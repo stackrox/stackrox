@@ -23,8 +23,11 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ListMitreAttackVectorsResponse is the response message for ListMitreAttackVectors.
 type ListMitreAttackVectorsResponse struct {
-	state              protoimpl.MessageState       `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// mitre_attack_vectors is the full list of MITRE ATT&CK vectors (tactics with their techniques).
+	// The response is approximately 1 MB in size.
 	MitreAttackVectors []*storage.MitreAttackVector `protobuf:"bytes,1,rep,name=mitre_attack_vectors,json=mitreAttackVectors,proto3" json:"mitre_attack_vectors,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
@@ -67,8 +70,10 @@ func (x *ListMitreAttackVectorsResponse) GetMitreAttackVectors() []*storage.Mitr
 	return nil
 }
 
+// GetMitreVectorResponse is the response message for GetMitreAttackVector.
 type GetMitreVectorResponse struct {
-	state             protoimpl.MessageState     `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// mitre_attack_vector is the requested MITRE ATT&CK tactic with all its associated techniques.
 	MitreAttackVector *storage.MitreAttackVector `protobuf:"bytes,1,opt,name=mitre_attack_vector,json=mitreAttackVector,proto3" json:"mitre_attack_vector,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache

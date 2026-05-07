@@ -23,15 +23,21 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// State describes the lifecycle stage of a compliance run.
 type ComplianceRun_State int32
 
 const (
-	ComplianceRun_INVALID          ComplianceRun_State = 0
-	ComplianceRun_READY            ComplianceRun_State = 1
-	ComplianceRun_STARTED          ComplianceRun_State = 2
-	ComplianceRun_WAIT_FOR_DATA    ComplianceRun_State = 3
+	ComplianceRun_INVALID ComplianceRun_State = 0
+	// READY indicates the run is scheduled and waiting to start.
+	ComplianceRun_READY ComplianceRun_State = 1
+	// STARTED indicates the run has been dispatched to the sensor.
+	ComplianceRun_STARTED ComplianceRun_State = 2
+	// WAIT_FOR_DATA indicates the run is waiting for compliance data from the cluster.
+	ComplianceRun_WAIT_FOR_DATA ComplianceRun_State = 3
+	// EVALUTING_CHECKS indicates the run is actively evaluating compliance checks.
 	ComplianceRun_EVALUTING_CHECKS ComplianceRun_State = 4
-	ComplianceRun_FINISHED         ComplianceRun_State = 5
+	// FINISHED indicates the run has completed (successfully or with errors).
+	ComplianceRun_FINISHED ComplianceRun_State = 5
 )
 
 // Enum value maps for ComplianceRun_State.
@@ -81,11 +87,13 @@ func (ComplianceRun_State) EnumDescriptor() ([]byte, []int) {
 	return file_api_v1_compliance_management_service_proto_rawDescGZIP(), []int{3, 0}
 }
 
+// ComplianceRunSelection specifies a cluster/standard pair for compliance run targeting.
+// Use "*" as a wildcard to target all clusters or all standards.
 type ComplianceRunSelection struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The ID of the cluster. "*" means "all clusters".
+	// cluster_id is the ID of the cluster to target. Use "*" to target all clusters.
 	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	// The ID of the compliance standard. "*" means "all standards".
+	// standard_id is the ID of the compliance standard to target. Use "*" to target all standards.
 	StandardId    string `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -223,15 +231,22 @@ func (x *GetActiveComplianceRunsResponse) GetActiveRuns() []*ComplianceRun {
 	return nil
 }
 
+// ComplianceRun represents a single compliance scan execution for a cluster/standard pair.
 type ComplianceRun struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	ClusterId     string                 `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	StandardId    string                 `protobuf:"bytes,3,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty"`
-	StartTime     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	FinishTime    *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=finish_time,json=finishTime,proto3" json:"finish_time,omitempty"`
-	State         ComplianceRun_State    `protobuf:"varint,7,opt,name=state,proto3,enum=v1.ComplianceRun_State" json:"state,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,8,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// cluster_id identifies the cluster this run was executed against.
+	ClusterId string `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// standard_id identifies the compliance standard used for this run.
+	StandardId string `protobuf:"bytes,3,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty"`
+	// start_time is when the compliance run began execution.
+	StartTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	// finish_time is when the compliance run completed; zero if still in progress.
+	FinishTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=finish_time,json=finishTime,proto3" json:"finish_time,omitempty"`
+	// state is the current lifecycle stage of this run.
+	State ComplianceRun_State `protobuf:"varint,7,opt,name=state,proto3,enum=v1.ComplianceRun_State" json:"state,omitempty"`
+	// error_message contains details when the run failed; empty on success.
+	ErrorMessage  string `protobuf:"bytes,8,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -315,6 +330,7 @@ func (x *ComplianceRun) GetErrorMessage() string {
 	return ""
 }
 
+// GetRecentComplianceRunsRequest filters recent runs by cluster, standard, and time window.
 type GetRecentComplianceRunsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to ClusterIdOpt:
@@ -325,7 +341,8 @@ type GetRecentComplianceRunsRequest struct {
 	//
 	//	*GetRecentComplianceRunsRequest_StandardId
 	StandardIdOpt isGetRecentComplianceRunsRequest_StandardIdOpt `protobuf_oneof:"standard_id_opt"`
-	Since         *timestamppb.Timestamp                         `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
+	// since filters runs to those that started at or after this timestamp.
+	Since         *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -404,6 +421,7 @@ type isGetRecentComplianceRunsRequest_ClusterIdOpt interface {
 }
 
 type GetRecentComplianceRunsRequest_ClusterId struct {
+	// cluster_id restricts results to runs for the specified cluster.
 	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3,oneof"`
 }
 
@@ -414,6 +432,7 @@ type isGetRecentComplianceRunsRequest_StandardIdOpt interface {
 }
 
 type GetRecentComplianceRunsRequest_StandardId struct {
+	// standard_id restricts results to runs for the specified compliance standard.
 	StandardId string `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3,oneof"`
 }
 
@@ -560,7 +579,8 @@ func (x *TriggerComplianceRunResponse) GetStartedRun() *ComplianceRun {
 }
 
 type TriggerComplianceRunsRequest struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// selection specifies which clusters and standards to run. Use "*" in either field for all.
 	Selection     *ComplianceRunSelection `protobuf:"bytes,1,opt,name=selection,proto3" json:"selection,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -647,10 +667,14 @@ func (x *TriggerComplianceRunsResponse) GetStartedRuns() []*ComplianceRun {
 	return nil
 }
 
+// GetComplianceRunStatusesRequest queries status for specific run IDs or the latest runs.
 type GetComplianceRunStatusesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RunIds        []string               `protobuf:"bytes,1,rep,name=run_ids,json=runIds,proto3" json:"run_ids,omitempty"`
-	Latest        bool                   `protobuf:"varint,2,opt,name=latest,proto3" json:"latest,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// run_ids is the list of compliance run IDs to query. Mutually exclusive with latest.
+	RunIds []string `protobuf:"bytes,1,rep,name=run_ids,json=runIds,proto3" json:"run_ids,omitempty"`
+	// latest when true returns the most recent run for each cluster/standard pair,
+	// ignoring run_ids. Cannot be combined with run_ids.
+	Latest        bool `protobuf:"varint,2,opt,name=latest,proto3" json:"latest,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -700,9 +724,10 @@ func (x *GetComplianceRunStatusesRequest) GetLatest() bool {
 }
 
 type GetComplianceRunStatusesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	InvalidRunIds []string               `protobuf:"bytes,1,rep,name=invalid_run_ids,json=invalidRunIds,proto3" json:"invalid_run_ids,omitempty"`
-	Runs          []*ComplianceRun       `protobuf:"bytes,2,rep,name=runs,proto3" json:"runs,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// invalid_run_ids contains IDs from the request that were not found.
+	InvalidRunIds []string         `protobuf:"bytes,1,rep,name=invalid_run_ids,json=invalidRunIds,proto3" json:"invalid_run_ids,omitempty"`
+	Runs          []*ComplianceRun `protobuf:"bytes,2,rep,name=runs,proto3" json:"runs,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

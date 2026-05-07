@@ -18,6 +18,8 @@
   "paths": {
     "/v1/config": {
       "get": {
+        "summary": "GetConfig returns the complete Central configuration, including public config, private config,\nand platform component config.",
+        "description": "Requires View on Administration.",
         "operationId": "ConfigService_GetConfig",
         "responses": {
           "200": {
@@ -38,6 +40,8 @@
         ]
       },
       "put": {
+        "summary": "PutConfig replaces the entire Central configuration in a single write.",
+        "description": "Both public_config and private_config must be present in the request; omitting either\nreturns INVALID_ARGUMENT. Platform component rules (if provided) are validated for\nnon-empty names and valid RE2 regex patterns. The vulnerability exception config embedded\nin private_config is also validated.\n\nSide effects on success:\n  - Telemetry collection is enabled or disabled based on public_config.telemetry.enabled.\n  - Platform component classification is re-evaluated for all workloads asynchronously.\n  - Custom Prometheus metrics aggregation is reconfigured.\n\nReturns INVALID_ARGUMENT if required sub-configs are missing or any validation fails.\nRequires Modify on Administration.",
         "operationId": "ConfigService_PutConfig",
         "responses": {
           "200": {
@@ -56,6 +60,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "PutConfigRequest carries the full Central configuration to replace in a single write.",
             "in": "body",
             "required": true,
             "schema": {
@@ -70,6 +75,8 @@
     },
     "/v1/config/platformcomponent": {
       "get": {
+        "summary": "GetPlatformComponentConfig returns the current platform component classification rules.",
+        "description": "Platform component rules are namespace-matching regexes used to label workloads as\nplatform (infrastructure) rather than user workloads. This endpoint is only available\nwhen the CustomizablePlatformComponents feature flag is enabled; returns an error otherwise.\n\nRequires View on Administration.",
         "operationId": "ConfigService_GetPlatformComponentConfig",
         "responses": {
           "200": {
@@ -90,6 +97,8 @@
         ]
       },
       "put": {
+        "summary": "UpdatePlatformComponentConfig replaces the platform component namespace-matching rules.",
+        "description": "Each rule must have a non-empty name and a valid RE2 regex for namespace matching.\nAfter a successful update, platform component classification is re-evaluated for all\nknown workloads asynchronously.\n\nReturns INVALID_ARGUMENT if any rule has an empty name, empty regex, or an invalid regex pattern.\nReturns an error if the CustomizablePlatformComponents feature flag is disabled.\nRequires Modify on Administration.",
         "operationId": "ConfigService_UpdatePlatformComponentConfig",
         "responses": {
           "200": {
@@ -108,6 +117,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "PutPlatformComponentConfigRequest carries the namespace-matching rules used to classify\nworkloads as platform components rather than user workloads.",
             "in": "body",
             "required": true,
             "schema": {
@@ -123,6 +133,7 @@
     "/v1/config/platformcomponent/rhlp/default": {
       "get": {
         "summary": "GetDefaultRedHatLayeredProductsRegex returns a static string containing the default Red Hat Layered Products regex.",
+        "description": "This regex is the built-in pattern used to identify namespaces belonging to Red Hat layered\nproducts (e.g. OpenShift operators). It can be used as a starting point when configuring\ncustom platform component rules via UpdatePlatformComponentConfig.\n\nRequires View on Administration.",
         "operationId": "ConfigService_GetDefaultRedHatLayeredProductsRegex",
         "responses": {
           "200": {
@@ -145,6 +156,8 @@
     },
     "/v1/config/private": {
       "get": {
+        "summary": "GetPrivateConfig returns the private (admin-only) portion of Central's configuration.",
+        "description": "Private config contains all data-retention settings: alert retention durations (by type),\nimage scan retention, expired vulnerability request retention, decommissioned cluster\nretention, report history and downloadable-report retention, administration event retention,\nand custom Prometheus metrics configuration.\n\nRequires View on the Administration resource.",
         "operationId": "ConfigService_GetPrivateConfig",
         "responses": {
           "200": {
@@ -167,6 +180,8 @@
     },
     "/v1/config/private/exception/vulnerabilities": {
       "get": {
+        "summary": "GetVulnerabilityExceptionConfig returns the current vulnerability exception (deferral/false-positive)\nconfiguration, which controls which expiry options are offered when users create exception requests.",
+        "description": "Requires View on VulnerabilityManagementRequests OR View on Administration.",
         "operationId": "ConfigService_GetVulnerabilityExceptionConfig",
         "responses": {
           "200": {
@@ -187,6 +202,8 @@
         ]
       },
       "put": {
+        "summary": "UpdateVulnerabilityExceptionConfig replaces the vulnerability exception configuration.",
+        "description": "Validates that:\n  - at least one DayOption is provided and at least one expiry option is enabled overall,\n  - all enabled DayOptions have unique num_days values >= 1,\n  - fixable_cve_options is present.\n\nReturns INVALID_ARGUMENT if validation fails.\nRequires Modify on Administration.",
         "operationId": "ConfigService_UpdateVulnerabilityExceptionConfig",
         "responses": {
           "200": {
@@ -205,6 +222,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "UpdateVulnerabilityExceptionConfigRequest carries the desired vulnerability exception\nconfiguration to store. All expiry_options validation rules apply.",
             "in": "body",
             "required": true,
             "schema": {
@@ -219,6 +237,8 @@
     },
     "/v1/config/public": {
       "get": {
+        "summary": "GetPublicConfig returns the public portion of Central's configuration.",
+        "description": "Public config includes UI banners (header/footer), the login-page notice, and the\ntelemetry opt-in status. This endpoint is intentionally unauthenticated so that banners\ncan be displayed on the login page before the user has a session.",
         "operationId": "ConfigService_GetPublicConfig",
         "responses": {
           "200": {
@@ -622,18 +642,22 @@
       "properties": {
         "numDays": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "description": "num_days is the duration in days for this expiry option. Must be >= 1 when enabled is true."
         },
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "enabled controls whether this duration is offered as an expiry choice in the UI."
         }
-      }
+      },
+      "description": "DayOption defines a selectable number-of-days duration that administrators can enable\nas a pre-set expiry option for vulnerability exception requests."
     },
     "v1GetDefaultRedHatLayeredProductsRegexResponse": {
       "type": "object",
       "properties": {
         "regex": {
-          "type": "string"
+          "type": "string",
+          "description": "regex is the built-in default RE2 pattern used to match namespaces that belong to\nRed Hat layered products (e.g. OpenShift operators)."
         }
       }
     },
@@ -641,7 +665,8 @@
       "type": "object",
       "properties": {
         "config": {
-          "$ref": "#/definitions/v1VulnerabilityExceptionConfig"
+          "$ref": "#/definitions/v1VulnerabilityExceptionConfig",
+          "description": "config is the current vulnerability exception configuration."
         }
       }
     },
@@ -649,9 +674,11 @@
       "type": "object",
       "properties": {
         "config": {
-          "$ref": "#/definitions/storageConfig"
+          "$ref": "#/definitions/storageConfig",
+          "description": "config is the complete Central configuration, including both public and private sub-configs.\nBoth public_config and private_config must be set; omitting either returns INVALID_ARGUMENT."
         }
-      }
+      },
+      "description": "PutConfigRequest carries the full Central configuration to replace in a single write."
     },
     "v1PutPlatformComponentConfigRequest": {
       "type": "object",
@@ -661,23 +688,28 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/PlatformComponentConfigRule"
-          }
+          },
+          "description": "rules is the ordered list of namespace-matching rules. Each rule must have a non-empty\nname and a valid RE2 namespace regex. Returns INVALID_ARGUMENT for empty names, empty\nregexes, or malformed regex patterns."
         }
-      }
+      },
+      "description": "PutPlatformComponentConfigRequest carries the namespace-matching rules used to classify\nworkloads as platform components rather than user workloads."
     },
     "v1UpdateVulnerabilityExceptionConfigRequest": {
       "type": "object",
       "properties": {
         "config": {
-          "$ref": "#/definitions/v1VulnerabilityExceptionConfig"
+          "$ref": "#/definitions/v1VulnerabilityExceptionConfig",
+          "description": "config is the new vulnerability exception configuration to apply.\nMust be non-nil and pass all validation rules (see VulnerabilityExceptionConfig)."
         }
-      }
+      },
+      "description": "UpdateVulnerabilityExceptionConfigRequest carries the desired vulnerability exception\nconfiguration to store. All expiry_options validation rules apply."
     },
     "v1UpdateVulnerabilityExceptionConfigResponse": {
       "type": "object",
       "properties": {
         "config": {
-          "$ref": "#/definitions/v1VulnerabilityExceptionConfig"
+          "$ref": "#/definitions/v1VulnerabilityExceptionConfig",
+          "description": "config is the vulnerability exception configuration as stored after the update."
         }
       }
     },
@@ -685,9 +717,11 @@
       "type": "object",
       "properties": {
         "expiryOptions": {
-          "$ref": "#/definitions/v1VulnerabilityExceptionConfigExpiryOptions"
+          "$ref": "#/definitions/v1VulnerabilityExceptionConfigExpiryOptions",
+          "description": "expiry_options defines the expiry modes available when creating vulnerability exceptions."
         }
-      }
+      },
+      "description": "VulnerabilityExceptionConfig controls which expiry options are available when users\ncreate vulnerability deferral or false-positive exception requests."
     },
     "v1VulnerabilityExceptionConfigExpiryOptions": {
       "type": "object",
@@ -698,33 +732,36 @@
             "type": "object",
             "$ref": "#/definitions/v1DayOption"
           },
-          "description": "This allows users to set expiry interval based on number of days."
+          "description": "day_options lists the pre-set day-count durations offered as expiry choices.\nAt least one DayOption must be provided; at least one must be enabled.\nAll enabled entries must have a unique num_days value >= 1."
         },
         "fixableCveOptions": {
           "$ref": "#/definitions/v1VulnerabilityExceptionConfigFixableCVEOptions",
-          "description": "This allows users to set vulnerability request expiry based on the CVEs."
+          "description": "fixable_cve_options configures expiry conditions tied to CVE fixability status.\nMust be present; at least one of all_fixable or any_fixable should be true."
         },
         "customDate": {
           "type": "boolean",
-          "description": "This option, if true, allows UI to show a custom date picker for setting expiry date."
+          "description": "custom_date, when true, allows the UI to display a date picker so users can\nspecify an arbitrary expiry date for the exception."
         },
         "indefinite": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "indefinite, when true, allows users to create exceptions with no expiry date."
         }
-      }
+      },
+      "description": "ExpiryOptions defines the full set of expiry modes presented to users when creating\na vulnerability exception. At least one option must be enabled."
     },
     "v1VulnerabilityExceptionConfigFixableCVEOptions": {
       "type": "object",
       "properties": {
         "allFixable": {
           "type": "boolean",
-          "description": "This options allows users to expire the vulnerability deferral request if and only if **all** vulnerabilities\nin the requests become fixable."
+          "description": "all_fixable, when true, expires the deferral request only when **all** vulnerabilities\nin the request become fixable."
         },
         "anyFixable": {
           "type": "boolean",
-          "description": "This options allows users to expire the vulnerability deferral request if **any** vulnerability\nin the requests become fixable."
+          "description": "any_fixable, when true, expires the deferral request as soon as **any** vulnerability\nin the request becomes fixable."
         }
-      }
+      },
+      "description": "FixableCVEOptions defines expiry conditions based on whether vulnerabilities become fixable."
     }
   }
 }

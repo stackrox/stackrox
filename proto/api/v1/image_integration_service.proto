@@ -11,7 +11,9 @@ option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 message GetImageIntegrationsRequest {
+  // name filters the results to integrations whose name exactly matches this value.
   string name = 1;
+  // cluster is reserved for future use and is currently ignored.
   string cluster = 2;
 }
 
@@ -20,24 +22,60 @@ message GetImageIntegrationsResponse {
 }
 
 message UpdateImageIntegrationRequest {
+  // config contains the updated image integration configuration.
   storage.ImageIntegration config = 1;
   // When false, use the stored credentials of an existing image integration given its ID.
   bool updatePassword = 2;
 }
 
-// ImageIntegrationService APIs manage image registry and image scanner integration.
+// ImageIntegrationService manages image registry and image scanner integrations.
+//
+// Image integrations connect StackRox to external container registries (e.g.
+// Docker Hub, ECR, GCR, Quay) and image scanners (e.g. Clairify, StackRox
+// Scanner). Integrations can serve as a registry, a scanner, a node scanner,
+// or any combination of those categories.
+//
+// When an integration is created or updated, the change is broadcast to all
+// connected Sensors so that delegated scanning configurations remain current.
+// Scanner V4 integrations are managed automatically and cannot be created or
+// deleted via this API.
+//
+// Sensitive credential fields are scrubbed from read responses for non-sensor
+// callers.
+//
+// Authentication: read operations require the Integration resource with View
+// access (Sensor service accounts are also permitted). Write and test
+// operations require the Integration resource with Modify access.
 service ImageIntegrationService {
-  // GetImageIntegration returns the image integration given its ID.
+  // GetImageIntegration returns the image integration with the given ID.
+  //
+  // Sensitive credential fields are replaced with a placeholder in the
+  // response.
+  // Returns NOT_FOUND if no integration with the given ID exists.
+  // Returns INVALID_ARGUMENT if the ID is empty.
   rpc GetImageIntegration(ResourceByID) returns (storage.ImageIntegration) {
     option (google.api.http) = {get: "/v1/imageintegrations/{id}"};
   }
 
-  // GetImageIntegrations returns all image integrations that match the request filters.
+  // GetImageIntegrations returns all image integrations, optionally filtered
+  // by name.
+  //
+  // Sensitive credential fields are scrubbed from the response for all callers
+  // except Sensor service accounts. Results can be filtered by exact name match
+  // using GetImageIntegrationsRequest.
   rpc GetImageIntegrations(GetImageIntegrationsRequest) returns (GetImageIntegrationsResponse) {
     option (google.api.http) = {get: "/v1/imageintegrations"};
   }
 
-  // PostImageIntegration creates a image integration.
+  // PostImageIntegration creates a new image integration.
+  //
+  // The id field must be empty; a new ID is assigned and returned. The
+  // integration is validated and tested (unless skip_test_integration is set)
+  // before it is persisted. On success, connected Sensors are notified.
+  //
+  // Returns INVALID_ARGUMENT if the id field is set, if required fields are
+  // missing, if validation fails, or if the integration test fails.
+  // Returns INVALID_ARGUMENT if the type is "scanner_v4" (auto-managed).
   rpc PostImageIntegration(storage.ImageIntegration) returns (storage.ImageIntegration) {
     option (google.api.http) = {
       post: "/v1/imageintegrations"
@@ -45,7 +83,12 @@ service ImageIntegrationService {
     };
   }
 
-  // PutImageIntegration modifies a given image integration, without using stored credential reconciliation.
+  // PutImageIntegration replaces an existing image integration, treating all
+  // credential fields in the request as authoritative (no stored credential
+  // reconciliation). Prefer UpdateImageIntegration for credential-preserving
+  // updates.
+  //
+  // Returns INVALID_ARGUMENT if validation or integration testing fails.
   rpc PutImageIntegration(storage.ImageIntegration) returns (Empty) {
     option (google.api.http) = {
       put: "/v1/imageintegrations/{id}"
@@ -53,7 +96,13 @@ service ImageIntegrationService {
     };
   }
 
-  // TestImageIntegration checks if the given image integration is correctly configured, without using stored credential reconciliation.
+  // TestImageIntegration verifies that the given image integration
+  // configuration is reachable and correctly set up, treating all credential
+  // fields as authoritative (no stored credential reconciliation).
+  //
+  // Tests each configured category (registry, scanner, node scanner)
+  // individually.
+  // Returns INVALID_ARGUMENT if any test fails or validation fails.
   rpc TestImageIntegration(storage.ImageIntegration) returns (Empty) {
     option (google.api.http) = {
       post: "/v1/imageintegrations/test"
@@ -61,12 +110,26 @@ service ImageIntegrationService {
     };
   }
 
-  // DeleteImageIntegration removes a image integration given its ID.
+  // DeleteImageIntegration removes the image integration with the given ID.
+  //
+  // Returns INVALID_ARGUMENT if the integration is of type "scanner_v4"
+  // (auto-managed integrations cannot be deleted).
+  // Returns INVALID_ARGUMENT if the ID is empty.
   rpc DeleteImageIntegration(ResourceByID) returns (Empty) {
     option (google.api.http) = {delete: "/v1/imageintegrations/{id}"};
   }
 
-  // UpdateImageIntegration modifies a given image integration, with optional stored credential reconciliation.
+  // UpdateImageIntegration modifies an existing image integration with
+  // optional stored credential reconciliation.
+  //
+  // When updatePassword is false, credential fields in the request are ignored
+  // and the stored credentials are preserved. When updatePassword is true,
+  // credentials in the request replace stored credentials. On success,
+  // connected Sensors are notified of the change.
+  //
+  // Returns INVALID_ARGUMENT if validation or integration testing fails.
+  // Returns NOT_FOUND if updatePassword is false and the integration does not
+  // exist.
   rpc UpdateImageIntegration(UpdateImageIntegrationRequest) returns (Empty) {
     option (google.api.http) = {
       patch: "/v1/imageintegrations/{config.id}"
@@ -74,7 +137,16 @@ service ImageIntegrationService {
     };
   }
 
-  // TestUpdatedImageIntegration checks if the given image integration is correctly configured, with optional stored credential reconciliation.
+  // TestUpdatedImageIntegration verifies that the given image integration
+  // configuration is reachable with optional stored credential reconciliation.
+  //
+  // When updatePassword is false, credential fields in the request are replaced
+  // with the stored credentials before the test is performed. When
+  // updatePassword is true, the provided credentials are used directly.
+  //
+  // Returns INVALID_ARGUMENT if any test fails or validation fails.
+  // Returns NOT_FOUND if updatePassword is false and the integration does not
+  // exist.
   rpc TestUpdatedImageIntegration(UpdateImageIntegrationRequest) returns (Empty) {
     option (google.api.http) = {
       post: "/v1/imageintegrations/test/updated"

@@ -129,11 +129,18 @@ func (ExceptionExpiry_ExpiryType) EnumDescriptor() ([]byte, []int) {
 	return file_api_v2_vuln_exception_service_proto_rawDescGZIP(), []int{1, 0}
 }
 
+// Comment represents a user comment on a vulnerability exception request.
+// Comments are required for all request actions (create, approve, deny, update)
+// and provide an audit trail for the exception lifecycle.
 type Comment struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	User          *SlimUser              `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Unique identifier for the comment.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The comment text. Required for all request actions.
+	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	// User who created the comment.
+	User *SlimUser `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty"`
+	// Timestamp when the comment was created.
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -254,9 +261,11 @@ func (x *ExceptionExpiry) GetExpiresOn() *timestamppb.Timestamp {
 	return nil
 }
 
+// DeferralRequest holds the expiry configuration for a deferral exception.
 type DeferralRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Expiry        *ExceptionExpiry       `protobuf:"bytes,1,opt,name=expiry,proto3" json:"expiry,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// REQUIRED. Expiry configuration for the deferral.
+	Expiry        *ExceptionExpiry `protobuf:"bytes,1,opt,name=expiry,proto3" json:"expiry,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -298,6 +307,8 @@ func (x *DeferralRequest) GetExpiry() *ExceptionExpiry {
 	return nil
 }
 
+// FalsePositiveRequest marks vulnerabilities as false positive. False-positive
+// exceptions are permanent and have no expiry configuration.
 type FalsePositiveRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -334,11 +345,13 @@ func (*FalsePositiveRequest) Descriptor() ([]byte, []int) {
 	return file_api_v2_vuln_exception_service_proto_rawDescGZIP(), []int{3}
 }
 
-// Next available tag: 16
 // VulnerabilityException represents a vulnerability exception such as deferral and false-positive.
+// Exceptions suppress specific CVEs from policy evaluation and risk scoring.
+// Next available tag: 16
 type VulnerabilityException struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Unique identifier for the exception (auto-generated).
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Auto-generated display name of the exception.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Indicates the state that the vulnerabilities will move to once the exception is enforced.
@@ -667,6 +680,7 @@ func (x *FalsePositiveUpdate) GetCves() []string {
 	return nil
 }
 
+// GetVulnerabilityExceptionResponse wraps a single vulnerability exception.
 type GetVulnerabilityExceptionResponse struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Exception     *VulnerabilityException `protobuf:"bytes,1,opt,name=exception,proto3" json:"exception,omitempty"`
@@ -711,6 +725,7 @@ func (x *GetVulnerabilityExceptionResponse) GetException() *VulnerabilityExcepti
 	return nil
 }
 
+// ListVulnerabilityExceptionsResponse wraps the list of vulnerability exceptions.
 type ListVulnerabilityExceptionsResponse struct {
 	state         protoimpl.MessageState    `protogen:"open.v1"`
 	Exceptions    []*VulnerabilityException `protobuf:"bytes,1,rep,name=exceptions,proto3" json:"exceptions,omitempty"`
@@ -755,6 +770,8 @@ func (x *ListVulnerabilityExceptionsResponse) GetExceptions() []*VulnerabilityEx
 	return nil
 }
 
+// CreateDeferVulnerabilityExceptionRequest contains the fields needed to create
+// a deferral exception. All fields are required.
 // next available tag: 6
 type CreateDeferVulnerabilityExceptionRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -828,6 +845,7 @@ func (x *CreateDeferVulnerabilityExceptionRequest) GetExceptionExpiry() *Excepti
 	return nil
 }
 
+// CreateDeferVulnerabilityExceptionResponse wraps the newly created deferral exception.
 type CreateDeferVulnerabilityExceptionResponse struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Exception     *VulnerabilityException `protobuf:"bytes,1,opt,name=exception,proto3" json:"exception,omitempty"`
@@ -872,6 +890,8 @@ func (x *CreateDeferVulnerabilityExceptionResponse) GetException() *Vulnerabilit
 	return nil
 }
 
+// CreateFalsePositiveVulnerabilityExceptionRequest contains the fields needed
+// to create a false-positive exception. All fields are required.
 type CreateFalsePositiveVulnerabilityExceptionRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// REQUIRED. The CVEs to which the exception should be applied.
@@ -935,6 +955,7 @@ func (x *CreateFalsePositiveVulnerabilityExceptionRequest) GetComment() string {
 	return ""
 }
 
+// CreateFalsePositiveVulnerabilityExceptionResponse wraps the newly created false-positive exception.
 type CreateFalsePositiveVulnerabilityExceptionResponse struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Exception     *VulnerabilityException `protobuf:"bytes,1,opt,name=exception,proto3" json:"exception,omitempty"`
@@ -979,6 +1000,8 @@ func (x *CreateFalsePositiveVulnerabilityExceptionResponse) GetException() *Vuln
 	return nil
 }
 
+// ApproveVulnerabilityExceptionRequest identifies the exception to approve and
+// requires a comment explaining the approval rationale.
 type ApproveVulnerabilityExceptionRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// REQUIRED. The ID of vulnerability exception to be approved.
@@ -1033,6 +1056,7 @@ func (x *ApproveVulnerabilityExceptionRequest) GetComment() string {
 	return ""
 }
 
+// ApproveVulnerabilityExceptionResponse wraps the approved exception.
 type ApproveVulnerabilityExceptionResponse struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Exception     *VulnerabilityException `protobuf:"bytes,1,opt,name=exception,proto3" json:"exception,omitempty"`
@@ -1077,6 +1101,8 @@ func (x *ApproveVulnerabilityExceptionResponse) GetException() *VulnerabilityExc
 	return nil
 }
 
+// DenyVulnerabilityExceptionRequest identifies the exception to deny and
+// requires a comment explaining the denial rationale.
 type DenyVulnerabilityExceptionRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// REQUIRED. The ID of vulnerability exception to be denied.
@@ -1131,6 +1157,7 @@ func (x *DenyVulnerabilityExceptionRequest) GetComment() string {
 	return ""
 }
 
+// DenyVulnerabilityExceptionResponse wraps the denied exception.
 type DenyVulnerabilityExceptionResponse struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Exception     *VulnerabilityException `protobuf:"bytes,1,opt,name=exception,proto3" json:"exception,omitempty"`
@@ -1175,6 +1202,8 @@ func (x *DenyVulnerabilityExceptionResponse) GetException() *VulnerabilityExcept
 	return nil
 }
 
+// UpdateVulnerabilityExceptionRequest modifies an existing exception.
+// Exactly one of deferral_update or false_positive_update must be set.
 type UpdateVulnerabilityExceptionRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// REQUIRED. The ID of vulnerability exception to be updated.
@@ -1279,6 +1308,7 @@ func (*UpdateVulnerabilityExceptionRequest_DeferralUpdate) isUpdateVulnerability
 func (*UpdateVulnerabilityExceptionRequest_FalsePositiveUpdate) isUpdateVulnerabilityExceptionRequest_Update() {
 }
 
+// UpdateVulnerabilityExceptionResponse wraps the updated exception.
 type UpdateVulnerabilityExceptionResponse struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Exception     *VulnerabilityException `protobuf:"bytes,1,opt,name=exception,proto3" json:"exception,omitempty"`
@@ -1323,6 +1353,7 @@ func (x *UpdateVulnerabilityExceptionResponse) GetException() *VulnerabilityExce
 	return nil
 }
 
+// CancelVulnerabilityExceptionResponse wraps the cancelled exception.
 type CancelVulnerabilityExceptionResponse struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Exception     *VulnerabilityException `protobuf:"bytes,1,opt,name=exception,proto3" json:"exception,omitempty"`
@@ -1367,9 +1398,10 @@ func (x *CancelVulnerabilityExceptionResponse) GetException() *VulnerabilityExce
 	return nil
 }
 
+// Scope defines where the exception is enforced.
 type VulnerabilityException_Scope struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// This field can be used to apply the exception to selected images.
+	// Applies the exception to a specific container image.
 	ImageScope    *VulnerabilityException_Scope_Image `protobuf:"bytes,1,opt,name=image_scope,json=imageScope,proto3" json:"image_scope,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1412,11 +1444,15 @@ func (x *VulnerabilityException_Scope) GetImageScope() *VulnerabilityException_S
 	return nil
 }
 
+// Image identifies a specific container image by registry, repository, and tag.
 type VulnerabilityException_Scope_Image struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Registry      string                 `protobuf:"bytes,1,opt,name=registry,proto3" json:"registry,omitempty"`
-	Remote        string                 `protobuf:"bytes,2,opt,name=remote,proto3" json:"remote,omitempty"`
-	Tag           string                 `protobuf:"bytes,3,opt,name=tag,proto3" json:"tag,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Container registry (e.g., "docker.io", "quay.io").
+	Registry string `protobuf:"bytes,1,opt,name=registry,proto3" json:"registry,omitempty"`
+	// Image repository name (e.g., "library/nginx").
+	Remote string `protobuf:"bytes,2,opt,name=remote,proto3" json:"remote,omitempty"`
+	// Image tag (e.g., "latest", "1.25").
+	Tag           string `protobuf:"bytes,3,opt,name=tag,proto3" json:"tag,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

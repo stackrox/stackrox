@@ -23,8 +23,12 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// GetProcessBaselineRequest identifies a process baseline by its composite key
+// (cluster, namespace, deployment, container).
 type GetProcessBaselineRequest struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// key uniquely identifies the process baseline. All four key fields
+	// (cluster_id, namespace, deployment_id, container_name) are required.
 	Key           *storage.ProcessBaselineKey `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -67,11 +71,16 @@ func (x *GetProcessBaselineRequest) GetKey() *storage.ProcessBaselineKey {
 	return nil
 }
 
+// UpdateProcessBaselinesRequest adds or removes process names from one or more
+// process baselines identified by their composite keys.
 type UpdateProcessBaselinesRequest struct {
-	state          protoimpl.MessageState        `protogen:"open.v1"`
-	Keys           []*storage.ProcessBaselineKey `protobuf:"bytes,1,rep,name=keys,proto3" json:"keys,omitempty"`
-	AddElements    []*storage.BaselineItem       `protobuf:"bytes,2,rep,name=add_elements,json=addElements,proto3" json:"add_elements,omitempty"`
-	RemoveElements []*storage.BaselineItem       `protobuf:"bytes,3,rep,name=remove_elements,json=removeElements,proto3" json:"remove_elements,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// keys identifies the baselines to update. Each key must have all four fields populated.
+	Keys []*storage.ProcessBaselineKey `protobuf:"bytes,1,rep,name=keys,proto3" json:"keys,omitempty"`
+	// add_elements is the list of process names to add to each baseline.
+	AddElements []*storage.BaselineItem `protobuf:"bytes,2,rep,name=add_elements,json=addElements,proto3" json:"add_elements,omitempty"`
+	// remove_elements is the list of process names to remove from each baseline.
+	RemoveElements []*storage.BaselineItem `protobuf:"bytes,3,rep,name=remove_elements,json=removeElements,proto3" json:"remove_elements,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -171,9 +180,12 @@ func (x *ProcessBaselinesResponse) GetBaselines() []*storage.ProcessBaseline {
 	return nil
 }
 
+// ProcessBaselineUpdateError records a failure to update a single baseline.
 type ProcessBaselineUpdateError struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	Error         string                      `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// error is the human-readable description of what went wrong.
+	Error string `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
+	// key identifies which baseline could not be updated.
 	Key           *storage.ProcessBaselineKey `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -224,8 +236,9 @@ func (x *ProcessBaselineUpdateError) GetKey() *storage.ProcessBaselineKey {
 }
 
 type BulkUpdateProcessBaselinesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// success is true if all baselines in the bulk operation were updated without error.
+	Success       bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -267,9 +280,13 @@ func (x *BulkUpdateProcessBaselinesResponse) GetSuccess() bool {
 	return false
 }
 
+// UpdateProcessBaselinesResponse returns the updated baseline objects along
+// with any per-baseline errors.
 type UpdateProcessBaselinesResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
-	Baselines     []*storage.ProcessBaseline    `protobuf:"bytes,1,rep,name=baselines,proto3" json:"baselines,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// baselines contains the updated baseline objects for all successful updates.
+	Baselines []*storage.ProcessBaseline `protobuf:"bytes,1,rep,name=baselines,proto3" json:"baselines,omitempty"`
+	// errors contains entries for any baselines that could not be updated.
 	Errors        []*ProcessBaselineUpdateError `protobuf:"bytes,2,rep,name=errors,proto3" json:"errors,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -319,10 +336,13 @@ func (x *UpdateProcessBaselinesResponse) GetErrors() []*ProcessBaselineUpdateErr
 	return nil
 }
 
+// LockProcessBaselinesRequest locks or unlocks a list of process baselines.
 type LockProcessBaselinesRequest struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
-	Keys          []*storage.ProcessBaselineKey `protobuf:"bytes,1,rep,name=keys,proto3" json:"keys,omitempty"`
-	Locked        bool                          `protobuf:"varint,2,opt,name=locked,proto3" json:"locked,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// keys identifies the baselines to lock or unlock. Each key must be fully specified.
+	Keys []*storage.ProcessBaselineKey `protobuf:"bytes,1,rep,name=keys,proto3" json:"keys,omitempty"`
+	// locked controls whether to lock (true) or unlock (false) the baselines.
+	Locked        bool `protobuf:"varint,2,opt,name=locked,proto3" json:"locked,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -371,10 +391,15 @@ func (x *LockProcessBaselinesRequest) GetLocked() bool {
 	return false
 }
 
+// BulkProcessBaselinesRequest identifies a set of baselines by cluster and
+// optional namespaces for bulk lock/unlock operations.
 type BulkProcessBaselinesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Namespaces    []string               `protobuf:"bytes,2,rep,name=namespaces,proto3" json:"namespaces,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id identifies the cluster whose baselines to operate on. Required.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// namespaces optionally restricts the operation to baselines in these namespaces.
+	// If empty, all namespaces in the cluster are included.
+	Namespaces    []string `protobuf:"bytes,2,rep,name=namespaces,proto3" json:"namespaces,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -423,10 +448,15 @@ func (x *BulkProcessBaselinesRequest) GetNamespaces() []string {
 	return nil
 }
 
+// DeleteProcessBaselinesRequest specifies which baselines to delete using a
+// search query, with a dry-run safeguard.
 type DeleteProcessBaselinesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
-	Confirm       bool                   `protobuf:"varint,2,opt,name=confirm,proto3" json:"confirm,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// query is a StackRox search query selecting the baselines to delete. Required.
+	Query string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	// confirm must be set to true to perform actual deletion. If false, the
+	// response indicates how many baselines would be deleted (dry run).
+	Confirm       bool `protobuf:"varint,2,opt,name=confirm,proto3" json:"confirm,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -475,10 +505,13 @@ func (x *DeleteProcessBaselinesRequest) GetConfirm() bool {
 	return false
 }
 
+// DeleteProcessBaselinesResponse reports the outcome of a baseline deletion.
 type DeleteProcessBaselinesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	NumDeleted    int32                  `protobuf:"varint,1,opt,name=num_deleted,json=numDeleted,proto3" json:"num_deleted,omitempty"`
-	DryRun        bool                   `protobuf:"varint,2,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// num_deleted is the number of baselines deleted (or that would be deleted in dry-run mode).
+	NumDeleted int32 `protobuf:"varint,1,opt,name=num_deleted,json=numDeleted,proto3" json:"num_deleted,omitempty"`
+	// dry_run is true if confirm was false and no deletion was performed.
+	DryRun        bool `protobuf:"varint,2,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

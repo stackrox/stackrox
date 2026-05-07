@@ -8,10 +8,12 @@ import "google/protobuf/timestamp.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// ComplianceRunSelection specifies a cluster/standard pair for compliance run targeting.
+// Use "*" as a wildcard to target all clusters or all standards.
 message ComplianceRunSelection {
-  // The ID of the cluster. "*" means "all clusters".
+  // cluster_id is the ID of the cluster to target. Use "*" to target all clusters.
   string cluster_id = 1;
-  // The ID of the compliance standard. "*" means "all standards".
+  // standard_id is the ID of the compliance standard to target. Use "*" to target all standards.
   string standard_id = 2;
 }
 
@@ -23,37 +25,54 @@ message GetActiveComplianceRunsResponse {
   repeated ComplianceRun active_runs = 1;
 }
 
+// ComplianceRun represents a single compliance scan execution for a cluster/standard pair.
 message ComplianceRun {
+  // State describes the lifecycle stage of a compliance run.
   enum State {
     INVALID = 0;
+    // READY indicates the run is scheduled and waiting to start.
     READY = 1;
+    // STARTED indicates the run has been dispatched to the sensor.
     STARTED = 2;
+    // WAIT_FOR_DATA indicates the run is waiting for compliance data from the cluster.
     WAIT_FOR_DATA = 3;
+    // EVALUTING_CHECKS indicates the run is actively evaluating compliance checks.
     EVALUTING_CHECKS = 4;
+    // FINISHED indicates the run has completed (successfully or with errors).
     FINISHED = 5;
   }
 
   string id = 1;
 
+  // cluster_id identifies the cluster this run was executed against.
   string cluster_id = 2;
+  // standard_id identifies the compliance standard used for this run.
   string standard_id = 3;
 
   reserved 4;
 
+  // start_time is when the compliance run began execution.
   google.protobuf.Timestamp start_time = 5;
+  // finish_time is when the compliance run completed; zero if still in progress.
   google.protobuf.Timestamp finish_time = 6;
 
+  // state is the current lifecycle stage of this run.
   State state = 7;
+  // error_message contains details when the run failed; empty on success.
   string error_message = 8;
 }
 
+// GetRecentComplianceRunsRequest filters recent runs by cluster, standard, and time window.
 message GetRecentComplianceRunsRequest {
   oneof cluster_id_opt {
+    // cluster_id restricts results to runs for the specified cluster.
     string cluster_id = 1;
   }
   oneof standard_id_opt {
+    // standard_id restricts results to runs for the specified compliance standard.
     string standard_id = 2;
   }
+  // since filters runs to those that started at or after this timestamp.
   google.protobuf.Timestamp since = 3;
 }
 
@@ -71,6 +90,7 @@ message TriggerComplianceRunResponse {
 }
 
 message TriggerComplianceRunsRequest {
+  // selection specifies which clusters and standards to run. Use "*" in either field for all.
   ComplianceRunSelection selection = 1;
 }
 
@@ -78,25 +98,51 @@ message TriggerComplianceRunsResponse {
   repeated ComplianceRun started_runs = 1;
 }
 
+// GetComplianceRunStatusesRequest queries status for specific run IDs or the latest runs.
 message GetComplianceRunStatusesRequest {
+  // run_ids is the list of compliance run IDs to query. Mutually exclusive with latest.
   repeated string run_ids = 1;
+  // latest when true returns the most recent run for each cluster/standard pair,
+  // ignoring run_ids. Cannot be combined with run_ids.
   bool latest = 2;
 }
 
 message GetComplianceRunStatusesResponse {
+  // invalid_run_ids contains IDs from the request that were not found.
   repeated string invalid_run_ids = 1;
   repeated ComplianceRun runs = 2;
 }
 
+// ComplianceManagementService manages the execution of compliance scans across clusters.
+//
+// Compliance runs are triggered per cluster/standard pair. The service supports
+// wildcard targeting (cluster "*" or standard "*") to fan out runs to all applicable
+// combinations. Run results are stored separately and queried via ComplianceService.
+//
+// Authentication: GetRecentRuns and GetRunStatuses require read access to the
+// Compliance resource. TriggerRuns requires write access.
 service ComplianceManagementService {
   // BEGIN EXPERIMENTAL/UNSTABLE API
 
+  // GetRecentRuns returns compliance runs matching the optional cluster, standard, and time filters.
+  //
+  // Results are sorted by start time ascending. All filter fields are optional;
+  // omitting them returns all recent runs across all clusters and standards.
+  //
+  // Requires read access to the Compliance resource.
   rpc GetRecentRuns(GetRecentComplianceRunsRequest) returns (GetRecentComplianceRunsResponse) {
     option (google.api.http) = {get: "/v1/complianceManagement/runs"};
   }
 
   // END EXPERIMENTAL/UNSTABLE API
 
+  // TriggerRuns starts new compliance runs for the specified cluster/standard selection.
+  //
+  // The selection supports wildcard values ("*") to trigger runs across all clusters
+  // or all standards. Returns the list of ComplianceRun objects that were started.
+  //
+  // Returns INVALID_ARGUMENT if the cluster or standard selection cannot be resolved.
+  // Requires write access to the Compliance resource.
   rpc TriggerRuns(TriggerComplianceRunsRequest) returns (TriggerComplianceRunsResponse) {
     option (google.api.http) = {
       post: "/v1/compliancemanagement/runs"
@@ -104,6 +150,13 @@ service ComplianceManagementService {
     };
   }
 
+  // GetRunStatuses returns the current status for specified run IDs or the latest runs.
+  //
+  // Set latest=true to retrieve the most recent run per cluster/standard pair without
+  // specifying IDs. Setting both latest=true and run_ids returns INVALID_ARGUMENT.
+  // IDs in the request that do not match any run are returned in invalid_run_ids.
+  //
+  // Requires read access to the Compliance resource.
   rpc GetRunStatuses(GetComplianceRunStatusesRequest) returns (GetComplianceRunStatusesResponse) {
     option (google.api.http) = {get: "/v1/compliancemanagement/runstatuses"};
   }

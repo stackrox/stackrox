@@ -30,14 +30,55 @@ const (
 // RbacServiceClient is the client API for RbacService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// RbacService provides read-only access to Kubernetes RBAC objects discovered by Sensor:
+// K8s roles, role bindings, and subjects (users and groups).
+//
+// These objects reflect the RBAC state of monitored clusters as observed by Sensor, not
+// the ACS access control model. Service accounts are served via a separate API.
+//
+// Authentication requirements:
+// - GetRole, ListRoles: require read access to the K8sRole resource.
+// - GetRoleBinding, ListRoleBindings: require read access to the K8sRoleBinding resource.
+// - GetSubject, ListSubjects: require read access to the K8sSubject resource.
 type RbacServiceClient interface {
+	// GetRole returns the Kubernetes role with the given ID.
+	//
+	// Returns NOT_FOUND if no K8s role with the specified ID exists.
+	// Requires read access to the K8sRole resource.
 	GetRole(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetRoleResponse, error)
+	// ListRoles returns all Kubernetes roles matching the search query.
+	//
+	// Uses StackRox search query syntax. An empty query returns all roles.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
+	// Requires read access to the K8sRole resource.
 	ListRoles(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListRolesResponse, error)
+	// GetRoleBinding returns the Kubernetes role binding with the given ID.
+	//
+	// Returns NOT_FOUND if no K8s role binding with the specified ID exists.
+	// Requires read access to the K8sRoleBinding resource.
 	GetRoleBinding(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetRoleBindingResponse, error)
+	// ListRoleBindings returns all Kubernetes role bindings matching the search query.
+	//
+	// Uses StackRox search query syntax. An empty query returns all role bindings.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
+	// Requires read access to the K8sRoleBinding resource.
 	ListRoleBindings(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListRoleBindingsResponse, error)
+	// GetSubject returns the Kubernetes subject (user or group) identified by the given name,
+	// together with their cluster-wide and namespace-scoped role bindings.
+	//
 	// Subjects served from this API are Groups and Users only.
-	// Id in this case is the Name field, since for users and groups, that is unique, and subjects do not have IDs.
+	// The id in this case is the Name field, since for users and groups that is unique,
+	// and subjects do not have IDs.
+	// Requires read access to the K8sSubject resource.
 	GetSubject(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetSubjectResponse, error)
+	// ListSubjects returns all Kubernetes subjects (users and groups) bound to roles matching
+	// the search query, along with the roles they are bound to.
+	//
+	// Only role-binding-specific search fields in the query are used to filter bindings.
+	// Additional subject-level filtering is applied on the aggregated results.
+	// Uses StackRox search query syntax. An empty query returns all subjects.
+	// Requires read access to the K8sSubject resource.
 	ListSubjects(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListSubjectsResponse, error)
 }
 
@@ -112,14 +153,55 @@ func (c *rbacServiceClient) ListSubjects(ctx context.Context, in *RawQuery, opts
 // RbacServiceServer is the server API for RbacService service.
 // All implementations should embed UnimplementedRbacServiceServer
 // for forward compatibility.
+//
+// RbacService provides read-only access to Kubernetes RBAC objects discovered by Sensor:
+// K8s roles, role bindings, and subjects (users and groups).
+//
+// These objects reflect the RBAC state of monitored clusters as observed by Sensor, not
+// the ACS access control model. Service accounts are served via a separate API.
+//
+// Authentication requirements:
+// - GetRole, ListRoles: require read access to the K8sRole resource.
+// - GetRoleBinding, ListRoleBindings: require read access to the K8sRoleBinding resource.
+// - GetSubject, ListSubjects: require read access to the K8sSubject resource.
 type RbacServiceServer interface {
+	// GetRole returns the Kubernetes role with the given ID.
+	//
+	// Returns NOT_FOUND if no K8s role with the specified ID exists.
+	// Requires read access to the K8sRole resource.
 	GetRole(context.Context, *ResourceByID) (*GetRoleResponse, error)
+	// ListRoles returns all Kubernetes roles matching the search query.
+	//
+	// Uses StackRox search query syntax. An empty query returns all roles.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
+	// Requires read access to the K8sRole resource.
 	ListRoles(context.Context, *RawQuery) (*ListRolesResponse, error)
+	// GetRoleBinding returns the Kubernetes role binding with the given ID.
+	//
+	// Returns NOT_FOUND if no K8s role binding with the specified ID exists.
+	// Requires read access to the K8sRoleBinding resource.
 	GetRoleBinding(context.Context, *ResourceByID) (*GetRoleBindingResponse, error)
+	// ListRoleBindings returns all Kubernetes role bindings matching the search query.
+	//
+	// Uses StackRox search query syntax. An empty query returns all role bindings.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
+	// Requires read access to the K8sRoleBinding resource.
 	ListRoleBindings(context.Context, *RawQuery) (*ListRoleBindingsResponse, error)
+	// GetSubject returns the Kubernetes subject (user or group) identified by the given name,
+	// together with their cluster-wide and namespace-scoped role bindings.
+	//
 	// Subjects served from this API are Groups and Users only.
-	// Id in this case is the Name field, since for users and groups, that is unique, and subjects do not have IDs.
+	// The id in this case is the Name field, since for users and groups that is unique,
+	// and subjects do not have IDs.
+	// Requires read access to the K8sSubject resource.
 	GetSubject(context.Context, *ResourceByID) (*GetSubjectResponse, error)
+	// ListSubjects returns all Kubernetes subjects (users and groups) bound to roles matching
+	// the search query, along with the roles they are bound to.
+	//
+	// Only role-binding-specific search fields in the query are used to filter bindings.
+	// Additional subject-level filtering is applied on the aggregated results.
+	// Uses StackRox search query syntax. An empty query returns all subjects.
+	// Requires read access to the K8sSubject resource.
 	ListSubjects(context.Context, *RawQuery) (*ListSubjectsResponse, error)
 }
 

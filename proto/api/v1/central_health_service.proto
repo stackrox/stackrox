@@ -8,24 +8,38 @@ import weak "google/api/annotations.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// GetUpgradeStatusResponse is the response for querying Central's upgrade/rollback status.
 message GetUpgradeStatusResponse {
   CentralUpgradeStatus upgradeStatus = 1;
 }
 
+// CentralHealthService exposes Central's upgrade and rollback readiness.
+//
+// This service allows operators and tooling to check whether Central can safely be rolled back
+// after an upgrade, and to which version. Useful during upgrade workflows and health monitoring.
+//
+// Authentication: requires a valid API token with the Admin role.
 service CentralHealthService {
+  // GetUpgradeStatus returns the current Central version and rollback capabilities.
+  //
+  // Reports the running version, the minimum DB version that can be safely rolled back to,
+  // and whether rollback after the current upgrade is supported.
   rpc GetUpgradeStatus(Empty) returns (GetUpgradeStatusResponse) {
     option (google.api.http) = {get: "/v1/centralhealth/upgradestatus"};
   }
 }
 
+// CentralUpgradeStatus describes the current Central version and its rollback capabilities.
 message CentralUpgradeStatus {
-  // Current Central Version
+  // version is the currently running Central version string (e.g. "4.5.0").
   string version = 1;
 
-  // The version of previous clone in Central. This is the version we can force rollback to.
+  // force_rollback_to is the version of the previous database clone that Central can be
+  // forcibly rolled back to. This represents the minimum supported DB version.
   string force_rollback_to = 2;
 
-  // If true, we can rollback to the current version if an upgrade failed.
+  // can_rollback_after_upgrade indicates whether Central can be safely rolled back to a
+  // previous version if an upgrade fails or needs to be reverted.
   bool can_rollback_after_upgrade = 3;
 
   // Current disk space stats for upgrade

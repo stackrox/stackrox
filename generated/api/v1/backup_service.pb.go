@@ -24,7 +24,9 @@ const (
 )
 
 type GetExternalBackupsResponse struct {
-	state           protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// external_backups contains all configured external backup configurations,
+	// with sensitive credential fields replaced by a placeholder.
 	ExternalBackups []*storage.ExternalBackup `protobuf:"bytes,1,rep,name=external_backups,json=externalBackups,proto3" json:"external_backups,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -68,7 +70,9 @@ func (x *GetExternalBackupsResponse) GetExternalBackups() []*storage.ExternalBac
 }
 
 type UpdateExternalBackupRequest struct {
-	state          protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// external_backup contains the updated backup configuration. The id field
+	// must be set.
 	ExternalBackup *storage.ExternalBackup `protobuf:"bytes,1,opt,name=external_backup,json=externalBackup,proto3" json:"external_backup,omitempty"`
 	// When false, use the stored credentials of an existing external backup configuration given its ID.
 	UpdatePassword bool `protobuf:"varint,2,opt,name=update_password,json=updatePassword,proto3" json:"update_password,omitempty"`

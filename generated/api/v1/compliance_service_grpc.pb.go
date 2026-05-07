@@ -30,11 +30,71 @@ const (
 // ComplianceServiceClient is the client API for ComplianceService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ComplianceService provides read access to compliance scan results and
+// standard definitions for secured clusters.
+//
+// StackRox evaluates workloads against built-in compliance standards including
+// CIS Kubernetes, NIST 800-53, NIST 800-190, PCI DSS 3.2, and HIPAA 164.
+// Compliance scans run automatically when sensors report cluster state changes.
+// Results can be retrieved per-run or aggregated across clusters, standards,
+// namespaces, nodes, deployments, and controls.
+//
+// To trigger an explicit compliance run, use the ComplianceManagementService
+// (TriggerRuns RPC). Results become available via this service once the run
+// completes.
+//
+// Authentication: all read endpoints require a valid API token with
+// View permission on the Compliance resource. UpdateComplianceStandardConfig
+// requires Modify permission on the Compliance resource.
 type ComplianceServiceClient interface {
+	// GetStandards returns the list of compliance standards active on at least
+	// one secured cluster.
+	//
+	// Only standards that the compliance operator manager considers active are
+	// returned. For each standard, the hideScanResults flag reflects the current
+	// configuration set via UpdateComplianceStandardConfig.
+	//
+	// Requires View permission on the Compliance resource.
 	GetStandards(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetComplianceStandardsResponse, error)
+	// GetStandard returns the full definition of a compliance standard by ID,
+	// including all control groups and individual controls.
+	//
+	// Returns NOT_FOUND if the standard ID does not exist.
+	// Requires View permission on the Compliance resource.
 	GetStandard(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetComplianceStandardResponse, error)
+	// GetRunResults returns the compliance scan results for a specific cluster
+	// and standard.
+	//
+	// By default, returns the most recent successful run's results along with
+	// metadata for any failed runs. Specify run_id to retrieve results for a
+	// specific historical run; note that bypassing the cache may increase
+	// memory pressure on the server.
+	//
+	// Requires View permission on the Compliance resource.
 	GetRunResults(ctx context.Context, in *GetComplianceRunResultsRequest, opts ...grpc.CallOption) (*GetComplianceRunResultsResponse, error)
+	// GetAggregatedResults returns compliance check pass/fail counts aggregated
+	// across the fleet according to the requested grouping and granularity.
+	//
+	// The `unit` field controls granularity (what each result row counts):
+	// CHECK gives one row per individual check, CONTROL per control, etc.
+	// The `group_by` field adds breakdown dimensions such as CLUSTER, STANDARD,
+	// NAMESPACE, NODE, DEPLOYMENT, CATEGORY, or CONTROL.
+	// The `where` field filters results using StackRox search query syntax
+	// (e.g. "Cluster:production+Standard:CIS").
+	//
+	// Standards with hideScanResults=true are excluded from the response.
+	// Requires View permission on the Compliance resource.
 	GetAggregatedResults(ctx context.Context, in *ComplianceAggregationRequest, opts ...grpc.CallOption) (*storage.ComplianceAggregation_Response, error)
+	// UpdateComplianceStandardConfig updates display configuration for a
+	// compliance standard, currently limited to the hideScanResults flag.
+	//
+	// When hideScanResults is true, the standard's results are suppressed in
+	// GetAggregatedResults responses. The standard itself remains visible via
+	// GetStandards and GetStandard.
+	//
+	// Returns NOT_FOUND if the standard ID does not exist.
+	// Requires Modify permission on the Compliance resource.
 	UpdateComplianceStandardConfig(ctx context.Context, in *UpdateComplianceRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -99,11 +159,71 @@ func (c *complianceServiceClient) UpdateComplianceStandardConfig(ctx context.Con
 // ComplianceServiceServer is the server API for ComplianceService service.
 // All implementations should embed UnimplementedComplianceServiceServer
 // for forward compatibility.
+//
+// ComplianceService provides read access to compliance scan results and
+// standard definitions for secured clusters.
+//
+// StackRox evaluates workloads against built-in compliance standards including
+// CIS Kubernetes, NIST 800-53, NIST 800-190, PCI DSS 3.2, and HIPAA 164.
+// Compliance scans run automatically when sensors report cluster state changes.
+// Results can be retrieved per-run or aggregated across clusters, standards,
+// namespaces, nodes, deployments, and controls.
+//
+// To trigger an explicit compliance run, use the ComplianceManagementService
+// (TriggerRuns RPC). Results become available via this service once the run
+// completes.
+//
+// Authentication: all read endpoints require a valid API token with
+// View permission on the Compliance resource. UpdateComplianceStandardConfig
+// requires Modify permission on the Compliance resource.
 type ComplianceServiceServer interface {
+	// GetStandards returns the list of compliance standards active on at least
+	// one secured cluster.
+	//
+	// Only standards that the compliance operator manager considers active are
+	// returned. For each standard, the hideScanResults flag reflects the current
+	// configuration set via UpdateComplianceStandardConfig.
+	//
+	// Requires View permission on the Compliance resource.
 	GetStandards(context.Context, *Empty) (*GetComplianceStandardsResponse, error)
+	// GetStandard returns the full definition of a compliance standard by ID,
+	// including all control groups and individual controls.
+	//
+	// Returns NOT_FOUND if the standard ID does not exist.
+	// Requires View permission on the Compliance resource.
 	GetStandard(context.Context, *ResourceByID) (*GetComplianceStandardResponse, error)
+	// GetRunResults returns the compliance scan results for a specific cluster
+	// and standard.
+	//
+	// By default, returns the most recent successful run's results along with
+	// metadata for any failed runs. Specify run_id to retrieve results for a
+	// specific historical run; note that bypassing the cache may increase
+	// memory pressure on the server.
+	//
+	// Requires View permission on the Compliance resource.
 	GetRunResults(context.Context, *GetComplianceRunResultsRequest) (*GetComplianceRunResultsResponse, error)
+	// GetAggregatedResults returns compliance check pass/fail counts aggregated
+	// across the fleet according to the requested grouping and granularity.
+	//
+	// The `unit` field controls granularity (what each result row counts):
+	// CHECK gives one row per individual check, CONTROL per control, etc.
+	// The `group_by` field adds breakdown dimensions such as CLUSTER, STANDARD,
+	// NAMESPACE, NODE, DEPLOYMENT, CATEGORY, or CONTROL.
+	// The `where` field filters results using StackRox search query syntax
+	// (e.g. "Cluster:production+Standard:CIS").
+	//
+	// Standards with hideScanResults=true are excluded from the response.
+	// Requires View permission on the Compliance resource.
 	GetAggregatedResults(context.Context, *ComplianceAggregationRequest) (*storage.ComplianceAggregation_Response, error)
+	// UpdateComplianceStandardConfig updates display configuration for a
+	// compliance standard, currently limited to the hideScanResults flag.
+	//
+	// When hideScanResults is true, the standard's results are suppressed in
+	// GetAggregatedResults responses. The standard itself remains visible via
+	// GetStandards and GetStandard.
+	//
+	// Returns NOT_FOUND if the standard ID does not exist.
+	// Requires Modify permission on the Compliance resource.
 	UpdateComplianceStandardConfig(context.Context, *UpdateComplianceRequest) (*Empty, error)
 }
 

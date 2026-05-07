@@ -18,7 +18,8 @@
   "paths": {
     "/v2/compliance/scan/result/{id}": {
       "get": {
-        "summary": "GetComplianceScanCheckResult returns the specific result by ID",
+        "summary": "GetComplianceScanCheckResult returns the specific result by ID.",
+        "description": "Returns the full cross-cluster check status including per-cluster outcomes,\nremediation instructions, rationale, and mapped compliance controls.\n\nReturns NOT_FOUND if no result with the given ID exists.\nReturns INVALID_ARGUMENT if the ID is empty.",
         "operationId": "ComplianceResultsService_GetComplianceScanCheckResult",
         "responses": {
           "200": {
@@ -50,6 +51,7 @@
     "/v2/compliance/scan/results": {
       "get": {
         "summary": "GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query\nOptional RawQuery query fields can be combined.\nCommonly used ones include but are not limited to\n- scan: id(s) of the compliance scan\n- cluster: id(s) of the cluster\n- profile: id(s) of the profile",
+        "description": "Returns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "ComplianceResultsService_GetComplianceScanResults",
         "responses": {
           "200": {
@@ -126,6 +128,7 @@
     "/v2/compliance/scan/results/profiles/{profileName}/checks": {
       "get": {
         "summary": "GetComplianceProfileResults retrieves the most recent compliance operator scan results for the specified query\nOptional RawQuery query fields can be combined.",
+        "description": "Returns per-check result counts grouped by check name for the specified profile.\nThe profile_name field is required. Supports pagination.\n\nReturns INVALID_ARGUMENT if profile_name is empty or the query is malformed.",
         "operationId": "ComplianceResultsService_GetComplianceProfileResults",
         "responses": {
           "200": {
@@ -207,7 +210,8 @@
     },
     "/v2/compliance/scan/results/profiles/{profileName}/checks/{checkName}": {
       "get": {
-        "summary": "GetComplianceProfileCheckResult lists status of a check per cluster",
+        "summary": "GetComplianceProfileCheckResult lists status of a check per cluster.",
+        "description": "Returns the per-cluster pass/fail status for a specific check within a profile.\nBoth profile_name and check_name are required. Supports pagination.\n\nReturns INVALID_ARGUMENT if profile_name or check_name is empty.",
         "operationId": "ComplianceResultsService_GetComplianceProfileCheckResult",
         "responses": {
           "200": {
@@ -295,7 +299,8 @@
     },
     "/v2/compliance/scan/results/profiles/{profileName}/checks/{checkName}/details": {
       "get": {
-        "summary": "GetComplianceProfileCheckDetails",
+        "summary": "GetComplianceProfileCheckDetails returns normalized details of a check across all clusters.",
+        "description": "Returns a single ComplianceClusterCheckStatus that aggregates the check's description,\ninstructions, rationale, and per-cluster outcomes. Since check names are versioned\nvia the profile, the rule definition is consistent across clusters.\n\nReturns INVALID_ARGUMENT if profile_name or check_name is empty.",
         "operationId": "ComplianceResultsService_GetComplianceProfileCheckDetails",
         "responses": {
           "200": {
@@ -314,12 +319,14 @@
         "parameters": [
           {
             "name": "profileName",
+            "description": "profile_name is required; the compliance profile this check belongs to.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "checkName",
+            "description": "check_name is required; the name of the check to retrieve details for.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -383,7 +390,8 @@
     },
     "/v2/compliance/scan/results/profiles/{profileName}/clusters/{clusterId}": {
       "get": {
-        "summary": "GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster",
+        "summary": "GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster.",
+        "description": "Returns all check results for the profile/cluster combination, including\nper-check remediation details and mapped controls. The last_scan_time reflects\nwhen the most recent scan completed on this cluster.\n\nReturns INVALID_ARGUMENT if profile_name or cluster_id is empty.",
         "operationId": "ComplianceResultsService_GetComplianceProfileClusterResults",
         "responses": {
           "200": {
@@ -402,12 +410,14 @@
         "parameters": [
           {
             "name": "profileName",
+            "description": "profile_name is required; the compliance profile to retrieve results for.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "clusterId",
+            "description": "cluster_id is required; the cluster to retrieve results from.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -472,6 +482,7 @@
     "/v2/compliance/scan/results/{scanConfigName}": {
       "get": {
         "summary": "GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query\nOptional RawQuery query fields can be combined.",
+        "description": "Filters results to those produced by the named scan configuration. The\nscan_config_name field is required. Additional query filters are ANDed in.\n\nReturns INVALID_ARGUMENT if scan_config_name is empty or the query is malformed.",
         "operationId": "ComplianceResultsService_GetComplianceScanConfigurationResults",
         "responses": {
           "200": {
@@ -490,6 +501,7 @@
         "parameters": [
           {
             "name": "scanConfigName",
+            "description": "scan_config_name is required; identifies the scan configuration to retrieve results for.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -606,21 +618,26 @@
       "type": "object",
       "properties": {
         "cluster": {
-          "$ref": "#/definitions/v2ComplianceScanCluster"
+          "$ref": "#/definitions/v2ComplianceScanCluster",
+          "description": "cluster identifies the cluster where this check result was recorded."
         },
         "status": {
-          "$ref": "#/definitions/v2ComplianceCheckStatus"
+          "$ref": "#/definitions/v2ComplianceCheckStatus",
+          "description": "status is the pass/fail/error outcome of this check on the cluster."
         },
         "createdTime": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "created_time is when this check result was first recorded."
         },
         "checkUid": {
-          "type": "string"
+          "type": "string",
+          "description": "check_uid is the unique identifier assigned by the Compliance Operator to this result."
         },
         "lastScanTime": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "last_scan_time is the time the most recent scan that produced this result completed."
         }
       },
       "title": "ClusterCheckStatus groups the result of the check by cluster"
@@ -629,15 +646,18 @@
       "type": "object",
       "properties": {
         "clusterId": {
-          "type": "string"
+          "type": "string",
+          "description": "cluster_id identifies the cluster where this check was evaluated."
         },
         "scanName": {
-          "type": "string"
+          "type": "string",
+          "description": "scan_name identifies the compliance scan configuration that produced this result."
         },
         "result": {
           "$ref": "#/definitions/v2ComplianceCheckResult"
         }
-      }
+      },
+      "description": "ComplianceCheckData associates a check result with its cluster and scan context."
     },
     "v2ComplianceCheckResult": {
       "type": "object",
@@ -649,34 +669,42 @@
           "type": "string"
         },
         "checkUid": {
-          "type": "string"
+          "type": "string",
+          "description": "check_uid is the unique identifier assigned by the Compliance Operator to this result."
         },
         "description": {
-          "type": "string"
+          "type": "string",
+          "description": "description explains what the check validates."
         },
         "instructions": {
-          "type": "string"
+          "type": "string",
+          "description": "instructions describes remediation steps when the check fails."
         },
         "rationale": {
-          "type": "string"
+          "type": "string",
+          "description": "rationale explains why this check is important."
         },
         "valuesUsed": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "valuesUsed lists the variable values applied when this check was evaluated."
         },
         "warnings": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "warnings contains any non-fatal warnings generated during check evaluation."
         },
         "status": {
-          "$ref": "#/definitions/v2ComplianceCheckStatus"
+          "$ref": "#/definitions/v2ComplianceCheckStatus",
+          "description": "status is the pass/fail/error outcome of this check."
         },
         "ruleName": {
-          "type": "string"
+          "type": "string",
+          "description": "rule_name is the name of the Compliance Operator rule that produced this result."
         },
         "labels": {
           "type": "object",
@@ -695,7 +723,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v2ComplianceControl"
-          }
+          },
+          "description": "controls lists the compliance framework controls (e.g. CIS, NIST) this check maps to."
         }
       },
       "title": "ComplianceCheckResult details of an instance of a compliance check result"
@@ -770,28 +799,34 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v2ClusterCheckStatus"
-          }
+          },
+          "description": "clusters lists the per-cluster status of this check."
         },
         "description": {
-          "type": "string"
+          "type": "string",
+          "description": "description explains what the check validates."
         },
         "instructions": {
-          "type": "string"
+          "type": "string",
+          "description": "instructions describes remediation steps when the check fails."
         },
         "rationale": {
-          "type": "string"
+          "type": "string",
+          "description": "rationale explains why this check is important."
         },
         "valuesUsed": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "valuesUsed lists the variable values applied when this check was evaluated."
         },
         "warnings": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "warnings contains any non-fatal warnings generated during check evaluation."
         },
         "labels": {
           "type": "object",
@@ -810,7 +845,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v2ComplianceControl"
-          }
+          },
+          "description": "controls lists the compliance framework controls this check maps to."
         }
       },
       "title": "ComplianceClusterCheckStatus provides the status of a compliance check result across clusters"
@@ -845,24 +881,29 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v2ClusterCheckStatus"
-          }
+          },
+          "description": "check_results lists the per-cluster status for this check."
         },
         "profileName": {
-          "type": "string"
+          "type": "string",
+          "description": "profile_name is the profile that defines this check."
         },
         "checkName": {
-          "type": "string"
+          "type": "string",
+          "description": "check_name is the name of the check being summarized."
         },
         "totalCount": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "total_count is the total number of cluster results, before pagination."
         },
         "controls": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v2ComplianceControl"
-          }
+          },
+          "description": "controls lists the compliance framework controls this check maps to."
         }
       },
       "title": "ListComplianceCheckClusterResponse provides stats per cluster"
@@ -878,20 +919,25 @@
           }
         },
         "profileName": {
-          "type": "string"
+          "type": "string",
+          "description": "profile_name is the profile applied during the scan."
         },
         "clusterId": {
-          "type": "string"
+          "type": "string",
+          "description": "cluster_id identifies the cluster these results are from."
         },
         "totalCount": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "total_count is the total number of check results, before pagination."
         },
         "lastScanTime": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "last_scan_time is the time the most recent scan completed on this cluster."
         }
-      }
+      },
+      "description": "ListComplianceCheckResultResponse provides check results for a profile on a single cluster."
     },
     "v2ListComplianceProfileResults": {
       "type": "object",
@@ -925,7 +971,8 @@
         },
         "totalCount": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "total_count is the total number of check results matching the query, before pagination."
         }
       },
       "title": "ListComplianceResultsResponse provides the complete scan results"

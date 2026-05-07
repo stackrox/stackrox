@@ -27,7 +27,17 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // FeatureFlagService retrieves information about feature flags.
+//
+// Feature flags control experimental or conditionally-enabled functionality in StackRox.
+// Each flag has an associated environment variable that can override its default state.
+//
+// Authentication: this endpoint is publicly accessible (no authentication required) so that
+// the UI can fetch feature flag state at startup before a user logs in.
 type FeatureFlagServiceClient interface {
+	// GetFeatureFlags returns all known feature flags and their current enabled state.
+	//
+	// The response is sorted alphabetically by flag name. This endpoint is anonymous
+	// (no authentication required) and is used by the UI at startup.
 	GetFeatureFlags(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetFeatureFlagsResponse, error)
 }
 
@@ -54,7 +64,17 @@ func (c *featureFlagServiceClient) GetFeatureFlags(ctx context.Context, in *Empt
 // for forward compatibility.
 //
 // FeatureFlagService retrieves information about feature flags.
+//
+// Feature flags control experimental or conditionally-enabled functionality in StackRox.
+// Each flag has an associated environment variable that can override its default state.
+//
+// Authentication: this endpoint is publicly accessible (no authentication required) so that
+// the UI can fetch feature flag state at startup before a user logs in.
 type FeatureFlagServiceServer interface {
+	// GetFeatureFlags returns all known feature flags and their current enabled state.
+	//
+	// The response is sorted alphabetically by flag name. This endpoint is anonymous
+	// (no authentication required) and is used by the UI at startup.
 	GetFeatureFlags(context.Context, *Empty) (*GetFeatureFlagsResponse, error)
 }
 

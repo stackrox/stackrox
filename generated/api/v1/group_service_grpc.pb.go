@@ -31,12 +31,50 @@ const (
 // GroupServiceClient is the client API for GroupService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// GroupService manages group-to-role mappings that drive role assignment for authenticated users.
+//
+// A group maps an (auth_provider_id, attribute_key, attribute_value) triple to a role.
+// When a user authenticates, their identity provider attributes are matched against all groups
+// for the corresponding auth provider; matching groups determine the roles assigned to the user.
+// Groups without a key/value pair act as a default role for all users of the auth provider.
+//
+// Authentication requirements:
+// - GetGroups, GetGroup: require read access to the Access resource.
+// - BatchUpdate, CreateGroup, UpdateGroup, DeleteGroup: require write access to the Access resource.
 type GroupServiceClient interface {
+	// GetGroups returns all groups, optionally filtered by auth provider ID, attribute key,
+	// attribute value, and/or group ID.
+	//
+	// All specified filters are ANDed. Omitting all filters returns all groups.
+	// Requires read access to the Access resource.
 	GetGroups(ctx context.Context, in *GetGroupsRequest, opts ...grpc.CallOption) (*GetGroupsResponse, error)
+	// GetGroup returns the single group matching the given group properties.
+	//
+	// Returns NOT_FOUND if no group matches the specified properties.
+	// Requires read access to the Access resource.
 	GetGroup(ctx context.Context, in *storage.GroupProperties, opts ...grpc.CallOption) (*storage.Group, error)
+	// BatchUpdate applies an atomic diff between previous_groups and required_groups in a single transaction.
+	//
+	// Groups in previous_groups but not required_groups are deleted.
+	// Groups in both are updated if they differ.
+	// Groups in required_groups without an ID are added (duplicates by (props, role) are deduplicated).
+	// Returns INVALID_ARGUMENT if any group fails validation.
+	// Requires write access to the Access resource.
 	BatchUpdate(ctx context.Context, in *GroupBatchUpdateRequest, opts ...grpc.CallOption) (*Empty, error)
+	// CreateGroup creates a new group mapping an auth provider attribute triple to a role.
+	//
+	// Requires write access to the Access resource.
 	CreateGroup(ctx context.Context, in *storage.Group, opts ...grpc.CallOption) (*Empty, error)
+	// UpdateGroup replaces the role assigned by an existing group.
+	//
+	// The group.props.id must be set and must match an existing group.
+	// Returns INVALID_ARGUMENT if validation fails or the group does not exist.
+	// Requires write access to the Access resource.
 	UpdateGroup(ctx context.Context, in *UpdateGroupRequest, opts ...grpc.CallOption) (*Empty, error)
+	// DeleteGroup removes the group identified by the given properties.
+	//
+	// Requires write access to the Access resource.
 	DeleteGroup(ctx context.Context, in *DeleteGroupRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -111,12 +149,50 @@ func (c *groupServiceClient) DeleteGroup(ctx context.Context, in *DeleteGroupReq
 // GroupServiceServer is the server API for GroupService service.
 // All implementations should embed UnimplementedGroupServiceServer
 // for forward compatibility.
+//
+// GroupService manages group-to-role mappings that drive role assignment for authenticated users.
+//
+// A group maps an (auth_provider_id, attribute_key, attribute_value) triple to a role.
+// When a user authenticates, their identity provider attributes are matched against all groups
+// for the corresponding auth provider; matching groups determine the roles assigned to the user.
+// Groups without a key/value pair act as a default role for all users of the auth provider.
+//
+// Authentication requirements:
+// - GetGroups, GetGroup: require read access to the Access resource.
+// - BatchUpdate, CreateGroup, UpdateGroup, DeleteGroup: require write access to the Access resource.
 type GroupServiceServer interface {
+	// GetGroups returns all groups, optionally filtered by auth provider ID, attribute key,
+	// attribute value, and/or group ID.
+	//
+	// All specified filters are ANDed. Omitting all filters returns all groups.
+	// Requires read access to the Access resource.
 	GetGroups(context.Context, *GetGroupsRequest) (*GetGroupsResponse, error)
+	// GetGroup returns the single group matching the given group properties.
+	//
+	// Returns NOT_FOUND if no group matches the specified properties.
+	// Requires read access to the Access resource.
 	GetGroup(context.Context, *storage.GroupProperties) (*storage.Group, error)
+	// BatchUpdate applies an atomic diff between previous_groups and required_groups in a single transaction.
+	//
+	// Groups in previous_groups but not required_groups are deleted.
+	// Groups in both are updated if they differ.
+	// Groups in required_groups without an ID are added (duplicates by (props, role) are deduplicated).
+	// Returns INVALID_ARGUMENT if any group fails validation.
+	// Requires write access to the Access resource.
 	BatchUpdate(context.Context, *GroupBatchUpdateRequest) (*Empty, error)
+	// CreateGroup creates a new group mapping an auth provider attribute triple to a role.
+	//
+	// Requires write access to the Access resource.
 	CreateGroup(context.Context, *storage.Group) (*Empty, error)
+	// UpdateGroup replaces the role assigned by an existing group.
+	//
+	// The group.props.id must be set and must match an existing group.
+	// Returns INVALID_ARGUMENT if validation fails or the group does not exist.
+	// Requires write access to the Access resource.
 	UpdateGroup(context.Context, *UpdateGroupRequest) (*Empty, error)
+	// DeleteGroup removes the group identified by the given properties.
+	//
+	// Requires write access to the Access resource.
 	DeleteGroup(context.Context, *DeleteGroupRequest) (*Empty, error)
 }
 

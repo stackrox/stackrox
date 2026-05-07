@@ -11,15 +11,41 @@ option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 message ConfigureTelemetryRequest {
+  // enabled is deprecated and has no effect.
   bool enabled = 1 [deprecated = true];
 }
 
+// TelemetryService provides access to Central's telemetry configuration,
+// including the phone-home client configuration used by the UI.
+//
+// GetTelemetryConfiguration and ConfigureTelemetry are deprecated stubs
+// retained for backwards compatibility; they always return enabled=false
+// and do not affect collection behavior.
+//
+// GetConfig and PostConfigReload are the active endpoints. GetConfig returns
+// the current phone-home client configuration (endpoint, storage key, and a
+// hashed user ID) needed by the frontend. PostConfigReload triggers Central
+// to re-read its telemetry configuration from the environment.
+//
+// Authentication: GetTelemetryConfiguration requires the Administration
+// resource with View access. ConfigureTelemetry requires the Administration
+// resource with Modify access. GetConfig and PostConfigReload require any
+// authenticated user.
 service TelemetryService {
+  // GetTelemetryConfiguration is deprecated and returns enabled=false
+  // unconditionally. It was previously used to check whether periodic
+  // telemetry collection was enabled.
+  //
+  // Deprecated: use GetConfig instead.
   rpc GetTelemetryConfiguration(Empty) returns (storage.TelemetryConfiguration) {
     option (google.api.http) = {get: "/v1/telemetry/configure"};
     option deprecated = true;
   }
 
+  // ConfigureTelemetry is deprecated and has no effect. It was previously
+  // used to enable or disable periodic telemetry collection.
+  //
+  // Deprecated: use PostConfigReload instead.
   rpc ConfigureTelemetry(ConfigureTelemetryRequest) returns (storage.TelemetryConfiguration) {
     option (google.api.http) = {
       put: "/v1/telemetry/configure"
@@ -28,10 +54,18 @@ service TelemetryService {
     option deprecated = true;
   }
 
+  // GetConfig returns the current phone-home telemetry client configuration
+  // for the authenticated user.
+  //
+  // The response includes a hashed user ID derived from the caller's auth
+  // identity, the telemetry endpoint URL, and a storage key (empty when
+  // the telemetry client is disabled).
   rpc GetConfig(Empty) returns (central.TelemetryConfig) {
     option (google.api.http) = {get: "/v1/telemetry/config"};
   }
 
+  // PostConfigReload triggers Central to re-read its telemetry configuration
+  // from the environment and reconfigure the phone-home client accordingly.
   rpc PostConfigReload(Empty) returns (Empty) {
     option (google.api.http) = {post: "/v1/telemetry/config/reload"};
   }

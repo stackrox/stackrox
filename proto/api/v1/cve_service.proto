@@ -9,36 +9,62 @@ import "google/protobuf/duration.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// SuppressCVERequest is the request message for suppressing (snoozeing) one or more CVEs.
 message SuppressCVERequest {
-  // These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
-  // For example, CVE-2021-44832.
+  // cves is the list of NVD vulnerability identifiers to suppress.
+  // These are the `cve` field values of `storage.CVE` (e.g. "CVE-2021-44832"),
+  // and *not* the internal `id` field.
   repeated string cves = 1;
   reserved 2;
-  // In JSON format, the Duration type is encoded as a string rather than an object,
-  // where the string ends in the suffix "s" (indicating seconds) and is preceded by the number of seconds,
-  // with nanoseconds expressed as fractional seconds.
-  // For example, 3 seconds with 0 nanoseconds should be encoded in JSON format as "3s",
-  // while 3 seconds and 1 nanosecond should be expressed in JSON format as "3.000000001s",
-  // and 3 seconds and 1 microsecond should be expressed in JSON format as "3.000001s".
+  // duration specifies how long the CVE should remain suppressed (snoozed).
+  // After this duration elapses, the CVE returns to the OBSERVED state automatically.
+  // In JSON format, encode as a string with a trailing "s" suffix representing seconds;
+  // nanoseconds are expressed as fractional seconds (e.g. "3s", "3.000000001s", "3.000001s").
   google.protobuf.Duration duration = 3;
 }
 
+// UnsuppressCVERequest is the request message for lifting suppression from one or more CVEs.
 message UnsuppressCVERequest {
-  // These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
-  // For example, CVE-2021-44832.
+  // cves is the list of NVD vulnerability identifiers to unsuppress.
+  // These are the `cve` field values of `storage.CVE` (e.g. "CVE-2021-44832"),
+  // and *not* the internal `id` field.
   repeated string cves = 1;
 }
 
-// NodeCVEService APIs can be used to manage node cves.
+// NodeCVEService manages suppression (snoozing) of CVEs that affect cluster nodes.
+//
+// Suppressing a node CVE temporarily hides it from vulnerability management views
+// for a specified duration (snooze). Once the duration expires the CVE reverts to
+// OBSERVED state automatically. Node CVEs are not part of the policy evaluation
+// workflow, so suppression has no effect on policy violations or risk scores.
+//
+// These APIs require the VulnMgmtLegacySnooze feature flag to be enabled
+// (env var ROX_VULN_MGMT_LEGACY_SNOOZE). When the flag is disabled all RPCs
+// return NOT_FOUND.
+//
+// Authentication: both endpoints require write access to the
+// VulnerabilityManagementRequests AND VulnerabilityManagementApprovals resources.
 service NodeCVEService {
-  // SuppressCVE suppresses node cves.
+  // SuppressCVEs snoozes the given node CVEs for the specified duration.
+  //
+  // Suppression sets the CVE state to snoozed, hiding it from vulnerability
+  // management views until the snooze duration elapses or UnsuppressCVEs is
+  // called. Because nodes are not part of the policy workflow, suppression does
+  // not affect policy violations or risk reprocessing.
+  //
+  // Returns INVALID_ARGUMENT if no CVE identifiers are provided.
+  // Returns NOT_FOUND if the VulnMgmtLegacySnooze feature flag is disabled.
   rpc SuppressCVEs(SuppressCVERequest) returns (Empty) {
     option (google.api.http) = {
       patch: "/v1/nodecves/suppress"
       body: "*"
     };
   }
-  // UnsuppressCVE unsuppresses node cves.
+  // UnsuppressCVEs lifts the snooze from the given node CVEs, returning them to
+  // the OBSERVED state immediately regardless of any remaining snooze duration.
+  //
+  // Returns INVALID_ARGUMENT if no CVE identifiers are provided.
+  // Returns NOT_FOUND if the VulnMgmtLegacySnooze feature flag is disabled.
   rpc UnsuppressCVEs(UnsuppressCVERequest) returns (Empty) {
     option (google.api.http) = {
       patch: "/v1/nodecves/unsuppress"
@@ -47,16 +73,47 @@ service NodeCVEService {
   }
 }
 
-// ClusterCVEService APIs can be used to manage cluster cves.
+// ClusterCVEService manages suppression (snoozing) of CVEs that affect Kubernetes
+// cluster infrastructure components (e.g. Kubernetes, Istio, OpenShift).
+//
+// Suppressing a cluster CVE temporarily hides it from vulnerability management
+// views for a specified duration (snooze). Once the duration expires the CVE
+// reverts to OBSERVED state automatically. Cluster CVEs are not evaluated as
+// part of the policy workflow, so suppression has no effect on policy violations
+// or risk scores.
+//
+// These APIs require the VulnMgmtLegacySnooze feature flag to be enabled
+// (env var ROX_VULN_MGMT_LEGACY_SNOOZE). When the flag is disabled all RPCs
+// return NOT_FOUND.
+//
+// Unlike image CVE suppression (which can be scoped per-cluster), cluster CVE
+// suppression applies globally across all secured clusters in Central.
+//
+// Authentication: both endpoints require write access to the
+// VulnerabilityManagementRequests AND VulnerabilityManagementApprovals resources.
 service ClusterCVEService {
-  // SuppressCVE suppresses cluster cves.
+  // SuppressCVEs snoozes the given cluster-infrastructure CVEs for the specified
+  // duration.
+  //
+  // Suppression sets the CVE state to snoozed, hiding it from vulnerability
+  // management views until the snooze duration elapses or UnsuppressCVEs is
+  // called. Because cluster CVEs are not part of the policy workflow, suppression
+  // does not affect policy violations or risk reprocessing.
+  //
+  // Returns INVALID_ARGUMENT if no CVE identifiers are provided.
+  // Returns NOT_FOUND if the VulnMgmtLegacySnooze feature flag is disabled.
   rpc SuppressCVEs(SuppressCVERequest) returns (Empty) {
     option (google.api.http) = {
       patch: "/v1/clustercves/suppress"
       body: "*"
     };
   }
-  // UnsuppressCVE unsuppresses cluster cves.
+  // UnsuppressCVEs lifts the snooze from the given cluster-infrastructure CVEs,
+  // returning them to the OBSERVED state immediately regardless of any remaining
+  // snooze duration.
+  //
+  // Returns INVALID_ARGUMENT if no CVE identifiers are provided.
+  // Returns NOT_FOUND if the VulnMgmtLegacySnooze feature flag is disabled.
   rpc UnsuppressCVEs(UnsuppressCVERequest) returns (Empty) {
     option (google.api.http) = {
       patch: "/v1/clustercves/unsuppress"

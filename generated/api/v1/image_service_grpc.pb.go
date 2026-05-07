@@ -40,15 +40,69 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// ImageService APIs manages image metadata.
+// ImageService manages container image metadata, vulnerability scan results, and image watching.
+//
+// Images are discovered automatically when Sensor reports workloads running in secured clusters.
+// Central enriches each image by fetching metadata from configured image registries and
+// vulnerability data from configured scanners (Clairify or Scanner V4). Enrichment runs
+// on an automatic reprocess interval and can also be triggered on-demand via ScanImage.
+//
+// ListImages returns lightweight (slim) image objects suitable for listing. GetImage returns
+// the full image with per-component vulnerability detail. ExportImages streams full image
+// objects for bulk export.
+//
+// The Watch API allows Central to continuously track images by tag even when no deployment
+// references them; this is useful for monitoring base images or pipeline images.
+//
+// Authentication:
+//   - Read (View Image): GetImage, CountImages, ListImages, ExportImages
+//   - Write (Modify Image): ScanImage, DeleteImages, InvalidateScanAndRegistryCaches
+//   - Read (View WatchedImage): GetWatchedImages
+//   - Write (Modify WatchedImage): WatchImage, UnwatchImage
+//   - Internal (Sensor/Admission Controller only): ScanImageInternal,
+//     GetImageVulnerabilitiesInternal, EnrichLocalImageInternal, UpdateLocalScanStatusInternal
 type ImageServiceClient interface {
-	// GetImage returns the image given its ID.
+	// GetImage returns the full image record for the given SHA digest, including all
+	// per-component vulnerability details.
+	//
+	// Unlike ListImages (which returns slim objects), GetImage returns the complete
+	// storage.Image including the embedded scan with all components and CVEs.
+	// Snoozed CVEs are excluded by default; set include_snoozed=true to include them.
+	// CVE descriptions are included by default; set strip_description=true to omit them.
+	//
+	// Returns INVALID_ARGUMENT if id is empty.
+	// Returns NOT_FOUND if no image with the given SHA exists.
 	GetImage(ctx context.Context, in *GetImageRequest, opts ...grpc.CallOption) (*storage.Image, error)
-	// CountImages returns a count of images that match the input query.
+	// CountImages returns the number of images matching the query.
+	//
+	// Accepts StackRox search query syntax (e.g. "Image:nginx+CVE:CVE-2021-44228").
+	// An empty query counts all images visible to the caller.
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	CountImages(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountImagesResponse, error)
-	// ListImages returns all the images that match the input query.
+	// ListImages returns lightweight image summaries matching the query.
+	//
+	// Returns storage.ListImage objects (slim form) which include name, scan time,
+	// component count, CVE count, and risk score, but omit per-component vulnerability
+	// details. Use GetImage to retrieve the full scan data for a specific image.
+	//
+	// Supports StackRox search query syntax and pagination. Results are capped at
+	// 1000 images per request.
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	ListImages(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListImagesResponse, error)
-	// ScanImage scans a single image and returns the result
+	// ScanImage triggers an on-demand scan of the named image and returns the full result.
+	//
+	// Central contacts the configured image registry to fetch metadata, then runs the
+	// image through the configured scanner (Clairify or Scanner V4) to produce vulnerability
+	// data. The enriched image is persisted to Central's datastore.
+	//
+	// By default the scan may be served from the metadata cache; set force=true to bypass
+	// the cache and fetch fresh data from the registry and scanner. The scan can be
+	// delegated to a specific secured cluster by providing the cluster name or ID.
+	//
+	// Requires Modify Image permission.
+	// Returns INVALID_ARGUMENT if the image name cannot be resolved.
 	ScanImage(ctx context.Context, in *ScanImageRequest, opts ...grpc.CallOption) (*storage.Image, error)
 	// ScanImageInternal is used solely by the Sensor and Admission Controller to send scan requests
 	ScanImageInternal(ctx context.Context, in *ScanImageInternalRequest, opts ...grpc.CallOption) (*ScanImageInternalResponse, error)
@@ -61,19 +115,60 @@ type ImageServiceClient interface {
 	// UpdateLocalScanStatusInternal is used solely by Sensor to send delegated scanning errors to central that
 	// prevent local enrichment from occurring (such as no scanner, throttled, etc.).
 	UpdateLocalScanStatusInternal(ctx context.Context, in *UpdateLocalScanStatusInternalRequest, opts ...grpc.CallOption) (*Empty, error)
-	// InvalidateScanAndRegistryCaches removes the image metadata cache.
+	// InvalidateScanAndRegistryCaches clears the in-memory image metadata cache used to
+	// avoid redundant registry and scanner calls.
+	//
+	// After invalidation, the next scan or enrichment request for any image will re-fetch
+	// metadata from the registry and re-run the scanner. This is useful after adding or
+	// updating image integrations.
+	//
+	// Requires Modify Image permission.
 	InvalidateScanAndRegistryCaches(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
-	// DeleteImage removes the images based on a query
+	// DeleteImages removes images matching the query from Central's datastore and
+	// broadcasts an invalidation message to all connected Sensors.
+	//
+	// The request requires a non-nil query; an empty query targets all images.
+	// When confirm=false the response reports the number of images that would be
+	// deleted without making any changes (dry run). Set confirm=true to perform
+	// the actual deletion.
+	//
+	// Requires Modify Image permission.
+	// Returns INVALID_ARGUMENT if no query is provided or the query syntax is malformed.
 	DeleteImages(ctx context.Context, in *DeleteImagesRequest, opts ...grpc.CallOption) (*DeleteImagesResponse, error)
-	// WatchImage marks an image name as to be watched.
+	// WatchImage registers an image name for continuous monitoring and triggers an
+	// immediate scan.
+	//
+	// Central will periodically re-scan watched images so that vulnerability data
+	// stays current even when no deployment currently references them. The image name
+	// must be fully qualified including a tag but must NOT include a digest (SHA).
+	//
+	// The response always returns HTTP 200; scan failure is signaled via the error_type
+	// and error_message fields rather than an HTTP error code.
+	//
+	// Requires Modify WatchedImage permission.
 	WatchImage(ctx context.Context, in *WatchImageRequest, opts ...grpc.CallOption) (*WatchImageResponse, error)
-	// UnwatchImage marks an image name to no longer be watched.
-	// It returns successfully if the image is no longer being watched
+	// UnwatchImage removes an image name from the watched list.
+	//
+	// Returns successfully if the image is no longer being watched
 	// after the call, irrespective of whether the image was already being watched.
+	//
+	// Requires Modify WatchedImage permission.
 	UnwatchImage(ctx context.Context, in *UnwatchImageRequest, opts ...grpc.CallOption) (*Empty, error)
 	// GetWatchedImages returns the list of image names that are currently
 	// being watched.
+	//
+	// Requires View WatchedImage permission.
 	GetWatchedImages(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetWatchedImagesResponse, error)
+	// ExportImages streams all images matching the query as a sequence of full image objects.
+	//
+	// Each response message in the stream contains one fully-enriched storage.Image.
+	// This endpoint is intended for bulk export use cases where the full vulnerability
+	// detail of every matching image is needed. Use ListImages for interactive queries.
+	//
+	// An optional timeout (in seconds) can be set; the stream will be canceled if the
+	// export takes longer than the specified duration.
+	//
+	// Requires View Image permission.
 	ExportImages(ctx context.Context, in *ExportImageRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExportImageResponse], error)
 }
 
@@ -239,15 +334,69 @@ type ImageService_ExportImagesClient = grpc.ServerStreamingClient[ExportImageRes
 // All implementations should embed UnimplementedImageServiceServer
 // for forward compatibility.
 //
-// ImageService APIs manages image metadata.
+// ImageService manages container image metadata, vulnerability scan results, and image watching.
+//
+// Images are discovered automatically when Sensor reports workloads running in secured clusters.
+// Central enriches each image by fetching metadata from configured image registries and
+// vulnerability data from configured scanners (Clairify or Scanner V4). Enrichment runs
+// on an automatic reprocess interval and can also be triggered on-demand via ScanImage.
+//
+// ListImages returns lightweight (slim) image objects suitable for listing. GetImage returns
+// the full image with per-component vulnerability detail. ExportImages streams full image
+// objects for bulk export.
+//
+// The Watch API allows Central to continuously track images by tag even when no deployment
+// references them; this is useful for monitoring base images or pipeline images.
+//
+// Authentication:
+//   - Read (View Image): GetImage, CountImages, ListImages, ExportImages
+//   - Write (Modify Image): ScanImage, DeleteImages, InvalidateScanAndRegistryCaches
+//   - Read (View WatchedImage): GetWatchedImages
+//   - Write (Modify WatchedImage): WatchImage, UnwatchImage
+//   - Internal (Sensor/Admission Controller only): ScanImageInternal,
+//     GetImageVulnerabilitiesInternal, EnrichLocalImageInternal, UpdateLocalScanStatusInternal
 type ImageServiceServer interface {
-	// GetImage returns the image given its ID.
+	// GetImage returns the full image record for the given SHA digest, including all
+	// per-component vulnerability details.
+	//
+	// Unlike ListImages (which returns slim objects), GetImage returns the complete
+	// storage.Image including the embedded scan with all components and CVEs.
+	// Snoozed CVEs are excluded by default; set include_snoozed=true to include them.
+	// CVE descriptions are included by default; set strip_description=true to omit them.
+	//
+	// Returns INVALID_ARGUMENT if id is empty.
+	// Returns NOT_FOUND if no image with the given SHA exists.
 	GetImage(context.Context, *GetImageRequest) (*storage.Image, error)
-	// CountImages returns a count of images that match the input query.
+	// CountImages returns the number of images matching the query.
+	//
+	// Accepts StackRox search query syntax (e.g. "Image:nginx+CVE:CVE-2021-44228").
+	// An empty query counts all images visible to the caller.
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	CountImages(context.Context, *RawQuery) (*CountImagesResponse, error)
-	// ListImages returns all the images that match the input query.
+	// ListImages returns lightweight image summaries matching the query.
+	//
+	// Returns storage.ListImage objects (slim form) which include name, scan time,
+	// component count, CVE count, and risk score, but omit per-component vulnerability
+	// details. Use GetImage to retrieve the full scan data for a specific image.
+	//
+	// Supports StackRox search query syntax and pagination. Results are capped at
+	// 1000 images per request.
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	ListImages(context.Context, *RawQuery) (*ListImagesResponse, error)
-	// ScanImage scans a single image and returns the result
+	// ScanImage triggers an on-demand scan of the named image and returns the full result.
+	//
+	// Central contacts the configured image registry to fetch metadata, then runs the
+	// image through the configured scanner (Clairify or Scanner V4) to produce vulnerability
+	// data. The enriched image is persisted to Central's datastore.
+	//
+	// By default the scan may be served from the metadata cache; set force=true to bypass
+	// the cache and fetch fresh data from the registry and scanner. The scan can be
+	// delegated to a specific secured cluster by providing the cluster name or ID.
+	//
+	// Requires Modify Image permission.
+	// Returns INVALID_ARGUMENT if the image name cannot be resolved.
 	ScanImage(context.Context, *ScanImageRequest) (*storage.Image, error)
 	// ScanImageInternal is used solely by the Sensor and Admission Controller to send scan requests
 	ScanImageInternal(context.Context, *ScanImageInternalRequest) (*ScanImageInternalResponse, error)
@@ -260,19 +409,60 @@ type ImageServiceServer interface {
 	// UpdateLocalScanStatusInternal is used solely by Sensor to send delegated scanning errors to central that
 	// prevent local enrichment from occurring (such as no scanner, throttled, etc.).
 	UpdateLocalScanStatusInternal(context.Context, *UpdateLocalScanStatusInternalRequest) (*Empty, error)
-	// InvalidateScanAndRegistryCaches removes the image metadata cache.
+	// InvalidateScanAndRegistryCaches clears the in-memory image metadata cache used to
+	// avoid redundant registry and scanner calls.
+	//
+	// After invalidation, the next scan or enrichment request for any image will re-fetch
+	// metadata from the registry and re-run the scanner. This is useful after adding or
+	// updating image integrations.
+	//
+	// Requires Modify Image permission.
 	InvalidateScanAndRegistryCaches(context.Context, *Empty) (*Empty, error)
-	// DeleteImage removes the images based on a query
+	// DeleteImages removes images matching the query from Central's datastore and
+	// broadcasts an invalidation message to all connected Sensors.
+	//
+	// The request requires a non-nil query; an empty query targets all images.
+	// When confirm=false the response reports the number of images that would be
+	// deleted without making any changes (dry run). Set confirm=true to perform
+	// the actual deletion.
+	//
+	// Requires Modify Image permission.
+	// Returns INVALID_ARGUMENT if no query is provided or the query syntax is malformed.
 	DeleteImages(context.Context, *DeleteImagesRequest) (*DeleteImagesResponse, error)
-	// WatchImage marks an image name as to be watched.
+	// WatchImage registers an image name for continuous monitoring and triggers an
+	// immediate scan.
+	//
+	// Central will periodically re-scan watched images so that vulnerability data
+	// stays current even when no deployment currently references them. The image name
+	// must be fully qualified including a tag but must NOT include a digest (SHA).
+	//
+	// The response always returns HTTP 200; scan failure is signaled via the error_type
+	// and error_message fields rather than an HTTP error code.
+	//
+	// Requires Modify WatchedImage permission.
 	WatchImage(context.Context, *WatchImageRequest) (*WatchImageResponse, error)
-	// UnwatchImage marks an image name to no longer be watched.
-	// It returns successfully if the image is no longer being watched
+	// UnwatchImage removes an image name from the watched list.
+	//
+	// Returns successfully if the image is no longer being watched
 	// after the call, irrespective of whether the image was already being watched.
+	//
+	// Requires Modify WatchedImage permission.
 	UnwatchImage(context.Context, *UnwatchImageRequest) (*Empty, error)
 	// GetWatchedImages returns the list of image names that are currently
 	// being watched.
+	//
+	// Requires View WatchedImage permission.
 	GetWatchedImages(context.Context, *Empty) (*GetWatchedImagesResponse, error)
+	// ExportImages streams all images matching the query as a sequence of full image objects.
+	//
+	// Each response message in the stream contains one fully-enriched storage.Image.
+	// This endpoint is intended for bulk export use cases where the full vulnerability
+	// detail of every matching image is needed. Use ListImages for interactive queries.
+	//
+	// An optional timeout (in seconds) can be set; the stream will be canceled if the
+	// export takes longer than the specified duration.
+	//
+	// Requires View Image permission.
 	ExportImages(*ExportImageRequest, grpc.ServerStreamingServer[ExportImageResponse]) error
 }
 

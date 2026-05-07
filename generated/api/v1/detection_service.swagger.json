@@ -18,7 +18,8 @@
   "paths": {
     "/v1/detect/build": {
       "post": {
-        "summary": "DetectBuildTime checks if any images violate build time policies.",
+        "summary": "DetectBuildTime checks a container image against all active build-time policies.",
+        "description": "The image can be specified as a full storage.ContainerImage object or as an image name string.\nIf a cluster is specified, the image scan is delegated to that cluster's scanner using the\ncluster's pull secrets to access private registries.\n\nReturns INVALID_ARGUMENT if neither image nor image_name is specified, if force and\nno_external_metadata are both set, or if a specified policy_category does not match any policy.",
         "operationId": "DetectionService_DetectBuildTime",
         "responses": {
           "200": {
@@ -37,6 +38,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "BuildDetectionRequest is the request message for DetectBuildTime.",
             "in": "body",
             "required": true,
             "schema": {
@@ -51,7 +53,8 @@
     },
     "/v1/detect/deploy": {
       "post": {
-        "summary": "DetectDeployTime checks if any deployments violate deploy time policies.",
+        "summary": "DetectDeployTime checks a single deployment object against all active deploy-time policies.",
+        "description": "Enriches the deployment's container images with vulnerability data before running detection.\nWhen enforcement_only is true, only evaluates policies with deploy-time enforcement actions\n(scale-to-zero or unsatisfiable node constraint); returns empty results if no such policies exist.\n\nReturns INVALID_ARGUMENT if the deployment is nil or if the specified cluster_id does not exist.",
         "operationId": "DetectionService_DetectDeployTime",
         "responses": {
           "200": {
@@ -70,6 +73,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "DeployDetectionRequest is the request message for DetectDeployTime.",
             "in": "body",
             "required": true,
             "schema": {
@@ -84,7 +88,8 @@
     },
     "/v1/detect/deploy/yaml": {
       "post": {
-        "summary": "DetectDeployTimeFromYAML checks if the given deployment yaml violates any deploy time policies.",
+        "summary": "DetectDeployTimeFromYAML checks Kubernetes workload manifests in YAML format against deploy-time policies.",
+        "description": "Parses one or more Kubernetes resource manifests from the yaml field (multi-document YAML supported).\nNon-deployment resources (e.g. ConfigMaps) and unrecognized resource types are skipped and reported\nin ignored_object_refs. When a cluster is specified, enriches deployments with live cluster data\n(service account permissions, applied network policies) via the connected Sensor.\n\nReturns INVALID_ARGUMENT if the yaml field is empty, if the YAML cannot be parsed, or if every\ndeployment in the YAML fails to parse. Returns INVALID_ARGUMENT if the specified cluster is not found\nor its Sensor connection is not ready.",
         "operationId": "DetectionService_DetectDeployTimeFromYAML",
         "responses": {
           "200": {
@@ -103,6 +108,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "DeployYAMLDetectionRequest is the request message for DetectDeployTimeFromYAML.",
             "in": "body",
             "required": true,
             "schema": {
@@ -239,19 +245,23 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is the Kubernetes resource name of the workload."
         },
         "type": {
-          "type": "string"
+          "type": "string",
+          "description": "type is the Kubernetes resource kind (e.g. \"Deployment\", \"DaemonSet\")."
         },
         "alerts": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageAlert"
-          }
+          },
+          "description": "alerts contains all policy violations found for this workload."
         }
-      }
+      },
+      "description": "Run holds detection results for a single workload resource."
     },
     "EnvironmentConfigEnvVarSource": {
       "type": "string",
@@ -1688,25 +1698,31 @@
       "type": "object",
       "properties": {
         "image": {
-          "$ref": "#/definitions/storageContainerImage"
+          "$ref": "#/definitions/storageContainerImage",
+          "description": "image is a fully-populated container image object to check."
         },
         "imageName": {
-          "type": "string"
+          "type": "string",
+          "description": "image_name is a container image reference string (e.g. \"nginx:latest\").\nUsed when the full image object is not available. Mutually exclusive with image."
         },
         "noExternalMetadata": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "no_external_metadata disables fetching vulnerability and metadata from external registries\nand scanners. Detection runs against previously cached data only. Mutually exclusive with force."
         },
         "sendNotifications": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "send_notifications triggers configured notification integrations for each generated alert."
         },
         "force": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "force forces re-fetching image metadata from external sources even if cached data exists.\nMutually exclusive with no_external_metadata."
         },
         "policyCategories": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "policy_categories restricts detection to policies belonging to the specified categories.\nReturns INVALID_ARGUMENT if any category does not match any existing policy category."
         },
         "cluster": {
           "type": "string",
@@ -1716,7 +1732,8 @@
           "type": "string",
           "description": "Namespace on the secured cluster from which to read context information\nwhen delegating image scans, specifically pull secrets to access the image\nregistry."
         }
-      }
+      },
+      "description": "BuildDetectionRequest is the request message for DetectBuildTime."
     },
     "v1BuildDetectionResponse": {
       "type": "object",
@@ -1726,43 +1743,54 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageAlert"
-          }
+          },
+          "description": "alerts contains all policy violations found for the given image."
         }
-      }
+      },
+      "description": "BuildDetectionResponse is the response message for DetectBuildTime."
     },
     "v1DeployDetectionRemark": {
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is the Kubernetes resource name of the deployment."
         },
         "permissionLevel": {
-          "type": "string"
+          "type": "string",
+          "description": "permission_level is the service account permission level for the deployment\n(e.g. \"CLUSTER_ADMIN\", \"ELEVATED_IN_NAMESPACE\")."
         },
         "appliedNetworkPolicies": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "applied_network_policies lists the names of Kubernetes NetworkPolicy objects\nthat apply to this deployment in its namespace."
         }
-      }
+      },
+      "description": "DeployDetectionRemark contains contextual Kubernetes information for a single deployment,\nenriched from the target cluster when a cluster is specified in the request."
     },
     "v1DeployDetectionRequest": {
       "type": "object",
       "properties": {
         "deployment": {
-          "$ref": "#/definitions/storageDeployment"
+          "$ref": "#/definitions/storageDeployment",
+          "description": "deployment is the deployment object to evaluate against deploy-time policies."
         },
         "noExternalMetadata": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "no_external_metadata disables fetching external image metadata. Detection runs on cached data only."
         },
         "enforcementOnly": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "enforcement_only limits detection to policies that have deploy-time enforcement actions configured\n(scale-to-zero or unsatisfiable node constraint). When no enforcement policies exist, returns empty results."
         },
         "clusterId": {
-          "type": "string"
+          "type": "string",
+          "description": "cluster_id is the ID of the cluster the deployment belongs to. Used to resolve cluster name\nand scope label-based policy matching."
         }
-      }
+      },
+      "description": "DeployDetectionRequest is the request message for DetectDeployTime."
     },
     "v1DeployDetectionResponse": {
       "type": "object",
@@ -1772,53 +1800,63 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/DeployDetectionResponseRun"
-          }
+          },
+          "description": "runs contains one entry per workload resource evaluated."
         },
         "ignoredObjectRefs": {
           "type": "array",
           "items": {
             "type": "string"
           },
-          "description": "The reference will be in the format: namespace/name[<group>/<version>, Kind=<kind>]."
+          "description": "The reference will be in the format: namespace/name[<group>/<version>, Kind=<kind>].\nignored_object_refs lists YAML resources that were skipped because their schema is not registered\n(e.g. custom resources). Each entry uses the format: namespace/name[group/version, Kind=kind]."
         },
         "remarks": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1DeployDetectionRemark"
-          }
+          },
+          "description": "remarks contains per-deployment contextual information such as permission level and applied\nnetwork policies. Only populated when a cluster is specified in the request."
         }
-      }
+      },
+      "description": "DeployDetectionResponse is the response message for DetectDeployTime and DetectDeployTimeFromYAML."
     },
     "v1DeployYAMLDetectionRequest": {
       "type": "object",
       "properties": {
         "yaml": {
-          "type": "string"
+          "type": "string",
+          "description": "yaml contains one or more Kubernetes workload manifests in YAML format (multi-document YAML is supported)."
         },
         "noExternalMetadata": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "no_external_metadata disables fetching external image metadata. Detection runs on cached data only."
         },
         "enforcementOnly": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "enforcement_only limits detection to policies that have deploy-time enforcement actions configured."
         },
         "force": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "force forces re-fetching image metadata from external sources even if cached data exists.\nMutually exclusive with no_external_metadata."
         },
         "policyCategories": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "policy_categories restricts detection to policies belonging to the specified categories.\nReturns INVALID_ARGUMENT if any category does not match any existing policy category."
         },
         "cluster": {
           "type": "string",
           "description": "Cluster to delegate scan to, may be the cluster's name or ID."
         },
         "namespace": {
-          "type": "string"
+          "type": "string",
+          "description": "namespace is the Kubernetes namespace used as context when resolving pull secrets for delegated scans.\nDefaults to \"default\" if not specified."
         }
-      }
+      },
+      "description": "DeployYAMLDetectionRequest is the request message for DetectDeployTimeFromYAML."
     }
   }
 }

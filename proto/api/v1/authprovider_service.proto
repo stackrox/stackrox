@@ -12,21 +12,32 @@ option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 message GetAuthProviderRequest {
+  // id is the unique identifier of the auth provider to retrieve.
   string id = 1;
 }
 
+// GetAuthProvidersRequest filters the list of auth providers returned by GetAuthProviders.
+// All specified filters are ANDed. Omitting a field disables that filter.
 message GetAuthProvidersRequest {
+  // name filters results to providers whose name exactly matches this value.
   string name = 1;
+  // type filters results to providers of this type (e.g. "oidc", "saml2", "userpki", "iap", "openshift").
   string type = 2;
 }
 
+// GetLoginAuthProvidersResponse contains the minimal provider information needed to render the login screen.
 message GetLoginAuthProvidersResponse {
+  // LoginAuthProvider carries the subset of auth provider fields needed to render a login button.
   message LoginAuthProvider {
     string id = 1;
     string name = 2;
+    // type identifies the provider type (e.g. "oidc", "saml2").
     string type = 3;
+    // login_url is the URL the client should redirect to in order to initiate the login flow.
     string login_url = 5;
   }
+  // auth_providers is the list of enabled, visible providers available for login, sorted by name
+  // with the basic provider last.
   repeated LoginAuthProvider auth_providers = 1;
 }
 
@@ -35,59 +46,117 @@ message GetAuthProvidersResponse {
 }
 
 message PostAuthProviderRequest {
+  // provider holds the new auth provider to create. The id and login_url fields must be empty;
+  // they are assigned by the server.
   storage.AuthProvider provider = 1;
 }
 
+// UpdateAuthProviderRequest updates specific mutable fields of an existing auth provider.
+// Only name and enabled can be changed via this endpoint; use PutAuthProvider for full replacement.
 message UpdateAuthProviderRequest {
+  // id is the unique identifier of the auth provider to update.
   string id = 1;
 
   oneof name_opt {
+    // name sets a new display name for the auth provider.
     string name = 2;
   }
   oneof enabled_opt {
+    // enabled enables or disables the auth provider for login.
     bool enabled = 3;
   }
 }
 
+// ExchangeTokenRequest carries the external identity provider token to be exchanged for a Central token.
 message ExchangeTokenRequest {
   // The external authentication token. The server will mask the value of this credential in responses and logs.
   string external_token = 1; // @gotags: scrub:"always"
+  // type identifies the auth provider type that issued the token (e.g. "oidc").
   string type = 2;
+  // state is the opaque state value returned by the identity provider during the OAuth/OIDC callback.
   string state = 3;
 }
 
+// ExchangeTokenResponse contains either a Central access token (normal login) or auth status (test mode).
 message ExchangeTokenResponse {
+  // token is the Central access token issued after a successful exchange. Empty in test mode.
   string token = 1;
+  // client_state is the opaque state passed back from the identity provider, stripped of internal markers.
   string client_state = 2;
+  // test is true when the exchange was triggered in test mode; in this case token is empty and user is set.
   bool test = 3;
+  // user contains the resolved auth status when test is true, used to preview what role the user would receive.
   v1.AuthStatus user = 4;
 }
 
+// AvailableProviderTypesResponse lists auth provider types that can be created on this installation.
 message AvailableProviderTypesResponse {
+  // AuthProviderType describes a single creatable auth provider type.
   message AuthProviderType {
+    // type is the identifier of the provider type (e.g. "oidc", "saml2", "userpki").
     string type = 1;
+    // suggested_attributes is the sorted list of token claim attributes that are commonly mapped
+    // for this provider type.
     repeated string suggested_attributes = 2;
   }
+  // auth_provider_types is the list of available provider types, sorted by type name.
+  // The built-in "basic" provider type is excluded.
   repeated AuthProviderType auth_provider_types = 1;
 }
 
+// AuthProviderService manages identity provider (IdP) integrations used for authenticating
+// users into the ACS platform.
+//
+// Auth providers represent external IdPs (OIDC, SAML, OpenShift OAuth, IAP, User PKI).
+// The built-in "basic" auth provider cannot be created, modified, or deleted via this API.
+//
+// Authentication requirements:
+// - ListAvailableProviderTypes, GetLoginAuthProviders, ExchangeToken: anonymous (used during login flow).
+// - GetAuthProvider, GetAuthProviders: require read access to the Access resource.
+// - PostAuthProvider, UpdateAuthProvider, PutAuthProvider, DeleteAuthProvider: require write access to the Access resource.
 service AuthProviderService {
+  // ListAvailableProviderTypes returns the auth provider types that can be created on this installation.
+  //
+  // The list is derived from registered backend factories. The built-in "basic" provider type
+  // is excluded. Results are sorted alphabetically by type name.
+  // This endpoint is publicly accessible (no authentication required).
   rpc ListAvailableProviderTypes(Empty) returns (AvailableProviderTypesResponse) {
     option (google.api.http) = {get: "/v1/availableAuthProviders"};
   }
 
+  // GetAuthProvider returns the auth provider with the given ID.
+  //
+  // Returns NOT_FOUND if no provider with the specified ID exists.
+  // Returns INVALID_ARGUMENT if the ID is empty.
+  // Requires read access to the Access resource.
   rpc GetAuthProvider(GetAuthProviderRequest) returns (storage.AuthProvider) {
     option (google.api.http) = {get: "/v1/authProviders/{id}"};
   }
 
+  // GetLoginAuthProviders returns the minimal auth provider information needed to render the login screen.
+  //
+  // Only returns enabled, visible providers that have a registered backend factory.
+  // Results are sorted by name; the built-in basic provider appears last.
+  // This endpoint is publicly accessible (no authentication required).
   rpc GetLoginAuthProviders(Empty) returns (GetLoginAuthProvidersResponse) {
     option (google.api.http) = {get: "/v1/login/authproviders"};
   }
 
+  // GetAuthProviders returns all auth providers, optionally filtered by name and/or type.
+  //
+  // Both filters are optional and exact-match. Results are sorted by name;
+  // the built-in basic provider appears last.
+  // Requires read access to the Access resource.
   rpc GetAuthProviders(GetAuthProvidersRequest) returns (GetAuthProvidersResponse) {
     option (google.api.http) = {get: "/v1/authProviders"};
   }
 
+  // PostAuthProvider creates a new auth provider.
+  //
+  // The provider.id and provider.login_url fields must be empty; they are assigned by the server.
+  // The provider.name must be non-empty. The built-in "basic" provider type cannot be created.
+  // Returns INVALID_ARGUMENT if validation fails.
+  // Requires write access to the Access resource.
   rpc PostAuthProvider(PostAuthProviderRequest) returns (storage.AuthProvider) {
     option (google.api.http) = {
       post: "/v1/authProviders"
@@ -95,6 +164,13 @@ service AuthProviderService {
     };
   }
 
+  // UpdateAuthProvider partially updates an existing auth provider's name or enabled status.
+  //
+  // Only the name and enabled fields can be modified via this endpoint. For full replacement,
+  // use PutAuthProvider. The built-in "basic" provider cannot be modified.
+  // Returns NOT_FOUND if no provider with the specified ID exists.
+  // Returns INVALID_ARGUMENT if the ID is empty or validation fails.
+  // Requires write access to the Access resource.
   rpc UpdateAuthProvider(UpdateAuthProviderRequest) returns (storage.AuthProvider) {
     option (google.api.http) = {
       patch: "/v1/authProviders/{id}"
@@ -102,6 +178,14 @@ service AuthProviderService {
     };
   }
 
+  // PutAuthProvider fully replaces an existing auth provider.
+  //
+  // The request body must include the full provider definition including id.
+  // Config fields omitted from the request are merged from the existing provider.
+  // The built-in "basic" provider cannot be modified.
+  // Returns NOT_FOUND if no provider with the specified ID exists.
+  // Returns INVALID_ARGUMENT if the ID is empty or validation fails.
+  // Requires write access to the Access resource.
   rpc PutAuthProvider(storage.AuthProvider) returns (storage.AuthProvider) {
     option (google.api.http) = {
       put: "/v1/authProviders/{id}"
@@ -109,10 +193,24 @@ service AuthProviderService {
     };
   }
 
+  // DeleteAuthProvider removes an auth provider and all its associated group mappings.
+  //
+  // The built-in "basic" provider cannot be deleted.
+  // When force is false, deletion is blocked if the provider has associated group mappings.
+  // Returns NOT_FOUND if no provider with the specified ID exists.
+  // Returns INVALID_ARGUMENT if the ID is empty.
+  // Requires write access to the Access resource.
   rpc DeleteAuthProvider(DeleteByIDWithForce) returns (Empty) {
     option (google.api.http) = {delete: "/v1/authProviders/{id}"};
   }
 
+  // ExchangeToken exchanges an external identity provider token for a Central access token.
+  //
+  // Used as part of the browser login flow after an OAuth/OIDC callback. The external_token,
+  // type, and state from the IdP callback are submitted here. On success a Central JWT is returned.
+  // When state contains an internal test-mode marker, the response returns the resolved user auth
+  // status instead of a token, allowing preview of role assignments without issuing a credential.
+  // This endpoint is publicly accessible (no authentication required).
   rpc ExchangeToken(ExchangeTokenRequest) returns (ExchangeTokenResponse) {
     option (google.api.http) = {
       post: "/v1/authProviders/exchangeToken"

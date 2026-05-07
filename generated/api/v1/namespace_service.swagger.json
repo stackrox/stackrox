@@ -18,6 +18,8 @@
   "paths": {
     "/v1/namespaces": {
       "get": {
+        "summary": "GetNamespaces returns a list of namespaces matching the optional query filter.",
+        "description": "Supports StackRox search query syntax to filter by cluster, namespace name, or label.\nReturns up to MaxInt32 results. Use the pagination field in the query for paging.\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "NamespaceService_GetNamespaces",
         "responses": {
           "200": {
@@ -36,6 +38,7 @@
         "parameters": [
           {
             "name": "query.query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -93,6 +96,8 @@
     },
     "/v1/namespaces/{id}": {
       "get": {
+        "summary": "GetNamespace returns the namespace with the given ID, enriched with deployment,\nsecret, and network policy counts.",
+        "description": "Returns INVALID_ARGUMENT if the ID is empty or the namespace is not found.",
         "operationId": "NamespaceService_GetNamespace",
         "responses": {
           "200": {
@@ -221,7 +226,8 @@
             "$ref": "#/definitions/v1Namespace"
           }
         }
-      }
+      },
+      "description": "GetNamespacesResponse is the response for a list namespaces request."
     },
     "v1Namespace": {
       "type": "object",
@@ -231,17 +237,21 @@
         },
         "numDeployments": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "num_deployments is the number of active deployments in this namespace."
         },
         "numSecrets": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "num_secrets is the number of secrets observed in this namespace."
         },
         "numNetworkPolicies": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "num_network_policies is the number of network policies applied in this namespace."
         }
-      }
+      },
+      "description": "Namespace aggregates a namespace's metadata with workload and policy counts observed by StackRox."
     },
     "v1Pagination": {
       "type": "object",
@@ -271,10 +281,12 @@
       "type": "object",
       "properties": {
         "query": {
-          "type": "string"
+          "type": "string",
+          "title": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\""
         },
         "pagination": {
-          "$ref": "#/definitions/v1Pagination"
+          "$ref": "#/definitions/v1Pagination",
+          "description": "pagination controls page size and sort order for list results."
         }
       },
       "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."

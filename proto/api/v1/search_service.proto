@@ -8,24 +8,46 @@ import weak "google/api/annotations.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// SearchCategory identifies a resource type that can be queried through SearchService.
+//
+// Not all categories are exposed via the global Search RPC — some are internal
+// or used only for autocomplete/options. The primary searchable categories are
+// ALERTS, DEPLOYMENTS, IMAGES, POLICIES, SECRETS, NAMESPACES, NODES, CLUSTERS,
+// SERVICE_ACCOUNTS, ROLES, ROLEBINDINGS, SUBJECTS, IMAGE_INTEGRATIONS, and POLICY_CATEGORIES.
+//
 // Next available tag: 85
 enum SearchCategory {
+  // SEARCH_UNSET means no category was specified. When passed to Search or
+  // Autocomplete it causes the service to search across all supported categories.
   SEARCH_UNSET = 0;
+  // ALERTS searches active and resolved policy-violation alerts.
   ALERTS = 1;
+  // IMAGES searches container images observed in the environment.
   IMAGES = 2;
+  // IMAGE_COMPONENTS searches individual software components (packages) within images.
   IMAGE_COMPONENTS = 20;
   IMAGE_VULN_EDGE = 27;
   IMAGE_COMPONENT_EDGE = 23;
+  // POLICIES searches security policies defined in StackRox.
   POLICIES = 3;
+  // DEPLOYMENTS searches Kubernetes Deployments, DaemonSets, StatefulSets, and other workloads.
   DEPLOYMENTS = 4;
   reserved 30;
+  // PODS searches individual Kubernetes Pods.
   PODS = 25;
+  // SECRETS searches Kubernetes Secrets observed in secured clusters.
   SECRETS = 5;
+  // PROCESS_INDICATORS searches runtime process execution events.
   PROCESS_INDICATORS = 6;
+  // COMPLIANCE searches compliance aggregation results across standards and controls.
   COMPLIANCE = 7;
+  // CLUSTERS searches secured Kubernetes clusters registered with Central.
   CLUSTERS = 8;
+  // NAMESPACES searches Kubernetes namespaces across all secured clusters.
   NAMESPACES = 9;
+  // NODES searches Kubernetes nodes across all secured clusters.
   NODES = 10;
+  // NODE_COMPONENTS searches software components (packages) installed on nodes.
   NODE_COMPONENTS = 38;
   NODE_VULN_EDGE = 28;
   NODE_COMPONENT_EDGE = 29;
@@ -33,16 +55,24 @@ enum SearchCategory {
   COMPLIANCE_STANDARD = 11;
   COMPLIANCE_CONTROL_GROUP = 12;
   COMPLIANCE_CONTROL = 13;
+  // SERVICE_ACCOUNTS searches Kubernetes ServiceAccount objects.
   SERVICE_ACCOUNTS = 14;
+  // ROLES searches Kubernetes Role and ClusterRole objects.
   ROLES = 15;
+  // ROLEBINDINGS searches Kubernetes RoleBinding and ClusterRoleBinding objects.
   ROLEBINDINGS = 16;
   REPORT_CONFIGURATIONS = 37;
   PROCESS_BASELINES = 17;
+  // SUBJECTS searches users and groups that appear as subjects in RBAC bindings.
   SUBJECTS = 18;
+  // RISKS searches risk scores associated with deployments.
   RISKS = 19;
+  // VULNERABILITIES searches CVEs across images, nodes, and cluster components.
   VULNERABILITIES = 21;
   CLUSTER_VULNERABILITIES = 34;
+  // IMAGE_VULNERABILITIES searches CVEs found in container image components.
   IMAGE_VULNERABILITIES = 35;
+  // NODE_VULNERABILITIES searches CVEs found in node components.
   NODE_VULNERABILITIES = 36;
   COMPONENT_VULN_EDGE = 22;
   CLUSTER_VULN_EDGE = 24;
@@ -55,8 +85,11 @@ enum SearchCategory {
   COMPLIANCE_RESULTS = 43;
   COMPLIANCE_DOMAIN = 44;
   CLUSTER_HEALTH = 45;
+  // POLICY_CATEGORIES searches user-defined policy category labels.
   POLICY_CATEGORIES = 46;
+  // IMAGE_INTEGRATIONS searches configured image registry integrations.
   IMAGE_INTEGRATIONS = 47;
+  // COLLECTIONS searches resource collections (scoped sets of deployments).
   COLLECTIONS = 48;
   POLICY_CATEGORY_EDGE = 49;
   PROCESS_LISTENING_ON_PORT = 50;
@@ -84,8 +117,11 @@ enum SearchCategory {
   COMPLIANCE_BENCHMARKS = 71;
   AUTH_PROVIDERS = 72;
   COMPLIANCE_REPORT_SNAPSHOT = 73;
+  // IMAGE_COMPONENTS_V2 is the v2 image components model used when the FlattenImageData feature flag is enabled.
   IMAGE_COMPONENTS_V2 = 74;
+  // IMAGE_VULNERABILITIES_V2 is the v2 image vulnerabilities model used when the FlattenImageData feature flag is enabled.
   IMAGE_VULNERABILITIES_V2 = 75;
+  // IMAGES_V2 is the v2 image model used when the FlattenImageData feature flag is enabled.
   IMAGES_V2 = 76;
   VIRTUAL_MACHINES = 77;
   BASE_IMAGES = 78;
@@ -97,12 +133,20 @@ enum SearchCategory {
   IMAGE_CVE_INFOS = 84;
 }
 
+// SearchDataType describes the type of values accepted for a search field,
+// as returned by the Options RPC.
 enum SearchDataType {
+  // SEARCH_BOOL accepts "true" or "false".
   SEARCH_BOOL = 0;
+  // SEARCH_NUMERIC accepts numeric comparisons, e.g. ">5" or "<=10".
   SEARCH_NUMERIC = 1;
+  // SEARCH_STRING accepts substring or regex patterns.
   SEARCH_STRING = 2;
+  // SEARCH_DATETIME accepts date/time values, e.g. ">01/02/2006".
   SEARCH_DATETIME = 3;
+  // SEARCH_MAP accepts key=value pairs for label-style fields.
   SEARCH_MAP = 4;
+  // SEARCH_ENUM accepts named enum values such as "CRITICAL" or "HIGH".
   SEARCH_ENUM = 5;
 }
 
@@ -113,19 +157,29 @@ enum SearchDataType {
 // "Deployment:central,sensor+Namespace:stackrox"
 // RawQuery is used in ListAPIs to search for a particular object.
 message RawQuery {
+  // query is a StackRox search query string. Multiple field:value pairs are
+  // joined with "+" (AND). Multiple values for one field are joined with ","
+  // (OR). Example: "Severity:CRITICAL+Cluster:production"
   string query = 1;
+  // pagination controls page size and sort order for list results.
   Pagination pagination = 2;
 }
 
 // RawSearchRequest is used to scope a given search in a specific category.
 // The search categories could be deployments, policies, images etc.
 message RawSearchRequest {
+  // query is a StackRox search query string. Use the Options RPC to discover
+  // valid field names for each category. Example: "Severity:CRITICAL+Namespace:stackrox"
   string query = 1;
+  // categories restricts the search to specific resource types. When empty,
+  // the service searches across all supported categories.
   repeated SearchCategory categories = 2;
 }
 
 message QuerySortOption {
+  // field is the search field name to sort by (as returned by Options).
   string field = 1;
+  // reversed sets descending sort order when true.
   bool reversed = 2;
   oneof search_after_opt {
     // search_after is alternative to offset for pagination.
@@ -190,8 +244,13 @@ message StringQuery {
 // MatchFieldQuery represents a query that matches documents containing the
 // query text in the provided field.
 message MatchFieldQuery {
+  // field is the search field name, as returned by the Options RPC.
   string field = 1;
+  // value is the value to match against the field. Supports prefixes like
+  // "r/" for regex, ">" / "<" for numeric comparisons.
   string value = 2;
+  // highlight requests that the matched field values be returned in the
+  // search result's field_to_matches map.
   bool highlight = 3;
 }
 
@@ -215,24 +274,37 @@ message BaseQuery {
   }
 }
 
+// ConjunctionQuery matches documents that satisfy all of the sub-queries (logical AND).
 message ConjunctionQuery {
   repeated Query queries = 1;
 }
 
+// DisjunctionQuery matches documents that satisfy any of the sub-queries (logical OR).
 message DisjunctionQuery {
   repeated Query queries = 1;
 }
 
+// MatchNoneQuery matches no documents. Useful as a sentinel value.
 message MatchNoneQuery {}
 
+// SearchResult represents a single matched resource returned by the Search RPC.
 message SearchResult {
+  // id is the unique identifier of the matched resource.
   string id = 1;
+  // name is the human-readable name of the matched resource.
   string name = 2;
+  // category is the resource type of this result (e.g. DEPLOYMENTS, IMAGES).
   SearchCategory category = 3;
+  // Matches holds the field values that caused this result to match the query.
   message Matches {
+    // values contains the matched text snippets for a given field.
     repeated string values = 1;
   }
+  // field_to_matches maps search field paths to the values that matched the query.
+  // Only populated for fields that had highlight=true in the query.
   map<string, Matches> field_to_matches = 4;
+  // score is a relevance score for ranking. Higher values indicate stronger matches.
+  // Results are returned sorted by score descending.
   double score = 5;
   // Location is intended to be a unique, yet human readable,
   // identifier for the result. For example, for a deployment,
@@ -242,36 +314,106 @@ message SearchResult {
   string location = 6;
 }
 
+// SearchResponse is returned by the Search RPC and contains matched results
+// grouped by category along with per-category counts.
 message SearchResponse {
+  // results contains matched resources sorted by relevance score (highest first).
   repeated SearchResult results = 1;
+  // Count reports the number of matches found within a single SearchCategory.
   message Count {
+    // category identifies which resource type this count applies to.
     SearchCategory category = 1;
+    // count is the number of resources matching the query in this category.
     int64 count = 2;
   }
+  // counts reports the number of results per category, useful for building
+  // faceted search UI components without iterating through all results.
   repeated Count counts = 2;
 }
 
+// SearchOptionsRequest is the request message for the Options RPC.
 message SearchOptionsRequest {
+  // categories restricts the response to field names applicable to those
+  // resource types. When empty, field names for all searchable categories
+  // are returned.
   repeated SearchCategory categories = 1;
 }
 
+// SearchOptionsResponse is the response message for the Options RPC.
 message SearchOptionsResponse {
+  // options is the sorted list of valid search field names (e.g. "Severity",
+  // "Cluster", "Namespace", "Image Tag") that can be used in query strings
+  // for the requested categories.
   repeated string options = 1;
 }
 
+// AutocompleteResponse is returned by the Autocomplete RPC.
 message AutocompleteResponse {
+  // values contains up to 10 deduplicated candidate completion strings,
+  // sorted by relevance score descending.
   repeated string values = 1;
 }
 
+// SearchService provides global search and query-assistance APIs across all
+// StackRox resource types.
+//
+// The StackRox search query syntax is:
+//   "<field>:<value>[,<value>...][+<field>:<value>...]"
+//
+// Examples:
+//   "Severity:CRITICAL"                          — alerts with critical severity
+//   "Severity:CRITICAL+Cluster:production"       — critical alerts in the production cluster
+//   "Deployment:central,sensor+Namespace:stackrox" — two deployments in stackrox namespace
+//   "Image Tag:r/.*-dev"                         — images whose tag matches a regex
+//
+// Use the Options RPC to discover the available field names for each category.
+// Use the Autocomplete RPC to interactively build valid query strings.
+//
+// Authentication: all three RPCs require an authenticated user or API token.
+// No additional resource-level permissions are required beyond authentication;
+// each search function applies its own data-store–level access controls.
 service SearchService {
+  // Search performs a global search across one or more resource categories
+  // and returns matched resources sorted by relevance score.
+  //
+  // Accepts the StackRox query syntax (e.g. "Severity:CRITICAL+Cluster:production").
+  // When categories is empty, all supported searchable categories are queried
+  // (ALERTS, DEPLOYMENTS, IMAGES, POLICIES, SECRETS, NAMESPACES, NODES, CLUSTERS,
+  // SERVICE_ACCOUNTS, ROLES, ROLEBINDINGS, SUBJECTS, IMAGE_INTEGRATIONS, POLICY_CATEGORIES).
+  //
+  // For ALERTS, results are only returned when the query explicitly filters on
+  // an alert field (e.g. "Severity", "Policy"); otherwise the category is skipped
+  // and its count is reported as 0.
+  //
+  // Returns INVALID_ARGUMENT if the query string cannot be parsed or if an
+  // unsupported category is requested.
   rpc Search(RawSearchRequest) returns (SearchResponse) {
     option (google.api.http) = {get: "/v1/search"};
   }
 
+  // Options returns the list of valid search field names for the requested
+  // categories. Use these field names as the left-hand side of query expressions
+  // (e.g. "Severity", "Cluster", "Image Tag").
+  //
+  // When categories is empty, field names for all searchable categories are
+  // returned. The response list is alphabetically sorted and deduplicated across
+  // categories.
   rpc Options(SearchOptionsRequest) returns (SearchOptionsResponse) {
     option (google.api.http) = {get: "/v1/search/metadata/options"};
   }
 
+  // Autocomplete returns up to 10 candidate values for the incomplete field
+  // in the query string, enabling interactive query-builder UIs.
+  //
+  // The query must contain an incomplete field expression — the final token
+  // is treated as the field being completed. For example, querying
+  // "Cluster:prod" with category CLUSTERS returns cluster names that start
+  // with "prod". Candidates are deduplicated and sorted by relevance score.
+  //
+  // When categories is empty, all autocomplete-capable categories are searched
+  // (includes COMPLIANCE in addition to the standard search categories).
+  //
+  // Returns INVALID_ARGUMENT if the query is empty or cannot be parsed.
   rpc Autocomplete(RawSearchRequest) returns (AutocompleteResponse) {
     option (google.api.http) = {get: "/v1/search/autocomplete"};
   }

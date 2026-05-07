@@ -13,77 +13,187 @@ import "storage/risk.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// DeploymentLabelsResponse contains label keys and their possible values
+// across all deployments visible to the caller.
 message DeploymentLabelsResponse {
+  // LabelValues holds the set of observed values for a single label key.
   message LabelValues {
+    // values is the sorted list of distinct values seen for the label key.
     repeated string values = 1;
   }
+  // labels maps each label key to its observed set of values.
   map<string, LabelValues> labels = 1;
+  // values is the sorted union of all label values across all keys.
   repeated string values = 2;
 }
 
+// ListDeploymentsResponse wraps the slim deployment list returned by ListDeployments.
 message ListDeploymentsResponse {
   repeated storage.ListDeployment deployments = 1;
 }
 
+// CountDeploymentsResponse holds the count of deployments matching a query.
 message CountDeploymentsResponse {
+  // count is the number of deployments that match the request query.
   int32 count = 1;
 }
 
+// ListDeploymentsWithProcessInfoResponse pairs each deployment with its
+// per-container process baseline statuses.
 message ListDeploymentsWithProcessInfoResponse {
+  // DeploymentWithProcessInfo combines a slim deployment summary with
+  // the process baseline evaluation result for each of its containers.
   message DeploymentWithProcessInfo {
+    // deployment is the slim deployment summary (same as ListDeployments).
     storage.ListDeployment deployment = 1;
     reserved 2; // formerly whitelist_statuses
+    // baseline_statuses holds one entry per container in the deployment,
+    // indicating whether its process baseline is locked, unlocked, or not yet
+    // generated, and whether anomalous processes have been observed.
+    // Only populated when the caller also has View(DeploymentExtension) permission.
     repeated storage.ContainerNameAndBaselineStatus baseline_statuses = 3;
   }
   repeated DeploymentWithProcessInfo deployments = 1;
 }
 
+// GetDeploymentWithRiskResponse holds a full deployment object together with
+// its computed risk score and contributing factors.
 message GetDeploymentWithRiskResponse {
+  // deployment is the full deployment object.
   storage.Deployment deployment = 1;
+  // risk is the risk record for this deployment, including the aggregate score
+  // and the individual risk factors that contributed to it.
   storage.Risk risk = 2;
 }
 
+// ExportDeploymentRequest specifies the filter and timeout for a streaming
+// deployment export.
 message ExportDeploymentRequest {
+  // timeout is an optional deadline in seconds for the streaming export.
+  // If zero, no deadline is applied. If positive, the stream will be
+  // cancelled after this many seconds.
   int32 timeout = 1;
+  // query filters exported deployments using StackRox search syntax.
+  // If empty, all deployments visible to the caller are exported.
+  // Example: "Cluster:production+Namespace:payments"
   string query = 2;
 }
 
+// ExportDeploymentResponse is one streamed message in the export response,
+// containing a single full deployment object.
 message ExportDeploymentResponse {
+  // deployment is a full deployment object from the export stream.
   storage.Deployment deployment = 1;
 }
 
-// DeploymentService APIs can be used to manage deployments.
+// DeploymentService provides read access to Kubernetes workload deployments
+// observed by StackRox Sensor across all secured clusters.
+//
+// Deployments represent Kubernetes workloads (Deployments, DaemonSets,
+// StatefulSets, etc.) and are the primary unit of risk evaluation and policy
+// enforcement in StackRox.
+//
+// The service offers two levels of detail:
+//   - Slim list objects (storage.ListDeployment) for listing and counting,
+//     containing only identity and summary fields.
+//   - Full objects (storage.Deployment) for single-item lookups and exports,
+//     containing container specs, security context, ports, volumes, and more.
+//
+// All endpoints require a valid API token or session with read access to the
+// Deployment resource. ListDeploymentsWithProcessInfo additionally requires
+// read access to the DeploymentExtension resource to receive baseline statuses.
 service DeploymentService {
-  // GetDeployment returns a deployment given its ID.
+  // GetDeployment returns the full deployment object with the given ID.
+  //
+  // Returns NOT_FOUND if no deployment with the given ID exists within the
+  // caller's authorized scope.
   rpc GetDeployment(ResourceByID) returns (storage.Deployment) {
     option (google.api.http) = {get: "/v1/deployments/{id}"};
   }
 
-  // GetDeploymentWithRisk returns a deployment and its risk given its ID.
+  // GetDeploymentWithRisk returns the full deployment object together with its
+  // computed risk score and the individual factors that contributed to it.
+  //
+  // Risk is calculated by the StackRox risk engine and reflects security
+  // posture signals such as image vulnerabilities, exposed ports, and
+  // privileged container settings.
+  //
+  // Returns NOT_FOUND if no deployment with the given ID exists within the
+  // caller's authorized scope.
   rpc GetDeploymentWithRisk(ResourceByID) returns (GetDeploymentWithRiskResponse) {
     option (google.api.http) = {get: "/v1/deploymentswithrisk/{id}"};
   }
 
-  // CountDeployments returns the number of deployments.
+  // CountDeployments returns the number of deployments that match the query.
+  //
+  // Uses StackRox search query syntax. If the query is empty, counts all
+  // deployments visible to the caller.
+  // Example query: "Cluster:production+Namespace:payments"
+  //
+  // Returns INVALID_ARGUMENT if the query syntax is malformed.
   rpc CountDeployments(RawQuery) returns (CountDeploymentsResponse) {
     option (google.api.http) = {get: "/v1/deploymentscount"};
   }
 
-  // ListDeployments returns the list of deployments.
+  // ListDeployments returns a paginated list of slim deployment summaries
+  // matching the query.
+  //
+  // Each result is a storage.ListDeployment containing only identity and summary
+  // fields (id, name, cluster, namespace, created, priority). Use GetDeployment
+  // to retrieve the full object for a specific deployment.
+  //
+  // Results are capped at 1000 deployments per request. Use pagination to page
+  // through larger result sets. Supports sorting via the pagination.sortOption
+  // field (e.g., by "Deployment Risk Priority").
+  //
+  // Uses StackRox search query syntax. Searchable fields include Cluster,
+  // Namespace, Deployment, Deployment Type, and Deployment Label.
+  //
+  // Returns INVALID_ARGUMENT if the query syntax is malformed.
   rpc ListDeployments(RawQuery) returns (ListDeploymentsResponse) {
     option (google.api.http) = {get: "/v1/deployments"};
   }
 
-  // ListDeploymentsWithProcessInfo returns the list of deployments with process information.
+  // ListDeploymentsWithProcessInfo returns a paginated list of slim deployment
+  // summaries, each paired with per-container process baseline evaluation results.
+  //
+  // Applies the same query, pagination, and 1000-result cap as ListDeployments.
+  //
+  // Baseline statuses indicate whether each container's process baseline is
+  // locked, unlocked, or not yet generated, and whether anomalous processes have
+  // been observed. Baseline statuses are only populated when the caller has
+  // read access to the DeploymentExtension resource in addition to Deployment.
+  // If the caller lacks DeploymentExtension access, deployments are still
+  // returned but baseline_statuses will be empty on each entry.
+  //
+  // Returns INVALID_ARGUMENT if the query syntax is malformed.
   rpc ListDeploymentsWithProcessInfo(RawQuery) returns (ListDeploymentsWithProcessInfoResponse) {
     option (google.api.http) = {get: "/v1/deploymentswithprocessinfo"};
   }
 
-  // GetLabels returns the labels used by deployments.
+  // GetLabels returns all label keys and their observed values across all
+  // deployments visible to the caller.
+  //
+  // The response contains a map of label key to sorted list of distinct values,
+  // plus a flat sorted list of all values across all keys. This is typically
+  // used to populate filter dropdowns in the UI.
+  //
+  // No query filtering is applied; all deployment labels are always returned.
   rpc GetLabels(Empty) returns (DeploymentLabelsResponse) {
     option (google.api.http) = {get: "/v1/deployments/metadata/labels"};
   }
 
+  // ExportDeployments streams full deployment objects matching the query as a
+  // server-sent stream of ExportDeploymentResponse messages.
+  //
+  // Unlike ListDeployments, this endpoint streams full storage.Deployment objects
+  // (not slim summaries) and has no upper bound on the number of results. It is
+  // intended for bulk data export scenarios.
+  //
+  // An optional timeout (in seconds) can be set on the request; if the stream
+  // does not complete within the timeout, it is cancelled.
+  //
+  // Returns INVALID_ARGUMENT if the query syntax is malformed.
   rpc ExportDeployments(ExportDeploymentRequest) returns (stream ExportDeploymentResponse) {
     option (google.api.http) = {get: "/v1/export/deployments"};
   }

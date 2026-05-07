@@ -24,12 +24,22 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// GenerateTokenRequest specifies the parameters for creating a new API token.
 type GenerateTokenRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// name is a human-readable label for the token. Must be non-empty.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// role is deprecated; use roles instead. If set, it is treated as a single-element roles list.
+	// Specifying both role and roles returns INVALID_ARGUMENT.
+	//
 	// Deprecated: Marked as deprecated in api/v1/api_token_service.proto.
-	Role          string                 `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"`
-	Roles         []string               `protobuf:"bytes,3,rep,name=roles,proto3" json:"roles,omitempty"`
+	Role string `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"`
+	// roles is the list of role names to assign to the generated token.
+	// All roles must exist and the caller must not request roles with more permissions than they hold
+	// (privilege escalation is rejected with NOT_AUTHORIZED).
+	Roles []string `protobuf:"bytes,3,rep,name=roles,proto3" json:"roles,omitempty"`
+	// expiration is the optional UTC timestamp at which the token should expire.
+	// If not set, the token does not expire.
 	Expiration    *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expiration,proto3" json:"expiration,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -94,9 +104,12 @@ func (x *GenerateTokenRequest) GetExpiration() *timestamppb.Timestamp {
 	return nil
 }
 
+// GenerateTokenResponse contains the newly generated API token and its metadata.
 type GenerateTokenResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// token is the raw API token value. This is the only time it is returned; store it securely.
+	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	// metadata contains the token ID, name, roles, and expiration. Use the ID to revoke the token.
 	Metadata      *storage.TokenMetadata `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -146,6 +159,7 @@ func (x *GenerateTokenResponse) GetMetadata() *storage.TokenMetadata {
 	return nil
 }
 
+// GetAPITokensRequest optionally filters tokens by revocation status.
 type GetAPITokensRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to RevokedOneof:
@@ -207,13 +221,17 @@ type isGetAPITokensRequest_RevokedOneof interface {
 }
 
 type GetAPITokensRequest_Revoked struct {
+	// revoked filters tokens by their revocation status.
+	// Set to true to return only revoked tokens; false to return only active tokens.
+	// Omit to return all tokens.
 	Revoked bool `protobuf:"varint,1,opt,name=revoked,proto3,oneof"`
 }
 
 func (*GetAPITokensRequest_Revoked) isGetAPITokensRequest_RevokedOneof() {}
 
 type GetAPITokensResponse struct {
-	state         protoimpl.MessageState   `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// tokens is the list of token metadata records matching the request filter.
 	Tokens        []*storage.TokenMetadata `protobuf:"bytes,1,rep,name=tokens,proto3" json:"tokens,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -256,9 +274,12 @@ func (x *GetAPITokensResponse) GetTokens() []*storage.TokenMetadata {
 	return nil
 }
 
+// ListAllowedTokenRolesResponse contains the role names the caller may assign to a new API token.
 type ListAllowedTokenRolesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RoleNames     []string               `protobuf:"bytes,1,rep,name=roleNames,proto3" json:"roleNames,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// roleNames is the sorted list of role names the caller is permitted to use when generating a token.
+	// The "None" role is excluded as it provides no permissions.
+	RoleNames     []string `protobuf:"bytes,1,rep,name=roleNames,proto3" json:"roleNames,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

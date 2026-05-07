@@ -18,6 +18,8 @@
   "paths": {
     "/v1/complianceManagement/runs": {
       "get": {
+        "summary": "GetRecentRuns returns compliance runs matching the optional cluster, standard, and time filters.",
+        "description": "Results are sorted by start time ascending. All filter fields are optional;\nomitting them returns all recent runs across all clusters and standards.\n\nRequires read access to the Compliance resource.",
         "operationId": "ComplianceManagementService_GetRecentRuns",
         "responses": {
           "200": {
@@ -36,18 +38,21 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id restricts results to runs for the specified cluster.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "standardId",
+            "description": "standard_id restricts results to runs for the specified compliance standard.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "since",
+            "description": "since filters runs to those that started at or after this timestamp.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -61,6 +66,8 @@
     },
     "/v1/compliancemanagement/runs": {
       "post": {
+        "summary": "TriggerRuns starts new compliance runs for the specified cluster/standard selection.",
+        "description": "The selection supports wildcard values (\"*\") to trigger runs across all clusters\nor all standards. Returns the list of ComplianceRun objects that were started.\n\nReturns INVALID_ARGUMENT if the cluster or standard selection cannot be resolved.\nRequires write access to the Compliance resource.",
         "operationId": "ComplianceManagementService_TriggerRuns",
         "responses": {
           "200": {
@@ -93,6 +100,8 @@
     },
     "/v1/compliancemanagement/runstatuses": {
       "get": {
+        "summary": "GetRunStatuses returns the current status for specified run IDs or the latest runs.",
+        "description": "Set latest=true to retrieve the most recent run per cluster/standard pair without\nspecifying IDs. Setting both latest=true and run_ids returns INVALID_ARGUMENT.\nIDs in the request that do not match any run are returned in invalid_run_ids.\n\nRequires read access to the Compliance resource.",
         "operationId": "ComplianceManagementService_GetRunStatuses",
         "responses": {
           "200": {
@@ -111,6 +120,7 @@
         "parameters": [
           {
             "name": "runIds",
+            "description": "run_ids is the list of compliance run IDs to query. Mutually exclusive with latest.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -121,6 +131,7 @@
           },
           {
             "name": "latest",
+            "description": "latest when true returns the most recent run for each cluster/standard pair,\nignoring run_ids. Cannot be combined with run_ids.",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -170,39 +181,47 @@
           "type": "string"
         },
         "clusterId": {
-          "type": "string"
+          "type": "string",
+          "description": "cluster_id identifies the cluster this run was executed against."
         },
         "standardId": {
-          "type": "string"
+          "type": "string",
+          "description": "standard_id identifies the compliance standard used for this run."
         },
         "startTime": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "start_time is when the compliance run began execution."
         },
         "finishTime": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "finish_time is when the compliance run completed; zero if still in progress."
         },
         "state": {
-          "$ref": "#/definitions/v1ComplianceRunState"
+          "$ref": "#/definitions/v1ComplianceRunState",
+          "description": "state is the current lifecycle stage of this run."
         },
         "errorMessage": {
-          "type": "string"
+          "type": "string",
+          "description": "error_message contains details when the run failed; empty on success."
         }
-      }
+      },
+      "description": "ComplianceRun represents a single compliance scan execution for a cluster/standard pair."
     },
     "v1ComplianceRunSelection": {
       "type": "object",
       "properties": {
         "clusterId": {
           "type": "string",
-          "description": "The ID of the cluster. \"*\" means \"all clusters\"."
+          "description": "cluster_id is the ID of the cluster to target. Use \"*\" to target all clusters."
         },
         "standardId": {
           "type": "string",
-          "description": "The ID of the compliance standard. \"*\" means \"all standards\"."
+          "description": "standard_id is the ID of the compliance standard to target. Use \"*\" to target all standards."
         }
-      }
+      },
+      "description": "ComplianceRunSelection specifies a cluster/standard pair for compliance run targeting.\nUse \"*\" as a wildcard to target all clusters or all standards."
     },
     "v1ComplianceRunState": {
       "type": "string",
@@ -214,7 +233,8 @@
         "EVALUTING_CHECKS",
         "FINISHED"
       ],
-      "default": "INVALID"
+      "default": "INVALID",
+      "description": "State describes the lifecycle stage of a compliance run.\n\n - READY: READY indicates the run is scheduled and waiting to start.\n - STARTED: STARTED indicates the run has been dispatched to the sensor.\n - WAIT_FOR_DATA: WAIT_FOR_DATA indicates the run is waiting for compliance data from the cluster.\n - EVALUTING_CHECKS: EVALUTING_CHECKS indicates the run is actively evaluating compliance checks.\n - FINISHED: FINISHED indicates the run has completed (successfully or with errors)."
     },
     "v1GetComplianceRunStatusesResponse": {
       "type": "object",
@@ -223,7 +243,8 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "invalid_run_ids contains IDs from the request that were not found."
         },
         "runs": {
           "type": "array",
@@ -250,7 +271,8 @@
       "type": "object",
       "properties": {
         "selection": {
-          "$ref": "#/definitions/v1ComplianceRunSelection"
+          "$ref": "#/definitions/v1ComplianceRunSelection",
+          "description": "selection specifies which clusters and standards to run. Use \"*\" in either field for all."
         }
       }
     },

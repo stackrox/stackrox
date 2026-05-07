@@ -8,19 +8,35 @@ import weak "google/api/annotations.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// FeatureFlag represents a single runtime feature flag and its current state.
 message FeatureFlag {
+  // name is the human-readable name of the feature flag.
   string name = 1;
+  // env_var is the environment variable that controls this flag (e.g. "ROX_SOME_FEATURE").
   string env_var = 2;
+  // enabled indicates whether the feature flag is currently active.
   bool enabled = 3;
   reserved 4;
 }
 
+// GetFeatureFlagsResponse is the response message for GetFeatureFlags.
 message GetFeatureFlagsResponse {
+  // feature_flags is the list of all known feature flags, sorted alphabetically by name.
   repeated FeatureFlag feature_flags = 1;
 }
 
 // FeatureFlagService retrieves information about feature flags.
+//
+// Feature flags control experimental or conditionally-enabled functionality in StackRox.
+// Each flag has an associated environment variable that can override its default state.
+//
+// Authentication: this endpoint is publicly accessible (no authentication required) so that
+// the UI can fetch feature flag state at startup before a user logs in.
 service FeatureFlagService {
+  // GetFeatureFlags returns all known feature flags and their current enabled state.
+  //
+  // The response is sorted alphabetically by flag name. This endpoint is anonymous
+  // (no authentication required) and is used by the UI at startup.
   rpc GetFeatureFlags(Empty) returns (GetFeatureFlagsResponse) {
     option (google.api.http) = {get: "/v1/featureflags"};
   }

@@ -27,11 +27,15 @@ const (
 type NetworkPolicyInSimulation_Status int32
 
 const (
-	NetworkPolicyInSimulation_INVALID   NetworkPolicyInSimulation_Status = 0
+	NetworkPolicyInSimulation_INVALID NetworkPolicyInSimulation_Status = 0
+	// UNCHANGED means this policy is not affected by the proposed modification.
 	NetworkPolicyInSimulation_UNCHANGED NetworkPolicyInSimulation_Status = 1
-	NetworkPolicyInSimulation_MODIFIED  NetworkPolicyInSimulation_Status = 2
-	NetworkPolicyInSimulation_ADDED     NetworkPolicyInSimulation_Status = 3
-	NetworkPolicyInSimulation_DELETED   NetworkPolicyInSimulation_Status = 4
+	// MODIFIED means this policy is replaced by a new version in the simulation.
+	NetworkPolicyInSimulation_MODIFIED NetworkPolicyInSimulation_Status = 2
+	// ADDED means this policy does not currently exist and would be created.
+	NetworkPolicyInSimulation_ADDED NetworkPolicyInSimulation_Status = 3
+	// DELETED means this policy would be removed by the modification.
+	NetworkPolicyInSimulation_DELETED NetworkPolicyInSimulation_Status = 4
 )
 
 // Enum value maps for NetworkPolicyInSimulation_Status.
@@ -131,13 +135,19 @@ func (GenerateNetworkPoliciesRequest_DeleteExistingPoliciesMode) EnumDescriptor(
 	return file_api_v1_network_policy_service_proto_rawDescGZIP(), []int{14, 0}
 }
 
+// GetNetworkPoliciesRequest filters the list of network policies returned for
+// a cluster.
 type GetNetworkPoliciesRequest struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId       string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	DeploymentQuery string                 `protobuf:"bytes,2,opt,name=deployment_query,json=deploymentQuery,proto3" json:"deployment_query,omitempty"`
-	Namespace       string                 `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id restricts results to policies in this cluster. Required.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// deployment_query is an optional StackRox search query; when set, only
+	// policies that apply to at least one matching deployment are returned.
+	DeploymentQuery string `protobuf:"bytes,2,opt,name=deployment_query,json=deploymentQuery,proto3" json:"deployment_query,omitempty"`
+	// namespace restricts results to policies in this Kubernetes namespace.
+	Namespace     string `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetNetworkPoliciesRequest) Reset() {
@@ -235,10 +245,15 @@ func (x *NetworkPoliciesResponse) GetNetworkPolicies() []*storage.NetworkPolicy 
 	return nil
 }
 
+// SendNetworkPolicyYamlRequest delivers a network policy modification as YAML
+// to one or more configured notifiers (e.g. Slack, email).
 type SendNetworkPolicyYamlRequest struct {
-	state         protoimpl.MessageState             `protogen:"open.v1"`
-	ClusterId     string                             `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	NotifierIds   []string                           `protobuf:"bytes,2,rep,name=notifier_ids,json=notifierIds,proto3" json:"notifier_ids,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id identifies the target cluster. Required.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// notifier_ids is the list of notifier IDs to send the YAML to. Required.
+	NotifierIds []string `protobuf:"bytes,2,rep,name=notifier_ids,json=notifierIds,proto3" json:"notifier_ids,omitempty"`
+	// modification is the network policy change to send. Must be non-empty.
 	Modification  *storage.NetworkPolicyModification `protobuf:"bytes,3,opt,name=modification,proto3" json:"modification,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -295,12 +310,18 @@ func (x *SendNetworkPolicyYamlRequest) GetModification() *storage.NetworkPolicyM
 	return nil
 }
 
+// GetNetworkGraphRequest generates a policy-based network connectivity graph
+// for a cluster, reflecting which deployments can communicate based on
+// current NetworkPolicies (not observed flows).
 type GetNetworkGraphRequest struct {
-	state     protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Query     string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id is the cluster to generate the graph for. Required.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// query filters deployments shown as query-match nodes using StackRox search syntax.
+	Query string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	// If set to true, include port-level information in the network policy graph.
-	IncludePorts  bool               `protobuf:"varint,3,opt,name=include_ports,json=includePorts,proto3" json:"include_ports,omitempty"`
+	IncludePorts bool `protobuf:"varint,3,opt,name=include_ports,json=includePorts,proto3" json:"include_ports,omitempty"`
+	// scope further restricts the set of deployments shown as graph nodes.
 	Scope         *NetworkGraphScope `protobuf:"bytes,4,opt,name=scope,proto3" json:"scope,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -364,17 +385,28 @@ func (x *GetNetworkGraphRequest) GetScope() *NetworkGraphScope {
 	return nil
 }
 
+// SimulateNetworkGraphRequest previews how the network connectivity graph
+// would change if a set of NetworkPolicy modifications were applied.
 type SimulateNetworkGraphRequest struct {
-	state        protoimpl.MessageState             `protogen:"open.v1"`
-	ClusterId    string                             `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Query        string                             `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id is the cluster to simulate against. Required.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// query filters deployments shown as query-match nodes using StackRox search syntax.
+	Query string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	// modification describes the network policies to add, modify, or delete in
+	// the simulation. Must be non-empty and must not affect restricted namespaces
+	// (stackrox, kube-system).
 	Modification *storage.NetworkPolicyModification `protobuf:"bytes,3,opt,name=modification,proto3" json:"modification,omitempty"`
 	// If set to true, include port-level information in the network policy graph.
-	IncludePorts    bool               `protobuf:"varint,4,opt,name=include_ports,json=includePorts,proto3" json:"include_ports,omitempty"`
-	IncludeNodeDiff bool               `protobuf:"varint,5,opt,name=include_node_diff,json=includeNodeDiff,proto3" json:"include_node_diff,omitempty"`
-	Scope           *NetworkGraphScope `protobuf:"bytes,6,opt,name=scope,proto3" json:"scope,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	IncludePorts bool `protobuf:"varint,4,opt,name=include_ports,json=includePorts,proto3" json:"include_ports,omitempty"`
+	// include_node_diff controls whether added/removed edge diffs between the
+	// current and simulated graphs are computed and returned. When false, only
+	// the simulated graph and policy list are returned.
+	IncludeNodeDiff bool `protobuf:"varint,5,opt,name=include_node_diff,json=includeNodeDiff,proto3" json:"include_node_diff,omitempty"`
+	// scope further restricts the set of deployments shown as graph nodes.
+	Scope         *NetworkGraphScope `protobuf:"bytes,6,opt,name=scope,proto3" json:"scope,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SimulateNetworkGraphRequest) Reset() {
@@ -449,9 +481,13 @@ func (x *SimulateNetworkGraphRequest) GetScope() *NetworkGraphScope {
 	return nil
 }
 
+// ApplyNetworkPolicyYamlRequest applies a set of NetworkPolicy changes to a
+// cluster via the connected Sensor.
 type ApplyNetworkPolicyYamlRequest struct {
-	state         protoimpl.MessageState             `protogen:"open.v1"`
-	ClusterId     string                             `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id is the cluster to apply the modification to. Required.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// modification describes the policies to create/update and the policies to delete.
 	Modification  *storage.NetworkPolicyModification `protobuf:"bytes,2,opt,name=modification,proto3" json:"modification,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -501,9 +537,12 @@ func (x *ApplyNetworkPolicyYamlRequest) GetModification() *storage.NetworkPolicy
 	return nil
 }
 
+// GetUndoModificationRequest fetches the undo record for the most recent
+// network policy application to a cluster.
 type GetUndoModificationRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id identifies the cluster whose undo record to retrieve.
+	ClusterId     string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -545,8 +584,12 @@ func (x *GetUndoModificationRequest) GetClusterId() string {
 	return ""
 }
 
+// GetUndoModificationResponse contains the undo record for the last applied
+// network policy modification to a cluster.
 type GetUndoModificationResponse struct {
-	state         protoimpl.MessageState                      `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// undo_record describes the original modification and the modification
+	// needed to revert it.
 	UndoRecord    *storage.NetworkPolicyApplicationUndoRecord `protobuf:"bytes,1,opt,name=undo_record,json=undoRecord,proto3" json:"undo_record,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -589,11 +632,18 @@ func (x *GetUndoModificationResponse) GetUndoRecord() *storage.NetworkPolicyAppl
 	return nil
 }
 
+// NetworkPolicyInSimulation represents a single network policy in the context
+// of a simulation, annotated with whether it is unchanged, added, modified,
+// or deleted by the proposed modification.
 type NetworkPolicyInSimulation struct {
-	state         protoimpl.MessageState           `protogen:"open.v1"`
-	Policy        *storage.NetworkPolicy           `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
-	Status        NetworkPolicyInSimulation_Status `protobuf:"varint,2,opt,name=status,proto3,enum=v1.NetworkPolicyInSimulation_Status" json:"status,omitempty"`
-	OldPolicy     *storage.NetworkPolicy           `protobuf:"bytes,3,opt,name=old_policy,json=oldPolicy,proto3" json:"old_policy,omitempty"` // if status is MODIFIED or DELETED, this contains the previous network policy.
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// policy is the network policy in its simulated state (nil if DELETED).
+	Policy *storage.NetworkPolicy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	// status indicates how this policy is affected by the proposed modification.
+	Status NetworkPolicyInSimulation_Status `protobuf:"varint,2,opt,name=status,proto3,enum=v1.NetworkPolicyInSimulation_Status" json:"status,omitempty"`
+	// old_policy is the current (pre-simulation) version of the policy.
+	// Populated when status is MODIFIED or DELETED.
+	OldPolicy     *storage.NetworkPolicy `protobuf:"bytes,3,opt,name=old_policy,json=oldPolicy,proto3" json:"old_policy,omitempty"` // if status is MODIFIED or DELETED, this contains the previous network policy.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -649,16 +699,22 @@ func (x *NetworkPolicyInSimulation) GetOldPolicy() *storage.NetworkPolicy {
 	return nil
 }
 
+// NetworkNodeDiff captures the change to a single network node's connectivity
+// between two graph states (e.g. current vs. simulated).
 type NetworkNodeDiff struct {
-	state     protoimpl.MessageState `protogen:"open.v1"`
-	PolicyIds []string               `protobuf:"bytes,1,rep,name=policy_ids,json=policyIds,proto3" json:"policy_ids,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// policy_ids lists NetworkPolicy IDs that select this deployment in the new state.
+	PolicyIds []string `protobuf:"bytes,1,rep,name=policy_ids,json=policyIds,proto3" json:"policy_ids,omitempty"`
 	// Deprecated: Marked as deprecated in api/v1/network_policy_service.proto.
-	DEPRECATEDOutEdges map[int32]*NetworkEdgePropertiesBundle  `protobuf:"bytes,2,rep,name=DEPRECATED_out_edges,json=DEPRECATEDOutEdges,proto3" json:"DEPRECATED_out_edges,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	OutEdges           map[string]*NetworkEdgePropertiesBundle `protobuf:"bytes,5,rep,name=out_edges,json=outEdges,proto3" json:"out_edges,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	NonIsolatedIngress bool                                    `protobuf:"varint,3,opt,name=non_isolated_ingress,json=nonIsolatedIngress,proto3" json:"non_isolated_ingress,omitempty"`
-	NonIsolatedEgress  bool                                    `protobuf:"varint,4,opt,name=non_isolated_egress,json=nonIsolatedEgress,proto3" json:"non_isolated_egress,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	DEPRECATEDOutEdges map[int32]*NetworkEdgePropertiesBundle `protobuf:"bytes,2,rep,name=DEPRECATED_out_edges,json=DEPRECATEDOutEdges,proto3" json:"DEPRECATED_out_edges,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// out_edges maps a destination node ID to the edge properties in the new state.
+	OutEdges map[string]*NetworkEdgePropertiesBundle `protobuf:"bytes,5,rep,name=out_edges,json=outEdges,proto3" json:"out_edges,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// non_isolated_ingress is true when no ingress policy selects this node in the new state.
+	NonIsolatedIngress bool `protobuf:"varint,3,opt,name=non_isolated_ingress,json=nonIsolatedIngress,proto3" json:"non_isolated_ingress,omitempty"`
+	// non_isolated_egress is true when no egress policy selects this node in the new state.
+	NonIsolatedEgress bool `protobuf:"varint,4,opt,name=non_isolated_egress,json=nonIsolatedEgress,proto3" json:"non_isolated_egress,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *NetworkNodeDiff) Reset() {
@@ -727,13 +783,16 @@ func (x *NetworkNodeDiff) GetNonIsolatedEgress() bool {
 	return false
 }
 
+// NetworkGraphDiff summarizes which edges were added or removed between two
+// network graph states.
 type NetworkGraphDiff struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Deprecated: Marked as deprecated in api/v1/network_policy_service.proto.
-	DEPRECATEDNodeDiffs map[int32]*NetworkNodeDiff  `protobuf:"bytes,1,rep,name=DEPRECATED_node_diffs,json=DEPRECATEDNodeDiffs,proto3" json:"DEPRECATED_node_diffs,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	NodeDiffs           map[string]*NetworkNodeDiff `protobuf:"bytes,2,rep,name=node_diffs,json=nodeDiffs,proto3" json:"node_diffs,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	DEPRECATEDNodeDiffs map[int32]*NetworkNodeDiff `protobuf:"bytes,1,rep,name=DEPRECATED_node_diffs,json=DEPRECATEDNodeDiffs,proto3" json:"DEPRECATED_node_diffs,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// node_diffs maps a node ID to the connectivity changes for that node.
+	NodeDiffs     map[string]*NetworkNodeDiff `protobuf:"bytes,2,rep,name=node_diffs,json=nodeDiffs,proto3" json:"node_diffs,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkGraphDiff) Reset() {
@@ -781,14 +840,25 @@ func (x *NetworkGraphDiff) GetNodeDiffs() map[string]*NetworkNodeDiff {
 	return nil
 }
 
+// SimulateNetworkGraphResponse contains the results of a network policy
+// simulation, including the simulated graph, the policy states, and optional
+// edge diffs.
 type SimulateNetworkGraphResponse struct {
-	state          protoimpl.MessageState       `protogen:"open.v1"`
-	SimulatedGraph *NetworkGraph                `protobuf:"bytes,1,opt,name=simulated_graph,json=simulatedGraph,proto3" json:"simulated_graph,omitempty"`
-	Policies       []*NetworkPolicyInSimulation `protobuf:"bytes,2,rep,name=policies,proto3" json:"policies,omitempty"`
-	Added          *NetworkGraphDiff            `protobuf:"bytes,3,opt,name=added,proto3" json:"added,omitempty"`
-	Removed        *NetworkGraphDiff            `protobuf:"bytes,4,opt,name=removed,proto3" json:"removed,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// simulated_graph is the network connectivity graph after applying the
+	// proposed modification.
+	SimulatedGraph *NetworkGraph `protobuf:"bytes,1,opt,name=simulated_graph,json=simulatedGraph,proto3" json:"simulated_graph,omitempty"`
+	// policies is the full list of network policies in the simulation with their
+	// change status (UNCHANGED, ADDED, MODIFIED, DELETED).
+	Policies []*NetworkPolicyInSimulation `protobuf:"bytes,2,rep,name=policies,proto3" json:"policies,omitempty"`
+	// added contains nodes and edges that would be added by the modification.
+	// Only populated when include_node_diff is true and the modification has changes.
+	Added *NetworkGraphDiff `protobuf:"bytes,3,opt,name=added,proto3" json:"added,omitempty"`
+	// removed contains nodes and edges that would be removed by the modification.
+	// Only populated when include_node_diff is true and the modification has changes.
+	Removed       *NetworkGraphDiff `protobuf:"bytes,4,opt,name=removed,proto3" json:"removed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SimulateNetworkGraphResponse) Reset() {
@@ -849,9 +919,12 @@ func (x *SimulateNetworkGraphResponse) GetRemoved() *NetworkGraphDiff {
 	return nil
 }
 
+// GetNetworkGraphEpochRequest requests the current network graph epoch for a
+// cluster.
 type GetNetworkGraphEpochRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id identifies the cluster whose epoch to retrieve. Required.
+	ClusterId     string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -893,9 +966,13 @@ func (x *GetNetworkGraphEpochRequest) GetClusterId() string {
 	return ""
 }
 
+// NetworkGraphEpoch is a version counter for the network policy graph of a
+// cluster. It increments whenever the underlying network policies change.
 type NetworkGraphEpoch struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Epoch         uint32                 `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// epoch is a monotonically increasing counter. Clients can poll this to
+	// detect when the graph needs to be refreshed.
+	Epoch         uint32 `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -938,15 +1015,26 @@ func (x *NetworkGraphEpoch) GetEpoch() uint32 {
 }
 
 // Next available tag: 5
+// GenerateNetworkPoliciesRequest describes the parameters for auto-generating
+// Kubernetes NetworkPolicies based on observed network flows.
 type GenerateNetworkPoliciesRequest struct {
-	state            protoimpl.MessageState                                    `protogen:"open.v1"`
-	ClusterId        string                                                    `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Query            string                                                    `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
-	DeleteExisting   GenerateNetworkPoliciesRequest_DeleteExistingPoliciesMode `protobuf:"varint,3,opt,name=delete_existing,json=deleteExisting,proto3,enum=v1.GenerateNetworkPoliciesRequest_DeleteExistingPoliciesMode" json:"delete_existing,omitempty"`
-	NetworkDataSince *timestamppb.Timestamp                                    `protobuf:"bytes,4,opt,name=network_data_since,json=networkDataSince,proto3" json:"network_data_since,omitempty"`
-	IncludePorts     bool                                                      `protobuf:"varint,5,opt,name=include_ports,json=includePorts,proto3" json:"include_ports,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id is the cluster to generate policies for. Required.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// query filters the deployments whose observed flows are used for generation,
+	// using StackRox search syntax.
+	Query string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	// delete_existing controls whether existing policies are deleted before applying
+	// the generated ones. Defaults to NONE if UNKNOWN.
+	DeleteExisting GenerateNetworkPoliciesRequest_DeleteExistingPoliciesMode `protobuf:"varint,3,opt,name=delete_existing,json=deleteExisting,proto3,enum=v1.GenerateNetworkPoliciesRequest_DeleteExistingPoliciesMode" json:"delete_existing,omitempty"`
+	// network_data_since restricts flows used for generation to those observed
+	// after this timestamp.
+	NetworkDataSince *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=network_data_since,json=networkDataSince,proto3" json:"network_data_since,omitempty"`
+	// include_ports controls whether per-port connection details are reflected in
+	// the generated policy rules.
+	IncludePorts  bool `protobuf:"varint,5,opt,name=include_ports,json=includePorts,proto3" json:"include_ports,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GenerateNetworkPoliciesRequest) Reset() {
@@ -1015,8 +1103,12 @@ func (x *GenerateNetworkPoliciesRequest) GetIncludePorts() bool {
 }
 
 // Next available tag: 2
+// GenerateNetworkPoliciesResponse contains the generated NetworkPolicy YAML
+// modification ready to be applied or previewed.
 type GenerateNetworkPoliciesResponse struct {
-	state         protoimpl.MessageState             `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// modification contains the YAML for newly generated policies and references
+	// to policies that should be deleted, per the delete_existing mode.
 	Modification  *storage.NetworkPolicyModification `protobuf:"bytes,1,opt,name=modification,proto3" json:"modification,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1059,13 +1151,19 @@ func (x *GenerateNetworkPoliciesResponse) GetModification() *storage.NetworkPoli
 	return nil
 }
 
+// GetBaselineGeneratedPolicyForDeploymentRequest requests auto-generation of
+// a NetworkPolicy for a specific deployment based on its network baseline.
 type GetBaselineGeneratedPolicyForDeploymentRequest struct {
-	state          protoimpl.MessageState                                    `protogen:"open.v1"`
-	DeploymentId   string                                                    `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// deployment_id is the ID of the deployment to generate the policy for. Required.
+	DeploymentId string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
+	// delete_existing controls whether any existing baseline-generated policy for
+	// this deployment is included in the modification's delete list.
 	DeleteExisting GenerateNetworkPoliciesRequest_DeleteExistingPoliciesMode `protobuf:"varint,2,opt,name=delete_existing,json=deleteExisting,proto3,enum=v1.GenerateNetworkPoliciesRequest_DeleteExistingPoliciesMode" json:"delete_existing,omitempty"`
-	IncludePorts   bool                                                      `protobuf:"varint,3,opt,name=include_ports,json=includePorts,proto3" json:"include_ports,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// include_ports controls whether per-port details are reflected in the generated rules.
+	IncludePorts  bool `protobuf:"varint,3,opt,name=include_ports,json=includePorts,proto3" json:"include_ports,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetBaselineGeneratedPolicyForDeploymentRequest) Reset() {
@@ -1119,8 +1217,11 @@ func (x *GetBaselineGeneratedPolicyForDeploymentRequest) GetIncludePorts() bool 
 	return false
 }
 
+// GetBaselineGeneratedPolicyForDeploymentResponse contains the generated
+// NetworkPolicy modification for a specific deployment.
 type GetBaselineGeneratedPolicyForDeploymentResponse struct {
-	state         protoimpl.MessageState             `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// modification contains the generated policy YAML and any policies to delete.
 	Modification  *storage.NetworkPolicyModification `protobuf:"bytes,1,opt,name=modification,proto3" json:"modification,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1163,8 +1264,13 @@ func (x *GetBaselineGeneratedPolicyForDeploymentResponse) GetModification() *sto
 	return nil
 }
 
+// GetAllowedPeersFromCurrentPolicyForDeploymentResponse lists all network
+// peers that are currently permitted to communicate with a deployment based
+// on the active NetworkPolicies.
 type GetAllowedPeersFromCurrentPolicyForDeploymentResponse struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// allowed_peers is the list of permitted peer connections, including port,
+	// protocol, and ingress/egress direction for each peer.
 	AllowedPeers  []*NetworkBaselineStatusPeer `protobuf:"bytes,1,rep,name=allowed_peers,json=allowedPeers,proto3" json:"allowed_peers,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1207,9 +1313,14 @@ func (x *GetAllowedPeersFromCurrentPolicyForDeploymentResponse) GetAllowedPeers(
 	return nil
 }
 
+// ApplyNetworkPolicyYamlForDeploymentRequest applies a network policy
+// modification to the cluster of the specified deployment and records an
+// undo record keyed by deployment ID.
 type ApplyNetworkPolicyYamlForDeploymentRequest struct {
-	state         protoimpl.MessageState             `protogen:"open.v1"`
-	DeploymentId  string                             `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// deployment_id is used to look up the target cluster and to key the undo record.
+	DeploymentId string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
+	// modification describes the policies to create/update and the policies to delete.
 	Modification  *storage.NetworkPolicyModification `protobuf:"bytes,2,opt,name=modification,proto3" json:"modification,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1259,8 +1370,11 @@ func (x *ApplyNetworkPolicyYamlForDeploymentRequest) GetModification() *storage.
 	return nil
 }
 
+// GetUndoModificationForDeploymentResponse contains the undo record for the
+// last network policy modification applied via ApplyNetworkPolicyYamlForDeployment.
 type GetUndoModificationForDeploymentResponse struct {
-	state         protoimpl.MessageState                      `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// undo_record describes the original modification and the change needed to revert it.
 	UndoRecord    *storage.NetworkPolicyApplicationUndoRecord `protobuf:"bytes,1,opt,name=undo_record,json=undoRecord,proto3" json:"undo_record,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1303,11 +1417,17 @@ func (x *GetUndoModificationForDeploymentResponse) GetUndoRecord() *storage.Netw
 	return nil
 }
 
+// GetDiffFlowsReconciledFlow captures the connection-level diff for a single
+// peer between two network policy states.
 type GetDiffFlowsReconciledFlow struct {
-	state         protoimpl.MessageState                         `protogen:"open.v1"`
-	Entity        *storage.NetworkEntityInfo                     `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
-	Added         []*storage.NetworkBaselineConnectionProperties `protobuf:"bytes,2,rep,name=added,proto3" json:"added,omitempty"`
-	Removed       []*storage.NetworkBaselineConnectionProperties `protobuf:"bytes,3,rep,name=removed,proto3" json:"removed,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// entity is the peer network entity.
+	Entity *storage.NetworkEntityInfo `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
+	// added lists connection properties that would be newly permitted in the new state.
+	Added []*storage.NetworkBaselineConnectionProperties `protobuf:"bytes,2,rep,name=added,proto3" json:"added,omitempty"`
+	// removed lists connection properties that would no longer be permitted.
+	Removed []*storage.NetworkBaselineConnectionProperties `protobuf:"bytes,3,rep,name=removed,proto3" json:"removed,omitempty"`
+	// unchanged lists connection properties permitted in both states.
 	Unchanged     []*storage.NetworkBaselineConnectionProperties `protobuf:"bytes,4,rep,name=unchanged,proto3" json:"unchanged,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1371,9 +1491,13 @@ func (x *GetDiffFlowsReconciledFlow) GetUnchanged() []*storage.NetworkBaselineCo
 	return nil
 }
 
+// GetDiffFlowsGroupedFlow groups connection properties for a single peer in
+// one of the two compared policy states (added or removed).
 type GetDiffFlowsGroupedFlow struct {
-	state         protoimpl.MessageState                         `protogen:"open.v1"`
-	Entity        *storage.NetworkEntityInfo                     `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// entity is the peer network entity.
+	Entity *storage.NetworkEntityInfo `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
+	// properties are the connection properties (port, protocol, direction) for this peer.
 	Properties    []*storage.NetworkBaselineConnectionProperties `protobuf:"bytes,2,rep,name=properties,proto3" json:"properties,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1423,10 +1547,16 @@ func (x *GetDiffFlowsGroupedFlow) GetProperties() []*storage.NetworkBaselineConn
 	return nil
 }
 
+// GetDiffFlowsResponse describes the diff between two sets of allowed peers
+// for a deployment (e.g. current policy vs. baseline-generated policy, or
+// current policy vs. undo state).
 type GetDiffFlowsResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
-	Added         []*GetDiffFlowsGroupedFlow    `protobuf:"bytes,1,rep,name=added,proto3" json:"added,omitempty"`
-	Removed       []*GetDiffFlowsGroupedFlow    `protobuf:"bytes,2,rep,name=removed,proto3" json:"removed,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// added contains peers that are permitted in the new state but not in the current state.
+	Added []*GetDiffFlowsGroupedFlow `protobuf:"bytes,1,rep,name=added,proto3" json:"added,omitempty"`
+	// removed contains peers that are permitted in the current state but not in the new state.
+	Removed []*GetDiffFlowsGroupedFlow `protobuf:"bytes,2,rep,name=removed,proto3" json:"removed,omitempty"`
+	// reconciled contains peers present in both states, with per-connection property diffs.
 	Reconciled    []*GetDiffFlowsReconciledFlow `protobuf:"bytes,3,rep,name=reconciled,proto3" json:"reconciled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

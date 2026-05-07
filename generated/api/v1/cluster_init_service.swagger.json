@@ -18,6 +18,8 @@
   "paths": {
     "/v1/cluster-init/ca-config": {
       "get": {
+        "summary": "GetCAConfig returns Central's CA certificate rendered as a Helm values YAML bundle.",
+        "description": "This can be used to configure trust for Central when deploying secured cluster components.",
         "operationId": "ClusterInitService_GetCAConfig",
         "responses": {
           "200": {
@@ -40,6 +42,7 @@
     },
     "/v1/cluster-init/crs": {
       "get": {
+        "summary": "GetCRSs returns metadata for all existing Cluster Registration Secrets.",
         "operationId": "ClusterInitService_GetCRSs",
         "responses": {
           "200": {
@@ -60,6 +63,8 @@
         ]
       },
       "post": {
+        "summary": "GenerateCRS creates a new Cluster Registration Secret with the specified name and\nreturns the Kubernetes Secret manifest to apply in the secured cluster.",
+        "description": "Returns ALREADY_EXISTS if a CRS with the given name already exists.\nReturns UNIMPLEMENTED if the CRS feature is not enabled.",
         "operationId": "ClusterInitService_GenerateCRS",
         "responses": {
           "200": {
@@ -78,6 +83,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "CRSGenRequest is the request to generate a new Cluster Registration Secret with default settings.",
             "in": "body",
             "required": true,
             "schema": {
@@ -92,6 +98,8 @@
     },
     "/v1/cluster-init/crs-extended": {
       "post": {
+        "summary": "GenerateCRSExtended creates a new Cluster Registration Secret with optional expiry and\nregistration limit constraints.",
+        "description": "Exactly one of valid_until or valid_for may be specified; providing both returns INVALID_ARGUMENT.\nReturns ALREADY_EXISTS if a CRS with the given name already exists.\nReturns UNIMPLEMENTED if the CRS feature is not enabled.",
         "operationId": "ClusterInitService_GenerateCRSExtended",
         "responses": {
           "200": {
@@ -110,6 +118,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "CRSGenRequestExtended is the request to generate a new Cluster Registration Secret\nwith optional expiry and registration limits.",
             "in": "body",
             "required": true,
             "schema": {
@@ -124,7 +133,8 @@
     },
     "/v1/cluster-init/crs/revoke": {
       "patch": {
-        "summary": "RevokeCRSBundle deletes cluster registration secrets.",
+        "summary": "RevokeCRS revokes one or more Cluster Registration Secrets.",
+        "description": "Revoked CRSs can no longer be used to register new clusters. Clusters that already completed\nregistration are not affected. Partial failures are reported per-ID in crs_revocation_errors.",
         "operationId": "ClusterInitService_RevokeCRS",
         "responses": {
           "200": {
@@ -143,6 +153,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "CRSRevokeRequest is the request to revoke one or more Cluster Registration Secrets.",
             "in": "body",
             "required": true,
             "schema": {
@@ -157,7 +168,7 @@
     },
     "/v1/cluster-init/init-bundles": {
       "get": {
-        "summary": "Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).",
+        "summary": "GetInitBundles returns metadata for all existing init bundles, including which clusters\nare currently authenticated using each bundle.\nDeprecated: use GetCRSs instead. Init bundles are superseded by Cluster Registration Secrets.",
         "operationId": "ClusterInitService_GetInitBundles",
         "responses": {
           "200": {
@@ -178,7 +189,8 @@
         ]
       },
       "post": {
-        "summary": "Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).",
+        "summary": "GenerateInitBundle creates a new init bundle with the specified name and returns its\ncredentials rendered as a Helm values YAML and as Kubernetes Secret manifests.",
+        "description": "Returns ALREADY_EXISTS if a bundle with the given name already exists.\nDeprecated: use GenerateCRS instead.",
         "operationId": "ClusterInitService_GenerateInitBundle",
         "responses": {
           "200": {
@@ -197,6 +209,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "InitBundleGenRequest is the request to generate a new init bundle.\nDeprecated: use CRSGenRequest instead.",
             "in": "body",
             "required": true,
             "schema": {
@@ -211,7 +224,8 @@
     },
     "/v1/cluster-init/init-bundles/revoke": {
       "patch": {
-        "summary": "RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster\nthen its ID should be included in request.\nIf confirm_impacted_clusters_ids does not match with current impacted clusters\nthen request will fail with error that includes all impacted clusters.\nInit bundles are deprecated in favor of Cluster Registration Secrets (CRS).",
+        "summary": "RevokeInitBundle revokes one or more init bundles, preventing clusters from re-authenticating using them.",
+        "description": "If any of the specified bundles are currently in use by clusters, the caller must include all\naffected cluster IDs in confirm_impacted_clusters_ids. The request fails if any impacted cluster\nis not confirmed, returning the list of impacted clusters in the error response.\n\nReturns ALREADY_EXISTS if the revocation conflicts, or an error if confirmation is incomplete.\nDeprecated: use RevokeCRS instead.",
         "operationId": "ClusterInitService_RevokeInitBundle",
         "responses": {
           "200": {
@@ -230,6 +244,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "InitBundleRevokeRequest is the request to revoke one or more init bundles.\nDeprecated: use CRSRevokeRequest instead.",
             "in": "body",
             "required": true,
             "schema": {
@@ -253,7 +268,8 @@
         "error": {
           "type": "string"
         }
-      }
+      },
+      "description": "CRSRevocationError describes a revocation failure for a single CRS."
     },
     "InitBundleMetaImpactedCluster": {
       "type": "object",
@@ -264,7 +280,8 @@
         "id": {
           "type": "string"
         }
-      }
+      },
+      "description": "ImpactedCluster identifies a cluster that was registered using this init bundle."
     },
     "InitBundleRevokeResponseInitBundleRevocationError": {
       "type": "object",
@@ -280,9 +297,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/InitBundleMetaImpactedCluster"
-          }
+          },
+          "description": "impacted_clusters lists the clusters still using this bundle, which must be confirmed before revoking."
         }
-      }
+      },
+      "description": "InitBundleRevocationError describes a revocation failure for a single init bundle."
     },
     "googleRpcStatus": {
       "type": "object",
@@ -351,29 +370,35 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is a human-readable label for the CRS. Must be unique across all CRSs."
         }
-      }
+      },
+      "description": "CRSGenRequest is the request to generate a new Cluster Registration Secret with default settings."
     },
     "v1CRSGenRequestExtended": {
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is a human-readable label for the CRS. Must be unique across all CRSs."
         },
         "validUntil": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "valid_until sets an absolute expiry time. Mutually exclusive with valid_for."
         },
         "validFor": {
-          "type": "string"
+          "type": "string",
+          "description": "valid_for sets a relative validity duration from time of creation. Mutually exclusive with valid_until."
         },
         "maxRegistrations": {
           "type": "string",
           "format": "uint64",
-          "title": "4 was int32 max_registrations"
+          "description": "4 was int32 max_registrations\nmax_registrations limits how many clusters may register with this CRS. Zero means unlimited."
         }
-      }
+      },
+      "description": "CRSGenRequestExtended is the request to generate a new Cluster Registration Secret\nwith optional expiry and registration limits."
     },
     "v1CRSGenResponse": {
       "type": "object",
@@ -383,9 +408,11 @@
         },
         "crs": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "description": "crs contains the Kubernetes Secret manifest (YAML) to be applied in the secured cluster."
         }
-      }
+      },
+      "description": "CRSGenResponse is returned when generating a new Cluster Registration Secret."
     },
     "v1CRSMeta": {
       "type": "object",
@@ -405,25 +432,30 @@
         },
         "expiresAt": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "expires_at is the time after which this CRS is no longer valid for new registrations.\nZero value means the CRS does not expire."
         },
         "maxRegistrations": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "description": "max_registrations is the maximum number of clusters that may register using this CRS.\nZero value means no limit."
         },
         "registrationsInitiated": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "registrations_initiated lists cluster IDs for which a registration was started but not yet completed."
         },
         "registrationsCompleted": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "registrations_completed lists cluster IDs that have successfully registered using this CRS."
         }
-      }
+      },
+      "description": "CRSMeta holds metadata for a Cluster Registration Secret (CRS)."
     },
     "v1CRSMetasResponse": {
       "type": "object",
@@ -435,7 +467,8 @@
             "$ref": "#/definitions/v1CRSMeta"
           }
         }
-      }
+      },
+      "description": "CRSMetasResponse is the response listing all Cluster Registration Secrets."
     },
     "v1CRSRevokeRequest": {
       "type": "object",
@@ -444,9 +477,11 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "ids lists the IDs of the CRSs to revoke."
         }
-      }
+      },
+      "description": "CRSRevokeRequest is the request to revoke one or more Cluster Registration Secrets."
     },
     "v1CRSRevokeResponse": {
       "type": "object",
@@ -464,24 +499,29 @@
             "type": "string"
           }
         }
-      }
+      },
+      "description": "CRSRevokeResponse reports the outcome of a CRS revocation request."
     },
     "v1GetCAConfigResponse": {
       "type": "object",
       "properties": {
         "helmValuesBundle": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "description": "helm_values_bundle contains the CA certificate rendered as a Helm values YAML snippet."
         }
-      }
+      },
+      "description": "GetCAConfigResponse contains the Central CA configuration as a Helm values bundle."
     },
     "v1InitBundleGenRequest": {
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is a human-readable label for the init bundle. Must be unique across all init bundles."
         }
-      }
+      },
+      "description": "InitBundleGenRequest is the request to generate a new init bundle.\nDeprecated: use CRSGenRequest instead."
     },
     "v1InitBundleGenResponse": {
       "type": "object",
@@ -491,13 +531,16 @@
         },
         "helmValuesBundle": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "description": "helm_values_bundle contains the Helm values YAML for deploying a secured cluster with this bundle."
         },
         "kubectlBundle": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "description": "kubectl_bundle contains the Kubernetes Secret manifests for deploying a secured cluster with this bundle."
         }
-      }
+      },
+      "description": "InitBundleGenResponse is the response for generating an init bundle.\nDeprecated: use CRSGenResponse instead."
     },
     "v1InitBundleMeta": {
       "type": "object",
@@ -513,7 +556,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/InitBundleMetaImpactedCluster"
-          }
+          },
+          "description": "impacted_clusters lists the clusters currently authenticated with this init bundle."
         },
         "createdAt": {
           "type": "string",
@@ -524,9 +568,11 @@
         },
         "expiresAt": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "expires_at is the time after which this init bundle is no longer valid."
         }
-      }
+      },
+      "description": "InitBundleMeta holds metadata for an init bundle used to authenticate a new secured cluster.\nDeprecated: use CRSMeta instead. Init bundles are superseded by Cluster Registration Secrets (CRS)."
     },
     "v1InitBundleMetasResponse": {
       "type": "object",
@@ -538,7 +584,8 @@
             "$ref": "#/definitions/v1InitBundleMeta"
           }
         }
-      }
+      },
+      "description": "InitBundleMetasResponse is the response listing all init bundles.\nDeprecated: use CRSMetasResponse instead."
     },
     "v1InitBundleRevokeRequest": {
       "type": "object",
@@ -547,15 +594,18 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "ids lists the IDs of the init bundles to revoke."
         },
         "confirmImpactedClustersIds": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "confirm_impacted_clusters_ids must contain the IDs of all clusters currently using the\nbundles being revoked. The request fails if any impacted cluster ID is not confirmed."
         }
-      }
+      },
+      "description": "InitBundleRevokeRequest is the request to revoke one or more init bundles.\nDeprecated: use CRSRevokeRequest instead."
     },
     "v1InitBundleRevokeResponse": {
       "type": "object",
@@ -573,7 +623,8 @@
             "type": "string"
           }
         }
-      }
+      },
+      "description": "InitBundleRevokeResponse reports the outcome of an init bundle revocation.\nDeprecated: use CRSRevokeResponse instead."
     }
   }
 }

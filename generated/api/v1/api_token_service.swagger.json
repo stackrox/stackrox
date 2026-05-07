@@ -18,7 +18,8 @@
   "paths": {
     "/v1/apitokens": {
       "get": {
-        "summary": "GetAPITokens returns all the API tokens.",
+        "summary": "GetAPITokens returns metadata for all API tokens, optionally filtered by revocation status.",
+        "description": "Use the revoked field to filter for active or revoked tokens only.\nRequires read access to the Integration resource.",
         "operationId": "APITokenService_GetAPITokens",
         "responses": {
           "200": {
@@ -37,6 +38,7 @@
         "parameters": [
           {
             "name": "revoked",
+            "description": "revoked filters tokens by their revocation status.\nSet to true to return only revoked tokens; false to return only active tokens.\nOmit to return all tokens.",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -49,7 +51,8 @@
     },
     "/v1/apitokens/generate": {
       "post": {
-        "summary": "GenerateToken generates API token for a given user and role.",
+        "summary": "GenerateToken creates a new API token assigned to one or more roles.",
+        "description": "The token name must be non-empty. All requested roles must exist and must not exceed\nthe caller's own permissions (privilege escalation prevention).\nThe raw token value is returned only in this response; it cannot be retrieved later.\nReturns INVALID_ARGUMENT if the name is empty, both role and roles are set, or a role does not exist.\nReturns NOT_AUTHORIZED if any requested role has more permissions than the caller.\nRequires read access to the Access resource and write access to the Integration resource.",
         "operationId": "APITokenService_GenerateToken",
         "responses": {
           "200": {
@@ -68,6 +71,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "GenerateTokenRequest specifies the parameters for creating a new API token.",
             "in": "body",
             "required": true,
             "schema": {
@@ -82,7 +86,8 @@
     },
     "/v1/apitokens/generate/allowed-roles": {
       "get": {
-        "summary": "GetAllowedTokenRoles return roles that user is allowed to request for API token.",
+        "summary": "ListAllowedTokenRoles returns the role names the caller is permitted to assign to a new API token.",
+        "description": "Roles with more permissions than the caller holds are excluded (privilege escalation prevention).\nThe built-in \"None\" role is excluded. Results are sorted alphabetically.\nRequires read access to the Access resource.",
         "operationId": "APITokenService_ListAllowedTokenRoles",
         "responses": {
           "200": {
@@ -105,7 +110,8 @@
     },
     "/v1/apitokens/revoke/{id}": {
       "patch": {
-        "summary": "RevokeToken removes the API token for a given id.",
+        "summary": "RevokeToken marks the API token with the given ID as revoked, immediately invalidating it.",
+        "description": "Revocation is permanent; revoked tokens cannot be reinstated.\nReturns an error if the ID is empty or no token with that ID exists.\nRequires write access to the Integration resource.",
         "operationId": "APITokenService_RevokeToken",
         "responses": {
           "200": {
@@ -136,7 +142,8 @@
     },
     "/v1/apitokens/{id}": {
       "get": {
-        "summary": "GetAPIToken returns API token metadata for a given id.",
+        "summary": "GetAPIToken returns the metadata for the API token with the given ID.",
+        "description": "Note: the raw token value is never returned; only metadata is available after creation.\nReturns INVALID_ARGUMENT if the ID is empty or no token with that ID exists.\nRequires read access to the Integration resource.",
         "operationId": "APITokenService_GetAPIToken",
         "responses": {
           "200": {
@@ -236,33 +243,41 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is a human-readable label for the token. Must be non-empty."
         },
         "role": {
-          "type": "string"
+          "type": "string",
+          "description": "role is deprecated; use roles instead. If set, it is treated as a single-element roles list.\nSpecifying both role and roles returns INVALID_ARGUMENT."
         },
         "roles": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "roles is the list of role names to assign to the generated token.\nAll roles must exist and the caller must not request roles with more permissions than they hold\n(privilege escalation is rejected with NOT_AUTHORIZED)."
         },
         "expiration": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "expiration is the optional UTC timestamp at which the token should expire.\nIf not set, the token does not expire."
         }
-      }
+      },
+      "description": "GenerateTokenRequest specifies the parameters for creating a new API token."
     },
     "v1GenerateTokenResponse": {
       "type": "object",
       "properties": {
         "token": {
-          "type": "string"
+          "type": "string",
+          "description": "token is the raw API token value. This is the only time it is returned; store it securely."
         },
         "metadata": {
-          "$ref": "#/definitions/storageTokenMetadata"
+          "$ref": "#/definitions/storageTokenMetadata",
+          "description": "metadata contains the token ID, name, roles, and expiration. Use the ID to revoke the token."
         }
-      }
+      },
+      "description": "GenerateTokenResponse contains the newly generated API token and its metadata."
     },
     "v1GetAPITokensResponse": {
       "type": "object",
@@ -272,7 +287,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageTokenMetadata"
-          }
+          },
+          "description": "tokens is the list of token metadata records matching the request filter."
         }
       }
     },
@@ -283,9 +299,11 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "roleNames is the sorted list of role names the caller is permitted to use when generating a token.\nThe \"None\" role is excluded as it provides no permissions."
         }
-      }
+      },
+      "description": "ListAllowedTokenRolesResponse contains the role names the caller may assign to a new API token."
     }
   }
 }

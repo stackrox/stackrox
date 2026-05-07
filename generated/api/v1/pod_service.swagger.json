@@ -18,6 +18,8 @@
   "paths": {
     "/v1/export/pods": {
       "get": {
+        "summary": "ExportPods streams all pods matching the optional query as a sequence of ExportPodResponse messages.",
+        "description": "Unlike GetPods, ExportPods is not paginated and streams all matching pods. A timeout in\nseconds may be specified; if the stream is not completed within that time the request is cancelled.\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "PodService_ExportPods",
         "responses": {
           "200": {
@@ -45,6 +47,7 @@
         "parameters": [
           {
             "name": "timeout",
+            "description": "timeout is the maximum number of seconds to wait for the export stream to complete.\nZero means no timeout.",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -52,6 +55,7 @@
           },
           {
             "name": "query",
+            "description": "query filters pods using StackRox search syntax. If empty, all pods are exported.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -64,7 +68,8 @@
     },
     "/v1/pods": {
       "get": {
-        "summary": "GetPods returns the pods.",
+        "summary": "GetPods returns a list of pods matching the optional query filter.",
+        "description": "Uses StackRox search query syntax to filter by cluster, namespace, deployment, or label.\nResults are paginated; at most 1000 pods are returned per request.\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "PodService_GetPods",
         "responses": {
           "200": {
@@ -83,6 +88,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -325,7 +331,8 @@
         "pod": {
           "$ref": "#/definitions/storagePod"
         }
-      }
+      },
+      "description": "ExportPodResponse is a single streamed item in a bulk pod export."
     },
     "v1Pagination": {
       "type": "object",
@@ -361,7 +368,8 @@
             "$ref": "#/definitions/storagePod"
           }
         }
-      }
+      },
+      "description": "PodsResponse is the response for a list pods request."
     },
     "v1SortOption": {
       "type": "object",

@@ -18,6 +18,8 @@
   "paths": {
     "/v1/search": {
       "get": {
+        "summary": "Search performs a global search across one or more resource categories\nand returns matched resources sorted by relevance score.",
+        "description": "Accepts the StackRox query syntax (e.g. \"Severity:CRITICAL+Cluster:production\").\nWhen categories is empty, all supported searchable categories are queried\n(ALERTS, DEPLOYMENTS, IMAGES, POLICIES, SECRETS, NAMESPACES, NODES, CLUSTERS,\nSERVICE_ACCOUNTS, ROLES, ROLEBINDINGS, SUBJECTS, IMAGE_INTEGRATIONS, POLICY_CATEGORIES).\n\nFor ALERTS, results are only returned when the query explicitly filters on\nan alert field (e.g. \"Severity\", \"Policy\"); otherwise the category is skipped\nand its count is reported as 0.\n\nReturns INVALID_ARGUMENT if the query string cannot be parsed or if an\nunsupported category is requested.",
         "operationId": "SearchService_Search",
         "responses": {
           "200": {
@@ -36,12 +38,14 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Use the Options RPC to discover\nvalid field names for each category. Example: \"Severity:CRITICAL+Namespace:stackrox\"",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "categories",
+            "description": "categories restricts the search to specific resource types. When empty,\nthe service searches across all supported categories.\n\n - SEARCH_UNSET: SEARCH_UNSET means no category was specified. When passed to Search or\nAutocomplete it causes the service to search across all supported categories.\n - ALERTS: ALERTS searches active and resolved policy-violation alerts.\n - IMAGES: IMAGES searches container images observed in the environment.\n - IMAGE_COMPONENTS: IMAGE_COMPONENTS searches individual software components (packages) within images.\n - POLICIES: POLICIES searches security policies defined in StackRox.\n - DEPLOYMENTS: DEPLOYMENTS searches Kubernetes Deployments, DaemonSets, StatefulSets, and other workloads.\n - PODS: PODS searches individual Kubernetes Pods.\n - SECRETS: SECRETS searches Kubernetes Secrets observed in secured clusters.\n - PROCESS_INDICATORS: PROCESS_INDICATORS searches runtime process execution events.\n - COMPLIANCE: COMPLIANCE searches compliance aggregation results across standards and controls.\n - CLUSTERS: CLUSTERS searches secured Kubernetes clusters registered with Central.\n - NAMESPACES: NAMESPACES searches Kubernetes namespaces across all secured clusters.\n - NODES: NODES searches Kubernetes nodes across all secured clusters.\n - NODE_COMPONENTS: NODE_COMPONENTS searches software components (packages) installed on nodes.\n - SERVICE_ACCOUNTS: SERVICE_ACCOUNTS searches Kubernetes ServiceAccount objects.\n - ROLES: ROLES searches Kubernetes Role and ClusterRole objects.\n - ROLEBINDINGS: ROLEBINDINGS searches Kubernetes RoleBinding and ClusterRoleBinding objects.\n - SUBJECTS: SUBJECTS searches users and groups that appear as subjects in RBAC bindings.\n - RISKS: RISKS searches risk scores associated with deployments.\n - VULNERABILITIES: VULNERABILITIES searches CVEs across images, nodes, and cluster components.\n - IMAGE_VULNERABILITIES: IMAGE_VULNERABILITIES searches CVEs found in container image components.\n - NODE_VULNERABILITIES: NODE_VULNERABILITIES searches CVEs found in node components.\n - POLICY_CATEGORIES: POLICY_CATEGORIES searches user-defined policy category labels.\n - IMAGE_INTEGRATIONS: IMAGE_INTEGRATIONS searches configured image registry integrations.\n - COLLECTIONS: COLLECTIONS searches resource collections (scoped sets of deployments).\n - IMAGE_COMPONENTS_V2: IMAGE_COMPONENTS_V2 is the v2 image components model used when the FlattenImageData feature flag is enabled.\n - IMAGE_VULNERABILITIES_V2: IMAGE_VULNERABILITIES_V2 is the v2 image vulnerabilities model used when the FlattenImageData feature flag is enabled.\n - IMAGES_V2: IMAGES_V2 is the v2 image model used when the FlattenImageData feature flag is enabled.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -141,6 +145,8 @@
     },
     "/v1/search/autocomplete": {
       "get": {
+        "summary": "Autocomplete returns up to 10 candidate values for the incomplete field\nin the query string, enabling interactive query-builder UIs.",
+        "description": "The query must contain an incomplete field expression — the final token\nis treated as the field being completed. For example, querying\n\"Cluster:prod\" with category CLUSTERS returns cluster names that start\nwith \"prod\". Candidates are deduplicated and sorted by relevance score.\n\nWhen categories is empty, all autocomplete-capable categories are searched\n(includes COMPLIANCE in addition to the standard search categories).\n\nReturns INVALID_ARGUMENT if the query is empty or cannot be parsed.",
         "operationId": "SearchService_Autocomplete",
         "responses": {
           "200": {
@@ -159,12 +165,14 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Use the Options RPC to discover\nvalid field names for each category. Example: \"Severity:CRITICAL+Namespace:stackrox\"",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "categories",
+            "description": "categories restricts the search to specific resource types. When empty,\nthe service searches across all supported categories.\n\n - SEARCH_UNSET: SEARCH_UNSET means no category was specified. When passed to Search or\nAutocomplete it causes the service to search across all supported categories.\n - ALERTS: ALERTS searches active and resolved policy-violation alerts.\n - IMAGES: IMAGES searches container images observed in the environment.\n - IMAGE_COMPONENTS: IMAGE_COMPONENTS searches individual software components (packages) within images.\n - POLICIES: POLICIES searches security policies defined in StackRox.\n - DEPLOYMENTS: DEPLOYMENTS searches Kubernetes Deployments, DaemonSets, StatefulSets, and other workloads.\n - PODS: PODS searches individual Kubernetes Pods.\n - SECRETS: SECRETS searches Kubernetes Secrets observed in secured clusters.\n - PROCESS_INDICATORS: PROCESS_INDICATORS searches runtime process execution events.\n - COMPLIANCE: COMPLIANCE searches compliance aggregation results across standards and controls.\n - CLUSTERS: CLUSTERS searches secured Kubernetes clusters registered with Central.\n - NAMESPACES: NAMESPACES searches Kubernetes namespaces across all secured clusters.\n - NODES: NODES searches Kubernetes nodes across all secured clusters.\n - NODE_COMPONENTS: NODE_COMPONENTS searches software components (packages) installed on nodes.\n - SERVICE_ACCOUNTS: SERVICE_ACCOUNTS searches Kubernetes ServiceAccount objects.\n - ROLES: ROLES searches Kubernetes Role and ClusterRole objects.\n - ROLEBINDINGS: ROLEBINDINGS searches Kubernetes RoleBinding and ClusterRoleBinding objects.\n - SUBJECTS: SUBJECTS searches users and groups that appear as subjects in RBAC bindings.\n - RISKS: RISKS searches risk scores associated with deployments.\n - VULNERABILITIES: VULNERABILITIES searches CVEs across images, nodes, and cluster components.\n - IMAGE_VULNERABILITIES: IMAGE_VULNERABILITIES searches CVEs found in container image components.\n - NODE_VULNERABILITIES: NODE_VULNERABILITIES searches CVEs found in node components.\n - POLICY_CATEGORIES: POLICY_CATEGORIES searches user-defined policy category labels.\n - IMAGE_INTEGRATIONS: IMAGE_INTEGRATIONS searches configured image registry integrations.\n - COLLECTIONS: COLLECTIONS searches resource collections (scoped sets of deployments).\n - IMAGE_COMPONENTS_V2: IMAGE_COMPONENTS_V2 is the v2 image components model used when the FlattenImageData feature flag is enabled.\n - IMAGE_VULNERABILITIES_V2: IMAGE_VULNERABILITIES_V2 is the v2 image vulnerabilities model used when the FlattenImageData feature flag is enabled.\n - IMAGES_V2: IMAGES_V2 is the v2 image model used when the FlattenImageData feature flag is enabled.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -264,6 +272,8 @@
     },
     "/v1/search/metadata/options": {
       "get": {
+        "summary": "Options returns the list of valid search field names for the requested\ncategories. Use these field names as the left-hand side of query expressions\n(e.g. \"Severity\", \"Cluster\", \"Image Tag\").",
+        "description": "When categories is empty, field names for all searchable categories are\nreturned. The response list is alphabetically sorted and deduplicated across\ncategories.",
         "operationId": "SearchService_Options",
         "responses": {
           "200": {
@@ -282,6 +292,7 @@
         "parameters": [
           {
             "name": "categories",
+            "description": "categories restricts the response to field names applicable to those\nresource types. When empty, field names for all searchable categories\nare returned.\n\n - SEARCH_UNSET: SEARCH_UNSET means no category was specified. When passed to Search or\nAutocomplete it causes the service to search across all supported categories.\n - ALERTS: ALERTS searches active and resolved policy-violation alerts.\n - IMAGES: IMAGES searches container images observed in the environment.\n - IMAGE_COMPONENTS: IMAGE_COMPONENTS searches individual software components (packages) within images.\n - POLICIES: POLICIES searches security policies defined in StackRox.\n - DEPLOYMENTS: DEPLOYMENTS searches Kubernetes Deployments, DaemonSets, StatefulSets, and other workloads.\n - PODS: PODS searches individual Kubernetes Pods.\n - SECRETS: SECRETS searches Kubernetes Secrets observed in secured clusters.\n - PROCESS_INDICATORS: PROCESS_INDICATORS searches runtime process execution events.\n - COMPLIANCE: COMPLIANCE searches compliance aggregation results across standards and controls.\n - CLUSTERS: CLUSTERS searches secured Kubernetes clusters registered with Central.\n - NAMESPACES: NAMESPACES searches Kubernetes namespaces across all secured clusters.\n - NODES: NODES searches Kubernetes nodes across all secured clusters.\n - NODE_COMPONENTS: NODE_COMPONENTS searches software components (packages) installed on nodes.\n - SERVICE_ACCOUNTS: SERVICE_ACCOUNTS searches Kubernetes ServiceAccount objects.\n - ROLES: ROLES searches Kubernetes Role and ClusterRole objects.\n - ROLEBINDINGS: ROLEBINDINGS searches Kubernetes RoleBinding and ClusterRoleBinding objects.\n - SUBJECTS: SUBJECTS searches users and groups that appear as subjects in RBAC bindings.\n - RISKS: RISKS searches risk scores associated with deployments.\n - VULNERABILITIES: VULNERABILITIES searches CVEs across images, nodes, and cluster components.\n - IMAGE_VULNERABILITIES: IMAGE_VULNERABILITIES searches CVEs found in container image components.\n - NODE_VULNERABILITIES: NODE_VULNERABILITIES searches CVEs found in node components.\n - POLICY_CATEGORIES: POLICY_CATEGORIES searches user-defined policy category labels.\n - IMAGE_INTEGRATIONS: IMAGE_INTEGRATIONS searches configured image registry integrations.\n - COLLECTIONS: COLLECTIONS searches resource collections (scoped sets of deployments).\n - IMAGE_COMPONENTS_V2: IMAGE_COMPONENTS_V2 is the v2 image components model used when the FlattenImageData feature flag is enabled.\n - IMAGE_VULNERABILITIES_V2: IMAGE_VULNERABILITIES_V2 is the v2 image vulnerabilities model used when the FlattenImageData feature flag is enabled.\n - IMAGES_V2: IMAGES_V2 is the v2 image model used when the FlattenImageData feature flag is enabled.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -385,13 +396,16 @@
       "type": "object",
       "properties": {
         "category": {
-          "$ref": "#/definitions/v1SearchCategory"
+          "$ref": "#/definitions/v1SearchCategory",
+          "description": "category identifies which resource type this count applies to."
         },
         "count": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "count is the number of resources matching the query in this category."
         }
-      }
+      },
+      "description": "Count reports the number of matches found within a single SearchCategory."
     },
     "SearchResultMatches": {
       "type": "object",
@@ -400,9 +414,11 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "values contains the matched text snippets for a given field."
         }
-      }
+      },
+      "description": "Matches holds the field values that caused this result to match the query."
     },
     "googleRpcStatus": {
       "type": "object",
@@ -441,9 +457,11 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "values contains up to 10 deduplicated candidate completion strings,\nsorted by relevance score descending."
         }
-      }
+      },
+      "description": "AutocompleteResponse is returned by the Autocomplete RPC."
     },
     "v1SearchCategory": {
       "type": "string",
@@ -531,7 +549,7 @@
         "IMAGE_CVE_INFOS"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 85"
+      "description": "SearchCategory identifies a resource type that can be queried through SearchService.\n\nNot all categories are exposed via the global Search RPC — some are internal\nor used only for autocomplete/options. The primary searchable categories are\nALERTS, DEPLOYMENTS, IMAGES, POLICIES, SECRETS, NAMESPACES, NODES, CLUSTERS,\nSERVICE_ACCOUNTS, ROLES, ROLEBINDINGS, SUBJECTS, IMAGE_INTEGRATIONS, and POLICY_CATEGORIES.\n\nNext available tag: 85\n\n - SEARCH_UNSET: SEARCH_UNSET means no category was specified. When passed to Search or\nAutocomplete it causes the service to search across all supported categories.\n - ALERTS: ALERTS searches active and resolved policy-violation alerts.\n - IMAGES: IMAGES searches container images observed in the environment.\n - IMAGE_COMPONENTS: IMAGE_COMPONENTS searches individual software components (packages) within images.\n - POLICIES: POLICIES searches security policies defined in StackRox.\n - DEPLOYMENTS: DEPLOYMENTS searches Kubernetes Deployments, DaemonSets, StatefulSets, and other workloads.\n - PODS: PODS searches individual Kubernetes Pods.\n - SECRETS: SECRETS searches Kubernetes Secrets observed in secured clusters.\n - PROCESS_INDICATORS: PROCESS_INDICATORS searches runtime process execution events.\n - COMPLIANCE: COMPLIANCE searches compliance aggregation results across standards and controls.\n - CLUSTERS: CLUSTERS searches secured Kubernetes clusters registered with Central.\n - NAMESPACES: NAMESPACES searches Kubernetes namespaces across all secured clusters.\n - NODES: NODES searches Kubernetes nodes across all secured clusters.\n - NODE_COMPONENTS: NODE_COMPONENTS searches software components (packages) installed on nodes.\n - SERVICE_ACCOUNTS: SERVICE_ACCOUNTS searches Kubernetes ServiceAccount objects.\n - ROLES: ROLES searches Kubernetes Role and ClusterRole objects.\n - ROLEBINDINGS: ROLEBINDINGS searches Kubernetes RoleBinding and ClusterRoleBinding objects.\n - SUBJECTS: SUBJECTS searches users and groups that appear as subjects in RBAC bindings.\n - RISKS: RISKS searches risk scores associated with deployments.\n - VULNERABILITIES: VULNERABILITIES searches CVEs across images, nodes, and cluster components.\n - IMAGE_VULNERABILITIES: IMAGE_VULNERABILITIES searches CVEs found in container image components.\n - NODE_VULNERABILITIES: NODE_VULNERABILITIES searches CVEs found in node components.\n - POLICY_CATEGORIES: POLICY_CATEGORIES searches user-defined policy category labels.\n - IMAGE_INTEGRATIONS: IMAGE_INTEGRATIONS searches configured image registry integrations.\n - COLLECTIONS: COLLECTIONS searches resource collections (scoped sets of deployments).\n - IMAGE_COMPONENTS_V2: IMAGE_COMPONENTS_V2 is the v2 image components model used when the FlattenImageData feature flag is enabled.\n - IMAGE_VULNERABILITIES_V2: IMAGE_VULNERABILITIES_V2 is the v2 image vulnerabilities model used when the FlattenImageData feature flag is enabled.\n - IMAGES_V2: IMAGES_V2 is the v2 image model used when the FlattenImageData feature flag is enabled."
     },
     "v1SearchOptionsResponse": {
       "type": "object",
@@ -540,9 +558,11 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "options is the sorted list of valid search field names (e.g. \"Severity\",\n\"Cluster\", \"Namespace\", \"Image Tag\") that can be used in query strings\nfor the requested categories."
         }
-      }
+      },
+      "description": "SearchOptionsResponse is the response message for the Options RPC."
     },
     "v1SearchResponse": {
       "type": "object",
@@ -552,44 +572,53 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1SearchResult"
-          }
+          },
+          "description": "results contains matched resources sorted by relevance score (highest first)."
         },
         "counts": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/SearchResponseCount"
-          }
+          },
+          "description": "counts reports the number of results per category, useful for building\nfaceted search UI components without iterating through all results."
         }
-      }
+      },
+      "description": "SearchResponse is returned by the Search RPC and contains matched results\ngrouped by category along with per-category counts."
     },
     "v1SearchResult": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "id is the unique identifier of the matched resource."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is the human-readable name of the matched resource."
         },
         "category": {
-          "$ref": "#/definitions/v1SearchCategory"
+          "$ref": "#/definitions/v1SearchCategory",
+          "description": "category is the resource type of this result (e.g. DEPLOYMENTS, IMAGES)."
         },
         "fieldToMatches": {
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/SearchResultMatches"
-          }
+          },
+          "description": "field_to_matches maps search field paths to the values that matched the query.\nOnly populated for fields that had highlight=true in the query."
         },
         "score": {
           "type": "number",
-          "format": "double"
+          "format": "double",
+          "description": "score is a relevance score for ranking. Higher values indicate stronger matches.\nResults are returned sorted by score descending."
         },
         "location": {
           "type": "string",
           "description": "Location is intended to be a unique, yet human readable,\nidentifier for the result. For example, for a deployment,\nthe location will be \"$cluster_name/$namespace/$deployment_name.\nIt is displayed in the UI in the global search results, underneath\nthe name for each result."
         }
-      }
+      },
+      "description": "SearchResult represents a single matched resource returned by the Search RPC."
     }
   }
 }

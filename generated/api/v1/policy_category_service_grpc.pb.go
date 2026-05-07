@@ -30,17 +30,46 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// PolicyCategoryService APIs can be used to manage policy categories.
+// PolicyCategoryService manages the categories used to organize security policies.
+//
+// Policy categories are named groupings (e.g. "Vulnerability Management", "Network Security")
+// that help organize and filter policies. Default categories are built-in and cannot be deleted.
+// Custom categories can be created, renamed, and deleted.
+//
+// Authentication: read operations require View access to the WorkflowAdministration resource.
+// Write operations (create, rename, delete) require Modify access to WorkflowAdministration.
 type PolicyCategoryServiceClient interface {
-	// GetPolicyCategory returns the requested policy category by ID.
+	// GetPolicyCategory returns a single policy category by ID.
+	//
+	// Returns INVALID_ARGUMENT if id is empty.
+	// Returns NOT_FOUND if no category with the given ID exists.
 	GetPolicyCategory(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*PolicyCategory, error)
-	// GetPolicyCategories returns the list of policy categories
+	// GetPolicyCategories returns the list of policy categories matching the optional query.
+	//
+	// Uses StackRox search syntax. Returns all categories if the query is empty.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	GetPolicyCategories(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*GetPolicyCategoriesResponse, error)
-	// PostPolicyCategory creates a new policy category
+	// PostPolicyCategory creates a new custom policy category.
+	//
+	// The category name must be between 5 and 128 characters and must not contain newlines or
+	// dollar signs. Returns the created category with its assigned ID.
+	//
+	// Returns INVALID_ARGUMENT if the request is empty or the name fails validation.
 	PostPolicyCategory(ctx context.Context, in *PostPolicyCategoryRequest, opts ...grpc.CallOption) (*PolicyCategory, error)
 	// RenamePolicyCategory renames the given policy category.
+	//
+	// The new name must be between 5 and 128 characters and must not contain newlines or dollar signs.
+	// Returns the updated category.
+	//
+	// Returns INVALID_ARGUMENT if the new name fails validation.
+	// Returns NOT_FOUND if no category with the given ID exists.
 	RenamePolicyCategory(ctx context.Context, in *RenamePolicyCategoryRequest, opts ...grpc.CallOption) (*PolicyCategory, error)
-	// DeletePolicyCategory removes the given policy category.
+	// DeletePolicyCategory removes the given policy category permanently.
+	//
+	// Default (built-in) categories cannot be deleted. Custom categories used by active policies
+	// are unlinked from those policies on deletion.
+	//
+	// Returns NOT_FOUND if no category with the given ID exists.
 	DeletePolicyCategory(ctx context.Context, in *DeletePolicyCategoryRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -106,17 +135,46 @@ func (c *policyCategoryServiceClient) DeletePolicyCategory(ctx context.Context, 
 // All implementations should embed UnimplementedPolicyCategoryServiceServer
 // for forward compatibility.
 //
-// PolicyCategoryService APIs can be used to manage policy categories.
+// PolicyCategoryService manages the categories used to organize security policies.
+//
+// Policy categories are named groupings (e.g. "Vulnerability Management", "Network Security")
+// that help organize and filter policies. Default categories are built-in and cannot be deleted.
+// Custom categories can be created, renamed, and deleted.
+//
+// Authentication: read operations require View access to the WorkflowAdministration resource.
+// Write operations (create, rename, delete) require Modify access to WorkflowAdministration.
 type PolicyCategoryServiceServer interface {
-	// GetPolicyCategory returns the requested policy category by ID.
+	// GetPolicyCategory returns a single policy category by ID.
+	//
+	// Returns INVALID_ARGUMENT if id is empty.
+	// Returns NOT_FOUND if no category with the given ID exists.
 	GetPolicyCategory(context.Context, *ResourceByID) (*PolicyCategory, error)
-	// GetPolicyCategories returns the list of policy categories
+	// GetPolicyCategories returns the list of policy categories matching the optional query.
+	//
+	// Uses StackRox search syntax. Returns all categories if the query is empty.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	GetPolicyCategories(context.Context, *RawQuery) (*GetPolicyCategoriesResponse, error)
-	// PostPolicyCategory creates a new policy category
+	// PostPolicyCategory creates a new custom policy category.
+	//
+	// The category name must be between 5 and 128 characters and must not contain newlines or
+	// dollar signs. Returns the created category with its assigned ID.
+	//
+	// Returns INVALID_ARGUMENT if the request is empty or the name fails validation.
 	PostPolicyCategory(context.Context, *PostPolicyCategoryRequest) (*PolicyCategory, error)
 	// RenamePolicyCategory renames the given policy category.
+	//
+	// The new name must be between 5 and 128 characters and must not contain newlines or dollar signs.
+	// Returns the updated category.
+	//
+	// Returns INVALID_ARGUMENT if the new name fails validation.
+	// Returns NOT_FOUND if no category with the given ID exists.
 	RenamePolicyCategory(context.Context, *RenamePolicyCategoryRequest) (*PolicyCategory, error)
-	// DeletePolicyCategory removes the given policy category.
+	// DeletePolicyCategory removes the given policy category permanently.
+	//
+	// Default (built-in) categories cannot be deleted. Custom categories used by active policies
+	// are unlinked from those policies on deletion.
+	//
+	// Returns NOT_FOUND if no category with the given ID exists.
 	DeletePolicyCategory(context.Context, *DeletePolicyCategoryRequest) (*Empty, error)
 }
 

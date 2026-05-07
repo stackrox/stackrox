@@ -45,34 +45,116 @@ const (
 // RoleServiceClient is the client API for RoleService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// RoleService manages the ACS role-based access control (RBAC) model, including roles,
+// permission sets, and access scopes.
+//
+// A role combines a permission set (what resources can be accessed and at what level)
+// with a simple access scope (which clusters and namespaces are in scope).
+// Permission sets and access scopes can be shared across multiple roles.
+//
+// Ephemeral roles/permission sets/access scopes created internally by the system are
+// excluded from list responses and cannot be created or modified via this API.
+//
+// Authentication requirements:
+//   - GetMyPermissions, GetResources, GetClustersForPermissions, GetNamespacesForClusterAndPermissions: any authenticated caller.
+//   - GetRoles, GetRole, ListPermissionSets, GetPermissionSet, ListSimpleAccessScopes, GetSimpleAccessScope: read access to the Access resource.
+//   - ComputeEffectiveAccessScope: read access to the Access, Cluster, and Namespace resources.
+//   - CreateRole, UpdateRole, DeleteRole, PostPermissionSet, PutPermissionSet, DeletePermissionSet,
+//     PostSimpleAccessScope, PutSimpleAccessScope, DeleteSimpleAccessScope: write access to the Access resource.
 type RoleServiceClient interface {
+	// GetRoles returns all non-ephemeral roles, sorted alphabetically by name.
+	//
+	// Requires read access to the Access resource.
 	GetRoles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetRolesResponse, error)
+	// GetRole returns the role with the given ID.
+	//
+	// Returns NOT_FOUND if no role with the specified ID exists.
+	// Requires read access to the Access resource.
 	GetRole(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.Role, error)
+	// GetMyPermissions returns the aggregated permissions of the authenticated caller.
+	//
+	// Permissions are aggregated across all roles assigned to the caller. For each resource,
+	// the highest access level across all roles is returned.
+	// Requires any authenticated session (no specific resource permission needed).
 	GetMyPermissions(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetPermissionsResponse, error)
+	// CreateRole creates a new role with the given name.
+	//
+	// The name in the URL path must match role.name if role.name is provided.
+	// Ephemeral roles cannot be created via this API.
+	// Returns INVALID_ARGUMENT if the name is mismatched or the role already exists.
+	// Requires write access to the Access resource.
 	CreateRole(ctx context.Context, in *CreateRoleRequest, opts ...grpc.CallOption) (*Empty, error)
+	// UpdateRole replaces an existing role definition.
+	//
+	// Ephemeral roles cannot be modified via this API.
+	// Returns INVALID_ARGUMENT if validation fails or the role does not exist.
+	// Requires write access to the Access resource.
 	UpdateRole(ctx context.Context, in *storage.Role, opts ...grpc.CallOption) (*Empty, error)
+	// DeleteRole removes the role with the given ID.
+	//
+	// Requires write access to the Access resource.
 	DeleteRole(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
+	// GetResources returns the list of all ACS resource names that can be referenced in permission sets.
+	//
+	// Requires any authenticated session.
 	GetResources(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetResourcesResponse, error)
+	// GetPermissionSet returns the permission set with the given ID.
+	//
+	// Returns NOT_FOUND if no permission set with the specified ID exists.
+	// Requires read access to the Access resource.
 	GetPermissionSet(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.PermissionSet, error)
+	// ListPermissionSets returns all non-ephemeral permission sets, sorted alphabetically by name.
+	//
+	// Requires read access to the Access resource.
 	ListPermissionSets(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListPermissionSetsResponse, error)
-	// PostPermissionSet
+	// PostPermissionSet creates a new permission set.
 	//
 	// PermissionSet.id is disallowed in request and set in response.
+	// Ephemeral permission sets cannot be created via this API.
+	// Returns INVALID_ARGUMENT if id is set or validation fails.
+	// Requires write access to the Access resource.
 	PostPermissionSet(ctx context.Context, in *storage.PermissionSet, opts ...grpc.CallOption) (*storage.PermissionSet, error)
+	// PutPermissionSet replaces an existing permission set.
+	//
+	// Ephemeral permission sets cannot be modified via this API.
+	// Returns INVALID_ARGUMENT if validation fails.
+	// Requires write access to the Access resource.
 	PutPermissionSet(ctx context.Context, in *storage.PermissionSet, opts ...grpc.CallOption) (*Empty, error)
+	// DeletePermissionSet removes the permission set with the given ID.
+	//
+	// Requires write access to the Access resource.
 	DeletePermissionSet(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
+	// GetSimpleAccessScope returns the simple access scope with the given ID.
+	//
+	// Returns NOT_FOUND if no access scope with the specified ID exists.
+	// Requires read access to the Access resource.
 	GetSimpleAccessScope(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.SimpleAccessScope, error)
+	// ListSimpleAccessScopes returns all non-ephemeral simple access scopes, sorted alphabetically by name.
+	//
+	// Requires read access to the Access resource.
 	ListSimpleAccessScopes(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListSimpleAccessScopesResponse, error)
-	// PostSimpleAccessScope
+	// PostSimpleAccessScope creates a new simple access scope.
 	//
 	// SimpleAccessScope.id is disallowed in request and set in response.
+	// Ephemeral access scopes cannot be created via this API.
+	// Returns INVALID_ARGUMENT if id is set or validation fails.
+	// Requires write access to the Access resource.
 	PostSimpleAccessScope(ctx context.Context, in *storage.SimpleAccessScope, opts ...grpc.CallOption) (*storage.SimpleAccessScope, error)
-	PutSimpleAccessScope(ctx context.Context, in *storage.SimpleAccessScope, opts ...grpc.CallOption) (*Empty, error)
-	DeleteSimpleAccessScope(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
-	// ComputeEffectiveAccessScope
+	// PutSimpleAccessScope replaces an existing simple access scope.
 	//
-	// Returns effective access scope based on the rules in the request. Does
-	// not persist anything; not idempotent due to possible changes to clusters
+	// Ephemeral access scopes cannot be modified via this API.
+	// Returns INVALID_ARGUMENT if validation fails.
+	// Requires write access to the Access resource.
+	PutSimpleAccessScope(ctx context.Context, in *storage.SimpleAccessScope, opts ...grpc.CallOption) (*Empty, error)
+	// DeleteSimpleAccessScope removes the simple access scope with the given ID.
+	//
+	// Requires write access to the Access resource.
+	DeleteSimpleAccessScope(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
+	// ComputeEffectiveAccessScope evaluates access scope rules against the current cluster and
+	// namespace inventory and returns the resulting effective access scope.
+	//
+	// Does not persist anything; not idempotent due to possible changes to clusters
 	// and namespaces. POST is chosen due to potentially large payload.
 	//
 	// There are advantages in both keeping the response slim and detailed. If
@@ -97,8 +179,11 @@ type RoleServiceClient interface {
 	//     EXCLUDED). Namespaces can be either INCLUDED or EXCLUDED.
 	//
 	//   - High, when every cluster and namespace is augmented with metadata.
+	//
+	// Requires read access to the Access, Cluster, and Namespace resources.
 	ComputeEffectiveAccessScope(ctx context.Context, in *ComputeEffectiveAccessScopeRequest, opts ...grpc.CallOption) (*storage.EffectiveAccessScope, error)
-	// GetClustersForPermissions
+	// GetClustersForPermissions returns the cluster ID/name pairs accessible to the caller
+	// for the specified permissions.
 	//
 	// Returns the list of cluster ID and cluster name pairs that have at least read allowed
 	// by the scope of the requesting user for the list of requested permissions.
@@ -109,8 +194,10 @@ type RoleServiceClient interface {
 	//
 	// If no permission is given in input, all clusters allowed by the requester scope for
 	// any permission with cluster scope or narrower will be part of the response.
+	// Requires any authenticated session.
 	GetClustersForPermissions(ctx context.Context, in *GetClustersForPermissionsRequest, opts ...grpc.CallOption) (*GetClustersForPermissionsResponse, error)
-	// GetNamespacesForClusterAndPermissions
+	// GetNamespacesForClusterAndPermissions returns the namespace ID/name pairs within a cluster
+	// that are accessible to the caller for the specified permissions.
 	//
 	// Returns the list of namespace ID and namespace name pairs that belong to the requested
 	// cluster and for which the user has at least read access granted for the list of
@@ -122,6 +209,7 @@ type RoleServiceClient interface {
 	//
 	// If no permission is given in input, all namespaces allowed by the requester scope for
 	// any permission with namespace scope or narrower will be part of the response.
+	// Requires any authenticated session.
 	GetNamespacesForClusterAndPermissions(ctx context.Context, in *GetNamespaceForClusterAndPermissionsRequest, opts ...grpc.CallOption) (*GetNamespacesForClusterAndPermissionsResponse, error)
 }
 
@@ -336,34 +424,116 @@ func (c *roleServiceClient) GetNamespacesForClusterAndPermissions(ctx context.Co
 // RoleServiceServer is the server API for RoleService service.
 // All implementations should embed UnimplementedRoleServiceServer
 // for forward compatibility.
+//
+// RoleService manages the ACS role-based access control (RBAC) model, including roles,
+// permission sets, and access scopes.
+//
+// A role combines a permission set (what resources can be accessed and at what level)
+// with a simple access scope (which clusters and namespaces are in scope).
+// Permission sets and access scopes can be shared across multiple roles.
+//
+// Ephemeral roles/permission sets/access scopes created internally by the system are
+// excluded from list responses and cannot be created or modified via this API.
+//
+// Authentication requirements:
+//   - GetMyPermissions, GetResources, GetClustersForPermissions, GetNamespacesForClusterAndPermissions: any authenticated caller.
+//   - GetRoles, GetRole, ListPermissionSets, GetPermissionSet, ListSimpleAccessScopes, GetSimpleAccessScope: read access to the Access resource.
+//   - ComputeEffectiveAccessScope: read access to the Access, Cluster, and Namespace resources.
+//   - CreateRole, UpdateRole, DeleteRole, PostPermissionSet, PutPermissionSet, DeletePermissionSet,
+//     PostSimpleAccessScope, PutSimpleAccessScope, DeleteSimpleAccessScope: write access to the Access resource.
 type RoleServiceServer interface {
+	// GetRoles returns all non-ephemeral roles, sorted alphabetically by name.
+	//
+	// Requires read access to the Access resource.
 	GetRoles(context.Context, *Empty) (*GetRolesResponse, error)
+	// GetRole returns the role with the given ID.
+	//
+	// Returns NOT_FOUND if no role with the specified ID exists.
+	// Requires read access to the Access resource.
 	GetRole(context.Context, *ResourceByID) (*storage.Role, error)
+	// GetMyPermissions returns the aggregated permissions of the authenticated caller.
+	//
+	// Permissions are aggregated across all roles assigned to the caller. For each resource,
+	// the highest access level across all roles is returned.
+	// Requires any authenticated session (no specific resource permission needed).
 	GetMyPermissions(context.Context, *Empty) (*GetPermissionsResponse, error)
+	// CreateRole creates a new role with the given name.
+	//
+	// The name in the URL path must match role.name if role.name is provided.
+	// Ephemeral roles cannot be created via this API.
+	// Returns INVALID_ARGUMENT if the name is mismatched or the role already exists.
+	// Requires write access to the Access resource.
 	CreateRole(context.Context, *CreateRoleRequest) (*Empty, error)
+	// UpdateRole replaces an existing role definition.
+	//
+	// Ephemeral roles cannot be modified via this API.
+	// Returns INVALID_ARGUMENT if validation fails or the role does not exist.
+	// Requires write access to the Access resource.
 	UpdateRole(context.Context, *storage.Role) (*Empty, error)
+	// DeleteRole removes the role with the given ID.
+	//
+	// Requires write access to the Access resource.
 	DeleteRole(context.Context, *ResourceByID) (*Empty, error)
+	// GetResources returns the list of all ACS resource names that can be referenced in permission sets.
+	//
+	// Requires any authenticated session.
 	GetResources(context.Context, *Empty) (*GetResourcesResponse, error)
+	// GetPermissionSet returns the permission set with the given ID.
+	//
+	// Returns NOT_FOUND if no permission set with the specified ID exists.
+	// Requires read access to the Access resource.
 	GetPermissionSet(context.Context, *ResourceByID) (*storage.PermissionSet, error)
+	// ListPermissionSets returns all non-ephemeral permission sets, sorted alphabetically by name.
+	//
+	// Requires read access to the Access resource.
 	ListPermissionSets(context.Context, *Empty) (*ListPermissionSetsResponse, error)
-	// PostPermissionSet
+	// PostPermissionSet creates a new permission set.
 	//
 	// PermissionSet.id is disallowed in request and set in response.
+	// Ephemeral permission sets cannot be created via this API.
+	// Returns INVALID_ARGUMENT if id is set or validation fails.
+	// Requires write access to the Access resource.
 	PostPermissionSet(context.Context, *storage.PermissionSet) (*storage.PermissionSet, error)
+	// PutPermissionSet replaces an existing permission set.
+	//
+	// Ephemeral permission sets cannot be modified via this API.
+	// Returns INVALID_ARGUMENT if validation fails.
+	// Requires write access to the Access resource.
 	PutPermissionSet(context.Context, *storage.PermissionSet) (*Empty, error)
+	// DeletePermissionSet removes the permission set with the given ID.
+	//
+	// Requires write access to the Access resource.
 	DeletePermissionSet(context.Context, *ResourceByID) (*Empty, error)
+	// GetSimpleAccessScope returns the simple access scope with the given ID.
+	//
+	// Returns NOT_FOUND if no access scope with the specified ID exists.
+	// Requires read access to the Access resource.
 	GetSimpleAccessScope(context.Context, *ResourceByID) (*storage.SimpleAccessScope, error)
+	// ListSimpleAccessScopes returns all non-ephemeral simple access scopes, sorted alphabetically by name.
+	//
+	// Requires read access to the Access resource.
 	ListSimpleAccessScopes(context.Context, *Empty) (*ListSimpleAccessScopesResponse, error)
-	// PostSimpleAccessScope
+	// PostSimpleAccessScope creates a new simple access scope.
 	//
 	// SimpleAccessScope.id is disallowed in request and set in response.
+	// Ephemeral access scopes cannot be created via this API.
+	// Returns INVALID_ARGUMENT if id is set or validation fails.
+	// Requires write access to the Access resource.
 	PostSimpleAccessScope(context.Context, *storage.SimpleAccessScope) (*storage.SimpleAccessScope, error)
-	PutSimpleAccessScope(context.Context, *storage.SimpleAccessScope) (*Empty, error)
-	DeleteSimpleAccessScope(context.Context, *ResourceByID) (*Empty, error)
-	// ComputeEffectiveAccessScope
+	// PutSimpleAccessScope replaces an existing simple access scope.
 	//
-	// Returns effective access scope based on the rules in the request. Does
-	// not persist anything; not idempotent due to possible changes to clusters
+	// Ephemeral access scopes cannot be modified via this API.
+	// Returns INVALID_ARGUMENT if validation fails.
+	// Requires write access to the Access resource.
+	PutSimpleAccessScope(context.Context, *storage.SimpleAccessScope) (*Empty, error)
+	// DeleteSimpleAccessScope removes the simple access scope with the given ID.
+	//
+	// Requires write access to the Access resource.
+	DeleteSimpleAccessScope(context.Context, *ResourceByID) (*Empty, error)
+	// ComputeEffectiveAccessScope evaluates access scope rules against the current cluster and
+	// namespace inventory and returns the resulting effective access scope.
+	//
+	// Does not persist anything; not idempotent due to possible changes to clusters
 	// and namespaces. POST is chosen due to potentially large payload.
 	//
 	// There are advantages in both keeping the response slim and detailed. If
@@ -388,8 +558,11 @@ type RoleServiceServer interface {
 	//     EXCLUDED). Namespaces can be either INCLUDED or EXCLUDED.
 	//
 	//   - High, when every cluster and namespace is augmented with metadata.
+	//
+	// Requires read access to the Access, Cluster, and Namespace resources.
 	ComputeEffectiveAccessScope(context.Context, *ComputeEffectiveAccessScopeRequest) (*storage.EffectiveAccessScope, error)
-	// GetClustersForPermissions
+	// GetClustersForPermissions returns the cluster ID/name pairs accessible to the caller
+	// for the specified permissions.
 	//
 	// Returns the list of cluster ID and cluster name pairs that have at least read allowed
 	// by the scope of the requesting user for the list of requested permissions.
@@ -400,8 +573,10 @@ type RoleServiceServer interface {
 	//
 	// If no permission is given in input, all clusters allowed by the requester scope for
 	// any permission with cluster scope or narrower will be part of the response.
+	// Requires any authenticated session.
 	GetClustersForPermissions(context.Context, *GetClustersForPermissionsRequest) (*GetClustersForPermissionsResponse, error)
-	// GetNamespacesForClusterAndPermissions
+	// GetNamespacesForClusterAndPermissions returns the namespace ID/name pairs within a cluster
+	// that are accessible to the caller for the specified permissions.
 	//
 	// Returns the list of namespace ID and namespace name pairs that belong to the requested
 	// cluster and for which the user has at least read access granted for the list of
@@ -413,6 +588,7 @@ type RoleServiceServer interface {
 	//
 	// If no permission is given in input, all namespaces allowed by the requester scope for
 	// any permission with namespace scope or narrower will be part of the response.
+	// Requires any authenticated session.
 	GetNamespacesForClusterAndPermissions(context.Context, *GetNamespaceForClusterAndPermissionsRequest) (*GetNamespacesForClusterAndPermissionsResponse, error)
 }
 

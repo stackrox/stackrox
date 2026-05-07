@@ -32,14 +32,66 @@ const (
 // CollectionServiceClient is the client API for CollectionService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// CollectionService manages resource collections used to group deployments for scoping reports and policies.
+//
+// A resource collection is a named set of rules (selectors) that dynamically match Kubernetes deployments
+// based on cluster, namespace, deployment name, or label criteria. Collections can embed other collections
+// to form hierarchies. They are used as scopes for vulnerability reports and other workflow automation.
+//
+// Authentication: read operations require View access to the WorkflowAdministration resource.
+// Write operations (Create, Update, Delete, DryRun) require Modify access to WorkflowAdministration.
 type CollectionServiceClient interface {
+	// ListCollectionSelectors returns all supported field labels that can be used in resource selectors.
+	//
+	// Supported selectors include fields such as "Cluster", "Namespace", and "Deployment Label".
+	// Requires read access to the WorkflowAdministration resource.
 	ListCollectionSelectors(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListCollectionSelectorsResponse, error)
+	// GetCollection returns a single collection by ID.
+	//
+	// When CollectionDeploymentMatchOptions.with_matches is true, also resolves and returns the
+	// deployments currently matched by the collection's selectors, optionally further filtered
+	// by filter_query.
+	//
+	// Returns INVALID_ARGUMENT if id is empty.
+	// Returns NOT_FOUND if no collection with the given ID exists.
 	GetCollection(ctx context.Context, in *GetCollectionRequest, opts ...grpc.CallOption) (*GetCollectionResponse, error)
+	// GetCollectionCount returns the count of collections matching the optional query.
+	//
+	// Matches all collections if the query is empty.
 	GetCollectionCount(ctx context.Context, in *GetCollectionCountRequest, opts ...grpc.CallOption) (*GetCollectionCountResponse, error)
+	// CreateCollection creates a new resource collection.
+	//
+	// The collection name must be non-empty after whitespace trimming. At least one resource selector
+	// or embedded collection ID must be provided. The caller's identity is recorded as the creator.
+	//
+	// Returns INVALID_ARGUMENT if the name is empty, or if no selectors or embedded collections are provided.
 	CreateCollection(ctx context.Context, in *CreateCollectionRequest, opts ...grpc.CallOption) (*CreateCollectionResponse, error)
+	// UpdateCollection updates an existing collection's name, description, selectors, and embedded collections.
+	//
+	// Replaces the full set of selectors and embedded collection references.
+	// The caller's identity is recorded as the last updater.
+	//
+	// Returns INVALID_ARGUMENT if id is empty, the name is empty, or no selectors or embedded collections are provided.
 	UpdateCollection(ctx context.Context, in *UpdateCollectionRequest, opts ...grpc.CallOption) (*UpdateCollectionResponse, error)
+	// ListCollections returns all collections matching the optional search query.
+	//
+	// Results are sorted by collection name ascending. Pagination is controlled by the query's
+	// pagination field with a default page size of 1000.
 	ListCollections(ctx context.Context, in *ListCollectionsRequest, opts ...grpc.CallOption) (*ListCollectionsResponse, error)
+	// DeleteCollection removes a collection permanently.
+	//
+	// Returns INVALID_ARGUMENT if id is empty.
+	// Returns a conflict error if the collection is referenced by another collection or by a
+	// vulnerability report configuration.
 	DeleteCollection(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
+	// DryRunCollection simulates creating or updating a collection without persisting it.
+	//
+	// Validates the collection definition and, when options.with_matches is true, resolves and
+	// returns the deployments that would match. Set id to simulate an update to an existing
+	// collection; leave id empty to simulate a new collection.
+	//
+	// Returns INVALID_ARGUMENT if the collection definition is invalid (empty name, no selectors).
 	DryRunCollection(ctx context.Context, in *DryRunCollectionRequest, opts ...grpc.CallOption) (*DryRunCollectionResponse, error)
 }
 
@@ -134,14 +186,66 @@ func (c *collectionServiceClient) DryRunCollection(ctx context.Context, in *DryR
 // CollectionServiceServer is the server API for CollectionService service.
 // All implementations should embed UnimplementedCollectionServiceServer
 // for forward compatibility.
+//
+// CollectionService manages resource collections used to group deployments for scoping reports and policies.
+//
+// A resource collection is a named set of rules (selectors) that dynamically match Kubernetes deployments
+// based on cluster, namespace, deployment name, or label criteria. Collections can embed other collections
+// to form hierarchies. They are used as scopes for vulnerability reports and other workflow automation.
+//
+// Authentication: read operations require View access to the WorkflowAdministration resource.
+// Write operations (Create, Update, Delete, DryRun) require Modify access to WorkflowAdministration.
 type CollectionServiceServer interface {
+	// ListCollectionSelectors returns all supported field labels that can be used in resource selectors.
+	//
+	// Supported selectors include fields such as "Cluster", "Namespace", and "Deployment Label".
+	// Requires read access to the WorkflowAdministration resource.
 	ListCollectionSelectors(context.Context, *Empty) (*ListCollectionSelectorsResponse, error)
+	// GetCollection returns a single collection by ID.
+	//
+	// When CollectionDeploymentMatchOptions.with_matches is true, also resolves and returns the
+	// deployments currently matched by the collection's selectors, optionally further filtered
+	// by filter_query.
+	//
+	// Returns INVALID_ARGUMENT if id is empty.
+	// Returns NOT_FOUND if no collection with the given ID exists.
 	GetCollection(context.Context, *GetCollectionRequest) (*GetCollectionResponse, error)
+	// GetCollectionCount returns the count of collections matching the optional query.
+	//
+	// Matches all collections if the query is empty.
 	GetCollectionCount(context.Context, *GetCollectionCountRequest) (*GetCollectionCountResponse, error)
+	// CreateCollection creates a new resource collection.
+	//
+	// The collection name must be non-empty after whitespace trimming. At least one resource selector
+	// or embedded collection ID must be provided. The caller's identity is recorded as the creator.
+	//
+	// Returns INVALID_ARGUMENT if the name is empty, or if no selectors or embedded collections are provided.
 	CreateCollection(context.Context, *CreateCollectionRequest) (*CreateCollectionResponse, error)
+	// UpdateCollection updates an existing collection's name, description, selectors, and embedded collections.
+	//
+	// Replaces the full set of selectors and embedded collection references.
+	// The caller's identity is recorded as the last updater.
+	//
+	// Returns INVALID_ARGUMENT if id is empty, the name is empty, or no selectors or embedded collections are provided.
 	UpdateCollection(context.Context, *UpdateCollectionRequest) (*UpdateCollectionResponse, error)
+	// ListCollections returns all collections matching the optional search query.
+	//
+	// Results are sorted by collection name ascending. Pagination is controlled by the query's
+	// pagination field with a default page size of 1000.
 	ListCollections(context.Context, *ListCollectionsRequest) (*ListCollectionsResponse, error)
+	// DeleteCollection removes a collection permanently.
+	//
+	// Returns INVALID_ARGUMENT if id is empty.
+	// Returns a conflict error if the collection is referenced by another collection or by a
+	// vulnerability report configuration.
 	DeleteCollection(context.Context, *ResourceByID) (*Empty, error)
+	// DryRunCollection simulates creating or updating a collection without persisting it.
+	//
+	// Validates the collection definition and, when options.with_matches is true, resolves and
+	// returns the deployments that would match. Set id to simulate an update to an existing
+	// collection; leave id empty to simulate a new collection.
+	//
+	// Returns INVALID_ARGUMENT if the collection definition is invalid (empty name, no selectors).
 	DryRunCollection(context.Context, *DryRunCollectionRequest) (*DryRunCollectionResponse, error)
 }
 

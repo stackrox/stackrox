@@ -95,6 +95,7 @@
     "/v2/compliance/scan/stats/profiles": {
       "get": {
         "summary": "GetComplianceProfileScanStats lists current scan stats grouped by profile\nOptional RawQuery query fields can be combined.\nCommonly used ones include but are not limited to\n- scan: id(s) of the compliance scan\n- cluster: id(s) of the cluster\n- profile: id(s) of the profile",
+        "description": "Returns check status counts for all profiles matching the query, across all clusters.\nSupports pagination; total_count reflects distinct profile names.\n\nReturns INVALID_ARGUMENT if the query is malformed.",
         "operationId": "ComplianceResultsStatsService_GetComplianceProfilesStats",
         "responses": {
           "200": {
@@ -170,7 +171,8 @@
     },
     "/v2/compliance/scan/stats/profiles/clusters/{clusterId}": {
       "get": {
-        "summary": "GetComplianceProfilesClusterStats lists cluster stats grouped by profile",
+        "summary": "GetComplianceProfilesClusterStats lists cluster stats grouped by profile.",
+        "description": "Returns check status counts per profile for the specified cluster.\nThe cluster_id field is required; returns INVALID_ARGUMENT if the cluster is not found.\nSupports pagination; total_count reflects distinct profile names.\n\nReturns INVALID_ARGUMENT if cluster_id is empty or the cluster does not exist.",
         "operationId": "ComplianceResultsStatsService_GetComplianceProfilesClusterStats",
         "responses": {
           "200": {
@@ -189,6 +191,7 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id is required; the cluster to retrieve stats for.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -253,6 +256,7 @@
     "/v2/compliance/scan/stats/profiles/{profileName}": {
       "get": {
         "summary": "GetComplianceProfileStats lists current scan stats grouped by profile\nOptional RawQuery query fields can be combined.\nCommonly used ones include but are not limited to\n- scan: id(s) of the compliance scan\n- cluster: id(s) of the cluster\n- profile: id(s) of the profile",
+        "description": "Returns check status counts for the specified profile across all clusters.\nThe profile_name field is required. Supports pagination.\n\nReturns INVALID_ARGUMENT if profile_name is empty or the query is malformed.",
         "operationId": "ComplianceResultsStatsService_GetComplianceProfileStats",
         "responses": {
           "200": {
@@ -334,7 +338,8 @@
     },
     "/v2/compliance/scan/stats/profiles/{profileName}/checks/{checkName}": {
       "get": {
-        "summary": "GetComplianceProfileCheckStats lists current stats for a specific cluster check",
+        "summary": "GetComplianceProfileCheckStats lists current stats for a specific cluster check.",
+        "description": "Returns per-cluster check status counts for a specific check within a profile.\nBoth profile_name and check_name are required. Supports pagination.\n\nReturns INVALID_ARGUMENT if profile_name or check_name is empty.",
         "operationId": "ComplianceResultsStatsService_GetComplianceProfileCheckStats",
         "responses": {
           "200": {
@@ -422,6 +427,8 @@
     },
     "/v2/compliance/scan/stats/profiles/{profileName}/clusters": {
       "get": {
+        "summary": "GetComplianceClusterStats lists overall compliance check stats per cluster for a given profile.",
+        "description": "Returns pass/fail/error counts per cluster filtered to the specified profile.\nAlso includes Compliance Operator integration status errors per cluster.\nThe profile_name field is required. Supports pagination.\n\nReturns INVALID_ARGUMENT if profile_name is empty or the query is malformed.",
         "operationId": "ComplianceResultsStatsService_GetComplianceClusterStats",
         "responses": {
           "200": {
@@ -503,7 +510,8 @@
     },
     "/v2/compliance/stats/configurations/clusters/{clusterId}": {
       "get": {
-        "summary": "GetComplianceClusterScanStats lists the current scan stats for a cluster for each scan configuration",
+        "summary": "GetComplianceClusterScanStats lists the current scan stats for a cluster for each scan configuration.",
+        "description": "Returns check status counts per scan configuration for the specified cluster.\nThe cluster_id field is required. The scan_config_id is resolved from the scan configuration name.\nSupports pagination; total_count reflects distinct scan configuration names.\n\nReturns INVALID_ARGUMENT if cluster_id is empty.",
         "operationId": "ComplianceResultsStatsService_GetComplianceClusterScanStats",
         "responses": {
           "200": {
@@ -522,6 +530,7 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id is required; the cluster to retrieve stats for.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -741,10 +750,12 @@
       "type": "object",
       "properties": {
         "scanStats": {
-          "$ref": "#/definitions/v2ComplianceScanStatsShim"
+          "$ref": "#/definitions/v2ComplianceScanStatsShim",
+          "description": "scan_stats contains the check status counts and scan metadata for this cluster/scan pair."
         },
         "cluster": {
-          "$ref": "#/definitions/v2ComplianceScanCluster"
+          "$ref": "#/definitions/v2ComplianceScanCluster",
+          "description": "cluster identifies the cluster these stats are for."
         }
       },
       "title": "ComplianceClusterScanStats provides scan stats overview based on cluster"
@@ -768,23 +779,28 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v2ComplianceCheckStatusCount"
-          }
+          },
+          "description": "check_stats lists the count of checks by status (PASS, FAIL, ERROR, etc.) for this profile."
         },
         "profileName": {
-          "type": "string"
+          "type": "string",
+          "description": "profile_name is the name of the compliance profile these stats are for."
         },
         "title": {
-          "type": "string"
+          "type": "string",
+          "description": "title is the human-readable display name of the profile."
         },
         "version": {
-          "type": "string"
+          "type": "string",
+          "description": "version is the version string of the profile (e.g. \"1.4.0\")."
         },
         "benchmarks": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v2ComplianceBenchmark"
-          }
+          },
+          "description": "benchmarks lists the compliance frameworks (e.g. CIS, NIST) this profile maps to."
         }
       },
       "title": "ComplianceProfileScanStats provides scan stats overview based on profile"
@@ -804,21 +820,25 @@
       "type": "object",
       "properties": {
         "scanName": {
-          "type": "string"
+          "type": "string",
+          "description": "scan_name is the name of the scan configuration these stats are for."
         },
         "checkStats": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v2ComplianceCheckStatusCount"
-          }
+          },
+          "description": "check_stats lists the count of checks by status (PASS, FAIL, ERROR, etc.)."
         },
         "lastScan": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "last_scan is when the most recent scan for this configuration completed."
         },
         "scanConfigId": {
-          "type": "string"
+          "type": "string",
+          "description": "scan_config_id is the ID of the scan configuration."
         }
       },
       "title": "ComplianceScanStatsShim models statistics of checks for a given scan configuration"
@@ -848,17 +868,21 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v2ComplianceProfileScanStats"
-          }
+          },
+          "description": "scan_stats lists per-profile check status counts for the requested cluster."
         },
         "clusterId": {
-          "type": "string"
+          "type": "string",
+          "description": "cluster_id identifies the cluster these stats are scoped to."
         },
         "clusterName": {
-          "type": "string"
+          "type": "string",
+          "description": "cluster_name is the human-readable name of the cluster."
         },
         "totalCount": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "total_count is the total number of distinct profiles matching the query, before pagination."
         }
       },
       "title": "ListComplianceClusterProfileStatsResponse provides stats for the profiles within the scans"
@@ -871,11 +895,13 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v2ComplianceClusterScanStats"
-          }
+          },
+          "description": "scan_stats lists per-scan-configuration check status counts for the requested cluster."
         },
         "totalCount": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "total_count is the total number of scan configurations matching the query, before pagination."
         }
       },
       "title": "ListComplianceClusterScanStatsResponse provides stats for the clusters within the scans"
@@ -908,11 +934,13 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v2ComplianceProfileScanStats"
-          }
+          },
+          "description": "scan_stats lists per-profile check status counts."
         },
         "totalCount": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "total_count is the total number of distinct profiles matching the query, before pagination."
         }
       },
       "title": "ListComplianceProfileScanStatsResponse provides stats for the profiles within the scans"

@@ -18,6 +18,7 @@
   "paths": {
     "/v1/ping": {
       "get": {
+        "summary": "Ping confirms Central is reachable and responding. Returns HTTP 200 with\n{\"status\": \"ok\"} on success. Safe to call without credentials.",
         "operationId": "PingService_Ping",
         "responses": {
           "200": {

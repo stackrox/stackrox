@@ -26,8 +26,25 @@ const (
 // NamespaceServiceClient is the client API for NamespaceService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// NamespaceService provides access to Kubernetes namespaces observed by StackRox.
+//
+// Namespaces are discovered from secured clusters and enriched with deployment,
+// secret, and network policy counts. Results are scoped to the namespaces
+// accessible to the requesting user.
+//
+// Authentication: all endpoints require a valid API token with read access to the Namespace resource.
 type NamespaceServiceClient interface {
+	// GetNamespaces returns a list of namespaces matching the optional query filter.
+	//
+	// Supports StackRox search query syntax to filter by cluster, namespace name, or label.
+	// Returns up to MaxInt32 results. Use the pagination field in the query for paging.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	GetNamespaces(ctx context.Context, in *GetNamespaceRequest, opts ...grpc.CallOption) (*GetNamespacesResponse, error)
+	// GetNamespace returns the namespace with the given ID, enriched with deployment,
+	// secret, and network policy counts.
+	//
+	// Returns INVALID_ARGUMENT if the ID is empty or the namespace is not found.
 	GetNamespace(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Namespace, error)
 }
 
@@ -62,8 +79,25 @@ func (c *namespaceServiceClient) GetNamespace(ctx context.Context, in *ResourceB
 // NamespaceServiceServer is the server API for NamespaceService service.
 // All implementations should embed UnimplementedNamespaceServiceServer
 // for forward compatibility.
+//
+// NamespaceService provides access to Kubernetes namespaces observed by StackRox.
+//
+// Namespaces are discovered from secured clusters and enriched with deployment,
+// secret, and network policy counts. Results are scoped to the namespaces
+// accessible to the requesting user.
+//
+// Authentication: all endpoints require a valid API token with read access to the Namespace resource.
 type NamespaceServiceServer interface {
+	// GetNamespaces returns a list of namespaces matching the optional query filter.
+	//
+	// Supports StackRox search query syntax to filter by cluster, namespace name, or label.
+	// Returns up to MaxInt32 results. Use the pagination field in the query for paging.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	GetNamespaces(context.Context, *GetNamespaceRequest) (*GetNamespacesResponse, error)
+	// GetNamespace returns the namespace with the given ID, enriched with deployment,
+	// secret, and network policy counts.
+	//
+	// Returns INVALID_ARGUMENT if the ID is empty or the namespace is not found.
 	GetNamespace(context.Context, *ResourceByID) (*Namespace, error)
 }
 

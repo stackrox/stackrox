@@ -18,6 +18,8 @@
   "paths": {
     "/v1/export/nodes": {
       "get": {
+        "summary": "ExportNodes streams all nodes matching the optional query as a sequence of ExportNodeResponse messages.",
+        "description": "Supports StackRox search query syntax for filtering. A timeout in seconds may be specified;\nif the stream is not completed within that time the request is cancelled.\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "NodeService_ExportNodes",
         "responses": {
           "200": {
@@ -45,6 +47,7 @@
         "parameters": [
           {
             "name": "timeout",
+            "description": "timeout is the maximum number of seconds to wait for the export stream to complete.\nZero means no timeout.",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -52,6 +55,7 @@
           },
           {
             "name": "query",
+            "description": "query filters nodes using StackRox search syntax. If empty, all nodes are exported.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -64,6 +68,8 @@
     },
     "/v1/nodes/{clusterId}": {
       "get": {
+        "summary": "ListNodes returns all nodes belonging to the specified cluster.",
+        "description": "Returns INVALID_ARGUMENT if cluster_id is empty or does not match a known cluster.",
         "operationId": "NodeService_ListNodes",
         "responses": {
           "200": {
@@ -82,6 +88,7 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id filters nodes to those belonging to the specified cluster.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -94,6 +101,8 @@
     },
     "/v1/nodes/{clusterId}/{nodeId}": {
       "get": {
+        "summary": "GetNode returns the node identified by node_id.",
+        "description": "The cluster_id field is retained for API compatibility but is not used to look up the node;\nnode IDs are unique across all clusters.\nReturns NOT_FOUND if no node with the given node_id exists.",
         "operationId": "NodeService_GetNode",
         "responses": {
           "200": {
@@ -112,12 +121,14 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id is included for API compatibility. The node_id uniquely identifies a node\nacross all clusters and is sufficient to retrieve it.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "nodeId",
+            "description": "node_id is the unique identifier of the node to retrieve.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -935,7 +946,8 @@
         "node": {
           "$ref": "#/definitions/storageNode"
         }
-      }
+      },
+      "description": "ExportNodeResponse is a single streamed item in a bulk node export."
     },
     "v1ListNodesResponse": {
       "type": "object",
@@ -947,7 +959,8 @@
             "$ref": "#/definitions/storageNode"
           }
         }
-      }
+      },
+      "description": "ListNodesResponse contains the list of nodes returned by ListNodes."
     }
   }
 }

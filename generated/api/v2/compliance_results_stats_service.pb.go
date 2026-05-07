@@ -25,11 +25,15 @@ const (
 
 // ComplianceScanStatsShim models statistics of checks for a given scan configuration
 type ComplianceScanStatsShim struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
-	ScanName      string                        `protobuf:"bytes,1,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
-	CheckStats    []*ComplianceCheckStatusCount `protobuf:"bytes,2,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
-	LastScan      *timestamppb.Timestamp        `protobuf:"bytes,3,opt,name=last_scan,json=lastScan,proto3" json:"last_scan,omitempty"`
-	ScanConfigId  string                        `protobuf:"bytes,4,opt,name=scan_config_id,json=scanConfigId,proto3" json:"scan_config_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// scan_name is the name of the scan configuration these stats are for.
+	ScanName string `protobuf:"bytes,1,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
+	// check_stats lists the count of checks by status (PASS, FAIL, ERROR, etc.).
+	CheckStats []*ComplianceCheckStatusCount `protobuf:"bytes,2,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
+	// last_scan is when the most recent scan for this configuration completed.
+	LastScan *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_scan,json=lastScan,proto3" json:"last_scan,omitempty"`
+	// scan_config_id is the ID of the scan configuration.
+	ScanConfigId  string `protobuf:"bytes,4,opt,name=scan_config_id,json=scanConfigId,proto3" json:"scan_config_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -94,12 +98,17 @@ func (x *ComplianceScanStatsShim) GetScanConfigId() string {
 
 // ComplianceProfileScanStats provides scan stats overview based on profile
 type ComplianceProfileScanStats struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
-	CheckStats    []*ComplianceCheckStatusCount `protobuf:"bytes,1,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
-	ProfileName   string                        `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
-	Title         string                        `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Version       string                        `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
-	Benchmarks    []*ComplianceBenchmark        `protobuf:"bytes,5,rep,name=benchmarks,proto3" json:"benchmarks,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// check_stats lists the count of checks by status (PASS, FAIL, ERROR, etc.) for this profile.
+	CheckStats []*ComplianceCheckStatusCount `protobuf:"bytes,1,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
+	// profile_name is the name of the compliance profile these stats are for.
+	ProfileName string `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
+	// title is the human-readable display name of the profile.
+	Title string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	// version is the version string of the profile (e.g. "1.4.0").
+	Version string `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
+	// benchmarks lists the compliance frameworks (e.g. CIS, NIST) this profile maps to.
+	Benchmarks    []*ComplianceBenchmark `protobuf:"bytes,5,rep,name=benchmarks,proto3" json:"benchmarks,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -171,9 +180,11 @@ func (x *ComplianceProfileScanStats) GetBenchmarks() []*ComplianceBenchmark {
 
 // ComplianceClusterScanStats provides scan stats overview based on cluster
 type ComplianceClusterScanStats struct {
-	state         protoimpl.MessageState   `protogen:"open.v1"`
-	ScanStats     *ComplianceScanStatsShim `protobuf:"bytes,1,opt,name=scan_stats,json=scanStats,proto3" json:"scan_stats,omitempty"`
-	Cluster       *ComplianceScanCluster   `protobuf:"bytes,2,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// scan_stats contains the check status counts and scan metadata for this cluster/scan pair.
+	ScanStats *ComplianceScanStatsShim `protobuf:"bytes,1,opt,name=scan_stats,json=scanStats,proto3" json:"scan_stats,omitempty"`
+	// cluster identifies the cluster these stats are for.
+	Cluster       *ComplianceScanCluster `protobuf:"bytes,2,opt,name=cluster,proto3" json:"cluster,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -222,10 +233,13 @@ func (x *ComplianceClusterScanStats) GetCluster() *ComplianceScanCluster {
 	return nil
 }
 
+// ComplianceScanClusterRequest filters stats to a specific cluster with an optional query.
 type ComplianceScanClusterRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Query         *RawQuery              `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id is required; the cluster to retrieve stats for.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// query further filters results using StackRox search syntax. Supports pagination.
+	Query         *RawQuery `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -276,9 +290,11 @@ func (x *ComplianceScanClusterRequest) GetQuery() *RawQuery {
 
 // ListComplianceProfileScanStatsResponse provides stats for the profiles within the scans
 type ListComplianceProfileScanStatsResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
-	ScanStats     []*ComplianceProfileScanStats `protobuf:"bytes,1,rep,name=scan_stats,json=scanStats,proto3" json:"scan_stats,omitempty"`
-	TotalCount    int32                         `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// scan_stats lists per-profile check status counts.
+	ScanStats []*ComplianceProfileScanStats `protobuf:"bytes,1,rep,name=scan_stats,json=scanStats,proto3" json:"scan_stats,omitempty"`
+	// total_count is the total number of distinct profiles matching the query, before pagination.
+	TotalCount    int32 `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -329,11 +345,15 @@ func (x *ListComplianceProfileScanStatsResponse) GetTotalCount() int32 {
 
 // ListComplianceClusterProfileStatsResponse provides stats for the profiles within the scans
 type ListComplianceClusterProfileStatsResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
-	ScanStats     []*ComplianceProfileScanStats `protobuf:"bytes,1,rep,name=scan_stats,json=scanStats,proto3" json:"scan_stats,omitempty"`
-	ClusterId     string                        `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	ClusterName   string                        `protobuf:"bytes,3,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
-	TotalCount    int32                         `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// scan_stats lists per-profile check status counts for the requested cluster.
+	ScanStats []*ComplianceProfileScanStats `protobuf:"bytes,1,rep,name=scan_stats,json=scanStats,proto3" json:"scan_stats,omitempty"`
+	// cluster_id identifies the cluster these stats are scoped to.
+	ClusterId string `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// cluster_name is the human-readable name of the cluster.
+	ClusterName string `protobuf:"bytes,3,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	// total_count is the total number of distinct profiles matching the query, before pagination.
+	TotalCount    int32 `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -398,9 +418,11 @@ func (x *ListComplianceClusterProfileStatsResponse) GetTotalCount() int32 {
 
 // ListComplianceClusterScanStatsResponse provides stats for the clusters within the scans
 type ListComplianceClusterScanStatsResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
-	ScanStats     []*ComplianceClusterScanStats `protobuf:"bytes,1,rep,name=scan_stats,json=scanStats,proto3" json:"scan_stats,omitempty"`
-	TotalCount    int32                         `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// scan_stats lists per-scan-configuration check status counts for the requested cluster.
+	ScanStats []*ComplianceClusterScanStats `protobuf:"bytes,1,rep,name=scan_stats,json=scanStats,proto3" json:"scan_stats,omitempty"`
+	// total_count is the total number of scan configurations matching the query, before pagination.
+	TotalCount    int32 `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

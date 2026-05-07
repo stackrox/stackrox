@@ -588,6 +588,7 @@
     },
     "/v2/reports/view-based/history": {
       "get": {
+        "summary": "GetViewBasedReportHistory returns the report generation history for all view-based reports.",
         "operationId": "ReportService_GetViewBasedReportHistory",
         "responses": {
           "200": {
@@ -663,6 +664,7 @@
     },
     "/v2/reports/view-based/my-history": {
       "get": {
+        "summary": "GetViewBasedMyReportHistory returns the report generation history for the calling user's view-based reports.",
         "operationId": "ReportService_GetViewBasedMyReportHistory",
         "responses": {
           "200": {
@@ -738,6 +740,7 @@
     },
     "/v2/reports/view-based/run": {
       "post": {
+        "summary": "PostViewBasedReport submits a view-based vulnerability report for generation.",
         "operationId": "ReportService_PostViewBasedReport",
         "responses": {
           "200": {

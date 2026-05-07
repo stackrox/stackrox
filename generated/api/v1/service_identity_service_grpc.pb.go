@@ -27,12 +27,32 @@ const (
 // ServiceIdentityServiceClient is the client API for ServiceIdentityService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ServiceIdentityService manages mTLS service identities used by StackRox components.
+//
+// Service identities are certificate/key pairs issued by Central's CA that allow
+// StackRox components (Sensor, Collector, etc.) to authenticate using mutual TLS.
+// Private keys are generated on demand and never stored — callers must securely
+// retain the credentials from the CreateServiceIdentity response.
+//
+// Authentication:
+//   - GetServiceIdentities and GetAuthorities require read access to the Administration resource.
+//   - CreateServiceIdentity requires write access to the Administration resource.
 type ServiceIdentityServiceClient interface {
+	// GetServiceIdentities returns metadata for all service identities registered in Central.
+	//
+	// Returns the list of known identities (without private keys, which are never stored).
 	GetServiceIdentities(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServiceIdentityResponse, error)
-	// CreateServiceIdentity creates a new key pair and certificate.
-	// The key and certificate are not retained and can never be retrieved again.
+	// CreateServiceIdentity issues a new mTLS certificate and private key for a service.
+	//
+	// The generated key pair is returned in the response and is never stored by Central.
+	// If the credentials are lost, a new identity must be created; the existing one cannot be recovered.
+	// Returns INVALID_ARGUMENT if id is empty or type is UNKNOWN_SERVICE.
 	CreateServiceIdentity(ctx context.Context, in *CreateServiceIdentityRequest, opts ...grpc.CallOption) (*CreateServiceIdentityResponse, error)
-	// GetAuthorities returns the authorities currently in use.
+	// GetAuthorities returns the CA certificates currently trusted by Central.
+	//
+	// These are the root certificates that can be used to verify service identity certificates
+	// issued by Central.
 	GetAuthorities(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Authorities, error)
 }
 
@@ -77,12 +97,32 @@ func (c *serviceIdentityServiceClient) GetAuthorities(ctx context.Context, in *E
 // ServiceIdentityServiceServer is the server API for ServiceIdentityService service.
 // All implementations should embed UnimplementedServiceIdentityServiceServer
 // for forward compatibility.
+//
+// ServiceIdentityService manages mTLS service identities used by StackRox components.
+//
+// Service identities are certificate/key pairs issued by Central's CA that allow
+// StackRox components (Sensor, Collector, etc.) to authenticate using mutual TLS.
+// Private keys are generated on demand and never stored — callers must securely
+// retain the credentials from the CreateServiceIdentity response.
+//
+// Authentication:
+//   - GetServiceIdentities and GetAuthorities require read access to the Administration resource.
+//   - CreateServiceIdentity requires write access to the Administration resource.
 type ServiceIdentityServiceServer interface {
+	// GetServiceIdentities returns metadata for all service identities registered in Central.
+	//
+	// Returns the list of known identities (without private keys, which are never stored).
 	GetServiceIdentities(context.Context, *Empty) (*ServiceIdentityResponse, error)
-	// CreateServiceIdentity creates a new key pair and certificate.
-	// The key and certificate are not retained and can never be retrieved again.
+	// CreateServiceIdentity issues a new mTLS certificate and private key for a service.
+	//
+	// The generated key pair is returned in the response and is never stored by Central.
+	// If the credentials are lost, a new identity must be created; the existing one cannot be recovered.
+	// Returns INVALID_ARGUMENT if id is empty or type is UNKNOWN_SERVICE.
 	CreateServiceIdentity(context.Context, *CreateServiceIdentityRequest) (*CreateServiceIdentityResponse, error)
-	// GetAuthorities returns the authorities currently in use.
+	// GetAuthorities returns the CA certificates currently trusted by Central.
+	//
+	// These are the root certificates that can be used to verify service identity certificates
+	// issued by Central.
 	GetAuthorities(context.Context, *Empty) (*Authorities, error)
 }
 
