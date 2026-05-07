@@ -248,7 +248,7 @@ func newSplunk(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, 
 		healthEndpoint = url + splunkHECHealthEndpoint
 	}
 
-	tr := proxy.RoundTripper(proxy.WithTLSConfig(&tls.Config{InsecureSkipVerify: conf.GetInsecure()}))
+	tr := proxy.RoundTripper(proxy.WithTLSConfig(&tls.Config{InsecureSkipVerify: conf.GetInsecure()})) //#nosec G402 -- InsecureSkipVerify is user-configurable for Splunk
 	client := &http.Client{Transport: tr}
 
 	return &splunk{

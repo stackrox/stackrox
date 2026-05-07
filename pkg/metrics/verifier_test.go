@@ -57,7 +57,7 @@ func TestClientCertVerifier(t *testing.T) {
 			tlsVerifier := &clientCertVerifier{
 				subjectCN: c.subjectCN,
 			}
-			tlsConfig := &tls.Config{ClientCAs: caPool}
+			tlsConfig := &tls.Config{ClientCAs: caPool, MinVersion: tls.VersionTLS12}
 			err = tlsVerifier.VerifyPeerCertificate(certs[0], nil, tlsConfig)
 
 			if c.isError {

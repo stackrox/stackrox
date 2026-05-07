@@ -25,7 +25,7 @@ func TestDialContextError(t *testing.T) {
 				InnerLogger: zap.New(observedZapCore).Sugar(),
 			}
 
-			_, err := DialContext(context.Background(), "tcp", dialAddr, &tls.Config{})
+			_, err := DialContext(context.Background(), "tcp", dialAddr, &tls.Config{MinVersion: tls.VersionTLS12})
 
 			assert.NotContains(t, err.Error(), "127.0.0.1")
 			assert.NotContains(t, err.Error(), "10001")

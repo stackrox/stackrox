@@ -23,7 +23,7 @@ func tlsConfigWithCustomCertPool() (*tls.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &tls.Config{RootCAs: certPool}, nil
+	return &tls.Config{RootCAs: certPool, MinVersion: tls.VersionTLS12}, nil
 }
 
 func systemCertPoolWithInjectedCAs() (*x509.CertPool, error) {

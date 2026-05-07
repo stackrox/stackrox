@@ -63,7 +63,7 @@ func (s *supressCveServiceTestErrorImpl) SuppressCVEs(_ context.Context, req *v1
 func (a *MarshalerTest) TestDurationParsing() {
 	testPort := testutils.GetFreeTestPort()
 	url := fmt.Sprintf("https://localhost:%d/v1/nodecves/suppress", testPort)
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //#nosec G402 -- test code
 
 	api := newAPIForTest(a.T(), defaultConf(testPort))
 	grpcServiceHandler := &supressCveServiceTestErrorImpl{}

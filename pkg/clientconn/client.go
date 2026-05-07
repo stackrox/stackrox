@@ -116,6 +116,7 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 		ServerName: serverName,
 		NextProtos: nextProtos,
 		RootCAs:    opts.RootCAs,
+		MinVersion: tls.VersionTLS12,
 	}
 
 	if opts.UseClientCert != DontUseClientCert {

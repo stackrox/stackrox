@@ -27,9 +27,9 @@ type insecureCapableTransport struct {
 func NewInsecureCapableTransport(transport *http.Transport) http.RoundTripper {
 	insecure := transport.Clone()
 	if insecure.TLSClientConfig == nil {
-		insecure.TLSClientConfig = &tls.Config{}
+		insecure.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 	}
-	insecure.TLSClientConfig.InsecureSkipVerify = true
+	insecure.TLSClientConfig.InsecureSkipVerify = true //#nosec G402 -- intentional for insecure-capable transport
 
 	return &insecureCapableTransport{
 		transport:         transport,

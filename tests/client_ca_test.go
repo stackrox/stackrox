@@ -127,7 +127,7 @@ func tlsConfWithCertChain(leafKey crypto.PrivateKey, leafCert *x509.Certificate,
 		certChain = append(certChain, cert.Raw)
 	}
 
-	return &tls.Config{
+	return &tls.Config{ //#nosec G402 -- test code
 		InsecureSkipVerify: true,
 		Certificates:       []tls.Certificate{{Certificate: certChain, PrivateKey: leafKey}},
 	}
@@ -195,7 +195,7 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 	token := getTokenForUserPKIAuthProvider(t, createdAuthProvider.GetId(), tlsConfWithLeaf)
 
 	// If only token is passed but with no client certs, we expect an error.
-	_, err = getAuthStatus(t, &tls.Config{InsecureSkipVerify: true}, token)
+	_, err = getAuthStatus(t, &tls.Config{InsecureSkipVerify: true}, token) //#nosec G402 -- test code
 	assert.Error(t, err)
 
 	// Token plus other, non-matching cert => should error.
@@ -227,7 +227,7 @@ func TestClientCARequested(t *testing.T) {
 	require.NoError(t, err, "Could not parse client CA PEM data")
 
 	var acceptableCAs [][]byte
-	tlsConf := &tls.Config{
+	tlsConf := &tls.Config{ //#nosec G402 -- test code
 		InsecureSkipVerify: true,
 		ServerName:         "central.stackrox",
 		GetClientCertificate: func(cri *tls.CertificateRequestInfo) (*tls.Certificate, error) {
