@@ -50,8 +50,7 @@ const (
 	defaultSSHFirstContactTimeout = 20 * time.Minute
 
 	// defaultGuestStepTimeout caps individual guest-preparation steps that
-	// run after SSH is confirmed working (cloud-init wait, sudo check,
-	// activation, roxagent install).
+	// run after SSH is confirmed working (cloud-init wait and sudo check).
 	defaultGuestStepTimeout = 10 * time.Minute
 
 	// defaultVirtctlCommandTimeout is the maximum wall-clock time for a single
@@ -177,7 +176,7 @@ func (s *VMScanningSuite) SetupSuite() {
 	s.vmSpecs = s.cfg.vmSpecs()
 	s.logf("VM scanning setup: provision persistent VMs (%d specs)", len(s.vmSpecs))
 	s.provisionPersistentVMs(s.vmSpecs)
-	s.logf("VM scanning setup: prepare guests (ssh/cloud-init/roxagent/activation)")
+	s.logf("VM scanning setup: prepare guests (ssh/cloud-init/sudo readiness)")
 	s.preparePersistentGuests()
 	s.logf("VM scanning setup: complete")
 }
@@ -380,7 +379,6 @@ func formatContainerNames(containers []coreV1.Container) string {
 
 func (s *VMScanningSuite) provisionPersistentVMs(specs []vmSpec) {
 	ctx := s.ctx
-	createdNow := make(map[string]bool)
 
 	s.logf("provision persistent VMs: creating namespace %q", s.namespace)
 	_, err := s.k8sClient.CoreV1().Namespaces().Create(ctx, &coreV1.Namespace{
@@ -407,7 +405,6 @@ func (s *VMScanningSuite) provisionPersistentVMs(specs []vmSpec) {
 		createErr := vmhelpers.CreateVirtualMachine(ctx, s.dynamicClient, req)
 		if createErr == nil {
 			s.logf("provision persistent VMs: created VM %s/%s", s.namespace, sp.Name)
-			createdNow[sp.Name] = true
 		} else if apierrors.IsAlreadyExists(createErr) {
 			currentImage, imgErr := vmhelpers.GetVMContainerDiskImage(ctx, s.dynamicClient, s.namespace, sp.Name)
 			if imgErr != nil {
@@ -427,10 +424,8 @@ func (s *VMScanningSuite) provisionPersistentVMs(specs []vmSpec) {
 				require.NoError(s.T(), vmhelpers.CreateVirtualMachine(ctx, s.dynamicClient, req),
 					"CreateVirtualMachine %s/%s after image mismatch delete", s.namespace, sp.Name)
 				s.logf("provision persistent VMs: recreated VM %s/%s with correct image", s.namespace, sp.Name)
-				createdNow[sp.Name] = true
 			} else {
 				s.logf("provision persistent VMs: VM %s/%s already exists with correct image; reusing it", s.namespace, sp.Name)
-				createdNow[sp.Name] = false
 			}
 		} else {
 			require.NoError(s.T(), createErr, "EnsureVirtualMachineExists %s/%s", s.namespace, sp.Name)
@@ -707,18 +702,6 @@ func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {
 	}); err != nil {
 		return err
 	}
-	var (
-		activated   bool
-		activStatus string
-	)
-	if err := runStep("Check activation status", "GetActivationStatus", stepTimeout, func(stepCtx context.Context) error {
-		var innerErr error
-		activated, activStatus, innerErr = vmhelpers.GetActivationStatus(stepCtx, virt, vm.Namespace, vm.Name)
-		return innerErr
-	}); err != nil {
-		return err
-	}
-	s.logf("[guest prep] activation status for %s/%s: activated=%v detail=%q", vm.Namespace, vm.Name, activated, activStatus)
 	s.logf("[guest prep] COMPLETED for %s/%s in %d step(s)", vm.Namespace, vm.Name, stepNum)
 	return nil
 }
