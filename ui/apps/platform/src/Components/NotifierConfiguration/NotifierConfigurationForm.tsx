@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
-import { Button, Card, CardBody, CardTitle, Flex, FlexItem, Tooltip } from '@patternfly/react-core';
-import { HelpIcon, PencilAltIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
+import { Button, Flex, FormSection, TextArea, TextInput } from '@patternfly/react-core';
+import { PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import type { FormikErrors } from 'formik';
 
-import { isDefaultEmailTemplate } from 'Components/EmailTemplate/EmailTemplate.utils';
-import EmailTemplateModal from 'Components/EmailTemplate/EmailTemplateModal';
-import type { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useIndexKey from 'hooks/useIndexKey';
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
@@ -27,8 +24,6 @@ function splitAndTrimMailingListsString(mailingListsString: string): string[] {
 }
 
 export type NotifierConfigurationFormProps = {
-    customBodyDefault: string;
-    customSubjectDefault: string;
     errors: FormikErrors<unknown>;
     // Caller provides name of property in formik.values and PatternFly fieldId props.
     // For example:
@@ -38,26 +33,20 @@ export type NotifierConfigurationFormProps = {
     hasWriteAccessForIntegration: boolean;
     notifierConfigurations: NotifierConfiguration[];
     onDeleteLastNotifierConfiguration?: () => void;
-    renderTemplatePreview?: (args: TemplatePreviewArgs) => ReactElement;
     setFieldValue: (fieldId: string, value: unknown) => void;
 };
 
 function NotifierConfigurationForm({
-    customBodyDefault,
-    customSubjectDefault,
     errors,
     fieldIdPrefixForFormikAndPatternFly,
     hasWriteAccessForIntegration,
     notifierConfigurations,
     onDeleteLastNotifierConfiguration,
-    renderTemplatePreview,
     setFieldValue,
 }: NotifierConfigurationFormProps): ReactElement {
     const { keyFor } = useIndexKey();
     const [notifiers, setNotifiers] = useState<NotifierIntegrationBase[]>([]);
     const [isLoadingNotifiers, setIsLoadingNotifiers] = useState(false);
-    const [notifierConfigurationSelected, setNotifierConfigurationSelected] =
-        useState<NotifierConfiguration | null>(null);
 
     useEffect(() => {
         setIsLoadingNotifiers(true);
@@ -98,216 +87,128 @@ function NotifierConfigurationForm({
 
     return (
         <>
-            <Flex
-                direction={{ default: 'column' }}
-                gap={{ default: 'gapMd' }}
-                aria-label="Delivery destinations"
-            >
-                {notifierConfigurations.map((notifierConfiguration, index) => {
-                    const { emailConfig, notifierName } = notifierConfiguration;
-                    const { customBody, customSubject, mailingLists, notifierId } = emailConfig;
-                    const fieldId = `${fieldIdPrefixForFormikAndPatternFly}[${index}]`;
-                    const isDefaultEmailTemplateApplied = isDefaultEmailTemplate({
-                        customBody,
-                        customSubject,
-                    });
-                    return (
-                        <FlexItem key={keyFor(index)}>
-                            <Card>
-                                <CardTitle>
-                                    <Flex
-                                        alignItems={{
-                                            default: 'alignItemsCenter',
-                                        }}
-                                    >
-                                        <FlexItem flex={{ default: 'flex_1' }}>
-                                            Delivery destination
-                                        </FlexItem>
-                                        <FlexItem>
-                                            <Button
-                                                icon={<TrashIcon />}
-                                                variant="plain"
-                                                aria-label="Delete delivery destination"
-                                                onClick={() => {
-                                                    const notifierConfigurationsFiltered =
-                                                        notifierConfigurations.filter(
-                                                            (notifierConfigurationArg) =>
-                                                                notifierConfigurationArg !==
-                                                                notifierConfiguration
-                                                        );
-                                                    setFieldValue(
-                                                        fieldIdPrefixForFormikAndPatternFly,
-                                                        notifierConfigurationsFiltered
-                                                    );
-                                                    setMailingListsStrings(
-                                                        mailingListsStrings.filter(
-                                                            (_, i) => i !== index
-                                                        )
-                                                    );
-                                                    if (
-                                                        notifierConfigurationsFiltered.length ===
-                                                            0 &&
-                                                        onDeleteLastNotifierConfiguration
-                                                    ) {
-                                                        onDeleteLastNotifierConfiguration();
-                                                    }
-                                                }}
-                                            />
-                                        </FlexItem>
-                                    </Flex>
-                                </CardTitle>
-                                <CardBody>
-                                    <Flex
-                                        direction={{ default: 'column' }}
-                                        spaceItems={{ default: 'spaceItemsMd' }}
-                                    >
-                                        <NotifierMailingLists
-                                            errors={errors}
-                                            fieldIdPrefixForFormikAndPatternFly={fieldId}
-                                            hasWriteAccessForIntegration={
-                                                hasWriteAccessForIntegration
-                                            }
-                                            isLoadingNotifiers={isLoadingNotifiers}
-                                            mailingListsString={mailingListsStrings[index]}
-                                            notifierId={notifierId}
-                                            notifierName={notifierName}
-                                            notifiers={notifiers}
-                                            setMailingLists={(mailingListsString: string) => {
-                                                setFieldValue(
-                                                    `${fieldId}.emailConfig.mailingLists`,
-                                                    splitAndTrimMailingListsString(
-                                                        mailingListsString
-                                                    )
-                                                );
-                                                updateMailingListsString(index, mailingListsString);
-                                            }}
-                                            setNotifier={(notifier: NotifierIntegrationBase) => {
-                                                setFieldValue(fieldId, {
-                                                    emailConfig: {
-                                                        ...emailConfig,
-                                                        notifierId: notifier.id,
-                                                        mailingLists:
-                                                            mailingLists.length === 0
-                                                                ? splitAndTrimMailingListsString(
-                                                                      notifier.labelDefault
-                                                                  )
-                                                                : mailingLists,
-                                                    },
-                                                    notifierName: notifier.name,
-                                                });
-                                                updateMailingListsString(
-                                                    index,
-                                                    notifier.labelDefault
-                                                );
-                                            }}
-                                            setNotifiers={setNotifiers}
-                                        />
-                                        <FormLabelGroup
-                                            label="Email template"
-                                            labelHelp={
-                                                <Tooltip
-                                                    content={
-                                                        isDefaultEmailTemplateApplied ? (
-                                                            <div>
-                                                                Default template applied. Edit to
-                                                                customize.
-                                                            </div>
-                                                        ) : (
-                                                            <div>
-                                                                Custom template applied. Edit to
-                                                                customize.
-                                                            </div>
-                                                        )
-                                                    }
-                                                >
-                                                    <Button
-                                                        icon={
-                                                            <HelpIcon aria-label="More info for email template field" />
-                                                        }
-                                                        variant="plain"
-                                                        aria-label="More info for email template field"
-                                                        aria-describedby={`${fieldId}.customSubject`}
-                                                    />
-                                                </Tooltip>
-                                            }
-                                            fieldId={`${fieldId}.customSubject`}
-                                            errors={errors}
-                                            isRequired
-                                        >
-                                            <Button
-                                                variant="link"
-                                                isInline
-                                                icon={<PencilAltIcon />}
-                                                onClick={() => {
-                                                    setNotifierConfigurationSelected(
-                                                        notifierConfiguration
-                                                    );
-                                                }}
-                                                iconPosition="right"
-                                            >
-                                                {isDefaultEmailTemplateApplied
-                                                    ? 'Default template applied'
-                                                    : 'Custom template applied'}
-                                            </Button>
-                                        </FormLabelGroup>
-                                    </Flex>
-                                </CardBody>
-                            </Card>
-                        </FlexItem>
-                    );
-                })}
-                <FlexItem>
-                    <Button
-                        variant="link"
-                        icon={<PlusCircleIcon />}
-                        onClick={() => {
-                            const notifierConfiguration: NotifierConfiguration = {
-                                emailConfig: {
-                                    notifierId: '',
-                                    mailingLists: [],
-                                    customSubject: '',
-                                    customBody: '',
-                                },
-                                notifierName: '',
-                            };
-                            setFieldValue(fieldIdPrefixForFormikAndPatternFly, [
-                                ...notifierConfigurations,
-                                notifierConfiguration,
-                            ]);
-                            setMailingListsStrings([...mailingListsStrings, '']);
-                        }}
-                    >
-                        Add delivery destination
-                    </Button>
-                </FlexItem>
+            {notifierConfigurations.map((notifierConfiguration, index) => {
+                const { emailConfig, notifierName } = notifierConfiguration;
+                const { customBody, customSubject, mailingLists, notifierId } = emailConfig;
+                const fieldId = `${fieldIdPrefixForFormikAndPatternFly}[${index}]`;
+
+                return (
+                    <FormSection key={keyFor(index)} title="Destination" titleElement="h3">
+                        <Flex direction={{ default: 'row' }}>
+                            <Button
+                                variant="link"
+                                icon={<TrashIcon />}
+                                onClick={() => {
+                                    const notifierConfigurationsFiltered =
+                                        notifierConfigurations.filter(
+                                            (notifierConfigurationArg) =>
+                                                notifierConfigurationArg !== notifierConfiguration
+                                        );
+                                    setFieldValue(
+                                        fieldIdPrefixForFormikAndPatternFly,
+                                        notifierConfigurationsFiltered
+                                    );
+                                    setMailingListsStrings(
+                                        mailingListsStrings.filter((_, i) => i !== index)
+                                    );
+                                    if (
+                                        notifierConfigurationsFiltered.length === 0 &&
+                                        onDeleteLastNotifierConfiguration
+                                    ) {
+                                        onDeleteLastNotifierConfiguration();
+                                    }
+                                }}
+                            >
+                                Delete destination
+                            </Button>
+                        </Flex>
+                        <NotifierMailingLists
+                            errors={errors}
+                            fieldIdPrefixForFormikAndPatternFly={fieldId}
+                            hasWriteAccessForIntegration={hasWriteAccessForIntegration}
+                            isLoadingNotifiers={isLoadingNotifiers}
+                            mailingListsString={mailingListsStrings[index]}
+                            notifierId={notifierId}
+                            notifierName={notifierName}
+                            notifiers={notifiers}
+                            setMailingLists={(mailingListsString: string) => {
+                                setFieldValue(
+                                    `${fieldId}.emailConfig.mailingLists`,
+                                    splitAndTrimMailingListsString(mailingListsString)
+                                );
+                                updateMailingListsString(index, mailingListsString);
+                            }}
+                            setNotifier={(notifier: NotifierIntegrationBase) => {
+                                setFieldValue(fieldId, {
+                                    emailConfig: {
+                                        ...emailConfig,
+                                        notifierId: notifier.id,
+                                        mailingLists:
+                                            mailingLists.length === 0
+                                                ? splitAndTrimMailingListsString(
+                                                      notifier.labelDefault
+                                                  )
+                                                : mailingLists,
+                                    },
+                                    notifierName: notifier.name,
+                                });
+                                updateMailingListsString(index, notifier.labelDefault);
+                            }}
+                            setNotifiers={setNotifiers}
+                        />
+                        <FormLabelGroup
+                            label="Custom subject"
+                            fieldId="customSubject"
+                            errors={errors}
+                        >
+                            <TextInput
+                                type="text"
+                                id="customSubject"
+                                name="customSubject"
+                                value={customSubject}
+                                onChange={(_event, value) => {
+                                    setFieldValue(`${fieldId}.customSubject`, value);
+                                }}
+                            />
+                        </FormLabelGroup>
+                        <FormLabelGroup label="Custom body" fieldId="customBody" errors={errors}>
+                            <TextArea
+                                type="text"
+                                id="customBody"
+                                name="customBody"
+                                value={customBody}
+                                onChange={(_event, value) => {
+                                    setFieldValue(`${fieldId}.customBody`, value);
+                                }}
+                            />
+                        </FormLabelGroup>
+                    </FormSection>
+                );
+            })}
+            <Flex direction={{ default: 'row' }}>
+                <Button
+                    variant="link"
+                    icon={<PlusCircleIcon />}
+                    onClick={() => {
+                        const notifierConfiguration: NotifierConfiguration = {
+                            emailConfig: {
+                                notifierId: '',
+                                mailingLists: [],
+                                customSubject: '',
+                                customBody: '',
+                            },
+                            notifierName: '',
+                        };
+                        setFieldValue(fieldIdPrefixForFormikAndPatternFly, [
+                            ...notifierConfigurations,
+                            notifierConfiguration,
+                        ]);
+                        setMailingListsStrings([...mailingListsStrings, '']);
+                    }}
+                >
+                    Add destination
+                </Button>
             </Flex>
-            {notifierConfigurationSelected && (
-                <EmailTemplateModal
-                    customBodyDefault={customBodyDefault}
-                    customBodyInitial={notifierConfigurationSelected.emailConfig.customBody}
-                    customSubjectDefault={customSubjectDefault}
-                    customSubjectInitial={notifierConfigurationSelected.emailConfig.customSubject}
-                    onChange={({ customBody, customSubject }) => {
-                        const index = notifierConfigurations.indexOf(notifierConfigurationSelected);
-                        if (index >= 0) {
-                            const { emailConfig } = notifierConfigurationSelected;
-                            setFieldValue(`${fieldIdPrefixForFormikAndPatternFly}[${index}]`, {
-                                ...notifierConfigurationSelected,
-                                emailConfig: {
-                                    ...emailConfig,
-                                    customSubject,
-                                    customBody,
-                                },
-                            });
-                        }
-                    }}
-                    onClose={() => {
-                        setNotifierConfigurationSelected(null);
-                    }}
-                    renderTemplatePreview={renderTemplatePreview}
-                    title="Edit email template"
-                />
-            )}
         </>
     );
 }
