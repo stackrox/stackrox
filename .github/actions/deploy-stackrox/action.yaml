@@ -85,12 +85,14 @@ runs:
             clusterName: ${{ inputs.cluster-name }}
         EOF
 
-          # Deploy with roxie
+          # Deploy with roxie.
+          # roxie needs a TTY for --exposure=none (no --envrc allowed).
+          # Use 'script' to provide a pseudo-TTY on Linux CI runners.
           ts "roxie deploy starting..."
           export MAIN_IMAGE_TAG="${{ inputs.tag }}"
           export ROX_ADMIN_PASSWORD
 
-          roxie deploy both \
+          script -q -e -c "roxie deploy both \
             --resources=${{ inputs.resources }} \
             --single-namespace \
             --exposure=none \
@@ -98,38 +100,16 @@ runs:
             --central-wait=10m \
             --secured-cluster-wait=10m \
             --override /tmp/roxie-override.yaml \
-            --envrc /tmp/roxie-envrc \
-            --tag "${{ inputs.tag }}" 2>&1 || {
-            # Fallback: roxie might fail with --envrc + --exposure=none
-            # In that case, try without --envrc and set up port-forward ourselves
-            ts "roxie --envrc failed, retrying with port-forward..."
-            roxie deploy both \
-              --resources=${{ inputs.resources }} \
-              --single-namespace \
-              --exposure=none \
-              --deploy-operator=false \
-              --central-wait=10m \
-              --secured-cluster-wait=10m \
-              --override /tmp/roxie-override.yaml \
-              --tag "${{ inputs.tag }}" \
-              --port-forwarding 2>&1 || true
-          }
+            --tag ${{ inputs.tag }}" /dev/null || true
           ts "roxie deploy complete"
 
-          # Set up port-forward if not already done by roxie
-          if ! curl -sk --connect-timeout 1 https://localhost:8000/v1/ping >/dev/null 2>&1; then
-            NS="${{ inputs.namespace }}"
-            while true; do
-              kubectl -n "$NS" port-forward svc/central 8000:443 2>/dev/null || sleep 2
-            done &
-          fi
+          # Set up port-forward (roxie spawns a subshell with --exposure=none
+          # which exits when script ends, so we need our own)
+          NS="${{ inputs.namespace }}"
+          while true; do
+            kubectl -n "$NS" port-forward svc/central 8000:443 2>/dev/null || sleep 2
+          done &
           API_ENDPOINT="localhost:8000"
-
-          # If roxie wrote an envrc with a remote endpoint, use that instead
-          if [ -f /tmp/roxie-envrc ]; then
-            source /tmp/roxie-envrc
-            API_ENDPOINT="${API_ENDPOINT:-localhost:8000}"
-          fi
 
           # Wait for Central API
           ts "waiting for Central API..."
