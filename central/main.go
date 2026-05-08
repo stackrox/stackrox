@@ -29,6 +29,7 @@ import (
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	authProviderSvc "github.com/stackrox/rox/central/authprovider/service"
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
+	backgroundmigrations "github.com/stackrox/rox/central/backgroundmigrations/runner"
 	baseImageService "github.com/stackrox/rox/central/baseimage/service"
 	baseImageWatcher "github.com/stackrox/rox/central/baseimage/watcher"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
@@ -400,6 +401,9 @@ func startServices() {
 		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
 	}
 
+	if features.BackgroundMigration.Enabled() {
+		backgroundmigrations.Singleton().Start()
+	}
 }
 
 func servicesToRegister() []pkgGRPC.APIService {
@@ -689,6 +693,7 @@ func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
 	add(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
 	add(clusterDataStore.Gather)
 	add(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
+	add(complianceScanDS.GatherTailoredProfiles(complianceScanDS.Singleton()))
 	add(declarativeconfig.ManagerSingleton().Gather())
 	add(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
 	add(externalbackupsDS.Gather)
