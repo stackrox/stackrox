@@ -1,10 +1,13 @@
 import { useCallback } from 'react';
 
 import { fetchReportHistory } from 'services/ReportsService';
-import type { ReportConfiguration, ReportSnapshot } from 'services/ReportsService.types';
+import type { ReportSnapshot } from 'services/ReportsService.types'; // ReportConfiguration
 import useInterval from 'hooks/useInterval';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useRestQuery from 'hooks/useRestQuery';
+
+// Replace with unified ReportConfiguration type when we delete ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING feature flag.
+import type { ImageVulnerabilityReportConfiguration as ReportConfiguration } from '../../ImageVulnerabilityReports/imageVulnerabilityReports.types';
 
 async function fetchLastReportJobForConfiguration(
     reportConfigurationId: string

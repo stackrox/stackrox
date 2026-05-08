@@ -68,6 +68,7 @@ function FiltersQuery<T extends FiltersQueryConfiguration = FiltersQueryConfigur
                     <CompoundSearchFilterLabels
                         attributesSeparateFromConfig={attributesSeparateFromConfig}
                         config={searchFilterConfig}
+                        hasClearFilters={false}
                         onFilterChange={onFilterChange}
                         searchFilter={searchFilter}
                     />
