@@ -28,7 +28,7 @@ type keyBundleUpdater struct {
 	doneSig  concurrency.Signal
 }
 
-const minUpdateInterval = 1 * time.Minute
+const minUpdateInterval = 5 * time.Minute
 
 func newKeyBundleUpdater(url, filePath string, interval time.Duration) *keyBundleUpdater {
 	if interval < minUpdateInterval {
@@ -62,7 +62,8 @@ func (u *keyBundleUpdater) run() {
 	defer u.doneSig.Signal()
 
 	if err := os.MkdirAll(filepath.Dir(u.filePath), 0700); err != nil {
-		log.Errorf("Failed to create directory for key bundle file: %v", err)
+		log.Errorf("Failed to create directory for key bundle file %q, updater will not run: %v",
+			u.filePath, err)
 		return
 	}
 
@@ -131,7 +132,7 @@ func (u *keyBundleUpdater) doDownload() error {
 		return errors.Wrap(err, "writing key bundle file")
 	}
 
-	log.Infof("Successfully downloaded Red Hat signing key bundle from %q", u.url)
+	log.Debugf("Successfully downloaded Red Hat signing key bundle from %q", u.url)
 	return nil
 }
 
@@ -142,29 +143,25 @@ func atomicWriteFile(path string, data []byte) error {
 		return errors.Wrap(err, "creating temp file")
 	}
 	tmpPath := tmp.Name()
+	defer os.Remove(tmpPath)
 
 	if err := os.Chmod(tmpPath, 0600); err != nil {
 		_ = tmp.Close()
-		_ = os.Remove(tmpPath)
 		return errors.Wrap(err, "setting temp file permissions")
 	}
 	if _, err := tmp.Write(data); err != nil {
 		_ = tmp.Close()
-		_ = os.Remove(tmpPath)
 		return errors.Wrap(err, "writing temp file")
 	}
 	if err := tmp.Sync(); err != nil {
 		_ = tmp.Close()
-		_ = os.Remove(tmpPath)
 		return errors.Wrap(err, "syncing temp file")
 	}
 	if err := tmp.Close(); err != nil {
-		_ = os.Remove(tmpPath)
 		return errors.Wrap(err, "closing temp file")
 	}
 
 	if err := os.Rename(tmpPath, path); err != nil {
-		_ = os.Remove(tmpPath)
 		return errors.Wrap(err, "renaming temp file")
 	}
 	return nil

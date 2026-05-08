@@ -157,7 +157,7 @@ func TestUpdaterStopSignal(t *testing.T) {
 	require.Eventually(t, func() bool {
 		_, err := os.Stat(filePath)
 		return err == nil
-	}, 2*time.Second, 10*time.Millisecond, "updater did not write the file")
+	}, 2*time.Second, 50*time.Millisecond, "updater did not write the file")
 
 	done := make(chan struct{})
 	go func() {

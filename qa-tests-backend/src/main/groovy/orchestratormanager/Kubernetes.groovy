@@ -67,7 +67,6 @@ import io.fabric8.kubernetes.api.model.VolumeMount
 import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration
 import io.fabric8.kubernetes.api.model.apps.DaemonSet as K8sDaemonSet
 import io.fabric8.kubernetes.api.model.apps.DaemonSetBuilder
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
 import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
