@@ -169,15 +169,16 @@ setup() {
 }
 
 @test "virtctl mode with no target fails with error and usage" {
-    # This would happen if someone accidentally passes only --stage-dir-like
-    # args that don't match any known flag, BUT the current interface means
-    # bare args go to virtctl. The edge case is: what if the script is invoked
-    # in a way that setup_transport_virtctl gets 0 args? That can't happen via
-    # main() because the else branch requires $# > 0. But we test the error
-    # path via a quirk: "virtctl" was the old keyword; now bare args go to
-    # virtctl directly. So this test just verifies the usage text exists.
-    run bash "${INSTALL_SCRIPT}" --ssh
+    run bash -c "
+        set -euo pipefail
+        source <(
+            sed -n '/^usage()/,/^}/p' '${INSTALL_SCRIPT}'
+            sed -n '/^setup_transport_virtctl()/,/^}/p' '${INSTALL_SCRIPT}'
+        )
+        setup_transport_virtctl
+    "
     assert_failure
+    assert_output --partial "error: virtctl mode requires at least a target"
     assert_output --partial "Usage:"
     assert_output --partial "virtctl"
 }

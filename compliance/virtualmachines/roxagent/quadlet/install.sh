@@ -76,9 +76,9 @@ main() {
 usage() {
     cat >&2 <<EOF
 Usage:
-  $0                                                # Install locally
-  $0 [virtctl-flags...] <user@vmi/name>            # Remote install via virtctl (default)
-  $0 --ssh <user@host> [port]                      # Remote install via SSH
+  $0                                           # Install locally
+  $0 [virtctl-flags...] <user@vmi/name>        # Remote install via virtctl (default)
+  $0 --ssh <user@host> [port]                  # Remote install via SSH
 
 Examples:
   $0 -n openshift-cnv cloud-user@vmi/rhel10-1
