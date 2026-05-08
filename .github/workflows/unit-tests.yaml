@@ -67,7 +67,20 @@ jobs:
         echo "go-test.sh exit: $?"
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: |
+        echo "=== which go ==="
+        which go
+        go env GOROOT
+        echo "=== Running make go-unit-tests ==="
+        set +eo pipefail
+        ${{ matrix.gotags }} make go-unit-tests 2>&1
+        rc=$?
+        echo "=== MAKE EXIT CODE: $rc ==="
+        if [ $rc -ne 0 ]; then
+          echo "=== Last 20 lines of test log ==="
+          tail -20 test-output/test.log || true
+        fi
+        exit $rc
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
       with:
