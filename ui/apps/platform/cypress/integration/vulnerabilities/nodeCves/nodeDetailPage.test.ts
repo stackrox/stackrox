@@ -188,7 +188,7 @@ describe('Node CVEs - Node Detail Page', () => {
             // filtering by Severity should only display rows with a matching top severity
             applyLocalSeverityFilters('Low');
             waitAndYieldRequestBodyVariables().then(
-                expectRequestedQuery('SEVERITY:LOW_VULNERABILITY_SEVERITY')
+                expectRequestedQuery('Severity:LOW_VULNERABILITY_SEVERITY')
             );
             assertOnEachRowForColumn('Top severity', (_, cell) => {
                 expect(cell.innerText).to.contain('Low');

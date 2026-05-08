@@ -222,7 +222,7 @@ describe('Node CVEs - CVE Detail Page', () => {
 
             applyLocalSeverityFilters('Low');
             waitAndYieldRequestBodyVariables().then(
-                expectRequestedQuery(`SEVERITY:LOW_VULNERABILITY_SEVERITY+CVE:r/^${mockCveName}$`)
+                expectRequestedQuery(`Severity:LOW_VULNERABILITY_SEVERITY+CVE:r/^${mockCveName}$`)
             );
             cy.get(vulnSelectors.summaryCard('Nodes by severity')).contains('Critical hidden');
             cy.get(vulnSelectors.summaryCard('Nodes by severity')).contains('Important hidden');
