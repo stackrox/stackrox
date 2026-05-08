@@ -56,10 +56,10 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         free-disk-space: 30
 
-#    - name: Cache Go dependencies
-#      uses: ./.github/actions/cache-go-dependencies
-#      with:
-#        key-suffix: ${{ matrix.gotags }}
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+      with:
+        key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests

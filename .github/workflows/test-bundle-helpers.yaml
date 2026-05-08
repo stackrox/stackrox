@@ -86,7 +86,8 @@ jobs:
       - name: Override GOTOOLCHAIN
         run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
-#      - name: Cache Go dependencies
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
 
       - name: Generate bundle with Python
         env:
@@ -141,8 +142,8 @@ jobs:
       - name: Override GOTOOLCHAIN
         run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
-#      - name: Cache Go dependencies
-#        uses: ./.github/actions/cache-go-dependencies
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
 
       - name: Run Go unit tests
         run: |
