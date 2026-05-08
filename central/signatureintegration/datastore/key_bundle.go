@@ -11,11 +11,11 @@ import (
 )
 
 var (
-	errKeyBundleEmpty          = errors.New("key bundle must contain at least one key")
-	errKeyNameEmpty            = errors.New("empty name")
-	errKeyNamePathSeparator    = errors.New("must not contain path separators")
-	errKeyNameDuplicate        = errors.New("duplicate key name")
-	errKeyInvalidPEM           = errors.New("invalid PEM-encoded public key")
+	errKeyBundleEmpty       = errors.New("key bundle must contain at least one key")
+	errKeyNameEmpty         = errors.New("empty name")
+	errKeyNamePathSeparator = errors.New("must not contain path separators")
+	errKeyNameDuplicate     = errors.New("duplicate key name")
+	errKeyInvalidPEM        = errors.New("invalid PEM-encoded public key")
 )
 
 type keyBundle struct {
