@@ -6,8 +6,10 @@ import get from 'lodash/get';
 import groupBy from 'lodash/groupBy';
 import keys from 'lodash/keys';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { listDeployments } from 'services/DeploymentsService';
 import type { ListDeployment } from 'types/deployment.proto';
+import { withActiveDeploymentFilter } from 'utils/deploymentUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type Deployment = {
@@ -49,6 +51,9 @@ function getNamespacesWithDeployments(deployments: ListDeployment[]): NamespaceW
 }
 
 function useFetchNamespaceDeployments(selectedNamespaceIds: string[]) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
+
     const [deploymentResponse, setDeploymentResponse] = useState<ListDeploymentResponse>({
         loading: false,
         error: '',
@@ -67,9 +72,10 @@ function useFetchNamespaceDeployments(selectedNamespaceIds: string[]) {
                 error: '',
                 deploymentsByNamespace: [],
             });
-            const searchQuery: Record<string, string[]> = {
-                'Namespace ID': selectedNamespaceIds,
-            };
+            const searchQuery = withActiveDeploymentFilter(
+                { 'Namespace ID': selectedNamespaceIds },
+                isDeploymentSoftDeletionEnabled
+            );
             const sortOption = { field: 'Deployment', reversed: false };
             listDeployments(searchQuery, sortOption, 0, 0)
                 .then((response) => {
@@ -94,7 +100,7 @@ function useFetchNamespaceDeployments(selectedNamespaceIds: string[]) {
                     });
                 });
         }
-    }, [selectedNamespaceIds]);
+    }, [selectedNamespaceIds, isDeploymentSoftDeletionEnabled]);
     return deploymentResponse;
 }
 
