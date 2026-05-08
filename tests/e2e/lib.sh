@@ -199,7 +199,6 @@ export_test_environment() {
     ci_export ROX_NODE_VULNERABILITY_REPORTS "${ROX_NODE_VULNERABILITY_REPORTS:-true}"
     ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
-    ci_export ROX_TAILORED_PROFILES "${ROX_TAILORED_PROFILES:-true}"
     ci_export ROX_INIT_CONTAINER_SUPPORT "${ROX_INIT_CONTAINER_SUPPORT:-true}"
     ci_export SCANNER_V4_VULN_READINESS "${SCANNER_V4_VULN_READINESS:-true}"
 
@@ -370,8 +369,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_BASE_IMAGE_DETECTION'
     customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_LABEL_BASED_POLICY_SCOPING'
-    customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_TAILORED_PROFILES'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_INIT_CONTAINER_SUPPORT'
     customize_envVars+=$'\n        value: "true"'

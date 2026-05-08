@@ -11,6 +11,7 @@ import CreateIntegrationPage from './CreateIntegrationPage';
 import EditIntegrationPage from './EditIntegrationPage';
 import IntegrationDetailsPage from './IntegrationDetailsPage';
 
+import ApiClientIntegrationsTab from './IntegrationTiles/ApiClientIntegrationsTab';
 import AuthenticationIntegrationsTab from './IntegrationTiles/AuthenticationIntegrationsTab';
 import BackupIntegrationsTab from './IntegrationTiles/BackupIntegrationsTab';
 import CloudSourceIntegrationsTab from './IntegrationTiles/CloudSourceIntegrationsTab';
@@ -31,6 +32,7 @@ const integrationsTabElementMap: Record<IntegrationSource, IntegrationsTabElemen
     backups: BackupIntegrationsTab,
     cloudSources: CloudSourceIntegrationsTab,
     authProviders: AuthenticationIntegrationsTab,
+    apiClients: ApiClientIntegrationsTab,
 };
 
 const IntegrationsPage = (): ReactElement => {

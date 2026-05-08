@@ -152,6 +152,25 @@ jobs:
           jq <<< "$matrix"
           echo "matrix=$(jq -c <<< "$matrix")" >> "$GITHUB_OUTPUT"
 
+  # Ensures go.mod doesn't require a Go version newer than what Konflux
+  # builders support. Remove once Konflux tracks upstream Go releases:
+  # https://github.com/stackrox/stackrox/pull/19737
+  go-version-ceiling:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+        with:
+          go-version: '1.25.7'
+          cache: false
+
+      - name: Verify go.mod is compatible with Konflux builders
+        run: go mod tidy
+
   pre-build-ui:
     strategy:
       fail-fast: false
@@ -364,12 +383,6 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Set up Go
-        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: false
-
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
@@ -400,12 +413,6 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Set up Go
-      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
-      with:
-        go-version-file: go.mod
-        cache: false
 
     - name: Set up Node.js
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
@@ -446,12 +453,6 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Set up Go
-        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
-        with:
-          go-version-file: operator/tools/kubebuilder/go.mod
-          cache: false
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -988,12 +989,6 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Set up Go
-      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
-      with:
-        go-version-file: go.mod
-        cache: false
-
     - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: cli-build
@@ -1108,6 +1103,7 @@ jobs:
       - build-and-push-main
       - build-and-push-operator
       - build-operator-bundle
+      - go-version-ceiling
       - pre-build-cli
       - pre-build-docs
       - pre-build-go-binaries

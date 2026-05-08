@@ -137,7 +137,7 @@ func checkForConversion(field reflect.StructField) bool {
 
 func getBaseType(fieldType reflect.Type) reflect.Type {
 	baseType := fieldType
-	for baseType.Kind() == reflect.Slice || baseType.Kind() == reflect.Map || baseType.Kind() == reflect.Ptr {
+	for baseType.Kind() == reflect.Slice || baseType.Kind() == reflect.Map || baseType.Kind() == reflect.Pointer {
 		baseType = baseType.Elem()
 	}
 

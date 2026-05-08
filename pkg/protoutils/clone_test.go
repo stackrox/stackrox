@@ -143,7 +143,7 @@ func checkAliasRecursive(t *testing.T, orig, cloned reflect.Value) {
 		for iter.Next() {
 			checkAliasRecursive(t, iter.Value(), cloned.MapIndex(iter.Key()))
 		}
-	case reflect.Ptr:
+	case reflect.Pointer:
 		checkPointers(t, orig, cloned)
 		checkAliasRecursive(t, orig.Elem(), cloned.Elem())
 	case reflect.Struct:

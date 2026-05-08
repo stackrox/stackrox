@@ -47,6 +47,10 @@ const useIntegrationPermissions = (): UseIntegrationPermissionsResponse => {
             write: getHasReadWritePermission('Integration', userRolePermissions),
             read: getHasReadPermission('Integration', userRolePermissions),
         },
+        apiClients: {
+            write: getHasReadWritePermission('Integration', userRolePermissions),
+            read: getHasReadPermission('Integration', userRolePermissions),
+        },
     };
 };
 

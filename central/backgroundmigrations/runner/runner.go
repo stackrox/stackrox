@@ -155,6 +155,7 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "reading current state")
 	}
+	bgMigrationSeqNumGauge.Set(float64(dbSeqNum))
 
 	overrideSeqNum, overrideTag, shouldOverride := r.checkSeqNumOverrideConfig(r.targetSeqNum, dbOverrideTag)
 	if shouldOverride {
@@ -181,8 +182,12 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 		dbSeqNum = r.targetSeqNum
 	}
 
+	// apply potential changes from overrides or rollbacks to the metric
+	bgMigrationSeqNumGauge.Set(float64(dbSeqNum))
+
 	if dbSeqNum == r.targetSeqNum {
 		log.Infof("up to date at seq num %d", dbSeqNum)
+		bgMigrationCompleteGauge.Set(1)
 		return nil
 	}
 
@@ -203,6 +208,7 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 			if err := r.writeSeqNum(ctx, migration.VersionAfterSeqNum); err != nil {
 				return errors.Wrapf(err, "updating seq num to %d after skipping migration %d", migration.VersionAfterSeqNum, seqNum)
 			}
+			bgMigrationSeqNumGauge.Set(float64(migration.VersionAfterSeqNum))
 			continue
 		}
 
@@ -216,8 +222,12 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 			return errors.Wrapf(err, "updating seq num to %d", migration.VersionAfterSeqNum)
 		}
 
+		bgMigrationSeqNumGauge.Set(float64(migration.VersionAfterSeqNum))
+
 		log.Infof("completed migration %d, now at seq num %d", seqNum, migration.VersionAfterSeqNum)
 	}
+
+	bgMigrationCompleteGauge.Set(1)
 
 	log.Infof("all migrations complete, at seq num %d", r.targetSeqNum)
 	return nil
