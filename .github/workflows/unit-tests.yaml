@@ -72,6 +72,11 @@ jobs:
         which go
         go env GOROOT
         echo "=== Running make go-unit-tests ==="
+        echo "=== Quick pipeline test (3 packages) ==="
+        set -o pipefail
+        CGO_ENABLED=1 GOTAGS=,test scripts/go-test.sh -timeout 5m -race -v ./pkg/env/... ./pkg/utils/... ./pkg/set/... | tee /tmp/quick-test.log
+        echo "Quick pipeline exit: $?"
+        set +eo pipefail
         set +eo pipefail
         ${{ matrix.gotags }} make go-unit-tests 2>&1
         rc=$?
