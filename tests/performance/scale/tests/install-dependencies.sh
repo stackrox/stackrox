@@ -28,10 +28,11 @@ echo "export KUBE_BURNER_PATH=$KUBE_BURNER_PATH" >> ~/.bashrc
 sudo cp "${HOME}/oc" /usr/bin
 
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-helm repo add rhacs https://mirror.openshift.com/pub/rhacs/charts
-helm repo update
 
 sudo install -o root -g root -m 0755 "${HOME}/roxctl" /usr/local/bin/roxctl
+
+roxctl helm output central-services --image-defaults=development_build --output-dir "${HOME}/stackrox-central-services-chart" --remove
+roxctl helm output secured-cluster-services --image-defaults=development_build --output-dir "${HOME}/stackrox-secured-cluster-services-chart" --remove
 
 sudo apt-get install jq -y
 sudo snap install yq

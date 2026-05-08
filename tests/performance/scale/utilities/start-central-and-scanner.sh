@@ -9,7 +9,7 @@ export KUBECONFIG="$artifacts_dir"/kubeconfig
 admin_password="$(cat "$artifacts_dir"/kubeadmin-password)"
 
 settings=(
-    --namespace stackrox stackrox-central-services --create-namespace rhacs/central-services
+    --namespace stackrox stackrox-central-services --create-namespace "${HOME}/stackrox-central-services-chart"
     --set central.exposure.route.enabled=true
     --set central.adminPassword.value="$admin_password"
     --set enableOpenShiftMonitoring=true

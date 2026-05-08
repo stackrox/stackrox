@@ -10,7 +10,7 @@ echo "Starting secure cluster services"
 export KUBECONFIG=$artifacts_dir/kubeconfig
 
 settings=(
-    --namespace stackrox stackrox-secured-cluster-services rhacs/secured-cluster-services
+    --namespace stackrox stackrox-secured-cluster-services "${HOME}/stackrox-secured-cluster-services-chart"
     --values perf-bundle.yml
     --set clusterName=perf-test
     --set enableOpenShiftMonitoring=true
