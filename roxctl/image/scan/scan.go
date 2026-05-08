@@ -96,8 +96,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	// Deprecated flag
 	// The error message will be prefixed by "command <command-name> has been deprecated".
-	//
-	// TODO(ROX-29120): This may NOT be removed until we find another place to put this or we replace this with another equivalent format.
 	c.Flags().StringVarP(&imageScanCmd.format, "format", "", "json", "Format of the output. Choose output format from json and csv.")
 	utils.Must(c.Flags().MarkDeprecated("format", deprecationNote))
 
