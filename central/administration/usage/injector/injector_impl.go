@@ -50,11 +50,9 @@ func (i *injectorImpl) gatherLoop() {
 	for {
 		select {
 		case <-i.tickChan:
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				i.gather(ctx)
-			}()
+			})
 		case <-i.stop.Done():
 			cancel()
 			wg.Wait()
@@ -68,11 +66,9 @@ func (i *injectorImpl) gatherLoop() {
 // Start initiates periodic data injections to the database with the
 // collected usage.
 func (i *injectorImpl) Start() {
-	i.gatherersGroup.Add(1)
-	go func() {
-		defer i.gatherersGroup.Done()
+	i.gatherersGroup.Go(func() {
 		i.gatherLoop()
-	}()
+	})
 }
 
 // Stop stops the scheduled timer and wait for the gatherer to stop.

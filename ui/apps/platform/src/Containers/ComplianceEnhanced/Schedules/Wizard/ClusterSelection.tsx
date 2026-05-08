@@ -50,7 +50,6 @@ function ClusterSelection({
     const isRouteEnabledForClusters = isRouteEnabled('clusters');
     const {
         setFieldValue,
-        setTouched,
         values: formikValues,
         touched: formikTouched,
     }: FormikContextType<ScanConfigFormValues> = useFormikContext();
@@ -78,7 +77,6 @@ function ClusterSelection({
             })
             .map((cluster) => cluster.clusterId);
 
-        setTouched({ ...formikTouched, clusters: true });
         setFieldValue('clusters', newSelectedIds);
     };
 
@@ -87,7 +85,6 @@ function ClusterSelection({
 
         const newSelectedIds = isSelected ? clusters.map((cluster) => cluster.clusterId) : [];
 
-        setTouched({ ...formikTouched, clusters: true });
         setFieldValue('clusters', newSelectedIds);
     };
 

@@ -9,6 +9,7 @@ from clusters import AutomationFlavorsCluster
 
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
+os.environ["KUBERNETES_PROVIDER"] = "ocp"
 os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"

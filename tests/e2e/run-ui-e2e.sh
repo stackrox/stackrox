@@ -14,6 +14,43 @@ source "$ROOT/tests/scripts/setup-certs.sh"
 
 set -euo pipefail
 
+enable_console_plugin() {
+    info "Enabling advanced-cluster-security console plugin"
+
+    # Wait for the ConsolePlugin CRD and resource to exist
+    info "Waiting for ConsolePlugin CRD to be established"
+    kubectl wait --for=condition=Established --timeout=120s \
+        crd/consoleplugins.console.openshift.io
+
+    info "Waiting for advanced-cluster-security ConsolePlugin resource to be created"
+    kubectl wait --for=create --timeout=120s \
+        consoleplugin/advanced-cluster-security
+
+    # Enable the plugin in the console operator config (idempotent)
+    local current_plugins
+    current_plugins=$(oc get console.operator.openshift.io cluster -o jsonpath='{.spec.plugins[*]}' 2>/dev/null || echo "")
+    if [[ "$current_plugins" =~ (^|[[:space:]])advanced-cluster-security([[:space:]]|$) ]]; then
+        info "Plugin 'advanced-cluster-security' is already enabled"
+    else
+        info "Enabling plugin 'advanced-cluster-security' in console config"
+        if [[ -z "$current_plugins" || "$current_plugins" == "null" ]]; then
+            # No plugins enabled yet, initialize the array
+            oc patch console.operator.openshift.io cluster --type=merge \
+              -p '{"spec":{"plugins":["advanced-cluster-security"]}}'
+        else
+            # Append to existing plugins
+            oc patch console.operator.openshift.io cluster --type=json \
+              -p '[{"op": "add", "path": "/spec/plugins/-", "value": "advanced-cluster-security"}]'
+        fi
+
+        # Wait for console deployment to roll out with plugin configuration
+        info "Waiting for console deployment to roll out with plugin enabled"
+        kubectl rollout status deployment/console -n openshift-console --timeout=3m || {
+            die "Console rollout did not complete within 3m after enabling plugin"
+        }
+    fi
+}
+
 test_ui_e2e() {
     info "Starting UI e2e tests"
 
@@ -31,6 +68,11 @@ test_ui_e2e() {
     # deploy the optional components before stackrox
     deploy_optional_e2e_components
     deploy_stackrox
+
+    # Enable the console plugin for OpenShift if the ConsolePlugin resource exists
+    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]] && kubectl get consoleplugin advanced-cluster-security &>/dev/null; then
+        enable_console_plugin
+    fi
 
     run_ui_e2e_tests
 }
@@ -59,6 +101,10 @@ run_ui_e2e_tests() {
     make -C ui test-e2e || touch FAIL
 
     store_test_results "ui/test-results/reports/cypress/integration/." "cy-reps"
+    # OCP console plugin tests write to a separate directory; only present on OpenShift runs
+    if [[ -d "ui/test-results/reports/cypress/integration-ocp" ]]; then
+        store_test_results "ui/test-results/reports/cypress/integration-ocp/." "cy-reps/consolePlugin"
+    fi
 
     if is_OPENSHIFT_CI; then
         cp -a ui/test-results/artifacts/* "${ARTIFACT_DIR}/" || true

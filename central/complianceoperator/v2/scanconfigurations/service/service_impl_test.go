@@ -1198,6 +1198,19 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.Complian
 	}
 }
 
+// TestGetProfiles_NoMatch verifies that when GetProfilesNames returns nil (filter
+// matches no scan configs), getProfiles short-circuits and returns an empty list
+// rather than falling through to SearchProfiles with no WHERE clause (which would
+// return every profile in the database).
+func (s *ComplianceScanConfigServiceTestSuite) TestGetProfiles_NoMatch() {
+	s.scanConfigDatastore.EXPECT().GetProfilesNames(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+
+	profiles, count, err := s.service.(*serviceImpl).getProfiles(s.ctx, search.EmptyQuery(), search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Empty(profiles)
+	s.Zero(count)
+}
+
 func getTestAPIRec() *apiV2.ComplianceScanConfiguration {
 	return &apiV2.ComplianceScanConfiguration{
 		ScanName: "test-scan",

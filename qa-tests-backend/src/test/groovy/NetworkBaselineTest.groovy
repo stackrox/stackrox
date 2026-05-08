@@ -33,7 +33,7 @@ class NetworkBaselineTest extends BaseSpecification {
     private static final String NGINX_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine"
     private static final String EXTERNAL_IP1 = "8.8.8.8" // Google Public DNS
     private static final String EXTERNAL_IP2 = "1.1.1.1" // Cloudflare Public DNS
-    private static final String EXTERNAL_IP3 = "142.250.72.238" // Google CDN
+    private static final String EXTERNAL_IP3 = "1.1.1.2" // Cloudflare (this will be used to test port 80)
 
     // The baseline generation duration must be changed from the default for this test to succeed.
     private static final int EXPECTED_BASELINE_DURATION_SECONDS = 240
@@ -473,8 +473,9 @@ class NetworkBaselineTest extends BaseSpecification {
 
         def externalBaseline = evaluateWithRetry(30, 4) {
             def externalBaseline = NetworkBaselineService.getNetworkBaselineForExternalFlows(deploymentUid)
-            assert externalBaseline.totalAnomalous + externalBaseline.totalBaseline != 0 :
-                    "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${externalBaseline}"
+            assert externalBaseline.totalBaseline >= 3 :
+                    "Expected at least 3 baseline peers for deployment ${deploymentUid}, " +
+                    "got ${externalBaseline.totalBaseline}. Baseline is ${externalBaseline}"
             return externalBaseline
         }
 
@@ -534,8 +535,10 @@ class NetworkBaselineTest extends BaseSpecification {
 
         def externalBaselineAfter = evaluateWithRetry(30, 4) {
             def externalBaselineAfter = NetworkBaselineService.getNetworkBaselineForExternalFlows(deploymentUid)
-            assert externalBaselineAfter.totalAnomalous + externalBaselineAfter.totalBaseline != 0 :
-                    "No peers in baseline for deployment ${deploymentUid} yet. Baseline is ${externalBaselineAfter}"
+            assert externalBaselineAfter.totalAnomalous == 2 && externalBaselineAfter.totalBaseline == 1 :
+                    "Expected 2 anomalous + 1 baseline for deployment ${deploymentUid}, " +
+                    "got ${externalBaselineAfter.totalAnomalous} anomalous + " +
+                    "${externalBaselineAfter.totalBaseline} baseline. Baseline is ${externalBaselineAfter}"
             return externalBaselineAfter
         }
 

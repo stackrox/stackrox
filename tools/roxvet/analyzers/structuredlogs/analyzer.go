@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/tools/roxvet/common"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
-	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/ast/inspector"
 	"golang.org/x/tools/go/types/typeutil"
 )
@@ -57,7 +56,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 }
 
 func checkCall(pass *analysis.Pass, call *ast.CallExpr) {
-	fn := astutil.Unparen(call.Fun)
+	fn := ast.Unparen(call.Fun)
 
 	// Skip type conversions and built-in functions.
 	if pass.TypesInfo.Types[fn].IsType() || pass.TypesInfo.Types[fn].IsBuiltin() {

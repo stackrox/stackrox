@@ -144,9 +144,7 @@ func TestDataRaceAtCleanup(t *testing.T) {
 	wg := sync.WaitGroup{}
 	doneSignal := concurrency.NewSignal()
 	// Spawning two goroutines to attempt to trigger data race in updateConfigDelayed
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case <-doneSignal.Done():
@@ -157,10 +155,8 @@ func TestDataRaceAtCleanup(t *testing.T) {
 				_ = s.DeleteImageDigestMirrorSet(idmsA.UID)
 			}
 		}
-	}()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	})
+	wg.Go(func() {
 		for {
 			select {
 			case <-doneSignal.Done():
@@ -171,7 +167,7 @@ func TestDataRaceAtCleanup(t *testing.T) {
 				_ = s.DeleteImageTagMirrorSet(itmsA.UID)
 			}
 		}
-	}()
+	})
 	time.Sleep(100 * time.Millisecond)
 	s.Cleanup()
 	doneSignal.Signal()

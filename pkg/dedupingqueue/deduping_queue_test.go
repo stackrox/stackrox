@@ -18,8 +18,8 @@ func TestUniQueue(t *testing.T) {
 }
 
 func (s *uniQueueSuite) TestPushPull() {
-	items := []*testItem{{1}, {2}, {1}, {3}}
-	expectedItems := []*testItem{{1}, {2}, {3}}
+	items := []*testItem{{value: 1}, {value: 2}, {value: 1}, {value: 3}}
+	expectedItems := []*testItem{{value: 1}, {value: 2}, {value: 3}}
 	q := NewDedupingQueue[string]()
 	for _, i := range items {
 		q.Push(i)
@@ -68,12 +68,104 @@ func (s *uniQueueSuite) TestPullBlocking() {
 	}, time.Second, 100*time.Millisecond, "an nil value should be returned after the stop signal is triggered")
 }
 
+func (s *uniQueueSuite) TestMergeableItemsMergeOnDuplicate() {
+	q := NewDedupingQueue[string]()
+	q.Push(&mergeableItem{id: "a", flag1: false, flag2: true})
+	q.Push(&mergeableItem{id: "a", flag1: true, flag2: false})
+
+	s.Assert().Equal(1, q.queue.Len(), "duplicate key should result in one item")
+
+	stopSignal := concurrency.NewSignal()
+	defer stopSignal.Signal()
+	item := q.PullBlocking(&stopSignal)
+	merged, ok := item.(*mergeableItem)
+	s.Require().True(ok)
+	s.Assert().True(merged.flag1, "flag1 should be sticky-true after merge")
+	s.Assert().True(merged.flag2, "flag2 should be sticky-true after merge")
+}
+
+func (s *uniQueueSuite) TestMergeableThreeWayMerge() {
+	q := NewDedupingQueue[string]()
+	q.Push(&mergeableItem{id: "a", flag1: false, flag2: false})
+	q.Push(&mergeableItem{id: "a", flag1: true, flag2: false})
+	q.Push(&mergeableItem{id: "a", flag1: false, flag2: true})
+
+	s.Assert().Equal(1, q.queue.Len())
+
+	stopSignal := concurrency.NewSignal()
+	defer stopSignal.Signal()
+	item := q.PullBlocking(&stopSignal)
+	merged, ok := item.(*mergeableItem)
+	s.Require().True(ok)
+	s.Assert().True(merged.flag1, "flag1 should accumulate across three pushes")
+	s.Assert().True(merged.flag2, "flag2 should accumulate across three pushes")
+}
+
+func (s *uniQueueSuite) TestNonMergeableItemsReplaceOnDuplicate() {
+	q := NewDedupingQueue[string]()
+	q.Push(&testItem{value: 1, payload: "first"})
+	q.Push(&testItem{value: 1, payload: "second"})
+
+	s.Assert().Equal(1, q.queue.Len(), "duplicate key should result in one item")
+
+	stopSignal := concurrency.NewSignal()
+	defer stopSignal.Signal()
+	item := q.PullBlocking(&stopSignal)
+	pulled, ok := item.(*testItem)
+	s.Require().True(ok)
+	s.Assert().Equal("second", pulled.payload, "new item should replace the old one")
+}
+
+func (s *uniQueueSuite) TestMergeablePreservesQueueOrder() {
+	q := NewDedupingQueue[string]()
+	q.Push(&mergeableItem{id: "a", flag1: true, flag2: false})
+	q.Push(&mergeableItem{id: "b", flag1: false, flag2: true})
+	q.Push(&mergeableItem{id: "a", flag1: false, flag2: true})
+
+	s.Assert().Equal(2, q.queue.Len(), "should have two items after merge")
+
+	stopSignal := concurrency.NewSignal()
+	defer stopSignal.Signal()
+
+	firstItem := q.PullBlocking(&stopSignal)
+	first, ok := firstItem.(*mergeableItem)
+	s.Require().True(ok)
+	s.Assert().Equal("a", first.id, "merged item should keep its original position")
+	s.Assert().True(first.flag1)
+	s.Assert().True(first.flag2)
+
+	secondItem := q.PullBlocking(&stopSignal)
+	second, ok := secondItem.(*mergeableItem)
+	s.Require().True(ok)
+	s.Assert().Equal("b", second.id)
+}
+
 type testItem struct {
-	value int
+	value   int
+	payload string
 }
 
 func (i *testItem) GetDedupeKey() string {
 	return fmt.Sprintf("%d", i.value)
+}
+
+type mergeableItem struct {
+	id    string
+	flag1 bool
+	flag2 bool
+}
+
+func (i *mergeableItem) GetDedupeKey() string {
+	return i.id
+}
+
+func (i *mergeableItem) MergeFrom(old Item[string]) {
+	oldItem, ok := old.(*mergeableItem)
+	if !ok {
+		return
+	}
+	i.flag1 = i.flag1 || oldItem.flag1
+	i.flag2 = i.flag2 || oldItem.flag2
 }
 
 type itemWithNoKeyFunction struct {

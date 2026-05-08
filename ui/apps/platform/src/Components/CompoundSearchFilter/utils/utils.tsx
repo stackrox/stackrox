@@ -200,7 +200,7 @@ export type CompoundSearchFilterLabelDescription = {
 export type IsGlobalPredicate = (category: string, value: string) => boolean;
 
 // If attribute has any values in search filter return description else null.
-export function getCompoundSearchFilterLabelDescriptionOrNull(
+function getCompoundSearchFilterLabelDescriptionOrNull(
     attribute: CompoundSearchFilterAttribute,
     searchFilter: SearchFilter,
     isGlobalPredicate: IsGlobalPredicate
@@ -346,6 +346,31 @@ export function getCompoundSearchFilterLabelDescriptionOrNull(
 // Return internal value if untrusted page address search query does not have a valid option.
 function getLabelForOption(option: SelectSearchFilterOption | undefined, value: string) {
     return option ? option.label : value;
+}
+
+const isGlobalPredicateFalse: IsGlobalPredicate = () => false;
+
+// Return descriptions for compound search filter and also for report configurations.
+export function getCompoundSearchFilterLabelDescriptions(
+    attributes: CompoundSearchFilterAttribute[],
+    searchFilter: SearchFilter,
+    isGlobalPredicate: IsGlobalPredicate = isGlobalPredicateFalse // for certain values in AdvancedFilterToolbar.tsx file
+): CompoundSearchFilterLabelDescription[] {
+    const labelGroupDescriptions: CompoundSearchFilterLabelDescription[] = [];
+
+    attributes.forEach((attribute) => {
+        const labelDescriptionOrNull = getCompoundSearchFilterLabelDescriptionOrNull(
+            attribute,
+            searchFilter,
+            isGlobalPredicate
+        );
+        if (labelDescriptionOrNull !== null) {
+            // Attribute has one or more values in the search filter.
+            labelGroupDescriptions.push(labelDescriptionOrNull);
+        }
+    });
+
+    return labelGroupDescriptions;
 }
 
 // Given predicate function from useFeatureFlags hook in component

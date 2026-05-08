@@ -105,11 +105,9 @@ func TestValue_GetWithContext(t *testing.T) {
 		ctx, cancel := context.WithCancelCause(context.Background())
 		var value string
 		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() {
+		wg.Go(func() {
 			value = v.GetWithContext(ctx)
-			wg.Done()
-		}()
+		})
 		cancel(errors.New("a cause"))
 		wg.Wait()
 
@@ -130,11 +128,9 @@ func TestValue_GetWithContext(t *testing.T) {
 		defer cancel(nil)
 		var value string
 		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() {
+		wg.Go(func() {
 			value = v.GetWithContext(ctx)
-			wg.Done()
-		}()
+		})
 		v.Set("value")
 		wg.Wait()
 		assert.Equal(t, "value", value)

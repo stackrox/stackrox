@@ -21,11 +21,9 @@ func TestHeapDump(t *testing.T) {
 	now := time.Now()
 	wg := sync.WaitGroup{}
 
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		p.dumpHeapOnThreshhold(ctx, runCheck)
-		wg.Done()
-	}()
+	})
 
 	runCheck <- now
 	cancelCtx()

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
@@ -14,13 +15,19 @@ import (
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
 	DATA_NOT_AVAILABLE = "Data Not Available"
-	NO_REMEDIATION     = "No Remediation Available"
+	// CONTROL_NOT_APPLICABLE is used when a control reference cannot be resolved for structural reasons
+	// (e.g. tailored profiles with no benchmark mapping, or profiles like E8 whose benchmark short name
+	// has no matching standard in rule annotations). DATA_NOT_AVAILABLE is used instead when the lookup
+	// fails due to errors or data-integrity issues.
+	CONTROL_NOT_APPLICABLE = "N/A"
+	NO_REMEDIATION         = "No Remediation Available"
 )
 
 var (
@@ -115,12 +122,13 @@ func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, 
 func (g *Aggregator) AggregateResults(ctx context.Context, clusterID string, clusterResults *[]*report.ResultRow, checkStatus *checkStatus) checkResultWalkByQuery {
 	return func(checkResult *storage.ComplianceOperatorCheckResultV2) error {
 		row := &report.ResultRow{
-			ClusterName:  checkResult.GetClusterName(),
-			CheckName:    checkResult.GetCheckName(),
-			Description:  checkResult.GetDescription(),
-			Status:       checkResult.GetStatus().String(),
-			Rationale:    checkResult.GetRationale(),
-			Instructions: checkResult.GetInstructions(),
+			ClusterName:    checkResult.GetClusterName(),
+			CheckName:      checkResult.GetCheckName(),
+			Description:    checkResult.GetDescription(),
+			Status:         checkResult.GetStatus().String(),
+			Rationale:      checkResult.GetRationale(),
+			Instructions:   checkResult.GetInstructions(),
+			AssessmentTime: protocompat.ConvertTimestampToString(checkResult.GetLastStartedTime(), time.RFC1123),
 		}
 		profileInfo, profileName, profileType, err := g.getProfileInfo(ctx, checkResult, clusterID)
 		if err != nil {
@@ -209,7 +217,7 @@ func (g *Aggregator) getControlsInfo(ctx context.Context, checkResult *storage.C
 		return DATA_NOT_AVAILABLE, err
 	}
 	if len(controls) == 0 {
-		return DATA_NOT_AVAILABLE, nil
+		return CONTROL_NOT_APPLICABLE, nil
 	}
 	controlsList := make([]string, 0, len(controls))
 	for _, ctrl := range controls {

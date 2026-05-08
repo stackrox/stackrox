@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	checkResultsMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
@@ -21,10 +22,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
-	scanConfigID = "scan-config-id"
+	scanConfigID               = "scan-config-id"
+	expectedFormattedTimestamp = "Wed, 07 May 2025 12:00:00 UTC"
 )
 
 func TestComplianceReportingDataGenerator(t *testing.T) {
@@ -167,13 +170,14 @@ var (
 )
 
 type walkByQueryTestCase struct {
-	check                *storage.ComplianceOperatorCheckResultV2
-	expectedProfiles     func() ([]*storage.ComplianceOperatorProfileV2, error)
-	expectedRemediations func() ([]*storage.ComplianceOperatorRemediationV2, error)
-	expectedRules        func() ([]*storage.ComplianceOperatorRuleV2, error)
-	expectedBenchmarks   func() ([]*storage.ComplianceOperatorBenchmarkV2, error)
-	expectedControls     func() ([]*datastore.ControlResult, error)
-	expectError          bool
+	check                  *storage.ComplianceOperatorCheckResultV2
+	expectedProfiles       func() ([]*storage.ComplianceOperatorProfileV2, error)
+	expectedRemediations   func() ([]*storage.ComplianceOperatorRemediationV2, error)
+	expectedRules          func() ([]*storage.ComplianceOperatorRuleV2, error)
+	expectedBenchmarks     func() ([]*storage.ComplianceOperatorBenchmarkV2, error)
+	expectedControls       func() ([]*datastore.ControlResult, error)
+	expectedAssessmentTime string
+	expectError            bool
 }
 
 func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
@@ -196,6 +200,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		"fail check no error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_FAIL),
@@ -214,6 +219,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		"mixed check no error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_INCONSISTENT),
@@ -232,6 +238,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		"profile search error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -254,6 +261,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
 				return benchmarks, nil
 			},
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		"remediation search error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -282,6 +290,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		"rule search error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -307,6 +316,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
 				return []*storage.ComplianceOperatorRuleV2{}, nil
 			},
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		"benchmark not found": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -327,6 +337,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
 				return []*storage.ComplianceOperatorBenchmarkV2{}, nil
 			},
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		"control search error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -364,6 +375,106 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return []*datastore.ControlResult{}, nil
 			},
+			expectedAssessmentTime: expectedFormattedTimestamp,
+		},
+		"profile without benchmark mapping renders control reference as N/A": {
+			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
+			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
+				return []*storage.ComplianceOperatorProfileV2{
+					{
+						Name:           "my-custom-tailored-profile",
+						ProfileVersion: "1.0.0",
+						OperatorKind:   storage.ComplianceOperatorProfileV2_TAILORED_PROFILE,
+					},
+				}, nil
+			},
+			expectedRemediations: func() ([]*storage.ComplianceOperatorRemediationV2, error) {
+				return remediations, nil
+			},
+			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
+				return rules, nil
+			},
+			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
+				return []*storage.ComplianceOperatorBenchmarkV2{}, nil
+			},
+			expectedAssessmentTime: expectedFormattedTimestamp,
+		},
+		"profile with benchmark but no matching controls renders control reference as N/A": {
+			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
+			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
+				return []*storage.ComplianceOperatorProfileV2{
+					{
+						Name:           "ocp4-e8",
+						ProfileVersion: "1.0.0",
+						OperatorKind:   storage.ComplianceOperatorProfileV2_PROFILE,
+					},
+				}, nil
+			},
+			expectedRemediations: func() ([]*storage.ComplianceOperatorRemediationV2, error) {
+				return remediations, nil
+			},
+			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
+				return rules, nil
+			},
+			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
+				return benchmarks, nil
+			},
+			expectedControls: func() ([]*datastore.ControlResult, error) {
+				return []*datastore.ControlResult{}, nil
+			},
+			expectedAssessmentTime: expectedFormattedTimestamp,
+		},
+		// getCheckResult not used here to test nil LastStartedTime
+		"nil last started time renders assessment time as N/A": {
+			check: &storage.ComplianceOperatorCheckResultV2{
+				ClusterName:  "cluster-1",
+				CheckName:    "check",
+				Description:  "description",
+				Status:       storage.ComplianceOperatorCheckResultV2_PASS,
+				Rationale:    "rationale",
+				Instructions: "instructions",
+			},
+			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
+				return profiles, nil
+			},
+			expectedRemediations: func() ([]*storage.ComplianceOperatorRemediationV2, error) {
+				return remediations, nil
+			},
+			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
+				return rules, nil
+			},
+			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
+				return benchmarks, nil
+			},
+			expectedControls: func() ([]*datastore.ControlResult, error) {
+				return controls, nil
+			},
+			expectedAssessmentTime: "N/A",
+		},
+		"profile matching benchmark regex resolves controls": {
+			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
+			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
+				return []*storage.ComplianceOperatorProfileV2{
+					{
+						Name:           "ocp4-cis",
+						ProfileVersion: "1.4.0",
+						OperatorKind:   storage.ComplianceOperatorProfileV2_PROFILE,
+					},
+				}, nil
+			},
+			expectedRemediations: func() ([]*storage.ComplianceOperatorRemediationV2, error) {
+				return remediations, nil
+			},
+			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
+				return rules, nil
+			},
+			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
+				return benchmarks, nil
+			},
+			expectedControls: func() ([]*datastore.ControlResult, error) {
+				return controls, nil
+			},
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 	}
 	for tname, tcase := range cases {
@@ -471,16 +582,17 @@ func mockWalkByQueryWrapper(_ context.Context, clusterID string, clusterResults 
 
 func getRowFromCluster(check, clusterID string) *report.ResultRow {
 	return &report.ResultRow{
-		ClusterName:  clusterID,
-		CheckName:    fmt.Sprintf("check-%s-%s", clusterID, check),
-		Description:  fmt.Sprintf("description-%s-%s", clusterID, check),
-		Status:       fmt.Sprintf("status-%s-%s", clusterID, check),
-		Rationale:    fmt.Sprintf("rationale-%s-%s", clusterID, check),
-		Instructions: fmt.Sprintf("instructions-%s-%s", clusterID, check),
-		Profile:      fmt.Sprintf("profile-%s-%s", clusterID, check),
-		ProfileType:  fmt.Sprintf("profiletype-%s-%s", clusterID, check),
-		ControlRef:   fmt.Sprintf("control-%s-%s", clusterID, check),
-		Remediation:  fmt.Sprintf("remediation=%s-%s", clusterID, check),
+		ClusterName:    clusterID,
+		CheckName:      fmt.Sprintf("check-%s-%s", clusterID, check),
+		Description:    fmt.Sprintf("description-%s-%s", clusterID, check),
+		Status:         fmt.Sprintf("status-%s-%s", clusterID, check),
+		Rationale:      fmt.Sprintf("rationale-%s-%s", clusterID, check),
+		Instructions:   fmt.Sprintf("instructions-%s-%s", clusterID, check),
+		Profile:        fmt.Sprintf("profile-%s-%s", clusterID, check),
+		ProfileType:    fmt.Sprintf("profiletype-%s-%s", clusterID, check),
+		ControlRef:     fmt.Sprintf("control-%s-%s", clusterID, check),
+		Remediation:    fmt.Sprintf("remediation=%s-%s", clusterID, check),
+		AssessmentTime: "N/A",
 	}
 }
 
@@ -518,12 +630,13 @@ func assertResults(t *testing.T, tcase getReportDataTestCase, res *report.Result
 
 func getCheckResult(status storage.ComplianceOperatorCheckResultV2_CheckStatus) *storage.ComplianceOperatorCheckResultV2 {
 	return &storage.ComplianceOperatorCheckResultV2{
-		ClusterName:  "cluster-1",
-		CheckName:    "check",
-		Description:  "description",
-		Status:       status,
-		Rationale:    "rationale",
-		Instructions: "instructions",
+		ClusterName:     "cluster-1",
+		CheckName:       "check",
+		Description:     "description",
+		Status:          status,
+		Rationale:       "rationale",
+		Instructions:    "instructions",
+		LastStartedTime: timestamppb.New(time.Date(2025, 5, 7, 12, 0, 0, 0, time.UTC)),
 	}
 }
 
@@ -551,6 +664,7 @@ func assertResult(t *testing.T, tcase walkByQueryTestCase, row *report.ResultRow
 	assert.Equal(t, tcase.check.GetStatus().String(), row.Status)
 	assert.Equal(t, tcase.check.GetRationale(), row.Rationale)
 	assert.Equal(t, tcase.check.GetInstructions(), row.Instructions)
+	assert.Equal(t, tcase.expectedAssessmentTime, row.AssessmentTime)
 	if tcase.expectedProfiles != nil {
 		expProfiles, _ := tcase.expectedProfiles()
 		if len(expProfiles) < 1 {
@@ -588,7 +702,7 @@ func assertResult(t *testing.T, tcase walkByQueryTestCase, row *report.ResultRow
 	}
 	expBench, _ := tcase.expectedBenchmarks()
 	if len(expBench) == 0 {
-		assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
+		assert.Equal(t, CONTROL_NOT_APPLICABLE, row.ControlRef)
 		return
 	}
 	if tcase.expectedControls == nil {
@@ -596,7 +710,7 @@ func assertResult(t *testing.T, tcase walkByQueryTestCase, row *report.ResultRow
 	}
 	expControls, _ := tcase.expectedControls()
 	if len(expControls) == 0 {
-		assert.Equal(t, DATA_NOT_AVAILABLE, row.ControlRef)
+		assert.Equal(t, CONTROL_NOT_APPLICABLE, row.ControlRef)
 		return
 	}
 	expControlInfos := make([]string, 0, len(expControls))

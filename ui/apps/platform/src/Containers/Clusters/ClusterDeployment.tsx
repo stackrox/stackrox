@@ -30,23 +30,24 @@ function ClusterDeployment({
 }: ClusterDeploymentProps): ReactElement {
     const { analyticsTrack } = useAnalytics();
 
-    let managerTypeTitle = 'Dynamic configurations are automatically applied';
-    let managerTypeText =
-        'If you edited static configurations or you need to redeploy, download a new bundle.';
-    if (managerType === 'MANAGER_TYPE_KUBERNETES_OPERATOR') {
-        managerTypeTitle = 'Cluster labels have been saved';
-        managerTypeText = 'All other cluster settings are managed by the Kubernetes operator.';
-    }
-    if (managerType === 'MANAGER_TYPE_HELM_CHART') {
-        managerTypeTitle = 'Cluster labels have been saved';
-        managerTypeText = 'All other cluster settings are managed by the Helm chart.';
-    }
+    const isHelmOrOperatorManaged =
+        managerType === 'MANAGER_TYPE_KUBERNETES_OPERATOR' ||
+        managerType === 'MANAGER_TYPE_HELM_CHART';
+
+    const showPostCheckInSavedConfigAlert = editing && clusterCheckedIn && !isHelmOrOperatorManaged;
+
     // Without FlexItem element, Button stretches to column width.
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
-            {editing && clusterCheckedIn && (
-                <Alert variant="info" isInline title={managerTypeTitle} component="p">
-                    {managerTypeText}
+            {showPostCheckInSavedConfigAlert && (
+                <Alert
+                    variant="info"
+                    isInline
+                    title="Dynamic configurations are automatically applied"
+                    component="p"
+                >
+                    If you edited static configurations or you need to redeploy, download a new
+                    bundle.
                 </Alert>
             )}
             {managerType !== 'MANAGER_TYPE_KUBERNETES_OPERATOR' && (

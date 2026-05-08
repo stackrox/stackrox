@@ -16,7 +16,6 @@ import SearchFilterInput from 'Components/SearchFilterInput';
 import { fetchGlobalSearchResults, getSearchOptionsForCategory } from 'services/SearchService';
 import type { SearchResponse } from 'services/SearchService';
 import type { SearchFilter } from 'types/search';
-import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { searchPath } from 'routePaths';
@@ -79,11 +78,7 @@ function SearchPage(): ReactElement {
             setSeachResponseErrorMessage(null);
 
             const parsedSearchFilter = parseSearchFilter(stringifiedSearchFilter);
-            const query = getRequestQueryStringForSearchFilter(
-                localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true'
-                    ? { ...parsedSearchFilter, 'Orchestrator Component': 'false' }
-                    : parsedSearchFilter
-            );
+            const query = getRequestQueryStringForSearchFilter(parsedSearchFilter);
 
             fetchGlobalSearchResults({ query })
                 .then(setSearchResponse)

@@ -51,7 +51,6 @@ export const selectors = {
         searchWord: '.react-select__multi-value__label:eq(1)',
     },
     createPolicyButton: 'button:contains("Create policy")',
-    imageLink: 'div:contains("Image Name") + a',
     table: {
         dataRows: 'table tbody tr',
     },

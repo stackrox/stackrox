@@ -94,11 +94,9 @@ func VerifyAgainstSignatureIntegrations(ctx context.Context, integrations []*sto
 	results := make([]*storage.ImageSignatureVerificationResult, len(integrations))
 	var wg sync.WaitGroup
 	for index, integration := range integrations {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			results[index] = VerifyAgainstSignatureIntegration(ctx, integration, image)
-		}()
+		})
 	}
 	wg.Wait()
 	return results

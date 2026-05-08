@@ -21,6 +21,7 @@ export type CompoundSearchFilterProps = {
     config: CompoundSearchFilterConfig;
     defaultEntity?: string;
     defaultAttribute?: string;
+    isDisabled?: boolean;
     searchFilter: SearchFilter;
     additionalContextFilter?: SearchFilter;
     onSearch: OnSearchCallback;
@@ -30,6 +31,7 @@ function CompoundSearchFilter({
     config,
     defaultEntity,
     defaultAttribute = 'Name',
+    isDisabled = false,
     searchFilter,
     additionalContextFilter,
     onSearch,
@@ -46,6 +48,7 @@ function CompoundSearchFilter({
                 <EntitySelector
                     menuToggleClassName="pf-v6-u-flex-shrink-0"
                     entity={entity}
+                    isDisabled={isDisabled}
                     onChange={(value) => {
                         setSelectedEntity(ensureString(value));
                         setSelectedAttribute(undefined);
@@ -61,6 +64,7 @@ function CompoundSearchFilter({
                         menuToggleClassName="pf-v6-u-flex-shrink-0"
                         attributes={entity.attributes}
                         attribute={attribute}
+                        isDisabled={isDisabled}
                         onChange={(value) => {
                             setSelectedAttribute(ensureString(value));
                         }}
@@ -73,6 +77,7 @@ function CompoundSearchFilter({
                     key={`${entity.displayName} ${attribute.displayName}`}
                     entity={entity}
                     attribute={attribute}
+                    isDisabled={isDisabled}
                     searchFilter={searchFilter}
                     additionalContextFilter={additionalContextFilter}
                     onSearch={(payload) => {

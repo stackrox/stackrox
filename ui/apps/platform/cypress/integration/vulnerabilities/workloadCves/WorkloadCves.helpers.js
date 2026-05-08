@@ -1,5 +1,6 @@
 import { addDays, format } from 'date-fns';
 import { getDescriptionListGroup } from '../../../helpers/formHelpers';
+import { hasFeatureFlag } from '../../../helpers/features';
 import {
     getRouteMatcherMapForGraphQL,
     interactAndWaitForResponses,
@@ -161,22 +162,24 @@ export function extractNonZeroSeverityFromCount(severityCountText) {
 }
 
 export function cancelAllCveExceptions() {
-    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
+    return cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+        const auth = { bearer: ROX_AUTH_TOKEN };
 
-    cy.request({ url: '/v2/vulnerability-exceptions', auth }).as('vulnExceptions');
+        cy.request({ url: '/v2/vulnerability-exceptions', auth }).as('vulnExceptions');
 
-    return cy.get('@vulnExceptions').then((res) => {
-        return Promise.all(
-            res.body.exceptions.map(({ id, expired, requester }) => {
-                return requester?.name === 'ui_tests' && !expired
-                    ? cy.request({
-                          url: `/v2/vulnerability-exceptions/${id}/cancel`,
-                          auth,
-                          method: 'POST',
-                      })
-                    : Promise.resolve();
-            })
-        );
+        return cy.get('@vulnExceptions').then((res) => {
+            return Promise.all(
+                res.body.exceptions.map(({ id, expired, requester }) => {
+                    return requester?.name === 'ui_tests' && !expired
+                        ? cy.request({
+                              url: `/v2/vulnerability-exceptions/${id}/cancel`,
+                              auth,
+                              method: 'POST',
+                          })
+                        : Promise.resolve();
+                })
+            );
+        });
     });
 }
 
@@ -243,6 +246,25 @@ export function verifySelectedCvesInModal(cveNames) {
 }
 
 /**
+ * Transform a v1 image CVE response to a v2 response format.
+ * The v2 response uses `imageV2` as the root key, `ImageV2` as the typename,
+ * a UUID-style `id`, and an additional `digest` field.
+ */
+function toImageV2Response(v1Response) {
+    const { image } = v1Response.data;
+    return {
+        data: {
+            imageV2: {
+                ...image,
+                id: '4c657931-d333-5cb8-8f0d-7e3836525ec7',
+                digest: image.id,
+                __typename: 'ImageV2',
+            },
+        },
+    };
+}
+
+/**
  * Visits an image single page via the workload CVE overview page and mocks the responses for the image
  * details and CVE list. We need to mock the CVE list to ensure that multiple CVEs are present for the image. We
  * also need to mock the image details to ensure Apollo does not duplicate CVE requests due to mismatched
@@ -257,12 +279,24 @@ export function visitImageSinglePageWithMockedResponses() {
         imageDetailsOpname,
         cveListOpname,
     ]);
+
     const staticResponseMapForImageCves = {
         [imageDetailsOpname]: {
             fixture: 'vulnerabilities/workloadCves/imageWithMultipleCves.json',
         },
-        [cveListOpname]: { fixture: 'vulnerabilities/workloadCves/multipleCvesForImage.json' },
     };
+
+    // When FlattenImageData is enabled, the getCVEsForImage query uses imageV2(...)
+    // which returns data under the `imageV2` key instead of `image`.
+    if (hasFeatureFlag('ROX_FLATTEN_IMAGE_DATA')) {
+        cy.fixture('vulnerabilities/workloadCves/multipleCvesForImage.json').then((v1Response) => {
+            staticResponseMapForImageCves[cveListOpname] = { body: toImageV2Response(v1Response) };
+        });
+    } else {
+        staticResponseMapForImageCves[cveListOpname] = {
+            fixture: 'vulnerabilities/workloadCves/multipleCvesForImage.json',
+        };
+    }
 
     visitWorkloadCveOverview();
 
@@ -339,13 +373,15 @@ export function verifyExceptionConfirmationDetails(params) {
  * Clean up any existing watched images via API
  */
 export function unwatchAllImages() {
-    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
+    return cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+        const auth = { bearer: ROX_AUTH_TOKEN };
 
-    cy.request({ url: '/v1/watchedimages', auth }).as('listWatchedImages');
+        cy.request({ url: '/v1/watchedimages', auth }).as('listWatchedImages');
 
-    cy.get('@listWatchedImages').then((res) => {
-        res.body.watchedImages.forEach(({ name }) => {
-            cy.request({ url: `/v1/watchedimages?name=${name}`, auth, method: 'DELETE' });
+        cy.get('@listWatchedImages').then((res) => {
+            res.body.watchedImages.forEach(({ name }) => {
+                cy.request({ url: `/v1/watchedimages?name=${name}`, auth, method: 'DELETE' });
+            });
         });
     });
 }

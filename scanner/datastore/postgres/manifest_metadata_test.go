@@ -3,18 +3,18 @@
 package postgres
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
+	"github.com/quay/claircore/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_ManifestMetadata_MigrateManifests(t *testing.T) {
-	ctx := context.Background()
+	ctx := test.Logging(t)
 	pool := testDB(t, ctx, "manifest_metadata_migrate_manifests_test")
 	ccStore, err := postgres.InitPostgresIndexerStore(ctx, pool, true)
 	require.NoError(t, err)
@@ -53,7 +53,7 @@ func Test_ManifestMetadata_MigrateManifests(t *testing.T) {
 }
 
 func Test_ManifestMetadata(t *testing.T) {
-	ctx := context.Background()
+	ctx := test.Logging(t)
 	pool := testDB(t, ctx, "manifest_metadata_test")
 	store, err := InitPostgresIndexerMetadataStore(ctx, pool, true, IndexerMetadataStoreOpts{})
 	require.NoError(t, err)

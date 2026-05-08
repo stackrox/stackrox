@@ -163,6 +163,9 @@ func (s *serviceImpl) ListProfileSummaries(ctx context.Context, request *v2.Clus
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for %v", request)
 	}
+	if len(profileNames) == 0 {
+		return &v2.ListComplianceProfileSummaryResponse{}, nil
+	}
 
 	// Build query to get the filtered list by profile names
 	profileQuery := search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ComplianceOperatorProfileName, profileNames...).ProtoQuery()

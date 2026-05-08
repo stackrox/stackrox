@@ -10,7 +10,6 @@ import services.ImageService
 import services.PolicyService
 import util.Timer
 
-import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -84,7 +83,8 @@ class AdmissionControllerTest extends BaseSpecification {
         // Pre-scan the image so Central has cached scan results for CVE-based policy evaluation.
         ImageService.scanImage(SCAN_INLINE_IMAGE_NAME_WITH_SHA)
 
-        ImageOuterClass.Image image = ImageService.getImage(SCAN_INLINE_IMAGE_SHA, false)
+        def imageId = flattenImageDataEnabled ? TEST_IMAGE_V2_ID : SCAN_INLINE_IMAGE_SHA
+        ImageOuterClass.Image image = ImageService.getImage(imageId, false)
         assert image
         assert !image.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_METADATA)
 
@@ -234,7 +234,6 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @Ignore("Temporarily skipped while investigating ROX-34110, ROX-34111, ROX-34112")
     def "Verify AC enforcement with label scoping: #desc"() {
         given:
         "Set up namespace with labels"
@@ -294,7 +293,6 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @Ignore("Temporarily skipped while investigating ROX-34110, ROX-34111, ROX-34112")
     def "Verify AC respects label hot-reload: #desc"() {
         given:
         "Set up namespace with initial label"

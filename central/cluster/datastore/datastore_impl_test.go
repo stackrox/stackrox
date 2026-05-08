@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"errors"
+	"regexp"
 	"testing"
 	"time"
 
@@ -26,6 +27,7 @@ import (
 	serviceAccountDataStoreMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	clusterPkg "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -129,12 +131,18 @@ func (s *clusterDataStoreTestSuite) SetupTest() {
 		networkBaselineMgr:        s.networkBaselineMgr,
 		compliancePruner:          s.compliancePruner,
 		idToNameCache:             simplecache.New(),
+		idToNamespaceFilterCache:  simplecache.New(),
 		nameToIDCache:             simplecache.New(),
 	}
 }
 
 func (s *clusterDataStoreTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
+
+	// reset caches
+	s.datastore.idToNameCache = simplecache.New()
+	s.datastore.idToNamespaceFilterCache = simplecache.New()
+	s.datastore.nameToIDCache = simplecache.New()
 }
 
 type lookupResult struct {
@@ -825,4 +833,169 @@ func (s *clusterDataStoreTestSuite) TestGetClusterLabels() {
 			}
 		})
 	}
+}
+
+func (s *clusterDataStoreTestSuite) TestProcessMatching() {
+	clusterID := fixtureconsts.Cluster1
+	testCluster := &storage.Cluster{
+		Id:        clusterID,
+		Name:      "test",
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		HelmConfig: &storage.CompleteClusterConfig{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				ProcessIndicators: &storage.DynamicClusterConfig_ProcessIndicatorsConfig{
+					ExcludeNamespaceFilter: "test-.*",
+					NoPersistence:          false,
+				},
+			},
+		},
+	}
+
+	ctx := sac.WithAllAccess(s.T().Context())
+
+	// populate regexp cache
+	filter := clusterPkg.GetNamespaceFilter(testCluster)
+	s.datastore.idToNamespaceFilterCache.Add(clusterID, regexp.MustCompile(*filter))
+
+	indicator := &storage.ProcessIndicator{
+		Id:            uuid.NewV4().String(),
+		DeploymentId:  uuid.NewV4().String(),
+		ContainerName: uuid.NewV4().String(),
+		PodId:         uuid.NewV4().String(),
+		ClusterId:     clusterID,
+		Namespace:     "test-namespace",
+	}
+
+	// The process with matching namespace should be found
+	match, err := s.datastore.MatchProcessIndicator(ctx, indicator)
+	s.NoError(err)
+	assert.True(s.T(), match)
+
+	// We change the namespace to not match anymore, and the process passes
+	indicator.Namespace = "other-namespace"
+	match, err = s.datastore.MatchProcessIndicator(ctx, indicator)
+	s.NoError(err)
+	assert.False(s.T(), match)
+
+	// We change the namespace to match the openshift pattern,
+	// and ask to exclude it
+	indicator.Namespace = "openshift-test"
+	testCluster.HelmConfig.DynamicConfig.ProcessIndicators.ExcludeOpenshiftNs = true
+
+	// We need to update the cache to take persistence into account
+	filter = clusterPkg.GetNamespaceFilter(testCluster)
+	s.datastore.idToNamespaceFilterCache.Add(clusterID, regexp.MustCompile(*filter))
+
+	match, err = s.datastore.MatchProcessIndicator(ctx, indicator)
+	s.NoError(err)
+	assert.True(s.T(), match)
+
+	// No matter how the namespace looks like, if no persistence is requested,
+	// the process will match
+	indicator.Namespace = "something-completely-different"
+	testCluster.HelmConfig.DynamicConfig.ProcessIndicators.NoPersistence = true
+
+	// We need to update the cache to take persistence into account
+	filter = clusterPkg.GetNamespaceFilter(testCluster)
+	s.datastore.idToNamespaceFilterCache.Add(clusterID, regexp.MustCompile(*filter))
+
+	match, err = s.datastore.MatchProcessIndicator(ctx, indicator)
+	s.NoError(err)
+	assert.True(s.T(), match)
+}
+
+func (s *clusterDataStoreTestSuite) TestUpdateCluster() {
+	clusterID := fixtureconsts.Cluster1
+	testCluster := &storage.Cluster{
+		Id:        clusterID,
+		Name:      "test",
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		MainImage: "docker.io/stackrox/rox:latest",
+		HelmConfig: &storage.CompleteClusterConfig{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				ProcessIndicators: &storage.DynamicClusterConfig_ProcessIndicatorsConfig{
+					ExcludeNamespaceFilter: "test-.*",
+					NoPersistence:          false,
+				},
+			},
+		},
+	}
+
+	ctx := sac.WithAllAccess(s.T().Context())
+
+	s.clusterStore.EXPECT().
+		Upsert(gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	err := s.datastore.updateClusterNoLock(ctx, testCluster)
+	s.NoError(err)
+
+	filter, ok := s.datastore.idToNamespaceFilterCache.Get(clusterID)
+	assert.True(s.T(), ok)
+	assert.Equal(s.T(), filter.(*regexp.Regexp).String(), "test-.*")
+}
+
+func (s *clusterDataStoreTestSuite) TestUpdateClusterIncorrectFilter() {
+	clusterID := fixtureconsts.Cluster1
+	testCluster := &storage.Cluster{
+		Id:        clusterID,
+		Name:      "test",
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		MainImage: "docker.io/stackrox/rox:latest",
+		HelmConfig: &storage.CompleteClusterConfig{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				ProcessIndicators: &storage.DynamicClusterConfig_ProcessIndicatorsConfig{
+					ExcludeNamespaceFilter: "[",
+					NoPersistence:          false,
+				},
+			},
+		},
+	}
+
+	ctx := sac.WithAllAccess(s.T().Context())
+
+	s.clusterStore.EXPECT().
+		Upsert(gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	err := s.datastore.updateClusterNoLock(ctx, testCluster)
+	s.NoError(err)
+
+	filter, ok := s.datastore.idToNamespaceFilterCache.Get(clusterID)
+	assert.False(s.T(), ok)
+	assert.Nil(s.T(), filter)
+}
+
+func (s *clusterDataStoreTestSuite) TestUpdateClusterCleanupCache() {
+	clusterID := fixtureconsts.Cluster1
+	testCluster := &storage.Cluster{
+		Id:        clusterID,
+		Name:      "test",
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		MainImage: "docker.io/stackrox/rox:latest",
+		HelmConfig: &storage.CompleteClusterConfig{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				ProcessIndicators: &storage.DynamicClusterConfig_ProcessIndicatorsConfig{
+					ExcludeNamespaceFilter: "",
+					NoPersistence:          false,
+				},
+			},
+		},
+	}
+
+	ctx := sac.WithAllAccess(s.T().Context())
+
+	s.clusterStore.EXPECT().
+		Upsert(gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	// populate regexp cache
+	s.datastore.idToNamespaceFilterCache.Add(clusterID, regexp.MustCompile("test-.*"))
+
+	err := s.datastore.updateClusterNoLock(ctx, testCluster)
+	s.NoError(err)
+
+	filter, ok := s.datastore.idToNamespaceFilterCache.Get(clusterID)
+	assert.False(s.T(), ok)
+	assert.Nil(s.T(), filter)
 }

@@ -367,21 +367,26 @@ func (ds *datastoreImpl) CreateUnlockedProcessBaseline(ctx context.Context, key 
 		return baseline, nil
 	}
 
-	// Get the list of processes
-	baselineList, err := ds.getProcessList(ctx, key)
-	if err != nil {
-		return nil, err
-	}
-
 	// Build the de-duped elements for the baseline
-	elements := make(map[string]*storage.BaselineItem, len(baselineList))
+	elements := make(map[string]*storage.BaselineItem)
 
-	for _, indicator := range baselineList {
+	fn := func(indicator *storage.ProcessIndicator) error {
 		baselineItem := processBaselinePkg.BaselineItemFromProcess(indicator)
 
 		insertableElement := &storage.BaselineItem{Item: &storage.BaselineItem_ProcessName{ProcessName: baselineItem}}
 
 		elements[baselineItem] = insertableElement
+		return nil
+	}
+
+	query := pkgSearch.NewQueryBuilder().
+		AddExactMatches(pkgSearch.DeploymentID, key.GetDeploymentId()).
+		AddExactMatches(pkgSearch.ContainerName, key.GetContainerName()).
+		ProtoQuery()
+
+	err = ds.processesDataStore.GetByQueryFn(ctx, query, fn)
+	if err != nil {
+		return nil, err
 	}
 
 	baseElements := make([]*storage.BaselineElement, 0, len(elements))
@@ -403,17 +408,6 @@ func (ds *datastoreImpl) CreateUnlockedProcessBaseline(ctx context.Context, key 
 	_, err = ds.addProcessBaselineUnlocked(ctx, id, baseline)
 
 	return baseline, err
-}
-
-func (ds *datastoreImpl) getProcessList(ctx context.Context, key *storage.ProcessBaselineKey) ([]*storage.ProcessIndicator, error) {
-	// Simply use search to find the process indicators for the baseline key
-	return ds.processesDataStore.SearchRawProcessIndicators(
-		ctx,
-		pkgSearch.NewQueryBuilder().
-			AddExactMatches(pkgSearch.DeploymentID, key.GetDeploymentId()).
-			AddExactMatches(pkgSearch.ContainerName, key.GetContainerName()).
-			ProtoQuery(),
-	)
 }
 
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(baseline *storage.ProcessBaseline) error) error {

@@ -11,6 +11,7 @@ from ci_tests import UpgradeTest
 from post_tests import PostClusterTest, FinalPost
 
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
+os.environ["KUBERNETES_PROVIDER"] = "gke"
 os.environ["SCANNER_V4_DB_STORAGE_CLASS"] = "faster"
 
 ClusterTestRunner(

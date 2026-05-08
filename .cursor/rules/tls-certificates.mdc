@@ -1,0 +1,13 @@
+---
+description: TLS certificate architecture, caching, rotation, and hot-reload across StackRox components. Read when working on TLS, mTLS, certificates, CA rotation, certwatch, or the TLSChallenge endpoint.
+alwaysApply: false
+---
+
+# TLS certificates in StackRox
+
+Read `pkg/mtls/README.md` for the full architecture overview covering mTLS,
+certificate caching, CA rotation, and hot-reload behavior across all StackRox
+components.
+
+When making changes to TLS-related code, review and update that README if the
+change affects the documented architecture, caching behavior, or CA rotation flow.

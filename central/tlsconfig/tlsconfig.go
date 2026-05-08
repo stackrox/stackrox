@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/x509utils"
 )
@@ -193,6 +194,29 @@ func loadInternalCertificateFromFiles() (*tls.Certificate, error) {
 	return &cert, nil
 }
 
+// LoadInternalCertificateFromDirectory loads the internal service leaf certificate
+// (cert.pem + key.pem) from the given directory and verifies it against the
+// internal CA trust roots.
+func LoadInternalCertificateFromDirectory(dir string) (*tls.Certificate, error) {
+	certFile := filepath.Join(dir, mtls.ServiceCertFileName)
+	keyFile := filepath.Join(dir, mtls.ServiceKeyFileName)
+
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return nil, errors.Wrapf(err, "loading internal certificate from %q", dir)
+	}
+
+	trustPool, err := verifier.TrustedCertPool()
+	if err != nil {
+		return nil, errors.Wrap(err, "building trust pool for internal certificate verification")
+	}
+	if _, err := cert.Leaf.Verify(x509.VerifyOptions{Roots: trustPool}); err != nil {
+		return nil, errors.Wrap(err, "verifying internal certificate against trusted CAs")
+	}
+
+	return &cert, nil
+}
+
 func issueInternalCertificate(namespace string) (*tls.Certificate, error) {
 	issuedCert, err := mtls.IssueNewCert(mtls.CentralSubject, mtls.WithNamespace(namespace))
 	if err != nil {
@@ -213,34 +237,39 @@ func issueInternalCertificate(namespace string) (*tls.Certificate, error) {
 }
 
 func getInternalCertificates(namespace string) ([]tls.Certificate, error) {
-	var internalCerts []tls.Certificate
-	// First try to load the internal certificate from files. If the files don't exist, issue
-	// ourselves a cert.
-	if certFromFiles, err := loadInternalCertificateFromFiles(); err != nil {
-		return nil, err
-	} else if certFromFiles != nil {
-		internalCerts = append(internalCerts, *certFromFiles)
-	}
-
-	if len(internalCerts) > 0 {
-		serviceCert, err := x509.ParseCertificate(internalCerts[0].Certificate[0])
-		if err != nil {
-			return nil, errors.Wrap(err, "loaded internal certificate is invalid")
-		}
-		if validForAllDNSNames(serviceCert, mtls.CentralSubject.AllHostnamesForNamespace(namespace)...) {
-			return internalCerts, nil // cert loaded from secret is sufficient
-		}
-	}
-
-	log.Warnw("Internal TLS certificates are not valid for all cluster-internal DNS names due to deployment in "+
-		"alternative namespace, issuing ephemeral certificate with adequate DNS names",
-		logging.String("namespace", namespace), logging.Strings("internalDNSNames", mtls.CentralSubject.AllHostnamesForNamespace(namespace)))
-	newInternalCert, err := issueInternalCertificate(namespace)
+	certFromFiles, err := loadInternalCertificateFromFiles()
 	if err != nil {
-		return internalCerts, err
+		return nil, err
 	}
-	internalCerts = append(internalCerts, *newInternalCert)
-	return internalCerts, nil
+	if certFromFiles != nil {
+		return buildInternalCerts(certFromFiles, namespace)
+	}
+
+	// No cert files on disk — issue an ephemeral cert from scratch.
+	ephemeralCert, err := issueInternalCertificate(namespace)
+	if err != nil {
+		return nil, errors.Wrapf(err, "issuing ephemeral internal certificate for namespace %s", namespace)
+	}
+	return []tls.Certificate{*ephemeralCert}, nil
+}
+
+// buildInternalCerts returns a cert slice containing the given cert. If the cert
+// is not valid for all DNS names in the given namespace, an additional ephemeral
+// cert with the correct SANs is issued and appended.
+func buildInternalCerts(cert *tls.Certificate, namespace string) ([]tls.Certificate, error) {
+	if cert.Leaf != nil && validForAllDNSNames(cert.Leaf, mtls.CentralSubject.AllHostnamesForNamespace(namespace)...) {
+		return []tls.Certificate{*cert}, nil
+	}
+
+	log.Warnw("Internal TLS certificate is not valid for all cluster-internal DNS names, "+
+		"issuing ephemeral certificate with adequate DNS names",
+		logging.String("namespace", namespace),
+		logging.Strings("internalDNSNames", mtls.CentralSubject.AllHostnamesForNamespace(namespace)))
+	ephemeralCert, err := issueInternalCertificate(namespace)
+	if err != nil {
+		return []tls.Certificate{*cert}, errors.Wrap(err, "issuing ephemeral certificate for alternative namespace")
+	}
+	return []tls.Certificate{*cert, *ephemeralCert}, nil
 }
 
 func validForAllDNSNames(cert *x509.Certificate, dnsNames ...string) bool {

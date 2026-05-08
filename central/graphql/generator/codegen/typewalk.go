@@ -95,7 +95,7 @@ func (ctx *walkState) walkType(typeDesc typeDescriptor) {
 	if ty.Implements(messageType) {
 		unions = ctx.walkUnions(ty)
 	}
-	for ty.Kind() == reflect.Ptr {
+	for ty.Kind() == reflect.Pointer {
 		ty = ty.Elem()
 	}
 	if _, ok := ctx.typeData[ty]; ok {

@@ -2,43 +2,40 @@ package vuln
 
 import (
 	"context"
+	"log/slog"
 	"time"
-
-	"github.com/quay/zlog"
 )
 
 const gcName = `garbage-collection`
 
 // runGCFullPeriodic runs garbage collection until completion, periodically.
 func (u *Updater) runGCFullPeriodic() {
-	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/vuln/Updater.runFullGCPeriodic")
+	ctx := u.ctx
 
-	zlog.Info(ctx).Str("full_gc_interval", u.fullGCInterval.String()).Msg("starting periodic full GC")
+	slog.InfoContext(ctx, "starting periodic full GC", "full_gc_interval", u.fullGCInterval.String())
 	t := time.NewTicker(u.fullGCInterval)
 	defer t.Stop()
 	for {
 		select {
 		case <-ctx.Done():
-			zlog.Info(ctx).Err(ctx.Err()).Msg("stopping periodic full GC")
+			slog.InfoContext(ctx, "stopping periodic full GC", "reason", ctx.Err())
 			return
 		case <-t.C:
-			zlog.Info(ctx).Msg("full GC started")
+			slog.InfoContext(ctx, "full GC started")
 			u.runGCFull(ctx)
-			zlog.Info(ctx).Msg("full GC completed")
+			slog.InfoContext(ctx, "full GC completed")
 		}
 	}
 }
 
 // runGCFull runs garbage collection until completion.
 func (u *Updater) runGCFull(ctx context.Context) {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.runGCFull")
-
 	// Use Lock instead of TryLock to ensure we get the lock
 	// and run a full GC.
 	ctx, done := u.locker.Lock(ctx, gcName)
 	defer done()
 	if err := ctx.Err(); err != nil {
-		zlog.Warn(ctx).Err(err).Msg("lock context canceled")
+		slog.WarnContext(ctx, "lock context canceled", "reason", err)
 		return
 	}
 
@@ -48,12 +45,12 @@ func (u *Updater) runGCFull(ctx context.Context) {
 	for i > 0 {
 		select {
 		case <-ctx.Done():
-			zlog.Error(ctx).Err(ctx.Err()).Msg("performing GC")
+			slog.ErrorContext(ctx, "performing GC", "reason", ctx.Err())
 			return
 		default:
 			i, err = u.runGCNoLock(ctx)
 			if err != nil {
-				zlog.Error(ctx).Err(err).Msg("performing GC")
+				slog.ErrorContext(ctx, "performing GC", "reason", err)
 				return
 			}
 		}
@@ -62,37 +59,30 @@ func (u *Updater) runGCFull(ctx context.Context) {
 
 // runGC runs a garbage collection cycle, once.
 func (u *Updater) runGC(ctx context.Context) {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.runGC")
-
 	// Use TryLock instead of Lock because a GC cycle is already happening.
 	ctx, done := u.locker.TryLock(ctx, gcName)
 	defer done()
 	if err := ctx.Err(); err != nil {
-		zlog.Debug(ctx).
-			Err(err).
-			Msg("lock context canceled, garbage collection already running")
+		slog.DebugContext(ctx, "lock context canceled, garbage collection already running", "reason", err)
 		return
 	}
 
 	_, err := u.runGCNoLock(ctx)
 	if err != nil {
-		zlog.Error(ctx).Err(err).Msg("performing GC")
+		slog.ErrorContext(ctx, "performing GC", "reason", err)
 	}
 }
 
 // runGCNoLock runs the actual garbage collection cycle.
 // DO NOT CALL THIS UNLESS THE garbage-collection LOCK IS ACQUIRED.
 func (u *Updater) runGCNoLock(ctx context.Context) (int64, error) {
-	zlog.Info(ctx).Int("retention", u.updateRetention).Msg("GC started")
+	slog.InfoContext(ctx, "GC started", "retention", u.updateRetention)
 
 	i, err := u.store.GC(ctx, u.updateRetention)
 	if err != nil {
 		return i, err
 	}
 
-	zlog.Info(ctx).
-		Int64("remaining_ops", i).
-		Int("retention", u.updateRetention).
-		Msg("GC completed")
+	slog.InfoContext(ctx, "GC completed", "remaining_ops", i, "retention", u.updateRetention)
 	return i, nil
 }

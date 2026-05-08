@@ -29,6 +29,8 @@ const (
 	VirtualMachine_MISSING_SCAN_DATA                   VirtualMachine_Note = 1
 	VirtualMachine_MISSING_SIGNATURE                   VirtualMachine_Note = 2
 	VirtualMachine_MISSING_SIGNATURE_VERIFICATION_DATA VirtualMachine_Note = 3
+	VirtualMachine_MISSING_SCANNER                     VirtualMachine_Note = 4
+	VirtualMachine_SCAN_FAILED                         VirtualMachine_Note = 5
 )
 
 // Enum value maps for VirtualMachine_Note.
@@ -38,12 +40,16 @@ var (
 		1: "MISSING_SCAN_DATA",
 		2: "MISSING_SIGNATURE",
 		3: "MISSING_SIGNATURE_VERIFICATION_DATA",
+		4: "MISSING_SCANNER",
+		5: "SCAN_FAILED",
 	}
 	VirtualMachine_Note_value = map[string]int32{
 		"MISSING_METADATA":                    0,
 		"MISSING_SCAN_DATA":                   1,
 		"MISSING_SIGNATURE":                   2,
 		"MISSING_SIGNATURE_VERIFICATION_DATA": 3,
+		"MISSING_SCANNER":                     4,
+		"SCAN_FAILED":                         5,
 	}
 )
 
@@ -906,7 +912,7 @@ var File_storage_virtual_machine_proto protoreflect.FileDescriptor
 
 const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorage/virtual_machine.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11storage/cve.proto\x1a\x13storage/image.proto\"\xa3\x05\n" +
+	"\x1dstorage/virtual_machine.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11storage/cve.proto\x1a\x13storage/image.proto\"\xca\x05\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x12\n" +
@@ -924,12 +930,14 @@ const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"s\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x99\x01\n" +
 	"\x04Note\x12\x14\n" +
 	"\x10MISSING_METADATA\x10\x00\x12\x15\n" +
 	"\x11MISSING_SCAN_DATA\x10\x01\x12\x15\n" +
 	"\x11MISSING_SIGNATURE\x10\x02\x12'\n" +
-	"#MISSING_SIGNATURE_VERIFICATION_DATA\x10\x03\".\n" +
+	"#MISSING_SIGNATURE_VERIFICATION_DATA\x10\x03\x12\x13\n" +
+	"\x0fMISSING_SCANNER\x10\x04\x12\x0f\n" +
+	"\vSCAN_FAILED\x10\x05\".\n" +
 	"\x05State\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aSTOPPED\x10\x01\x12\v\n" +

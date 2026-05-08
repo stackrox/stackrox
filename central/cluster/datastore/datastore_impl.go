@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -34,7 +35,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	clusterValidation "github.com/stackrox/rox/pkg/cluster"
+	clusterPkg "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
@@ -94,8 +95,9 @@ type datastoreImpl struct {
 	notifier      notifierProcessor.Processor
 	clusterRanker *ranking.Ranker
 
-	idToNameCache simplecache.Cache
-	nameToIDCache simplecache.Cache
+	idToNameCache            simplecache.Cache
+	idToNamespaceFilterCache simplecache.Cache
+	nameToIDCache            simplecache.Cache
 
 	lock sync.Mutex
 }
@@ -180,6 +182,22 @@ func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 	for _, c := range clusters {
 		ds.idToNameCache.Add(c.GetId(), c.GetName())
 		ds.nameToIDCache.Add(c.GetName(), c.GetId())
+
+		if filter := clusterPkg.GetNamespaceFilter(c); filter != nil {
+			compiledFilter, err := regexp.Compile(*filter)
+
+			if err == nil {
+				ds.idToNamespaceFilterCache.Add(c.GetId(), compiledFilter)
+			} else {
+				log.Errorf("Could not compile filter regexp: %v", err)
+			}
+		} else {
+			// We got empty filter building the cluster. There should be no
+			// prior cache at this point, but just in case make sure it's
+			// invalidated.
+			ds.idToNamespaceFilterCache.Remove(c.GetId())
+		}
+
 		c.HealthStatus = clusterHealthStatuses[c.GetId()]
 	}
 	return nil
@@ -331,6 +349,26 @@ func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string,
 		return "", false, nil
 	}
 	return val.(string), true, nil
+}
+
+// Figure out if an indicator matches provided namespace filter. We consider
+// SAC errors or failure to find the pre-compiled filter regex as not matching
+// cases.
+func (ds *datastoreImpl) MatchProcessIndicator(ctx context.Context,
+	indicator *storage.ProcessIndicator) (bool, error) {
+
+	id := indicator.GetClusterId()
+
+	if ok, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(id)); err != nil || !ok {
+		return false, err
+	}
+
+	filter, ok := ds.idToNamespaceFilterCache.Get(id)
+	if !ok {
+		return false, nil
+	}
+
+	return filter.(*regexp.Regexp).MatchString(indicator.GetNamespace()), nil
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
@@ -585,6 +623,7 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 		return errors.Wrapf(err, "failed to remove cluster %q", id)
 	}
 	ds.idToNameCache.Remove(id)
+	ds.idToNamespaceFilterCache.Remove(id)
 	ds.nameToIDCache.Remove(cluster.GetName())
 
 	deleteRelatedCtx := sac.WithAllAccess(context.Background())
@@ -893,6 +932,20 @@ func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *stora
 	}
 	ds.idToNameCache.Add(cluster.GetId(), cluster.GetName())
 	ds.nameToIDCache.Add(cluster.GetName(), cluster.GetId())
+
+	if filter := clusterPkg.GetNamespaceFilter(cluster); filter != nil {
+		compiledFilter, err := regexp.Compile(*filter)
+
+		if err == nil {
+			ds.idToNamespaceFilterCache.Add(cluster.GetId(), compiledFilter)
+		} else {
+			log.Errorf("Could not compile filter regexp: %v", err)
+		}
+	} else {
+		// We got empty filter updating the cluster. Make sure the cache is
+		// invalidated.
+		ds.idToNamespaceFilterCache.Remove(cluster.GetId())
+	}
 	return nil
 }
 
@@ -1097,7 +1150,7 @@ func normalizeCluster(cluster *storage.Cluster) error {
 }
 
 func validateInput(cluster *storage.Cluster) error {
-	return clusterValidation.Validate(cluster).ToError()
+	return clusterPkg.Validate(cluster).ToError()
 }
 
 // addDefaults enriches the provided non-nil cluster object with defaults for

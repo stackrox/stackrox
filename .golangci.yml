@@ -7,6 +7,7 @@ run:
     - scanner_db_integration
     - sql_integration
     - test_e2e
+    - test_e2e_vm
   modules-download-mode: readonly
 output:
   formats:

@@ -9,10 +9,10 @@ describe('searchOptionsToQuery', () => {
 
     it('should return query string for 2 options which do not have type', () => {
         const options = [
-            { type: 'categoryOption', value: 'Orchestrator Component:' },
+            { type: 'categoryOption', value: 'Platform Component:' },
             { value: 'false' },
         ];
-        const expected = 'Orchestrator Component:false';
+        const expected = 'Platform Component:false';
         expect(searchOptionsToQuery(options)).toEqual(expected);
     });
 
@@ -48,10 +48,10 @@ describe('searchOptionsToQuery', () => {
             { value: 'remote' },
             { type: 'categoryOption', value: 'Namespace:' },
             { value: 'stackrox' },
-            { type: 'categoryOption', value: 'Orchestrator Component:' },
+            { type: 'categoryOption', value: 'Platform Component:' },
             { value: 'false' },
         ];
-        const expected = 'Cluster:remote+Namespace:stackrox+Orchestrator Component:false';
+        const expected = 'Cluster:remote+Namespace:stackrox+Platform Component:false';
         expect(searchOptionsToQuery(options)).toEqual(expected);
     });
 });

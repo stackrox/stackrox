@@ -1,4 +1,3 @@
-import { useLocation } from 'react-router-dom-v5-compat';
 import { NavList } from '@patternfly/react-core';
 
 import {
@@ -7,29 +6,22 @@ import {
     violationsPlatformViewPath,
     violationsUserWorkloadsViewPath,
 } from 'routePaths';
-import { hasSearchKeyValue } from 'utils/searchUtils';
+import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
+import {
+    fullWorkflowView,
+    nodeWorkflowView,
+    platformWorkflowView,
+    userWorkloadWorkflowView,
+} from 'Components/FilteredWorkflowViewSelector/types';
 import NavigationItem from 'Containers/MainPage/Navigation/NavigationItem';
-import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import type { HasReadAccess } from 'hooks/usePermissions';
 
-type ViolationsSubnavProps = {
-    hasReadAccess: HasReadAccess;
-    isFeatureFlagEnabled: IsFeatureFlagEnabled;
-};
+function ViolationsSubnav() {
+    const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
 
-function ViolationsSubnav({
-    hasReadAccess, // eslint-disable-line @typescript-eslint/no-unused-vars
-    isFeatureFlagEnabled, // eslint-disable-line @typescript-eslint/no-unused-vars
-}: ViolationsSubnavProps) {
-    const location = useLocation();
-    const search = location.search ?? '';
-
-    const isUserWorkloadsActive =
-        hasSearchKeyValue(search, 'filteredWorkflowView', 'Applications view') ||
-        hasSearchKeyValue(search, 'filteredWorkflowView', null);
-    const isPlatformActive = hasSearchKeyValue(search, 'filteredWorkflowView', 'Platform view');
-    const isNodeActive = hasSearchKeyValue(search, 'filteredWorkflowView', 'Node view');
-    const isFullViewActive = hasSearchKeyValue(search, 'filteredWorkflowView', 'Full view');
+    const isUserWorkloadsActive = filteredWorkflowView === userWorkloadWorkflowView;
+    const isPlatformActive = filteredWorkflowView === platformWorkflowView;
+    const isNodeActive = filteredWorkflowView === nodeWorkflowView;
+    const isFullViewActive = filteredWorkflowView === fullWorkflowView;
 
     return (
         <NavList>

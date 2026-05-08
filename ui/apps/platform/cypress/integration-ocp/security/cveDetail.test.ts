@@ -5,12 +5,11 @@ import { selectProject } from '../../helpers/ocpConsole';
 import { assertSearchEntities } from '../../integration/vulnerabilities/workloadCves/WorkloadCves.helpers';
 import { selectors } from '../../integration/vulnerabilities/workloadCves/WorkloadCves.selectors';
 import { selectors as vulnerabilitiesSelectors } from '../../integration/vulnerabilities/vulnerabilities.selectors';
-import pf6 from '../../selectors/pf6';
-import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from '../../helpers/request';
 
 function visitFirstCve() {
     withOcpAuth();
     visitFromConsoleLeftNavExpandable('Security', 'Vulnerabilities');
+    selectProject('stackrox');
 
     return cy
         .get(`${selectors.firstTableRow} td[data-label="CVE"]`)
@@ -25,8 +24,7 @@ function visitFirstCve() {
 describe('Security vulnerabilities - CVE Detail page', () => {
     it('should navigate to the CVE Detail page and account for the project filter', () => {
         visitFirstCve().then(() => {
-            // Verify that "All projects" is selected
-            cy.get(`.co-namespace-bar ${pf6.menuToggle}`).contains('All Projects');
+            selectProject('All Projects');
 
             // Click the deployment entity toggle
             cy.get(vulnerabilitiesSelectors.entityTypeToggleItem('Deployment')).click();
@@ -48,13 +46,8 @@ describe('Security vulnerabilities - CVE Detail page', () => {
             // Verify that Namespace is present in the search entities
             assertSearchEntities(['Image', 'Image component', 'Deployment', 'Namespace']);
 
-            // Change to the 'stackrox' project
-            interactAndWaitForResponses(
-                () => {
-                    selectProject('stackrox');
-                },
-                getRouteMatcherMapForGraphQL(['getImageCVEList'])
-            );
+            // Change back to the 'stackrox' project
+            selectProject('stackrox');
 
             // Verify that the "Namespace" column is not present
             assertVisibleTableColumns(topLevelTableSelector, [...baseColumns]);

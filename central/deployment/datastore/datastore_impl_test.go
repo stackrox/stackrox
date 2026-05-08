@@ -124,11 +124,13 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 
 	dep.Containers = []*storage.Container{
 		{
+			Name: "container-a",
 			Image: &storage.ContainerImage{
 				Id: "abc",
 			},
 		},
 		{
+			Name: "container-b",
 			Image: &storage.ContainerImage{
 				Id: "def",
 			},
@@ -147,27 +149,45 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
-	// Different numbers of containers for the CronJob so early exit with no changes
+	// Old deployment has fewer containers (e.g., no init containers yet), but matching containers still merge
 	returnedDep := dep.CloneVT()
 	returnedDep.Containers = returnedDep.GetContainers()[:1]
+	returnedDep.Containers[0].Image.Id = "abc"
 
 	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
+	// container-b still has no ID since it wasn't in the old deployment
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
-	// Filled in for missing last container, but names do not match
-	returnedDep.Containers = append(returnedDep.Containers, dep.GetContainers()[1].CloneVT())
-	returnedDep.Containers[1].Image.Id = "xyz"
-	returnedDep.Containers[1].Image.Name = &storage.ImageName{
-		FullName: "fullname",
+	// Old container has matching name but different image full name, so no merge
+	returnedDep = &storage.Deployment{
+		Id:   "id",
+		Type: kubernetes.CronJob,
+		Containers: []*storage.Container{
+			{
+				Name: "container-a",
+				Image: &storage.ContainerImage{
+					Id: "abc",
+				},
+			},
+			{
+				Name: "container-b",
+				Image: &storage.ContainerImage{
+					Id: "xyz",
+					Name: &storage.ImageName{
+						FullName: "fullname",
+					},
+				},
+			},
+		},
 	}
 	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
-	// Fill in missing last container value since names match
-	dep.Containers[1].Image.Name = returnedDep.GetContainers()[1].GetImage().GetName()
-	expectedDep.Containers[1].Image.Name = returnedDep.GetContainers()[1].GetImage().GetName()
+	// Fill in missing last container value since image names match
+	dep.Containers[1].Image.Name = &storage.ImageName{FullName: "fullname"}
+	expectedDep.Containers[1].Image.Name = &storage.ImageName{FullName: "fullname"}
 	expectedDep.Containers[1].Image.Id = "xyz"
 	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))

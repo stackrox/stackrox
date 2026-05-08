@@ -67,13 +67,13 @@ func (s *processIndicatorDatastoreSACSuite) SetupTest() {
 
 func (s *processIndicatorDatastoreSACSuite) TearDownTest() {
 	err := s.datastore.RemoveProcessIndicators(s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx],
-		s.testProcessIndicatorIDs)
+		s.testProcessIndicatorIDs, RemovalReasonProcessFilter)
 	s.Require().NoError(err)
 }
 
 func (s *processIndicatorDatastoreSACSuite) deleteProcessIndicator(id string) {
 	s.Require().NoError(s.datastore.RemoveProcessIndicators(s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx],
-		[]string{id}))
+		[]string{id}, RemovalReasonProcessFilter))
 }
 
 func (s *processIndicatorDatastoreSACSuite) TestAddProcessIndicators() {
@@ -162,7 +162,7 @@ func (s *processIndicatorDatastoreSACSuite) TestRemoveProcessIndicators() {
 			s.Require().NoError(err)
 			defer s.deleteProcessIndicator(processIndicator.GetId())
 
-			err = s.datastore.RemoveProcessIndicators(ctx, []string{processIndicator.GetId()})
+			err = s.datastore.RemoveProcessIndicators(ctx, []string{processIndicator.GetId()}, RemovalReasonProcessFilter)
 			s.NoError(err)
 
 			fetchedProcess, found, err := s.datastore.GetProcessIndicator(
@@ -195,7 +195,7 @@ func (s *processIndicatorDatastoreSACSuite) TestPruneProcessIndicators() {
 			s.Require().NoError(err)
 			defer s.deleteProcessIndicator(processIndicator.GetId())
 
-			prunedCount, err := s.datastore.PruneProcessIndicators(ctx, []string{processIndicator.GetId()})
+			prunedCount, err := s.datastore.PruneProcessIndicators(ctx, []string{processIndicator.GetId()}, PruneReasonSimilarity)
 			s.NoError(err)
 
 			fetchedProcess, found, err := s.datastore.GetProcessIndicator(

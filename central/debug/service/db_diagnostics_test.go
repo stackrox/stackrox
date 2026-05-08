@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/stats"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -67,4 +68,19 @@ func (s *DBDiagnosticTestSuite) TestBuildDiagnosticData() {
 	// Drive some error cases
 	diagnosticData = buildDBDiagnosticData(s.ctx, nil, s.dbPool)
 	s.Equal(diagnosticData.DatabaseConnectString, "")
+}
+
+func (s *DBDiagnosticTestSuite) TestGetPGStatActivities() {
+	activities := stats.GetPGStatActivities(s.ctx, s.dbPool, 100)
+	s.Empty(activities.Error)
+	s.True(len(activities.Activities) > 0)
+
+	foundActive := false
+	for _, a := range activities.Activities {
+		if a.State != nil && *a.State == "active" {
+			foundActive = true
+			break
+		}
+	}
+	s.True(foundActive, "expected to find at least one active connection")
 }

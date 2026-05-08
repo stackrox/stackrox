@@ -2,10 +2,12 @@ import { Toolbar, ToolbarContent, ToolbarGroup } from '@patternfly/react-core';
 
 import type { SearchFilter } from 'types/search';
 import useAnalytics from 'hooks/useAnalytics';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
+import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 
 import { getSearchFilterConfig } from './ViolationsTableSearchFilter.utils';
@@ -27,8 +29,12 @@ function ViolationsTableSearchFilter({
 }: ViolationsTableSearchFilterProps) {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    const searchFilterConfig = getSearchFilterConfig(filteredWorkflowView);
+    const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        getSearchFilterConfig(filteredWorkflowView)
+    );
 
     const onSearchHandler: OnSearchCallback = (payload) => {
         onSearch(payload);

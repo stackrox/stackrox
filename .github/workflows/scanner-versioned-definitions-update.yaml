@@ -198,7 +198,7 @@ jobs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3@sha256:1161dae82604108deeaffd17261af4a3220b01d726201ea721b49a0c1a3a072d # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1 # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
@@ -273,7 +273,7 @@ jobs:
         zip definitions/"$SCANNER_BUNDLE_VERSION"/vulnerabilities.zip bundles/*.json.zst
 
     - name: Upload definitions artifacts
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # ratchet:actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
       with:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
         path: definitions
@@ -291,7 +291,7 @@ jobs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3@sha256:1161dae82604108deeaffd17261af4a3220b01d726201ea721b49a0c1a3a072d # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1 # ratchet:quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp

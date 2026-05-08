@@ -33,5 +33,9 @@ clusterConfig:
     autoLockProcessBaselinesConfig:
       enabled: {{ ._rox.autoLockProcessBaselines.enabled }}
     [<- end >]
+    processIndicators:
+      noPersistence: {{ ._rox.processIndicators.noPersistence }}
+      excludeOpenshiftNs: {{ ._rox.processIndicators.excludeOpenshiftNs }}
+      excludeNamespaceFilter: {{ ._rox.processIndicators.excludeNamespaceFilter | toString }}
   configFingerprint: {{ ._rox._configFP }}
   clusterLabels: {{- toYaml ._rox.clusterLabels | nindent 4 }}

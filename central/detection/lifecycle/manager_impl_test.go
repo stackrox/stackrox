@@ -7,9 +7,12 @@ import (
 
 	"github.com/pkg/errors"
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	"github.com/stackrox/rox/central/deployment/cache"
 	queueMocks "github.com/stackrox/rox/central/deployment/queue/mocks"
 	alertManagerMocks "github.com/stackrox/rox/central/detection/alertmanager/mocks"
 	processBaselineDataStoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
+	processIndicatorsDataStoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
+	piFilter "github.com/stackrox/rox/central/processindicator/filter"
 	reprocessorMocks "github.com/stackrox/rox/central/reprocessor/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
@@ -82,6 +86,8 @@ type ManagerTestSuite struct {
 	mockCtrl                   *gomock.Controller
 	connectionManager          *connectionMocks.MockManager
 	cluster                    *clusterDataStoreMocks.MockDataStore
+	indicators                 *processIndicatorsDataStoreMocks.MockDataStore
+	filter                     filter.Filter
 }
 
 func (suite *ManagerTestSuite) SetupTest() {
@@ -93,6 +99,8 @@ func (suite *ManagerTestSuite) SetupTest() {
 	suite.deploymentObservationQueue = queueMocks.NewMockDeploymentObservationQueue(suite.mockCtrl)
 	suite.connectionManager = connectionMocks.NewMockManager(suite.mockCtrl)
 	suite.cluster = clusterDataStoreMocks.NewMockDataStore(suite.mockCtrl)
+	suite.filter = piFilter.Singleton()
+	suite.indicators = processIndicatorsDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 
 	suite.manager = &managerImpl{
 		baselines:                  suite.baselines,
@@ -101,11 +109,21 @@ func (suite *ManagerTestSuite) SetupTest() {
 		deploymentObservationQueue: suite.deploymentObservationQueue,
 		connectionManager:          suite.connectionManager,
 		clusterDataStore:           suite.cluster,
+		processFilter:              suite.filter,
+		processesDataStore:         suite.indicators,
+		queuedIndicators:           make(map[string]*storage.ProcessIndicator),
+		deletedDeploymentsCache:    cache.DeletedDeploymentsSingleton(),
 	}
 }
 
 func (suite *ManagerTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
+
+	// reset the state
+	suite.filter = piFilter.Singleton()
+	suite.manager.processFilter = suite.filter
+	suite.manager.queuedIndicators = make(map[string]*storage.ProcessIndicator)
+	suite.manager.deletedDeploymentsCache = cache.DeletedDeploymentsSingleton()
 }
 
 func makeIndicator() (*storage.ProcessBaselineKey, *storage.ProcessIndicator) {
@@ -330,4 +348,47 @@ func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesNoCluster() {
 	suite.cluster.EXPECT().GetCluster(gomock.Any(), clusterId).Return(nil, false, nil)
 	enabled := suite.manager.isAutoLockEnabledForCluster(clusterId)
 	suite.False(enabled)
+}
+
+func (suite *ManagerTestSuite) TestFlushIndicators() {
+	_, indicator1 := makeIndicator()
+	_, indicator2 := makeIndicator()
+
+	// Make first indicator to match and be filtered out
+	suite.cluster.EXPECT().MatchProcessIndicator(gomock.Any(), indicator1).
+		Return(true, nil)
+
+	// The second indicator should pass through
+	suite.cluster.EXPECT().MatchProcessIndicator(gomock.Any(), indicator2).
+		Return(false, nil)
+
+	// The second indicator will cause reading of the corresponding baseline...
+	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), gomock.Any()).
+		Return(nil, false, nil)
+
+	// ... as well as new deployment in the observation queue ...
+	suite.deploymentObservationQueue.EXPECT().
+		InObservation(gomock.Any())
+
+	// ... and update of the corresponding baseline
+	suite.baselines.EXPECT().UpsertProcessBaseline(
+		gomock.Any(), gomock.Any(), gomock.Any(), true, true).
+		Return(nil, nil)
+
+	// Only the second indicator is getting stored
+	suite.indicators.EXPECT().
+		AddProcessIndicators(gomock.Any(), indicator2).
+		Return(nil)
+
+	// Unfortunately it's not easy to test new indicators in the lifecycle
+	// manager at the higher level, since flushIndicatorQueue is executed in a
+	// separate go routine, which makes mock expectation checking complicated
+	// (we have to somehow wait for this routine to end). Thus we test at
+	// flushIndicatorQueue level, and manually prepare the indicator queue.
+	//
+	// TODO: Is it possible to incorporate testing/synctest here on top of testify?
+	suite.manager.queuedIndicators[indicator1.GetId()] = indicator1
+	suite.manager.queuedIndicators[indicator2.GetId()] = indicator2
+
+	suite.manager.flushIndicatorQueue()
 }

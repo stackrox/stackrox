@@ -128,6 +128,7 @@ export type SearchFieldLabel =
     | 'Container ID'
     | 'Container Image Digest'
     | 'Container Name'
+    | 'Container Type'
     | 'Deployment ID'
     | 'Deployment'
     | 'Deployment Label'

@@ -8,11 +8,11 @@ import {
 } from '@patternfly/react-core';
 
 import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
-import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
+import CompoundSearchFilterDescriptionListGroups from 'Components/CompoundSearchFilter/components/CompoundSearchFilterDescriptionListGroups';
 import { getSearchFilterFromSearchString } from 'utils/searchUtils';
 import {
-    attributesSeparateFromConfigForViewBasedReport,
-    configForViewBasedReport,
+    attributesSeparateFromConfigForImageVulnerabilityReport,
+    searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport,
 } from '../../searchFilterConfig';
 
 export type ViewBasedReportJobDetailsProps = {
@@ -20,53 +20,48 @@ export type ViewBasedReportJobDetailsProps = {
 };
 
 function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetailsProps) {
-    const query = getSearchFilterFromSearchString(reportSnapshot.viewBasedVulnReportFilters.query);
+    const { name, viewBasedVulnReportFilters } = reportSnapshot;
+    const { query } = viewBasedVulnReportFilters;
+
+    const searchFilter = getSearchFilterFromSearchString(query);
+
+    // Render separate attributes (more likely to be specified) preceding config.
+    const attributesFromConfig =
+        searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport.flatMap(
+            ({ attributes }) => attributes
+        );
+    const attributes = [
+        ...attributesSeparateFromConfigForImageVulnerabilityReport,
+        ...attributesFromConfig,
+    ];
 
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
-            <Title headingLevel="h2">Report details</Title>
+            <Title headingLevel="h2">Details</Title>
             <DescriptionList
-                columnModifier={{
-                    default: '3Col',
-                }}
+                isCompact
+                isHorizontal
+                horizontalTermWidthModifier={{ default: '20ch' }}
             >
                 <DescriptionListGroup>
                     <DescriptionListTerm>Name</DescriptionListTerm>
-                    <DescriptionListDescription>{reportSnapshot.name}</DescriptionListDescription>
+                    <DescriptionListDescription>{name}</DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
-                    <DescriptionListTerm>Results type</DescriptionListTerm>
-                    <DescriptionListDescription>Vulnerabilities</DescriptionListDescription>
-                </DescriptionListGroup>
-                <DescriptionListGroup>
-                    <DescriptionListTerm>Area of concern</DescriptionListTerm>
-                    <DescriptionListDescription>
-                        {reportSnapshot.areaOfConcern}
-                    </DescriptionListDescription>
+                    <DescriptionListTerm>Report type</DescriptionListTerm>
+                    <DescriptionListDescription>Image vulnerabilities</DescriptionListDescription>
                 </DescriptionListGroup>
             </DescriptionList>
-            <Title headingLevel="h2">Scope details</Title>
+            <Title headingLevel="h2">Filters</Title>
             <DescriptionList
-                columnModifier={{
-                    default: '1Col',
-                }}
+                isCompact
+                isHorizontal
+                horizontalTermWidthModifier={{ default: '20ch' }}
             >
-                <DescriptionListGroup>
-                    <DescriptionListTerm>Scoping method</DescriptionListTerm>
-                    <DescriptionListDescription>Using filters</DescriptionListDescription>
-                </DescriptionListGroup>
-                <DescriptionListGroup>
-                    <DescriptionListTerm>Scope filters</DescriptionListTerm>
-                    <DescriptionListDescription>
-                        <CompoundSearchFilterLabels
-                            attributesSeparateFromConfig={
-                                attributesSeparateFromConfigForViewBasedReport
-                            }
-                            config={configForViewBasedReport}
-                            searchFilter={query}
-                        />
-                    </DescriptionListDescription>
-                </DescriptionListGroup>
+                <CompoundSearchFilterDescriptionListGroups
+                    attributes={attributes}
+                    searchFilter={searchFilter}
+                />
             </DescriptionList>
         </Flex>
     );

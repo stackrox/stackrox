@@ -307,12 +307,10 @@ func Test_identified(t *testing.T) {
 	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, identified)
 
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		tt.Track("test", nil)
 		tt.Stop()
-	}()
+	})
 	assert.Equal(t, int32(0), i.Load())
 	close(identified)
 	wg.Wait()

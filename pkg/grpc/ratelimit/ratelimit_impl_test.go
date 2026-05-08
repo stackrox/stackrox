@@ -122,11 +122,9 @@ func TestLimitWithThrottle(t *testing.T) {
 			resultChan := make(chan bool, numCalls)
 
 			for i := 0; i < numCalls; i++ {
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
+				wg.Go(func() {
 					resultChan <- rl.limit(context.Background())
-				}()
+				})
 			}
 
 			go func() {

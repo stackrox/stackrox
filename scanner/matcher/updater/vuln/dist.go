@@ -2,10 +2,10 @@ package vuln
 
 import (
 	"context"
+	"log/slog"
 	"slices"
 
 	"github.com/quay/claircore"
-	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 )
@@ -30,10 +30,9 @@ func newDistManager(store postgres.MatcherStore) *distManager {
 //
 // It is *not* safe to call update concurrently.
 func (dm *distManager) update(ctx context.Context) (err error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "updater/vuln/dists.update")
-	zlog.Info(ctx).Msg("updating vuln distributions")
+	slog.InfoContext(ctx, "updating vuln distributions")
 	defer func() {
-		zlog.Info(ctx).Bool("updated", err == nil).Msg("done updating vuln distributions")
+		slog.InfoContext(ctx, "done updating vuln distributions", "updated", err == nil)
 	}()
 
 	var dists []claircore.Distribution

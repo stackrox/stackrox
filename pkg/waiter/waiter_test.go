@@ -93,12 +93,10 @@ func TestWaitClose(t *testing.T) {
 	assert.NoError(t, err)
 
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		_, err := w.Wait(context.Background())
 		assert.ErrorIs(t, err, ErrWaiterClosed)
-	}()
+	})
 
 	assert.Equal(t, 1, wm.len())
 	w.Close()

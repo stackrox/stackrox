@@ -30,6 +30,20 @@ export const Annotation: CompoundSearchFilterAttribute = {
     inputType: 'autocomplete',
 };
 
+export const ContainerType: CompoundSearchFilterAttribute = {
+    displayName: 'Container type',
+    filterChipLabel: 'Container type',
+    searchTerm: 'Container Type',
+    inputType: 'select',
+    inputProps: {
+        options: [
+            { value: 'REGULAR', label: 'Regular' },
+            { value: 'INIT', label: 'Init' },
+        ],
+    },
+    featureFlagDependency: ['ROX_INIT_CONTAINER_SUPPORT'],
+};
+
 export const Inactive: CompoundSearchFilterAttribute = {
     displayName: 'Status',
     filterChipLabel: 'Deployment status',
@@ -43,4 +57,4 @@ export const Inactive: CompoundSearchFilterAttribute = {
     },
 };
 
-export const deploymentAttributes = [Annotation, ID, Label, Name, Inactive];
+export const deploymentAttributes = [Annotation, ContainerType, ID, Label, Name, Inactive];

@@ -1,0 +1,8 @@
+self-hosted-runner:
+  labels: []
+paths:
+  .github/workflows/**:
+    ignore:
+      # GHA coerces bool to 0/1 for array indexing at runtime.
+      # This is a well-known idiom: fromJSON('["a","b"]')[cond != 'val']
+      - 'index access of array must be type of number but got "bool"'

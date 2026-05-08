@@ -41,6 +41,14 @@ sudo ./roxagent --daemon --index-interval 10m --host-path /custom/path --port 20
 
 The host receives these reports and forwards them to StackRox Central for vulnerability analysis.
 
+## Single-instance protection
+
+- roxagent uses a file lock at `/run/lock/roxagent/roxagent.lock` to prevent overlapping scans on the same VM.
+- In single-scan mode, if another agent is already running, the new invocation exits with an error.
+- In daemon mode, if another agent is scanning, the current cycle is skipped and retried at the next interval.
+- If the lock cannot be acquired (permissions or missing directory), a warning is logged and the scan proceeds without protection.
+- The lock is shared between host-binary and Quadlet/Podman runs via a bind mount.
+
 ## Deployment
 
 ### Using Quadlet (Recommended for RHEL VMs)

@@ -503,7 +503,16 @@ func getCentralDBData(ctx context.Context, zipWriter *zipWriter) error {
 	if tuples.Error != "" {
 		log.Errorw("error retrieving pg_stat_user_tables", logging.Err(errors.New(tuples.Error)))
 	}
-	return addJSONToZip(zipWriter, "central-db-pg-tuples.json", tuples)
+	if err := addJSONToZip(zipWriter, "central-db-pg-tuples.json", tuples); err != nil {
+		return err
+	}
+
+	// Get the active session stats
+	activities := stats.GetPGStatActivities(ctx, db, pgStatStatementsMax)
+	if activities.Error != "" {
+		log.Errorw("error retrieving pg_stat_activity", logging.Err(errors.New(activities.Error)))
+	}
+	return addJSONToZip(zipWriter, "central-db-pg-activity.json", activities)
 }
 
 func (s *serviceImpl) getLogImbue(ctx context.Context, zipWriter *zipWriter) error {
@@ -828,7 +837,9 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	log.Info("Finished writing data to the diagnostic bundle")
 
 	// Get logs last to also catch logs made during creation of diag bundle.
-	if (opts.withCentral || opts.withDBOnly) && (opts.logs == localLogs || failureDuringDiagnostics) {
+	if (opts.withCentral || opts.withDBOnly) &&
+		(opts.logs == localLogs || failureDuringDiagnostics) &&
+		!env.ManagedCentral.BooleanSetting() {
 		if err := logging.ForEachRotation(logging.LoggingPath, func(logFileName string) error {
 			return zipWriter.addFile(filepath.Base(logFileName), logFileName)
 		}); err != nil {

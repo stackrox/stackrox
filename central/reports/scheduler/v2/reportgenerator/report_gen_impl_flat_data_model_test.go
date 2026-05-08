@@ -54,7 +54,7 @@ type NewDataModelEnhancedReportingTestSuite struct {
 	reportGenerator       *reportGeneratorImpl
 }
 
-func (s *NewDataModelEnhancedReportingTestSuite) TearDownTest() {
+func (s *NewDataModelEnhancedReportingTestSuite) TearDownSuite() {
 	s.truncateTable(postgresSchema.DeploymentsTableName)
 	s.truncateTable(postgresSchema.ImagesTableName)
 	s.truncateTable(postgresSchema.ImageComponentV2TableName)
@@ -240,5 +240,338 @@ func collectVulnReportDataSQFNewDataModel(cveResponses []*ImageCVEQueryResponse)
 		componentNames:  componentNames.AsSlice(),
 		cveNames:        cveNames,
 		cvss:            cvss,
+	}
+}
+
+func (s *NewDataModelEnhancedReportingTestSuite) TestGetReportDataWithEntityScopeAndQueryFilters() {
+	allImageTypes := []storage.VulnerabilityReportFilters_ImageType{
+		storage.VulnerabilityReportFilters_DEPLOYED,
+		storage.VulnerabilityReportFilters_WATCHED,
+	}
+	deployedOnly := []storage.VulnerabilityReportFilters_ImageType{
+		storage.VulnerabilityReportFilters_DEPLOYED,
+	}
+
+	testCases := map[string]struct {
+		entityScope   *storage.EntityScope
+		query         string
+		imageTypes    []storage.VulnerabilityReportFilters_ImageType
+		scopeRules    []*storage.SimpleAccessScope_Rules
+		dataStartTime time.Time
+		expected      *vulnReportDataNewDataModel
+	}{
+		"Cluster scope with CVSS filter narrows by scope and score": {
+			entityScope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_CLUSTER,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "c1", MatchType: storage.MatchType_EXACT},
+						},
+					},
+				},
+			},
+			query:      "CVSS:>=7.0",
+			imageTypes: allImageTypes,
+			scopeRules: []*storage.SimpleAccessScope_Rules{
+				{IncludedClusters: []string{"c1"}},
+			},
+			expected: &vulnReportDataNewDataModel{
+				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "w0_img", "w1_img"},
+				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
+				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
+					"CVE-fixable_critical-c1_ns2_dep0_img_comp",
+					"CVE-fixable_critical-w0_img_comp",
+					"CVE-fixable_critical-w1_img_comp",
+				},
+			},
+		},
+		"Namespace scope with EPSS probability filter and c1 access scope": {
+			entityScope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_NAMESPACE,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "ns1", MatchType: storage.MatchType_EXACT},
+						},
+					},
+				},
+			},
+			query:      "EPSS Probability:>=0.5",
+			imageTypes: allImageTypes,
+			scopeRules: []*storage.SimpleAccessScope_Rules{
+				{IncludedClusters: []string{"c1"}},
+			},
+			expected: &vulnReportDataNewDataModel{
+				deploymentNames: []string{"c1_ns1_dep0"},
+				imageNames:      []string{"c1_ns1_dep0_img", "w0_img", "w1_img"},
+				componentNames:  []string{"c1_ns1_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
+				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
+					"CVE-fixable_critical-w0_img_comp",
+					"CVE-fixable_critical-w1_img_comp",
+				},
+			},
+		},
+		"Deployment scope with low NVD CVSS filter": {
+			entityScope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_DEPLOYMENT,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "c1_ns1_dep0", MatchType: storage.MatchType_EXACT},
+						},
+					},
+				},
+			},
+			query:      "NVD CVSS:<=5.0",
+			imageTypes: allImageTypes,
+			scopeRules: []*storage.SimpleAccessScope_Rules{
+				{IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+					{ClusterName: "c1", NamespaceName: "ns1"},
+				}},
+			},
+			expected: &vulnReportDataNewDataModel{
+				deploymentNames: []string{"c1_ns1_dep0"},
+				imageNames:      []string{"c1_ns1_dep0_img", "w0_img", "w1_img"},
+				componentNames:  []string{"c1_ns1_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
+				cveNames: []string{
+					"CVE-nonFixable_low-c1_ns1_dep0_img_comp",
+					"CVE-nonFixable_low-w0_img_comp",
+					"CVE-nonFixable_low-w1_img_comp",
+				},
+			},
+		},
+		"Cluster and namespace AND rules with fixability filter": {
+			entityScope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_CLUSTER,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "c1", MatchType: storage.MatchType_EXACT},
+						},
+					},
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_NAMESPACE,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "ns1", MatchType: storage.MatchType_EXACT},
+						},
+					},
+				},
+			},
+			query:      "Fixable:true",
+			imageTypes: allImageTypes,
+			scopeRules: []*storage.SimpleAccessScope_Rules{
+				{IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+					{ClusterName: "c1", NamespaceName: "ns1"},
+				}},
+			},
+			expected: &vulnReportDataNewDataModel{
+				deploymentNames: []string{"c1_ns1_dep0"},
+				imageNames:      []string{"c1_ns1_dep0_img", "w0_img", "w1_img"},
+				componentNames:  []string{"c1_ns1_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
+				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
+					"CVE-fixable_critical-w0_img_comp",
+					"CVE-fixable_critical-w1_img_comp",
+				},
+			},
+		},
+		"Deployment scope deployed-only with component source filter": {
+			entityScope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_DEPLOYMENT,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "c1_ns1_dep0", MatchType: storage.MatchType_EXACT},
+						},
+					},
+				},
+			},
+			query:      "Component Source:OS",
+			imageTypes: deployedOnly,
+			scopeRules: []*storage.SimpleAccessScope_Rules{
+				{IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+					{ClusterName: "c1", NamespaceName: "ns1"},
+				}},
+			},
+			expected: &vulnReportDataNewDataModel{
+				deploymentNames: []string{"c1_ns1_dep0"},
+				imageNames:      []string{"c1_ns1_dep0_img"},
+				componentNames:  []string{"c1_ns1_dep0_img_comp"},
+				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
+					"CVE-nonFixable_low-c1_ns1_dep0_img_comp",
+				},
+			},
+		},
+		"Deployment regex scope with CVSS filter": {
+			entityScope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_DEPLOYMENT,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "c1_.*", MatchType: storage.MatchType_REGEX},
+						},
+					},
+				},
+			},
+			query:      "CVSS:>=7.0",
+			imageTypes: allImageTypes,
+			scopeRules: []*storage.SimpleAccessScope_Rules{
+				{IncludedClusters: []string{"c1"}},
+			},
+			expected: &vulnReportDataNewDataModel{
+				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "w0_img", "w1_img"},
+				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
+				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
+					"CVE-fixable_critical-c1_ns2_dep0_img_comp",
+					"CVE-fixable_critical-w0_img_comp",
+					"CVE-fixable_critical-w1_img_comp",
+				},
+			},
+		},
+		"Multiple deployment values AND with low EPSS filter": {
+			entityScope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_DEPLOYMENT,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "c1_ns1_dep0", MatchType: storage.MatchType_EXACT},
+							{Value: "c2_ns1_dep0", MatchType: storage.MatchType_EXACT},
+						},
+					},
+				},
+			},
+			query:      "EPSS Probability:<=0.5",
+			imageTypes: allImageTypes,
+			scopeRules: []*storage.SimpleAccessScope_Rules{
+				{IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+					{ClusterName: "c1", NamespaceName: "ns1"},
+					{ClusterName: "c2", NamespaceName: "ns1"},
+				}},
+			},
+			expected: &vulnReportDataNewDataModel{
+				deploymentNames: []string{"c1_ns1_dep0", "c2_ns1_dep0"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c2_ns1_dep0_img", "w0_img", "w1_img"},
+				componentNames:  []string{"c1_ns1_dep0_img_comp", "c2_ns1_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
+				cveNames: []string{
+					"CVE-nonFixable_low-c1_ns1_dep0_img_comp",
+					"CVE-nonFixable_low-c2_ns1_dep0_img_comp",
+					"CVE-nonFixable_low-w0_img_comp",
+					"CVE-nonFixable_low-w1_img_comp",
+				},
+			},
+		},
+		"Namespace scope with image registry and CVSS combined filter": {
+			entityScope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_NAMESPACE,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "ns1", MatchType: storage.MatchType_EXACT},
+						},
+					},
+				},
+			},
+			query:      "Image Registry:docker.io+CVSS:>=7.0",
+			imageTypes: allImageTypes,
+			scopeRules: []*storage.SimpleAccessScope_Rules{
+				{IncludedClusters: []string{"c1", "c2"}},
+			},
+			expected: &vulnReportDataNewDataModel{
+				deploymentNames: []string{"c1_ns1_dep0", "c2_ns1_dep0"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c2_ns1_dep0_img"},
+				componentNames:  []string{"c1_ns1_dep0_img_comp", "c2_ns1_dep0_img_comp"},
+				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
+					"CVE-fixable_critical-c2_ns1_dep0_img_comp",
+				},
+			},
+		},
+		"Deployment scope with image label filter": {
+			entityScope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_DEPLOYMENT,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "c1_ns1_dep0", MatchType: storage.MatchType_EXACT},
+						},
+					},
+				},
+			},
+			query:      "Image Label:app=test",
+			imageTypes: allImageTypes,
+			scopeRules: []*storage.SimpleAccessScope_Rules{
+				{IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+					{ClusterName: "c1", NamespaceName: "ns1"},
+				}},
+			},
+			expected: &vulnReportDataNewDataModel{
+				deploymentNames: []string{"c1_ns1_dep0"},
+				imageNames:      []string{"c1_ns1_dep0_img"},
+				componentNames:  []string{"c1_ns1_dep0_img_comp"},
+				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
+				},
+			},
+		},
+		"Cluster scope deployed-only with image regex and EPSS combined filter": {
+			entityScope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_CLUSTER,
+						Field:  storage.EntityField_FIELD_NAME,
+						Values: []*storage.RuleValue{
+							{Value: "c1", MatchType: storage.MatchType_EXACT},
+							{Value: "c2", MatchType: storage.MatchType_EXACT},
+						},
+					},
+				},
+			},
+			query:      "Image:r/c1_.*+EPSS Probability:>=0.5",
+			imageTypes: deployedOnly,
+			scopeRules: []*storage.SimpleAccessScope_Rules{
+				{IncludedClusters: []string{"c1", "c2"}},
+			},
+			expected: &vulnReportDataNewDataModel{
+				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img"},
+				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp"},
+				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
+					"CVE-fixable_critical-c1_ns2_dep0_img_comp",
+				},
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		s.T().Run(name, func(t *testing.T) {
+			reportSnap := testEntityScopeReportSnapshot(tc.entityScope, tc.query, tc.imageTypes, tc.scopeRules)
+			reportData, err := s.reportGenerator.getReportDataSQF(reportSnap, nil, time.Time{})
+			s.NoError(err)
+			collected := collectVulnReportDataSQFNewDataModel(reportData.CVEResponses)
+			s.ElementsMatch(tc.expected.deploymentNames, collected.deploymentNames)
+			s.ElementsMatch(tc.expected.imageNames, collected.imageNames)
+			s.ElementsMatch(tc.expected.componentNames, collected.componentNames)
+			s.ElementsMatch(tc.expected.cveNames, collected.cveNames)
+			s.Equal(len(tc.expected.cveNames), reportData.NumDeployedImageResults+reportData.NumWatchedImageResults)
+			s.Equal(len(tc.expected.cveNames), len(collected.cvss))
+		})
 	}
 }

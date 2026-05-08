@@ -64,6 +64,7 @@ type Alerts struct {
 	NamespaceID              string                              `gorm:"column:namespaceid;type:uuid"`
 	DeploymentID             string                              `gorm:"column:deployment_id;type:uuid;index:alerts_deployment_id,type:btree"`
 	DeploymentName           string                              `gorm:"column:deployment_name;type:varchar"`
+	DeploymentType           string                              `gorm:"column:deployment_type;type:varchar"`
 	DeploymentInactive       bool                                `gorm:"column:deployment_inactive;type:bool"`
 	ImageID                  string                              `gorm:"column:image_id;type:varchar"`
 	ImageNameRegistry        string                              `gorm:"column:image_name_registry;type:varchar"`
@@ -80,5 +81,6 @@ type Alerts struct {
 	State                    storage.ViolationState              `gorm:"column:state;type:integer;index:alerts_state,type:btree"`
 	PlatformComponent        bool                                `gorm:"column:platformcomponent;type:bool"`
 	EntityType               storage.Alert_EntityType            `gorm:"column:entitytype;type:integer"`
+	EnforcementCount         int32                               `gorm:"column:enforcementcount;type:integer"`
 	Serialized               []byte                              `gorm:"column:serialized;type:bytea"`
 }

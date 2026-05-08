@@ -51,6 +51,10 @@ func convertVMNote(note storage.VirtualMachineV2_Note) v2.VMNote {
 	switch note {
 	case storage.VirtualMachineV2_MISSING_SCAN_DATA:
 		return v2.VMNote_VM_NOTE_MISSING_SCAN_DATA
+	case storage.VirtualMachineV2_MISSING_SCANNER:
+		return v2.VMNote_VM_NOTE_MISSING_SCANNER
+	case storage.VirtualMachineV2_SCAN_FAILED:
+		return v2.VMNote_VM_NOTE_SCAN_FAILED
 	case storage.VirtualMachineV2_MISSING_SIGNATURE:
 		return v2.VMNote_VM_NOTE_MISSING_SIGNATURE
 	case storage.VirtualMachineV2_MISSING_SIGNATURE_VERIFICATION_DATA:
@@ -143,5 +147,17 @@ func fixabilityToProto(f common.ResourceCountByFixability) *v2.VulnFixableCount 
 	return &v2.VulnFixableCount{
 		Total:   int32(f.GetTotal()),
 		Fixable: int32(f.GetFixable()),
+	}
+}
+
+// ConvertScanNote converts a storage scan note to a v2 API scan note.
+func ConvertScanNote(note storage.VirtualMachineScanV2_Note) v2.VMScanNote {
+	switch note {
+	case storage.VirtualMachineScanV2_OS_UNKNOWN:
+		return v2.VMScanNote_VM_SCAN_NOTE_OS_UNKNOWN
+	case storage.VirtualMachineScanV2_OS_UNSUPPORTED:
+		return v2.VMScanNote_VM_SCAN_NOTE_OS_UNSUPPORTED
+	default:
+		return v2.VMScanNote_VM_SCAN_NOTE_UNSET
 	}
 }

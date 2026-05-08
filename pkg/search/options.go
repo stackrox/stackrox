@@ -40,6 +40,8 @@ var (
 
 	PolicyID           = newFieldLabel("Policy ID")
 	Enforcement        = newFieldLabel("Enforcement")
+	EnforcementAction  = newFieldLabel("Enforcement Action")
+	EnforcementCount   = newFieldLabel("Enforcement Count")
 	PolicyName         = newFieldLabel("Policy")
 	PolicyCategoryName = newFieldLabel("Policy Category")
 	PolicyCategoryID   = newFieldLabel("Policy Category ID")
@@ -496,6 +498,7 @@ var (
 	VirtualMachineName     = newFieldLabel("Virtual Machine Name")
 	GuestOS                = newFieldLabel("Guest OS")
 	VirtualMachineState    = newFieldLabel("Virtual Machine State")
+	VirtualMachineScanID   = newFieldLabel("Virtual Machine Scan ID")
 	VirtualMachineScanTime = newFieldLabel("Virtual Machine Scan Time")
 	VirtualMachineScanOS   = newFieldLabel("Virtual Machine Scan OS")
 	VirtualMachineTopCVSS  = newFieldLabel("Virtual Machine Top CVSS")

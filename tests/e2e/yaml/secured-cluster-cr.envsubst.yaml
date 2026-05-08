@@ -8,6 +8,8 @@ spec:
   perNode:
     fileActivityMonitoring:
       mode: $fam_mode_setting
+  processIndicators:
+    excludeNamespaceRegex: namespace-without-persistence
   scanner:
     scannerComponent: $scanner_component_setting
     analyzer:

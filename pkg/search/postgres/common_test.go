@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
+	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -1337,6 +1338,108 @@ func TestGetQueries(t *testing.T) {
 			assert.Equal(t, GET, actual.QueryType)
 			assert.Equal(t, c.expectedQuery, actual.AsSQL())
 			assert.Equal(t, c.expectedData, actual.Data)
+		})
+	}
+}
+
+func TestCombineQueryEntries_PostTransformComposition(t *testing.T) {
+	makeTransform := func(values []string) func(interface{}) interface{} {
+		return func(_ interface{}) interface{} { return values }
+	}
+
+	cases := map[string]struct {
+		entries           []*pgsearch.QueryEntry
+		expectedWhere     string
+		expectedValues    []interface{}
+		expectedTransform []string // nil means PostTransform should be nil
+	}{
+		"two label filters are composed": {
+			entries: []*pgsearch.QueryEntry{
+				{
+					Where: pgsearch.WhereClause{Query: "cond_a", Values: []interface{}{"a"}},
+					SelectedFields: []pgsearch.SelectQueryField{{
+						SelectPath:    "deployments.Labels",
+						FieldPath:     "deployment.labels",
+						PostTransform: makeTransform([]string{"app=visa"}),
+					}},
+				},
+				{
+					Where: pgsearch.WhereClause{Query: "cond_b", Values: []interface{}{"b"}},
+					SelectedFields: []pgsearch.SelectQueryField{{
+						SelectPath:    "deployments.Labels",
+						FieldPath:     "deployment.labels",
+						PostTransform: makeTransform([]string{"app=mastercard"}),
+					}},
+				},
+			},
+			expectedWhere:     "(cond_a or cond_b)",
+			expectedValues:    []interface{}{"a", "b"},
+			expectedTransform: []string{"app=visa", "app=mastercard"},
+		},
+		"three filters chain correctly": {
+			entries: []*pgsearch.QueryEntry{
+				{
+					Where:          pgsearch.WhereClause{Query: "a"},
+					SelectedFields: []pgsearch.SelectQueryField{{SelectPath: "col", PostTransform: makeTransform([]string{"x"})}},
+				},
+				{
+					Where:          pgsearch.WhereClause{Query: "b"},
+					SelectedFields: []pgsearch.SelectQueryField{{SelectPath: "col", PostTransform: makeTransform([]string{"y"})}},
+				},
+				{
+					Where:          pgsearch.WhereClause{Query: "c"},
+					SelectedFields: []pgsearch.SelectQueryField{{SelectPath: "col", PostTransform: makeTransform([]string{"z"})}},
+				},
+			},
+			expectedWhere:     "(a or b or c)",
+			expectedTransform: []string{"x", "y", "z"},
+		},
+		"overlapping filters are deduplicated": {
+			entries: []*pgsearch.QueryEntry{
+				{
+					Where:          pgsearch.WhereClause{Query: "a"},
+					SelectedFields: []pgsearch.SelectQueryField{{SelectPath: "col", PostTransform: makeTransform([]string{"app=visa"})}},
+				},
+				{
+					Where:          pgsearch.WhereClause{Query: "b"},
+					SelectedFields: []pgsearch.SelectQueryField{{SelectPath: "col", PostTransform: makeTransform([]string{"app=visa", "app=mastercard"})}},
+				},
+			},
+			expectedWhere:     "(a or b)",
+			expectedTransform: []string{"app=mastercard", "app=visa"},
+		},
+		"nil PostTransform duplicates are dropped without error": {
+			entries: []*pgsearch.QueryEntry{
+				{
+					Where:          pgsearch.WhereClause{Query: "a"},
+					SelectedFields: []pgsearch.SelectQueryField{{SelectPath: "col"}},
+				},
+				{
+					Where:          pgsearch.WhereClause{Query: "b"},
+					SelectedFields: []pgsearch.SelectQueryField{{SelectPath: "col"}},
+				},
+			},
+			expectedWhere:     "(a or b)",
+			expectedTransform: nil,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			result := combineQueryEntries(tc.entries, " or ")
+
+			assert.Equal(t, tc.expectedWhere, result.Where.Query)
+			if tc.expectedValues != nil {
+				assert.Equal(t, tc.expectedValues, result.Where.Values)
+			}
+			assert.Len(t, result.SelectedFields, 1)
+
+			if tc.expectedTransform == nil {
+				assert.Nil(t, result.SelectedFields[0].PostTransform)
+			} else {
+				got := result.SelectedFields[0].PostTransform(nil).([]string)
+				assert.ElementsMatch(t, tc.expectedTransform, got)
+			}
 		})
 	}
 }

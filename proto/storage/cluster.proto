@@ -121,10 +121,31 @@ message AutoLockProcessBaselinesConfig {
 
 // The difference between Static and Dynamic cluster config is that Dynamic values are sent over the Central to Sensor gRPC connection. This has the benefit of allowing for "hot reloading" of values without restarting Secured cluster components.
 message DynamicClusterConfig {
+  // Configure per-namespace persistence for ProcessIndicators
+  message ProcessIndicatorsConfig {
+    // Specifies whether to persist process indicators independently from
+    // other configuratons. If true, the filters above are ignored, and no
+    // process indicators are persisted. If false (the protobuf default for
+    // booleans), process indicators are persisted according to
+    // namespace_filter and exclude_openshift_ns.
+    bool no_persistence = 1;
+
+    // A regex specifying to not persist process indicators from specified
+    // namespaces. E.g. namespace_filter: "test-.*" will instruct Central to
+    // not persist any process indicator coming from the "test-filtering"
+    // namespace.
+    string exclude_namespace_filter = 2;
+
+    // A short-cut to not persist process indicators from openshift namespaces.
+    // Equivalent to namespace_filter: "openshift-.*".
+    bool exclude_openshift_ns = 3;
+  }
+
   AdmissionControllerConfig admission_controller_config = 1;
   string registry_override = 2;
   bool disable_audit_logs = 3;
   AutoLockProcessBaselinesConfig auto_lock_process_baselines_config = 4;
+  ProcessIndicatorsConfig process_indicators = 5;
 }
 
 // Encodes a complete cluster configuration minus ID/Name identifiers

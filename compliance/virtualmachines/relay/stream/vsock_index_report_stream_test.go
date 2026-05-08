@@ -1,15 +1,44 @@
 package stream
 
 import (
+	"context"
+	"net"
 	"testing"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/protobuf/proto"
 )
 
 func TestStream(t *testing.T) {
 	suite.Run(t, new(streamTestSuite))
+}
+
+func TestVsockIndexReportStream_CloseStopsActiveAcceptLoop(t *testing.T) {
+	t.Parallel()
+
+	listener := newBlockingListener()
+	reportStream := newWithListener(listener)
+	reportStream.waitAfterFailedAccept = 0
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		reportStream.acceptLoop(context.Background(), nil)
+	}()
+
+	<-listener.acceptStarted
+
+	require.NoError(t, reportStream.Close())
+
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("accept loop did not stop after Close")
+	}
 }
 
 type streamTestSuite struct {
@@ -75,4 +104,37 @@ func (s *streamTestSuite) TestValidateVsockCID() {
 	connVsockCID = uint32(42)
 	err = validateReportedVsockCID(vmReport, connVsockCID)
 	s.Require().NoError(err)
+}
+
+type blockingListener struct {
+	acceptStarted chan struct{}
+	closeCh       chan struct{}
+	startOnce     sync.Once
+	closeOnce     sync.Once
+}
+
+func newBlockingListener() *blockingListener {
+	return &blockingListener{
+		acceptStarted: make(chan struct{}),
+		closeCh:       make(chan struct{}),
+	}
+}
+
+func (l *blockingListener) Accept() (net.Conn, error) {
+	l.startOnce.Do(func() {
+		close(l.acceptStarted)
+	})
+	<-l.closeCh
+	return nil, net.ErrClosed
+}
+
+func (l *blockingListener) Close() error {
+	l.closeOnce.Do(func() {
+		close(l.closeCh)
+	})
+	return nil
+}
+
+func (l *blockingListener) Addr() net.Addr {
+	return &net.UnixAddr{Name: "test", Net: "unix"}
 }

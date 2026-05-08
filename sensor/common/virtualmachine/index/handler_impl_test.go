@@ -8,6 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/index/mocks"
 	vmmetrics "github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -136,7 +138,9 @@ func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 		}(i)
 	}
 
-	// Collect all responses with shorter timeout.
+	// Collect all responses. The timeout breaks the loop so the Assert
+	// below reports the actual vs expected count — do not fail inside
+	// the select; that would abort before the diagnostic assertion.
 	totalResponses := 0
 	for range numGoroutines * numVMsPerGoroutine {
 		select {
@@ -144,7 +148,8 @@ func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 			totalResponses++
 		case <-time.After(500 * time.Millisecond):
 			s.T().Logf("Timeout waiting for response, got %d responses", totalResponses)
-			return // Don't fail, just exit
+			s.Assert().Equal(numGoroutines*numVMsPerGoroutine, totalResponses)
+			return
 		}
 	}
 	s.Assert().Equal(numGoroutines*numVMsPerGoroutine, totalResponses)
@@ -163,12 +168,10 @@ func (s *virtualMachineHandlerSuite) TestVirtualMachineNotFound() {
 	// Test that the goroutine processes sent VMs.
 	vm := &v1.IndexReport{VsockCid: cid}
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		err := s.handler.Send(context.Background(), vm)
 		s.Require().NoError(err)
-	}()
+	})
 
 	wg.Wait()
 
@@ -192,12 +195,10 @@ func (s *virtualMachineHandlerSuite) TestInvalidCID() {
 	// Test that the goroutine processes sent VMs.
 	vm := &v1.IndexReport{VsockCid: cid}
 	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		err := s.handler.Send(context.Background(), vm)
 		s.Require().NoError(err)
-	}()
+	})
 
 	wg.Wait()
 
@@ -227,7 +228,8 @@ func (s *virtualMachineHandlerSuite) TestStop() {
 
 func (s *virtualMachineHandlerSuite) TestCapabilities() {
 	caps := s.handler.Capabilities()
-	s.Require().Empty(caps)
+	s.Require().Len(caps, 1)
+	s.Contains(caps, centralsensor.SensorACKSupport)
 }
 
 func (s *virtualMachineHandlerSuite) TestAccepts() {
@@ -332,6 +334,314 @@ func (s *virtualMachineHandlerSuite) TestResponsesC_AfterStart() {
 	s.Require().NotNil(ch)
 }
 
+func (s *virtualMachineHandlerSuite) TestComplianceC_AfterStart() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	ch := s.handler.ComplianceC()
+	s.Require().NotNil(ch, "ComplianceC channel should be not nil after start")
+}
+
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	cases := map[string]struct {
+		centralAction  central.SensorACK_Action
+		resourceID     string
+		vmID           string
+		nodeName       string
+		reason         string
+		expectedAction sensor.MsgToCompliance_ComplianceACK_Action
+	}{
+		"should forward ACK to compliance with composite resource ID": {
+			centralAction:  central.SensorACK_ACK,
+			resourceID:     "vm-123:100",
+			vmID:           "vm-123",
+			nodeName:       "node-a",
+			reason:         "all good",
+			expectedAction: sensor.MsgToCompliance_ComplianceACK_ACK,
+		},
+		"should forward NACK to compliance with composite resource ID": {
+			centralAction:  central.SensorACK_NACK,
+			resourceID:     "vm-456:200",
+			vmID:           "vm-456",
+			nodeName:       "node-b",
+			reason:         "validation failed",
+			expectedAction: sensor.MsgToCompliance_ComplianceACK_NACK,
+		},
+		"should forward ACK with bare VM ID": {
+			centralAction:  central.SensorACK_ACK,
+			resourceID:     "vm-789",
+			vmID:           "vm-789",
+			nodeName:       "node-c",
+			reason:         "",
+			expectedAction: sensor.MsgToCompliance_ComplianceACK_ACK,
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			s.store.EXPECT().Get(virtualmachine.VMID(tc.vmID)).Return(
+				&virtualmachine.Info{ID: virtualmachine.VMID(tc.vmID), NodeName: tc.nodeName})
+
+			ctx := context.Background()
+			msg := &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+					Action:      tc.centralAction,
+					MessageType: central.SensorACK_VM_INDEX_REPORT,
+					ResourceId:  tc.resourceID,
+					Reason:      tc.reason,
+				}},
+			}
+
+			err := s.handler.ProcessMessage(ctx, msg)
+			s.Require().NoError(err)
+
+			select {
+			case got := <-s.handler.ComplianceC():
+				ack := got.Msg.GetComplianceAck()
+				s.Require().NotNil(ack)
+				s.Equal(tc.expectedAction, ack.GetAction())
+				s.Equal(sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT, ack.GetMessageType())
+				s.Equal(tc.resourceID, ack.GetResourceId())
+				s.Equal(tc.reason, ack.GetReason())
+				s.Equal(tc.nodeName, got.Hostname)
+				s.False(got.Broadcast)
+			case <-time.After(100 * time.Millisecond):
+				s.Fail("timed out waiting for compliance message")
+			}
+		})
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DropsWhenVMUnknown() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	cases := map[string]struct {
+		resourceID string
+		expectedID string
+	}{
+		"should drop when resource ID is empty": {
+			resourceID: "",
+		},
+		"should drop when VM not in store": {
+			resourceID: "vm-deleted",
+			expectedID: "vm-deleted",
+		},
+		"should drop when VM from composite ID not in store": {
+			resourceID: "vm-deleted:999",
+			expectedID: "vm-deleted",
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			if tc.expectedID != "" {
+				s.store.EXPECT().Get(virtualmachine.VMID(tc.expectedID)).Return(nil)
+			}
+
+			ctx := context.Background()
+			msg := &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+					Action:      central.SensorACK_ACK,
+					MessageType: central.SensorACK_VM_INDEX_REPORT,
+					ResourceId:  tc.resourceID,
+				}},
+			}
+
+			err := s.handler.ProcessMessage(ctx, msg)
+			s.Require().NoError(err)
+
+			select {
+			case <-s.handler.ComplianceC():
+				s.Fail("ACK should have been dropped when VM is unknown, not forwarded")
+			default:
+			}
+		})
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_NoStartDoesNotPanic() {
+	ctx := context.Background()
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_ACK,
+			MessageType: central.SensorACK_VM_INDEX_REPORT,
+			ResourceId:  "vm-no-start",
+		}},
+	}
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_ = s.handler.ProcessMessage(ctx, msg)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(100 * time.Millisecond):
+		s.Fail("ProcessMessage should not block when Start() has not been called")
+	}
+
+	s.Nil(s.handler.ComplianceC())
+}
+
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_UnknownActionDropped() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	ctx := context.Background()
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_Action(999),
+			MessageType: central.SensorACK_VM_INDEX_REPORT,
+			ResourceId:  "vm-unknown",
+		}},
+	}
+
+	err = s.handler.ProcessMessage(ctx, msg)
+	s.Require().NoError(err)
+
+	select {
+	case <-s.handler.ComplianceC():
+		s.Fail("unexpected message on ComplianceC for unknown SensorACK action")
+	default:
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DoesNotBlockWhenStopped() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+
+	// Fill the compliance channel to capacity.
+	s.handler.toCompliance <- common.MessageToComplianceWithAddress{}
+
+	s.handler.Stop()
+
+	s.store.EXPECT().Get(virtualmachine.VMID("vm-stopped")).Return(
+		&virtualmachine.Info{ID: "vm-stopped", NodeName: "node-x"})
+
+	ctx := context.Background()
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_NACK,
+			MessageType: central.SensorACK_VM_INDEX_REPORT,
+			ResourceId:  "vm-stopped",
+			Reason:      "after stop",
+		}},
+	}
+
+	// The first select in forwardToCompliance sees StopRequested and
+	// returns before attempting the channel send.
+	err = s.handler.ProcessMessage(ctx, msg)
+	s.Require().NoError(err)
+
+	// Only the pre-filled message should be in the channel.
+	select {
+	case <-s.handler.ComplianceC():
+	default:
+		s.Fail("expected the pre-filled message")
+	}
+	select {
+	case <-s.handler.ComplianceC():
+		s.Fail("the second message should have been dropped")
+	default:
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DropsWhenQueueFull() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	s.store.EXPECT().Get(virtualmachine.VMID("vm-first")).Return(
+		&virtualmachine.Info{ID: "vm-first", NodeName: "node-1"})
+	s.store.EXPECT().Get(virtualmachine.VMID("vm-second")).Return(
+		&virtualmachine.Info{ID: "vm-second", NodeName: "node-2"})
+
+	ctx := context.Background()
+	makeMsg := func(id string) *central.MsgToSensor {
+		return &central.MsgToSensor{
+			Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+				Action:      central.SensorACK_ACK,
+				MessageType: central.SensorACK_VM_INDEX_REPORT,
+				ResourceId:  id,
+			}},
+		}
+	}
+
+	// First send fills the buffer (capacity 1).
+	err = s.handler.ProcessMessage(ctx, makeMsg("vm-first"))
+	s.Require().NoError(err)
+
+	// Second send without draining: hits the default branch, drops
+	// immediately instead of blocking. This protects ProcessMessage
+	// from stalling if compliance is slow.
+	err = s.handler.ProcessMessage(ctx, makeMsg("vm-second"))
+	s.Require().NoError(err)
+
+	// Only the first message is in the channel.
+	select {
+	case got := <-s.handler.ComplianceC():
+		s.Equal("vm-first", got.Msg.GetComplianceAck().GetResourceId())
+	case <-time.After(100 * time.Millisecond):
+		s.Fail("first message should be available in the buffer")
+	}
+
+	// Channel should now be empty (second was dropped).
+	select {
+	case <-s.handler.ComplianceC():
+		s.Fail("second message should have been dropped when queue was full")
+	default:
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DropsOnCancelledContext() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	// Fill the buffer so the send would need to block.
+	s.handler.toCompliance <- common.MessageToComplianceWithAddress{}
+
+	s.store.EXPECT().Get(virtualmachine.VMID("vm-cancelled")).Return(
+		&virtualmachine.Info{ID: "vm-cancelled", NodeName: "node-c"})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_ACK,
+			MessageType: central.SensorACK_VM_INDEX_REPORT,
+			ResourceId:  "vm-cancelled",
+		}},
+	}
+
+	// The first select in forwardToCompliance sees ctx.Done() and
+	// returns before attempting the channel send.
+	err = s.handler.ProcessMessage(ctx, msg)
+	s.Require().NoError(err)
+
+	// Drain the pre-filled message; the cancelled one was dropped.
+	select {
+	case <-s.handler.ComplianceC():
+	default:
+		s.Fail("expected the pre-filled message")
+	}
+	select {
+	case <-s.handler.ComplianceC():
+		s.Fail("the message with cancelled context should have been dropped")
+	default:
+	}
+}
+
 func (s *virtualMachineHandlerSuite) TestSend_CapabilityNotSupported() {
 	// Remove capability to simulate old Central version
 	centralcaps.Set(nil)
@@ -345,4 +655,74 @@ func (s *virtualMachineHandlerSuite) TestSend_CapabilityNotSupported() {
 	s.Require().ErrorIs(err, errCapabilityNotSupported)
 	s.Require().ErrorIs(err, errox.NotImplemented)
 	s.Assert().ErrorContains(err, "Central does not have virtual machine capability")
+}
+
+func (s *virtualMachineHandlerSuite) TestSend_AfterStop() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	s.handler.Stop()
+
+	vm := &v1.IndexReport{VsockCid: "1"}
+	err = s.handler.Send(context.Background(), vm)
+	s.Require().Error(err)
+	s.Require().ErrorIs(err, errInputChanClosed)
+	s.Require().ErrorIs(err, errox.InvariantViolation)
+}
+
+func (s *virtualMachineHandlerSuite) TestSend_CentralNotReachable() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	vm := &v1.IndexReport{VsockCid: "1"}
+	err = s.handler.Send(context.Background(), vm)
+	s.Require().Error(err)
+	s.Require().ErrorIs(err, errCentralNotReachable)
+	s.Require().ErrorIs(err, errox.ResourceExhausted)
+}
+
+func (s *virtualMachineHandlerSuite) TestStart_CalledTwice() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	err = s.handler.Start()
+	s.Require().ErrorIs(err, errStartMoreThanOnce)
+}
+
+func TestVmIDFromResourceID(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		resourceID string
+		expected   string
+	}{
+		"extracts vm id from composite resource id": {
+			resourceID: "vm-1:100",
+			expected:   "vm-1",
+		},
+		"returns bare vm id as-is": {
+			resourceID: "vm-1",
+			expected:   "vm-1",
+		},
+		"returns empty string for empty input": {
+			resourceID: "",
+			expected:   "",
+		},
+		"extracts uuid vm id from composite": {
+			resourceID: "d2696fad-8ef2-49f5-9726-499b1419be20:1289650420",
+			expected:   "d2696fad-8ef2-49f5-9726-499b1419be20",
+		},
+		"returns bare CID as-is": {
+			resourceID: "1289650420",
+			expected:   "1289650420",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.expected, vmIDFromResourceID(tc.resourceID))
+		})
+	}
 }

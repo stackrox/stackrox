@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	networkingV1 "k8s.io/api/networking/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -145,8 +146,8 @@ func (a *restorePolicy) Record(mod *storage.NetworkPolicyModification) {
 
 func (t *applyTx) Rollback(ctx context.Context) error {
 	var errList errorhelpers.ErrorList
-	for i := len(t.rollbackActions) - 1; i >= 0; i-- {
-		errList.AddError(t.rollbackActions[i].Execute(ctx, t.networkingClient))
+	for _, action := range sliceutils.Backward(t.rollbackActions) {
+		errList.AddError(action.Execute(ctx, t.networkingClient))
 	}
 	if err := errList.ToError(); err != nil {
 		return errors.Wrap(err, "reverting network policy modifications")
@@ -264,8 +265,8 @@ func (t *applyTx) deleteNetworkPolicy(ctx context.Context, namespace, name strin
 
 func (t *applyTx) UndoModification() *storage.NetworkPolicyModification {
 	mod := &storage.NetworkPolicyModification{}
-	for i := len(t.rollbackActions) - 1; i >= 0; i-- {
-		t.rollbackActions[i].Record(mod)
+	for _, action := range sliceutils.Backward(t.rollbackActions) {
+		action.Record(mod)
 	}
 	return mod
 }

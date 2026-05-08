@@ -5,5 +5,5 @@ type FixabilityLabels = Record<FixabilityLabelKey, string>;
 
 export const fixabilityLabels: FixabilityLabels = {
     FIXABLE: 'Fixable',
-    NOT_FIXABLE: 'Unfixable',
+    NOT_FIXABLE: 'Not fixable',
 };

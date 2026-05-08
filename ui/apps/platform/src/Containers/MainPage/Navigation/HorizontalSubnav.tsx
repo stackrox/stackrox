@@ -5,6 +5,7 @@ import { Nav } from '@patternfly/react-core';
 
 import {
     everyResource,
+    riskBasePath,
     someResource,
     violationsBasePath,
     vulnerabilitiesAllImagesPath,
@@ -23,12 +24,13 @@ import type { FeatureFlagPredicate } from 'utils/featureFlagUtils';
 
 import './HorizontalSubnav.css';
 
+const RiskSubnav = lazy(() => import('Containers/Risk/RiskSubnav'));
 const ViolationsSubnav = lazy(() => import('Containers/Violations/ViolationsSubnav'));
 const VulnerabilitiesSubnav = lazy(
     () => import('Containers/Vulnerabilities/VulnerabilitiesSubnav')
 );
 
-type SubnavRouteKey = 'violations' | 'vulnerabilities';
+type SubnavRouteKey = 'risk' | 'violations' | 'vulnerabilities';
 
 type SubnavRouteConfig = {
     key: SubnavRouteKey;
@@ -42,6 +44,12 @@ type SubnavRouteConfig = {
 };
 
 const subnavRoutes: SubnavRouteConfig[] = [
+    {
+        key: 'risk',
+        patterns: [`${riskBasePath}/*`],
+        component: RiskSubnav,
+        resourceAccessRequirements: everyResource(['Deployment']),
+    },
     {
         key: 'violations',
         patterns: [`${violationsBasePath}/*`],

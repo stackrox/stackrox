@@ -1,16 +1,14 @@
 import type { ReactElement } from 'react';
-import { Alert, Flex, FlexItem, Title } from '@patternfly/react-core';
+import { Alert, Content, Flex, FlexItem, Title } from '@patternfly/react-core';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import type { Cluster, ClusterManagerType, CompleteClusterConfig } from 'types/cluster.proto';
 import type { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
-
-import ClusterLabelsTable from './ClusterLabelsTable';
 import ClusterStatusGrid from './ClusterStatusGrid';
 import ClusterSummaryGrid from './ClusterSummaryGrid';
 import DynamicConfigurationForm from './DynamicConfigurationForm';
 import StaticConfigurationForm from './StaticConfigurationForm';
-
 // Delete whenever deprecated properties are deleted.
 function getClusterHasDefaultsForAdmissionController(helmConfig: CompleteClusterConfig) {
     return (
@@ -30,7 +28,6 @@ type ClusterLabelsConfigurationStatusSummaryProps = {
     managerType: ClusterManagerType;
     handleChange: (path: string, value: boolean | number | string) => void;
     handleChangeAdmissionControllerEnforcementBehavior: (value: boolean) => void;
-    handleChangeLabels: (labels) => void;
 };
 
 function ClusterLabelsConfigurationStatusSummary({
@@ -40,7 +37,6 @@ function ClusterLabelsConfigurationStatusSummary({
     managerType,
     handleChange,
     handleChangeAdmissionControllerEnforcementBehavior,
-    handleChangeLabels,
 }: ClusterLabelsConfigurationStatusSummaryProps): ReactElement {
     const isManagerTypeNonConfigurable =
         managerType === 'MANAGER_TYPE_KUBERNETES_OPERATOR' ||
@@ -77,11 +73,30 @@ function ClusterLabelsConfigurationStatusSummary({
             {selectedCluster.id && (
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
                     <Title headingLevel="h2">Cluster labels</Title>
-                    <ClusterLabelsTable
-                        labels={selectedCluster?.labels ?? {}}
-                        handleChangeLabels={handleChangeLabels}
-                        hasAction
-                    />
+                    {Object.keys(selectedCluster?.labels ?? {}).length === 0 ? (
+                        <Content component="p">No labels</Content>
+                    ) : (
+                        <Table variant="compact" aria-label="Cluster labels">
+                            <Thead>
+                                <Tr>
+                                    <Th>Key</Th>
+                                    <Th>Value</Th>
+                                </Tr>
+                            </Thead>
+                            <Tbody>
+                                {Object.entries(selectedCluster.labels).map(([key, value]) => (
+                                    <Tr key={key}>
+                                        <Td dataLabel="Key" modifier="breakWord">
+                                            {key}
+                                        </Td>
+                                        <Td dataLabel="Value" modifier="breakWord">
+                                            {value}
+                                        </Td>
+                                    </Tr>
+                                ))}
+                            </Tbody>
+                        </Table>
+                    )}
                 </Flex>
             )}
             {isManagerTypeNonConfigurable &&

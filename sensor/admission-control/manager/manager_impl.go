@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 	"sync/atomic"
+	"testing"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -17,12 +18,14 @@ import (
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/detection/runtime"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/admission-control/errors"
 	"github.com/stackrox/rox/sensor/admission-control/resources"
@@ -93,11 +96,75 @@ const (
 	imageNameCacheSize = 8192
 )
 
+// imageGenTracker tracks per-key generation counters to prevent stale in-flight
+// fetches from re-caching data after an invalidation or full purge.
+type imageGenTracker struct {
+	mu           sync.RWMutex
+	gen          map[string]uint64
+	cacheVersion string
+}
+
+func newImageGenTracker() *imageGenTracker {
+	return &imageGenTracker{gen: make(map[string]uint64)}
+}
+
+// Snapshot captures the per-key generation and CacheVersion before a fetch.
+func (t *imageGenTracker) Snapshot(key string) (gen uint64, cacheVersion string) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	return t.gen[key], t.cacheVersion
+}
+
+// Changed returns true if the generation or CacheVersion moved since the snapshot.
+func (t *imageGenTracker) Changed(key string, gen uint64, cacheVersion string) bool {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	return t.gen[key] != gen || t.cacheVersion != cacheVersion
+}
+
+// Inc bumps the per-key generation counter.
+func (t *imageGenTracker) Inc(key string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.gen[key]++
+}
+
+// CacheVersion returns the current cache version.
+func (t *imageGenTracker) CacheVersion() string {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	return t.cacheVersion
+}
+
+// UpdateCacheVersion sets a new CacheVersion and clears all per-key counters.
+func (t *imageGenTracker) UpdateCacheVersion(v string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.cacheVersion = v
+	clear(t.gen)
+}
+
+// Get returns the per-key generation counter (for testing only).
+func (t *imageGenTracker) Get(_ testing.TB, key string) uint64 {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	return t.gen[key]
+}
+
+// Clear resets all per-key counters and the cache version (for testing only).
+func (t *imageGenTracker) Clear(_ testing.TB) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.cacheVersion = ""
+	clear(t.gen)
+}
+
 type manager struct {
 	stopper concurrency.Stopper
 
-	client     sensor.ImageServiceClient
-	imageCache sizeboundedcache.Cache[string, imageCacheEntry]
+	client        sensor.ImageServiceClient
+	imageCache    sizeboundedcache.Cache[string, imageCacheEntry]
+	imageCacheGen *imageGenTracker
 	// imageNameToImageCacheKey resolves image full names (e.g. "docker.io/library/nginx:1.25")
 	// to their cache keys in imageCache. This is needed because admission requests for CREATE/UPDATE
 	// operations only contain image names (no digest/ID), so imageKey() returns the full name as the
@@ -106,16 +173,16 @@ type manager struct {
 	// Bounded by imageNameCacheSize to prevent unbounded growth during long-lived Sensor sessions.
 	imageNameToImageCacheKey *lru.Cache[string, string]
 	imageNameCacheEnabled    bool
+	imageCacheTTL            time.Duration
 	imageFetchGroup          *coalescer.Coalescer[*storage.Image]
 
+	depClient               sensor.DeploymentServiceClient
+	resourceUpdatesC        chan *sensor.AdmCtrlUpdateResourceRequest
 	imageCacheInvalidationC chan *sensor.AdmCtrlImageCacheInvalidation
-
-	depClient        sensor.DeploymentServiceClient
-	resourceUpdatesC chan *sensor.AdmCtrlUpdateResourceRequest
-	namespaces       *resources.NamespaceStore
-	deployments      *resources.DeploymentStore
-	pods             *resources.PodStore
-	initialSyncSig   concurrency.Signal
+	namespaces              *resources.NamespaceStore
+	deployments             *resources.DeploymentStore
+	pods                    *resources.PodStore
+	initialSyncSig          concurrency.Signal
 
 	settingsStream     *concurrency.ValueStream[*sensor.AdmissionControlSettings]
 	settingsC          chan *sensor.AdmissionControlSettings
@@ -125,8 +192,6 @@ type manager struct {
 
 	state         atomic.Pointer[state]
 	clusterLabels atomic.Pointer[map[string]string]
-
-	cacheVersion string
 
 	sensorConnStatus concurrency.Flag
 
@@ -158,7 +223,9 @@ func NewManager(namespace string, maxImageCacheSize int64, imageNameCacheEnabled
 		imageCache:               cache,
 		imageNameToImageCacheKey: nameCache,
 		imageNameCacheEnabled:    imageNameCacheEnabled,
+		imageCacheTTL:            env.AdmissionControlImageCacheTTL.DurationSetting(),
 		imageFetchGroup:          coalescer.New[*storage.Image](),
+		imageCacheGen:            newImageGenTracker(),
 
 		alertsC: make(chan []*storage.Alert),
 
@@ -404,10 +471,15 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		}
 	}
 
-	if newSettings.GetCacheVersion() != m.cacheVersion {
+	if newSettings.GetCacheVersion() != m.imageCacheGen.CacheVersion() {
+		log.Infof("CacheVersion changed (%s -> %s): purging image cache and resetting gen counters",
+			m.imageCacheGen.CacheVersion(), newSettings.GetCacheVersion())
+		// UpdateCacheVersion must precede Purge so that any in-flight fetch that
+		// snapshotted the old cacheVersion sees the mismatch in Changed() and
+		// discards its result instead of re-caching stale data.
+		m.imageCacheGen.UpdateCacheVersion(newSettings.GetCacheVersion())
 		m.imageCache.Purge()
 		m.imageNameToImageCacheKey.Purge()
-		m.cacheVersion = newSettings.GetCacheVersion()
 	}
 
 	m.state.Store(newState)
@@ -529,6 +601,9 @@ func (m *manager) getDeploymentForPod(namespace, podName string) *storage.Deploy
 	return m.deployments.Get(namespace, m.pods.GetDeploymentID(namespace, podName))
 }
 
+// processImageCacheInvalidation removes targeted entries from the image cache
+// and bumps generation counters for both the digest key and full name to
+// prevent in-flight fetches from re-caching stale data.
 func (m *manager) processImageCacheInvalidation(inv *sensor.AdmCtrlImageCacheInvalidation) {
 	s := m.currentState()
 	flatten := s != nil && s.GetFlattenImageData()
@@ -542,11 +617,13 @@ func (m *manager) processImageCacheInvalidation(inv *sensor.AdmCtrlImageCacheInv
 		fullName := key.GetImageFullName()
 
 		if cacheKey != "" {
+			m.imageCacheGen.Inc(cacheKey)
 			m.imageCache.Remove(cacheKey)
 			m.imageFetchGroup.Forget(cacheKey)
 			invalidated++
 		}
 		if fullName != "" {
+			m.imageCacheGen.Inc(fullName)
 			m.imageNameToImageCacheKey.Remove(fullName)
 			m.imageFetchGroup.Forget(fullName)
 		}

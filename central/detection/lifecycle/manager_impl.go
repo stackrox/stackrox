@@ -128,7 +128,7 @@ func (m *managerImpl) buildIndicatorFilter() {
 	}
 
 	log.Infof("Cleaning up %d processes as a part of building process filter", len(processesToRemove))
-	if err := m.processesDataStore.RemoveProcessIndicators(ctx, processesToRemove); err != nil {
+	if err := m.processesDataStore.RemoveProcessIndicators(ctx, processesToRemove, processIndicatorDatastore.RemovalReasonProcessFilter); err != nil {
 		utils.Should(errors.Wrap(err, "error removing process indicators"))
 	}
 	log.Infof("Successfully cleaned up those %d processes", len(processesToRemove))
@@ -209,7 +209,8 @@ func (m *managerImpl) autoLockProcessBaselines(baselines []*storage.ProcessBasel
 	}
 }
 
-// Perhaps the cluster config should be kept in memory and calling the database should not be needed
+// Lifecycle manager uses cachedStorage for cluster datastore,
+// thus repeated calls are memoized
 func (m *managerImpl) isAutoLockEnabledForCluster(clusterId string) bool {
 	if !features.AutoLockProcessBaselines.Enabled() {
 		return false
@@ -252,7 +253,23 @@ func (m *managerImpl) flushIndicatorQueue() {
 		if m.deletedDeploymentsCache.Contains(indicator.GetDeploymentId()) {
 			continue
 		}
-		indicatorSlice = append(indicatorSlice, indicator)
+
+		match, err := m.clusterDataStore.MatchProcessIndicator(lifecycleMgrCtx, indicator)
+
+		if err != nil || !match {
+			// Add the indicator if not matching, or in the presence of an error
+			// (we consider any errors from MatchProcessIndicator as non-blocking).
+			//
+			// The only scenario when the indicator is not persisted is when it
+			// matches and we got no errors.
+			if err != nil {
+				log.Errorf("Cannot match indicator %s: %v", indicator.GetId(), err)
+			}
+
+			indicatorSlice = append(indicatorSlice, indicator)
+		} else {
+			metrics.ProcessIndicatorsNotPersistedInc()
+		}
 	}
 
 	// Index the process indicators in batch
@@ -279,15 +296,21 @@ func (m *managerImpl) addToIndicatorQueue(indicator *storage.ProcessIndicator) {
 func (m *managerImpl) addBaseline(deploymentID string) []*storage.ProcessBaseline {
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "AddBaseline")
 
-	// Simply use search to find the process indicators for the deployment
-	indicatorSlice, _ := m.processesDataStore.SearchRawProcessIndicators(
-		lifecycleMgrCtx,
-		search.NewQueryBuilder().
-			AddExactMatches(search.DeploymentID, deploymentID).
-			ProtoQuery(),
-	)
+	// Group the processes into particular baseline segments
+	baselineMap := make(map[processBaselineKey][]*storage.ProcessIndicator)
 
-	return m.buildMapAndCheckBaseline(indicatorSlice)
+	fn := func(indicator *storage.ProcessIndicator) error {
+		key := indicatorToBaselineKey(indicator)
+		baselineMap[key] = append(baselineMap[key], indicator)
+		return nil
+	}
+
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.DeploymentID, deploymentID).
+		ProtoQuery()
+	utils.Should(m.processesDataStore.GetByQueryFn(lifecycleMgrCtx, query, fn))
+
+	return m.processBaselineMap(baselineMap)
 }
 
 func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.ProcessIndicator) []*storage.ProcessBaseline {
@@ -298,7 +321,11 @@ func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.Process
 		baselineMap[key] = append(baselineMap[key], indicator)
 	}
 
-	baselines := make([]*storage.ProcessBaseline, 0)
+	return m.processBaselineMap(baselineMap)
+}
+
+func (m *managerImpl) processBaselineMap(baselineMap map[processBaselineKey][]*storage.ProcessIndicator) []*storage.ProcessBaseline {
+	baselines := make([]*storage.ProcessBaseline, 0, len(baselineMap))
 
 	for key, indicators := range baselineMap {
 		if baseline, _, err := m.checkAndUpdateBaseline(key, indicators); err != nil {

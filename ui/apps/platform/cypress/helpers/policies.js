@@ -170,19 +170,21 @@ export function importPolicyFromFixture(fileName, contentsInterceptor = (c) => c
 }
 
 export function deletePolicyIfExists(policyName) {
-    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
+    return cy.env(['ROX_AUTH_TOKEN']).then(({ ROX_AUTH_TOKEN }) => {
+        const auth = { bearer: ROX_AUTH_TOKEN };
 
-    cy.request({
-        url: api.policies.policies,
-        auth,
-    }).as('listPolicies');
+        cy.request({
+            url: api.policies.policies,
+            auth,
+        }).as('listPolicies');
 
-    cy.get('@listPolicies').then((res) => {
-        const policy = res.body.policies.find(({ name }) => name === policyName);
-        if (policy) {
-            const { id } = policy;
-            const url = `/v1/policies/${id}`;
-            cy.request({ url, auth, method: 'DELETE' });
-        }
+        cy.get('@listPolicies').then((res) => {
+            const policy = res.body.policies.find(({ name }) => name === policyName);
+            if (policy) {
+                const { id } = policy;
+                const url = `/v1/policies/${id}`;
+                cy.request({ url, auth, method: 'DELETE' });
+            }
+        });
     });
 }

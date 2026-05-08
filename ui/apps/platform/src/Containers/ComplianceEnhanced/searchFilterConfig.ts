@@ -3,6 +3,7 @@ import {
     clusterLabelAttribute,
     clusterNameAttribute,
 } from 'Components/CompoundSearchFilter/attributes/cluster';
+import { profileName, profileType } from 'Components/CompoundSearchFilter/attributes/profile';
 import { profileCheckAttributes } from 'Components/CompoundSearchFilter/attributes/profileCheck';
 import type {
     CompoundSearchFilterEntity,
@@ -10,6 +11,12 @@ import type {
 } from 'Components/CompoundSearchFilter/types';
 
 import { CHECK_STATUS_QUERY } from './Coverage/compliance.coverage.constants';
+
+export const profileSearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Profile',
+    searchCategory: 'COMPLIANCE',
+    attributes: [profileName, profileType],
+};
 
 export const profileCheckSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Profile check',
