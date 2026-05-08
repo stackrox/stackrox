@@ -1,7 +1,9 @@
 import { gql, useQuery } from '@apollo/client';
 import type { ApolloError, QueryHookOptions } from '@apollo/client';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { SearchFilter } from 'types/search';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 type DeploymentCountResponse = {
@@ -31,7 +33,13 @@ function useFetchDeploymentCount(
         'variables'
     > = {}
 ): UseFetchDeploymentCount {
-    const query = getRequestQueryStringForSearchFilter(searchFilter);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
+
+    const query = withActiveDeploymentQuery(
+        getRequestQueryStringForSearchFilter(searchFilter),
+        isDeploymentSoftDeletionEnabled
+    );
     const options = { ...queryOptions, variables: { query } };
     const { loading, error, data } = useQuery<DeploymentCountResponse, { query: string }>(
         DEPLOYMENT_COUNT_QUERY,

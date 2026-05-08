@@ -23,10 +23,12 @@ import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils'
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLSearch from 'hooks/useURLSearch';
 import useRestQuery from 'hooks/useRestQuery';
 import { fetchDeploymentsCount } from 'services/DeploymentsService';
 import type { SearchFilter } from 'types/search';
+import { withActiveDeploymentFilter } from 'utils/deploymentUtils';
 import { useDeploymentListeningEndpoints } from './hooks/useDeploymentListeningEndpoints';
 import ListeningEndpointsTable from './ListeningEndpointsTable';
 import { searchFilterConfig } from './searchFilterConfig';
@@ -40,10 +42,15 @@ function ListeningEndpointsPage() {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
     const { searchFilter, setSearchFilter } = useURLSearch();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
 
     const deploymentCountFetcher = useCallback(
-        () => fetchDeploymentsCount(searchFilter),
-        [searchFilter]
+        () =>
+            fetchDeploymentsCount(
+                withActiveDeploymentFilter(searchFilter, isDeploymentSoftDeletionEnabled)
+            ),
+        [searchFilter, isDeploymentSoftDeletionEnabled]
     );
 
     const countQuery = useRestQuery(deploymentCountFetcher);

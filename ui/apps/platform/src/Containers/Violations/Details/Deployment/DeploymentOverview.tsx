@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom-v5-compat';
 import { DescriptionList } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { vulnerabilitiesPlatformPath, vulnerabilitiesUserWorkloadsPath } from 'routePaths';
 import type { AlertDeployment } from 'types/alert.proto';
 import type { Deployment } from 'types/deployment.proto';
@@ -19,6 +20,8 @@ function DeploymentOverview({
     alertDeployment,
     deployment,
 }: DeploymentOverviewProps): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
     const hasPlatformWorkloadCveLink = deployment && deployment.platformComponent;
     return (
         <DescriptionList isCompact isHorizontal>
@@ -49,6 +52,12 @@ function DeploymentOverview({
                             deployment.created ? getDateTime(deployment.created) : 'not available'
                         }
                     />
+                    {isDeploymentSoftDeletionEnabled && deployment.deleted && (
+                        <DescriptionListItem
+                            term="Deleted"
+                            desc={getDateTime(deployment.deleted)}
+                        />
+                    )}
                     <DescriptionListItem
                         term="Labels"
                         desc={<FlatObjectDescriptionList data={deployment.labels} />}
