@@ -141,10 +141,10 @@ const PrivateConfigDataRetentionDetails = ({
                         <CardBody>
                             <DataRetentionValue
                                 value={
-                                    privateConfig?.resourceRetentionConfig
-                                        ?.deploymentDurationDays
+                                    privateConfig?.resourceRetentionConfig?.deploymentDurationDays
                                 }
                                 suffix="day"
+                                canRetainForever={false}
                             />
                         </CardBody>
                     </Card>
