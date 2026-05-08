@@ -1,9 +1,7 @@
-# CI values for KinD e2e smoke tests.
+# CI values for e2e tests (KinD and GKE).
 # Minimal resources, no scanner v4, legacy scanner enabled.
-# Matches Prow gke_ui_e2e_tests.py config (ROX_SCANNER_V4=false).
-
-imagePullSecrets:
-  allowNone: true
+# imagePullSecrets handled by deploy-stackrox action (auto-detects
+# quay-pull-secret or falls back to allowNone).
 
 central:
   persistence:
