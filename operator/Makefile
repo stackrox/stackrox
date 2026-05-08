@@ -12,10 +12,6 @@ CSV_VERSION ?= v$(VERSION)
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
-# Python binary to use for bundle helpers. Can be overridden to use a specific version (e.g., python3.12).
-# The Konflux build uses Python 3.12, so using python3.12 locally ensures compatibility.
-PYTHON ?= python3
-
 # This can be adjusted if deploying into non-standard namespaces. For example, as in
 #
 #   NAMESPACE=... make -C operator stackrox-image-pull-secret
@@ -297,14 +293,8 @@ test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(KUTTL) test --config kuttl-test.yaml --artifacts-dir build/kuttl-test-artifacts-upgrade $(KUTTL_TEST_RUN_ARGS) tests/upgrade
 
 .PHONY: test-bundle-helpers
-test-bundle-helpers: ## Run Python unit tests against helper scripts.
-	set -euo pipefail ;\
-	if [ "$${USE_GO_BUNDLE_HELPER:-true}" != "true" ]; then \
-		$(ACTIVATE_PYTHON) ;\
-		pytest -v bundle_helpers ;\
-	else \
-		echo "Skipping Python tests (USE_GO_BUNDLE_HELPER=true)" ;\
-	fi
+test-bundle-helpers: ## Run Go unit tests for bundle helper scripts.
+	cd bundle_helpers && go test ./...
 
 .PHONY: stackrox-image-pull-secret
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on Quay.io. Used by Helm chart.
@@ -484,16 +474,6 @@ upgrade-via-chart:
 
 ##@ Bundle and Index build
 
-# Commands to enter local Python virtual environment and get needed dependencies there.
-# We rely on the venv's default pip and setuptools, which are automatically compatible
-# with the Python version used to create the venv:
-# - Python 3.12 venvs come with pip/setuptools that handle Python 3.12 correctly
-# - Older Python venvs come with pip/setuptools appropriate for those versions
-# This avoids compatibility issues when trying to upgrade to specific pip versions.
-ACTIVATE_PYTHON = $(PYTHON) -m venv bundle_helpers/.venv ;\
-	. bundle_helpers/.venv/bin/activate ;\
-	pip3 install -r bundle_helpers/requirements.txt
-
 .PHONY: bundle
 bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
 	rm -rf bundle
@@ -521,9 +501,7 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 # Therefore we append ".extra" file to the end of bundle's dockerfile.
 	cat bundle.Dockerfile.extra >> bundle.Dockerfile
 # Fix the orders in the specDescriptors (children must not appear before their parents).
-# Note: Python venv is always needed because the Go implementation uses yaml-normalizer.py
 	set -euo pipefail ;\
-	$(ACTIVATE_PYTHON) ;\
 	./bundle_helpers/dispatch.sh fix-spec-descriptor-order \
 	  <bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
 	  >bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed
@@ -533,9 +511,7 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 
 .PHONY: bundle-post-process
 bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
-# Note: Python venv is always needed because dispatch.sh may use yaml-normalizer.py
 	set -euo pipefail ;\
-	$(ACTIVATE_PYTHON) ;\
 	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
 	candidate_version=$$(./bundle_helpers/dispatch.sh patch-csv \
 		--use-version $(VERSION) \
