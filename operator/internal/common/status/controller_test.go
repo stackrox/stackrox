@@ -181,7 +181,7 @@ func TestDetermineAvailableState(t *testing.T) {
 			status, reason, message := determineAvailableState(tt.statuses)
 
 			assert.Equal(t, string(tt.expectedStatus), string(status), "status mismatch")
-			assert.Equal(t, string(tt.expectedReason), string(reason), "reason mismatch")
+			assert.Equal(t, tt.expectedReason, string(reason), "reason mismatch")
 			if tt.messageContains != "" {
 				assert.Contains(t, message, tt.messageContains, "message does not contain expected text")
 			}
