@@ -456,11 +456,6 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
-      - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # ratchet:actions/setup-python@v6.2.0
-        with:
-          python-version-file: operator/bundle_helpers/.python-version
-
       - name: Build Operator Bundle
         run: make -C operator/ bundle bundle-build
 
