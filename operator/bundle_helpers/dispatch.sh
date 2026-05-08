@@ -2,43 +2,27 @@
 #
 # Wrapper script for bundle helper tools.
 #
-# Provides an abstraction layer that allows switching between Python and Go
-# implementations of bundle helper scripts without changing Makefile or Dockerfiles.
-# The implementation is selected via the USE_GO_BUNDLE_HELPER environment variable.
-#
-# Usage: dispatch.sh <script-base-name> [args...]
+# Usage: dispatch.sh <command> [args...]
 
 set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
-    echo "Usage: $0 <script-base-name> [args...]" >&2
+    echo "Usage: $0 <command> [args...]" >&2
     exit 1
 fi
 
-script_name="$1"
+command="$1"
 shift
 
 script_dir="$(dirname "$0")"
 
-# Debug logging to stderr
-echo "dispatch.sh: USE_GO_BUNDLE_HELPER=${USE_GO_BUNDLE_HELPER:-true} for script=$script_name" >&2
-
-if [[ "${USE_GO_BUNDLE_HELPER:-true}" == "true" ]]; then
-    case "$script_name" in
-    fix-spec-descriptor-order)
-        echo "dispatch.sh: Using Go implementation for $script_name" >&2
-        exec go run "${script_dir}/main.go" "$script_name" "$@"
-        ;;
-    patch-csv)
-        echo "dispatch.sh: Using Go implementation for $script_name" >&2
-        exec go run "${script_dir}/main.go" "$script_name" "$@"
-        ;;
-    *)
-        echo >&2 "No Go implementation of $script_name yet, falling back to Python one!"
-        exec "${script_dir}/${script_name}.py" "$@"
-        ;;
-    esac
-else
-    echo "dispatch.sh: Using Python implementation for $script_name" >&2
-    exec "${script_dir}/${script_name}.py" "$@"
-fi
+case "$command" in
+fix-spec-descriptor-order|patch-csv)
+    exec go run "${script_dir}/main.go" "$command" "$@"
+    ;;
+*)
+    echo "Unknown command: $command" >&2
+    echo "Available commands: fix-spec-descriptor-order, patch-csv" >&2
+    exit 1
+    ;;
+esac
