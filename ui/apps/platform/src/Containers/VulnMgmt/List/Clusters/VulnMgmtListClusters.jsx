@@ -1,6 +1,8 @@
 import { gql } from '@apollo/client';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import queryService from 'utils/queryService';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import {
     defaultHeaderClassName,
     nonSortableHeaderClassName,
@@ -29,9 +31,13 @@ export const defaultClusterSort = [
 ];
 
 const VulnMgmtListClusters = ({ selectedRowId, search, sort, page, data, totalResults }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
+
     const query = gql`
         query getClusters(
             $query: String
+            $deploymentQuery: String
             $policyQuery: String
             $scopeQuery: String
             $pagination: Pagination
@@ -40,6 +46,7 @@ const VulnMgmtListClusters = ({ selectedRowId, search, sort, page, data, totalRe
                 ...clusterFields
                 unusedVarSink(query: $policyQuery)
                 unusedVarSink(query: $scopeQuery)
+                unusedVarSink(query: $deploymentQuery)
             }
             count: clusterCount(query: $query)
         }
@@ -51,6 +58,7 @@ const VulnMgmtListClusters = ({ selectedRowId, search, sort, page, data, totalRe
         variables: {
             ...vulMgmtPolicyQuery,
             query: queryService.objectToWhereClause(search),
+            deploymentQuery: withActiveDeploymentQuery('', isDeploymentSoftDeletionEnabled),
             pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
         },
     };

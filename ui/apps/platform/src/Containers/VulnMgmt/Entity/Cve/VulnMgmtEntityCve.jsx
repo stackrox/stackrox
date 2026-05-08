@@ -6,6 +6,8 @@ import useCases from 'constants/useCaseTypes';
 import entityTypes, { resourceTypes } from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import {
     VULN_CVE_DETAIL_FRAGMENT,
     IMAGE_CVE_DETAIL_FRAGMENT,
@@ -62,6 +64,8 @@ function getCVETypeFromStack(worklowStateStack) {
 
 const VulnMgmtEntityCve = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const workflowState = useContext(workflowStateContext);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
     const worklowStateStack = workflowState.getStateStack();
     const cveType = getCVETypeFromStack(worklowStateStack) || entityTypes.IMAGE_CVE;
     const queryName = queryNameMap[cveType];
@@ -90,13 +94,14 @@ const VulnMgmtEntityCve = ({ entityId, entityListType, search, entityContext, so
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-            query ${queryName}${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
+            query ${queryName}${entityListType}($id: ID!, $pagination: Pagination, $query: String, $deploymentQuery: String, $policyQuery: String, $scopeQuery: String) {
                 result: ${vulnQuery}(id: $id) {
                     id
                     ${defaultCountKeyMap[entityListType]}(query: $query)
                     ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
                     unusedVarSink(query: $policyQuery)
                     unusedVarSink(query: $scopeQuery)
+                    unusedVarSink(query: $deploymentQuery)
                 }
             }
             ${fragment}
@@ -107,7 +112,13 @@ const VulnMgmtEntityCve = ({ entityId, entityListType, search, entityContext, so
     const queryOptions = {
         variables: {
             id: entityId,
-            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
+            query: tryUpdateQueryWithVulMgmtPolicyClause(
+                entityListType,
+                search,
+                entityContext,
+                isDeploymentSoftDeletionEnabled
+            ),
+            deploymentQuery: withActiveDeploymentQuery('', isDeploymentSoftDeletionEnabled),
             ...vulMgmtPolicyQuery,
             scopeQuery: getScopeQuery(fullEntityContext),
         },
