@@ -413,6 +413,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 				return []*datastore.ControlResult{}, nil
 			},
 		},
+		// getCheckResult not used here to test nil LastStartedTime
 		"nil last started time renders assessment time as N/A": {
 			check: &storage.ComplianceOperatorCheckResultV2{
 				ClusterName:  "cluster-1",
