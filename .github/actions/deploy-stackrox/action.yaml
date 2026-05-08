@@ -60,12 +60,22 @@ runs:
 
           # Helm install central-services
           kubectl create namespace stackrox 2>/dev/null || true
+
+          # Use existing pull secret if available (GKE), otherwise allowNone (KinD)
+          PULL_SECRET_ARGS=""
+          if kubectl -n stackrox get secret quay-pull-secret >/dev/null 2>&1; then
+            PULL_SECRET_ARGS="--set imagePullSecrets.useExisting=quay-pull-secret"
+          else
+            PULL_SECRET_ARGS="--set imagePullSecrets.allowNone=true"
+          fi
+
           ts "helm install central-services"
           helm upgrade --install -n stackrox stackrox-central-services \
             "${{ inputs.central-chart }}" \
             -f "${{ inputs.central-values }}" \
             --set image.registry="${{ inputs.registry }}" \
-            --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" >/dev/null
+            --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
+            ${PULL_SECRET_ARGS} >/dev/null
           ts "helm install complete"
 
           # Set up API endpoint based on load-balancer mode
@@ -92,7 +102,7 @@ runs:
           # Wait for Central API
           ts "waiting for Central API..."
           for _ in $(seq 1 120); do
-            curl -sk --connect-timeout 1 "https://${API_ENDPOINT}/v1/metadata" >/dev/null 2>&1 && break
+            curl -sk --connect-timeout 1 "https://${API_ENDPOINT}/v1/ping" >/dev/null 2>&1 && break
             sleep 1
           done
           ts "Central API ready"
