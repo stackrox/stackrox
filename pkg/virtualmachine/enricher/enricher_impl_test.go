@@ -157,9 +157,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 			mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 			mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(virtualMachineScan, nil)
 
-			enricher := New(func() scannerTypes.VirtualMachineScanner {
-				return mockScanner
-			})
+			enricher := newTestEnricher(mockScanner)
 
 			err := enricher.EnrichVirtualMachineWithVulnerabilities(tt.vm, tt.indexReport)
 			require.NoError(t, err)
@@ -191,9 +189,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 
 func TestEnrichVirtualMachineWithVulnerabilities_Errors(t *testing.T) {
 	t.Run("should add missing scanner note when scanner is nil", func(t *testing.T) {
-		enricher := New(func() scannerTypes.VirtualMachineScanner {
-			return nil
-		})
+		enricher := newTestEnricher(nil)
 
 		vm := &storage.VirtualMachine{Id: "vm-id", Name: "test-vm"}
 		err := enricher.EnrichVirtualMachineWithVulnerabilities(vm, &v4.IndexReport{
@@ -216,9 +212,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Errors(t *testing.T) {
 		mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 		mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(nil, testError)
 
-		enricher := New(func() scannerTypes.VirtualMachineScanner {
-			return mockScanner
-		})
+		enricher := newTestEnricher(mockScanner)
 		vm := &storage.VirtualMachine{Id: "vm-id", Name: "test-vm"}
 
 		err := enricher.EnrichVirtualMachineWithVulnerabilities(vm, &v4.IndexReport{
@@ -261,9 +255,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_ClearPreExistingNotes(t *testin
 	mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 	mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(virtualMachineScan, nil)
 
-	enricher := New(func() scannerTypes.VirtualMachineScanner {
-		return mockScanner
-	})
+	enricher := newTestEnricher(mockScanner)
 
 	err := enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexReport)
 	require.NoError(t, err)
@@ -329,9 +321,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_ComponentConversion(t *testing.
 	mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 	mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(virtualMachineScan, nil)
 
-	enricher := New(func() scannerTypes.VirtualMachineScanner {
-		return mockScanner
-	})
+	enricher := newTestEnricher(mockScanner)
 
 	err := enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexReport)
 	require.NoError(t, err)
@@ -376,6 +366,12 @@ func TestEnrichVirtualMachineWithVulnerabilities_ComponentConversion(t *testing.
 	assert.Equal(t, expectedPkg.GetName(), pkg.GetName())
 	assert.Equal(t, expectedPkg.GetVersion(), pkg.GetVersion())
 	assert.Len(t, pkg.GetVulnerabilities(), 1) // pkg-2 has only vuln-1
+}
+
+func newTestEnricher(scanner scannerTypes.VirtualMachineScanner) VirtualMachineEnricher {
+	return New(func() scannerTypes.VirtualMachineScanner {
+		return scanner
+	})
 }
 
 func createVirtualMachineScanFromIndexReport(indexReport *v4.IndexReport, vulnCount int) *storage.VirtualMachineScan {
