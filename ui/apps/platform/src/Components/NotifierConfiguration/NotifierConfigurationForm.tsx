@@ -158,27 +158,31 @@ function NotifierConfigurationForm({
                         />
                         <FormLabelGroup
                             label="Custom subject"
-                            fieldId="customSubject"
+                            fieldId="emailConfig.customSubject"
                             errors={errors}
                         >
                             <TextInput
                                 type="text"
-                                id="customSubject"
-                                name="customSubject"
+                                id="emailConfig.customSubject"
+                                name="emailConfig.customSubject"
                                 value={customSubject}
                                 onChange={(_event, value) => {
-                                    setFieldValue(`${fieldId}.customSubject`, value);
+                                    setFieldValue(`${fieldId}.emailConfig.customSubject`, value);
                                 }}
                             />
                         </FormLabelGroup>
-                        <FormLabelGroup label="Custom body" fieldId="customBody" errors={errors}>
+                        <FormLabelGroup
+                            label="Custom body"
+                            fieldId="emailConfig.customBody"
+                            errors={errors}
+                        >
                             <TextArea
                                 type="text"
-                                id="customBody"
-                                name="customBody"
+                                id="emailConfig.customBody"
+                                name="emailConfig.customBody"
                                 value={customBody}
                                 onChange={(_event, value) => {
-                                    setFieldValue(`${fieldId}.customBody`, value);
+                                    setFieldValue(`${fieldId}.emailConfig.customBody`, value);
                                 }}
                             />
                         </FormLabelGroup>
