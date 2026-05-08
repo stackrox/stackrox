@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/types/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -156,7 +157,9 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 			mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 			mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(virtualMachineScan, nil)
 
-			enricher := New(mockScanner)
+			enricher := New(func() scannerTypes.VirtualMachineScanner {
+				return mockScanner
+			})
 
 			err := enricher.EnrichVirtualMachineWithVulnerabilities(tt.vm, tt.indexReport)
 			require.NoError(t, err)
@@ -188,7 +191,9 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 
 func TestEnrichVirtualMachineWithVulnerabilities_Errors(t *testing.T) {
 	t.Run("should add missing scanner note when scanner is nil", func(t *testing.T) {
-		enricher := New(nil)
+		enricher := New(func() scannerTypes.VirtualMachineScanner {
+			return nil
+		})
 
 		vm := &storage.VirtualMachine{Id: "vm-id", Name: "test-vm"}
 		err := enricher.EnrichVirtualMachineWithVulnerabilities(vm, &v4.IndexReport{
@@ -211,7 +216,9 @@ func TestEnrichVirtualMachineWithVulnerabilities_Errors(t *testing.T) {
 		mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 		mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(nil, testError)
 
-		enricher := New(mockScanner)
+		enricher := New(func() scannerTypes.VirtualMachineScanner {
+			return mockScanner
+		})
 		vm := &storage.VirtualMachine{Id: "vm-id", Name: "test-vm"}
 
 		err := enricher.EnrichVirtualMachineWithVulnerabilities(vm, &v4.IndexReport{
@@ -254,7 +261,9 @@ func TestEnrichVirtualMachineWithVulnerabilities_ClearPreExistingNotes(t *testin
 	mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 	mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(virtualMachineScan, nil)
 
-	enricher := New(mockScanner)
+	enricher := New(func() scannerTypes.VirtualMachineScanner {
+		return mockScanner
+	})
 
 	err := enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexReport)
 	require.NoError(t, err)
@@ -320,7 +329,9 @@ func TestEnrichVirtualMachineWithVulnerabilities_ComponentConversion(t *testing.
 	mockScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
 	mockScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(virtualMachineScan, nil)
 
-	enricher := New(mockScanner)
+	enricher := New(func() scannerTypes.VirtualMachineScanner {
+		return mockScanner
+	})
 
 	err := enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexReport)
 	require.NoError(t, err)

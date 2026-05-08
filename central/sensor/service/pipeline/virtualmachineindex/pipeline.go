@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/convert/v1tov2storage"
+	"github.com/stackrox/rox/central/imageintegration"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -18,6 +19,8 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/scanners"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	vmEnricher "github.com/stackrox/rox/pkg/virtualmachine/enricher"
 	"google.golang.org/grpc/codes"
@@ -38,9 +41,22 @@ const (
 func GetPipeline() pipeline.Fragment {
 	return newPipeline(
 		virtualMachineDataStore.Singleton(),
-		vmEnricher.Singleton(),
+		vmEnricher.New(func() scannerTypes.VirtualMachineScanner {
+			return resolveVMScanner(imageintegration.Set().ScannerSet())
+		}),
 		virtualMachineV2DataStore.Singleton(),
 	)
+}
+
+func resolveVMScanner(scannerSet scanners.Set) scannerTypes.VirtualMachineScanner {
+	for _, scanner := range scannerSet.GetAll() {
+		if scanner.GetScanner().Type() == scannerTypes.ScannerV4 {
+			if vmScanner, ok := scanner.GetScanner().(scannerTypes.VirtualMachineScanner); ok {
+				return vmScanner
+			}
+		}
+	}
+	return nil
 }
 
 // newPipeline returns a new instance of Pipeline.

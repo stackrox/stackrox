@@ -41,6 +41,7 @@ var (
 	_ types.Scanner                  = (*scannerv4)(nil)
 	_ types.ImageVulnerabilityGetter = (*scannerv4)(nil)
 	_ types.NodeScanner              = (*scannerv4)(nil)
+	_ types.VirtualMachineScanner    = (*scannerv4)(nil)
 	_ types.SBOMer                   = (*scannerv4)(nil)
 
 	log = logging.LoggerForModule()
@@ -544,31 +545,4 @@ func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
 	}
 
 	return scanner, nil
-}
-
-// NewVirtualMachineScanner provides a scannerv4 instance that is able to scan virtual machines
-func NewVirtualMachineScanner() (types.VirtualMachineScanner, error) {
-	return newVirtualMachineScanner(getMatcherOnlyScanner)
-}
-
-func newVirtualMachineScanner(clientCreator func(string) (client.Scanner, error)) (types.VirtualMachineScanner, error) {
-	matcherEndpoint := DefaultMatcherEndpoint
-
-	scannerClient, err := clientCreator(matcherEndpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	numConcurrentScans := defaultMaxConcurrentScans
-
-	return &scannerv4{
-		name:              "Virtual machine scanner",
-		scannerClient:     scannerClient,
-		ScanSemaphore:     types.NewSemaphoreWithValue(numConcurrentScans),
-		NodeScanSemaphore: types.NewNodeSemaphoreWithValue(numConcurrentScans),
-	}, nil
-}
-
-func getMatcherOnlyScanner(matcherEndpoint string) (client.Scanner, error) {
-	return client.NewGRPCScanner(context.Background(), client.WithMatcherAddress(matcherEndpoint))
 }

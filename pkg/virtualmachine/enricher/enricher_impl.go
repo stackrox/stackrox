@@ -15,12 +15,12 @@ var (
 )
 
 type enricherImpl struct {
-	vmScanner types.VirtualMachineScanner
+	resolveScanner func() types.VirtualMachineScanner
 }
 
-func New(scanner types.VirtualMachineScanner) VirtualMachineEnricher {
+func New(resolveScanner func() types.VirtualMachineScanner) VirtualMachineEnricher {
 	return &enricherImpl{
-		vmScanner: scanner,
+		resolveScanner: resolveScanner,
 	}
 }
 
@@ -28,16 +28,17 @@ func (e *enricherImpl) EnrichVirtualMachineWithVulnerabilities(vm *storage.Virtu
 	// Clear any pre-existing notes
 	vm.Notes = vm.GetNotes()[:0]
 
-	if e.vmScanner == nil {
+	vmScanner := e.resolveScanner()
+	if vmScanner == nil {
 		vm.Notes = append(vm.Notes, storage.VirtualMachine_MISSING_SCANNER)
 		return errors.New("Scanner V4 client not available for VM enrichment")
 	}
 
-	sema := e.vmScanner.MaxConcurrentNodeScanSemaphore()
+	sema := vmScanner.MaxConcurrentNodeScanSemaphore()
 	_ = sema.Acquire(context.Background(), 1)
 	defer sema.Release(1)
 
-	scan, err := e.vmScanner.GetVirtualMachineScan(vm, indexReport)
+	scan, err := vmScanner.GetVirtualMachineScan(vm, indexReport)
 	if err != nil {
 		vm.Notes = append(vm.Notes, storage.VirtualMachine_SCAN_FAILED)
 		return errors.Wrap(err, "getting scan for VM")
