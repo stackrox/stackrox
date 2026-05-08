@@ -111,7 +111,7 @@ spec:
           mountPath: /run/secrets/stackrox.io/certs
         - name: shared-memory
           mountPath: /dev/shm
-      {{- include "srox.certWatcherSidecar" (list ._rox.scannerV4.db.image.fullRef "certs") | nindent 6 }}
+      {{- include "srox.certWatcherSidecar" (list . "scanner-v4-db" ._rox.scannerV4.db.image.fullRef "certs") | nindent 6 }}
       securityContext:
         fsGroup: 70
         runAsUser: 70
