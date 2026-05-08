@@ -31,6 +31,11 @@ inputs:
   roxie-version:
     description: roxie release version to install
     default: v0.2.1
+  github-token:
+    description: >
+      GitHub token with access to stackrox/roxie (private repo).
+      Use secrets.RHACS_BOT_GITHUB_TOKEN or equivalent.
+    required: true
 
 runs:
   using: composite
@@ -44,7 +49,7 @@ runs:
           echo "Installing roxie ${{ inputs.roxie-version }}..."
           ARCH=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
           OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-          gh release download "${{ inputs.roxie-version }}" \
+          GH_TOKEN="${{ inputs.github-token }}" gh release download "${{ inputs.roxie-version }}" \
             --repo stackrox/roxie \
             --pattern "roxie-${OS}-${ARCH}" \
             --dir /tmp --clobber
