@@ -424,6 +424,22 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	return errorList.ToError()
 }
 
+// PurgeDeployments permanently removes soft-deleted deployments matching the
+// query from the store. Related objects (risks, baselines, network flows) are
+// already cleaned up during the preceding soft-delete.
+func (ds *datastoreImpl) PurgeDeployments(ctx context.Context, q *v1.Query) (int, error) {
+	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, sac.ErrResourceAccessDenied
+	}
+	ids, err := ds.deploymentStore.DeleteByQueryWithIDs(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return len(ids), nil
+}
+
 // TODO: ROX-30948 Make this return []*storage.ImageV2
 func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error) {
 	imageIDs := make([]string, 0, len(deployment.GetContainers()))

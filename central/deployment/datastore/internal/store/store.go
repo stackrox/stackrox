@@ -26,6 +26,7 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Upsert(ctx context.Context, deployment *storage.Deployment) error
 	Delete(ctx context.Context, id string) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 
 	GetIDs(ctx context.Context) ([]string, error)
 

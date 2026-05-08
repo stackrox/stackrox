@@ -41,6 +41,10 @@ type DataStore interface {
 	UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error
 
 	RemoveDeployment(ctx context.Context, clusterID, id string) error
+	// PurgeDeployments permanently removes soft-deleted deployments matching the
+	// query from the store. This is used by the garbage collector to hard-delete
+	// expired deployments. It returns the number of deleted deployments.
+	PurgeDeployments(ctx context.Context, q *v1.Query) (int, error)
 
 	GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error)
 	GetDeploymentIDs(ctx context.Context, q *v1.Query) ([]string, error)

@@ -20,7 +20,7 @@ const (
 		child.Id = parent.Id)`
 
 	getAllOrphanedAlerts = `SELECT id FROM alerts WHERE lifecyclestage = 0 and state = 0 and time < now() at time zone 'utc' - INTERVAL '%d MINUTES' and NOT EXISTS
-		(SELECT 1 FROM deployments WHERE alerts.deployment_id = deployments.Id)`
+		(SELECT 1 FROM deployments WHERE alerts.deployment_id = deployments.Id AND deployments.state != 1)`
 
 	getAllOrphanedPods = `SELECT id FROM pods WHERE NOT EXISTS
 		(SELECT 1 FROM clusters WHERE pods.clusterid = clusters.Id)`
@@ -29,7 +29,7 @@ const (
 		(SELECT 1 FROM clusters WHERE nodes.clusterid = clusters.Id)`
 
 	getOrphanedProcessesByDeployment = `SELECT id FROM process_indicators pi WHERE NOT EXISTS
-		(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) AND
+		(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id AND deployments.state != 1) AND
 		(signal_time < now() AT time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time IS NULL)`
 
 	getOrphanedProcessesByPod = `SELECT id FROM process_indicators pi WHERE NOT EXISTS

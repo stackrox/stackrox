@@ -151,6 +151,21 @@ func (mr *MockDataStoreMockRecorder) ListDeployment(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDeployment", reflect.TypeOf((*MockDataStore)(nil).ListDeployment), ctx, id)
 }
 
+// PurgeDeployments mocks base method.
+func (m *MockDataStore) PurgeDeployments(ctx context.Context, q *v1.Query) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PurgeDeployments", ctx, q)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PurgeDeployments indicates an expected call of PurgeDeployments.
+func (mr *MockDataStoreMockRecorder) PurgeDeployments(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PurgeDeployments", reflect.TypeOf((*MockDataStore)(nil).PurgeDeployments), ctx, q)
+}
+
 // RemoveDeployment mocks base method.
 func (m *MockDataStore) RemoveDeployment(ctx context.Context, clusterID, id string) error {
 	m.ctrl.T.Helper()
