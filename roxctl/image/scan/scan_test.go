@@ -442,6 +442,26 @@ func (s *imageScanTestSuite) TestFormatFlagDeprecationMessage() {
 	s.Assert().False(strings.Contains(output.String(), "please use --format="))
 }
 
+func (s *imageScanTestSuite) TestLegacyOutputDeprecationMessageEndToEnd() {
+	conn, closeF := s.createGRPCMockImageService(testComponents)
+	defer closeF()
+
+	env, out, errOut := s.newTestMockEnvironmentWithConn(conn)
+	cmd := Command(env)
+	cmd.Flags().Duration("timeout", 1*time.Minute, "")
+	cmd.Flags().Duration("retry-timeout", 1*time.Minute, "")
+	cmd.SetArgs([]string{"--output=legacy-json", "--image", s.defaultImageScanCommand.image})
+
+	err := cmd.Execute()
+	s.Require().NoError(err)
+
+	expectedOutput, err := os.ReadFile(path.Join("testdata", "legacy_testComponents.json"))
+	s.Require().NoError(err)
+	s.Assert().JSONEq(string(expectedOutput), out.String())
+	s.Assert().Contains(errOut.String(), `Output format "legacy-json" has been deprecated`)
+	s.Assert().Contains(errOut.String(), "please use --output=json to migrate to the new JSON output format")
+}
+
 func (s *imageScanTestSuite) TestValidate() {
 	jsonPrinter, err := printer.NewJSONPrinterFactory(false, false).CreatePrinter("json")
 	s.Require().NoError(err)

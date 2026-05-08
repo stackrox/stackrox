@@ -37,7 +37,7 @@ const (
 	legacyCSVOutputFormat           = "legacy-csv"
 	legacyJSONOutputDeprecationNote = "please use --output=json to migrate to the new JSON output format. " + legacyOutputMigrationNote
 	legacyCSVOutputDeprecationNote  = "please use --output=csv to migrate to the new CSV output format. " + legacyOutputMigrationNote
-	outputFlagUsage                 = "Output format. Choose one of: table | csv | json | sarif | legacy-json | legacy-csv. If omitted, defaults to deprecated legacy-json for backwards compatibility."
+	outputFlagUsageSuffix           = ". If omitted, defaults to deprecated legacy-json for backwards compatibility."
 )
 
 var (
@@ -54,9 +54,12 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	imageScanCmd := &imageScanCommand{env: cliEnvironment}
 
-	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table",
-		append(supportedObjectPrinters,
-			printer.NewSarifPrinterFactory(printers.SarifVulnerabilityReport, scan.SarifJSONPathExpressions, &imageScanCmd.image))...)
+	customPrinterFactories := append(
+		slices.Clone(supportedObjectPrinters),
+		printer.NewSarifPrinterFactory(printers.SarifVulnerabilityReport, scan.SarifJSONPathExpressions, &imageScanCmd.image),
+	)
+
+	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", customPrinterFactories...)
 	// should not happen when using default values, must be a programming error
 	utils.Must(err)
 	// Set the Output Format to empty, so by default the new output format will not be used and the legacy one will be
@@ -82,7 +85,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 
 	objectPrinterFactory.AddFlags(c)
-	c.Flag("output").Usage = outputFlagUsage
+	c.Flag("output").Usage = outputFlagUsage(customPrinterFactories...)
 
 	c.Flags().StringVarP(&imageScanCmd.image, "image", "i", "", "Image name and reference. (e.g. nginx:latest or nginx@sha256:...).")
 	c.Flags().BoolVarP(&imageScanCmd.force, "force", "f", false, "Bypass Central's cache for the image and force a new pull from the Scanner.")
@@ -166,6 +169,20 @@ func legacyOutputFormat(outputFormat string) (string, string, bool) {
 	default:
 		return "", "", false
 	}
+}
+
+func outputFlagUsage(customPrinterFactories ...printer.CustomPrinterFactory) string {
+	supportedFormats := make([]string, 0, len(customPrinterFactories)+2)
+	for _, customPrinterFactory := range customPrinterFactories {
+		for _, format := range customPrinterFactory.SupportedFormats() {
+			if !slices.Contains(supportedFormats, format) {
+				supportedFormats = append(supportedFormats, format)
+			}
+		}
+	}
+
+	supportedFormats = append(supportedFormats, legacyJSONOutputFormat, legacyCSVOutputFormat)
+	return "Output format. Choose one of: " + strings.Join(supportedFormats, " | ") + outputFlagUsageSuffix
 }
 
 // Validate will validate the injected values and check whether it's possible to execute the operation with the
