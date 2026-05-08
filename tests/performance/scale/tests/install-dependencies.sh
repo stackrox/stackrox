@@ -4,7 +4,6 @@ set -eoux pipefail
 GO_VERSION="${GO_VERSION:-1.25.9}"
 KUBECTL_VERSION="${KUBECTL_VERSION:-v1.30.0}"
 KUBE_BURNER_VERSION="${KUBE_BURNER_VERSION:-1.4.3}"
-ROXCTL_VERSION="${ROXCTL_VERSION:-4.4.2}"
 STACKROX_BRANCH="${STACKROX_BRANCH:-jv-automate-perf-tests-4.11}"
 
 git clone https://github.com/stackrox/stackrox.git
@@ -32,10 +31,7 @@ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 helm repo add rhacs https://mirror.openshift.com/pub/rhacs/charts
 helm repo update
 
-arch="$(uname -m | sed "s/x86_64//")"; arch="${arch:+-$arch}"
-curl -f -o roxctl "https://mirror.openshift.com/pub/rhacs/assets/${ROXCTL_VERSION}/bin/Linux/roxctl${arch}"
-chmod +x roxctl
-sudo cp roxctl /usr/local/bin
+sudo install -o root -g root -m 0755 "${HOME}/roxctl" /usr/local/bin/roxctl
 
 sudo apt-get install jq -y
 sudo snap install yq
