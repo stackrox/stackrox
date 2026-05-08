@@ -2,6 +2,8 @@ import static util.Helpers.waitForTrue
 import static util.Helpers.withRetry
 import static util.Helpers.trueWithin
 
+import groovy.json.JsonOutput
+
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass.SignatureIntegration
 
 import common.Constants
@@ -62,40 +64,58 @@ LKpdYJEldXnyRE4ppY5d7vnRZHvdZQMSE3KoRSMvVnzZtc9LTKLB3DlS/w==
         "Central is configured with a short watch interval for testing"
         orchestrator.updateDeploymentEnv(Constants.STACKROX_NAMESPACE, "central", "central",
                 WATCH_INTERVAL_ENV, SHORT_WATCH_INTERVAL)
-        waitForTrue(30, 10) {
+
+        def bundleJson = JsonOutput.toJson([keys: [
+                [name: "test-key-1", pem: TEST_PUBLIC_KEY_PEM],
+                [name: "test-key-2", pem: TEST_PUBLIC_KEY_PEM_2],
+        ]])
+
+        // Wait for the new pod (with the updated env var) to be Running and ready.
+        // Checking only phase == "Running" can match the old pod before the rollout begins.
+        String centralPodName = null
+        waitForTrue(10, 15) {
             def pods = orchestrator.getPods(Constants.STACKROX_NAMESPACE, "central")
-            return pods.size() == 1 && pods.get(0).status.phase == "Running"
+            if (pods.size() != 1) { return false }
+            def pod = pods.get(0)
+            boolean hasNewEnv = pod.spec.containers.get(0).env.any {
+                it.name == WATCH_INTERVAL_ENV && it.value == SHORT_WATCH_INTERVAL
+            }
+            boolean isReady = pod.status.containerStatuses?.getAt(0)?.ready ?: false
+            if (hasNewEnv && isReady) {
+                centralPodName = pod.metadata.name
+                return true
+            }
+            return false
         }
-
-        def bundleJson = """{"keys": [""" +
-                """{"name": "test-key-1", "pem": ${escapeJsonString(TEST_PUBLIC_KEY_PEM)}}, """ +
-                """{"name": "test-key-2", "pem": ${escapeJsonString(TEST_PUBLIC_KEY_PEM_2)}}]}"""
-
-        def centralPods = orchestrator.getPods(Constants.STACKROX_NAMESPACE, "central")
-        assert centralPods.size() == 1
-        def centralPodName = centralPods.get(0).metadata.name
+        assert centralPodName != null
 
         when:
         "The bundle file is written into the Central pod at the watcher path"
+        def b64 = bundleJson.bytes.encodeBase64().toString()
         def writeCmd = ["sh", "-c",
-                "mkdir -p /tmp/redhat-signing-keys && " +
-                "cat > /tmp/redhat-signing-keys/bundle.json << 'BUNDLE_EOF'\n${bundleJson}\nBUNDLE_EOF",
+                "mkdir -p /tmp/redhat-signing-keys && echo ${b64} | base64 -d > /tmp/redhat-signing-keys/bundle.json",
         ] as String[]
         assert orchestrator.execInContainerByPodName(
                 centralPodName, Constants.STACKROX_NAMESPACE, writeCmd)
 
         then:
         "The watcher detects the file and upserts the integration with the bundle keys"
-        trueWithin(30, 5) {
-            def integration = getRedHatIntegration()
-            if (integration == null) {
+        trueWithin(12, 5) {
+            try {
+                def integration = getRedHatIntegration()
+                if (integration == null) {
+                    return false
+                }
+                if (integration.cosign.publicKeysCount != 2) {
+                    return false
+                }
+                def keyNames = (integration.cosign.publicKeysList*.name).sort()
+                return keyNames == ["test-key-1", "test-key-2"]
+            } catch (io.grpc.StatusRuntimeException ignored) {
+                // Central may be briefly unavailable after the rolling restart triggered
+                // by the env var update in given:; gRPC will reconnect on the next retry.
                 return false
             }
-            if (integration.cosign.publicKeysCount != 2) {
-                return false
-            }
-            def keyNames = (integration.cosign.publicKeysList*.name).sort()
-            return keyNames == ["test-key-1", "test-key-2"]
         }
 
         cleanup:
@@ -107,17 +127,8 @@ LKpdYJEldXnyRE4ppY5d7vnRZHvdZQMSE3KoRSMvVnzZtc9LTKLB3DlS/w==
         }
         orchestrator.updateDeploymentEnv(Constants.STACKROX_NAMESPACE, "central", "central",
                 WATCH_INTERVAL_ENV, "4h")
-        waitForTrue(30, 10) {
+        waitForTrue(6, 10) {
             orchestrator.deploymentReady(Constants.STACKROX_NAMESPACE, "central")
         }
-    }
-
-    private static String escapeJsonString(String s) {
-        def escaped = s.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t")
-        return "\"${escaped}\""
     }
 }

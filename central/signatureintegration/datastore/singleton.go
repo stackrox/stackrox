@@ -15,21 +15,20 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// Stoppable represents a background process that can be stopped.
-type Stoppable interface {
-	Stop()
-}
+// redHatKeyBundlePath is the well-known path where the key bundle file is read from.
+// External processes (e.g. an HTTP updater sidecar) write to this location.
+const redHatKeyBundlePath = "/tmp/redhat-signing-keys/bundle.json"
 
 var (
 	once     sync.Once
 	instance DataStore
 
-	bundleWatcher Stoppable
+	bundleWatcher *keyBundleWatcher
 )
 
 // KeyBundleWatcher returns the key bundle watcher for shutdown registration.
 // Must only be called after Singleton().
-func KeyBundleWatcher() Stoppable {
+func KeyBundleWatcher() *keyBundleWatcher {
 	return bundleWatcher
 }
 
@@ -58,10 +57,7 @@ func startKeyBundleWatcher(siStore store.SignatureIntegrationStore) {
 		return
 	}
 
-	filePath := env.RedHatSigningKeyBundlePath.Setting()
-	interval := env.RedHatSigningKeyWatchInterval.DurationSetting()
-
-	w := newKeyBundleWatcher(filePath, interval, siStore)
+	w := newKeyBundleWatcher(redHatKeyBundlePath, env.RedHatSigningKeyWatchInterval.DurationSetting(), siStore)
 	w.Start()
 	bundleWatcher = w
 }
@@ -70,7 +66,7 @@ func startKeyBundleWatcher(siStore store.SignatureIntegrationStore) {
 func Singleton() DataStore {
 	once.Do(func() {
 		storage := pgStore.New(globaldb.GetPostgres())
-		seedRedHatDefaultSignatureIntegration(storage)
+		seedRedHatDefaultSignatureIntegration(storage) // must run before watcher; bundle file takes precedence on first tick
 		instance = New(storage, policyDataStore.Singleton())
 		startKeyBundleWatcher(storage)
 	})
