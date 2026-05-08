@@ -640,10 +640,6 @@ func (g *garbageCollectorImpl) collectDeletedDeployments(config *storage.Private
 			DeploymentDurationDays: configDatastore.DefaultResourceRetention,
 		}
 	}
-	if retentionConfig.GetDeploymentDurationDays() == 0 {
-		log.Info("[Deployment Pruning] pruning of deleted deployments is disabled.")
-		return
-	}
 	retentionDays := int64(retentionConfig.GetDeploymentDurationDays())
 
 	// Find and remove soft-deleted deployments past the retention window.
