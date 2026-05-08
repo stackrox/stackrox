@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Stub that fails if invoked — used to verify a command is NOT called.
+# The actual command name is derived from $0 (the symlink/copy name).
+printf 'unexpected %s invocation: %s\n' "$(basename "$0")" "$*" >&2
+exit 99
