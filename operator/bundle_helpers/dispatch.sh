@@ -14,11 +14,12 @@ fi
 command="$1"
 shift
 
-script_dir="$(dirname "$0")"
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 case "$command" in
 fix-spec-descriptor-order|patch-csv)
-    exec go run "${script_dir}/main.go" "$command" "$@"
+    cd "$script_dir"
+    exec go run ./main.go "$command" "$@"
     ;;
 *)
     echo "Unknown command: $command" >&2

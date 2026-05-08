@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func encodeAndNormalizeYAML(doc any, w io.Writer) error {
+func encodeYAML(doc any, w io.Writer) error {
 	enc := yaml.NewEncoder(w)
 	enc.SetIndent(2)
 	if err := enc.Encode(doc); err != nil {

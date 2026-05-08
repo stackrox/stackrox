@@ -47,7 +47,7 @@ func fixSpecDescriptorOrderBytes(in []byte) ([]byte, error) {
 	}
 
 	var buf bytes.Buffer
-	if err := encodeAndNormalizeYAML(csvDoc, &buf); err != nil {
+	if err := encodeYAML(csvDoc, &buf); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
