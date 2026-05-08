@@ -426,8 +426,8 @@ class AdmissionControllerTest extends BaseSpecification {
         "1 init latest"   | BUSYBOX_TAGGED_IMAGE     | [BUSYBOX_LATEST_TAG_IMAGE]                          | true
         "2 inits latest"  | BUSYBOX_TAGGED_IMAGE     | [BUSYBOX_LATEST_TAG_IMAGE, BUSYBOX_LATEST_TAG_IMAGE]| true
         "mixed inits"     | BUSYBOX_TAGGED_IMAGE     | [BUSYBOX_LATEST_TAG_IMAGE, BUSYBOX_TAGGED_IMAGE]    | true
-        "main latest 1i"  | BUSYBOX_LATEST_TAG_IMAGE | [BUSYBOX_TAGGED_IMAGE]                              | false
-        "main latest 2i"  | BUSYBOX_LATEST_TAG_IMAGE | [BUSYBOX_TAGGED_IMAGE, BUSYBOX_TAGGED_IMAGE]        | false
+        "main 1 init"     | BUSYBOX_LATEST_TAG_IMAGE | [BUSYBOX_TAGGED_IMAGE]                              | false
+        "main 2 inits"    | BUSYBOX_LATEST_TAG_IMAGE | [BUSYBOX_TAGGED_IMAGE, BUSYBOX_TAGGED_IMAGE]        | false
     }
 
 }

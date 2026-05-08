@@ -334,11 +334,11 @@ class Deployment {
     }
 
     Deployment addInitContainer(String name, String image, List<String> command = ["sh", "-c", "echo init done"]) {
-        Map<String, Object> spec = new HashMap<>()
-        spec.put("name", name)
-        spec.put("image", image)
-        spec.put("command", command)
-        this.initContainers.add(spec)
+        this.initContainers.add([
+            name   : name,
+            image  : image,
+            command: command,
+        ])
         return this
     }
 
