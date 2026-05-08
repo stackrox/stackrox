@@ -34,6 +34,11 @@ inputs:
       "lb" waits for a real LoadBalancer IP (GKE, matches Prow behavior).
       Anything else uses port-forward (KinD, simple setup).
     default: ""
+  namespace:
+    description: >
+      Kubernetes namespace for StackRox deployment. Use unique namespaces
+      when sharing a cluster across multiple shards.
+    default: stackrox
 
 runs:
   using: composite
@@ -47,6 +52,7 @@ runs:
 
         (
           set +e
+          NS="${{ inputs.namespace }}"
           T0=$(date +%s)
           ts() { echo "+$(( $(date +%s) - T0 ))s $*"; }
 
@@ -59,18 +65,18 @@ runs:
           ts "cluster reachable"
 
           # Helm install central-services
-          kubectl create namespace stackrox 2>/dev/null || true
+          kubectl create namespace "$NS" 2>/dev/null || true
 
           # Use existing pull secret if available (GKE), otherwise allowNone (KinD)
           PULL_SECRET_ARGS=""
-          if kubectl -n stackrox get secret quay-pull-secret >/dev/null 2>&1; then
+          if kubectl -n "$NS" get secret quay-pull-secret >/dev/null 2>&1; then
             PULL_SECRET_ARGS="--set imagePullSecrets.useExisting=quay-pull-secret"
           else
             PULL_SECRET_ARGS="--set imagePullSecrets.allowNone=true"
           fi
 
           ts "helm install central-services"
-          helm upgrade --install -n stackrox stackrox-central-services \
+          helm upgrade --install -n "$NS" stackrox-central-services \
             "${{ inputs.central-chart }}" \
             -f "${{ inputs.central-values }}" \
             --set image.registry="${{ inputs.registry }}" \
@@ -84,7 +90,7 @@ runs:
             ts "waiting for LoadBalancer IP..."
             LB_IP=""
             for _ in $(seq 1 120); do
-              LB_IP=$(kubectl -n stackrox get svc/central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
+              LB_IP=$(kubectl -n "$NS" get svc/central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
               [ -n "$LB_IP" ] && [ "$LB_IP" != "null" ] && break
               LB_IP=""
               sleep 5
@@ -94,7 +100,7 @@ runs:
           else
             # Port-forward with auto-reconnect
             while true; do
-              kubectl -n stackrox port-forward svc/central 8000:443 2>/dev/null || sleep 2
+              kubectl -n "$NS" port-forward svc/central 8000:443 2>/dev/null || sleep 2
             done &
             API_ENDPOINT="localhost:8000"
           fi
@@ -134,11 +140,11 @@ runs:
             exit 1
           fi
 
-          helm upgrade --install -n stackrox stackrox-secured-cluster-services \
+          helm upgrade --install -n "$NS" stackrox-secured-cluster-services \
             "${{ inputs.sensor-chart }}" \
             -f "${{ inputs.sensor-values }}" \
             --set image.registry="${{ inputs.registry }}" \
-            --set centralEndpoint=central.stackrox.svc:443 \
+            --set centralEndpoint=central.${NS}.svc:443 \
             -f /tmp/sensor-init-bundle.yaml >/dev/null 2>&1
           ts "sensor deployed"
 
@@ -146,7 +152,7 @@ runs:
           kubectl create namespace qa-test 2>/dev/null || true
           kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null || true
           kubectl -n qa-test run busybox --image=busybox --restart=Always -- \
-            sh -c 'while true; do wget -q -O /dev/null http://central.stackrox.svc:443 2>/dev/null; sleep 5; done' 2>/dev/null || true
+            sh -c 'while true; do wget -q -O /dev/null http://central.${NS}.svc:443 2>/dev/null; sleep 5; done' 2>/dev/null || true
 
           for _ in $(seq 1 60); do
             dep_count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
