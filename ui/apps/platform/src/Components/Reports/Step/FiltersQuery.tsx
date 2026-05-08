@@ -23,17 +23,17 @@ export type FiltersQueryConfiguration = {
     };
 };
 
-export type FiltersQueryProps = {
+export type FiltersQueryProps<T extends FiltersQueryConfiguration = FiltersQueryConfiguration> = {
     attributesSeparateFromConfig: SelectSearchFilterAttribute[];
-    formik: FormikProps<FiltersQueryConfiguration>;
+    formik: FormikProps<T>;
     searchFilterConfig: CompoundSearchFilterConfig;
 };
 
-function FiltersQuery({
+function FiltersQuery<T extends FiltersQueryConfiguration = FiltersQueryConfiguration>({
     attributesSeparateFromConfig,
     formik,
     searchFilterConfig,
-}: FiltersQueryProps): ReactElement {
+}: FiltersQueryProps<T>): ReactElement {
     const searchFilter = getSearchFilterFromSearchString(formik.values.vulnReportFilters.query);
 
     function onFilterChange(searchFilterChanged: SearchFilter) {
@@ -68,6 +68,7 @@ function FiltersQuery({
                     <CompoundSearchFilterLabels
                         attributesSeparateFromConfig={attributesSeparateFromConfig}
                         config={searchFilterConfig}
+                        hasClearFilters={false}
                         onFilterChange={onFilterChange}
                         searchFilter={searchFilter}
                     />

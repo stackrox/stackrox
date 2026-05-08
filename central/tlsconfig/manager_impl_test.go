@@ -209,7 +209,7 @@ func (s *managerTestSuite) TestLoadInternalCertificateFromDirectory() {
 func (s *managerTestSuite) TestLoadInternalCertificateFromDirectoryMissingFiles() {
 	dir := s.T().TempDir()
 	cert, err := LoadInternalCertificateFromDirectory(dir)
-	s.NoError(err)
+	s.Error(err)
 	s.Nil(cert)
 }
 

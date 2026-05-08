@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Fake sudo stub for BATS tests.
+# Rewrites system paths (/etc/*, /run/*) into FAKE_ROOT so tests can verify
+# file placement without requiring real root privileges.
+#
+# Requires: FAKE_ROOT environment variable set to a temp directory.
+set -euo pipefail
+
+rewrite_system_path() {
+    local path="$1"
+    case "${path}" in
+        /etc/*|/run/*)
+            printf '%s%s\n' "${FAKE_ROOT}" "${path}"
+            ;;
+        *)
+            printf '%s\n' "${path}"
+            ;;
+    esac
+}
+
+cmd="$1"
+shift
+
+case "${cmd}" in
+    mkdir)
+        args=()
+        for arg in "$@"; do
+            args+=("$(rewrite_system_path "${arg}")")
+        done
+        command mkdir "${args[@]}"
+        ;;
+    tee)
+        target="$(rewrite_system_path "$1")"
+        command mkdir -p "$(dirname "${target}")"
+        cat > "${target}"
+        ;;
+    cp)
+        src="$1"
+        dst="$(rewrite_system_path "$2")"
+        if [[ "$2" == */ ]]; then
+            command mkdir -p "${dst}"
+        else
+            command mkdir -p "$(dirname "${dst}")"
+        fi
+        command cp "${src}" "${dst}"
+        ;;
+    restorecon)
+        exit 0
+        ;;
+    systemd-tmpfiles|systemctl)
+        printf '%s %s\n' "${cmd}" "$*" >> "${FAKE_ROOT}/sudo.log"
+        exit 0
+        ;;
+    *)
+        printf 'unsupported sudo command: %s\n' "${cmd}" >&2
+        exit 1
+        ;;
+esac

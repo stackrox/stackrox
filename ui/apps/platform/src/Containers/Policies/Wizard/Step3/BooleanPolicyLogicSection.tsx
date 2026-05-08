@@ -2,7 +2,7 @@ import { Fragment } from 'react';
 import { Flex, GridItem } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
-import type { Policy } from 'types/policy.proto';
+import type { ClientPolicy } from 'types/policy.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getPolicyDescriptors } from '../../policies.utils';
 import PolicySection from './PolicySection';
@@ -14,7 +14,7 @@ type BooleanPolicyLogicSectionProps = {
 };
 
 function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSectionProps) {
-    const { values } = useFormikContext<Policy>();
+    const { values } = useFormikContext<ClientPolicy>();
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const filteredDescriptors = getPolicyDescriptors(

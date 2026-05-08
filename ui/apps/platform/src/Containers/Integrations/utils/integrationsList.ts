@@ -360,6 +360,7 @@ const integrationSourceRequirementsMap: Record<IntegrationSource, IntegrationsRo
     backups: { centralCapabilityRequirement: 'centralCanUseCloudBackupIntegrations' },
     cloudSources: {},
     authProviders: {},
+    apiClients: {},
 };
 
 export type IntegrationsRoutePredicates = {
@@ -407,6 +408,7 @@ export const integrationSourceTitleMap: Record<IntegrationSource, string> = {
     backups: 'Backup',
     cloudSources: 'Cloud source',
     authProviders: 'Authentication',
+    apiClients: 'API clients',
 };
 
 export function getIntegrationTabPath(source: IntegrationSource) {

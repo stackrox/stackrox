@@ -22,7 +22,6 @@ import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/componen
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import TBodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useRestQuery from 'hooks/useRestQuery';
 import useTableSelection from 'hooks/useTableSelection';
 import type { ComplianceProfileSummary } from 'services/ComplianceCommon';
@@ -42,9 +41,6 @@ export type ProfileSelectionProps = {
 };
 
 function ProfileSelection({ alertRef, clusterIds }: ProfileSelectionProps): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isTailoredProfilesEnabled = isFeatureFlagEnabled('ROX_TAILORED_PROFILES');
-
     const {
         setFieldValue,
         values: formikValues,
@@ -107,7 +103,7 @@ function ProfileSelection({ alertRef, clusterIds }: ProfileSelectionProps): Reac
     };
 
     const isProfileExpanded = (name: string) => expandedProfileNames.includes(name);
-    const totalColumns = isTailoredProfilesEnabled ? 7 : 6;
+    const totalColumns = 7;
 
     const tableState = getTableUIState({
         isLoading: isFetchingProfiles,
@@ -159,7 +155,7 @@ function ProfileSelection({ alertRef, clusterIds }: ProfileSelectionProps): Reac
                             <Th screenReaderText="Row selection" />
                             <Th screenReaderText="Row expansion" />
                             <Th>Profile</Th>
-                            {isTailoredProfilesEnabled && <Th>Type</Th>}
+                            <Th>Type</Th>
                             <Th>Rule set</Th>
                             <Th>Applicability</Th>
                             <Th>Version</Th>
@@ -205,15 +201,13 @@ function ProfileSelection({ alertRef, clusterIds }: ProfileSelectionProps): Reac
                                                 }}
                                             />
                                             <Td dataLabel="Profile">{name}</Td>
-                                            {isTailoredProfilesEnabled && (
-                                                <Td dataLabel="Type">
-                                                    {(operatorKind &&
-                                                        complianceProfileOperatorKindLabels[
-                                                            operatorKind
-                                                        ]) ??
-                                                        '—'}
-                                                </Td>
-                                            )}
+                                            <Td dataLabel="Type">
+                                                {(operatorKind &&
+                                                    complianceProfileOperatorKindLabels[
+                                                        operatorKind
+                                                    ]) ??
+                                                    '—'}
+                                            </Td>
                                             <Td dataLabel="Rule set">{ruleCount}</Td>
                                             <Td dataLabel="Applicability">{productType}</Td>
                                             <Td dataLabel="Version">{profileVersion || '-'}</Td>

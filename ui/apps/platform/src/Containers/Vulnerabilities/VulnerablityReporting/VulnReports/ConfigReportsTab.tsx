@@ -25,7 +25,6 @@ import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/reac
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
 import { vulnerabilityConfigurationReportsPath } from 'routePaths';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
@@ -47,6 +46,10 @@ import MyLastJobStatus from 'Components/ReportJob/MyLastJobStatus';
 import useAuthStatus from 'hooks/useAuthStatus';
 import { reportDownloadURL } from 'services/ReportsService';
 
+import type {
+    ImageVulnerabilityReportConfiguration,
+    ImageVulnerabilityResourceScope,
+} from '../../ImageVulnerabilityReports/imageVulnerabilityReports.types';
 import useFetchReports from '../api/useFetchReports';
 import useRunReport from '../api/useRunReport';
 import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
@@ -85,11 +88,6 @@ function ConfigReportsTab() {
 
     const isRouteEnabled = useIsRouteEnabled();
     const isCollectionsRouteEnabled = isRouteEnabled('collections');
-
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isEnhancedFilteringEnabled = isFeatureFlagEnabled(
-        'ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING'
-    );
 
     const { toasts, addToast, removeToast } = useToasts();
 
@@ -155,6 +153,14 @@ function ConfigReportsTab() {
         },
     });
 
+    // Because callback function exists independent of conditional rendering,
+    // TypeScript does not know for sure that it is has a collectionScope property.
+    function onClickCollectionLink(resourceScope: ImageVulnerabilityResourceScope) {
+        if ('collectionScope' in resourceScope) {
+            setCollectionModalId(resourceScope.collectionScope.collectionId);
+        }
+    }
+
     function onConfirmDeleteSelection() {
         const selectedIds = getSelectedIds();
         openDeleteModal(selectedIds);
@@ -185,16 +191,13 @@ function ConfigReportsTab() {
                     </Alert>
                 ))}
             </AlertGroup>
-            <PageTitle
-                title={`${isEnhancedFilteringEnabled ? 'Image vulnerability reports' : 'Vulnerability reporting'} - Report configurations`}
-            />
+            <PageTitle title="Image vulnerability reports - Scheduled reports" />
             <PageSection>
                 {runError && <Alert variant="danger" isInline title={runError} component="p" />}
                 <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsCenter' }}>
                     <FlexItem>
                         <Content component="p">
-                            Configure reports, define collections, and assign delivery destinations
-                            to report on vulnerabilities across the organization.
+                            Configure scheduled reports for image vulnerabilities.
                         </Content>
                     </FlexItem>
                     {reportConfigurations &&
@@ -276,12 +279,12 @@ function ConfigReportsTab() {
                                 <HelpIconTh
                                     popoverContent={
                                         <div>
-                                            A set of user-configured rules for selecting deployments
-                                            as part of the collection
+                                            A set of user-configured rules to select deployed images
+                                            either by Custom scope or by named collection
                                         </div>
                                     }
                                 >
-                                    Collection
+                                    Resources
                                 </HelpIconTh>
                                 <Th>Description</Th>
                                 <HelpIconTh
@@ -376,7 +379,8 @@ function ConfigReportsTab() {
                                 </Tr>
                             </Tbody>
                         )}
-                        {reportConfigurations.map((report, rowIndex) => {
+                        {reportConfigurations.map((reportArg, rowIndex) => {
+                            const report = reportArg as ImageVulnerabilityReportConfiguration; // ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING
                             const vulnReportURL = generatePath(
                                 vulnerabilityConfigurationReportDetailsPath,
                                 {
@@ -449,8 +453,6 @@ function ConfigReportsTab() {
                                     isDisabled: isReportStatusPending,
                                 },
                             ];
-                            const { collectionName, collectionId } =
-                                report.resourceScope.collectionScope;
 
                             return (
                                 <Tbody key={report.id}>
@@ -466,20 +468,29 @@ function ConfigReportsTab() {
                                         <Td dataLabel="Report">
                                             <Link to={vulnReportURL}>{report.name}</Link>
                                         </Td>
-                                        <Td dataLabel="Collection">
-                                            {isCollectionsRouteEnabled ? (
-                                                <Button
-                                                    variant="link"
-                                                    isInline
-                                                    onClick={() =>
-                                                        setCollectionModalId(collectionId)
-                                                    }
-                                                >
-                                                    {collectionName}
-                                                </Button>
-                                            ) : (
-                                                collectionName
-                                            )}
+                                        <Td dataLabel="Resources">
+                                            {'entityScope' in report.resourceScope &&
+                                                'Custom scope'}
+                                            {'collectionScope' in report.resourceScope &&
+                                                (isCollectionsRouteEnabled ? (
+                                                    <Button
+                                                        variant="link"
+                                                        isInline
+                                                        onClick={() =>
+                                                            onClickCollectionLink(
+                                                                report.resourceScope
+                                                            )
+                                                        }
+                                                    >
+                                                        {
+                                                            report.resourceScope.collectionScope
+                                                                .collectionName
+                                                        }
+                                                    </Button>
+                                                ) : (
+                                                    report.resourceScope.collectionScope
+                                                        .collectionName
+                                                ))}
                                         </Td>
                                         <Td dataLabel="Description">{report.description || '-'}</Td>
                                         <Td dataLabel="My last job status">

@@ -31,6 +31,8 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+        exclude:
+          - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -44,26 +46,15 @@ jobs:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
-    - name: Set up Go
-      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
-      with:
-        go-version-file: go.mod
-        cache: false
-
-    # setup-go sets GOTOOLCHAIN=local; override so sub-module tools
-    # with newer go directives (e.g. operator proto tools) can auto-download.
-    - name: Override GOTOOLCHAIN
-      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
-
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         free-disk-space: 30
 
-#    - name: Cache Go dependencies
-#      uses: ./.github/actions/cache-go-dependencies
-#      with:
-#        key-suffix: ${{ matrix.gotags }}
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+      with:
+        key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
@@ -119,6 +110,9 @@ jobs:
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         pg: [ 'default', '15' ]
+        pg: [ '15' ]
+        exclude:
+          - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -150,15 +144,6 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-
-    - name: Set up Go
-      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
-      with:
-        go-version-file: go.mod
-        cache: false
-
-    - name: Override GOTOOLCHAIN
-      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -218,15 +203,6 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-
-    - name: Set up Go
-      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
-      with:
-        go-version-file: go.mod
-        cache: false
-
-    - name: Override GOTOOLCHAIN
-      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - uses: ./.github/actions/job-preamble
       with:

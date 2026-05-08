@@ -9,6 +9,7 @@ export type AttributeSelectorOnChange = (value: string | number | undefined) => 
 export type AttributeSelectorProps = {
     attributes: CompoundSearchFilterAttribute[];
     attribute: CompoundSearchFilterAttribute;
+    isDisabled: boolean;
     onChange: AttributeSelectorOnChange;
     menuToggleClassName?: string;
 };
@@ -16,6 +17,7 @@ export type AttributeSelectorProps = {
 function AttributeSelector({
     attributes,
     attribute,
+    isDisabled = false,
     onChange,
     menuToggleClassName,
 }: AttributeSelectorProps) {
@@ -23,6 +25,7 @@ function AttributeSelector({
         <ToolbarItem>
             <SimpleSelect
                 menuToggleClassName={menuToggleClassName}
+                isDisabled={isDisabled}
                 value={attribute.displayName}
                 onChange={onChange}
                 ariaLabelMenu="compound search filter attribute selector menu"

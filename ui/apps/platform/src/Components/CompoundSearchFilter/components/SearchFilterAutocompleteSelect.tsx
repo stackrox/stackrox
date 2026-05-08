@@ -11,6 +11,7 @@ import AutocompleteSelect from './AutocompleteSelect';
 export type SearchFilterAutocompleteSelectProps = {
     additionalContextFilter?: SearchFilter;
     attribute: GenericSearchFilterAttribute;
+    isDisabled?: boolean;
     onSearch: OnSearchCallback;
     searchCategory: string;
     searchFilter: SearchFilter;
@@ -19,6 +20,7 @@ export type SearchFilterAutocompleteSelectProps = {
 function SearchFilterAutocompleteSelect({
     additionalContextFilter,
     attribute,
+    isDisabled = false,
     onSearch,
     searchCategory,
     searchFilter,
@@ -46,6 +48,7 @@ function SearchFilterAutocompleteSelect({
                     searchCategory={searchCategory}
                     searchTerm={searchTerm}
                     value={value}
+                    isDisabled={isDisabled}
                     onChange={setValue}
                     onSearch={handleSearch}
                     textLabel={textLabel}
@@ -57,6 +60,7 @@ function SearchFilterAutocompleteSelect({
                 <Button
                     variant="control"
                     aria-label="Apply autocomplete input to search"
+                    isDisabled={isDisabled}
                     onClick={() => handleSearch(value)}
                     icon={<ArrowRightIcon />}
                 />

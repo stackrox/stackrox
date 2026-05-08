@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stackrox/rox/central/backgroundmigrations/migrations"
 	"github.com/stackrox/rox/central/backgroundmigrations/types"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -122,6 +123,9 @@ func (s *RunnerTestSuite) TestUpToDate() {
 	seqNum, _, err := runner.readState(s.ctx)
 	s.Require().NoError(err)
 	s.Equal(0, seqNum)
+
+	s.Equal(0.0, testutil.ToFloat64(bgMigrationSeqNumGauge))
+	s.Equal(1.0, testutil.ToFloat64(bgMigrationCompleteGauge))
 }
 
 func (s *RunnerTestSuite) TestDetectsRollback() {
@@ -136,6 +140,9 @@ func (s *RunnerTestSuite) TestDetectsRollback() {
 	seqNum, _, err := runner.readState(s.ctx)
 	s.Require().NoError(err)
 	s.Equal(2, seqNum)
+
+	s.Equal(2.0, testutil.ToFloat64(bgMigrationSeqNumGauge))
+	s.Equal(1.0, testutil.ToFloat64(bgMigrationCompleteGauge))
 }
 
 func (s *RunnerTestSuite) TestRunsOnlyNewMigrations() {
@@ -166,6 +173,9 @@ func (s *RunnerTestSuite) TestRunsOnlyNewMigrations() {
 	seqNum, _, err := runner.readState(s.ctx)
 	s.Require().NoError(err)
 	s.Equal(3, seqNum)
+
+	s.Equal(3.0, testutil.ToFloat64(bgMigrationSeqNumGauge))
+	s.Equal(1.0, testutil.ToFloat64(bgMigrationCompleteGauge))
 }
 
 func (s *RunnerTestSuite) TestRetriesOnMigrationError() {
@@ -479,6 +489,73 @@ func (s *RunnerTestSuite) TestOverrideNotReappliedOnRestart() {
 	s.Require().NoError(err)
 	s.Equal(3, seqNum)
 	s.Equal("ROX-123", overrideTag, "override tag must remain after second run")
+}
+
+func (s *RunnerTestSuite) TestSkipMigrations() {
+	ran := []int{}
+	migrations.MustRegister(types.BackgroundMigration{
+		StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "m0",
+		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 0); return nil },
+	})
+	migrations.MustRegister(types.BackgroundMigration{
+		StartingSeqNum: 1, VersionAfterSeqNum: 2, Description: "m1",
+		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 1); return nil },
+	})
+	migrations.MustRegister(types.BackgroundMigration{
+		StartingSeqNum: 2, VersionAfterSeqNum: 3, Description: "m2",
+		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 2); return nil },
+	})
+
+	s.T().Setenv("ROX_SKIP_BACKGROUND_MIGRATIONS", "1")
+
+	runner := s.newRunner(&doneRolloutChecker{}, 3)
+	requireStoppedWithin(s.T(), runner, testTimeout)
+
+	s.Equal([]int{0, 2}, ran)
+
+	seqNum, _, err := runner.readState(s.ctx)
+	s.Require().NoError(err)
+	s.Equal(3, seqNum)
+}
+
+func (s *RunnerTestSuite) TestSkipMultipleMigrations() {
+	ran := []int{}
+	migrations.MustRegister(types.BackgroundMigration{
+		StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "m0",
+		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 0); return nil },
+	})
+	migrations.MustRegister(types.BackgroundMigration{
+		StartingSeqNum: 1, VersionAfterSeqNum: 2, Description: "m1",
+		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 1); return nil },
+	})
+	migrations.MustRegister(types.BackgroundMigration{
+		StartingSeqNum: 2, VersionAfterSeqNum: 3, Description: "m2",
+		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 2); return nil },
+	})
+
+	s.T().Setenv("ROX_SKIP_BACKGROUND_MIGRATIONS", "0, 2")
+
+	runner := s.newRunner(&doneRolloutChecker{}, 3)
+	requireStoppedWithin(s.T(), runner, testTimeout)
+
+	s.Equal([]int{1}, ran)
+
+	seqNum, _, err := runner.readState(s.ctx)
+	s.Require().NoError(err)
+	s.Equal(3, seqNum)
+}
+
+func (s *RunnerTestSuite) TestSkipMigrationsEmptyEnv() {
+	ran := []int{}
+	migrations.MustRegister(types.BackgroundMigration{
+		StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "m0",
+		Run: func(_ context.Context, _ postgres.DB) error { ran = append(ran, 0); return nil },
+	})
+
+	runner := s.newRunner(&doneRolloutChecker{}, 1)
+	requireStoppedWithin(s.T(), runner, testTimeout)
+
+	s.Equal([]int{0}, ran)
 }
 
 func (s *RunnerTestSuite) TestOverrideIgnoredWithoutSeqNum() {

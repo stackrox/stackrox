@@ -13,6 +13,7 @@ import (
 // RemoteIndexer represents the interface offered by remote indexers.
 type RemoteIndexer interface {
 	ReportGetter
+	GetRepositoryToCPEMapping(context.Context, string) (*FetchResult, error)
 	Close(context.Context) error
 }
 
@@ -57,4 +58,20 @@ func (r *remoteIndexer) GetIndexReport(ctx context.Context, hashID string, _ boo
 	ir.Success = resp.GetSuccess()
 	ir.Err = resp.GetErr()
 	return ir, true, nil
+}
+
+// GetRepositoryToCPEMapping fetches the repository-to-CPE mapping from the remote indexer.
+func (r *remoteIndexer) GetRepositoryToCPEMapping(ctx context.Context, ifModifiedSince string) (*FetchResult, error) {
+	slog.InfoContext(ctx, "fetching repo-to-CPE mapping from remote indexer")
+
+	result, err := r.indexer.GetRepositoryToCPEMapping(ctx, ifModifiedSince)
+	if err != nil {
+		return nil, err
+	}
+
+	return &FetchResult{
+		Modified:     result.Modified,
+		LastModified: result.LastModified,
+		Data:         result.Data,
+	}, nil
 }

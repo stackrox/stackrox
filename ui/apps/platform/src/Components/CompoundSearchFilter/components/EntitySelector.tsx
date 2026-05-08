@@ -8,16 +8,24 @@ export type EntitySelectorOnChange = (value: string | number | undefined) => voi
 
 export type EntitySelectorProps = {
     entity: CompoundSearchFilterEntity;
+    isDisabled: boolean;
     onChange: EntitySelectorOnChange;
     config: CompoundSearchFilterConfig;
     menuToggleClassName?: string;
 };
 
-function EntitySelector({ entity, onChange, config, menuToggleClassName }: EntitySelectorProps) {
+function EntitySelector({
+    entity,
+    isDisabled = false,
+    onChange,
+    config,
+    menuToggleClassName,
+}: EntitySelectorProps) {
     return (
         <ToolbarItem>
             <SimpleSelect
                 menuToggleClassName={menuToggleClassName}
+                isDisabled={isDisabled}
                 value={entity.displayName}
                 onChange={onChange}
                 ariaLabelMenu="compound search filter entity selector menu"

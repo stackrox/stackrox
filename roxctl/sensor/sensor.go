@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/roxctl/sensor/generate"
 	"github.com/stackrox/rox/roxctl/sensor/generatecerts"
 	"github.com/stackrox/rox/roxctl/sensor/getbundle"
+	"github.com/stackrox/rox/roxctl/sensor/migratetooperator"
 )
 
 // Command controls all of the functions being applied to a sensor
@@ -19,6 +20,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		generate.Command(cliEnvironment),
 		getbundle.Command(cliEnvironment),
 		generatecerts.Command(cliEnvironment),
+		migratetooperator.Command(cliEnvironment),
 	)
 	flags.AddTimeout(c)
 	flags.AddRetryTimeout(c)

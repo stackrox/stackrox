@@ -63,6 +63,7 @@ function getLabelOfSelectedOption(
 
 export type SearchFilterSelectExclusiveDoubleProps = {
     attribute: SelectExclusiveDoubleSearchFilterAttribute;
+    isDisabled?: boolean;
     isSeparate?: boolean; // default false if within CompoundSearchFilter
     onSearch: OnSearchCallback;
     searchFilter: SearchFilter;
@@ -70,6 +71,7 @@ export type SearchFilterSelectExclusiveDoubleProps = {
 
 function SearchFilterSelectExclusiveDouble({
     attribute,
+    isDisabled = false,
     isSeparate = false,
     onSearch,
     searchFilter,
@@ -96,6 +98,7 @@ function SearchFilterSelectExclusiveDouble({
         <ToolbarItem>
             <SelectSingle
                 id={category1}
+                isDisabled={isDisabled}
                 isFullWidth={false}
                 placeholderText={placeholderText}
                 toggleAriaLabel={`${placeholderText} select menu`}

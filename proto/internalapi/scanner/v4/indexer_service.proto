@@ -56,6 +56,25 @@ message StoreIndexReportResponse {
   string status = 1;
 }
 
+message GetRepositoryToCPEMappingRequest {
+  // If provided, indexer returns data only if modified since this timestamp.
+  // If empty, always returns the full data.
+  string if_modified_since = 1;
+}
+
+message RepositoryCPEInfo {
+  repeated string cpes = 1;
+}
+
+message GetRepositoryToCPEMappingResponse {
+  // True if data was returned, false if not modified since the requested time.
+  bool modified = 1;
+  // Timestamp to use in the next request's if_modified_since field.
+  string last_modified = 2;
+  // Maps repository names to their CPE information (empty if modified=false).
+  map<string, RepositoryCPEInfo> mapping = 3;
+}
+
 // Indexer service creates manifests and store index reports.
 service Indexer {
   // CreateIndexReport creates an index report for the specified resource and returns the report.
@@ -74,4 +93,7 @@ service Indexer {
 
   // StoreIndexReport stores an external index report to the datastore.
   rpc StoreIndexReport(StoreIndexReportRequest) returns (StoreIndexReportResponse);
+
+  // GetRepositoryToCPEMapping returns the repository-to-CPE mapping used for RHEL package matching.
+  rpc GetRepositoryToCPEMapping(GetRepositoryToCPEMappingRequest) returns (GetRepositoryToCPEMappingResponse);
 }

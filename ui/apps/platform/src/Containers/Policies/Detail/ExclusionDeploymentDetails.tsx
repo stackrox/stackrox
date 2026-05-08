@@ -7,24 +7,42 @@ import type { PolicyExcludedDeployment } from 'types/policy.proto';
 
 import { getClusterName } from '../policies.utils';
 
-type ExcludedDeploymentProps = {
+type ExclusionDeploymentDetailsProps = {
     clusters: ClusterScopeObject[];
     excludedDeployment: PolicyExcludedDeployment;
 };
 
-function ExcludedDeployment({
+function ExclusionDeploymentDetails({
     clusters,
     excludedDeployment,
-}: ExcludedDeploymentProps): ReactElement {
+}: ExclusionDeploymentDetailsProps): ReactElement {
     const { name: deploymentName, scope } = excludedDeployment;
-    const { cluster: clusterId, namespace: namespaceName, label } = scope ?? {};
+    const {
+        cluster: clusterId,
+        clusterLabel,
+        namespace: namespaceName,
+        namespaceLabel,
+        label,
+    } = scope ?? {};
 
     return (
-        <DescriptionList isCompact isHorizontal>
+        <DescriptionList isCompact isHorizontal horizontalTermWidthModifier={{ default: '16ch' }}>
             {clusterId && (
                 <DescriptionListItem term="Cluster" desc={getClusterName(clusters, clusterId)} />
             )}
+            {clusterLabel && (
+                <DescriptionListItem
+                    term="Cluster label"
+                    desc={`${clusterLabel.key}=${clusterLabel.value}`}
+                />
+            )}
             {namespaceName && <DescriptionListItem term="Namespace" desc={namespaceName} />}
+            {namespaceLabel && (
+                <DescriptionListItem
+                    term="Namespace label"
+                    desc={`${namespaceLabel.key}=${namespaceLabel.value}`}
+                />
+            )}
             {deploymentName && <DescriptionListItem term="Deployment" desc={deploymentName} />}
             {label && (
                 <DescriptionListItem term="Deployment label" desc={`${label.key}=${label.value}`} />
@@ -33,4 +51,4 @@ function ExcludedDeployment({
     );
 }
 
-export default ExcludedDeployment;
+export default ExclusionDeploymentDetails;
