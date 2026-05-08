@@ -169,18 +169,17 @@ setup() {
 }
 
 @test "virtctl mode with no target fails with error and usage" {
-    run bash -c "
-        set -euo pipefail
-        source <(
-            sed -n '/^usage()/,/^}/p' '${INSTALL_SCRIPT}'
-            sed -n '/^setup_transport_virtctl()/,/^}/p' '${INSTALL_SCRIPT}'
-        )
-        setup_transport_virtctl
-    "
+    run bash "${INSTALL_SCRIPT}" virtctl
     assert_failure
     assert_output --partial "error: virtctl mode requires at least a target"
     assert_output --partial "Usage:"
     assert_output --partial "virtctl"
+}
+
+@test "remote args without a mode selector fail with usage" {
+    run bash "${INSTALL_SCRIPT}" -n openshift-cnv "cloud-user@vmi/rhel10-1"
+    assert_failure
+    assert_output --partial "Usage:"
 }
 
 # =============================================================================
@@ -216,13 +215,13 @@ setup() {
 }
 
 # =============================================================================
-# Virtctl mode (default remote) argument dispatch
+# Virtctl mode argument dispatch
 # =============================================================================
 
 @test "virtctl mode with flags and target invokes virtctl scp/ssh correctly" {
     write_recording_stub virtctl
 
-    run bash "${INSTALL_SCRIPT}" -n openshift-cnv "cloud-user@vmi/rhel10-1"
+    run bash "${INSTALL_SCRIPT}" virtctl -n openshift-cnv "cloud-user@vmi/rhel10-1"
     assert_success
     assert_output --partial "Done!"
 
@@ -237,7 +236,7 @@ setup() {
 @test "virtctl mode with only a target (no extra flags) works" {
     write_recording_stub virtctl
 
-    run bash "${INSTALL_SCRIPT}" "cloud-user@vmi/rhel10-1"
+    run bash "${INSTALL_SCRIPT}" virtctl "cloud-user@vmi/rhel10-1"
     assert_success
 
     run cat "${CALL_LOG}"
@@ -249,7 +248,7 @@ setup() {
 @test "virtctl mode with multiple flags passes all flags" {
     write_recording_stub virtctl
 
-    run bash "${INSTALL_SCRIPT}" -n openshift-cnv --local-ssh-opts="-o StrictHostKeyChecking=no" "cloud-user@vmi/rhel10-1"
+    run bash "${INSTALL_SCRIPT}" virtctl -n openshift-cnv --local-ssh-opts="-o StrictHostKeyChecking=no" "cloud-user@vmi/rhel10-1"
     assert_success
 
     run cat "${CALL_LOG}"
@@ -264,10 +263,10 @@ setup() {
     local container_file="${BATS_TEST_TMPDIR}/test.container"
     printf '%s\n' "${CONTAINER_ALL_PATHS_EXIST}" > "${container_file}"
 
-    # Override OPTIONAL_HOST_PATHS to paths that DO exist on any system.
     run bash -c "
-        source '${INSTALL_SCRIPT}'  --source-only 2>/dev/null || true
+        set -euo pipefail
         OPTIONAL_HOST_PATHS=(/tmp /var)
+        source <(sed -n '/^filter_container_file/,/^}/p' '${INSTALL_SCRIPT}')
         filter_container_file '${container_file}'
     "
     assert_output --partial "Volume=/etc/yum.repos.d:/etc/yum.repos.d:ro"
@@ -425,7 +424,7 @@ setup() {
 @test "virtctl mode prints Done epilogue exactly once" {
     write_recording_stub virtctl
 
-    run bash "${INSTALL_SCRIPT}" -n openshift-cnv "cloud-user@vmi/rhel10-1"
+    run bash "${INSTALL_SCRIPT}" virtctl -n openshift-cnv "cloud-user@vmi/rhel10-1"
     assert_success
 
     local count
