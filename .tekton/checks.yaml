@@ -80,8 +80,7 @@ spec:
       description: Revision of the Source Repository
       name: revision
       type: string
-    # TODO: Change to quay.io/rhacs-eng/konflux-checks once this repo is created
-    - default: quay.io/rhacs-eng/release-roxctl
+    - default: quay.io/rhacs-eng/konflux-checks
       description: Output Image Repository (for OCI artifacts)
       name: output-image-repo
       type: string
