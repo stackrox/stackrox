@@ -467,7 +467,7 @@ const vulnerabilitiesPathToLabelMap: Record<string, string> = {
     [vulnerabilitiesBasePath]: 'Vulnerabilities',
     [vulnerabilitiesPlatformCvesPath]: 'Platform CVEs',
     [vulnerabilitiesNodeCvesPath]: 'Node CVEs',
-    [vulnerabilityReportsPath]: 'Vulnerability Reporting',
+    [vulnerabilityReportsPath]: 'Reports',
     [exceptionManagementPath]: 'Exception Management',
 };
 
