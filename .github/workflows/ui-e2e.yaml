@@ -154,6 +154,8 @@ jobs:
 
       - name: Deploy StackRox (background)
         uses: ./.github/actions/deploy-stackrox
+        with:
+          tag: ${{ inputs.tag }}
 
       - name: Start resource monitor
         run: |
@@ -308,6 +310,8 @@ jobs:
 
       - name: Deploy StackRox
         uses: ./.github/actions/deploy-stackrox
+        with:
+          tag: ${{ inputs.tag }}
 
       - name: Install Cypress dependencies
         working-directory: ui/apps/platform
