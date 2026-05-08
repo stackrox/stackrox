@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
@@ -14,6 +15,7 @@ import (
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -120,12 +122,13 @@ func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, 
 func (g *Aggregator) AggregateResults(ctx context.Context, clusterID string, clusterResults *[]*report.ResultRow, checkStatus *checkStatus) checkResultWalkByQuery {
 	return func(checkResult *storage.ComplianceOperatorCheckResultV2) error {
 		row := &report.ResultRow{
-			ClusterName:  checkResult.GetClusterName(),
-			CheckName:    checkResult.GetCheckName(),
-			Description:  checkResult.GetDescription(),
-			Status:       checkResult.GetStatus().String(),
-			Rationale:    checkResult.GetRationale(),
-			Instructions: checkResult.GetInstructions(),
+			ClusterName:    checkResult.GetClusterName(),
+			CheckName:      checkResult.GetCheckName(),
+			Description:    checkResult.GetDescription(),
+			Status:         checkResult.GetStatus().String(),
+			Rationale:      checkResult.GetRationale(),
+			Instructions:   checkResult.GetInstructions(),
+			AssessmentTime: protocompat.ConvertTimestampToString(checkResult.GetLastStartedTime(), time.RFC1123),
 		}
 		profileInfo, profileName, profileType, err := g.getProfileInfo(ctx, checkResult, clusterID)
 		if err != nil {
