@@ -65,6 +65,10 @@ endif
 
 ifneq ($(BUILD_TAG),)
 TAG := $(BUILD_TAG)
+# Prow CI needs "release" GOTAGS so that test binaries match the Central image built by GHA.
+ifdef OPENSHIFT_CI
+GOTAGS := $(if $(GOTAGS),$(GOTAGS)$(comma))$(RELEASE_GOTAGS)
+endif
 endif
 
 ifeq ($(TAG),)
