@@ -39,6 +39,11 @@ type DeploymentReference struct {
 	// SkipResolving indicates whether the deployments need to be resolved or not. This is set to true when a re-process
 	// is triggered after receiving a message from central (e.g. UpdatedImage).
 	SkipResolving bool
+
+	// SkipDeduping bypasses the deduping queue and resolves the deployment inline.
+	// Used for SYNC events from the deployment dispatcher to ensure they reach central
+	// before the SyncedEvent for proper reconciliation tracking.
+	SkipDeduping bool
 }
 
 // ResourceEvent message used by the event pipeline's components
@@ -133,6 +138,13 @@ func WithForceDetection() DeploymentReferenceOption {
 func WithSkipResolving() DeploymentReferenceOption {
 	return func(dr *DeploymentReference) {
 		dr.SkipResolving = true
+	}
+}
+
+// WithSkipDeduping bypasses the deduping queue and resolves the deployment inline.
+func WithSkipDeduping() DeploymentReferenceOption {
+	return func(dr *DeploymentReference) {
+		dr.SkipDeduping = true
 	}
 }
 

@@ -126,7 +126,7 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 
 func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.SearchDataType {
 	switch original.Kind() {
-	case reflect.Ptr, reflect.Slice:
+	case reflect.Pointer, reflect.Slice:
 		return s.walkRecursive(prefix, original.Elem())
 	case reflect.Struct:
 		s.handleStruct(prefix, original)

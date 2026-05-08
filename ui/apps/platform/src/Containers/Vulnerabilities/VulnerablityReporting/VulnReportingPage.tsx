@@ -1,11 +1,11 @@
 import { Navigate, Route, Routes } from 'react-router-dom-v5-compat';
 
+import type { ReportPageAction } from 'Components/Reports/reports.types';
 import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
 
-import CreateVulnReportPage from './ModifyVulnReport/CreateVulnReportPage';
-import EditVulnReportPage from './ModifyVulnReport/EditVulnReportPage';
-import CloneVulnReportPage from './ModifyVulnReport/CloneVulnReportPage';
+import ImageVulnerabilityReportWizardPage from '../ImageVulnerabilityReports/Wizard/ImageVulnerabilityReportWizardPage';
+
 import ViewVulnReportPage from './ViewVulnReport/ViewVulnReportPage';
 import ConfigReportsTab from './VulnReports/ConfigReportsTab';
 import ViewBasedReportsTab from './VulnReports/ViewBasedReportsTab';
@@ -13,10 +13,8 @@ import VulnReportingLayout from './VulnReports/VulnReportingLayout';
 
 import './VulnReportingPage.css';
 
-type PageActions = 'create' | 'edit' | 'clone';
-
 function VulnReportingPage() {
-    const { pageAction } = usePageAction<PageActions>();
+    const { pageAction } = usePageAction<ReportPageAction>();
 
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
     const hasWriteAccessForReport =
@@ -29,8 +27,9 @@ function VulnReportingPage() {
         <Routes>
             <Route
                 element={
-                    pageAction === 'create' && hasWriteAccessForReport ? (
-                        <CreateVulnReportPage />
+                    (pageAction === 'create' || pageAction === 'createFromFilters') &&
+                    hasWriteAccessForReport ? (
+                        <ImageVulnerabilityReportWizardPage pageAction={pageAction} />
                     ) : (
                         <VulnReportingLayout />
                     )
@@ -43,10 +42,8 @@ function VulnReportingPage() {
             <Route
                 path="/configuration/:reportId"
                 element={
-                    pageAction === 'edit' && hasWriteAccessForReport ? (
-                        <EditVulnReportPage />
-                    ) : pageAction === 'clone' && hasWriteAccessForReport ? (
-                        <CloneVulnReportPage />
+                    (pageAction === 'clone' || pageAction === 'edit') && hasWriteAccessForReport ? (
+                        <ImageVulnerabilityReportWizardPage pageAction={pageAction} />
                     ) : (
                         <ViewVulnReportPage />
                     )
