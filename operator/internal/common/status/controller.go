@@ -208,13 +208,17 @@ type workloadStatus interface {
 	IsAvailable() bool
 }
 
-type deploymentStatus struct {
-	name   string
-	status appsv1.DeploymentStatus
+type namedWorkload struct {
+	name string
 }
 
-func (d deploymentStatus) Name() string {
+func (d namedWorkload) Name() string {
 	return d.name
+}
+
+type deploymentStatus struct {
+	namedWorkload
+	status appsv1.DeploymentStatus
 }
 
 func (d deploymentStatus) IsAvailable() bool {
@@ -227,17 +231,13 @@ func (d deploymentStatus) IsAvailable() bool {
 }
 
 type daemonSetStatus struct {
-	name   string
+	namedWorkload
 	status appsv1.DaemonSetStatus
 }
 
 func (d daemonSetStatus) IsAvailable() bool {
 	return d.status.DesiredNumberScheduled > 0 &&
 		d.status.NumberAvailable >= d.status.DesiredNumberScheduled
-}
-
-func (d daemonSetStatus) Name() string {
-	return d.name
 }
 
 // updateAvailable updates the Available condition based on deployment readiness.
@@ -267,14 +267,14 @@ func (r *Reconciler[T]) updateAvailable(ctx context.Context, obj T) *platform.St
 	workloadStatuses := make([]workloadStatus, 0, len(deployments.Items)+len(daemonsets.Items))
 	for _, deployment := range deployments.Items {
 		workloadStatuses = append(workloadStatuses, deploymentStatus{
-			name:   deployment.GetName(),
-			status: deployment.Status,
+			namedWorkload: namedWorkload{name: deployment.GetName()},
+			status:        deployment.Status,
 		})
 	}
 	for _, daemonset := range daemonsets.Items {
 		workloadStatuses = append(workloadStatuses, daemonSetStatus{
-			name:   daemonset.GetName(),
-			status: daemonset.Status,
+			namedWorkload: namedWorkload{name: daemonset.GetName()},
+			status:        daemonset.Status,
 		})
 	}
 
