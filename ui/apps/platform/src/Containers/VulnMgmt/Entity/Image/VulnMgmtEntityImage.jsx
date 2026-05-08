@@ -34,6 +34,7 @@ const VulnMgmtEntityImage = ({
         query getImage($id: ID!, $query: String, $scopeQuery: String) {
             result: image(id: $id) {
                 id
+                digest
                 lastUpdated
                 ${entityContext[entityTypes.DEPLOYMENT] ? '' : 'deploymentCount(query: $query)'}
                 metadata {
