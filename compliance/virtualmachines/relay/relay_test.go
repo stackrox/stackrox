@@ -37,6 +37,12 @@ var errTestStreamStart = errors.New("test stream start failure")
 // errTest is a generic test error for use in mock implementations.
 var errTest = errors.New("test error")
 
+const (
+	noThrottlingReportsPerMinute = 0
+	singleReportPerMinute        = 1
+	testStaleAckThreshold        = 4 * time.Hour
+)
+
 // TestRelay_StartFailure verifies that Relay.Run propagates stream startup
 // errors and does not enter the main select loop when initialization fails.
 func (s *relayTestSuite) TestRelay_StartFailure() {
@@ -55,7 +61,7 @@ func (s *relayTestSuite) TestRelay_StartFailure() {
 	}
 
 	// Construct the relay under test.
-	relay := New(stream, sender, &mockUMH{}, 0, 4*time.Hour)
+	relay := New(stream, sender, &mockUMH{}, noThrottlingReportsPerMinute, testStaleAckThreshold)
 
 	// Run the relay in a goroutine so we can assert it returns promptly and
 	// does not block in its select loop.
@@ -112,7 +118,7 @@ func (s *relayTestSuite) TestRelay_Integration() {
 
 	// Create relay with mock dependencies using the public constructor
 	// Rate limiting disabled (0)
-	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, 0, 4*time.Hour)
+	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, noThrottlingReportsPerMinute, testStaleAckThreshold)
 
 	// Run relay in background
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
@@ -182,7 +188,7 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 	}
 
 	umh := &mockUMH{}
-	relay := New(mockIndexReportStream, mockIndexReportSender, umh, 0, 4*time.Hour)
+	relay := New(mockIndexReportStream, mockIndexReportSender, umh, noThrottlingReportsPerMinute, testStaleAckThreshold)
 
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
 	defer cancel()
@@ -212,9 +218,11 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 	err := <-errChan
 	s.ErrorIs(err, context.Canceled)
 
-	umh.mu.Lock()
-	defer umh.mu.Unlock()
-	s.Contains(umh.nacks, "200", "failed send should be recorded as NACK")
+	var nacks []string
+	concurrency.WithLock(&umh.mu, func() {
+		nacks = slices.Clone(umh.nacks)
+	})
+	s.Contains(nacks, "200", "failed send should be recorded as NACK")
 }
 
 // TestRelay_ContextCancellation verifies relay stops on context cancellation
@@ -233,7 +241,7 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 		failOnIndex: -1, // never fail
 	}
 
-	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, 0, 4*time.Hour)
+	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, noThrottlingReportsPerMinute, testStaleAckThreshold)
 
 	ctx, cancel := context.WithCancel(s.ctx)
 
@@ -277,7 +285,7 @@ func (s *relayTestSuite) TestRelay_RateLimiting() {
 	}
 
 	// Rate limit: 1 per minute (effectively blocks after first)
-	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, 1, 4*time.Hour)
+	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, singleReportPerMinute, testStaleAckThreshold)
 
 	ctx, cancel := context.WithTimeout(s.ctx, 1*time.Second)
 	defer cancel()
@@ -330,7 +338,7 @@ func (s *relayTestSuite) TestRelay_UMHInteraction() {
 		retryCh: make(chan string, 1),
 	}
 
-	relay := New(mockIndexReportStream, mockIndexReportSender, umh, 0, 4*time.Hour)
+	relay := New(mockIndexReportStream, mockIndexReportSender, umh, noThrottlingReportsPerMinute, testStaleAckThreshold)
 
 	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
 	defer cancel()
@@ -536,7 +544,7 @@ func (s *relayTestSuite) TestRelay_RunReturnsErrorWhenRetryChannelCloses() {
 	umh := &mockUMH{
 		retryCh: retryCh,
 	}
-	r := New(&mockIndexReportStream{}, &mockIndexReportSender{failOnIndex: -1}, umh, 0, 4*time.Hour)
+	r := New(&mockIndexReportStream{}, &mockIndexReportSender{failOnIndex: -1}, umh, noThrottlingReportsPerMinute, testStaleAckThreshold)
 	s.Require().NotNil(r.cacheEvictTicker)
 
 	ctx, cancel := context.WithTimeout(s.ctx, time.Second)
@@ -545,6 +553,21 @@ func (s *relayTestSuite) TestRelay_RunReturnsErrorWhenRetryChannelCloses() {
 	err := r.Run(ctx)
 	s.Require().Error(err)
 	s.ErrorContains(err, "UMH retry command channel closed")
+}
+
+func (s *relayTestSuite) TestRelay_TryConsumeCreatesMetadataOnCacheMiss() {
+	r := &Relay{
+		maxReportsPerMinute: singleReportPerMinute,
+		cache:               make(map[string]*cachedReportMetadata),
+	}
+
+	s.NotPanics(func() {
+		s.True(r.tryConsume("missing"))
+	})
+
+	metadata := r.cache["missing"]
+	s.Require().NotNil(metadata, "missing cache entries should be initialized on first consumption")
+	s.NotNil(metadata.limiter, "newly initialized metadata should include a limiter")
 }
 
 // Mock implementations

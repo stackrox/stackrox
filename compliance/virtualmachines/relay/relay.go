@@ -224,7 +224,8 @@ func (r *Relay) isACKStale(vsockID string) bool {
 }
 
 // tryConsume checks if we can send a report for this VSOCK ID (leaky bucket).
-// The caller must ensure the cache entry exists (e.g. via cacheReport).
+// Missing metadata is initialized defensively so relay progress does not depend
+// on every caller pre-populating the cache.
 func (r *Relay) tryConsume(vsockID string) bool {
 	if r.maxReportsPerMinute <= 0 {
 		return true
@@ -233,7 +234,13 @@ func (r *Relay) tryConsume(vsockID string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	metadata := r.cache[vsockID]
+	metadata, ok := r.cache[vsockID]
+	if !ok {
+		metadata = &cachedReportMetadata{
+			updatedAt: time.Now(),
+		}
+		r.cache[vsockID] = metadata
+	}
 	if metadata.limiter == nil {
 		ratePerSecond := r.maxReportsPerMinute / 60.0
 		metadata.limiter = rate.NewLimiter(rate.Limit(ratePerSecond), 1)
