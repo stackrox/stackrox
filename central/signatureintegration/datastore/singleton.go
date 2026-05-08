@@ -19,16 +19,21 @@ import (
 // External processes (e.g. an HTTP updater sidecar) write to this location.
 const redHatKeyBundlePath = "/tmp/redhat-signing-keys/bundle.json"
 
+// Stoppable represents a background process that can be stopped.
+type Stoppable interface {
+	Stop()
+}
+
 var (
 	once     sync.Once
 	instance DataStore
 
-	bundleWatcher *keyBundleWatcher
+	bundleWatcher Stoppable
 )
 
 // KeyBundleWatcher returns the key bundle watcher for shutdown registration.
 // Must only be called after Singleton().
-func KeyBundleWatcher() *keyBundleWatcher {
+func KeyBundleWatcher() Stoppable {
 	return bundleWatcher
 }
 
