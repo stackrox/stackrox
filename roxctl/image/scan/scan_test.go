@@ -363,6 +363,7 @@ func (s *imageScanTestSuite) TestConstruct() {
 }
 
 func (s *imageScanTestSuite) TestDeprecationNote() {
+	expectedDefaultLegacyJSONInfoNote := "INFO:\tDefault image scan output currently uses deprecated legacy-json for backwards compatibility. Use --output=json to migrate to the new JSON output format. NOTE: it contains breaking changes in the format.\n"
 	expectedLegacyJSONDeprecationNote := "WARN:\tOutput format \"legacy-json\" has been deprecated, please use --output=json to migrate to the new JSON output format. NOTE: The new JSON / CSV format contains breaking changes, make sure you adapt to the new structure before migrating.\n"
 	expectedLegacyCSVDeprecationNote := "WARN:\tOutput format \"legacy-csv\" has been deprecated, please use --output=csv to migrate to the new CSV output format. NOTE: The new JSON / CSV format contains breaking changes, make sure you adapt to the new structure before migrating.\n"
 
@@ -372,7 +373,9 @@ func (s *imageScanTestSuite) TestDeprecationNote() {
 		outputFormat  string
 		expectedNote  string
 	}{
-		"default values are not changed, the deprecation warning should not be printed": {},
+		"default values are not changed, an informational note should be printed": {
+			expectedNote: expectedDefaultLegacyJSONInfoNote,
+		},
 		"changes in format, deprecation warning should not be printed": {
 			formatChanged: true,
 		},

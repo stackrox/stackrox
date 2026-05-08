@@ -31,6 +31,8 @@ const (
 	legacyOutputMigrationNote = "NOTE: The new JSON / CSV format contains breaking changes, make sure you adapt to the new structure before migrating."
 	deprecationNote           = "please use --output/-o to specify the output format. " +
 		legacyOutputMigrationNote
+	defaultLegacyJSONInfoNote = "Default image scan output currently uses deprecated legacy-json for backwards compatibility. " +
+		"Use --output=json to migrate to the new JSON output format. NOTE: it contains breaking changes in the format."
 	legacyJSONOutputFormat          = "legacy-json"
 	legacyCSVOutputFormat           = "legacy-csv"
 	legacyJSONOutputDeprecationNote = "please use --output=json to migrate to the new JSON output format. " + legacyOutputMigrationNote
@@ -138,6 +140,9 @@ func (i *imageScanCommand) Construct(_ []string, cmd *cobra.Command, f *printer.
 			i.env.Logger().WarnfLn("Output format %q has been deprecated, %s", f.OutputFormat, deprecationNote)
 		}
 		return nil
+	}
+	if !cmd.Flag("format").Changed && !cmd.Flag("output").Changed {
+		i.env.Logger().InfofLn("%s", defaultLegacyJSONInfoNote)
 	}
 
 	// Only create the printer when the old, deprecated output format is not used
