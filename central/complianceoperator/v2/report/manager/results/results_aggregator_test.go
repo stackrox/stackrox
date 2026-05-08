@@ -17,7 +17,6 @@ import (
 	scanMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -170,13 +169,14 @@ var (
 )
 
 type walkByQueryTestCase struct {
-	check                *storage.ComplianceOperatorCheckResultV2
-	expectedProfiles     func() ([]*storage.ComplianceOperatorProfileV2, error)
-	expectedRemediations func() ([]*storage.ComplianceOperatorRemediationV2, error)
-	expectedRules        func() ([]*storage.ComplianceOperatorRuleV2, error)
-	expectedBenchmarks   func() ([]*storage.ComplianceOperatorBenchmarkV2, error)
-	expectedControls     func() ([]*datastore.ControlResult, error)
-	expectError          bool
+	check                  *storage.ComplianceOperatorCheckResultV2
+	expectedProfiles       func() ([]*storage.ComplianceOperatorProfileV2, error)
+	expectedRemediations   func() ([]*storage.ComplianceOperatorRemediationV2, error)
+	expectedRules          func() ([]*storage.ComplianceOperatorRuleV2, error)
+	expectedBenchmarks     func() ([]*storage.ComplianceOperatorBenchmarkV2, error)
+	expectedControls       func() ([]*datastore.ControlResult, error)
+	expectedAssessmentTime string
+	expectError            bool
 }
 
 func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
@@ -199,6 +199,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
+			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
 		},
 		"fail check no error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_FAIL),
@@ -217,6 +218,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
+			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
 		},
 		"mixed check no error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_INCONSISTENT),
@@ -235,6 +237,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
+			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
 		},
 		"profile search error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -257,6 +260,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
 				return benchmarks, nil
 			},
+			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
 		},
 		"remediation search error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -285,6 +289,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
+			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
 		},
 		"rule search error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -310,6 +315,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
 				return []*storage.ComplianceOperatorRuleV2{}, nil
 			},
+			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
 		},
 		"benchmark not found": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -330,6 +336,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
 				return []*storage.ComplianceOperatorBenchmarkV2{}, nil
 			},
+			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
 		},
 		"control search error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -367,6 +374,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return []*datastore.ControlResult{}, nil
 			},
+			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
 		},
 		"profile without benchmark mapping renders control reference as N/A": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -388,6 +396,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
 				return []*storage.ComplianceOperatorBenchmarkV2{}, nil
 			},
+			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
 		},
 		"profile with benchmark but no matching controls renders control reference as N/A": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -412,6 +421,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return []*datastore.ControlResult{}, nil
 			},
+			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
 		},
 		// getCheckResult not used here to test nil LastStartedTime
 		"nil last started time renders assessment time as N/A": {
@@ -438,6 +448,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
+			expectedAssessmentTime: "N/A",
 		},
 		"profile matching benchmark regex resolves controls": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -462,6 +473,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
+			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
 		},
 	}
 	for tname, tcase := range cases {
@@ -653,7 +665,7 @@ func assertResult(t *testing.T, tcase walkByQueryTestCase, row *report.ResultRow
 	assert.Equal(t, tcase.check.GetStatus().String(), row.Status)
 	assert.Equal(t, tcase.check.GetRationale(), row.Rationale)
 	assert.Equal(t, tcase.check.GetInstructions(), row.Instructions)
-	assert.Equal(t, protocompat.ConvertTimestampToString(tcase.check.GetLastStartedTime(), time.RFC1123), row.AssessmentTime)
+	assert.Equal(t, tcase.expectedAssessmentTime, row.AssessmentTime)
 	if tcase.expectedProfiles != nil {
 		expProfiles, _ := tcase.expectedProfiles()
 		if len(expProfiles) < 1 {
