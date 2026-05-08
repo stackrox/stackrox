@@ -1,0 +1,161 @@
+name: Deploy StackRox
+description: >
+  Deploys StackRox (Central + Sensor) on a Kubernetes cluster.
+  Cluster-agnostic — retries kubectl until a cluster is reachable,
+  then deploys via helm. Can be started in parallel with cluster
+  creation; it will wait for the cluster to appear.
+
+  Runs in the background — returns immediately.
+  File-based outputs (poll for these):
+    /tmp/rox-auth-token     — API auth token (Central API ready)
+    /tmp/rox-admin-password — admin password
+    /tmp/rox-data-ready     — touched when Sensor reports >5 deployments
+    /tmp/deploy.log         — deploy timeline with timestamps
+
+inputs:
+  central-chart:
+    description: Path to rendered central-services helm chart
+    default: /tmp/central-chart
+  sensor-chart:
+    description: Path to rendered secured-cluster helm chart
+    default: /tmp/sensor-chart
+  central-values:
+    description: Central helm values file
+    default: .github/workflows/scripts/ci-values-central.yaml
+  sensor-values:
+    description: Sensor helm values file
+    default: .github/workflows/scripts/ci-values-sensor.yaml
+  registry:
+    description: Image registry for helm --set
+    default: quay.io/rhacs-eng
+  load-balancer:
+    description: >
+      Matches LOAD_BALANCER in CI scripts.
+      "lb" waits for a real LoadBalancer IP (GKE, matches Prow behavior).
+      Anything else uses port-forward (KinD, simple setup).
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Deploy StackRox (background)
+      shell: bash
+      run: |
+        ROX_ADMIN_PASSWORD="$(openssl rand -base64 20)"
+        echo "::add-mask::${ROX_ADMIN_PASSWORD}"
+        echo "${ROX_ADMIN_PASSWORD}" > /tmp/rox-admin-password
+
+        (
+          set +e
+          T0=$(date +%s)
+          ts() { echo "+$(( $(date +%s) - T0 ))s $*"; }
+
+          # Wait for cluster to be reachable (retries until kubectl works)
+          ts "waiting for cluster..."
+          for _ in $(seq 1 120); do
+            kubectl cluster-info >/dev/null 2>&1 && break
+            sleep 2
+          done
+          ts "cluster reachable"
+
+          # Helm install central-services
+          kubectl create namespace stackrox 2>/dev/null || true
+
+          # Use existing pull secret if available (GKE), otherwise allowNone (KinD)
+          PULL_SECRET_ARGS=""
+          if kubectl -n stackrox get secret quay-pull-secret >/dev/null 2>&1; then
+            PULL_SECRET_ARGS="--set imagePullSecrets.useExisting=quay-pull-secret"
+          else
+            PULL_SECRET_ARGS="--set imagePullSecrets.allowNone=true"
+          fi
+
+          ts "helm install central-services"
+          helm upgrade --install -n stackrox stackrox-central-services \
+            "${{ inputs.central-chart }}" \
+            -f "${{ inputs.central-values }}" \
+            --set image.registry="${{ inputs.registry }}" \
+            --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
+            ${PULL_SECRET_ARGS} >/dev/null
+          ts "helm install complete"
+
+          # Set up API endpoint based on load-balancer mode
+          LOAD_BALANCER="${{ inputs.load-balancer }}"
+          if [ "$LOAD_BALANCER" = "lb" ]; then
+            ts "waiting for LoadBalancer IP..."
+            LB_IP=""
+            for _ in $(seq 1 120); do
+              LB_IP=$(kubectl -n stackrox get svc/central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
+              [ -n "$LB_IP" ] && [ "$LB_IP" != "null" ] && break
+              LB_IP=""
+              sleep 5
+            done
+            API_ENDPOINT="${LB_IP}:443"
+            ts "LoadBalancer IP: ${LB_IP}"
+          else
+            # Port-forward with auto-reconnect
+            while true; do
+              kubectl -n stackrox port-forward svc/central 8000:443 2>/dev/null || sleep 2
+            done &
+            API_ENDPOINT="localhost:8000"
+          fi
+
+          # Wait for Central API
+          ts "waiting for Central API..."
+          for _ in $(seq 1 120); do
+            curl -sk --connect-timeout 1 "https://${API_ENDPOINT}/v1/ping" >/dev/null 2>&1 && break
+            sleep 1
+          done
+          ts "Central API ready"
+
+          # Generate auth token
+          set +x
+          curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+            "https://${API_ENDPOINT}/v1/apitokens/generate" \
+            -X POST -d '{"name":"ci-test","role":"Admin"}' \
+            | jq -r '.token' > /tmp/rox-auth-token
+          echo "${API_ENDPOINT}" > /tmp/rox-api-endpoint
+          set -x
+          ts "auth token written (endpoint: ${API_ENDPOINT})"
+
+          # Deploy sensor via init-bundle
+          ts "sensor deploy"
+          set +x
+          curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+            "https://${API_ENDPOINT}/v1/cluster-init/init-bundles" \
+            -X POST -d '{"name":"ci-cluster"}' \
+            > /tmp/init-response.json
+          set -x
+
+          jq -r '.helmValuesBundle' /tmp/init-response.json | base64 -d > /tmp/sensor-init-bundle.yaml
+
+          if ! grep -q "ca:" /tmp/sensor-init-bundle.yaml 2>/dev/null; then
+            echo "ERROR: Init bundle generation failed"
+            cat /tmp/init-response.json
+            exit 1
+          fi
+
+          helm upgrade --install -n stackrox stackrox-secured-cluster-services \
+            "${{ inputs.sensor-chart }}" \
+            -f "${{ inputs.sensor-values }}" \
+            --set image.registry="${{ inputs.registry }}" \
+            --set centralEndpoint=central.stackrox.svc:443 \
+            -f /tmp/sensor-init-bundle.yaml >/dev/null 2>&1
+          ts "sensor deployed"
+
+          # Seed test workloads
+          kubectl create namespace qa-test 2>/dev/null || true
+          kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null || true
+          kubectl -n qa-test run busybox --image=busybox --restart=Always -- \
+            sh -c 'while true; do wget -q -O /dev/null http://central.stackrox.svc:443 2>/dev/null; sleep 5; done' 2>/dev/null || true
+
+          for _ in $(seq 1 60); do
+            dep_count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://${API_ENDPOINT}/v1/deploymentscount" 2>/dev/null | jq -r '.count // 0')
+            [ "${dep_count:-0}" -gt 5 ] && break
+            sleep 3
+          done
+          touch /tmp/rox-data-ready
+          ts "data ready (${dep_count} deployments)"
+        ) > /tmp/deploy.log 2>&1 &
+
+        echo "StackRox deploy started in background"

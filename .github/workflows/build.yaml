@@ -804,6 +804,18 @@ jobs:
         message-id: build-images-ready
         message-path: build-comment.md
 
+  ui-e2e:
+    needs:
+    - define-job-matrix
+    - push-main-manifests
+    if: >-
+      !cancelled() && needs.push-main-manifests.result == 'success' &&
+      contains(github.event.pull_request.labels.*.name, 'ui-e2e')
+    uses: ./.github/workflows/ui-e2e.yaml
+    with:
+      tag: ${{ needs.define-job-matrix.outputs.build-tag }}
+    secrets: inherit
+
   build-and-push-operator:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:

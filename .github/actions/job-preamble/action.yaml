@@ -139,6 +139,27 @@ runs:
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
+    - name: Monitor runner resources
+      shell: bash
+      run: |
+        (
+          peak_cpu=0
+          peak_mem_pct=0
+          while true; do
+            ts=$(date -u +%H:%M:%S)
+            cpu=$(top -bn1 2>/dev/null | awk '/^%Cpu/{printf "%.0f", 100-$8}' || echo 0)
+            mem=$(free -m 2>/dev/null | awk '/^Mem:/{printf "%d/%dMB(%.0f%%)", $3, $2, $3/$2*100}' || echo "?")
+            mem_pct=$(free 2>/dev/null | awk '/^Mem:/{printf "%.0f", $3/$2*100}' || echo 0)
+            disk=$(df -BGB --output=avail / 2>/dev/null | tail -1 | tr -d ' ' || echo "?")
+            changed=""
+            [ "${cpu:-0}" -gt "$peak_cpu" ] 2>/dev/null && peak_cpu="$cpu" && changed="${changed} cpu=${peak_cpu}%"
+            [ "${mem_pct:-0}" -gt "$peak_mem_pct" ] 2>/dev/null && peak_mem_pct="$mem_pct" && changed="${changed} mem=${mem_pct}%"
+            [ -n "$changed" ] && echo "${ts} | PEAK:${changed} | mem=${mem} disk=${disk}"
+            sleep 30
+          done
+        ) >> /dev/shm/runner-monitor.log 2>&1 &
+        echo $! > /dev/shm/runner-monitor.pid
+
     - name: Record job info
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       id: record_job_info
@@ -164,4 +185,9 @@ runs:
             du -ks /* 2>/dev/null | sort -V || true;\
             du -k / 2>/dev/null | sort -V | tail -100 || true; \
             printf "Low free disk space post-job: ${free}" | tee -a "$GITHUB_STEP_SUMMARY";\
+          fi;
+          kill "$(cat /dev/shm/runner-monitor.pid 2>/dev/null)" 2>/dev/null || true;
+          if [ -s /dev/shm/runner-monitor.log ]; then
+            echo "Runner resource peaks:";
+            tail -5 /dev/shm/runner-monitor.log;
           fi;
