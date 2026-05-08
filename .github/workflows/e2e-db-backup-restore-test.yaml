@@ -198,15 +198,15 @@ jobs:
 
     - name: Setup TLS client certs
       run: |
-        # Generate client CA + certs using the same script Prow uses.
-        # setup_client_TLS_certs calls export_client_TLS_certs which sets
-        # KEYSTORE_PATH, CLIENT_CA_PATH, TRUSTSTORE_PATH in the shell.
-        # The keystore uses empty password (pass:) matching the Java code.
+        # setup-certs.sh has set -u, and needs info() from lib.sh
+        source scripts/ci/lib.sh
         source tests/scripts/setup-certs.sh
-        setup_client_TLS_certs "/tmp/client-tls-certs"
-        echo "CLIENT_CA_PATH=${CLIENT_CA_PATH}" >> "$GITHUB_ENV"
-        echo "KEYSTORE_PATH=${KEYSTORE_PATH}" >> "$GITHUB_ENV"
-        echo "TRUSTSTORE_PATH=${TRUSTSTORE_PATH}" >> "$GITHUB_ENV"
+        CERT_DIR="/tmp/client-tls-certs"
+        setup_client_TLS_certs "$CERT_DIR"
+        # Fallback paths in case export_client_TLS_certs didn't set them
+        echo "CLIENT_CA_PATH=${CLIENT_CA_PATH:-${CERT_DIR}/ca.crt}" >> "$GITHUB_ENV"
+        echo "KEYSTORE_PATH=${KEYSTORE_PATH:-${CERT_DIR}/keystore.p12}" >> "$GITHUB_ENV"
+        echo "TRUSTSTORE_PATH=${TRUSTSTORE_PATH:-${CERT_DIR}/keystore.p12}" >> "$GITHUB_ENV"
 
     - name: Compile QA tests
       working-directory: qa-tests-backend
