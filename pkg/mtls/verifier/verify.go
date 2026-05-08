@@ -100,13 +100,15 @@ func addSecondaryCACertIfExists(certPool *x509.CertPool) {
 // from a file watcher, enabling hot reload when cert files change on disk.
 func (NonCA) TLSConfig() (*tls.Config, error) {
 	loadAndWatchLeafCert()
+	if leafCert.Load() == nil {
+		return nil, errors.New("no leaf certificate available")
+	}
 
 	rootConf, err := serverTLSConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	rootConf.ClientAuth = tls.VerifyClientCertIfGiven
 	rootConf.GetCertificate = func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
 		cert := leafCert.Load()
 		if cert == nil {
