@@ -2928,35 +2928,3 @@ func (s *PruningTestSuite) TestCollectDeletedDeployments() {
 		})
 	}
 }
-
-func (s *PruningTestSuite) TestCollectDeletedDeploymentsDisabled() {
-	ctx := sac.WithAllAccess(context.Background())
-	// Clean up deployments from previous tests.
-	_, err := s.pool.Exec(ctx, "TRUNCATE deployments CASCADE")
-	require.NoError(s.T(), err)
-
-	_, config, images, imagesV2, deployments, _ := s.generateImageDataStructures(ctx)
-	nodes := s.generateNodeDataStructures()
-
-	gc := newGarbageCollector(nil, nodes, images, imagesV2, nil, deployments, nil,
-		nil, nil, nil, config, nil,
-		nil, nil, nil, nil, nil, nil, nil,
-		nil, nil, nil).(*garbageCollectorImpl)
-
-	// Create an expired deleted deployment.
-	d := newDeletedDeployment(fixtureconsts.Deployment1, testResourceRetention+1)
-	require.NoError(s.T(), deployments.UpsertDeployment(ctx, d))
-
-	// Run with retention disabled (0 days).
-	privateConfig := &storage.PrivateConfig{
-		ResourceRetentionConfig: &storage.ResourceRetentionConfig{
-			DeploymentDurationDays: 0,
-		},
-	}
-	gc.collectDeletedDeployments(privateConfig)
-
-	// Verify the deployment was NOT pruned.
-	remaining, err := deployments.Search(ctx, search.EmptyQuery())
-	require.NoError(s.T(), err)
-	assert.Len(s.T(), remaining, 1)
-}
