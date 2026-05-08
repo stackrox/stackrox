@@ -11,7 +11,7 @@ RUN echo "Go version of the builder:" && \
     go version 2>/dev/null
 RUN echo "go.mod version requirement:" && \
     grep -E '^(go|toolchain) ' go.mod
-RUN echo "If the following command fails, either roll back your changes to go.mod or update openshift-golang-builder on all Konflux jobs."
+RUN echo "If the following command fails, either roll back your changes to go.mod or update the openshift-golang-builder base images."
 RUN echo "Checking go.mod compatibility..." && \
     go mod tidy
 RUN echo "SUCCESS: Go version is compatible with go.mod"
