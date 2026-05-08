@@ -110,7 +110,6 @@ jobs:
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         pg: [ 'default', '15' ]
-        pg: [ '15' ]
         exclude:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
     runs-on: ubuntu-latest
