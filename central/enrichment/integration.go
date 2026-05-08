@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	virtualMachineEnricher "github.com/stackrox/rox/pkg/virtualmachine/enricher"
 )
 
 // Manager implements a bit of multiplexing logic between ImageIntegrations and NodeIntegrations
@@ -17,10 +18,18 @@ type Manager interface {
 	Remove(id string) error
 }
 
-func newManager(imageIntegrationSet integration.Set, nodeEnricher enricher.NodeEnricher, cveFetcher fetcher.OrchestratorIstioCVEManager) Manager {
+// newManager builds the shared integration manager that keeps image, node, VM,
+// and orchestrator enrichment state aligned from the same image integration.
+func newManager(
+	imageIntegrationSet integration.Set,
+	nodeEnricher enricher.NodeEnricher,
+	vmEnricher virtualMachineEnricher.VirtualMachineEnricher,
+	cveFetcher fetcher.OrchestratorIstioCVEManager,
+) Manager {
 	return &managerImpl{
 		imageIntegrationSet: imageIntegrationSet,
 		nodeEnricher:        nodeEnricher,
+		vmEnricher:          vmEnricher,
 		cveFetcher:          cveFetcher,
 	}
 }
@@ -28,6 +37,7 @@ func newManager(imageIntegrationSet integration.Set, nodeEnricher enricher.NodeE
 type managerImpl struct {
 	imageIntegrationSet integration.Set
 	nodeEnricher        enricher.NodeEnricher
+	vmEnricher          virtualMachineEnricher.VirtualMachineEnricher
 	cveFetcher          fetcher.OrchestratorIstioCVEManager
 }
 
@@ -36,6 +46,17 @@ type managerImpl struct {
 func isNodeIntegration(integration *storage.ImageIntegration) bool {
 	for _, category := range integration.GetCategories() {
 		if category == storage.ImageIntegrationCategory_NODE_SCANNER {
+			return true
+		}
+	}
+	return false
+}
+
+// isVirtualMachineIntegration returns "true" if the image integration is also a virtual machine integration.
+// It loops through the categories, which is a very small slice.
+func isVirtualMachineIntegration(integration *storage.ImageIntegration) bool {
+	for _, category := range integration.GetCategories() {
+		if category == storage.ImageIntegrationCategory_VIRTUAL_MACHINE_SCANNER {
 			return true
 		}
 	}
@@ -83,9 +104,20 @@ func imageIntegrationToOrchestratorIntegration(integration *storage.ImageIntegra
 	}, nil
 }
 
+// Upsert updates the image integration set first, then reconciles the derived
+// node, VM, and orchestrator integrations from that single source of truth.
+// VM-scanner reconciliation happens independently from node/orchestrator wiring
+// so the new VM category can coexist with the legacy node-scanner model.
 func (m *managerImpl) Upsert(integration *storage.ImageIntegration) error {
 	if err := m.imageIntegrationSet.UpdateImageIntegration(integration); err != nil {
 		return err
+	}
+	if !isVirtualMachineIntegration(integration) {
+		m.vmEnricher.RemoveVirtualMachineIntegration(integration.GetId())
+	} else {
+		if err := m.vmEnricher.UpsertVirtualMachineIntegration(integration); err != nil {
+			return err
+		}
 	}
 	if !isNodeIntegration(integration) {
 		m.nodeEnricher.RemoveNodeIntegration(integration.GetId())
@@ -115,10 +147,15 @@ func (m *managerImpl) Upsert(integration *storage.ImageIntegration) error {
 	return m.cveFetcher.UpsertOrchestratorIntegration(orchestratorIntegration)
 }
 
+// Remove removes the integration from every derived enrichment subsystem.
+// The VM-scanner path is cleared alongside node and orchestrator state so the
+// shared VM enricher can fall back when explicit VM integrations disappear.
 func (m *managerImpl) Remove(id string) error {
 	if err := m.imageIntegrationSet.RemoveImageIntegration(id); err != nil {
 		return err
 	}
 	m.nodeEnricher.RemoveNodeIntegration(id)
+	m.vmEnricher.RemoveVirtualMachineIntegration(id)
+	m.cveFetcher.RemoveIntegration(id)
 	return nil
 }

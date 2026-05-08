@@ -368,10 +368,171 @@ func TestEnrichVirtualMachineWithVulnerabilities_ComponentConversion(t *testing.
 	assert.Len(t, pkg.GetVulnerabilities(), 1) // pkg-2 has only vuln-1
 }
 
+func TestEnrichVirtualMachineWithVulnerabilities_UsesFallbackWhenNoExplicitIntegration(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	vm := &storage.VirtualMachine{Id: "vm-id", Name: "fallback-vm"}
+	indexReport := &v4.IndexReport{Contents: &v4.Contents{}}
+	virtualMachineScan := createVirtualMachineScanFromIndexReport(indexReport, 0)
+
+	fallbackScanner := scannerMocks.NewMockVirtualMachineScanner(ctrl)
+	fallbackScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
+	fallbackScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(virtualMachineScan, nil)
+
+	enricher := New(func() scannerTypes.VirtualMachineScanner {
+		return fallbackScanner
+	})
+
+	err := enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexReport)
+	require.NoError(t, err)
+	require.NotNil(t, vm.GetScan())
+}
+
+func TestEnrichVirtualMachineWithVulnerabilities_UsesExplicitIntegrationBeforeFallback(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	vm := &storage.VirtualMachine{Id: "vm-id", Name: "explicit-vm"}
+	indexReport := &v4.IndexReport{Contents: &v4.Contents{}}
+	explicitScan := createVirtualMachineScanFromIndexReport(indexReport, 0)
+	explicitScan.OperatingSystem = "explicit-os"
+
+	fallbackScanner := scannerMocks.NewMockVirtualMachineScanner(ctrl)
+	explicitScanner := scannerMocks.NewMockVirtualMachineScanner(ctrl)
+	explicitScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
+	explicitScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(explicitScan, nil)
+
+	enricher := newWithCreator(
+		func() scannerTypes.VirtualMachineScanner { return fallbackScanner },
+		creatorRegistration{name: scannerTypes.ScannerV4, creator: func(*storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error) {
+			return explicitScanner, nil
+		}},
+	)
+
+	err := enricher.UpsertVirtualMachineIntegration(&storage.ImageIntegration{
+		Id:   "explicit-id",
+		Name: "explicit",
+		Type: scannerTypes.ScannerV4,
+		IntegrationConfig: &storage.ImageIntegration_ScannerV4{
+			ScannerV4: &storage.ScannerV4Config{},
+		},
+	})
+	require.NoError(t, err)
+
+	err = enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexReport)
+	require.NoError(t, err)
+	require.NotNil(t, vm.GetScan())
+	assert.Equal(t, "explicit-os", vm.GetScan().GetOperatingSystem())
+}
+
+func TestEnrichVirtualMachineWithVulnerabilities_UpsertUnsupportedIntegrationTypeReturnsError(t *testing.T) {
+	enricher := New(func() scannerTypes.VirtualMachineScanner { return nil })
+
+	err := enricher.UpsertVirtualMachineIntegration(&storage.ImageIntegration{
+		Id:   "bad-id",
+		Name: "bad",
+		Type: scannerTypes.Quay,
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), scannerTypes.Quay)
+}
+
+func TestEnrichVirtualMachineWithVulnerabilities_RemovingExplicitIntegrationReturnsToFallback(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	vm := &storage.VirtualMachine{Id: "vm-id", Name: "remove-vm"}
+	indexReport := &v4.IndexReport{Contents: &v4.Contents{}}
+	explicitScan := createVirtualMachineScanFromIndexReport(indexReport, 0)
+	explicitScan.OperatingSystem = "explicit-os"
+	fallbackScan := createVirtualMachineScanFromIndexReport(indexReport, 0)
+	fallbackScan.OperatingSystem = "fallback-os"
+
+	fallbackScanner := scannerMocks.NewMockVirtualMachineScanner(ctrl)
+	explicitScanner := scannerMocks.NewMockVirtualMachineScanner(ctrl)
+
+	explicitScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
+	explicitScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(explicitScan, nil)
+	fallbackScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
+	fallbackScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(fallbackScan, nil)
+
+	enricher := newWithCreator(
+		func() scannerTypes.VirtualMachineScanner { return fallbackScanner },
+		creatorRegistration{name: scannerTypes.ScannerV4, creator: func(*storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error) {
+			return explicitScanner, nil
+		}},
+	)
+
+	integration := &storage.ImageIntegration{
+		Id:   "explicit-id",
+		Name: "explicit",
+		Type: scannerTypes.ScannerV4,
+		IntegrationConfig: &storage.ImageIntegration_ScannerV4{
+			ScannerV4: &storage.ScannerV4Config{},
+		},
+	}
+
+	require.NoError(t, enricher.UpsertVirtualMachineIntegration(integration))
+	require.NoError(t, enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexReport))
+	assert.Equal(t, "explicit-os", vm.GetScan().GetOperatingSystem())
+
+	vm.Scan = nil
+	enricher.RemoveVirtualMachineIntegration(integration.GetId())
+
+	require.NoError(t, enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexReport))
+	assert.Equal(t, "fallback-os", vm.GetScan().GetOperatingSystem())
+}
+
+func TestEnrichVirtualMachineWithVulnerabilities_UsesDeterministicFirstExplicitIntegration(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	vm := &storage.VirtualMachine{Id: "vm-id", Name: "deterministic-vm"}
+	indexReport := &v4.IndexReport{Contents: &v4.Contents{}}
+	firstScan := createVirtualMachineScanFromIndexReport(indexReport, 0)
+	firstScan.OperatingSystem = "first-os"
+
+	firstScanner := scannerMocks.NewMockVirtualMachineScanner(ctrl)
+	secondScanner := scannerMocks.NewMockVirtualMachineScanner(ctrl)
+	firstScanner.EXPECT().MaxConcurrentNodeScanSemaphore().Return(semaphore.NewWeighted(1))
+	firstScanner.EXPECT().GetVirtualMachineScan(gomock.Any(), gomock.Any()).Return(firstScan, nil)
+
+	enricher := newWithCreator(
+		func() scannerTypes.VirtualMachineScanner { return nil },
+		creatorRegistration{name: scannerTypes.ScannerV4, creator: func(integration *storage.ImageIntegration) (scannerTypes.VirtualMachineScanner, error) {
+			if integration.GetId() == "a-id" {
+				return firstScanner, nil
+			}
+			return secondScanner, nil
+		}},
+	)
+
+	require.NoError(t, enricher.UpsertVirtualMachineIntegration(newTestVMIntegration("z-id")))
+	require.NoError(t, enricher.UpsertVirtualMachineIntegration(newTestVMIntegration("a-id")))
+
+	require.NoError(t, enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexReport))
+	assert.Equal(t, "first-os", vm.GetScan().GetOperatingSystem())
+}
+
 func newTestEnricher(scanner scannerTypes.VirtualMachineScanner) VirtualMachineEnricher {
 	return New(func() scannerTypes.VirtualMachineScanner {
 		return scanner
 	})
+}
+
+func newTestVMIntegration(id string) *storage.ImageIntegration {
+	return &storage.ImageIntegration{
+		Id:   id,
+		Name: id,
+		Type: scannerTypes.ScannerV4,
+		Categories: []storage.ImageIntegrationCategory{
+			storage.ImageIntegrationCategory_VIRTUAL_MACHINE_SCANNER,
+		},
+		IntegrationConfig: &storage.ImageIntegration_ScannerV4{
+			ScannerV4: &storage.ScannerV4Config{},
+		},
+	}
 }
 
 func createVirtualMachineScanFromIndexReport(indexReport *v4.IndexReport, vulnCount int) *storage.VirtualMachineScan {

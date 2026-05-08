@@ -41,13 +41,17 @@ const (
 func GetPipeline() pipeline.Fragment {
 	return newPipeline(
 		virtualMachineDataStore.Singleton(),
-		vmEnricher.New(func() scannerTypes.VirtualMachineScanner {
+		vmEnricher.Singleton(func() scannerTypes.VirtualMachineScanner {
 			return resolveVMScanner(imageintegration.Set().ScannerSet())
 		}),
 		virtualMachineV2DataStore.Singleton(),
 	)
 }
 
+// resolveVMScanner preserves the legacy VM-scanner lookup from the active image
+// integration set.
+// The shared VM enricher uses this as its compatibility fallback until an
+// explicit VM-scanner integration is configured.
 func resolveVMScanner(scannerSet scanners.Set) scannerTypes.VirtualMachineScanner {
 	for _, scanner := range scannerSet.GetAll() {
 		if scanner.GetScanner().Type() == scannerTypes.ScannerV4 {
