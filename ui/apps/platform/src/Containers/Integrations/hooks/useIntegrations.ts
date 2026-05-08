@@ -75,7 +75,6 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
                 return cloudSources;
             }
             default: {
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 throw new Error(`Unknown source ${source}`);
             }
         }
