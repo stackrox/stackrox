@@ -70,9 +70,9 @@ message VulnerabilityReportFilters {
     google.protobuf.Timestamp since_start_date = 7;
   }
   repeated SimpleAccessScope.Rules access_scope_rules = 8;
-  bool include_nvd_cvss = 9;
-  bool include_epss_probability = 10;
-  bool include_advisory = 11;
+  bool include_nvd_cvss = 9 [deprecated = true];
+  bool include_epss_probability = 10 [deprecated = true];
+  bool include_advisory = 11 [deprecated = true];
   // this field stores enhanced filters related to image, cve etc for non collection based scopes
   string query = 12;
 }

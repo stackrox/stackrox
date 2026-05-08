@@ -5,6 +5,7 @@ package centralsensor
 const (
 	SensorACKReasonRateLimited       = "central rate limit exceeded"
 	SensorACKReasonEnrichmentFailed  = "enrichment failed"
+	SensorACKReasonMatcherNotReady   = "enrichment failed: matcher not initialized"
 	SensorACKReasonStorageFailed     = "storage failed"
 	SensorACKReasonMissingScanData   = "missing scanner index data"
 	SensorACKReasonMissingClusterID  = "missing cluster ID"

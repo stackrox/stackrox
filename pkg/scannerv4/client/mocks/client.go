@@ -119,6 +119,21 @@ func (mr *MockScannerMockRecorder) GetOrCreateImageIndex(ctx, ref, auth, opt any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateImageIndex", reflect.TypeOf((*MockScanner)(nil).GetOrCreateImageIndex), varargs...)
 }
 
+// GetRepositoryToCPEMapping mocks base method.
+func (m *MockScanner) GetRepositoryToCPEMapping(ctx context.Context, ifModifiedSince string) (*client.Repo2CPEResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRepositoryToCPEMapping", ctx, ifModifiedSince)
+	ret0, _ := ret[0].(*client.Repo2CPEResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRepositoryToCPEMapping indicates an expected call of GetRepositoryToCPEMapping.
+func (mr *MockScannerMockRecorder) GetRepositoryToCPEMapping(ctx, ifModifiedSince any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepositoryToCPEMapping", reflect.TypeOf((*MockScanner)(nil).GetRepositoryToCPEMapping), ctx, ifModifiedSince)
+}
+
 // GetSBOM mocks base method.
 func (m *MockScanner) GetSBOM(ctx context.Context, arg1 string, ref name.Digest, uri string, callOpts ...client.CallOption) ([]byte, bool, error) {
 	m.ctrl.T.Helper()

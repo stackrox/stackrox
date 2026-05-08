@@ -40,7 +40,11 @@ import type { Cluster } from 'types/cluster.proto';
 import type { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
+import {
+    applyRegexSearchModifiers,
+    convertToRestSearch,
+    getHasSearchApplied,
+} from 'utils/searchUtils';
 import {
     clustersBasePath,
     clustersClusterRegistrationSecretsPath,
@@ -100,7 +104,10 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     const [hasFetchedClusters, setHasFetchedClusters] = useState(false);
     const [isLoadingVisible, setIsLoadingVisible] = useState(false);
 
-    const restSearch = useMemo(() => convertToRestSearch(searchFilter ?? {}), [searchFilter]);
+    const restSearch = useMemo(
+        () => convertToRestSearch(applyRegexSearchModifiers(searchFilter ?? {})),
+        [searchFilter]
+    );
 
     const [currentClusters, setCurrentClusters] = useState<Cluster[]>([]);
     const [clusterIdToRetentionInfo, setClusterIdToRetentionInfo] =

@@ -26,9 +26,11 @@ type (
 	updateCertificateFunc func(cert *tls.Certificate)
 )
 
-// WatchCertDir starts watching the directory containing certificates
-func WatchCertDir(dir string, loadCert loadCertificateFunc, updateCert updateCertificateFunc, options ...CertWatchOption) {
+// WatchCertDir starts watching the directory containing certificates.
+// The name parameter is used in log messages to identify which certificate is being watched.
+func WatchCertDir(name string, dir string, loadCert loadCertificateFunc, updateCert updateCertificateFunc, options ...CertWatchOption) {
 	wh := &handler{
+		name:       name,
 		dir:        dir,
 		loadCert:   loadCert,
 		updateCert: updateCert,
@@ -43,6 +45,7 @@ func WatchCertDir(dir string, loadCert loadCertificateFunc, updateCert updateCer
 }
 
 type handler struct {
+	name       string
 	dir        string
 	loadCert   loadCertificateFunc
 	updateCert updateCertificateFunc
@@ -56,14 +59,14 @@ func (h *handler) OnChange(dir string) (interface{}, error) {
 func (h *handler) OnStableUpdate(val interface{}, err error) {
 	var cert *tls.Certificate
 	if err != nil {
-		log.Errorf("Error reading TLS certificates: %v. Disabling TLS certificate. Watch dir: %q", err, h.dir)
+		log.Errorf("Error reading %s certificate: %v. Watch dir: %q", h.name, err, h.dir)
 	} else {
 		cert, _ = val.(*tls.Certificate)
 		if cert == nil {
-			log.Infof("No TLS certificate found. Using internal certificates for HTTPS. Watch dir: %q", h.dir)
+			log.Infof("No %s certificate found in %q", h.name, h.dir)
 		} else {
-			log.Infof("TLS certificate loaded, using the following cert for HTTPS: (SerialNumber: %s, Subject: %s, DNSNames: %s, Issuer: %s), watch dir: %q",
-				cert.Leaf.SerialNumber, cert.Leaf.Subject, cert.Leaf.DNSNames, cert.Leaf.Issuer, h.dir)
+			log.Infof("%s certificate loaded (SerialNumber: %s, Subject: %s, DNSNames: %s, Issuer: %s), watch dir: %q",
+				h.name, cert.Leaf.SerialNumber, cert.Leaf.Subject, cert.Leaf.DNSNames, cert.Leaf.Issuer, h.dir)
 
 			parsedChain, err := x509utils.ParseCertificateChain(cert.Certificate)
 			if err != nil {
@@ -83,5 +86,5 @@ func (h *handler) OnStableUpdate(val interface{}, err error) {
 }
 
 func (h *handler) OnWatchError(err error) {
-	log.Errorf("Error watching TLS certificate directory %q: %v. Not updating TLS certificates!", h.dir, err)
+	log.Errorf("Error watching %s certificate directory %q: %v", h.name, h.dir, err)
 }

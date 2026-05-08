@@ -7,10 +7,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/registry"
@@ -483,6 +485,97 @@ func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
 				messageReceived.Wait()
 			})
 		}
+	}
+}
+
+func (s *resolverSuite) Test_Send_SkipDedupingBehavior() {
+	cases := map[string]struct {
+		skipDeduping  bool
+		expectedSends int
+	}{
+		"resolves inline producing a single Send": {
+			skipDeduping:  true,
+			expectedSends: 1,
+		},
+		"routes through queue producing two Sends": {
+			skipDeduping:  false,
+			expectedSends: 2,
+		},
+	}
+
+	for name, tc := range cases {
+		for _, pubSubEnabled := range []bool{true, false} {
+			s.Run(fmt.Sprintf("%s with %s %t", name, features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
+				s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
+				resolver := s.newResolver(pubSubEnabled)
+				err := resolver.Start()
+				s.NoError(err)
+
+				messageReceived := sync.WaitGroup{}
+				messageReceived.Add(tc.expectedSends)
+
+				s.givenPermissionLevelForDeployment("1234", storage.PermissionLevel_NONE)
+
+				s.mockOutput.EXPECT().Send(&deploymentMatcher{
+					id:                           "1234",
+					permissionLevel:              storage.PermissionLevel_NONE,
+					acceptableNumberOfMismatches: tc.expectedSends - 1,
+				}).Times(tc.expectedSends).Do(func(arg0 interface{}) {
+					defer messageReceived.Done()
+				})
+
+				event := &component.ResourceEvent{
+					DeploymentReferences: []component.DeploymentReference{
+						{
+							Reference:            resolverStore.ResolveDeploymentIds("1234"),
+							ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
+							SkipDeduping:         tc.skipDeduping,
+						},
+					},
+				}
+				s.dispatchEvent(event, resolver, pubSubEnabled)
+
+				messageReceived.Wait()
+			})
+		}
+	}
+}
+
+func (s *resolverSuite) Test_ToEvent_InitContainerFiltering() {
+	cases := map[string]struct {
+		caps               []centralsensor.CentralCapability
+		expectedContainers []string
+	}{
+		"filters init containers when Central lacks capability": {
+			caps:               []centralsensor.CentralCapability{},
+			expectedContainers: []string{"main-app"},
+		},
+		"includes init containers when Central has capability": {
+			caps:               []centralsensor.CentralCapability{centralsensor.InitContainerSupport},
+			expectedContainers: []string{"init-setup", "main-app"},
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			centralcaps.Set(tc.caps)
+			s.T().Cleanup(func() { centralcaps.Set(nil) })
+
+			deployment := &storage.Deployment{
+				Id: "test-deploy",
+				Containers: []*storage.Container{
+					{Name: "init-setup", Type: storage.ContainerType_INIT},
+					{Name: "main-app", Type: storage.ContainerType_REGULAR},
+				},
+			}
+
+			event := toEvent(central.ResourceAction_CREATE_RESOURCE, deployment, nil)
+			dep := event.GetDeployment()
+			s.Require().Len(dep.GetContainers(), len(tc.expectedContainers))
+			for i, name := range tc.expectedContainers {
+				s.Assert().Equal(name, dep.GetContainers()[i].GetName())
+			}
+		})
 	}
 }
 

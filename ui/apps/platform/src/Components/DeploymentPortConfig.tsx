@@ -33,7 +33,6 @@ function DeploymentPortConfig({ port }: DeploymentPortConfigProps) {
             toggleText={toggleText}
             onToggle={(_event, _isExpanded: boolean) => onToggle(_isExpanded)}
             isExpanded={isExpanded}
-            displaySize="lg"
             isWidthLimited
         >
             <Stack hasGutter>

@@ -3,10 +3,10 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"regexp"
 
 	"github.com/quay/claircore"
-	"github.com/quay/zlog"
 )
 
 // rhelCPE represents the expected pattern to identify a CPE which indicates a RHEL major version.
@@ -17,7 +17,6 @@ var rhelCPE = regexp.MustCompile(`^cpe:2\.3:o:redhat:enterprise_linux:(\d+)(?:\.
 //
 // A distribution is considered known if there exists at least one row in the vuln table which references it.
 func (m *matcherStore) Distributions(ctx context.Context) ([]claircore.Distribution, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/distributions/Distributions")
 
 	// As of ClairCore v1.5.29, all distributions may be identified by dist_id, dist_version_id, and dist_version except for RHEL.
 	// As of this version of ClairCore, RHEL vulnerabilities are not associated with a specific RHEL version, but rather just the CPE(s).
@@ -50,7 +49,7 @@ func (m *matcherStore) Distributions(ctx context.Context) ([]claircore.Distribut
 		if repoName != "" {
 			dist, err = rhelDist(repoName)
 			if err != nil {
-				zlog.Warn(ctx).Err(err).Msg("failed to parse repo_name; skipping...")
+				slog.WarnContext(ctx, "failed to parse repo_name; skipping...", "reason", err)
 				continue
 			}
 		}

@@ -3,10 +3,10 @@ package postgres
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/quay/zlog"
 )
 
 // GetLastVulnerabilityUpdate implements MatcherMetadataStore.GetLastVulnerabilityUpdate.
@@ -85,7 +85,6 @@ func (m *matcherMetadataStore) GetOrSetLastVulnerabilityUpdate(ctx context.Conte
 // Removes all entries for inactive vulnerability bundles that are older than the
 // last know update.
 func (m *matcherMetadataStore) GCVulnerabilityUpdates(ctx context.Context, activeUpdaters []string, lastUpdate time.Time) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/matcherMetadataStore.GCVulnerabilityUpdates")
 	const deleteUnknownAndInactive = `
 		DELETE FROM last_vuln_update
 		WHERE NOT key = ANY($1) AND update_timestamp < $2
@@ -100,16 +99,16 @@ func (m *matcherMetadataStore) GCVulnerabilityUpdates(ctx context.Context, activ
 		var deletedRow string
 		err := rows.Scan(&deletedRow)
 		if err != nil {
-			zlog.Warn(ctx).Err(err).Msg("scanning deleted row")
+			slog.WarnContext(ctx, "scanning deleted row", "reason", err)
 			continue
 		}
 		deletedRows = append(deletedRows, deletedRow)
 	}
 	if err := rows.Err(); err != nil {
-		zlog.Warn(ctx).Err(err).Msg("reading deleted rows")
+		slog.WarnContext(ctx, "reading deleted rows", "reason", err)
 	}
 	if len(deletedRows) > 0 {
-		zlog.Info(ctx).Strs("deleted_bundles", deletedRows).Msg("deleted inactive vulnerability bundle(s)")
+		slog.InfoContext(ctx, "deleted inactive vulnerability bundle(s)", "deleted_bundles", deletedRows)
 	}
 	return nil
 }

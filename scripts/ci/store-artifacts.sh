@@ -105,6 +105,10 @@ set_gs_path_vars() {
         WORKFLOW_SUBDIR="${repo}/${workflow_id}"
         JOB_SUBDIR="${BUILD_ID}-${JOB_NAME}"
         GS_JOB_URL="${GS_URL}/${WORKFLOW_SUBDIR}/${JOB_SUBDIR}"
+    elif is_GITHUB_ACTIONS; then
+        WORKFLOW_SUBDIR="${GITHUB_REPOSITORY}/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+        JOB_SUBDIR="${GITHUB_JOB}"
+        GS_JOB_URL="${GS_URL}/${WORKFLOW_SUBDIR}/${JOB_SUBDIR}"
     else
         die "Support is missing for this CI environment"
     fi
@@ -140,52 +144,92 @@ make_artifacts_help() {
     if is_OPENSHIFT_CI; then
         require_environment "ARTIFACT_DIR"
         help_file="$ARTIFACT_DIR/howto-locate-other-artifacts-summary.html"
+
+        cat > "$help_file" <<- EOH
+            <html>
+            <head>
+            <title>Additional StackRox e2e artifacts</title>
+            <style>
+              body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
+              a { color: #ff8caa }
+              a:visited { color: #ff8caa }
+            </style>
+            </head>
+            <body>
+
+            Additional StackRox e2e artifacts are stored in a GCS bucket (<code>$GS_URL</code>) by the
+            <code>store_artifacts</code> bash function.<br>
+
+            There are at least two options for access:
+
+            <h2>Option 1: gcloud storage cp</h2>
+
+            Copy all artifacts for the build/job:
+            <pre>gcloud storage cp -r $gs_job_url .</pre>
+
+            or copy all artifacts for the entire workflow:
+            <pre>gcloud storage cp -r $gs_workflow_url .</pre>
+
+            Then browse files locally.
+
+            <h2>Option 2: Browse using the Google cloud UI</h2>
+
+            <p>Make sure to use the URL where <code>authuser</code> corresponds to your @redhat.com account.<br>
+            You can check this by clicking on the user avatar in the top right corner of Google Cloud Console page
+            after following the link.</p>
+
+            <a target="_blank" href="$browser_job_url?authuser=0">authuser=0</a><br>
+            <a target="_blank" href="$browser_job_url?authuser=1">authuser=1</a><br>
+            <a target="_blank" href="$browser_job_url?authuser=2">authuser=2</a><br>
+
+            <br><br>
+
+            </body>
+            </html>
+EOH
+    elif is_GITHUB_ACTIONS; then
+        (
+            export GS_URL
+            export gs_job_url
+            export gs_workflow_url
+            export browser_job_url
+            echo '
+# Additional StackRox e2e artifacts
+
+Additional StackRox e2e artifacts are stored in a GCS bucket (`$GS_URL`) by the
+`store_artifacts` bash function.
+
+There are at least two options for access:
+
+## Option 1: gcloud storage cp
+
+Copy all artifacts for the build/job:
+```bash
+gcloud storage cp -r $gs_job_url .
+```
+
+or copy all artifacts for the entire workflow:
+```bash
+gcloud storage cp -r $gs_workflow_url .
+```
+
+Then browse files locally.
+
+## Option 2: Browse using the Google cloud UI
+
+Make sure to use the URL where `authuser` corresponds to your @redhat.com account.
+
+You can check this by clicking on the user avatar in the top right corner of Google Cloud Console page
+after following the link.
+
+* [authuser=0](${browser_job_url}?authuser=0)
+* [authuser=1](${browser_job_url}?authuser=1)
+* [authuser=2](${browser_job_url}?authuser=2)
+            ' | envsubst | tee -a "${GITHUB_STEP_SUMMARY}"
+        )
     else
         die "This is an unsupported environment"
     fi
-
-    cat > "$help_file" <<- EOH
-        <html>
-        <head>
-        <title>Additional StackRox e2e artifacts</title>
-        <style>
-          body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
-          a { color: #ff8caa }
-          a:visited { color: #ff8caa }
-        </style>
-        </head>
-        <body>
-
-        Additional StackRox e2e artifacts are stored in a GCS bucket (<code>$GS_URL</code>) by the
-        <code>store_artifacts</code> bash function.<br>
-
-        There are at least two options for access:
-
-        <h2>Option 1: gcloud storage cp</h2>
-
-        Copy all artifacts for the build/job:
-        <pre>gcloud storage cp -r $gs_job_url .</pre>
-
-        or copy all artifacts for the entire workflow:
-        <pre>gcloud storage cp -r $gs_workflow_url .</pre>
-
-        Then browse files locally.
-
-        <h2>Option 2: Browse using the Google cloud UI</h2>
-
-        <p>Make sure to use the URL where <code>authuser</code> corresponds to your @redhat.com account.<br>
-        You can check this by clicking on the user avatar in the top right corner of Google Cloud Console page
-        after following the link.</p>
-
-        <a target="_blank" href="$browser_job_url?authuser=0">authuser=0</a><br>
-        <a target="_blank" href="$browser_job_url?authuser=1">authuser=1</a><br>
-        <a target="_blank" href="$browser_job_url?authuser=2">authuser=2</a><br>
-
-        <br><br>
-
-        </body>
-        </html>
-EOH
 
     info "Artifacts are stored in a GCS bucket ($GS_URL)"
 }

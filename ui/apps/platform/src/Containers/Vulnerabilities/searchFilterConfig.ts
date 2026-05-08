@@ -1,8 +1,11 @@
 /*
  * Search filter configurations for vulnerability views.
  *
- * If you add a new filter config that should be available in view-based reports,
- * add it to the configForViewBasedReport array at the bottom of this file.
+ * If you add a new filter config that should be available in any of the following
+ * scheduled reports
+ * view-based reports
+ * workload vulnerability results
+ * add it to either searchFilterConfigForWhatever array near the end of this file.
  */
 
 import type {
@@ -225,20 +228,25 @@ export const attributeForSeverityInBackendAndViewBasedReport: SelectSearchFilter
     },
 };
 
-// This array includes filter configs that are relevant to view-based reports.
-// Only add configs here if they should be available as filters in vulnerability reports.
-export const configForViewBasedReport = [
+// Scheduled report has resources instead of cluster, deployment, namespace.
+export const searchFilterConfigForImageVulnerabilityReport = [
     imageCVESearchFilterConfig,
     imageSearchFilterConfig,
     imageComponentSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    namespaceSearchFilterConfig,
+];
+
+export const searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport = [
     clusterSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    deploymentSearchFilterConfig,
+    imageSearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    namespaceSearchFilterConfig,
 ];
 
 export const attributeForPlatformComponent: SelectSearchFilterAttribute = {
-    displayName: 'View context', // corresponds to horizontal navigation
-    filterChipLabel: 'View context',
+    displayName: 'Area of concern', // corresponds to horizontal navigation
+    filterChipLabel: 'Area of concern',
     searchTerm: 'Platform Component',
     inputType: 'select',
     inputProps: {
@@ -264,9 +272,10 @@ export const attributeForVulnerabilityState: SelectSearchFilterAttribute = {
     },
 };
 
-export const attributesSeparateFromConfigForViewBasedReport = [
+// For scheduled and view-based report.
+export const attributesSeparateFromConfigForImageVulnerabilityReport = [
     attributeForPlatformComponent,
-    attributeForFixableInBackendAndViewBasedReport,
     attributeForVulnerabilityState,
     attributeForSeverityInBackendAndViewBasedReport, // Formerly under Vulnerability parameters
+    attributeForFixableInBackendAndViewBasedReport,
 ];

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -20,7 +21,7 @@ import (
 	"github.com/facebookincubator/nvdtools/cveapi/nvd/schema"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/toolkit/log"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/nvd"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -79,7 +80,6 @@ func NewFactory() driver.UpdaterSetFactory {
 
 // Configure implements driver.Configurable.
 func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/nvd/Enricher/Configure")
 	var cfg Config
 	e.c = c
 	if err := f(&cfg); err != nil {
@@ -96,9 +96,7 @@ func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c 
 			return fmt.Errorf("feed file is not a regular file: %s", *cfg.FeedPath)
 		}
 		e.feedPath = *cfg.FeedPath
-		zlog.Info(ctx).
-			Str("feed_path", e.feedPath).
-			Msg("enricher configured with feed path")
+		slog.InfoContext(ctx, "enricher configured with feed path", "feed_path", e.feedPath)
 		return nil
 	}
 	if cfg.APIKey != nil {
@@ -130,11 +128,7 @@ func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c 
 		e.feed, err = defaultFeed.Parse(".")
 		utils.CrashOnError(err)
 	}
-	zlog.Info(ctx).
-		Str("feed", e.feed.String()).
-		Bool("has_api_key", e.apiKey != "").
-		Dur("call_interval", e.callInterval).
-		Msg("enricher configured")
+	slog.InfoContext(ctx, "enricher configured", "feed", e.feed.String(), "has_api_key", e.apiKey != "", "call_interval", e.callInterval)
 	return nil
 }
 
@@ -145,10 +139,9 @@ func (*Enricher) Name() string {
 
 // FetchEnrichment implements driver.EnrichmentUpdater.
 func (e *Enricher) FetchEnrichment(ctx context.Context, _ driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/nvd/Enricher/FetchEnrichment")
 	// Force a new hint, to signal updaters that this is new data.
 	hint := driver.Fingerprint(uuid.NewV4().String())
-	zlog.Info(ctx).Str("hint", string(hint)).Msg("starting fetch")
+	slog.InfoContext(ctx, "starting fetch", "hint", string(hint))
 	out, err := os.CreateTemp("", "enricher.nvd.")
 	if err != nil {
 		return nil, hint, err
@@ -158,7 +151,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, _ driver.Fingerprint) (i
 	defer func() {
 		if !success {
 			if err := out.Close(); err != nil {
-				zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+				slog.WarnContext(ctx, "unable to close spool", "reason", err)
 			}
 		}
 	}()
@@ -193,7 +186,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, _ driver.Fingerprint) (i
 				for _, vuln := range apiResp.Vulnerabilities {
 					item := filterFields(vuln.CVE)
 					if item == nil {
-						zlog.Warn(ctx).Str("cve", vuln.CVE.ID).Msg("skipping CVE")
+						slog.WarnContext(ctx, "skipping CVE", "cve", vuln.CVE.ID)
 						totalSkippedCVEs++
 						continue
 					}
@@ -211,10 +204,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, _ driver.Fingerprint) (i
 					totalCVEs++
 					cvesFromQuery++
 				}
-				zlog.Info(ctx).
-					Int("count", cvesFromQuery).
-					Int("total", totalCVEs).
-					Msg("loaded vulnerabilities")
+				slog.InfoContext(ctx, "loaded vulnerabilities", "count", cvesFromQuery, "total", totalCVEs)
 				// Rudimentary rate-limiting.
 				time.Sleep(e.callInterval)
 			}
@@ -262,7 +252,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, _ driver.Fingerprint) (i
 			jsonIter(func(vuln *schema.CVEAPIJSON20DefCVEItem) bool {
 				item := filterFields(vuln.CVE)
 				if item == nil {
-					zlog.Warn(ctx).Str("cve", vuln.CVE.ID).Msg("skipping CVE")
+					slog.WarnContext(ctx, "skipping CVE", "cve", vuln.CVE.ID)
 					totalSkippedCVEs++
 					return true
 				}
@@ -288,10 +278,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, _ driver.Fingerprint) (i
 			}
 		}
 	}
-	zlog.Info(ctx).
-		Int("skipped", totalSkippedCVEs).
-		Int("total", totalCVEs).
-		Msg("loaded vulnerabilities")
+	slog.InfoContext(ctx, "loaded vulnerabilities", "skipped", totalSkippedCVEs, "total", totalCVEs)
 	// Reset so clients can read the items.
 	if _, err := out.Seek(0, io.SeekStart); err != nil {
 		return nil, hint, fmt.Errorf("unable to reset item feed: %w", err)
@@ -373,11 +360,9 @@ func (e *Enricher) feedURL(start time.Time, end time.Time, startIdx int) string 
 }
 
 func (e *Enricher) query(ctx context.Context, start, end time.Time, startIdx int) (*schema.CVEAPIJSON20, error) {
-	ctx = zlog.ContextWithValues(ctx, "start_index", strconv.Itoa(startIdx),
-		"start_time", start.String(),
-		"end_time", end.String())
+	ctx = log.With(ctx, "start_index", strconv.Itoa(startIdx), "start_time", start.String(), "end_time", end.String())
 	u := e.feedURL(start, end, startIdx)
-	zlog.Debug(ctx).Str("url", u).Msgf("starting NVD request")
+	slog.DebugContext(ctx, "starting NVD request", "url", u)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating HTTP request: %w", err)
@@ -402,10 +387,7 @@ func (e *Enricher) queryWithBackoff(ctx context.Context, req *http.Request) (api
 				break
 			}
 		}
-		zlog.Warn(ctx).
-			Int("attempt", i).
-			Err(err).
-			Msg("failed query attempt")
+		slog.WarnContext(ctx, "failed query attempt", "attempt", i, "reason", err)
 		// Wait some multiple of 3 seconds before next attempt.
 		time.Sleep(time.Duration(3*i) * time.Second)
 	}
@@ -417,10 +399,7 @@ func (e *Enricher) tryQuery(ctx context.Context, req *http.Request) (*http.Respo
 	if err != nil {
 		return nil, fmt.Errorf("fetching NVD API results: %w", err)
 	}
-	zlog.Debug(ctx).
-		Int("status", resp.StatusCode).
-		Str("nvd_message", req.Header.Get("message")).
-		Msg("NVD response")
+	slog.DebugContext(ctx, "NVD response", "status", resp.StatusCode, "nvd_message", req.Header.Get("message"))
 	if resp.StatusCode != http.StatusOK {
 		_ = resp.Body.Close()
 		return nil, fmt.Errorf("unexpected status code when querying %s: %d", req.URL.String(), resp.StatusCode)
@@ -441,7 +420,6 @@ func parseResponse(resp *http.Response) (*schema.CVEAPIJSON20, error) {
 
 // ParseEnrichment implements driver.EnrichmentUpdater.
 func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.ReadCloser) ([]driver.EnrichmentRecord, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/nvd/Enricher/ParseEnrichment")
 	// Our Fetch method actually has all the smarts w/r/t to constructing the
 	// records, so this is just decoding in a loop.
 	defer func() {
@@ -455,9 +433,7 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.ReadCloser) ([]dri
 		ret = append(ret, driver.EnrichmentRecord{})
 		err = dec.Decode(&ret[len(ret)-1])
 	}
-	zlog.Debug(ctx).
-		Int("count", len(ret)-1).
-		Msg("decoded enrichments")
+	slog.DebugContext(ctx, "decoded enrichments", "count", len(ret)-1)
 	if !errors.Is(err, io.EOF) {
 		return nil, err
 	}
@@ -473,8 +449,6 @@ var cveRegexp = regexp.MustCompile(`(?i:cve)[-_][0-9]{4}[-_][0-9]{4,}`)
 
 // Enrich implements driver.Enricher.
 func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *claircore.VulnerabilityReport) (string, []json.RawMessage, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/nvd/Enricher/Enrich")
-
 	// We return any CVSS blobs for CVEs mentioned in the free-form parts of the
 	// vulnerability.
 	m := make(map[string][]json.RawMessage)
@@ -482,8 +456,7 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 	erCache := make(map[string][]driver.EnrichmentRecord)
 	for id, v := range r.Vulnerabilities {
 		t := make(map[string]struct{})
-		ctx := zlog.ContextWithValues(ctx,
-			"vuln", v.Name)
+		vulnCtx := log.With(ctx, "vuln", v.Name)
 		for _, elem := range []string{
 			v.Description,
 			v.Name,
@@ -500,9 +473,7 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 		for m := range t {
 			ts = append(ts, m)
 		}
-		zlog.Debug(ctx).
-			Strs("cve", ts).
-			Msg("found CVEs")
+		slog.DebugContext(vulnCtx, "found CVEs", "cve", ts)
 
 		slices.Sort(ts)
 		cveKey := strings.Join(ts, "_")
@@ -515,9 +486,7 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 			}
 			erCache[cveKey] = rec
 		}
-		zlog.Debug(ctx).
-			Int("count", len(rec)).
-			Msg("found records")
+		slog.DebugContext(vulnCtx, "found records", "count", len(rec))
 		for _, r := range rec {
 			m[id] = append(m[id], r.Enrichment)
 		}

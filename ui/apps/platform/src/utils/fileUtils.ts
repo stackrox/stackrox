@@ -14,6 +14,9 @@ export function parseAxiosResponseAttachment(response: AxiosResponse): {
 } {
     const matches = filenameRegex.exec(response.headers['content-disposition'] ?? '');
     const filename = matches && matches[1] ? matches[1] : null;
-    const file = new Blob([response.data], { type: response.headers['content-type'] });
+    const contentType = response.headers['content-type'];
+    const file = new Blob([response.data], {
+        type: typeof contentType === 'string' ? contentType : undefined,
+    });
     return { file, filename };
 }

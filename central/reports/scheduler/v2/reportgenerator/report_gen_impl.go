@@ -147,7 +147,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	}
 
 	// Format results into CSV
-	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.GetName(), req.ReportSnapshot)
+	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.GetName())
 	if err != nil {
 		return err
 	}
@@ -527,6 +527,7 @@ func getSelectsWatchedImages() []*v1.QuerySelect {
 	ret := []*v1.QuerySelect{
 		search.NewQuerySelect(search.ImageName).Proto(),
 		search.NewQuerySelect(search.Component).Proto(),
+		search.NewQuerySelect(search.ComponentVersion).Proto(),
 		search.NewQuerySelect(search.CVEID).Proto(),
 		search.NewQuerySelect(search.CVE).Proto(),
 		search.NewQuerySelect(search.Fixable).Proto(),
@@ -546,6 +547,7 @@ func getSelectsDeployedImages() []*v1.QuerySelect {
 	ret := []*v1.QuerySelect{
 		search.NewQuerySelect(search.ImageName).Proto(),
 		search.NewQuerySelect(search.Component).Proto(),
+		search.NewQuerySelect(search.ComponentVersion).Proto(),
 		search.NewQuerySelect(search.CVEID).Proto(),
 		search.NewQuerySelect(search.CVE).Proto(),
 		search.NewQuerySelect(search.Fixable).Proto(),

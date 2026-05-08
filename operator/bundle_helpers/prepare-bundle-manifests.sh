@@ -9,6 +9,6 @@ mkdir -p build/
 rm -rf build/bundle
 cp -a bundle build/
 
-"$(dirname "$0")/patch-csv.py" "$@" \
+"$(dirname "$0")/dispatch.sh" patch-csv "$@" \
     < bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
     > build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml

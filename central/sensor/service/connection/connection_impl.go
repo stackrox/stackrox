@@ -187,7 +187,8 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 		)
 		c.emitRateLimitedAdminEvent(c.clusterID, reason)
 		if vmReport := msg.GetEvent().GetVirtualMachineIndexReport(); vmReport != nil {
-			common.SendSensorACK(ctx, central.SensorACK_NACK, central.SensorACK_VM_INDEX_REPORT, vmReport.GetId(), centralsensor.SensorACKReasonRateLimited, c)
+			resourceID := common.VMIndexACKResourceID(vmReport.GetId(), vmReport.GetIndex().GetVsockCid())
+			common.SendSensorACK(ctx, central.SensorACK_NACK, central.SensorACK_VM_INDEX_REPORT, resourceID, centralsensor.SensorACKReasonRateLimited, c)
 		}
 		return
 	}

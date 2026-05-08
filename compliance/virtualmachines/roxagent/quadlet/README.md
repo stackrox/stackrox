@@ -13,6 +13,7 @@ This deployment uses [Podman Quadlet](https://docs.podman.io/en/latest/markdown/
 | `roxagent.container` | Quadlet container unit that runs roxagent |
 | `roxagent.timer` | Systemd timer that triggers hourly scans |
 | `roxagent-prep.service` | Prepares RPM database for scanning |
+| `roxagent-tmpfiles.conf` | Recreates `/run/lock/roxagent` on boot |
 | `install.sh` | Installation script for local or remote deployment |
 
 ## Prerequisites
@@ -164,6 +165,21 @@ sudo journalctl -u roxagent.service
 2. Check compliance container logs in the collector pod
 3. Verify Sensor can reach Central
 
+### Agent reports lock warning
+
+If logs show `could not acquire lock at /run/lock/roxagent/roxagent.lock`, verify the lock directory exists and is writable:
+
+```bash
+ls -la /run/lock/roxagent/
+sudo mkdir -p /run/lock/roxagent
+```
+
+The install script creates this directory immediately and installs a `tmpfiles.d`
+rule so it is recreated automatically on boot. The prep service also runs
+`mkdir -p /run/lock/roxagent` before every scan as an extra safeguard. If the
+directory was removed manually while the system is running, re-run `install.sh`
+or create it manually.
+
 ## Uninstallation
 
 ```bash
@@ -171,5 +187,6 @@ sudo systemctl disable --now roxagent.timer
 sudo rm /etc/containers/systemd/roxagent.container
 sudo rm /etc/systemd/system/roxagent.timer
 sudo rm /etc/systemd/system/roxagent-prep.service
+sudo rm /etc/tmpfiles.d/roxagent.conf
 sudo systemctl daemon-reload
 ```

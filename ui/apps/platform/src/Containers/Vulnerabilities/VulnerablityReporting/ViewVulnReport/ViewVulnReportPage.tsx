@@ -8,8 +8,8 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
-    Card,
-    CardBody,
+    // Card,
+    // CardBody,
     Divider,
     DropdownItem,
     Flex,
@@ -24,8 +24,8 @@ import {
 
 import { vulnerabilityConfigurationReportsPath } from 'routePaths';
 
-import type { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
-import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
+// import type { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
+// import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -38,17 +38,23 @@ import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
 import type { JobContextTab } from 'Components/ReportJob/types';
 import { ensureJobContextTab } from 'Components/ReportJob/utils';
-import EmailTemplatePreview from '../components/EmailTemplatePreview';
-import ReportParametersDetails from '../components/ReportParametersDetails';
-import ScheduleDetails from '../components/ScheduleDetails';
-import { defaultEmailBody, getDefaultEmailSubject } from '../forms/emailTemplateFormUtils';
+
+import ImageVulnerabilityReportView from '../../ImageVulnerabilityReports/View/ImageVulnerabilityReportView';
+import {
+    attributesSeparateFromConfigForImageVulnerabilityReport,
+    searchFilterConfigForImageVulnerabilityReport,
+} from '../../searchFilterConfig';
+// import EmailTemplatePreview from '../components/EmailTemplatePreview';
+// import ReportParametersDetails from '../components/ReportParametersDetails';
+// import ScheduleDetails from '../components/ScheduleDetails';
+// import { defaultEmailBody, getDefaultEmailSubject } from '../forms/emailTemplateFormUtils';
 import ReportJobs from './ReportJobs';
 import useFetchReport from '../api/useFetchReport';
 import useRunReport from '../api/useRunReport';
 import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
 import useDeleteModal, { isErrorDeleteResult } from '../hooks/useDeleteModal';
 import { vulnerabilityConfigurationReportDetailsPath } from '../pathsForVulnerabilityReporting';
-import { getReportFormValuesFromConfiguration } from '../utils';
+// import { getReportFormValuesFromConfiguration } from '../utils';
 
 export type TabTitleProps = {
     icon?: ReactElement;
@@ -58,7 +64,7 @@ export type TabTitleProps = {
 const configDetailsTabId = 'VulnReportsConfigDetails';
 const allReportJobsTabId = 'VulnReportsConfigReportJobs';
 
-const headingLevel = 'h2';
+// const headingLevel = 'h2';
 
 function ViewVulnReportPage() {
     const navigate = useNavigate();
@@ -126,7 +132,7 @@ function ViewVulnReportPage() {
         reportId: reportConfiguration.id,
     });
 
-    const reportFormValues = getReportFormValuesFromConfiguration(reportConfiguration);
+    // const reportFormValues = getReportFormValuesFromConfiguration(reportConfiguration);
 
     const isReportStatusPending =
         reportSnapshot?.reportStatus.runState === 'PREPARING' ||
@@ -160,7 +166,7 @@ function ViewVulnReportPage() {
             <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilityConfigurationReportsPath}>
-                        Vulnerability reporting
+                        Image vulnerability reports
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{reportConfiguration.name}</BreadcrumbItem>
                 </Breadcrumb>
@@ -258,6 +264,20 @@ function ViewVulnReportPage() {
                 </Tabs>
             </PageSection>
             {selectedTab === 'CONFIGURATION_DETAILS' && (
+                <PageSection isFilled hasOverflowScroll id={configDetailsTabId}>
+                    <ImageVulnerabilityReportView
+                        attributesSeparateFromConfig={
+                            attributesSeparateFromConfigForImageVulnerabilityReport
+                        }
+                        headingLevel="h2"
+                        horizontalTermWidthModifier={{ default: '24ch' }}
+                        values={reportConfiguration}
+                        searchFilterConfig={searchFilterConfigForImageVulnerabilityReport}
+                    />
+                </PageSection>
+            )}
+            {/*
+            {selectedTab === 'CONFIGURATION_DETAILS' && (
                 <PageSection hasBodyWrapper={false} isCenterAligned id={configDetailsTabId}>
                     <Card>
                         <CardBody>
@@ -293,6 +313,7 @@ function ViewVulnReportPage() {
                     </Card>
                 </PageSection>
             )}
+            */}
             {selectedTab === 'ALL_REPORT_JOBS' && (
                 <PageSection id={allReportJobsTabId}>
                     <ReportJobs reportId={reportId} />

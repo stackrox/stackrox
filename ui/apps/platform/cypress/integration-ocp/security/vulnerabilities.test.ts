@@ -18,6 +18,7 @@ describe('Security vulnerabilities page', () => {
     it('should display only the expected table columns for each entity type', () => {
         withOcpAuth();
         visitFromConsoleLeftNavExpandable('Security', 'Vulnerabilities');
+        selectProject('All Projects');
 
         // Check CVE table columns
         const expectedCveTableColumns = [
@@ -59,6 +60,7 @@ describe('Security vulnerabilities page', () => {
     it('should restrict the UI based on the status of the selected project', () => {
         withOcpAuth();
         visitFromConsoleLeftNavExpandable('Security', 'Vulnerabilities');
+        selectProject('All Projects');
 
         // Namespace is available by default when viewing "All projects"
         assertSearchEntities(['CVE', 'Image', 'Image component', 'Deployment', 'Namespace']);
@@ -89,6 +91,7 @@ describe('Security vulnerabilities page', () => {
         }).then(({ waitForRequests }) => {
             withOcpAuth();
             visitFromConsoleLeftNavExpandable('Security', 'Vulnerabilities');
+            selectProject('All Projects');
 
             waitForRequests().then(
                 ([

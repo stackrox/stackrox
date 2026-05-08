@@ -67,11 +67,12 @@ func TestNoVMConversionPanic(t *testing.T) {
 
 func TestToVirtualMachineScan(t *testing.T) {
 	testcases := []struct {
-		name     string
-		contents *v4.Contents
+		name       string
+		contents   *v4.Contents
+		expectedOS string
 	}{
 		{
-			name: "basic",
+			name: "basic without distribution",
 			contents: &v4.Contents{
 				Packages: map[string]*v4.Package{
 					"1": {
@@ -81,9 +82,10 @@ func TestToVirtualMachineScan(t *testing.T) {
 					},
 				},
 			},
+			expectedOS: "unknown",
 		},
 		{
-			name: "deprecated",
+			name: "deprecated without distribution",
 			contents: &v4.Contents{
 				PackagesDEPRECATED: []*v4.Package{
 					{
@@ -93,6 +95,27 @@ func TestToVirtualMachineScan(t *testing.T) {
 					},
 				},
 			},
+			expectedOS: "unknown",
+		},
+		{
+			name: "with single distribution",
+			contents: &v4.Contents{
+				Packages: map[string]*v4.Package{
+					"1": {
+						Id:      "1",
+						Name:    "my-test-package",
+						Version: "1.2.3",
+					},
+				},
+				Distributions: map[string]*v4.Distribution{
+					"rhel-9": {
+						Id:        "rhel-9",
+						Did:       "rhel",
+						VersionId: "9",
+					},
+				},
+			},
+			expectedOS: "rhel:9",
 		},
 	}
 	input := &v4.VulnerabilityReport{
@@ -114,39 +137,37 @@ func TestToVirtualMachineScan(t *testing.T) {
 		},
 	}
 
-	expected := &storage.VirtualMachineScan{
-		Notes: []storage.VirtualMachineScan_Note{
-			storage.VirtualMachineScan_OS_UNKNOWN,
-		},
-		Components: []*storage.EmbeddedVirtualMachineScanComponent{
-			{
-				Name:    "my-test-package",
-				Version: "1.2.3",
-				Vulnerabilities: []*storage.VirtualMachineVulnerability{
-					{
-						CveBaseInfo: &storage.VirtualMachineCVEInfo{
-							Cve: "CVE1-Name",
-						},
-						Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-						SetFixedBy: &storage.VirtualMachineVulnerability_FixedBy{
-							FixedBy: "v99",
-						},
+	expectedComponents := []*storage.EmbeddedVirtualMachineScanComponent{
+		{
+			Name:    "my-test-package",
+			Version: "1.2.3",
+			Vulnerabilities: []*storage.VirtualMachineVulnerability{
+				{
+					CveBaseInfo: &storage.VirtualMachineCVEInfo{
+						Cve: "CVE1-Name",
+					},
+					Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+					SetFixedBy: &storage.VirtualMachineVulnerability_FixedBy{
+						FixedBy: "v99",
 					},
 				},
-				Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
-					storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
-				},
+			},
+			Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
+				storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
 			},
 		},
+	}
+	expectedNotes := []storage.VirtualMachineScan_Note{
+		storage.VirtualMachineScan_OS_UNKNOWN,
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			input.Contents = tc.contents
 			actual := ToVirtualMachineScan(input)
-			protoassert.ElementsMatch(t, expected.GetComponents(), actual.GetComponents())
-			assert.Equal(t, expected.GetOperatingSystem(), actual.GetOperatingSystem())
-			assert.Equal(t, expected.GetNotes(), actual.GetNotes())
+			protoassert.ElementsMatch(t, expectedComponents, actual.GetComponents())
+			assert.Equal(t, tc.expectedOS, actual.GetOperatingSystem())
+			assert.Equal(t, expectedNotes, actual.GetNotes())
 		})
 	}
 }

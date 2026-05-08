@@ -20,10 +20,8 @@ spec:
       labels:
         app: connection-load-{{.Replica}}
     spec:
-      imagePullSecrets:
-      - name: {{.JobName}}-{{.Replica}}
       containers:
-      - image: quay.io/rhacs-eng/qa:berserker-network-1.0-85-g1b7ab034aa
+      - image: quay.io/stackrox-io/berserker:network-1.0-85-g1b7ab034aa
         resources:
           requests:
             memory: "100Mi"

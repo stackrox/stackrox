@@ -14,6 +14,14 @@ type Item[K comparable] interface {
 	GetDedupeKey() K
 }
 
+// Mergeable is an optional interface that queue items can implement to merge
+// state from an existing item when a duplicate key is pushed. If the new item
+// implements Mergeable, MergeFrom is called with the old item before the old
+// item is removed from the queue.
+type Mergeable[K comparable] interface {
+	MergeFrom(old Item[K])
+}
+
 // OptionFunc provides options for the queue.
 type OptionFunc[K comparable] func(*DedupingQueue[K])
 
@@ -125,6 +133,9 @@ func (q *DedupingQueue[K]) Push(item Item[K]) {
 	if oldItem, ok := q.indexer[key]; ok {
 		if q.operationMetric != nil {
 			q.operationMetric(ops.Dedupe, q.name)
+		}
+		if m, ok := item.(Mergeable[K]); ok {
+			m.MergeFrom(oldItem.Value.(Item[K]))
 		}
 		msgInserted = q.queue.InsertBefore(item, oldItem)
 		q.queue.Remove(oldItem)

@@ -131,6 +131,25 @@ jobs:
           condensed="$(jq -c <<< "$matrix")"
           echo "matrix=$condensed" >> "$GITHUB_OUTPUT"
 
+  # Ensures go.mod doesn't require a Go version newer than what Konflux
+  # builders support. Remove once Konflux tracks upstream Go releases:
+  # https://github.com/stackrox/stackrox/pull/19737
+  go-version-ceiling:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+        with:
+          go-version: '1.25.7'
+          cache: false
+
+      - name: Verify go.mod is compatible with Konflux builders
+        run: go mod tidy
+
   pre-build-ui:
     strategy:
       fail-fast: false
@@ -176,7 +195,7 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -258,7 +277,7 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3@sha256:39fd328dcc903b7d8a2f3eb6d9e5ddbf79569227a5667296b4b927f74c11b32a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -590,6 +609,7 @@ jobs:
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-main-image
 
       - name: Check debugger presence in the main image
+        if: github.event_name != 'pull_request'
         run: make check-debugger
 
       - name: Build roxctl image
@@ -1086,6 +1106,7 @@ jobs:
       - build-and-push-main
       - build-and-push-operator
       - build-operator-bundle
+      - go-version-ceiling
       - pre-build-cli
       - pre-build-docs
       - pre-build-go-binaries

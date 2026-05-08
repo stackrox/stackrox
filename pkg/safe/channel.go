@@ -5,51 +5,69 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// Channel provides a thread-safe channel with race-free shutdown semantics.
-// It encapsulates a channel along with synchronization primitives to ensure
-// safe writes and closure even during concurrent shutdown scenarios.
+// Channel provides a thread-safe channel with panic-free shutdown semantics.
+// It encapsulates a channel along with synchronization primitives to prevent
+// panics from sending on a closed channel during concurrent shutdown scenarios.
+// The channel is automatically closed when the waitable is triggered.
+// Write rejection after shutdown is best-effort - writes in progress may succeed.
 type Channel[T any] struct {
 	mu       sync.RWMutex
 	ch       chan T
-	closed   bool
 	waitable concurrency.Waitable
 }
 
 // NewChannel creates a new Channel with the specified buffer size.
-// The waitable parameter is used to coordinate shutdown - writes will fail
-// when the waitable is triggered.
+// The waitable parameter is used to coordinate shutdown - writes will make
+// best-effort to fail when the waitable is triggered, and the channel will be
+// automatically closed. Writes already in progress may complete successfully.
 // Panics if waitable is nil or size is negative.
 func NewChannel[T any](size int, waitable concurrency.Waitable) *Channel[T] {
 	if waitable == nil {
 		panic("waitable must not be nil")
 	}
+	if waitable.Done() == nil {
+		panic("waitable.Done() must not be nil")
+	}
 	if size < 0 {
 		panic("size must not be negative")
 	}
-	return &Channel[T]{
+	c := &Channel[T]{
 		ch:       make(chan T, size),
 		waitable: waitable,
 	}
+
+	// Spawn a goroutine that will close the channel when the waitable is triggered.
+	// The lock ensures all in-flight writes complete before closing.
+	go func() {
+		<-waitable.Done()
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		close(c.ch)
+	}()
+
+	return c
 }
 
 // Write pushes an item to the channel, blocking if the channel is full.
-// This operation is safe to call concurrently with Close.
+// This operation is safe to call concurrently with channel closure (no panics).
 //
-// Returns ErrWaitableTriggered if the waitable is triggered before or during the write.
+// Returns ErrWaitableTriggered if the waitable is triggered before the write starts
+// or while blocked waiting for channel space. Writes already holding the lock when
+// the waitable triggers may complete successfully (best-effort rejection).
 //
 // Thread-safety and double-select pattern:
 //
 // The RLock is required because Write/TryWrite calls may occur in different goroutines
-// from the Close call, and not all Write/TryWrite calls are in the same goroutine either.
+// from the auto-close goroutine, and not all Write/TryWrite calls are in the same goroutine either.
 // RLock is sufficient (rather than full Lock) because writing to a channel is already
-// thread-safe in Go; the lock only coordinates shutdown with Close.
+// thread-safe in Go; the lock only coordinates shutdown with the auto-close goroutine.
 //
 // The double-select pattern prevents panics when writing to a closed channel:
 //
 //  1. Caller A: Write() -> acquires RLock
-//  2. Caller B: Close() -> waits for lock (blocked by A's RLock)
+//  2. Auto-close goroutine: waitable triggers -> waits for lock (blocked by A's RLock)
 //  3. Caller A: Write() ends -> releases RLock
-//  4. Caller B: Close() acquires lock -> closes channel -> releases lock
+//  4. Auto-close goroutine: acquires lock -> closes channel -> releases lock
 //  5. Caller C: Write() -> acquires RLock -> first select detects triggered waitable -> exits early
 //
 // Without the first select (fast-path check), we would proceed to the second select where
@@ -57,7 +75,7 @@ func NewChannel[T any](size int, waitable concurrency.Waitable) *Channel[T] {
 // channel, potentially causing a panic.
 //
 // The second select is needed because if we're blocked waiting to write to a full channel
-// and another caller triggers the waitable, we should immediately stop trying to write and exit.
+// and the waitable is triggered, we should immediately stop trying to write and exit.
 func (s *Channel[T]) Write(item T) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -80,18 +98,18 @@ func (s *Channel[T]) Write(item T) error {
 
 // TryWrite attempts to push an item to the channel without blocking.
 // If the channel is full, it returns ErrChannelFull immediately.
-// This operation is safe to call concurrently with Close.
+// This operation is safe to call concurrently with channel closure (no panics).
 //
 // Returns:
-//   - ErrWaitableTriggered if the waitable is triggered before or during the write
+//   - ErrWaitableTriggered if the waitable is triggered before the write starts (best-effort)
 //   - ErrChannelFull if the channel is full and cannot accept the item
 //
 // Thread-safety and double-select pattern:
 //
 // The RLock is required because Write/TryWrite calls may occur in different goroutines
-// from the Close call, and not all Write/TryWrite calls are in the same goroutine either.
+// from the auto-close goroutine, and not all Write/TryWrite calls are in the same goroutine either.
 // RLock is sufficient (rather than full Lock) because writing to a channel is already
-// thread-safe in Go; the lock only coordinates shutdown with Close.
+// thread-safe in Go; the lock only coordinates shutdown with the auto-close goroutine.
 //
 // The double-select pattern prevents panics when writing to a closed channel:
 // See the Write function documentation for a detailed explanation of the race condition
@@ -132,30 +150,4 @@ func (s *Channel[T]) Len() int {
 // Cap returns the capacity of the channel.
 func (s *Channel[T]) Cap() int {
 	return cap(s.ch)
-}
-
-// Close safely closes the underlying channel.
-// This should be called after the waitable has been triggered.
-// It is safe to call Close multiple times - subsequent calls are no-ops.
-// Panics if called before the waitable has been triggered.
-//
-// Proper shutdown sequence:
-//  1. Signal the waitable
-//  2. Wait for the waitable
-//  3. Call Close()
-func (s *Channel[T]) Close() {
-	// Verify the waitable has been triggered to prevent potential deadlocks
-	select {
-	case <-s.waitable.Done():
-	default:
-		// Waitable not triggered - this violates the contract
-		panic("Close() called before waitable was triggered")
-	}
-
-	concurrency.WithLock(&s.mu, func() {
-		if !s.closed {
-			close(s.ch)
-			s.closed = true
-		}
-	})
 }

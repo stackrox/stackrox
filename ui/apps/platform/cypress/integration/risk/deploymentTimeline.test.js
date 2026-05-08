@@ -9,15 +9,15 @@ import {
     //                             because after the PatternFly 5 upgrade
     //                             the tooltip does not open about 5% of the test runs
     // getFormattedEventTimeById,
+    viewFirstRiskDeployment,
     viewGraph,
-    viewRiskDeploymentByName,
     visitRiskDeployments,
 } from './Risk.helpers';
 import { selectors } from './Risk.selectors';
 
 function openEventTimeline(staticResponseMapForDeploymentEventTimeline) {
-    visitRiskDeployments();
-    viewRiskDeploymentByName('collector');
+    visitRiskDeployments('Platform view');
+    viewFirstRiskDeployment();
     clickTab('Process discovery');
     viewGraph(staticResponseMapForDeploymentEventTimeline);
 }

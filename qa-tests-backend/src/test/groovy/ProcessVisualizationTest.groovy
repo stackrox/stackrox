@@ -23,6 +23,9 @@ class ProcessVisualizationTest extends BaseSpecification {
     // ldconfig process
     static final private String LDCONFIG = "/sbin/ldconfig"
 
+    // processes, originating from this namespace, will not be persisted
+    static final private String NO_PERSISTENCE_NS = "namespace-without-persistence"
+
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                 .setName (NGINXDEPLOYMENT)
@@ -66,6 +69,11 @@ class ProcessVisualizationTest extends BaseSpecification {
                 .setImagePrefetcherAffinity()
                 .setImage ("quay.io/rhacs-eng/qa-multi-arch:ROX4979")
                 .addLabel ("app", "test" ),
+            new Deployment()
+                .setName (NGINXDEPLOYMENT)
+                .setNamespace (NO_PERSISTENCE_NS)
+                .setImage (TEST_IMAGE)
+                .addLabel ( "app", "test" ),
      ]
 
     static final private MAX_SLEEP_TIME = 240000
@@ -333,6 +341,34 @@ class ProcessVisualizationTest extends BaseSpecification {
             ["/usr/bin/grep", "^- /etc/elasticsearch/jvm.options"],
             ["/sbin/ldconfig", "-p"],
         ] | ELASTICDEPLOYMENT
+    }
+
+    @Tag("BAT")
+    @Tag("RUNTIME")
+    def "Verify process visualization on the excluded namespace"()  {
+        when:
+        "Get Process IDs running on deployment without persistence"
+        String uid = DEPLOYMENTS.find { it.namespace == NO_PERSISTENCE_NS }.deploymentUid
+        assert uid != null
+
+        // It's hard to prove we didn't receive a process on purpose, it may
+        // just not arrived yet. Instead wait for maximum allowed time, and
+        // verify afterwards.
+        Set<String> receivedProcessPaths
+        int retries = MAX_SLEEP_TIME / SLEEP_INCREMENT
+        int delaySeconds = SLEEP_INCREMENT / 1000
+        Timer t = new Timer(retries, delaySeconds)
+        while (t.IsValid()) {
+            receivedProcessPaths = ProcessService.getUniqueProcessPaths(uid)
+            if (receivedProcessPaths.size() > 0) {
+                break
+            }
+            log.info "Didn't find all the expected processes, retrying..."
+        }
+
+        then:
+        "Verify no processes in the deployment without persistence"
+        assert receivedProcessPaths.size() == 0
     }
 
     // Returns true if received contains all the (path,UIDGIDSet) pairs found in expected

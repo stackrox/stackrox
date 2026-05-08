@@ -173,7 +173,7 @@ function ImagePage({
     // Create a scoped search filter that includes the image SHA filter plus any applied search filters.
     const imageScopedSearchFilterForReport = {
         ...baseSearchFilter,
-        'Image SHA': [imageId],
+        ...(isNewImageDataModelEnabled ? { 'Image ID': [imageId] } : { 'Image SHA': [imageId] }),
         ...querySearchFilter,
         'Vulnerability State': [vulnerabilityState],
     };

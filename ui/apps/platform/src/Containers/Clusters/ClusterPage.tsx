@@ -225,15 +225,6 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
         });
     }
 
-    /*
-     * Adapt preceding code for labels whose value is not from an input element.
-     */
-    function handleChangeLabels(labels) {
-        setSelectedCluster((oldClusterSettings) => {
-            return { ...oldClusterSettings, labels };
-        });
-    }
-
     function onNext() {
         if (wizardStep === 'FORM') {
             setMessageState(null);
@@ -354,7 +345,6 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                                 handleChangeAdmissionControllerEnforcementBehavior={
                                     onChangeAdmissionControllerEnforcementBehavior
                                 }
-                                handleChangeLabels={handleChangeLabels}
                             />
                         ))}
                     {!isBlocked && wizardStep === 'DEPLOYMENT' && (

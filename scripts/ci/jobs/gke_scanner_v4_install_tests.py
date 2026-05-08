@@ -15,6 +15,7 @@ os.environ["KUBERNETES_PROVIDER"] = "gke"
 os.environ["STORE_METRICS"] = "true"
 os.environ["ROX_BASELINE_GENERATION_DURATION"] = "5m"
 os.environ["ROX_SCANNER_V4"] = "true"
+os.environ["SCANNER_V4_VULN_READINESS"] = "false"
 
 ClusterTestRunner(
     cluster=GKECluster("scanner-v4-install-test", machine_type="e2-standard-8"),

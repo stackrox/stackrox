@@ -8,6 +8,7 @@ import { selectProject } from '../../helpers/ocpConsole';
 function visitImageDetailPage() {
     withOcpAuth();
     visitFromConsoleLeftNavExpandable('Security', 'Vulnerabilities');
+    selectProject('stackrox');
 
     cy.get(vulnerabilitiesSelectors.entityTypeToggleItem('Image')).click();
 
@@ -29,6 +30,7 @@ describe('Security vulnerabilities - Image Detail page', () => {
                 cy.get('button[role="tab"]:contains("Resources")').click();
 
                 // By default, the project filter should be "All projects" which will show the Namespace column
+                selectProject('All Projects');
                 const expectedColumns = ['Name', 'Namespace', 'Created'];
                 assertVisibleTableColumns('table', expectedColumns);
 

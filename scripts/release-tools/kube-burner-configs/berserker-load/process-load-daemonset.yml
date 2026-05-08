@@ -12,13 +12,11 @@ spec:
       labels:
         app: process-load-{{.Replica}}
     spec:
-      imagePullSecrets:
-        - name: {{.JobName}}-{{.Replica}}
       containers:
       - args:
         - sleep
         - infinity
-        image: quay.io/rhacs-eng/qa:berserker-1.0-63-g7b0a20bf5f
+        image: quay.io/stackrox-io/berserker:1.0-86-g3464e60064
         resources:
           requests:
             memory: "10Mi"

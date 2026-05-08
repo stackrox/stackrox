@@ -576,11 +576,14 @@ type VulnerabilityReportFilters struct {
 	//	*VulnerabilityReportFilters_AllVuln
 	//	*VulnerabilityReportFilters_SinceLastSentScheduledReport
 	//	*VulnerabilityReportFilters_SinceStartDate
-	CvesSince              isVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
-	AccessScopeRules       []*SimpleAccessScope_Rules             `protobuf:"bytes,8,rep,name=access_scope_rules,json=accessScopeRules,proto3" json:"access_scope_rules,omitempty"`
-	IncludeNvdCvss         bool                                   `protobuf:"varint,9,opt,name=include_nvd_cvss,json=includeNvdCvss,proto3" json:"include_nvd_cvss,omitempty"`
-	IncludeEpssProbability bool                                   `protobuf:"varint,10,opt,name=include_epss_probability,json=includeEpssProbability,proto3" json:"include_epss_probability,omitempty"`
-	IncludeAdvisory        bool                                   `protobuf:"varint,11,opt,name=include_advisory,json=includeAdvisory,proto3" json:"include_advisory,omitempty"`
+	CvesSince        isVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
+	AccessScopeRules []*SimpleAccessScope_Rules             `protobuf:"bytes,8,rep,name=access_scope_rules,json=accessScopeRules,proto3" json:"access_scope_rules,omitempty"`
+	// Deprecated: Marked as deprecated in storage/report_configuration.proto.
+	IncludeNvdCvss bool `protobuf:"varint,9,opt,name=include_nvd_cvss,json=includeNvdCvss,proto3" json:"include_nvd_cvss,omitempty"`
+	// Deprecated: Marked as deprecated in storage/report_configuration.proto.
+	IncludeEpssProbability bool `protobuf:"varint,10,opt,name=include_epss_probability,json=includeEpssProbability,proto3" json:"include_epss_probability,omitempty"`
+	// Deprecated: Marked as deprecated in storage/report_configuration.proto.
+	IncludeAdvisory bool `protobuf:"varint,11,opt,name=include_advisory,json=includeAdvisory,proto3" json:"include_advisory,omitempty"`
 	// this field stores enhanced filters related to image, cve etc for non collection based scopes
 	Query         string `protobuf:"bytes,12,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -686,6 +689,7 @@ func (x *VulnerabilityReportFilters) GetAccessScopeRules() []*SimpleAccessScope_
 	return nil
 }
 
+// Deprecated: Marked as deprecated in storage/report_configuration.proto.
 func (x *VulnerabilityReportFilters) GetIncludeNvdCvss() bool {
 	if x != nil {
 		return x.IncludeNvdCvss
@@ -693,6 +697,7 @@ func (x *VulnerabilityReportFilters) GetIncludeNvdCvss() bool {
 	return false
 }
 
+// Deprecated: Marked as deprecated in storage/report_configuration.proto.
 func (x *VulnerabilityReportFilters) GetIncludeEpssProbability() bool {
 	if x != nil {
 		return x.IncludeEpssProbability
@@ -700,6 +705,7 @@ func (x *VulnerabilityReportFilters) GetIncludeEpssProbability() bool {
 	return false
 }
 
+// Deprecated: Marked as deprecated in storage/report_configuration.proto.
 func (x *VulnerabilityReportFilters) GetIncludeAdvisory() bool {
 	if x != nil {
 		return x.IncludeAdvisory
@@ -1010,7 +1016,7 @@ const file_storage_report_configuration_proto_rawDesc = "" +
 	"\terror_msg\x18\x03 \x01(\tR\berrorMsg\"%\n" +
 	"\tRunStatus\x12\v\n" +
 	"\aSUCCESS\x10\x00\x12\v\n" +
-	"\aFAILURE\x10\x01\"\xb8\x06\n" +
+	"\aFAILURE\x10\x01\"\xc4\x06\n" +
 	"\x1aVulnerabilityReportFilters\x12N\n" +
 	"\n" +
 	"fixability\x18\x01 \x01(\x0e2..storage.VulnerabilityReportFilters.FixabilityR\n" +
@@ -1024,11 +1030,11 @@ const file_storage_report_configuration_proto_rawDesc = "" +
 	"\ball_vuln\x18\x05 \x01(\bH\x00R\aallVuln\x12H\n" +
 	" since_last_sent_scheduled_report\x18\x06 \x01(\bH\x00R\x1csinceLastSentScheduledReport\x12F\n" +
 	"\x10since_start_date\x18\a \x01(\v2\x1a.google.protobuf.TimestampH\x00R\x0esinceStartDate\x12N\n" +
-	"\x12access_scope_rules\x18\b \x03(\v2 .storage.SimpleAccessScope.RulesR\x10accessScopeRules\x12(\n" +
-	"\x10include_nvd_cvss\x18\t \x01(\bR\x0eincludeNvdCvss\x128\n" +
+	"\x12access_scope_rules\x18\b \x03(\v2 .storage.SimpleAccessScope.RulesR\x10accessScopeRules\x12,\n" +
+	"\x10include_nvd_cvss\x18\t \x01(\bB\x02\x18\x01R\x0eincludeNvdCvss\x12<\n" +
 	"\x18include_epss_probability\x18\n" +
-	" \x01(\bR\x16includeEpssProbability\x12)\n" +
-	"\x10include_advisory\x18\v \x01(\bR\x0fincludeAdvisory\x12\x14\n" +
+	" \x01(\bB\x02\x18\x01R\x16includeEpssProbability\x12-\n" +
+	"\x10include_advisory\x18\v \x01(\bB\x02\x18\x01R\x0fincludeAdvisory\x12\x14\n" +
 	"\x05query\x18\f \x01(\tR\x05query\"4\n" +
 	"\n" +
 	"Fixability\x12\b\n" +

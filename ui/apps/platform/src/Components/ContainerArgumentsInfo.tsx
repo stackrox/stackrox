@@ -1,24 +1,19 @@
-import type { CSSProperties, ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Card, CardBody, CardTitle, EmptyState, List, ListItem } from '@patternfly/react-core';
 
 type ContainerArgumentsInfoProps = {
     args: string[];
 };
 
-const styleConstant = {
-    overflow: 'scroll',
-    '--pf-v6-u-max-height--MaxHeight': '12ch',
-} as CSSProperties;
-
 function ContainerArgumentsInfo({ args }: ContainerArgumentsInfoProps): ReactElement {
     return (
         <Card>
             <CardTitle>Arguments</CardTitle>
             {args.length > 0 ? (
-                <CardBody className="pf-v6-u-pt-lg pf-v6-u-mx-lg pf-v6-u-mb-lg">
-                    <List isPlain className="pf-v6-u-max-height" style={styleConstant}>
+                <CardBody>
+                    <List isPlain>
                         {args.map((arg) => (
-                            <ListItem>--{arg}</ListItem>
+                            <ListItem key={arg}>--{arg}</ListItem>
                         ))}
                     </List>
                 </CardBody>
