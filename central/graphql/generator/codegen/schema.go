@@ -19,7 +19,7 @@ func isListType(p reflect.Type) bool {
 		return false
 	}
 	name := p.Name()
-	if p.Kind() == reflect.Ptr {
+	if p.Kind() == reflect.Pointer {
 		name = p.Elem().Name()
 	}
 	return isProto(p) && len(name) > 4 && name[0:4] == "List"
@@ -100,7 +100,7 @@ func schemaExpand(p reflect.Type) string {
 		if p.Key().Kind() == reflect.String && p.Elem().Kind() == reflect.String {
 			return "[Label!]!"
 		}
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if p == protocompat.TimestampPtrType {
 			return "Time"
 		}

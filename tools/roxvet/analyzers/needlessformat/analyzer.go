@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/tools/roxvet/common"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
-	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/ast/inspector"
 	"golang.org/x/tools/go/types/typeutil"
 )
@@ -77,7 +76,7 @@ func isNeedlessVarArgsCall(fun *types.Func, call *ast.CallExpr) (bool, string, s
 }
 
 func checkCall(pass *analysis.Pass, call *ast.CallExpr) {
-	fun := astutil.Unparen(call.Fun)
+	fun := ast.Unparen(call.Fun)
 
 	if pass.TypesInfo.Types[fun].IsType() || pass.TypesInfo.Types[fun].IsBuiltin() {
 		return // a type conversion, or a builtin (like panic)

@@ -16,11 +16,11 @@ func isProto(p reflect.Type) bool {
 	if p == nil {
 		return false
 	}
-	if p.Kind() == reflect.Ptr {
+	if p.Kind() == reflect.Pointer {
 		return p.Implements(messageType)
 	}
 	if p.Kind() == reflect.Struct {
-		p = reflect.PtrTo(p)
+		p = reflect.PointerTo(p)
 		return p.Implements(messageType)
 	}
 	return false

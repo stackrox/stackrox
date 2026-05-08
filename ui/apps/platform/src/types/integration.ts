@@ -8,6 +8,7 @@ export const integrationSources = [
     'backups',
     'cloudSources',
     'authProviders',
+    'apiClients',
 ] as const;
 
 export type IntegrationSource = (typeof integrationSources)[number];

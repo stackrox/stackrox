@@ -106,7 +106,7 @@ func JSONFieldsFilter(field reflect.StructField, _ []reflect.StructField) bool {
 // The field filter, if non-nil, causes pruning at selected (sub-)fields.
 func FullInit(val interface{}, init BasicTypeInitializer, fieldFilter FieldFilter) error {
 	rval := reflect.ValueOf(val)
-	if rval.Kind() != reflect.Ptr || rval.IsNil() {
+	if rval.Kind() != reflect.Pointer || rval.IsNil() {
 		return errors.New("argument to FullInit must be a non-nil pointer")
 	}
 	fullInitRecursive(rval.Elem(), init, fieldFilter, nil, make(map[reflect.Type]struct{}))
@@ -118,7 +118,7 @@ func fullInitRecursive(val reflect.Value, init BasicTypeInitializer, fieldFilter
 	case reflect.Func, reflect.Interface, reflect.Uintptr, reflect.UnsafePointer, reflect.Invalid:
 		// nothing we can do here
 
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if _, ok := seenTypes[val.Type().Elem()]; !ok {
 			if val.Type() == types.TimestampPtrType {
 				initTime(val, init)
