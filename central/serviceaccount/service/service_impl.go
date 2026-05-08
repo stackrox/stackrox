@@ -128,13 +128,13 @@ func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQ
 }
 
 func (s *serviceImpl) getDeploymentRelationships(ctx context.Context, sa *storage.ServiceAccount) []*v1.SADeploymentRelationship {
-	psr := search.NewQueryBuilder().
+	baseQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, sa.GetClusterId()).
 		AddExactMatches(search.Namespace, sa.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, sa.GetName()).
 		ProtoQuery()
 
-	deploymentResults, err := s.deployments.SearchListDeployments(ctx, psr)
+	deploymentResults, err := s.deployments.SearchListDeployments(ctx, baseQuery)
 	if err != nil {
 		return nil
 	}

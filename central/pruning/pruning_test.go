@@ -242,7 +242,7 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 	mockBaselineDataStore := processBaselineDatastoreMocks.NewMockDataStore(ctrl)
 
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(ctrl)
-	mockConfigDatastore.EXPECT().GetPrivateConfig(ctx).Return(testConfig.GetPrivateConfig(), nil)
+	mockConfigDatastore.EXPECT().GetPrivateConfig(ctx).Return(testConfig.GetPrivateConfig(), nil).AnyTimes()
 
 	mockAlertDatastore := alertDatastoreMocks.NewMockDataStore(ctrl)
 
@@ -325,7 +325,7 @@ func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (ale
 	mockImageDatastore := imageDatastoreMocks.NewMockDataStore(ctrl)
 	mockImageV2Datastore := imageV2DatastoreMocks.NewMockDataStore(ctrl)
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(ctrl)
-	mockConfigDatastore.EXPECT().GetPrivateConfig(ctx).Return(testConfig.GetPrivateConfig(), nil)
+	mockConfigDatastore.EXPECT().GetPrivateConfig(ctx).Return(testConfig.GetPrivateConfig(), nil).AnyTimes()
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 
@@ -1574,6 +1574,101 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 	}
 }
 
+func (s *PruningTestSuite) TestRemoveOrphanedPLOPsSoftDeletedDeployment() {
+	plopID1 := uuid.NewV4().String()
+
+	db := pgtest.ForT(s.T())
+	plopDBstore := plopStore.NewFullStore(db)
+	plopDS := plopDatastore.GetTestPostgresDataStore(s.T(), db)
+	gci := &garbageCollectorImpl{
+		postgres: db,
+		plops:    plopDS,
+	}
+	prunedPLOPsWithoutPodUIDs = false
+
+	// Create a soft-deleted deployment. PLOPs referencing it should be pruned.
+	deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(s.T(), db.DB)
+	s.Require().NoError(err)
+	s.Require().NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{
+		Id:        fixtureconsts.Deployment1,
+		ClusterId: fixtureconsts.Cluster1,
+		State:     storage.DeploymentState_DEPLOYMENT_STATE_DELETED,
+		Deleted:   protocompat.TimestampNow(),
+	}))
+
+	podDS := podDatastore.GetTestPostgresDataStore(s.T(), db.DB)
+	s.Require().NoError(podDS.UpsertPod(s.ctx, &storage.Pod{Id: fixtureconsts.PodUID1, ClusterId: fixtureconsts.Cluster1}))
+
+	plop := &storage.ProcessListeningOnPortStorage{
+		Id:                 plopID1,
+		Port:               1234,
+		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
+		Closed:             false,
+		Process: &storage.ProcessIndicatorUniqueKey{
+			PodId:               fixtureconsts.PodUID1,
+			ContainerName:       "test_container1",
+			ProcessName:         "test_process1",
+			ProcessArgs:         "test_arguments1",
+			ProcessExecFilePath: "test_path1",
+		},
+		DeploymentId: fixtureconsts.Deployment1,
+		PodUid:       fixtureconsts.PodUID1,
+	}
+
+	err = plopDBstore.UpsertMany(pruningCtx, []*storage.ProcessListeningOnPortStorage{plop})
+	s.Require().NoError(err)
+
+	plopIDs, err := plopDBstore.GetIDs(pruningCtx)
+	s.Require().NoError(err)
+	s.Require().Contains(plopIDs, plopID1)
+
+	gci.removeOrphanedPLOPs()
+
+	// The PLOP should be removed because the deployment is soft-deleted.
+	plopIDs, err = plopDBstore.GetIDs(pruningCtx)
+	s.Require().NoError(err)
+	s.Require().NotContains(plopIDs, plopID1)
+}
+
+func (s *PruningTestSuite) TestMarkOrphanedAlertsSoftDeletedDeployment() {
+	db := pgtest.ForT(s.T())
+	alertMock := alertDatastoreMocks.NewMockDataStore(gomock.NewController(s.T()))
+	gci := &garbageCollectorImpl{
+		postgres: db.DB,
+		alerts:   alertMock,
+	}
+
+	actualAlertsDS := alertDatastore.GetTestPostgresDataStore(s.T(), db.DB)
+	deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(s.T(), db.DB)
+	s.Require().NoError(err)
+
+	// Create a soft-deleted deployment.
+	s.Require().NoError(deploymentDS.UpsertDeployment(pruningCtx, &storage.Deployment{
+		Id:      fixtureconsts.Deployment1,
+		State:   storage.DeploymentState_DEPLOYMENT_STATE_DELETED,
+		Deleted: protocompat.TimestampNow(),
+	}))
+
+	// Insert an old alert referencing the soft-deleted deployment.
+	alertID := fixtureconsts.Alert1
+	s.Require().NoError(actualAlertsDS.UpsertAlert(pruningCtx, &storage.Alert{
+		Id:             alertID,
+		LifecycleStage: storage.LifecycleStage_DEPLOY,
+		State:          storage.ViolationState_ACTIVE,
+		Time:           protoconv.ConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
+		Entity: &storage.Alert_Deployment_{
+			Deployment: &storage.Alert_Deployment{
+				Id: fixtureconsts.Deployment1,
+			},
+		},
+	}))
+
+	// The alert should be resolved because the deployment is soft-deleted.
+	alertMock.EXPECT().MarkAlertsResolvedBatch(pruningCtx, alertID)
+	gci.markOrphanedAlertsAsResolved()
+}
+
 func (s *PruningTestSuite) TestMarkOrphanedAlerts() {
 	cases := []struct {
 		name              string
@@ -1672,7 +1767,11 @@ func (s *PruningTestSuite) TestMarkOrphanedAlerts() {
 					State: la.GetState(),
 				}))
 			}
-			alerts.EXPECT().MarkAlertsResolvedBatch(pruningCtx, c.expectedDeletions)
+			expectedArgs := make([]any, len(c.expectedDeletions))
+			for i, id := range c.expectedDeletions {
+				expectedArgs[i] = id
+			}
+			alerts.EXPECT().MarkAlertsResolvedBatch(pruningCtx, expectedArgs...)
 			gci.markOrphanedAlertsAsResolved()
 		})
 	}
@@ -2737,4 +2836,127 @@ func resourceWithAccess(access storage.Access, resource permissions.ResourceMeta
 		Access:   access,
 		Resource: resource,
 	}
+}
+
+const (
+	testResourceRetention = 1
+)
+
+func newDeletedDeployment(id string, daysOld int) *storage.Deployment {
+	return &storage.Deployment{
+		Id:      id,
+		State:   storage.DeploymentState_DEPLOYMENT_STATE_DELETED,
+		Deleted: protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * time.Duration(daysOld) * time.Hour)),
+	}
+}
+
+func newActiveDeployment(id string) *storage.Deployment {
+	return &storage.Deployment{
+		Id:    id,
+		State: storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE,
+	}
+}
+
+func (s *PruningTestSuite) TestCollectDeletedDeployments() {
+	cases := map[string]struct {
+		deployments    []*storage.Deployment
+		expectedDeploy []string
+	}{
+		"expired deleted deployment is pruned": {
+			deployments: []*storage.Deployment{
+				newDeletedDeployment(fixtureconsts.Deployment1, testResourceRetention+1),
+			},
+			expectedDeploy: []string{},
+		},
+		"recently deleted deployment is preserved": {
+			deployments: []*storage.Deployment{
+				newDeletedDeployment(fixtureconsts.Deployment1, 0),
+			},
+			expectedDeploy: []string{fixtureconsts.Deployment1},
+		},
+		"active deployment is unaffected": {
+			deployments: []*storage.Deployment{
+				newActiveDeployment(fixtureconsts.Deployment1),
+			},
+			expectedDeploy: []string{fixtureconsts.Deployment1},
+		},
+		"mix of active and expired deleted deployments": {
+			deployments: []*storage.Deployment{
+				newActiveDeployment(fixtureconsts.Deployment1),
+				newDeletedDeployment(fixtureconsts.Deployment2, testResourceRetention+1),
+				newDeletedDeployment(fixtureconsts.Deployment3, 0),
+			},
+			expectedDeploy: []string{fixtureconsts.Deployment1, fixtureconsts.Deployment3},
+		},
+	}
+
+	ctx := sac.WithAllAccess(context.Background())
+
+	for name, c := range cases {
+		s.T().Run(name, func(t *testing.T) {
+			// Clean up deployments from previous subtests.
+			_, err := s.pool.Exec(ctx, "TRUNCATE deployments CASCADE")
+			require.NoError(t, err)
+
+			_, config, _, _, deployments, _ := s.generateImageDataStructures(ctx)
+
+			gc := newGarbageCollector(nil, nil, nil, nil, nil, deployments, nil,
+				nil, nil, nil, config, nil,
+				nil, nil, nil, nil, nil, nil, nil,
+				nil, nil, nil).(*garbageCollectorImpl)
+
+			// Upsert deployments.
+			for _, d := range c.deployments {
+				require.NoError(t, deployments.UpsertDeployment(ctx, d))
+			}
+
+			privateConfig := &storage.PrivateConfig{
+				ResourceRetentionConfig: &storage.ResourceRetentionConfig{
+					DeploymentDurationDays: testResourceRetention,
+				},
+			}
+			gc.collectDeletedDeployments(privateConfig)
+
+			// Verify remaining deployments.
+			remainingDeploys, err := deployments.Search(ctx, search.EmptyQuery())
+			require.NoError(t, err)
+			var deployIDs []string
+			for _, r := range remainingDeploys {
+				deployIDs = append(deployIDs, r.ID)
+			}
+			assert.ElementsMatch(t, c.expectedDeploy, deployIDs)
+		})
+	}
+}
+
+func (s *PruningTestSuite) TestCollectDeletedDeploymentsDisabled() {
+	ctx := sac.WithAllAccess(context.Background())
+	// Clean up deployments from previous tests.
+	_, err := s.pool.Exec(ctx, "TRUNCATE deployments CASCADE")
+	require.NoError(s.T(), err)
+
+	_, config, images, imagesV2, deployments, _ := s.generateImageDataStructures(ctx)
+	nodes := s.generateNodeDataStructures()
+
+	gc := newGarbageCollector(nil, nodes, images, imagesV2, nil, deployments, nil,
+		nil, nil, nil, config, nil,
+		nil, nil, nil, nil, nil, nil, nil,
+		nil, nil, nil).(*garbageCollectorImpl)
+
+	// Create an expired deleted deployment.
+	d := newDeletedDeployment(fixtureconsts.Deployment1, testResourceRetention+1)
+	require.NoError(s.T(), deployments.UpsertDeployment(ctx, d))
+
+	// Run with retention disabled (0 days).
+	privateConfig := &storage.PrivateConfig{
+		ResourceRetentionConfig: &storage.ResourceRetentionConfig{
+			DeploymentDurationDays: 0,
+		},
+	}
+	gc.collectDeletedDeployments(privateConfig)
+
+	// Verify the deployment was NOT pruned.
+	remaining, err := deployments.Search(ctx, search.EmptyQuery())
+	require.NoError(s.T(), err)
+	assert.Len(s.T(), remaining, 1)
 }

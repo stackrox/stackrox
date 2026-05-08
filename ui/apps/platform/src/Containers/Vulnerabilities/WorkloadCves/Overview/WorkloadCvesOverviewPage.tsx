@@ -38,7 +38,12 @@ import type { VulnerabilityState } from 'types/cve.proto';
 
 import { searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport } from '../../searchFilterConfig';
 import { isVulnMgmtLocalStorage, workloadEntityTabValues } from '../../types';
-import type { DefaultFilters, VulnMgmtLocalStorage, WorkloadEntityTab } from '../../types';
+import type {
+    DefaultFilters,
+    QuerySearchFilter,
+    VulnMgmtLocalStorage,
+    WorkloadEntityTab,
+} from '../../types';
 import {
     getNamespaceViewPagePath,
     getRegexScopedQueryString,
@@ -108,6 +113,39 @@ const descriptionForVulnerabilityStateMap: Record<VulnerabilityState, string> = 
         'View workload vulnerabilities identified as false positives and excluded from active prioritization',
 };
 
+/**
+ * Merges a base (page-scope) filter with a user-applied filter. For keys that
+ * exist in both, user values are intersected with the base values so the user
+ * can narrow within the page scope but not escape it.
+ *
+ * Returns a `hasEmptyIntersection` flag when the user selected values that fall
+ * entirely outside the base scope (e.g. "Deployed" on the Inactive page). The
+ * caller uses this flag to force zero results.
+ */
+function mergeBaseAndUserFilters(
+    baseFilter: QuerySearchFilter,
+    userFilter: QuerySearchFilter
+): { filter: QuerySearchFilter; hasEmptyIntersection: boolean } {
+    const result: QuerySearchFilter = { ...baseFilter, ...userFilter };
+    let hasEmptyIntersection = false;
+
+    Object.keys(baseFilter).forEach((key) => {
+        const baseValues = baseFilter[key];
+        const userValues = userFilter[key];
+        if (baseValues && userValues) {
+            const constrained = userValues.filter((v) => baseValues.includes(v));
+            if (constrained.length > 0) {
+                result[key] = constrained;
+            } else {
+                hasEmptyIntersection = true;
+                result[key] = baseValues;
+            }
+        }
+    });
+
+    return { filter: result, hasEmptyIntersection };
+}
+
 const defaultStorage: VulnMgmtLocalStorage = {
     preferences: {
         defaultFilters: {
@@ -156,28 +194,51 @@ function WorkloadCvesOverviewPage() {
     const { searchFilter: urlSearchFilter, setSearchFilter: setURLSearchFilter } = useURLSearch();
     const isFirstRender = useIsFirstRender();
 
+    // Visible deployment state default for views that filter by deployment state.
+    // Unlike baseSearchFilter (hidden context), this appears as a filter chip in the UI.
+    const deploymentStateDefault: SearchFilter =
+        isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION') &&
+        (viewContext === 'User workloads' || viewContext === 'Platform')
+            ? { 'Deployment State': ['DEPLOYMENT_STATE_ACTIVE'] }
+            : {};
+
     // If this is the first render of the page, and no other filters are applied, use the default filters
     // as the search filters to apply on the first run of the query. This will only happen once, and on a
     // subsequent render the default filters will be synced with the URL params and page state, if needed.
     const shouldSyncDefaultFilters = isFirstRender && isEmpty(urlSearchFilter) && isViewingWithCves;
     const searchFilter = shouldSyncDefaultFilters
-        ? localStorageValue.preferences.defaultFilters
+        ? { ...localStorageValue.preferences.defaultFilters, ...deploymentStateDefault }
         : urlSearchFilter;
 
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
+    // Merge base and user filters so that user-applied filter values for keys
+    // already present in the base filter are constrained to the base scope.
+    // Without this, the spread operator would let a user filter override the
+    // page-level scope — e.g., selecting "Deployed" on the Inactive page would
+    // show active-deployment data.
+    const { filter: scopedSearchFilter, hasEmptyIntersection } = mergeBaseAndUserFilters(
+        baseSearchFilter,
+        querySearchFilter
+    );
+
     // If the user is viewing observed CVEs, we need to scope the query based on
     // the selected vulnerability state. If the user is viewing _without_ CVEs, we
     // need to scope the query to only show images/deployments with 0 CVEs.
+    //
+    // When the filter intersection is empty (user selected values entirely
+    // outside the page scope, e.g. "Deployed" on the Inactive page), an
+    // unmatchable Image SHA filter is injected so every server-side query —
+    // entity counts AND table data — returns zero results.
     const workloadCvesScopedSearchFilter = isViewingWithCves
         ? {
-              ...baseSearchFilter,
-              ...querySearchFilter,
+              ...scopedSearchFilter,
               'Vulnerability State': [currentVulnerabilityState],
+              ...(hasEmptyIntersection ? { 'Image SHA': ['none'] } : {}),
           }
         : {
-              ...baseSearchFilter,
-              ...querySearchFilter,
+              ...scopedSearchFilter,
+              ...(hasEmptyIntersection ? { 'Image SHA': ['none'] } : {}),
               'Image CVE Count': ['0'],
           };
 
@@ -240,7 +301,10 @@ function WorkloadCvesOverviewPage() {
     }
 
     function applyDefaultFilters() {
-        setSearchFilter(localStorageValue.preferences.defaultFilters);
+        setSearchFilter({
+            ...localStorageValue.preferences.defaultFilters,
+            ...deploymentStateDefault,
+        });
     }
 
     // Track the current entity tab when the page is initially visited.

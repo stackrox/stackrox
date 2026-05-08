@@ -474,6 +474,15 @@
       ],
       "default": "OR"
     },
+    "storageDeploymentState": {
+      "type": "string",
+      "enum": [
+        "DEPLOYMENT_STATE_ACTIVE",
+        "DEPLOYMENT_STATE_DELETED"
+      ],
+      "default": "DEPLOYMENT_STATE_ACTIVE",
+      "description": " - DEPLOYMENT_STATE_ACTIVE: The deployment workload is currently active.\n - DEPLOYMENT_STATE_DELETED: The deployment workload was deleted."
+    },
     "storageListDeployment": {
       "type": "object",
       "properties": {
@@ -503,9 +512,18 @@
         "priority": {
           "type": "string",
           "format": "int64"
+        },
+        "deleted": {
+          "type": "string",
+          "format": "date-time",
+          "description": "`deleted` is the time at which the underlying deployment workload was\ndeleted. `nil` if the workload exists."
+        },
+        "state": {
+          "$ref": "#/definitions/storageDeploymentState",
+          "description": "`state` indicates the current status of the deployment workload."
         }
       },
-      "title": "Next available tag: 9"
+      "title": "Next available tag: 11"
     },
     "storageMatchType": {
       "type": "string",

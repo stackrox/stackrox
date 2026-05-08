@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -64,7 +65,7 @@ func (q *queryBuilder) BuildQuery(
 	if err != nil {
 		return nil, err
 	}
-	deploymentsQuery = search.ConjunctionQuery(deploymentsQuery, scopeQuery)
+	deploymentsQuery = search.ConjunctionQuery(deploymentsQuery, scopeQuery, deploymentDataStore.ActiveDeploymentsQuery())
 
 	cveQuery, err := q.buildCVEAttributesQuery()
 	if err != nil {

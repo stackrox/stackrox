@@ -128,6 +128,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 				Tolerations:                  []*storage.Toleration{},
 				ServiceAccount:               "default",
 				AutomountServiceAccountToken: true,
+				State:                        storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE,
 				Containers: []*storage.Container{
 					{
 						Id:   "FooID:container1",
@@ -266,6 +267,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 				Tolerations:                  []*storage.Toleration{},
 				ServiceAccount:               "default",
 				AutomountServiceAccountToken: true,
+				State:                        storage.DeploymentState_DEPLOYMENT_STATE_ACTIVE,
 				Containers: []*storage.Container{
 					{
 						Id:   "FooID:container1",

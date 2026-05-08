@@ -15,6 +15,7 @@ import (
 	npMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	npGraphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	nDataStoreMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
+	"github.com/stackrox/rox/central/role/sachelper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -135,8 +136,18 @@ func (suite *ServiceTestSuite) SetupTest() {
 	suite.netTreeMgr = netTreeMgrMocks.NewMockManager(suite.mockCtrl)
 	suite.notifiers = nDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 
-	suite.tested = New(suite.networkPolicies, suite.deployments, suite.externalSrcs, suite.graphConfig, suite.networkBaselines, suite.netTreeMgr,
-		suite.evaluator, suite.namespaces, suite.clusters, suite.notifiers, nil, nil)
+	suite.tested = &serviceImpl{
+		networkPolicies:  suite.networkPolicies,
+		deployments:      suite.deployments,
+		externalSrcs:     suite.externalSrcs,
+		graphConfig:      suite.graphConfig,
+		networkBaselines: suite.networkBaselines,
+		networkTreeMgr:   suite.netTreeMgr,
+		graphEvaluator:   suite.evaluator,
+		clusterStore:     suite.clusters,
+		notifierStore:    suite.notifiers,
+		clusterSACHelper: sachelper.NewClusterSacHelper(suite.clusters),
+	}
 }
 
 func (suite *ServiceTestSuite) TearDownTest() {

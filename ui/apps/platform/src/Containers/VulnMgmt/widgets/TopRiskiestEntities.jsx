@@ -12,6 +12,7 @@ import NoComponentVulnMessage from 'Components/NoComponentVulnMessage';
 import { getDateTime } from 'utils/dateUtils';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import queryService from 'utils/queryService';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import entityTypes from 'constants/entityTypes';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import { entitySortFieldsMap } from 'constants/sortFields';
@@ -343,7 +344,11 @@ const TopRiskiestEntities = ({ entityContext, search, limit }) => {
         ...entityContextObject,
         ...search,
     }; // Combine entity context and search
-    const query = queryService.objectToWhereClause(queryObject); // get final gql query string
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
+    const query = withActiveDeploymentQuery(
+        queryService.objectToWhereClause(queryObject),
+        isDeploymentSoftDeletionEnabled
+    ); // Get final gql query string, filtering out deleted deployments when enabled.
 
     const {
         loading,

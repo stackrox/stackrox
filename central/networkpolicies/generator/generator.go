@@ -29,7 +29,7 @@ func New(networkPolicies npDS.DataStore,
 ) Generator {
 	return &generator{
 		networkPolicies:     networkPolicies,
-		deploymentStore:     deploymentStore,
+		deploymentStore:     dDS.NewActiveStateDatastore(deploymentStore),
 		namespacesStore:     namespacesStore,
 		globalFlowDataStore: globalFlowDataStore,
 		networkTreeMgr:      networkTreeMgr,

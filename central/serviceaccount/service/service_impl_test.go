@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
@@ -186,9 +187,10 @@ func (suite *ServiceAccountServiceTestSuite) TestSearchServiceAccountFailure() {
 
 func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, expectedSA.GetClusterId()).
+	baseQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, expectedSA.GetClusterId()).
 		AddExactMatches(search.Namespace, expectedSA.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, expectedSA.GetName()).ProtoQuery()
+	q := search.ConjunctionQuery(baseQuery, deploymentDatastore.ActiveDeploymentsQuery())
 
 	suite.mockDeploymentStore.EXPECT().SearchListDeployments(gomock.Any(), q).Return([]*storage.ListDeployment{listDeployment}, nil)
 

@@ -22,6 +22,6 @@ type Service interface {
 func New(secrets secretDS.DataStore, deployments deploymentDS.DataStore) Service {
 	return &serviceImpl{
 		secrets:     secrets,
-		deployments: deployments,
+		deployments: deploymentDS.NewActiveStateDatastore(deployments),
 	}
 }

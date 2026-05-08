@@ -1,6 +1,8 @@
 import { gql } from '@apollo/client';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import queryService from 'utils/queryService';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import DateTimeField from 'Components/DateTimeField';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import TableCellLink from 'Components/TableCellLink';
@@ -186,6 +188,9 @@ export function getCurriedDeploymentTableColumns() {
 }
 
 const VulnMgmtListDeployments = ({ selectedRowId, search, sort, page, data, totalResults }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
+
     const query = gql`
         query getDeployments($query: String, $policyQuery: String, $pagination: Pagination) {
             results: deployments(query: $query, pagination: $pagination) {
@@ -198,7 +203,10 @@ const VulnMgmtListDeployments = ({ selectedRowId, search, sort, page, data, tota
     const tableSort = sort || defaultDeploymentSort;
     const queryOptions = {
         variables: {
-            query: queryService.objectToWhereClause(search),
+            query: withActiveDeploymentQuery(
+                queryService.objectToWhereClause(search),
+                isDeploymentSoftDeletionEnabled
+            ),
             ...vulMgmtPolicyQuery,
             pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
         },

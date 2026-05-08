@@ -28,6 +28,7 @@ export type Deployment = {
     podLabels: Record<string, string>;
     labelSelector: MatchLabelsSelector;
     created: string; // ISO 8601 date string
+    deleted: string | null; // ISO 8601 date string, null if active
     clusterId: string;
     clusterName: string;
     containers: Container[];

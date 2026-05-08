@@ -77,7 +77,7 @@ export const CLUSTER_LIST_FRAGMENT_UPDATED = gql`
         }
         # createdAt
         namespaceCount
-        deploymentCount
+        deploymentCount(query: $deploymentQuery)
         nodeCount
         # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
         policyStatus(query: $policyQuery) {
@@ -132,7 +132,7 @@ export const VULN_CVE_DETAIL_FRAGMENT = gql`
         createdAt
         componentCount(query: $query)
         imageCount(query: $query)
-        deploymentCount(query: $query)
+        deploymentCount(query: $deploymentQuery)
         nodeCount(query: $query)
     }
 `;
@@ -170,7 +170,7 @@ export const IMAGE_CVE_DETAIL_FRAGMENT = gql`
         }
         vulnerabilityState
         imageComponentCount(query: $query)
-        deploymentCount(query: $query)
+        deploymentCount(query: $deploymentQuery)
         discoveredAtImage(query: $query)
         imageCount(query: $query)
         operatingSystem
@@ -271,7 +271,7 @@ export const IMAGE_CVE_LIST_FRAGMENT = gql`
         severity
         summary
         discoveredAtImage(query: $scopeQuery)
-        deploymentCount(query: $query)
+        deploymentCount(query: $deploymentQuery)
         imageCount(query: $query)
         componentCount: imageComponentCount(query: $query)
     }
@@ -354,7 +354,7 @@ export const VULN_IMAGE_CVE_LIST_FRAGMENT = gql`
         vulnerabilityState
         componentCount: imageComponentCount
         imageCount
-        deploymentCount
+        deploymentCount(query: $deploymentQuery)
     }
 `;
 
@@ -459,7 +459,7 @@ export const IMAGE_LIST_FRAGMENT = gql`
             fullName
         }
         watchStatus
-        deploymentCount(query: $query)
+        deploymentCount(query: $deploymentQuery)
         priority
         topVuln: topImageVulnerability {
             cvss
@@ -535,7 +535,7 @@ export const VULN_COMPONENT_LIST_FRAGMENT = gql`
             scoreVersion
         }
         imageCount(query: $query)
-        deploymentCount(query: $query)
+        deploymentCount(query: $deploymentQuery)
         nodeCount(query: $query)
         priority
     }
@@ -615,7 +615,7 @@ export const VULN_IMAGE_COMPONENT_LIST_FRAGMENT = gql`
             scoreVersion
         }
         imageCount(query: $query)
-        deploymentCount(query: $query)
+        deploymentCount(query: $deploymentQuery)
         priority
         operatingSystem
     }
@@ -656,7 +656,7 @@ export const VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT = gql`
             scoreVersion
         }
         imageCount(query: $query)
-        deploymentCount(query: $query)
+        deploymentCount(query: $deploymentQuery)
         operatingSystem
         priority
     }
@@ -693,7 +693,7 @@ export const NAMESPACE_LIST_FRAGMENT_UPDATED = gql`
                 total
             }
         }
-        deploymentCount
+        deploymentCount(query: $deploymentQuery)
         imageCount(query: $query)
         # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
         policyStatusOnly(query: $policyQuery)

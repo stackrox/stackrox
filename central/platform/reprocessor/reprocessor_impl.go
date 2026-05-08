@@ -52,7 +52,7 @@ func New(alertDatastore alertDS.DataStore,
 	return &platformReprocessorImpl{
 		alertDatastore:      alertDatastore,
 		configDatastore:     configDatastore,
-		deploymentDatastore: deploymentDatastore,
+		deploymentDatastore: deploymentDS.NewActiveStateDatastore(deploymentDatastore),
 		platformMatcher:     platformMatcher,
 		semaphore:           semaphore.NewWeighted(1),
 		stopSignal:          concurrency.NewSignal(),

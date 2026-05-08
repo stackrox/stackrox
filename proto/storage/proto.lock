@@ -5740,6 +5740,11 @@
                 "id": 9,
                 "name": "metrics",
                 "type": "PrometheusMetrics"
+              },
+              {
+                "id": 10,
+                "name": "resource_retention_config",
+                "type": "ResourceRetentionConfig"
               }
             ]
           },
@@ -5867,6 +5872,16 @@
               {
                 "id": 1,
                 "name": "retention_duration_days",
+                "type": "uint32"
+              }
+            ]
+          },
+          {
+            "name": "ResourceRetentionConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "deployment_duration_days",
                 "type": "uint32"
               }
             ]
@@ -7275,6 +7290,18 @@
       "def": {
         "enums": [
           {
+            "name": "DeploymentState",
+            "enum_fields": [
+              {
+                "name": "DEPLOYMENT_STATE_ACTIVE"
+              },
+              {
+                "name": "DEPLOYMENT_STATE_DELETED",
+                "integer": 1
+              }
+            ]
+          },
+          {
             "name": "ContainerType",
             "enum_fields": [
               {
@@ -7457,7 +7484,13 @@
               {
                 "id": 16,
                 "name": "inactive",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 17,
@@ -7526,6 +7559,16 @@
                 "id": 35,
                 "name": "platform_component",
                 "type": "bool"
+              },
+              {
+                "id": 36,
+                "name": "deleted",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 37,
+                "name": "state",
+                "type": "DeploymentState"
               }
             ],
             "maps": [
@@ -8184,6 +8227,16 @@
                 "id": 7,
                 "name": "priority",
                 "type": "int64"
+              },
+              {
+                "id": 9,
+                "name": "deleted",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 10,
+                "name": "state",
+                "type": "DeploymentState"
               }
             ]
           }

@@ -29,6 +29,8 @@ import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
@@ -62,7 +64,7 @@ import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal
 
 const imageDetailsQuery = gql`
     ${imageDetailsFragment}
-    query getImageDetails($id: ID!) {
+    query getImageDetails($id: ID!, $deploymentQuery: String) {
         image(id: $id) {
             id
             name {
@@ -78,7 +80,7 @@ const imageDetailsQuery = gql`
 
 const imageV2DetailsQuery = gql`
     ${imageV2DetailsFragment}
-    query getImageDetails($id: ID!) {
+    query getImageDetails($id: ID!, $deploymentQuery: String) {
         image: imageV2(id: $id) {
             id: digest
             name {
@@ -131,18 +133,30 @@ function ImagePage({
     const navigate = useNavigate();
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
     const { urlBuilder, pageTitle, baseSearchFilter, viewContext } = useWorkloadCveViewContext();
     const { imageId } = useParams() as { imageId: string };
 
-    const v1Query = useQuery<{ image: ImageData }, { id: string }>(imageDetailsQuery, {
-        variables: { id: imageId },
-        skip: isNewImageDataModelEnabled,
-    });
+    const deploymentQuery = withActiveDeploymentQuery(
+        getRequestQueryStringForSearchFilter(baseSearchFilter),
+        isDeploymentSoftDeletionEnabled
+    );
 
-    const v2Query = useQuery<{ image: ImageData }, { id: string }>(imageV2DetailsQuery, {
-        variables: { id: imageId },
-        skip: !isNewImageDataModelEnabled,
-    });
+    const v1Query = useQuery<{ image: ImageData }, { id: string; deploymentQuery: string }>(
+        imageDetailsQuery,
+        {
+            variables: { id: imageId, deploymentQuery },
+            skip: isNewImageDataModelEnabled,
+        }
+    );
+
+    const v2Query = useQuery<{ image: ImageData }, { id: string; deploymentQuery: string }>(
+        imageV2DetailsQuery,
+        {
+            variables: { id: imageId, deploymentQuery },
+            skip: !isNewImageDataModelEnabled,
+        }
+    );
 
     const data = isNewImageDataModelEnabled ? v2Query.data : v1Query.data;
     const error = isNewImageDataModelEnabled ? v2Query.error : v1Query.error;

@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/converter/utils"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -322,7 +323,7 @@ func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForPerClusterVul
 }
 
 func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForImages(ctx context.Context) (numerator, denominator int, err error) {
-	allDepsCount, err := evr.root.DeploymentDataStore.CountDeployments(ctx)
+	allDepsCount, err := deploymentDS.NewActiveStateDatastore(evr.root.DeploymentDataStore).Count(ctx, search.EmptyQuery())
 	if err != nil {
 		return 0, 0, err
 	}

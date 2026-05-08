@@ -95,12 +95,12 @@ const (
 	`
 
 	pruneNetworkFlowsSrcStmt = `DELETE FROM %s child WHERE NOT EXISTS
-		(SELECT 1 from deployments parent WHERE child.Props_SrcEntity_Id = parent.id::text AND parent.clusterid = $1)
+		(SELECT 1 from deployments parent WHERE child.Props_SrcEntity_Id = parent.id::text AND parent.clusterid = $1 AND parent.state != 1)
 		AND Props_SrcEntity_Type = 1
 		AND UpdatedAt < $2`
 
 	pruneNetworkFlowsDestStmt = `DELETE FROM %s child WHERE NOT EXISTS
-		(SELECT 1 from deployments parent WHERE child.Props_DstEntity_Id = parent.id::text AND parent.clusterid = $1)
+		(SELECT 1 from deployments parent WHERE child.Props_DstEntity_Id = parent.id::text AND parent.clusterid = $1 AND parent.state != 1)
 		AND Props_DstEntity_Type = 1
 		AND UpdatedAt < $2`
 

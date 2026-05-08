@@ -31,7 +31,7 @@ func TestVulnMgmtHandler_V1(t *testing.T) {
 	images := imageMocks.NewMockDataStore(ctrl)
 	imagesV2 := imageV2Mocks.NewMockDataStore(ctrl)
 
-	deployments.EXPECT().GetDeploymentIDs(gomock.Any()).Return([]string{deploymentID}, nil)
+	deployments.EXPECT().GetDeploymentIDs(gomock.Any(), gomock.Any()).Return([]string{deploymentID}, nil)
 	deployments.EXPECT().GetDeployment(gomock.Any(), deploymentID).Return(&storage.Deployment{
 		Id:          deploymentID,
 		Name:        "my-deploy",
@@ -113,7 +113,7 @@ func TestVulnMgmtHandler_V2(t *testing.T) {
 	images := imageMocks.NewMockDataStore(ctrl)
 	imagesV2 := imageV2Mocks.NewMockDataStore(ctrl)
 
-	deployments.EXPECT().GetDeploymentIDs(gomock.Any()).Return([]string{deploymentID}, nil)
+	deployments.EXPECT().GetDeploymentIDs(gomock.Any(), gomock.Any()).Return([]string{deploymentID}, nil)
 	deployments.EXPECT().GetDeployment(gomock.Any(), deploymentID).Return(&storage.Deployment{
 		Id:          deploymentID,
 		Name:        "my-deploy",
@@ -195,7 +195,7 @@ func TestVulnMgmtHandler_V2SkipsEmptyUUID(t *testing.T) {
 	images := imageMocks.NewMockDataStore(ctrl)
 	imagesV2 := imageV2Mocks.NewMockDataStore(ctrl)
 
-	deployments.EXPECT().GetDeploymentIDs(gomock.Any()).Return([]string{deploymentID}, nil)
+	deployments.EXPECT().GetDeploymentIDs(gomock.Any(), gomock.Any()).Return([]string{deploymentID}, nil)
 	deployments.EXPECT().GetDeployment(gomock.Any(), deploymentID).Return(&storage.Deployment{
 		Id:          deploymentID,
 		Name:        "my-deploy",

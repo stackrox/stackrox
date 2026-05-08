@@ -1,8 +1,11 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Truncate } from '@patternfly/react-core';
+import { Label, LabelGroup, Tooltip, Truncate } from '@patternfly/react-core';
+
+import { getDateTime } from 'utils/dateUtils';
 
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
@@ -75,6 +78,8 @@ export const deploymentListQuery = gql`
             namespace
             imageCount(query: $query)
             created
+            state
+            deleted
         }
     }
 `;
@@ -94,6 +99,8 @@ export type Deployment = {
     namespace: string;
     imageCount: number;
     created: string | null;
+    state: string;
+    deleted: string | null;
 };
 
 type DeploymentOverviewTableProps = {
@@ -177,15 +184,33 @@ function DeploymentOverviewTable({
                             namespace,
                             imageCount,
                             created,
+                            state,
+                            deleted,
                         } = deployment;
                         const criticalCount = imageCVECountBySeverity.critical.total;
                         const importantCount = imageCVECountBySeverity.important.total;
                         const moderateCount = imageCVECountBySeverity.moderate.total;
                         const lowCount = imageCVECountBySeverity.low.total;
                         const unknownCount = imageCVECountBySeverity.unknown.total;
+
+                        const labels: ReactNode[] = [];
+                        if (state === 'DEPLOYMENT_STATE_DELETED' && deleted) {
+                            labels.push(
+                                <Tooltip key="deleted" content={`Deleted: ${getDateTime(deleted)}`}>
+                                    <Label isCompact variant="outline" color="red">
+                                        Deleted
+                                    </Label>
+                                </Tooltip>
+                            );
+                        }
+
                         return (
                             <Tbody key={id}>
-                                <Tr>
+                                <Tr
+                                    style={
+                                        labels.length !== 0 ? { borderBlockEnd: 'none' } : undefined
+                                    }
+                                >
                                     <Td
                                         className={getVisibilityClass('deployment')}
                                         dataLabel="Deployment"
@@ -242,6 +267,15 @@ function DeploymentOverviewTable({
                                         <DateDistance date={created} />
                                     </Td>
                                 </Tr>
+                                {labels.length !== 0 && (
+                                    <Tr>
+                                        <Td colSpan={colSpan} style={{ paddingTop: 0 }}>
+                                            <LabelGroup isCompact numLabels={labels.length}>
+                                                {labels}
+                                            </LabelGroup>
+                                        </Td>
+                                    </Tr>
+                                )}
                             </Tbody>
                         );
                     })
