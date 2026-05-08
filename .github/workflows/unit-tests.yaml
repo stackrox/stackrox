@@ -56,6 +56,16 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
+    - name: Debug - env and go info
+      run: |
+        echo "SHELLOPTS=$SHELLOPTS"
+        go version
+        go env GOPATH GOTOOLCHAIN
+        ./status.sh
+        echo "=== Single test via go-test.sh ==="
+        CGO_ENABLED=1 GOTAGS=,test scripts/go-test.sh -timeout 5m -v ./pkg/env/...
+        echo "go-test.sh exit: $?"
+
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
