@@ -55,7 +55,7 @@ func (rs *rowSets) Scan(dest ...interface{}) error {
 			continue
 		}
 		destVal := reflect.ValueOf(dest[i])
-		if destVal.Kind() != reflect.Ptr {
+		if destVal.Kind() != reflect.Pointer {
 			return fmt.Errorf("destination argument must be a pointer for column %s", r.defs[i].Name)
 		}
 		if col == nil {

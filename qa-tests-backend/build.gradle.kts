@@ -1,4 +1,3 @@
-import com.google.protobuf.gradle.*
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import java.time.Duration
 
@@ -13,52 +12,12 @@ codenarc {
     reportFormat = "text"
 }
 
-protobuf {
-    // There is no protoc-grpc-gen for Apple Silicon (M1), so if you are running on it, force the osx-x86_64 version
-    // See https://github.com/grpc/grpc-java/issues/7690
-    var protocGenArch = ""
-    if (System.getProperty("os.arch") == "aarch64" && System.getProperty("os.name").lowercase().contains("mac")) {
-        protocGenArch = ":osx-x86_64"
-    }
-    protoc { artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.get()}" }
-    plugins {
-        id("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java:${libs.versions.grpc.get()}${protocGenArch}"
-        }
-    }
-    generateProtoTasks {
-        all().forEach { task ->
-            task.plugins {
-                id("grpc")
-            }
-        }
-    }
-}
+apply(from = "protobuf.gradle")
 
 // Assign all Java source dirs to Groovy, as the groovy compiler should take care of them.
-// Keep proto-generated sources in java.srcDirs to avoid Groovy compiler OOM on large files.
-afterEvaluate {
-    val protoGeneratedPath = "generated${File.separator}sources${File.separator}proto"
-
-    project.sourceSets.forEach { sourceSet ->
-        // Partition sources: proto-generated vs user Java
-        val (protoGenerated, userJava) = sourceSet.java.srcDirs.partition {
-            it.path.contains(protoGeneratedPath)
-        }
-
-        sourceSet.groovy.setSrcDirs(sourceSet.groovy.srcDirs + userJava)
-        sourceSet.java.setSrcDirs(protoGenerated)
-    }
-
-    // Ensure proto files are generated and compiled before Groovy compilation
-    listOf("", "Test").forEach { prefix ->
-        tasks.named("compile${prefix}Java") {
-            dependsOn("generate${prefix}Proto")
-        }
-        tasks.named("compile${prefix}Groovy") {
-            dependsOn("compile${prefix}Java")
-        }
-    }
+project.sourceSets.forEach { sourceSet ->
+    sourceSet.groovy.srcDirs += sourceSet.java.srcDirs
+    sourceSet.java.setSrcDirs(emptyList<File>())
 }
 
 dependencies {
@@ -254,7 +213,7 @@ tasks.register<JavaExec>("runSampleScript") {
     dependsOn("classes")
     if (project.hasProperty("runScript")) {
         mainClass = "sampleScripts." + project.properties["runScript"]
-        classpath = extensions.getByType<SourceSetContainer>()["main"].runtimeClasspath
+        classpath = sourceSets["main"].runtimeClasspath
     }
 }
 
@@ -273,5 +232,13 @@ tasks.register<Test>("testPZDebug") {
 tasks.register<Test>("testDeploymentCheck") {
     useJUnitPlatform {
         includeTags("DeploymentCheck")
+    }
+}
+
+allprojects {
+    apply(plugin = "java")
+    java {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 }

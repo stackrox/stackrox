@@ -121,6 +121,8 @@ enum VMNote {
   VM_NOTE_MISSING_SCAN_DATA = 1;
   VM_NOTE_MISSING_SIGNATURE = 2;
   VM_NOTE_MISSING_SIGNATURE_VERIFICATION_DATA = 3;
+  VM_NOTE_MISSING_SCANNER = 4;
+  VM_NOTE_SCAN_FAILED = 5;
 }
 
 // Agent status enriched from a separate data source (not on VirtualMachineV2 storage).

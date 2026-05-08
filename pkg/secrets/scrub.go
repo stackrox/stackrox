@@ -87,7 +87,7 @@ func ScrubSecretsFromStructWithReplacement(obj interface{}, replacement string, 
 }
 
 func visitStructTags(value reflect.Value, visitor func(field reflect.Value, tag string)) {
-	if value.Kind() == reflect.Ptr {
+	if value.Kind() == reflect.Pointer {
 		value = value.Elem()
 	}
 	if value.Kind() != reflect.Struct {
@@ -99,7 +99,7 @@ func visitStructTags(value reflect.Value, visitor func(field reflect.Value, tag 
 		switch fieldValue.Kind() {
 		case reflect.Struct:
 			visitStructTags(fieldValue, visitor)
-		case reflect.Ptr, reflect.Interface:
+		case reflect.Pointer, reflect.Interface:
 			if !fieldValue.IsNil() {
 				visitStructTags(fieldValue.Elem(), visitor)
 			}
