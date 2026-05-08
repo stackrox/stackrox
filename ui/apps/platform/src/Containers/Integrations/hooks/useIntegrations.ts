@@ -3,6 +3,8 @@ import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 
+import { ensureExhaustive } from 'utils/type.utils';
+
 import type { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -74,8 +76,11 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
                 }
                 return cloudSources;
             }
+            case 'apiClients': {
+                return []; // source does not use hook because it does not have any integrations
+            }
             default: {
-                return [];
+                return ensureExhaustive(source);
             }
         }
     }
