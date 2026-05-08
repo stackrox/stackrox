@@ -26,7 +26,8 @@ import (
 )
 
 const (
-	scanConfigID = "scan-config-id"
+	scanConfigID               = "scan-config-id"
+	expectedFormattedTimestamp = "Wed, 07 May 2025 12:00:00 UTC"
 )
 
 func TestComplianceReportingDataGenerator(t *testing.T) {
@@ -199,7 +200,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
-			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		"fail check no error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_FAIL),
@@ -218,7 +219,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
-			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		"mixed check no error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_INCONSISTENT),
@@ -237,7 +238,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
-			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		"profile search error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -260,7 +261,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
 				return benchmarks, nil
 			},
-			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		"remediation search error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -289,7 +290,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
-			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		"rule search error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -315,7 +316,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
 				return []*storage.ComplianceOperatorRuleV2{}, nil
 			},
-			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		"benchmark not found": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -336,7 +337,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
 				return []*storage.ComplianceOperatorBenchmarkV2{}, nil
 			},
-			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		"control search error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -374,7 +375,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return []*datastore.ControlResult{}, nil
 			},
-			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		"profile without benchmark mapping renders control reference as N/A": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -396,7 +397,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
 				return []*storage.ComplianceOperatorBenchmarkV2{}, nil
 			},
-			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		"profile with benchmark but no matching controls renders control reference as N/A": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -421,7 +422,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return []*datastore.ControlResult{}, nil
 			},
-			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 		// getCheckResult not used here to test nil LastStartedTime
 		"nil last started time renders assessment time as N/A": {
@@ -473,7 +474,7 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedControls: func() ([]*datastore.ControlResult, error) {
 				return controls, nil
 			},
-			expectedAssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
+			expectedAssessmentTime: expectedFormattedTimestamp,
 		},
 	}
 	for tname, tcase := range cases {
@@ -627,8 +628,6 @@ func assertResults(t *testing.T, tcase getReportDataTestCase, res *report.Result
 	}
 }
 
-var testLastStartedTime = timestamppb.New(time.Date(2025, 5, 7, 12, 0, 0, 0, time.UTC))
-
 func getCheckResult(status storage.ComplianceOperatorCheckResultV2_CheckStatus) *storage.ComplianceOperatorCheckResultV2 {
 	return &storage.ComplianceOperatorCheckResultV2{
 		ClusterName:     "cluster-1",
@@ -637,7 +636,7 @@ func getCheckResult(status storage.ComplianceOperatorCheckResultV2_CheckStatus) 
 		Status:          status,
 		Rationale:       "rationale",
 		Instructions:    "instructions",
-		LastStartedTime: testLastStartedTime,
+		LastStartedTime: timestamppb.New(time.Date(2025, 5, 7, 12, 0, 0, 0, time.UTC)),
 	}
 }
 
