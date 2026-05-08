@@ -132,7 +132,7 @@ spec:
         - name: SHOULD_REALLY_WORK
         steps:
         - name: determine
-          image: registry.redhat.io/ubi9-minimal:latest@sha256:fe688da81a696387ca53a4c19231e99289591f990c904ef913c51b6e87d4e4df
+          image: registry.redhat.io/ubi9-minimal:latest@sha256:b9b10f42d7eba7ad4a6d5ef26b7d34fdc892b2ffe59b8d0372ec884008569eb6
           # The script expresses the same condition as pipelinesascode.tekton.dev/on-cel-expression in other pipelines
           # but in a more verbose way because, as it turns out, both syntax and fields of CEL expressions are slightly
           # different.
