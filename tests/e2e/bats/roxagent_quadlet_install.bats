@@ -169,7 +169,7 @@ setup() {
 }
 
 @test "virtctl mode with no target fails with error and usage" {
-    run bash "${INSTALL_SCRIPT}" virtctl
+    run bash "${INSTALL_SCRIPT}" --virtctl
     assert_failure
     assert_output --partial "error: virtctl mode requires at least a target"
     assert_output --partial "Usage:"
@@ -221,7 +221,7 @@ setup() {
 @test "virtctl mode with flags and target invokes virtctl scp/ssh correctly" {
     write_recording_stub virtctl
 
-    run bash "${INSTALL_SCRIPT}" virtctl -n openshift-cnv "cloud-user@vmi/rhel10-1"
+    run bash "${INSTALL_SCRIPT}" --virtctl -n openshift-cnv "cloud-user@vmi/rhel10-1"
     assert_success
     assert_output --partial "Done!"
 
@@ -236,7 +236,7 @@ setup() {
 @test "virtctl mode with only a target (no extra flags) works" {
     write_recording_stub virtctl
 
-    run bash "${INSTALL_SCRIPT}" virtctl "cloud-user@vmi/rhel10-1"
+    run bash "${INSTALL_SCRIPT}" --virtctl "cloud-user@vmi/rhel10-1"
     assert_success
 
     run cat "${CALL_LOG}"
@@ -248,7 +248,7 @@ setup() {
 @test "virtctl mode with multiple flags passes all flags" {
     write_recording_stub virtctl
 
-    run bash "${INSTALL_SCRIPT}" virtctl -n openshift-cnv --local-ssh-opts="-o StrictHostKeyChecking=no" "cloud-user@vmi/rhel10-1"
+    run bash "${INSTALL_SCRIPT}" --virtctl -n openshift-cnv --local-ssh-opts="-o StrictHostKeyChecking=no" "cloud-user@vmi/rhel10-1"
     assert_success
 
     run cat "${CALL_LOG}"
@@ -424,7 +424,7 @@ setup() {
 @test "virtctl mode prints Done epilogue exactly once" {
     write_recording_stub virtctl
 
-    run bash "${INSTALL_SCRIPT}" virtctl -n openshift-cnv "cloud-user@vmi/rhel10-1"
+    run bash "${INSTALL_SCRIPT}" --virtctl -n openshift-cnv "cloud-user@vmi/rhel10-1"
     assert_success
 
     local count

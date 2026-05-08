@@ -3,7 +3,7 @@
 #
 # Usage:
 #   ./install.sh                                                      # Install locally
-#   ./install.sh virtctl -n openshift-cnv cloud-user@vmi/rhel10-1     # Via virtctl
+#   ./install.sh --virtctl -n openshift-cnv cloud-user@vmi/rhel10-1   # Via virtctl
 #   ./install.sh --ssh user@host                                      # SSH (port 22)
 #   ./install.sh --ssh user@host 2222                                 # SSH with custom port
 
@@ -60,7 +60,7 @@ main() {
         fi
         setup_transport_ssh "$1" "${2:-22}"
         install_remote
-    elif [ "$1" = "virtctl" ]; then
+    elif [ "$1" = "--virtctl" ]; then
         shift
         setup_transport_virtctl "$@"
         install_remote
@@ -81,11 +81,11 @@ usage() {
     cat >&2 <<EOF
 Usage:
   $0                                           # Install locally
-  $0 virtctl [virtctl-flags...] <user@vmi/name> # Remote install via virtctl
+  $0 --virtctl [virtctl-flags...] <user@vmi/name> # Remote install via virtctl
   $0 --ssh <user@host> [port]                  # Remote install via SSH
 
 Examples:
-  $0 virtctl -n openshift-cnv cloud-user@vmi/rhel10-1
+  $0 --virtctl -n openshift-cnv cloud-user@vmi/rhel10-1
   $0 --ssh root@192.168.1.10
   $0 --ssh root@192.168.1.10 2222
 EOF
@@ -139,7 +139,7 @@ setup_transport_virtctl() {
         exit 1
     fi
 
-    # Expects virtctl mode arguments after the explicit "virtctl" selector, e.g.:
+    # Expects virtctl mode arguments after the explicit "--virtctl" selector, e.g.:
     #   -n openshift-cnv cloud-user@vmi/rhel10-1
     # The last positional arg is the target; everything else are flags.
     TRANSPORT_KIND="virtctl"
