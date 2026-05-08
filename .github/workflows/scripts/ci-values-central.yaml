@@ -1,0 +1,47 @@
+# CI values for e2e tests (KinD and GKE).
+# Minimal resources, no scanner v4, legacy scanner enabled.
+# imagePullSecrets handled by deploy-stackrox action (auto-detects
+# quay-pull-secret or falls back to allowNone).
+
+central:
+  persistence:
+    none: true
+  resources:
+    requests:
+      memory: 100Mi
+      cpu: 100m
+    limits:
+      memory: 4Gi
+      cpu: 2
+  db:
+    resources:
+      requests:
+        memory: 100Mi
+        cpu: 100m
+      limits:
+        memory: 4Gi
+        cpu: 2
+  telemetry:
+    enabled: false
+
+scanner:
+  disable: false
+  replicas: 1
+  resources:
+    requests:
+      memory: 100Mi
+      cpu: 100m
+    limits:
+      memory: 2Gi
+  dbResources:
+    requests:
+      memory: 100Mi
+      cpu: 100m
+    limits:
+      memory: 2Gi
+
+scannerV4:
+  disable: true
+
+system:
+  enablePodSecurityPolicies: false

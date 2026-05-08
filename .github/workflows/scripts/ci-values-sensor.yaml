@@ -1,0 +1,31 @@
+# CI values for KinD e2e smoke tests — secured cluster services.
+# Minimal resources, CORE_BPF collector, 1 admission control replica.
+
+imagePullSecrets:
+  allowNone: true
+
+clusterName: remote
+
+sensor:
+  resources:
+    requests:
+      memory: 100Mi
+      cpu: 100m
+    limits:
+      memory: 4Gi
+
+collector:
+  collectionMethod: CORE_BPF
+  resources:
+    requests:
+      memory: 100Mi
+      cpu: 50m
+    limits:
+      memory: 1Gi
+
+admissionControl:
+  replicas: 1
+  resources:
+    requests:
+      memory: 100Mi
+      cpu: 50m

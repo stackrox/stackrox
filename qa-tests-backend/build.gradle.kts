@@ -36,6 +36,9 @@ dependencies {
     implementation(platform(libs.spock.bom))
     implementation(libs.spock.core)
     implementation(libs.spock.junit4)
+    // Gradle 9 requires the JUnit Platform launcher explicitly.
+    // Without this, test tasks fail with "Failed to load JUnit Platform".
+    runtimeOnly("org.junit.platform:junit-platform-launcher")
     implementation(libs.rest.assured)
     testImplementation(libs.snakeyaml)
     implementation(libs.logback.classic)
@@ -107,6 +110,12 @@ tasks.withType<Test>().configureEach {
     }
 
     useJUnitPlatform();
+
+    // Gradle 9: registered Test tasks don't inherit testClassesDirs from
+    // the test source set. Wire them explicitly so test discovery works.
+    val testSourceSet = project.sourceSets["test"]
+    testClassesDirs = testSourceSet.output.classesDirs
+    classpath = testSourceSet.runtimeClasspath
 }
 
 tasks.register<Test>("testBegin") {
