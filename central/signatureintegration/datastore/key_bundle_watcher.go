@@ -14,7 +14,10 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 )
 
-const maxBundleFileSize = 5 * 1024 * 1024 // 5 MB
+const (
+	maxBundleFileSize = 5 * 1024 * 1024 // 5 MB
+	minWatchInterval  = 5 * time.Second
+)
 
 type keyBundleWatcher struct {
 	filePath string
@@ -24,8 +27,6 @@ type keyBundleWatcher struct {
 	doneSig  concurrency.Signal
 	lastHash [sha256.Size]byte
 }
-
-const minWatchInterval = 5 * time.Second
 
 func newKeyBundleWatcher(filePath string, interval time.Duration, siStore store.SignatureIntegrationStore) *keyBundleWatcher {
 	if interval < minWatchInterval {
@@ -109,6 +110,7 @@ func (w *keyBundleWatcher) checkAndUpsert() {
 	bundle, err := parseKeyBundle(data)
 	if err != nil {
 		log.Warnf("Invalid key bundle file %q: %v", w.filePath, err)
+		// Update hash so repeated polls of the same invalid content don't re-warn.
 		w.lastHash = hash
 		watcherFileErrorTotal.Inc()
 		return
