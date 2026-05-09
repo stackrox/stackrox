@@ -12,21 +12,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Activate pre-cached Go
-      run: |
-        go_dir=$(ls -d /opt/hostedtoolcache/go/*/x64 2>/dev/null | sort -V | tail -1 || true)
-        if [[ -n "$go_dir" ]] && [[ -x "$go_dir/bin/go" ]]; then
-          echo "Activating $("$go_dir/bin/go" version) from $go_dir"
-          echo "$go_dir/bin" >> "$GITHUB_PATH"
-          [[ ":$PATH:" == *":$HOME/go/bin:"* ]] || echo "$HOME/go/bin" >> "$GITHUB_PATH"
-        elif command -v go &>/dev/null; then
-          echo "No pre-cached Go in hostedtoolcache, using system $(go version)"
-        else
-          echo "::error::No Go found — neither in hostedtoolcache nor on PATH"
-          exit 1
-        fi
-      shell: bash
-
     - name: Determine Go cache paths
       id: cache-paths
       run: |

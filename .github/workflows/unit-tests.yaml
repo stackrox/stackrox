@@ -56,6 +56,51 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
+    - name: Diagnose go test exit code
+      run: |
+        echo "=== Go info ==="
+        which go
+        go version
+        go env GOROOT GOTOOLCHAIN
+        echo ""
+
+        # Build package list exactly like the Makefile $(shell ...)
+        pkgs=$(git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list 2>/dev/null | grep -v '^github.com/stackrox/rox/tests$' | grep -Ev 'stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests')
+        echo "Package count: $(echo $pkgs | wc -w)"
+
+        echo ""
+        echo "=== Layer 1: go test directly (no go-test.sh, no make) ==="
+        set +e
+        CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 go test -buildvcs=false -timeout 25m -race -cover -coverprofile /tmp/cov-direct.out -tags test -v $pkgs > /tmp/gotest-stdout.log 2> /tmp/gotest-stderr.log
+        rc=$?
+        set -e
+        echo "go test exit: $rc"
+        echo "FAIL packages: $(grep -c '^FAIL' /tmp/gotest-stdout.log || echo 0)"
+        echo "ok packages: $(grep -c '^ok' /tmp/gotest-stdout.log || echo 0)"
+        echo "covdata errors: $(grep -c 'no such tool' /tmp/gotest-stderr.log || echo 0)"
+        if [ $rc -ne 0 ]; then
+          echo "=== FAIL lines ==="
+          grep '^FAIL' /tmp/gotest-stdout.log || echo "(none in stdout)"
+          grep 'FAIL' /tmp/gotest-stderr.log || echo "(none in stderr)"
+          echo "=== Last 10 lines of stderr ==="
+          tail -10 /tmp/gotest-stderr.log
+        fi
+
+        echo ""
+        echo "=== Layer 2: go-test.sh (no make) ==="
+        set +e
+        CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=,test scripts/go-test.sh -timeout 25m -race -cover -coverprofile /tmp/cov-script.out -v $pkgs > /tmp/goscript-stdout.log 2> /tmp/goscript-stderr.log
+        rc=$?
+        set -e
+        echo "go-test.sh exit: $rc"
+        if [ $rc -ne 0 ]; then
+          echo "FAIL packages: $(grep -c '^FAIL' /tmp/goscript-stdout.log || echo 0)"
+          echo "=== FAIL lines ==="
+          grep '^FAIL' /tmp/goscript-stdout.log || echo "(none)"
+          echo "=== Last 10 stderr ==="
+          tail -10 /tmp/goscript-stderr.log
+        fi
+
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
