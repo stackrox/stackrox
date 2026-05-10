@@ -63,72 +63,93 @@ jobs:
 
     - name: Test GOTOOLCHAIN variants
       run: |
-        echo "=== Runner environment ==="
-        echo "System Go: $(/usr/bin/go version 2>&1 || echo none)"
-        echo "Hostedtoolcache:"
-        for d in /opt/hostedtoolcache/go/*/x64; do
-          [ -x "$d/bin/go" ] && echo "  $d  ($($d/bin/go version 2>&1))"
-        done
-        echo "GOMODCACHE: $(go env GOMODCACHE)"
-        echo ""
-
-        for tc in "auto" "go1.25.0+auto" "go1.25.9+auto" "go1.25.0+path" "go1.25.9+path"; do
+        test_variant() {
+          local label=$1
           echo "========================================"
-          echo "=== GOTOOLCHAIN=$tc ==="
+          echo "=== $label ==="
           echo "========================================"
           t0=$(date +%s%N)
-          GOTOOLCHAIN=$tc go version 2>&1
+          go version 2>&1
           t1=$(date +%s%N)
-          echo "download/resolve: $(( (t1 - t0) / 1000000 ))ms"
-          goroot=$(GOTOOLCHAIN=$tc go env GOROOT 2>&1)
-          echo "GOROOT: $goroot"
-          echo "GOROOT writable: $([ -w "$goroot" ] && echo yes || echo no)"
-          echo "GOTOOLDIR writable: $([ -w "$(GOTOOLCHAIN=$tc go env GOTOOLDIR)" ] && echo yes || echo no)"
-          echo "GOTOOLDIR contents: $(ls $(GOTOOLCHAIN=$tc go env GOTOOLDIR)/ 2>/dev/null | tr '\n' ' ')"
-          echo "covdata src exists: $([ -f "$goroot/src/cmd/covdata/covdata.go" ] && echo yes || echo no)"
-          echo "go tool covdata: $(GOTOOLCHAIN=$tc go tool covdata 2>&1 | head -1) (exit=$?)"
-
+          echo "resolve: $(( (t1 - t0) / 1000000 ))ms"
+          echo "GOROOT: $(go env GOROOT)"
+          echo "GOTOOLDIR writable: $([ -w "$(go env GOTOOLDIR)" ] && echo yes || echo no)"
           set +e
-          GOTOOLCHAIN=$tc CGO_ENABLED=1 go test -buildvcs=false -cover -v \
+          CGO_ENABLED=1 go test -buildvcs=false -cover -v \
             ./central/administration/events/datastore/... ./pkg/env/... \
             > /dev/null 2>/tmp/tc-stderr.log
           rc=$?
           set -e
-          echo "go test -cover exit: $rc"
-          echo "covdata errors: $(grep -c 'no such tool' /tmp/tc-stderr.log 2>/dev/null || echo 0)"
+          echo "go test -cover exit: $rc  covdata-errors: $(grep -c 'no such tool' /tmp/tc-stderr.log 2>/dev/null || echo 0)"
           echo ""
-        done
+        }
 
-        echo "========================================"
-        echo "=== toolchain directive in go.mod ==="
-        echo "========================================"
-        # Temporarily add toolchain directive
-        sed -i '/^go 1.25.0$/a toolchain go1.25.9' go.mod
-        echo "go.mod now says:"
-        head -4 go.mod
+        echo "=== Runner environment ==="
+        echo "System Go: $(/usr/bin/go version 2>&1 || echo none)"
+        echo "Hostedtoolcache: $(ls -d /opt/hostedtoolcache/go/*/x64 2>/dev/null | sort -V | while read d; do echo -n "$(basename $(dirname $d)) "; done)"
         echo ""
-        # Reset GOTOOLCHAIN to default (auto)
+
+        # 1. Baseline: GOTOOLCHAIN=auto (broken)
+        GOTOOLCHAIN=auto test_variant "GOTOOLCHAIN=auto (baseline)"
+
+        # 2. Env var workaround: go1.25.0+auto
+        GOTOOLCHAIN=go1.25.0+auto test_variant "GOTOOLCHAIN=go1.25.0+auto"
+
+        # 3. Env var with latest patch
+        GOTOOLCHAIN=go1.25.9+auto test_variant "GOTOOLCHAIN=go1.25.9+auto"
+
+        # 4. toolchain directive in go.mod (GOTOOLCHAIN=auto, the default)
+        sed -i '/^go 1.25.0$/a toolchain go1.25.9' go.mod
+        echo "go.mod: $(head -3 go.mod | tr '\n' ' ')"
         unset GOTOOLCHAIN
-        t0=$(date +%s%N)
-        go version 2>&1
-        t1=$(date +%s%N)
-        echo "download/resolve: $(( (t1 - t0) / 1000000 ))ms"
-        echo "GOROOT: $(go env GOROOT)"
-        echo "GOROOT writable: $([ -w "$(go env GOROOT)" ] && echo yes || echo no)"
-        echo "GOTOOLDIR writable: $([ -w "$(go env GOTOOLDIR)" ] && echo yes || echo no)"
-        echo "go tool covdata: $(go tool covdata 2>&1 | head -1) (exit=$?)"
-
-        set +e
-        CGO_ENABLED=1 go test -buildvcs=false -cover -v \
-          ./central/administration/events/datastore/... ./pkg/env/... \
-          > /dev/null 2>/tmp/tc-stderr.log
-        rc=$?
-        set -e
-        echo "go test -cover exit: $rc"
-        echo "covdata errors: $(grep -c 'no such tool' /tmp/tc-stderr.log 2>/dev/null || echo 0)"
-
-        # Revert go.mod
+        test_variant "toolchain go1.25.9 in go.mod (GOTOOLCHAIN=auto)"
         git checkout go.mod
+
+    - name: Test setup-go variants
+      run: |
+        test_variant() {
+          local label=$1
+          echo "========================================"
+          echo "=== $label ==="
+          echo "========================================"
+          t0=$(date +%s%N)
+          go version 2>&1
+          t1=$(date +%s%N)
+          echo "resolve: $(( (t1 - t0) / 1000000 ))ms"
+          echo "GOROOT: $(go env GOROOT)"
+          echo "GOTOOLCHAIN: $(go env GOTOOLCHAIN)"
+          echo "GOTOOLDIR writable: $([ -w "$(go env GOTOOLDIR)" ] && echo yes || echo no)"
+          set +e
+          CGO_ENABLED=1 go test -buildvcs=false -cover -v \
+            ./central/administration/events/datastore/... ./pkg/env/... \
+            > /dev/null 2>/tmp/tc-stderr.log
+          rc=$?
+          set -e
+          echo "go test -cover exit: $rc  covdata-errors: $(grep -c 'no such tool' /tmp/tc-stderr.log 2>/dev/null || echo 0)"
+          echo ""
+        }
+
+        # Save original PATH to restore between tests
+        ORIG_PATH=$PATH
+
+        # 5. setup-go with go-version-file (reads go.mod), cache disabled
+        echo "Setting up Go from go.mod via setup-go..."
+        # Simulate what setup-go does: activate hostedtoolcache Go, set GOTOOLCHAIN=local
+        go_dir=$(ls -d /opt/hostedtoolcache/go/1.25.*/x64 2>/dev/null | sort -V | tail -1)
+        export PATH="$go_dir/bin:$HOME/go/bin:$ORIG_PATH"
+        export GOTOOLCHAIN=local
+        test_variant "setup-go style: hostedtoolcache 1.25.x + GOTOOLCHAIN=local"
+
+        # 6. setup-go + override GOTOOLCHAIN back to auto
+        export GOTOOLCHAIN=auto
+        test_variant "setup-go style: hostedtoolcache 1.25.x + GOTOOLCHAIN=auto"
+
+        # 7. Activate hostedtoolcache Go, no GOTOOLCHAIN override
+        unset GOTOOLCHAIN
+        test_variant "hostedtoolcache Go on PATH, default GOTOOLCHAIN"
+
+        # Restore
+        export PATH=$ORIG_PATH
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
