@@ -63,25 +63,72 @@ jobs:
 
     - name: Test GOTOOLCHAIN variants
       run: |
-        echo "=== System Go ==="
-        /usr/bin/go version 2>&1 || echo "no /usr/bin/go"
-        echo "Hostedtoolcache: $(ls -d /opt/hostedtoolcache/go/*/x64 2>/dev/null | sort -V | tr '\n' ' ')"
+        echo "=== Runner environment ==="
+        echo "System Go: $(/usr/bin/go version 2>&1 || echo none)"
+        echo "Hostedtoolcache:"
+        for d in /opt/hostedtoolcache/go/*/x64; do
+          [ -x "$d/bin/go" ] && echo "  $d  ($($d/bin/go version 2>&1))"
+        done
+        echo "GOMODCACHE: $(go env GOMODCACHE)"
         echo ""
 
         for tc in "auto" "go1.25.0+auto" "go1.25.9+auto" "go1.25.0+path" "go1.25.9+path"; do
+          echo "========================================"
           echo "=== GOTOOLCHAIN=$tc ==="
+          echo "========================================"
+          t0=$(date +%s%N)
           GOTOOLCHAIN=$tc go version 2>&1
-          GOTOOLCHAIN=$tc go env GOROOT 2>&1
-          echo "covdata: $(GOTOOLCHAIN=$tc go tool covdata 2>&1 | head -1; echo exit=$?)"
+          t1=$(date +%s%N)
+          echo "download/resolve: $(( (t1 - t0) / 1000000 ))ms"
+          goroot=$(GOTOOLCHAIN=$tc go env GOROOT 2>&1)
+          echo "GOROOT: $goroot"
+          echo "GOROOT writable: $([ -w "$goroot" ] && echo yes || echo no)"
+          echo "GOTOOLDIR writable: $([ -w "$(GOTOOLCHAIN=$tc go env GOTOOLDIR)" ] && echo yes || echo no)"
+          echo "GOTOOLDIR contents: $(ls $(GOTOOLCHAIN=$tc go env GOTOOLDIR)/ 2>/dev/null | tr '\n' ' ')"
+          echo "covdata src exists: $([ -f "$goroot/src/cmd/covdata/covdata.go" ] && echo yes || echo no)"
+          echo "go tool covdata: $(GOTOOLCHAIN=$tc go tool covdata 2>&1 | head -1) (exit=$?)"
 
-          # Quick cover test on one package
           set +e
-          GOTOOLCHAIN=$tc CGO_ENABLED=1 go test -buildvcs=false -cover -v ./pkg/env/... > /dev/null 2>/tmp/tc-stderr-$tc.log
+          GOTOOLCHAIN=$tc CGO_ENABLED=1 go test -buildvcs=false -cover -v \
+            ./central/administration/events/datastore/... ./pkg/env/... \
+            > /dev/null 2>/tmp/tc-stderr.log
           rc=$?
           set -e
-          echo "go test -cover exit: $rc  covdata-errors: $(grep -c 'no such tool' /tmp/tc-stderr-$tc.log 2>/dev/null || echo 0)"
+          echo "go test -cover exit: $rc"
+          echo "covdata errors: $(grep -c 'no such tool' /tmp/tc-stderr.log 2>/dev/null || echo 0)"
           echo ""
         done
+
+        echo "========================================"
+        echo "=== toolchain directive in go.mod ==="
+        echo "========================================"
+        # Temporarily add toolchain directive
+        sed -i '/^go 1.25.0$/a toolchain go1.25.9' go.mod
+        echo "go.mod now says:"
+        head -4 go.mod
+        echo ""
+        # Reset GOTOOLCHAIN to default (auto)
+        unset GOTOOLCHAIN
+        t0=$(date +%s%N)
+        go version 2>&1
+        t1=$(date +%s%N)
+        echo "download/resolve: $(( (t1 - t0) / 1000000 ))ms"
+        echo "GOROOT: $(go env GOROOT)"
+        echo "GOROOT writable: $([ -w "$(go env GOROOT)" ] && echo yes || echo no)"
+        echo "GOTOOLDIR writable: $([ -w "$(go env GOTOOLDIR)" ] && echo yes || echo no)"
+        echo "go tool covdata: $(go tool covdata 2>&1 | head -1) (exit=$?)"
+
+        set +e
+        CGO_ENABLED=1 go test -buildvcs=false -cover -v \
+          ./central/administration/events/datastore/... ./pkg/env/... \
+          > /dev/null 2>/tmp/tc-stderr.log
+        rc=$?
+        set -e
+        echo "go test -cover exit: $rc"
+        echo "covdata errors: $(grep -c 'no such tool' /tmp/tc-stderr.log 2>/dev/null || echo 0)"
+
+        # Revert go.mod
+        git checkout go.mod
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
