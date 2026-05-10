@@ -61,6 +61,28 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
+    - name: Test GOTOOLCHAIN variants
+      run: |
+        echo "=== System Go ==="
+        /usr/bin/go version 2>&1 || echo "no /usr/bin/go"
+        echo "Hostedtoolcache: $(ls -d /opt/hostedtoolcache/go/*/x64 2>/dev/null | sort -V | tr '\n' ' ')"
+        echo ""
+
+        for tc in "auto" "go1.25.0+auto" "go1.25.9+auto" "go1.25.0+path" "go1.25.9+path"; do
+          echo "=== GOTOOLCHAIN=$tc ==="
+          GOTOOLCHAIN=$tc go version 2>&1
+          GOTOOLCHAIN=$tc go env GOROOT 2>&1
+          echo "covdata: $(GOTOOLCHAIN=$tc go tool covdata 2>&1 | head -1; echo exit=$?)"
+
+          # Quick cover test on one package
+          set +e
+          GOTOOLCHAIN=$tc CGO_ENABLED=1 go test -buildvcs=false -cover -v ./pkg/env/... > /dev/null 2>/tmp/tc-stderr-$tc.log
+          rc=$?
+          set -e
+          echo "go test -cover exit: $rc  covdata-errors: $(grep -c 'no such tool' /tmp/tc-stderr-$tc.log 2>/dev/null || echo 0)"
+          echo ""
+        done
+
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
