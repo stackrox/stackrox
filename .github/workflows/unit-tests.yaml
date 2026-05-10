@@ -61,95 +61,40 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
-    - name: Test GOTOOLCHAIN variants
-      run: |
-        test_variant() {
-          local label=$1
-          echo "========================================"
-          echo "=== $label ==="
-          echo "========================================"
-          t0=$(date +%s%N)
-          go version 2>&1
-          t1=$(date +%s%N)
-          echo "resolve: $(( (t1 - t0) / 1000000 ))ms"
-          echo "GOROOT: $(go env GOROOT)"
-          echo "GOTOOLDIR writable: $([ -w "$(go env GOTOOLDIR)" ] && echo yes || echo no)"
-          set +e
-          CGO_ENABLED=1 go test -buildvcs=false -cover -v \
-            ./central/administration/events/datastore/... ./pkg/env/... \
-            > /dev/null 2>/tmp/tc-stderr.log
-          rc=$?
-          set -e
-          echo "go test -cover exit: $rc  covdata-errors: $(grep -c 'no such tool' /tmp/tc-stderr.log 2>/dev/null || echo 0)"
-          echo ""
-        }
+    - name: Test setup-go with go-version-file
+      uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+        cache: false
 
-        echo "=== Runner environment ==="
-        echo "System Go: $(/usr/bin/go version 2>&1 || echo none)"
-        echo "Hostedtoolcache: $(ls -d /opt/hostedtoolcache/go/*/x64 2>/dev/null | sort -V | while read d; do echo -n "$(basename $(dirname $d)) "; done)"
+    - name: Verify setup-go result
+      run: |
+        echo "=== setup-go with go-version-file: go.mod ==="
+        echo "go version: $(go version)"
+        echo "which go: $(which go)"
+        echo "GOROOT: $(go env GOROOT)"
+        echo "GOTOOLCHAIN: $(go env GOTOOLCHAIN)"
+        echo "GOTOOLDIR: $(go env GOTOOLDIR)"
+        echo "GOTOOLDIR writable: $([ -w "$(go env GOTOOLDIR)" ] && echo yes || echo no)"
+        echo "GOTOOLDIR contents: $(ls $(go env GOTOOLDIR)/ | tr '\n' ' ')"
+        echo "covdata src: $([ -f "$(go env GOROOT)/src/cmd/covdata/covdata.go" ] && echo yes || echo no)"
         echo ""
 
-        # 1. Baseline: GOTOOLCHAIN=auto (broken)
-        GOTOOLCHAIN=auto test_variant "GOTOOLCHAIN=auto (baseline)"
+        echo "=== go test -cover ==="
+        set +e
+        CGO_ENABLED=1 go test -buildvcs=false -cover -v \
+          ./central/administration/events/datastore/... ./pkg/env/... \
+          > /dev/null 2>/tmp/setup-go-stderr.log
+        rc=$?
+        set -e
+        echo "go test -cover exit: $rc"
+        echo "covdata errors: $(grep -c 'no such tool' /tmp/setup-go-stderr.log 2>/dev/null || echo 0)"
+        echo ""
 
-        # 2. Env var workaround: go1.25.0+auto
-        GOTOOLCHAIN=go1.25.0+auto test_variant "GOTOOLCHAIN=go1.25.0+auto"
-
-        # 3. Env var with latest patch
-        GOTOOLCHAIN=go1.25.9+auto test_variant "GOTOOLCHAIN=go1.25.9+auto"
-
-        # 4. toolchain directive in go.mod (GOTOOLCHAIN=auto, the default)
-        sed -i '/^go 1.25.0$/a toolchain go1.25.9' go.mod
-        echo "go.mod: $(head -3 go.mod | tr '\n' ' ')"
-        unset GOTOOLCHAIN
-        test_variant "toolchain go1.25.9 in go.mod (GOTOOLCHAIN=auto)"
-        git checkout go.mod
-
-    - name: Test setup-go variants
-      run: |
-        test_variant() {
-          local label=$1
-          echo "========================================"
-          echo "=== $label ==="
-          echo "========================================"
-          t0=$(date +%s%N)
-          go version 2>&1
-          t1=$(date +%s%N)
-          echo "resolve: $(( (t1 - t0) / 1000000 ))ms"
-          echo "GOROOT: $(go env GOROOT)"
-          echo "GOTOOLCHAIN: $(go env GOTOOLCHAIN)"
-          echo "GOTOOLDIR writable: $([ -w "$(go env GOTOOLDIR)" ] && echo yes || echo no)"
-          set +e
-          CGO_ENABLED=1 go test -buildvcs=false -cover -v \
-            ./central/administration/events/datastore/... ./pkg/env/... \
-            > /dev/null 2>/tmp/tc-stderr.log
-          rc=$?
-          set -e
-          echo "go test -cover exit: $rc  covdata-errors: $(grep -c 'no such tool' /tmp/tc-stderr.log 2>/dev/null || echo 0)"
-          echo ""
-        }
-
-        # Save original PATH to restore between tests
-        ORIG_PATH=$PATH
-
-        # 5. setup-go with go-version-file (reads go.mod), cache disabled
-        echo "Setting up Go from go.mod via setup-go..."
-        # Simulate what setup-go does: activate hostedtoolcache Go, set GOTOOLCHAIN=local
-        go_dir=$(ls -d /opt/hostedtoolcache/go/1.25.*/x64 2>/dev/null | sort -V | tail -1)
-        export PATH="$go_dir/bin:$HOME/go/bin:$ORIG_PATH"
-        export GOTOOLCHAIN=local
-        test_variant "setup-go style: hostedtoolcache 1.25.x + GOTOOLCHAIN=local"
-
-        # 6. setup-go + override GOTOOLCHAIN back to auto
-        export GOTOOLCHAIN=auto
-        test_variant "setup-go style: hostedtoolcache 1.25.x + GOTOOLCHAIN=auto"
-
-        # 7. Activate hostedtoolcache Go, no GOTOOLCHAIN override
-        unset GOTOOLCHAIN
-        test_variant "hostedtoolcache Go on PATH, default GOTOOLCHAIN"
-
-        # Restore
-        export PATH=$ORIG_PATH
+        echo "=== What version does setup-go pick for go.mod 'go 1.25.0'? ==="
+        echo "go.mod says: $(grep '^go ' go.mod)"
+        echo "setup-go installed: $(go version)"
+        echo "This is the latest 1.25.x in hostedtoolcache."
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
