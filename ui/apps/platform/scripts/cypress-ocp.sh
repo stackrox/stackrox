@@ -54,7 +54,7 @@ fi
 
 # Opens cypress with environment variables for feature flags and auth
 OPENSHIFT_CONSOLE_URL="${OPENSHIFT_CONSOLE_URL:-http://localhost:9000}"
-API_PROXY_BASE_URL="${OPENSHIFT_CONSOLE_URL}/api/proxy/plugin/advanced-cluster-security/api-service/proxy/central"
+api_endpoint="${UI_BASE_URL:-https://localhost:8000}"
 
 if [[ -z "$OCP_BRIDGE_AUTH_DISABLED" && ( -z "$OPENSHIFT_CONSOLE_USERNAME" || -z "$OPENSHIFT_CONSOLE_PASSWORD" ) ]]; then
     echo "OPENSHIFT_CONSOLE_USERNAME and OPENSHIFT_CONSOLE_PASSWORD must be set if OCP_BRIDGE_AUTH_DISABLED is not true"
@@ -65,8 +65,15 @@ curl_cfg() { # Use built-in echo to not expose $2 in the process list.
   echo -n "$1 = \"${2//[\"\\]/\\&}\""
 }
 
-if [[ -n "$OPENSHIFT_CONSOLE_PASSWORD" || "$OCP_BRIDGE_AUTH_DISABLED" == "true" ]]; then
-  readarray -t arr < <(curl -sk --config <(curl_cfg user "$OPENSHIFT_CONSOLE_USERNAME:$OPENSHIFT_CONSOLE_PASSWORD") "${API_PROXY_BASE_URL}"/v1/featureflags | jq -cr '.featureFlags[] | {name: .envVar, enabled: .enabled}')
+if [[ -z "$ROX_USERNAME" || -z "$ROX_ADMIN_PASSWORD" ]]; then
+  # basic auth creds weren't set (e.g. by CI), assume local k8s deployment
+  # shellcheck source=../../../../scripts/k8s/export-basic-auth-creds.sh
+  source ../../../scripts/k8s/export-basic-auth-creds.sh ../../../deploy/k8s
+fi
+
+# Fetch feature flags directly from Central rather than through the OCP Console proxy
+if [[ -n "$ROX_ADMIN_PASSWORD" ]]; then
+  readarray -t arr < <(curl -sk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") "${api_endpoint}"/v1/featureflags | jq -cr '.featureFlags[] | {name: .envVar, enabled: .enabled}')
   for i in "${arr[@]}"; do
     name=$(echo "$i" | jq -rc .name)
     val=$(echo "$i" | jq -rc .enabled)

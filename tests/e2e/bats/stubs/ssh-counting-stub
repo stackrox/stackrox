@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# SSH stub that tracks call count via CALL_LOG.
+# First call: emits the __STAGE_DIR__ marker (simulates create_remote_stage_dir).
+# Subsequent calls: records stdin (the heredoc) to CALL_LOG.heredoc for assertion.
+#
+# Requires: CALL_LOG environment variable.
+if [ ! -f "${CALL_LOG}.ssh_call_count" ]; then
+    echo "0" > "${CALL_LOG}.ssh_call_count"
+fi
+count=$(cat "${CALL_LOG}.ssh_call_count")
+count=$((count + 1))
+echo "${count}" > "${CALL_LOG}.ssh_call_count"
+
+if [ "${count}" -eq 1 ]; then
+    echo "__STAGE_DIR__=/var/tmp/roxagent-install.FAKEXX"
+else
+    cat >> "${CALL_LOG}.heredoc"
+fi
