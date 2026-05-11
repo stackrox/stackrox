@@ -95,7 +95,7 @@
         "yup": "^1.6.1"
     },
     "scripts": {
-        "clean": "rm -rf ./test-results ./cypress/test-results",
+        "clean": "rm -rf ./test-results ./cypress/test-results ./cypress/webpack-output",
         "start": "vite serve",
         "start:ocp-plugin": "NODE_ENV=development webpack serve --config webpack.ocp-plugin.config.js",
         "build": "tsc && NODE_OPTIONS=--max_old_space_size=4096 vite build",
@@ -150,7 +150,6 @@
         "css-loader": "^7.1.2",
         "cypress": "^15.14.1",
         "cypress-axe": "^1.7.0",
-        "cypress-vite": "^1.10.0",
         "eslint": "^9.39.3",
         "eslint-import-resolver-typescript": "^4.2.6",
         "eslint-plugin-cypress": "^6.1.0",
