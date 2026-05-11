@@ -30,12 +30,12 @@ runs:
     #     when go.mod specifies a newer build version via `toolchain`.
     #
     # What this action does instead:
-    #   - Reads the `toolchain` directive first (falls back to `go`)
-    #     and finds the best matching Go pre-installed on the runner.
     #   - Sets GOTOOLCHAIN=auto so sub-modules can resolve their own
     #     toolchain requirements.
     #   - Manages GOCACHE with per-job keys (via key-suffix input) and
     #     trims stale entries in a post-step before cache save.
+    #   - Reads the `toolchain` directive first (falls back to `go`)
+    #     and finds the best matching Go pre-installed on the runner.
     - name: Setup Go
       run: |
         # Prefer toolchain directive (build version), fall back to go directive (minimum).
