@@ -10,6 +10,13 @@ import (
 	"github.com/stackrox/rox/scanner/matcher/repo2cpe"
 )
 
+// NewRHELCPETransformFunc returns a PURL transformer that resolves
+// repository_id to repository_cpes. Clairore's RHEL matcher requires the
+// repository_cpes qualifier to produce IndexRecords for correct vulnerability
+// matching; without it, RHEL RPM PURLs are silently skipped. External SBOMs
+// typically only carry the repository_id query parameter, so this enrichment
+// step is necessary. Other PURL types (Alpine, Debian, etc.) do not use
+// CPE-based repository matching in Claircore.
 func NewRHELCPETransformFunc(updater *repo2cpe.Updater) func(ctx context.Context, p *packageurl.PackageURL) error {
 	return func(ctx context.Context, p *packageurl.PackageURL) error {
 		qs := p.Qualifiers.Map()
