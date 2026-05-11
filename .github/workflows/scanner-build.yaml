@@ -101,6 +101,11 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+        cache: false
+    - run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
     - name: Cache Go dependencies
       env:
         GOARCH: ${{ matrix.goarch }}

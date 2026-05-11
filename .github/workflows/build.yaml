@@ -243,6 +243,11 @@ jobs:
       - name: PR labels
         uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
 
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
       - name: Cache Go dependencies
         if: |
           needs.define-job-matrix.outputs.gotags == 'release'
@@ -295,6 +300,11 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
       - name: Cache Go dependencies
         env:
           GOARCH: ${{ matrix.arch }}
@@ -362,6 +372,11 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
@@ -398,6 +413,11 @@ jobs:
       with:
         node-version-file: ui/package.json
 
+    - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+        cache: false
+    - run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
@@ -433,6 +453,11 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
