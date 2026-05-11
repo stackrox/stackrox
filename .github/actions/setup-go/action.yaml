@@ -34,8 +34,9 @@ runs:
     #     toolchain requirements.
     #   - Manages GOCACHE with per-job keys (via key-suffix input) and
     #     trims stale entries in a post-step before cache save.
-    #   - Reads the `toolchain` directive first (falls back to `go`)
-    #     and finds the best matching Go pre-installed on the runner.
+    #   - Uses go.mod's `toolchain` directive to determine the build
+    #     version (falls back to `go` if unset), and finds the best
+    #     matching Go pre-installed on the runner.
     - name: Setup Go
       run: |
         # Prefer toolchain directive (build version), fall back to go directive (minimum).
