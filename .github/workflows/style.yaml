@@ -37,10 +37,6 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # ratchet:actions/setup-python@v6
-      with:
-        python-version-file: operator/bundle_helpers/.python-version
-
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
 
