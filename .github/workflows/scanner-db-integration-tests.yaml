@@ -33,8 +33,7 @@ jobs:
         su postgres -c 'initdb -D /tmp/data'
         su postgres -c 'pg_ctl -D /tmp/data start'
 
-    - name: Setup Go and cache
-      uses: ./.github/actions/setup-go
+      - uses: ./.github/actions/setup-go
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1

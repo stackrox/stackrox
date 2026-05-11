@@ -129,8 +129,7 @@ jobs:
           xmlstarlet --version
           pycodestyle --version
 
-      - name: Setup Go and cache
-        uses: ./.github/actions/setup-go
+        - uses: ./.github/actions/setup-go
 
       - name: Download scanner module for proto generation
         run: go mod download github.com/stackrox/scanner
