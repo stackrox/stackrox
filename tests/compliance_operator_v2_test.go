@@ -1180,13 +1180,9 @@ func TestComplianceV2GetComplianceRule(t *testing.T) {
 				tpName, current.Status.State, current.Status.ErrorMessage)
 		}, 10*time.Second, 1*time.Second)
 
-		profileClient := v2.NewComplianceProfileServiceClient(conn)
-		waitUntilTPInCentralDB(ctx, t, profileClient, clusterID, tpName)
-
 		require.EventuallyWithT(t, func(c *assert.CollectT) {
 			resp, err := ruleClient.GetComplianceRule(ctx, &v2.RuleRequest{
 				RuleName: crName,
-				Query:    &v2.RawQuery{Query: "Cluster ID:" + clusterID},
 			})
 			require.NoError(c, err)
 			require.NotNil(c, resp)
