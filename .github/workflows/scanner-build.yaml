@@ -104,7 +104,7 @@ jobs:
     - name: Cache Go dependencies
       env:
         GOARCH: ${{ matrix.goarch }}
-      uses: ./.github/actions/cache-go-dependencies
+      uses: ./.github/actions/setup-go
 
     - uses: ./.github/actions/handle-tagged-build
 
