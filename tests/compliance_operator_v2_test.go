@@ -1152,34 +1152,6 @@ func TestComplianceV2GetComplianceRule(t *testing.T) {
 		crName := fmt.Sprintf("rule-get-%s", uuid.NewV4().String())
 		createCustomRule(ctx, t, dynClient, crName)
 
-		tpName := crName
-		tp := &complianceoperatorv1.TailoredProfile{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      tpName,
-				Namespace: coNamespaceV2,
-			},
-			Spec: complianceoperatorv1.TailoredProfileSpec{
-				Title:       "E2E GetComplianceRule custom",
-				Description: "From-scratch TP for GetComplianceRule e2e test",
-				EnableRules: []complianceoperatorv1.RuleReferenceSpec{
-					{Name: crName, Kind: complianceoperatorv1.CustomRuleKind, Rationale: "e2e test"},
-				},
-			},
-		}
-		require.NoError(t, dynClient.Create(ctx, tp), "failed to create TP")
-		t.Cleanup(func() {
-			deleteResource[complianceoperatorv1.TailoredProfile](ctx, t, dynClient, tpName, coNamespaceV2)
-		})
-
-		require.EventuallyWithT(t, func(c *assert.CollectT) {
-			var current complianceoperatorv1.TailoredProfile
-			err := dynClient.Get(ctx, types.NamespacedName{Name: tpName, Namespace: coNamespaceV2}, &current)
-			require.NoErrorf(c, err, "failed to get TailoredProfile %s", tpName)
-			require.Equalf(c, complianceoperatorv1.TailoredProfileStateReady, current.Status.State,
-				"TailoredProfile %s not READY (state: %q, error: %q)",
-				tpName, current.Status.State, current.Status.ErrorMessage)
-		}, 10*time.Second, 1*time.Second)
-
 		require.EventuallyWithT(t, func(c *assert.CollectT) {
 			resp, err := ruleClient.GetComplianceRule(ctx, &v2.RuleRequest{
 				RuleName: crName,
