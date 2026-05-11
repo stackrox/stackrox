@@ -279,8 +279,8 @@ func (m *networkFlowManager) handleConnectionEnrichmentResult(result EnrichmentR
 	case EnrichmentResultInvalidInput:
 		switch reason {
 		case EnrichmentReasonConnParsingIPFailed:
-			log.Debugf("Enrichment failed. Unable to parse IP address.")
-			return PostEnrichmentActionRetry
+			log.Debugf("Enrichment failed. Unable to parse IP address. Removing connection.")
+			return PostEnrichmentActionRemove
 		}
 	case EnrichmentResultSkipped:
 		switch reason {
