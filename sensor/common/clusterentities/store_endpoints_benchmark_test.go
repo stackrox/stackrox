@@ -54,6 +54,37 @@ func BenchmarkEndpointsStoreAddToHistory(b *testing.B) {
 	}
 }
 
+func TestApplyNoLock_AllocationsForUnchangedDeployment(t *testing.T) {
+	store := newEndpointsStoreWithMemory(5)
+	data := benchmarkGenerateEntityData(50, 4)
+	updates := map[string]*EntityData{
+		"depl-bench": data,
+	}
+	store.Apply(updates, false)
+
+	allocs := testing.AllocsPerRun(100, func() {
+		store.Apply(updates, false)
+	})
+
+	if allocs > 5 {
+		t.Fatalf("expected unchanged Apply to stay within allocation budget, got %.0f allocations", allocs)
+	}
+}
+
+func benchmarkGenerateEntityData(numEndpoints, targetsPerEndpoint int) *EntityData {
+	data := &EntityData{}
+	for endpointIdx := range numEndpoints {
+		endpoint := buildEndpoint(fmt.Sprintf("10.%d.%d.%d", (endpointIdx/65536)%256, (endpointIdx/256)%256, endpointIdx%256), 8080)
+		for targetIdx := range targetsPerEndpoint {
+			data.AddEndpoint(endpoint, EndpointTargetInfo{
+				ContainerPort: uint16(8080 + targetIdx),
+				PortName:      fmt.Sprintf("port-%d", targetIdx),
+			})
+		}
+	}
+	return data
+}
+
 // legacy is the version used in 4.10.0 and earlier (before backporting the fix).
 /*
 Running tool: /usr/local/go/bin/go test -test.fullpath=true -benchmem -run=^$ -bench ^BenchmarkEndpointsStoreAddToHistory$ github.com/stackrox/rox/sensor/common/clusterentities -count=1

@@ -2,6 +2,7 @@ package clusterentities
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -104,9 +105,22 @@ func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool)
 func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) {
 	defer e.updateMetricsNoLock()
 	if !incremental {
-		for deploymentID := range updates {
+		unchangedDeployments := set.NewStringSet()
+		for deploymentID, data := range updates {
+			if !data.isDeleteOnly() && e.endpointsUnchangedNoLock(deploymentID, data.endpoints) {
+				unchangedDeployments.Add(deploymentID)
+				continue
+			}
 			e.purgeNoLock(deploymentID)
 		}
+		for deploymentID, data := range updates {
+			if data.isDeleteOnly() || unchangedDeployments.Contains(deploymentID) {
+				// A call to Apply() with empty payload of the updates map (no values) is meant to be a delete operation.
+				continue
+			}
+			e.applySingleNoLock(deploymentID, *data)
+		}
+		return
 	}
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
@@ -115,6 +129,37 @@ func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental
 		}
 		e.applySingleNoLock(deploymentID, *data)
 	}
+}
+
+func (e *endpointsStore) endpointsUnchangedNoLock(deploymentID string, newEndpoints map[net.NumericEndpoint][]EndpointTargetInfo) bool {
+	currentEndpoints, found := e.reverseEndpointMap[deploymentID]
+	if !found {
+		return len(newEndpoints) == 0
+	}
+	if len(currentEndpoints) != len(newEndpoints) {
+		return false
+	}
+	for endpoint, newTargetInfos := range newEndpoints {
+		if !currentEndpoints.Contains(endpoint) {
+			return false
+		}
+
+		currentTargetInfos, found := e.endpointMap[endpoint][deploymentID]
+		if !found || len(currentTargetInfos) != len(newTargetInfos) {
+			return false
+		}
+		for _, targetInfo := range newTargetInfos {
+			if !currentTargetInfos.Contains(targetInfo) {
+				return false
+			}
+		}
+		for currentTargetInfo := range currentTargetInfos {
+			if !slices.Contains(newTargetInfos, currentTargetInfo) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func (e *endpointsStore) purgeNoLock(deploymentID string) {
