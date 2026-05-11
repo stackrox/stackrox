@@ -36,17 +36,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    # Stable version ldflags for test caching: Go's test cache keys include
-    # link ActionID which includes -X ldflags. Fixed BUILD_TAG/SHORTCOMMIT
-    # prevent per-commit cache misses.
-    # TODO(golang/go#75031): remove GOTOOLCHAIN once Go fixes covdata with
-    # auto-downloaded toolchains. Without this, GOTOOLCHAIN=auto downloads
-    # Go into the read-only module cache where lazy-built tools like covdata
-    # (needed by -cover) fail to build, causing go test to exit 1.
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
-      GOTOOLCHAIN: go1.25.0+auto
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -57,7 +49,7 @@ jobs:
         free-disk-space: 30
 
     - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
+      uses: ./.github/actions/setup-go
       with:
         key-suffix: ${{ matrix.gotags }}
 
@@ -129,7 +121,6 @@ jobs:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
       POSTGRES_PASSWORD: testpassword
-      GOTOOLCHAIN: go1.25.0+auto
     steps:
     # Runner's postgres is initialized with C.UTF-8 locale (GHA default).
     # Tests (e.g. central/splunk) require byte-order collation.
@@ -157,7 +148,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
+      uses: ./.github/actions/setup-go
       with:
         key-suffix: ${{ matrix.gotags }}-${{ matrix.pg }}
 
@@ -216,7 +207,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
+      uses: ./.github/actions/setup-go
 
     - name: Go Bench Tests
       run: make go-postgres-bench-tests
@@ -346,7 +337,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
+      uses: ./.github/actions/setup-go
 
     - uses: ./.github/actions/handle-tagged-build
 
@@ -445,7 +436,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
+      uses: ./.github/actions/setup-go
 
     - name: Login to Quay.io
       uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4

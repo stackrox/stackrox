@@ -249,7 +249,7 @@ jobs:
             || github.ref_name == 'master'
             || github.event_name == 'workflow_call'
             || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
-        uses: ./.github/actions/cache-go-dependencies
+        uses: ./.github/actions/setup-go
 
       - name: Build CLI
         if: |
@@ -298,7 +298,7 @@ jobs:
       - name: Cache Go dependencies
         env:
           GOARCH: ${{ matrix.arch }}
-        uses: ./.github/actions/cache-go-dependencies
+        uses: ./.github/actions/setup-go
         with:
           # Only race needs a separate cache (-race/CGO_ENABLED=1 produces 39% unique entries).
           # Default and prerelease share 93% of entries and should use the same cache.
@@ -363,7 +363,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
+        uses: ./.github/actions/setup-go
 
       - name: Download scanner module for proto generation
         run: go mod download github.com/stackrox/scanner
@@ -399,7 +399,7 @@ jobs:
         node-version-file: ui/package.json
 
     - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
+      uses: ./.github/actions/setup-go
 
     - uses: ./.github/actions/cache-ui-dependencies
 
@@ -434,7 +434,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
+        uses: ./.github/actions/setup-go
 
       - uses: ./.github/actions/handle-tagged-build
 
