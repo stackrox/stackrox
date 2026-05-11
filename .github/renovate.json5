@@ -72,4 +72,8 @@
     "dockerfile",
     "rpm-lockfile",
   ],
+  "labels": [
+    // Add auto-approve label which triggers the corresponding workflow.
+    "auto-approve",
+  ],
 }
