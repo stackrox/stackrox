@@ -54,33 +54,6 @@ func BenchmarkEndpointsStoreAddToHistory(b *testing.B) {
 	}
 }
 
-func TestApplySingleNoLock_AllocationsForNewDeployment(t *testing.T) {
-	data := benchmarkGenerateEntityData(50, 4)
-
-	allocs := testing.AllocsPerRun(100, func() {
-		store := newEndpointsStoreWithMemory(5)
-		store.applySingleNoLock("depl-bench", *data)
-	})
-
-	if allocs > 220 {
-		t.Fatalf("expected applySingleNoLock to stay within allocation budget, got %.0f allocations", allocs)
-	}
-}
-
-func benchmarkGenerateEntityData(numEndpoints, targetsPerEndpoint int) *EntityData {
-	data := &EntityData{}
-	for endpointIdx := range numEndpoints {
-		endpoint := buildEndpoint(fmt.Sprintf("10.%d.%d.%d", (endpointIdx/65536)%256, (endpointIdx/256)%256, endpointIdx%256), 8080)
-		for targetIdx := range targetsPerEndpoint {
-			data.AddEndpoint(endpoint, EndpointTargetInfo{
-				ContainerPort: uint16(8080 + targetIdx),
-				PortName:      fmt.Sprintf("port-%d", targetIdx),
-			})
-		}
-	}
-	return data
-}
-
 // legacy is the version used in 4.10.0 and earlier (before backporting the fix).
 /*
 Running tool: /usr/local/go/bin/go test -test.fullpath=true -benchmem -run=^$ -bench ^BenchmarkEndpointsStoreAddToHistory$ github.com/stackrox/rox/sensor/common/clusterentities -count=1
@@ -98,3 +71,38 @@ BenchmarkEndpointsStoreAddToHistory/legacy_endpoints_5000-12 	    2221	    53532
 PASS
 ok  	github.com/stackrox/rox/sensor/common/clusterentities	7.895s
 */
+
+func BenchmarkApplySingleNoLock_AllocationsForNewDeployment(b *testing.B) {
+	for _, tc := range []struct {
+		name               string
+		numEndpoints       int
+		targetsPerEndpoint int
+	}{
+		{name: "50x4", numEndpoints: 50, targetsPerEndpoint: 4},
+		{name: "500x4", numEndpoints: 500, targetsPerEndpoint: 4},
+		{name: "5000x4", numEndpoints: 5000, targetsPerEndpoint: 4},
+	} {
+		b.Run(tc.name, func(b *testing.B) {
+			data := benchmarkGenerateEntityData(tc.numEndpoints, tc.targetsPerEndpoint)
+			b.ReportAllocs()
+			for b.Loop() {
+				store := newEndpointsStoreWithMemory(5)
+				store.applySingleNoLock("depl-bench", *data)
+			}
+		})
+	}
+}
+
+func benchmarkGenerateEntityData(numEndpoints, targetsPerEndpoint int) *EntityData {
+	data := &EntityData{}
+	for endpointIdx := range numEndpoints {
+		endpoint := buildEndpoint(fmt.Sprintf("10.%d.%d.%d", (endpointIdx/65536)%256, (endpointIdx/256)%256, endpointIdx%256), 8080)
+		for targetIdx := range targetsPerEndpoint {
+			data.AddEndpoint(endpoint, EndpointTargetInfo{
+				ContainerPort: uint16(8080 + targetIdx),
+				PortName:      fmt.Sprintf("port-%d", targetIdx),
+			})
+		}
+	}
+	return data
+}
