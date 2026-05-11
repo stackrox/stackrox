@@ -17,12 +17,23 @@ runs:
   steps:
     # Activate the latest Go from hostedtoolcache that satisfies go.mod.
     # This replaces actions/setup-go — we avoid its downsides:
-    #   - setup-go sets GOTOOLCHAIN=local (breaks sub-module tool downloads)
-    #   - setup-go caches GOCACHE with a single key for all jobs — different
-    #     jobs (unit tests, postgres tests, style) write incompatible entries
-    #     into the same cache, and the cache grows unbounded without trimming
-    #   - setup-go reads the `go` directive, not `toolchain` (installs wrong version)
-    # Our approach: find the best pre-installed Go, add to PATH, set GOTOOLCHAIN=auto.
+    #
+    #   setup-go                          this action
+    #   ─────────────────────────────     ─────────────────────────────
+    #   sets GOTOOLCHAIN=local            sets GOTOOLCHAIN=auto
+    #   (breaks sub-module tool           (sub-modules can download
+    #    downloads that need a             their required toolchain
+    #    newer Go than go.mod)             versions automatically)
+    #
+    #   caches GOCACHE with one key       per-job cache keys with
+    #   for all jobs — different jobs      stale-entry trimming
+    #   overwrite each other's cache      (see key-suffix input and
+    #   and it grows unbounded             trim post-step below)
+    #
+    #   reads `go` directive, not         finds the best pre-installed
+    #   `toolchain` — installs the        Go that satisfies go.mod,
+    #   minimum version even when          using whichever patch the
+    #   a newer patch is available         runner image ships
     - name: Setup Go
       run: |
         required=$(grep '^go ' go.mod | awk '{print $2}')
