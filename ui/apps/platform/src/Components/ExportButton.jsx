@@ -45,8 +45,8 @@ class ExportButton extends Component {
         customCsvExportHandler: PropTypes.func,
         page: PropTypes.string,
         disabled: PropTypes.bool,
-        isExporting: PropTypes.bool.isRequired,
-        setIsExporting: PropTypes.func.isRequired,
+        isExporting: PropTypes.bool,
+        setIsExporting: PropTypes.func,
     };
 
     static defaultProps = {
@@ -60,6 +60,8 @@ class ExportButton extends Component {
         customCsvExportHandler: null,
         page: '',
         disabled: false,
+        isExporting: false,
+        setIsExporting: () => {},
     };
 
     constructor(props) {
