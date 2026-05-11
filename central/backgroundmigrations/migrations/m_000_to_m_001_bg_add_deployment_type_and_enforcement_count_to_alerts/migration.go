@@ -3,7 +3,6 @@ package m000tom001
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/backgroundmigrations/migrations"
 	"github.com/stackrox/rox/central/backgroundmigrations/types"
@@ -43,6 +42,8 @@ func run(ctx context.Context, db postgres.DB) error {
 	return nil
 }
 
+// backfillDeploymentType is a single atomic UPDATE via JOIN — no read-then-write,
+// so no concurrency issue with Central's writes.
 func backfillDeploymentType(ctx context.Context, db postgres.DB) error {
 	result, err := db.Exec(ctx,
 		`UPDATE alerts a SET bg_deployment_type = d.type
@@ -59,6 +60,10 @@ func backfillDeploymentType(ctx context.Context, db postgres.DB) error {
 	return nil
 }
 
+// backfillOrphanedDeploymentType reads the deployment type from the serialized
+// blob for alerts whose deployment no longer exists in the deployments table.
+// Uses cursor-based pagination on the PK index with FOR UPDATE SKIP LOCKED
+// inside a transaction to avoid stale reads from concurrent Central writes.
 func backfillOrphanedDeploymentType(ctx context.Context, db postgres.DB) error {
 	totalBackfilled := 0
 	lastID := ""
@@ -68,24 +73,22 @@ func backfillOrphanedDeploymentType(ctx context.Context, db postgres.DB) error {
 			return ctx.Err()
 		}
 
-		ids, deployTypes, newLastID, err := readOrphanedDeploymentTypes(ctx, db, lastID)
+		count, newLastID, err := processOrphanedDeploymentTypeBatch(ctx, db, lastID)
 		if err != nil {
 			return err
 		}
-		lastID = newLastID
+		if newLastID != "" {
+			lastID = newLastID
+		}
 
-		if len(ids) == 0 {
+		if count == 0 {
 			break
 		}
 
-		if err := batchUpdateDeploymentType(ctx, db, ids, deployTypes); err != nil {
-			return err
-		}
+		totalBackfilled += count
+		log.Infof("Backfilled bg_deployment_type for %d orphaned alerts (total: %d)", count, totalBackfilled)
 
-		totalBackfilled += len(ids)
-		log.Infof("Backfilled bg_deployment_type for %d orphaned alerts (total: %d)", len(ids), totalBackfilled)
-
-		if len(ids) < batchSize {
+		if count < batchSize {
 			break
 		}
 	}
@@ -94,79 +97,83 @@ func backfillOrphanedDeploymentType(ctx context.Context, db postgres.DB) error {
 	return nil
 }
 
-func readOrphanedDeploymentTypes(ctx context.Context, db postgres.DB, lastID string) (ids []string, deployTypes []string, newLastID string, err error) {
-	var rows pgx.Rows
-
-	if lastID == "" {
-		rows, err = db.Query(ctx,
-			`SELECT a.id, a.serialized FROM alerts a
-			WHERE a.entitytype = $1
-			  AND (a.bg_deployment_type IS NULL OR a.bg_deployment_type = '')
-			ORDER BY a.id LIMIT $2`,
-			storage.Alert_DEPLOYMENT, batchSize)
-	} else {
-		rows, err = db.Query(ctx,
-			`SELECT a.id, a.serialized FROM alerts a
-			WHERE a.entitytype = $1
-			  AND (a.bg_deployment_type IS NULL OR a.bg_deployment_type = '')
-			  AND a.id > $2
-			ORDER BY a.id LIMIT $3`,
-			storage.Alert_DEPLOYMENT, lastID, batchSize)
-	}
+func processOrphanedDeploymentTypeBatch(ctx context.Context, db postgres.DB, lastID string) (int, string, error) {
+	tx, err := db.Begin(ctx)
 	if err != nil {
-		return nil, nil, "", errors.Wrap(err, "querying orphaned deployment alerts")
+		return 0, "", errors.Wrap(err, "beginning transaction")
 	}
-	defer rows.Close()
+	defer func() { _ = tx.Rollback(ctx) }()
 
-	ids = make([]string, 0, batchSize)
-	deployTypes = make([]string, 0, batchSize)
+	var query string
+	var args []interface{}
+	if lastID == "" {
+		query = `SELECT a.id, a.serialized FROM alerts a
+			WHERE a.entitytype = $1
+			ORDER BY a.id LIMIT $2
+			FOR UPDATE SKIP LOCKED`
+		args = []interface{}{storage.Alert_DEPLOYMENT, batchSize}
+	} else {
+		query = `SELECT a.id, a.serialized FROM alerts a
+			WHERE a.entitytype = $1
+			  AND a.id > $2
+			ORDER BY a.id LIMIT $3
+			FOR UPDATE SKIP LOCKED`
+		args = []interface{}{storage.Alert_DEPLOYMENT, lastID, batchSize}
+	}
+
+	rows, err := tx.Query(ctx, query, args...)
+	if err != nil {
+		return 0, "", errors.Wrap(err, "querying orphaned deployment alerts")
+	}
+
+	type update struct {
+		id         string
+		deployType string
+	}
+	updates := make([]update, 0, batchSize)
+	var newLastID string
 
 	for rows.Next() {
 		var id string
 		var serialized []byte
 		if err := rows.Scan(&id, &serialized); err != nil {
-			return nil, nil, "", errors.Wrap(err, "scanning orphaned alert row")
+			rows.Close()
+			return 0, "", errors.Wrap(err, "scanning orphaned alert row")
 		}
 
 		alert := &storage.Alert{}
 		if err := alert.UnmarshalVT(serialized); err != nil {
-			return nil, nil, "", errors.Wrapf(err, "deserializing alert %s", id)
+			rows.Close()
+			return 0, "", errors.Wrapf(err, "deserializing alert %s", id)
 		}
 
-		ids = append(ids, id)
-		deployTypes = append(deployTypes, alert.GetDeployment().GetType())
 		newLastID = id
+		if alert.GetDeployment().GetType() == "" {
+			continue
+		}
+		updates = append(updates, update{id: id, deployType: alert.GetDeployment().GetType()})
 	}
-
+	rows.Close()
 	if err := rows.Err(); err != nil {
-		return nil, nil, "", errors.Wrap(err, "iterating orphaned alert rows")
+		return 0, "", errors.Wrap(err, "iterating orphaned alert rows")
 	}
 
-	return ids, deployTypes, newLastID, nil
-}
-
-func batchUpdateDeploymentType(ctx context.Context, db postgres.DB, ids []string, deployTypes []string) error {
-	conn, err := db.Acquire(ctx)
-	if err != nil {
-		return errors.Wrap(err, "acquiring connection")
-	}
-	defer conn.Release()
-
-	batch := &pgx.Batch{}
-	for i := range ids {
-		batch.Queue("UPDATE alerts SET bg_deployment_type = $1 WHERE id = $2", deployTypes[i], ids[i])
-	}
-
-	results := conn.SendBatch(ctx, batch)
-	for i := 0; i < len(ids); i++ {
-		if _, err := results.Exec(); err != nil {
-			_ = results.Close()
-			return errors.Wrapf(err, "updating bg_deployment_type for alert at index %d", i)
+	for _, u := range updates {
+		if _, err := tx.Exec(ctx, "UPDATE alerts SET bg_deployment_type = $1 WHERE id = $2", u.deployType, u.id); err != nil {
+			return 0, "", errors.Wrapf(err, "updating bg_deployment_type for alert %s", u.id)
 		}
 	}
-	return results.Close()
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, "", errors.Wrap(err, "committing orphaned deployment type batch")
+	}
+
+	return len(updates), newLastID, nil
 }
 
+// backfillEnforcementCount computes enforcement_count from the serialized blob
+// and writes to bg_enforcementcount. Uses cursor-based pagination on the PK
+// index with FOR UPDATE SKIP LOCKED to avoid stale reads.
 func backfillEnforcementCount(ctx context.Context, db postgres.DB) error {
 	totalBackfilled := 0
 	lastID := ""
@@ -180,7 +187,9 @@ func backfillEnforcementCount(ctx context.Context, db postgres.DB) error {
 		if err != nil {
 			return err
 		}
-		lastID = newLastID
+		if newLastID != "" {
+			lastID = newLastID
+		}
 
 		if count == 0 {
 			break
@@ -198,54 +207,60 @@ func backfillEnforcementCount(ctx context.Context, db postgres.DB) error {
 	return nil
 }
 
-func processEnforcementBatch(ctx context.Context, db postgres.DB, lastID string) (count int, newLastID string, err error) {
-	var rows pgx.Rows
-	if lastID == "" {
-		rows, err = db.Query(ctx,
-			`SELECT id, serialized FROM alerts
-			WHERE enforcement_action != 0
-			  AND (bg_enforcementcount IS NULL OR bg_enforcementcount = 0)
-			ORDER BY id LIMIT $1`,
-			batchSize)
-	} else {
-		rows, err = db.Query(ctx,
-			`SELECT id, serialized FROM alerts
-			WHERE enforcement_action != 0
-			  AND (bg_enforcementcount IS NULL OR bg_enforcementcount = 0)
-			  AND id > $1
-			ORDER BY id LIMIT $2`,
-			lastID, batchSize)
+func processEnforcementBatch(ctx context.Context, db postgres.DB, lastID string) (int, string, error) {
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return 0, "", errors.Wrap(err, "beginning transaction")
 	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var query string
+	var args []interface{}
+	if lastID == "" {
+		query = `SELECT id, serialized FROM alerts
+			WHERE enforcement_action != 0
+			ORDER BY id LIMIT $1
+			FOR UPDATE SKIP LOCKED`
+		args = []interface{}{batchSize}
+	} else {
+		query = `SELECT id, serialized FROM alerts
+			WHERE enforcement_action != 0
+			  AND id > $1
+			ORDER BY id LIMIT $2
+			FOR UPDATE SKIP LOCKED`
+		args = []interface{}{lastID, batchSize}
+	}
+
+	rows, err := tx.Query(ctx, query, args...)
 	if err != nil {
 		return 0, "", errors.Wrap(err, "querying enforced alerts")
 	}
-	defer rows.Close()
 
 	type alertUpdate struct {
 		id    string
 		count int32
 	}
 	updates := make([]alertUpdate, 0, batchSize)
-	fetched := 0
+	var newLastID string
 
 	for rows.Next() {
-		fetched++
 		var id string
 		var data []byte
 		if err := rows.Scan(&id, &data); err != nil {
+			rows.Close()
 			return 0, "", errors.Wrap(err, "scanning enforced alert row")
 		}
 
 		alert := &storage.Alert{}
 		if err := alert.UnmarshalVT(data); err != nil {
+			rows.Close()
 			return 0, "", errors.Wrapf(err, "deserializing alert %s", id)
 		}
 
-		enfCount := computeEnforcementCount(alert)
-		updates = append(updates, alertUpdate{id: id, count: enfCount})
 		newLastID = id
+		updates = append(updates, alertUpdate{id: id, count: computeEnforcementCount(alert)})
 	}
-
+	rows.Close()
 	if err := rows.Err(); err != nil {
 		return 0, "", errors.Wrap(err, "iterating enforced alert rows")
 	}
@@ -254,29 +269,17 @@ func processEnforcementBatch(ctx context.Context, db postgres.DB, lastID string)
 		return 0, newLastID, nil
 	}
 
-	conn, err := db.Acquire(ctx)
-	if err != nil {
-		return 0, "", errors.Wrap(err, "acquiring connection")
-	}
-	defer conn.Release()
-
-	batch := &pgx.Batch{}
 	for _, u := range updates {
-		batch.Queue("UPDATE alerts SET bg_enforcementcount = $1 WHERE id = $2", u.count, u.id)
-	}
-
-	results := conn.SendBatch(ctx, batch)
-	for i := 0; i < len(updates); i++ {
-		if _, err := results.Exec(); err != nil {
-			_ = results.Close()
-			return 0, "", errors.Wrapf(err, "updating bg_enforcementcount for alert at index %d", i)
+		if _, err := tx.Exec(ctx, "UPDATE alerts SET bg_enforcementcount = $1 WHERE id = $2", u.count, u.id); err != nil {
+			return 0, "", errors.Wrapf(err, "updating bg_enforcementcount for alert %s", u.id)
 		}
 	}
-	if err := results.Close(); err != nil {
-		return 0, "", errors.Wrap(err, "closing batch results")
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, "", errors.Wrap(err, "committing enforcement count batch")
 	}
 
-	return fetched, newLastID, nil
+	return len(updates), newLastID, nil
 }
 
 func computeEnforcementCount(alert *storage.Alert) int32 {
