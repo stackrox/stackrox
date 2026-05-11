@@ -99,13 +99,14 @@ func (m *endpointManagerImpl) addEndpointDataForPod(pod *v1.Pod, data *clusteren
 
 func (m *endpointManagerImpl) endpointDataForDeployment(w *deploymentWrap) *clusterentities.EntityData {
 	result := &clusterentities.EntityData{}
+	allNodeIPs := m.getAllNodeIPs()
 
 	for _, pod := range w.pods {
 		m.addEndpointDataForPod(pod, result)
 	}
 
 	for _, svc := range m.serviceStore.getMatchingServicesWithRoutes(w.Namespace, w.PodLabels) {
-		m.addEndpointDataForService(w, svc.serviceWrap, result)
+		m.addEndpointDataForService(w, svc.serviceWrap, allNodeIPs, result)
 	}
 
 	m.podStore.forEach(w.GetNamespace(), w.GetId(), func(p *storage.Pod) {
@@ -134,6 +135,14 @@ func (m *endpointManagerImpl) endpointDataForDeployment(w *deploymentWrap) *clus
 	})
 
 	return result
+}
+
+func (m *endpointManagerImpl) getAllNodeIPs() []net.IPAddress {
+	var allNodeIPs []net.IPAddress
+	for _, node := range m.nodeStore.getNodes() {
+		allNodeIPs = append(allNodeIPs, node.addresses...)
+	}
+	return allNodeIPs
 }
 
 func getAllServiceIPs(svc *v1.Service) (serviceIPs []net.IPAddress) {
@@ -180,17 +189,14 @@ func addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []net.
 	}
 }
 
-func (m *endpointManagerImpl) addEndpointDataForService(deployment *deploymentWrap, svc *serviceWrap, data *clusterentities.EntityData) {
-	var allNodeIPs []net.IPAddress
+func (m *endpointManagerImpl) addEndpointDataForService(deployment *deploymentWrap, svc *serviceWrap, allNodeIPs []net.IPAddress, data *clusterentities.EntityData) {
+	var nodeIPs []net.IPAddress
 	if svc.Spec.Type == v1.ServiceTypeLoadBalancer || svc.Spec.Type == v1.ServiceTypeNodePort {
-		for _, node := range m.nodeStore.getNodes() {
-			allNodeIPs = append(allNodeIPs, node.addresses...)
-		}
+		nodeIPs = allNodeIPs
 	}
-
 	serviceIPs := getAllServiceIPs(svc.Service)
 	for _, port := range svc.Spec.Ports {
-		addEndpointDataForServicePort(deployment, serviceIPs, allNodeIPs, port, data)
+		addEndpointDataForServicePort(deployment, serviceIPs, nodeIPs, port, data)
 	}
 }
 
