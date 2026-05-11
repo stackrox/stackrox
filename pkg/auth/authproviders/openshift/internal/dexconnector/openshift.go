@@ -296,7 +296,7 @@ func (c *openshiftConnector) identity(ctx context.Context, s Scopes, token *oaut
 			return identity, errors.Wrap(err, "failed to marshal openshift's oauth2 token")
 		}
 		identity.ConnectorData = connData
-		log.Info(connData)
+		log.Info(string(connData))
 	}
 
 	return identity, nil

@@ -17,28 +17,6 @@ type acmBasedMapperImpl struct {
 	clientFactory func(ctx context.Context, token string) (externalrolebroker.ACMClient, error)
 }
 
-type user struct {
-	name       string
-	identifier string
-	groups     []string
-}
-
-func (u user) GetName() string {
-	return u.name
-}
-
-func (u user) GetUID() string {
-	return u.identifier
-}
-
-func (u user) GetGroups() []string {
-	return u.groups
-}
-
-func (u user) GetExtra() map[string][]string {
-	return nil
-}
-
 // FromUserDescriptor retrieves roles from ACM UserPermissions.
 // It queries the ACM clusterview aggregate API to get user permissions,
 // filters them for base Kubernetes resources, and converts them to ACS ResolvedRoles.
