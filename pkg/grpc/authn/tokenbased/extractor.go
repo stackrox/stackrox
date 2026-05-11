@@ -155,7 +155,7 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 		return nil, errors.New("external user tokens must originate from exactly one source")
 	}
 
-	log.Info("tokenBasedExtractor - getting role mapper for AuthProvider ", authProvider.GetId())
+	log.Info("tokenBasedExtractor - getting role mapper for AuthProvider ", authProvider.ID())
 	roleMapper := authProvider.RoleMapper()
 	if roleMapper == nil {
 		return nil, errors.New("misconfigured authentication provider: no role mapper defined")
