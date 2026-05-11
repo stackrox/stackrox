@@ -2,6 +2,7 @@ package acmclient
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
@@ -20,12 +21,26 @@ type ACMClient struct {
 	clusterviewClient clusterviewclient.ClusterviewV1alpha1Interface
 }
 
+type rtwrapper struct {
+	rt http.RoundTripper
+}
+
+func (rt *rtwrapper) RoundTrip(req *http.Request) (*http.Response, error) {
+	log.Info("RoundTripper request ", req.URL.Host, " ", req.URL.Path, " auth ", req.Header.Get("Authorization"))
+	return rt.rt.RoundTrip(req)
+}
+
+func loggingRoundTripper(rt http.RoundTripper) http.RoundTripper {
+	return &rtwrapper{rt: rt}
+}
+
 // NewACMClient creates a new client for the ACM clusterview API using in-cluster configuration.
 func NewACMClient() (*ACMClient, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get in-cluster config")
 	}
+	config.Wrap(loggingRoundTripper)
 
 	clusterviewClient, err := clusterviewclient.NewForConfig(config)
 	if err != nil {
@@ -43,6 +58,7 @@ func NewACMClientFromConfig(config *rest.Config) (*ACMClient, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clusterview client")
 	}
+	config.Wrap(loggingRoundTripper)
 
 	return &ACMClient{
 		clusterviewClient: clusterviewClient,
