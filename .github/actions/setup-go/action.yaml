@@ -30,13 +30,18 @@ runs:
     #   overwrite each other's cache      (see key-suffix input and
     #   and it grows unbounded             trim post-step below)
     #
-    #   reads `go` directive, not         finds the best pre-installed
-    #   `toolchain` — installs the        Go that satisfies go.mod,
-    #   minimum version even when          using whichever patch the
-    #   a newer patch is available         runner image ships
+    #   reads `go` directive, not         reads `toolchain` directive
+    #   `toolchain` — installs the        first (fall back to `go`),
+    #   minimum version even when          and finds the best match
+    #   a newer patch is available         pre-installed on the runner
     - name: Setup Go
       run: |
-        required=$(grep '^go ' go.mod | awk '{print $2}')
+        # Prefer toolchain directive (build version), fall back to go directive (minimum).
+        # The toolchain directive strips the "go" prefix: "toolchain go1.25.9" → "1.25.9".
+        required=$(grep '^toolchain ' go.mod | awk '{print $2}' | sed 's/^go//')
+        if [[ -z "$required" ]]; then
+          required=$(grep '^go ' go.mod | awk '{print $2}')
+        fi
         best=""
         for d in $(ls -d /opt/hostedtoolcache/go/*/x64 2>/dev/null | sort -rV); do
           ver=$(basename "$(dirname "$d")")
