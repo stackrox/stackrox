@@ -104,15 +104,13 @@ func (m *endpointManagerImpl) endpointDataForDeployment(w *deploymentWrap) *clus
 		m.addEndpointDataForPod(pod, result)
 	}
 
-	services := m.serviceStore.getMatchingServicesWithRoutes(w.Namespace, w.PodLabels)
 	var allNodeIPs []net.IPAddress
-	for _, svc := range services {
-		if svc.serviceWrap.Spec.Type == v1.ServiceTypeLoadBalancer || svc.serviceWrap.Spec.Type == v1.ServiceTypeNodePort {
+	for _, svc := range m.serviceStore.getMatchingServicesWithRoutes(w.Namespace, w.PodLabels) {
+		if allNodeIPs == nil &&
+			(svc.serviceWrap.Spec.Type == v1.ServiceTypeLoadBalancer ||
+				svc.serviceWrap.Spec.Type == v1.ServiceTypeNodePort) {
 			allNodeIPs = m.getAllNodeIPs()
-			break
 		}
-	}
-	for _, svc := range services {
 		m.addEndpointDataForService(w, svc.serviceWrap, allNodeIPs, result)
 	}
 
