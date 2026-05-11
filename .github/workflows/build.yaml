@@ -244,11 +244,6 @@ jobs:
         uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
 
       - name: Setup Go and cache
-        if: |
-          needs.define-job-matrix.outputs.gotags == 'release'
-            || github.ref_name == 'master'
-            || github.event_name == 'workflow_call'
-            || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
         uses: ./.github/actions/setup-go
 
       - name: Build CLI
