@@ -13,6 +13,12 @@ import (
 )
 
 const (
+	// msDOSReadOnly is the MS-DOS file attribute bit for read-only files.
+	// Windows ZIP extractors check this bit in the lower byte of ExternalAttrs.
+	msDOSReadOnly = 0x1
+)
+
+const (
 	emptyValue           = "Data not found for the cluster"
 	successfulClusterFmt = "cluster_%s.csv"
 	failedClusterFmt     = "failed_cluster_%s.csv"
@@ -48,7 +54,7 @@ type CSVWriter interface {
 
 //go:generate mockgen-wrapper
 type ZipWriter interface {
-	Create(string) (io.Writer, error)
+	CreateHeader(fh *zip.FileHeader) (io.Writer, error)
 	Close() error
 }
 
@@ -99,8 +105,18 @@ func (f *FormatterImpl) FormatCSVReport(results map[string][]*report.ResultRow, 
 	return &buf, nil
 }
 
+func readOnlyFileHeader(name string) *zip.FileHeader {
+	fh := &zip.FileHeader{
+		Name:   name,
+		Method: zip.Deflate,
+	}
+	fh.SetMode(0444)
+	fh.ExternalAttrs |= msDOSReadOnly
+	return fh
+}
+
 func (f *FormatterImpl) createCSVInZip(zipWriter ZipWriter, filename string, clusterResults []*report.ResultRow) error {
-	w, err := zipWriter.Create(filename)
+	w, err := zipWriter.CreateHeader(readOnlyFileHeader(filename))
 	if err != nil {
 		return err
 	}
@@ -133,7 +149,7 @@ func generateRecord(row *report.ResultRow) []string {
 }
 
 func (f *FormatterImpl) createFailedClusterFileInZip(zipWriter ZipWriter, filename string, failedCluster *report.FailedCluster) error {
-	w, err := zipWriter.Create(filename)
+	w, err := zipWriter.CreateHeader(readOnlyFileHeader(filename))
 	if err != nil {
 		return err
 	}

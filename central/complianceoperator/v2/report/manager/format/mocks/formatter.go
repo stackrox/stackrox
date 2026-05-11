@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	zip "archive/zip"
 	io "io"
 	reflect "reflect"
 
@@ -105,17 +106,17 @@ func (mr *MockZipWriterMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockZipWriter)(nil).Close))
 }
 
-// Create mocks base method.
-func (m *MockZipWriter) Create(arg0 string) (io.Writer, error) {
+// CreateHeader mocks base method.
+func (m *MockZipWriter) CreateHeader(fh *zip.FileHeader) (io.Writer, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", arg0)
+	ret := m.ctrl.Call(m, "CreateHeader", fh)
 	ret0, _ := ret[0].(io.Writer)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Create indicates an expected call of Create.
-func (mr *MockZipWriterMockRecorder) Create(arg0 any) *gomock.Call {
+// CreateHeader indicates an expected call of CreateHeader.
+func (mr *MockZipWriterMockRecorder) CreateHeader(fh any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockZipWriter)(nil).Create), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateHeader", reflect.TypeOf((*MockZipWriter)(nil).CreateHeader), fh)
 }
