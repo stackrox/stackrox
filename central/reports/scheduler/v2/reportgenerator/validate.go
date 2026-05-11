@@ -21,7 +21,7 @@ func ValidateReportRequest(request *ReportRequest) error {
 	}
 	// only check resource scope is non nil if report snapshot is for config based vuln reports
 	if request.ReportSnapshot.GetVulnReportFilters() != nil && request.ReportSnapshot.GetResourceScope() == nil {
-		errorList.AddError(errors.New("Report request does not have a valid non-nil collection."))
+		errorList.AddError(errors.New("Report request does not have a valid non-nil resource scope."))
 	}
 
 	return errorList.ToError()
