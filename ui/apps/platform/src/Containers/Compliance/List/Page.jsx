@@ -20,30 +20,28 @@ const ComplianceListPage = () => {
     const { pageEntityListType, entityId1, entityType2, entityListType2, entityId2 } = params;
     const placeholder = `Filter ${pluralize(lowerCase(pageEntityListType))}`;
     return (
-        <>
-            <section className="flex flex-col h-full relative" id="capture-list">
-                <Header
-                    entityType={pageEntityListType}
-                    searchComponent={
-                        <ComplianceSearchInput
-                            placeholder={placeholder}
-                            categories={['COMPLIANCE']}
-                            shouldAddComplianceState
-                        />
-                    }
-                    standard={query.Standard || query.standard}
-                />
-                <ComplianceList
-                    entityType={pageEntityListType}
-                    query={query}
-                    selectedRowId={entityId1}
-                    entityType2={entityType2}
-                    entityListType2={entityListType2}
-                    entityId2={entityId2}
-                    noSearch
-                />
-            </section>
-        </>
+        <section className="flex flex-col h-full relative">
+            <Header
+                entityType={pageEntityListType}
+                searchComponent={
+                    <ComplianceSearchInput
+                        placeholder={placeholder}
+                        categories={['COMPLIANCE']}
+                        shouldAddComplianceState
+                    />
+                }
+                standard={query.Standard || query.standard}
+            />
+            <ComplianceList
+                entityType={pageEntityListType}
+                query={query}
+                selectedRowId={entityId1}
+                entityType2={entityType2}
+                entityListType2={entityListType2}
+                entityId2={entityId2}
+                noSearch
+            />
+        </section>
     );
 };
 

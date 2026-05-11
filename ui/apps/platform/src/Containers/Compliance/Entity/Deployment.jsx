@@ -82,10 +82,7 @@ const DeploymentPage = ({
                         ...query[searchParam],
                     };
                     contents = (
-                        <section
-                            id="capture-list"
-                            className="flex flex-col flex-1 overflow-y-auto h-full"
-                        >
+                        <section className="flex flex-col flex-1 overflow-y-auto h-full">
                             <ComplianceList
                                 entityType={listEntityType1}
                                 query={listQuery}
@@ -110,7 +107,6 @@ const DeploymentPage = ({
                             className={`flex-1 relative bg-base-200 overflow-auto ${
                                 !sidePanelMode ? `p-6` : `p-4`
                             } `}
-                            id="capture-dashboard"
                         >
                             <div
                                 className={`grid ${

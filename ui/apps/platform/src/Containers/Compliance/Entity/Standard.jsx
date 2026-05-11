@@ -16,7 +16,7 @@ const StandardPage = ({
         'Standard Id': entityId,
     };
     return (
-        <section className="flex flex-col h-full relative" id="capture-list">
+        <section className="flex flex-col h-full relative">
             <Header
                 entityType={entityTypes.CONTROL}
                 searchComponent={
