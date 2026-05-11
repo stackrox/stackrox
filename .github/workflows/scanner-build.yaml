@@ -103,7 +103,7 @@ jobs:
 
       env:
         GOARCH: ${{ matrix.goarch }}
-      - uses: ./.github/actions/setup-go
+    - uses: ./.github/actions/setup-go
 
     - uses: ./.github/actions/handle-tagged-build
 
