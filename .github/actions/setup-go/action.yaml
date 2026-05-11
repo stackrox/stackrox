@@ -1,5 +1,7 @@
-name: Cache Go Dependencies
-description: Cache Go Dependencies
+name: Setup Go and Cache
+description: >
+  Wraps actions/setup-go with our GOCACHE management: per-job cache
+  keys, stale-entry trimming, and mtime stabilization for test caching.
 inputs:
   save:
     description: Whether this job saves caches on pushes to the default branch.
@@ -12,19 +14,49 @@ inputs:
 runs:
   using: composite
   steps:
+    # Use actions/setup-go for Go installation. We override two defaults:
+    #
+    # Problems with actions/setup-go defaults:
+    #   - Sets GOTOOLCHAIN=local, which prevents sub-module tools from
+    #     auto-downloading their required Go versions.
+    #   - Caches GOCACHE with a single key shared across all jobs.
+    #     Different jobs (unit tests, postgres tests, style) write
+    #     incompatible entries into the same cache, and it grows
+    #     unbounded because setup-go never trims stale entries.
+    #   - Reads the `go` directive instead of `toolchain`, so it
+    #     installs the minimum language version (e.g. 1.25.0) even
+    #     when go.mod specifies a newer build version via `toolchain`.
+    #
+    # What this action does instead:
+    #   - Overrides GOTOOLCHAIN to auto so sub-modules can resolve
+    #     their own toolchain requirements.
+    #   - Manages GOCACHE with per-job keys (via key-suffix input)
+    #     and trims stale entries in a post-step before cache save.
+    #   - Delegates version selection to actions/setup-go (reads
+    #     go.mod via go-version-file). Note: setup-go reads the `go`
+    #     directive, not `toolchain` — see actions/setup-go#480.
+    - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+      shell: bash
+
+    - name: Register Go problem matchers
+      run: echo "::add-matcher::${GITHUB_ACTION_PATH}/matchers.json"
+      shell: bash
+
     - name: Determine Go cache paths
       id: cache-paths
       run: |
         echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
         echo "TAG=${{ github.sha }}" >> "$GITHUB_OUTPUT"
-        # Hash go.mod once for use in cache keys. When dependencies change,
-        # the GOCACHE must be invalidated because Go's module index caches
-        # parsed imports by (filename, mtime, size) and our fixed mtimes
-        # can cause stale cached imports when file content changes.
         echo "GOMOD_HASH=$(sha256sum go.mod | cut -c1-16)" >> "$GITHUB_OUTPUT"
         suffix="${{ inputs.key-suffix }}"
-        echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"  # prepends dash if set
+        echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"
       shell: bash
 
     - name: Cache Go Build (save)
@@ -47,14 +79,7 @@ runs:
       run: |
         gocache="${{ steps.cache-paths.outputs.GOCACHE }}"
         if [[ -d "$gocache" ]]; then
-          # Backdate all cache entries to year 2000. During the build/test,
-          # Go's markUsed() updates mtimes of accessed entries to "now"
-          # (it always updates when mtime is >1 hour old). The post-step
-          # below trims entries still at year 2000 before cache save.
           timeout 120 find "$gocache" -type f -exec touch -t 200001010000 {} + || true
-          # Protect trim.txt: if backdated, Go's built-in Trim() sees
-          # "last trim was in year 2000" and deletes ALL backdated entries
-          # before the build starts. Setting it to now prevents this.
           echo "$(date +%s)" > "$gocache/trim.txt"
           echo "Marked GOCACHE entries for stale detection"
         fi
@@ -80,28 +105,12 @@ runs:
     - name: Clear test cache on non-PR runs
       if: github.event_name != 'pull_request'
       run: |
-        # Non-PR runs (master, release branches, nightlies) always run tests
-        # from scratch to catch real failures. go clean -testcache removes
-        # cached test results while preserving the compilation cache.
         go clean -testcache
         echo "Cleared test cache for fresh run"
       shell: bash
 
     - name: Stabilize file mtimes for Go test cache
       run: |
-        # Go's test cache validates inputs by (path, size, mtime) — NOT content.
-        # git checkout sets all mtimes to "now", which differs between CI runs,
-        # causing every test to miss the cache. Setting a fixed mtime makes the
-        # test cache hit across runs when file content hasn't changed.
-        #
-        # Go's module index also caches parsed imports by (filename, mtime, size).
-        # A fixed mtime can cause stale cached imports when a file changes content
-        # but keeps the same size. This is mitigated by including go.mod hash in
-        # the GOCACHE key — dependency changes invalidate the entire cache.
-        # See: https://github.com/golang/go/blob/go1.25.7/src/cmd/go/internal/modindex/read.go#L116
-
         git ls-files | xargs touch -t 200101010000
-        # Also stabilize directory mtimes — tests using os.ReadDir or
-        # filepath.Walk check directory mtimes too.
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
       shell: bash
