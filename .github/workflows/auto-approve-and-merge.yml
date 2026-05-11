@@ -1,4 +1,4 @@
-name: auto-merge
+name: auto-approve-and-merge
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   auto-approve:
-    name: Auto-approve Konflux updates for default branch
+    name: Auto-approve and auto-merge Konflux updates for default branch
     runs-on: ubuntu-slim
     if: github.actor == 'red-hat-konflux[bot]' && github.event.label.name == 'auto-approve' && github.event.pull_request.base.ref == github.event.pull_request.base.repo.default_branch
     steps:
@@ -15,6 +15,12 @@ jobs:
         GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
       run: |
         set -euo pipefail
+
         gh pr review ${{ github.event.pull_request.number }} \
           --approve --body "Auto-approved by automation." \
+          --repo "${{ github.repository }}"
+
+        # This does not merge immediately but rather enables auto-merge, due to the `--auto` argument.
+        gh pr merge ${{ github.event.pull_request.number }} \
+          --auto --delete-branch --squash \
           --repo "${{ github.repository }}"
