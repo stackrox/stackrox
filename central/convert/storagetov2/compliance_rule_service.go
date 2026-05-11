@@ -1,6 +1,7 @@
 package storagetov2
 
 import (
+	ruleutils "github.com/stackrox/rox/central/complianceoperator/v2/rules/utils"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -27,6 +28,7 @@ func ComplianceRule(incoming *storage.ComplianceOperatorRuleV2) *v2.ComplianceRu
 		RuleId:       incoming.GetRuleId(),
 		Instructions: incoming.GetInstructions(),
 		Warning:      incoming.GetWarning(),
-		ParentRule:   incoming.GetParentRule(),
+		ParentRule:    incoming.GetParentRule(),
+		OperatorKind: v2.ComplianceRule_OperatorKind(ruleutils.CustomRuleEffectiveOperatorKind(incoming.GetOperatorKind())),
 	}
 }

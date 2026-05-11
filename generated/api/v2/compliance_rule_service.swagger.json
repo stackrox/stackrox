@@ -208,8 +208,20 @@
         },
         "warning": {
           "type": "string"
+        },
+        "operatorKind": {
+          "$ref": "#/definitions/v2ComplianceRuleOperatorKind"
         }
       }
+    },
+    "v2ComplianceRuleOperatorKind": {
+      "type": "string",
+      "enum": [
+        "OPERATOR_KIND_UNSPECIFIED",
+        "RULE",
+        "CUSTOM_RULE"
+      ],
+      "default": "OPERATOR_KIND_UNSPECIFIED"
     },
     "v2Pagination": {
       "type": "object",

@@ -127,7 +127,8 @@ func GetRuleV2(_ *testing.T) *apiV2.ComplianceRule {
 		Warning:     "test warning",
 		Severity:    "UNSET_RULE_SEVERITY",
 		Fixes:       fixes,
-		ParentRule:  "random-rule-name",
+		ParentRule:    "random-rule-name",
+		OperatorKind: apiV2.ComplianceRule_RULE,
 	}
 }
 

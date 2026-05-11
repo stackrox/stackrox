@@ -86,6 +86,55 @@ func (ComplianceCheckStatus) EnumDescriptor() ([]byte, []int) {
 	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{0}
 }
 
+type ComplianceRule_OperatorKind int32
+
+const (
+	ComplianceRule_OPERATOR_KIND_UNSPECIFIED ComplianceRule_OperatorKind = 0
+	ComplianceRule_RULE                      ComplianceRule_OperatorKind = 1
+	ComplianceRule_CUSTOM_RULE               ComplianceRule_OperatorKind = 2
+)
+
+// Enum value maps for ComplianceRule_OperatorKind.
+var (
+	ComplianceRule_OperatorKind_name = map[int32]string{
+		0: "OPERATOR_KIND_UNSPECIFIED",
+		1: "RULE",
+		2: "CUSTOM_RULE",
+	}
+	ComplianceRule_OperatorKind_value = map[string]int32{
+		"OPERATOR_KIND_UNSPECIFIED": 0,
+		"RULE":                      1,
+		"CUSTOM_RULE":               2,
+	}
+)
+
+func (x ComplianceRule_OperatorKind) Enum() *ComplianceRule_OperatorKind {
+	p := new(ComplianceRule_OperatorKind)
+	*p = x
+	return p
+}
+
+func (x ComplianceRule_OperatorKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ComplianceRule_OperatorKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_v2_compliance_common_proto_enumTypes[1].Descriptor()
+}
+
+func (ComplianceRule_OperatorKind) Type() protoreflect.EnumType {
+	return &file_api_v2_compliance_common_proto_enumTypes[1]
+}
+
+func (x ComplianceRule_OperatorKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ComplianceRule_OperatorKind.Descriptor instead.
+func (ComplianceRule_OperatorKind) EnumDescriptor() ([]byte, []int) {
+	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{0, 0}
+}
+
 // OperatorKind is the kind of the Compliance Operator resource that this
 // `ComplianceProfileSummary` was sourced from. ACS represents both Compliance
 // Operator `Profiles` and `TailoredProfiles` as compliance profiles.
@@ -125,11 +174,11 @@ func (x ComplianceProfileSummary_OperatorKind) String() string {
 }
 
 func (ComplianceProfileSummary_OperatorKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_v2_compliance_common_proto_enumTypes[1].Descriptor()
+	return file_api_v2_compliance_common_proto_enumTypes[2].Descriptor()
 }
 
 func (ComplianceProfileSummary_OperatorKind) Type() protoreflect.EnumType {
-	return &file_api_v2_compliance_common_proto_enumTypes[1]
+	return &file_api_v2_compliance_common_proto_enumTypes[2]
 }
 
 func (x ComplianceProfileSummary_OperatorKind) Number() protoreflect.EnumNumber {
@@ -142,21 +191,22 @@ func (ComplianceProfileSummary_OperatorKind) EnumDescriptor() ([]byte, []int) {
 }
 
 type ComplianceRule struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	RuleType      string                 `protobuf:"bytes,3,opt,name=rule_type,json=ruleType,proto3" json:"rule_type,omitempty"`
-	Severity      string                 `protobuf:"bytes,4,opt,name=severity,proto3" json:"severity,omitempty"`
-	Standard      string                 `protobuf:"bytes,5,opt,name=standard,proto3" json:"standard,omitempty"`
-	Control       string                 `protobuf:"bytes,6,opt,name=control,proto3" json:"control,omitempty"`
-	Title         string                 `protobuf:"bytes,7,opt,name=title,proto3" json:"title,omitempty"`
-	Description   string                 `protobuf:"bytes,8,opt,name=description,proto3" json:"description,omitempty"`
-	Rationale     string                 `protobuf:"bytes,9,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	Fixes         []*ComplianceRule_Fix  `protobuf:"bytes,10,rep,name=fixes,proto3" json:"fixes,omitempty"`
-	Id            string                 `protobuf:"bytes,11,opt,name=id,proto3" json:"id,omitempty"`
-	RuleId        string                 `protobuf:"bytes,12,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
-	ParentRule    string                 `protobuf:"bytes,13,opt,name=parent_rule,json=parentRule,proto3" json:"parent_rule,omitempty"`
-	Instructions  string                 `protobuf:"bytes,14,opt,name=instructions,proto3" json:"instructions,omitempty"`
-	Warning       string                 `protobuf:"bytes,15,opt,name=warning,proto3" json:"warning,omitempty"`
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	Name          string                      `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	RuleType      string                      `protobuf:"bytes,3,opt,name=rule_type,json=ruleType,proto3" json:"rule_type,omitempty"`
+	Severity      string                      `protobuf:"bytes,4,opt,name=severity,proto3" json:"severity,omitempty"`
+	Standard      string                      `protobuf:"bytes,5,opt,name=standard,proto3" json:"standard,omitempty"`
+	Control       string                      `protobuf:"bytes,6,opt,name=control,proto3" json:"control,omitempty"`
+	Title         string                      `protobuf:"bytes,7,opt,name=title,proto3" json:"title,omitempty"`
+	Description   string                      `protobuf:"bytes,8,opt,name=description,proto3" json:"description,omitempty"`
+	Rationale     string                      `protobuf:"bytes,9,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	Fixes         []*ComplianceRule_Fix       `protobuf:"bytes,10,rep,name=fixes,proto3" json:"fixes,omitempty"`
+	Id            string                      `protobuf:"bytes,11,opt,name=id,proto3" json:"id,omitempty"`
+	RuleId        string                      `protobuf:"bytes,12,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
+	ParentRule    string                      `protobuf:"bytes,13,opt,name=parent_rule,json=parentRule,proto3" json:"parent_rule,omitempty"`
+	Instructions  string                      `protobuf:"bytes,14,opt,name=instructions,proto3" json:"instructions,omitempty"`
+	Warning       string                      `protobuf:"bytes,15,opt,name=warning,proto3" json:"warning,omitempty"`
+	OperatorKind  ComplianceRule_OperatorKind `protobuf:"varint,16,opt,name=operator_kind,json=operatorKind,proto3,enum=v2.ComplianceRule_OperatorKind" json:"operator_kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -287,6 +337,13 @@ func (x *ComplianceRule) GetWarning() string {
 		return x.Warning
 	}
 	return ""
+}
+
+func (x *ComplianceRule) GetOperatorKind() ComplianceRule_OperatorKind {
+	if x != nil {
+		return x.OperatorKind
+	}
+	return ComplianceRule_OPERATOR_KIND_UNSPECIFIED
 }
 
 type ComplianceScanCluster struct {
@@ -1053,7 +1110,7 @@ var File_api_v2_compliance_common_proto protoreflect.FileDescriptor
 
 const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\n" +
-	"\x1eapi/v2/compliance_common.proto\x12\x02v2\x1a\x19api/v2/search_query.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe8\x03\n" +
+	"\x1eapi/v2/compliance_common.proto\x12\x02v2\x1a\x19api/v2/search_query.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf8\x04\n" +
 	"\x0eComplianceRule\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1b\n" +
 	"\trule_type\x18\x03 \x01(\tR\bruleType\x12\x1a\n" +
@@ -1070,12 +1127,17 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\vparent_rule\x18\r \x01(\tR\n" +
 	"parentRule\x12\"\n" +
 	"\finstructions\x18\x0e \x01(\tR\finstructions\x12\x18\n" +
-	"\awarning\x18\x0f \x01(\tR\awarning\x1aA\n" +
+	"\awarning\x18\x0f \x01(\tR\awarning\x12D\n" +
+	"\roperator_kind\x18\x10 \x01(\x0e2\x1f.v2.ComplianceRule.OperatorKindR\foperatorKind\x1aA\n" +
 	"\x03Fix\x12\x1a\n" +
 	"\bplatform\x18\x01 \x01(\tR\bplatform\x12\x1e\n" +
 	"\n" +
 	"disruption\x18\x02 \x01(\tR\n" +
-	"disruptionJ\x04\b\x02\x10\x03\"Y\n" +
+	"disruption\"H\n" +
+	"\fOperatorKind\x12\x1d\n" +
+	"\x19OPERATOR_KIND_UNSPECIFIED\x10\x00\x12\b\n" +
+	"\x04RULE\x10\x01\x12\x0f\n" +
+	"\vCUSTOM_RULE\x10\x02J\x04\b\x02\x10\x03\"Y\n" +
 	"\x15ComplianceScanCluster\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12!\n" +
@@ -1163,46 +1225,48 @@ func file_api_v2_compliance_common_proto_rawDescGZIP() []byte {
 	return file_api_v2_compliance_common_proto_rawDescData
 }
 
-var file_api_v2_compliance_common_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_api_v2_compliance_common_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_api_v2_compliance_common_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_api_v2_compliance_common_proto_goTypes = []any{
 	(ComplianceCheckStatus)(0),                        // 0: v2.ComplianceCheckStatus
-	(ComplianceProfileSummary_OperatorKind)(0),        // 1: v2.ComplianceProfileSummary.OperatorKind
-	(*ComplianceRule)(nil),                            // 2: v2.ComplianceRule
-	(*ComplianceScanCluster)(nil),                     // 3: v2.ComplianceScanCluster
-	(*ComplianceCheckStatusCount)(nil),                // 4: v2.ComplianceCheckStatusCount
-	(*ComplianceCheckResultStatusCount)(nil),          // 5: v2.ComplianceCheckResultStatusCount
-	(*ComplianceControl)(nil),                         // 6: v2.ComplianceControl
-	(*ComplianceBenchmark)(nil),                       // 7: v2.ComplianceBenchmark
-	(*ListComplianceProfileResults)(nil),              // 8: v2.ListComplianceProfileResults
-	(*ComplianceClusterOverallStats)(nil),             // 9: v2.ComplianceClusterOverallStats
-	(*ListComplianceClusterOverallStatsResponse)(nil), // 10: v2.ListComplianceClusterOverallStatsResponse
-	(*ComplianceProfileResultsRequest)(nil),           // 11: v2.ComplianceProfileResultsRequest
-	(*ComplianceProfileCheckRequest)(nil),             // 12: v2.ComplianceProfileCheckRequest
-	(*ComplianceProfileSummary)(nil),                  // 13: v2.ComplianceProfileSummary
-	(*ComplianceRule_Fix)(nil),                        // 14: v2.ComplianceRule.Fix
-	(*timestamppb.Timestamp)(nil),                     // 15: google.protobuf.Timestamp
-	(*RawQuery)(nil),                                  // 16: v2.RawQuery
+	(ComplianceRule_OperatorKind)(0),                  // 1: v2.ComplianceRule.OperatorKind
+	(ComplianceProfileSummary_OperatorKind)(0),        // 2: v2.ComplianceProfileSummary.OperatorKind
+	(*ComplianceRule)(nil),                            // 3: v2.ComplianceRule
+	(*ComplianceScanCluster)(nil),                     // 4: v2.ComplianceScanCluster
+	(*ComplianceCheckStatusCount)(nil),                // 5: v2.ComplianceCheckStatusCount
+	(*ComplianceCheckResultStatusCount)(nil),          // 6: v2.ComplianceCheckResultStatusCount
+	(*ComplianceControl)(nil),                         // 7: v2.ComplianceControl
+	(*ComplianceBenchmark)(nil),                       // 8: v2.ComplianceBenchmark
+	(*ListComplianceProfileResults)(nil),              // 9: v2.ListComplianceProfileResults
+	(*ComplianceClusterOverallStats)(nil),             // 10: v2.ComplianceClusterOverallStats
+	(*ListComplianceClusterOverallStatsResponse)(nil), // 11: v2.ListComplianceClusterOverallStatsResponse
+	(*ComplianceProfileResultsRequest)(nil),           // 12: v2.ComplianceProfileResultsRequest
+	(*ComplianceProfileCheckRequest)(nil),             // 13: v2.ComplianceProfileCheckRequest
+	(*ComplianceProfileSummary)(nil),                  // 14: v2.ComplianceProfileSummary
+	(*ComplianceRule_Fix)(nil),                        // 15: v2.ComplianceRule.Fix
+	(*timestamppb.Timestamp)(nil),                     // 16: google.protobuf.Timestamp
+	(*RawQuery)(nil),                                  // 17: v2.RawQuery
 }
 var file_api_v2_compliance_common_proto_depIdxs = []int32{
-	14, // 0: v2.ComplianceRule.fixes:type_name -> v2.ComplianceRule.Fix
-	0,  // 1: v2.ComplianceCheckStatusCount.status:type_name -> v2.ComplianceCheckStatus
-	4,  // 2: v2.ComplianceCheckResultStatusCount.check_stats:type_name -> v2.ComplianceCheckStatusCount
-	6,  // 3: v2.ComplianceCheckResultStatusCount.controls:type_name -> v2.ComplianceControl
-	5,  // 4: v2.ListComplianceProfileResults.profile_results:type_name -> v2.ComplianceCheckResultStatusCount
-	3,  // 5: v2.ComplianceClusterOverallStats.cluster:type_name -> v2.ComplianceScanCluster
-	4,  // 6: v2.ComplianceClusterOverallStats.check_stats:type_name -> v2.ComplianceCheckStatusCount
-	15, // 7: v2.ComplianceClusterOverallStats.last_scan_time:type_name -> google.protobuf.Timestamp
-	9,  // 8: v2.ListComplianceClusterOverallStatsResponse.scan_stats:type_name -> v2.ComplianceClusterOverallStats
-	16, // 9: v2.ComplianceProfileResultsRequest.query:type_name -> v2.RawQuery
-	16, // 10: v2.ComplianceProfileCheckRequest.query:type_name -> v2.RawQuery
-	7,  // 11: v2.ComplianceProfileSummary.standards:type_name -> v2.ComplianceBenchmark
-	1,  // 12: v2.ComplianceProfileSummary.operator_kind:type_name -> v2.ComplianceProfileSummary.OperatorKind
-	13, // [13:13] is the sub-list for method output_type
-	13, // [13:13] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	15, // 0: v2.ComplianceRule.fixes:type_name -> v2.ComplianceRule.Fix
+	1,  // 1: v2.ComplianceRule.operator_kind:type_name -> v2.ComplianceRule.OperatorKind
+	0,  // 2: v2.ComplianceCheckStatusCount.status:type_name -> v2.ComplianceCheckStatus
+	5,  // 3: v2.ComplianceCheckResultStatusCount.check_stats:type_name -> v2.ComplianceCheckStatusCount
+	7,  // 4: v2.ComplianceCheckResultStatusCount.controls:type_name -> v2.ComplianceControl
+	6,  // 5: v2.ListComplianceProfileResults.profile_results:type_name -> v2.ComplianceCheckResultStatusCount
+	4,  // 6: v2.ComplianceClusterOverallStats.cluster:type_name -> v2.ComplianceScanCluster
+	5,  // 7: v2.ComplianceClusterOverallStats.check_stats:type_name -> v2.ComplianceCheckStatusCount
+	16, // 8: v2.ComplianceClusterOverallStats.last_scan_time:type_name -> google.protobuf.Timestamp
+	10, // 9: v2.ListComplianceClusterOverallStatsResponse.scan_stats:type_name -> v2.ComplianceClusterOverallStats
+	17, // 10: v2.ComplianceProfileResultsRequest.query:type_name -> v2.RawQuery
+	17, // 11: v2.ComplianceProfileCheckRequest.query:type_name -> v2.RawQuery
+	8,  // 12: v2.ComplianceProfileSummary.standards:type_name -> v2.ComplianceBenchmark
+	2,  // 13: v2.ComplianceProfileSummary.operator_kind:type_name -> v2.ComplianceProfileSummary.OperatorKind
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_compliance_common_proto_init() }
@@ -1216,7 +1280,7 @@ func file_api_v2_compliance_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v2_compliance_common_proto_rawDesc), len(file_api_v2_compliance_common_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
