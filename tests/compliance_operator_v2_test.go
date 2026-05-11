@@ -1118,3 +1118,92 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 		})
 	}
 }
+
+func TestComplianceV2GetComplianceRule(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	ruleClient := v2.NewComplianceRuleServiceClient(conn)
+	serviceCluster := v1.NewClustersServiceClient(conn)
+	clusters, err := serviceCluster.GetClusters(ctx, &v1.GetClustersRequest{})
+	require.NoError(t, err)
+	require.Greater(t, len(clusters.GetClusters()), 0)
+	clusterID := clusters.GetClusters()[0].GetId()
+
+	t.Run("regular", func(t *testing.T) {
+		t.Parallel()
+		ruleName := "ocp4-api-server-encryption-provider-cipher"
+		resp, err := ruleClient.GetComplianceRule(ctx, &v2.RuleRequest{
+			RuleName: ruleName,
+			Query:    &v2.RawQuery{Query: "Cluster ID:" + clusterID},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, ruleName, resp.GetName())
+		assert.NotEmpty(t, resp.GetRuleId(), "RuleId (XCCDF ID) should be non-empty")
+		assert.NotEmpty(t, resp.GetTitle(), "Title should be non-empty")
+		assert.NotEmpty(t, resp.GetRuleType(), "RuleType should be non-empty")
+		assert.NotEmpty(t, resp.GetSeverity(), "Severity should be non-empty")
+	})
+
+	t.Run("custom", func(t *testing.T) {
+		t.Parallel()
+		dynClient := createDynamicClient(t)
+		crName := fmt.Sprintf("rule-get-%s", uuid.NewV4().String())
+		createCustomRule(ctx, t, dynClient, crName)
+
+		tpName := crName
+		tp := &complianceoperatorv1.TailoredProfile{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      tpName,
+				Namespace: coNamespaceV2,
+			},
+			Spec: complianceoperatorv1.TailoredProfileSpec{
+				Title:       "E2E GetComplianceRule custom",
+				Description: "From-scratch TP for GetComplianceRule e2e test",
+				EnableRules: []complianceoperatorv1.RuleReferenceSpec{
+					{Name: crName, Kind: complianceoperatorv1.CustomRuleKind, Rationale: "e2e test"},
+				},
+			},
+		}
+		require.NoError(t, dynClient.Create(ctx, tp), "failed to create TP")
+		t.Cleanup(func() {
+			deleteResource[complianceoperatorv1.TailoredProfile](ctx, t, dynClient, tpName, coNamespaceV2)
+		})
+
+		require.EventuallyWithT(t, func(c *assert.CollectT) {
+			var current complianceoperatorv1.TailoredProfile
+			err := dynClient.Get(ctx, types.NamespacedName{Name: tpName, Namespace: coNamespaceV2}, &current)
+			require.NoErrorf(c, err, "failed to get TailoredProfile %s", tpName)
+			require.Equalf(c, complianceoperatorv1.TailoredProfileStateReady, current.Status.State,
+				"TailoredProfile %s not READY (state: %q, error: %q)",
+				tpName, current.Status.State, current.Status.ErrorMessage)
+		}, 10*time.Second, 1*time.Second)
+
+		profileClient := v2.NewComplianceProfileServiceClient(conn)
+		waitUntilTPInCentralDB(ctx, t, profileClient, clusterID, tpName)
+
+		require.EventuallyWithT(t, func(c *assert.CollectT) {
+			resp, err := ruleClient.GetComplianceRule(ctx, &v2.RuleRequest{
+				RuleName: crName,
+				Query:    &v2.RawQuery{Query: "Cluster ID:" + clusterID},
+			})
+			require.NoError(c, err)
+			require.NotNil(c, resp)
+			assert.Equal(c, crName, resp.GetName())
+			assert.NotEmpty(c, resp.GetTitle(), "Title should be non-empty")
+		}, 60*time.Second, 5*time.Second)
+	})
+
+	t.Run("not-found", func(t *testing.T) {
+		t.Parallel()
+		// Server returns (nil, nil) for no matches; gRPC serializes nil as
+		// an empty message, so the client gets a zero-value ComplianceRule.
+		resp, err := ruleClient.GetComplianceRule(ctx, &v2.RuleRequest{
+			RuleName: "nonexistent-rule-that-does-not-exist",
+			Query:    &v2.RawQuery{Query: "Cluster ID:" + clusterID},
+		})
+		require.NoError(t, err)
+		assert.Empty(t, resp.GetName())
+	})
+}
