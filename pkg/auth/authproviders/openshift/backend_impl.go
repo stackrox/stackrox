@@ -14,14 +14,19 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/satoken"
 	"github.com/stackrox/rox/pkg/sync"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
-	openshiftAPIUrl    = "https://openshift.default.svc"
-	roxTokenExpiration = 5 * time.Minute
+	openshiftAPIUrl       = "https://openshift.default.svc"
+	roxTokenExpiration    = 5 * time.Minute
+	oauthClientName       = "stackrox-oauthclient"
+	oauthClientSecretName = "central-oauthclient-secret"
+	oauthClientSecretKey  = "clientSecret"
 )
 
 // This is the location for CA files which shall be used for certificate validation within
@@ -211,11 +216,11 @@ func (b *backend) recreateOpenshiftConnector() {
 }
 
 func getOpenShiftSettings() (openShiftSettings, error) {
-	clientID := "system:serviceaccount:" + env.Namespace.Setting() + ":central"
+	clientID := oauthClientName
 
-	clientSecret, err := satoken.LoadTokenFromFile()
+	clientSecret, err := readOAuthClientSecret()
 	if err != nil {
-		return openShiftSettings{}, errors.Wrap(err, "reading service account token")
+		return openShiftSettings{}, errors.Wrap(err, "reading OAuth client secret")
 	}
 
 	certPool, err := getSystemCertPoolWithAdditionalCA(serviceOperatorCAPath, internalServicesCAPath, injectedCAPath)
@@ -228,6 +233,31 @@ func getOpenShiftSettings() (openShiftSettings, error) {
 		clientSecret:    clientSecret,
 		trustedCertPool: certPool,
 	}, nil
+}
+
+func readOAuthClientSecret() (string, error) {
+	config, err := k8sutil.GetK8sInClusterConfig()
+	if err != nil {
+		return "", errors.Wrap(err, "creating Kubernetes client config")
+	}
+
+	client, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return "", errors.Wrap(err, "creating Kubernetes client")
+	}
+
+	namespace := env.Namespace.Setting()
+	secret, err := client.CoreV1().Secrets(namespace).Get(context.Background(), oauthClientSecretName, metav1.GetOptions{})
+	if err != nil {
+		return "", errors.Wrapf(err, "reading secret %s from namespace %s", oauthClientSecretName, namespace)
+	}
+
+	clientSecretBytes, ok := secret.Data[oauthClientSecretKey]
+	if !ok {
+		return "", errors.Errorf("key %s not found in secret %s", oauthClientSecretKey, oauthClientSecretName)
+	}
+
+	return string(clientSecretBytes), nil
 }
 
 func getSystemCertPoolWithAdditionalCA(additionalCAPaths ...string) (*x509.CertPool, error) {
