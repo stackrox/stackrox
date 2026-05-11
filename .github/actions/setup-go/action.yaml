@@ -18,7 +18,9 @@ runs:
     # Activate the latest Go from hostedtoolcache that satisfies go.mod.
     # This replaces actions/setup-go — we avoid its downsides:
     #   - setup-go sets GOTOOLCHAIN=local (breaks sub-module tool downloads)
-    #   - setup-go enables GOCACHE caching by default (conflicts with ours)
+    #   - setup-go caches GOCACHE with a single key for all jobs — different
+    #     jobs (unit tests, postgres tests, style) write incompatible entries
+    #     into the same cache, and the cache grows unbounded without trimming
     #   - setup-go reads the `go` directive, not `toolchain` (installs wrong version)
     # Our approach: find the best pre-installed Go, add to PATH, set GOTOOLCHAIN=auto.
     - name: Setup Go
