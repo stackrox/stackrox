@@ -2,7 +2,6 @@ package clusterentities
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 	"time"
 
@@ -105,19 +104,16 @@ func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool)
 func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) {
 	defer e.updateMetricsNoLock()
 	if !incremental {
-		unchangedDeployments := set.NewStringSet()
 		for deploymentID, data := range updates {
-			if !data.isDeleteOnly() && e.endpointsUnchangedNoLock(deploymentID, data.endpoints) {
-				unchangedDeployments.Add(deploymentID)
+			if data.isDeleteOnly() {
+				// A call to Apply() with empty payload of the updates map (no values) is meant to be a delete operation.
+				e.purgeNoLock(deploymentID)
+				continue
+			}
+			if e.endpointsUnchangedNoLock(deploymentID, data.endpoints) {
 				continue
 			}
 			e.purgeNoLock(deploymentID)
-		}
-		for deploymentID, data := range updates {
-			if data.isDeleteOnly() || unchangedDeployments.Contains(deploymentID) {
-				// A call to Apply() with empty payload of the updates map (no values) is meant to be a delete operation.
-				continue
-			}
 			e.applySingleNoLock(deploymentID, *data)
 		}
 		return
@@ -148,13 +144,15 @@ func (e *endpointsStore) endpointsUnchangedNoLock(deploymentID string, newEndpoi
 		if !found || len(currentTargetInfos) != len(newTargetInfos) {
 			return false
 		}
-		for _, targetInfo := range newTargetInfos {
-			if !currentTargetInfos.Contains(targetInfo) {
-				return false
-			}
+		newSet := make(map[EndpointTargetInfo]struct{}, len(newTargetInfos))
+		for _, ti := range newTargetInfos {
+			newSet[ti] = struct{}{}
 		}
-		for currentTargetInfo := range currentTargetInfos {
-			if !slices.Contains(newTargetInfos, currentTargetInfo) {
+		if len(newSet) != len(currentTargetInfos) {
+			return false
+		}
+		for ti := range currentTargetInfos {
+			if _, ok := newSet[ti]; !ok {
 				return false
 			}
 		}
