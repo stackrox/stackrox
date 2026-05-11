@@ -34,7 +34,7 @@ jobs:
         su postgres -c 'pg_ctl -D /tmp/data start'
 
     - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
+      uses: ./.github/actions/setup-go
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1

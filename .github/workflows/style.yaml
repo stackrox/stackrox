@@ -130,7 +130,7 @@ jobs:
           pycodestyle --version
 
       - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
+        uses: ./.github/actions/setup-go
 
       - name: Download scanner module for proto generation
         run: go mod download github.com/stackrox/scanner
