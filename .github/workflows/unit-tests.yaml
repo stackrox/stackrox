@@ -58,7 +58,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         free-disk-space: 30
 
-    - name: Cache Go dependencies
+    - name: Setup Go and cache
       uses: ./.github/actions/setup-go
       with:
         key-suffix: ${{ matrix.gotags }}
@@ -152,7 +152,7 @@ jobs:
         su postgres -c 'initdb -D /tmp/data'
         su postgres -c 'pg_ctl -D /tmp/data start'
 
-    - name: Cache Go dependencies
+    - name: Setup Go and cache
       uses: ./.github/actions/setup-go
       with:
         key-suffix: ${{ matrix.gotags }}
@@ -215,7 +215,7 @@ jobs:
         su postgres -c 'initdb -D /tmp/data'
         su postgres -c 'pg_ctl -D /tmp/data start'
 
-    - name: Cache Go dependencies
+    - name: Setup Go and cache
       uses: ./.github/actions/setup-go
 
     - name: Is Postgres ready
@@ -348,7 +348,7 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Cache Go dependencies
+    - name: Setup Go and cache
       uses: ./.github/actions/setup-go
 
     - uses: ./.github/actions/handle-tagged-build
@@ -447,7 +447,7 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Cache Go dependencies
+    - name: Setup Go and cache
       uses: ./.github/actions/setup-go
 
     - name: Login to Quay.io

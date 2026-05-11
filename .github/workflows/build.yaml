@@ -243,7 +243,7 @@ jobs:
       - name: PR labels
         uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
 
-      - name: Cache Go dependencies
+      - name: Setup Go and cache
         if: |
           needs.define-job-matrix.outputs.gotags == 'release'
             || github.ref_name == 'master'
@@ -295,7 +295,7 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Cache Go dependencies
+      - name: Setup Go and cache
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/setup-go
@@ -362,7 +362,7 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Cache Go dependencies
+      - name: Setup Go and cache
         uses: ./.github/actions/setup-go
 
       - name: Download scanner module for proto generation
@@ -398,7 +398,7 @@ jobs:
       with:
         node-version-file: ui/package.json
 
-    - name: Cache Go dependencies
+    - name: Setup Go and cache
       uses: ./.github/actions/setup-go
 
     - uses: ./.github/actions/cache-ui-dependencies
@@ -433,7 +433,7 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Cache Go dependencies
+      - name: Setup Go and cache
         uses: ./.github/actions/setup-go
 
       - uses: ./.github/actions/handle-tagged-build
