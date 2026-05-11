@@ -62,6 +62,7 @@ func defaultACMClientFactory(_ context.Context, token string) (externalrolebroke
 		return nil, errors.Wrap(err, "failed to load k8s config")
 	}
 	cfg.BearerToken = token
+	log.Info("Querying ACM with bearer token ", cfg.BearerToken)
 	return acmclient.NewACMClientFromConfig(cfg)
 }
 
