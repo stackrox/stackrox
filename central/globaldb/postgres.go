@@ -2,11 +2,16 @@ package globaldb
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events"
+	"github.com/stackrox/rox/pkg/administration/events/stream"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -88,6 +93,11 @@ SELECT
 	totalConnectionQuery = `SELECT state, COUNT(datid) FROM pg_stat_activity WHERE state IS NOT NULL GROUP BY state;`
 
 	maxConnectionQuery = `SELECT current_setting('max_connections')::int;`
+
+	invalidIndexQuery = `SELECT s.relname, s.indexrelname
+		FROM pg_stat_user_indexes s
+		JOIN pg_index ix ON ix.indexrelid = s.indexrelid
+		WHERE ix.indisvalid = false`
 
 	pgStatStatementsMax = 1000
 )
@@ -378,6 +388,15 @@ func getMaxConnections(ctx context.Context, db postgres.DB) {
 }
 
 func startMonitoringPostgres(ctx context.Context, db postgres.DB, postgresConfig *postgres.Config) {
+	go func() {
+		t := time.NewTicker(1 * time.Hour)
+		defer t.Stop()
+		CollectPostgresIndexStats(ctx, db)
+		for range t.C {
+			CollectPostgresIndexStats(ctx, db)
+		}
+	}()
+
 	t := time.NewTicker(1 * time.Minute)
 	defer t.Stop()
 	for range t.C {
@@ -385,5 +404,60 @@ func startMonitoringPostgres(ctx context.Context, db postgres.DB, postgresConfig
 		CollectPostgresDatabaseStats(postgresConfig)
 		CollectPostgresConnectionStats(ctx, db)
 		CollectPostgresTupleStats(ctx, db)
+	}
+}
+
+// CollectPostgresIndexStats checks for invalid indexes, exports a Prometheus metric,
+// and produces an administration event if any are found.
+func CollectPostgresIndexStats(ctx context.Context, db postgres.DB) {
+	ctx, cancel := context.WithTimeout(ctx, PostgresQueryTimeout)
+	defer cancel()
+
+	rows, err := db.Query(ctx, invalidIndexQuery)
+	if err != nil {
+		log.Errorf("error checking for invalid indexes: %v", err)
+		metrics.PostgresInvalidIndexes.Set(0)
+		return
+	}
+	defer rows.Close()
+
+	type invalidIndex struct {
+		tableName string
+		indexName string
+	}
+	var invalidIndexes []invalidIndex
+
+	for rows.Next() {
+		var idx invalidIndex
+		if err := rows.Scan(&idx.tableName, &idx.indexName); err != nil {
+			log.Errorf("error scanning row for invalid index data: %v", err)
+			return
+		}
+		invalidIndexes = append(invalidIndexes, idx)
+	}
+	if err := rows.Err(); err != nil {
+		log.Errorf("error reading invalid index rows: %v", err)
+	}
+
+	metrics.PostgresInvalidIndexes.Set(float64(len(invalidIndexes)))
+
+	if len(invalidIndexes) > 0 {
+		var details strings.Builder
+		for i, idx := range invalidIndexes {
+			if i > 0 {
+				details.WriteString(", ")
+			}
+			fmt.Fprintf(&details, "%s (table: %s)", idx.indexName, idx.tableName)
+		}
+
+		stream.Singleton().Produce(&events.AdministrationEvent{
+			Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+			Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING,
+			Domain:       events.DefaultDomain,
+			Message:      fmt.Sprintf("Detected %d invalid PostgreSQL index(es): %s", len(invalidIndexes), details.String()),
+			ResourceType: "Database",
+			ResourceName: "central-db",
+			Hint:         "Invalid indexes can degrade query performance and may indicate a failed index creation or migration. To fix, run: REINDEX INDEX CONCURRENTLY <index_name>; for each invalid index. If the problem persists, contact Red Hat support.",
+		})
 	}
 }
