@@ -289,9 +289,9 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - uses: ./.github/actions/setup-go
         env:
           GOARCH: ${{ matrix.arch }}
-      - uses: ./.github/actions/setup-go
         with:
           # Only race needs a separate cache (-race/CGO_ENABLED=1 produces 39% unique entries).
           # Default and prerelease share 93% of entries and should use the same cache.
