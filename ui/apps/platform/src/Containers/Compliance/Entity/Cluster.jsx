@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext } from 'react';
 
 import entityTypes from 'constants/entityTypes';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
@@ -10,7 +10,6 @@ import { CLUSTER_NAME as QUERY } from 'queries/cluster';
 import ComplianceList from 'Containers/Compliance/List/List';
 import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceByStandards';
 import Loader from 'Components/Loader';
-import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 import isGQLLoading from 'utils/gqlLoading';
@@ -54,7 +53,6 @@ const ClusterPage = ({
     query,
     sidePanelMode,
 }) => {
-    const [isExporting, setIsExporting] = useState(false);
     const searchParam = useContext(searchContext);
 
     const { hasReadAccess } = usePermissions();
@@ -89,7 +87,6 @@ const ClusterPage = ({
                 }
                 const cluster = processData(data);
                 const { name, id } = cluster;
-                const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
 
                 if (listEntityType1 && !sidePanelMode) {
@@ -130,7 +127,7 @@ const ClusterPage = ({
                                 } sm:grid-columns-1 grid-gap-5`}
                             >
                                 <div
-                                    className={`grid s-2 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
+                                    className="grid s-2 md:grid-auto-fit md:grid-dense"
                                     style={{ '--min-tile-width': '50%' }}
                                 >
                                     <div className="s-full pb-5">
@@ -153,7 +150,7 @@ const ClusterPage = ({
 
                                 {sidePanelMode && isComplianceRouteEnabledForEntities && (
                                     <div
-                                        className={`grid s-2 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
+                                        className="grid s-2 md:grid-auto-fit md:grid-dense"
                                         style={{ '--min-tile-width': '50%' }}
                                     >
                                         {isComplianceRouteEnabledForNamespaces && (
@@ -199,8 +196,6 @@ const ClusterPage = ({
                                     listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
-                                    isExporting={isExporting}
-                                    setIsExporting={setIsExporting}
                                 />
                                 <ResourceTabs
                                     entityId={entityId}
@@ -211,7 +206,6 @@ const ClusterPage = ({
                             </>
                         )}
                         {contents}
-                        {isExporting && <BackdropExporting />}
                     </section>
                 );
             }}

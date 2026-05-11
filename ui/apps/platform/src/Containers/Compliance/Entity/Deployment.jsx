@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext } from 'react';
 import { useLocation } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
@@ -7,7 +7,6 @@ import entityTypes from 'constants/entityTypes';
 import Widget from 'Components/Widget';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
-import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import URLService from 'utils/URLService';
 import ComplianceList from 'Containers/Compliance/List/List';
@@ -60,7 +59,6 @@ const DeploymentPage = ({
     query,
     sidePanelMode,
 }) => {
-    const [isExporting, setIsExporting] = useState(false);
     const searchParam = useContext(searchContext);
     const match = useWorkflowMatch();
     const location = useLocation();
@@ -74,7 +72,6 @@ const DeploymentPage = ({
                 const deployment = processData(data);
                 const { name, id, labels, clusterName, namespace, clusterId, namespaceId } =
                     deployment;
-                const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
 
                 if (listEntityType1 && !sidePanelMode) {
@@ -123,7 +120,7 @@ const DeploymentPage = ({
                                 } sm:grid-columns-1 grid-gap-5`}
                             >
                                 <div
-                                    className={`grid s-2 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
+                                    className="grid s-2 md:grid-auto-fit md:grid-dense"
                                     style={{ '--min-tile-width': '50%' }}
                                 >
                                     <div className="s-full pb-3">
@@ -155,7 +152,7 @@ const DeploymentPage = ({
                                 </div>
 
                                 <Widget
-                                    className={`sx-2 ${pdfClassName}`}
+                                    className="sx-2"
                                     header={`${labels.length} ${pluralize('Label', labels.length)}`}
                                 >
                                     <Labels labels={labels} />
@@ -179,8 +176,6 @@ const DeploymentPage = ({
                                     listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
-                                    isExporting={isExporting}
-                                    setIsExporting={setIsExporting}
                                 />
                                 <ResourceTabs
                                     entityId={id}
@@ -191,7 +186,6 @@ const DeploymentPage = ({
                             </>
                         )}
                         {contents}
-                        {isExporting && <BackdropExporting />}
                     </section>
                 );
             }}

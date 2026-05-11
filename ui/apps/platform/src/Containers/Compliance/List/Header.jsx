@@ -12,7 +12,7 @@ import usePermissions from 'hooks/usePermissions';
 
 // Disable to prevent merge conflict below if we need to cherry pick fix to previous release.
 /* eslint-disable prettier/prettier */
-const ListHeader = ({ entityType, searchComponent, standard, isExporting, setIsExporting }) => {
+const ListHeader = ({ entityType, searchComponent, standard }) => {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
 
@@ -27,16 +27,6 @@ const ListHeader = ({ entityType, searchComponent, standard, isExporting, setIsE
 
     // If standardId is truthy, then standard page entity is CONTROL for address controls?s[standard]=WHAT_EVER&s[groupBy]=CATEGORY
     const subHeaderText = standardId ? 'Standard' : 'Resource list';
-    let tableOptions = null;
-    if (standardId) {
-        tableOptions = {
-            columnStyles: {
-                0: { columnWidth: 80 },
-                1: { columnWidth: 80 },
-                2: { columnWidth: 25 },
-            },
-        };
-    }
     return (
         <PageHeader header={headerText} subHeader={subHeaderText}>
             <div className="w-full">{searchComponent}</div>
@@ -49,10 +39,6 @@ const ListHeader = ({ entityType, searchComponent, standard, isExporting, setIsE
                     id={standardId || entityType}
                     type={standardId ? 'STANDARD' : ''}
                     page={useCaseTypes.COMPLIANCE}
-                    pdfId="capture-list"
-                    tableOptions={tableOptions}
-                    isExporting={isExporting}
-                    setIsExporting={setIsExporting}
                 />
             </div>
         </PageHeader>
@@ -63,8 +49,6 @@ ListHeader.propTypes = {
     searchComponent: PropTypes.element,
     entityType: PropTypes.string.isRequired,
     standard: PropTypes.string,
-    isExporting: PropTypes.bool.isRequired,
-    setIsExporting: PropTypes.func.isRequired,
 };
 
 ListHeader.defaultProps = {

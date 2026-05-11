@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext } from 'react';
 import pluralize from 'pluralize';
 import { gql } from '@apollo/client';
 
@@ -12,7 +12,6 @@ import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
 import PageNotFound from 'Components/PageNotFound';
 import isGQLLoading from 'utils/gqlLoading';
 import Loader from 'Components/Loader';
-import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import Labels from 'Containers/Compliance/widgets/Labels';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import entityTypes from 'constants/entityTypes';
@@ -69,7 +68,6 @@ const NamespacePage = ({
     query,
     sidePanelMode,
 }) => {
-    const [isExporting, setIsExporting] = useState(false);
     const searchParam = useContext(searchContext);
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
@@ -87,7 +85,6 @@ const NamespacePage = ({
                 }
                 const namespace = processData(data);
                 const { name, id, clusterName, labels } = namespace;
-                const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
 
                 if (listEntityType1 && !sidePanelMode) {
@@ -128,7 +125,7 @@ const NamespacePage = ({
                                 } sm:grid-columns-1 grid-gap-5`}
                             >
                                 <div
-                                    className={`grid s-2 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
+                                    className="grid s-2 md:grid-auto-fit md:grid-dense"
                                     style={{ '--min-tile-width': '50%' }}
                                 >
                                     <div className="s-full pb-3">
@@ -150,7 +147,7 @@ const NamespacePage = ({
                                 </div>
 
                                 <Widget
-                                    className={`sx-2 ${pdfClassName}`}
+                                    className="sx-2"
                                     header={`${labels.length} ${pluralize('Label', labels.length)}`}
                                 >
                                     <Labels labels={labels} />
@@ -163,7 +160,7 @@ const NamespacePage = ({
                                 {sidePanelMode && (
                                     <>
                                         <div
-                                            className={`grid sx-2 sy-1 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
+                                            className="grid sx-2 sy-1 md:grid-auto-fit md:grid-dense"
                                             style={{ '--min-tile-width': '50%' }}
                                         >
                                             <div className="md:pr-3 pt-3">
@@ -190,8 +187,6 @@ const NamespacePage = ({
                                     listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
-                                    isExporting={isExporting}
-                                    setIsExporting={setIsExporting}
                                 />
                                 <ResourceTabs
                                     entityId={id}
@@ -202,7 +197,6 @@ const NamespacePage = ({
                             </>
                         )}
                         {contents}
-                        {isExporting && <BackdropExporting />}
                     </section>
                 );
             }}
