@@ -43,8 +43,11 @@ runs:
         # Prefer toolchain directive (build version), fall back to go directive (minimum).
         # The toolchain directive strips the "go" prefix: "toolchain go1.25.9" → "1.25.9".
         required=$(grep '^toolchain ' go.mod | awk '{print $2}' | sed 's/^go//')
-        if [[ -z "$required" ]]; then
+        if [[ -n "$required" ]]; then
+          echo "go.mod toolchain directive: go$required"
+        else
           required=$(grep '^go ' go.mod | awk '{print $2}')
+          echo "::warning::No toolchain directive in go.mod — falling back to go directive ($required). Consider adding 'toolchain go<version>' to go.mod to pin the build version."
         fi
         best=""
         for d in $(ls -d /opt/hostedtoolcache/go/*/x64 2>/dev/null | sort -rV); do
