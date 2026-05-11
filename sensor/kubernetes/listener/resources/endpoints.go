@@ -105,11 +105,13 @@ func (m *endpointManagerImpl) endpointDataForDeployment(w *deploymentWrap) *clus
 	}
 
 	var allNodeIPs []net.IPAddress
+	var nodeIPsLoaded bool
 	for _, svc := range m.serviceStore.getMatchingServicesWithRoutes(w.Namespace, w.PodLabels) {
-		if allNodeIPs == nil &&
+		if !nodeIPsLoaded &&
 			(svc.serviceWrap.Spec.Type == v1.ServiceTypeLoadBalancer ||
 				svc.serviceWrap.Spec.Type == v1.ServiceTypeNodePort) {
 			allNodeIPs = m.getAllNodeIPs()
+			nodeIPsLoaded = true
 		}
 		m.addEndpointDataForService(w, svc.serviceWrap, allNodeIPs, result)
 	}
