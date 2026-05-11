@@ -38,8 +38,10 @@ func (rm *storeBasedMapperFactoryImpl) GetRoleMapper(ctx context.Context, authPr
 	}
 	provider, found, err := rm.authProviders.GetAuthProvider(ctx, authProviderID)
 	if err != nil || !found {
+		log.Info("AuthProvider found ", found, " error: ", err)
 		return storeBasedMapper
 	}
+	log.Info("AuthProvider of type ", provider.GetType(), " (ref for Openshift:", openshift.TypeName, ")")
 	if provider.GetType() == openshift.TypeName {
 		acmMapper, err := NewACMBasedMapper()
 		if err != nil {
