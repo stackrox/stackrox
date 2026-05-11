@@ -18,22 +18,24 @@ runs:
     # Activate the latest Go from hostedtoolcache that satisfies go.mod.
     # This replaces actions/setup-go — we avoid its downsides:
     #
-    #   setup-go                          this action
-    #   ─────────────────────────────     ─────────────────────────────
-    #   sets GOTOOLCHAIN=local            sets GOTOOLCHAIN=auto
-    #   (breaks sub-module tool           (sub-modules can download
-    #    downloads that need a             their required toolchain
-    #    newer Go than go.mod)             versions automatically)
+    # Problems with actions/setup-go:
+    #   - Sets GOTOOLCHAIN=local, which prevents sub-module tools from
+    #     auto-downloading their required Go versions.
+    #   - Caches GOCACHE with a single key shared across all jobs.
+    #     Different jobs (unit tests, postgres tests, style) write
+    #     incompatible entries into the same cache, and it grows
+    #     unbounded because setup-go never trims stale entries.
+    #   - Reads the `go` directive instead of `toolchain`, so it
+    #     installs the minimum language version (e.g. 1.25.0) even
+    #     when go.mod specifies a newer build version via `toolchain`.
     #
-    #   caches GOCACHE with one key       per-job cache keys with
-    #   for all jobs — different jobs      stale-entry trimming
-    #   overwrite each other's cache      (see key-suffix input and
-    #   and it grows unbounded             trim post-step below)
-    #
-    #   reads `go` directive, not         reads `toolchain` directive
-    #   `toolchain` — installs the        first (fall back to `go`),
-    #   minimum version even when          and finds the best match
-    #   a newer patch is available         pre-installed on the runner
+    # What this action does instead:
+    #   - Reads the `toolchain` directive first (falls back to `go`)
+    #     and finds the best matching Go pre-installed on the runner.
+    #   - Sets GOTOOLCHAIN=auto so sub-modules can resolve their own
+    #     toolchain requirements.
+    #   - Manages GOCACHE with per-job keys (via key-suffix input) and
+    #     trims stale entries in a post-step before cache save.
     - name: Setup Go
       run: |
         # Prefer toolchain directive (build version), fall back to go directive (minimum).
