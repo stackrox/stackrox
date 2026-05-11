@@ -1,11 +1,14 @@
 package resources
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/sensor/common/service"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -90,10 +93,14 @@ func TestEndpointDataForDeployment_ReusesFlattenedNodeIPsAcrossServices(t *testi
 		portConfigs: map[service.PortRef]*storage.PortConfig{},
 	})
 
-	if nodeStore.getNodesCalls != 1 {
-		t.Fatalf("expected getNodes to be called once per deployment build, got %d", nodeStore.getNodesCalls)
-	}
-	if data == nil {
-		t.Fatal("expected endpoint data to be returned")
+	require.Equal(t, 1, nodeStore.getNodesCalls, "getNodes should be called exactly once per deployment build")
+	require.NotNil(t, data, "expected endpoint data to be returned")
+
+	str := data.String()
+	for _, nodeIP := range []string{"10.0.0.10", "10.0.0.11"} {
+		for _, nodePort := range []int32{30080, 30081} {
+			ep := fmt.Sprintf("%s:%d", nodeIP, nodePort)
+			assert.Contains(t, str, ep, "expected NodePort endpoint %s in result", ep)
+		}
 	}
 }
