@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/imagev2/datastore/mocks"
+	"github.com/stackrox/rox/central/views"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	imagesViewMocks "github.com/stackrox/rox/central/views/images/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -177,9 +178,9 @@ func (suite *ImageV2LoaderTestSuite) TestFromQuery() {
 	core2.EXPECT().GetImageID().Return(sha2)
 	results = append(results, core2)
 
-	suite.mockView.EXPECT().Get(suite.ctx, query).Return(results, nil)
+	suite.mockView.EXPECT().Get(suite.ctx, query, views.ReadOptions{}).Return(results, nil)
 
-	images, err := loader.FromQuery(suite.ctx, query)
+	images, err := loader.FromQuery(suite.ctx, query, views.ReadOptions{})
 	suite.NoError(err)
 	protoassert.SlicesEqual(suite.T(), []*storage.ImageV2{
 		loader.loaded[sha1],
@@ -200,13 +201,13 @@ func (suite *ImageV2LoaderTestSuite) TestFromQuery() {
 	core3.EXPECT().GetImageID().Return(sha3)
 	results = append(results, core3)
 
-	suite.mockView.EXPECT().Get(suite.ctx, query).Return(results, nil)
+	suite.mockView.EXPECT().Get(suite.ctx, query, views.ReadOptions{}).Return(results, nil)
 
 	thirdImage := &storage.ImageV2{Id: "sha3"}
 	suite.mockDataStore.EXPECT().GetManyImageMetadata(suite.ctx, []string{sha3}).
 		Return([]*storage.ImageV2{thirdImage}, nil)
 
-	images, err = loader.FromQuery(suite.ctx, query)
+	images, err = loader.FromQuery(suite.ctx, query, views.ReadOptions{})
 	suite.NoError(err)
 	protoassert.SlicesEqual(suite.T(), []*storage.ImageV2{
 		loader.loaded[sha1],
@@ -228,9 +229,9 @@ func (suite *ImageV2LoaderTestSuite) TestFromQuery() {
 	core3.EXPECT().GetImageID().Return(sha3)
 	results = append(results, core3)
 
-	suite.mockView.EXPECT().Get(suite.ctx, query).Return(results, nil)
+	suite.mockView.EXPECT().Get(suite.ctx, query, views.ReadOptions{}).Return(results, nil)
 
-	images, err = loader.FromQuery(suite.ctx, query)
+	images, err = loader.FromQuery(suite.ctx, query, views.ReadOptions{})
 	suite.NoError(err)
 	protoassert.SlicesEqual(suite.T(), []*storage.ImageV2{
 		loader.loaded[sha1],

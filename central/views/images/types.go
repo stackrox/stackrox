@@ -3,6 +3,7 @@ package images
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
@@ -15,7 +16,8 @@ type ImageCore interface {
 	GetImageCVEsBySeverity() common.ResourceCountByCVESeverity
 }
 
-// ImageView interface provides functionality to fetch the image data
+// ImageView interface provides functionality to fetch the image data.
 type ImageView interface {
-	Get(ctx context.Context, q *v1.Query) ([]ImageCore, error)
+	Count(ctx context.Context, q *v1.Query, options views.ReadOptions) (int, error)
+	Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]ImageCore, error)
 }

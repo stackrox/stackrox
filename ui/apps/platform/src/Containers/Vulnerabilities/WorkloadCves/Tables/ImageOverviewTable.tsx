@@ -73,8 +73,17 @@ export const defaultColumns = {
 } as const;
 
 export const imageListQuery = gql`
-    query getImageList($query: String, $pagination: Pagination) {
-        images(query: $query, pagination: $pagination) {
+    query getImageList(
+        $query: String
+        $activeDeploymentQuery: String
+        $excludeWithActiveDeployments: Boolean
+        $pagination: Pagination
+    ) {
+        images(
+            query: $query
+            excludeWithActiveDeployments: $excludeWithActiveDeployments
+            pagination: $pagination
+        ) {
             id
             digest: id
             name {
@@ -102,6 +111,7 @@ export const imageListQuery = gql`
             }
             operatingSystem
             deploymentCount(query: $query)
+            activeDeploymentCount: deploymentCount(query: $activeDeploymentQuery)
             watchStatus
             metadata {
                 v1 {
@@ -124,8 +134,17 @@ export const imageListQuery = gql`
 `;
 
 export const imageV2ListQuery = gql`
-    query getImageList($query: String, $pagination: Pagination) {
-        images: imageV2s(query: $query, pagination: $pagination) {
+    query getImageList(
+        $query: String
+        $activeDeploymentQuery: String
+        $excludeWithActiveDeployments: Boolean
+        $pagination: Pagination
+    ) {
+        images: imageV2s(
+            query: $query
+            excludeWithActiveDeployments: $excludeWithActiveDeployments
+            pagination: $pagination
+        ) {
             id
             digest
             name {
@@ -153,6 +172,7 @@ export const imageV2ListQuery = gql`
             }
             operatingSystem
             deploymentCount(query: $query)
+            activeDeploymentCount: deploymentCount(query: $activeDeploymentQuery)
             watchStatus
             metadata {
                 v1 {
@@ -192,6 +212,7 @@ export type Image = {
     };
     operatingSystem: string;
     deploymentCount: number;
+    activeDeploymentCount: number;
     watchStatus: WatchStatus;
     metadata: {
         v1: {
@@ -383,6 +404,13 @@ function ImageOverviewTable({
                                     key="hasScanMessage"
                                     scanMessage={scanMessage}
                                 />
+                            );
+                        }
+                        if (image.activeDeploymentCount === 0) {
+                            labels.push(
+                                <Label key="inactive" isCompact variant="outline" color="yellow">
+                                    Inactive
+                                </Label>
                             );
                         }
 

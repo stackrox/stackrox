@@ -6,6 +6,8 @@ import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/e
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import WorkflowEntityPage from '../WorkflowEntityPage';
 import VulnMgmtNamespaceOverview from './VulnMgmtNamespaceOverview';
 import EntityList from '../../List/VulnMgmtList';
@@ -26,9 +28,11 @@ const VulnMgmtEntityNamespace = ({
     setRefreshTrigger,
 }) => {
     const workflowState = useContext(workflowStateContext);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
 
     const overviewQuery = gql`
-        query getNamespace($id: ID!) {
+        query getNamespace($id: ID!, $deploymentQuery: String) {
             result: namespace(id: $id) {
                 metadata {
                     priority
@@ -40,7 +44,7 @@ const VulnMgmtEntityNamespace = ({
                         value
                     }
                 }
-                deploymentCount
+                deploymentCount(query: $deploymentQuery)
                 imageCount
                 imageComponentCount
                 imageVulnerabilityCount
@@ -50,7 +54,7 @@ const VulnMgmtEntityNamespace = ({
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-        query getNamespace${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
+        query getNamespace${entityListType}($id: ID!, $pagination: Pagination, $query: String, $deploymentQuery: String, $policyQuery: String, $scopeQuery: String) {
             result: namespace(id: $id) {
                 metadata {
                     id
@@ -59,6 +63,7 @@ const VulnMgmtEntityNamespace = ({
                 ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
                 unusedVarSink(query: $policyQuery)
                 unusedVarSink(query: $scopeQuery)
+                unusedVarSink(query: $deploymentQuery)
             }
         }
         ${fragment}
@@ -70,7 +75,13 @@ const VulnMgmtEntityNamespace = ({
     const queryOptions = {
         variables: {
             id: entityId,
-            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, newEntityContext),
+            query: tryUpdateQueryWithVulMgmtPolicyClause(
+                entityListType,
+                search,
+                newEntityContext,
+                isDeploymentSoftDeletionEnabled
+            ),
+            deploymentQuery: withActiveDeploymentQuery('', isDeploymentSoftDeletionEnabled),
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
             scopeQuery: getScopeQuery(fullEntityContext),

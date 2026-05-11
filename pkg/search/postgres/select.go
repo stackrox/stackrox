@@ -79,7 +79,7 @@ func newDBScanAPI(opts ...dbscan.APIOption) *dbscan.API {
 
 // RunSelectOneForSchema executes a select request against the database for given schema and returns a single result.
 // The input query must explicitly specify select fields. Returns nil if no results are found.
-func RunSelectOneForSchema[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query) (*T, error) {
+func RunSelectOneForSchema[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query, opts ...SelectRequestOption) (*T, error) {
 	var query *query
 	var err error
 	// Add this to be safe and convert panics to errors,
@@ -109,6 +109,16 @@ func RunSelectOneForSchema[T any](ctx context.Context, db postgres.DB, schema *w
 	if query == nil {
 		return nil, nil
 	}
+
+	// Apply WHERE interceptor if provided.
+	cfg := &selectRequestConfig{}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+	if cfg.whereInterceptor != nil {
+		query.Where, query.Data = cfg.whereInterceptor(query.Where, query.Data)
+	}
+
 	return pgutils.Retry2(ctx, func() (*T, error) {
 		return retryableRunSelectOneForSchema[T](ctx, db, query)
 	})
@@ -129,7 +139,7 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schem
 
 // RunSelectRequestForSchemaFn executes a select request against the database for given schema. The input query must
 // explicitly specify select fields.
-func RunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query, fn func(*T) error) (retErr error) {
+func RunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query, fn func(*T) error, opts ...SelectRequestOption) (retErr error) {
 	var query *query
 	// Add this to be safe and convert panics to errors,
 	// since we do a lot of casting and other operations that could potentially panic in this code.
@@ -159,6 +169,16 @@ func RunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, sch
 	if query == nil {
 		return nil
 	}
+
+	// Apply WHERE interceptor if provided.
+	cfg := &selectRequestConfig{}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+	if cfg.whereInterceptor != nil {
+		query.Where, query.Data = cfg.whereInterceptor(query.Where, query.Data)
+	}
+
 	return pgutils.Retry(ctx, func() error {
 		return retryableRunSelectRequestForSchemaFn[T](ctx, db, query, fn)
 	})

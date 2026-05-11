@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/imagev2/datastore"
+	"github.com/stackrox/rox/central/views"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -44,7 +45,7 @@ func GetImageV2Loader(ctx context.Context) (ImageV2Loader, error) {
 type ImageV2Loader interface {
 	FromIDs(ctx context.Context, ids []string) ([]*storage.ImageV2, error)
 	FromID(ctx context.Context, id string) (*storage.ImageV2, error)
-	FromQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageV2, error)
+	FromQuery(ctx context.Context, query *v1.Query, opts views.ReadOptions) ([]*storage.ImageV2, error)
 	FullImageWithID(ctx context.Context, id string) (*storage.ImageV2, error)
 
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
@@ -107,8 +108,10 @@ func (idl *imageV2LoaderImpl) FullImageWithID(ctx context.Context, id string) (*
 }
 
 // FromQuery loads a set of images that match a query.
-func (idl *imageV2LoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageV2, error) {
-	responses, err := idl.imageView.Get(ctx, query)
+// The provided ReadOptions are forwarded to the image view to control
+// server-side filtering (e.g. excluding images with active deployments).
+func (idl *imageV2LoaderImpl) FromQuery(ctx context.Context, query *v1.Query, opts views.ReadOptions) ([]*storage.ImageV2, error) {
+	responses, err := idl.imageView.Get(ctx, query, opts)
 	if err != nil {
 		return nil, err
 	}

@@ -14,7 +14,9 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSort from 'hooks/useTableSort';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import { useSearchFilter } from '../NetworkGraphURLStateContext';
@@ -48,11 +50,16 @@ function DeploymentScopeModal({
     const [perPage, setPerPage] = useState(20);
 
     const { searchFilter } = useSearchFilter();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
 
     const options = {
         skip: !isOpen,
         variables: {
-            query: getRequestQueryStringForSearchFilter(searchFilter),
+            query: withActiveDeploymentQuery(
+                getRequestQueryStringForSearchFilter(searchFilter),
+                isDeploymentSoftDeletionEnabled
+            ),
             pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     };

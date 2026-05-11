@@ -132,6 +132,7 @@ export type SearchFieldLabel =
     | 'Deployment ID'
     | 'Deployment'
     | 'Deployment Label'
+    | 'Deployment State'
     | 'Deployment Type'
     | 'Drop Capabilities'
     | 'Environment Key'

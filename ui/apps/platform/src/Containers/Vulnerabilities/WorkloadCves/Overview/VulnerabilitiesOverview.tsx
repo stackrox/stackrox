@@ -4,6 +4,7 @@ import { Flex } from '@patternfly/react-core';
 
 import type { CompoundSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -39,10 +40,10 @@ function getSearchFilterEntityByTab(entityTab: WorkloadEntityTab): 'CVE' | 'Imag
 }
 
 export const entityTypeCountsQuery = gql`
-    query getEntityTypeCounts($query: String) {
-        imageCount(query: $query)
+    query getEntityTypeCounts($query: String, $excludeWithActiveDeployments: Boolean) {
+        imageCount(query: $query, excludeWithActiveDeployments: $excludeWithActiveDeployments)
         deploymentCount(query: $query)
-        imageCVECount(query: $query)
+        imageCVECount(query: $query, excludeWithActiveDeployments: $excludeWithActiveDeployments)
     }
 `;
 
@@ -93,15 +94,19 @@ function VulnerabilitiesOverview({
 }: VulnerabilitiesOverviewProps) {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
-    const { baseSearchFilter, overviewEntityTabs } = useWorkloadCveViewContext();
+    const { baseSearchFilter, overviewEntityTabs, viewContext } = useWorkloadCveViewContext();
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const defaultSearchFilterEntity = getSearchFilterEntityByTab(activeEntityTabKey);
+
+    const isInactiveWithSoftDeletion =
+        viewContext === 'Inactive images' && isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
 
     const { data } = useQuery<{
         imageCount: number;
@@ -110,6 +115,7 @@ function VulnerabilitiesOverview({
     }>(entityTypeCountsQuery, {
         variables: {
             query: workloadCvesScopedQueryString,
+            excludeWithActiveDeployments: isInactiveWithSoftDeletion || undefined,
         },
     });
 
