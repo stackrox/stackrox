@@ -59,11 +59,11 @@ runs:
             break
           fi
         done
+        echo "::add-matcher::${GITHUB_ACTION_PATH}/matchers.json"
         if [[ -n "$best" ]]; then
           echo "$best/bin" >> "$GITHUB_PATH"
           [[ ":$PATH:" == *":$HOME/go/bin:"* ]] || echo "$HOME/go/bin" >> "$GITHUB_PATH"
           echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
-          echo "::add-matcher::${GITHUB_ACTION_PATH}/matchers.json"
           echo "Using $("$best/bin/go" version) from $best"
         else
           echo "::warning::No suitable Go in hostedtoolcache (need >=$required), using system Go"
