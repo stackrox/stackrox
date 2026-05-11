@@ -12,7 +12,6 @@ import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import type { VulnerabilityState } from 'types/cve.proto';
 import type { SearchFilter } from 'types/search';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
-import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
@@ -41,30 +40,10 @@ function getSearchFilterEntityByTab(entityTab: WorkloadEntityTab): 'CVE' | 'Imag
 }
 
 export const entityTypeCountsQuery = gql`
-    query getEntityTypeCounts($query: String) {
-        imageCount(query: $query)
+    query getEntityTypeCounts($query: String, $excludeWithActiveDeployments: Boolean) {
+        imageCount(query: $query, excludeWithActiveDeployments: $excludeWithActiveDeployments)
         deploymentCount(query: $query)
-        imageCVECount(query: $query)
-    }
-`;
-
-// Lightweight query used on the inactive images page to compute entity counts
-// that correctly exclude images with active deployments. The main imageCount
-// and imageCVECount resolvers cannot express this constraint, so we fetch
-// minimal per-image data, filter client-side, and then re-query the CVE count
-// scoped to only the truly inactive images.
-const inactiveImageCountQuery = gql`
-    query getInactiveImageCount($query: String, $activeDeploymentQuery: String) {
-        images(query: $query) {
-            id
-            activeDeploymentCount: deploymentCount(query: $activeDeploymentQuery)
-        }
-    }
-`;
-
-const inactiveCVECountQuery = gql`
-    query getInactiveCVECount($query: String) {
-        imageCVECount(query: $query)
+        imageCVECount(query: $query, excludeWithActiveDeployments: $excludeWithActiveDeployments)
     }
 `;
 
@@ -136,55 +115,13 @@ function VulnerabilitiesOverview({
     }>(entityTypeCountsQuery, {
         variables: {
             query: workloadCvesScopedQueryString,
+            excludeWithActiveDeployments: isInactiveWithSoftDeletion || undefined,
         },
     });
-
-    // On the inactive images page with soft deletion, the server-side imageCount
-    // and imageCVECount include images that also have active deployments. The
-    // image table filters these out client-side (activeDeploymentCount === 0), so
-    // the tab counts must be corrected to match. This lightweight query fetches
-    // per-image deployment counts so we can identify truly inactive images and
-    // re-query the CVE count scoped to only those images.
-    const { data: inactiveCountData } = useQuery<{
-        images: { id: string; activeDeploymentCount: number }[];
-    }>(inactiveImageCountQuery, {
-        variables: {
-            query: workloadCvesScopedQueryString,
-            activeDeploymentQuery: withActiveDeploymentQuery(workloadCvesScopedQueryString, true),
-        },
-        skip: !isInactiveWithSoftDeletion,
-    });
-
-    const inactiveImageIds = isInactiveWithSoftDeletion
-        ? (inactiveCountData?.images
-              .filter((img) => img.activeDeploymentCount === 0)
-              .map((img) => img.id) ?? [])
-        : [];
-
-    // Re-query CVE count scoped to only the truly inactive images so the CVE tab
-    // count excludes CVEs that belong exclusively to images with active
-    // deployments.
-    const imageIdTerm = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA') ? 'Image ID' : 'Image SHA';
-    const inactiveCveScopedQuery = `${workloadCvesScopedQueryString}+${imageIdTerm}:${inactiveImageIds.join(',')}`;
-
-    const { data: inactiveCveData } = useQuery<{ imageCVECount: number }>(inactiveCVECountQuery, {
-        variables: { query: inactiveCveScopedQuery },
-        skip: !isInactiveWithSoftDeletion || inactiveImageIds.length === 0,
-    });
-
-    const correctedImageCount = isInactiveWithSoftDeletion
-        ? inactiveImageIds.length
-        : (data?.imageCount ?? 0);
-
-    const correctedCveCount = isInactiveWithSoftDeletion
-        ? inactiveImageIds.length === 0
-            ? 0
-            : (inactiveCveData?.imageCVECount ?? 0)
-        : (data?.imageCVECount ?? 0);
 
     const entityCounts = {
-        CVE: correctedCveCount,
-        Image: correctedImageCount,
+        CVE: data?.imageCVECount ?? 0,
+        Image: data?.imageCount ?? 0,
         Deployment: data?.deploymentCount ?? 0,
     };
 

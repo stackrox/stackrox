@@ -73,8 +73,17 @@ export const defaultColumns = {
 } as const;
 
 export const imageListQuery = gql`
-    query getImageList($query: String, $activeDeploymentQuery: String, $pagination: Pagination) {
-        images(query: $query, pagination: $pagination) {
+    query getImageList(
+        $query: String
+        $activeDeploymentQuery: String
+        $excludeWithActiveDeployments: Boolean
+        $pagination: Pagination
+    ) {
+        images(
+            query: $query
+            excludeWithActiveDeployments: $excludeWithActiveDeployments
+            pagination: $pagination
+        ) {
             id
             digest: id
             name {
@@ -125,8 +134,17 @@ export const imageListQuery = gql`
 `;
 
 export const imageV2ListQuery = gql`
-    query getImageList($query: String, $activeDeploymentQuery: String, $pagination: Pagination) {
-        images: imageV2s(query: $query, pagination: $pagination) {
+    query getImageList(
+        $query: String
+        $activeDeploymentQuery: String
+        $excludeWithActiveDeployments: Boolean
+        $pagination: Pagination
+    ) {
+        images: imageV2s(
+            query: $query
+            excludeWithActiveDeployments: $excludeWithActiveDeployments
+            pagination: $pagination
+        ) {
             id
             digest
             name {

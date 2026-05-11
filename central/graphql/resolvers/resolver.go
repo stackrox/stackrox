@@ -53,6 +53,7 @@ import (
 	"github.com/stackrox/rox/central/views/imagecomponentflat"
 	"github.com/stackrox/rox/central/views/imagecve"
 	"github.com/stackrox/rox/central/views/imagecveflat"
+	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/central/views/nodecve"
 	"github.com/stackrox/rox/central/views/platformcve"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/datastore"
@@ -120,6 +121,7 @@ type Resolver struct {
 	ImageCVEV2DataStore           imageCVEV2DataStore.DataStore
 
 	// Views
+	ImageView              imagesView.ImageView
 	ImageComponentFlatView imagecomponentflat.ComponentFlatView
 	ImageCVEView           imagecve.CveView
 	ImageCVEFlatView       imagecveflat.CveFlatView
@@ -174,6 +176,7 @@ func New() *Resolver {
 		PolicyCategoryDataStore:       policyCategoryDatastore.Singleton(),
 
 		// Views
+		ImageView: imagesView.Singleton(),
 		ImageCVEView: func() imagecve.CveView {
 			return imagecve.Singleton()
 		}(),

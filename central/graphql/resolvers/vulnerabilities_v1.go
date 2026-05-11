@@ -11,6 +11,7 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -456,14 +457,14 @@ func (evr *EmbeddedVulnerabilityResolver) loadImages(ctx context.Context, query 
 	query.Pagination = pagination
 
 	if features.FlattenImageData.Enabled() {
-		resolvers, err := evr.root.wrapImageV2s(imageV2Loader.FromQuery(ctx, query))
+		resolvers, err := evr.root.wrapImageV2s(imageV2Loader.FromQuery(ctx, query, views.ReadOptions{}))
 		res := make([]ImageResolver, 0, len(resolvers))
 		for _, resolver := range resolvers {
 			res = append(res, resolver)
 		}
 		return res, err
 	}
-	resolvers, err := evr.root.wrapImages(imageLoader.FromQuery(ctx, query))
+	resolvers, err := evr.root.wrapImages(imageLoader.FromQuery(ctx, query, views.ReadOptions{}))
 	res := make([]ImageResolver, 0, len(resolvers))
 	for _, resolver := range resolvers {
 		res = append(res, resolver)

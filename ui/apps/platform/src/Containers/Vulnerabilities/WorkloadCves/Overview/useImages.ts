@@ -13,11 +13,13 @@ export function useImages({
     query,
     pagination,
     sortOption,
+    excludeWithActiveDeployments = false,
     options = {},
 }: {
     query: string;
     pagination: ReturnType<typeof useURLPagination>;
     sortOption: ApiSortOption | undefined;
+    excludeWithActiveDeployments?: boolean;
     options?: Omit<QueryHookOptions<{ images: Image[] }>, 'variables'>;
 }) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
@@ -30,6 +32,7 @@ export function useImages({
         variables: {
             query,
             activeDeploymentQuery: withActiveDeploymentQuery(query, isSoftDeletionEnabled),
+            excludeWithActiveDeployments: excludeWithActiveDeployments || undefined,
             pagination: getPaginationParams({ page, perPage, sortOption }),
         },
         ...options,

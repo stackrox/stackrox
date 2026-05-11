@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/image/mappings"
+	"github.com/stackrox/rox/central/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -323,7 +324,7 @@ func (eicr *EmbeddedImageScanComponentResolver) loadImages(ctx context.Context, 
 		if err != nil {
 			return nil, err
 		}
-		resolvers, err := eicr.root.wrapImageV2s(imageV2Loader.FromQuery(ctx, query))
+		resolvers, err := eicr.root.wrapImageV2s(imageV2Loader.FromQuery(ctx, query, views.ReadOptions{}))
 		res := make([]ImageResolver, 0, len(resolvers))
 		for i, resolver := range resolvers {
 			res[i] = resolver
@@ -334,7 +335,7 @@ func (eicr *EmbeddedImageScanComponentResolver) loadImages(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-	resolvers, err := eicr.root.wrapImages(imageLoader.FromQuery(ctx, query))
+	resolvers, err := eicr.root.wrapImages(imageLoader.FromQuery(ctx, query, views.ReadOptions{}))
 	res := make([]ImageResolver, 0, len(resolvers))
 	for i, resolver := range resolvers {
 		res[i] = resolver

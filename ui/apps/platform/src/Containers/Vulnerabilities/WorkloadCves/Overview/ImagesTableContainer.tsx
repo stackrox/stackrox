@@ -52,27 +52,20 @@ function ImagesTableContainer({
     const { viewContext } = useWorkloadCveViewContext();
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
+    const isInactiveWithSoftDeletion =
+        viewContext === 'Inactive images' && isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
+
     const { error, loading, data } = useImages({
         query: workloadCvesScopedQueryString,
         pagination,
         sortOption,
+        excludeWithActiveDeployments: isInactiveWithSoftDeletion,
     });
-
-    // When viewing inactive images with soft deletion enabled, exclude images that
-    // still have active deployments. This handles an edge case where an image is
-    // associated with both active and deleted deployments: the server-side query
-    // returns the image (because the deleted deployment row passes the filter), but
-    // it should not appear in the inactive tab.
-    const isInactiveWithSoftDeletion =
-        viewContext === 'Inactive images' && isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
-    const images = isInactiveWithSoftDeletion
-        ? data?.images.filter((image) => image.activeDeploymentCount === 0)
-        : data?.images;
 
     const tableState = getTableUIState({
         isLoading: loading,
         error,
-        data: images,
+        data: data?.images,
         searchFilter,
     });
 
