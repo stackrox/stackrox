@@ -36,17 +36,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    # Stable version ldflags for test caching: Go's test cache keys include
-    # link ActionID which includes -X ldflags. Fixed BUILD_TAG/SHORTCOMMIT
-    # prevent per-commit cache misses.
-    # TODO(golang/go#75031): remove GOTOOLCHAIN once Go fixes covdata with
-    # auto-downloaded toolchains. Without this, GOTOOLCHAIN=auto downloads
-    # Go into the read-only module cache where lazy-built tools like covdata
-    # (needed by -cover) fail to build, causing go test to exit 1.
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
-      GOTOOLCHAIN: go1.25.0+auto
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -55,6 +47,64 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         free-disk-space: 30
+
+    - name: Compare Go toolchain options
+      run: |
+        verify() {
+          local label=$1
+          echo "========================================"
+          echo "=== $label ==="
+          echo "========================================"
+          t0=$(date +%s%N)
+          go version 2>&1
+          t1=$(date +%s%N)
+          echo "resolve: $(( (t1 - t0) / 1000000 ))ms"
+          echo "GOROOT: $(go env GOROOT)"
+          echo "GOTOOLCHAIN: $(go env GOTOOLCHAIN)"
+          echo "GOTOOLDIR writable: $([ -w "$(go env GOTOOLDIR)" ] && echo yes || echo no)"
+          set +e
+          CGO_ENABLED=1 go test -buildvcs=false -cover -v \
+            ./central/administration/events/datastore/... ./pkg/env/... \
+            > /dev/null 2>/tmp/tc-stderr.log
+          rc=$?
+          set -e
+          echo "go test -cover exit: $rc  covdata-errors: $(grep -c 'no such tool' /tmp/tc-stderr.log 2>/dev/null || echo 0)"
+          echo ""
+        }
+
+        ORIG_PATH=$PATH
+        echo "Hostedtoolcache: $(ls -d /opt/hostedtoolcache/go/*/x64 2>/dev/null | sort -V | while read d; do echo -n "$(basename $(dirname $d)) "; done)"
+        echo "System Go: $(/usr/bin/go version 2>&1)"
+        echo ""
+
+        # Option 1: setup-go + toolchain go1.25.9 in go.mod
+        #   Simulate setup-go: use hostedtoolcache 1.25.9, set GOTOOLCHAIN=local
+        sed -i '/^go 1.25.0$/a toolchain go1.25.9' go.mod
+        export PATH="/opt/hostedtoolcache/go/1.25.9/x64/bin:$HOME/go/bin:$ORIG_PATH"
+        export GOTOOLCHAIN=local
+        verify "Option 1: setup-go(1.25.9) + toolchain go1.25.9 in go.mod"
+        git checkout go.mod
+        export PATH=$ORIG_PATH
+        unset GOTOOLCHAIN
+
+        # Option 2: system Go + GOTOOLCHAIN=go1.25.0+auto env var
+        export GOTOOLCHAIN=go1.25.0+auto
+        verify "Option 2: system Go + GOTOOLCHAIN=go1.25.0+auto env var (current PR)"
+        unset GOTOOLCHAIN
+
+        # Option 3: system Go + toolchain go1.25.10 in go.mod (has covdata fix)
+        sed -i '/^go 1.25.0$/a toolchain go1.25.10' go.mod
+        verify "Option 3: system Go + toolchain go1.25.10 in go.mod (no workarounds)"
+        git checkout go.mod
+
+        # Option 4: setup-go + toolchain go1.25.10 in go.mod
+        sed -i '/^go 1.25.0$/a toolchain go1.25.10' go.mod
+        export PATH="/opt/hostedtoolcache/go/1.25.9/x64/bin:$HOME/go/bin:$ORIG_PATH"
+        export GOTOOLCHAIN=local
+        verify "Option 4: setup-go(1.25.9) + toolchain go1.25.10 in go.mod"
+        git checkout go.mod
+        export PATH=$ORIG_PATH
+        unset GOTOOLCHAIN
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
@@ -123,13 +173,10 @@ jobs:
     # Stable version ldflags for test caching: Go's test cache keys include
     # link ActionID which includes -X ldflags. Fixed BUILD_TAG/SHORTCOMMIT
     # prevent per-commit cache misses.
-    # TODO(golang/go#75031): remove GOTOOLCHAIN once Go fixes covdata with
-    # auto-downloaded toolchains.
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
       POSTGRES_PASSWORD: testpassword
-      GOTOOLCHAIN: go1.25.0+auto
     steps:
     # Runner's postgres is initialized with C.UTF-8 locale (GHA default).
     # Tests (e.g. central/splunk) require byte-order collation.
