@@ -61,40 +61,109 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
-    - name: Test setup-go with go-version-file
+    - name: Test setup-go variants
+      run: |
+        verify() {
+          local label=$1
+          echo "========================================"
+          echo "=== $label ==="
+          echo "========================================"
+          echo "go version: $(go version)"
+          echo "GOROOT: $(go env GOROOT)"
+          echo "GOTOOLCHAIN: $(go env GOTOOLCHAIN)"
+          echo "GOTOOLDIR writable: $([ -w "$(go env GOTOOLDIR)" ] && echo yes || echo no)"
+          set +e
+          CGO_ENABLED=1 go test -buildvcs=false -cover -v \
+            ./central/administration/events/datastore/... ./pkg/env/... \
+            > /dev/null 2>/tmp/tc-stderr.log
+          rc=$?
+          set -e
+          echo "go test -cover exit: $rc  covdata-errors: $(grep -c 'no such tool' /tmp/tc-stderr.log 2>/dev/null || echo 0)"
+          echo ""
+        }
+
+        echo "Hostedtoolcache: $(ls -d /opt/hostedtoolcache/go/*/x64 2>/dev/null | sort -V | while read d; do echo -n "$(basename $(dirname $d)) "; done)"
+        echo "go.mod: $(head -3 go.mod | tr '\n' ' ')"
+        echo ""
+
+        # --- Test A: setup-go with go-version: '1.25.9' (exact, matches hostedtoolcache) ---
+        echo "::group::setup-go go-version=1.25.9"
+        # Can't call setup-go from a run step, so simulate: check if hostedtoolcache has it
+        if [ -x /opt/hostedtoolcache/go/1.25.9/x64/bin/go ]; then
+          export PATH="/opt/hostedtoolcache/go/1.25.9/x64/bin:$HOME/go/bin:$PATH"
+          export GOTOOLCHAIN=local
+          verify "A: setup-go go-version=1.25.9 (simulated, hostedtoolcache hit)"
+        else
+          echo "1.25.9 NOT in hostedtoolcache"
+        fi
+        echo "::endgroup::"
+
+        # --- Test B: toolchain go1.25.9 in go.mod + setup-go reading it ---
+        echo "::group::toolchain go1.25.9 in go.mod"
+        sed -i '/^go 1.25.0$/a toolchain go1.25.9' go.mod
+        echo "go.mod now: $(head -4 go.mod | tr '\n' ' ')"
+        # setup-go with go-version-file reads the toolchain line if present
+        # Simulate: it would find 1.25.9 in hostedtoolcache
+        export PATH="/opt/hostedtoolcache/go/1.25.9/x64/bin:$HOME/go/bin:$PATH"
+        export GOTOOLCHAIN=local
+        verify "B: toolchain go1.25.9 in go.mod (simulated setup-go)"
+        # Also test: what does plain GOTOOLCHAIN=auto do with the directive?
+        export GOTOOLCHAIN=auto
+        verify "B2: toolchain go1.25.9 in go.mod, GOTOOLCHAIN=auto, hostedtoolcache on PATH"
+        git checkout go.mod
+        echo "::endgroup::"
+
+    # --- Test C: actual setup-go with go-version: '1.25.9' ---
+    - name: "setup-go: go-version 1.25.9"
+      uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v5
+      with:
+        go-version: '1.25.9'
+        cache: false
+
+    - name: "Verify: setup-go 1.25.9"
+      run: |
+        echo "========================================"
+        echo "=== C: actual setup-go go-version=1.25.9 ==="
+        echo "========================================"
+        echo "go version: $(go version)"
+        echo "GOROOT: $(go env GOROOT)"
+        echo "GOTOOLCHAIN: $(go env GOTOOLCHAIN)"
+        echo "GOTOOLDIR writable: $([ -w "$(go env GOTOOLDIR)" ] && echo yes || echo no)"
+        set +e
+        CGO_ENABLED=1 go test -buildvcs=false -cover -v \
+          ./central/administration/events/datastore/... ./pkg/env/... \
+          > /dev/null 2>/tmp/tc-stderr.log
+        rc=$?
+        set -e
+        echo "go test -cover exit: $rc  covdata-errors: $(grep -c 'no such tool' /tmp/tc-stderr.log 2>/dev/null || echo 0)"
+
+    # --- Test D: actual setup-go with go-version-file after adding toolchain directive ---
+    - name: Add toolchain go1.25.9 to go.mod
+      run: sed -i '/^go 1.25.0$/a toolchain go1.25.9' go.mod && head -4 go.mod
+
+    - name: "setup-go: go-version-file with toolchain directive"
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v5
       with:
         go-version-file: go.mod
         cache: false
 
-    - name: Verify setup-go result
+    - name: "Verify: setup-go go-version-file + toolchain go1.25.9"
       run: |
-        echo "=== setup-go with go-version-file: go.mod ==="
+        echo "========================================"
+        echo "=== D: setup-go go-version-file + toolchain go1.25.9 ==="
+        echo "========================================"
         echo "go version: $(go version)"
-        echo "which go: $(which go)"
         echo "GOROOT: $(go env GOROOT)"
         echo "GOTOOLCHAIN: $(go env GOTOOLCHAIN)"
-        echo "GOTOOLDIR: $(go env GOTOOLDIR)"
         echo "GOTOOLDIR writable: $([ -w "$(go env GOTOOLDIR)" ] && echo yes || echo no)"
-        echo "GOTOOLDIR contents: $(ls $(go env GOTOOLDIR)/ | tr '\n' ' ')"
-        echo "covdata src: $([ -f "$(go env GOROOT)/src/cmd/covdata/covdata.go" ] && echo yes || echo no)"
-        echo ""
-
-        echo "=== go test -cover ==="
         set +e
         CGO_ENABLED=1 go test -buildvcs=false -cover -v \
           ./central/administration/events/datastore/... ./pkg/env/... \
-          > /dev/null 2>/tmp/setup-go-stderr.log
+          > /dev/null 2>/tmp/tc-stderr.log
         rc=$?
         set -e
-        echo "go test -cover exit: $rc"
-        echo "covdata errors: $(grep -c 'no such tool' /tmp/setup-go-stderr.log 2>/dev/null || echo 0)"
-        echo ""
-
-        echo "=== What version does setup-go pick for go.mod 'go 1.25.0'? ==="
-        echo "go.mod says: $(grep '^go ' go.mod)"
-        echo "setup-go installed: $(go version)"
-        echo "This is the latest 1.25.x in hostedtoolcache."
+        echo "go test -cover exit: $rc  covdata-errors: $(grep -c 'no such tool' /tmp/tc-stderr.log 2>/dev/null || echo 0)"
+        git checkout go.mod
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
