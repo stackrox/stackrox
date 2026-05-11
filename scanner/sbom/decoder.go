@@ -19,6 +19,12 @@ import (
 	"github.com/quay/claircore/ubuntu"
 )
 
+// NewPURLRegistry creates a PURL registry with all supported ecosystems. The registered
+// PURL types must be kept in sync with the indexer ecosystems and matcher factories used
+// by Claircore, otherwise the SBOM decoder may produce results that cannot match
+// vulnerabilities accurately.
+// - Indexer ecosystems can be found in scanner/indexer/indexer.go
+// - Matchers can be found in scanner/matcher/matcher.go
 func NewPURLRegistry(rhelTransformFuncs ...purl.TransformerFunc) *purl.Registry {
 	reg := purl.NewRegistry()
 
