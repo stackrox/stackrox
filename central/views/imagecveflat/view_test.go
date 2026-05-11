@@ -365,7 +365,7 @@ func (s *ImageCVEFlatViewTestSuite) TestCountImageCVEFlatSAC() {
 				testCtxs := testutils.GetNamespaceScopedTestContexts(tc.ctx, s.T(), resources.Image)
 				ctx := testCtxs[key]
 
-				actual, err := s.cveView.Count(ctx, tc.q)
+				actual, err := s.cveView.Count(ctx, tc.q, views.ReadOptions{})
 				if tc.expectedErr != "" {
 					s.ErrorContains(err, tc.expectedErr)
 					return

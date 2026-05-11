@@ -44,7 +44,7 @@ func init() {
 				"publishedOn: Time",
 				"topNvdCVSS: Float!",
 			}),
-		schema.AddQuery("imageCVECount(query: String): Int!"),
+		schema.AddQuery("imageCVECount(query: String, excludeWithActiveDeployments: Boolean): Int!"),
 		schema.AddQuery("imageCVEs(query: String, pagination: Pagination): [ImageCVECore!]!"),
 		// `subfieldScopeQuery` applies the scope query to all the subfields of the ImageCVE resolver.
 		// This eliminates the need to pass queries to individual resolvers.
@@ -80,18 +80,23 @@ func (resolver *Resolver) wrapImageCVECoresWithContext(ctx context.Context, valu
 
 // ImageCVECount returns the count of image cves satisfying the specified query.
 // Note: Client must explicitly pass observed/deferred CVEs.
-func (resolver *Resolver) ImageCVECount(ctx context.Context, q RawQuery) (int32, error) {
+func (resolver *Resolver) ImageCVECount(ctx context.Context, args struct {
+	Query                        *string
+	ExcludeWithActiveDeployments *bool
+}) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEs")
 
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
-	query, err := q.AsV1QueryOrEmpty()
+	rawQuery := RawQuery{Query: args.Query}
+	query, err := rawQuery.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
 	}
 
-	count, err := resolver.ImageCVEView.Count(ctx, query)
+	opts := readOptionsFromBool(args.ExcludeWithActiveDeployments)
+	count, err := resolver.ImageCVEView.Count(ctx, query, opts)
 	if err != nil {
 		return 0, err
 	}
@@ -287,7 +292,11 @@ func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ P
 		searchField = search.ImageSHA
 	}
 	imageQ := search.NewQueryBuilder().AddExactMatches(searchField, imageIDs...).Query()
-	return resolver.root.Images(ctx, PaginatedQuery{
+	return resolver.root.Images(ctx, struct {
+		Query                        *string
+		Pagination                   *inputtypes.Pagination
+		ExcludeWithActiveDeployments *bool
+	}{
 		Query:      pointers.String(imageQ),
 		Pagination: args.Pagination,
 	})

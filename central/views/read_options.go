@@ -8,6 +8,12 @@ type ReadOptions struct {
 	SkipGetAffectedImages          bool
 	SkipGetFirstDiscoveredInSystem bool
 	SkipPublishedDate              bool
+
+	// ExcludeImagesWithActiveDeployments filters out images that are referenced
+	// by at least one deployment in DEPLOYMENT_STATE_ACTIVE. Used by the
+	// "Inactive images" view to avoid counting images that still have active
+	// workloads.
+	ExcludeImagesWithActiveDeployments bool
 }
 
 // IsDefault returns true if all readoptions are set to default/false.

@@ -28,7 +28,7 @@ type imageCVEFlatViewImpl struct {
 	db     postgres.DB
 }
 
-func (v *imageCVEFlatViewImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+func (v *imageCVEFlatViewImpl) Count(ctx context.Context, q *v1.Query, options views.ReadOptions) (int, error) {
 	if err := common.ValidateQuery(q); err != nil {
 		return 0, err
 	}
@@ -36,7 +36,15 @@ func (v *imageCVEFlatViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	result, err := pgSearch.RunSelectOneForSchema[imageCVEFlatCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
+	var runOpts []pgSearch.SelectRequestOption
+	if options.ExcludeImagesWithActiveDeployments {
+		imageCol, containerCol := cveFlatImageColumns()
+		runOpts = append(runOpts, pgSearch.WithWhereInterceptor(func(where string, values []any) (string, []any) {
+			return common.ApplyActiveDeploymentExclusion(where, values, imageCol, containerCol)
+		}))
+	}
+
+	result, err := pgSearch.RunSelectOneForSchema[imageCVEFlatCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE), runOpts...)
 	if err != nil {
 		return 0, err
 	}
@@ -167,4 +175,11 @@ func (v *imageCVEFlatViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query)
 	}
 
 	return cveIDsToFilter, nil
+}
+
+func cveFlatImageColumns() (string, string) {
+	if features.FlattenImageData.Enabled() {
+		return "image_cves_v2.imageidv2", "image_idv2"
+	}
+	return "image_cves_v2.imageid", "image_id"
 }

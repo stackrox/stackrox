@@ -7,8 +7,10 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
@@ -127,14 +129,20 @@ func init() {
 		}),
 		schema.AddQuery("image(id: ID!): Image"),
 		schema.AddQuery("fullImage(id: ID!): Image"),
-		schema.AddQuery("images(query: String, pagination: Pagination): [Image!]!"),
-		schema.AddQuery("imageCount(query: String): Int!"),
+		schema.AddQuery("images(query: String, pagination: Pagination, excludeWithActiveDeployments: Boolean): [Image!]!"),
+		schema.AddQuery("imageCount(query: String, excludeWithActiveDeployments: Boolean): Int!"),
 		schema.AddEnumType("ImageWatchStatus", imageWatchStatuses),
 	)
 }
 
-// Images returns GraphQL resolvers for all images
-func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
+// Images returns GraphQL resolvers for all images.
+// The excludeWithActiveDeployments argument, when true, filters out images that
+// have at least one active deployment.
+func (resolver *Resolver) Images(ctx context.Context, args struct {
+	Query                        *string
+	Pagination                   *inputtypes.Pagination
+	ExcludeWithActiveDeployments *bool
+}) ([]ImageResolver, error) {
 	if features.FlattenImageData.Enabled() {
 		return resolver.ImageV2s(ctx, args)
 	}
@@ -142,15 +150,17 @@ func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]Im
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
-	q, err := args.AsV1QueryOrEmpty()
+	pq := PaginatedQuery{Query: args.Query, Pagination: args.Pagination}
+	q, err := pq.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
+	opts := readOptionsFromBool(args.ExcludeWithActiveDeployments)
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return nil, err
 	}
-	images, err := imageLoader.FromQuery(ctx, q)
+	images, err := imageLoader.FromQuery(ctx, q, opts)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -163,8 +173,22 @@ func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]Im
 	return res, err
 }
 
-// ImageCount returns count of all images across deployments
-func (resolver *Resolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
+// readOptionsFromBool converts an optional bool pointer into ReadOptions.
+// A nil or false value results in default (no-op) options.
+func readOptionsFromBool(exclude *bool) views.ReadOptions {
+	if exclude != nil && *exclude {
+		return views.ReadOptions{ExcludeImagesWithActiveDeployments: true}
+	}
+	return views.ReadOptions{}
+}
+
+// ImageCount returns count of all images across deployments.
+// The excludeWithActiveDeployments argument, when true, filters out images that
+// have at least one active deployment.
+func (resolver *Resolver) ImageCount(ctx context.Context, args struct {
+	Query                        *string
+	ExcludeWithActiveDeployments *bool
+}) (int32, error) {
 	if features.FlattenImageData.Enabled() {
 		return resolver.ImageV2Count(ctx, args)
 	}
@@ -173,9 +197,16 @@ func (resolver *Resolver) ImageCount(ctx context.Context, args RawQuery) (int32,
 		return 0, err
 	}
 
-	q, err := args.AsV1QueryOrEmpty()
+	rawQuery := RawQuery{Query: args.Query}
+	q, err := rawQuery.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
+	}
+
+	opts := readOptionsFromBool(args.ExcludeWithActiveDeployments)
+	if opts.ExcludeImagesWithActiveDeployments {
+		count, err := resolver.ImageView.Count(ctx, q, opts)
+		return int32(count), err
 	}
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
@@ -246,7 +277,10 @@ func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args Pa
 
 func (resolver *imageResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilityCount")
-	return resolver.root.ImageVulnerabilityCount(resolver.withImageScopeContext(ctx), args)
+	return resolver.root.ImageVulnerabilityCount(resolver.withImageScopeContext(ctx), struct {
+		Query                        *string
+		ExcludeWithActiveDeployments *bool
+	}{Query: args.Query})
 }
 
 func (resolver *imageResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {

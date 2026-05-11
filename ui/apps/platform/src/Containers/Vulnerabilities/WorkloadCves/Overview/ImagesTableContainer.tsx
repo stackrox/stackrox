@@ -5,6 +5,7 @@ import type useURLPagination from 'hooks/useURLPagination';
 
 import { getTableUIState } from 'utils/getTableUIState';
 import type { SearchFilter } from 'types/search';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
@@ -13,6 +14,7 @@ import type { ImageOverviewTableProps } from '../Tables/ImageOverviewTable';
 import type { VulnerabilitySeverityLabel } from '../../types';
 import TableEntityToolbar from '../../components/TableEntityToolbar';
 import type { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import { useImages } from './useImages';
 
 type ImagesTableContainerProps = {
@@ -47,11 +49,17 @@ function ImagesTableContainer({
     imageTableColumnOverrides,
 }: ImagesTableContainerProps) {
     const { sortOption, getSortParams } = sort;
+    const { viewContext } = useWorkloadCveViewContext();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+
+    const isInactiveWithSoftDeletion =
+        viewContext === 'Inactive images' && isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
 
     const { error, loading, data } = useImages({
         query: workloadCvesScopedQueryString,
         pagination,
         sortOption,
+        excludeWithActiveDeployments: isInactiveWithSoftDeletion,
     });
 
     const tableState = getTableUIState({

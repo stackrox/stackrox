@@ -2,6 +2,7 @@ import { useQuery } from '@apollo/client';
 import type { QueryHookOptions } from '@apollo/client';
 
 import { getPaginationParams } from 'utils/searchUtils';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 import type { ApiSortOption } from 'types/search';
 import type useURLPagination from 'hooks/useURLPagination';
 import useFeatureFlags from 'hooks/useFeatureFlags';
@@ -12,21 +13,26 @@ export function useImages({
     query,
     pagination,
     sortOption,
+    excludeWithActiveDeployments = false,
     options = {},
 }: {
     query: string;
     pagination: ReturnType<typeof useURLPagination>;
     sortOption: ApiSortOption | undefined;
+    excludeWithActiveDeployments?: boolean;
     options?: Omit<QueryHookOptions<{ images: Image[] }>, 'variables'>;
 }) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
+    const isSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
     const { page, perPage } = pagination;
     return useQuery<{
         images: Image[];
     }>(isNewImageDataModelEnabled ? imageV2ListQuery : imageListQuery, {
         variables: {
             query,
+            activeDeploymentQuery: withActiveDeploymentQuery(query, isSoftDeletionEnabled),
+            excludeWithActiveDeployments: excludeWithActiveDeployments || undefined,
             pagination: getPaginationParams({ page, perPage, sortOption }),
         },
         ...options,

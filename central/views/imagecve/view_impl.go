@@ -27,7 +27,7 @@ type imageCVECoreViewImpl struct {
 	db     postgres.DB
 }
 
-func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query, options views.ReadOptions) (int, error) {
 	if err := common.ValidateQuery(q); err != nil {
 		return 0, err
 	}
@@ -35,7 +35,15 @@ func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	result, err := pgSearch.RunSelectOneForSchema[imageCVECoreCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
+	var runOpts []pgSearch.SelectRequestOption
+	if options.ExcludeImagesWithActiveDeployments {
+		imageCol, containerCol := imageCVEImageColumns()
+		runOpts = append(runOpts, pgSearch.WithWhereInterceptor(func(where string, values []any) (string, []any) {
+			return common.ApplyActiveDeploymentExclusion(where, values, imageCol, containerCol)
+		}))
+	}
+
+	result, err := pgSearch.RunSelectOneForSchema[imageCVECoreCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE), runOpts...)
 	if err != nil {
 		return 0, err
 	}
@@ -43,6 +51,13 @@ func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 		return 0, nil
 	}
 	return result.CVECount, nil
+}
+
+func imageCVEImageColumns() (string, string) {
+	if features.FlattenImageData.Enabled() {
+		return "image_cves_v2.imageidv2", "image_idv2"
+	}
+	return "image_cves_v2.imageid", "image_id"
 }
 
 func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error) {

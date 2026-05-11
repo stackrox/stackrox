@@ -94,7 +94,7 @@ func (s *ImageScanResolverTestSuite) TestGetImagesWithScan() {
 	img := fixtures.GetImageWithUniqueComponents(5)
 	imageCore := imagesViewMocks.NewMockImageCore(s.mockCtrl)
 	imageCore.EXPECT().GetImageID().Return(img.GetId())
-	s.imageView.EXPECT().Get(gomock.Any(), gomock.Any()).
+	s.imageView.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return([]imagesView.ImageCore{imageCore}, nil)
 	cloned := img.CloneVT()
 	cloned.Scan.Components = nil
@@ -117,7 +117,7 @@ func (s *ImageScanResolverTestSuite) TestGetImagesWithoutScan() {
 	img := fixtures.GetImageWithUniqueComponents(5)
 	imageCore := imagesViewMocks.NewMockImageCore(s.mockCtrl)
 	imageCore.EXPECT().GetImageID().Return(img.GetId())
-	s.imageView.EXPECT().Get(gomock.Any(), gomock.Any()).
+	s.imageView.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return([]imagesView.ImageCore{imageCore}, nil)
 
 	cloned := img.CloneVT()
@@ -179,7 +179,7 @@ func (s *ImageScanResolverV2TestSuite) TestGetImagesWithScan() {
 	img := fixtures.GetImageV2WithUniqueComponents(5)
 	imageCore := imagesViewMocks.NewMockImageCore(s.mockCtrl)
 	imageCore.EXPECT().GetImageID().Return(img.GetId())
-	s.imageView.EXPECT().Get(gomock.Any(), gomock.Any()).
+	s.imageView.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return([]imagesView.ImageCore{imageCore}, nil)
 	cloned := img.CloneVT()
 	cloned.Scan.Components = nil
@@ -202,7 +202,7 @@ func (s *ImageScanResolverV2TestSuite) TestGetImagesWithoutScan() {
 	img := fixtures.GetImageV2WithUniqueComponents(5)
 	imageCore := imagesViewMocks.NewMockImageCore(s.mockCtrl)
 	imageCore.EXPECT().GetImageID().Return(img.GetId())
-	s.imageView.EXPECT().Get(gomock.Any(), gomock.Any()).
+	s.imageView.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return([]imagesView.ImageCore{imageCore}, nil)
 
 	cloned := img.CloneVT()

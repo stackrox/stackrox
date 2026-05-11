@@ -1,8 +1,10 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
-import { Flex, Truncate, pluralize } from '@patternfly/react-core';
+import { Flex, Label, LabelGroup, Tooltip, Truncate, pluralize } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
+import { getDateTime } from 'utils/dateUtils';
 import useSet from 'hooks/useSet';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import type { VulnerabilityState } from 'types/cve.proto';
@@ -66,6 +68,8 @@ export type DeploymentForCve = {
     type: string;
     clusterName: string;
     created: string | null;
+    state: string;
+    deleted: string | null;
     unknownImageCount: number;
     lowImageCount: number;
     moderateImageCount: number;
@@ -84,6 +88,8 @@ export const deploymentsForCveFragment = gql`
         type
         clusterName
         created
+        state
+        deleted
         unknownImageCount: imageCount(query: $unknownImageCountQuery)
         lowImageCount: imageCount(query: $lowImageCountQuery)
         moderateImageCount: imageCount(query: $moderateImageCountQuery)
@@ -177,6 +183,8 @@ function AffectedDeploymentsTable({
                             importantImageCount,
                             criticalImageCount,
                             created,
+                            state,
+                            deleted,
                             images,
                         } = deployment;
                         const isExpanded = expandedRowSet.has(id);
@@ -186,9 +194,24 @@ function AffectedDeploymentsTable({
                             componentVulnerabilities: image.imageComponents,
                         }));
 
+                        const labels: ReactNode[] = [];
+                        if (state === 'DEPLOYMENT_STATE_DELETED' && deleted) {
+                            labels.push(
+                                <Tooltip key="deleted" content={`Deleted: ${getDateTime(deleted)}`}>
+                                    <Label isCompact variant="outline" color="red">
+                                        Deleted
+                                    </Label>
+                                </Tooltip>
+                            );
+                        }
+
                         return (
                             <Tbody key={id} isExpanded={isExpanded}>
-                                <Tr>
+                                <Tr
+                                    style={
+                                        labels.length !== 0 ? { borderBlockEnd: 'none' } : undefined
+                                    }
+                                >
                                     <Td
                                         className={getVisibilityClass('rowExpansion')}
                                         expand={{
@@ -257,6 +280,15 @@ function AffectedDeploymentsTable({
                                         <DateDistance date={created} />
                                     </Td>
                                 </Tr>
+                                {labels.length !== 0 && (
+                                    <Tr>
+                                        <Td colSpan={colSpan} style={{ paddingTop: 0 }}>
+                                            <LabelGroup isCompact numLabels={labels.length}>
+                                                {labels}
+                                            </LabelGroup>
+                                        </Td>
+                                    </Tr>
+                                )}
                                 <Tr isExpanded={isExpanded}>
                                     <Td className={getVisibilityClass('rowExpansion')} />
                                     <Td colSpan={colSpanForComponentVulnerabilitiesTable}>
