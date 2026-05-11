@@ -123,7 +123,7 @@ var (
 	LabelBasedPolicyScoping = registerFeature("Enable cluster and namespace label-based policy scoping", "ROX_LABEL_BASED_POLICY_SCOPING", enabled)
 
 	// VulnerabilityReportsEnhancedFiltering enables filtering similar to view-based reports in scheduled vulnerability reports
-	VulnerabilityReportsEnhancedFiltering = registerFeature("Enables filtering similar to view-based reports in scheduled vulnerability reports", "ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING")
+	VulnerabilityReportsEnhancedFiltering = registerFeature("Enables filtering similar to view-based reports in scheduled vulnerability reports", "ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING", enabled)
 
 	// NodeVulnerabilityReports enables interface for (future) node vulnerability reports to develop in parallel with image vulnerability reports
 	NodeVulnerabilityReports = registerFeature("Enables interface for scheduled node vulnerability reports", "ROX_NODE_VULNERABILITY_REPORTS")
