@@ -128,6 +128,9 @@ func (e *endpointsStore) purgeNoLock(deploymentID string) {
 
 func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData) {
 	if len(data.endpoints) == 0 {
+		if _, exists := e.reverseEndpointMap[deploymentID]; !exists {
+			e.reverseEndpointMap[deploymentID] = nil
+		}
 		return
 	}
 
