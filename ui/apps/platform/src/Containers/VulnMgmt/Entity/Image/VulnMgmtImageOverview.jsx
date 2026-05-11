@@ -24,6 +24,7 @@ import TableWidget from '../TableWidget';
 
 const emptyImage = {
     deploymentCount: 0,
+    digest: '',
     id: '',
     lastUpdated: '',
     metadata: {
@@ -81,7 +82,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const metadataKeyValuePairs = [
         {
             key: 'SHA',
-            value: safeData.id,
+            value: safeData.digest,
         },
         {
             key: 'Created',
