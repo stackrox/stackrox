@@ -57,7 +57,7 @@ func backfillDeploymentType(ctx context.Context, db postgres.DB) error {
 		`UPDATE alerts a SET deployment_type = d.type
 		 FROM deployments d
 		 WHERE a.deployment_id = d.id
-		   AND (a.deployment_type IS NULL OR a.deployment_type = '')
+		   AND a.deployment_type IS NULL
 		   AND a.entitytype = $1`,
 		storage.Alert_DEPLOYMENT,
 	)
@@ -112,14 +112,14 @@ func readOrphanedDeploymentTypes(db postgres.DB, ctx context.Context, lastID str
 		rows, err = db.Query(ctx,
 			`SELECT a.id, a.serialized FROM alerts a
 			WHERE a.entitytype = $1
-			  AND (a.deployment_type IS NULL OR a.deployment_type = '')
+			  AND a.deployment_type IS NULL
 			ORDER BY a.id LIMIT $2`,
 			storage.Alert_DEPLOYMENT, batchSize)
 	} else {
 		rows, err = db.Query(ctx,
 			`SELECT a.id, a.serialized FROM alerts a
 			WHERE a.entitytype = $1
-			  AND (a.deployment_type IS NULL OR a.deployment_type = '')
+			  AND a.deployment_type IS NULL
 			  AND a.id > $2
 			ORDER BY a.id LIMIT $3`,
 			storage.Alert_DEPLOYMENT, lastID, batchSize)
