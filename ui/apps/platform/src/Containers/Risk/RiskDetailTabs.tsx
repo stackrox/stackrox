@@ -15,7 +15,7 @@ const processDiscoveryTab = 'Process discovery';
 
 export type RiskDetailTabsProps = {
     deployment: Deployment;
-    risk: Risk | null;
+    risk: Risk | null | undefined;
 };
 
 function RiskDetailTabs({ deployment, risk }: RiskDetailTabsProps) {
