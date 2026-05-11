@@ -28,6 +28,12 @@ message ComplianceRule {
   string parent_rule = 13;
   string instructions = 14;
   string warning = 15;
+  enum OperatorKind {
+    OPERATOR_KIND_UNSPECIFIED = 0;
+    RULE = 1;
+    CUSTOM_RULE = 2;
+  }
+  OperatorKind operator_kind = 16;
 }
 
 enum ComplianceCheckStatus {
