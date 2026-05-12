@@ -702,56 +702,43 @@ func TestContainerImagesView(t *testing.T) {
 
 	// Build maps for easier assertion
 	type imageInfo struct {
-		digest        string
-		clusterIDs    []string
-		deploymentIDs []string
-		imageName     *storage.ImageName
+		digest     string
+		clusterIDs []string
+		imageName  *storage.ImageName
 	}
 	responseMap := make(map[string]imageInfo)
 	for _, resp := range responses {
 		responseMap[resp.GetImageID()] = imageInfo{
-			digest:        resp.GetImageDigest(),
-			clusterIDs:    resp.GetClusterIDs(),
-			deploymentIDs: resp.GetDeploymentIDs(),
-			imageName:     resp.GetImageName(),
+			digest:     resp.GetImageDigest(),
+			clusterIDs: resp.GetClusterIDs(),
+			imageName:  resp.GetImageName(),
 		}
 	}
 
-	dep1ID := deployments[0].GetId()
-	dep2ID := deployments[1].GetId()
-	dep3ID := deployments[2].GetId()
-	dep4ID := deployments[3].GetId()
-
-	// Verify sharedImageIDV2_1 is in both clusters and deployments 1, 2, 3
+	// Verify sharedImageIDV2_1 is in both clusters with correct digest
 	assert.Contains(t, responseMap, sharedImageIDV2_1)
 	assert.Equal(t, sharedImageDigest_1, responseMap[sharedImageIDV2_1].digest,
 		"sharedImageIDV2_1 should have correct digest")
 	assert.ElementsMatch(t, []string{cluster1, cluster2}, responseMap[sharedImageIDV2_1].clusterIDs,
 		"sharedImageIDV2_1 should be in both cluster1 and cluster2")
-	assert.ElementsMatch(t, []string{dep1ID, dep2ID, dep3ID}, responseMap[sharedImageIDV2_1].deploymentIDs,
-		"sharedImageIDV2_1 should be in dep1, dep2, dep3")
 	assert.Equal(t, "nginx:1.0", responseMap[sharedImageIDV2_1].imageName.GetFullName(),
 		"sharedImageIDV2_1 should have correct image name")
 
-	// Verify sharedImageIDV2_2 is only in cluster2 and deployments 3, 4
+	// Verify sharedImageIDV2_2 is only in cluster2 with correct digest
 	assert.Contains(t, responseMap, sharedImageIDV2_2)
 	assert.Equal(t, sharedImageDigest_2, responseMap[sharedImageIDV2_2].digest,
 		"sharedImageIDV2_2 should have correct digest")
 	assert.ElementsMatch(t, []string{cluster2}, responseMap[sharedImageIDV2_2].clusterIDs,
 		"sharedImageIDV2_2 should be only in cluster2")
-	assert.ElementsMatch(t, []string{dep3ID, dep4ID}, responseMap[sharedImageIDV2_2].deploymentIDs,
-		"sharedImageIDV2_2 should be in dep3, dep4")
 	assert.Equal(t, "redis:latest", responseMap[sharedImageIDV2_2].imageName.GetFullName(),
 		"sharedImageIDV2_2 should have correct image name")
 
-	// Verify uniqueImageIDV2 is only in cluster2 and deployment 3
+	// Verify uniqueImageIDV2 is only in cluster2 with correct digest
 	assert.Contains(t, responseMap, uniqueImageIDV2)
 	assert.Equal(t, uniqueImageDigest, responseMap[uniqueImageIDV2].digest,
 		"uniqueImageIDV2 should have correct digest")
 	assert.ElementsMatch(t, []string{cluster2}, responseMap[uniqueImageIDV2].clusterIDs,
 		"uniqueImageIDV2 should be only in cluster2")
-	assert.ElementsMatch(t, []string{dep3ID}, responseMap[uniqueImageIDV2].deploymentIDs,
-		"uniqueImageIDV2 should be in dep3 only")
 	assert.Equal(t, "postgres:15", responseMap[uniqueImageIDV2].imageName.GetFullName(),
 		"uniqueImageIDV2 should have correct image name")
 }

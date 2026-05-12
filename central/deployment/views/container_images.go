@@ -9,7 +9,6 @@ type ContainerImageView struct {
 	ImageIDV2         string   `db:"image_id"`
 	ImageDigest       string   `db:"image_sha"`
 	ClusterIDs        []string `db:"cluster_id"`
-	DeploymentIDs     []string `db:"deployment_id"`
 	ImageNameRegistry string   `db:"image_registry"`
 	ImageNameRemote   string   `db:"image_remote"`
 	ImageNameTag      string   `db:"image_tag"`
@@ -29,11 +28,6 @@ func (c *ContainerImageView) GetImageID() string {
 // GetClusterIDs returns the cluster IDs.
 func (c *ContainerImageView) GetClusterIDs() []string {
 	return c.ClusterIDs
-}
-
-// GetDeploymentIDs returns the deployment IDs.
-func (c *ContainerImageView) GetDeploymentIDs() []string {
-	return c.DeploymentIDs
 }
 
 // GetImageName returns the image name.

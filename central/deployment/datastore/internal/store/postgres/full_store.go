@@ -131,7 +131,6 @@ func (f *fullStoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query)
 		pkgSearch.NewQuerySelect(pkgSearch.ImageID).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ImageSHA).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ClusterID).Distinct().Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.DeploymentID).Distinct().Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ImageRegistry).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ImageRemote).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ImageTag).Proto(),

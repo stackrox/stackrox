@@ -216,6 +216,7 @@ func newPod(live bool, imageIDs ...string) *storage.Pod {
 	if live {
 		return &storage.Pod{
 			Id:                  fixtureconsts.PodUID1,
+			DeploymentId:        fixtureconsts.Deployment1,
 			LiveInstances:       instances,
 			TerminatedInstances: instanceLists,
 		}
@@ -223,6 +224,7 @@ func newPod(live bool, imageIDs ...string) *storage.Pod {
 
 	return &storage.Pod{
 		Id:                  fixtureconsts.PodUID2,
+		DeploymentId:        fixtureconsts.Deployment1,
 		TerminatedInstances: instanceLists,
 	}
 }
@@ -583,7 +585,9 @@ func (s *PruningTestSuite) TestImagePruning() {
 				require.NoError(t, deployments.UpsertDeployment(ctx, c.deployment))
 			}
 			if c.pod != nil {
-				c.pod.DeploymentId = c.deployment.GetId()
+				if c.deployment != nil {
+					c.pod.DeploymentId = c.deployment.GetId()
+				}
 				require.NoError(t, pods.UpsertPod(ctx, c.pod))
 			}
 			for _, image := range c.images {
@@ -684,11 +688,11 @@ func (s *PruningTestSuite) TestImagePruningSameDigestDifferentName() {
 	}
 
 	type testCase struct {
-		name            string
-		images          []*storage.ImageV2
-		deployments     []*storage.Deployment
-		pods            []*storage.Pod
-		expectedDigests []string
+		name             string
+		images           []*storage.ImageV2
+		deployments      []*storage.Deployment
+		pods             []*storage.Pod
+		expectedImageIDs []string
 	}
 
 	cases := []testCase{
@@ -718,7 +722,7 @@ func (s *PruningTestSuite) TestImagePruningSameDigestDifferentName() {
 					},
 				},
 			},
-			expectedDigests: []string{digest},
+			expectedImageIDs: []string{imageB.GetId()},
 		},
 		{
 			name:   "stuck pod - deployment no longer references digest - should not prune",
@@ -746,7 +750,47 @@ func (s *PruningTestSuite) TestImagePruningSameDigestDifferentName() {
 					},
 				},
 			},
-			expectedDigests: []string{digest},
+			expectedImageIDs: []string{imageA.GetId()},
+		},
+		{
+			name:   "stuck pod in one deployment, different deployment has same digest - should not prune",
+			images: []*storage.ImageV2{imageA, imageB},
+			deployments: []*storage.Deployment{
+				{
+					Id: fixtureconsts.Deployment1,
+					Containers: []*storage.Container{
+						{
+							Image: &storage.ContainerImage{
+								Id:   differentDigest,
+								IdV2: uuid.NewV5FromNonUUIDs("ghcr.io/stackrox/imageA:v2@"+differentDigest, differentDigest).String(),
+								Name: &storage.ImageName{FullName: "ghcr.io/stackrox/imageA:v2@" + differentDigest},
+							},
+						},
+					},
+				},
+				{
+					Id: fixtureconsts.Deployment2,
+					Containers: []*storage.Container{
+						{
+							Image: &storage.ContainerImage{
+								Id:   digest,
+								IdV2: imageB.GetId(),
+								Name: nameB,
+							},
+						},
+					},
+				},
+			},
+			pods: []*storage.Pod{
+				{
+					Id:           fixtureconsts.PodUID1,
+					DeploymentId: fixtureconsts.Deployment1,
+					LiveInstances: []*storage.ContainerInstance{
+						{ImageDigest: digest},
+					},
+				},
+			},
+			expectedImageIDs: []string{imageA.GetId(), imageB.GetId()},
 		},
 	}
 
@@ -780,11 +824,11 @@ func (s *PruningTestSuite) TestImagePruningSameDigestDifferentName() {
 			remainingImages, err := imagesV2.SearchRawImages(ctx, search.EmptyQuery())
 			require.NoError(t, err)
 
-			var remainingDigests []string
+			var remainingIDs []string
 			for _, img := range remainingImages {
-				remainingDigests = append(remainingDigests, img.GetDigest())
+				remainingIDs = append(remainingIDs, img.GetId())
 			}
-			assert.ElementsMatch(t, c.expectedDigests, remainingDigests)
+			assert.ElementsMatch(t, c.expectedImageIDs, remainingIDs)
 		})
 	}
 }
