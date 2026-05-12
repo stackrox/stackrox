@@ -141,13 +141,7 @@ jobs:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         ORCHESTRATOR_FLAVOR: k8s
-        ROX_ADMIN_PASSWORD_FILE: /tmp/rox-admin-password
       run: |
-        set +x
-        export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
-        export API_ENDPOINT="$(cat /tmp/rox-api-endpoint)"
-        echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
-        set -x
         source tests/e2e/lib.sh
         export_test_environment
         db_backup_and_restore_test /tmp/db-backup-restore-test

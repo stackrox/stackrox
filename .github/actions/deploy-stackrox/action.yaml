@@ -1,11 +1,12 @@
 name: Deploy StackRox
 description: >
-  Deploys StackRox using roxie. Writes /tmp/rox-admin-password,
-  /tmp/rox-api-endpoint, /tmp/rox-auth-token for downstream steps.
+  Deploys StackRox using roxie.
 
-  Default: blocks until Central is ready (foreground).
-  Set background=true to return immediately — poll for
-  /tmp/rox-auth-token to know when deploy is complete.
+  Foreground (default): blocks until ready. Exports API_ENDPOINT,
+  ROX_ADMIN_PASSWORD, etc. to GITHUB_ENV for downstream steps.
+
+  Background: returns immediately. Poll for /tmp/rox-auth-token,
+  then source /tmp/roxie-env.sh to get the env vars.
 
 inputs:
   tag:
@@ -32,11 +33,6 @@ inputs:
   background:
     description: Return immediately; deploy runs in background
     default: "false"
-
-outputs:
-  api-endpoint:
-    description: Central API endpoint (host:port)
-    value: ${{ steps.deploy.outputs.api-endpoint }}
 
 runs:
   using: composite
@@ -73,13 +69,11 @@ runs:
         fi
 
     - name: Deploy StackRox
-      id: deploy
       shell: bash
       run: |
         set +x
         export ROX_ADMIN_PASSWORD="$(openssl rand -base64 20)"
         echo "::add-mask::${ROX_ADMIN_PASSWORD}"
-        echo "${ROX_ADMIN_PASSWORD}" > /tmp/rox-admin-password
         export MAIN_IMAGE_TAG="${{ inputs.tag }}"
 
         deploy() {
@@ -90,13 +84,9 @@ runs:
             --override <(echo "securedCluster: {spec: {clusterName: ${{ inputs.cluster-name }}}}") \
             --tag ${{ inputs.tag }}
 
-          # Make roxie's env vars available to all downstream steps
           sed "s/^export //; s/['\"]//g" /tmp/roxie-env.sh >> "$GITHUB_ENV"
           source /tmp/roxie-env.sh
-          echo "${API_ENDPOINT}" > /tmp/rox-api-endpoint
-          echo "api-endpoint=${API_ENDPOINT}" >> "$GITHUB_OUTPUT"
 
-          # Generate API token (roxie doesn't do this yet)
           curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
             "https://${API_ENDPOINT}/v1/apitokens/generate" \
             -X POST -d '{"name":"ci-test","role":"Admin"}' \
@@ -105,7 +95,6 @@ runs:
 
         if [ "${{ inputs.background }}" = "true" ]; then
           deploy > /tmp/deploy.log 2>&1 &
-          echo "Deploy started in background (PID $!)"
         else
           deploy
         fi
