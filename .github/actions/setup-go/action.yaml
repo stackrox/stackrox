@@ -44,8 +44,8 @@ runs:
         # Resolve version from go.mod: prefer toolchain (build version),
         # fall back to go directive (minimum language version).
         toolchain=$(go mod edit -json | jq -r '.Toolchain // empty')
-        required="${toolchain#go}"  # strip "go" prefix: "go1.25.9" → "1.25.9"
-        if [[ -n "$required" ]]; then
+        if [[ -n "$toolchain" ]]; then
+          required="${toolchain#go}"  # strip "go" prefix: "go1.25.9" → "1.25.9"
           echo "go.mod toolchain directive: $toolchain"
         else
           required=$(go mod edit -json | jq -r '.Go // empty')
