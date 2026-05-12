@@ -902,6 +902,7 @@ jobs:
     needs:
       - define-job-matrix
       - pre-build-go-binaries
+      - pre-build-oss-notice
     if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
@@ -941,6 +942,11 @@ jobs:
 
       - name: Unpack Go binaries
         run: tar xvzf go-binaries-build.tgz
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: oss-notice
+          path: scanner/image/scanner/THIRD_PARTY_NOTICES
 
       - name: Copy scanner binary to expected location
         run: |
