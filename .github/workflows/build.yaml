@@ -1233,6 +1233,7 @@ jobs:
     needs:
       - build-and-push-main
       - build-and-push-operator
+      - build-and-push-scanner
       - build-operator-bundle
       - go-version-ceiling
       - pre-build-cli
