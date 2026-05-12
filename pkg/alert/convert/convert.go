@@ -65,7 +65,7 @@ func populateListAlertEntityInfoForDeployment(listAlert *storage.ListAlert, depl
 			Namespace:      deployment.GetNamespace(),
 			NamespaceId:    deployment.GetNamespaceId(),
 			Inactive:       deployment.GetInactive(),
-			DeploymentType: deployment.GetType(),
+			DeploymentType: deploymentTypeOrDefault(deployment.GetType()),
 		},
 	}
 	listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
@@ -75,6 +75,13 @@ func populateListAlertEntityInfoForDeployment(listAlert *storage.ListAlert, depl
 		NamespaceId:  deployment.GetNamespaceId(),
 		ResourceType: storage.ListAlert_DEPLOYMENT,
 	}
+}
+
+func deploymentTypeOrDefault(dt string) string {
+	if dt != "" {
+		return dt
+	}
+	return "Deployment"
 }
 
 func populateListAlertEntityInfoForNode(listAlert *storage.ListAlert, alert *storage.Alert) {
