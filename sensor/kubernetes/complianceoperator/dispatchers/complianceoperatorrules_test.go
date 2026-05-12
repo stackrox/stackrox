@@ -72,5 +72,12 @@ func TestRuleProcessEvent_WithoutV2Capability(t *testing.T) {
 
 	require.NotNil(t, event)
 	require.Len(t, event.ForwardMessages, 1, "expected V1 event only")
-	assert.NotNil(t, event.ForwardMessages[0].GetComplianceOperatorRule())
+	assert.IsType(t, &central.SensorEvent_ComplianceOperatorRule{}, event.ForwardMessages[0].GetResource())
+
+	v1Rule := event.ForwardMessages[0].GetComplianceOperatorRule()
+	require.NotNil(t, v1Rule)
+	assert.Equal(t, "rule-uid", v1Rule.GetId())
+	assert.Equal(t, "xccdf_org.ssgproject.content_rule_api_server_anonymous_auth", v1Rule.GetRuleId())
+	assert.Equal(t, "ocp4-api-server-anonymous-auth", v1Rule.GetName())
+	assert.Equal(t, "Ensure that anonymous requests are authorized", v1Rule.GetTitle())
 }
