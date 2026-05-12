@@ -28,7 +28,7 @@ func ComplianceRule(incoming *storage.ComplianceOperatorRuleV2) *v2.ComplianceRu
 		RuleId:       incoming.GetRuleId(),
 		Instructions: incoming.GetInstructions(),
 		Warning:      incoming.GetWarning(),
-		ParentRule:    incoming.GetParentRule(),
+		ParentRule:   incoming.GetParentRule(),
 		OperatorKind: v2.ComplianceRule_OperatorKind(ruleutils.CustomRuleEffectiveOperatorKind(incoming.GetOperatorKind())),
 	}
 }
