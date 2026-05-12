@@ -1,9 +1,10 @@
 package storagetov2
 
 import (
-	ruleutils "github.com/stackrox/rox/central/complianceoperator/v2/rules/utils"
+	"github.com/pkg/errors"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // ComplianceRule converts summary object to V2 API summary object
@@ -29,6 +30,23 @@ func ComplianceRule(incoming *storage.ComplianceOperatorRuleV2) *v2.ComplianceRu
 		Instructions: incoming.GetInstructions(),
 		Warning:      incoming.GetWarning(),
 		ParentRule:   incoming.GetParentRule(),
-		OperatorKind: v2.ComplianceRule_OperatorKind(ruleutils.CustomRuleEffectiveOperatorKind(incoming.GetOperatorKind())),
+		OperatorKind: convertRuleOperatorKind(incoming.GetOperatorKind()),
+	}
+}
+
+func convertRuleOperatorKind(kind storage.ComplianceOperatorRuleV2_OperatorKind) v2.ComplianceRule_OperatorKind {
+	switch kind {
+	case storage.ComplianceOperatorRuleV2_RULE:
+		return v2.ComplianceRule_RULE
+	case storage.ComplianceOperatorRuleV2_CUSTOM_RULE:
+		return v2.ComplianceRule_CUSTOM_RULE
+	case storage.ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED:
+		// Older sensors do not set OperatorKind for regular (non-custom) rules,
+		// so UNSPECIFIED is treated as RULE. This fallback can be removed when
+		// versions that don't set OperatorKind (<= 4.10) are not supported.
+		return v2.ComplianceRule_RULE
+	default:
+		utils.Should(errors.Errorf("unhandled rule operator kind %s", kind))
+		return v2.ComplianceRule_OPERATOR_KIND_UNSPECIFIED
 	}
 }

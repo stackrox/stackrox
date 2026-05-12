@@ -1,8 +1,10 @@
 package storagetov2
 
 import (
+	"github.com/pkg/errors"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // ComplianceV2Profile converts V2 storage objects to V2 API objects
@@ -36,7 +38,7 @@ func ComplianceV2Profile(incoming *storage.ComplianceOperatorProfileV2, benchmar
 		Product:        incoming.GetProduct(),
 		Title:          incoming.GetTitle(),
 		Values:         incoming.GetValues(),
-		OperatorKind:   v2.ComplianceProfile_OperatorKind(incoming.GetOperatorKind()),
+		OperatorKind:   convertProfileOperatorKind(incoming.GetOperatorKind()),
 	}
 }
 
@@ -94,7 +96,7 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, b
 				RuleCount:      int32(len(summary.GetRules())),
 				ProfileVersion: summary.GetProfileVersion(),
 				Standards:      profileBenchmarkNameMap[summary.GetName()],
-				OperatorKind:   v2.ComplianceProfileSummary_OperatorKind(summary.GetOperatorKind()),
+				OperatorKind:   convertProfileSummaryOperatorKind(summary.GetOperatorKind()),
 			}
 			orderedProfiles = append(orderedProfiles, summary.GetName())
 		}
@@ -106,4 +108,35 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, b
 	}
 
 	return summaries
+}
+
+func convertProfileOperatorKind(kind storage.ComplianceOperatorProfileV2_OperatorKind) v2.ComplianceProfile_OperatorKind {
+	switch kind {
+	case storage.ComplianceOperatorProfileV2_PROFILE:
+		return v2.ComplianceProfile_PROFILE
+	case storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
+		return v2.ComplianceProfile_TAILORED_PROFILE
+	case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
+		// Older centrals may have stored profiles without OperatorKind,
+		// so UNSPECIFIED is treated as PROFILE. This fallback can be removed when
+		// versions that don't set OperatorKind (<= 4.10) are not supported.
+		return v2.ComplianceProfile_PROFILE
+	default:
+		utils.Should(errors.Errorf("unhandled profile operator kind %s", kind))
+		return v2.ComplianceProfile_OPERATOR_KIND_UNSPECIFIED
+	}
+}
+
+func convertProfileSummaryOperatorKind(kind storage.ComplianceOperatorProfileV2_OperatorKind) v2.ComplianceProfileSummary_OperatorKind {
+	switch kind {
+	case storage.ComplianceOperatorProfileV2_PROFILE:
+		return v2.ComplianceProfileSummary_PROFILE
+	case storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
+		return v2.ComplianceProfileSummary_TAILORED_PROFILE
+	case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
+		return v2.ComplianceProfileSummary_PROFILE
+	default:
+		utils.Should(errors.Errorf("unhandled profile summary operator kind %s", kind))
+		return v2.ComplianceProfileSummary_OPERATOR_KIND_UNSPECIFIED
+	}
 }
