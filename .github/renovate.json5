@@ -73,7 +73,7 @@
     "rpm-lockfile",
   ],
   "labels": [
-    // Add auto-approve label which triggers the corresponding workflow.
-    "auto-approve",
+    // mintmaker-auto-merge label triggers the corresponding workflow.
+    "mintmaker-auto-merge",
   ],
 }

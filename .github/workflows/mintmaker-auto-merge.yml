@@ -1,4 +1,4 @@
-name: auto-approve-and-merge
+name: mintmaker-auto-merge
 
 on:
   pull_request:
@@ -10,9 +10,9 @@ on:
 
 jobs:
   auto-approve:
-    name: Auto-approve and auto-merge Konflux updates
+    name: Auto-approve and auto-merge MintMaker@Konflux updates
     runs-on: ubuntu-slim
-    if: github.event.pull_request.user.login == 'red-hat-konflux[bot]' && github.event.label.name == 'auto-approve'
+    if: github.event.pull_request.user.login == 'red-hat-konflux[bot]' && github.event.label.name == 'mintmaker-auto-merge'
     steps:
     - env:
         GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
