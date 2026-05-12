@@ -990,10 +990,12 @@ scanner-v4-db ${tag}
 END
             ;;
         *-race-condition-qa-e2e-tests)
+            local base_tag
+            base_tag="${STACKROX_BUILD_TAG:-"$(make --quiet --no-print-directory tag)"}"
             cat >> "${image_list}" << END
-central-db ${tag}
-main ${tag}-rcd
-roxctl ${tag}
+central-db ${base_tag}
+main ${base_tag}-rcd
+roxctl ${base_tag}
 END
             if is_in_PR_context && ! pr_has_label "ci-build-race-condition-debug"; then
                 echo "ERROR: Your PR is missing the \"ci-build-race-condition-debug\" label."
