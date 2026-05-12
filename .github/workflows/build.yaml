@@ -300,7 +300,7 @@ jobs:
         with:
           # Only race needs a separate cache (-race/CGO_ENABLED=1 produces 39% unique entries).
           # Default and prerelease share 93% of entries and should use the same cache.
-          key-suffix: ${{ (matrix.name == 'race-condition-debug' && 'race') || '' }}
+          cache-key-suffix: ${{ (matrix.name == 'race-condition-debug' && 'race') || '' }}
 
       - name: PR labels
         uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9

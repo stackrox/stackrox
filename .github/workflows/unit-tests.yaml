@@ -60,7 +60,7 @@ jobs:
 
     - uses: ./.github/actions/setup-go
       with:
-        key-suffix: ${{ matrix.gotags }}
+        cache-key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
@@ -153,7 +153,7 @@ jobs:
 
     - uses: ./.github/actions/setup-go
       with:
-        key-suffix: ${{ matrix.gotags }}
+        cache-key-suffix: ${{ matrix.gotags }}
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1

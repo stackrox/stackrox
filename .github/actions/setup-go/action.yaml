@@ -9,7 +9,7 @@ inputs:
     description: Whether this job saves caches on pushes to the default branch.
     required: false
     default: 'true'
-  key-suffix:
+  cache-key-suffix:
     description: Extra suffix for cache keys (use to distinguish matrix entries that share github.job).
     required: false
     default: ''
@@ -33,7 +33,7 @@ runs:
     # What this action does instead:
     #   - Leaves GOTOOLCHAIN at its default (auto) so sub-modules can
     #     resolve their own toolchain requirements.
-    #   - Keys GOCACHE per job (and per matrix entry via key-suffix)
+    #   - Keys GOCACHE per job (and per matrix entry via cache-key-suffix)
     #     so jobs don't overwrite each other, and trims stale entries
     #     in a post-step before cache save.
     #   - Uses go.mod's `toolchain` directive to determine the build
@@ -102,7 +102,7 @@ runs:
         # parsed imports by (filename, mtime, size) and our fixed mtimes
         # can cause stale cached imports when file content changes.
         echo "GOMOD_HASH=$(sha256sum go.mod | cut -c1-16)" >> "$GITHUB_OUTPUT"
-        suffix="${{ inputs.key-suffix }}"
+        suffix="${{ inputs.cache-key-suffix }}"
         echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"  # prepends dash if set
       shell: bash
 
