@@ -79,9 +79,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 		status.enrichmentConsumption.consumedNetworkGraph = true
 	}
 
-	// Use shared container resolution logic
-	activeChecker := &endpointActiveChecker{mutex: &m.activeEndpointsMutex, activeEndpoints: m.activeEndpoints}
-	containerResult := resolveContainerID(m, now, ep.containerID, status, activeChecker, *ep)
+	containerResult := resolveContainerID(m, now, ep.containerID, status, &m.endpointChecker, *ep)
 
 	if !containerResult.Found {
 		// There is an endpoint involving a container that Sensor does not recognize. In this case we may do two things:

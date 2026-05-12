@@ -146,6 +146,8 @@ func NewManager(
 	opts ...Option,
 ) Manager {
 	enricherTicker := time.NewTicker(enricherCycle)
+	activeConns := make(map[connection]*networkConnIndicatorWithAge)
+	activeEps := make(map[containerEndpoint]*containerEndpointIndicatorWithAge)
 	mgr := &networkFlowManager{
 		connectionsByHost:    make(map[string]*hostConnections),
 		clusterEntities:      clusterEntities,
@@ -157,10 +159,18 @@ func NewManager(
 		updateComputer:       updateComputer,
 		initialSync:          &atomic.Bool{},
 		enrichmentDoneSignal: concurrency.NewSignal(),
-		activeConnections:    make(map[connection]*networkConnIndicatorWithAge),
-		activeEndpoints:      make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
+		activeConnections:    activeConns,
+		activeEndpoints:      activeEps,
 		stopper:              concurrency.NewStopper(),
 		pubSub:               pubSub,
+	}
+	mgr.endpointChecker = endpointActiveChecker{
+		mutex:           &mgr.activeEndpointsMutex,
+		activeEndpoints: activeEps,
+	}
+	mgr.connectionChecker = connectionActiveChecker{
+		mutex:             &mgr.activeConnectionsMutex,
+		activeConnections: activeConns,
 	}
 	maxAgeSetting := env.EnrichmentPurgerTickerMaxAge.DurationSetting()
 	if maxAgeSetting > 0 && maxAgeSetting <= enricherCycle {
@@ -215,6 +225,11 @@ type networkFlowManager struct {
 	// An endpoint is active until Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value,
 	// or until Sensor decides that such message may never arrive and decides that a given endpoint is no longer active.
 	activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge
+
+	// Reusable checkers for resolveContainerID, initialized once at construction to
+	// avoid per-iteration heap allocations in the enrichment hot loop.
+	endpointChecker   endpointActiveChecker
+	connectionChecker connectionActiveChecker
 
 	sensorUpdates chan *message.ExpiringMessage
 
