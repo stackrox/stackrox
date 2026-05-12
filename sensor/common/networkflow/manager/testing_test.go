@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -144,6 +145,11 @@ func (c *connectionPair) external() *connectionPair {
 
 func (c *connectionPair) invalidAddress() *connectionPair {
 	c.conn.remote.IPAndPort.Address = net.ParseIP("invalid")
+	return c
+}
+
+func (c *connectionPair) notFresh() *connectionPair {
+	c.status.firstSeen = timestamp.Now().Add(-env.ClusterEntityResolutionWaitPeriod.DurationSetting() * 2)
 	return c
 }
 
