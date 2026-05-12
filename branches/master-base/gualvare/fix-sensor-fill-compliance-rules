@@ -1,6 +1,6 @@
 {
   "base": {
-    "name": "master",
-    "hash": "221385c82e5ccf6143d90e4a92e876aacfce7826"
+    "name": "master-base/gualvare/fix-compliance-dispatch-customrules-if-tps-supported",
+    "hash": "3f6f280419374e1162d9451c5f2dbb049a99c5b8"
   }
 }
