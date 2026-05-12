@@ -930,8 +930,11 @@ func (s *PolicyServiceTestSuite) TestDeletingDefaultPolicyIsBlocked() {
 
 func (s *PolicyServiceTestSuite) TestDeletingDeclarativePolicyIsBlocked() {
 	// arrange
+	mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
+	mockRole.EXPECT().GetRoleName().Return(accesscontrol.Admin)
+
 	mockIdentity := authnMocks.NewMockIdentity(s.mockCtrl)
-	mockIdentity.EXPECT().Roles().Return(nil)
+	mockIdentity.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole})
 	ctx := authn.ContextWithIdentity(context.Background(), mockIdentity, s.T())
 
 	mockPolicy := &storage.Policy{
