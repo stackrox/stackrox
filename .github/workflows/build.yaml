@@ -74,7 +74,7 @@ jobs:
             "push_main_multiarch_manifests": { "name":[] },
             "build_and_push_operator": { "name":[], "arch":[] },
             "push_operator_multiarch_manifests": { "name":[] },
-            "build_and_push_scanner": { "name":[], "goos":[], "goarch":[], "registry":[] },
+            "build_and_push_scanner": { "name":[], "goos":[], "arch":[], "registry":[] },
             "push_scanner_manifests": { "name":[], "registry":[] },
             "scan_images_with_roxctl": { "name":[], "image":[], "exclude":[] }
           }'
@@ -96,7 +96,7 @@ jobs:
 
           matrix="$(jq '.build_and_push_scanner.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_scanner.goos += ["linux"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_scanner.goarch += ["amd64", "arm64"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_scanner.arch += ["amd64", "arm64"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_scanner.registry += ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
 
           matrix="$(jq '.push_scanner_manifests.name += ["default"]' <<< "$matrix")"
@@ -110,7 +110,7 @@ jobs:
           if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
             matrix="$(jq '.pre_build_go_binaries.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_scanner.goarch += ["ppc64le", "s390x"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_scanner.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
           fi;
 
           # Conditionally add a prerelease build (binaries built with GOTAGS=release)
@@ -138,9 +138,9 @@ jobs:
             matrix="$(jq '.build_and_push_main.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_scanner.exclude = [{ "name": "race-condition-debug", "goarch": "arm64" }]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_scanner.exclude += [{ "name": "race-condition-debug", "goarch": "ppc64le" }]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_scanner.exclude += [{ "name": "race-condition-debug", "goarch": "s390x" }]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_scanner.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_scanner.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_scanner.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
           fi
 
           echo "Job matrix after conditionals:"
@@ -945,7 +945,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
 
       - name: Set up QEMU
-        if: matrix.goarch != 'amd64'
+        if: matrix.arch != 'amd64'
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
@@ -955,7 +955,7 @@ jobs:
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
-          name: go-binaries-build-${{ matrix.goarch }}-${{ matrix.name }}
+          name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
 
       - name: Unpack Go binaries
         run: tar xvzf go-binaries-build.tgz
@@ -963,7 +963,7 @@ jobs:
       - name: Copy scanner binary to expected location
         run: |
           mkdir -p scanner/image/scanner/bin
-          cp bin/linux_${{ matrix.goarch }}/scanner scanner/image/scanner/bin/scanner
+          cp bin/linux_${{ matrix.arch }}/scanner scanner/image/scanner/bin/scanner
 
       - name: Set build tag for prerelease images
         if: matrix.name == 'prerelease'
@@ -974,7 +974,7 @@ jobs:
         run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
       - name: Build Scanner and ScannerDB images
-        run: scripts/lib.sh retry 6 true make -C scanner GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} images
+        run: scripts/lib.sh retry 6 true make -C scanner GOOS=${{ matrix.goos }} GOARCH=${{ matrix.arch }} images
 
       - name: Push Scanner and ScannerDB images
         if: |
@@ -986,7 +986,7 @@ jobs:
           QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
           source ./scripts/ci/lib.sh
-          push_scanner_image_set "${{ matrix.registry }}" "${{ matrix.goarch }}"
+          push_scanner_image_set "${{ matrix.registry }}" "${{ matrix.arch }}"
 
   push-scanner-manifests:
     runs-on: ubuntu-latest
