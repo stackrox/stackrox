@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
+	detectormetrics "github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
@@ -113,6 +114,7 @@ func (d *delegatedRegistryImpl) processUpdatedDelegatedRegistryConfig(config *ce
 		return errors.New("could not process updated delegated registry config, stop requested")
 	default:
 		d.registryStore.SetDelegatedRegistryConfig(config)
+		detectormetrics.UpdateScannerConfigurationInfo(config)
 		log.Infof("Upserted delegated registry config: %q", config)
 	}
 	return nil

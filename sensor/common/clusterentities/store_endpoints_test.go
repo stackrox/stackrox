@@ -366,6 +366,29 @@ func buildExpectation(ip, deplID, portName string, location whereThingIsStored, 
 	}
 }
 
+func (s *ClusterEntitiesStoreTestSuite) TestEmptyEndpointUpdatePreservesSeenState() {
+	store := NewStore(5, nil, true)
+
+	// First update: deployment has a container but no endpoints (e.g., no Service yet).
+	noEndpoints := &EntityData{}
+	noEndpoints.AddContainerID("ctr-a", ContainerMetadata{DeploymentID: "deplA"})
+	store.Apply(map[string]*EntityData{"deplA": noEndpoints}, false)
+
+	// Second update: deployment gets a real endpoint, shared with deplB.
+	ep := buildEndpoint("10.0.0.1", 80)
+	deplB := &EntityData{}
+	deplB.AddEndpoint(ep, EndpointTargetInfo{ContainerPort: 80, PortName: "http"})
+	store.Apply(map[string]*EntityData{"deplB": deplB}, true)
+
+	deplA := &EntityData{}
+	deplA.AddEndpoint(ep, EndpointTargetInfo{ContainerPort: 80, PortName: "http"})
+	store.Apply(map[string]*EntityData{"deplA": deplA}, false)
+
+	// deplB must NOT have been moved to history — deplA was already "seen".
+	_, hasHistory := store.endpointsStore.reverseHistoricalEndpoints["deplB"]
+	s.False(hasHistory, "deplB should not be moved to history when deplA was previously seen with empty endpoints")
+}
+
 func (s *ClusterEntitiesStoreTestSuite) TestEndpointTakeoverFastPathDoesNotPolluteReverseHistory() {
 	store := NewStore(5, nil, true)
 

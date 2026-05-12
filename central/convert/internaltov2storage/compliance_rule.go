@@ -99,7 +99,10 @@ func centralToStorageRuleKind(kind central.ComplianceOperatorRuleV2_OperatorKind
 	case central.ComplianceOperatorRuleV2_CUSTOM_RULE:
 		return storage.ComplianceOperatorRuleV2_CUSTOM_RULE
 	case central.ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED:
-		return storage.ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED
+		// Older sensors do not set OperatorKind for regular (non-custom) rules,
+		// so UNSPECIFIED is treated as RULE. This fallback can be removed when
+		// versions that don't set OperatorKind (<= 4.10) are not supported.
+		return storage.ComplianceOperatorRuleV2_RULE
 	default:
 		log.Errorf("Unexpected rule operator kind %v", kind)
 		return storage.ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED
