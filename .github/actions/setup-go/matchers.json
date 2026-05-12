@@ -4,11 +4,7 @@
             "owner": "go",
             "pattern": [
                 {
-<<<<<<< HEAD
-                    "regexp": "^\\s*(.+\\.go):(?:(\\d+):(\\d+):)? (.*)",
-=======
                     "regexp": "^\\s*(.+\\.go):(\\d+):(?:(\\d+):)? (.*)",
->>>>>>> davdhacs/setup-go-combined
                     "file": 1,
                     "line": 2,
                     "column": 3,
