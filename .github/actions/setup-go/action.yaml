@@ -56,7 +56,12 @@ runs:
           echo "go.mod toolchain directive: go$version"
         else
           version=$(grep '^go ' go.mod | awk '{print $2}' || true)
-          echo "::warning::No toolchain directive in go.mod — falling back to go directive ($version). Consider adding 'toolchain go<version>' to go.mod to pin the build version."
+          if [[ -n "$version" ]]; then
+            echo "::warning::No toolchain directive in go.mod — falling back to go directive ($version). Consider adding 'toolchain go<version>' to go.mod to pin the build version."
+          else
+            echo "::error::Could not parse Go version from go.mod (no toolchain or go directive found)"
+            exit 1
+          fi
         fi
         echo "version=$version" >> "$GITHUB_OUTPUT"
       shell: bash
