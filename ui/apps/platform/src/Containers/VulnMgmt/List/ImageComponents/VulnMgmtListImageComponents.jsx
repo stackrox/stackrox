@@ -9,7 +9,9 @@ import TopCvssLabel from 'Components/TopCvssLabel';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import CVEStackedPill from 'Components/CVEStackedPill';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import queryService from 'utils/queryService';
+import { withActiveDeploymentQuery } from 'utils/deploymentUtils';
 
 import { VULN_IMAGE_COMPONENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
@@ -192,8 +194,15 @@ export function getComponentTableColumns() {
 }
 
 const VulnMgmtListImageComponents = ({ selectedRowId, search, sort, page, data, totalResults }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeploymentSoftDeletionEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_SOFT_DELETION');
+
     const query = gql`
-        query getImageComponents($query: String, $pagination: Pagination) {
+        query getImageComponents(
+            $query: String
+            $deploymentQuery: String
+            $pagination: Pagination
+        ) {
             results: imageComponents(query: $query, pagination: $pagination) {
                 ...imageComponentFields
             }
@@ -205,6 +214,7 @@ const VulnMgmtListImageComponents = ({ selectedRowId, search, sort, page, data, 
     const queryOptions = {
         variables: {
             query: queryService.objectToWhereClause(search),
+            deploymentQuery: withActiveDeploymentQuery('', isDeploymentSoftDeletionEnabled),
             scopeQuery: '',
             pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
         },
