@@ -359,8 +359,12 @@ jobs:
             GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
           fi
 
+          # Copy scanner binary to location expected by scanner image build
+          mkdir -p scanner/image/scanner/bin
+          cp bin/linux_${{ matrix.arch }}/scanner scanner/image/scanner/bin/scanner
+
       - name: Bundle the build to preserve permissions
-        run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
+        run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }} scanner/image/scanner/bin/scanner
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
