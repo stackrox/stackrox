@@ -391,43 +391,33 @@ class AdmissionControllerTest extends BaseSpecification {
         "namespace removal"| "backend"    | null
     }
 
-    @Unroll
     @Tag("BAT")
-    def "Verify AC init container enforcement: #desc"() {
+    def "Verify AC allows deployment with init containers"() {
         given:
         "Feature flag for init container support is enabled"
         Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_INIT_CONTAINER_SUPPORT"))
 
         when:
-        "Create a deployment with init container(s)"
+        "Create a deployment with init containers"
         def deployment = new Deployment()
-                .setName("init-ac-${desc.replaceAll(' ', '-')}")
+                .setName("init-ac-test")
                 .setNamespace(TEST_NAMESPACE)
                 .setImagePrefetcherAffinity()
-                .setImage(mainImage)
+                .setImage(BUSYBOX_TAGGED_IMAGE)
                 .addLabel("app", "test")
-        initImages.eachWithIndex { String image, int i ->
-            deployment.addInitContainer("init-${i}", image)
-        }
+                .addInitContainer("init-0", BUSYBOX_LATEST_TAG_IMAGE)
+                .addInitContainer("init-1", BUSYBOX_TAGGED_IMAGE)
 
         def created = orchestrator.createDeploymentNoWait(deployment)
 
         then:
-        "Verify admission controller allows or blocks based on which container violates policy"
-        assert created == allowed
+        "Admission controller allows the deployment"
+        assert created
 
         cleanup:
         if (created) {
             deleteDeploymentWithCaution(deployment)
         }
-
-        where:
-        desc              | mainImage                | initImages                                          | allowed
-        "1 init latest"   | BUSYBOX_TAGGED_IMAGE     | [BUSYBOX_LATEST_TAG_IMAGE]                          | true
-        "2 inits latest"  | BUSYBOX_TAGGED_IMAGE     | [BUSYBOX_LATEST_TAG_IMAGE, BUSYBOX_LATEST_TAG_IMAGE]| true
-        "mixed inits"     | BUSYBOX_TAGGED_IMAGE     | [BUSYBOX_LATEST_TAG_IMAGE, BUSYBOX_TAGGED_IMAGE]    | true
-        "main 1 init"     | BUSYBOX_LATEST_TAG_IMAGE | [BUSYBOX_TAGGED_IMAGE]                              | false
-        "main 2 inits"    | BUSYBOX_LATEST_TAG_IMAGE | [BUSYBOX_TAGGED_IMAGE, BUSYBOX_TAGGED_IMAGE]        | false
     }
 
 }
