@@ -118,7 +118,6 @@ include make/gotools.mk
 $(call go-tool, BUF_BIN, github.com/bufbuild/buf/cmd/buf, tools/proto)
 $(call go-tool, GOLANGCILINT_BIN, github.com/golangci/golangci-lint/v2/cmd/golangci-lint, tools/linters)
 $(call go-tool, EASYJSON_BIN, github.com/mailru/easyjson/easyjson)
-$(call go-tool, OSSLS_BIN, github.com/stackrox/ossls, tools/build)
 $(call go-tool, ROXVET_BIN, ./tools/roxvet)
 $(call go-tool, STRINGER_BIN, golang.org/x/tools/cmd/stringer)
 $(call go-tool, MOCKGEN_BIN, go.uber.org/mock/mockgen)
@@ -700,11 +699,6 @@ endif
 .PHONY: copy-binaries-to-image-dir
 copy-binaries-to-image-dir: copy-go-binaries-to-image-dir
 	cp -r ui/build image/rhel/ui/
-ifdef CI
-	$(SILENT)[ -d image/rhel/THIRD_PARTY_NOTICES ] || { echo "image/rhel/THIRD_PARTY_NOTICES dir not found! It is required for CI-built images."; exit 1; }
-else
-	$(SILENT)[ -f image/rhel/THIRD_PARTY_NOTICES ] || mkdir -p image/rhel/THIRD_PARTY_NOTICES
-endif
 	$(SILENT)[ -d image/rhel/docs ] || { echo "Generated docs not found in image/rhel/docs. They are required for build."; exit 1; }
 
 .PHONY: scale-image
@@ -783,16 +777,6 @@ default-image-registry:
 .PHONY: product-branding
 product-branding:
 	@echo $(ROX_PRODUCT_BRANDING)
-
-.PHONY: ossls-audit
-ossls-audit: deps $(OSSLS_BIN)
-	$(OSSLS_BIN) version
-	$(OSSLS_BIN) audit
-
-.PHONY: ossls-notice
-ossls-notice: deps $(OSSLS_BIN)
-	$(OSSLS_BIN) version
-	$(OSSLS_BIN) audit --export image/rhel/THIRD_PARTY_NOTICES
 
 .PHONY: collector-tag
 collector-tag:

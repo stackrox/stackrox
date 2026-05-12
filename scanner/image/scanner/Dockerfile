@@ -52,7 +52,6 @@ COPY scripts/entrypoint.sh \
      scripts/restore-all-dir-contents \
      scripts/save-dir-contents /usr/local/bin/
 COPY bin/scanner /usr/local/bin/
-COPY THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=mappings /mappings/repository-to-cpe.json /mappings/container-name-repos-map.json /run/mappings/
 # Copy Delve debugger if built (empty dir when DEBUG_BUILD=no).
 COPY --from=debugger /output/go/ /go/

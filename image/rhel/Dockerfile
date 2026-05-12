@@ -81,7 +81,6 @@ RUN \
 COPY --from=stackrox_data /stackrox-data /stackrox/static-data
 COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
 COPY ./docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
-COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 
 COPY ui /ui
 

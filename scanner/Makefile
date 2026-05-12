@@ -190,8 +190,7 @@ copy-scripts: $(image-scripts-t)
 
 .PHONY: image-scanner
 image-scanner: $(if $(CI),,image/scanner/bin/scanner) \
-               $(image-scripts-t) \
-               ossls-notice
+               $(image-scripts-t)
 	@echo "+ $@"
 	$(DOCKERBUILD) \
             -t stackrox/$(image-prefix):$(TAG) \
@@ -247,20 +246,6 @@ image-scannerctl: image/scannerctl/bin/scannerctl
 	    -t stackrox/$(image-prefix)-scannerctl:$(TAG) \
 	    $(DOCKERBUILD_ARGS) \
             -f image/scannerctl/Dockerfile image/scannerctl
-
-###########
-## Tools ##
-###########
-
-.PHONY: ossls-notice
-ossls-notice: $(build-deps-t)
-	@echo "+ $@"
-ifdef CI
-	$(SILENT)ossls version
-	$(SILENT)ossls audit --export image/scanner/THIRD_PARTY_NOTICES
-else
-	$(SILENT)mkdir -p image/scanner/THIRD_PARTY_NOTICES
-endif
 
 #################
 ## Integration ##
