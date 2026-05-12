@@ -18,7 +18,7 @@ class FileActivityTest extends BaseSpecification {
 
     static final private String DEPLOY_PATH = "/tmp/fa-deploy-${RUN_ID}"
     static final private String NODE_PATH = "/tmp/fa-node-${RUN_ID}"
-    static final private String POLICY_WILDCARD = "/tmp/fa-*"
+    static final private String POLICY_PATH = "/tmp/fa-*"
     static final private String DEPLOY_POLICY_NAME = "FA-E2E-deploy-${RUN_ID}"
     static final private String NODE_POLICY_NAME = "FA-E2E-node-${RUN_ID}"
 
@@ -33,7 +33,7 @@ class FileActivityTest extends BaseSpecification {
             .setName("fa-deploy-${RUN_ID}")
             .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
             .setCommand(["/bin/sh", "-c",])
-            .setArgs(["while sleep 1; do touch ${DEPLOY_PATH}; done" as String,])
+            .setArgs(["while sleep 1; do echo >> ${DEPLOY_PATH}; done" as String,])
             .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
 
     @Shared
@@ -41,7 +41,7 @@ class FileActivityTest extends BaseSpecification {
             .setName("fa-node-${RUN_ID}")
             .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
             .setCommand(["/bin/sh", "-c",])
-            .setArgs(["while sleep 1; do chroot /host sudo touch ${NODE_PATH}; done" as String,])
+            .setArgs(["while sleep 1; do chroot /host sudo sh -c 'echo >> ${NODE_PATH}'; done" as String,])
             .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
             .setPrivilegedFlag(true)
             .addHostMount("host-root", "/host")
@@ -53,13 +53,13 @@ class FileActivityTest extends BaseSpecification {
                         Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER))
 
         deployPolicyID = PolicyService.createNewPolicy(createFileActivityPolicy(
-                DEPLOY_POLICY_NAME, POLICY_WILDCARD,
-                PolicyOuterClass.EventSource.DEPLOYMENT_EVENT, "OPEN"))
+                DEPLOY_POLICY_NAME, POLICY_PATH,
+                PolicyOuterClass.EventSource.DEPLOYMENT_EVENT))
         assert deployPolicyID
 
         nodePolicyID = PolicyService.createNewPolicy(createFileActivityPolicy(
-                NODE_POLICY_NAME, POLICY_WILDCARD,
-                PolicyOuterClass.EventSource.NODE_EVENT, "OPEN"))
+                NODE_POLICY_NAME, POLICY_PATH,
+                PolicyOuterClass.EventSource.NODE_EVENT))
         assert nodePolicyID
 
         orchestrator.createDeployment(deployDeployment)
@@ -94,7 +94,7 @@ class FileActivityTest extends BaseSpecification {
         "the alert contains file access violation details"
         def violations = AlertService.getViolations(
                 ListAlertsRequest.newBuilder()
-                        .setQuery("Policy:${DEPLOY_POLICY_NAME}")
+                        .setQuery("Deployment:${deployDeployment.name}+Policy:${DEPLOY_POLICY_NAME}")
                         .build())
         assert violations.size() >= 1
 
@@ -109,27 +109,24 @@ class FileActivityTest extends BaseSpecification {
         expect:
         "a node-level alert is triggered"
         assert Services.waitForNodeViolation(NODE_POLICY_NAME, 90)
+
+        and:
+        "the alert contains file access violation details"
+        def violations = AlertService.getViolations(
+                ListAlertsRequest.newBuilder()
+                        .setQuery("Policy:${NODE_POLICY_NAME}")
+                        .build())
+        assert violations.size() >= 1
+
+        def alert = AlertService.getViolation(violations[0].id)
+        assert alert.violationsList.size() > 0
+        assert alert.violationsList[0].type == AlertOuterClass.Alert.Violation.Type.FILE_ACCESS
+        assert alert.violationsList[0].message.contains(NODE_PATH)
     }
 
     @CompileStatic
     private static PolicyOuterClass.Policy createFileActivityPolicy(
-            String name, String path, PolicyOuterClass.EventSource eventSource, String... operations) {
-        def groups = [
-                PolicyOuterClass.PolicyGroup.newBuilder()
-                        .setFieldName("File Path")
-                        .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(path))
-                        .build(),
-        ]
-
-        if (operations.length > 0) {
-            def opGroup = PolicyOuterClass.PolicyGroup.newBuilder()
-                    .setFieldName("File Operation")
-            operations.each { op ->
-                opGroup.addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(op))
-            }
-            groups << opGroup.build()
-        }
-
+            String name, String path, PolicyOuterClass.EventSource eventSource) {
         return PolicyOuterClass.Policy.newBuilder()
                 .setName(name)
                 .addLifecycleStages(PolicyOuterClass.LifecycleStage.RUNTIME)
@@ -140,7 +137,12 @@ class FileActivityTest extends BaseSpecification {
                 .addPolicySections(
                         PolicyOuterClass.PolicySection.newBuilder()
                                 .setSectionName("file-access")
-                                .addAllPolicyGroups(groups)
+                                .addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("File Path")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue(path))
+                                                .build())
                                 .build()
                 )
                 .build()
