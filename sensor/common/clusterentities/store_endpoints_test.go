@@ -409,3 +409,190 @@ func (s *ClusterEntitiesStoreTestSuite) TestEndpointTakeoverFastPathDoesNotPollu
 	s.Contains(reverseHistDeplA, ep1, "taken-over endpoint must be historical for previous owner")
 	s.NotContains(reverseHistDeplA, ep2, "unrelated endpoint must not be marked historical during single-endpoint takeover")
 }
+
+func buildEntityData(entries map[net.NumericEndpoint][]EndpointTargetInfo) *EntityData {
+	data := &EntityData{}
+	for endpoint, targetInfos := range entries {
+		for _, targetInfo := range targetInfos {
+			data.AddEndpoint(endpoint, targetInfo)
+		}
+	}
+	return data
+}
+
+func (s *ClusterEntitiesStoreTestSuite) TestEndpointsUnchangedNoLockVariantsMatchExpectedSemantics() {
+	ep1 := buildEndpoint("10.0.0.1", 80)
+	ep2 := buildEndpoint("10.0.0.2", 80)
+
+	cases := map[string]struct {
+		current       *EntityData
+		next          map[net.NumericEndpoint][]EndpointTargetInfo
+		wantUnchanged bool
+	}{
+		"empty current and empty next are unchanged": {
+			next:          map[net.NumericEndpoint][]EndpointTargetInfo{},
+			wantUnchanged: true,
+		},
+		"empty current and non-empty next are changed": {
+			next: map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {
+					{ContainerPort: 80, PortName: "http"},
+				},
+			},
+			wantUnchanged: false,
+		},
+		"unchanged endpoints and target infos": {
+			current: buildEntityData(map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {
+					{ContainerPort: 80, PortName: "http"},
+					{ContainerPort: 443, PortName: "https"},
+				},
+				ep2: {
+					{ContainerPort: 8080, PortName: "metrics"},
+				},
+			}),
+			next: map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {
+					{ContainerPort: 443, PortName: "https"},
+					{ContainerPort: 80, PortName: "http"},
+				},
+				ep2: {
+					{ContainerPort: 8080, PortName: "metrics"},
+				},
+			},
+			wantUnchanged: true,
+		},
+		"same target info on distinct endpoints is unchanged": {
+			current: buildEntityData(map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {
+					{ContainerPort: 80, PortName: "http"},
+				},
+				ep2: {
+					{ContainerPort: 80, PortName: "http"},
+				},
+			}),
+			next: map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {
+					{ContainerPort: 80, PortName: "http"},
+				},
+				ep2: {
+					{ContainerPort: 80, PortName: "http"},
+				},
+			},
+			wantUnchanged: true,
+		},
+		"duplicate target infos are treated as changed": {
+			current: buildEntityData(map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {
+					{ContainerPort: 80, PortName: "http"},
+				},
+			}),
+			next: map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {
+					{ContainerPort: 80, PortName: "http"},
+					{ContainerPort: 80, PortName: "http"},
+				},
+			},
+			wantUnchanged: false,
+		},
+		"duplicate target infos can mask removal and are treated as changed": {
+			current: buildEntityData(map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {
+					{ContainerPort: 80, PortName: "http"},
+					{ContainerPort: 443, PortName: "https"},
+				},
+			}),
+			next: map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {
+					{ContainerPort: 80, PortName: "http"},
+					{ContainerPort: 80, PortName: "http"},
+				},
+			},
+			wantUnchanged: false,
+		},
+		"same length but different target info is treated as changed": {
+			current: buildEntityData(map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {
+					{ContainerPort: 80, PortName: "http"},
+					{ContainerPort: 443, PortName: "https"},
+				},
+			}),
+			next: map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {
+					{ContainerPort: 80, PortName: "http"},
+					{ContainerPort: 9090, PortName: "metrics"},
+				},
+			},
+			wantUnchanged: false,
+		},
+		"missing endpoint is treated as changed": {
+			current: buildEntityData(map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {
+					{ContainerPort: 80, PortName: "http"},
+				},
+				ep2: {
+					{ContainerPort: 8080, PortName: "metrics"},
+				},
+			}),
+			next: map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {
+					{ContainerPort: 80, PortName: "http"},
+				},
+			},
+			wantUnchanged: false,
+		},
+		"extra endpoint is treated as changed": {
+			current: buildEntityData(map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {
+					{ContainerPort: 80, PortName: "http"},
+				},
+			}),
+			next: map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {
+					{ContainerPort: 80, PortName: "http"},
+				},
+				ep2: {
+					{ContainerPort: 8080, PortName: "metrics"},
+				},
+			},
+			wantUnchanged: false,
+		},
+	}
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			store := newEndpointsStoreWithMemory(5)
+			if c.current != nil {
+				store.applyNoLock(map[string]*EntityData{"depl": c.current}, false)
+			}
+
+			s.Equal(c.wantUnchanged, store.endpointsUnchangedNoLockBaseline("depl", c.next))
+			s.Equal(c.wantUnchanged, store.endpointsUnchangedNoLock("depl", c.next))
+			s.Equal(c.wantUnchanged, store.endpointsUnchangedNoLockHybrid("depl", c.next))
+		})
+	}
+}
+
+func (s *ClusterEntitiesStoreTestSuite) TestApplyCanonicalizesDuplicateTargetInfosWhenTheyMaskRemoval() {
+	ep := buildEndpoint("10.0.0.3", 8080)
+	httpTarget := EndpointTargetInfo{ContainerPort: 8080, PortName: "http"}
+	httpsTarget := EndpointTargetInfo{ContainerPort: 8443, PortName: "https"}
+
+	store := newEndpointsStoreWithMemory(5)
+	store.applyNoLock(map[string]*EntityData{
+		"depl": buildEntityData(map[net.NumericEndpoint][]EndpointTargetInfo{
+			ep: {httpTarget, httpsTarget},
+		}),
+	}, false)
+
+	store.applyNoLock(map[string]*EntityData{
+		"depl": buildEntityData(map[net.NumericEndpoint][]EndpointTargetInfo{
+			ep: {httpTarget, httpTarget},
+		}),
+	}, false)
+
+	targetInfos := store.endpointMap[ep]["depl"]
+	s.Len(targetInfos, 1)
+	s.True(targetInfos.Contains(httpTarget))
+	s.False(targetInfos.Contains(httpsTarget))
+}

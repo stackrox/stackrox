@@ -104,18 +104,7 @@ func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool)
 func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) {
 	defer e.updateMetricsNoLock()
 	if !incremental {
-		for deploymentID, data := range updates {
-			if data.isDeleteOnly() {
-				// A call to Apply() with empty payload of the updates map (no values) is meant to be a delete operation.
-				e.purgeNoLock(deploymentID)
-				continue
-			}
-			if e.endpointsUnchangedNoLock(deploymentID, data.endpoints) {
-				continue
-			}
-			e.purgeNoLock(deploymentID)
-			e.applySingleNoLock(deploymentID, *data)
-		}
+		e.replaceNoLock(updates)
 		return
 	}
 	for deploymentID, data := range updates {
@@ -127,7 +116,57 @@ func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental
 	}
 }
 
+func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) {
+	for deploymentID, data := range updates {
+		if data.isDeleteOnly() {
+			// A call to Apply() with empty payload of the updates map (no values) is meant to be a delete operation.
+			e.purgeNoLock(deploymentID)
+			continue
+		}
+		if e.endpointsUnchangedNoLock(deploymentID, data.endpoints) {
+			continue
+		}
+		e.purgeNoLock(deploymentID)
+		e.applySingleNoLock(deploymentID, *data)
+	}
+}
+
 func (e *endpointsStore) endpointsUnchangedNoLock(deploymentID string, newEndpoints map[net.NumericEndpoint][]EndpointTargetInfo) bool {
+	currentEndpoints, found := e.reverseEndpointMap[deploymentID]
+	if !found {
+		return len(newEndpoints) == 0
+	}
+	if len(currentEndpoints) != len(newEndpoints) {
+		return false
+	}
+	var seen set.Set[EndpointTargetInfo]
+	for endpoint, newTargetInfos := range newEndpoints {
+		if !currentEndpoints.Contains(endpoint) {
+			return false
+		}
+
+		currentTargetInfos, found := e.endpointMap[endpoint][deploymentID]
+		if !found || len(currentTargetInfos) != len(newTargetInfos) {
+			return false
+		}
+
+		// Reuse one temporary set across endpoints to keep the unchanged fast path
+		// allocation-free while still rejecting duplicate entries in newTargetInfos.
+		clear(seen)
+		for _, ti := range newTargetInfos {
+			if seen.Contains(ti) {
+				return false
+			}
+			seen.Add(ti)
+			if !currentTargetInfos.Contains(ti) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (e *endpointsStore) endpointsUnchangedNoLockBaseline(deploymentID string, newEndpoints map[net.NumericEndpoint][]EndpointTargetInfo) bool {
 	currentEndpoints, found := e.reverseEndpointMap[deploymentID]
 	if !found {
 		return len(newEndpoints) == 0
@@ -144,15 +183,66 @@ func (e *endpointsStore) endpointsUnchangedNoLock(deploymentID string, newEndpoi
 		if !found || len(currentTargetInfos) != len(newTargetInfos) {
 			return false
 		}
-		newSet := make(map[EndpointTargetInfo]struct{}, len(newTargetInfos))
+
+		newSet := set.NewSet[EndpointTargetInfo]()
 		for _, ti := range newTargetInfos {
-			newSet[ti] = struct{}{}
+			newSet.Add(ti)
 		}
 		if len(newSet) != len(currentTargetInfos) {
 			return false
 		}
 		for ti := range currentTargetInfos {
-			if _, ok := newSet[ti]; !ok {
+			if !newSet.Contains(ti) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// endpointsUnchangedNoLockLinearScanThreshold is a magic number. AI cannot explain it, and I am too lazy to calculate it on paper.
+const endpointsUnchangedNoLockLinearScanThreshold = 8
+
+func (e *endpointsStore) endpointsUnchangedNoLockHybrid(deploymentID string, newEndpoints map[net.NumericEndpoint][]EndpointTargetInfo) bool {
+	currentEndpoints, found := e.reverseEndpointMap[deploymentID]
+	if !found {
+		return len(newEndpoints) == 0
+	}
+	if len(currentEndpoints) != len(newEndpoints) {
+		return false
+	}
+	var seen set.Set[EndpointTargetInfo]
+	for endpoint, newTargetInfos := range newEndpoints {
+		if !currentEndpoints.Contains(endpoint) {
+			return false
+		}
+
+		currentTargetInfos, found := e.endpointMap[endpoint][deploymentID]
+		if !found || len(currentTargetInfos) != len(newTargetInfos) {
+			return false
+		}
+
+		if len(newTargetInfos) <= endpointsUnchangedNoLockLinearScanThreshold {
+			for i, ti := range newTargetInfos {
+				if !currentTargetInfos.Contains(ti) {
+					return false
+				}
+				for j := 0; j < i; j++ {
+					if newTargetInfos[j] == ti {
+						return false
+					}
+				}
+			}
+			continue
+		}
+
+		clear(seen)
+		for _, ti := range newTargetInfos {
+			if seen.Contains(ti) {
+				return false
+			}
+			seen.Add(ti)
+			if !currentTargetInfos.Contains(ti) {
 				return false
 			}
 		}
