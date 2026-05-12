@@ -41,33 +41,33 @@ runs:
       shell: bash
       run: |
         if ! command -v roxctl >/dev/null 2>&1; then
-          IMG="quay.io/rhacs-eng/main:${{ inputs.tag }}"
-          ARCH=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
+          img="quay.io/rhacs-eng/main:${{ inputs.tag }}"
+          arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
           set +x
           if [ -n "${{ inputs.quay-pass }}" ]; then
             echo "${{ inputs.quay-pass }}" | docker login -u "${{ inputs.quay-user }}" --password-stdin quay.io 2>/dev/null || true
           fi
-          docker pull -q --platform "linux/${ARCH}" "$IMG" 2>/dev/null || true
-          CID=$(docker create --platform "linux/${ARCH}" "$IMG" true 2>/dev/null)
-          if [ -n "$CID" ]; then
-            docker cp "$CID:/assets/downloads/cli/roxctl-linux-${ARCH}" /usr/local/bin/roxctl
-            docker rm "$CID" >/dev/null
+          docker pull -q --platform "linux/${arch}" "$img" 2>/dev/null || true
+          cid=$(docker create --platform "linux/${arch}" "$img" true 2>/dev/null)
+          if [ -n "$cid" ]; then
+            docker cp "$cid:/assets/downloads/cli/roxctl-linux-${arch}" /usr/local/bin/roxctl
+            docker rm "$cid" >/dev/null
           fi
           chmod +x /usr/local/bin/roxctl 2>/dev/null || true
         fi
 
-        WANT="${{ inputs.roxie-version }}"
-        HAVE=$(roxie version 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[^ ]*' || true)
-        if [ "$HAVE" != "$WANT" ]; then
-          ARCH=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
-          OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+        want="${{ inputs.roxie-version }}"
+        have=$(roxie version 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[^ ]*' || true)
+        if [ "$have" != "$want" ]; then
+          arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
+          os=$(uname -s | tr '[:upper:]' '[:lower:]')
           set +x
-          GH_TOKEN="${{ inputs.github-token }}" gh release download "$WANT" \
+          GH_TOKEN="${{ inputs.github-token }}" gh release download "$want" \
             --repo stackrox/roxie \
-            --pattern "roxie-${OS}-${ARCH}" \
+            --pattern "roxie-${os}-${arch}" \
             --dir /tmp --clobber
-          chmod +x "/tmp/roxie-${OS}-${ARCH}"
-          sudo mv "/tmp/roxie-${OS}-${ARCH}" /usr/local/bin/roxie
+          chmod +x "/tmp/roxie-${os}-${arch}"
+          sudo mv "/tmp/roxie-${os}-${arch}" /usr/local/bin/roxie
         fi
         echo "roxie: $(roxie version 2>/dev/null)"
 
