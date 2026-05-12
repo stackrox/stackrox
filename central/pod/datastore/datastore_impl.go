@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
@@ -17,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"strings"
 )
 
 const (
