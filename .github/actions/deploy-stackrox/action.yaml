@@ -19,7 +19,7 @@ inputs:
     description: Resource sizing preset (acs-defaults, auto, medium, small, ci)
     default: small
   roxie-version:
-    description: roxie release version
+    description: roxie release version (empty = use whatever is installed)
     default: v0.2.2-test2
   github-token:
     description: GitHub token with access to stackrox/roxie
@@ -57,7 +57,8 @@ runs:
         fi
 
         roxie_version_installed=$(roxie version 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[^ ]*' || true)
-        if [ "$roxie_version_installed" != "${{ inputs.roxie-version }}" ]; then
+        roxie_version_requested="${{ inputs.roxie-version }}"
+        if [ -n "$roxie_version_requested" ] && [ "$roxie_version_installed" != "$roxie_version_requested" ]; then
           arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
           os=$(uname -s | tr '[:upper:]' '[:lower:]')
           set +x
