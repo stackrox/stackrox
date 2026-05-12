@@ -56,13 +56,12 @@ runs:
           chmod +x /usr/local/bin/roxctl 2>/dev/null || true
         fi
 
-        want="${{ inputs.roxie-version }}"
-        have=$(roxie version 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[^ ]*' || true)
-        if [ "$have" != "$want" ]; then
+        roxie_version_installed=$(roxie version 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[^ ]*' || true)
+        if [ "$roxie_version_installed" != "${{ inputs.roxie-version }}" ]; then
           arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
           os=$(uname -s | tr '[:upper:]' '[:lower:]')
           set +x
-          GH_TOKEN="${{ inputs.github-token }}" gh release download "$want" \
+          GH_TOKEN="${{ inputs.github-token }}" gh release download "${{ inputs.roxie-version }}" \
             --repo stackrox/roxie \
             --pattern "roxie-${os}-${arch}" \
             --dir /tmp --clobber
