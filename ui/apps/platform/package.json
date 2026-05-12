@@ -95,6 +95,7 @@
         "yup": "^1.6.1"
     },
     "scripts": {
+        "build:clean": "rm -rf .tsbuildinfo node_modules/.vite node_modules/.cache",
         "clean": "rm -rf ./test-results ./cypress/test-results",
         "start": "vite serve",
         "start:ocp-plugin": "NODE_ENV=development webpack serve --config webpack.ocp-plugin.config.js",
