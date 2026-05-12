@@ -152,7 +152,13 @@ jobs:
 
     - name: Is Postgres ready
       run: |
-        timeout 60 bash -c 'until pg_isready; do sleep 1; done'
+        if [ "${{ matrix.pg }}" = "default" ]; then
+          timeout 60 bash -c 'until pg_isready; do sleep 1; done' \
+            || { sudo journalctl -u postgresql --no-pager -n 20; exit 1; }
+        else
+          timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' \
+            || { docker logs postgres; exit 1; }
+        fi
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
@@ -208,7 +214,8 @@ jobs:
 
     - name: Is Postgres ready
       run: |
-        timeout 60 bash -c 'until pg_isready; do sleep 1; done'
+        timeout 60 bash -c 'until pg_isready; do sleep 1; done' \
+          || { sudo journalctl -u postgresql --no-pager -n 20; exit 1; }
 
     - name: Go Bench Tests
       run: make go-postgres-bench-tests
