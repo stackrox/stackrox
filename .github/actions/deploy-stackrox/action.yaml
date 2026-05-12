@@ -1,60 +1,36 @@
 name: Deploy StackRox
 description: >
-  Deploys StackRox (Central + Sensor) on a Kubernetes cluster.
-  Uses roxie (github.com/stackrox/roxie) by default — a single command
-  that handles the full deploy lifecycle. Cluster-agnostic: works with
-  KinD, GKE, or any cluster kubectl can reach.
-
-  Runs in the background — returns immediately.
-  File-based outputs (poll for these):
-    /tmp/rox-auth-token     — API auth token (Central API ready)
-    /tmp/rox-admin-password — admin password
-    /tmp/rox-api-endpoint   — Central API endpoint (host:port)
-    /tmp/rox-data-ready     — touched when Sensor reports >5 deployments
-    /tmp/deploy.log         — deploy timeline with timestamps
+  Deploys StackRox using roxie. Blocks until Central is ready.
+  Writes /tmp/rox-admin-password, /tmp/rox-api-endpoint,
+  /tmp/rox-auth-token for downstream test steps.
 
 inputs:
   tag:
     description: Image tag to deploy
     required: true
-  namespace:
-    description: >
-      Kubernetes namespace for StackRox deployment. Use unique namespaces
-      when sharing a cluster across multiple shards.
-    default: stackrox
   cluster-name:
-    description: Cluster name as seen by Sensor (test framework expects "remote")
+    description: Cluster name as seen by Sensor
     default: remote
   resources:
     description: Resource sizing preset (acs-defaults, auto, medium, small, ci)
     default: small
   roxie-version:
-    description: roxie release version to install
+    description: roxie release version
     default: v0.2.2-test2
   github-token:
-    description: >
-      GitHub token with access to stackrox/roxie (private repo).
-      Use secrets.RHACS_BOT_GITHUB_TOKEN or equivalent.
+    description: GitHub token with access to stackrox/roxie
     required: true
   quay-user:
-    description: Quay.io username for pulling images (needed if docker not already logged in)
+    description: Quay.io username (for roxctl extraction)
     default: ""
   quay-pass:
     description: Quay.io password
     default: ""
-  background:
-    description: >
-      Run deploy in background (true) or foreground (false).
-      Foreground is useful for debugging deploy failures.
-    default: "true"
 
 outputs:
   api-endpoint:
-    description: Central API endpoint (host:port) — available in foreground mode
+    description: Central API endpoint (host:port)
     value: ${{ steps.deploy.outputs.api-endpoint }}
-  auth-token:
-    description: API auth token — available in foreground mode
-    value: ${{ steps.deploy.outputs.auth-token }}
 
 runs:
   using: composite
@@ -63,7 +39,6 @@ runs:
       shell: bash
       run: |
         if ! command -v roxctl >/dev/null 2>&1; then
-          echo "Extracting roxctl from main:${{ inputs.tag }}..."
           IMG="quay.io/rhacs-eng/main:${{ inputs.tag }}"
           ARCH=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
           set +x
@@ -75,137 +50,44 @@ runs:
           if [ -n "$CID" ]; then
             docker cp "$CID:/assets/downloads/cli/roxctl-linux-${ARCH}" /usr/local/bin/roxctl
             docker rm "$CID" >/dev/null
-          else
-            echo "::warning::Could not extract roxctl from image, building from source"
-            go build -o /usr/local/bin/roxctl ./roxctl
           fi
-          chmod +x /usr/local/bin/roxctl
-          echo "roxctl: $(roxctl version 2>/dev/null || echo installed)"
+          chmod +x /usr/local/bin/roxctl 2>/dev/null || true
         fi
 
-        if command -v roxie >/dev/null 2>&1; then
-          echo "roxie already installed: $(roxie version)"
-        else
-          echo "Installing roxie ${{ inputs.roxie-version }}..."
+        if ! command -v roxie >/dev/null 2>&1; then
           ARCH=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
           OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+          set +x
           GH_TOKEN="${{ inputs.github-token }}" gh release download "${{ inputs.roxie-version }}" \
             --repo stackrox/roxie \
             --pattern "roxie-${OS}-${ARCH}" \
             --dir /tmp --clobber
           chmod +x "/tmp/roxie-${OS}-${ARCH}"
           sudo mv "/tmp/roxie-${OS}-${ARCH}" /usr/local/bin/roxie
-          echo "Installed: $(roxie version)"
         fi
 
-    - name: Deploy StackRox (${{ inputs.background == 'true' && 'background' || 'foreground' }})
+    - name: Deploy StackRox
       id: deploy
       shell: bash
       run: |
         set +x
-        ROX_ADMIN_PASSWORD="$(openssl rand -base64 20)"
+        export ROX_ADMIN_PASSWORD="$(openssl rand -base64 20)"
         echo "::add-mask::${ROX_ADMIN_PASSWORD}"
         echo "${ROX_ADMIN_PASSWORD}" > /tmp/rox-admin-password
+        export MAIN_IMAGE_TAG="${{ inputs.tag }}"
 
-        deploy_stackrox() {
-          set +e
-          T0=$(date +%s)
-          ts() { echo "+$(( $(date +%s) - T0 ))s $*"; }
+        roxie deploy both \
+          --resources=${{ inputs.resources }} \
+          --single-namespace \
+          --envrc /tmp/roxie-env.sh \
+          --override <(echo "securedCluster: {spec: {clusterName: ${{ inputs.cluster-name }}}}") \
+          --tag ${{ inputs.tag }}
 
-          ts "waiting for cluster..."
-          for _ in $(seq 1 120); do
-            kubectl cluster-info >/dev/null 2>&1 && break
-            sleep 2
-          done
-          ts "cluster reachable"
+        source /tmp/roxie-env.sh
+        echo "${API_ENDPOINT}" > /tmp/rox-api-endpoint
+        echo "api-endpoint=${API_ENDPOINT}" >> "$GITHUB_OUTPUT"
 
-          cat > /tmp/roxie-override.yaml << EOF
-        securedCluster:
-          spec:
-            clusterName: ${{ inputs.cluster-name }}
-        EOF
-
-          ts "roxie deploy starting..."
-          export MAIN_IMAGE_TAG="${{ inputs.tag }}"
-          export ROX_ADMIN_PASSWORD
-
-          # roxie PR#169: --envrc works with --exposure=none (detached
-          # port-forward). On KinD, auto-detection overrides to none.
-          # On GKE, use loadbalancer (real LB available).
-          CURRENT_CTX=$(kubectl config current-context 2>/dev/null || true)
-          if [[ "$CURRENT_CTX" == kind-* ]]; then
-            EXPOSURE="none"
-          else
-            EXPOSURE="loadbalancer"
-          fi
-
-          roxie deploy both \
-            --resources=${{ inputs.resources }} \
-            --single-namespace \
-            --central-wait=10m \
-            --secured-cluster-wait=10m \
-            --override /tmp/roxie-override.yaml \
-            --tag ${{ inputs.tag }} \
-            --envrc /tmp/roxie-env.sh \
-            --exposure=${EXPOSURE}
-          ROXIE_RC=$?
-          ts "roxie deploy complete (exit ${ROXIE_RC})"
-
-          ts "pods:"
-          kubectl -n "${{ inputs.namespace }}" get pods --no-headers 2>/dev/null || true
-
-          if [ $ROXIE_RC -ne 0 ]; then
-            ts "ERROR: roxie deploy failed"
-            return 1
-          fi
-
-          # Use roxie's endpoint from envrc if available (LB IP on GKE),
-          # otherwise fall back to port-forward on localhost:8000 (KinD).
-          ROXIE_ENDPOINT=$(grep API_ENDPOINT /tmp/roxie-env.sh 2>/dev/null | head -1 | sed 's/.*="//' | sed 's/"//')
-          if [ -n "$ROXIE_ENDPOINT" ] && [[ "$ROXIE_ENDPOINT" != 127.0.0.1* ]]; then
-            API_ENDPOINT="$ROXIE_ENDPOINT"
-            ts "using LB endpoint: ${API_ENDPOINT}"
-          else
-            NS="${{ inputs.namespace }}"
-            while true; do
-              kubectl -n "$NS" port-forward svc/central 8000:443 2>/dev/null || sleep 2
-            done &
-            API_ENDPOINT="localhost:8000"
-            ts "using port-forward: ${API_ENDPOINT}"
-          fi
-
-          ts "waiting for Central API on ${API_ENDPOINT}..."
-          for _ in $(seq 1 120); do
-            curl -sk --connect-timeout 1 "https://${API_ENDPOINT}/v1/ping" >/dev/null 2>&1 && break
-            sleep 1
-          done
-          ts "Central API ready"
-
-          curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-            "https://${API_ENDPOINT}/v1/apitokens/generate" \
-            -X POST -d '{"name":"ci-test","role":"Admin"}' \
-            | jq -r '.token' > /tmp/rox-auth-token
-          echo "${API_ENDPOINT}" > /tmp/rox-api-endpoint
-          ts "auth token written (endpoint: ${API_ENDPOINT})"
-
-          for _ in $(seq 1 60); do
-            dep_count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-              "https://${API_ENDPOINT}/v1/deploymentscount" 2>/dev/null | jq -r '.count // 0')
-            [ "${dep_count:-0}" -gt 5 ] && break
-            sleep 3
-          done
-          touch /tmp/rox-data-ready
-          ts "data ready (${dep_count} deployments)"
-        }
-
-        if [ "${{ inputs.background }}" = "true" ]; then
-          deploy_stackrox > /tmp/deploy.log 2>&1 &
-          echo "StackRox deploy started in background (PID $!)"
-        else
-          deploy_stackrox 2>&1 | tee /tmp/deploy.log
-          # Expose outputs for downstream jobs (shared cluster mode).
-          if [ -s /tmp/rox-auth-token ]; then
-            echo "api-endpoint=$(cat /tmp/rox-api-endpoint)" >> "$GITHUB_OUTPUT"
-            echo "auth-token=$(cat /tmp/rox-auth-token)" >> "$GITHUB_OUTPUT"
-          fi
-        fi
+        curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+          "https://${API_ENDPOINT}/v1/apitokens/generate" \
+          -X POST -d '{"name":"ci-test","role":"Admin"}' \
+          | jq -r '.token' > /tmp/rox-auth-token
