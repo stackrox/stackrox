@@ -16,7 +16,5 @@ func encodeYAML(doc any, w io.Writer) error {
 	if err := enc.Close(); err != nil {
 		return fmt.Errorf("failed to close encoder: %w", err)
 	}
-	// Extra newline to match the previous output format.
-	_, err := fmt.Fprintln(w)
-	return err
+	return nil
 }
