@@ -35,11 +35,13 @@ runs:
   steps:
     - name: Install roxctl
       shell: bash
+      env:
+        QUAY_USER: ${{ inputs.quay-user }}
+        QUAY_PASS: ${{ inputs.quay-pass }}
       run: |
         arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
         img="quay.io/rhacs-eng/main:${{ inputs.tag }}"
-        set +x
-        [ -n "${{ inputs.quay-pass }}" ] && echo "${{ inputs.quay-pass }}" | docker login -u "${{ inputs.quay-user }}" --password-stdin quay.io 2>/dev/null || true
+        [ -n "$QUAY_PASS" ] && echo "$QUAY_PASS" | docker login -u "$QUAY_USER" --password-stdin quay.io 2>/dev/null || true
         docker pull -q --platform "linux/${arch}" "$img" 2>/dev/null || true
         cid=$(docker create --platform "linux/${arch}" "$img" true 2>/dev/null) && \
           docker cp "$cid:/assets/downloads/cli/roxctl-linux-${arch}" /usr/local/bin/roxctl && \
@@ -48,11 +50,12 @@ runs:
 
     - name: Install roxie
       shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
       run: |
         arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
         os=$(uname -s | tr '[:upper:]' '[:lower:]')
-        set +x
-        GH_TOKEN="${{ inputs.github-token }}" gh release download "${{ inputs.roxie-version }}" \
+        gh release download "${{ inputs.roxie-version }}" \
           --repo stackrox/roxie --pattern "roxie-${os}-${arch}" --dir /tmp --clobber
         sudo install "/tmp/roxie-${os}-${arch}" /usr/local/bin/roxie
 
