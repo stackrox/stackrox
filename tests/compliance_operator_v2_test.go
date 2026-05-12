@@ -1145,6 +1145,7 @@ func TestComplianceV2GetComplianceRule(t *testing.T) {
 		assert.NotEmpty(t, resp.GetTitle(), "Title should be non-empty")
 		assert.NotEmpty(t, resp.GetRuleType(), "RuleType should be non-empty")
 		assert.NotEmpty(t, resp.GetSeverity(), "Severity should be non-empty")
+		assert.Equal(t, v2.ComplianceRule_RULE, resp.GetOperatorKind(), "OperatorKind should be RULE for built-in rules")
 	})
 
 	t.Run("custom", func(t *testing.T) {
