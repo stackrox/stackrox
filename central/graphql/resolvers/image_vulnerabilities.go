@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/generator"
 	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
-	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/views"
@@ -208,21 +207,25 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args stru
 	Query                        *string
 	ExcludeWithActiveDeployments *bool
 }) (int32, error) {
+	return resolver.imageVulnerabilityCount(ctx,
+		RawQuery{Query: args.Query},
+		readOptionsFromBool(args.ExcludeWithActiveDeployments),
+	)
+}
+
+func (resolver *Resolver) imageVulnerabilityCount(ctx context.Context, args RawQuery, opts ...views.ReadOptions) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCount")
-	// Check permissions.
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
 
-	// Cast query.
-	rawQuery := RawQuery{Query: args.Query}
-	query, err := rawQuery.AsV1QueryOrEmpty()
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
 	}
 
-	opts := readOptionsFromBool(args.ExcludeWithActiveDeployments)
-	cveCount, err := resolver.ImageCVEFlatView.Count(ctx, query, opts)
+	readOpts := firstOrDefault(opts)
+	cveCount, err := resolver.ImageCVEFlatView.Count(ctx, query, readOpts)
 	return int32(cveCount), err
 }
 
@@ -630,19 +633,12 @@ func (resolver *imageCVEV2Resolver) ImageComponentCount(ctx context.Context, arg
 
 func (resolver *imageCVEV2Resolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageCount")
-	return resolver.root.ImageCount(resolver.imageVulnerabilityScopeContext(ctx), struct {
-		Query                        *string
-		ExcludeWithActiveDeployments *bool
-	}{Query: args.Query})
+	return resolver.root.imageCount(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
 func (resolver *imageCVEV2Resolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "Images")
-	return resolver.root.Images(resolver.imageVulnerabilityScopeContext(ctx), struct {
-		Query                        *string
-		Pagination                   *inputtypes.Pagination
-		ExcludeWithActiveDeployments *bool
-	}{Query: args.Query, Pagination: args.Pagination})
+	return resolver.root.images(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
 func (resolver *imageCVEV2Resolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {

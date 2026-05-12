@@ -84,19 +84,25 @@ func (resolver *Resolver) ImageCVECount(ctx context.Context, args struct {
 	Query                        *string
 	ExcludeWithActiveDeployments *bool
 }) (int32, error) {
+	return resolver.imageCVECount(ctx,
+		RawQuery{Query: args.Query},
+		readOptionsFromBool(args.ExcludeWithActiveDeployments),
+	)
+}
+
+func (resolver *Resolver) imageCVECount(ctx context.Context, args RawQuery, opts ...views.ReadOptions) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEs")
 
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
-	rawQuery := RawQuery{Query: args.Query}
-	query, err := rawQuery.AsV1QueryOrEmpty()
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
 	}
 
-	opts := readOptionsFromBool(args.ExcludeWithActiveDeployments)
-	count, err := resolver.ImageCVEView.Count(ctx, query, opts)
+	readOpts := firstOrDefault(opts)
+	count, err := resolver.ImageCVEView.Count(ctx, query, readOpts)
 	if err != nil {
 		return 0, err
 	}
@@ -292,11 +298,7 @@ func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ P
 		searchField = search.ImageSHA
 	}
 	imageQ := search.NewQueryBuilder().AddExactMatches(searchField, imageIDs...).Query()
-	return resolver.root.Images(ctx, struct {
-		Query                        *string
-		Pagination                   *inputtypes.Pagination
-		ExcludeWithActiveDeployments *bool
-	}{
+	return resolver.root.images(ctx, PaginatedQuery{
 		Query:      pointers.String(imageQ),
 		Pagination: args.Pagination,
 	})

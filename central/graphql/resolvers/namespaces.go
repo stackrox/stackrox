@@ -6,7 +6,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace"
@@ -307,19 +306,12 @@ func (resolver *namespaceResolver) K8sRoles(ctx context.Context, args PaginatedQ
 
 func (resolver *namespaceResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Images")
-	return resolver.root.Images(resolver.namespaceScopeContext(ctx), struct {
-		Query                        *string
-		Pagination                   *inputtypes.Pagination
-		ExcludeWithActiveDeployments *bool
-	}{Query: args.Query, Pagination: args.Pagination})
+	return resolver.root.images(resolver.namespaceScopeContext(ctx), args)
 }
 
 func (resolver *namespaceResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageCount")
-	return resolver.root.ImageCount(resolver.namespaceScopeContext(ctx), struct {
-		Query                        *string
-		ExcludeWithActiveDeployments *bool
-	}{Query: args.Query})
+	return resolver.root.imageCount(resolver.namespaceScopeContext(ctx), args)
 }
 
 func (resolver *namespaceResolver) getApplicablePolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, error) {
@@ -524,10 +516,7 @@ func (resolver *namespaceResolver) ImageVulnerabilities(ctx context.Context, arg
 
 func (resolver *namespaceResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageVulnerabilityCount")
-	return resolver.root.ImageVulnerabilityCount(resolver.namespaceScopeContext(ctx), struct {
-		Query                        *string
-		ExcludeWithActiveDeployments *bool
-	}{Query: args.Query})
+	return resolver.root.imageVulnerabilityCount(resolver.namespaceScopeContext(ctx), args)
 }
 
 func (resolver *namespaceResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {

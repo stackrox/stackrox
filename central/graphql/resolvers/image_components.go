@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
-	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/views"
@@ -261,27 +260,17 @@ func (resolver *imageComponentV2Resolver) Deployments(ctx context.Context, args 
 
 func (resolver *imageComponentV2Resolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageCount")
-	return resolver.root.ImageCount(resolver.imageComponentScopeContext(ctx), struct {
-		Query                        *string
-		ExcludeWithActiveDeployments *bool
-	}{Query: args.Query})
+	return resolver.root.imageCount(resolver.imageComponentScopeContext(ctx), args)
 }
 
 func (resolver *imageComponentV2Resolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Images")
-	return resolver.root.Images(resolver.imageComponentScopeContext(ctx), struct {
-		Query                        *string
-		Pagination                   *inputtypes.Pagination
-		ExcludeWithActiveDeployments *bool
-	}{Query: args.Query, Pagination: args.Pagination})
+	return resolver.root.images(resolver.imageComponentScopeContext(ctx), args)
 }
 
 func (resolver *imageComponentV2Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilityCount")
-	return resolver.root.ImageVulnerabilityCount(resolver.imageComponentScopeContext(ctx), struct {
-		Query                        *string
-		ExcludeWithActiveDeployments *bool
-	}{Query: args.Query})
+	return resolver.root.imageVulnerabilityCount(resolver.imageComponentScopeContext(ctx), args)
 }
 
 func (resolver *imageComponentV2Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
