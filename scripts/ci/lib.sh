@@ -506,7 +506,7 @@ registry_ro_login() {
 }
 
 push_matching_collector_scanner_images() {
-    info "Pushing collector & scanner images tagged with main-version using buildx imagetools"
+    info "Pushing collector & scanner images tagged with main-version using skopeo"
 
     if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: push_matching_collector_scanner_images <brand>"
@@ -518,7 +518,7 @@ push_matching_collector_scanner_images() {
     registry="$(registry_from_branding "$brand")"
 
     _retag() {
-        retry 5 true docker buildx imagetools create -t "$2" "$1"
+        skopeo copy --retry-times 5 --all "docker://$1" "docker://$2"
     }
 
     local main_tag
