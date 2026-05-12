@@ -107,6 +107,9 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 		port = conn.remote.IPAndPort.Port
 	}
 
+	// Keep the flow counter label values in metric registration order: direction,
+	// namespace. These WithLabelValues calls sit on the enrichment hot path and
+	// intentionally avoid map-based labels to stay allocation-free.
 	// Cannot find any entity when looking by endpoint and IP address.
 	if len(lookupResults) == 0 {
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
@@ -326,6 +329,9 @@ func updateConnectionMetric(now timestamp.MicroTS, action PostEnrichmentAction, 
 	fresh := strconv.FormatBool(status.isFresh(now))
 	isExternal := strconv.FormatBool(status.isExternal)
 
+	// Keep this hot-path metric update on WithLabelValues and reuse the
+	// precomputed strings above. The argument order must stay in sync with the
+	// label registration in sensor/common/networkflow/metrics/metrics.go.
 	flowMetrics.FlowEnrichmentEventsConnection.WithLabelValues(
 		containerIDFound,
 		string(result),

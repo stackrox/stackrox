@@ -2,16 +2,16 @@ package manager
 
 import (
 	"testing"
-	"time"
 
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/timestamp"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 )
 
 func benchmarkConnStatus(now timestamp.MicroTS) *connStatus {
 	return &connStatus{
-		firstSeen:             now.Add(-env.ContainerIDResolutionGracePeriod.DurationSetting() - time.Second),
+		// Keep the benchmark independent from env tunables while still exercising
+		// mature=true and fresh=false label values.
+		firstSeen:             timestamp.MicroTS(0),
 		lastSeen:              now,
 		containerIDFound:      true,
 		historicalContainerID: true,
