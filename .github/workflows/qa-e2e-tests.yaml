@@ -40,6 +40,7 @@ jobs:
       ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL: 30s
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       IS_RACE_BUILD: ${{ (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-build-race-condition-debug')) && 'true' || 'false' }}
+      LOAD_BALANCER: lb
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -107,6 +108,11 @@ jobs:
           infractl wait "${CLUSTER_NAME}"
           infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts
           echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
+
+      - name: Verify kubectl access
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
 
       - name: Wait for container images
         uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
