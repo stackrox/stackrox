@@ -44,10 +44,6 @@ runs:
       run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
       shell: bash
 
-    - name: Register Go problem matchers
-      run: echo "::add-matcher::${GITHUB_ACTION_PATH}/matchers.json"
-      shell: bash
-
     - name: Determine Go cache paths
       id: cache-paths
       run: |
