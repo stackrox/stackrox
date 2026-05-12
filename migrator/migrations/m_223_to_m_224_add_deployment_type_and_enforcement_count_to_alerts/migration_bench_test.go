@@ -12,6 +12,7 @@ import (
 	oldSchema "github.com/stackrox/rox/migrator/migrations/m_223_to_m_224_add_deployment_type_and_enforcement_count_to_alerts/test/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
@@ -81,13 +82,16 @@ func benchmarkMigration(b *testing.B, numAlerts, numDeployments int) {
 	}
 }
 
-func insertBenchDeployments(b *testing.B, ctx context.Context, db *pghelper.TestPostgres, numDeployments int) (live []string, orphaned []string) {
+func insertBenchDeployments(b *testing.B, ctx context.Context, db *pghelper.TestPostgres, numDeployments int, orphanPct ...int) (live []string, orphaned []string) {
 	b.Helper()
 	deployTypes := []string{"Deployment", "DaemonSet", "StatefulSet", "Job", "CronJob", "Pod"}
 
 	live = make([]string, 0, numDeployments)
-	// 10% of deployments will be orphaned (deleted but alerts remain)
-	orphanCount := numDeployments / 10
+	pct := 10
+	if len(orphanPct) > 0 {
+		pct = orphanPct[0]
+	}
+	orphanCount := numDeployments * pct / 100
 	orphaned = make([]string, 0, orphanCount)
 
 	for i := 0; i < numDeployments; i++ {
@@ -246,6 +250,92 @@ func makeBenchAlert(index int, deployIDs []string, deployTypes []string) *storag
 	}
 
 	return alert
+}
+
+// BenchmarkOrphanedBackfillComparison compares the orphaned deployment_type
+// backfill strategies using separate databases and production-scale data.
+// Based on the real long-running cluster: ~2M alerts, 332K distinct deployment
+// IDs, only 657 still exist (99.8% orphaned), 4.8KB avg row size.
+func BenchmarkOrphanedBackfillComparison(b *testing.B) {
+	const (
+		numAlerts      = 2_000_000
+		numDeployments = 4_000
+		orphanPct      = 99
+	)
+
+	type variant struct {
+		name     string
+		backfill func(ctx context.Context, db postgres.DB) error
+	}
+
+	variants := []variant{
+		{
+			"deserialize_batched",
+			backfillOrphanedDeploymentType,
+		},
+		{
+			"sql_default",
+			func(ctx context.Context, db postgres.DB) error {
+				ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
+				defer cancel()
+				result, err := db.Exec(ctx,
+					`UPDATE alerts SET deployment_type = 'Deployment'
+					 WHERE entitytype = $1
+					   AND deployment_type IS NULL
+					   AND deployment_id NOT IN (SELECT id FROM deployments)`,
+					storage.Alert_DEPLOYMENT,
+				)
+				if err != nil {
+					return err
+				}
+				b.Logf("sql_default updated %d rows", result.RowsAffected())
+				return nil
+			},
+		},
+	}
+
+	for _, v := range variants {
+		b.Run(v.name, func(b *testing.B) {
+			ctx := sac.WithAllAccess(context.Background())
+			db := pghelper.ForT(b, false)
+
+			pgutils.CreateTableFromModel(ctx, db.GetGormDB(), oldSchema.CreateTableAlertsStmt)
+			_, err := db.Exec(ctx,
+				`CREATE TABLE IF NOT EXISTS deployments (id UUID PRIMARY KEY, type VARCHAR)`)
+			if err != nil {
+				b.Fatal(err)
+			}
+
+			liveIDs, orphanedIDs := insertBenchDeployments(b, ctx, db, numDeployments, orphanPct)
+			insertBenchAlerts(b, ctx, db, numAlerts, liveIDs, orphanedIDs)
+
+			// Add the deployment_type column as NULL (pre-migration state).
+			_, err = db.Exec(ctx, "ALTER TABLE alerts ADD COLUMN IF NOT EXISTS deployment_type VARCHAR")
+			if err != nil {
+				b.Fatal(err)
+			}
+
+			// Run the JOIN backfill first (same for both variants).
+			if err := backfillDeploymentType(ctx, db.DB); err != nil {
+				b.Fatal(err)
+			}
+
+			var orphanCount int
+			if err := db.QueryRow(ctx,
+				"SELECT COUNT(*) FROM alerts WHERE entitytype = $1 AND deployment_type IS NULL",
+				storage.Alert_DEPLOYMENT).Scan(&orphanCount); err != nil {
+				b.Fatal(err)
+			}
+			b.Logf("Setup: %d total alerts, %d orphaned needing backfill", numAlerts, orphanCount)
+
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				if err := v.backfill(ctx, db.DB); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
 }
 
 func resetBenchColumns(b *testing.B, ctx context.Context, db *pghelper.TestPostgres) {

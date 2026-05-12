@@ -147,7 +147,7 @@ func (s *migrationTestSuite) TestMigration() {
 	err = dbs.PostgresDB.QueryRow(s.ctx,
 		`SELECT COALESCE(deployment_type, '') FROM alerts WHERE id = $1`, alertIDs["deploy-orphan"]).Scan(&deployType)
 	s.Require().NoError(err)
-	s.Equal("StatefulSet", deployType, "orphaned deployment alert should get type from blob")
+	s.Equal("Deployment", deployType, "orphaned deployment alert should default to Deployment")
 
 	// Resource alert: should be NULL/empty (not a deployment).
 	err = dbs.PostgresDB.QueryRow(s.ctx,
