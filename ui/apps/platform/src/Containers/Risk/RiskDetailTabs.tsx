@@ -1,4 +1,4 @@
-import { Flex, PageSection, Tab, TabTitleText, Tabs } from '@patternfly/react-core';
+import { Alert, Flex, PageSection, Tab, TabTitleText, Tabs } from '@patternfly/react-core';
 
 import usePermissions from 'hooks/usePermissions';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -15,7 +15,7 @@ const processDiscoveryTab = 'Process discovery';
 
 export type RiskDetailTabsProps = {
     deployment: Deployment;
-    risk: Risk;
+    risk: Risk | null | undefined;
 };
 
 function RiskDetailTabs({ deployment, risk }: RiskDetailTabsProps) {
@@ -57,16 +57,21 @@ function RiskDetailTabs({ deployment, risk }: RiskDetailTabsProps) {
                 </Tabs>
             </PageSection>
             <PageSection id={activeTabKey}>
-                {activeTabKey === riskIndicatorsTab && (
-                    <Flex
-                        direction={{ default: 'column' }}
-                        spaceItems={{ default: 'spaceItemsMd' }}
-                    >
-                        {risk.results.map((result) => (
-                            <RiskIndicatorCard key={result.name} result={result} />
-                        ))}
-                    </Flex>
-                )}
+                {activeTabKey === riskIndicatorsTab &&
+                    (risk ? (
+                        <Flex
+                            direction={{ default: 'column' }}
+                            spaceItems={{ default: 'spaceItemsMd' }}
+                        >
+                            {risk.results.map((result) => (
+                                <RiskIndicatorCard key={result.name} result={result} />
+                            ))}
+                        </Flex>
+                    ) : (
+                        <Alert variant="warning" isInline title="Risk not found" component="p">
+                            Risk for selected deployment may not have been processed.
+                        </Alert>
+                    ))}
                 {activeTabKey === deploymentDetailsTab && (
                     <div className="flex flex-1 flex-col relative">
                         <div className="absolute w-full">
