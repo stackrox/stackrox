@@ -33,6 +33,7 @@ inputs:
   background:
     description: Return immediately; deploy runs in background
     default: "false"
+    default: "false"
 
 runs:
   using: composite
