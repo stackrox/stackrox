@@ -39,9 +39,11 @@ runs:
         QUAY_USER: ${{ inputs.quay-user }}
         QUAY_PASS: ${{ inputs.quay-pass }}
       run: |
+        # roxie needs roxctl for CRS generation (any recent version works)
+        command -v roxctl >/dev/null && exit 0
         arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
-        img="quay.io/rhacs-eng/main:${{ inputs.tag }}"
         [ -n "$QUAY_PASS" ] && echo "$QUAY_PASS" | docker login -u "$QUAY_USER" --password-stdin quay.io 2>/dev/null || true
+        img="quay.io/rhacs-eng/main:${{ inputs.tag }}"
         docker pull -q --platform "linux/${arch}" "$img" 2>/dev/null || true
         cid=$(docker create --platform "linux/${arch}" "$img" true 2>/dev/null) && \
           docker cp "$cid:/assets/downloads/cli/roxctl-linux-${arch}" /usr/local/bin/roxctl && \
