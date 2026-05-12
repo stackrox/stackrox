@@ -56,18 +56,16 @@ runs:
           chmod +x /usr/local/bin/roxctl 2>/dev/null || true
         fi
 
-        if ! command -v roxie >/dev/null 2>&1; then
-          arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
-          os=$(uname -s | tr '[:upper:]' '[:lower:]')
-          set +x
-          GH_TOKEN="${{ inputs.github-token }}" gh release download "${{ inputs.roxie-version }}" \
-            --repo stackrox/roxie \
-            --pattern "roxie-${os}-${arch}" \
-            --dir /tmp --clobber
-          chmod +x "/tmp/roxie-${os}-${arch}"
-          sudo mv "/tmp/roxie-${os}-${arch}" /usr/local/bin/roxie
-        fi
-        echo "roxie: $(roxie version 2>/dev/null)"
+        arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
+        os=$(uname -s | tr '[:upper:]' '[:lower:]')
+        set +x
+        GH_TOKEN="${{ inputs.github-token }}" gh release download "${{ inputs.roxie-version }}" \
+          --repo stackrox/roxie \
+          --pattern "roxie-${os}-${arch}" \
+          --dir /tmp --clobber
+        chmod +x "/tmp/roxie-${os}-${arch}"
+        sudo mv "/tmp/roxie-${os}-${arch}" /usr/local/bin/roxie
+        echo "roxie: $(roxie version)"
 
     - name: Deploy StackRox
       shell: bash
