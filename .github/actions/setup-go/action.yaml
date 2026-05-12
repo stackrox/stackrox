@@ -71,8 +71,16 @@ runs:
           echo "$best/bin" >> "$GITHUB_PATH"
           [[ ":$PATH:" == *":$HOME/go/bin:"* ]] || echo "$HOME/go/bin" >> "$GITHUB_PATH"
           echo "Using $("$best/bin/go" version) from $best"
+        elif command -v go &>/dev/null; then
+          sysver=$(go version | awk '{print $3}' | sed 's/^go//')
+          if printf '%s\n%s\n' "$required" "$sysver" | sort -V -C; then
+            echo "::warning::Using system Go ($sysver) — not from hostedtoolcache"
+          else
+            echo "::error::System Go ($sysver) does not satisfy required version ($required). Update the runner image or go.mod."
+            exit 1
+          fi
         else
-          echo "::error::No suitable Go in hostedtoolcache (need >=$required). Update the runner image or go.mod."
+          echo "::error::No Go found — neither in hostedtoolcache nor on PATH"
           exit 1
         fi
       shell: bash
