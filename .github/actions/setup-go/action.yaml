@@ -26,18 +26,32 @@ runs:
     #   - Reads the `go` directive instead of `toolchain`, so it
     #     installs the minimum language version (e.g. 1.25.0) even
     #     when go.mod specifies a newer build version via `toolchain`.
+    #     We work around this by parsing go.mod ourselves and passing
+    #     the toolchain version explicitly via go-version.
     #
     # What this action does instead:
     #   - Overrides GOTOOLCHAIN to auto so sub-modules can resolve
     #     their own toolchain requirements.
     #   - Manages GOCACHE with per-job keys (via key-suffix input)
     #     and trims stale entries in a post-step before cache save.
-    #   - Delegates version selection to actions/setup-go (reads
-    #     go.mod via go-version-file). Note: setup-go reads the `go`
-    #     directive, not `toolchain` — see actions/setup-go#480.
+    #   - Reads go.mod's `toolchain` directive (falls back to `go`)
+    #     and passes the version to actions/setup-go for installation.
+    - name: Resolve Go version from go.mod
+      id: go-version
+      run: |
+        version=$(grep '^toolchain ' go.mod | awk '{print $2}' | sed 's/^go//' || true)
+        if [[ -n "$version" ]]; then
+          echo "go.mod toolchain directive: go$version"
+        else
+          version=$(grep '^go ' go.mod | awk '{print $2}' || true)
+          echo "::warning::No toolchain directive in go.mod — falling back to go directive ($version). Consider adding 'toolchain go<version>' to go.mod to pin the build version."
+        fi
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+      shell: bash
+
     - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v5
       with:
-        go-version-file: go.mod
+        go-version: ${{ steps.go-version.outputs.version }}
         cache: false
 
     - name: Override GOTOOLCHAIN
