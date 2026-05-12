@@ -52,6 +52,12 @@ function getSrcAliases() {
 
 const config = {
     mode: isProd ? 'production' : 'development',
+    cache: {
+        type: 'filesystem',
+        buildDependencies: {
+            config: [__filename],
+        },
+    },
     // No regular entry points needed. All plugin related scripts are generated via ConsoleRemotePlugin.
     entry: {},
     context: path.resolve(__dirname, 'src'),
