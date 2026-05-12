@@ -32,9 +32,10 @@ runs:
       shell: bash
       run: |
         command -v roxctl >/dev/null && exit 0
-        cid=$(docker create --platform linux/amd64 quay.io/stackrox-io/roxctl:latest true) && \
-          docker cp "$cid:/roxctl" /usr/local/bin/roxctl && \
-          docker rm "$cid" >/dev/null
+        docker pull -q --platform linux/amd64 quay.io/stackrox-io/roxctl:latest
+        cid=$(docker create --platform linux/amd64 quay.io/stackrox-io/roxctl:latest true)
+        docker cp "$cid:/usr/bin/roxctl" /usr/local/bin/roxctl
+        docker rm "$cid" >/dev/null
 
     - name: Install roxie
       shell: bash
