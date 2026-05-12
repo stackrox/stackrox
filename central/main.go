@@ -231,6 +231,11 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/leaderelection"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 )
 
 var (
@@ -277,6 +282,65 @@ func runSafeMode() {
 	sig := <-signalsC
 	log.Infof("Caught %s signal", sig)
 	log.Info("Central terminated")
+}
+
+func runLeaderElection(ctx context.Context) {
+	restConfig, err := rest.InClusterConfig()
+	if err != nil {
+		log.Errorf("Failed to get in-cluster config, running all services without leader election: %v", err)
+		startServices()
+		return
+	}
+
+	client, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		log.Errorf("Failed to create kubernetes client: %v", err)
+		return
+	}
+
+	podName := os.Getenv("POD_NAME")
+	if podName == "" {
+		podName = "central-unknown"
+		log.Warn("POD_NAME not set, using default")
+	}
+
+	namespace := os.Getenv("POD_NAMESPACE")
+	if namespace == "" {
+		namespace = "stackrox"
+		log.Warn("POD_NAMESPACE not set, using default 'stackrox'")
+	}
+
+	lock := &resourcelock.LeaseLock{
+		LeaseMeta: metav1.ObjectMeta{
+			Name:      "central-leader",
+			Namespace: namespace,
+		},
+		Client: client.CoordinationV1(),
+		LockConfig: resourcelock.ResourceLockConfig{
+			Identity: podName,
+		},
+	}
+
+	leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
+		Lock:          lock,
+		LeaseDuration: 15 * time.Second,
+		RenewDeadline: 10 * time.Second,
+		RetryPeriod:   2 * time.Second,
+		Callbacks: leaderelection.LeaderCallbacks{
+			OnStartedLeading: func(_ context.Context) {
+				log.Info("Became leader, starting scheduled services")
+				startServices()
+			},
+			OnStoppedLeading: func() {
+				log.Fatal("Lost leadership, exiting for restart")
+			},
+			OnNewLeader: func(identity string) {
+				if identity != podName {
+					log.Infof("New leader elected: %s", identity)
+				}
+			},
+		},
+	})
 }
 
 func main() {
@@ -329,8 +393,10 @@ func main() {
 	if env.ManagedCentral.BooleanSetting() {
 		clusterInternalServer := internal.NewHTTPServer(metrics.HTTPSingleton())
 		clusterInternalServer.AddRoutes(clusterInternalRoutes())
-		clusterInternalServer.RunForever()
+		go clusterInternalServer.RunForever()
 	}
+
+	go runLeaderElection(ctx)
 
 	waitForTerminationSignal()
 }
@@ -620,6 +686,7 @@ func startGRPCServer() {
 		HTTPMetrics:        metrics.HTTPSingleton(),
 		Endpoints:          endpointCfgs,
 		Subsystem:          pkgMetrics.CentralSubsystem,
+		MaxConnectionAge:   env.MaxConnectionAgeSetting.DurationSetting(),
 	}
 
 	if devbuild.IsEnabled() {
@@ -657,8 +724,6 @@ func startGRPCServer() {
 	go watchdog(startedSig, grpcServerWatchdogTimeout)
 
 	go startPhonehomeTelemetryCollection(c, basicAuthProvider.ID())
-
-	go startServices()
 }
 
 func startPhonehomeTelemetryCollection(c *phonehomeClient.CentralClient, basicAuthProviderID string) {

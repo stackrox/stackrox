@@ -1309,6 +1309,8 @@ github.com/redis/go-redis/extra/redisotel/v9 v9.5.3 h1:kuvuJL/+MZIEdvtb/kTBRiRgY
 github.com/redis/go-redis/extra/redisotel/v9 v9.5.3/go.mod h1:7f/FMrf5RRRVHXgfk7CzSVzXHiWeuOQUu2bsVqWoa+g=
 github.com/redis/go-redis/v9 v9.18.0 h1:pMkxYPkEbMPwRdenAzUNyFNrDgHx9U+DrBabWNfSRQs=
 github.com/redis/go-redis/v9 v9.18.0/go.mod h1:k3ufPphLU5YXwNTUcCRXGxUoF1fqxnhFQmscfkCoDA0=
+github.com/redis/go-redis/v9 v9.19.0 h1:XPVaaPSnG6RhYf7p+rmSa9zZfeVAnWsH5h3lxthOm/k=
+github.com/redis/go-redis/v9 v9.19.0/go.mod h1:v/M13XI1PVCDcm01VtPFOADfZtHf8YW3baQf57KlIkA=
 github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319 h1:ukjThsA2ou7AmovpwtMVkNQSuoN/v5U16+JomTz3c7o=
 github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319/go.mod h1:rhSvwcijY9wfmrBYrfCvapX8/xOTV46NAUjBRgUyJqc=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=
