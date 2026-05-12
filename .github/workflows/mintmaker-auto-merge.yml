@@ -9,7 +9,7 @@ on:
     - master
 
 jobs:
-  auto-approve:
+  mintmaker-auto-approve-and-merge:
     name: Auto-approve and auto-merge MintMaker@Konflux updates
     runs-on: ubuntu-slim
     if: github.event.pull_request.user.login == 'red-hat-konflux[bot]' && github.event.label.name == 'mintmaker-auto-merge'
