@@ -1,8 +1,8 @@
 name: Deploy StackRox
 description: >
   Deploys StackRox using roxie. Foreground (default): blocks until
-  ready, exports env vars. Background: returns immediately, poll
-  wait $(cat /tmp/deploy-stackrox.pid) then source /tmp/roxie-env.sh.
+  ready, exports env vars. Background: returns immediately. Wait
+  with: wait $(cat /tmp/deploy-stackrox.pid) && source /tmp/roxie-env.sh
   Log: /tmp/deploy-stackrox.log.
 
 inputs:
