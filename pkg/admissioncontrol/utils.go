@@ -19,14 +19,14 @@ func SensorEventToAdmCtrlReq(event *central.SensorEvent) (*sensor.AdmCtrlUpdateR
 		return &sensor.AdmCtrlUpdateResourceRequest{
 			Action: event.GetAction(),
 			Resource: &sensor.AdmCtrlUpdateResourceRequest_Pod{
-				Pod: event.GetPod(),
+				Pod: event.GetPod().CloneVT(),
 			},
 		}, nil
 	case *central.SensorEvent_Deployment:
 		return &sensor.AdmCtrlUpdateResourceRequest{
 			Action: event.GetAction(),
 			Resource: &sensor.AdmCtrlUpdateResourceRequest_Deployment{
-				Deployment: event.GetDeployment(),
+				Deployment: event.GetDeployment().CloneVT(),
 			},
 		}, nil
 	case *central.SensorEvent_Namespace:
