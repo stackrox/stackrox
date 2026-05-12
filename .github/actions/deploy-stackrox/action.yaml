@@ -1,12 +1,8 @@
 name: Deploy StackRox
 description: >
-  Deploys StackRox using roxie.
-
-  Foreground (default): blocks until ready. Exports API_ENDPOINT,
-  ROX_ADMIN_PASSWORD, etc. to GITHUB_ENV for downstream steps.
-
-  Background: returns immediately. Poll for /tmp/rox-auth-token,
-  then source /tmp/roxie-env.sh to get the env vars.
+  Deploys StackRox using roxie. Foreground (default): blocks until
+  ready, exports env vars. Background: returns immediately, poll
+  /tmp/rox-auth-token then source /tmp/roxie-env.sh.
 
 inputs:
   tag:
@@ -16,56 +12,49 @@ inputs:
     description: Cluster name as seen by Sensor
     default: remote
   resources:
-    description: Resource sizing preset (acs-defaults, auto, medium, small, ci)
+    description: Resource sizing preset
     default: small
   roxie-version:
-    description: roxie release version (empty = use whatever is installed)
+    description: roxie release version
     default: v0.2.2-test2
   github-token:
     description: GitHub token with access to stackrox/roxie
     required: true
   quay-user:
-    description: Quay.io username (for roxctl extraction)
+    description: Quay.io username
     default: ""
   quay-pass:
     description: Quay.io password
     default: ""
   background:
-    description: Return immediately; deploy runs in background
+    description: Run deploy in background
     default: "false"
 
 runs:
   using: composite
   steps:
-    - name: Install roxie + roxctl
+    - name: Install roxctl
       shell: bash
       run: |
-        if ! command -v roxctl >/dev/null 2>&1; then
-          img="quay.io/rhacs-eng/main:${{ inputs.tag }}"
-          arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
-          set +x
-          if [ -n "${{ inputs.quay-pass }}" ]; then
-            echo "${{ inputs.quay-pass }}" | docker login -u "${{ inputs.quay-user }}" --password-stdin quay.io 2>/dev/null || true
-          fi
-          docker pull -q --platform "linux/${arch}" "$img" 2>/dev/null || true
-          cid=$(docker create --platform "linux/${arch}" "$img" true 2>/dev/null)
-          if [ -n "$cid" ]; then
-            docker cp "$cid:/assets/downloads/cli/roxctl-linux-${arch}" /usr/local/bin/roxctl
-            docker rm "$cid" >/dev/null
-          fi
-          chmod +x /usr/local/bin/roxctl 2>/dev/null || true
-        fi
+        arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
+        img="quay.io/rhacs-eng/main:${{ inputs.tag }}"
+        set +x
+        [ -n "${{ inputs.quay-pass }}" ] && echo "${{ inputs.quay-pass }}" | docker login -u "${{ inputs.quay-user }}" --password-stdin quay.io 2>/dev/null || true
+        docker pull -q --platform "linux/${arch}" "$img" 2>/dev/null || true
+        cid=$(docker create --platform "linux/${arch}" "$img" true 2>/dev/null) && \
+          docker cp "$cid:/assets/downloads/cli/roxctl-linux-${arch}" /usr/local/bin/roxctl && \
+          docker rm "$cid" >/dev/null
+        chmod +x /usr/local/bin/roxctl 2>/dev/null || true
 
+    - name: Install roxie
+      shell: bash
+      run: |
         arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
         os=$(uname -s | tr '[:upper:]' '[:lower:]')
         set +x
         GH_TOKEN="${{ inputs.github-token }}" gh release download "${{ inputs.roxie-version }}" \
-          --repo stackrox/roxie \
-          --pattern "roxie-${os}-${arch}" \
-          --dir /tmp --clobber
-        chmod +x "/tmp/roxie-${os}-${arch}"
-        sudo mv "/tmp/roxie-${os}-${arch}" /usr/local/bin/roxie
-        echo "roxie: $(roxie version)"
+          --repo stackrox/roxie --pattern "roxie-${os}-${arch}" --dir /tmp --clobber
+        sudo install "/tmp/roxie-${os}-${arch}" /usr/local/bin/roxie
 
     - name: Deploy StackRox
       shell: bash
