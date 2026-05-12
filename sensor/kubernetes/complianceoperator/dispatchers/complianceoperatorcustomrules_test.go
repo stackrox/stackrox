@@ -15,6 +15,7 @@ import (
 )
 
 func customRuleToUnstructured(t *testing.T, cr *v1alpha1.CustomRule) *unstructured.Unstructured {
+	t.Helper()
 	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
 	require.NoError(t, err)
 	return &unstructured.Unstructured{Object: obj}
