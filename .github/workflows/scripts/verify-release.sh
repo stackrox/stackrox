@@ -17,7 +17,11 @@ check_args() {
         LATEST_VERSION \
         RELEASE \
         PROJECT \
-        ERRATA_NAME
+        ERRATA_NAME \
+        \
+        JIRA_TOKEN \
+        JIRA_BASE_URL \
+        JIRA_USER
 }
 
 mark_failed() {
@@ -45,7 +49,7 @@ check_dir_not_empty() {
 
 check_url_page_exists() {
     URL="$1"
-    curl -sSLf "$URL" --output /dev/null || {
+    curl -sSLf --retry 5 --retry-all-errors "$URL" --output /dev/null || {
         mark_failed
         gh_log error "Retrieving $URL failed."
     }
@@ -54,7 +58,7 @@ check_url_page_exists() {
 check_url_yaml_contains() {
     URL="$1"
     QUERY="$2"
-    curl -sSLf "$URL" 2>/dev/null | yq -e "$QUERY" >/dev/null || {
+    curl -sSLf --retry 5 --retry-all-errors "$URL" 2>/dev/null | yq -e "$QUERY" >/dev/null || {
         mark_failed
         gh_log error "The Helm index does not contain the new version."
     }
@@ -101,13 +105,16 @@ validate_jira_release() {
     PROJECT="$1"
     RELEASE_PATCH="$2"
 
-    IS_RELEASED=$(curl -sSLf \
-        -H "Authorization: Bearer $JIRA_TOKEN" \
-        "https://issues.redhat.com/rest/api/2/project/${PROJECT}/versions" \
-    | jq -r ".[] | select(.name == \"${RELEASE_PATCH}\") | .released")
-    if [ "${IS_RELEASED}" != "true" ]; then
+    release=$(get_jira_release "$PROJECT" "$RELEASE_PATCH")
+    if [ -n "${release}" ]; then
+        IS_RELEASED=$(echo "$release" | jq -r ".released")
+        if [ "${IS_RELEASED}" != "true" ]; then
+            mark_failed
+            gh_log error "JIRA Release $RELEASE_PATCH has not been marked as done."
+        fi
+    else
         mark_failed
-        gh_log error "JIRA Release $RELEASE_PATCH has not been marked as done."
+        gh_log error "Couldn't find JIRA release \`$RELEASE_PATCH\`."
     fi
 }
 
