@@ -40,7 +40,6 @@ jobs:
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       IS_RACE_BUILD: ${{ (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-build-race-condition-debug')) && 'true' || 'false' }}
       LOAD_BALANCER: lb
-      ROX_SCANNER_V4: "true"
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -121,8 +120,8 @@ jobs:
           image: |
             rhacs-eng/main:${{ env.tag }}
             rhacs-eng/central-db:${{ env.tag }}
-            rhacs-eng/scanner-v4:${{ env.tag }}
-            rhacs-eng/scanner-v4-db:${{ env.tag }}
+            rhacs-eng/scanner:${{ env.scanner_tag }}
+            rhacs-eng/scanner-db:${{ env.scanner_tag }}
             rhacs-eng/collector:${{ env.tag }}
 
       - name: Run pre-test setup
