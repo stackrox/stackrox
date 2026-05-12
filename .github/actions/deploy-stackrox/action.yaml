@@ -3,6 +3,7 @@ description: >
   Deploys StackRox using roxie. Foreground (default): blocks until
   ready, exports env vars. Background: returns immediately, poll
   /tmp/rox-auth-token then source /tmp/roxie-env.sh.
+  Log: /tmp/deploy-stackrox.log.
 
 inputs:
   tag:
@@ -72,7 +73,7 @@ runs:
         }
 
         if [ "${{ inputs.background }}" = "true" ]; then
-          deploy > /tmp/deploy.log 2>&1 &
+          deploy > /tmp/deploy-stackrox.log 2>&1 &
         else
           deploy
         fi
