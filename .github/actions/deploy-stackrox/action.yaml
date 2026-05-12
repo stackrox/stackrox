@@ -90,21 +90,17 @@ runs:
             --override <(echo "securedCluster: {spec: {clusterName: ${{ inputs.cluster-name }}}}") \
             --tag ${{ inputs.tag }}
 
-          # Export roxie's env vars to GITHUB_ENV for downstream steps
-          grep '^export ' /tmp/roxie-env.sh | sed 's/^export //' | while IFS='=' read -r key val; do
-            val="${val%\'}" && val="${val#\'}" && val="${val%\"}" && val="${val#\"}"
-            echo "${key}=${val}" >> "$GITHUB_ENV"
-            [ "$key" = "API_ENDPOINT" ] && echo "${val}" > /tmp/rox-api-endpoint
-            [[ "$key" =~ PASSWORD|TOKEN ]] && echo "::add-mask::${val}"
-          done
+          # Make roxie's env vars available to all downstream steps
+          sed 's/^export //' /tmp/roxie-env.sh >> "$GITHUB_ENV"
+          source /tmp/roxie-env.sh
+          echo "${API_ENDPOINT}" > /tmp/rox-api-endpoint
+          echo "api-endpoint=${API_ENDPOINT}" >> "$GITHUB_OUTPUT"
 
           # Generate API token (roxie doesn't do this yet)
-          source /tmp/roxie-env.sh
           curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
             "https://${API_ENDPOINT}/v1/apitokens/generate" \
             -X POST -d '{"name":"ci-test","role":"Admin"}' \
             | jq -r '.token' > /tmp/rox-auth-token
-          echo "api-endpoint=${API_ENDPOINT}" >> "$GITHUB_OUTPUT"
         }
 
         if [ "${{ inputs.background }}" = "true" ]; then
