@@ -54,11 +54,12 @@ func NewACMClient() (*ACMClient, error) {
 
 // NewACMClientFromConfig creates a new client for the ACM clusterview API using the provided config.
 func NewACMClientFromConfig(config *rest.Config) (*ACMClient, error) {
+	config.Wrap(loggingRoundTripper)
+
 	clusterviewClient, err := clusterviewclient.NewForConfig(config)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clusterview client")
 	}
-	config.Wrap(loggingRoundTripper)
 
 	return &ACMClient{
 		clusterviewClient: clusterviewClient,
