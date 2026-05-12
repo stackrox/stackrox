@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
+	pkgRedis "github.com/stackrox/rox/pkg/redis"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -121,9 +122,9 @@ func New(
 		notifier:                  notifier,
 		clusterRanker:             clusterRanker,
 		networkBaselineMgr:        networkBaselineMgr,
-		idToNameCache:             simplecache.New(),
-		idToNamespaceFilterCache:  simplecache.New(),
-		nameToIDCache:             simplecache.New(),
+		idToNameCache:             simplecache.NewRedis(pkgRedis.ClientSingleton(), "cluster:id-to-name"),
+		idToNamespaceFilterCache:  simplecache.New(), // namespace filters contain compiled regexes, keep local
+		nameToIDCache:             simplecache.NewRedis(pkgRedis.ClientSingleton(), "cluster:name-to-id"),
 		compliancePruner:          compliancePruner,
 		clusterInitStore:          clusterInitStore,
 	}

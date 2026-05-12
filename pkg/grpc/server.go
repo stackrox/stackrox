@@ -459,8 +459,9 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 		grpc.ChainUnaryInterceptor(a.unaryInterceptors()...),
 		grpc.MaxRecvMsgSize(env.MaxMsgSizeSetting.IntegerSetting()),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
-			Time:             40 * time.Second,
-			MaxConnectionAge: a.config.MaxConnectionAge,
+			Time:                  40 * time.Second,
+			MaxConnectionAge:      a.config.MaxConnectionAge,
+			MaxConnectionAgeGrace: 30 * time.Second,
 		}),
 		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
 			MinTime:             5 * time.Second,

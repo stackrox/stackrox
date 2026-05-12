@@ -112,6 +112,7 @@ require (
 	github.com/quay/claircore v1.5.53-0.20260402203018-c2f0b781a39b
 	github.com/quay/claircore/toolkit v1.6.0
 	github.com/quay/zlog/v2 v2.1.1
+	github.com/redis/go-redis/v9 v9.18.0
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/russellhaering/gosaml2 v0.11.0
 	github.com/russellhaering/goxmldsig v1.6.0
@@ -277,6 +278,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/cyberphone/json-canonicalization v0.0.0-20241213102144-19d51d7fe467 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/digitorus/pkcs7 v0.0.0-20230818184609-3a137a874352 // indirect
 	github.com/digitorus/timestamp v0.0.0-20231217203849-220c5c2851b7 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect

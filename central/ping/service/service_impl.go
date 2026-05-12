@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"os"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -9,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 var (
@@ -44,9 +46,9 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // Ping implements v1.PingServiceServer, and it always returns a v1.PongMessage object.
-func (s *serviceImpl) Ping(context.Context, *v1.Empty) (*v1.PongMessage, error) {
-	result := &v1.PongMessage{
-		Status: "ok",
+func (s *serviceImpl) Ping(ctx context.Context, _ *v1.Empty) (*v1.PongMessage, error) {
+	if podName := os.Getenv("POD_NAME"); podName != "" {
+		_ = grpc.SetHeader(ctx, metadata.Pairs("x-pod-name", podName))
 	}
-	return result, nil
+	return &v1.PongMessage{Status: "ok"}, nil
 }
