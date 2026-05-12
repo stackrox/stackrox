@@ -23,7 +23,8 @@ jobs:
           --approve --body "Auto-approved by automation." \
           --repo "${{ github.repository }}"
 
-        # This does not merge immediately but rather enables auto-merge, due to the `--auto` argument.
+        # This enables auto-merge due to the `--auto` argument. Once branch protection rules are satisfied, the merge
+        # will happen. If no rules are defined, PR will be merged instantly.
         gh pr merge ${{ github.event.pull_request.number }} \
           --auto --delete-branch --squash \
           --repo "${{ github.repository }}"
