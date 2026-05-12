@@ -67,7 +67,6 @@ runs:
             break
           fi
         done
-        echo "::add-matcher::${GITHUB_ACTION_PATH}/matchers.json"
         if [[ -n "$best" ]]; then
           echo "$best/bin" >> "$GITHUB_PATH"
           [[ ":$PATH:" == *":$HOME/go/bin:"* ]] || echo "$HOME/go/bin" >> "$GITHUB_PATH"
@@ -76,6 +75,12 @@ runs:
         else
           echo "::warning::No suitable Go in hostedtoolcache (need >=$required), using system Go"
         fi
+      shell: bash
+
+    # Register Go error pattern matcher so compilation errors appear as
+    # inline annotations on PR diffs (e.g. "file.go:10: undefined: foo").
+    - name: Register Go problem matchers
+      run: echo "::add-matcher::${GITHUB_ACTION_PATH}/matchers.json"
       shell: bash
 
     - name: Determine Go cache paths
