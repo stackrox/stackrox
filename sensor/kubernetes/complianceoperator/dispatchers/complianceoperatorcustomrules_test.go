@@ -62,17 +62,17 @@ func TestCustomRuleProcessEvent_WithCapability(t *testing.T) {
 	rule := event.ForwardMessages[0].GetComplianceOperatorRuleV2()
 	require.NotNil(t, rule)
 
-	assert.Equal(t, "custom-rule-uid", rule.GetId())
-	assert.Equal(t, "check-cm-marker", rule.GetName())
-	assert.Equal(t, "xccdf_org.example_rule_check_cm_marker", rule.GetRuleId())
-	assert.Equal(t, "Check CM Marker", rule.GetTitle())
-	assert.Equal(t, "Checks that a configmap marker exists", rule.GetDescription())
-	assert.Equal(t, "Platform", rule.GetRuleType())
+	assert.Equal(t, string(cr.GetUID()), rule.GetId())
+	assert.Equal(t, cr.GetName(), rule.GetName())
+	assert.Equal(t, cr.Spec.ID, rule.GetRuleId())
+	assert.Equal(t, cr.Spec.Title, rule.GetTitle())
+	assert.Equal(t, cr.Spec.Description, rule.GetDescription())
+	assert.Equal(t, cr.Spec.CheckType, rule.GetRuleType())
 	assert.Equal(t, central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY, rule.GetSeverity())
 	assert.Equal(t, central.ComplianceOperatorRuleV2_CUSTOM_RULE, rule.GetOperatorKind())
-	assert.Equal(t, "Ensure the configmap has the marker key", rule.GetInstructions())
+	assert.Equal(t, cr.Spec.Instructions, rule.GetInstructions())
 	require.Len(t, rule.GetFixes(), 1)
-	assert.Equal(t, "ocp4", rule.GetFixes()[0].GetPlatform())
+	assert.Equal(t, cr.Spec.AvailableFixes[0].Platform, rule.GetFixes()[0].GetPlatform())
 }
 
 func TestCustomRuleProcessEvent_WithoutCapability(t *testing.T) {
