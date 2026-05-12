@@ -59,8 +59,8 @@ runs:
 
         arch=$(uname -m | sed 's/x86_64/x64/;s/aarch64/arm64/')
         best=""
-        # Check /opt (host runner) and /mnt/opt (inside container jobs that mount /opt:/mnt/opt).
-        for d in $(ls -d /opt/hostedtoolcache/go/*/$arch /mnt/opt/hostedtoolcache/go/*/$arch 2>/dev/null | sort -rV); do
+        # Check /opt (host runner) and /__t (GHA's hostedtoolcache mount inside container jobs).
+        for d in $(ls -d /opt/hostedtoolcache/go/*/$arch /__t/go/*/$arch 2>/dev/null | sort -rV); do
           ver=$(basename "$(dirname "$d")")
           if [ -x "$d/bin/go" ] && printf '%s\n%s\n' "$required" "$ver" | sort -V -C; then
             best="$d"
