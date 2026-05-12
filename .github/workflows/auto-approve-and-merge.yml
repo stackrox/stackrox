@@ -12,7 +12,7 @@ jobs:
   auto-approve:
     name: Auto-approve and auto-merge Konflux updates
     runs-on: ubuntu-slim
-    if: github.actor == 'red-hat-konflux[bot]' && github.event.label.name == 'auto-approve'
+    if: github.event.pull_request.user.login == 'red-hat-konflux[bot]' && github.event.label.name == 'auto-approve'
     steps:
     - env:
         GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
