@@ -56,9 +56,7 @@ runs:
           chmod +x /usr/local/bin/roxctl 2>/dev/null || true
         fi
 
-        roxie_version_installed=$(roxie version 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[^ ]*' || true)
-        roxie_version_requested="${{ inputs.roxie-version }}"
-        if [ -n "$roxie_version_requested" ] && [ "$roxie_version_installed" != "$roxie_version_requested" ]; then
+        if ! command -v roxie >/dev/null 2>&1; then
           arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
           os=$(uname -s | tr '[:upper:]' '[:lower:]')
           set +x
