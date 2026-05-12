@@ -21,10 +21,9 @@ jobs:
       fail-fast: false
       matrix:
         test-group:
-          - "testParallel"  # Testing Scanner V4 deployment
-          # - "testBegin testParallel"
-          # - "testBAT"
-          # - "testRest"
+          - "testBegin testParallel"
+          - "testBAT"
+          - "testRest"
           # - "testSensorBounce testSensorBounceNext"
 
     env:
