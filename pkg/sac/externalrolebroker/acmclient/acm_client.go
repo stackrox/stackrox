@@ -60,7 +60,6 @@ func NewACMClientFromConfig(config *rest.Config) (*ACMClient, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clusterview client")
 	}
-	config.Wrap(loggingRoundTripper)
 
 	return &ACMClient{
 		clusterviewClient: clusterviewClient,
