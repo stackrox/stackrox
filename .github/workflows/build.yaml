@@ -243,13 +243,18 @@ jobs:
       - name: PR labels
         uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
 
-      - name: Cache Go dependencies
         if: |
           needs.define-job-matrix.outputs.gotags == 'release'
             || github.ref_name == 'master'
             || github.event_name == 'workflow_call'
             || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
-        uses: ./.github/actions/cache-go-dependencies
+
+      - uses: ./.github/actions/setup-go
+        if: |
+          needs.define-job-matrix.outputs.gotags == 'release'
+            || github.ref_name == 'master'
+            || github.event_name == 'workflow_call'
+            || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
 
       - name: Build CLI
         if: |
@@ -295,10 +300,9 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Cache Go dependencies
+      - uses: ./.github/actions/setup-go
         env:
           GOARCH: ${{ matrix.arch }}
-        uses: ./.github/actions/cache-go-dependencies
         with:
           # Only race needs a separate cache (-race/CGO_ENABLED=1 produces 39% unique entries).
           # Default and prerelease share 93% of entries and should use the same cache.
@@ -362,8 +366,7 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
+      - uses: ./.github/actions/setup-go
 
       - name: Download scanner module for proto generation
         run: go mod download github.com/stackrox/scanner
@@ -398,8 +401,7 @@ jobs:
       with:
         node-version-file: ui/package.json
 
-    - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
+    - uses: ./.github/actions/setup-go
 
     - uses: ./.github/actions/cache-ui-dependencies
 
@@ -433,8 +435,7 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
+      - uses: ./.github/actions/setup-go
 
       - uses: ./.github/actions/handle-tagged-build
 
