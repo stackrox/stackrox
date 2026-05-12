@@ -136,7 +136,7 @@ func (s *ListAlertScanner) Build() *storage.ListAlert {
 				ClusterId:      s.ClusterID.String,
 				Namespace:      s.Namespace.String,
 				NamespaceId:    s.NamespaceID.String,
-				DeploymentType: s.DeploymentType.String,
+				DeploymentType: deploymentTypeOrDefault(s.DeploymentType),
 				Inactive:       s.DeploymentInactive.Bool,
 			},
 		}
@@ -169,4 +169,11 @@ func (s *ListAlertScanner) Build() *storage.ListAlert {
 	}
 
 	return la
+}
+
+func deploymentTypeOrDefault(dt pgtype.Text) string {
+	if dt.Valid && dt.String != "" {
+		return dt.String
+	}
+	return "Deployment"
 }
