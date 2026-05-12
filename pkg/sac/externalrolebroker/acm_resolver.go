@@ -5,9 +5,14 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
 	clusterviewv1alpha1 "github.com/stolostron/cluster-lifecycle-api/clusterview/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // ACMClient defines the interface for interacting with the ACM clusterview API.
@@ -36,15 +41,18 @@ func GetResolvedRolesFromACM(ctx context.Context, client ACMClient) ([]permissio
 
 	// Filter to only permissions managing base Kubernetes resources
 	filteredPermissions := FilterUserPermissionsForBaseK8sResources(userPermissionList.Items)
+	log.Info("Filtered ", len(filteredPermissions), " UserPermission objects in")
 
 	// Convert each filtered UserPermission to a ResolvedRole
 	resolvedRoles := make([]permissions.ResolvedRole, 0, len(filteredPermissions))
 	for _, userPermission := range filteredPermissions {
 		// Convert ClusterRoleDefinition to PermissionSet
 		permissionSet := ConvertClusterRoleToPermissionSet(userPermission.Status.ClusterRoleDefinition)
+		log.Info(permissionSet.GetResourceToAccess())
 
 		// Convert Bindings to SimpleAccessScope
 		accessScope := ConvertBindingsToSimpleAccessScope(userPermission.Status.Bindings)
+		log.Info(accessScope.GetRules())
 
 		// Create ResolvedRole with the UserPermission name as the role name
 		resolvedRole := roletest.NewResolvedRole(
