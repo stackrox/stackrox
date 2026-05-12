@@ -142,7 +142,7 @@ func getProxyURL(envSetting string, endpointCfg proxyEndpointConfig) (*url.URL, 
 	if err != nil {
 		errs.AddWrap(err, "parsing setting from config file")
 	}
-	return u, nil
+	return u, errs.ToError()
 }
 
 func (c *proxyConfig) Compile(envCfg environmentConfig) *compiledConfig {
