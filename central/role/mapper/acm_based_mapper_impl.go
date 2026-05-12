@@ -62,6 +62,10 @@ func defaultACMClientFactory(_ context.Context, token string) (externalrolebroke
 		return nil, errors.Wrap(err, "failed to load k8s config")
 	}
 	cfg.BearerToken = token
+	// Clear BearerTokenFile so that BearerToken takes precedence.
+	// InClusterConfig() sets BearerTokenFile to the service account token,
+	// which would override the user's OAuth token we just set.
+	cfg.BearerTokenFile = ""
 	log.Info("Querying ACM with bearer token ", cfg.BearerToken)
 	return acmclient.NewACMClientFromConfig(cfg)
 }
