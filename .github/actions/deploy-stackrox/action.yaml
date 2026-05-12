@@ -56,17 +56,20 @@ runs:
           chmod +x /usr/local/bin/roxctl 2>/dev/null || true
         fi
 
-        if ! command -v roxie >/dev/null 2>&1; then
+        WANT="${{ inputs.roxie-version }}"
+        HAVE=$(roxie version 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[^ ]*' || true)
+        if [ "$HAVE" != "$WANT" ]; then
           ARCH=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
           OS=$(uname -s | tr '[:upper:]' '[:lower:]')
           set +x
-          GH_TOKEN="${{ inputs.github-token }}" gh release download "${{ inputs.roxie-version }}" \
+          GH_TOKEN="${{ inputs.github-token }}" gh release download "$WANT" \
             --repo stackrox/roxie \
             --pattern "roxie-${OS}-${ARCH}" \
             --dir /tmp --clobber
           chmod +x "/tmp/roxie-${OS}-${ARCH}"
           sudo mv "/tmp/roxie-${OS}-${ARCH}" /usr/local/bin/roxie
         fi
+        echo "roxie: $(roxie version 2>/dev/null)"
 
     - name: Deploy StackRox
       shell: bash
