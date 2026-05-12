@@ -20,12 +20,6 @@ inputs:
   github-token:
     description: GitHub token with access to stackrox/roxie
     required: true
-  quay-user:
-    description: Quay.io username
-    default: ""
-  quay-pass:
-    description: Quay.io password
-    default: ""
   background:
     description: Run deploy in background
     default: "false"
@@ -35,20 +29,11 @@ runs:
   steps:
     - name: Install roxctl
       shell: bash
-      env:
-        QUAY_USER: ${{ inputs.quay-user }}
-        QUAY_PASS: ${{ inputs.quay-pass }}
       run: |
-        # roxie needs roxctl for CRS generation (any recent version works)
         command -v roxctl >/dev/null && exit 0
-        arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
-        [ -n "$QUAY_PASS" ] && echo "$QUAY_PASS" | docker login -u "$QUAY_USER" --password-stdin quay.io 2>/dev/null || true
-        img="quay.io/rhacs-eng/main:${{ inputs.tag }}"
-        docker pull -q --platform "linux/${arch}" "$img" 2>/dev/null || true
-        cid=$(docker create --platform "linux/${arch}" "$img" true 2>/dev/null) && \
-          docker cp "$cid:/assets/downloads/cli/roxctl-linux-${arch}" /usr/local/bin/roxctl && \
+        cid=$(docker create --platform linux/amd64 quay.io/stackrox-io/roxctl:latest true) && \
+          docker cp "$cid:/roxctl" /usr/local/bin/roxctl && \
           docker rm "$cid" >/dev/null
-        chmod +x /usr/local/bin/roxctl 2>/dev/null || true
 
     - name: Install roxie
       shell: bash
