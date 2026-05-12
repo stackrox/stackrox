@@ -86,12 +86,18 @@ func (ComplianceCheckStatus) EnumDescriptor() ([]byte, []int) {
 	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{0}
 }
 
+// OperatorKind is the kind of the Compliance Operator resource that this
+// `ComplianceRule` was sourced from. ACS represents both Compliance Operator
+// `Rules` and `CustomRules` as compliance rules.
 type ComplianceRule_OperatorKind int32
 
 const (
+	// The kind is unspecified.
 	ComplianceRule_OPERATOR_KIND_UNSPECIFIED ComplianceRule_OperatorKind = 0
-	ComplianceRule_RULE                      ComplianceRule_OperatorKind = 1
-	ComplianceRule_CUSTOM_RULE               ComplianceRule_OperatorKind = 2
+	// The kind is `Rule`.
+	ComplianceRule_RULE ComplianceRule_OperatorKind = 1
+	// The kind is `CustomRule`.
+	ComplianceRule_CUSTOM_RULE ComplianceRule_OperatorKind = 2
 )
 
 // Enum value maps for ComplianceRule_OperatorKind.

@@ -28,9 +28,15 @@ message ComplianceRule {
   string parent_rule = 13;
   string instructions = 14;
   string warning = 15;
+  // OperatorKind is the kind of the Compliance Operator resource that this
+  // `ComplianceRule` was sourced from. ACS represents both Compliance Operator
+  // `Rules` and `CustomRules` as compliance rules.
   enum OperatorKind {
+    // The kind is unspecified.
     OPERATOR_KIND_UNSPECIFIED = 0;
+    // The kind is `Rule`.
     RULE = 1;
+    // The kind is `CustomRule`.
     CUSTOM_RULE = 2;
   }
   OperatorKind operator_kind = 16;
