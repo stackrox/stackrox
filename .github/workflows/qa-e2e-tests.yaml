@@ -40,6 +40,7 @@ jobs:
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       IS_RACE_BUILD: ${{ (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-build-race-condition-debug')) && 'true' || 'false' }}
       LOAD_BALANCER: lb
+      ROX_SCANNER_V4: "true"
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -120,8 +121,8 @@ jobs:
           image: |
             rhacs-eng/main:${{ env.tag }}
             rhacs-eng/central-db:${{ env.tag }}
-            rhacs-eng/scanner:${{ env.scanner_tag }}
-            rhacs-eng/scanner-db:${{ env.scanner_tag }}
+            rhacs-eng/scanner-v4:${{ env.tag }}
+            rhacs-eng/scanner-v4-db:${{ env.tag }}
             rhacs-eng/collector:${{ env.tag }}
 
       - name: Run pre-test setup
@@ -212,6 +213,14 @@ jobs:
           # Copy test results if they exist
           cp -r qa-tests-backend/build/test-results/* ${{ env.ARTIFACT_DIR }}/ 2>/dev/null || true
           cp -r qa-tests-backend/build/reports/* ${{ env.ARTIFACT_DIR }}/ 2>/dev/null || true
+
+      - name: Upload pod logs and test results
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa-e2e-logs-${{ strategy.job-index }}
+          path: ${{ env.ARTIFACT_DIR }}/
+          retention-days: 7
 
       - name: Final post-test
         if: always()
