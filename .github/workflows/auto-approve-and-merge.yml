@@ -4,12 +4,15 @@ on:
   pull_request:
     types:
     - labeled
+    branches:
+    # Only enabled for PRs targeting master because release branches lack protection rules.
+    - master
 
 jobs:
   auto-approve:
-    name: Auto-approve and auto-merge Konflux updates for default branch
+    name: Auto-approve and auto-merge Konflux updates
     runs-on: ubuntu-slim
-    if: github.actor == 'red-hat-konflux[bot]' && github.event.label.name == 'auto-approve' && github.event.pull_request.base.ref == github.event.pull_request.base.repo.default_branch
+    if: github.actor == 'red-hat-konflux[bot]' && github.event.label.name == 'auto-approve'
     steps:
     - env:
         GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
