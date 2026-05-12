@@ -125,22 +125,31 @@ jobs:
         from pre_tests import PreSystemTests
         PreSystemTests().run()
 
-    - name: Deploy StackRox and run DB backup/restore test
+    - name: Deploy StackRox
+      uses: ./.github/actions/deploy-stackrox
+      with:
+        tag: ${{ env.tag }}
+        background: "false"
+        github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+        quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+    - name: Run DB backup/restore test
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         ORCHESTRATOR_FLAVOR: k8s
+        ROX_ADMIN_PASSWORD_FILE: /tmp/rox-admin-password
       run: |
-        source tests/e2e/lib.sh
-        source tests/scripts/setup-certs.sh
-        source scripts/ci/sensor-wait.sh
-        export_test_environment
-        setup_deployment_env false false
-        deploy_stackrox
-        # Persist API_ENDPOINT for post-test steps (ci_export only sets it in this shell)
+        set +x
+        export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
+        export API_ENDPOINT="$(cat /tmp/rox-api-endpoint)"
         echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
+        set -x
+        source tests/e2e/lib.sh
+        export_test_environment
         db_backup_and_restore_test /tmp/db-backup-restore-test
 
     - name: Run post-test
