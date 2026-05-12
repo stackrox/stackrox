@@ -91,7 +91,7 @@ runs:
             --tag ${{ inputs.tag }}
 
           # Make roxie's env vars available to all downstream steps
-          sed 's/^export //' /tmp/roxie-env.sh >> "$GITHUB_ENV"
+          sed "s/^export //; s/['\"]//g" /tmp/roxie-env.sh >> "$GITHUB_ENV"
           source /tmp/roxie-env.sh
           echo "${API_ENDPOINT}" > /tmp/rox-api-endpoint
           echo "api-endpoint=${API_ENDPOINT}" >> "$GITHUB_OUTPUT"
