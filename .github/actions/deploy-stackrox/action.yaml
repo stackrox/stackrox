@@ -1,8 +1,11 @@
 name: Deploy StackRox
 description: >
-  Deploys StackRox using roxie. Blocks until Central is ready.
-  Writes /tmp/rox-admin-password, /tmp/rox-api-endpoint,
-  /tmp/rox-auth-token for downstream test steps.
+  Deploys StackRox using roxie. Writes /tmp/rox-admin-password,
+  /tmp/rox-api-endpoint, /tmp/rox-auth-token for downstream steps.
+
+  Default: blocks until Central is ready (foreground).
+  Set background=true to return immediately — poll for
+  /tmp/rox-auth-token to know when deploy is complete.
 
 inputs:
   tag:
@@ -26,6 +29,9 @@ inputs:
   quay-pass:
     description: Quay.io password
     default: ""
+  background:
+    description: Return immediately; deploy runs in background
+    default: "false"
 
 outputs:
   api-endpoint:
@@ -76,18 +82,34 @@ runs:
         echo "${ROX_ADMIN_PASSWORD}" > /tmp/rox-admin-password
         export MAIN_IMAGE_TAG="${{ inputs.tag }}"
 
-        roxie deploy both \
-          --resources=${{ inputs.resources }} \
-          --single-namespace \
-          --envrc /tmp/roxie-env.sh \
-          --override <(echo "securedCluster: {spec: {clusterName: ${{ inputs.cluster-name }}}}") \
-          --tag ${{ inputs.tag }}
+        deploy() {
+          roxie deploy both \
+            --resources=${{ inputs.resources }} \
+            --single-namespace \
+            --envrc /tmp/roxie-env.sh \
+            --override <(echo "securedCluster: {spec: {clusterName: ${{ inputs.cluster-name }}}}") \
+            --tag ${{ inputs.tag }}
 
-        source /tmp/roxie-env.sh
-        echo "${API_ENDPOINT}" > /tmp/rox-api-endpoint
-        echo "api-endpoint=${API_ENDPOINT}" >> "$GITHUB_OUTPUT"
+          # Export roxie's env vars to GITHUB_ENV for downstream steps
+          grep '^export ' /tmp/roxie-env.sh | sed 's/^export //' | while IFS='=' read -r key val; do
+            val="${val%\'}" && val="${val#\'}" && val="${val%\"}" && val="${val#\"}"
+            echo "${key}=${val}" >> "$GITHUB_ENV"
+            [ "$key" = "API_ENDPOINT" ] && echo "${val}" > /tmp/rox-api-endpoint
+            [[ "$key" =~ PASSWORD|TOKEN ]] && echo "::add-mask::${val}"
+          done
 
-        curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-          "https://${API_ENDPOINT}/v1/apitokens/generate" \
-          -X POST -d '{"name":"ci-test","role":"Admin"}' \
-          | jq -r '.token' > /tmp/rox-auth-token
+          # Generate API token (roxie doesn't do this yet)
+          source /tmp/roxie-env.sh
+          curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+            "https://${API_ENDPOINT}/v1/apitokens/generate" \
+            -X POST -d '{"name":"ci-test","role":"Admin"}' \
+            | jq -r '.token' > /tmp/rox-auth-token
+          echo "api-endpoint=${API_ENDPOINT}" >> "$GITHUB_OUTPUT"
+        }
+
+        if [ "${{ inputs.background }}" = "true" ]; then
+          deploy > /tmp/deploy.log 2>&1 &
+          echo "Deploy started in background (PID $!)"
+        else
+          deploy
+        fi
