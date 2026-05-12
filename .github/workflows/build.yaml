@@ -1161,9 +1161,11 @@ jobs:
     needs:
       - build-and-push-main
       - build-and-push-operator
+      - build-and-push-scanner
       - define-job-matrix
       - push-main-manifests
       - push-matching-collector-scanner
+      - push-scanner-manifests
     name: Check images for vulnerabilities
     runs-on: ubuntu-latest
     permissions:
