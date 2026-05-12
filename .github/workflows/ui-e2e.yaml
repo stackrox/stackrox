@@ -157,6 +157,8 @@ jobs:
         with:
           tag: ${{ inputs.tag }}
           github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+          quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
       - name: Start resource monitor
         run: |
@@ -195,13 +197,16 @@ jobs:
 
       - name: Wait for auth token
         run: |
-          for i in $(seq 1 90); do
+          for _ in $(seq 1 300); do
             [ -s /tmp/rox-auth-token ] && break
             sleep 2
           done
           if [ ! -s /tmp/rox-auth-token ]; then
-            echo "::error::Auth token not generated after 3 minutes — deploy likely failed"
-            tail -50 /tmp/deploy.log 2>/dev/null || echo "(no log)"
+            echo "::error::Auth token not generated after 10 minutes"
+            echo "--- deploy.log (last 80 lines) ---"
+            tail -80 /tmp/deploy.log 2>/dev/null || echo "(no log)"
+            echo "--- pods ---"
+            kubectl -n stackrox get pods --no-headers 2>/dev/null || true
             exit 1
           fi
           set +x
