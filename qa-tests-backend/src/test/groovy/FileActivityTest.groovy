@@ -69,18 +69,15 @@ class FileActivityTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        if (orchestrator.containsDaemonSetContainer(
-                Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER)) {
-            orchestrator.deleteDeployment(deployDeployment)
-            orchestrator.deleteDeployment(nodeDeployment)
-            resolveAlertsByPolicy(DEPLOY_POLICY_NAME)
-            resolveAlertsByPolicy(NODE_POLICY_NAME)
-            if (deployPolicyID) {
-                PolicyService.deletePolicy(deployPolicyID)
-            }
-            if (nodePolicyID) {
-                PolicyService.deletePolicy(nodePolicyID)
-            }
+        orchestrator.deleteDeployment(deployDeployment)
+        orchestrator.deleteDeployment(nodeDeployment)
+        resolveAlertsByPolicy(DEPLOY_POLICY_NAME)
+        resolveAlertsByPolicy(NODE_POLICY_NAME)
+        if (deployPolicyID) {
+            PolicyService.deletePolicy(deployPolicyID)
+        }
+        if (nodePolicyID) {
+            PolicyService.deletePolicy(nodePolicyID)
         }
     }
 
