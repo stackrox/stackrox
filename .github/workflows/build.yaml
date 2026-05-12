@@ -987,6 +987,66 @@ jobs:
           source ./scripts/ci/lib.sh
           push_scanner_image_set "${{ matrix.registry }}" "${{ matrix.goarch }}"
 
+  push-scanner-manifests:
+    runs-on: ubuntu-latest
+    needs:
+      - define-job-matrix
+      - build-and-push-scanner
+    # This step will run even if some of the build-and-push-scanner steps failed.
+    # By following this approach as much of the build matrix as possible is
+    # completed despite transient issues e.g. docker pull timeouts. In this way
+    # some e2e jobs that require some part of the build matrix can still
+    # proceed.
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_scanner_manifests }}
+    env:
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      with:
+        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+
+    - name: Set build tag for prerelease images
+      if: matrix.name == 'prerelease'
+      run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
+
+    - name: Set build tag for race condition images
+      if: matrix.name == 'race-condition-debug'
+      run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
+
+    - name: Push Scanner and ScannerDB image manifests
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      env:
+        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+      run: |
+          source ./scripts/ci/lib.sh
+
+          architectures="amd64,arm64"
+          if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
+            architectures="amd64,arm64,ppc64le,s390x"
+          fi
+          if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
+            architectures="amd64"
+          fi
+
+          push_scanner_image_manifest_lists "${{ matrix.registry }}" "$architectures"
+
   push-operator-manifests:
     runs-on: ubuntu-latest
     needs:
