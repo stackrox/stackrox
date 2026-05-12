@@ -323,10 +323,10 @@ var (
 	//  true  | v4   | true/SPEC | local scanner (v4)   | local or Central (per registry)
 	//
 	// Impossible states (never emitted):
-	//   local=false, mode=v2              — no scanner means no mode.
-	//   local=false, mode=v4              — no scanner means no mode.
-	//   local=true,  mode=none            — a local scanner is always v2 or v4.
-	//   local=false, delegated=true       — delegation requires a local scanner.
+	//   local=false, mode=v2                   — no scanner means no mode.
+	//   local=false, mode=v4                   — no scanner means no mode.
+	//   local=true,  mode=none                 — a local scanner is always v2 or v4.
+	//   local=false, delegated=true            — delegation requires a local scanner.
 	//   local=true,  mode=none, delegated=true — compound of the above two.
 	//
 	// Note: vulnerability matching always happens in Central regardless of
