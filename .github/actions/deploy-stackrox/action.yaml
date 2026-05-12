@@ -2,7 +2,7 @@ name: Deploy StackRox
 description: >
   Deploys StackRox using roxie. Foreground (default): blocks until
   ready, exports env vars. Background: returns immediately, poll
-  /tmp/deploy-stackrox.done then source /tmp/roxie-env.sh.
+  wait $(cat /tmp/deploy-stackrox.pid) then source /tmp/roxie-env.sh.
   Log: /tmp/deploy-stackrox.log.
 
 inputs:
@@ -71,11 +71,11 @@ runs:
             -X POST -d '{"name":"ci-test","role":"Admin"}' \
             | jq -r '.token' > /tmp/rox-auth-token
 
-          touch /tmp/deploy-stackrox.done
         }
 
         if [ "${{ inputs.background }}" = "true" ]; then
           deploy > /tmp/deploy-stackrox.log 2>&1 &
+          echo $! > /tmp/deploy-stackrox.pid
         else
           deploy
         fi
