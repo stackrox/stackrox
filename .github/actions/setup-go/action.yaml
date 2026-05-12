@@ -1,8 +1,9 @@
 name: Setup Go and Cache
 description: >
   Activate the best available Go from the runner's hostedtoolcache,
-  override setup-go's problematic defaults, and manage GOCACHE with
-  stale-entry trimming and mtime stabilization for test caching.
+  adjust setup-go defaults for our build environment, and manage
+  GOCACHE with stale-entry trimming and mtime stabilization for
+  test caching.
 inputs:
   save:
     description: Whether this job saves caches on pushes to the default branch.
