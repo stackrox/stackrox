@@ -1160,7 +1160,7 @@ func TestComplianceV2GetComplianceRule(t *testing.T) {
 			require.NotNil(c, resp)
 			assert.Equal(c, crName, resp.GetName())
 			assert.NotEmpty(c, resp.GetTitle(), "Title should be non-empty")
-		}, 60*time.Second, 5*time.Second)
+		}, 10*time.Second, 1*time.Second)
 	})
 
 	t.Run("not-found", func(t *testing.T) {
