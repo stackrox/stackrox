@@ -17,6 +17,7 @@ export type ImageResources = {
             tag: string;
         } | null;
         deploymentCount: number;
+        activeDeploymentCount: number;
         operatingSystem: string;
         scanTime: string | null;
     }[];
@@ -34,6 +35,7 @@ export const imageResourcesFragment = gql`
                 tag
             }
             deploymentCount(query: $query)
+            activeDeploymentCount: deploymentCount(query: $activeDeploymentQuery)
             operatingSystem
             scanTime
         }
@@ -57,7 +59,7 @@ function ImageResourceTable({ data, getSortParams }: ImageResourceTableProps) {
                 </Tr>
             </Thead>
             {data.images.length === 0 && <EmptyTableResults colSpan={4} />}
-            {data.images.map(({ id, digest, name, deploymentCount, operatingSystem, scanTime }) => {
+            {data.images.map(({ id, digest, name, activeDeploymentCount, operatingSystem, scanTime }) => {
                 return (
                     <Tbody key={id}>
                         <Tr>
@@ -68,9 +70,8 @@ function ImageResourceTable({ data, getSortParams }: ImageResourceTableProps) {
                                     'NAME UNKNOWN'
                                 )}
                             </Td>
-                            {/* Given that this is in the context of a deployment, when would `deploymentCount` ever be less than zero? */}
                             <Td dataLabel="Image status">
-                                {deploymentCount > 0 ? 'Active' : 'Inactive'}
+                                {activeDeploymentCount > 0 ? 'Active' : 'Inactive'}
                             </Td>
                             <Td dataLabel="Image OS">{operatingSystem}</Td>
                             <Td dataLabel="Created">

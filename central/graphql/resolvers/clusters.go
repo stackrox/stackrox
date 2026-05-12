@@ -515,12 +515,12 @@ func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name 
 
 func (resolver *clusterResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Images")
-	return resolver.root.Images(resolver.clusterScopeContext(ctx), args)
+	return resolver.root.images(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageCount")
-	return resolver.root.ImageCount(resolver.clusterScopeContext(ctx), args)
+	return resolver.root.imageCount(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
@@ -595,7 +595,7 @@ func (resolver *clusterResolver) ImageVulnerabilities(ctx context.Context, args 
 
 func (resolver *clusterResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageVulnerabilityCount")
-	return resolver.root.ImageVulnerabilityCount(resolver.clusterScopeContext(ctx), args)
+	return resolver.root.imageVulnerabilityCount(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {

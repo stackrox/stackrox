@@ -57,4 +57,18 @@ export const Inactive: CompoundSearchFilterAttribute = {
     },
 };
 
-export const deploymentAttributes = [Annotation, ContainerType, ID, Label, Name, Inactive];
+export const State: CompoundSearchFilterAttribute = {
+    displayName: 'State',
+    filterChipLabel: 'Deployment state',
+    searchTerm: 'Deployment State',
+    inputType: 'select',
+    inputProps: {
+        options: [
+            { value: 'DEPLOYMENT_STATE_ACTIVE', label: 'Deployed' },
+            { value: 'DEPLOYMENT_STATE_DELETED', label: 'Deleted' },
+        ],
+    },
+    featureFlagDependency: ['ROX_DEPLOYMENT_SOFT_DELETION'],
+};
+
+export const deploymentAttributes = [Annotation, ContainerType, ID, Label, Name, Inactive, State];

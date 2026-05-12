@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -259,17 +260,17 @@ func (resolver *imageComponentV2Resolver) Deployments(ctx context.Context, args 
 
 func (resolver *imageComponentV2Resolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageCount")
-	return resolver.root.ImageCount(resolver.imageComponentScopeContext(ctx), args)
+	return resolver.root.imageCount(resolver.imageComponentScopeContext(ctx), args)
 }
 
 func (resolver *imageComponentV2Resolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Images")
-	return resolver.root.Images(resolver.imageComponentScopeContext(ctx), args)
+	return resolver.root.images(resolver.imageComponentScopeContext(ctx), args)
 }
 
 func (resolver *imageComponentV2Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilityCount")
-	return resolver.root.ImageVulnerabilityCount(resolver.imageComponentScopeContext(ctx), args)
+	return resolver.root.imageVulnerabilityCount(resolver.imageComponentScopeContext(ctx), args)
 }
 
 func (resolver *imageComponentV2Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
@@ -304,7 +305,7 @@ func (resolver *imageComponentV2Resolver) LastScanned(ctx context.Context) (*gra
 		}
 		q := search.NewQueryBuilder().AddExactMatches(search.ImageID, resolver.data.GetImageIdV2()).ProtoQuery()
 
-		images, err := imageLoader.FromQuery(resolver.ctx, q)
+		images, err := imageLoader.FromQuery(resolver.ctx, q, views.ReadOptions{})
 		if err != nil || len(images) == 0 {
 			return nil, err
 		} else if len(images) > 1 {
@@ -320,7 +321,7 @@ func (resolver *imageComponentV2Resolver) LastScanned(ctx context.Context) (*gra
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetImageId()).ProtoQuery()
 
-	images, err := imageLoader.FromQuery(resolver.ctx, q)
+	images, err := imageLoader.FromQuery(resolver.ctx, q, views.ReadOptions{})
 	if err != nil || len(images) == 0 {
 		return nil, err
 	} else if len(images) > 1 {

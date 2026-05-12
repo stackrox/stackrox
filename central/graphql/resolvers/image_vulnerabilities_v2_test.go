@@ -159,7 +159,10 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestUnauthorizedImageVulnerabilit
 }
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestUnauthorizedImageVulnerabilityCountEndpoint() {
-	_, err := s.resolver.ImageVulnerabilityCount(s.ctx, RawQuery{})
+	_, err := s.resolver.ImageVulnerabilityCount(s.ctx, struct {
+		Query                        *string
+		ExcludeWithActiveDeployments *bool
+	}{})
 	s.Error(err, "Unauthorized request got through")
 }
 
@@ -184,7 +187,10 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilities() {
 	cveList := getCVEList(ctx, vulns)
 	s.ElementsMatch(distinctCVEs, cveList)
 
-	count, err := s.resolver.ImageVulnerabilityCount(ctx, RawQuery{})
+	count, err := s.resolver.ImageVulnerabilityCount(ctx, struct {
+		Query                        *string
+		ExcludeWithActiveDeployments *bool
+	}{})
 	s.NoError(err)
 	s.Equal(expected, count)
 
@@ -219,7 +225,10 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesFixable()
 	}
 	s.ElementsMatch([]string{"cve-2018-1"}, cveVulns.AsSlice())
 
-	count, err := s.resolver.ImageVulnerabilityCount(ctx, RawQuery{Query: &query})
+	count, err := s.resolver.ImageVulnerabilityCount(ctx, struct {
+		Query                        *string
+		ExcludeWithActiveDeployments *bool
+	}{Query: &query})
 	s.NoError(err)
 	s.Equal(expected, count)
 }
@@ -244,7 +253,10 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilitiesNonFixabl
 	cveList := getCVEList(ctx, vulns)
 	s.ElementsMatch(expectedCVEs, cveList)
 
-	count, err := s.resolver.ImageVulnerabilityCount(ctx, RawQuery{Query: &query})
+	count, err := s.resolver.ImageVulnerabilityCount(ctx, struct {
+		Query                        *string
+		ExcludeWithActiveDeployments *bool
+	}{Query: &query})
 	s.NoError(err)
 	s.Equal(expected, count)
 }

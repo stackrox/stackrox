@@ -1,7 +1,10 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Label, LabelGroup, Tooltip } from '@patternfly/react-core';
 import { gql } from '@apollo/client';
 
+import { getDateTime } from 'utils/dateUtils';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import { generateVisibilityForColumns } from 'hooks/useManagedColumns';
 import type { ManagedColumns } from 'hooks/useManagedColumns';
@@ -41,6 +44,8 @@ export type DeploymentResources = {
         clusterName: string;
         namespace: string;
         created: string | null;
+        state: string;
+        deleted: string | null;
     }[];
 };
 
@@ -54,6 +59,8 @@ export const deploymentResourcesFragment = gql`
             clusterName
             namespace
             created
+            state
+            deleted
         }
     }
 `;
@@ -72,6 +79,8 @@ export const deploymentResourcesV2Fragment = gql`
             clusterName
             namespace
             created
+            state
+            deleted
         }
     }
 `;
@@ -110,33 +119,60 @@ function DeploymentResourceTable({
                 </Tr>
             </Thead>
             {data.deployments.length === 0 && <EmptyTableResults colSpan={4} />}
-            {data.deployments.map(({ id, name, type, clusterName, namespace, created }) => {
-                return (
-                    <Tbody key={id}>
-                        <Tr>
-                            <Td dataLabel="Name" className={getVisibilityClass('name')}>
-                                <Link
-                                    to={urlBuilder.workloadDetails(
-                                        { id, namespace, name, type },
-                                        vulnerabilityState
-                                    )}
+            {data.deployments.map(
+                ({ id, name, type, clusterName, namespace, created, state, deleted }) => {
+                    const labels: ReactNode[] = [];
+                    if (state === 'DEPLOYMENT_STATE_DELETED' && deleted) {
+                        labels.push(
+                            <Tooltip key="deleted" content={`Deleted: ${getDateTime(deleted)}`}>
+                                <Label isCompact variant="outline" color="red">
+                                    Deleted
+                                </Label>
+                            </Tooltip>
+                        );
+                    }
+
+                    return (
+                        <Tbody key={id}>
+                            <Tr
+                                style={labels.length !== 0 ? { borderBlockEnd: 'none' } : undefined}
+                            >
+                                <Td dataLabel="Name" className={getVisibilityClass('name')}>
+                                    <Link
+                                        to={urlBuilder.workloadDetails(
+                                            { id, namespace, name, type },
+                                            vulnerabilityState
+                                        )}
+                                    >
+                                        {name}
+                                    </Link>
+                                </Td>
+                                <Td dataLabel="Cluster" className={getVisibilityClass('cluster')}>
+                                    {clusterName}
+                                </Td>
+                                <Td
+                                    dataLabel="Namespace"
+                                    className={getVisibilityClass('namespace')}
                                 >
-                                    {name}
-                                </Link>
-                            </Td>
-                            <Td dataLabel="Cluster" className={getVisibilityClass('cluster')}>
-                                {clusterName}
-                            </Td>
-                            <Td dataLabel="Namespace" className={getVisibilityClass('namespace')}>
-                                {namespace}
-                            </Td>
-                            <Td dataLabel="Created" className={getVisibilityClass('created')}>
-                                <DateDistance date={created} />
-                            </Td>
-                        </Tr>
-                    </Tbody>
-                );
-            })}
+                                    {namespace}
+                                </Td>
+                                <Td dataLabel="Created" className={getVisibilityClass('created')}>
+                                    <DateDistance date={created} />
+                                </Td>
+                            </Tr>
+                            {labels.length !== 0 && (
+                                <Tr>
+                                    <Td colSpan={4} style={{ paddingTop: 0 }}>
+                                        <LabelGroup isCompact numLabels={labels.length}>
+                                            {labels}
+                                        </LabelGroup>
+                                    </Td>
+                                </Tr>
+                            )}
+                        </Tbody>
+                    );
+                }
+            )}
         </Table>
     );
 }

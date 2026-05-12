@@ -123,7 +123,10 @@ func (s *ImageCVECoreResolverTestSuite) TestImageCVEsNoImagePerm() {
 }
 
 func (s *ImageCVECoreResolverTestSuite) TestImageCVECountNoImagePerm() {
-	response, err := s.resolver.ImageCVECount(context.Background(), RawQuery{})
+	response, err := s.resolver.ImageCVECount(context.Background(), struct {
+		Query                        *string
+		ExcludeWithActiveDeployments *bool
+	}{})
 	s.Error(err)
 	s.Zero(response)
 }
@@ -133,8 +136,11 @@ func (s *ImageCVECoreResolverTestSuite) TestImageCVECount() {
 	expectedQ, err := q.AsV1QueryOrEmpty()
 	s.Require().NoError(err)
 
-	s.imageCVEView.EXPECT().Count(s.ctx, expectedQ).Return(0, nil)
-	response, err := s.resolver.ImageCVECount(s.ctx, *q)
+	s.imageCVEView.EXPECT().Count(s.ctx, expectedQ, gomock.Any()).Return(0, nil)
+	response, err := s.resolver.ImageCVECount(s.ctx, struct {
+		Query                        *string
+		ExcludeWithActiveDeployments *bool
+	}{Query: q.Query})
 	s.NoError(err)
 	s.Equal(response, int32(0))
 }
@@ -145,8 +151,11 @@ func (s *ImageCVECoreResolverTestSuite) TestImageCVECountWithQuery() {
 	}
 	expectedQ := search.NewQueryBuilder().AddStrings(search.ImageName, "image").ProtoQuery()
 
-	s.imageCVEView.EXPECT().Count(s.ctx, expectedQ).Return(3, nil)
-	response, err := s.resolver.ImageCVECount(s.ctx, *q)
+	s.imageCVEView.EXPECT().Count(s.ctx, expectedQ, gomock.Any()).Return(3, nil)
+	response, err := s.resolver.ImageCVECount(s.ctx, struct {
+		Query                        *string
+		ExcludeWithActiveDeployments *bool
+	}{Query: q.Query})
 	s.NoError(err)
 	s.Equal(response, int32(3))
 }

@@ -33,6 +33,6 @@ type CveFlat interface {
 //
 //go:generate mockgen-wrapper
 type CveFlatView interface {
-	Count(ctx context.Context, q *v1.Query) (int, error)
+	Count(ctx context.Context, q *v1.Query, options views.ReadOptions) (int, error)
 	Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]CveFlat, error)
 }

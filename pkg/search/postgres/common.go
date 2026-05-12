@@ -995,8 +995,10 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	})
 }
 
-// RunCountRequestForSchema executes a request for just the count against the database
-func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (int, error) {
+// RunCountRequestForSchema executes a request for just the count against the database.
+// It accepts optional SelectRequestOption values (e.g. WithWhereInterceptor) to modify
+// the compiled query before execution.
+func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, opts ...SelectRequestOption) (int, error) {
 	if q == nil {
 		q = searchPkg.EmptyQuery()
 	}
@@ -1005,6 +1007,15 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 	if err != nil || query == nil {
 		return 0, err
 	}
+
+	cfg := &selectRequestConfig{}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+	if cfg.whereInterceptor != nil {
+		query.Where, query.Data = cfg.whereInterceptor(query.Where, query.Data)
+	}
+
 	queryStr := query.AsSQL()
 
 	var pool postgres.Queryable

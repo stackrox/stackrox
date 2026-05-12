@@ -3,6 +3,7 @@ package images
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
@@ -24,7 +25,26 @@ type imageCoreViewImpl struct {
 	db     postgres.DB
 }
 
-func (v *imageCoreViewImpl) Get(ctx context.Context, query *v1.Query) ([]ImageCore, error) {
+func (v *imageCoreViewImpl) Count(ctx context.Context, q *v1.Query, options views.ReadOptions) (int, error) {
+	if err := common.ValidateQuery(q); err != nil {
+		return 0, err
+	}
+
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
+	var runOpts []pgSearch.SelectRequestOption
+	if options.ExcludeImagesWithActiveDeployments {
+		imageCol, containerCol := imageAndContainerColumns()
+		runOpts = append(runOpts, pgSearch.WithWhereInterceptor(func(where string, values []any) (string, []any) {
+			return common.ApplyActiveDeploymentExclusion(where, values, imageCol, containerCol)
+		}))
+	}
+
+	return pgSearch.RunCountRequestForSchema(queryCtx, v.schema, q, v.db, runOpts...)
+}
+
+func (v *imageCoreViewImpl) Get(ctx context.Context, query *v1.Query, options views.ReadOptions) ([]ImageCore, error) {
 	if err := common.ValidateQuery(query); err != nil {
 		return nil, err
 	}
@@ -34,11 +54,19 @@ func (v *imageCoreViewImpl) Get(ctx context.Context, query *v1.Query) ([]ImageCo
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
+	var runOpts []pgSearch.SelectRequestOption
+	if options.ExcludeImagesWithActiveDeployments {
+		imageCol, containerCol := imageAndContainerColumns()
+		runOpts = append(runOpts, pgSearch.WithWhereInterceptor(func(where string, values []any) (string, []any) {
+			return common.ApplyActiveDeploymentExclusion(where, values, imageCol, containerCol)
+		}))
+	}
+
 	ret := make([]ImageCore, 0, paginated.GetLimit(query.GetPagination().GetLimit(), 100))
 	err := pgSearch.RunSelectRequestForSchemaFn[imageResponse](queryCtx, v.db, v.schema, query, func(r *imageResponse) error {
 		ret = append(ret, r)
 		return nil
-	})
+	}, runOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -90,4 +118,11 @@ func withSelectQuery(query *v1.Query) *v1.Query {
 	}
 
 	return cloned
+}
+
+func imageAndContainerColumns() (imageColumnExpr, containerImageColumn string) {
+	if features.FlattenImageData.Enabled() {
+		return "images_v2.id", "image_idv2"
+	}
+	return "images.id", "image_id"
 }

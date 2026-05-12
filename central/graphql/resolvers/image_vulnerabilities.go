@@ -65,7 +65,7 @@ func init() {
 			)),
 		schema.AddQuery("imageVulnerability(id: ID): ImageVulnerability"),
 		schema.AddQuery("imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!"),
-		schema.AddQuery("imageVulnerabilityCount(query: String): Int!"),
+		schema.AddQuery("imageVulnerabilityCount(query: String, excludeWithActiveDeployments: Boolean): Int!"),
 	)
 }
 
@@ -200,21 +200,32 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 	return ret, nil
 }
 
-// ImageVulnerabilityCount returns count of image vulnerabilities for the input query
-func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+// ImageVulnerabilityCount returns count of image vulnerabilities for the input query.
+// The excludeWithActiveDeployments argument, when true, excludes CVEs belonging
+// to images that have at least one active deployment.
+func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args struct {
+	Query                        *string
+	ExcludeWithActiveDeployments *bool
+}) (int32, error) {
+	return resolver.imageVulnerabilityCount(ctx,
+		RawQuery{Query: args.Query},
+		readOptionsFromBool(args.ExcludeWithActiveDeployments),
+	)
+}
+
+func (resolver *Resolver) imageVulnerabilityCount(ctx context.Context, args RawQuery, opts ...views.ReadOptions) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCount")
-	// check permissions
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
 
-	// cast query
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
 	}
 
-	cveCount, err := resolver.ImageCVEFlatView.Count(ctx, query)
+	readOpts := firstOrDefault(opts)
+	cveCount, err := resolver.ImageCVEFlatView.Count(ctx, query, readOpts)
 	return int32(cveCount), err
 }
 
@@ -473,7 +484,7 @@ func (resolver *imageCVEV2Resolver) LastScanned(ctx context.Context) (*graphql.T
 
 		q := search.NewQueryBuilder().AddExactMatches(search.ImageID, resolver.data.GetImageIdV2()).ProtoQuery()
 
-		images, err := imageLoader.FromQuery(resolver.imageVulnerabilityScopeContext(ctx), q)
+		images, err := imageLoader.FromQuery(resolver.imageVulnerabilityScopeContext(ctx), q, views.ReadOptions{})
 		if err != nil || len(images) == 0 {
 			return nil, err
 		} else if len(images) > 1 {
@@ -489,7 +500,7 @@ func (resolver *imageCVEV2Resolver) LastScanned(ctx context.Context) (*graphql.T
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetImageId()).ProtoQuery()
 
-	images, err := imageLoader.FromQuery(resolver.imageVulnerabilityScopeContext(ctx), q)
+	images, err := imageLoader.FromQuery(resolver.imageVulnerabilityScopeContext(ctx), q, views.ReadOptions{})
 	if err != nil || len(images) == 0 {
 		return nil, err
 	} else if len(images) > 1 {
@@ -622,12 +633,12 @@ func (resolver *imageCVEV2Resolver) ImageComponentCount(ctx context.Context, arg
 
 func (resolver *imageCVEV2Resolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageCount")
-	return resolver.root.ImageCount(resolver.imageVulnerabilityScopeContext(ctx), args)
+	return resolver.root.imageCount(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
 func (resolver *imageCVEV2Resolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "Images")
-	return resolver.root.Images(resolver.imageVulnerabilityScopeContext(ctx), args)
+	return resolver.root.images(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
 func (resolver *imageCVEV2Resolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
