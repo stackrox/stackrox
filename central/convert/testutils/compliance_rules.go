@@ -117,17 +117,17 @@ func GetRuleV2(_ *testing.T) *apiV2.ComplianceRule {
 	}
 
 	return &apiV2.ComplianceRule{
-		Id:          RuleUID,
-		RuleId:      ruleID,
-		Name:        "ocp-cis",
-		RuleType:    "node",
-		Title:       "test rule",
-		Description: "test description",
-		Rationale:   "test rationale",
-		Warning:     "test warning",
-		Severity:    "UNSET_RULE_SEVERITY",
-		Fixes:       fixes,
-		ParentRule:    "random-rule-name",
+		Id:           RuleUID,
+		RuleId:       ruleID,
+		Name:         "ocp-cis",
+		RuleType:     "node",
+		Title:        "test rule",
+		Description:  "test description",
+		Rationale:    "test rationale",
+		Warning:      "test warning",
+		Severity:     "UNSET_RULE_SEVERITY",
+		Fixes:        fixes,
+		ParentRule:   "random-rule-name",
 		OperatorKind: apiV2.ComplianceRule_RULE,
 	}
 }
