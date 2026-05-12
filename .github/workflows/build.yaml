@@ -24,6 +24,11 @@ defaults:
     # See https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#defaultsrunshell
     shell: bash
 
+env:
+  # SOURCE_DATE_EPOCH for reproducible builds - fixed timestamp for all builds
+  # Jan 1, 2001 00:00:00 UTC
+  SOURCE_DATE_EPOCH: "978307200"
+
 jobs:
   define-job-matrix:
     outputs:
@@ -140,8 +145,6 @@ jobs:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
       # For consistency with `image/rhel/konflux.Dockerfile`, see comment there.
       UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
-      # Match timestamp from cache-go-dependencies for consistency
-      SOURCE_DATE_EPOCH: 978307200
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

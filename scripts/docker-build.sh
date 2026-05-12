@@ -2,6 +2,8 @@
 
 set -e
 
+export SOURCE_DATE_EPOCH
+
 echo "Building with platform linux/${GOARCH}"
 if docker info | grep buildx; then
     docker buildx build --platform "linux/${GOARCH}" --load "$@"
