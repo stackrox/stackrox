@@ -36,6 +36,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
+    # Stable version ldflags for test caching: Go's test cache keys include
+    # link ActionID which includes -X ldflags. Fixed BUILD_TAG/SHORTCOMMIT
+    # prevent per-commit cache misses.
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
@@ -48,8 +51,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         free-disk-space: 30
 
-    - name: Setup Go and cache
-      uses: ./.github/actions/setup-go
+    - uses: ./.github/actions/setup-go
       with:
         key-suffix: ${{ matrix.gotags }}
 
@@ -112,6 +114,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
+    # Stable version ldflags for test caching: Go's test cache keys include
+    # link ActionID which includes -X ldflags. Fixed BUILD_TAG/SHORTCOMMIT
+    # prevent per-commit cache misses.
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
@@ -124,7 +129,6 @@ jobs:
       run: |
         sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
         sudo systemctl start postgresql.service
-        timeout 60 bash -c 'until pg_isready; do sleep 1; done'
 
     # Same base image as production (image/postgres/Dockerfile).
     - name: Start Postgres (${{ matrix.pg }})
@@ -142,14 +146,14 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Setup Go and cache
-      uses: ./.github/actions/setup-go
+    - uses: ./.github/actions/setup-go
       with:
         key-suffix: ${{ matrix.gotags }}-${{ matrix.pg }}
 
     - name: Is Postgres ready
-      if: matrix.pg != 'default'
-      run: timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' || { docker logs postgres; exit 1; }
+      run: |
+        timeout 60 bash -c 'until pg_isready; do sleep 1; done'
+
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
 
@@ -192,7 +196,6 @@ jobs:
       run: |
         sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
         sudo systemctl start postgresql.service
-        timeout 60 bash -c 'until pg_isready; do sleep 1; done'
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -201,8 +204,11 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Setup Go and cache
-      uses: ./.github/actions/setup-go
+    - uses: ./.github/actions/setup-go
+
+    - name: Is Postgres ready
+      run: |
+        timeout 60 bash -c 'until pg_isready; do sleep 1; done'
 
     - name: Go Bench Tests
       run: make go-postgres-bench-tests
@@ -331,8 +337,7 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Setup Go and cache
-      uses: ./.github/actions/setup-go
+    - uses: ./.github/actions/setup-go
 
     - uses: ./.github/actions/handle-tagged-build
 
@@ -430,8 +435,7 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Setup Go and cache
-      uses: ./.github/actions/setup-go
+    - uses: ./.github/actions/setup-go
 
     - name: Login to Quay.io
       uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
