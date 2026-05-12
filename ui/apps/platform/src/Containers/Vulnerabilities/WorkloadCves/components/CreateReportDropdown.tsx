@@ -5,9 +5,18 @@ import type { MenuToggleElement } from '@patternfly/react-core';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
+import type { FeatureFlagEnvVar } from 'types/featureFlag';
+import type { ResourceName } from 'types/roleResources';
 import { ensureExhaustive } from 'utils/type.utils';
 
-const dropdownItems = [
+type DropdownItem = {
+    text: 'Export report as CSV' | 'Create scheduled report';
+    description: string;
+    featureFlagDependency?: FeatureFlagEnvVar;
+    writeAccessRequirement?: ResourceName;
+};
+
+const dropdownItems: DropdownItem[] = [
     {
         text: 'Export report as CSV',
         description:
@@ -16,7 +25,6 @@ const dropdownItems = [
     {
         text: 'Create scheduled report',
         description: 'Create a scheduled report from this view using the filters you’ve applied.',
-        featureFlagDependency: 'ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING',
         writeAccessRequirement: 'WorkflowAdministration',
     },
 ] as const;
@@ -76,9 +84,11 @@ function CreateReportDropdown({
                         const { description, text } = dropdownItem;
                         const isEnabled =
                             !('featureFlagDependency' in dropdownItem) ||
+                            !dropdownItem.featureFlagDependency ||
                             isFeatureFlagEnabled(dropdownItem.featureFlagDependency);
                         const hasAccess =
                             !('writeAccessRequirement' in dropdownItem) ||
+                            !dropdownItem.writeAccessRequirement ||
                             hasReadWriteAccess(dropdownItem.writeAccessRequirement);
 
                         return isEnabled && hasAccess ? (

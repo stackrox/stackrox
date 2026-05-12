@@ -149,6 +149,21 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichConnection() {
 				action: PostEnrichmentActionRetry,
 			},
 		},
+		"Non-fresh connection with invalid address should be removed": {
+			connPair:            createConnectionPair().incoming().invalidAddress().notFresh(),
+			enrichedConnections: make(map[indicator.NetworkConn]timestamp.MicroTS),
+			setupMocks: func(m *mockExpectations) {
+				m.expectContainerFound(dstID).expectEndpointNotFound().expectExternalNotFound()
+			},
+			expected: struct {
+				result    EnrichmentResult
+				action    PostEnrichmentAction
+				indicator *indicator.NetworkConn
+			}{
+				result: EnrichmentResultInvalidInput,
+				action: PostEnrichmentActionRemove,
+			},
+		},
 		"Outgoing connection with successful internal lookup should return the correct id": {
 			connPair:            createConnectionPair(),
 			enrichedConnections: make(map[indicator.NetworkConn]timestamp.MicroTS),
