@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/retry/handler"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc/metadata"
@@ -48,9 +49,9 @@ type Compliance struct {
 	nodeNameProvider   node.NodeNameProvider
 	nodeScanner        node.NodeScanner
 	nodeIndexer        node.NodeIndexer
-	umhNodeInventory   node.UnconfirmedMessageHandler
-	umhNodeIndex       node.UnconfirmedMessageHandler
-	umhVMIndex         node.UnconfirmedMessageHandler
+	umhNodeInventory   handler.UnconfirmedMessageHandler
+	umhNodeIndex       handler.UnconfirmedMessageHandler
+	umhVMIndex         handler.UnconfirmedMessageHandler
 	nodeInventoryCache atomic.Pointer[sensor.MsgFromCompliance]
 	nodeIndexCache     atomic.Pointer[sensor.MsgFromCompliance]
 	scrapeConfig       atomic.Pointer[sensor.MsgToCompliance_ScrapeConfig]
@@ -59,7 +60,7 @@ type Compliance struct {
 
 // NewComplianceApp constructs the Compliance app object
 func NewComplianceApp(nnp node.NodeNameProvider, scanner node.NodeScanner, nodeIndexer node.NodeIndexer,
-	umhNodeInv, umhNodeIndex, umhVMIndex node.UnconfirmedMessageHandler) *Compliance {
+	umhNodeInv, umhNodeIndex, umhVMIndex handler.UnconfirmedMessageHandler) *Compliance {
 	return &Compliance{
 		nodeNameProvider:  nnp,
 		nodeScanner:       scanner,
@@ -430,7 +431,7 @@ func (c *Compliance) handleComplianceACK(ack *sensor.MsgToCompliance_ComplianceA
 }
 
 // dispatchACK routes a ComplianceACK action to the appropriate UMH method.
-func dispatchACK(umh node.UnconfirmedMessageHandler, label string, action sensor.MsgToCompliance_ComplianceACK_Action, reason string) {
+func dispatchACK(umh handler.UnconfirmedMessageHandler, label string, action sensor.MsgToCompliance_ComplianceACK_Action, reason string) {
 	switch action {
 	case sensor.MsgToCompliance_ComplianceACK_ACK:
 		umh.HandleACK(nodeResourceID)

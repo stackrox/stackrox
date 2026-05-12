@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// fakeUMH is a minimal test double for node.UnconfirmedMessageHandler.
+// fakeUMH is a minimal test double for handler.UnconfirmedMessageHandler.
 // Set retryC to a non-nil channel when tests need RetryCommand() to be selectable.
 type fakeUMH struct {
 	ackCount  int

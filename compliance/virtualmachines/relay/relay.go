@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/retry/handler"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/time/rate"
 )
@@ -31,21 +32,11 @@ type cachedReportMetadata struct {
 	limiter     *rate.Limiter
 }
 
-// UnconfirmedMessageHandler is the minimal interface used by the relay to track ACK/NACK state.
-// Implemented by compliance UMH components.
-type UnconfirmedMessageHandler interface {
-	HandleACK(resourceID string)
-	HandleNACK(resourceID string)
-	ObserveSending(resourceID string)
-	RetryCommand() <-chan string
-	OnACK(callback func(resourceID string))
-}
-
 // Relay receives index reports from VMs and forwards them to Sensor.
 type Relay struct {
 	reportStream IndexReportStream
 	reportSender sender.IndexReportSender
-	umh          UnconfirmedMessageHandler
+	umh          handler.UnconfirmedMessageHandler
 
 	// Rate limiting config
 	maxReportsPerMinute float64
@@ -86,7 +77,7 @@ func (r *Relay) evictStaleEntries(now time.Time, threshold time.Duration) {
 func New(
 	reportStream IndexReportStream,
 	reportSender sender.IndexReportSender,
-	umh UnconfirmedMessageHandler,
+	umh handler.UnconfirmedMessageHandler,
 	maxReportsPerMinute float64,
 	staleAckThreshold time.Duration,
 ) *Relay {

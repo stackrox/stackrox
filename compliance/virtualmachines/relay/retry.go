@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/retry/handler"
 )
 
 const retryRateLimitKey = "vm-relay-retry"
@@ -47,7 +48,7 @@ func WithBackoff(factory func() backoff.BackOff) RetryOption {
 // exits on context cancellation, which is treated as a permanent (non-retryable) error.
 //
 // Retries continue indefinitely until the parent context is cancelled at shutdown.
-func RunWithRetry(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient, umh UnconfirmedMessageHandler, opts ...RetryOption) error {
+func RunWithRetry(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient, umh handler.UnconfirmedMessageHandler, opts ...RetryOption) error {
 	cfg := retryConfig{
 		backOffFactory: defaultBackOff,
 	}
@@ -88,7 +89,7 @@ func defaultBackOff() backoff.BackOff {
 	return eb
 }
 
-func makeDefaultOperation(umh UnconfirmedMessageHandler) Operation {
+func makeDefaultOperation(umh handler.UnconfirmedMessageHandler) Operation {
 	return func(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()

@@ -683,3 +683,9 @@ func (m *mockUMH) OnACK(callback func(resourceID string)) {
 	defer m.mu.Unlock()
 	m.onACKCb = callback
 }
+
+func (m *mockUMH) Stopped() concurrency.ReadOnlyErrorSignal {
+	s := concurrency.NewStopper()
+	s.Flow().ReportStopped()
+	return s.Client().Stopped()
+}
