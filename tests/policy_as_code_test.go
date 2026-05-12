@@ -475,10 +475,15 @@ func (pc *PolicyAsCodeSuite) TearDownSuite() {
 	// TODO: Don't double delete
 	for _, policy := range pc.policies {
 		pc.T().Logf("Deleting policy with name \"%s\"", policy.GetName())
-		_, err := pc.policyClient.DeletePolicy(pc.ctx, &v1.ResourceByID{
-			Id: policy.GetId(),
-		})
-		pc.Require().NoError(err)
+		if policy.GetSource() == storage.PolicySource_DECLARATIVE {
+			err := pc.k8sClient.Delete(pc.ctx, policy.GetName(), metav1.DeleteOptions{})
+			pc.Require().NoError(err)
+		} else {
+			_, err := pc.policyClient.DeletePolicy(pc.ctx, &v1.ResourceByID{
+				Id: policy.GetId(),
+			})
+			pc.Require().NoError(err)
+		}
 	}
 
 	if pc.notifier != nil {
