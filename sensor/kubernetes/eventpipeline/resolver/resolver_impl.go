@@ -244,7 +244,7 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 					skipResolving:    deploymentReference.SkipResolving,
 					forceDetection:   deploymentReference.ForceDetection,
 				}
-				if features.SensorAggregateDeploymentReferenceOptimization.Enabled() && r.deploymentRefQueue != nil {
+				if features.SensorAggregateDeploymentReferenceOptimization.Enabled() && r.deploymentRefQueue != nil && !deploymentReference.SkipDeduping {
 					r.deploymentRefQueue.Push(ref)
 				} else {
 					r.resolveDeployment(msg, ref)
