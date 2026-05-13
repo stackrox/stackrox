@@ -827,6 +827,10 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 			continue
 		}
 		inCentralSet.Add(generateScanIndex(complianceNamespace, scanCfg.GetUpdateScan().GetScanSettings().GetScanName()))
+		if err := m.checkForProfileConflicts(complianceNamespace, scanCfg.GetUpdateScan().GetScanSettings()); err != nil {
+			errList.AddError(err)
+			continue
+		}
 		// Reconcile ScanSetting
 		if err := m.reconcileCreateOrUpdateResource(
 			complianceNamespace,
@@ -839,10 +843,6 @@ func (m *handlerImpl) processSyncScanCfg(request *central.SyncComplianceScanConf
 			errList.AddError(err)
 		}
 		// Reconcile ScanSettingBinding
-		if err := m.checkForProfileConflicts(complianceNamespace, scanCfg.GetUpdateScan().GetScanSettings()); err != nil {
-			errList.AddError(err)
-			continue
-		}
 		if err := m.reconcileCreateOrUpdateResource(
 			complianceNamespace,
 			scanCfg.GetUpdateScan(),
