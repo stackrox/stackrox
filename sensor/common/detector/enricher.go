@@ -377,8 +377,13 @@ func (e *enricher) getImages(ctx context.Context, deployment *storage.Deployment
 	for i := 0; i < len(deployment.GetContainers()); i++ {
 		imgResult := <-imageChan
 
+		if imgResult.image == nil {
+			continue
+		}
 		imageName := imgResult.image.GetName()
 		deploymentImageName := deployment.GetContainers()[imgResult.containerIdx].GetImage().GetName()
+		// Safe to use the cached pointer directly without cloning: all downstream
+		// consumers (e.g. ConstructImage) clone the image before mutating it.
 		image := imgResult.image
 		if !compareImageName(imageName, deploymentImageName) {
 			// This will ensure that when we change the Name of the image
@@ -428,9 +433,15 @@ func (e *enricher) stop() {
 	e.stopSig.Signal()
 }
 
-func compareImageName(x *storage.ImageName, y *storage.ImageName) bool {
+func compareImageName(x, y *storage.ImageName) bool {
+	if x == y {
+		return true
+	}
+	if x == nil || y == nil {
+		return false
+	}
 	// Using proto.Equal can be racy due to internal writes in the Equal function.
-	// We compare the fields manually to avoid races.
+	// Compare fields manually to avoid races.
 	return x.GetRegistry() == y.GetRegistry() &&
 		x.GetRemote() == y.GetRemote() &&
 		x.GetTag() == y.GetTag() &&
