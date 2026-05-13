@@ -1,0 +1,21 @@
+name: Retest Konflux Builds
+
+on:
+  check_run:
+    types: [completed]
+
+jobs:
+  retest-failed-builds:
+    # Guard against phantom fork PRs: when a fork has a sync PR whose head
+    # points at our master, GitHub populates check_run.pull_requests[0] with
+    # the fork's PR number. Verify the PR URL belongs to this repo.
+    if: >-
+      contains(github.event.check_run.pull_requests[0].url, format('/repos/{0}/pulls/', github.repository))
+    uses: stackrox/actions/.github/workflows/retest-konflux-builds.yml@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/.github/workflows/retest-konflux-builds.yml@v1
+    permissions:
+      pull-requests: write
+      issues: write
+    with:
+      max_retries: 3
+      check_name_suffix: '-on-push'
+      retest_command: '/konflux-retest'
