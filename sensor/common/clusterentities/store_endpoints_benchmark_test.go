@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stretchr/testify/assert"
 )
 
 func benchmarkSeedEndpointsStore(numEndpoints int) (*endpointsStore, string, net.NumericEndpoint) {
@@ -71,15 +72,7 @@ func TestApplyNoLock_AllocationsForUnchangedDeployment(t *testing.T) {
 		maxAllocs    = 10.0 // upper bound to catch regressions while tolerating minor runtime variations
 	)
 
-	if allocs > maxAllocs {
-		t.Fatalf("expected unchanged Apply to stay within allocation budget (target <= %.0f, max tolerated <= %.0f), got %.0f allocations",
-			targetAllocs, maxAllocs, allocs)
-	}
-
-	if allocs > targetAllocs {
-		t.Logf("unchanged Apply allocations above target budget: got %.0f allocations (target <= %.0f, max tolerated <= %.0f)",
-			allocs, targetAllocs, maxAllocs)
-	}
+	assert.InDelta(t, targetAllocs, allocs, maxAllocs, "unchanged Apply allocations should stay within target budget")
 }
 
 func benchmarkGenerateEntityData(numEndpoints, targetsPerEndpoint int) *EntityData {
