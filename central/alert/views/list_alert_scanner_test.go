@@ -3,6 +3,7 @@ package views
 import (
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -48,5 +49,31 @@ func TestListAlertSelectProtosMatchDests(t *testing.T) {
 	for i, sel := range ListAlertSelectProtos {
 		assert.Equal(t, expectedOrder[i].String(), sel.GetField().GetName(),
 			"ListAlertSelectProtos[%d] field name mismatch", i)
+	}
+}
+
+func TestDeploymentTypeOrDefault(t *testing.T) {
+	cases := map[string]struct {
+		input    pgtype.Text
+		expected string
+	}{
+		"valid value": {
+			input:    pgtype.Text{String: "DaemonSet", Valid: true},
+			expected: "DaemonSet",
+		},
+		"null": {
+			input:    pgtype.Text{Valid: false},
+			expected: "Deployment",
+		},
+		"empty string": {
+			input:    pgtype.Text{String: "", Valid: true},
+			expected: "Deployment",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, deploymentTypeOrDefault(tc.input))
+		})
 	}
 }
