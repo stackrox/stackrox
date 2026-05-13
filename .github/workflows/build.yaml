@@ -74,8 +74,8 @@ jobs:
             "push_main_multiarch_manifests": { "name":[] },
             "build_and_push_operator": { "name":[], "arch":[] },
             "push_operator_multiarch_manifests": { "name":[] },
-            "build_and_push_scanner": { "name":[], "goos":[], "arch":[] },
-            "push_scanner_manifests": { "name":[] },
+            "build_and_push_scanner": { "name":[], "goos":[], "arch":[], "registry":[] },
+            "push_scanner_manifests": { "name":[], "registry":[] },
             "scan_images_with_roxctl": { "name":[], "image":[], "exclude":[] }
           }'
 
