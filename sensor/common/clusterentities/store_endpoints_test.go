@@ -566,9 +566,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestEndpointsUnchangedNoLockVariantsMatc
 				store.applyNoLock(map[string]*EntityData{"depl": c.current}, false)
 			}
 
-			s.Equal(c.wantUnchanged, store.endpointsUnchangedNoLockBaseline("depl", c.next))
 			s.Equal(c.wantUnchanged, store.endpointsUnchangedNoLock("depl", c.next))
-			s.Equal(c.wantUnchanged, store.endpointsUnchangedNoLockHybrid("depl", c.next))
 		})
 	}
 }

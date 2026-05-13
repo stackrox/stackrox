@@ -2,6 +2,7 @@ package clusterentities
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -131,6 +132,33 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) {
 	}
 }
 
+// endpointsUnchangedNoLock checks whether the incoming endpoints are
+// identical to the ones already stored for the given deployment.
+//
+// # Correctness
+//
+// The stored set (currentTargetInfos) is duplicate-free by definition.
+// The incoming slice (newTargetInfos) may contain duplicates.
+// We iterate the set and verify every element exists in the slice.
+// Combined with the length check |set| == |slice|, this is sufficient:
+// if every one of the n distinct set elements appears in a slice of length n,
+// the slice must be an exact permutation of the set (pigeonhole principle).
+// No separate duplicate-tracking structure is needed, so the function
+// allocates nothing on the heap.
+//
+// # Hint table
+//
+// For target lists above a small threshold, a stack-allocated [64]uint8 array
+// accelerates element lookup. The table maps ContainerPort % 64 to a 1-based
+// index into newTargetInfos. During lookup, the hint gives an O(1) candidate
+// position; if the candidate matches, we skip the linear scan entirely.
+//
+// Collisions (two ports mapping to the same bucket) are harmless: the last
+// writer wins during construction, and any lookup that finds a non-matching
+// candidate simply falls through to slices.Contains for that single element.
+// Correctness never depends on the hint table — it is purely a performance
+// optimisation that degrades gracefully from O(n) (no collisions) to O(n²)
+// (all collisions, equivalent to the plain linear scan path).
 func (e *endpointsStore) endpointsUnchangedNoLock(deploymentID string, newEndpoints map[net.NumericEndpoint][]EndpointTargetInfo) bool {
 	currentEndpoints, found := e.reverseEndpointMap[deploymentID]
 	if !found {
@@ -139,7 +167,11 @@ func (e *endpointsStore) endpointsUnchangedNoLock(deploymentID string, newEndpoi
 	if len(currentEndpoints) != len(newEndpoints) {
 		return false
 	}
-	var seen set.Set[EndpointTargetInfo]
+
+	const hintBuckets = 64
+	const hintThreshold = 6
+	var hints [hintBuckets]uint8
+
 	for endpoint, newTargetInfos := range newEndpoints {
 		if !currentEndpoints.Contains(endpoint) {
 			return false
@@ -150,100 +182,32 @@ func (e *endpointsStore) endpointsUnchangedNoLock(deploymentID string, newEndpoi
 			return false
 		}
 
-		// Reuse one temporary set across endpoints to keep the unchanged fast path
-		// allocation-free while still rejecting duplicate entries in newTargetInfos.
-		clear(seen)
-		for _, ti := range newTargetInfos {
-			if seen.Contains(ti) {
-				return false
-			}
-			seen.Add(ti)
-			if !currentTargetInfos.Contains(ti) {
-				return false
-			}
-		}
-	}
-	return true
-}
+		n := len(newTargetInfos)
 
-func (e *endpointsStore) endpointsUnchangedNoLockBaseline(deploymentID string, newEndpoints map[net.NumericEndpoint][]EndpointTargetInfo) bool {
-	currentEndpoints, found := e.reverseEndpointMap[deploymentID]
-	if !found {
-		return len(newEndpoints) == 0
-	}
-	if len(currentEndpoints) != len(newEndpoints) {
-		return false
-	}
-	for endpoint, newTargetInfos := range newEndpoints {
-		if !currentEndpoints.Contains(endpoint) {
-			return false
-		}
-
-		currentTargetInfos, found := e.endpointMap[endpoint][deploymentID]
-		if !found || len(currentTargetInfos) != len(newTargetInfos) {
-			return false
-		}
-
-		newSet := set.NewSet[EndpointTargetInfo]()
-		for _, ti := range newTargetInfos {
-			newSet.Add(ti)
-		}
-		if len(newSet) != len(currentTargetInfos) {
-			return false
-		}
-		for ti := range currentTargetInfos {
-			if !newSet.Contains(ti) {
-				return false
-			}
-		}
-	}
-	return true
-}
-
-// endpointsUnchangedNoLockLinearScanThreshold is a magic number. AI cannot explain it, and I am too lazy to calculate it on paper.
-const endpointsUnchangedNoLockLinearScanThreshold = 8
-
-func (e *endpointsStore) endpointsUnchangedNoLockHybrid(deploymentID string, newEndpoints map[net.NumericEndpoint][]EndpointTargetInfo) bool {
-	currentEndpoints, found := e.reverseEndpointMap[deploymentID]
-	if !found {
-		return len(newEndpoints) == 0
-	}
-	if len(currentEndpoints) != len(newEndpoints) {
-		return false
-	}
-	var seen set.Set[EndpointTargetInfo]
-	for endpoint, newTargetInfos := range newEndpoints {
-		if !currentEndpoints.Contains(endpoint) {
-			return false
-		}
-
-		currentTargetInfos, found := e.endpointMap[endpoint][deploymentID]
-		if !found || len(currentTargetInfos) != len(newTargetInfos) {
-			return false
-		}
-
-		if len(newTargetInfos) <= endpointsUnchangedNoLockLinearScanThreshold {
+		if n > hintThreshold && n <= 254 {
+			// Build hint table: ContainerPort % 64 → 1-based slice index.
+			// Zero means "no entry"; values 1..255 encode indices 0..254.
+			clear(hints[:])
 			for i, ti := range newTargetInfos {
-				if !currentTargetInfos.Contains(ti) {
+				hints[ti.ContainerPort%hintBuckets] = uint8(i + 1)
+			}
+			for ti := range currentTargetInfos {
+				// Try the O(1) hint first.
+				idx := int(hints[ti.ContainerPort%hintBuckets]) - 1
+				if idx >= 0 && idx < n && newTargetInfos[idx] == ti {
+					continue
+				}
+				// Hint missed (collision or empty bucket) — fall back to scan.
+				if !slices.Contains(newTargetInfos, ti) {
 					return false
 				}
-				for j := 0; j < i; j++ {
-					if newTargetInfos[j] == ti {
-						return false
-					}
+			}
+		} else {
+			// Small n: linear scan is cheaper than building the hint table.
+			for ti := range currentTargetInfos {
+				if !slices.Contains(newTargetInfos, ti) {
+					return false
 				}
-			}
-			continue
-		}
-
-		clear(seen)
-		for _, ti := range newTargetInfos {
-			if seen.Contains(ti) {
-				return false
-			}
-			seen.Add(ti)
-			if !currentTargetInfos.Contains(ti) {
-				return false
 			}
 		}
 	}
