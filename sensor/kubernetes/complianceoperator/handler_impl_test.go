@@ -561,6 +561,26 @@ func (s *HandlerTestSuite) TestProcessApplyScheduledScanProfileConflictErrorIncl
 	s.Contains(errMsg, "ns")
 }
 
+func (s *HandlerTestSuite) TestProcessApplyScheduledScanMultipleConflictsReportedTogether() {
+	s.createExternalSSB("ssb-argocd", "ocp4-cis")
+	s.createExternalSSB("ssb-gitops", "ocp4-cis-node")
+
+	msg := getTestScheduledScanRequestMsg("my-scan", "0 10 * * *", "ocp4-cis", "ocp4-cis-node")
+	expected := expectedResponse{
+		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+		errSubstr: "already referenced by ScanSettingBinding",
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+
+	errMsg := actual.GetApplyComplianceScanConfigResponse().GetError()
+	s.Contains(errMsg, "ssb-argocd")
+	s.Contains(errMsg, "ssb-gitops")
+	s.Contains(errMsg, "remove the existing bindings")
+}
+
 func (s *HandlerTestSuite) TestSyncScanCfgProfileConflictWithExternalSSB() {
 	s.createExternalSSB("cis-compliance", "ocp4-cis", "ocp4-cis-node")
 

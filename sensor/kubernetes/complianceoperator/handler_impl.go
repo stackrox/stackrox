@@ -693,6 +693,7 @@ func (m *handlerImpl) checkForProfileConflicts(ns string, request *central.Apply
 		return err
 	}
 
+	var errList errorhelpers.ErrorList
 	for _, item := range allSSBs.Items {
 		// ACS-managed SSBs are excluded: Central already prevents intra-ACS profile conflicts.
 		if hasStackroxLabels(item.GetLabels()) {
@@ -712,15 +713,17 @@ func (m *handlerImpl) checkForProfileConflicts(ns string, request *central.Apply
 		}
 
 		if len(conflicting) > 0 {
-			return errors.Errorf(
-				"profiles [%s] are already referenced by ScanSettingBinding %q in namespace %q; "+
-					"remove the existing binding or choose different profiles",
+			errList.AddStringf(
+				"profiles [%s] are already referenced by ScanSettingBinding %q in namespace %q",
 				strings.Join(conflicting, ", "), item.GetName(), ns,
 			)
 		}
 	}
 
-	return nil
+	if !errList.Empty() {
+		errList.AddStrings("remove the existing bindings or choose different profiles")
+	}
+	return errList.ToError()
 }
 
 func (m *handlerImpl) reconcileCreateOrUpdateResource(
