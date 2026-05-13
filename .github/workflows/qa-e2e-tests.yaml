@@ -217,7 +217,12 @@ jobs:
         cp "$certs_dir/tls.crt" "$certs_dir/tls.key" webhookserver/chart/certs/
         helm -n stackrox upgrade --install webhookserver webhookserver/chart/
         kubectl -n stackrox rollout status deploy/webhookserver --timeout=2m
-        echo "GENERIC_WEBHOOK_SERVER_CA_CONTENTS=$(cat $certs_dir/ca.crt)" >> "$GITHUB_ENV"
+
+    - name: Export webhook server CA
+      if: always()
+      run: |
+        [ -f /tmp/webhook-certs/ca.crt ] && \
+          echo "GENERIC_WEBHOOK_SERVER_CA_CONTENTS=$(cat /tmp/webhook-certs/ca.crt)" >> "$GITHUB_ENV" || true
 
     - name: Restore Gradle cache
       uses: actions/cache/restore@v4
@@ -531,7 +536,12 @@ jobs:
         cp "$certs_dir/tls.crt" "$certs_dir/tls.key" webhookserver/chart/certs/
         helm -n stackrox upgrade --install webhookserver webhookserver/chart/
         kubectl -n stackrox rollout status deploy/webhookserver --timeout=2m
-        echo "GENERIC_WEBHOOK_SERVER_CA_CONTENTS=$(cat $certs_dir/ca.crt)" >> "$GITHUB_ENV"
+
+    - name: Export webhook server CA
+      if: always()
+      run: |
+        [ -f /tmp/webhook-certs/ca.crt ] && \
+          echo "GENERIC_WEBHOOK_SERVER_CA_CONTENTS=$(cat /tmp/webhook-certs/ca.crt)" >> "$GITHUB_ENV" || true
 
     - name: Restore Gradle cache
       uses: actions/cache/restore@v4
