@@ -125,6 +125,16 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) {
 			continue
 		}
 		if e.endpointsUnchangedNoLock(deploymentID, data.endpoints) {
+			// applySingleNoLock records a nil "seen" marker in reverseEndpointMap
+			// the first time a deployment arrives with zero endpoints (e.g. a pod
+			// exists but no Service selects it yet). That marker later prevents
+			// the endpoint-takeover path from incorrectly moving other deployments
+			// to history when this deployment finally acquires real endpoints.
+			// Because endpointsUnchangedNoLock short-circuits "not-in-store +
+			// empty" as unchanged, we must replicate the marker here.
+			if _, exists := e.reverseEndpointMap[deploymentID]; !exists && len(data.endpoints) == 0 {
+				e.reverseEndpointMap[deploymentID] = nil
+			}
 			continue
 		}
 		e.purgeNoLock(deploymentID)

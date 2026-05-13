@@ -127,17 +127,3 @@ func BenchmarkApplySingleNoLock_AllocationsForNewDeployment(b *testing.B) {
 		})
 	}
 }
-
-func benchmarkGenerateEntityData(numEndpoints, targetsPerEndpoint int) *EntityData {
-	data := &EntityData{}
-	for endpointIdx := range numEndpoints {
-		endpoint := buildEndpoint(fmt.Sprintf("10.%d.%d.%d", (endpointIdx/65536)%256, (endpointIdx/256)%256, endpointIdx%256), 8080)
-		for targetIdx := range targetsPerEndpoint {
-			data.AddEndpoint(endpoint, EndpointTargetInfo{
-				ContainerPort: uint16(8080 + targetIdx),
-				PortName:      fmt.Sprintf("port-%d", targetIdx),
-			})
-		}
-	}
-	return data
-}
