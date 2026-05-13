@@ -560,6 +560,69 @@ func (s *HandlerTestSuite) TestProcessApplyScheduledScanProfileConflictErrorIncl
 	s.Contains(errMsg, "ns")
 }
 
+func (s *HandlerTestSuite) TestSyncScanCfgProfileConflictWithExternalSSB() {
+	s.createExternalSSB("cis-compliance", "ocp4-cis", "ocp4-cis-node")
+
+	handler, ok := s.requestHandler.(*handlerImpl)
+	s.Require().True(ok)
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	syncReq := &central.SyncComplianceScanConfigRequest{
+		ScanConfigs: []*central.ApplyComplianceScanConfigRequest{
+			{
+				ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
+					UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
+						ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
+							ScanName: "my-scan",
+							Profiles: []string{"ocp4-cis"},
+						},
+						Cron: "0 10 * * *",
+					},
+				},
+			},
+		},
+	}
+	err := handler.processSyncScanCfg(syncReq)
+	s.Require().Error(err)
+	s.Contains(err.Error(), "already referenced by ScanSettingBinding")
+
+	// SSB must not have been created.
+	_, getErr := s.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).
+		Namespace("ns").Get(context.Background(), "my-scan", v1.GetOptions{})
+	s.Error(getErr, "SSB should not exist after sync with profile conflict")
+}
+
+func (s *HandlerTestSuite) TestSyncScanCfgNoConflictDifferentProfiles() {
+	s.createExternalSSB("cis-compliance", "ocp4-cis")
+
+	handler, ok := s.requestHandler.(*handlerImpl)
+	s.Require().True(ok)
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	syncReq := &central.SyncComplianceScanConfigRequest{
+		ScanConfigs: []*central.ApplyComplianceScanConfigRequest{
+			{
+				ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
+					UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
+						ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
+							ScanName: "my-scan",
+							Profiles: []string{"rhcos4-moderate"},
+						},
+						Cron: "0 10 * * *",
+					},
+				},
+			},
+		},
+	}
+	err := handler.processSyncScanCfg(syncReq)
+	s.Require().NoError(err)
+
+	// SSB should have been created since profiles don't conflict.
+	ssb := s.getScanSettingBinding("my-scan")
+	s.Require().Len(ssb.Profiles, 1)
+	s.Equal("rhcos4-moderate", ssb.Profiles[0].Name)
+}
+
 func (s *HandlerTestSuite) createExternalSSB(name string, profiles ...string) {
 	s.createSSBWithLabels(name, map[string]string{"app": "external"}, profiles...)
 }
