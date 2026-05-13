@@ -48,13 +48,14 @@ type pipelineTestCase struct {
 }
 
 type processScanConfigTestCase struct {
-	desc        string
-	setMocks    func()
-	isErrorTest bool
-	expectedErr string
-	testContext context.Context
-	clusters    []string
-	testRequest *storage.ComplianceOperatorScanConfigurationV2
+	desc                  string
+	setMocks              func()
+	isErrorTest           bool
+	expectedErr           string
+	expectedErrSubstrings []string
+	testContext           context.Context
+	clusters              []string
+	testRequest           *storage.ComplianceOperatorScanConfigurationV2
 }
 
 func TestComplianceManager(t *testing.T) {
@@ -455,6 +456,35 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			expectedErr: "conflict with external ScanSettingBinding",
 		},
 		{
+			desc:        "Conflicts across multiple clusters reported together",
+			testRequest: getTestRecNoID(),
+			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
+			clusters:    []string{testconsts.Cluster1, testconsts.Cluster2},
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+				suite.scanConfigDS.EXPECT().GetScanConfigurationByName(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(nil, nil).Times(1)
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return([]*storage.ComplianceOperatorScanSettingBindingV2{
+					{
+						Name:         "external-ssb-cluster1",
+						ClusterId:    testconsts.Cluster1,
+						ProfileNames: []string{"ocp4-cis"},
+						Labels:       map[string]string{"managed-by": "argocd"},
+					},
+				}, nil).Times(1)
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster2).Return([]*storage.ComplianceOperatorScanSettingBindingV2{
+					{
+						Name:         "external-ssb-cluster2",
+						ClusterId:    testconsts.Cluster2,
+						ProfileNames: []string{"ocp4-cis"},
+						Labels:       map[string]string{"managed-by": "argocd"},
+					},
+				}, nil).Times(1)
+			},
+			isErrorTest:           true,
+			expectedErr:           "external-ssb-cluster1",
+			expectedErrSubstrings: []string{"external-ssb-cluster1", "external-ssb-cluster2", "remove the external ScanSettingBindings"},
+		},
+		{
 			desc:        "SSB with nil labels is treated as external",
 			testRequest: getTestRecNoID(),
 			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
@@ -481,6 +511,9 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			config, err := suite.manager.ProcessScanRequest(tc.testContext, tc.testRequest, tc.clusters)
 			if tc.isErrorTest {
 				suite.Require().ErrorContains(err, tc.expectedErr)
+				for _, sub := range tc.expectedErrSubstrings {
+					suite.Require().ErrorContains(err, sub)
+				}
 				suite.Require().Nil(config)
 			} else {
 				suite.Require().NoError(err)

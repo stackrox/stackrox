@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -450,6 +451,7 @@ func (m *managerImpl) checkForExternalSSBConflicts(ctx context.Context, profiles
 		return nil
 	}
 
+	var errList errorhelpers.ErrorList
 	for _, clusterID := range clusters {
 		ssbs, err := m.ssbDS.GetScanSettingBindingsByCluster(ctx, clusterID)
 		if err != nil {
@@ -468,15 +470,17 @@ func (m *managerImpl) checkForExternalSSBConflicts(ctx context.Context, profiles
 				}
 			}
 			if len(conflicting) > 0 {
-				return errors.Errorf(
-					"profiles %v conflict with external ScanSettingBinding %q in cluster %q; "+
-						"remove the external ScanSettingBinding or choose different profiles",
+				errList.AddStringf(
+					"profiles %v conflict with external ScanSettingBinding %q in cluster %q",
 					conflicting, ssb.GetName(), clusterID)
 			}
 		}
 	}
 
-	return nil
+	if !errList.Empty() {
+		errList.AddStrings("remove the external ScanSettingBindings or choose different profiles")
+	}
+	return errList.ToError()
 }
 
 func (m *managerImpl) ProcessRescanRequest(ctx context.Context, scanID string) error {
