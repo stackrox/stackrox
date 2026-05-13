@@ -135,6 +135,7 @@ func TestPlatformComponentLayeredProductsRegex(t *testing.T) {
 		"openshift-windows-machine-config-operator",
 		"openshift-workload-availability",
 		"redhat-ods-operator",
+		"rhacs-operator",
 		"rhdh-operator",
 		"service-telemetry",
 		"stackrox",
@@ -218,8 +219,8 @@ func TestPlatformComponentLayeredProductsRegex(t *testing.T) {
 	t.Run("PatternCount", func(t *testing.T) {
 		// Count the number of valid namespaces we've defined
 		expectedCount := len(validNamespaces)
-		assert.Equal(t, 125, expectedCount,
-			"Expected 125 valid namespace patterns in the test array")
+		assert.Equal(t, 126, expectedCount,
+			"Expected 126 valid namespace patterns in the test array")
 	})
 }
 
