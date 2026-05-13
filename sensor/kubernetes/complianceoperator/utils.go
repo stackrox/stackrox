@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/pointers"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -21,32 +20,6 @@ var (
 		"app.kubernetes.io/name": "stackrox",
 	}
 )
-
-func getRequestedProfileNames(request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) set.StringSet {
-	names := set.NewStringSet()
-	if request == nil {
-		return names
-	}
-	if refs := request.GetProfileRefs(); len(refs) > 0 {
-		for _, ref := range refs {
-			names.Add(ref.GetName())
-		}
-		return names
-	}
-	for _, name := range request.GetProfiles() {
-		names.Add(name)
-	}
-	return names
-}
-
-func hasStackroxLabels(itemLabels map[string]string) bool {
-	for k, v := range stackroxLabels {
-		if itemLabels[k] != v {
-			return false
-		}
-	}
-	return true
-}
 
 // convertFunction signature of the convert functions
 type convertFunction func(string, *central.ApplyComplianceScanConfigRequest_BaseScanSettings, string) runtime.Object
