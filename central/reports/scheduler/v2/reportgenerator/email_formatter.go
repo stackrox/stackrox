@@ -192,8 +192,8 @@ func validateSnapshot(snapshot *storage.ReportSnapshot) error {
 	if reportFilters == nil {
 		return errors.New("Report snapshot is missing vulnerability report filters")
 	}
-	if snapshot.GetCollection() == nil {
-		return errors.New("Report snapshot is missing collection snapshot")
+	if snapshot.GetResourceScope() == nil {
+		return errors.New("Report snapshot is missing resource scope")
 	}
 	if len(reportFilters.GetImageTypes()) == 0 {
 		return errors.New("Report snapshot is missing image type filters")
