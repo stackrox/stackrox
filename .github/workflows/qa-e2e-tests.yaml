@@ -208,20 +208,15 @@ jobs:
         set -x
 
     - name: Deploy webhook server
+      continue-on-error: true
       run: |
         certs_dir="/tmp/webhook-certs"
         mkdir -p "$certs_dir"
-        tests/scripts/setup-certs.sh "$certs_dir" webhookserver.stackrox "Webhook Server CA" || {
-          echo "::warning::Webhook server cert generation failed — IntegrationsTest will fail"
-          exit 0
-        }
+        tests/scripts/setup-certs.sh "$certs_dir" webhookserver.stackrox "Webhook Server CA"
         mkdir -p webhookserver/chart/certs
         cp "$certs_dir/tls.crt" "$certs_dir/tls.key" webhookserver/chart/certs/
-        helm -n stackrox upgrade --install webhookserver webhookserver/chart/ || {
-          echo "::warning::Webhook server helm install failed"
-          exit 0
-        }
-        kubectl -n stackrox rollout status deploy/webhookserver --timeout=2m || true
+        helm -n stackrox upgrade --install webhookserver webhookserver/chart/
+        kubectl -n stackrox rollout status deploy/webhookserver --timeout=2m
         echo "GENERIC_WEBHOOK_SERVER_CA_CONTENTS=$(cat $certs_dir/ca.crt)" >> "$GITHUB_ENV"
 
     - name: Restore Gradle cache
@@ -527,20 +522,15 @@ jobs:
         set -x
 
     - name: Deploy webhook server
+      continue-on-error: true
       run: |
         certs_dir="/tmp/webhook-certs"
         mkdir -p "$certs_dir"
-        tests/scripts/setup-certs.sh "$certs_dir" webhookserver.stackrox "Webhook Server CA" || {
-          echo "::warning::Webhook server cert generation failed — IntegrationsTest will fail"
-          exit 0
-        }
+        tests/scripts/setup-certs.sh "$certs_dir" webhookserver.stackrox "Webhook Server CA"
         mkdir -p webhookserver/chart/certs
         cp "$certs_dir/tls.crt" "$certs_dir/tls.key" webhookserver/chart/certs/
-        helm -n stackrox upgrade --install webhookserver webhookserver/chart/ || {
-          echo "::warning::Webhook server helm install failed"
-          exit 0
-        }
-        kubectl -n stackrox rollout status deploy/webhookserver --timeout=2m || true
+        helm -n stackrox upgrade --install webhookserver webhookserver/chart/
+        kubectl -n stackrox rollout status deploy/webhookserver --timeout=2m
         echo "GENERIC_WEBHOOK_SERVER_CA_CONTENTS=$(cat $certs_dir/ca.crt)" >> "$GITHUB_ENV"
 
     - name: Restore Gradle cache
