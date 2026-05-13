@@ -198,7 +198,7 @@ describe('Node CVEs - Node Detail Page', () => {
 
             // filtering by CVE Status should only display rows with a matching status
             applyLocalStatusFilters('Fixable');
-            waitAndYieldRequestBodyVariables().then(expectRequestedQuery('FIXABLE:true'));
+            waitAndYieldRequestBodyVariables().then(expectRequestedQuery('Fixable:true'));
             assertOnEachRowForColumn('CVE status', (_, cell) => {
                 expect(cell.innerText).to.contain('Fixable');
             });
