@@ -1,15 +1,14 @@
 package k8sutil
 
 import (
-	"strings"
-
+	"github.com/stackrox/rox/pkg/set"
 	"k8s.io/client-go/rest"
 )
 
-// suppressedWarnings lists API server warning substrings that should be silently dropped.
-var suppressedWarnings = []string{
-	"DeploymentConfig is deprecated",
-}
+// suppressedWarnings contains API server warnings that should be silently dropped.
+var suppressedWarnings = set.NewFrozenStringSet(
+	"apps.openshift.io/v1 DeploymentConfig is deprecated in v4.14+, unavailable in v4.10000+",
+)
 
 // filteredWarningHandler delegates to the default WarningLogger but suppresses
 // known-noisy API server deprecation warnings that cannot be avoided.
@@ -18,10 +17,8 @@ type filteredWarningHandler struct {
 }
 
 func (h filteredWarningHandler) HandleWarningHeader(code int, agent string, text string) {
-	for _, substr := range suppressedWarnings {
-		if strings.Contains(text, substr) {
-			return
-		}
+	if suppressedWarnings.Contains(text) {
+		return
 	}
 	h.delegate.HandleWarningHeader(code, agent, text)
 }
