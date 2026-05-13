@@ -1,0 +1,9 @@
+goos: linux
+goarch: amd64
+pkg: github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs
+cpu: Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz
+BenchmarkConstructImage-8                 	   55485	    112741 ns/op	   58798 B/op	     770 allocs/op
+BenchmarkConstructImageManyComponents-8   	   10000	    502081 ns/op	  215560 B/op	    2724 allocs/op
+BenchmarkConstructDeployment-8            	   47173	    120880 ns/op	   61493 B/op	     820 allocs/op
+PASS
+ok  	github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs	17.002s
