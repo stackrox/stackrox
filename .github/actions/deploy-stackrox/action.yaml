@@ -37,6 +37,9 @@ runs:
         GH_TOKEN: ${{ inputs.github-token }}
       run: |
         set -x
+        # roxie needs roxctl for CRS generation (API call, any version works).
+        # If the caller built roxctl from source, it's already on PATH.
+        # Otherwise fall back to the public image.
         if ! command -v roxctl >/dev/null 2>&1; then
           docker pull -q --platform linux/amd64 quay.io/stackrox-io/roxctl:latest
           cid=$(docker create --platform linux/amd64 quay.io/stackrox-io/roxctl:latest true)
