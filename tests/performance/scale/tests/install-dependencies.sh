@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eoux pipefail
 
-GO_VERSION="${GO_VERSION:-1.25.9}"
+GO_VERSION="${GO_VERSION:-1.26}"
 KUBECTL_VERSION="${KUBECTL_VERSION:-v1.30.0}"
 KUBE_BURNER_VERSION="${KUBE_BURNER_VERSION:-1.4.3}"
 STACKROX_BRANCH="${STACKROX_BRANCH:-jv-automate-perf-tests-4.11}"

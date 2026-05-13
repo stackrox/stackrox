@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -eoux pipefail
 
 ELASTIC_USERNAME=$1
 ELASTIC_PASSWORD=$2
