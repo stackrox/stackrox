@@ -130,6 +130,10 @@ func TestGetRequestedProfileNames(t *testing.T) {
 			req:      &central.ApplyComplianceScanConfigRequest_BaseScanSettings{},
 			expected: nil,
 		},
+		"nil request": {
+			req:      nil,
+			expected: nil,
+		},
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {

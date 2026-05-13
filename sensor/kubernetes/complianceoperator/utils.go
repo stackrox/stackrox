@@ -24,6 +24,9 @@ var (
 
 func getRequestedProfileNames(request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) set.StringSet {
 	names := set.NewStringSet()
+	if request == nil {
+		return names
+	}
 	if refs := request.GetProfileRefs(); len(refs) > 0 {
 		for _, ref := range refs {
 			names.Add(ref.GetName())
