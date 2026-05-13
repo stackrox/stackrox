@@ -13,11 +13,11 @@ import (
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scansDatastore "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
+	ssbDatastore "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -40,19 +40,13 @@ var (
 type clusterScan struct {
 	clusterID string
 	scanID    string
-	responseC chan string
-}
-
-type pendingRequest struct {
-	clusterID string
-	requestID string
-	responseC chan string
 }
 
 type managerImpl struct {
 	sensorConnMgr connection.Manager
 	integrationDS compIntegration.DataStore
 	scanSettingDS compScanSetting.DataStore
+	ssbDS         ssbDatastore.DataStore
 	clusterDS     clusterDatastore.DataStore
 	profileDS     profileDatastore.DataStore
 	scansDS       scansDatastore.DataStore
@@ -65,11 +59,12 @@ type managerImpl struct {
 }
 
 // New returns on instance of Manager interface that provides functionality to process compliance requests and forward them to Sensor.
-func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, clusterDS clusterDatastore.DataStore, profileDS profileDatastore.DataStore, scansDS scansDatastore.DataStore, resultsDS resultsDatastore.DataStore) Manager {
+func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, ssbDS ssbDatastore.DataStore, clusterDS clusterDatastore.DataStore, profileDS profileDatastore.DataStore, scansDS scansDatastore.DataStore, resultsDS resultsDatastore.DataStore) Manager {
 	return &managerImpl{
 		sensorConnMgr:   sensorConnMgr,
 		integrationDS:   integrationDS,
 		scanSettingDS:   scanSettingDS,
+		ssbDS:           ssbDS,
 		runningRequests: make(map[string]clusterScan),
 		clusterDS:       clusterDS,
 		profileDS:       profileDS,
@@ -280,6 +275,10 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
+	if err := m.checkForExternalSSBConflicts(ctx, profiles, clusters); err != nil {
+		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+	}
+
 	// Get all profiles from the database to validate that they exist and are compatible
 	returnedProfiles, err := m.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusters[0]).
@@ -311,63 +310,38 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 	// Persist profile_refs so the startup sync path can forward correct kinds to Sensor on reconnect.
 	scanRequest.ProfileRefs = internaltov2storage.ProfileV2ToScanConfigRefs(returnedProfiles)
 
-	profileRefs := internaltov2storage.ScanConfigRefsToCentral(scanRequest.GetProfileRefs())
-
-	var pending []pendingRequest
-
-	for _, clusterID := range clusters {
-		sensorRequestID := uuid.NewV4().String()
-		retC := make(chan string, 1)
-
-		m.trackSensorRequest(sensorRequestID, clusterID, scanRequest.GetId(), retC)
-
-		sensorMessage := buildScanConfigSensorMsg(sensorRequestID, cron, profiles, profileRefs, scanRequest.GetScanConfigName(), createScanRequest)
-		if err := m.sensorConnMgr.SendMessage(clusterID, sensorMessage); err != nil {
-			m.cleanupPendingRequests(append(pending, pendingRequest{clusterID, sensorRequestID, retC}))
-			return nil, errors.Wrapf(err, "error sending compliance scan config to cluster %q", clusterID)
-		}
-
-		pending = append(pending, pendingRequest{clusterID, sensorRequestID, retC})
-	}
-
-	var sensorErrors []string
-	for _, p := range pending {
-		select {
-		case errStr := <-p.responseC:
-			if errStr != "" {
-				sensorErrors = append(sensorErrors, errStr)
-			}
-		case <-ctx.Done():
-			m.cleanupPendingRequests(pending)
-			return nil, errors.Wrap(ctx.Err(), "timed out waiting for sensor response")
-		}
-	}
-
-	if len(sensorErrors) > 0 {
-		return nil, errors.Errorf("Sensor rejected scan configuration %q: %s",
-			scanRequest.GetScanConfigName(), strings.Join(sensorErrors, "; "))
-	}
-
-	if err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest); err != nil {
+	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
+	if err != nil {
 		log.Error(err)
 		return nil, errors.Errorf("Unable to save scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
-	for _, p := range pending {
-		if err := m.updateClusterStatus(ctx, scanRequest.GetId(), p.clusterID, ""); err != nil {
+	profileRefs := internaltov2storage.ScanConfigRefsToCentral(scanRequest.GetProfileRefs())
+
+	for _, clusterID := range clusters {
+		// id for the request message to sensor
+		sensorRequestID := uuid.NewV4().String()
+
+		sensorMessage := buildScanConfigSensorMsg(sensorRequestID, cron, profiles, profileRefs, scanRequest.GetScanConfigName(), createScanRequest)
+		err := m.sensorConnMgr.SendMessage(clusterID, sensorMessage)
+		var status string
+		if err != nil {
+			status = err.Error()
+			log.Errorf("error sending compliance scan config to cluster %q: %v", clusterID, err)
+		} else {
+			// Request was not rejected so add it to map awaiting response
+			m.trackSensorRequest(sensorRequestID, clusterID, scanRequest.GetId())
+		}
+
+		// Update status in DB
+		err = m.updateClusterStatus(ctx, scanRequest.GetId(), clusterID, status)
+		if err != nil {
 			log.Error(err)
+			return nil, errors.Wrapf(err, "Unable to save scan configuration status for scan named %q", scanRequest.GetScanConfigName())
 		}
 	}
 
 	return scanRequest, nil
-}
-
-func (m *managerImpl) cleanupPendingRequests(pending []pendingRequest) {
-	m.runningRequestsLock.Lock()
-	defer m.runningRequestsLock.Unlock()
-	for _, p := range pending {
-		delete(m.runningRequests, p.requestID)
-	}
 }
 
 func (m *managerImpl) processClusterDelete(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) {
@@ -420,15 +394,14 @@ func (m *managerImpl) removeSensorRequestForCluster(scanConfigID, clusterID stri
 }
 
 // trackSensorRequest adds sensor request to a map with cluster and scan config that was sent for correlating responses.
-// When responseC is non-nil, HandleScanRequestResponse will send the response to it instead of updating cluster status.
-func (m *managerImpl) trackSensorRequest(sensorRequestID, clusterID, scanConfigID string, responseC chan string) {
+func (m *managerImpl) trackSensorRequest(sensorRequestID, clusterID, scanConfigID string) {
 	m.runningRequestsLock.Lock()
 	defer m.runningRequestsLock.Unlock()
 
+	// Request was not rejected so add it to map awaiting response
 	m.runningRequests[sensorRequestID] = clusterScan{
 		clusterID: clusterID,
 		scanID:    scanConfigID,
-		responseC: responseC,
 	}
 }
 
@@ -438,34 +411,68 @@ func (m *managerImpl) HandleScanRequestResponse(ctx context.Context, requestID s
 		return errors.Errorf("Compliance is disabled. Cannot process request ID: %q", requestID)
 	}
 
+	m.runningRequestsLock.Lock()
+	defer m.runningRequestsLock.Unlock()
+
 	// TODO(ROX-18711): This mapping will not survive a restart, such cases will be covered by
 	// the sync process when implemented
-	clusterScanData, found := concurrency.WithLock2(&m.runningRequestsLock, func() (clusterScan, bool) {
-		data, ok := m.runningRequests[requestID]
-		if ok {
-			delete(m.runningRequests, requestID)
-		}
-		return data, ok
-	})
+	var scanID string
+	clusterScanData, found := m.runningRequests[requestID]
 	if !found {
 		return errors.Errorf("Unable to find request %q", requestID)
 	}
 
+	// The request was found, remove it from the map
+	delete(m.runningRequests, requestID)
+
 	if clusterScanData.clusterID != clusterID {
 		return errors.Errorf("Cluster mismatch for request %q", requestID)
 	}
+	scanID = clusterScanData.scanID
 
-	// Synchronous path: send to the response channel so the caller can unblock.
-	if clusterScanData.responseC != nil {
-		select {
-		case clusterScanData.responseC <- responsePayload:
-		default:
-		}
+	if scanID == "" {
+		return errors.Errorf("Unable to map request %q to a scan configuration", requestID)
+	}
+
+	err := m.updateClusterStatus(ctx, scanID, clusterID, responsePayload)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// checkForExternalSSBConflicts checks if any non-ACS-managed ScanSettingBindings in the target
+// clusters already reference any of the requested profiles.
+func (m *managerImpl) checkForExternalSSBConflicts(ctx context.Context, profiles []string, clusters []string) error {
+	requestedProfiles := set.NewStringSet(profiles...)
+	if requestedProfiles.Cardinality() == 0 {
 		return nil
 	}
 
-	// Async path (e.g. rescan): update cluster status directly.
-	return m.updateClusterStatus(ctx, clusterScanData.scanID, clusterID, responsePayload)
+	for _, clusterID := range clusters {
+		ssbs, err := m.ssbDS.GetScanSettingBindingsByCluster(ctx, clusterID)
+		if err != nil {
+			return errors.Wrapf(err, "checking for external SSB conflicts in cluster %q", clusterID)
+		}
+
+		for _, ssb := range ssbs {
+			if ssb.GetLabels()["app.kubernetes.io/name"] == "stackrox" {
+				continue
+			}
+
+			for _, profileName := range ssb.GetProfileNames() {
+				if requestedProfiles.Contains(profileName) {
+					return errors.Errorf(
+						"profile %q conflicts with external ScanSettingBinding %q in cluster %q; "+
+							"remove the external ScanSettingBinding or choose a different profile",
+						profileName, ssb.GetName(), clusterID)
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func (m *managerImpl) ProcessRescanRequest(ctx context.Context, scanID string) error {
