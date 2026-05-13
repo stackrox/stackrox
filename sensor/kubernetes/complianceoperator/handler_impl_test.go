@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic/fake"
@@ -621,6 +622,39 @@ func (s *HandlerTestSuite) TestSyncScanCfgNoConflictDifferentProfiles() {
 	ssb := s.getScanSettingBinding("my-scan")
 	s.Require().Len(ssb.Profiles, 1)
 	s.Equal("rhcos4-moderate", ssb.Profiles[0].Name)
+}
+
+func (s *HandlerTestSuite) TestProcessApplyScheduledScanFailsClosedOnMalformedSSB() {
+	s.createMalformedSSB("bad-ssb")
+
+	msg := getTestScheduledScanRequestMsg("my-scan", "0 10 * * *", "ocp4-cis")
+	expected := expectedResponse{
+		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+		errSubstr: "decoding ScanSettingBinding",
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *HandlerTestSuite) createMalformedSSB(name string) {
+	s.T().Helper()
+	obj := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": complianceoperator.GetGroupVersion().String(),
+			"kind":       complianceoperator.ScanSettingBinding.Kind,
+			"metadata": map[string]interface{}{
+				"name":      name,
+				"namespace": "ns",
+				"labels":    map[string]interface{}{"app": "external"},
+			},
+			"profiles": "not-an-array",
+		},
+	}
+	_, err := s.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).
+		Namespace("ns").Create(context.Background(), obj, v1.CreateOptions{})
+	s.Require().NoError(err)
 }
 
 func (s *HandlerTestSuite) createExternalSSB(name string, profiles ...string) {

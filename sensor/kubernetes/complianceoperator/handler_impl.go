@@ -701,8 +701,7 @@ func (m *handlerImpl) checkForProfileConflicts(ns string, request *central.Apply
 
 		var ssb v1alpha1.ScanSettingBinding
 		if convErr := runtime.DefaultUnstructuredConverter.FromUnstructured(item.Object, &ssb); convErr != nil {
-			log.Warnf("Skipping ScanSettingBinding %q during profile conflict check: %v", item.GetName(), convErr)
-			continue
+			return errors.Wrapf(convErr, "decoding ScanSettingBinding %q during profile conflict check", item.GetName())
 		}
 
 		var conflicting []string
