@@ -549,6 +549,11 @@
                         "id": 10,
                         "name": "name",
                         "type": "string"
+                      },
+                      {
+                        "id": 11,
+                        "name": "type",
+                        "type": "ContainerType"
                       }
                     ]
                   }

@@ -26,6 +26,7 @@ message Alert {
     message Container {
       ContainerImage image = 3; // @gotags: search:"-" sql:"ignore-fks,ignore-index"
       string name = 10;
+      ContainerType type = 11; // @gotags: search:"Container Type"
     }
     repeated Container containers = 11;
     map<string, string> annotations = 14; // @gotags: sensorhash:"ignore"

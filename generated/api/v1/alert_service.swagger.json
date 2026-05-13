@@ -745,6 +745,9 @@
         },
         "name": {
           "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/storageContainerType"
         }
       }
     },
@@ -1181,6 +1184,14 @@
         }
       },
       "title": "Next tag: 13"
+    },
+    "storageContainerType": {
+      "type": "string",
+      "enum": [
+        "REGULAR",
+        "INIT"
+      ],
+      "default": "REGULAR"
     },
     "storageEnforcementAction": {
       "type": "string",
