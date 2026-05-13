@@ -18,6 +18,7 @@ import (
 	common "github.com/stackrox/rox/central/views/common"
 	imagecve "github.com/stackrox/rox/central/views/imagecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -113,6 +114,20 @@ func (m *MockCveCore) GetImagesBySeverity() common.ResourceCountByCVESeverity {
 func (mr *MockCveCoreMockRecorder) GetImagesBySeverity() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesBySeverity", reflect.TypeOf((*MockCveCore)(nil).GetImagesBySeverity))
+}
+
+// GetSeverity mocks base method.
+func (m *MockCveCore) GetSeverity() storage.VulnerabilitySeverity {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSeverity")
+	ret0, _ := ret[0].(storage.VulnerabilitySeverity)
+	return ret0
+}
+
+// GetSeverity indicates an expected call of GetSeverity.
+func (mr *MockCveCoreMockRecorder) GetSeverity() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSeverity", reflect.TypeOf((*MockCveCore)(nil).GetSeverity))
 }
 
 // GetPublishDate mocks base method.

@@ -40,6 +40,7 @@ func init() {
 				"firstDiscoveredInSystem: Time",
 				"exceptionCount(requestStatus: [String]): Int!",
 				"images(pagination: Pagination): [Image!]!",
+				"severity: String!",
 				"topCVSS: Float!",
 				"publishedOn: Time",
 				"topNvdCVSS: Float!",
@@ -137,6 +138,10 @@ func (resolver *imageCVECoreResolver) AffectedImageCountBySeverity(ctx context.C
 
 func (resolver *imageCVECoreResolver) CVE(_ context.Context) string {
 	return resolver.data.GetCVE()
+}
+
+func (resolver *imageCVECoreResolver) Severity(_ context.Context) string {
+	return resolver.data.GetSeverity().String()
 }
 
 func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) ([]*deploymentResolver, error) {

@@ -187,7 +187,7 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{search.CVE.String()},
+		Fields: []string{search.CVE.String(), search.Severity.String()},
 	}
 
 	// For pagination and sort to work properly, the filter query to get the CVEs needs to
@@ -219,6 +219,7 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVE).Proto(),
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
+		search.NewQuerySelect(search.Severity).Proto(),
 	}
 	if !options.SkipGetImagesBySeverity {
 		cloned.Selects = append(cloned.Selects,
@@ -241,7 +242,7 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.NVDCVSS).AggrFunc(aggregatefunc.Max).Proto())
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{search.CVE.String()},
+		Fields: []string{search.CVE.String(), search.Severity.String()},
 	}
 
 	return cloned
