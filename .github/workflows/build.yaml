@@ -665,6 +665,16 @@ jobs:
             GOOS=linux GOARCH="$ARCH" CGO_ENABLED=0 make build-prep main-build-nodeps
           fi
 
+          # Create roxctl stubs for other architectures.
+          # make copy-go-binaries-to-image-dir (called by docker-build-main-image)
+          # expects roxctl for all platforms in CI. We only built for $ARCH.
+          for arch in linux_amd64 linux_arm64 linux_ppc64le linux_s390x darwin_amd64 darwin_arm64; do
+            mkdir -p "bin/${arch}"
+            [[ -f "bin/${arch}/roxctl" ]] || cp "bin/linux_${ARCH}/roxctl" "bin/${arch}/roxctl"
+          done
+          mkdir -p bin/windows_amd64
+          [[ -f bin/windows_amd64/roxctl.exe ]] || echo "stub" > bin/windows_amd64/roxctl.exe
+
       - name: Check for UI changes
         id: ui-check
         env:
