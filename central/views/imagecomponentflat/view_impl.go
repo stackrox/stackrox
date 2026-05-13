@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 
+	imagev2common "github.com/stackrox/rox/central/imagev2/common"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
@@ -29,6 +30,7 @@ func (v *imageComponentFlatViewImpl) Count(ctx context.Context, q *v1.Query) (in
 	if err := common.ValidateQuery(q); err != nil {
 		return 0, err
 	}
+	q = imagev2common.WithRowsFromImageV2Only(q)
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
@@ -49,6 +51,7 @@ func (v *imageComponentFlatViewImpl) Get(ctx context.Context, q *v1.Query) ([]Co
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
+	q = imagev2common.WithRowsFromImageV2Only(q)
 
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
