@@ -26,10 +26,10 @@ import {
     routeMatcherMapForNodeCvePage,
     routeMatcherMapForNodeCves,
     routeMatcherMapForNodePage,
+    staticResponseMapForNodePage,
     visitNodeCvePage,
     visitNodeCvePageWithStaticPermissions,
 } from './NodeCve.helpers';
-import { staticResponseMapForNodePage } from './nodeDetailPage.test';
 import { applyLocalSeverityFilters } from '../workloadCves/WorkloadCves.helpers';
 
 const mockCveName = 'CYPRESS-CVE-2022-1996';

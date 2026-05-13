@@ -118,6 +118,18 @@ export function visitNodeCvePageWithStaticPermissions(
     );
 }
 
+export const staticResponseMapForNodePage = {
+    [getNodeMetadataOpname]: {
+        fixture: `vulnerabilities/nodeCves/${getNodeMetadataOpname}`,
+    },
+    [getNodeVulnSummaryOpname]: {
+        fixture: `vulnerabilities/nodeCves/${getNodeVulnSummaryOpname}`,
+    },
+    [getNodeVulnerabilitiesOpname]: {
+        fixture: `vulnerabilities/nodeCves/${getNodeVulnerabilitiesOpname}`,
+    },
+};
+
 export function visitFirstNodeLinkFromTable(): Cypress.Chainable<string> {
     // Get the name of the first node in the table and pass it to the caller
     return cy

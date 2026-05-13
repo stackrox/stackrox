@@ -25,11 +25,10 @@ import {
     applyLocalStatusFilters,
 } from '../workloadCves/WorkloadCves.helpers';
 import {
-    getNodeMetadataOpname,
-    getNodeVulnSummaryOpname,
     getNodeVulnerabilitiesOpname,
     routeMatcherMapForNodePage,
     routeMatcherMapForNodes,
+    staticResponseMapForNodePage,
     visitFirstNodeFromOverviewPage,
 } from './NodeCve.helpers';
 
@@ -38,18 +37,6 @@ const { assertAvailableFilters } = filterHelpers;
 const nodeBaseUrl = '/main/vulnerabilities/node-cves/nodes';
 const mockNodeId = '1';
 const mockNodeName = 'cypress-node-1';
-
-export const staticResponseMapForNodePage = {
-    [getNodeMetadataOpname]: {
-        fixture: `vulnerabilities/nodeCves/${getNodeMetadataOpname}`,
-    },
-    [getNodeVulnSummaryOpname]: {
-        fixture: `vulnerabilities/nodeCves/${getNodeVulnSummaryOpname}`,
-    },
-    [getNodeVulnerabilitiesOpname]: {
-        fixture: `vulnerabilities/nodeCves/${getNodeVulnerabilitiesOpname}`,
-    },
-};
 
 const mockNodePageUrl = `${nodeBaseUrl}/${mockNodeId}`;
 
