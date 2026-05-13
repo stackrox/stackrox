@@ -38,8 +38,8 @@ runs:
       run: |
         set -x
         if ! command -v roxctl >/dev/null 2>&1; then
-          docker pull -q --platform linux/amd64 "quay.io/rhacs-eng/roxctl:${{ inputs.tag }}"
-          cid=$(docker create --platform linux/amd64 "quay.io/rhacs-eng/roxctl:${{ inputs.tag }}" true)
+          docker pull -q --platform linux/amd64 "quay.io/stackrox-io/roxctl:${{ inputs.tag }}"
+          cid=$(docker create --platform linux/amd64 "quay.io/stackrox-io/roxctl:${{ inputs.tag }}" true)
           docker cp "$cid:/usr/bin/roxctl" /usr/local/bin/roxctl
           docker rm "$cid" >/dev/null
         fi
