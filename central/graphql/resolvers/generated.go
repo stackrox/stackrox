@@ -94,6 +94,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Alert_Deployment_Container", []string{
 		"image: ContainerImage",
 		"name: String!",
+		"type: ContainerType!",
 	}))
 	utils.Must(builder.AddType("Alert_Enforcement", []string{
 		"action: EnforcementAction!",
@@ -2314,6 +2315,11 @@ func (resolver *alert_Deployment_ContainerResolver) Image(ctx context.Context) (
 func (resolver *alert_Deployment_ContainerResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
+}
+
+func (resolver *alert_Deployment_ContainerResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
 }
 
 type alert_EnforcementResolver struct {

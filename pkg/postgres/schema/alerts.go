@@ -20,7 +20,12 @@ var (
 	// CreateTableAlertsStmt holds the create statement for table `alerts`.
 	CreateTableAlertsStmt = &postgres.CreateStmts{
 		GormModel: (*Alerts)(nil),
-		Children:  []*postgres.CreateStmts{},
+		Children: []*postgres.CreateStmts{
+			&postgres.CreateStmts{
+				GormModel: (*AlertsContainers)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
+		},
 	}
 
 	// AlertsSchema is the go schema for table `alerts`.
@@ -41,6 +46,8 @@ var (
 const (
 	// AlertsTableName specifies the name of the table in postgres.
 	AlertsTableName = "alerts"
+	// AlertsContainersTableName specifies the name of the table in postgres.
+	AlertsContainersTableName = "alerts_containers"
 )
 
 // Alerts holds the Gorm model for Postgres table `alerts`.
@@ -83,4 +90,12 @@ type Alerts struct {
 	EntityType               storage.Alert_EntityType            `gorm:"column:entitytype;type:integer"`
 	EnforcementCount         int32                               `gorm:"column:enforcementcount;type:integer"`
 	Serialized               []byte                              `gorm:"column:serialized;type:bytea"`
+}
+
+// AlertsContainers holds the Gorm model for Postgres table `alerts_containers`.
+type AlertsContainers struct {
+	AlertsID  string                `gorm:"column:alerts_id;type:uuid;primaryKey"`
+	Idx       int                   `gorm:"column:idx;type:integer;primaryKey;index:alertscontainers_idx,type:btree"`
+	Type      storage.ContainerType `gorm:"column:type;type:integer"`
+	AlertsRef Alerts                `gorm:"foreignKey:alerts_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

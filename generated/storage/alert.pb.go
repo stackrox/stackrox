@@ -1460,6 +1460,7 @@ type Alert_Deployment_Container struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Image         *ContainerImage        `protobuf:"bytes,3,opt,name=image,proto3" json:"image,omitempty" search:"-" sql:"ignore-fks,ignore-index"` // @gotags: search:"-" sql:"ignore-fks,ignore-index"
 	Name          string                 `protobuf:"bytes,10,opt,name=name,proto3" json:"name,omitempty"`
+	Type          ContainerType          `protobuf:"varint,11,opt,name=type,proto3,enum=storage.ContainerType" json:"type,omitempty" search:"Container Type"` // @gotags: search:"Container Type"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1506,6 +1507,13 @@ func (x *Alert_Deployment_Container) GetName() string {
 		return x.Name
 	}
 	return ""
+}
+
+func (x *Alert_Deployment_Container) GetType() ContainerType {
+	if x != nil {
+		return x.Type
+	}
+	return ContainerType_REGULAR
 }
 
 type Alert_Violation_KeyValueAttrs struct {
@@ -1953,7 +1961,7 @@ var File_storage_alert_proto protoreflect.FileDescriptor
 
 const file_storage_alert_proto_rawDesc = "" +
 	"\n" +
-	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x19storage/file_access.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\x96\x1c\n" +
+	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x19storage/file_access.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\xc2\x1c\n" +
 	"\x05Alert\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x06policy\x18\x02 \x01(\v2\x0f.storage.PolicyR\x06policy\x12@\n" +
@@ -1983,7 +1991,7 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x12platform_component\x18\x16 \x01(\bR\x11platformComponent\x12:\n" +
 	"\ventity_type\x18\x17 \x01(\x0e2\x19.storage.Alert.EntityTypeR\n" +
 	"entityType\x12+\n" +
-	"\x11enforcement_count\x18\x19 \x01(\x05R\x10enforcementCount\x1a\x80\x05\n" +
+	"\x11enforcement_count\x18\x19 \x01(\x05R\x10enforcementCount\x1a\xac\x05\n" +
 	"\n" +
 	"Deployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -2003,11 +2011,12 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\binactive\x18\x0f \x01(\bR\binactive\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aN\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1az\n" +
 	"\tContainer\x12-\n" +
 	"\x05image\x18\x03 \x01(\v2\x17.storage.ContainerImageR\x05image\x12\x12\n" +
 	"\x04name\x18\n" +
-	" \x01(\tR\x04name\x1a>\n" +
+	" \x01(\tR\x04name\x12*\n" +
+	"\x04type\x18\v \x01(\x0e2\x16.storage.ContainerTypeR\x04type\x1a>\n" +
 	"\x10AnnotationsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a\xa3\x03\n" +
@@ -2198,8 +2207,9 @@ var file_storage_alert_proto_goTypes = []any{
 	(Severity)(0),                                      // 31: storage.Severity
 	(*FileAccess)(nil),                                 // 32: storage.FileAccess
 	(*ProcessIndicator)(nil),                           // 33: storage.ProcessIndicator
-	(L4Protocol)(0),                                    // 34: storage.L4Protocol
-	(NetworkEntityInfo_Type)(0),                        // 35: storage.NetworkEntityInfo.Type
+	(ContainerType)(0),                                 // 34: storage.ContainerType
+	(L4Protocol)(0),                                    // 35: storage.L4Protocol
+	(NetworkEntityInfo_Type)(0),                        // 36: storage.NetworkEntityInfo.Type
 }
 var file_storage_alert_proto_depIdxs = []int32{
 	26, // 0: storage.Alert.policy:type_name -> storage.Policy
@@ -2239,17 +2249,18 @@ var file_storage_alert_proto_depIdxs = []int32{
 	33, // 34: storage.Alert.ProcessViolation.processes:type_name -> storage.ProcessIndicator
 	30, // 35: storage.Alert.Enforcement.action:type_name -> storage.EnforcementAction
 	28, // 36: storage.Alert.Deployment.Container.image:type_name -> storage.ContainerImage
-	20, // 37: storage.Alert.Violation.KeyValueAttrs.attrs:type_name -> storage.Alert.Violation.KeyValueAttrs.KeyValueAttr
-	34, // 38: storage.Alert.Violation.NetworkFlowInfo.protocol:type_name -> storage.L4Protocol
-	21, // 39: storage.Alert.Violation.NetworkFlowInfo.source:type_name -> storage.Alert.Violation.NetworkFlowInfo.Entity
-	21, // 40: storage.Alert.Violation.NetworkFlowInfo.destination:type_name -> storage.Alert.Violation.NetworkFlowInfo.Entity
-	35, // 41: storage.Alert.Violation.NetworkFlowInfo.Entity.entity_type:type_name -> storage.NetworkEntityInfo.Type
-	4,  // 42: storage.ListAlert.CommonEntityInfo.resource_type:type_name -> storage.ListAlert.ResourceType
-	43, // [43:43] is the sub-list for method output_type
-	43, // [43:43] is the sub-list for method input_type
-	43, // [43:43] is the sub-list for extension type_name
-	43, // [43:43] is the sub-list for extension extendee
-	0,  // [0:43] is the sub-list for field type_name
+	34, // 37: storage.Alert.Deployment.Container.type:type_name -> storage.ContainerType
+	20, // 38: storage.Alert.Violation.KeyValueAttrs.attrs:type_name -> storage.Alert.Violation.KeyValueAttrs.KeyValueAttr
+	35, // 39: storage.Alert.Violation.NetworkFlowInfo.protocol:type_name -> storage.L4Protocol
+	21, // 40: storage.Alert.Violation.NetworkFlowInfo.source:type_name -> storage.Alert.Violation.NetworkFlowInfo.Entity
+	21, // 41: storage.Alert.Violation.NetworkFlowInfo.destination:type_name -> storage.Alert.Violation.NetworkFlowInfo.Entity
+	36, // 42: storage.Alert.Violation.NetworkFlowInfo.Entity.entity_type:type_name -> storage.NetworkEntityInfo.Type
+	4,  // 43: storage.ListAlert.CommonEntityInfo.resource_type:type_name -> storage.ListAlert.ResourceType
+	44, // [44:44] is the sub-list for method output_type
+	44, // [44:44] is the sub-list for method input_type
+	44, // [44:44] is the sub-list for extension type_name
+	44, // [44:44] is the sub-list for extension extendee
+	0,  // [0:44] is the sub-list for field type_name
 }
 
 func init() { file_storage_alert_proto_init() }
