@@ -58,7 +58,7 @@ function FiltersQuery<T extends FiltersQueryConfiguration = FiltersQueryConfigur
                     />
                 </FormGroup>
             ))}
-            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
                 <CompoundSearchFilter
                     config={searchFilterConfig}
                     onSearch={onSearch}

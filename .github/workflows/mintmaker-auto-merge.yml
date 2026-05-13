@@ -1,0 +1,30 @@
+name: mintmaker-auto-merge
+
+on:
+  pull_request:
+    types:
+    - labeled
+    branches:
+    # Only enabled for PRs targeting master because release branches lack protection rules.
+    - master
+
+jobs:
+  mintmaker-auto-approve-and-merge:
+    name: Auto-approve and auto-merge MintMaker updates
+    runs-on: ubuntu-slim
+    if: github.event.pull_request.user.login == 'red-hat-konflux[bot]' && github.event.label.name == 'mintmaker-auto-merge'
+    steps:
+    - env:
+        GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+      run: |
+        set -euo pipefail
+
+        gh pr review ${{ github.event.pull_request.number }} \
+          --approve --body "Auto-approved by automation." \
+          --repo "${{ github.repository }}"
+
+        # This enables auto-merge due to the `--auto` argument. Once branch protection rules are satisfied, the merge
+        # will happen. If no rules are defined, PR will be merged instantly.
+        gh pr merge ${{ github.event.pull_request.number }} \
+          --auto --delete-branch --squash \
+          --repo "${{ github.repository }}"

@@ -72,4 +72,8 @@
     "dockerfile",
     "rpm-lockfile",
   ],
+  "labels": [
+    // mintmaker-auto-merge label triggers the corresponding workflow.
+    "mintmaker-auto-merge",
+  ],
 }
