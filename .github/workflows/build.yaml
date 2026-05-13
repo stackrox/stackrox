@@ -97,8 +97,10 @@ jobs:
           matrix="$(jq '.build_and_push_scanner.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_scanner.goos += ["linux"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_scanner.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_scanner.registry += ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
 
           matrix="$(jq '.push_scanner_manifests.name += ["default"]' <<< "$matrix")"
+          matrix="$(jq '.push_scanner_manifests.registry += ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
 
           matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "fact", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator", "scanner-v4", "scanner-v4-db"]' <<< "$matrix")"
@@ -991,9 +993,7 @@ jobs:
           QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
         run: |
           source ./scripts/ci/lib.sh
-          for registry in quay.io/stackrox-io quay.io/rhacs-eng; do
-            push_scanner_image_set "$registry" "${{ matrix.arch }}"
-          done
+          push_scanner_image_set "${{ matrix.registry }}" "${{ matrix.arch }}"
 
   push-scanner-manifests:
     runs-on: ubuntu-latest
@@ -1053,9 +1053,7 @@ jobs:
             architectures="amd64"
           fi
 
-          for registry in quay.io/stackrox-io quay.io/rhacs-eng; do
-            push_scanner_image_manifest_lists "$registry" "$architectures"
-          done
+          push_scanner_image_manifest_lists "${{ matrix.registry }}" "$architectures"
 
   push-operator-manifests:
     runs-on: ubuntu-latest
