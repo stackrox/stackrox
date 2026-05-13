@@ -85,6 +85,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 
 	objectPrinterFactory.AddFlags(c)
+	// provide flag usage, including supported values and default.
 	c.Flag("output").Usage = outputFlagUsage(customPrinterFactories...)
 
 	c.Flags().StringVarP(&imageScanCmd.image, "image", "i", "", "Image name and reference. (e.g. nginx:latest or nginx@sha256:...).")

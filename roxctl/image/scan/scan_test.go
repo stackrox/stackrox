@@ -443,23 +443,53 @@ func (s *imageScanTestSuite) TestFormatFlagDeprecationMessage() {
 }
 
 func (s *imageScanTestSuite) TestLegacyOutputDeprecationMessageEndToEnd() {
-	conn, closeF := s.createGRPCMockImageService(testComponents)
-	defer closeF()
+	cases := map[string]struct {
+		outputFlag         string
+		expectedOutputFile string
+		expectedDeprecMsg  string
+		expectedMigration  string
+		jsonCompare        bool
+	}{
+		"legacy-json should print deprecation warning and produce legacy JSON output": {
+			outputFlag:         "legacy-json",
+			expectedOutputFile: "legacy_testComponents.json",
+			expectedDeprecMsg:  `Output format "legacy-json" has been deprecated`,
+			expectedMigration:  "please use --output=json to migrate to the new JSON output format",
+			jsonCompare:        true,
+		},
+		"legacy-csv should print deprecation warning and produce legacy CSV output": {
+			outputFlag:         "legacy-csv",
+			expectedOutputFile: "legacy_testComponents.csv",
+			expectedDeprecMsg:  `Output format "legacy-csv" has been deprecated`,
+			expectedMigration:  "please use --output=csv to migrate to the new CSV output format",
+		},
+	}
 
-	env, out, errOut := s.newTestMockEnvironmentWithConn(conn)
-	cmd := Command(env)
-	cmd.Flags().Duration("timeout", 1*time.Minute, "")
-	cmd.Flags().Duration("retry-timeout", 1*time.Minute, "")
-	cmd.SetArgs([]string{"--output=legacy-json", "--image", s.defaultImageScanCommand.image})
+	for name, c := range cases {
+		s.Run(name, func() {
+			conn, closeF := s.createGRPCMockImageService(testComponents)
+			defer closeF()
 
-	err := cmd.Execute()
-	s.Require().NoError(err)
+			env, out, errOut := s.newTestMockEnvironmentWithConn(conn)
+			cmd := Command(env)
+			cmd.Flags().Duration("timeout", 1*time.Minute, "")
+			cmd.Flags().Duration("retry-timeout", 1*time.Minute, "")
+			cmd.SetArgs([]string{"--output=" + c.outputFlag, "--image", s.defaultImageScanCommand.image})
 
-	expectedOutput, err := os.ReadFile(path.Join("testdata", "legacy_testComponents.json"))
-	s.Require().NoError(err)
-	s.Assert().JSONEq(string(expectedOutput), out.String())
-	s.Assert().Contains(errOut.String(), `Output format "legacy-json" has been deprecated`)
-	s.Assert().Contains(errOut.String(), "please use --output=json to migrate to the new JSON output format")
+			err := cmd.Execute()
+			s.Require().NoError(err)
+
+			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutputFile))
+			s.Require().NoError(err)
+			if c.jsonCompare {
+				s.Assert().JSONEq(string(expectedOutput), out.String())
+			} else {
+				s.Assert().Equal(string(expectedOutput), out.String())
+			}
+			s.Assert().Contains(errOut.String(), c.expectedDeprecMsg)
+			s.Assert().Contains(errOut.String(), c.expectedMigration)
+		})
+	}
 }
 
 func (s *imageScanTestSuite) TestValidate() {
