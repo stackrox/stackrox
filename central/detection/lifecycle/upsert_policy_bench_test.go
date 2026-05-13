@@ -5,10 +5,7 @@ package lifecycle
 import (
 	"context"
 	"fmt"
-	"sync"
-	"sync/atomic"
 	"testing"
-	"time"
 
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	centralDetection "github.com/stackrox/rox/central/detection"
@@ -150,90 +147,6 @@ func makeRuntimePolicy(id, name string) *storage.Policy {
 		storage.LifecycleStage_RUNTIME,
 	}
 	return p
-}
-
-// BenchmarkUpsertPolicyLockContention measures reader lock wait time during
-// UpsertPolicy with real postgres-backed alert queries.
-//
-// "Before": AlertAndNotify runs inside the write lock (old behavior).
-// "After": AlertAndNotify runs outside the write lock (new behavior).
-func BenchmarkUpsertPolicyLockContention(b *testing.B) {
-	alertCounts := []int{100, 1000, 5000}
-
-	for _, perPolicy := range alertCounts {
-		b.Run(fmt.Sprintf("alertsPerPolicy=%d", perPolicy), func(b *testing.B) {
-			env := setupBenchEnv(b, perPolicy)
-			policy := makeRuntimePolicy(benchPolicies[0].id, benchPolicies[0].name)
-
-			// upsertPolicyOld simulates the original code: AlertAndNotify
-			// executes while holding the write lock.
-			upsertPolicyOld := func() error {
-				env.manager.policyAlertsLock.Lock()
-				defer env.manager.policyAlertsLock.Unlock()
-
-				_ = env.manager.runtimeDetector.PolicySet().UpsertPolicy(policy)
-
-				modifiedDeployments, err := env.manager.alertManager.AlertAndNotify(
-					lifecycleMgrCtx, nil,
-					alertmanager.WithPolicyID(policy.GetId()))
-				if err != nil {
-					return err
-				}
-				if modifiedDeployments.Cardinality() > 0 {
-					env.manager.reprocessor.ReprocessRiskForDeployments(modifiedDeployments.AsSlice()...)
-				}
-				return nil
-			}
-
-			b.Run("Before_LockIncludesAlertAndNotify", func(b *testing.B) {
-				var totalReaderWait atomic.Int64
-
-				b.ReportAllocs()
-				b.ResetTimer()
-				for i := 0; i < b.N; i++ {
-					var wg sync.WaitGroup
-					wg.Add(1)
-
-					go func() {
-						defer wg.Done()
-						time.Sleep(100 * time.Microsecond)
-						start := time.Now()
-						env.manager.policyAlertsLock.RLock()
-						totalReaderWait.Add(time.Since(start).Microseconds())
-						env.manager.policyAlertsLock.RUnlock()
-					}()
-
-					require.NoError(b, upsertPolicyOld())
-					wg.Wait()
-				}
-				b.ReportMetric(float64(totalReaderWait.Load())/float64(b.N), "avg-reader-wait-µs")
-			})
-
-			b.Run("After_LockExcludesAlertAndNotify", func(b *testing.B) {
-				var totalReaderWait atomic.Int64
-
-				b.ReportAllocs()
-				b.ResetTimer()
-				for i := 0; i < b.N; i++ {
-					var wg sync.WaitGroup
-					wg.Add(1)
-
-					go func() {
-						defer wg.Done()
-						time.Sleep(100 * time.Microsecond)
-						start := time.Now()
-						env.manager.policyAlertsLock.RLock()
-						totalReaderWait.Add(time.Since(start).Microseconds())
-						env.manager.policyAlertsLock.RUnlock()
-					}()
-
-					require.NoError(b, env.manager.UpsertPolicy(policy))
-					wg.Wait()
-				}
-				b.ReportMetric(float64(totalReaderWait.Load())/float64(b.N), "avg-reader-wait-µs")
-			})
-		})
-	}
 }
 
 // BenchmarkPolicyInjectionLoop measures the full end-to-end cost of injecting
