@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -228,6 +229,10 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 }
 
 func (m *handlerImpl) createScanResources(requestID string, ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, cron string) bool {
+	if err := m.checkForProfileConflicts(ns, request); err != nil {
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+
 	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request, cron))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
@@ -295,6 +300,10 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 	// we have a scan setting binding and not a scan setting.  This probably isn't even possible.
 	if ssObj == nil {
 		err = errors.Wrap(err, "Could not convert unstructured to scan setting")
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+
+	if err := m.checkForProfileConflicts(ns, request.GetScanSettings()); err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
@@ -661,6 +670,58 @@ func (m *handlerImpl) getResourcesInCluster(api k8sapi.APIResource) (map[string]
 		resourcesInClusterMap[generateScanIndex(resource.GetNamespace(), resource.GetName())] = resource
 	}
 	return resourcesInClusterMap, nil
+}
+
+// checkForProfileConflicts lists all ScanSettingBindings in the namespace and returns an error
+// if any non-ACS-managed binding already references any of the requested profiles. This prevents
+// the compliance operator from silently ignoring duplicate ComplianceScan names derived from
+// the same profiles across different suites.
+func (m *handlerImpl) checkForProfileConflicts(ns string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) error {
+	requestedProfiles := getRequestedProfileNames(request)
+	if requestedProfiles.Cardinality() == 0 {
+		return nil
+	}
+
+	var allSSBs *unstructured.UnstructuredList
+	err := m.callWithRetry(func(ctx context.Context) error {
+		var err error
+		allSSBs, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).
+			Namespace(ns).List(ctx, v1.ListOptions{})
+		return errors.Wrap(err, "checking for profile conflicts")
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, item := range allSSBs.Items {
+		// ACS-managed SSBs are excluded: Central already prevents intra-ACS profile conflicts.
+		if hasStackroxLabels(item.GetLabels()) {
+			continue
+		}
+
+		var ssb v1alpha1.ScanSettingBinding
+		if convErr := runtime.DefaultUnstructuredConverter.FromUnstructured(item.Object, &ssb); convErr != nil {
+			log.Warnf("Skipping ScanSettingBinding %q during profile conflict check: %v", item.GetName(), convErr)
+			continue
+		}
+
+		var conflicting []string
+		for _, prof := range ssb.Profiles {
+			if requestedProfiles.Contains(prof.Name) {
+				conflicting = append(conflicting, prof.Name)
+			}
+		}
+
+		if len(conflicting) > 0 {
+			return errors.Errorf(
+				"profiles [%s] are already referenced by ScanSettingBinding %q in namespace %q; "+
+					"remove the existing binding or choose different profiles",
+				strings.Join(conflicting, ", "), item.GetName(), ns,
+			)
+		}
+	}
+
+	return nil
 }
 
 func (m *handlerImpl) reconcileCreateOrUpdateResource(
