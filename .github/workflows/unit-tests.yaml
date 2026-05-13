@@ -51,7 +51,8 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         free-disk-space: 30
 
-    - uses: ./.github/actions/setup-go
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: ${{ matrix.gotags }}
 
@@ -146,7 +147,8 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - uses: ./.github/actions/setup-go
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: ${{ matrix.gotags }}-${{ matrix.pg }}
 
@@ -210,7 +212,8 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - uses: ./.github/actions/setup-go
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
 
     - name: Is Postgres ready
       run: |
@@ -344,7 +347,8 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - uses: ./.github/actions/setup-go
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
 
     - uses: ./.github/actions/handle-tagged-build
 
@@ -442,7 +446,8 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - uses: ./.github/actions/setup-go
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
 
     - name: Login to Quay.io
       uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4

@@ -101,9 +101,10 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - uses: ./.github/actions/setup-go
+    - name: Cache Go dependencies
       env:
         GOARCH: ${{ matrix.goarch }}
+      uses: ./.github/actions/cache-go-dependencies
 
     - uses: ./.github/actions/handle-tagged-build
 
