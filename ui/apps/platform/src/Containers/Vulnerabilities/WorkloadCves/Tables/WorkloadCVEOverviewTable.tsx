@@ -12,7 +12,7 @@ import {
     Tr,
 } from '@patternfly/react-table';
 import type { IAction } from '@patternfly/react-table';
-import { Content, LabelGroup } from '@patternfly/react-core';
+import { Badge, Content, LabelGroup, Stack, StackItem } from '@patternfly/react-core';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -119,6 +119,7 @@ export const cveListQuery = gql`
     ) {
         imageCVEs(query: $query, pagination: $pagination) {
             cve
+            occurrenceCount
             affectedImageCountBySeverity {
                 critical {
                     total
@@ -148,6 +149,9 @@ export const cveListQuery = gql`
                 scoreVersion
                 nvdCvss
                 nvdScoreVersion
+                datasource
+                severity
+                link
                 cveBaseInfo {
                     epss {
                         epssProbability
@@ -171,6 +175,7 @@ export type CVEListQueryResult = {
 
 export type ImageCVE = {
     cve: string;
+    occurrenceCount: number;
     affectedImageCountBySeverity: {
         critical: { total: number };
         important: { total: number };
@@ -189,7 +194,10 @@ export type ImageCVE = {
         cvss: number;
         scoreVersion: string;
         nvdCvss: number;
-        nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
+        nvdScoreVersion: string;
+        datasource: string;
+        severity: string;
+        link: string;
         cveBaseInfo: CveBaseInfo;
     }[];
     pendingExceptionCount: number;
@@ -316,6 +324,7 @@ function WorkloadCVEOverviewTable({
                         (
                             {
                                 cve,
+                                occurrenceCount,
                                 affectedImageCountBySeverity,
                                 topCVSS,
                                 topNvdCVSS,
@@ -410,6 +419,15 @@ function WorkloadCVEOverviewTable({
                                             >
                                                 {cve}
                                             </Link>
+                                            {occurrenceCount > distroTuples.length / 2 &&
+                                                distroTuples.length > 1 && (
+                                                    <Badge
+                                                        isRead
+                                                        style={{ marginLeft: '0.5rem' }}
+                                                    >
+                                                        {occurrenceCount} occurrences
+                                                    </Badge>
+                                                )}
                                         </Td>
                                         <Td
                                             dataLabel="Images by severity"
@@ -521,11 +539,97 @@ function WorkloadCVEOverviewTable({
                                         <Td />
                                         <Td colSpan={colSpan - 1}>
                                             <ExpandableRowContent>
-                                                {summary ? (
-                                                    <Content component="p">{summary}</Content>
-                                                ) : (
-                                                    <PartialCVEDataAlert />
-                                                )}
+                                                <Stack hasGutter>
+                                                    {summary && (
+                                                        <StackItem>
+                                                            <Content component="p">
+                                                                {summary}
+                                                            </Content>
+                                                        </StackItem>
+                                                    )}
+                                                    {!summary && (
+                                                        <StackItem>
+                                                            <PartialCVEDataAlert />
+                                                        </StackItem>
+                                                    )}
+                                                    {distroTuples.length > 1 && (
+                                                        <StackItem>
+                                                            <Content component="h4">
+                                                                Scanner Occurrences (
+                                                                {distroTuples.length})
+                                                            </Content>
+                                                            <Table
+                                                                variant="compact"
+                                                                borders={false}
+                                                            >
+                                                                <Thead>
+                                                                    <Tr>
+                                                                        <Th>Severity</Th>
+                                                                        <Th>CVSS</Th>
+                                                                        <Th>Source</Th>
+                                                                        <Th>OS</Th>
+                                                                        <Th>Reference</Th>
+                                                                    </Tr>
+                                                                </Thead>
+                                                                <Tbody>
+                                                                    {distroTuples.map(
+                                                                        (tuple, idx) => (
+                                                                            <Tr
+                                                                                key={`${tuple.severity}-${tuple.datasource}-${String(idx)}`}
+                                                                            >
+                                                                                <Td>
+                                                                                    {tuple.severity
+                                                                                        .replace(
+                                                                                            '_VULNERABILITY_SEVERITY',
+                                                                                            ''
+                                                                                        )
+                                                                                        .toLowerCase()}
+                                                                                </Td>
+                                                                                <Td>
+                                                                                    {tuple.cvss.toFixed(
+                                                                                        1
+                                                                                    )}
+                                                                                </Td>
+                                                                                <Td>
+                                                                                    {tuple.datasource ||
+                                                                                        'unknown'}
+                                                                                </Td>
+                                                                                <Td>
+                                                                                    {tuple.operatingSystem ||
+                                                                                        'N/A'}
+                                                                                </Td>
+                                                                                <Td>
+                                                                                    {tuple.link ? (
+                                                                                        <a
+                                                                                            href={
+                                                                                                tuple.link
+                                                                                            }
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                        >
+                                                                                            {tuple.link
+                                                                                                .split(
+                                                                                                    '/'
+                                                                                                )
+                                                                                                .slice(
+                                                                                                    -2
+                                                                                                )
+                                                                                                .join(
+                                                                                                    '/'
+                                                                                                )}
+                                                                                        </a>
+                                                                                    ) : (
+                                                                                        'N/A'
+                                                                                    )}
+                                                                                </Td>
+                                                                            </Tr>
+                                                                        )
+                                                                    )}
+                                                                </Tbody>
+                                                            </Table>
+                                                        </StackItem>
+                                                    )}
+                                                </Stack>
                                             </ExpandableRowContent>
                                         </Td>
                                     </Tr>

@@ -115,6 +115,20 @@ func (mr *MockCveCoreMockRecorder) GetImagesBySeverity() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesBySeverity", reflect.TypeOf((*MockCveCore)(nil).GetImagesBySeverity))
 }
 
+// GetOccurrenceCount mocks base method.
+func (m *MockCveCore) GetOccurrenceCount() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOccurrenceCount")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// GetOccurrenceCount indicates an expected call of GetOccurrenceCount.
+func (mr *MockCveCoreMockRecorder) GetOccurrenceCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOccurrenceCount", reflect.TypeOf((*MockCveCore)(nil).GetOccurrenceCount))
+}
+
 // GetPublishDate mocks base method.
 func (m *MockCveCore) GetPublishDate() *time.Time {
 	m.ctrl.T.Helper()
