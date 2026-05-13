@@ -12,6 +12,29 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Activate pre-cached Go
+      run: |
+        # Try both layouts: with arch subdir (setup-go) and without (runner-images pre-install)
+        go_dir=$(ls -d /opt/hostedtoolcache/go/*/x64 /opt/hostedtoolcache/go/*/arm64 /opt/hostedtoolcache/go/*/ 2>/dev/null | sort -V | tail -1 || true)
+        # Strip trailing slash for consistent paths
+        go_dir="${go_dir%/}"
+        echo "PATH before: $PATH"
+        if [[ -n "$go_dir" ]] && [[ -x "$go_dir/bin/go" ]]; then
+          echo "Activating $("$go_dir/bin/go" version) from $go_dir"
+          echo "$go_dir/bin" >> "$GITHUB_PATH"
+          if [[ ":$PATH:" != *":$HOME/go/bin:"* ]]; then
+            echo "$HOME/go/bin" >> "$GITHUB_PATH"
+          fi
+        else
+          if command -v go &>/dev/null; then
+            echo "No pre-cached Go in hostedtoolcache, using system $(go version)"
+          else
+            echo "::error::No Go found — neither in hostedtoolcache nor on PATH"
+            exit 1
+          fi
+        fi
+      shell: bash
+
     - name: Determine Go cache paths
       id: cache-paths
       run: |
@@ -27,8 +50,9 @@ runs:
         echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"  # prepends dash if set
       shell: bash
 
+    # TODO: revert always-save back to default-branch-only after experiment
     - name: Cache Go Build (save)
-      if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
+      if: inputs.save == 'true'
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
@@ -36,7 +60,7 @@ runs:
         restore-keys: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
 
     - name: Cache Go Build (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
+      if: ${{ inputs.save != 'true' }}
       uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache/restore@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
