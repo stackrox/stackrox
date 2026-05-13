@@ -134,6 +134,9 @@ func convertProfileSummaryOperatorKind(kind storage.ComplianceOperatorProfileV2_
 	case storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
 		return v2.ComplianceProfileSummary_TAILORED_PROFILE
 	case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
+		// Older centrals may have stored profiles without OperatorKind,
+		// so UNSPECIFIED is treated as PROFILE. This fallback can be removed when
+		// versions that don't set OperatorKind (<= 4.10) are not supported.
 		return v2.ComplianceProfileSummary_PROFILE
 	default:
 		utils.Should(errors.Errorf("unhandled profile summary operator kind %s", kind))
