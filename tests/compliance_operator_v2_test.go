@@ -3,8 +3,14 @@
 package tests
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
+	"encoding/csv"
 	"fmt"
+	"io"
+	"net/http"
+	"regexp"
 	"testing"
 	"time"
 
@@ -1117,4 +1123,251 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 			}
 		})
 	}
+}
+
+// assessmentTimeFormat is the expected format for timestamps in compliance report CSVs.
+// The format is MM/DD/YYYY HH:MM:SS in 24-hour time.
+var assessmentTimeFormat = regexp.MustCompile(`^\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}$`)
+
+// TestComplianceV2ReportDownloadTimestampFormat verifies that the Assessment Time
+// column in downloaded compliance report CSVs uses MM/DD/YYYY HH:MM:SS format.
+func TestComplianceV2ReportDownloadTimestampFormat(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	dynClient := createDynamicClient(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	scanConfigService := v2.NewComplianceScanConfigurationServiceClient(conn)
+	serviceCluster := v1.NewClustersServiceClient(conn)
+
+	clusters, err := serviceCluster.GetClusters(ctx, &v1.GetClustersRequest{})
+	require.NoError(t, err)
+	require.Greater(t, len(clusters.GetClusters()), 0, "no clusters found")
+	clusterID := clusters.GetClusters()[0].GetId()
+
+	testID := fmt.Sprintf("ts-fmt-%s", uuid.NewV4().String())
+
+	req := &v2.ComplianceScanConfiguration{
+		ScanName: testID,
+		Clusters: []string{clusterID},
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			OneTimeScan: true,
+			Profiles:    []string{"ocp4-e8"},
+			Description: "timestamp format e2e test",
+			ScanSchedule: &v2.Schedule{
+				IntervalType: v2.Schedule_DAILY,
+				Hour:         12,
+				Minute:       0,
+				Interval: &v2.Schedule_DaysOfWeek_{
+					DaysOfWeek: &v2.Schedule_DaysOfWeek{Days: []int32{0, 1, 2, 3, 4, 5, 6}},
+				},
+			},
+		},
+	}
+
+	scanConfig, err := scanConfigService.CreateComplianceScanConfiguration(ctx, req)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = deleteScanConfig(ctx, scanConfig.GetId(), scanConfigService)
+		cleanUpResources(ctx, t, dynClient, testID, coNamespaceV2)
+	})
+
+	// Wait for the scan to complete on the cluster.
+	waitForComplianceSuiteToComplete(t, dynClient, testID, waitForDoneInterval, waitForDoneTimeout)
+
+	runAndDownloadReport(t, ctx, scanConfigService, scanConfig.GetId())
+}
+
+// TestComplianceV2ReportDownloadTimestampFormatTailoredProfile verifies timestamps
+// in report CSVs when using a tailored profile with custom rules.
+func TestComplianceV2ReportDownloadTimestampFormatTailoredProfile(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	dynClient := createDynamicClient(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	scanConfigService := v2.NewComplianceScanConfigurationServiceClient(conn)
+	serviceCluster := v1.NewClustersServiceClient(conn)
+	profileClient := v2.NewComplianceProfileServiceClient(conn)
+
+	clusters, err := serviceCluster.GetClusters(ctx, &v1.GetClustersRequest{})
+	require.NoError(t, err)
+	require.Greater(t, len(clusters.GetClusters()), 0, "no clusters found")
+	clusterID := clusters.GetClusters()[0].GetId()
+
+	testID := fmt.Sprintf("ts-tp-%s", uuid.NewV4().String())
+
+	// Create a custom rule for the tailored profile.
+	crName := testID
+	createCustomRule(ctx, t, dynClient, crName)
+
+	// Create a tailored profile that adds the custom rule.
+	tp := &complianceoperatorv1.TailoredProfile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testID,
+			Namespace: coNamespaceV2,
+		},
+		Spec: complianceoperatorv1.TailoredProfileSpec{
+			Title:       fmt.Sprintf("E2E TS TP %s", testID),
+			Description: "Tailored profile for timestamp format e2e test",
+			EnableRules: []complianceoperatorv1.RuleReferenceSpec{
+				{Name: crName, Kind: complianceoperatorv1.CustomRuleKind, Rationale: "e2e timestamp test"},
+			},
+		},
+	}
+	require.NoError(t, dynClient.Create(ctx, tp), "failed to create TailoredProfile")
+	t.Cleanup(func() {
+		deleteResource[complianceoperatorv1.TailoredProfile](ctx, t, dynClient, testID, coNamespaceV2)
+	})
+
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		var current complianceoperatorv1.TailoredProfile
+		tpErr := dynClient.Get(ctx, types.NamespacedName{Name: testID, Namespace: coNamespaceV2}, &current)
+		require.NoErrorf(c, tpErr, "failed to get TailoredProfile %s", testID)
+		require.Equalf(c, complianceoperatorv1.TailoredProfileStateReady, current.Status.State,
+			"TailoredProfile %s not READY (state: %q, error: %q)",
+			testID, current.Status.State, current.Status.ErrorMessage)
+	}, 30*time.Second, 2*time.Second)
+
+	// Wait for the tailored profile to appear in Central.
+	waitUntilTPInCentralDB(ctx, t, profileClient, clusterID, testID)
+
+	req := &v2.ComplianceScanConfiguration{
+		ScanName: testID,
+		Clusters: []string{clusterID},
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			OneTimeScan: true,
+			Profiles:    []string{testID},
+			Description: "tailored profile timestamp format e2e test",
+			ScanSchedule: &v2.Schedule{
+				IntervalType: v2.Schedule_DAILY,
+				Hour:         12,
+				Minute:       0,
+				Interval: &v2.Schedule_DaysOfWeek_{
+					DaysOfWeek: &v2.Schedule_DaysOfWeek{Days: []int32{0, 1, 2, 3, 4, 5, 6}},
+				},
+			},
+		},
+	}
+
+	scanConfig, err := scanConfigService.CreateComplianceScanConfiguration(ctx, req)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = deleteScanConfig(ctx, scanConfig.GetId(), scanConfigService)
+		cleanUpResources(ctx, t, dynClient, testID, coNamespaceV2)
+	})
+
+	waitForComplianceSuiteToComplete(t, dynClient, testID, waitForDoneInterval, waitForDoneTimeout)
+
+	runAndDownloadReport(t, ctx, scanConfigService, scanConfig.GetId())
+}
+
+// runAndDownloadReport triggers an on-demand download report for the given scan config,
+// polls until the report is generated, downloads the zip, and verifies all Assessment
+// Time values in the CSV files match MM/DD/YYYY HH:MM:SS format.
+func runAndDownloadReport(t *testing.T, ctx context.Context, scanConfigService v2.ComplianceScanConfigurationServiceClient, scanConfigID string) {
+	t.Helper()
+
+	// Trigger an on-demand download report.
+	runResp, err := scanConfigService.RunReport(ctx, &v2.ComplianceRunReportRequest{
+		ScanConfigId:             scanConfigID,
+		ReportNotificationMethod: v2.NotificationMethod_DOWNLOAD,
+	})
+	require.NoError(t, err)
+	submittedAt := runResp.GetSubmittedAt()
+	require.NotNil(t, submittedAt, "expected a submission timestamp in RunReport response")
+
+	// Poll until the report is ready (GENERATED state), finding it by submission time.
+	var reportID string
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		history, histErr := scanConfigService.GetMyReportHistory(ctx, &v2.ComplianceReportHistoryRequest{
+			Id: scanConfigID,
+		})
+		require.NoError(c, histErr)
+		for _, snap := range history.GetComplianceReportSnapshots() {
+			snapTime := snap.GetReportStatus().GetStartedAt()
+			if snapTime == nil || snapTime.AsTime().Before(submittedAt.AsTime().Add(-5*time.Second)) {
+				continue
+			}
+			state := snap.GetReportStatus().GetRunState()
+			require.NotEqualf(c, v2.ComplianceReportStatus_FAILURE, state,
+				"report failed: %s", snap.GetReportStatus().GetErrorMsg())
+			require.Equalf(c, v2.ComplianceReportStatus_GENERATED, state,
+				"report not yet ready (state: %s)", state)
+			reportID = snap.GetReportJobId()
+			return
+		}
+		require.Fail(c, "report snapshot not yet found in history")
+	}, waitForDoneTimeout, waitForDoneInterval)
+
+	// Download the report zip via the HTTP endpoint.
+	httpClient := centralgrpc.HTTPClientForCentral(t)
+	downloadURL := fmt.Sprintf("/v2/compliance/scan/configurations/reports/download?id=%s", reportID)
+	resp, err := httpClient.Get(downloadURL)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+	require.Equal(t, http.StatusOK, resp.StatusCode, "expected HTTP 200 for report download")
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	verifyReportTimestamps(t, body)
+}
+
+// verifyReportTimestamps unzips a compliance report zip, reads every CSV file,
+// and asserts that non-empty Assessment Time values match MM/DD/YYYY HH:MM:SS.
+func verifyReportTimestamps(t *testing.T, zipData []byte) {
+	t.Helper()
+	r, err := zip.NewReader(bytes.NewReader(zipData), int64(len(zipData)))
+	require.NoError(t, err, "failed to open report zip")
+
+	var checkedRows int
+	for _, f := range r.File {
+		if f.FileInfo().IsDir() {
+			continue
+		}
+
+		rc, openErr := f.Open()
+		require.NoErrorf(t, openErr, "failed to open %s in zip", f.Name)
+
+		rows, readErr := csv.NewReader(rc).ReadAll()
+		_ = rc.Close()
+		require.NoErrorf(t, readErr, "failed to read CSV %s", f.Name)
+
+		if len(rows) < 2 {
+			continue
+		}
+
+		// Find the "Assessment Time" column index.
+		header := rows[0]
+		assessmentColIdx := -1
+		for i, col := range header {
+			if col == "Assessment Time" {
+				assessmentColIdx = i
+				break
+			}
+		}
+		if assessmentColIdx < 0 {
+			continue
+		}
+
+		for rowIdx, row := range rows[1:] {
+			if assessmentColIdx >= len(row) {
+				continue
+			}
+			val := row[assessmentColIdx]
+			switch val {
+			case "", "N/A", "Data not found for the cluster":
+				continue
+			case "ERR":
+				assert.Failf(t, "invalid timestamp in report",
+					"Assessment Time in %s row %d: got %q (invalid protobuf timestamp)",
+					f.Name, rowIdx+2, val)
+				continue
+			}
+			assert.Truef(t, assessmentTimeFormat.MatchString(val),
+				"Assessment Time in %s row %d: got %q, want MM/DD/YYYY HH:MM:SS format",
+				f.Name, rowIdx+2, val)
+			checkedRows++
+		}
+	}
+	assert.Greater(t, checkedRows, 0, "no Assessment Time values were checked — report may be empty")
 }

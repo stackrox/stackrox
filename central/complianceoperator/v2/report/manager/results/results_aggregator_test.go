@@ -27,7 +27,7 @@ import (
 
 const (
 	scanConfigID               = "scan-config-id"
-	expectedFormattedTimestamp = "Wed, 07 May 2025 12:00:00 UTC"
+	expectedFormattedTimestamp = "05/07/2025 12:00:00"
 )
 
 func TestComplianceReportingDataGenerator(t *testing.T) {

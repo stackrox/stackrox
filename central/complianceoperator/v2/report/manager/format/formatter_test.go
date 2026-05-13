@@ -148,7 +148,7 @@ func (s *ComplianceReportingFormatterSuite) Test_FormatCSVReportWithPartialFaile
 			Description:    "description-2",
 			Status:         "Fail",
 			Remediation:    "remediation-2",
-			AssessmentTime: "Wed, 07 May 2025 14:00:00 UTC",
+			AssessmentTime: "05/07/2025 14:00:00",
 		},
 	}
 
@@ -321,7 +321,7 @@ func getFakeReportData() map[string][]*report.ResultRow {
 			Description:    "description-1",
 			Status:         "Pass",
 			Remediation:    "remediation-1",
-			AssessmentTime: "Wed, 07 May 2025 12:00:00 UTC",
+			AssessmentTime: "05/07/2025 12:00:00",
 		},
 		{
 			ClusterName:    "test_cluster-1",
@@ -332,7 +332,7 @@ func getFakeReportData() map[string][]*report.ResultRow {
 			Description:    "description-2",
 			Status:         "Fail",
 			Remediation:    "remediation-2",
-			AssessmentTime: "Wed, 07 May 2025 13:00:00 UTC",
+			AssessmentTime: "05/07/2025 13:00:00",
 		},
 	}
 	return results

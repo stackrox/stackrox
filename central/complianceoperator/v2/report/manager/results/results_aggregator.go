@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
@@ -28,6 +27,8 @@ const (
 	// fails due to errors or data-integrity issues.
 	CONTROL_NOT_APPLICABLE = "N/A"
 	NO_REMEDIATION         = "No Remediation Available"
+	// AssessmentTimeFormat is the Go time layout for the Assessment Time column in compliance report CSVs.
+	AssessmentTimeFormat = "01/02/2006 15:04:05"
 )
 
 var (
@@ -128,7 +129,7 @@ func (g *Aggregator) AggregateResults(ctx context.Context, clusterID string, clu
 			Status:         checkResult.GetStatus().String(),
 			Rationale:      checkResult.GetRationale(),
 			Instructions:   checkResult.GetInstructions(),
-			AssessmentTime: protocompat.ConvertTimestampToString(checkResult.GetLastStartedTime(), time.RFC1123),
+			AssessmentTime: protocompat.ConvertTimestampToString(checkResult.GetLastStartedTime(), AssessmentTimeFormat),
 		}
 		profileInfo, profileName, profileType, err := g.getProfileInfo(ctx, checkResult, clusterID)
 		if err != nil {
