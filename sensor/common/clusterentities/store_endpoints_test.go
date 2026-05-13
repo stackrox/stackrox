@@ -367,26 +367,125 @@ func buildExpectation(ip, deplID, portName string, location whereThingIsStored, 
 }
 
 func (s *ClusterEntitiesStoreTestSuite) TestEmptyEndpointUpdatePreservesSeenState() {
-	store := NewStore(5, nil, true)
-
-	// First update: deployment has a container but no endpoints (e.g., no Service yet).
-	noEndpoints := &EntityData{}
-	noEndpoints.AddContainerID("ctr-a", ContainerMetadata{DeploymentID: "deplA"})
-	store.Apply(map[string]*EntityData{"deplA": noEndpoints}, false)
-
-	// Second update: deployment gets a real endpoint, shared with deplB.
 	ep := buildEndpoint("10.0.0.1", 80)
-	deplB := &EntityData{}
-	deplB.AddEndpoint(ep, EndpointTargetInfo{ContainerPort: 80, PortName: "http"})
-	store.Apply(map[string]*EntityData{"deplB": deplB}, true)
+	httpTarget := EndpointTargetInfo{ContainerPort: 80, PortName: "http"}
 
-	deplA := &EntityData{}
-	deplA.AddEndpoint(ep, EndpointTargetInfo{ContainerPort: 80, PortName: "http"})
-	store.Apply(map[string]*EntityData{"deplA": deplA}, false)
+	type applyStep struct {
+		deploymentID string
+		data         *EntityData
+		incremental  bool
+	}
+	applyWithoutEndpoints := func(deplID string) applyStep {
+		d := &EntityData{}
+		d.AddContainerID("ctr-"+deplID, ContainerMetadata{DeploymentID: deplID})
+		return applyStep{deploymentID: deplID, data: d, incremental: false}
+	}
+	endpointUpdate := func(deplID string) applyStep {
+		d := &EntityData{}
+		d.AddEndpoint(ep, httpTarget)
+		return applyStep{deploymentID: deplID, data: d, incremental: true}
+	}
+	endpointOverwrite := func(deplID string) applyStep {
+		d := &EntityData{}
+		d.AddEndpoint(ep, httpTarget)
+		return applyStep{deploymentID: deplID, data: d, incremental: false}
+	}
 
-	// deplB must NOT have been moved to history — deplA was already "seen".
-	_, hasHistory := store.endpointsStore.reverseHistoricalEndpoints["deplB"]
-	s.False(hasHistory, "deplB should not be moved to history when deplA was previously seen with empty endpoints")
+	deplAResult := LookupResult{
+		Entity:         networkgraph.EntityForDeployment("deplA"),
+		ContainerPorts: []uint16{80},
+		PortNames:      []string{"http"},
+	}
+	deplBResult := LookupResult{
+		Entity:         networkgraph.EntityForDeployment("deplB"),
+		ContainerPorts: []uint16{80},
+		PortNames:      []string{"http"},
+	}
+
+	cases := map[string]struct {
+		steps     []applyStep
+		wantDeplA whereThingIsStored
+		wantDeplB whereThingIsStored
+	}{
+		"deployment seen with empty endpoints should not trigger takeover when it later acquires real endpoints": {
+			steps: []applyStep{
+				applyWithoutEndpoints("deplA"),
+				endpointUpdate("deplB"),
+				endpointOverwrite("deplA"),
+			},
+			wantDeplA: theMap,
+			wantDeplB: theMap,
+		},
+		"repeated empty applies should not corrupt the seen marker": {
+			steps: []applyStep{
+				applyWithoutEndpoints("deplA"),
+				applyWithoutEndpoints("deplA"),
+				applyWithoutEndpoints("deplA"),
+				endpointUpdate("deplB"),
+				endpointOverwrite("deplA"),
+			},
+			wantDeplA: theMap,
+			wantDeplB: theMap,
+		},
+		"unchanged real endpoints after empty start should hit the fast path without side effects": {
+			steps: []applyStep{
+				applyWithoutEndpoints("deplA"),
+				endpointUpdate("deplB"),
+				endpointOverwrite("deplA"),
+				endpointOverwrite("deplA"),
+			},
+			wantDeplA: theMap,
+			wantDeplB: theMap,
+		},
+		"two deployments both seen empty should not trigger takeover when they share the same endpoint": {
+			steps: []applyStep{
+				applyWithoutEndpoints("deplA"),
+				applyWithoutEndpoints("deplB"),
+				endpointOverwrite("deplA"),
+				endpointOverwrite("deplB"),
+			},
+			wantDeplA: theMap,
+			wantDeplB: theMap,
+		},
+		"unseen deployment should trigger takeover as expected": {
+			steps: []applyStep{
+				endpointUpdate("deplB"),
+				endpointOverwrite("deplA"),
+			},
+			wantDeplA: theMap,
+			wantDeplB: history,
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			store := NewStore(5, nil, true)
+			for _, step := range tc.steps {
+				store.Apply(map[string]*EntityData{step.deploymentID: step.data}, step.incremental)
+			}
+			current, historical, _, _ := store.endpointsStore.lookupEndpoint(ep, store.podIPsStore)
+			for _, want := range []struct {
+				result   LookupResult
+				location whereThingIsStored
+				label    string
+			}{
+				{deplAResult, tc.wantDeplA, "deplA"},
+				{deplBResult, tc.wantDeplB, "deplB"},
+			} {
+				switch want.location {
+				case theMap:
+					s.Contains(current, want.result, "%s should be current", want.label)
+					s.NotContains(historical, want.result, "%s should not be historical", want.label)
+				case history:
+					s.NotContains(current, want.result, "%s should not be current", want.label)
+					s.Contains(historical, want.result, "%s should be historical", want.label)
+				case nowhere:
+					s.NotContains(current, want.result, "%s should not be current", want.label)
+					s.NotContains(historical, want.result, "%s should not be historical", want.label)
+				}
+			}
+		})
+	}
 }
 
 func (s *ClusterEntitiesStoreTestSuite) TestEndpointTakeoverFastPathDoesNotPolluteReverseHistory() {
