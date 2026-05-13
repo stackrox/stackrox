@@ -13,7 +13,7 @@ inputs:
     required: true
   registry:
     description: Image registry
-    default: quay.io/rhacs-eng
+    default: quay.io/stackrox-io
   num-nodes:
     description: Number of GKE nodes
     default: "3"

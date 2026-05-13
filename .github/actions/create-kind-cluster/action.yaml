@@ -12,7 +12,7 @@ inputs:
     required: true
   registry:
     description: Image registry
-    default: quay.io/rhacs-eng
+    default: quay.io/stackrox-io
   memory-limit:
     description: Docker container memory cap
     default: 6g
