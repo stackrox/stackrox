@@ -1,8 +1,8 @@
 package augmentedobjs
 
 import (
-	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -256,7 +256,9 @@ func constructDeployment(deployment *storage.Deployment, images []*storage.Image
 
 	for idx, container := range deployment.GetContainers() {
 		for i, env := range container.GetConfig().GetEnv() {
-			envVarObj := &envVar{EnvVar: fmt.Sprintf("%s%s%s%s%s", env.GetEnvVarSource(), CompositeFieldCharSep, env.GetKey(), CompositeFieldCharSep, env.GetValue())}
+			envVarObj := &envVar{
+				EnvVar: strings.Join([]string{env.GetEnvVarSource().String(), env.GetKey(), env.GetValue()}, CompositeFieldCharSep),
+			}
 			err := obj.AddPlainObjAt(
 				envVarObj,
 				pathutil.FieldStep("Containers"), pathutil.IndexStep(idx), pathutil.FieldStep("Config"),
@@ -331,7 +333,9 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 	// Since policies query for Dockerfile Line as a single compound field, we simulate it by creating a "composite"
 	// dockerfile line under each layer.
 	for i, layer := range image.GetMetadata().GetV1().GetLayers() {
-		lineObj := &dockerfileLine{Line: fmt.Sprintf("%s%s%s", layer.GetInstruction(), CompositeFieldCharSep, layer.GetValue())}
+		lineObj := &dockerfileLine{
+			Line: strings.Join([]string{layer.GetInstruction(), layer.GetValue()}, CompositeFieldCharSep),
+		}
 		err := obj.AddPlainObjAt(
 			lineObj,
 			pathutil.FieldStep("Metadata"), pathutil.FieldStep("V1"), pathutil.FieldStep("Layers"),
@@ -346,7 +350,7 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 	// "composite" component and version field.
 	for i, component := range image.GetScan().GetComponents() {
 		compAndVersionObj := &componentAndVersion{
-			ComponentAndVersion: fmt.Sprintf("%s%s%s", component.GetName(), CompositeFieldCharSep, component.GetVersion()),
+			ComponentAndVersion: strings.Join([]string{component.GetName(), component.GetVersion()}, CompositeFieldCharSep),
 		}
 		err := obj.AddPlainObjAt(
 			compAndVersionObj,
