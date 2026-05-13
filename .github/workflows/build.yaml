@@ -698,13 +698,11 @@ jobs:
           echo "UI changed: ${ui_changed}"
 
       - name: Set up Node.js
-        if: steps.ui-check.outputs.ui_changed == 'true'
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
         with:
           node-version-file: ui/package.json
 
       - name: Cache UI dependencies
-        if: steps.ui-check.outputs.ui_changed == 'true'
         uses: ./.github/actions/cache-ui-dependencies
 
       - name: Build UI
@@ -717,6 +715,16 @@ jobs:
             cp -a ui/build "ui-${brand}/build"
             rm -rf ui/build
           done
+
+      - name: Generate docs and OSS notices
+        run: |
+          # Swagger docs need the scanner module
+          go mod download github.com/stackrox/scanner
+          make swagger-docs
+          rm -rf .proto
+          # OSS notice needs UI deps (may already be installed if UI was built)
+          make -C ui deps
+          make ossls-notice
 
       - name: Login to docker.io
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
