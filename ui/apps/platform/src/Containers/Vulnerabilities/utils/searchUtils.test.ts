@@ -138,10 +138,10 @@ describe('getWorkloadEntityPagePath', () => {
 
         expect(
             getWorkloadEntityPagePath('CVE', 'CVE-123-456', 'OBSERVED', {
-                s: { Severity: ['CRITICAL', 'IMPORTANT'], FIXABLE: [], NAMESPACE: ['stackrox'] },
+                s: { Severity: ['Critical', 'Important'], Fixable: [], Namespace: ['stackrox'] },
             })
         ).toEqual(
-            `cves/CVE-123-456?s[Severity][0]=CRITICAL&s[Severity][1]=IMPORTANT&s[NAMESPACE][0]=stackrox&vulnerabilityState=OBSERVED`
+            `cves/CVE-123-456?s[Severity][0]=Critical&s[Severity][1]=Important&s[Namespace][0]=stackrox&vulnerabilityState=OBSERVED`
         );
     });
 
@@ -158,10 +158,10 @@ describe('getWorkloadEntityPagePath', () => {
 
         expect(
             getWorkloadEntityPagePath('Image', 'sha256:123-456', 'OBSERVED', {
-                s: { Severity: ['CRITICAL', 'IMPORTANT'], FIXABLE: [], NAMESPACE: ['stackrox'] },
+                s: { Severity: ['Critical', 'Important'], Fixable: [], Namespace: ['stackrox'] },
             })
         ).toEqual(
-            `images/sha256:123-456?s[Severity][0]=CRITICAL&s[Severity][1]=IMPORTANT&s[NAMESPACE][0]=stackrox&vulnerabilityState=OBSERVED`
+            `images/sha256:123-456?s[Severity][0]=Critical&s[Severity][1]=Important&s[Namespace][0]=stackrox&vulnerabilityState=OBSERVED`
         );
     });
 
@@ -178,10 +178,10 @@ describe('getWorkloadEntityPagePath', () => {
 
         expect(
             getWorkloadEntityPagePath('Deployment', 'deployment-123-456', 'OBSERVED', {
-                s: { Severity: ['CRITICAL', 'IMPORTANT'], FIXABLE: [], NAMESPACE: ['stackrox'] },
+                s: { Severity: ['Critical', 'Important'], Fixable: [], Namespace: ['stackrox'] },
             })
         ).toEqual(
-            `deployments/deployment-123-456?s[Severity][0]=CRITICAL&s[Severity][1]=IMPORTANT&s[NAMESPACE][0]=stackrox&vulnerabilityState=OBSERVED`
+            `deployments/deployment-123-456?s[Severity][0]=Critical&s[Severity][1]=Important&s[Namespace][0]=stackrox&vulnerabilityState=OBSERVED`
         );
     });
 });
@@ -195,8 +195,8 @@ describe('getPlatformEntityPagePath', () => {
         );
 
         expect(
-            getPlatformEntityPagePath('CVE', 'CVE-123-456', { s: { Severity: ['CRITICAL'] } })
-        ).toEqual(`${platformUrlBase}/cves/CVE-123-456?s[Severity][0]=CRITICAL`);
+            getPlatformEntityPagePath('CVE', 'CVE-123-456', { s: { Severity: ['Critical'] } })
+        ).toEqual(`${platformUrlBase}/cves/CVE-123-456?s[Severity][0]=Critical`);
     });
 
     it('should return the correct path for Cluster entity', () => {
@@ -206,10 +206,10 @@ describe('getPlatformEntityPagePath', () => {
 
         expect(
             getPlatformEntityPagePath('Cluster', 'cluster-123-456', {
-                s: { Severity: ['CRITICAL'], NAMESPACE: ['stackrox'] },
+                s: { Severity: ['Critical'], Namespace: ['stackrox'] },
             })
         ).toEqual(
-            `${platformUrlBase}/clusters/cluster-123-456?s[Severity][0]=CRITICAL&s[NAMESPACE][0]=stackrox`
+            `${platformUrlBase}/clusters/cluster-123-456?s[Severity][0]=Critical&s[Namespace][0]=stackrox`
         );
     });
 });
@@ -223,8 +223,8 @@ describe('getNodeEntityPagePath', () => {
         );
 
         expect(
-            getNodeEntityPagePath('CVE', 'CVE-123-456', { s: { Severity: ['CRITICAL'] } })
-        ).toEqual(`${nodeUrlBase}/cves/CVE-123-456?s[Severity][0]=CRITICAL`);
+            getNodeEntityPagePath('CVE', 'CVE-123-456', { s: { Severity: ['Critical'] } })
+        ).toEqual(`${nodeUrlBase}/cves/CVE-123-456?s[Severity][0]=Critical`);
     });
 
     it('should return the correct path for Node entity', () => {
@@ -234,10 +234,10 @@ describe('getNodeEntityPagePath', () => {
 
         expect(
             getNodeEntityPagePath('Node', 'node-123-456', {
-                s: { Severity: ['CRITICAL'], NAMESPACE: ['stackrox'] },
+                s: { Severity: ['Critical'], Namespace: ['stackrox'] },
             })
         ).toEqual(
-            `${nodeUrlBase}/nodes/node-123-456?s[Severity][0]=CRITICAL&s[NAMESPACE][0]=stackrox`
+            `${nodeUrlBase}/nodes/node-123-456?s[Severity][0]=Critical&s[Namespace][0]=stackrox`
         );
     });
 });
