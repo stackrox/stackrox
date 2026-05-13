@@ -134,6 +134,7 @@ func toAlertDeploymentContainer(c *storage.Container) *storage.Alert_Deployment_
 	return &storage.Alert_Deployment_Container{
 		Name:  c.GetName(),
 		Image: c.GetImage(),
+		Type:  c.GetType(),
 	}
 }
 
