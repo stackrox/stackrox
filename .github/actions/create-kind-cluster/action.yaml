@@ -1,0 +1,61 @@
+name: Create KinD cluster
+description: >
+  Creates a KinD cluster and pre-pulls images into containerd.
+  Runs in the background — returns immediately.
+
+inputs:
+  cluster-name:
+    description: Unique cluster name
+    required: true
+  tag:
+    description: Image tag
+    required: true
+  registry:
+    description: Image registry
+    default: quay.io/rhacs-eng
+  memory-limit:
+    description: Docker container memory cap
+    default: 6g
+  quay-user:
+    description: Quay.io username
+    required: true
+  quay-pass:
+    description: Quay.io password
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Create KinD cluster (background)
+      shell: bash
+      env:
+        QUAY_USER: ${{ inputs.quay-user }}
+        QUAY_PASS: ${{ inputs.quay-pass }}
+      run: |
+        set +x
+        echo "$QUAY_PASS" | docker login -u "$QUAY_USER" --password-stdin quay.io
+        set -x
+
+        (
+          node="${{ inputs.cluster-name }}-control-plane"
+          set +x
+          ctr_auth="${QUAY_USER}:${QUAY_PASS}"
+
+          kind create cluster --name "${{ inputs.cluster-name }}"
+
+          docker update --memory "${{ inputs.memory-limit }}" \
+            --memory-swap "${{ inputs.memory-limit }}" "$node"
+
+          docker exec "$node" ctr -n k8s.io images pull \
+            --user "$ctr_auth" --platform linux/amd64 \
+            "${{ inputs.registry }}/central-db:${{ inputs.tag }}" &
+          pid_cdb=$!
+          docker exec "$node" ctr -n k8s.io images pull \
+            --user "$ctr_auth" --platform linux/amd64 \
+            "${{ inputs.registry }}/main:${{ inputs.tag }}" &
+          set -x
+
+          wait $pid_cdb
+        ) > /tmp/kind-create.log 2>&1 &
+
+        echo "KinD cluster creation started in background"
