@@ -21,6 +21,9 @@ inputs:
   github-token:
     description: GitHub token with access to stackrox/roxie
     required: true
+  scanner:
+    description: "Scanner config: v4 (default), v2, or both"
+    default: v4
   background:
     description: Run deploy in background
     default: "false"
@@ -28,25 +31,26 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install roxctl
-      shell: bash
-      run: |
-        command -v roxctl >/dev/null && exit 0
-        docker pull -q --platform linux/amd64 quay.io/stackrox-io/roxctl:latest
-        cid=$(docker create --platform linux/amd64 quay.io/stackrox-io/roxctl:latest true)
-        docker cp "$cid:/usr/bin/roxctl" /usr/local/bin/roxctl
-        docker rm "$cid" >/dev/null
-
-    - name: Install roxie
+    - name: Install roxctl + roxie
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
       run: |
+        set -x
+        if ! command -v roxctl >/dev/null 2>&1; then
+          docker pull -q --platform linux/amd64 quay.io/stackrox-io/roxctl:latest
+          cid=$(docker create --platform linux/amd64 quay.io/stackrox-io/roxctl:latest true)
+          docker cp "$cid:/usr/bin/roxctl" /usr/local/bin/roxctl
+          docker rm "$cid" >/dev/null
+          roxctl version || echo "roxctl install failed"
+        fi
+
         arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
         os=$(uname -s | tr '[:upper:]' '[:lower:]')
         gh release download "${{ inputs.roxie-version }}" \
           --repo stackrox/roxie --pattern "roxie-${os}-${arch}" --dir /tmp --clobber
         sudo install "/tmp/roxie-${os}-${arch}" /usr/local/bin/roxie
+        roxie version || echo "roxie install failed"
 
     - name: Deploy StackRox
       shell: bash
@@ -58,11 +62,24 @@ runs:
         export MAIN_IMAGE_TAG="${{ inputs.tag }}"
 
         deploy() {
+          # Wait for cluster to be reachable (KinD may still be starting)
+          for _ in $(seq 1 120); do
+            kubectl cluster-info >/dev/null 2>&1 && break
+            sleep 2
+          done
+
+          # Build override YAML with cluster name + scanner config
+          printf 'securedCluster:\n  spec:\n    clusterName: %s\n' "${{ inputs.cluster-name }}" > /tmp/roxie-override.yaml
+          case "${{ inputs.scanner }}" in
+            v2)   printf 'central:\n  spec:\n    scanner:\n      scannerComponent: Enabled\n    scannerV4:\n      scannerComponent: Disabled\n' >> /tmp/roxie-override.yaml ;;
+            both) printf 'central:\n  spec:\n    scanner:\n      scannerComponent: Enabled\n' >> /tmp/roxie-override.yaml ;;
+          esac
+
           roxie deploy both \
             --resources=${{ inputs.resources }} \
             --single-namespace \
             --envrc /tmp/roxie-env.sh \
-            --override <(echo "securedCluster: {spec: {clusterName: ${{ inputs.cluster-name }}}}") \
+            --override /tmp/roxie-override.yaml \
             --tag ${{ inputs.tag }}
 
           sed "s/^export //; s/['\"]//g" /tmp/roxie-env.sh >> "$GITHUB_ENV"
