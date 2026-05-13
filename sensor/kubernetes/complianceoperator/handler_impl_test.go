@@ -13,10 +13,12 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/mocks"
+	sensorUtils "github.com/stackrox/rox/sensor/utils"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic/fake"
 )
 
@@ -47,7 +49,12 @@ func (s *HandlerTestSuite) SetupSuite() {
 }
 
 func (s *HandlerTestSuite) SetupTest() {
-	s.client = fake.NewSimpleDynamicClient(runtime.NewScheme(), &v1alpha1.ScanSettingBinding{TypeMeta: v1.TypeMeta{Kind: "ScanSetting", APIVersion: complianceoperator.GetGroupVersion().String()}})
+	s.client = fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(),
+		map[schema.GroupVersionResource]string{
+			complianceoperator.ScanSetting.GroupVersionResource():        "ScanSettingList",
+			complianceoperator.ScanSettingBinding.GroupVersionResource(): "ScanSettingBindingList",
+		},
+	)
 	s.statusInfo = mocks.NewMockStatusInfo(gomock.NewController(s.T()))
 	readySignal := concurrency.NewSignal()
 	s.requestHandler = NewRequestHandler(s.client, s.statusInfo, &readySignal)
@@ -471,6 +478,175 @@ func (s *HandlerTestSuite) TestProcessApplyScheduledScanLegacyProfilesOnly() {
 		s.Equal(complianceoperator.Profile.Kind, ref.Kind,
 			"legacy profiles should default to Profile kind, got %q for %q", ref.Kind, ref.Name)
 	}
+}
+
+func (s *HandlerTestSuite) TestProcessApplyScheduledScanProfileConflictWithExternalSSB() {
+	s.createExternalSSB("cis-compliance", "ocp4-cis", "ocp4-cis-node")
+
+	msg := getTestScheduledScanRequestMsg("my-scan", "0 10 * * *", "ocp4-cis")
+	expected := expectedResponse{
+		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+		errSubstr: "already referenced by ScanSettingBinding",
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *HandlerTestSuite) TestProcessApplyScheduledScanNoConflictWithACSManagedSSB() {
+	s.createSSBWithLabels("acs-existing", sensorUtils.GetSensorKubernetesLabels(), "ocp4-cis")
+
+	msg := getTestScheduledScanRequestMsg("another-scan", "0 10 * * *", "ocp4-cis")
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *HandlerTestSuite) TestProcessApplyScheduledScanNoConflictDifferentProfiles() {
+	s.createExternalSSB("cis-compliance", "ocp4-cis", "ocp4-cis-node")
+
+	msg := getTestScheduledScanRequestMsg("my-scan", "0 10 * * *", "rhcos4-moderate")
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *HandlerTestSuite) TestProcessUpdateScheduledScanProfileConflict() {
+	msg := getTestScheduledScanRequestMsg("my-scan", "0 10 * * *", "rhcos4-moderate")
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+
+	s.createExternalSSB("cis-compliance", "ocp4-cis-node")
+
+	msg = getTestUpdateScanRequestMsg("my-scan", "0 10 * * *", "ocp4-cis-node")
+	expected = expectedResponse{
+		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+		errSubstr: "already referenced by ScanSettingBinding",
+	}
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual = s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *HandlerTestSuite) TestProcessApplyScheduledScanProfileConflictErrorIncludesDetails() {
+	s.createExternalSSB("cis-compliance", "ocp4-cis", "ocp4-cis-node")
+
+	msg := getTestScheduledScanRequestMsg("my-scan", "0 10 * * *", "ocp4-cis-node")
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+
+	errMsg := actual.GetApplyComplianceScanConfigResponse().GetError()
+	s.Contains(errMsg, "ocp4-cis-node")
+	s.Contains(errMsg, "cis-compliance")
+	s.Contains(errMsg, "ns")
+}
+
+func (s *HandlerTestSuite) TestSyncScanCfgProfileConflictWithExternalSSB() {
+	s.createExternalSSB("cis-compliance", "ocp4-cis", "ocp4-cis-node")
+
+	handler, ok := s.requestHandler.(*handlerImpl)
+	s.Require().True(ok)
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	syncReq := &central.SyncComplianceScanConfigRequest{
+		ScanConfigs: []*central.ApplyComplianceScanConfigRequest{
+			{
+				ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
+					UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
+						ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
+							ScanName: "my-scan",
+							Profiles: []string{"ocp4-cis"},
+						},
+						Cron: "0 10 * * *",
+					},
+				},
+			},
+		},
+	}
+	err := handler.processSyncScanCfg(syncReq)
+	s.Require().Error(err)
+	s.Contains(err.Error(), "already referenced by ScanSettingBinding")
+
+	// SSB must not have been created.
+	_, getErr := s.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).
+		Namespace("ns").Get(context.Background(), "my-scan", v1.GetOptions{})
+	s.Error(getErr, "SSB should not exist after sync with profile conflict")
+}
+
+func (s *HandlerTestSuite) TestSyncScanCfgNoConflictDifferentProfiles() {
+	s.createExternalSSB("cis-compliance", "ocp4-cis")
+
+	handler, ok := s.requestHandler.(*handlerImpl)
+	s.Require().True(ok)
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	syncReq := &central.SyncComplianceScanConfigRequest{
+		ScanConfigs: []*central.ApplyComplianceScanConfigRequest{
+			{
+				ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
+					UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
+						ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
+							ScanName: "my-scan",
+							Profiles: []string{"rhcos4-moderate"},
+						},
+						Cron: "0 10 * * *",
+					},
+				},
+			},
+		},
+	}
+	err := handler.processSyncScanCfg(syncReq)
+	s.Require().NoError(err)
+
+	ssb := s.getScanSettingBinding("my-scan")
+	s.Require().Len(ssb.Profiles, 1)
+	s.Equal("rhcos4-moderate", ssb.Profiles[0].Name)
+}
+
+func (s *HandlerTestSuite) createExternalSSB(name string, profiles ...string) {
+	s.createSSBWithLabels(name, map[string]string{"app": "external"}, profiles...)
+}
+
+func (s *HandlerTestSuite) createSSBWithLabels(name string, labels map[string]string, profiles ...string) {
+	s.T().Helper()
+	profRefs := make([]v1alpha1.NamedObjectReference, 0, len(profiles))
+	for _, p := range profiles {
+		profRefs = append(profRefs, v1alpha1.NamedObjectReference{
+			Name:     p,
+			Kind:     "Profile",
+			APIGroup: complianceoperator.GetGroupVersion().String(),
+		})
+	}
+	ssb := &v1alpha1.ScanSettingBinding{
+		TypeMeta: v1.TypeMeta{
+			Kind:       complianceoperator.ScanSettingBinding.Kind,
+			APIVersion: complianceoperator.GetGroupVersion().String(),
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name:      name,
+			Namespace: "ns",
+			Labels:    labels,
+		},
+		Profiles: profRefs,
+	}
+	obj, err := runtimeObjToUnstructured(ssb)
+	s.Require().NoError(err)
+	_, err = s.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).
+		Namespace("ns").Create(context.Background(), obj, v1.CreateOptions{})
+	s.Require().NoError(err)
 }
 
 func (s *HandlerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *central.ComplianceResponse {
