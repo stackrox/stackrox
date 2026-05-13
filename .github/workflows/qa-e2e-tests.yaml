@@ -221,8 +221,13 @@ jobs:
     - name: Export webhook server CA
       if: always()
       run: |
-        [ -f /tmp/webhook-certs/ca.crt ] && \
-          echo "GENERIC_WEBHOOK_SERVER_CA_CONTENTS=$(cat /tmp/webhook-certs/ca.crt)" >> "$GITHUB_ENV" || true
+        if [ -f /tmp/webhook-certs/ca.crt ]; then
+          {
+            echo "GENERIC_WEBHOOK_SERVER_CA_CONTENTS<<CERT_EOF"
+            cat /tmp/webhook-certs/ca.crt
+            echo "CERT_EOF"
+          } >> "$GITHUB_ENV"
+        fi
 
     - name: Restore Gradle cache
       uses: actions/cache/restore@v4
@@ -540,8 +545,13 @@ jobs:
     - name: Export webhook server CA
       if: always()
       run: |
-        [ -f /tmp/webhook-certs/ca.crt ] && \
-          echo "GENERIC_WEBHOOK_SERVER_CA_CONTENTS=$(cat /tmp/webhook-certs/ca.crt)" >> "$GITHUB_ENV" || true
+        if [ -f /tmp/webhook-certs/ca.crt ]; then
+          {
+            echo "GENERIC_WEBHOOK_SERVER_CA_CONTENTS<<CERT_EOF"
+            cat /tmp/webhook-certs/ca.crt
+            echo "CERT_EOF"
+          } >> "$GITHUB_ENV"
+        fi
 
     - name: Restore Gradle cache
       uses: actions/cache/restore@v4
