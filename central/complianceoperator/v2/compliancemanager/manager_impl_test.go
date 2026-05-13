@@ -366,7 +366,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 				}, nil).Times(1)
 			},
 			isErrorTest: true,
-			expectedErr: "conflicts with external ScanSettingBinding",
+			expectedErr: "conflict with external ScanSettingBinding",
 		},
 		{
 			desc:        "No conflict when external SSB uses different profiles",
@@ -419,6 +419,59 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 				suite.scanConfigDS.EXPECT().UpdateClusterStatus(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), testconsts.Cluster1, "", "test_cluster")
 			},
 			isErrorTest: false,
+		},
+		{
+			desc:        "SSB datastore error propagates",
+			testRequest: getTestRecNoID(),
+			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
+			clusters:    []string{testconsts.Cluster1},
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+				suite.scanConfigDS.EXPECT().GetScanConfigurationByName(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(nil, nil).Times(1)
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, errors.New("db connection failed")).Times(1)
+			},
+			isErrorTest: true,
+			expectedErr: "checking for external SSB conflicts",
+		},
+		{
+			desc:        "Multi-cluster conflict detected in second cluster",
+			testRequest: getTestRecNoID(),
+			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
+			clusters:    []string{testconsts.Cluster1, testconsts.Cluster2},
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+				suite.scanConfigDS.EXPECT().GetScanConfigurationByName(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(nil, nil).Times(1)
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, nil).Times(1)
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster2).Return([]*storage.ComplianceOperatorScanSettingBindingV2{
+					{
+						Name:         "external-ssb-cluster2",
+						ClusterId:    testconsts.Cluster2,
+						ProfileNames: []string{"ocp4-cis"},
+						Labels:       map[string]string{"managed-by": "argocd"},
+					},
+				}, nil).Times(1)
+			},
+			isErrorTest: true,
+			expectedErr: "conflict with external ScanSettingBinding",
+		},
+		{
+			desc:        "SSB with nil labels is treated as external",
+			testRequest: getTestRecNoID(),
+			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
+			clusters:    []string{testconsts.Cluster1},
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+				suite.scanConfigDS.EXPECT().GetScanConfigurationByName(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(nil, nil).Times(1)
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return([]*storage.ComplianceOperatorScanSettingBindingV2{
+					{
+						Name:         "unlabeled-ssb",
+						ClusterId:    testconsts.Cluster1,
+						ProfileNames: []string{"ocp4-cis"},
+					},
+				}, nil).Times(1)
+			},
+			isErrorTest: true,
+			expectedErr: "conflict with external ScanSettingBinding",
 		},
 	}
 	for _, tc := range cases {

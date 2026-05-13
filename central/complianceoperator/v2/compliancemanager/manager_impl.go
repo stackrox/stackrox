@@ -461,13 +461,17 @@ func (m *managerImpl) checkForExternalSSBConflicts(ctx context.Context, profiles
 				continue
 			}
 
+			var conflicting []string
 			for _, profileName := range ssb.GetProfileNames() {
 				if requestedProfiles.Contains(profileName) {
-					return errors.Errorf(
-						"profile %q conflicts with external ScanSettingBinding %q in cluster %q; "+
-							"remove the external ScanSettingBinding or choose a different profile",
-						profileName, ssb.GetName(), clusterID)
+					conflicting = append(conflicting, profileName)
 				}
+			}
+			if len(conflicting) > 0 {
+				return errors.Errorf(
+					"profiles %v conflict with external ScanSettingBinding %q in cluster %q; "+
+						"remove the external ScanSettingBinding or choose different profiles",
+					conflicting, ssb.GetName(), clusterID)
 			}
 		}
 	}
