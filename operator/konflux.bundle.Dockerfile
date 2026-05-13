@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:308d6f6b433dfb38b5df78e23a66d42decfa997e556b92d38733df710ec38634 AS builder
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:03bcee28f6137a3103a9218d2d7e6a453658d04a084ec9a41d1501c0d28cff37 AS builder
 
 # This installs both PyYAML and Python.
 RUN microdnf -y install python3.12-pyyaml
