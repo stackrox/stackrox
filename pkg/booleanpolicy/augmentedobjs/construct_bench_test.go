@@ -51,26 +51,27 @@ func getTestImage(numComponents int) *storage.Image {
 }
 
 func BenchmarkConstructImage(b *testing.B) {
+	b.ReportAllocs()
 	image := getTestImage(50)
 	imageFullName := "stackrox.io/srox/test:latest"
 
-	b.ResetTimer()
 	for b.Loop() {
 		_, _ = ConstructImage(image, imageFullName)
 	}
 }
 
 func BenchmarkConstructImageManyComponents(b *testing.B) {
+	b.ReportAllocs()
 	image := getTestImage(200)
 	imageFullName := "stackrox.io/srox/test:latest"
 
-	b.ResetTimer()
 	for b.Loop() {
 		_, _ = ConstructImage(image, imageFullName)
 	}
 }
 
 func BenchmarkConstructDeployment(b *testing.B) {
+	b.ReportAllocs()
 	deployment := &storage.Deployment{
 		Name:      "test-deploy",
 		Namespace: "default",
@@ -90,7 +91,6 @@ func BenchmarkConstructDeployment(b *testing.B) {
 	images := []*storage.Image{getTestImage(50)}
 	applied := &NetworkPoliciesApplied{}
 
-	b.ResetTimer()
 	for b.Loop() {
 		_, _, _ = constructDeployment(deployment, images, applied)
 	}
