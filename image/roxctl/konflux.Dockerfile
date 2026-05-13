@@ -26,7 +26,7 @@ RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh 
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:46f08923b566497395dda7d4d07bad383b4eedd5a382c3e22e715b169f414331
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:03bcee28f6137a3103a9218d2d7e6a453658d04a084ec9a41d1501c0d28cff37
 
 COPY --from=builder /go/src/github.com/stackrox/rox/app/image/bin/roxctl /usr/bin/roxctl
 
