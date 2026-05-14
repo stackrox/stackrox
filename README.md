@@ -62,7 +62,8 @@ To [report a vulnerability or bug](https://github.com/stackrox/stackrox/security
 
 As of release 4.10 it's possible to [install StackRox using the operator](operator/install).
 
-> ![WARNING] The following installation methods are deprecated.
+> [!WARNING]
+> The following installation methods are deprecated.
 
 ### Quick Installation using Helm
 
