@@ -42,6 +42,17 @@ spec:
   - name: output-image-repo
     value: quay.io/rhacs-eng/release-collector
 
+  taskRunSpecs:
+  - pipelineTaskName: wait-for-image
+    stepSpecs:
+    - name: wait-for-image
+      computeResources:
+        requests:
+          memory: 32Mi
+          cpu: 10m
+        limits:
+          memory: 64Mi
+
   pipelineRef:
     name: retag-pipeline
 

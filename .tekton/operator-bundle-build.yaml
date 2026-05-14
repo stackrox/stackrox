@@ -77,6 +77,118 @@ spec:
           memory: 3Gi
         requests:
           memory: 3Gi
+  # Reduce memory for wait-for-* tasks. The namespace LimitRange defaults to
+  # 256Mi per container, but these tasks only run skopeo inspect (29Mi peak)
+  # once per minute with sleep in between. 12 pods x 256Mi = 3Gi reserved
+  # for idle polling. With 32Mi request / 64Mi limit: 12 x 32Mi = 384Mi.
+  - pipelineTaskName: wait-for-operator-image
+    stepSpecs:
+    - name: wait-for-image
+      computeResources:
+        requests:
+          memory: 32Mi
+          cpu: 10m
+        limits:
+          memory: 64Mi
+  - pipelineTaskName: wait-for-main-image
+    stepSpecs:
+    - name: wait-for-image
+      computeResources:
+        requests:
+          memory: 32Mi
+          cpu: 10m
+        limits:
+          memory: 64Mi
+  - pipelineTaskName: wait-for-scanner-image
+    stepSpecs:
+    - name: wait-for-image
+      computeResources:
+        requests:
+          memory: 32Mi
+          cpu: 10m
+        limits:
+          memory: 64Mi
+  - pipelineTaskName: wait-for-scanner-db-image
+    stepSpecs:
+    - name: wait-for-image
+      computeResources:
+        requests:
+          memory: 32Mi
+          cpu: 10m
+        limits:
+          memory: 64Mi
+  - pipelineTaskName: wait-for-scanner-slim-image
+    stepSpecs:
+    - name: wait-for-image
+      computeResources:
+        requests:
+          memory: 32Mi
+          cpu: 10m
+        limits:
+          memory: 64Mi
+  - pipelineTaskName: wait-for-scanner-db-slim-image
+    stepSpecs:
+    - name: wait-for-image
+      computeResources:
+        requests:
+          memory: 32Mi
+          cpu: 10m
+        limits:
+          memory: 64Mi
+  - pipelineTaskName: wait-for-scanner-v4-image
+    stepSpecs:
+    - name: wait-for-image
+      computeResources:
+        requests:
+          memory: 32Mi
+          cpu: 10m
+        limits:
+          memory: 64Mi
+  - pipelineTaskName: wait-for-scanner-v4-db-image
+    stepSpecs:
+    - name: wait-for-image
+      computeResources:
+        requests:
+          memory: 32Mi
+          cpu: 10m
+        limits:
+          memory: 64Mi
+  - pipelineTaskName: wait-for-collector-image
+    stepSpecs:
+    - name: wait-for-image
+      computeResources:
+        requests:
+          memory: 32Mi
+          cpu: 10m
+        limits:
+          memory: 64Mi
+  - pipelineTaskName: wait-for-fact-image
+    stepSpecs:
+    - name: wait-for-image
+      computeResources:
+        requests:
+          memory: 32Mi
+          cpu: 10m
+        limits:
+          memory: 64Mi
+  - pipelineTaskName: wait-for-roxctl-image
+    stepSpecs:
+    - name: wait-for-image
+      computeResources:
+        requests:
+          memory: 32Mi
+          cpu: 10m
+        limits:
+          memory: 64Mi
+  - pipelineTaskName: wait-for-central-db-image
+    stepSpecs:
+    - name: wait-for-image
+      computeResources:
+        requests:
+          memory: 32Mi
+          cpu: 10m
+        limits:
+          memory: 64Mi
 
   taskRunTemplate:
     serviceAccountName: build-pipeline-operator-bundle

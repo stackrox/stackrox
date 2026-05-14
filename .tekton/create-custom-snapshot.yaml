@@ -28,6 +28,17 @@ spec:
 
   params:
 
+  taskRunSpecs:
+  - pipelineTaskName: wait-for-bundle-image
+    stepSpecs:
+    - name: wait-for-image
+      computeResources:
+        requests:
+          memory: 32Mi
+          cpu: 10m
+        limits:
+          memory: 64Mi
+
   taskRunTemplate:
     serviceAccountName: build-pipeline-operator-bundle
 
