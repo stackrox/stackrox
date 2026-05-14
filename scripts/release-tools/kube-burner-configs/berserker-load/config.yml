@@ -30,38 +30,4 @@ jobs:
       pod-security.kubernetes.io/audit: privileged
       pod-security.kubernetes.io/warn: privileged
     objects:
-
-      - objectTemplate: process-load-daemonset.yml
-        replicas: 6
-        inputVars:
-          podReplicas: 2
-
-      - objectTemplate: endpoint-load-daemonset.yml
-        replicas: 6
-        inputVars:
-          podReplicas: 2
-
-      - objectTemplate: connection-load-daemonset.yml
-        replicas: 6
-        inputVars:
-          podReplicas: 2
-
-      - objectTemplate: file-activity-load-daemonset.yml
-        replicas: 1
-        inputVars:
-          podReplicas: 2
-
-      - objectTemplate: service.yml
-        replicas: 10
-
-      - objectTemplate: berserker-configmap-endpoints-zipf.yml
-        replicas: 10
-
-      - objectTemplate: berserker-configmap-connections.yml
-        replicas: 10
-
-      - objectTemplate: berserker-configmap-processes.yml
-        replicas: 10
-
-      - objectTemplate: berserker-configmap-file-activity.yml
-        replicas: 10
+{{ env "BERSERKER_OBJECTS" | indent 6 }}
