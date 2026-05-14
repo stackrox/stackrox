@@ -301,6 +301,8 @@ jobs:
         AWS_ASSUME_ROLE_EXTERNAL_ID: ${{ secrets.AWS_ASSUME_ROLE_EXTERNAL_ID }}
         AWS_ASSUME_ROLE_TEST_CONDITION_ID: ${{ secrets.AWS_ASSUME_ROLE_TEST_CONDITION_ID }}
         REMOTE_CLUSTER_ARCH: multi-arch
+        REDHAT_USERNAME: ""
+        REDHAT_PASSWORD: ""
         SLACK_MAIN_WEBHOOK: "https://hooks.slack.com/services/disabled"
         SLACK_ALT_WEBHOOK: "https://hooks.slack.com/services/disabled"
         SLACK_FIXABLE_VULNS_CHANNEL: "https://hooks.slack.com/services/disabled"
@@ -308,9 +310,7 @@ jobs:
         set +x
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
         set -x
-        # CI=false: test framework's mustGetInCI() returns defaults for missing
-        # optional secrets (REDHAT_USERNAME, etc.) instead of throwing.
-        CI=false ./gradlew testBAT ${{ matrix.tests }}
+        ./gradlew testBAT ${{ matrix.tests }}
 
     - name: Collect logs
       if: always()
@@ -682,6 +682,8 @@ jobs:
         AWS_ASSUME_ROLE_EXTERNAL_ID: ${{ secrets.AWS_ASSUME_ROLE_EXTERNAL_ID }}
         AWS_ASSUME_ROLE_TEST_CONDITION_ID: ${{ secrets.AWS_ASSUME_ROLE_TEST_CONDITION_ID }}
         REMOTE_CLUSTER_ARCH: multi-arch
+        REDHAT_USERNAME: ""
+        REDHAT_PASSWORD: ""
         SLACK_MAIN_WEBHOOK: "https://hooks.slack.com/services/disabled"
         SLACK_ALT_WEBHOOK: "https://hooks.slack.com/services/disabled"
         SLACK_FIXABLE_VULNS_CHANNEL: "https://hooks.slack.com/services/disabled"
@@ -689,9 +691,7 @@ jobs:
         set +x
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
         set -x
-        # CI=false: test framework's mustGetInCI() returns defaults for missing
-        # optional secrets (REDHAT_USERNAME, etc.) instead of throwing.
-        CI=false ./gradlew testBAT ${{ matrix.tests }}
+        ./gradlew testBAT ${{ matrix.tests }}
 
     - name: Collect logs
       if: always()
