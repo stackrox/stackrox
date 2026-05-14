@@ -116,9 +116,11 @@ def get_compatibility_test_tuples():
                                                   helm_version=i)]
 
         if len(central_chart_versions) == 0:
-            logging.info("Found no older central chart versions to test against according to the product lifecycles API.")
+            logging.info("Found no older central chart versions to test against "
+                         "according to the product lifecycles API.")
         if len(sensor_chart_versions) == 0:
-            logging.info("Found no older sensor chart versions to test against according to the product lifecycles API.")
+            logging.info("Found no older sensor chart versions to test against "
+                         "according to the product lifecycles API.")
         if len(central_chart_versions) == 0 or len(sensor_chart_versions) == 0:
             logging.info("However versions with support exceptions will still be tested against.")
 
