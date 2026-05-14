@@ -8,14 +8,7 @@ An operator was available only for the "Red Hat Advanced Cluster Security"-brand
 This is changing. Due to significant maintenance burden of three installation methods,
 we are planning to consolidate on just one: the operator.
 
-As the first step, in the 4.10 release we proved the simplest possible, _temporary_ way to install the community StackRox-branded operator.
-We hope this is useful to the community for getting to know the operator.
-
-**See [this document in the `release-4.10` branch for instructions](https://github.com/stackrox/stackrox/blob/release-4.10/operator/install/README.md) for the above.**
-
----
-
-**The following text describes the installation for the upcoming 4.11 release.**
+**The following text describes the installation for the 4.11 release.**
 
 ## How to use it?
 
@@ -50,7 +43,7 @@ will cause the operator to seamlessly take over the existing resources.
 > were used when installing, and then check the [documentation for the custom resource schema](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/latest/html/installing/installing-rhacs-on-red-hat-openshift#install-central-config-options-ocp)
 > to find out which CR fields need to be set to achieve the same effect.
 
-For example for central:
+Example:
 
 ```shell
 $ roxctl central migrate-to-operator --namespace stackrox > cr-central.yaml
@@ -60,9 +53,27 @@ $ kubectl apply --namespace stackrox -f cr-central.yaml
 
 ### New installations
 
-Please have a look at the [samples](../config/samples) directory.
+Please have a look at the [samples in this directory](.).
 
-Before applying the `SecuredCluster` CR you need to retrieve from central and apply on the cluster a cluster registration secret.
+```shell
+kubectl create namespace stackrox
+kubectl apply -f https://raw.githubusercontent.com/stackrox/stackrox/refs/heads/master/operator/install/platform_v1alpha1_central.yaml
+```
+
+You need to retrieve from central and apply on the cluster a cluster registration secret.
+
+```shell
+kubectl -n stackrox get secrets central-htpasswd --template='{{.data.password | base64decode}}' | \
+kubectl -n stackrox exec -i deploy/central -- bash -c \
+  'ROX_ADMIN_PASSWORD=$(cat) roxctl --insecure-skip-tls-verify central crs generate crs1 -o -' |
+kubectl -n stackrox apply -f -
+```
+
+Finally, apply a `SecuredCluster` CR:
+
+```shell
+kubectl apply -f https://raw.githubusercontent.com/stackrox/stackrox/refs/heads/master/operator/install/platform_v1alpha1_securedcluster.yaml
+```
 
 [Documentation for the custom resource schema](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/latest/html/installing/installing-rhacs-on-red-hat-openshift#install-central-config-options-ocp) -
 the way to customize your StackRox deployment - is currently only available
@@ -76,3 +87,8 @@ You may encounter a few references to RH ACS when using the operator in places s
 - central web UI when generating cluster registration secrets
 
 These will be cleaned up in a future release.
+
+## Note about release 4.10
+
+As the first step, in the 4.10 release we proved the simplest possible, _temporary_ way to install the community StackRox-branded operator.
+See [this document in the `release-4.10` branch for instructions](https://github.com/stackrox/stackrox/blob/release-4.10/operator/install/README.md) for that release.
