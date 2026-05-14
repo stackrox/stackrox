@@ -54,7 +54,7 @@ NUM_RELEASES_DEFAULT = 3
 # patch of the input release.
 sample_support_exception = Release(major=3, minor=74)
 
-_helm_repo_active = False
+_state = {"helm_repo_active": False}
 
 
 @contextmanager
@@ -64,18 +64,17 @@ def helm_repo_session():
     Reentrant: nested calls are no-ops so callers don't need to
     coordinate who "owns" the repo lifecycle.
     """
-    global _helm_repo_active
-    if _helm_repo_active:
+    if _state["helm_repo_active"]:
         yield
         return
 
     add_helm_repo()
     try:
         update_helm_repo()
-        _helm_repo_active = True
+        _state["helm_repo_active"] = True
         yield
     finally:
-        _helm_repo_active = False
+        _state["helm_repo_active"] = False
         remove_helm_repo()
 
 
