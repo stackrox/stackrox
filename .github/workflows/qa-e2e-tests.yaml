@@ -198,9 +198,21 @@ jobs:
         echo "CLIENT_CA_PATH=${CLIENT_CA_PATH:-${CERT_DIR}/ca.crt}" >> "$GITHUB_ENV"
         echo "KEYSTORE_PATH=${KEYSTORE_PATH:-${CERT_DIR}/keystore.p12}" >> "$GITHUB_ENV"
 
-        # Build trust store from Central's CA so HTTPS connections work
+        # Build PKCS12 trust store with Central's CA for HTTPS connections.
+        # Tests load trust store with empty password via KeyStore.getInstance("PKCS12").
+        # openssl pkcs12 doesn't create Java-compatible TrustedCertificateEntry and
+        # keytool requires non-empty password, so use Java directly.
         kubectl -n stackrox get secret central-tls -o jsonpath='{.data.ca\.pem}' | base64 -d > /tmp/central-ca.crt
-        openssl pkcs12 -export -nokeys -in /tmp/central-ca.crt -out /tmp/truststore.p12 -passout pass:
+        java --source 21 - /tmp/central-ca.crt /tmp/truststore.p12 <<'JAVA'
+        import java.io.*; import java.security.*; import java.security.cert.*;
+        class T { public static void main(String[] a) throws Exception {
+            var ks = KeyStore.getInstance("PKCS12");
+            ks.load(null, "".toCharArray());
+            var cf = CertificateFactory.getInstance("X.509");
+            ks.setCertificateEntry("ca", cf.generateCertificate(new FileInputStream(a[0])));
+            ks.store(new FileOutputStream(a[1]), "".toCharArray());
+        }}
+        JAVA
         echo "TRUSTSTORE_PATH=/tmp/truststore.p12" >> "$GITHUB_ENV"
 
         # Register client CA with Central so it accepts client cert auth
@@ -550,9 +562,21 @@ jobs:
         echo "CLIENT_CA_PATH=${CLIENT_CA_PATH:-${CERT_DIR}/ca.crt}" >> "$GITHUB_ENV"
         echo "KEYSTORE_PATH=${KEYSTORE_PATH:-${CERT_DIR}/keystore.p12}" >> "$GITHUB_ENV"
 
-        # Build trust store from Central's CA so HTTPS connections work
+        # Build PKCS12 trust store with Central's CA for HTTPS connections.
+        # Tests load trust store with empty password via KeyStore.getInstance("PKCS12").
+        # openssl pkcs12 doesn't create Java-compatible TrustedCertificateEntry and
+        # keytool requires non-empty password, so use Java directly.
         kubectl -n stackrox get secret central-tls -o jsonpath='{.data.ca\.pem}' | base64 -d > /tmp/central-ca.crt
-        openssl pkcs12 -export -nokeys -in /tmp/central-ca.crt -out /tmp/truststore.p12 -passout pass:
+        java --source 21 - /tmp/central-ca.crt /tmp/truststore.p12 <<'JAVA'
+        import java.io.*; import java.security.*; import java.security.cert.*;
+        class T { public static void main(String[] a) throws Exception {
+            var ks = KeyStore.getInstance("PKCS12");
+            ks.load(null, "".toCharArray());
+            var cf = CertificateFactory.getInstance("X.509");
+            ks.setCertificateEntry("ca", cf.generateCertificate(new FileInputStream(a[0])));
+            ks.store(new FileOutputStream(a[1]), "".toCharArray());
+        }}
+        JAVA
         echo "TRUSTSTORE_PATH=/tmp/truststore.p12" >> "$GITHUB_ENV"
 
         # Register client CA with Central so it accepts client cert auth
