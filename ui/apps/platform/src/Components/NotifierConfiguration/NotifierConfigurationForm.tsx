@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Button, Flex, FormSection, TextArea, TextInput } from '@patternfly/react-core';
 import { PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
-import type { FormikErrors } from 'formik';
+import type { FormikErrors, FormikTouched } from 'formik';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useIndexKey from 'hooks/useIndexKey';
@@ -34,6 +34,7 @@ export type NotifierConfigurationFormProps = {
     notifierConfigurations: NotifierConfiguration[];
     onDeleteLastNotifierConfiguration?: () => void;
     setFieldValue: (fieldId: string, value: unknown) => void;
+    touched?: FormikTouched<unknown>;
 };
 
 function NotifierConfigurationForm({
@@ -43,6 +44,7 @@ function NotifierConfigurationForm({
     notifierConfigurations,
     onDeleteLastNotifierConfiguration,
     setFieldValue,
+    touched,
 }: NotifierConfigurationFormProps): ReactElement {
     const { keyFor } = useIndexKey();
     const [notifiers, setNotifiers] = useState<NotifierIntegrationBase[]>([]);
@@ -125,6 +127,7 @@ function NotifierConfigurationForm({
                         <NotifierMailingLists
                             errors={errors}
                             fieldIdPrefixForFormikAndPatternFly={fieldId}
+                            touched={touched}
                             hasWriteAccessForIntegration={hasWriteAccessForIntegration}
                             isLoadingNotifiers={isLoadingNotifiers}
                             mailingListsString={mailingListsStrings[index]}
@@ -160,6 +163,7 @@ function NotifierConfigurationForm({
                             label="Custom subject"
                             fieldId="emailConfig.customSubject"
                             errors={errors}
+                            touched={touched}
                         >
                             <TextInput
                                 type="text"
@@ -175,6 +179,7 @@ function NotifierConfigurationForm({
                             label="Custom body"
                             fieldId="emailConfig.customBody"
                             errors={errors}
+                            touched={touched}
                         >
                             <TextArea
                                 type="text"

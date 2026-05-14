@@ -230,7 +230,12 @@ export const attributeForSeverityInBackendAndViewBasedReport: SelectSearchFilter
 
 // Scheduled report has resources instead of cluster, deployment, namespace.
 export const searchFilterConfigForImageVulnerabilityReport = [
-    imageCVESearchFilterConfig,
+    {
+        ...imageCVESearchFilterConfig,
+        attributes: imageCVESearchFilterConfig.attributes.filter(
+            ({ searchTerm }) => searchTerm !== 'CVE Created Time'
+        ),
+    },
     imageSearchFilterConfig,
     imageComponentSearchFilterConfig,
 ];

@@ -244,6 +244,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Deployment', 'WorkflowAdministration']),
     },
     compliance: {
+        featureFlagRequirements: allEnabled(['ROX_DEPRECATED_COMPLIANCE_DASHBOARD']),
         // Same resources as compliance-enhanced although lack of commented-out resources affects entire list or entity pages.
         resourceAccessRequirements: everyResource([
             // 'Alert', // for Deployment
