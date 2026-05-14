@@ -468,7 +468,7 @@ jobs:
         id: platforms
         run: |
           PLATFORMS="linux/amd64,linux/arm64"
-          if [[ "${{ github.event_name }}" == "push" ]] || \
+          if [[ "${{ github.event_name }}" != "pull_request" ]] || \
              [[ "${{ contains(github.event.pull_request.labels.*.name, 'ci-build-all-arch') }}" == "true" ]]; then
             PLATFORMS="linux/amd64,linux/arm64,linux/ppc64le,linux/s390x"
           fi
