@@ -1074,12 +1074,6 @@ check_build_workflows() {
         check-workflow-run \
             --workflow=build.yaml \
             --head-SHA="${commit_sha}"
-
-        echo
-        info "GitHub Actions workflow status for scanner-build.yaml:"
-        check-workflow-run \
-            --workflow=scanner-build.yaml \
-            --head-SHA="${commit_sha}"
     } | tee "${STATE_BUILD_RESULTS}" || true
 }
 
