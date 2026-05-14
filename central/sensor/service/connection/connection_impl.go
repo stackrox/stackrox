@@ -92,6 +92,7 @@ type sensorConnection struct {
 
 type rateLimiter interface {
 	TryConsume(clientID string, msg *central.MsgFromSensor) (allowed bool, reason string)
+	Return(clientID string, msg *central.MsgFromSensor)
 }
 
 func newConnection(ctx context.Context,
@@ -142,7 +143,7 @@ func newConnection(ctx context.Context,
 	deduper.StartSync()
 
 	conn.hashDeduper = deduper
-	conn.sensorEventHandler = newSensorEventHandler(cluster, sensorHello.GetSensorVersion(), eventPipeline, conn, &conn.stopSig, deduper, initSyncMgr)
+	conn.sensorEventHandler = newSensorEventHandler(cluster, sensorHello.GetSensorVersion(), eventPipeline, conn, &conn.stopSig, deduper, initSyncMgr, rl)
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
 	conn.networkEntitiesCtrl = networkentities.NewController(cluster.GetId(), networkEntityMgr, graph.Singleton(), conn, &conn.stopSig)
