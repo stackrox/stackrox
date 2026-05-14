@@ -45,7 +45,7 @@ Adding a new column, index, or table to a proto definition and regenerating the 
 sufficient — the migrator will apply the schema change automatically.
 
 **Write a migration ONLY when existing data must be backfilled or transformed.** If the new column
-can tolerate its zero value until normal application operation populates it, skip the migration.
+can tolerate its default value until normal application operation populates it, skip the migration.
 
 ### Test Backwards Compatibility
 The `gke-upgrade-tests` provide broad stroke tests of the upgrade functionality. The upgrade test

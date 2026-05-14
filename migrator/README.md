@@ -7,7 +7,7 @@ Please review the [overview](OVERVIEW.md) for details on the upgrade and migrati
 
 ## When is a migration NOT needed?
 
-Schema-only changes — adding columns, adding indexes, adding new tables — are applied
+Schema-only changes — adding columns, indexes and new tables — are applied
 automatically by GORM AutoMigrate during every Central startup. **You do NOT need to write a
 migration for these.** Simply update the proto definition (add field, add search tag) and
 regenerate the schema code. The migrator will pick up the new schema on the next startup.
@@ -17,7 +17,7 @@ A migration is **only** needed when you must **backfill or transform existing da
 - Splitting data from one column into two
 - Converting enum values or data formats
 
-If the application code can tolerate the zero value (0, empty string, nil, false) in the new
+If the application code can tolerate its default value (0, empty string, nil, false) in the new
 column until the data is naturally populated through normal operation, no migration is required.
 
 ## Purpose of database migrations
