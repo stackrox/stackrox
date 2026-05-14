@@ -241,7 +241,7 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.NVDCVSS).AggrFunc(aggregatefunc.Max).Proto())
 	}
 	cloned.Selects = append(cloned.Selects,
-		search.NewQuerySelect(search.CVEID).AggrFunc(aggregatefunc.Count).Filter("occurrence_count", nil).Proto(),
+		search.NewQuerySelect(search.CVEID).AggrFunc(aggregatefunc.Count).Proto(),
 	)
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
