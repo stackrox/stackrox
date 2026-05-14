@@ -496,6 +496,11 @@ jobs:
           cache-from: type=gha,scope=central-db
           cache-to: type=gha,mode=max,scope=central-db
 
+      # scanner/image/db/Dockerfile does COPY init-bundles/db-init.dump.zst.
+      # This file is not in git - the Makefile creates it as empty by default
+      # (or populated if SCANNER_DB_INIT_BUNDLE_ENABLED=force, which is not used).
+      # Since we bypass make and build directly with buildx, we create the empty
+      # file here to match the default make behavior. The init script ignores it.
       - name: Create empty init bundle for scanner-v4-db
         run: |
           mkdir -p scanner/image/db/init-bundles
@@ -517,6 +522,11 @@ jobs:
           cache-from: type=gha,scope=scanner-v4-db
           cache-to: type=gha,mode=max,scope=scanner-v4-db
 
+      # We can't push to both quay.io/stackrox-io and quay.io/rhacs-eng in a single
+      # build because they require different credentials (different organizations).
+      # Instead, we build once and push to stackrox-io, then use skopeo to copy the
+      # multi-arch manifest list to rhacs-eng. This is more efficient than building
+      # twice and matches the pattern used for collector retag.
       - name: Login to quay.io/rhacs-eng
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
