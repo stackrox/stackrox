@@ -296,9 +296,10 @@ func (s *InitContainerSuite) TestInitContainerExtraction() {
 		}
 	}
 
-	// Verify types and images
 	s.Require().NotNil(initContainer, "expected an init container")
 	s.Require().NotNil(regularContainer, "expected a regular container")
+	s.Equal(storage.ContainerType_INIT, initContainer.GetType())
+	s.Equal(storage.ContainerType_REGULAR, regularContainer.GetType())
 	s.Contains(initContainer.GetImage().GetName().GetFullName(), "busybox")
 	s.Contains(regularContainer.GetImage().GetName().GetFullName(), "nginx")
 
