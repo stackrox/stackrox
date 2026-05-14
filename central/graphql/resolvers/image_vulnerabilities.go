@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/views"
+	"github.com/stackrox/rox/central/views/imagecveflat"
 	"github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -176,28 +177,36 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 	}
 	vulns, err := loader.FromQuery(ctx, vulnQuery)
 
-	// Stash a single instance of a CVE to aid in normalizing
-	foundVulns := make(map[string]*storage.ImageCVEV2)
+	// Group raw records by CVE name, then deduplicate by (CVE, severity) to
+	// surface entries with different severity assessments while still collapsing
+	// entries that differ only by component.
+	type cveSevKey struct {
+		cve      string
+		severity storage.VulnerabilitySeverity
+	}
+	dedupedByCVE := make(map[string][]*storage.ImageCVEV2)
+	seen := make(map[cveSevKey]bool)
 	for _, vuln := range vulns {
-		if _, ok := foundVulns[vuln.GetCveBaseInfo().GetCve()]; !ok {
-			foundVulns[vuln.GetCveBaseInfo().GetCve()] = vuln
+		key := cveSevKey{cve: vuln.GetCveBaseInfo().GetCve(), severity: vuln.GetSeverity()}
+		if !seen[key] {
+			seen[key] = true
+			dedupedByCVE[key.cve] = append(dedupedByCVE[key.cve], vuln)
 		}
 	}
 
-	// Normalize the CVEs based on the flat view to keep them in the correct paging and sort order
-	normalizedVulns := make([]*storage.ImageCVEV2, 0, len(cveFlatData))
+	// Normalize: for each flat view entry (which provides sort order), include
+	// deduplicated entries. When a CVE has multiple distinct severity entries,
+	// use nil flatData so each resolver reports its own severity/CVSS.
+	ret := make([]ImageVulnerabilityResolver, 0, len(cveFlatData))
 	for _, cveFlat := range cveFlatData {
-		normalizedVulns = append(normalizedVulns, foundVulns[cveFlat.GetCVE()])
-	}
-	cveResolvers, err := resolver.wrapImageCVEV2sFlatWithContext(ctx, normalizedVulns, cveFlatData, err)
-	if err != nil {
-		return nil, err
-	}
-
-	// cast as return type
-	ret := make([]ImageVulnerabilityResolver, 0, len(cveResolvers))
-	for _, res := range cveResolvers {
-		ret = append(ret, res)
+		entries := dedupedByCVE[cveFlat.GetCVE()]
+		for _, vuln := range entries {
+			var flat imagecveflat.CveFlat
+			if len(entries) == 1 {
+				flat = cveFlat
+			}
+			ret = append(ret, &imageCVEV2Resolver{ctx: ctx, root: resolver, data: vuln, flatData: flat})
+		}
 	}
 	return ret, nil
 }
