@@ -38,6 +38,15 @@ columns as that would break upon a rollback.  Additinally GORM will not make dat
 perform updates on precision and such as those are not breaking.
 For more see [GORM Auto Migration](https://gorm.io/docs/migration.html#Auto-Migration)
 
+### When NOT to write a migration
+
+Because GORM AutoMigrate runs on every startup, **schema-only changes do not require a migration**.
+Adding a new column, index, or table to a proto definition and regenerating the schema code is
+sufficient — the migrator will apply the schema change automatically.
+
+**Write a migration ONLY when existing data must be backfilled or transformed.** If the new column
+can tolerate its zero value until normal application operation populates it, skip the migration.
+
 ### Test Backwards Compatibility
 The `gke-upgrade-tests` provide broad stroke tests of the upgrade functionality. The upgrade test
 starts with a 4.1.3 deployment and upgrades to the current release.  This will execute all the migrations
