@@ -340,7 +340,7 @@ jobs:
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
-        fetch-depth: 0
+        fetch-depth: 1
 
     - name: Create GKE cluster
       id: cluster
@@ -359,6 +359,8 @@ jobs:
         tag: ${{ env.TAG }}
         background: "false"
         github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+        registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
 
     - name: Add registry integration + pull secrets
@@ -404,6 +406,27 @@ jobs:
           /tmp/rox-api-endpoint
         retention-days: 1
         if-no-files-found: error
+
+    - name: Collect deploy logs
+      if: always()
+      run: |
+        mkdir -p /tmp/provision-artifacts
+        cp /tmp/deploy-stackrox.log /tmp/provision-artifacts/ 2>/dev/null || true
+        cp /tmp/roxie-override.yaml /tmp/provision-artifacts/ 2>/dev/null || true
+        kubectl -n stackrox get pods -o wide > /tmp/provision-artifacts/pods.txt 2>/dev/null || true
+        for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null); do
+          kubectl -n stackrox logs "$(basename "$pod")" --all-containers 2>&1 \
+            | sed -E 's/(password|token|secret|credential|bearer)[=: ]*[^ "]+/\1=REDACTED/gi' \
+            > "/tmp/provision-artifacts/$(basename "$pod").log" || true
+        done
+
+    - name: Upload provision artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: provision-gke-${{ github.run_id }}
+        path: /tmp/provision-artifacts
+        retention-days: 7
 
   gke-qa-e2e:
     if: >-
