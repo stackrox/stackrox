@@ -407,7 +407,7 @@ func (resolver *imageCVEV2Resolver) EnvImpact(ctx context.Context) (float64, err
 		return 0, err
 	}
 	ctx = scoped.Context(ctx, scoped.Scope{
-		IDs:   resolver.flatData.GetCVEIDs(),
+		IDs:   resolver.getCVEIDs(),
 		Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 	})
 	scopedCount, err := resolver.root.DeploymentCount(ctx, RawQuery{})
@@ -436,7 +436,7 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 		return "", nil
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.flatData.GetCVEIDs()...).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.getCVEIDs()...).ProtoQuery()
 	cves, err := resolver.root.ImageCVEV2DataStore.SearchRawImageCVEs(resolver.ctx, query)
 	if err != nil || len(cves) == 0 {
 		return "", err
@@ -458,7 +458,7 @@ func (resolver *imageCVEV2Resolver) IsFixable(ctx context.Context, _ RawQuery) (
 	}
 
 	query := search.NewQueryBuilder().
-		AddExactMatches(search.CVEID, resolver.flatData.GetCVEIDs()...).
+		AddExactMatches(search.CVEID, resolver.getCVEIDs()...).
 		AddBools(search.Fixable, true).
 		ProtoQuery()
 	count, err := resolver.root.ImageCVEV2DataStore.Count(resolver.ctx, query)
@@ -698,7 +698,7 @@ func (resolver *imageCVEV2Resolver) Advisory(ctx context.Context) (*advisoryReso
 		return nil, nil
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.flatData.GetCVEIDs()...).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.getCVEIDs()...).ProtoQuery()
 	cves, err := resolver.root.ImageCVEV2DataStore.SearchRawImageCVEs(resolver.ctx, query)
 	if err != nil || len(cves) == 0 {
 		return nil, err
@@ -732,7 +732,7 @@ func (resolver *imageCVEV2Resolver) imageVulnerabilityScopeContext(ctx context.C
 
 	if resolver.flatData != nil {
 		return scoped.Context(resolver.ctx, scoped.Scope{
-			IDs:   resolver.flatData.GetCVEIDs(),
+			IDs:   resolver.getCVEIDs(),
 			Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 		})
 	}

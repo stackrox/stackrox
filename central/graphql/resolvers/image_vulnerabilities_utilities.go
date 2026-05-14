@@ -77,6 +77,13 @@ func (resolver *Resolver) wrapImageCVEV2sFlatWithContext(ctx context.Context, va
 	return output, nil
 }
 
+func (resolver *imageCVEV2Resolver) getCVEIDs() []string {
+	if resolver.flatData != nil {
+		return resolver.flatData.GetCVEIDs()
+	}
+	return []string{resolver.data.GetId()}
+}
+
 func (resolver *imageCVEV2Resolver) ComponentId(ctx context.Context) string {
 	value := resolver.data.GetComponentId()
 	return value
