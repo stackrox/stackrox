@@ -496,6 +496,11 @@ jobs:
           cache-from: type=gha,scope=central-db
           cache-to: type=gha,mode=max,scope=central-db
 
+      - name: Create empty init bundle for scanner-v4-db
+        run: |
+          mkdir -p scanner/image/db/init-bundles
+          touch scanner/image/db/init-bundles/db-init.dump.zst
+
       - name: Build and push scanner-v4-db multi-arch to stackrox-io
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
