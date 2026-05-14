@@ -433,6 +433,89 @@ jobs:
         name: oss-notice
         path: image/rhel/THIRD_PARTY_NOTICES
 
+  build-and-push-db:
+    runs-on: ubuntu-latest
+    needs:
+      - define-job-matrix
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        registry: [quay.io/stackrox-io, quay.io/rhacs-eng]
+    env:
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Login to docker.io to mitigate rate limiting on downloading images
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        with:
+          username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+
+      - name: Determine platforms
+        id: platforms
+        run: |
+          PLATFORMS="linux/amd64,linux/arm64"
+          if [[ "${{ github.event_name }}" == "push" ]] || \
+             [[ "${{ contains(github.event.pull_request.labels.*.name, 'ci-build-all-arch') }}" == "true" ]]; then
+            PLATFORMS="linux/amd64,linux/arm64,linux/ppc64le,linux/s390x"
+          fi
+          echo "platforms=${PLATFORMS}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to Quay.io
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        with:
+          registry: quay.io
+          username: ${{ matrix.registry == 'quay.io/rhacs-eng' && secrets.QUAY_RHACS_ENG_RW_USERNAME || secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ matrix.registry == 'quay.io/rhacs-eng' && secrets.QUAY_RHACS_ENG_RW_PASSWORD || secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Build and push central-db multi-arch
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # ratchet:docker/build-push-action@v7.1.0
+        with:
+          context: image/postgres
+          file: image/postgres/Dockerfile
+          platforms: ${{ steps.platforms.outputs.platforms }}
+          push: true
+          tags: ${{ matrix.registry }}/central-db:${{ env.BUILD_TAG }}
+          cache-from: type=gha,scope=central-db
+          cache-to: type=gha,mode=max,scope=central-db
+
+      - name: Build and push scanner-v4-db multi-arch
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # ratchet:docker/build-push-action@v7.1.0
+        with:
+          context: scanner/image/db
+          file: scanner/image/db/Dockerfile
+          platforms: ${{ steps.platforms.outputs.platforms }}
+          push: true
+          tags: ${{ matrix.registry }}/scanner-v4-db:${{ env.BUILD_TAG }}
+          build-args: |
+            LABEL_VERSION=${{ env.BUILD_TAG }}
+            LABEL_RELEASE=${{ env.BUILD_TAG }}
+          cache-from: type=gha,scope=scanner-v4-db
+          cache-to: type=gha,mode=max,scope=scanner-v4-db
+
   build-operator-bundle:
     runs-on: ubuntu-latest
     env:
@@ -480,6 +563,7 @@ jobs:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:
       - define-job-matrix
+      - build-and-push-db
       - pre-build-cli
       - pre-build-docs
       - pre-build-go-binaries
@@ -915,6 +999,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - define-job-matrix
+      - build-and-push-db
       - pre-build-go-binaries
       - pre-build-oss-notice
     if: ${{ !cancelled() }}
