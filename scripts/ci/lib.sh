@@ -223,7 +223,7 @@ get_central_diagnostics() {
 }
 
 push_image_manifest_lists() {
-    info "Pushing main, roxctl and central-db images as manifest lists"
+    info "Pushing main and roxctl images as manifest lists"
 
     if [[ "$#" -ne 3 ]]; then
         die "missing arg. usage: push_image_manifest_lists <push_context> <brand> <architectures (CSV)>"
@@ -233,7 +233,7 @@ push_image_manifest_lists() {
     local brand="$2"
     local architectures="$3"
 
-    local main_image_set=("main" "roxctl" "central-db")
+    local main_image_set=("main" "roxctl")
 
     local registry
     registry="$(registry_from_branding "$brand")"
@@ -265,7 +265,7 @@ registry_from_branding() {
 }
 
 push_main_image_set() {
-    info "Pushing main, roxctl and central-db images"
+    info "Pushing main and roxctl images"
 
     if [[ "$#" -ne 3 ]]; then
         die "missing arg. usage: push_main_image_set <push_context> <brand> <arch>"
@@ -275,7 +275,7 @@ push_main_image_set() {
     local brand="$2"
     local arch="$3"
 
-    local main_image_set=("main" "roxctl" "central-db")
+    local main_image_set=("main" "roxctl")
 
     _push_main_image_set() {
         local registry="$1"
@@ -366,7 +366,7 @@ push_operator_image() {
 }
 
 push_scanner_image_manifest_lists() {
-    info "Pushing scanner-v4 and scanner-v4-db images as manifest lists"
+    info "Pushing scanner-v4 image as manifest list"
 
     if [[ "$#" -ne 2 ]]; then
         die "missing arg. usage: push_scanner_image_manifest_lists <registry> <architectures (CSV)>"
@@ -374,7 +374,7 @@ push_scanner_image_manifest_lists() {
 
     local registry="$1"
     local architectures="$2"
-    local scanner_image_set=("scanner-v4" "scanner-v4-db")
+    local scanner_image_set=("scanner-v4")
 
     local tag
     tag="$(make --quiet --no-print-directory -C scanner tag)"
@@ -386,7 +386,7 @@ push_scanner_image_manifest_lists() {
 }
 
 push_scanner_image_set() {
-    info "Pushing scanner-v4 and scanner-v4-db images"
+    info "Pushing scanner-v4 image"
 
     if [[ "$#" -ne 2 ]]; then
         die "missing arg. usage: push_scanner_image_set <registry> <arch>"
@@ -395,7 +395,7 @@ push_scanner_image_set() {
     local registry="$1"
     local arch="$2"
 
-    local scanner_image_set=("scanner-v4" "scanner-v4-db")
+    local scanner_image_set=("scanner-v4")
 
     _push_scanner_image_set() {
         local registry="$1"

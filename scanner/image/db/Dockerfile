@@ -23,7 +23,9 @@ COPY init-bundles/db-init.dump.zst /db-init.dump.zst
 
 COPY scripts/docker-entrypoint.sh scripts/init-entrypoint.sh scripts/cert-watcher.sh /usr/local/bin/
 
-RUN dnf upgrade -y --nobest && \
+RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
+    --mount=type=cache,target=/var/cache/yum,sharing=locked \
+    dnf upgrade -y --nobest && \
     localedef -f UTF-8 -i en_US en_US.UTF-8 && \
     mkdir -p /var/lib/postgresql && \
     groupmod -g 70 postgres && \
@@ -32,9 +34,8 @@ RUN dnf upgrade -y --nobest && \
     chown -R postgres:postgres /var/run/postgresql && \
     chown -R postgres /var/lib/pgsql && \
     chown -R postgres /opt/app-root && \
-    dnf clean all && \
+    # Cleanup - cache mounts are automatically unmounted, no need to clean
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf /var/cache/yum && \
     mkdir /docker-entrypoint-initdb.d
 
 STOPSIGNAL SIGINT
