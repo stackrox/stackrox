@@ -236,7 +236,7 @@ jobs:
         path: |
           ~/.gradle/caches
           ~/.gradle/wrapper
-        key: gradle-qa-${{ hashFiles('qa-tests-backend/**/*.gradle*', 'qa-tests-backend/gradle/wrapper/gradle-wrapper.properties') }}
+        key: gradle-qa-${{ hashFiles('qa-tests-backend/build.gradle', 'qa-tests-backend/settings.gradle.kts', 'qa-tests-backend/protobuf.gradle', 'qa-tests-backend/gradle/wrapper/gradle-wrapper.properties') }}
         restore-keys: gradle-qa-
 
     - name: Compile QA tests
@@ -610,7 +610,7 @@ jobs:
         path: |
           ~/.gradle/caches
           ~/.gradle/wrapper
-        key: gradle-qa-${{ hashFiles('qa-tests-backend/**/*.gradle*', 'qa-tests-backend/gradle/wrapper/gradle-wrapper.properties') }}
+        key: gradle-qa-${{ hashFiles('qa-tests-backend/build.gradle', 'qa-tests-backend/settings.gradle.kts', 'qa-tests-backend/protobuf.gradle', 'qa-tests-backend/gradle/wrapper/gradle-wrapper.properties') }}
         restore-keys: gradle-qa-
 
     - name: Compile QA tests
