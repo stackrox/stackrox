@@ -166,15 +166,83 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.input-image-repo):$(tasks.determine-input-image-tag.results.IMAGE_TAG)"
-    taskRef:
+    taskSpec:
       params:
-      - name: name
-        value: wait-for-image
-      - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:d81002767dc80ff7560f371ff6a6ebe3c46b465690624e2e4519e971ae64a7d3
-      - name: kind
-        value: task
-      resolver: bundles
+      - name: IMAGE
+        description: Image reference.
+        type: string
+      results:
+      - name: IMAGE_DIGEST
+        description: Image digest in the format `sha256:abcdef0123`.
+      - name: GIT_REF
+        description: Git commit from `vcs-ref` image label.
+      - name: GIT_REPO
+        description: Git repository URL from `source-location` image label.
+      steps:
+      - name: wait-for-image
+        image: quay.io/konflux-ci/release-service-utils:latest@sha256:52b4ab39bcbce444712afd0c2700dcda36be6c4a36e0c8a8db87a45e615326a7
+        computeResources:
+          requests:
+            memory: 8Mi
+            cpu: 10m
+          limits:
+            memory: 64Mi
+        env:
+        - name: DESIRED_GIT_REF
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['pipelinesascode.tekton.dev/sha']
+        - name: REPOSITORY_URL
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['pipelinesascode.tekton.dev/repo-url']
+        script: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+          IMAGE="$(params.IMAGE)"
+          _registry="${IMAGE%%/*}"; _rest="${IMAGE#*/}"; _repo="${_rest%%:*}"; _tag="${_rest##*:}"
+          _auth_file=""; for f in /tekton/creds/.docker/config.json "${HOME}/.docker/config.json"; do [ -f "$f" ] && _auth_file="$f" && break; done
+          _get_bearer_token() {
+            local challenge; challenge="$(curl -sI "https://${_registry}/v2/${_repo}/manifests/${_tag}" | tr -d '\r' | grep -i www-authenticate)" || true
+            local realm; realm="$(echo "$challenge" | sed -n 's/.*realm="\([^"]*\)".*/\1/p')"
+            local service; service="$(echo "$challenge" | sed -n 's/.*service="\([^"]*\)".*/\1/p')"
+            local scope; scope="$(echo "$challenge" | sed -n 's/.*scope="\([^"]*\)".*/\1/p')"
+            [ -z "$realm" ] && echo "" && return
+            local basic_auth=""; [ -n "$_auth_file" ] && basic_auth="$(jq -r ".auths[\"${_registry}\"].auth // empty" "$_auth_file" 2>/dev/null)" || true
+            if [ -n "$basic_auth" ]; then curl -sf -H "Authorization: Basic ${basic_auth}" "${realm}?service=${service}&scope=${scope}" | jq -r '.token'
+            else curl -sf "${realm}?service=${service}&scope=${scope}" | jq -r '.token'; fi
+          }
+          echo "Waiting for image ${IMAGE} (lightweight curl polling)..."
+          _token=""; _token_time=0
+          while true; do
+            _now="$(date +%s)"
+            [ -z "$_token" ] || [ $((_now - _token_time)) -gt 300 ] && { _token="$(_get_bearer_token)" || true; _token_time="$_now"; }
+            _http="$(curl -sf -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${_token}" -H 'Accept: application/vnd.oci.image.index.v1+json,application/vnd.docker.distribution.manifest.v2+json,application/vnd.docker.distribution.manifest.list.v2+json' "https://${_registry}/v2/${_repo}/manifests/${_tag}" 2>/dev/null)" || _http="000"
+            [ "$_http" = "200" ] && { >&2 echo "INFO: Image tag found, verifying with skopeo..."; break; }
+            >&2 echo "INFO: Image not found yet (HTTP ${_http}): ${IMAGE}."; sleep 1m
+          done
+          while true; do
+            raw_info="$(skopeo inspect --retry-times 10 --format '{{.Digest}} {{ index .Labels "vcs-ref" }} {{ index .Labels "source-location" }}' --no-tags "docker://${IMAGE}" 2>/dev/null)" && break
+            >&2 echo "INFO: skopeo inspect failed, retrying..."; sleep 1m
+          done
+          infos=( $raw_info ); [ "${#infos[@]}" -ne 3 ] && { >&2 echo "ERROR: Missing image labels."; exit 1; }
+          digest="${infos[0]}"; git_ref_from_label="${infos[1]}"; repository_from_label="${infos[2]}"
+          IMAGE_WITH_DIGEST="${IMAGE}@${digest}"
+          if [[ "${repository_from_label}" == "${REPOSITORY_URL}" && "${git_ref_from_label}" != "${DESIRED_GIT_REF}" ]]; then
+            while true; do
+              raw_info="$(skopeo inspect --retry-times 10 --format '{{.Digest}} {{ index .Labels "vcs-ref" }} {{ index .Labels "source-location" }}' --no-tags "docker://${IMAGE}")"; infos=( $raw_info )
+              digest="${infos[0]}"; git_ref_from_label="${infos[1]}"; repository_from_label="${infos[2]}"; IMAGE_WITH_DIGEST="${IMAGE}@${digest}"
+              [[ "${git_ref_from_label}" == "${DESIRED_GIT_REF}" ]] && break; sleep 1m
+            done
+          fi
+          echo -n "${digest}" | tee "$(results.IMAGE_DIGEST.path)"; echo
+          echo -n "${git_ref_from_label}" | tee "$(results.GIT_REF.path)"; echo
+          echo -n "${repository_from_label}" | tee "$(results.GIT_REPO.path)"; echo
+          echo "Waiting for attestation for ${IMAGE_WITH_DIGEST}..."
+          while true; do cosign tree "${IMAGE_WITH_DIGEST}" | grep -qE "quay.io/.*:sha256-.*\.att$" && break; sleep 1m; done
+          no_success="$(cosign download attestation "${IMAGE_WITH_DIGEST}" | jq -r '.payload' | base64 -d | jq '.predicate.buildConfig.tasks | [ .[] | select(.status != "Succeeded") ] | length')"
+          [ "${no_success}" -gt 0 ] && { >&2 echo "ERROR: Task(s) failed during build of ${IMAGE_WITH_DIGEST}."; exit 1; }
+          echo "Pipeline for ${IMAGE_WITH_DIGEST} finished successfully."
     timeout: 5m
 
   - name: retag-image

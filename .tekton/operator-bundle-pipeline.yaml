@@ -364,15 +364,169 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.operator-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    taskRef: &wait-for-image-ref
+    taskSpec: &wait-for-image-spec
       params:
-      - name: name
-        value: wait-for-image
-      - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:d81002767dc80ff7560f371ff6a6ebe3c46b465690624e2e4519e971ae64a7d3
-      - name: kind
-        value: task
-      resolver: bundles
+      - name: IMAGE
+        description: Image reference.
+        type: string
+      results:
+      - name: IMAGE_DIGEST
+        description: Image digest in the format `sha256:abcdef0123`.
+      - name: GIT_REF
+        description: Git commit for the image's source code from `vcs-ref` image label.
+      - name: GIT_REPO
+        description: Git repository URL for the image's source code from `source-location` image label.
+      steps:
+      - name: wait-for-image
+        image: quay.io/konflux-ci/release-service-utils:latest@sha256:52b4ab39bcbce444712afd0c2700dcda36be6c4a36e0c8a8db87a45e615326a7
+        computeResources:
+          requests:
+            memory: 8Mi
+            cpu: 10m
+          limits:
+            memory: 64Mi
+        env:
+        - name: DESIRED_GIT_REF
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['pipelinesascode.tekton.dev/sha']
+        - name: REPOSITORY_URL
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['pipelinesascode.tekton.dev/repo-url']
+        script: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          IMAGE="$(params.IMAGE)"
+
+          # Parse image reference
+          _registry="${IMAGE%%/*}"
+          _rest="${IMAGE#*/}"
+          _repo="${_rest%%:*}"
+          _tag="${_rest##*:}"
+
+          # Resolve auth from Tekton's injected credentials
+          _auth_file=""
+          for f in /tekton/creds/.docker/config.json "${HOME}/.docker/config.json"; do
+            if [ -f "$f" ]; then
+              _auth_file="$f"
+              break
+            fi
+          done
+
+          _get_bearer_token() {
+            local challenge realm service scope
+            challenge="$(curl -sI "https://${_registry}/v2/${_repo}/manifests/${_tag}" | tr -d '\r' | grep -i www-authenticate)" || true
+            realm="$(echo "$challenge" | sed -n 's/.*realm="\([^"]*\)".*/\1/p')"
+            service="$(echo "$challenge" | sed -n 's/.*service="\([^"]*\)".*/\1/p')"
+            scope="$(echo "$challenge" | sed -n 's/.*scope="\([^"]*\)".*/\1/p')"
+            if [ -z "$realm" ]; then echo ""; return; fi
+
+            local basic_auth=""
+            if [ -n "$_auth_file" ]; then
+              basic_auth="$(jq -r ".auths[\"${_registry}\"].auth // empty" "$_auth_file" 2>/dev/null)" || true
+            fi
+            if [ -n "$basic_auth" ]; then
+              curl -sf -H "Authorization: Basic ${basic_auth}" "${realm}?service=${service}&scope=${scope}" | jq -r '.token'
+            else
+              curl -sf "${realm}?service=${service}&scope=${scope}" | jq -r '.token'
+            fi
+          }
+
+          echo "Waiting for image ${IMAGE} to become available (lightweight curl polling)..."
+
+          # Phase 1: Lightweight polling with curl (~7Mi vs skopeo's ~29Mi)
+          _token=""
+          _token_time=0
+          while true; do
+            _now="$(date +%s)"
+            if [ -z "$_token" ] || [ $((_now - _token_time)) -gt 300 ]; then
+              _token="$(_get_bearer_token)" || true
+              _token_time="$_now"
+            fi
+
+            _http="$(curl -sf -o /dev/null -w '%{http_code}' \
+              -H "Authorization: Bearer ${_token}" \
+              -H 'Accept: application/vnd.oci.image.index.v1+json,application/vnd.docker.distribution.manifest.v2+json,application/vnd.docker.distribution.manifest.list.v2+json' \
+              "https://${_registry}/v2/${_repo}/manifests/${_tag}" 2>/dev/null)" || _http="000"
+
+            if [ "$_http" = "200" ]; then
+              >&2 echo "INFO: Image tag found via lightweight check, verifying with skopeo..."
+              break
+            fi
+            >&2 echo "INFO: Image not found yet (HTTP ${_http}): ${IMAGE}."
+            sleep 1m
+          done
+
+          # Phase 2: Full inspection with skopeo (29Mi spike, once)
+          while true; do
+            if ! raw_info="$(skopeo inspect \
+              --retry-times 10 \
+              --format '{{.Digest}} {{ index .Labels "vcs-ref" }} {{ index .Labels "source-location" }}' \
+              --no-tags \
+              "docker://${IMAGE}" 2>/dev/null)"; then
+              >&2 echo "INFO: skopeo inspect failed, retrying..."
+              sleep 1m
+              continue
+            fi
+
+            infos=( $raw_info )
+            if [[ "${#infos[@]}" -ne 3 ]]; then
+              >&2 echo "ERROR: Not all required information was found. Verify that the 'vcs-ref' and 'source-location' labels are set on the image ${IMAGE}."
+              exit 1
+            fi
+
+            digest="${infos[0]}"
+            git_ref_from_label="${infos[1]}"
+            repository_from_label="${infos[2]}"
+            IMAGE_WITH_DIGEST="${IMAGE}@${digest}"
+
+            if [[ "${repository_from_label}" == "${REPOSITORY_URL}" ]]; then
+              if [[ "${git_ref_from_label}" == "${DESIRED_GIT_REF}" ]]; then
+                >&2 echo "INFO: The found image ${IMAGE_WITH_DIGEST} is built for the expected commit (${DESIRED_GIT_REF})."
+                break
+              else
+                >&2 echo "WARNING: Image ${IMAGE_WITH_DIGEST} built for different commit (${git_ref_from_label}), expected (${DESIRED_GIT_REF}). Waiting..."
+                sleep 1m
+              fi
+            else
+              >&2 echo "INFO: Skipping the Git reference check (different repository)."
+              break
+            fi
+          done
+
+          echo "Image ${IMAGE} found."
+          echo -n "${digest}" | tee "$(results.IMAGE_DIGEST.path)"
+          echo
+          echo -n "${git_ref_from_label}" | tee "$(results.GIT_REF.path)"
+          echo
+          echo -n "${repository_from_label}" | tee "$(results.GIT_REPO.path)"
+          echo
+
+          # Phase 3: Wait for attestation
+          echo "Waiting for attestation for ${IMAGE_WITH_DIGEST} to appear..."
+          while true; do
+            if cosign tree "${IMAGE_WITH_DIGEST}" | grep -qE "quay.io/.*:sha256-.*\.att$"; then
+              break
+            fi
+            echo "Attestation not yet found, sleeping..."
+            sleep 1m
+          done
+
+          echo "Attestation found. Checking pipeline success..."
+          no_success="$(cosign download attestation "${IMAGE_WITH_DIGEST}" | \
+            jq -r '.payload' | \
+            base64 -d | \
+            jq '.predicate.buildConfig.tasks | [ .[] | select(.status != "Succeeded") ] | length'
+          )"
+
+          if [[ "${no_success}" -gt 0 ]]; then
+            >&2 echo "ERROR: At least one task failed during build of ${IMAGE_WITH_DIGEST}."
+            exit 1
+          else
+            echo "Pipeline for ${IMAGE_WITH_DIGEST} finished successfully."
+          fi
     # This timeout must be the same as the pipeline timeout in `operator-build.yaml`.
     timeout: 1h10m
 
@@ -380,7 +534,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.main-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
+    taskSpec: *wait-for-image-spec
     # This timeout must be the same as the pipeline timeout in `main-build.yaml`.
     timeout: 2h40m
 
@@ -388,7 +542,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.scanner-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
+    taskSpec: *wait-for-image-spec
     # This timeout must be the same as the pipeline timeout in `scanner-retag.yaml`
     timeout: 40m
 
@@ -396,7 +550,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.scanner-db-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
+    taskSpec: *wait-for-image-spec
     # This timeout must be the same as the pipeline timeout in `scanner-db-retag.yaml`
     timeout: 40m
 
@@ -404,7 +558,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.scanner-slim-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
+    taskSpec: *wait-for-image-spec
     # This timeout must be the same as the pipeline timeout in `scanner-slim-retag.yaml`
     timeout: 40m
 
@@ -412,7 +566,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.scanner-db-slim-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
+    taskSpec: *wait-for-image-spec
     # This timeout must be the same as the pipeline timeout in `scanner-db-slim-retag.yaml`
     timeout: 40m
 
@@ -420,7 +574,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.scanner-v4-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
+    taskSpec: *wait-for-image-spec
     # This timeout must be the same as the pipeline timeout in `scanner-v4-build.yaml`.
     timeout: 1h10m
 
@@ -428,7 +582,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.scanner-v4-db-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
+    taskSpec: *wait-for-image-spec
     # This timeout must be the same as the pipeline timeout in `scanner-v4-db-build.yaml`.
     timeout: 1h10m
 
@@ -436,7 +590,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.collector-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
+    taskSpec: *wait-for-image-spec
     # This timeout must be the same as the pipeline timeout in `collector-retag.yaml`
     timeout: 40m
 
@@ -444,7 +598,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.fact-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
+    taskSpec: *wait-for-image-spec
     # This timeout must be the same as the pipeline timeout in `retag-fact.yaml`
     timeout: 40m
 
@@ -452,7 +606,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.roxctl-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
+    taskSpec: *wait-for-image-spec
     # This timeout must be the same as the pipeline timeout in `roxctl-build.yaml`.
     timeout: 1h10m
 
@@ -460,7 +614,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.central-db-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    taskRef: *wait-for-image-ref
+    taskSpec: *wait-for-image-spec
     # This timeout must be the same as the pipeline timeout in `central-db-build.yaml`.
     timeout: 1h40m
 
