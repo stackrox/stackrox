@@ -39,6 +39,8 @@ type sensorEventHandler struct {
 	injector    common.MessageInjector
 	stopSig     *concurrency.ErrorSignal
 
+	rl rateLimiter
+
 	reconciliationMap *reconciliation.StoreMap
 }
 
@@ -50,6 +52,7 @@ func newSensorEventHandler(
 	stopSig *concurrency.ErrorSignal,
 	deduper hashManager.Deduper,
 	initSyncMgr *initSyncManager,
+	rl rateLimiter,
 ) *sensorEventHandler {
 	return &sensorEventHandler{
 		cluster:       cluster,
@@ -63,10 +66,12 @@ func newSensorEventHandler(
 		pipeline:    pipeline,
 		injector:    injector,
 		stopSig:     stopSig,
+		rl:          rl,
 	}
 }
 
 func (s *sensorEventHandler) handleMessages(ctx context.Context, msg *central.MsgFromSensor) error {
+	defer s.rl.Return(s.cluster.GetId(), msg)
 	return s.pipeline.Run(ctx, msg, s.injector)
 }
 
@@ -145,6 +150,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	// was processed
 	if !s.deduper.ShouldProcess(msg) {
 		metrics.IncSensorEventsDeduper(true, msg)
+		s.rl.Return(s.cluster.GetId(), msg)
 		return
 	}
 	metrics.IncSensorEventsDeduper(false, msg)
