@@ -307,7 +307,6 @@ jobs:
         set +x
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
         set -x
-        unset CI
         ./gradlew testBAT ${{ matrix.tests }}
 
     - name: Collect logs
@@ -686,7 +685,6 @@ jobs:
         set +x
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
         set -x
-        unset CI
         ./gradlew testBAT ${{ matrix.tests }}
 
     - name: Collect logs
