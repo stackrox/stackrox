@@ -96,6 +96,7 @@ runs:
 
           sed "s/^export //; s/['\"]//g" /tmp/roxie-env.sh >> "$GITHUB_ENV"
           source /tmp/roxie-env.sh
+          echo "$API_ENDPOINT" > /tmp/rox-api-endpoint
 
           curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
             "https://${API_ENDPOINT}/v1/apitokens/generate" \
