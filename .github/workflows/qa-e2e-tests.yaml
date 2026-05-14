@@ -197,7 +197,11 @@ jobs:
         setup_client_TLS_certs "$CERT_DIR"
         echo "CLIENT_CA_PATH=${CLIENT_CA_PATH:-${CERT_DIR}/ca.crt}" >> "$GITHUB_ENV"
         echo "KEYSTORE_PATH=${KEYSTORE_PATH:-${CERT_DIR}/keystore.p12}" >> "$GITHUB_ENV"
-        echo "TRUSTSTORE_PATH=${TRUSTSTORE_PATH:-${CERT_DIR}/keystore.p12}" >> "$GITHUB_ENV"
+
+        # Build trust store from Central's CA so HTTPS connections work
+        kubectl -n stackrox get secret central-tls -o jsonpath='{.data.ca\.crt}' | base64 -d > /tmp/central-ca.crt
+        openssl pkcs12 -export -nokeys -in /tmp/central-ca.crt -out /tmp/truststore.p12 -passout pass:
+        echo "TRUSTSTORE_PATH=/tmp/truststore.p12" >> "$GITHUB_ENV"
 
         # Register client CA with Central so it accepts client cert auth
         set +x
@@ -217,6 +221,7 @@ jobs:
         cp "$certs_dir/tls.crt" "$certs_dir/tls.key" webhookserver/chart/certs/
         helm -n stackrox upgrade --install webhookserver webhookserver/chart/
         kubectl -n stackrox rollout status deploy/webhookserver --timeout=2m
+        kubectl -n stackrox port-forward svc/webhookserver 8080:8080 &
 
     - name: Export webhook server CA
       if: always()
@@ -544,7 +549,11 @@ jobs:
         setup_client_TLS_certs "$CERT_DIR"
         echo "CLIENT_CA_PATH=${CLIENT_CA_PATH:-${CERT_DIR}/ca.crt}" >> "$GITHUB_ENV"
         echo "KEYSTORE_PATH=${KEYSTORE_PATH:-${CERT_DIR}/keystore.p12}" >> "$GITHUB_ENV"
-        echo "TRUSTSTORE_PATH=${TRUSTSTORE_PATH:-${CERT_DIR}/keystore.p12}" >> "$GITHUB_ENV"
+
+        # Build trust store from Central's CA so HTTPS connections work
+        kubectl -n stackrox get secret central-tls -o jsonpath='{.data.ca\.crt}' | base64 -d > /tmp/central-ca.crt
+        openssl pkcs12 -export -nokeys -in /tmp/central-ca.crt -out /tmp/truststore.p12 -passout pass:
+        echo "TRUSTSTORE_PATH=/tmp/truststore.p12" >> "$GITHUB_ENV"
 
         # Register client CA with Central so it accepts client cert auth
         set +x
@@ -564,6 +573,7 @@ jobs:
         cp "$certs_dir/tls.crt" "$certs_dir/tls.key" webhookserver/chart/certs/
         helm -n stackrox upgrade --install webhookserver webhookserver/chart/
         kubectl -n stackrox rollout status deploy/webhookserver --timeout=2m
+        kubectl -n stackrox port-forward svc/webhookserver 8080:8080 &
 
     - name: Export webhook server CA
       if: always()
