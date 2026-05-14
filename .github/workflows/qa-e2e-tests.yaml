@@ -26,81 +26,64 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Scanner v2 shards — fast startup, no matcher wait
-          - name: auth
+          # Mirrors GKE shard split — one cluster per shard, scanner v2 unless noted
+          - name: policy-config
             scanner: v2
-            tests: >-
-              --tests AuthServiceTest
-              --tests CertRotationTest
-              --tests ClientCertAuthTest
-              --tests K8sRbacTest
-              --tests SecretsTest
-              --tests ServiceAccountTest
-
-          - name: cluster
+            tests: "--tests PolicyConfigurationTest"
+          - name: enforcement
             scanner: v2
-            tests: >-
-              --tests DeploymentCheck
-              --tests DeploymentTest
-              --tests NetworkFlowTest
-              --tests NetworkSimulator
-              --tests K8sEventDetectionTest
-              --tests GlobalSearch
-              --tests CSVTest
-
-          - name: policy
+            tests: "--tests Enforcement"
+          - name: secrets
             scanner: v2
-            tests: >-
-              --tests PolicyConfigurationTest
-              --tests PolicyFieldsTest
-              --tests Enforcement
-              --tests ComplianceTest
-              --tests DeclarativeConfigTest
-
-          - name: runtime
+            tests: "--tests SecretsTest"
+          - name: policy-fields
             scanner: v2
-            tests: >-
-              --tests RuntimePolicyTest
-              --tests RuntimeViolationLifecycleTest
-              --tests ProcessBaselinesTest
-              --tests ProcessVisualizationTest
-              --tests AuditLogAlertsTest
-              --tests AuditScrubbingTest
-              --tests AttemptedAlertsTest
-              --tests FileActivityTest
-
+            tests: "--tests PolicyFieldsTest"
+          - name: compliance
+            scanner: v2
+            tests: "--tests ComplianceTest"
+          - name: network-flow
+            scanner: v2
+            tests: "--tests NetworkFlowTest"
+          - name: global-search
+            scanner: v2
+            tests: "--tests GlobalSearch"
           - name: integrations
             scanner: v2
-            tests: >-
-              --tests IntegrationsTest
-              --tests PaginationTest
-              --tests AutocompleteTest
-              --tests BuiltinPoliciesTest
-              --tests GraphQLResourcePaginationTest
-
-          # Scanner v4 shard — needs matcher for vuln scanning
-          - name: vuln-v4
-            scanner: v4
-            tests: >-
-              --tests DefaultPoliciesTest
-              --tests ImageManagementTest
-              --tests ImageScanningTest
-              --tests VulnScanPermissionTest
-              --tests VulnReportingTest
-              --tests AdmissionControllerTest
-              --tests AdmissionControllerNoImageScanTest
-
-          # Same tests with scanner v2 — test if they auto-detect
-          - name: vuln-v2
+            tests: "--tests IntegrationsTest"
+          - name: csv
             scanner: v2
-            tests: >-
-              --tests DefaultPoliciesTest
-              --tests ImageManagementTest
-              --tests ImageScanningTest
-              --tests VulnScanPermissionTest
-              --tests VulnReportingTest
-              --tests AdmissionControllerTest
-              --tests AdmissionControllerNoImageScanTest
+            tests: "--tests CSVTest"
+          - name: admission
+            scanner: v4
+            tests: "--tests AdmissionControllerTest --tests AdmissionControllerNoImageScanTest"
+          - name: builtin-policy
+            scanner: v2
+            tests: "--tests BuiltinPoliciesTest"
+          - name: deployment
+            scanner: v2
+            tests: "--tests DeploymentCheck --tests DeploymentTest"
+          - name: attempted-alerts
+            scanner: v2
+            tests: "--tests AttemptedAlertsTest"
+          - name: auth
+            scanner: v2
+            tests: "--tests AuthServiceTest --tests CertRotationTest --tests ClientCertAuthTest --tests K8sRbacTest --tests ServiceAccountTest"
+          - name: runtime-lifecycle
+            scanner: v2
+            tests: "--tests RuntimePolicyTest --tests RuntimeViolationLifecycleTest --tests AuditLogAlertsTest"
+          - name: runtime-process
+            scanner: v2
+            tests: "--tests AuditScrubbingTest --tests FileActivityTest --tests ProcessBaselinesTest --tests ProcessVisualizationTest"
+          - name: vuln-scan
+            scanner: v4
+            tests: "--tests DefaultPoliciesTest --tests ImageManagementTest --tests ImageScanningTest --tests VulnScanPermissionTest --tests VulnReportingTest"
+          - name: network-misc
+            scanner: v2
+            tests: "--tests NetworkSimulator --tests K8sEventDetectionTest --tests DeclarativeConfigTest"
+          - name: graphql-pagination
+            scanner: v2
+            tests: "--tests PaginationTest --tests AutocompleteTest --tests GraphQLResourcePaginationTest"
 
     env:
       CLUSTER_NAME: qa-e2e-kind-${{ github.run_id }}-${{ strategy.job-index }}
