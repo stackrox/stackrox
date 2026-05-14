@@ -113,8 +113,8 @@ def run_compatibility_tests(testfunc, cluster_name):
                 )
                 os.environ.pop("COMPAT_HELM_REPO_NAME", None)
         else:
-            logging.info("There are currently no supported older versions or support exceptions that require compatibility "
-                         "testing.")
+            logging.info("There are currently no supported older versions or "
+                         "support exceptions that require compatibility testing.")
     finally:
         os.environ.pop("COMPAT_HELM_CHART_URL", None)
         if clone_dir:
