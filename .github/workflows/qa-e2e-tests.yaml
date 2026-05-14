@@ -319,10 +319,14 @@ jobs:
         mkdir -p /tmp/test-artifacts
         cp /tmp/deploy-stackrox.log /tmp/test-artifacts/ 2>/dev/null || true
         cp /tmp/roxie-override.yaml /tmp/test-artifacts/ 2>/dev/null || true
+        free -h > /tmp/test-artifacts/memory.txt 2>/dev/null || true
+        docker stats --no-stream >> /tmp/test-artifacts/memory.txt 2>/dev/null || true
         for ns in stackrox qa default; do
           kubectl -n "$ns" get pods -o wide >> /tmp/test-artifacts/pods.txt 2>/dev/null || true
           kubectl -n "$ns" get events --sort-by=.lastTimestamp >> /tmp/test-artifacts/events.txt 2>/dev/null || true
         done
+        kubectl top nodes >> /tmp/test-artifacts/resources.txt 2>/dev/null || true
+        kubectl top pods -A >> /tmp/test-artifacts/resources.txt 2>/dev/null || true
         for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null); do
           kubectl -n stackrox logs "$(basename "$pod")" --all-containers 2>&1 \
             | sed -E 's/(password|token|secret|credential|bearer)[=: ]*[^ "]+/\1=REDACTED/gi' \
