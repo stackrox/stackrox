@@ -34,9 +34,9 @@ RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
     mkdir /docker-entrypoint-initdb.d
 
 # This will be ignored if empty in the init script.
-COPY init-bundles/db-init.dump.zst /db-init.dump.zst
+COPY --link init-bundles/db-init.dump.zst /db-init.dump.zst
 
-COPY scripts/docker-entrypoint.sh scripts/init-entrypoint.sh /usr/local/bin/
+COPY --link scripts/docker-entrypoint.sh scripts/init-entrypoint.sh /usr/local/bin/
 
 STOPSIGNAL SIGINT
 
