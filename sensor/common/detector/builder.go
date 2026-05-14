@@ -26,6 +26,8 @@ import (
 )
 
 // StoreProvider provides access to the stores needed by the detector.
+//
+//go:generate mockgen-wrapper
 type StoreProvider interface {
 	Deployments() store.DeploymentStore
 	ServiceAccounts() store.ServiceAccountStore

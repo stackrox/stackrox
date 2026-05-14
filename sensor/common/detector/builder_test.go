@@ -4,12 +4,14 @@ import (
 	"testing"
 
 	sensorInternal "github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/pkg/expiringcache/mocks"
+	cacheMocks "github.com/stackrox/rox/pkg/expiringcache/mocks"
 	"github.com/stackrox/rox/pkg/scopecomp"
+	detectorMocks "github.com/stackrox/rox/sensor/common/detector/mocks"
 	enforcerMocks "github.com/stackrox/rox/sensor/common/enforcer/mocks"
 	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
+	"github.com/stackrox/rox/sensor/common/store"
 	storeMocks "github.com/stackrox/rox/sensor/common/store/mocks"
 	updaterMocks "github.com/stackrox/rox/sensor/common/updater/mocks"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +25,7 @@ func validBuilder(ctrl *gomock.Controller) *Builder {
 		WithEnforcer(enforcerMocks.NewMockEnforcer(ctrl)).
 		WithDeploymentStore(storeMocks.NewMockDeploymentStore(ctrl)).
 		WithServiceAccountStore(storeMocks.NewMockServiceAccountStore(ctrl)).
-		WithImageCache(mocks.NewMockCache[cache.Key, cache.Value](ctrl)).
+		WithImageCache(cacheMocks.NewMockCache[cache.Key, cache.Value](ctrl)).
 		WithAuditLogEvents(make(chan *sensorInternal.AuditEvents)).
 		WithAuditLogUpdater(updaterMocks.NewMockComponent(ctrl)).
 		WithNetworkPolicyStore(storeMocks.NewMockNetworkPolicyStore(ctrl)).
@@ -121,6 +123,38 @@ func TestValidateRequiredFields(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Verify WithStoreProvider populates all store-related builder fields.
+func TestWithStoreProvider(t *testing.T) {
+	ctrl := gomock.NewController(t)
+
+	depStore := storeMocks.NewMockDeploymentStore(ctrl)
+	saStore := storeMocks.NewMockServiceAccountStore(ctrl)
+	npStore := storeMocks.NewMockNetworkPolicyStore(ctrl)
+	nodeStore := storeMocks.NewMockNodeStore(ctrl)
+	regStore := fakeRegistryProvider{}
+	clp := fakeClusterLabelProvider{}
+	nlp := fakeNamespaceLabelProvider{}
+
+	sp := detectorMocks.NewMockStoreProvider(ctrl)
+	sp.EXPECT().Deployments().Return(depStore)
+	sp.EXPECT().ServiceAccounts().Return(saStore)
+	sp.EXPECT().NetworkPolicies().Return(npStore)
+	sp.EXPECT().Nodes().Return(nodeStore)
+	sp.EXPECT().Registries().Return(regStore)
+	sp.EXPECT().ClusterLabels().Return(clp)
+	sp.EXPECT().NamespaceLabels().Return(nlp)
+
+	b := NewBuilder().WithStoreProvider(sp)
+
+	assert.Equal(t, store.DeploymentStore(depStore), b.deploymentStore)
+	assert.Equal(t, store.ServiceAccountStore(saStore), b.serviceAccountStore)
+	assert.Equal(t, store.NetworkPolicyStore(npStore), b.networkPolicyStore)
+	assert.Equal(t, store.NodeStore(nodeStore), b.nodeStore)
+	assert.Equal(t, registry.Provider(regStore), b.registryStore)
+	assert.Equal(t, scopecomp.ClusterLabelProvider(clp), b.clusterLabelProvider)
+	assert.Equal(t, scopecomp.NamespaceLabelProvider(nlp), b.namespaceLabelProvider)
 }
 
 // Verify optional fields don't cause validation errors when nil.
