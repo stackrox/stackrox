@@ -54,6 +54,7 @@ spec:
         { "type": "gomod", "path": "." }
       ]
   - name: build-source-image
+    retries: 3
     value: 'true'
   - name: clone-depth
     value: '0'

@@ -177,6 +177,7 @@ spec:
       resolver: bundles
 
   - name: clone-repository
+    retries: 3
     params:
     - name: url
       value: $(params.git-url)
@@ -256,6 +257,7 @@ spec:
       resolver: bundles
 
   - name: prefetch-dependencies
+    retries: 3
     params:
     - name: input
       value: $(params.prefetch-input)
@@ -283,6 +285,7 @@ spec:
       workspace: git-auth
 
   - name: build-images
+    retries: 3
     matrix:
       params:
       - name: PLATFORM
@@ -334,6 +337,7 @@ spec:
     timeout: 2h0m0s
 
   - name: build-image-index
+    retries: 3
     params:
     - name: IMAGE
       value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
@@ -354,6 +358,7 @@ spec:
     runAfter: [build-images]
 
   - name: build-source-image
+    retries: 3
     params:
     - name: BINARY_IMAGE
       value: $(tasks.build-image-index.results.IMAGE_URL)
@@ -378,6 +383,7 @@ spec:
       values: ["true"]
 
   - name: deprecated-base-image-check
+    retries: 3
     params:
     - name: IMAGE_URL
       value: $(tasks.build-image-index.results.IMAGE_URL)
@@ -398,6 +404,7 @@ spec:
       values: ["false"]
 
   - name: clair-scan
+    retries: 3
     matrix:
       params:
       - name: image-platform
@@ -423,6 +430,7 @@ spec:
       values: ["false"]
 
   - name: ecosystem-cert-preflight-checks
+    retries: 3
     matrix:
       params:
       - name: platform
@@ -446,6 +454,7 @@ spec:
       values: ["false"]
 
   - name: sast-shell-check
+    retries: 3
     params:
     - name: image-digest
       value: $(tasks.build-image-index.results.IMAGE_DIGEST)
@@ -472,6 +481,7 @@ spec:
       values: ["false"]
 
   - name: sast-unicode-check
+    retries: 3
     params:
     - name: image-digest
       value: $(tasks.build-image-index.results.IMAGE_DIGEST)
@@ -498,6 +508,7 @@ spec:
       values: ["false"]
 
   - name: sast-snyk-check
+    retries: 3
     params:
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
@@ -524,6 +535,7 @@ spec:
       values: ["false"]
 
   - name: clamav-scan
+    retries: 3
     matrix:
       params:
       - name: image-arch
@@ -549,6 +561,7 @@ spec:
       values: ["false"]
 
   - name: rpms-signature-scan
+    retries: 3
     params:
     - name: image-digest
       value: $(tasks.build-image-index.results.IMAGE_DIGEST)
@@ -569,6 +582,7 @@ spec:
       values: ["false"]
 
   - name: push-dockerfile
+    retries: 3
     params:
     - name: IMAGE
       value: $(tasks.build-image-index.results.IMAGE_URL)

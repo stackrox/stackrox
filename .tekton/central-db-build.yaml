@@ -53,6 +53,7 @@ spec:
   - name: prefetch-input
     value: ''
   - name: build-source-image
+    retries: 3
     value: 'true'
   - name: clone-depth
     value: '0'

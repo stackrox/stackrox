@@ -182,6 +182,7 @@ spec:
             echo -n "${result}" | tee "$(results.SHOULD_REALLY_WORK.path)"
 
     - name: clone-repository
+      retries: 3
       params:
       - name: url
         value: $(params.git-url)

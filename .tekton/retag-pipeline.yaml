@@ -99,6 +99,7 @@ spec:
     taskRef: *post-bigquery-metrics-ref
 
   - name: clone-repository
+    retries: 3
     params:
     - name: url
       value: $(params.git-url)
@@ -177,6 +178,7 @@ spec:
     timeout: 5m
 
   - name: retag-image
+    retries: 3
     # runAfter needs to be specified, because there is no implicit dependency on wait-for-image's
     # results, but we still need it to run before.
     runAfter:
