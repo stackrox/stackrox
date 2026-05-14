@@ -113,7 +113,7 @@ function PlatformCvesOverviewPage() {
             searchFilter={searchFilter}
             searchFilterConfig={searchFilterConfig}
             defaultSearchFilterEntity="CVE"
-            cveStatusFilterField="CLUSTER CVE FIXABLE"
+            cveStatusFilterField="Cluster CVE Fixable"
             onFilterChange={(newFilter, searchPayload) => {
                 setSearchFilter(newFilter);
                 trackAppliedFilter(PLATFORM_CVE_FILTER_APPLIED, searchPayload);

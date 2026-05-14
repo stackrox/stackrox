@@ -33,6 +33,33 @@ helm install --wait --namespace stackrox-operator-system --create-namespace stac
 ## Where to go from here?
 
 Once the operator is running, to actually deploy StackRox you need to create a `Central` and/or a `SecuredCluster` custom resource.
+
+### Migrations
+
+For help replacing an existing deployment (done with manifests or the `central-services`/`secured-cluster-services` charts)
+you can use the new `roxctl central migrate-to-operator` and `roxctl sensor migrate-to-operator` commands.
+These generate custom resources, which - if applied in the same namespace as an existing legacy installation -
+will cause the operator to seamlessly take over the existing resources.
+
+> [!WARNING]
+> The `migrate-to-operator` commands are not currently aware of every way that a legacy StackRox deployment
+> could have been customized. We plan to improve on this in the following release, but nevertheless we advise
+> caution.
+> 
+> For example for central, you can use a command such as `helm get values -n stackrox stackrox-central-services` to find what Helm values
+> were used when installing, and then check the [documentation for the custom resource schema](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/latest/html/installing/installing-rhacs-on-red-hat-openshift#install-central-config-options-ocp)
+> to find out which CR fields need to be set to achieve the same effect.
+
+For example for central:
+
+```shell
+$ roxctl central migrate-to-operator --namespace stackrox > cr-central.yaml
+$ cat cr-central.yaml
+$ kubectl apply --namespace stackrox -f cr-central.yaml
+```
+
+### New installations
+
 Please have a look at the [samples](../config/samples) directory.
 
 Before applying the `SecuredCluster` CR you need to retrieve from central and apply on the cluster a cluster registration secret.
