@@ -199,7 +199,7 @@ jobs:
         echo "KEYSTORE_PATH=${KEYSTORE_PATH:-${CERT_DIR}/keystore.p12}" >> "$GITHUB_ENV"
 
         # Build trust store from Central's CA so HTTPS connections work
-        kubectl -n stackrox get secret central-tls -o jsonpath='{.data.ca\.crt}' | base64 -d > /tmp/central-ca.crt
+        kubectl -n stackrox get secret central-tls -o jsonpath='{.data.ca\.pem}' | base64 -d > /tmp/central-ca.crt
         openssl pkcs12 -export -nokeys -in /tmp/central-ca.crt -out /tmp/truststore.p12 -passout pass:
         echo "TRUSTSTORE_PATH=/tmp/truststore.p12" >> "$GITHUB_ENV"
 
@@ -551,7 +551,7 @@ jobs:
         echo "KEYSTORE_PATH=${KEYSTORE_PATH:-${CERT_DIR}/keystore.p12}" >> "$GITHUB_ENV"
 
         # Build trust store from Central's CA so HTTPS connections work
-        kubectl -n stackrox get secret central-tls -o jsonpath='{.data.ca\.crt}' | base64 -d > /tmp/central-ca.crt
+        kubectl -n stackrox get secret central-tls -o jsonpath='{.data.ca\.pem}' | base64 -d > /tmp/central-ca.crt
         openssl pkcs12 -export -nokeys -in /tmp/central-ca.crt -out /tmp/truststore.p12 -passout pass:
         echo "TRUSTSTORE_PATH=/tmp/truststore.p12" >> "$GITHUB_ENV"
 
