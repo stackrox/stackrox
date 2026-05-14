@@ -1,7 +1,7 @@
-import navSelectors from '../selectors/navigation';
 import pf6 from '../selectors/pf6';
 
-import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
+import { hasFeatureFlag } from './features';
+import { getRouteMatcherMapForGraphQL } from './request';
 import { visit, visitConsole, visitWithStaticResponseForPermissions } from './visit';
 
 /*
@@ -46,16 +46,20 @@ const routeMatcherMapForComplianceLevelsByStandard = getRouteMatcherMapForGraphQ
     getAggregatedResultsOpname,
 ]);
 
-const routeMatcherMap = {
-    ...routeMatcherMapForSummaryCounts,
-    ...routeMatcherMapForSearchFilter,
-    ...routeMatcherMapForViolationsByPolicySeverity,
-    ...routeMatcherMapForImagesAtMostRisk,
-    ...routeMatcherMapForDeploymentsAtMostRisk,
-    ...routeMatcherMapForAgingImages,
-    ...routeMatcherMapForViolationsByPolicyCategory,
-    ...routeMatcherMapForComplianceLevelsByStandard,
-};
+function getRouteMatcherMap() {
+    return {
+        ...routeMatcherMapForSummaryCounts,
+        ...routeMatcherMapForSearchFilter,
+        ...routeMatcherMapForViolationsByPolicySeverity,
+        ...routeMatcherMapForImagesAtMostRisk,
+        ...routeMatcherMapForDeploymentsAtMostRisk,
+        ...routeMatcherMapForAgingImages,
+        ...routeMatcherMapForViolationsByPolicyCategory,
+        ...(hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')
+            ? routeMatcherMapForComplianceLevelsByStandard
+            : {}),
+    };
+}
 
 const routeMatcherMapForConsole = {
     mypermissions: {
@@ -82,20 +86,11 @@ const title = 'Dashboard';
 
 // visit helpers
 
-export function visitMainDashboardFromLeftNav() {
-    interactAndWaitForResponses(() => {
-        cy.get(`${navSelectors.navLinks}:contains("${title}")`).click();
-    }, routeMatcherMap);
-
-    cy.location('pathname').should('eq', basePath);
-    cy.get(`h1:contains("${title}")`);
-}
-
 /**
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visitMainDashboard(staticResponseMap) {
-    visit(basePath, routeMatcherMap, staticResponseMap);
+    visit(basePath, getRouteMatcherMap(), staticResponseMap);
 
     cy.get(`.pf-v6-c-nav__link.pf-m-current:contains("${title}")`);
     cy.get(`h1:contains("${title}")`);
