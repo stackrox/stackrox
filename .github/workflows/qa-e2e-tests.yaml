@@ -308,7 +308,9 @@ jobs:
         set +x
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
         set -x
-        ./gradlew testBAT ${{ matrix.tests }}
+        # CI=false: test framework's mustGetInCI() returns defaults for missing
+        # optional secrets (REDHAT_USERNAME, etc.) instead of throwing.
+        CI=false ./gradlew testBAT ${{ matrix.tests }}
 
     - name: Collect logs
       if: always()
@@ -687,7 +689,9 @@ jobs:
         set +x
         export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
         set -x
-        ./gradlew testBAT ${{ matrix.tests }}
+        # CI=false: test framework's mustGetInCI() returns defaults for missing
+        # optional secrets (REDHAT_USERNAME, etc.) instead of throwing.
+        CI=false ./gradlew testBAT ${{ matrix.tests }}
 
     - name: Collect logs
       if: always()
