@@ -4,7 +4,6 @@ package datastore
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	imageDS "github.com/stackrox/rox/central/image/datastore"
@@ -42,11 +41,11 @@ func (s *ImageComponentV2DataStoreV1FilterTestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
 	// The CVE converter sets ImageId vs ImageIdV2 based on the FlattenImageData flag, so temporarily disable it to insert a V1 image.
-	s.Require().NoError(os.Setenv(features.FlattenImageData.EnvVar(), "false"))
+	s.T().Setenv(features.FlattenImageData.EnvVar(), "false")
 	v1Store := imageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Require().NoError(v1Store.UpsertImage(s.ctx, fixtures.GetImageSherlockHolmes1()))
 
-	s.Require().NoError(os.Setenv(features.FlattenImageData.EnvVar(), "true"))
+	s.T().Setenv(features.FlattenImageData.EnvVar(), "true")
 	v2Store := imageV2DS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.v2Image = imageUtils.ConvertToV2(fixtures.GetImageDoctorJekyll2())
 	s.Require().NoError(v2Store.UpsertImage(s.ctx, s.v2Image))

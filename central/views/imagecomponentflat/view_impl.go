@@ -30,7 +30,6 @@ func (v *imageComponentFlatViewImpl) Count(ctx context.Context, q *v1.Query) (in
 	if err := common.ValidateQuery(q); err != nil {
 		return 0, err
 	}
-	q = imagev2common.WithRowsFromImageV2Only(q)
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
