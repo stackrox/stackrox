@@ -23,6 +23,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Deprecated: Marked as deprecated in api/v1/cluster_service.proto.
 type DeploymentFormat int32
 
 const (
@@ -491,23 +492,23 @@ const file_api_v1_cluster_service_proto_rawDesc = "" +
 	"\x12GetClustersRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\"^\n" +
 	"\x1eKernelSupportAvailableResponse\x128\n" +
-	"\x18kernel_support_available\x18\x01 \x01(\bR\x16kernelSupportAvailable:\x02\x18\x01*:\n" +
+	"\x18kernel_support_available\x18\x01 \x01(\bR\x16kernelSupportAvailable:\x02\x18\x01*>\n" +
 	"\x10DeploymentFormat\x12\v\n" +
 	"\aKUBECTL\x10\x00\x12\b\n" +
 	"\x04HELM\x10\x01\x12\x0f\n" +
-	"\vHELM_VALUES\x10\x02*I\n" +
+	"\vHELM_VALUES\x10\x02\x1a\x02\x18\x01*I\n" +
 	"\x10LoadBalancerType\x12\b\n" +
 	"\x04NONE\x10\x00\x12\x11\n" +
 	"\rLOAD_BALANCER\x10\x01\x12\r\n" +
 	"\tNODE_PORT\x10\x02\x12\t\n" +
-	"\x05ROUTE\x10\x032\xff\x04\n" +
+	"\x05ROUTE\x10\x032\x85\x05\n" +
 	"\x0fClustersService\x12M\n" +
 	"\vGetClusters\x12\x16.v1.GetClustersRequest\x1a\x10.v1.ClustersList\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/clusters\x12N\n" +
 	"\n" +
-	"GetCluster\x12\x10.v1.ResourceByID\x1a\x13.v1.ClusterResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/clusters/{id}\x12M\n" +
-	"\vPostCluster\x12\x10.storage.Cluster\x1a\x13.v1.ClusterResponse\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/v1/clusters\x12Q\n" +
+	"GetCluster\x12\x10.v1.ResourceByID\x1a\x13.v1.ClusterResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/clusters/{id}\x12P\n" +
+	"\vPostCluster\x12\x10.storage.Cluster\x1a\x13.v1.ClusterResponse\"\x1a\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/v1/clusters\x88\x02\x01\x12T\n" +
 	"\n" +
-	"PutCluster\x12\x10.storage.Cluster\x1a\x13.v1.ClusterResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\x1a\x11/v1/clusters/{id}\x12G\n" +
+	"PutCluster\x12\x10.storage.Cluster\x1a\x13.v1.ClusterResponse\"\x1f\x82\xd3\xe4\x93\x02\x16:\x01*\x1a\x11/v1/clusters/{id}\x88\x02\x01\x12G\n" +
 	"\rDeleteCluster\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"\x19\x82\xd3\xe4\x93\x02\x13*\x11/v1/clusters/{id}\x12\x80\x01\n" +
 	"\x19GetKernelSupportAvailable\x12\t.v1.Empty\x1a\".v1.KernelSupportAvailableResponse\"4\x82\xd3\xe4\x93\x02+\x12)/v1/clusters-env/kernel-support-available\x88\x02\x01\x12_\n" +
 	"\x17GetClusterDefaultValues\x12\t.v1.Empty\x1a\x1b.v1.ClusterDefaultsResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/cluster-defaultsB'\n" +

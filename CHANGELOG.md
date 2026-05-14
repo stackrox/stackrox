@@ -31,6 +31,12 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Deprecated Features
 
+- Deprecated gRPC endpoints for helm/manifest-based installation: `GetCAConfig`,
+  `SensorUpgradeService` (all RPCs), `DeploymentFormat` enum, `PostCluster`, and
+  `PutCluster`. The REST endpoints `/api/extensions/clusters/zip`,
+  `/api/extensions/clusters/helm-config.yaml`, and `/api/extensions/helm-charts/`
+  are also deprecated. Use operator-based installation with CRS instead.
+
 ### Technical Changes
 
 - OpenShift 3 support removed from all installation methods.

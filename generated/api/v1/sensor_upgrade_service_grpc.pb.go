@@ -28,10 +28,17 @@ const (
 // SensorUpgradeServiceClient is the client API for SensorUpgradeService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// SensorUpgradeService is deprecated. Use operator-based installation instead;
+// the operator handles sensor upgrades and certificate rotation.
 type SensorUpgradeServiceClient interface {
+	// Deprecated: Do not use.
 	GetSensorUpgradeConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetSensorUpgradeConfigResponse, error)
+	// Deprecated: Do not use.
 	UpdateSensorUpgradeConfig(ctx context.Context, in *UpdateSensorUpgradeConfigRequest, opts ...grpc.CallOption) (*Empty, error)
+	// Deprecated: Do not use.
 	TriggerSensorUpgrade(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
+	// Deprecated: Do not use.
 	TriggerSensorCertRotation(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -43,6 +50,7 @@ func NewSensorUpgradeServiceClient(cc grpc.ClientConnInterface) SensorUpgradeSer
 	return &sensorUpgradeServiceClient{cc}
 }
 
+// Deprecated: Do not use.
 func (c *sensorUpgradeServiceClient) GetSensorUpgradeConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetSensorUpgradeConfigResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetSensorUpgradeConfigResponse)
@@ -53,6 +61,7 @@ func (c *sensorUpgradeServiceClient) GetSensorUpgradeConfig(ctx context.Context,
 	return out, nil
 }
 
+// Deprecated: Do not use.
 func (c *sensorUpgradeServiceClient) UpdateSensorUpgradeConfig(ctx context.Context, in *UpdateSensorUpgradeConfigRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
@@ -63,6 +72,7 @@ func (c *sensorUpgradeServiceClient) UpdateSensorUpgradeConfig(ctx context.Conte
 	return out, nil
 }
 
+// Deprecated: Do not use.
 func (c *sensorUpgradeServiceClient) TriggerSensorUpgrade(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
@@ -73,6 +83,7 @@ func (c *sensorUpgradeServiceClient) TriggerSensorUpgrade(ctx context.Context, i
 	return out, nil
 }
 
+// Deprecated: Do not use.
 func (c *sensorUpgradeServiceClient) TriggerSensorCertRotation(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
@@ -86,10 +97,17 @@ func (c *sensorUpgradeServiceClient) TriggerSensorCertRotation(ctx context.Conte
 // SensorUpgradeServiceServer is the server API for SensorUpgradeService service.
 // All implementations should embed UnimplementedSensorUpgradeServiceServer
 // for forward compatibility.
+//
+// SensorUpgradeService is deprecated. Use operator-based installation instead;
+// the operator handles sensor upgrades and certificate rotation.
 type SensorUpgradeServiceServer interface {
+	// Deprecated: Do not use.
 	GetSensorUpgradeConfig(context.Context, *Empty) (*GetSensorUpgradeConfigResponse, error)
+	// Deprecated: Do not use.
 	UpdateSensorUpgradeConfig(context.Context, *UpdateSensorUpgradeConfigRequest) (*Empty, error)
+	// Deprecated: Do not use.
 	TriggerSensorUpgrade(context.Context, *ResourceByID) (*Empty, error)
+	// Deprecated: Do not use.
 	TriggerSensorCertRotation(context.Context, *ResourceByID) (*Empty, error)
 }
 
