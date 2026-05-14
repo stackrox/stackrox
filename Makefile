@@ -501,6 +501,7 @@ main-build-nodeps:
 		migrator \
 		operator/cmd \
 		roxctl \
+		scanner/cmd/scanner \
 		sensor/admission-control \
 		sensor/kubernetes \
 		sensor/upgrader \
