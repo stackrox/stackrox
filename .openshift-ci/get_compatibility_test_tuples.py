@@ -12,6 +12,7 @@ from pathlib import Path
 from get_latest_helm_chart_versions import (
     get_supported_helm_chart_versions,
     get_latest_helm_chart_version_for_specific_release,
+    helm_repo_session,
 )
 
 
@@ -88,73 +89,74 @@ def get_compatibility_test_tuples():
     # start logging
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
-    central_chart_versions, sensor_chart_versions = get_supported_helm_chart_versions()
+    with helm_repo_session():
+        central_chart_versions, sensor_chart_versions = get_supported_helm_chart_versions()
 
-    makefile_path = Path(__file__).parent.parent
-    latest_tag = subprocess.check_output(
-        ["make", "tag", "-C", makefile_path, "--quiet", "--no-print-director"],
-        shell=False,
-        encoding="utf-8",
-    ).strip()
+        makefile_path = Path(__file__).parent.parent
+        latest_tag = subprocess.check_output(
+            ["make", "tag", "-C", makefile_path, "--quiet", "--no-print-director"],
+            shell=False,
+            encoding="utf-8",
+        ).strip()
 
-    # Remove the versions that are newer than the version of the current branch.
-    # This will make sure we do not test with an old test suite newer versions.
-    # It is important to not test newer versions with old tests suites because
-    # old test suites might depend on endpoints that no longer exist in newer
-    # versions.
-    # There is no risk in excluding newer versions as the compatibility tests in
-    # their respective branches will test against older versions.
-    central_chart_versions = [i for i in central_chart_versions
-                              if not
-                              is_newer_version(current_version=latest_tag,
-                                               helm_version=i)]
-    sensor_chart_versions = [i for i in sensor_chart_versions
-                             if not
-                             is_newer_version(current_version=latest_tag,
-                                              helm_version=i)]
+        # Remove the versions that are newer than the version of the current branch.
+        # This will make sure we do not test with an old test suite newer versions.
+        # It is important to not test newer versions with old tests suites because
+        # old test suites might depend on endpoints that no longer exist in newer
+        # versions.
+        # There is no risk in excluding newer versions as the compatibility tests in
+        # their respective branches will test against older versions.
+        central_chart_versions = [i for i in central_chart_versions
+                                  if not
+                                  is_newer_version(current_version=latest_tag,
+                                                   helm_version=i)]
+        sensor_chart_versions = [i for i in sensor_chart_versions
+                                 if not
+                                 is_newer_version(current_version=latest_tag,
+                                                  helm_version=i)]
 
-    if len(central_chart_versions) == 0:
-        logging.info("Found no older central chart versions to test against according to the product lifecycles API.")
-    if len(sensor_chart_versions) == 0:
-        logging.info("Found no older sensor chart versions to test against according to the product lifecycles API.")
-    if len(central_chart_versions) == 0 or len(sensor_chart_versions) == 0:
-        logging.info("However versions with support exceptions will still be tested against.")
+        if len(central_chart_versions) == 0:
+            logging.info("Found no older central chart versions to test against according to the product lifecycles API.")
+        if len(sensor_chart_versions) == 0:
+            logging.info("Found no older sensor chart versions to test against according to the product lifecycles API.")
+        if len(central_chart_versions) == 0 or len(sensor_chart_versions) == 0:
+            logging.info("However versions with support exceptions will still be tested against.")
 
-    ChartVersions = namedtuple(
-        "Chart_versions", ["central_version", "sensor_version"])
+        ChartVersions = namedtuple(
+            "Chart_versions", ["central_version", "sensor_version"])
 
-    # Latest central vs sensor versions in sensor_chart_versions
-    test_tuples = [
-        ChartVersions(central_version=latest_tag,
-                      sensor_version=sensor_chart_version)
-        for sensor_chart_version in sensor_chart_versions
-    ]
-    # Latest sensor vs central versions in central_chart_versions
-    test_tuples.extend(
-        [
-            ChartVersions(central_version=central_chart_version,
-                          sensor_version=latest_tag)
-            for central_chart_version in central_chart_versions
+        # Latest central vs sensor versions in sensor_chart_versions
+        test_tuples = [
+            ChartVersions(central_version=latest_tag,
+                          sensor_version=sensor_chart_version)
+            for sensor_chart_version in sensor_chart_versions
         ]
-    )
-
-    # Currently there are no support exceptions, the last one expired on 2024-06-30, see:
-    # https://issues.redhat.com/browse/ROX-18223
-    # however a new support exception is being negotiated, add it here when it's ready
-    support_exceptions = [
-        ChartVersions(
-            central_version=latest_tag,
-            sensor_version=get_latest_helm_chart_version_for_specific_release(
-                "stackrox-secured-cluster-services", Release(major=3, minor=74)
-            ),
+        # Latest sensor vs central versions in central_chart_versions
+        test_tuples.extend(
+            [
+                ChartVersions(central_version=central_chart_version,
+                              sensor_version=latest_tag)
+                for central_chart_version in central_chart_versions
+            ]
         )
-    ]
 
-    test_tuples.extend(
-        support_exception
-        for support_exception in support_exceptions
-        if support_exception not in test_tuples
-    )
+        # Currently there are no support exceptions, the last one expired on 2024-06-30, see:
+        # https://issues.redhat.com/browse/ROX-18223
+        # however a new support exception is being negotiated, add it here when it's ready
+        support_exceptions = [
+            ChartVersions(
+                central_version=latest_tag,
+                sensor_version=get_latest_helm_chart_version_for_specific_release(
+                    "stackrox-secured-cluster-services", Release(major=3, minor=74)
+                ),
+            )
+        ]
+
+        test_tuples.extend(
+            support_exception
+            for support_exception in support_exceptions
+            if support_exception not in test_tuples
+        )
     return test_tuples
 
 

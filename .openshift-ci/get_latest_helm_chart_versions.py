@@ -9,10 +9,12 @@ recent patch for each found release.
 
 import json
 import logging
+import os
 import pathlib
 import re
 import subprocess
 import sys
+from contextlib import contextmanager
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
@@ -52,6 +54,30 @@ NUM_RELEASES_DEFAULT = 3
 # patch of the input release.
 sample_support_exception = Release(major=3, minor=74)
 
+_helm_repo_active = False
+
+
+@contextmanager
+def helm_repo_session():
+    """Add the helm chart repo once, yield, then remove it.
+
+    Reentrant: nested calls are no-ops so callers don't need to
+    coordinate who "owns" the repo lifecycle.
+    """
+    global _helm_repo_active
+    if _helm_repo_active:
+        yield
+        return
+
+    add_helm_repo()
+    try:
+        update_helm_repo()
+        _helm_repo_active = True
+        yield
+    finally:
+        _helm_repo_active = False
+        remove_helm_repo()
+
 
 def main(argv):
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
@@ -80,30 +106,18 @@ def main(argv):
 
 
 def get_latest_helm_chart_versions(chart_name, num_releases=NUM_RELEASES_DEFAULT):
-    add_helm_repo()
-    try:
-        update_helm_repo()
+    with helm_repo_session():
         return __get_latest_helm_chart_versions(chart_name, num_releases)
-    finally:
-        remove_helm_repo()
 
 
 def get_latest_helm_chart_version_for_specific_release(chart_name, release):
-    add_helm_repo()
-    try:
-        update_helm_repo()
+    with helm_repo_session():
         return __get_latest_helm_chart_version_for_specific_release(chart_name, release)
-    finally:
-        remove_helm_repo()
 
 
 def get_supported_helm_chart_versions():
-    add_helm_repo()
-    try:
-        update_helm_repo()
+    with helm_repo_session():
         return __get_supported_helm_chart_versions()
-    finally:
-        remove_helm_repo()
 
 
 def __get_supported_helm_chart_versions():
@@ -274,7 +288,12 @@ def version_to_release(version):
 
 def add_helm_repo():
     logging.info("Adding temp helm repository...")
-    run_command(ADD_REPO_CMD)
+    url_override = os.environ.get("COMPAT_HELM_CHART_URL")
+    if url_override:
+        cmd = f"helm repo add {HELM_REPO_NAME} {url_override}"
+    else:
+        cmd = ADD_REPO_CMD
+    run_command(cmd)
 
 
 def update_helm_repo():
