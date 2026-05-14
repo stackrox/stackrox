@@ -100,8 +100,10 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
 
     # Repo name can't be too long or `helm search repo [REPO_NAME] -l` cuts off part of the name and the regex below fails.
     helm_repo_name="tmp-srox-compat"
-    helm repo add "${helm_repo_name}" https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
-    helm repo update
+    if ! helm repo list 2>/dev/null | grep -q "^${helm_repo_name}[[:space:]]"; then
+        helm repo add "${helm_repo_name}" https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
+        helm repo update
+    fi
 
     current_tag="$(make tag --quiet --no-print-directory)"
 
@@ -149,7 +151,6 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
 
     rm -rf "$charts_dir"
 
-    helm repo remove "${helm_repo_name}"
     ci_export CENTRAL_CHART_DIR_OVERRIDE ""
     ci_export SENSOR_CHART_DIR_OVERRIDE ""
 }
