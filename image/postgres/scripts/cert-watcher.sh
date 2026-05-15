@@ -19,7 +19,8 @@ while true; do
         if [ -n "$HASH" ]; then
             echo "cert-watcher: TLS certificates changed, reloading PostgreSQL"
             if ! pg_ctl reload -D "$PGDATA"; then
-                echo "cert-watcher: pg_ctl reload failed"
+                echo "cert-watcher: pg_ctl reload failed, will retry"
+                continue
             fi
         fi
         HASH="$NEW_HASH"
