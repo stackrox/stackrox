@@ -75,11 +75,13 @@ describe('Configuration Management Nodes', () => {
         clickOnCountWidget('controls', 'entityList');
     });
 
-    describe('should go to controls table from widget link', function () {
+    describe('should go to controls table from widget link', () => {
         // Skip although Controls and CIS Kubernetes v1.5 are visible, because these tests assume compliance tests ran and triggered a scan (pardon rhyme).
-        if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
-            this.skip();
-        }
+        before(function () {
+            if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
+                this.skip();
+            }
+        });
 
         const entitiesKey2 = 'controls';
 
