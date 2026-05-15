@@ -6,7 +6,8 @@ PGDATA="${PGDATA:-/var/lib/postgresql/data/pgdata}"
 POLL_INTERVAL="${ROX_CERT_POLL_INTERVAL:-5}"
 
 if ! command -v pg_ctl &>/dev/null; then
-    echo "cert-watcher: WARNING: pg_ctl not found, certificate reload will not work"
+    echo "cert-watcher: ERROR: pg_ctl not found, certificate reload will not work"
+    sleep infinity
 fi
 
 echo "cert-watcher: watching ${CERT_DIR} for changes (interval: ${POLL_INTERVAL}s)"

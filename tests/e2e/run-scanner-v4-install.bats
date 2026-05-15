@@ -794,6 +794,11 @@ EOT
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
+    _begin "verify-cert-watchers"
+
+    verify_cert_watcher_running "stackrox" "central-db"
+    verify_cert_watcher_running "stackrox" "scanner-v4-db"
+
     _end
 }
 
@@ -1114,6 +1119,23 @@ verify_scannerV4_matcher_deployed() {
     wait_for_ready_pods "${namespace}" "scanner-v4-db" 600
     wait_for_ready_pods "${namespace}" "scanner-v4-matcher" 600
     info "** Scanner V4 Matcher is deployed in namespace ${namespace}"
+}
+
+verify_cert_watcher_running() {
+    local namespace=${1:-stackrox}
+    local deployment=${2:-scanner-v4-db}
+    info "Verifying cert-watcher sidecar is running in ${namespace}/${deployment}..."
+    local retries=12
+    for ((i=1; i<=retries; i++)); do
+        if "${ORCH_CMD}" </dev/null -n "$namespace" logs "deploy/${deployment}" -c cert-watcher 2>/dev/null | grep -q "cert-watcher: watching"; then
+            info "** cert-watcher is running in ${namespace}/${deployment}"
+            return 0
+        fi
+        sleep 5
+    done
+    echo "ERROR: cert-watcher sidecar did not start correctly in ${namespace}/${deployment}"
+    "${ORCH_CMD}" </dev/null -n "$namespace" logs "deploy/${deployment}" -c cert-watcher || true
+    return 1
 }
 
 verify_deployment_scannerV4_env_var_set() {
