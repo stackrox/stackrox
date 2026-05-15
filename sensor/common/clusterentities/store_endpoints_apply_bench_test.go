@@ -75,6 +75,49 @@ func BenchmarkApplyChanged(b *testing.B) {
 	}
 }
 
+// BenchmarkApplyPartialChange measures the scenario from ROX-34642: a deployment
+// with many endpoints where only one endpoint changes per update. The baseline
+// purge-all/reinsert-all approach moves all N endpoints to history and back even
+// when only 1 changed.
+func BenchmarkApplyPartialChange(b *testing.B) {
+	for _, tc := range []struct {
+		numEndpoints       int
+		targetsPerEndpoint int
+	}{
+		{numEndpoints: 50, targetsPerEndpoint: 2},
+		{numEndpoints: 200, targetsPerEndpoint: 2},
+		{numEndpoints: 200, targetsPerEndpoint: 4},
+		{numEndpoints: 500, targetsPerEndpoint: 2},
+	} {
+		name := fmt.Sprintf("ep%d_tgt%d", tc.numEndpoints, tc.targetsPerEndpoint)
+		b.Run(name, func(b *testing.B) {
+			store := newEndpointsStoreWithMemory(5)
+			dataA := applyBenchGenerateEntityData(tc.numEndpoints, tc.targetsPerEndpoint)
+			updatesA := map[string]*EntityData{"depl-bench": dataA}
+			store.Apply(updatesA, false)
+
+			// Build a variant with one endpoint's target info changed.
+			dataB := applyBenchGenerateEntityData(tc.numEndpoints, tc.targetsPerEndpoint)
+			for ep, tis := range dataB.endpoints {
+				if len(tis) > 0 {
+					tis[0] = EndpointTargetInfo{ContainerPort: 9999, PortName: "changed"}
+					dataB.endpoints[ep] = tis
+					break
+				}
+			}
+			updatesB := map[string]*EntityData{"depl-bench": dataB}
+
+			for i := 0; b.Loop(); i++ {
+				if i%2 == 0 {
+					store.Apply(updatesB, false)
+				} else {
+					store.Apply(updatesA, false)
+				}
+			}
+		})
+	}
+}
+
 // BenchmarkEndpointsUnchangedNoLock measures the unchanged-endpoints fast path
 // across all implementation variants.
 //

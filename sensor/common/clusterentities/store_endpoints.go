@@ -120,10 +120,15 @@ func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental
 func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) {
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
-			// A call to Apply() with empty payload of the updates map (no values) is meant to be a delete operation.
+			// A call to Apply()->replaceNoLock() with empty payload of the updates map (no values) is meant to be a delete operation.
 			e.purgeNoLock(deploymentID)
 			continue
 		}
+		// Fast path: if all endpoints are identical, skip the diff entirely.
+		// endpointsUnchangedNoLock handles all edge cases cheaply:
+		// - deployment not in store + empty new → true in O(1)
+		// - deployment not in store + non-empty new → false in O(1)
+		// - deployment in store with nil set + empty new → true (length match)
 		if e.endpointsUnchangedNoLock(deploymentID, data.endpoints) {
 			// applySingleNoLock records a nil "seen" marker in reverseEndpointMap
 			// the first time a deployment arrives with zero endpoints (e.g. a pod
@@ -137,9 +142,111 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) {
 			}
 			continue
 		}
-		e.purgeNoLock(deploymentID)
-		e.applySingleNoLock(deploymentID, *data)
+		currentEndpoints, deploymentKnown := e.reverseEndpointMap[deploymentID]
+		if !deploymentKnown {
+			// Brand-new deployment: use the full insert path which handles endpoint takeover.
+			e.applySingleNoLock(deploymentID, *data)
+			continue
+		}
+		e.diffReplaceNoLock(deploymentID, currentEndpoints, data.endpoints)
 	}
+}
+
+// diffReplaceNoLock applies an endpoint update by computing a per-endpoint diff
+// against the current store state. Only endpoints that were actually added, removed,
+// or had their target info changed are touched. Unchanged endpoints are left in place,
+// avoiding the O(M × T) allocation cost of the purge-all/reinsert-all cycle.
+//
+// The three passes (removed, added/changed, re-check) each iterate at most M endpoints
+// with O(T) per-endpoint target comparison, giving O(M × T) total read-only work for
+// the comparison, plus O(k × T) mutation work proportional to the k endpoints that
+// actually changed.
+func (e *endpointsStore) diffReplaceNoLock(deploymentID string, currentEndpoints set.Set[net.NumericEndpoint], newEndpoints map[net.NumericEndpoint][]EndpointTargetInfo) {
+	// Pass 1: endpoints removed (in current but not in new) → move to history.
+	for ep := range currentEndpoints {
+		if _, inNew := newEndpoints[ep]; !inNew {
+			e.moveToHistory(deploymentID, ep)
+		}
+	}
+
+	// Pass 2: endpoints added or changed.
+	for ep, newTargetInfos := range newEndpoints {
+		if !currentEndpoints.Contains(ep) {
+			// New endpoint: insert directly.
+			e.insertSingleEndpointNoLock(deploymentID, ep, newTargetInfos)
+			continue
+		}
+		if e.targetInfoUnchangedNoLock(deploymentID, ep, newTargetInfos) {
+			continue
+		}
+		// Changed: move old to history, then insert the new target info set.
+		e.moveToHistory(deploymentID, ep)
+		e.insertSingleEndpointNoLock(deploymentID, ep, newTargetInfos)
+	}
+}
+
+// insertSingleEndpointNoLock inserts one endpoint's target info for an existing
+// deployment. Unlike applySingleNoLock, it does not perform deployment-takeover
+// checks (those only apply when a deployment is first seen).
+func (e *endpointsStore) insertSingleEndpointNoLock(deploymentID string, ep net.NumericEndpoint, targetInfos []EndpointTargetInfo) {
+	dSet := e.reverseEndpointMap[deploymentID]
+	if dSet == nil {
+		dSet = make(set.Set[net.NumericEndpoint], 1)
+		e.reverseEndpointMap[deploymentID] = dSet
+	}
+	dSet.Add(ep)
+
+	if _, ok := e.endpointMap[ep]; !ok {
+		e.endpointMap[ep] = make(map[string]set.Set[EndpointTargetInfo], 1)
+	}
+	etiSet := make(set.Set[EndpointTargetInfo], len(targetInfos))
+	for _, ti := range targetInfos {
+		etiSet.Add(ti)
+	}
+	e.endpointMap[ep][deploymentID] = etiSet
+	e.deleteFromHistory(deploymentID, ep)
+}
+
+// targetInfoUnchangedNoLock checks whether one endpoint's target info set is
+// identical to what is already stored. Uses the same pigeonhole + hint-table
+// approach as endpointsUnchangedNoLock, comparing |set| elements against a
+// slice of equal length.
+func (e *endpointsStore) targetInfoUnchangedNoLock(deploymentID string, ep net.NumericEndpoint, newTargetInfos []EndpointTargetInfo) bool {
+	currentTargetInfos, found := e.endpointMap[ep][deploymentID]
+	if !found {
+		return len(newTargetInfos) == 0
+	}
+	if len(currentTargetInfos) != len(newTargetInfos) {
+		return false
+	}
+	n := len(newTargetInfos)
+
+	const hintBuckets = 64
+	const hintThreshold = 6
+
+	if n <= hintThreshold || n > 254 {
+		for ti := range currentTargetInfos {
+			if !slices.Contains(newTargetInfos, ti) {
+				return false
+			}
+		}
+		return true
+	}
+
+	var hints [hintBuckets]uint8
+	for i, ti := range newTargetInfos {
+		hints[ti.ContainerPort%hintBuckets] = uint8(i + 1)
+	}
+	for ti := range currentTargetInfos {
+		idx := int(hints[ti.ContainerPort%hintBuckets]) - 1
+		if idx >= 0 && idx < n && newTargetInfos[idx] == ti {
+			continue
+		}
+		if !slices.Contains(newTargetInfos, ti) {
+			return false
+		}
+	}
+	return true
 }
 
 // endpointsUnchangedNoLock checks whether the incoming endpoints are
