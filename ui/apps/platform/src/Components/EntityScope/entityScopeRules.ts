@@ -93,7 +93,7 @@ const searchFieldLabelMapForClusterNamespace: Record<
     },
 } as const;
 
-const searchFieldLabelMapForClusterNamespaceDeployment: Record<
+export const searchFieldLabelMapForClusterNamespaceDeployment: Record<
     EntityScopeSearchFieldLabelForClusterNamespaceDeployment,
     EntityScopeRuleWithoutValues
 > = {
@@ -178,7 +178,7 @@ export const ruleFieldValueMapper = ({ matchType, value }: RuleValue): string =>
 /**
  * Return search filter in EntityScopeCompoundSearchFilter component.
  */
-function getSearchFilterFromEntityScopeRules(
+export function getSearchFilterFromEntityScopeRules(
     rules: EntityScopeRule[],
     searchFieldLabelMap: Record<string, EntityScopeRuleWithoutValues>
 ) {
