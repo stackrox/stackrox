@@ -3,14 +3,14 @@ set -uo pipefail
 
 CERT_DIR="${ROX_CERT_DIR:-/run/secrets/stackrox.io/certs}"
 PGDATA="${PGDATA:-/var/lib/postgresql/data/pgdata}"
-POLL_INTERVAL="${ROX_CERT_POLL_INTERVAL:-5}"
+POLL_INTERVAL="${ROX_CERT_POLL_INTERVAL:-5s}"
 
 if ! command -v pg_ctl &>/dev/null; then
     echo "cert-watcher: ERROR: pg_ctl not found, certificate reload will not work"
     sleep infinity
 fi
 
-echo "cert-watcher: watching ${CERT_DIR} for changes (interval: ${POLL_INTERVAL}s)"
+echo "cert-watcher: watching ${CERT_DIR} for changes (interval: ${POLL_INTERVAL})"
 
 HASH=""
 while true; do
