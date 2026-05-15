@@ -34,7 +34,7 @@ spec:
     - name: wait-for-image
       computeResources:
         requests:
-          memory: 32Mi
+          memory: 4Mi
           cpu: 10m
         limits:
           memory: 64Mi

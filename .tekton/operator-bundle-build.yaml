@@ -80,13 +80,13 @@ spec:
   # Reduce memory for wait-for-* tasks. The namespace LimitRange defaults to
   # 256Mi per container, but these tasks only run skopeo inspect (29Mi peak)
   # once per minute with sleep in between. 12 pods x 256Mi = 3Gi reserved
-  # for idle polling. With 32Mi request / 64Mi limit: 12 x 32Mi = 384Mi.
+  # for idle polling. With 4Mi request / 64Mi limit: 12 x 4Mi = 48Mi.
   - pipelineTaskName: wait-for-operator-image
     stepSpecs:
     - name: wait-for-image
       computeResources:
         requests:
-          memory: 32Mi
+          memory: 4Mi
           cpu: 10m
         limits:
           memory: 64Mi
@@ -95,7 +95,7 @@ spec:
     - name: wait-for-image
       computeResources:
         requests:
-          memory: 32Mi
+          memory: 4Mi
           cpu: 10m
         limits:
           memory: 64Mi
@@ -104,7 +104,7 @@ spec:
     - name: wait-for-image
       computeResources:
         requests:
-          memory: 32Mi
+          memory: 4Mi
           cpu: 10m
         limits:
           memory: 64Mi
@@ -113,7 +113,7 @@ spec:
     - name: wait-for-image
       computeResources:
         requests:
-          memory: 32Mi
+          memory: 4Mi
           cpu: 10m
         limits:
           memory: 64Mi
@@ -122,7 +122,7 @@ spec:
     - name: wait-for-image
       computeResources:
         requests:
-          memory: 32Mi
+          memory: 4Mi
           cpu: 10m
         limits:
           memory: 64Mi
@@ -131,7 +131,7 @@ spec:
     - name: wait-for-image
       computeResources:
         requests:
-          memory: 32Mi
+          memory: 4Mi
           cpu: 10m
         limits:
           memory: 64Mi
@@ -140,7 +140,7 @@ spec:
     - name: wait-for-image
       computeResources:
         requests:
-          memory: 32Mi
+          memory: 4Mi
           cpu: 10m
         limits:
           memory: 64Mi
@@ -149,7 +149,7 @@ spec:
     - name: wait-for-image
       computeResources:
         requests:
-          memory: 32Mi
+          memory: 4Mi
           cpu: 10m
         limits:
           memory: 64Mi
@@ -158,7 +158,7 @@ spec:
     - name: wait-for-image
       computeResources:
         requests:
-          memory: 32Mi
+          memory: 4Mi
           cpu: 10m
         limits:
           memory: 64Mi
@@ -167,7 +167,7 @@ spec:
     - name: wait-for-image
       computeResources:
         requests:
-          memory: 32Mi
+          memory: 4Mi
           cpu: 10m
         limits:
           memory: 64Mi
@@ -176,7 +176,7 @@ spec:
     - name: wait-for-image
       computeResources:
         requests:
-          memory: 32Mi
+          memory: 4Mi
           cpu: 10m
         limits:
           memory: 64Mi
@@ -185,7 +185,7 @@ spec:
     - name: wait-for-image
       computeResources:
         requests:
-          memory: 32Mi
+          memory: 4Mi
           cpu: 10m
         limits:
           memory: 64Mi
