@@ -55,7 +55,7 @@ jobs:
             scanner: v2
             tests: "--tests CSVTest"
           - name: admission
-            scanner: v4
+            scanner: v2
             tests: "--tests AdmissionControllerTest --tests AdmissionControllerNoImageScanTest"
           - name: builtin-policy
             scanner: v2
@@ -76,7 +76,7 @@ jobs:
             scanner: v2
             tests: "--tests AuditScrubbingTest --tests FileActivityTest --tests ProcessBaselinesTest --tests ProcessVisualizationTest"
           - name: vuln-scan
-            scanner: v4
+            scanner: v2
             tests: "--tests DefaultPoliciesTest --tests ImageManagementTest --tests ImageScanningTest --tests VulnScanPermissionTest --tests VulnReportingTest"
           - name: network-misc
             scanner: v2
