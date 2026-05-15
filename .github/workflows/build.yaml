@@ -850,9 +850,7 @@ jobs:
             if [ -d "$dir" ]; then
               arch=$(basename "$dir" | sed 's/go-binaries-build-\(.*\)-default/\1/')
               echo "Extracting binaries for $arch"
-              cd "$dir"
-              tar xzf go-binaries-build.tgz
-              cd ../..
+              tar -xzf "$dir/go-binaries-build.tgz" -C "$dir"
               # Move to expected location for Dockerfile
               mkdir -p "bin/linux_${arch}"
               cp "$dir/bin/linux_${arch}/stackrox-operator" "bin/linux_${arch}/"
