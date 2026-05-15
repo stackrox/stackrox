@@ -74,12 +74,6 @@ runs:
         export MAIN_IMAGE_TAG="${{ inputs.tag }}"
 
         deploy() {
-          # Wait for cluster to be reachable (KinD may still be starting)
-          for _ in $(seq 1 120); do
-            kubectl cluster-info >/dev/null 2>&1 && break
-            sleep 2
-          done
-
           # Build override YAML with cluster name + scanner config
           printf 'securedCluster:\n  spec:\n    clusterName: %s\n' "${{ inputs.cluster-name }}" > /tmp/roxie-override.yaml
           case "${{ inputs.scanner }}" in
