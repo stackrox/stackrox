@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -225,10 +226,10 @@ func (mr *MockCentralClientMockRecorder) GetPolicy(ctx, id any) *gomock.Call {
 }
 
 // ListClusters mocks base method.
-func (m *MockCentralClient) ListClusters(ctx context.Context) ([]*storage.Cluster, error) {
+func (m *MockCentralClient) ListClusters(ctx context.Context) ([]*v1.ClusterConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListClusters", ctx)
-	ret0, _ := ret[0].([]*storage.Cluster)
+	ret0, _ := ret[0].([]*v1.ClusterConfig)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -52,7 +52,7 @@ func openshift(generateCmd *sensorGenerateCommand) *cobra.Command {
 				return err
 			}
 
-			if err := clusterValidation.ValidatePartial(openshiftCommand.cluster).ToError(); err != nil {
+			if err := clusterValidation.ValidatePartial(clusterConfigToStorage(openshiftCommand.cluster)).ToError(); err != nil {
 				return errors.Wrap(err, "cluster validation failed")
 			}
 			return openshiftCommand.fullClusterCreation()

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/config-controller/pkg/client/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
@@ -69,8 +70,8 @@ func listNotifiers() []*storage.Notifier {
 	}
 }
 
-func listClusters() []*storage.Cluster {
-	return []*storage.Cluster{
+func listClusters() []*v1.ClusterConfig {
+	return []*v1.ClusterConfig{
 		{
 			Id:   "cluster-1",
 			Name: "Cluster1",

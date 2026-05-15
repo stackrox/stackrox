@@ -124,6 +124,270 @@ func (LoadBalancerType) EnumDescriptor() ([]byte, []int) {
 	return file_api_v1_cluster_service_proto_rawDescGZIP(), []int{1}
 }
 
+// ClusterConfig is the API-specific representation of a cluster.
+// It is field-number-identical to storage.Cluster to maintain gRPC wire
+// compatibility with older clients that send storage.Cluster directly.
+// This decoupling allows the storage representation to evolve independently
+// from the API contract in the future.
+//
+// Note: Server-managed fields (status, health_status, most_recent_sensor_id,
+// sensor_capabilities, audit_log_state, helm_config, init_bundle_id) are
+// accepted in create/update requests for backward compatibility, but their
+// values are silently ignored by the server. The server always uses its own
+// authoritative values for these fields.
+// Next tag: 33
+type ClusterConfig struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name               string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Type               storage.ClusterType    `protobuf:"varint,3,opt,name=type,proto3,enum=storage.ClusterType" json:"type,omitempty"`
+	MainImage          string                 `protobuf:"bytes,4,opt,name=main_image,json=mainImage,proto3" json:"main_image,omitempty"`
+	CentralApiEndpoint string                 `protobuf:"bytes,5,opt,name=central_api_endpoint,json=centralApiEndpoint,proto3" json:"central_api_endpoint,omitempty"`
+	// Deprecated: Marked as deprecated in api/v1/cluster_service.proto.
+	RuntimeSupport      bool `protobuf:"varint,7,opt,name=runtime_support,json=runtimeSupport,proto3" json:"runtime_support,omitempty"`
+	AdmissionController bool `protobuf:"varint,13,opt,name=admission_controller,json=admissionController,proto3" json:"admission_controller,omitempty"`
+	// Server-managed: accepted in requests for backward compatibility but
+	// ignored by the server. The server populates this from its own state.
+	Status                     *storage.ClusterStatus        `protobuf:"bytes,15,opt,name=status,proto3" json:"status,omitempty"`
+	CollectorImage             string                        `protobuf:"bytes,16,opt,name=collector_image,json=collectorImage,proto3" json:"collector_image,omitempty"`
+	CollectionMethod           storage.CollectionMethod      `protobuf:"varint,17,opt,name=collection_method,json=collectionMethod,proto3,enum=storage.CollectionMethod" json:"collection_method,omitempty"`
+	DynamicConfig              *storage.DynamicClusterConfig `protobuf:"bytes,18,opt,name=dynamic_config,json=dynamicConfig,proto3" json:"dynamic_config,omitempty"`
+	TolerationsConfig          *storage.TolerationsConfig    `protobuf:"bytes,19,opt,name=tolerations_config,json=tolerationsConfig,proto3" json:"tolerations_config,omitempty"`
+	Priority                   int64                         `protobuf:"varint,20,opt,name=priority,proto3" json:"priority,omitempty"`
+	AdmissionControllerUpdates bool                          `protobuf:"varint,21,opt,name=admission_controller_updates,json=admissionControllerUpdates,proto3" json:"admission_controller_updates,omitempty"`
+	// Server-managed: accepted in requests for backward compatibility but
+	// ignored by the server. The server populates this from its own state.
+	HealthStatus  *storage.ClusterHealthStatus `protobuf:"bytes,22,opt,name=health_status,json=healthStatus,proto3" json:"health_status,omitempty"`
+	SlimCollector bool                         `protobuf:"varint,23,opt,name=slim_collector,json=slimCollector,proto3" json:"slim_collector,omitempty"`
+	// Server-managed: accepted in requests for backward compatibility but
+	// ignored by the server.
+	HelmConfig                *storage.CompleteClusterConfig `protobuf:"bytes,24,opt,name=helm_config,json=helmConfig,proto3" json:"helm_config,omitempty"`
+	AdmissionControllerEvents bool                           `protobuf:"varint,25,opt,name=admission_controller_events,json=admissionControllerEvents,proto3" json:"admission_controller_events,omitempty"`
+	// Server-managed: accepted in requests for backward compatibility but
+	// ignored by the server.
+	MostRecentSensorId *storage.SensorDeploymentIdentification `protobuf:"bytes,26,opt,name=most_recent_sensor_id,json=mostRecentSensorId,proto3" json:"most_recent_sensor_id,omitempty"`
+	Labels             map[string]string                       `protobuf:"bytes,27,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Server-managed: accepted in requests for backward compatibility but
+	// ignored by the server.
+	AuditLogState map[string]*storage.AuditLogFileState `protobuf:"bytes,28,rep,name=audit_log_state,json=auditLogState,proto3" json:"audit_log_state,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Server-managed: accepted in requests for backward compatibility but
+	// ignored by the server.
+	InitBundleId string              `protobuf:"bytes,29,opt,name=init_bundle_id,json=initBundleId,proto3" json:"init_bundle_id,omitempty"`
+	ManagedBy    storage.ManagerType `protobuf:"varint,30,opt,name=managed_by,json=managedBy,proto3,enum=storage.ManagerType" json:"managed_by,omitempty"`
+	// Server-managed: accepted in requests for backward compatibility but
+	// ignored by the server.
+	SensorCapabilities             []string `protobuf:"bytes,31,rep,name=sensor_capabilities,json=sensorCapabilities,proto3" json:"sensor_capabilities,omitempty"`
+	AdmissionControllerFailOnError bool     `protobuf:"varint,32,opt,name=admission_controller_fail_on_error,json=admissionControllerFailOnError,proto3" json:"admission_controller_fail_on_error,omitempty"`
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
+}
+
+func (x *ClusterConfig) Reset() {
+	*x = ClusterConfig{}
+	mi := &file_api_v1_cluster_service_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClusterConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClusterConfig) ProtoMessage() {}
+
+func (x *ClusterConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_cluster_service_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClusterConfig.ProtoReflect.Descriptor instead.
+func (*ClusterConfig) Descriptor() ([]byte, []int) {
+	return file_api_v1_cluster_service_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ClusterConfig) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ClusterConfig) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ClusterConfig) GetType() storage.ClusterType {
+	if x != nil {
+		return x.Type
+	}
+	return storage.ClusterType(0)
+}
+
+func (x *ClusterConfig) GetMainImage() string {
+	if x != nil {
+		return x.MainImage
+	}
+	return ""
+}
+
+func (x *ClusterConfig) GetCentralApiEndpoint() string {
+	if x != nil {
+		return x.CentralApiEndpoint
+	}
+	return ""
+}
+
+// Deprecated: Marked as deprecated in api/v1/cluster_service.proto.
+func (x *ClusterConfig) GetRuntimeSupport() bool {
+	if x != nil {
+		return x.RuntimeSupport
+	}
+	return false
+}
+
+func (x *ClusterConfig) GetAdmissionController() bool {
+	if x != nil {
+		return x.AdmissionController
+	}
+	return false
+}
+
+func (x *ClusterConfig) GetStatus() *storage.ClusterStatus {
+	if x != nil {
+		return x.Status
+	}
+	return nil
+}
+
+func (x *ClusterConfig) GetCollectorImage() string {
+	if x != nil {
+		return x.CollectorImage
+	}
+	return ""
+}
+
+func (x *ClusterConfig) GetCollectionMethod() storage.CollectionMethod {
+	if x != nil {
+		return x.CollectionMethod
+	}
+	return storage.CollectionMethod(0)
+}
+
+func (x *ClusterConfig) GetDynamicConfig() *storage.DynamicClusterConfig {
+	if x != nil {
+		return x.DynamicConfig
+	}
+	return nil
+}
+
+func (x *ClusterConfig) GetTolerationsConfig() *storage.TolerationsConfig {
+	if x != nil {
+		return x.TolerationsConfig
+	}
+	return nil
+}
+
+func (x *ClusterConfig) GetPriority() int64 {
+	if x != nil {
+		return x.Priority
+	}
+	return 0
+}
+
+func (x *ClusterConfig) GetAdmissionControllerUpdates() bool {
+	if x != nil {
+		return x.AdmissionControllerUpdates
+	}
+	return false
+}
+
+func (x *ClusterConfig) GetHealthStatus() *storage.ClusterHealthStatus {
+	if x != nil {
+		return x.HealthStatus
+	}
+	return nil
+}
+
+func (x *ClusterConfig) GetSlimCollector() bool {
+	if x != nil {
+		return x.SlimCollector
+	}
+	return false
+}
+
+func (x *ClusterConfig) GetHelmConfig() *storage.CompleteClusterConfig {
+	if x != nil {
+		return x.HelmConfig
+	}
+	return nil
+}
+
+func (x *ClusterConfig) GetAdmissionControllerEvents() bool {
+	if x != nil {
+		return x.AdmissionControllerEvents
+	}
+	return false
+}
+
+func (x *ClusterConfig) GetMostRecentSensorId() *storage.SensorDeploymentIdentification {
+	if x != nil {
+		return x.MostRecentSensorId
+	}
+	return nil
+}
+
+func (x *ClusterConfig) GetLabels() map[string]string {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
+func (x *ClusterConfig) GetAuditLogState() map[string]*storage.AuditLogFileState {
+	if x != nil {
+		return x.AuditLogState
+	}
+	return nil
+}
+
+func (x *ClusterConfig) GetInitBundleId() string {
+	if x != nil {
+		return x.InitBundleId
+	}
+	return ""
+}
+
+func (x *ClusterConfig) GetManagedBy() storage.ManagerType {
+	if x != nil {
+		return x.ManagedBy
+	}
+	return storage.ManagerType(0)
+}
+
+func (x *ClusterConfig) GetSensorCapabilities() []string {
+	if x != nil {
+		return x.SensorCapabilities
+	}
+	return nil
+}
+
+func (x *ClusterConfig) GetAdmissionControllerFailOnError() bool {
+	if x != nil {
+		return x.AdmissionControllerFailOnError
+	}
+	return false
+}
+
 // next available tag: 3
 type DecommissionedClusterRetentionInfo struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -138,7 +402,7 @@ type DecommissionedClusterRetentionInfo struct {
 
 func (x *DecommissionedClusterRetentionInfo) Reset() {
 	*x = DecommissionedClusterRetentionInfo{}
-	mi := &file_api_v1_cluster_service_proto_msgTypes[0]
+	mi := &file_api_v1_cluster_service_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -150,7 +414,7 @@ func (x *DecommissionedClusterRetentionInfo) String() string {
 func (*DecommissionedClusterRetentionInfo) ProtoMessage() {}
 
 func (x *DecommissionedClusterRetentionInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_cluster_service_proto_msgTypes[0]
+	mi := &file_api_v1_cluster_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -163,7 +427,7 @@ func (x *DecommissionedClusterRetentionInfo) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use DecommissionedClusterRetentionInfo.ProtoReflect.Descriptor instead.
 func (*DecommissionedClusterRetentionInfo) Descriptor() ([]byte, []int) {
-	return file_api_v1_cluster_service_proto_rawDescGZIP(), []int{0}
+	return file_api_v1_cluster_service_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *DecommissionedClusterRetentionInfo) GetRetentionInfo() isDecommissionedClusterRetentionInfo_RetentionInfo {
@@ -213,7 +477,7 @@ func (*DecommissionedClusterRetentionInfo_DaysUntilDeletion) isDecommissionedClu
 
 type ClusterResponse struct {
 	state                protoimpl.MessageState              `protogen:"open.v1"`
-	Cluster              *storage.Cluster                    `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	Cluster              *ClusterConfig                      `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
 	ClusterRetentionInfo *DecommissionedClusterRetentionInfo `protobuf:"bytes,2,opt,name=cluster_retention_info,json=clusterRetentionInfo,proto3" json:"cluster_retention_info,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
@@ -221,7 +485,7 @@ type ClusterResponse struct {
 
 func (x *ClusterResponse) Reset() {
 	*x = ClusterResponse{}
-	mi := &file_api_v1_cluster_service_proto_msgTypes[1]
+	mi := &file_api_v1_cluster_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -233,7 +497,7 @@ func (x *ClusterResponse) String() string {
 func (*ClusterResponse) ProtoMessage() {}
 
 func (x *ClusterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_cluster_service_proto_msgTypes[1]
+	mi := &file_api_v1_cluster_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -246,10 +510,10 @@ func (x *ClusterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterResponse.ProtoReflect.Descriptor instead.
 func (*ClusterResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_cluster_service_proto_rawDescGZIP(), []int{1}
+	return file_api_v1_cluster_service_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ClusterResponse) GetCluster() *storage.Cluster {
+func (x *ClusterResponse) GetCluster() *ClusterConfig {
 	if x != nil {
 		return x.Cluster
 	}
@@ -274,7 +538,7 @@ type ClusterDefaultsResponse struct {
 
 func (x *ClusterDefaultsResponse) Reset() {
 	*x = ClusterDefaultsResponse{}
-	mi := &file_api_v1_cluster_service_proto_msgTypes[2]
+	mi := &file_api_v1_cluster_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -286,7 +550,7 @@ func (x *ClusterDefaultsResponse) String() string {
 func (*ClusterDefaultsResponse) ProtoMessage() {}
 
 func (x *ClusterDefaultsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_cluster_service_proto_msgTypes[2]
+	mi := &file_api_v1_cluster_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -299,7 +563,7 @@ func (x *ClusterDefaultsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterDefaultsResponse.ProtoReflect.Descriptor instead.
 func (*ClusterDefaultsResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_cluster_service_proto_rawDescGZIP(), []int{2}
+	return file_api_v1_cluster_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ClusterDefaultsResponse) GetMainImageRepository() string {
@@ -325,7 +589,7 @@ func (x *ClusterDefaultsResponse) GetKernelSupportAvailable() bool {
 
 type ClustersList struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
-	Clusters []*storage.Cluster     `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters,omitempty"`
+	Clusters []*ClusterConfig       `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters,omitempty"`
 	// Maps 'UNHEALTHY' clusters' IDs to their retention info
 	ClusterIdToRetentionInfo map[string]*DecommissionedClusterRetentionInfo `protobuf:"bytes,2,rep,name=cluster_id_to_retention_info,json=clusterIdToRetentionInfo,proto3" json:"cluster_id_to_retention_info,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields            protoimpl.UnknownFields
@@ -334,7 +598,7 @@ type ClustersList struct {
 
 func (x *ClustersList) Reset() {
 	*x = ClustersList{}
-	mi := &file_api_v1_cluster_service_proto_msgTypes[3]
+	mi := &file_api_v1_cluster_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -346,7 +610,7 @@ func (x *ClustersList) String() string {
 func (*ClustersList) ProtoMessage() {}
 
 func (x *ClustersList) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_cluster_service_proto_msgTypes[3]
+	mi := &file_api_v1_cluster_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -359,10 +623,10 @@ func (x *ClustersList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClustersList.ProtoReflect.Descriptor instead.
 func (*ClustersList) Descriptor() ([]byte, []int) {
-	return file_api_v1_cluster_service_proto_rawDescGZIP(), []int{3}
+	return file_api_v1_cluster_service_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ClustersList) GetClusters() []*storage.Cluster {
+func (x *ClustersList) GetClusters() []*ClusterConfig {
 	if x != nil {
 		return x.Clusters
 	}
@@ -385,7 +649,7 @@ type GetClustersRequest struct {
 
 func (x *GetClustersRequest) Reset() {
 	*x = GetClustersRequest{}
-	mi := &file_api_v1_cluster_service_proto_msgTypes[4]
+	mi := &file_api_v1_cluster_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -397,7 +661,7 @@ func (x *GetClustersRequest) String() string {
 func (*GetClustersRequest) ProtoMessage() {}
 
 func (x *GetClustersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_cluster_service_proto_msgTypes[4]
+	mi := &file_api_v1_cluster_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -410,7 +674,7 @@ func (x *GetClustersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetClustersRequest.ProtoReflect.Descriptor instead.
 func (*GetClustersRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_cluster_service_proto_rawDescGZIP(), []int{4}
+	return file_api_v1_cluster_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetClustersRequest) GetQuery() string {
@@ -430,7 +694,7 @@ type KernelSupportAvailableResponse struct {
 
 func (x *KernelSupportAvailableResponse) Reset() {
 	*x = KernelSupportAvailableResponse{}
-	mi := &file_api_v1_cluster_service_proto_msgTypes[5]
+	mi := &file_api_v1_cluster_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -442,7 +706,7 @@ func (x *KernelSupportAvailableResponse) String() string {
 func (*KernelSupportAvailableResponse) ProtoMessage() {}
 
 func (x *KernelSupportAvailableResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_cluster_service_proto_msgTypes[5]
+	mi := &file_api_v1_cluster_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -455,7 +719,7 @@ func (x *KernelSupportAvailableResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KernelSupportAvailableResponse.ProtoReflect.Descriptor instead.
 func (*KernelSupportAvailableResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_cluster_service_proto_rawDescGZIP(), []int{5}
+	return file_api_v1_cluster_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *KernelSupportAvailableResponse) GetKernelSupportAvailable() bool {
@@ -469,21 +733,58 @@ var File_api_v1_cluster_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_cluster_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1capi/v1/cluster_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x15storage/cluster.proto\"\x8a\x01\n" +
+	"\x1capi/v1/cluster_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x15storage/cluster.proto\"\x85\f\n" +
+	"\rClusterConfig\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12(\n" +
+	"\x04type\x18\x03 \x01(\x0e2\x14.storage.ClusterTypeR\x04type\x12\x1d\n" +
+	"\n" +
+	"main_image\x18\x04 \x01(\tR\tmainImage\x120\n" +
+	"\x14central_api_endpoint\x18\x05 \x01(\tR\x12centralApiEndpoint\x12+\n" +
+	"\x0fruntime_support\x18\a \x01(\bB\x02\x18\x01R\x0eruntimeSupport\x121\n" +
+	"\x14admission_controller\x18\r \x01(\bR\x13admissionController\x12.\n" +
+	"\x06status\x18\x0f \x01(\v2\x16.storage.ClusterStatusR\x06status\x12'\n" +
+	"\x0fcollector_image\x18\x10 \x01(\tR\x0ecollectorImage\x12F\n" +
+	"\x11collection_method\x18\x11 \x01(\x0e2\x19.storage.CollectionMethodR\x10collectionMethod\x12D\n" +
+	"\x0edynamic_config\x18\x12 \x01(\v2\x1d.storage.DynamicClusterConfigR\rdynamicConfig\x12I\n" +
+	"\x12tolerations_config\x18\x13 \x01(\v2\x1a.storage.TolerationsConfigR\x11tolerationsConfig\x12\x1a\n" +
+	"\bpriority\x18\x14 \x01(\x03R\bpriority\x12@\n" +
+	"\x1cadmission_controller_updates\x18\x15 \x01(\bR\x1aadmissionControllerUpdates\x12A\n" +
+	"\rhealth_status\x18\x16 \x01(\v2\x1c.storage.ClusterHealthStatusR\fhealthStatus\x12%\n" +
+	"\x0eslim_collector\x18\x17 \x01(\bR\rslimCollector\x12?\n" +
+	"\vhelm_config\x18\x18 \x01(\v2\x1e.storage.CompleteClusterConfigR\n" +
+	"helmConfig\x12>\n" +
+	"\x1badmission_controller_events\x18\x19 \x01(\bR\x19admissionControllerEvents\x12Z\n" +
+	"\x15most_recent_sensor_id\x18\x1a \x01(\v2'.storage.SensorDeploymentIdentificationR\x12mostRecentSensorId\x125\n" +
+	"\x06labels\x18\x1b \x03(\v2\x1d.v1.ClusterConfig.LabelsEntryR\x06labels\x12L\n" +
+	"\x0faudit_log_state\x18\x1c \x03(\v2$.v1.ClusterConfig.AuditLogStateEntryR\rauditLogState\x12$\n" +
+	"\x0einit_bundle_id\x18\x1d \x01(\tR\finitBundleId\x123\n" +
+	"\n" +
+	"managed_by\x18\x1e \x01(\x0e2\x14.storage.ManagerTypeR\tmanagedBy\x12/\n" +
+	"\x13sensor_capabilities\x18\x1f \x03(\tR\x12sensorCapabilities\x12J\n" +
+	"\"admission_controller_fail_on_error\x18  \x01(\bR\x1eadmissionControllerFailOnError\x1a9\n" +
+	"\vLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a\\\n" +
+	"\x12AuditLogStateEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x120\n" +
+	"\x05value\x18\x02 \x01(\v2\x1a.storage.AuditLogFileStateR\x05value:\x028\x01J\x04\b\x06\x10\aJ\x04\b\b\x10\tJ\x04\b\t\x10\n" +
+	"J\x04\b\n" +
+	"\x10\vJ\x04\b\v\x10\fJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0f\"\x8a\x01\n" +
 	"\"DecommissionedClusterRetentionInfo\x12!\n" +
 	"\vis_excluded\x18\x01 \x01(\bH\x00R\n" +
 	"isExcluded\x120\n" +
 	"\x13days_until_deletion\x18\x02 \x01(\x05H\x00R\x11daysUntilDeletionB\x0f\n" +
-	"\rRetentionInfo\"\x9b\x01\n" +
-	"\x0fClusterResponse\x12*\n" +
-	"\acluster\x18\x01 \x01(\v2\x10.storage.ClusterR\acluster\x12\\\n" +
+	"\rRetentionInfo\"\x9c\x01\n" +
+	"\x0fClusterResponse\x12+\n" +
+	"\acluster\x18\x01 \x01(\v2\x11.v1.ClusterConfigR\acluster\x12\\\n" +
 	"\x16cluster_retention_info\x18\x02 \x01(\v2&.v1.DecommissionedClusterRetentionInfoR\x14clusterRetentionInfo\"\xc5\x01\n" +
 	"\x17ClusterDefaultsResponse\x122\n" +
 	"\x15main_image_repository\x18\x01 \x01(\tR\x13mainImageRepository\x12<\n" +
 	"\x1acollector_image_repository\x18\x02 \x01(\tR\x18collectorImageRepository\x128\n" +
-	"\x18kernel_support_available\x18\x03 \x01(\bR\x16kernelSupportAvailable\"\xa1\x02\n" +
-	"\fClustersList\x12,\n" +
-	"\bclusters\x18\x01 \x03(\v2\x10.storage.ClusterR\bclusters\x12n\n" +
+	"\x18kernel_support_available\x18\x03 \x01(\bR\x16kernelSupportAvailable\"\xa2\x02\n" +
+	"\fClustersList\x12-\n" +
+	"\bclusters\x18\x01 \x03(\v2\x11.v1.ClusterConfigR\bclusters\x12n\n" +
 	"\x1ccluster_id_to_retention_info\x18\x02 \x03(\v2..v1.ClustersList.ClusterIdToRetentionInfoEntryR\x18clusterIdToRetentionInfo\x1as\n" +
 	"\x1dClusterIdToRetentionInfoEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12<\n" +
@@ -500,14 +801,14 @@ const file_api_v1_cluster_service_proto_rawDesc = "" +
 	"\x04NONE\x10\x00\x12\x11\n" +
 	"\rLOAD_BALANCER\x10\x01\x12\r\n" +
 	"\tNODE_PORT\x10\x02\x12\t\n" +
-	"\x05ROUTE\x10\x032\xff\x04\n" +
+	"\x05ROUTE\x10\x032\x81\x05\n" +
 	"\x0fClustersService\x12M\n" +
 	"\vGetClusters\x12\x16.v1.GetClustersRequest\x1a\x10.v1.ClustersList\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/clusters\x12N\n" +
 	"\n" +
-	"GetCluster\x12\x10.v1.ResourceByID\x1a\x13.v1.ClusterResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/clusters/{id}\x12M\n" +
-	"\vPostCluster\x12\x10.storage.Cluster\x1a\x13.v1.ClusterResponse\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/v1/clusters\x12Q\n" +
+	"GetCluster\x12\x10.v1.ResourceByID\x1a\x13.v1.ClusterResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/clusters/{id}\x12N\n" +
+	"\vPostCluster\x12\x11.v1.ClusterConfig\x1a\x13.v1.ClusterResponse\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/v1/clusters\x12R\n" +
 	"\n" +
-	"PutCluster\x12\x10.storage.Cluster\x1a\x13.v1.ClusterResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\x1a\x11/v1/clusters/{id}\x12G\n" +
+	"PutCluster\x12\x11.v1.ClusterConfig\x1a\x13.v1.ClusterResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\x1a\x11/v1/clusters/{id}\x12G\n" +
 	"\rDeleteCluster\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"\x19\x82\xd3\xe4\x93\x02\x13*\x11/v1/clusters/{id}\x12\x80\x01\n" +
 	"\x19GetKernelSupportAvailable\x12\t.v1.Empty\x1a\".v1.KernelSupportAvailableResponse\"4\x82\xd3\xe4\x93\x02+\x12)/v1/clusters-env/kernel-support-available\x88\x02\x01\x12_\n" +
 	"\x17GetClusterDefaultValues\x12\t.v1.Empty\x1a\x1b.v1.ClusterDefaultsResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/cluster-defaultsB'\n" +
@@ -526,46 +827,70 @@ func file_api_v1_cluster_service_proto_rawDescGZIP() []byte {
 }
 
 var file_api_v1_cluster_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_api_v1_cluster_service_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_api_v1_cluster_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_api_v1_cluster_service_proto_goTypes = []any{
-	(DeploymentFormat)(0),                      // 0: v1.DeploymentFormat
-	(LoadBalancerType)(0),                      // 1: v1.LoadBalancerType
-	(*DecommissionedClusterRetentionInfo)(nil), // 2: v1.DecommissionedClusterRetentionInfo
-	(*ClusterResponse)(nil),                    // 3: v1.ClusterResponse
-	(*ClusterDefaultsResponse)(nil),            // 4: v1.ClusterDefaultsResponse
-	(*ClustersList)(nil),                       // 5: v1.ClustersList
-	(*GetClustersRequest)(nil),                 // 6: v1.GetClustersRequest
-	(*KernelSupportAvailableResponse)(nil),     // 7: v1.KernelSupportAvailableResponse
-	nil,                                        // 8: v1.ClustersList.ClusterIdToRetentionInfoEntry
-	(*storage.Cluster)(nil),                    // 9: storage.Cluster
-	(*ResourceByID)(nil),                       // 10: v1.ResourceByID
-	(*Empty)(nil),                              // 11: v1.Empty
+	(DeploymentFormat)(0),                          // 0: v1.DeploymentFormat
+	(LoadBalancerType)(0),                          // 1: v1.LoadBalancerType
+	(*ClusterConfig)(nil),                          // 2: v1.ClusterConfig
+	(*DecommissionedClusterRetentionInfo)(nil),     // 3: v1.DecommissionedClusterRetentionInfo
+	(*ClusterResponse)(nil),                        // 4: v1.ClusterResponse
+	(*ClusterDefaultsResponse)(nil),                // 5: v1.ClusterDefaultsResponse
+	(*ClustersList)(nil),                           // 6: v1.ClustersList
+	(*GetClustersRequest)(nil),                     // 7: v1.GetClustersRequest
+	(*KernelSupportAvailableResponse)(nil),         // 8: v1.KernelSupportAvailableResponse
+	nil,                                            // 9: v1.ClusterConfig.LabelsEntry
+	nil,                                            // 10: v1.ClusterConfig.AuditLogStateEntry
+	nil,                                            // 11: v1.ClustersList.ClusterIdToRetentionInfoEntry
+	(storage.ClusterType)(0),                       // 12: storage.ClusterType
+	(*storage.ClusterStatus)(nil),                  // 13: storage.ClusterStatus
+	(storage.CollectionMethod)(0),                  // 14: storage.CollectionMethod
+	(*storage.DynamicClusterConfig)(nil),           // 15: storage.DynamicClusterConfig
+	(*storage.TolerationsConfig)(nil),              // 16: storage.TolerationsConfig
+	(*storage.ClusterHealthStatus)(nil),            // 17: storage.ClusterHealthStatus
+	(*storage.CompleteClusterConfig)(nil),          // 18: storage.CompleteClusterConfig
+	(*storage.SensorDeploymentIdentification)(nil), // 19: storage.SensorDeploymentIdentification
+	(storage.ManagerType)(0),                       // 20: storage.ManagerType
+	(*storage.AuditLogFileState)(nil),              // 21: storage.AuditLogFileState
+	(*ResourceByID)(nil),                           // 22: v1.ResourceByID
+	(*Empty)(nil),                                  // 23: v1.Empty
 }
 var file_api_v1_cluster_service_proto_depIdxs = []int32{
-	9,  // 0: v1.ClusterResponse.cluster:type_name -> storage.Cluster
-	2,  // 1: v1.ClusterResponse.cluster_retention_info:type_name -> v1.DecommissionedClusterRetentionInfo
-	9,  // 2: v1.ClustersList.clusters:type_name -> storage.Cluster
-	8,  // 3: v1.ClustersList.cluster_id_to_retention_info:type_name -> v1.ClustersList.ClusterIdToRetentionInfoEntry
-	2,  // 4: v1.ClustersList.ClusterIdToRetentionInfoEntry.value:type_name -> v1.DecommissionedClusterRetentionInfo
-	6,  // 5: v1.ClustersService.GetClusters:input_type -> v1.GetClustersRequest
-	10, // 6: v1.ClustersService.GetCluster:input_type -> v1.ResourceByID
-	9,  // 7: v1.ClustersService.PostCluster:input_type -> storage.Cluster
-	9,  // 8: v1.ClustersService.PutCluster:input_type -> storage.Cluster
-	10, // 9: v1.ClustersService.DeleteCluster:input_type -> v1.ResourceByID
-	11, // 10: v1.ClustersService.GetKernelSupportAvailable:input_type -> v1.Empty
-	11, // 11: v1.ClustersService.GetClusterDefaultValues:input_type -> v1.Empty
-	5,  // 12: v1.ClustersService.GetClusters:output_type -> v1.ClustersList
-	3,  // 13: v1.ClustersService.GetCluster:output_type -> v1.ClusterResponse
-	3,  // 14: v1.ClustersService.PostCluster:output_type -> v1.ClusterResponse
-	3,  // 15: v1.ClustersService.PutCluster:output_type -> v1.ClusterResponse
-	11, // 16: v1.ClustersService.DeleteCluster:output_type -> v1.Empty
-	7,  // 17: v1.ClustersService.GetKernelSupportAvailable:output_type -> v1.KernelSupportAvailableResponse
-	4,  // 18: v1.ClustersService.GetClusterDefaultValues:output_type -> v1.ClusterDefaultsResponse
-	12, // [12:19] is the sub-list for method output_type
-	5,  // [5:12] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	12, // 0: v1.ClusterConfig.type:type_name -> storage.ClusterType
+	13, // 1: v1.ClusterConfig.status:type_name -> storage.ClusterStatus
+	14, // 2: v1.ClusterConfig.collection_method:type_name -> storage.CollectionMethod
+	15, // 3: v1.ClusterConfig.dynamic_config:type_name -> storage.DynamicClusterConfig
+	16, // 4: v1.ClusterConfig.tolerations_config:type_name -> storage.TolerationsConfig
+	17, // 5: v1.ClusterConfig.health_status:type_name -> storage.ClusterHealthStatus
+	18, // 6: v1.ClusterConfig.helm_config:type_name -> storage.CompleteClusterConfig
+	19, // 7: v1.ClusterConfig.most_recent_sensor_id:type_name -> storage.SensorDeploymentIdentification
+	9,  // 8: v1.ClusterConfig.labels:type_name -> v1.ClusterConfig.LabelsEntry
+	10, // 9: v1.ClusterConfig.audit_log_state:type_name -> v1.ClusterConfig.AuditLogStateEntry
+	20, // 10: v1.ClusterConfig.managed_by:type_name -> storage.ManagerType
+	2,  // 11: v1.ClusterResponse.cluster:type_name -> v1.ClusterConfig
+	3,  // 12: v1.ClusterResponse.cluster_retention_info:type_name -> v1.DecommissionedClusterRetentionInfo
+	2,  // 13: v1.ClustersList.clusters:type_name -> v1.ClusterConfig
+	11, // 14: v1.ClustersList.cluster_id_to_retention_info:type_name -> v1.ClustersList.ClusterIdToRetentionInfoEntry
+	21, // 15: v1.ClusterConfig.AuditLogStateEntry.value:type_name -> storage.AuditLogFileState
+	3,  // 16: v1.ClustersList.ClusterIdToRetentionInfoEntry.value:type_name -> v1.DecommissionedClusterRetentionInfo
+	7,  // 17: v1.ClustersService.GetClusters:input_type -> v1.GetClustersRequest
+	22, // 18: v1.ClustersService.GetCluster:input_type -> v1.ResourceByID
+	2,  // 19: v1.ClustersService.PostCluster:input_type -> v1.ClusterConfig
+	2,  // 20: v1.ClustersService.PutCluster:input_type -> v1.ClusterConfig
+	22, // 21: v1.ClustersService.DeleteCluster:input_type -> v1.ResourceByID
+	23, // 22: v1.ClustersService.GetKernelSupportAvailable:input_type -> v1.Empty
+	23, // 23: v1.ClustersService.GetClusterDefaultValues:input_type -> v1.Empty
+	6,  // 24: v1.ClustersService.GetClusters:output_type -> v1.ClustersList
+	4,  // 25: v1.ClustersService.GetCluster:output_type -> v1.ClusterResponse
+	4,  // 26: v1.ClustersService.PostCluster:output_type -> v1.ClusterResponse
+	4,  // 27: v1.ClustersService.PutCluster:output_type -> v1.ClusterResponse
+	23, // 28: v1.ClustersService.DeleteCluster:output_type -> v1.Empty
+	8,  // 29: v1.ClustersService.GetKernelSupportAvailable:output_type -> v1.KernelSupportAvailableResponse
+	5,  // 30: v1.ClustersService.GetClusterDefaultValues:output_type -> v1.ClusterDefaultsResponse
+	24, // [24:31] is the sub-list for method output_type
+	17, // [17:24] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_cluster_service_proto_init() }
@@ -575,7 +900,7 @@ func file_api_v1_cluster_service_proto_init() {
 	}
 	file_api_v1_common_proto_init()
 	file_api_v1_empty_proto_init()
-	file_api_v1_cluster_service_proto_msgTypes[0].OneofWrappers = []any{
+	file_api_v1_cluster_service_proto_msgTypes[1].OneofWrappers = []any{
 		(*DecommissionedClusterRetentionInfo_IsExcluded)(nil),
 		(*DecommissionedClusterRetentionInfo_DaysUntilDeletion)(nil),
 	}
@@ -585,7 +910,7 @@ func file_api_v1_cluster_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_cluster_service_proto_rawDesc), len(file_api_v1_cluster_service_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   7,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

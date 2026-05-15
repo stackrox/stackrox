@@ -16,7 +16,6 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/utilities"
-	"github.com/stackrox/rox/generated/storage"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
@@ -112,7 +111,7 @@ func local_request_ClustersService_GetCluster_0(ctx context.Context, marshaler r
 
 func request_ClustersService_PostCluster_0(ctx context.Context, marshaler runtime.Marshaler, client ClustersServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq storage.Cluster
+		protoReq ClusterConfig
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
@@ -127,7 +126,7 @@ func request_ClustersService_PostCluster_0(ctx context.Context, marshaler runtim
 
 func local_request_ClustersService_PostCluster_0(ctx context.Context, marshaler runtime.Marshaler, server ClustersServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq storage.Cluster
+		protoReq ClusterConfig
 		metadata runtime.ServerMetadata
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
@@ -139,7 +138,7 @@ func local_request_ClustersService_PostCluster_0(ctx context.Context, marshaler 
 
 func request_ClustersService_PutCluster_0(ctx context.Context, marshaler runtime.Marshaler, client ClustersServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq storage.Cluster
+		protoReq ClusterConfig
 		metadata runtime.ServerMetadata
 		err      error
 	)
@@ -163,7 +162,7 @@ func request_ClustersService_PutCluster_0(ctx context.Context, marshaler runtime
 
 func local_request_ClustersService_PutCluster_0(ctx context.Context, marshaler runtime.Marshaler, server ClustersServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq storage.Cluster
+		protoReq ClusterConfig
 		metadata runtime.ServerMetadata
 		err      error
 	)

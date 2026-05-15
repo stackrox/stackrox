@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -74,7 +73,7 @@ func (cmd *clusterDeleteCommand) Delete() error {
 	}
 
 	validClusters := make([]string, 0, len(clusters))
-	var cluster *storage.Cluster
+	var cluster *v1.ClusterConfig
 	for _, cl := range clusters {
 		validClusters = append(validClusters, cl.GetName())
 		if strings.EqualFold(cl.GetName(), cmd.name) {
@@ -98,7 +97,7 @@ func (cmd *clusterDeleteCommand) Delete() error {
 	return nil
 }
 
-func (cmd *clusterDeleteCommand) getClusters(svc v1.ClustersServiceClient) ([]*storage.Cluster, error) {
+func (cmd *clusterDeleteCommand) getClusters(svc v1.ClustersServiceClient) ([]*v1.ClusterConfig, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), cmd.timeout)
 	defer cancel()
 	clusterResponse, err := svc.GetClusters(ctx, &v1.GetClustersRequest{})

@@ -47,13 +47,13 @@ type sensorGenerateCommand struct {
 	enablePodSecurityPolicies bool
 
 	// injected or constructed values
-	cluster     *storage.Cluster
+	cluster     *v1.ClusterConfig
 	env         environment.Environment
 	getBundleFn util.GetBundleFn
 }
 
-func defaultCluster() *storage.Cluster {
-	return &storage.Cluster{
+func defaultCluster() *v1.ClusterConfig {
+	return &v1.ClusterConfig{
 		AdmissionController:            true,
 		AdmissionControllerEvents:      true,
 		AdmissionControllerUpdates:     true,

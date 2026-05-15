@@ -23,6 +23,76 @@ enum LoadBalancerType {
   ROUTE = 3;
 }
 
+// ClusterConfig is the API-specific representation of a cluster.
+// It is field-number-identical to storage.Cluster to maintain gRPC wire
+// compatibility with older clients that send storage.Cluster directly.
+// This decoupling allows the storage representation to evolve independently
+// from the API contract in the future.
+//
+// Note: Server-managed fields (status, health_status, most_recent_sensor_id,
+// sensor_capabilities, audit_log_state, helm_config, init_bundle_id) are
+// accepted in create/update requests for backward compatibility, but their
+// values are silently ignored by the server. The server always uses its own
+// authoritative values for these fields.
+//Next tag: 33
+message ClusterConfig {
+  string id = 1;
+  string name = 2;
+  storage.ClusterType type = 3;
+  string main_image = 4;
+  string central_api_endpoint = 5;
+  reserved 6;
+  bool runtime_support = 7 [deprecated = true];
+  reserved 8;
+  reserved 9, 10, 11, 12, 14;
+  bool admission_controller = 13;
+
+  // Server-managed: accepted in requests for backward compatibility but
+  // ignored by the server. The server populates this from its own state.
+  storage.ClusterStatus status = 15;
+
+  string collector_image = 16;
+  storage.CollectionMethod collection_method = 17;
+  storage.DynamicClusterConfig dynamic_config = 18;
+  storage.TolerationsConfig tolerations_config = 19;
+  int64 priority = 20;
+  bool admission_controller_updates = 21;
+
+  // Server-managed: accepted in requests for backward compatibility but
+  // ignored by the server. The server populates this from its own state.
+  storage.ClusterHealthStatus health_status = 22;
+
+  bool slim_collector = 23;
+
+  // Server-managed: accepted in requests for backward compatibility but
+  // ignored by the server.
+  storage.CompleteClusterConfig helm_config = 24;
+
+  bool admission_controller_events = 25;
+
+  // Server-managed: accepted in requests for backward compatibility but
+  // ignored by the server.
+  storage.SensorDeploymentIdentification most_recent_sensor_id = 26;
+
+  map<string, string> labels = 27;
+
+  // Server-managed: accepted in requests for backward compatibility but
+  // ignored by the server.
+  map<string, storage.AuditLogFileState> audit_log_state = 28;
+
+  // Server-managed: accepted in requests for backward compatibility but
+  // ignored by the server.
+  string init_bundle_id = 29;
+
+  storage.ManagerType managed_by = 30;
+
+  // Server-managed: accepted in requests for backward compatibility but
+  // ignored by the server.
+  repeated string sensor_capabilities = 31;
+
+  bool admission_controller_fail_on_error = 32;
+}
+
 // next available tag: 3
 message DecommissionedClusterRetentionInfo {
   oneof RetentionInfo {
@@ -34,7 +104,7 @@ message DecommissionedClusterRetentionInfo {
 }
 
 message ClusterResponse {
-  storage.Cluster cluster = 1;
+  ClusterConfig cluster = 1;
   DecommissionedClusterRetentionInfo cluster_retention_info = 2;
 }
 
@@ -45,7 +115,7 @@ message ClusterDefaultsResponse {
 }
 
 message ClustersList {
-  repeated storage.Cluster clusters = 1;
+  repeated ClusterConfig clusters = 1;
   // Maps 'UNHEALTHY' clusters' IDs to their retention info
   map<string, DecommissionedClusterRetentionInfo> cluster_id_to_retention_info = 2;
 }
@@ -68,14 +138,14 @@ service ClustersService {
     option (google.api.http) = {get: "/v1/clusters/{id}"};
   }
 
-  rpc PostCluster(storage.Cluster) returns (ClusterResponse) {
+  rpc PostCluster(ClusterConfig) returns (ClusterResponse) {
     option (google.api.http) = {
       post: "/v1/clusters"
       body: "*"
     };
   }
 
-  rpc PutCluster(storage.Cluster) returns (ClusterResponse) {
+  rpc PutCluster(ClusterConfig) returns (ClusterResponse) {
     option (google.api.http) = {
       put: "/v1/clusters/{id}"
       body: "*"

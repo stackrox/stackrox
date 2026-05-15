@@ -69,24 +69,25 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // PostCluster creates a new cluster.
-func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error) {
+func (s *serviceImpl) PostCluster(ctx context.Context, request *v1.ClusterConfig) (*v1.ClusterResponse, error) {
 	if request.GetId() != "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Id field should be empty when posting a new cluster")
 	}
-	id, err := s.datastore.AddCluster(ctx, request)
+	cluster := convertAPIClusterToStorage(request)
+	id, err := s.datastore.AddCluster(ctx, cluster)
 	if err != nil {
 		return nil, err
 	}
-	request.Id = id
-	return s.getCluster(ctx, request.GetId())
+	return s.getCluster(ctx, id)
 }
 
 // PutCluster updates an existing cluster.
-func (s *serviceImpl) PutCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error) {
+func (s *serviceImpl) PutCluster(ctx context.Context, request *v1.ClusterConfig) (*v1.ClusterResponse, error) {
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Id must be provided")
 	}
-	err := s.datastore.UpdateCluster(ctx, request)
+	cluster := convertAPIClusterToStorage(request)
+	err := s.datastore.UpdateCluster(ctx, cluster)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +117,7 @@ func (s *serviceImpl) getCluster(ctx context.Context, id string) (*v1.ClusterRes
 	}
 
 	return &v1.ClusterResponse{
-		Cluster:              cluster,
+		Cluster:              convertStorageClusterToAPI(cluster),
 		ClusterRetentionInfo: clusterRetentionInfo,
 	}, nil
 }
@@ -190,7 +191,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 	}
 
 	return &v1.ClustersList{
-		Clusters:                 clusters,
+		Clusters:                 convertStorageClustersToAPI(clusters),
 		ClusterIdToRetentionInfo: clusterIDToRetentionInfoMap,
 	}, nil
 }
