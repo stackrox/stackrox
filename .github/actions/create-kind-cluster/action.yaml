@@ -45,7 +45,7 @@ runs:
 
           docker update --memory "${{ inputs.memory-limit }}" \
             --memory-swap "${{ inputs.memory-limit }}" \
-            --cpus 3 "$node"
+            --cpus 4 "$node"
 
           docker exec "$node" ctr -n k8s.io images pull \
             --user "$ctr_auth" --platform linux/amd64 \

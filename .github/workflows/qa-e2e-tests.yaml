@@ -148,18 +148,22 @@ jobs:
         set +x
         ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
 
-        curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-          "https://localhost:8443/v1/imageintegrations" \
-          -X POST -d "{
-            \"name\": \"quay-ci\",
-            \"type\": \"docker\",
-            \"categories\": [\"REGISTRY\"],
-            \"docker\": {
-              \"endpoint\": \"https://quay.io\",
-              \"username\": \"${QUAY_USER}\",
-              \"password\": \"${QUAY_PASS}\"
-            }
-          }" | jq -r '.id // .error'
+        for attempt in 1 2 3; do
+          result=$(curl -sk --retry 3 --retry-delay 5 -u "admin:${ROX_ADMIN_PASSWORD}" \
+            "https://localhost:8443/v1/imageintegrations" \
+            -X POST -d "{
+              \"name\": \"quay-ci\",
+              \"type\": \"docker\",
+              \"categories\": [\"REGISTRY\"],
+              \"docker\": {
+                \"endpoint\": \"https://quay.io\",
+                \"username\": \"${QUAY_USER}\",
+                \"password\": \"${QUAY_PASS}\"
+              }
+            }" 2>/dev/null) && break
+          sleep 5
+        done
+        echo "$result" | jq -r '.id // .error'
 
         for ns in qa default; do
           kubectl create namespace "$ns" 2>/dev/null || true
