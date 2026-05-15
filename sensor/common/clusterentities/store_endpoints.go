@@ -216,6 +216,12 @@ func (e *endpointsStore) insertSingleEndpointNoLock(deploymentID string, ep net.
 // identical to what is already stored. Uses the same pigeonhole + hint-table
 // approach as endpointsUnchangedNoLock, comparing |set| elements against a
 // slice of equal length.
+//
+// The comparison logic intentionally duplicates the inner hot path from
+// endpointsUnchangedNoLock. Extracting a shared helper made local
+// BenchmarkApply{Unchanged,Changed} runs about 3-7% slower and
+// BenchmarkEndpointsUnchangedNoLock about 3% slower, with no B/op or
+// allocs/op improvement.
 func (e *endpointsStore) targetInfoUnchangedNoLock(deploymentID string, ep net.NumericEndpoint, newTargetInfos []EndpointTargetInfo) bool {
 	currentTargetInfos, found := e.endpointMap[ep][deploymentID]
 	if !found {
