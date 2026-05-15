@@ -199,14 +199,6 @@ jobs:
         java /tmp/CreateTrustStore.java /tmp/central-ca.crt /tmp/truststore.p12
         echo "TRUSTSTORE_PATH=/tmp/truststore.p12" >> "$GITHUB_ENV"
 
-        # Register client CA with Central so it accepts client cert auth
-        set +x
-        roxctl -e "localhost:8443" -p "$(cat /tmp/rox-admin-password)" \
-          --insecure-skip-tls-verify \
-          central userpki create test-userpki -r Analyst \
-          -c "${CLIENT_CA_PATH:-${CERT_DIR}/ca.crt}" || true
-        set -x
-
     - name: Deploy webhook server
       continue-on-error: true
       run: |
@@ -241,7 +233,7 @@ jobs:
           qa-tests-backend/build/generated
           qa-tests-backend/build/resources
           qa-tests-backend/build/tmp
-        key: gradle-qa-${{ hashFiles('qa-tests-backend/build.gradle.kts', 'qa-tests-backend/settings.gradle.kts', 'qa-tests-backend/protobuf.gradle', 'qa-tests-backend/gradle/wrapper/gradle-wrapper.properties') }}
+        key: gradle-qa-${{ github.sha }}
         restore-keys: gradle-qa-
 
     - name: Compile QA tests
@@ -578,14 +570,6 @@ jobs:
         java /tmp/CreateTrustStore.java /tmp/central-ca.crt /tmp/truststore.p12
         echo "TRUSTSTORE_PATH=/tmp/truststore.p12" >> "$GITHUB_ENV"
 
-        # Register client CA with Central so it accepts client cert auth
-        set +x
-        roxctl -e "localhost:8443" -p "$(cat /tmp/rox-admin-password)" \
-          --insecure-skip-tls-verify \
-          central userpki create test-userpki -r Analyst \
-          -c "${CLIENT_CA_PATH:-${CERT_DIR}/ca.crt}" || true
-        set -x
-
     - name: Deploy webhook server
       continue-on-error: true
       run: |
@@ -620,7 +604,7 @@ jobs:
           qa-tests-backend/build/generated
           qa-tests-backend/build/resources
           qa-tests-backend/build/tmp
-        key: gradle-qa-${{ hashFiles('qa-tests-backend/build.gradle.kts', 'qa-tests-backend/settings.gradle.kts', 'qa-tests-backend/protobuf.gradle', 'qa-tests-backend/gradle/wrapper/gradle-wrapper.properties') }}
+        key: gradle-qa-${{ github.sha }}
         restore-keys: gradle-qa-
 
     - name: Compile QA tests
