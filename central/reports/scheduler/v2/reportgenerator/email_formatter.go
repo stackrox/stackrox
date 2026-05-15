@@ -89,7 +89,6 @@ func formatReportConfigDetails(snapshot *storage.ReportSnapshot, numDeployedImag
 	if err != nil {
 		return "", err
 	}
-	reportFilters := snapshot.GetVulnReportFilters()
 
 	writer.WriteString("<div>")
 
@@ -100,27 +99,38 @@ func formatReportConfigDetails(snapshot *storage.ReportSnapshot, numDeployedImag
 	formatSingleDetail(&writer, "Number of CVEs found",
 		fmt.Sprintf("%d in Deployed images", numDeployedImageCVEs),
 		fmt.Sprintf("%d in Watched images", numWatchedImageCVEs))
+	// Collection scope: show severity, fixability, collection, image types, CVEs since
+	reportFilters := snapshot.GetVulnReportFilters()
 
-	// Severities
-	// create a copy because severities will be sorted in descending order (critical, important, moderate, low)
-	severities := append([]storage.VulnerabilitySeverity{}, reportFilters.GetSeverities()...)
-	sort.Slice(severities, func(i, j int) bool {
-		return severities[i] > severities[j]
-	})
-	formatSingleDetail(&writer, "CVE severity", severities...)
+	if entityScope := snapshot.GetResourceScope().GetEntityScope(); entityScope != nil {
+		// Entity scope: show filter query and scope rules
+		reportFilters := snapshot.GetVulnReportFilters()
+		if query := reportFilters.GetQuery(); query != "" {
+			formatSingleDetail(&writer, "Filter", query)
+		}
+		scopeParts := formatEntityScope(entityScope)
+		if len(scopeParts) > 0 {
+			formatSingleDetail(&writer, "Report scope", scopeParts...)
+		}
+	} else {
 
-	// Fixability
-	fixabilities := expandFixability(reportFilters.GetFixability())
-	formatSingleDetail(&writer, "CVE status", fixabilities...)
+		// Severities
+		severities := append([]storage.VulnerabilitySeverity{}, reportFilters.GetSeverities()...)
+		sort.Slice(severities, func(i, j int) bool {
+			return severities[i] > severities[j]
+		})
+		formatSingleDetail(&writer, "CVE severity", severities...)
 
-	// Collection
-	formatSingleDetail(&writer, "Report scope", snapshot.GetCollection())
+		// Fixability
+		fixabilities := expandFixability(reportFilters.GetFixability())
+		formatSingleDetail(&writer, "CVE status", fixabilities...)
 
+		// Collection
+		formatSingleDetail(&writer, "Report scope", snapshot.GetCollection())
+	}
 	// Image types
-	// create a copy because image types will be sorted in ascending order (deployed, watched)
 	imageTypes := append([]storage.VulnerabilityReportFilters_ImageType{}, reportFilters.GetImageTypes()...)
 	sliceutils.NaturalSort(imageTypes)
-
 	formatSingleDetail(&writer, "Image type", imageTypes...)
 
 	// CVEs discovered since
@@ -129,6 +139,47 @@ func formatReportConfigDetails(snapshot *storage.ReportSnapshot, numDeployedImag
 	writer.WriteString("</div>")
 
 	return writer.String(), nil
+}
+
+func formatEntityScope(entityScope *storage.EntityScope) []string {
+	var parts []string
+	for _, rule := range entityScope.GetRules() {
+		entityType := friendlyEntityType(rule.GetEntity())
+		field := friendlyEntityField(rule.GetField())
+		values := make([]string, 0, len(rule.GetValues()))
+		for _, v := range rule.GetValues() {
+			values = append(values, v.GetValue())
+		}
+		parts = append(parts, fmt.Sprintf("%s %s: %s", entityType, field, strings.Join(values, ", ")))
+	}
+	return parts
+}
+
+var entityTypeToText = map[storage.EntityType]string{
+	storage.EntityType_ENTITY_TYPE_DEPLOYMENT: "Deployment",
+	storage.EntityType_ENTITY_TYPE_NAMESPACE:  "Namespace",
+	storage.EntityType_ENTITY_TYPE_CLUSTER:    "Cluster",
+}
+
+var entityFieldToText = map[storage.EntityField]string{
+	storage.EntityField_FIELD_ID:         "ID",
+	storage.EntityField_FIELD_NAME:       "Name",
+	storage.EntityField_FIELD_LABEL:      "Label",
+	storage.EntityField_FIELD_ANNOTATION: "Annotation",
+}
+
+func friendlyEntityType(t storage.EntityType) string {
+	if text, ok := entityTypeToText[t]; ok {
+		return text
+	}
+	return t.String()
+}
+
+func friendlyEntityField(f storage.EntityField) string {
+	if text, ok := entityFieldToText[f]; ok {
+		return text
+	}
+	return f.String()
 }
 
 func expandFixability(fixability storage.VulnerabilityReportFilters_Fixability) []storage.VulnerabilityReportFilters_Fixability {
@@ -192,8 +243,11 @@ func validateSnapshot(snapshot *storage.ReportSnapshot) error {
 	if reportFilters == nil {
 		return errors.New("Report snapshot is missing vulnerability report filters")
 	}
-	if snapshot.GetResourceScope() == nil {
-		return errors.New("Report snapshot is missing resource scope")
+	hasCollection := snapshot.GetCollection() != nil
+	hasEntityScope := snapshot.GetResourceScope().GetEntityScope() != nil
+	if !hasCollection && !hasEntityScope {
+		return errors.New("Report snapshot is missing both collection snapshot and entity scope")
+
 	}
 	if len(reportFilters.GetImageTypes()) == 0 {
 		return errors.New("Report snapshot is missing image type filters")
