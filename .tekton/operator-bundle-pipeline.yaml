@@ -358,7 +358,28 @@ spec:
     - name: git-basic-auth
       workspace: git-auth
 
+  # Delay polling start by 30m. Most upstream builds take 30-60m, so polling
+  # before that wastes 12 pods x 28Mi (skopeo RSS) on fruitless checks.
+  # This single 1Mi pod sleeps, then all wait-for-* tasks start and find
+  # their images immediately (or poll briefly for stragglers).
+  - name: delay-before-polling
+    taskSpec:
+      steps:
+      - name: sleep
+        image: registry.access.redhat.com/ubi9-minimal:latest@sha256:12db9874bd753eb98b1ab3d840e75de5d6842ac0604fbd68c012adefe97140be
+        computeResources:
+          requests:
+            memory: 1Mi
+            cpu: 1m
+          limits:
+            memory: 4Mi
+        script: |
+          echo "Delaying 30m before image polling starts..."
+          sleep 30m
+          echo "Delay complete, polling tasks will start now."
+
   - name: wait-for-operator-image
+    runAfter: [delay-before-polling]
     params:
     - name: IMAGE
       value: "$(params.operator-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
@@ -375,6 +396,7 @@ spec:
     timeout: 1h10m
 
   - name: wait-for-main-image
+    runAfter: [delay-before-polling]
     params:
     - name: IMAGE
       value: "$(params.main-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
@@ -383,6 +405,7 @@ spec:
     timeout: 2h40m
 
   - name: wait-for-scanner-image
+    runAfter: [delay-before-polling]
     params:
     - name: IMAGE
       value: "$(params.scanner-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
@@ -391,6 +414,7 @@ spec:
     timeout: 40m
 
   - name: wait-for-scanner-db-image
+    runAfter: [delay-before-polling]
     params:
     - name: IMAGE
       value: "$(params.scanner-db-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
@@ -399,6 +423,7 @@ spec:
     timeout: 40m
 
   - name: wait-for-scanner-slim-image
+    runAfter: [delay-before-polling]
     params:
     - name: IMAGE
       value: "$(params.scanner-slim-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
@@ -407,6 +432,7 @@ spec:
     timeout: 40m
 
   - name: wait-for-scanner-db-slim-image
+    runAfter: [delay-before-polling]
     params:
     - name: IMAGE
       value: "$(params.scanner-db-slim-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
@@ -415,6 +441,7 @@ spec:
     timeout: 40m
 
   - name: wait-for-scanner-v4-image
+    runAfter: [delay-before-polling]
     params:
     - name: IMAGE
       value: "$(params.scanner-v4-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
@@ -423,6 +450,7 @@ spec:
     timeout: 1h10m
 
   - name: wait-for-scanner-v4-db-image
+    runAfter: [delay-before-polling]
     params:
     - name: IMAGE
       value: "$(params.scanner-v4-db-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
@@ -431,6 +459,7 @@ spec:
     timeout: 1h10m
 
   - name: wait-for-collector-image
+    runAfter: [delay-before-polling]
     params:
     - name: IMAGE
       value: "$(params.collector-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
@@ -439,6 +468,7 @@ spec:
     timeout: 40m
 
   - name: wait-for-fact-image
+    runAfter: [delay-before-polling]
     params:
     - name: IMAGE
       value: "$(params.fact-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
@@ -447,6 +477,7 @@ spec:
     timeout: 40m
 
   - name: wait-for-roxctl-image
+    runAfter: [delay-before-polling]
     params:
     - name: IMAGE
       value: "$(params.roxctl-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
@@ -455,6 +486,7 @@ spec:
     timeout: 1h10m
 
   - name: wait-for-central-db-image
+    runAfter: [delay-before-polling]
     params:
     - name: IMAGE
       value: "$(params.central-db-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
