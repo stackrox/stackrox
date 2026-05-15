@@ -67,8 +67,6 @@ const WorkflowEntityPageLayout = () => {
         entityContext[pageEntity.entityType] = pageEntity.entityId;
     }
 
-    const pdfId = pageListType ? 'capture-list' : 'capture-widgets';
-
     return (
         <workflowStateContext.Provider value={pageState}>
             <div className="flex flex-1 flex-col" style={style}>
@@ -88,7 +86,7 @@ const WorkflowEntityPageLayout = () => {
                 </PageHeader>
                 <EntityTabs entityType={pageEntityType} activeTab={pageListType} />
                 <div className="flex flex-1 w-full h-full relative z-0 overflow-hidden">
-                    <div className="h-full w-full overflow-auto" id={pdfId}>
+                    <div className="h-full w-full overflow-auto">
                         <EntityComponent
                             entityType={pageEntityType}
                             entityId={pageEntityId}
