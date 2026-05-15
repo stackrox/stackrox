@@ -101,7 +101,7 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     # Repo name can't be too long or `helm search repo [REPO_NAME] -l` cuts off part of the name and the regex below fails.
     helm_repo_name="tmp-srox-compat"
     local helm_chart_url="https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource"
-    if ! helm repo list -o json 2>/dev/null | jq -e --arg name "$helm_repo_name" --arg url "$helm_chart_url" \
+    if ! helm repo list -o json | jq -e --arg name "$helm_repo_name" --arg url "$helm_chart_url" \
         'any(.[]; .name == $name and .url == $url)'; then
         helm repo add --force-update "${helm_repo_name}" "${helm_chart_url}"
     fi
