@@ -27,6 +27,8 @@ func init() {
 		PurgerRunDuration,
 		NumUpdatesSentToCentralCounter,
 		NumUpdatesSentToCentralGauge,
+		NumMessagesDroppedOnSendCounter,
+		NumUpdatesDroppedOnSendCounter,
 
 		// Other
 		NetworkEntityFlowCounter, // flow directions and graph entities
@@ -129,6 +131,18 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      netFlowManagerPrefix + "num_sent_to_central_current",
 		Help:      "A gauge that tracks the current number of connections and endpoints being updated (i.e., sent to Central)",
+	}, []string{"object"})
+	NumMessagesDroppedOnSendCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      netFlowManagerPrefix + "num_messages_dropped_on_send_total",
+		Help:      "Total number of dropped network flow messages",
+	})
+	NumUpdatesDroppedOnSendCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      netFlowManagerPrefix + "num_updates_dropped_on_send_total",
+		Help:      "Total number of connections, endpoints, and endpoints with processes dropped because the send buffer was full",
 	}, []string{"object"})
 	activeFlowsCurrent = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
