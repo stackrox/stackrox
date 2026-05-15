@@ -1176,5 +1176,6 @@ func TestComplianceV2GetComplianceRule(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.Empty(t, resp.GetName())
+		assert.Equal(t, v2.ComplianceRule_OPERATOR_KIND_UNSPECIFIED, resp.GetOperatorKind())
 	})
 }
