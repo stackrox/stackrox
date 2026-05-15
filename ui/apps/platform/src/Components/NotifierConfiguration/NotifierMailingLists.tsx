@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { Button, Flex, FlexItem, SelectOption, TextInput } from '@patternfly/react-core';
-import type { FormikErrors } from 'formik';
+import type { FormikErrors, FormikTouched } from 'formik';
 
 import EmailNotifierModal from 'Components/EmailNotifier/EmailNotifierModal';
 import SelectSingle from 'Components/SelectSingle';
@@ -29,6 +29,7 @@ type NotifierMailingListsProps = {
     setMailingLists: (mailingListsString: string) => void;
     setNotifier: (notifier: NotifierIntegrationBase) => void;
     setNotifiers: (notifiers: NotifierIntegrationBase[]) => void;
+    touched?: FormikTouched<unknown>;
 };
 
 function NotifierMailingLists({
@@ -43,6 +44,7 @@ function NotifierMailingLists({
     setMailingLists,
     setNotifier,
     setNotifiers,
+    touched,
 }: NotifierMailingListsProps): ReactElement {
     const [isEmailNotifierModalOpen, setIsEmailNotifierModalOpen] = useState(false);
 
@@ -109,13 +111,14 @@ function NotifierMailingLists({
             <FormLabelGroup
                 isRequired
                 label="Email notifier"
-                fieldId={`${fieldIdPrefixForFormikAndPatternFly}.notifier`}
+                fieldId={`${fieldIdPrefixForFormikAndPatternFly}.emailConfig.notifierId`}
                 errors={errors}
+                touched={touched}
             >
                 <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsFlexEnd' }}>
                     <FlexItem>
                         <SelectSingle
-                            id={`${fieldIdPrefixForFormikAndPatternFly}.notifier`}
+                            id={`${fieldIdPrefixForFormikAndPatternFly}.emailConfig.notifierId`}
                             isDisabled={isLoadingNotifiers}
                             toggleAriaLabel="Select a notifier"
                             value={notifierId}
@@ -145,6 +148,7 @@ function NotifierMailingLists({
                 fieldId={`${fieldIdPrefixForFormikAndPatternFly}.emailConfig.mailingLists`}
                 helperText="Multiple email addresses can be entered with comma separators."
                 errors={errors}
+                touched={touched}
             >
                 <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsFlexEnd' }}>
                     <FlexItem>

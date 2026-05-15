@@ -143,11 +143,11 @@ func (s *migrationTestSuite) TestMigration() {
 	s.Require().NoError(err)
 	s.Equal("DaemonSet", deployType, "live deployment alert should get type from deployments table")
 
-	// Orphaned deployment: should get type from blob.
+	// Orphaned deployment: stays NULL (defaulted at read time, not migration time).
 	err = dbs.PostgresDB.QueryRow(s.ctx,
 		`SELECT COALESCE(deployment_type, '') FROM alerts WHERE id = $1`, alertIDs["deploy-orphan"]).Scan(&deployType)
 	s.Require().NoError(err)
-	s.Equal("StatefulSet", deployType, "orphaned deployment alert should get type from blob")
+	s.Equal("", deployType, "orphaned deployment alert should remain NULL (defaulted at read time)")
 
 	// Resource alert: should be NULL/empty (not a deployment).
 	err = dbs.PostgresDB.QueryRow(s.ctx,

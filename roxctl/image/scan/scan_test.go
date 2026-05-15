@@ -3,11 +3,11 @@ package scan
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"net"
 	"os"
 	"path"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -296,6 +296,7 @@ func (s *imageScanTestSuite) TestConstruct() {
 
 	cases := map[string]struct {
 		legacyFormat       string
+		expectedFormat     string
 		printerFactory     *printer.ObjectPrinterFactory
 		standardizedFormat bool
 		printer            printer.ObjectPrinter
@@ -307,9 +308,30 @@ func (s *imageScanTestSuite) TestConstruct() {
 			standardizedFormat: true,
 			printer:            jsonPrinter,
 		},
-		"legacy output format should never create printers with empty output format": {
+		"default output should use legacy JSON without creating a printer": {
+			expectedFormat: "json",
 			legacyFormat:   "json",
 			printerFactory: emptyOutputFormatPrinterFactory,
+		},
+		"explicit legacy JSON output should use legacy JSON without creating a printer": {
+			expectedFormat: "json",
+			legacyFormat:   "json",
+			printerFactory: func() *printer.ObjectPrinterFactory {
+				factory, err := printer.NewObjectPrinterFactory("json", jsonFactory)
+				s.Require().NoError(err)
+				factory.OutputFormat = "legacy-json"
+				return factory
+			}(),
+		},
+		"explicit legacy CSV output should use legacy CSV without creating a printer": {
+			expectedFormat: "csv",
+			legacyFormat:   "json",
+			printerFactory: func() *printer.ObjectPrinterFactory {
+				factory, err := printer.NewObjectPrinterFactory("json", jsonFactory)
+				s.Require().NoError(err)
+				factory.OutputFormat = "legacy-csv"
+				return factory
+			}(),
 		},
 		"invalid printer factory should return an error": {
 			printerFactory: invalidObjPrinterFactory,
@@ -333,6 +355,7 @@ func (s *imageScanTestSuite) TestConstruct() {
 			}
 
 			s.Assert().Equal(c.printer, imgScanCmd.printer)
+			s.Assert().Equal(c.expectedFormat, imgScanCmd.format)
 			s.Assert().Equal(c.standardizedFormat, imgScanCmd.standardizedFormat)
 			s.Assert().Equal(1*time.Minute, imgScanCmd.timeout)
 		})
@@ -340,28 +363,40 @@ func (s *imageScanTestSuite) TestConstruct() {
 }
 
 func (s *imageScanTestSuite) TestDeprecationNote() {
-	expectedDeprecationNote := fmt.Sprintf("WARN:\tFlag --format has been deprecated, %s\n", deprecationNote)
-	emptyOutputFormatPrinterFactory, err := printer.NewObjectPrinterFactory("json", printer.NewJSONPrinterFactory(false, false))
-	s.Require().NoError(err)
-	emptyOutputFormatPrinterFactory.OutputFormat = ""
+	expectedDefaultLegacyJSONInfoNote := "INFO:\tDefault image scan output currently uses deprecated legacy-json for backwards compatibility. Use --output=json to migrate to the new JSON output format. NOTE: it contains breaking changes in the format.\n"
+	expectedLegacyJSONDeprecationNote := "WARN:\tOutput format \"legacy-json\" has been deprecated, please use --output=json to migrate to the new JSON output format. NOTE: The new JSON / CSV format contains breaking changes, make sure you adapt to the new structure before migrating.\n"
+	expectedLegacyCSVDeprecationNote := "WARN:\tOutput format \"legacy-csv\" has been deprecated, please use --output=csv to migrate to the new CSV output format. NOTE: The new JSON / CSV format contains breaking changes, make sure you adapt to the new structure before migrating.\n"
 
 	cases := map[string]struct {
-		formatChanged    bool
-		outputChanged    bool
-		printDeprecation bool
+		formatChanged bool
+		outputChanged bool
+		outputFormat  string
+		expectedNote  string
 	}{
-		"default values are not changed, the deprecation warning should be printed": {
-			printDeprecation: true,
+		"default values are not changed, an informational note should be printed": {
+			expectedNote: expectedDefaultLegacyJSONInfoNote,
 		},
 		"changes in format, deprecation warning should not be printed": {
 			formatChanged: true,
 		},
 		"changes in output format, deprecation warning should not be printed": {
 			outputChanged: true,
+			outputFormat:  "json",
 		},
 		"changes in both format and output format, deprecation warning should not be printed": {
 			outputChanged: true,
 			formatChanged: true,
+			outputFormat:  "json",
+		},
+		"explicit legacy JSON output should print deprecation warning": {
+			outputChanged: true,
+			outputFormat:  "legacy-json",
+			expectedNote:  expectedLegacyJSONDeprecationNote,
+		},
+		"explicit legacy CSV output should print deprecation warning": {
+			outputChanged: true,
+			outputFormat:  "legacy-csv",
+			expectedNote:  expectedLegacyCSVDeprecationNote,
 		},
 	}
 
@@ -371,17 +406,88 @@ func (s *imageScanTestSuite) TestDeprecationNote() {
 			io, _, _, errOut := io.TestIO()
 			imgScanCmd.env = environment.NewTestCLIEnvironment(s.T(), io, printer.DefaultColorPrinter())
 			cmd := Command(imgScanCmd.env)
+			printerFactory, err := printer.NewObjectPrinterFactory("json", printer.NewJSONPrinterFactory(false, false))
+			s.Require().NoError(err)
+			printerFactory.OutputFormat = c.outputFormat
 			cmd.Flags().Duration("timeout", 1*time.Minute, "")
 			cmd.Flags().Duration("retry-timeout", 1*time.Minute, "")
 			cmd.Flag("format").Changed = c.formatChanged
 			cmd.Flag("output").Changed = c.outputChanged
 
-			_ = imgScanCmd.Construct(nil, cmd, emptyOutputFormatPrinterFactory)
-			if c.printDeprecation {
-				s.Assert().Equal(expectedDeprecationNote, errOut.String())
+			_ = imgScanCmd.Construct(nil, cmd, printerFactory)
+			if c.expectedNote != "" {
+				s.Assert().Equal(c.expectedNote, errOut.String())
 			} else {
 				s.Assert().Empty(errOut.String())
 			}
+		})
+	}
+}
+
+func (s *imageScanTestSuite) TestFormatFlagDeprecationMessage() {
+	testIO, _, _, _ := io.TestIO()
+	env := environment.NewTestCLIEnvironment(s.T(), testIO, printer.DefaultColorPrinter())
+	cmd := Command(env)
+
+	var output bytes.Buffer
+	cmd.SetErr(&output)
+	cmd.SetOut(&output)
+	cmd.SetArgs([]string{"scan", "--format", "json", "--help"})
+
+	err := cmd.Execute()
+	s.Require().NoError(err)
+
+	s.Assert().Contains(output.String(), "Flag --format has been deprecated")
+	s.Assert().Contains(output.String(), "please use --output/-o to specify the output format")
+	s.Assert().False(strings.Contains(output.String(), "please use --format="))
+}
+
+func (s *imageScanTestSuite) TestLegacyOutputDeprecationMessageEndToEnd() {
+	cases := map[string]struct {
+		outputFlag         string
+		expectedOutputFile string
+		expectedDeprecMsg  string
+		expectedMigration  string
+		jsonCompare        bool
+	}{
+		"legacy-json should print deprecation warning and produce legacy JSON output": {
+			outputFlag:         "legacy-json",
+			expectedOutputFile: "legacy_testComponents.json",
+			expectedDeprecMsg:  `Output format "legacy-json" has been deprecated`,
+			expectedMigration:  "please use --output=json to migrate to the new JSON output format",
+			jsonCompare:        true,
+		},
+		"legacy-csv should print deprecation warning and produce legacy CSV output": {
+			outputFlag:         "legacy-csv",
+			expectedOutputFile: "legacy_testComponents.csv",
+			expectedDeprecMsg:  `Output format "legacy-csv" has been deprecated`,
+			expectedMigration:  "please use --output=csv to migrate to the new CSV output format",
+		},
+	}
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			conn, closeF := s.createGRPCMockImageService(testComponents)
+			defer closeF()
+
+			env, out, errOut := s.newTestMockEnvironmentWithConn(conn)
+			cmd := Command(env)
+			cmd.Flags().Duration("timeout", 1*time.Minute, "")
+			cmd.Flags().Duration("retry-timeout", 1*time.Minute, "")
+			cmd.SetArgs([]string{"--output=" + c.outputFlag, "--image", s.defaultImageScanCommand.image})
+
+			err := cmd.Execute()
+			s.Require().NoError(err)
+
+			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutputFile))
+			s.Require().NoError(err)
+			if c.jsonCompare {
+				s.Assert().JSONEq(string(expectedOutput), out.String())
+			} else {
+				s.Assert().Equal(string(expectedOutput), out.String())
+			}
+			s.Assert().Contains(errOut.String(), c.expectedDeprecMsg)
+			s.Assert().Contains(errOut.String(), c.expectedMigration)
 		})
 	}
 }

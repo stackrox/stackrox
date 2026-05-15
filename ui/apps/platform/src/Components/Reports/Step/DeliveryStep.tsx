@@ -35,6 +35,7 @@ function DeliveryStep<T extends DeliveryType = DeliveryType>({
                         notifierConfigurations={formik.values.notifiers}
                         onDeleteLastNotifierConfiguration={onDeleteLastNotifierConfiguration}
                         setFieldValue={formik.setFieldValue}
+                        touched={formik.touched}
                     />
                     {formik.values.notifiers.length !== 0 && (
                         <ScheduleFormSection formik={formik} />
