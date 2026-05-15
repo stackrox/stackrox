@@ -44,6 +44,7 @@ const (
 	defaultInterval     = 5 * time.Second
 	waitForDoneTimeout  = 5 * time.Minute
 	waitForDoneInterval = 30 * time.Second
+	knownRuleName       = "ocp4-api-server-encryption-provider-cipher"
 )
 
 var (
@@ -283,7 +284,7 @@ func createTailoredProfile(ctx context.Context, t *testing.T, client ctrlClient.
 			Title:       fmt.Sprintf("E2E TailoredProfile %s", name),
 			Description: "Extends ocp4-e8 for e2e testing",
 			DisableRules: []complianceoperatorv1.RuleReferenceSpec{
-				{Name: "ocp4-api-server-encryption-provider-cipher", Rationale: "e2e test"},
+				{Name: knownRuleName, Rationale: "e2e test"},
 			},
 		},
 	}
@@ -1052,7 +1053,7 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 				{Name: "ocp4-api-server-admission-control-plugin-alwaysadmit", Rationale: "e2e test"},
 			},
 			DisableRules: []complianceoperatorv1.RuleReferenceSpec{
-				{Name: "ocp4-api-server-encryption-provider-cipher", Rationale: "e2e test"},
+				{Name: knownRuleName, Rationale: "e2e test"},
 			},
 		},
 		"custom-rules": {
@@ -1132,7 +1133,7 @@ func TestComplianceV2GetComplianceRule(t *testing.T) {
 
 	t.Run("regular", func(t *testing.T) {
 		t.Parallel()
-		ruleName := "ocp4-api-server-encryption-provider-cipher"
+		ruleName := knownRuleName
 		resp, err := ruleClient.GetComplianceRule(ctx, &v2.RuleRequest{
 			RuleName: ruleName,
 			Query:    &v2.RawQuery{Query: "Cluster ID:" + clusterID},
