@@ -14,7 +14,6 @@ echo "cert-watcher: watching ${CERT_DIR} for changes (interval: ${POLL_INTERVAL}
 
 HASH=""
 while true; do
-    sleep "$POLL_INTERVAL"
     NEW_HASH=$(md5sum "$CERT_DIR"/server.crt "$CERT_DIR"/server.key 2>/dev/null | md5sum | awk '{print $1}')
     if [ -n "$NEW_HASH" ] && [ "$NEW_HASH" != "$HASH" ]; then
         if [ -n "$HASH" ]; then
@@ -25,4 +24,5 @@ while true; do
         fi
         HASH="$NEW_HASH"
     fi
+    sleep "$POLL_INTERVAL"
 done
