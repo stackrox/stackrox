@@ -80,7 +80,7 @@ spec:
           # Default: 3Gi (set by task, request == limit, zero headroom).
           # https://github.com/konflux-ci/build-definitions/tree/main/task/prefetch-dependencies-oci-ta
           # Observed peak: 2593Mi (operator), 1544Mi (main). OOMKilled intermittently at 3Gi.
-          # OOMKilled: most common failure (16/50 sampled). 1,905 total failures recovered across 40,656 runs (Apr 7 - May 14, 2026).
+          # OOMKilled: 584/13,559 runs (4.3%), Apr 15 - May 15, 2026. Most common OOM task.
           memory: 4Gi
         requests:
           cpu: 2
@@ -104,7 +104,7 @@ spec:
           # Default: 2Gi (namespace LimitRange). Downloads and decompresses full source+deps artifact.
           # https://github.com/konflux-ci/build-trusted-artifacts
           # Observed peak: 934Mi typical, but spikes past 2Gi during decompression of large monorepo.
-          # OOMKilled: 3/50 sampled failures. 1,905 total failures recovered across 40,656 runs (Apr 7 - May 14, 2026).
+          # OOMKilled: 139/10,381 runs (1.3%), Apr 15 - May 15, 2026.
           memory: 3Gi
 
   - pipelineTaskName: rpms-signature-scan
@@ -115,7 +115,7 @@ spec:
           # Default: 256Mi/256Mi (set by task, request == limit, zero headroom).
           # https://github.com/konflux-ci/build-definitions/tree/main/task/rpms-signature-scan
           # Observed: 193-215Mi steady state with only 41-63Mi headroom. OOMKilled intermittently.
-          # OOMKilled: 8/50 sampled failures. 1,905 total failures recovered across 40,656 runs (Apr 7 - May 14, 2026).
+          # OOMKilled: 180/10,492 runs (1.7%), Apr 15 - May 15, 2026.
           memory: 512Mi
 
   taskRunTemplate:
