@@ -358,10 +358,10 @@ spec:
     - name: git-basic-auth
       workspace: git-auth
 
-  # Delay polling start by 30m. Most upstream builds take 30-60m, so polling
-  # before that wastes 12 pods x 28Mi (skopeo RSS) on fruitless checks.
-  # This single 1Mi pod sleeps, then all wait-for-* tasks start and find
-  # their images immediately (or poll briefly for stragglers).
+  # Delay polling start by 45m. Upstream builds take 11-66m at p50, with
+  # main being the bottleneck (p10=55m, never finishes before 55m). A 45m
+  # delay means 11/12 images are ready when polling starts and only main
+  # needs active polling (~20m at p50). Saves ~188 pod-minutes per run.
   - name: delay-before-polling
     taskSpec:
       steps:
@@ -374,8 +374,9 @@ spec:
           limits:
             memory: 4Mi
         script: |
-          echo "Delaying 30m before image polling starts..."
-          sleep 30m
+          echo "Delaying 45m before image polling starts..."
+          echo "Upstream builds: main p50=66m p10=55m, others p50=11-42m"
+          sleep 45m
           echo "Delay complete, polling tasks will start now."
 
   - name: wait-for-operator-image
