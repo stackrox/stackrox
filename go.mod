@@ -5,7 +5,7 @@ go 1.25.7
 require (
 	cloud.google.com/go/artifactregistry v1.24.0
 	cloud.google.com/go/compute/metadata v0.9.0
-	cloud.google.com/go/containeranalysis v0.18.0
+	cloud.google.com/go/containeranalysis v0.19.0
 	cloud.google.com/go/securitycenter v1.44.0
 	cloud.google.com/go/storage v1.62.1
 	dario.cat/mergo v1.0.2
@@ -120,7 +120,7 @@ require (
 	github.com/sergi/go-diff v1.4.0
 	github.com/sigstore/cosign/v3 v3.0.4
 	github.com/sigstore/rekor v1.5.1
-	github.com/sigstore/sigstore v1.10.5
+	github.com/sigstore/sigstore v1.10.6
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
@@ -155,7 +155,7 @@ require (
 	google.golang.org/api v0.279.0
 	google.golang.org/genproto v0.0.0-20260319201613-d00831a3d3e7
 	google.golang.org/genproto/googleapis/api v0.0.0-20260414002931-afd174a4e478
-	google.golang.org/grpc v1.81.0
+	google.golang.org/grpc v1.81.1
 	google.golang.org/grpc/examples v0.0.0-20250407062114-b368379ef8f6
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
