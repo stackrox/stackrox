@@ -237,7 +237,10 @@ jobs:
           ~/.gradle/caches
           ~/.gradle/wrapper
           qa-tests-backend/.gradle
-          qa-tests-backend/build
+          qa-tests-backend/build/classes
+          qa-tests-backend/build/generated
+          qa-tests-backend/build/resources
+          qa-tests-backend/build/tmp
         key: gradle-qa-${{ hashFiles('qa-tests-backend/build.gradle.kts', 'qa-tests-backend/settings.gradle.kts', 'qa-tests-backend/protobuf.gradle', 'qa-tests-backend/gradle/wrapper/gradle-wrapper.properties') }}
         restore-keys: gradle-qa-
 
@@ -613,7 +616,10 @@ jobs:
           ~/.gradle/caches
           ~/.gradle/wrapper
           qa-tests-backend/.gradle
-          qa-tests-backend/build
+          qa-tests-backend/build/classes
+          qa-tests-backend/build/generated
+          qa-tests-backend/build/resources
+          qa-tests-backend/build/tmp
         key: gradle-qa-${{ hashFiles('qa-tests-backend/build.gradle.kts', 'qa-tests-backend/settings.gradle.kts', 'qa-tests-backend/protobuf.gradle', 'qa-tests-backend/gradle/wrapper/gradle-wrapper.properties') }}
         restore-keys: gradle-qa-
 
