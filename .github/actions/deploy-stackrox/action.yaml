@@ -74,11 +74,10 @@ runs:
         export MAIN_IMAGE_TAG="${{ inputs.tag }}"
 
         deploy() {
-          # Build override YAML with cluster name + scanner config
-          printf 'securedCluster:\n  spec:\n    clusterName: %s\n' "${{ inputs.cluster-name }}" > /tmp/roxie-override.yaml
+          yq -n ".securedCluster.spec.clusterName = \"${{ inputs.cluster-name }}\"" > /tmp/roxie-override.yaml
           case "${{ inputs.scanner }}" in
-            v2)   printf 'central:\n  spec:\n    scanner:\n      scannerComponent: Enabled\n    scannerV4:\n      scannerComponent: Disabled\n' >> /tmp/roxie-override.yaml ;;
-            both) printf 'central:\n  spec:\n    scanner:\n      scannerComponent: Enabled\n' >> /tmp/roxie-override.yaml ;;
+            v2)   yq -i '.central.spec.scanner.scannerComponent = "Enabled" | .central.spec.scannerV4.scannerComponent = "Disabled"' /tmp/roxie-override.yaml ;;
+            both) yq -i '.central.spec.scanner.scannerComponent = "Enabled"' /tmp/roxie-override.yaml ;;
           esac
 
           roxie deploy both \
