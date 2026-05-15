@@ -23,9 +23,11 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ListNodesRequest is the request message for listing nodes in a cluster.
 type ListNodesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id filters nodes to those belonging to the specified cluster.
+	ClusterId     string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -67,6 +69,7 @@ func (x *ListNodesRequest) GetClusterId() string {
 	return ""
 }
 
+// ListNodesResponse contains the list of nodes returned by ListNodes.
 type ListNodesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Nodes         []*storage.Node        `protobuf:"bytes,1,rep,name=nodes,proto3" json:"nodes,omitempty"`
@@ -111,10 +114,14 @@ func (x *ListNodesResponse) GetNodes() []*storage.Node {
 	return nil
 }
 
+// GetNodeRequest identifies a specific node by cluster and node IDs.
 type GetNodeRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	NodeId        string                 `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id is included for API compatibility. The node_id uniquely identifies a node
+	// across all clusters and is sufficient to retrieve it.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// node_id is the unique identifier of the node to retrieve.
+	NodeId        string `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -163,10 +170,14 @@ func (x *GetNodeRequest) GetNodeId() string {
 	return ""
 }
 
+// ExportNodeRequest is the request message for streaming a bulk node export.
 type ExportNodeRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Timeout       int32                  `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	Query         string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// timeout is the maximum number of seconds to wait for the export stream to complete.
+	// Zero means no timeout.
+	Timeout int32 `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	// query filters nodes using StackRox search syntax. If empty, all nodes are exported.
+	Query         string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -215,6 +226,7 @@ func (x *ExportNodeRequest) GetQuery() string {
 	return ""
 }
 
+// ExportNodeResponse is a single streamed item in a bulk node export.
 type ExportNodeResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Node          *storage.Node          `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`

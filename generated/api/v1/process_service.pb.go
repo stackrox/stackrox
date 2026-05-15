@@ -23,9 +23,12 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// GetProcessesByDeploymentRequest specifies the deployment whose process
+// indicators to retrieve.
 type GetProcessesByDeploymentRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	DeploymentId  string                 `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// deployment_id is the ID of the deployment to retrieve processes for. Required.
+	DeploymentId  string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -68,7 +71,8 @@ func (x *GetProcessesByDeploymentRequest) GetDeploymentId() string {
 }
 
 type GetProcessesResponse struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// processes is the list of raw process indicators observed in the deployment.
 	Processes     []*storage.ProcessIndicator `protobuf:"bytes,1,rep,name=processes,proto3" json:"processes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -111,9 +115,13 @@ func (x *GetProcessesResponse) GetProcesses() []*storage.ProcessIndicator {
 	return nil
 }
 
+// ProcessGroup groups all observed process indicator signals that share the
+// same command-line arguments.
 type ProcessGroup struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	Args          string                      `protobuf:"bytes,1,opt,name=args,proto3" json:"args,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// args is the command-line argument string shared by all signals in this group.
+	Args string `protobuf:"bytes,1,opt,name=args,proto3" json:"args,omitempty"`
+	// signals is the list of individual process indicator observations for this argument set.
 	Signals       []*storage.ProcessIndicator `protobuf:"bytes,2,rep,name=signals,proto3" json:"signals,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -163,11 +171,17 @@ func (x *ProcessGroup) GetSignals() []*storage.ProcessIndicator {
 	return nil
 }
 
+// ProcessNameGroup groups all process observations for a single executable
+// path, further subdivided by argument string.
 type ProcessNameGroup struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	TimesExecuted uint32                 `protobuf:"varint,2,opt,name=times_executed,json=timesExecuted,proto3" json:"times_executed,omitempty"`
-	Groups        []*ProcessGroup        `protobuf:"bytes,3,rep,name=groups,proto3" json:"groups,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// name is the full executable path (e.g. /usr/bin/python3).
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// times_executed is the number of distinct container IDs in which this
+	// process was observed.
+	TimesExecuted uint32 `protobuf:"varint,2,opt,name=times_executed,json=timesExecuted,proto3" json:"times_executed,omitempty"`
+	// groups contains sub-groups of observations keyed by argument string.
+	Groups        []*ProcessGroup `protobuf:"bytes,3,rep,name=groups,proto3" json:"groups,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -224,8 +238,9 @@ func (x *ProcessNameGroup) GetGroups() []*ProcessGroup {
 }
 
 type GetGroupedProcessesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Groups        []*ProcessNameGroup    `protobuf:"bytes,3,rep,name=groups,proto3" json:"groups,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// groups is the list of process name groups, sorted by executable path.
+	Groups        []*ProcessNameGroup `protobuf:"bytes,3,rep,name=groups,proto3" json:"groups,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -267,13 +282,22 @@ func (x *GetGroupedProcessesResponse) GetGroups() []*ProcessNameGroup {
 	return nil
 }
 
+// ProcessNameAndContainerNameGroup groups process observations for a single
+// executable + container name combination.
 type ProcessNameAndContainerNameGroup struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	ContainerName string                 `protobuf:"bytes,2,opt,name=container_name,json=containerName,proto3" json:"container_name,omitempty"`
-	TimesExecuted uint32                 `protobuf:"varint,3,opt,name=times_executed,json=timesExecuted,proto3" json:"times_executed,omitempty"`
-	Groups        []*ProcessGroup        `protobuf:"bytes,4,rep,name=groups,proto3" json:"groups,omitempty"`
-	Suspicious    bool                   `protobuf:"varint,5,opt,name=suspicious,proto3" json:"suspicious,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// name is the baseline item name (typically the executable path).
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// container_name is the name of the container within the deployment pod.
+	ContainerName string `protobuf:"bytes,2,opt,name=container_name,json=containerName,proto3" json:"container_name,omitempty"`
+	// times_executed is the number of distinct container IDs in which this
+	// process was observed in this container.
+	TimesExecuted uint32 `protobuf:"varint,3,opt,name=times_executed,json=timesExecuted,proto3" json:"times_executed,omitempty"`
+	// groups contains sub-groups of observations keyed by argument string.
+	Groups []*ProcessGroup `protobuf:"bytes,4,rep,name=groups,proto3" json:"groups,omitempty"`
+	// suspicious is true if this process is not present in the locked process
+	// baseline for this container, indicating it may be unexpected.
+	Suspicious    bool `protobuf:"varint,5,opt,name=suspicious,proto3" json:"suspicious,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -344,7 +368,8 @@ func (x *ProcessNameAndContainerNameGroup) GetSuspicious() bool {
 }
 
 type GetGroupedProcessesWithContainerResponse struct {
-	state         protoimpl.MessageState              `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// groups is the list of process name/container name groups, sorted by executable path.
 	Groups        []*ProcessNameAndContainerNameGroup `protobuf:"bytes,3,rep,name=groups,proto3" json:"groups,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -388,8 +413,9 @@ func (x *GetGroupedProcessesWithContainerResponse) GetGroups() []*ProcessNameAnd
 }
 
 type CountProcessesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Count         int32                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// count is the total number of process indicators matching the query.
+	Count         int32 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

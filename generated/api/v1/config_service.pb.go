@@ -23,9 +23,12 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// PutConfigRequest carries the full Central configuration to replace in a single write.
 type PutConfigRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Config        *storage.Config        `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// config is the complete Central configuration, including both public and private sub-configs.
+	// Both public_config and private_config must be set; omitting either returns INVALID_ARGUMENT.
+	Config        *storage.Config `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -67,10 +70,14 @@ func (x *PutConfigRequest) GetConfig() *storage.Config {
 	return nil
 }
 
+// DayOption defines a selectable number-of-days duration that administrators can enable
+// as a pre-set expiry option for vulnerability exception requests.
 type DayOption struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	NumDays       uint32                 `protobuf:"varint,1,opt,name=num_days,json=numDays,proto3" json:"num_days,omitempty"`
-	Enabled       bool                   `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// num_days is the duration in days for this expiry option. Must be >= 1 when enabled is true.
+	NumDays uint32 `protobuf:"varint,1,opt,name=num_days,json=numDays,proto3" json:"num_days,omitempty"`
+	// enabled controls whether this duration is offered as an expiry choice in the UI.
+	Enabled       bool `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -119,8 +126,11 @@ func (x *DayOption) GetEnabled() bool {
 	return false
 }
 
+// VulnerabilityExceptionConfig controls which expiry options are available when users
+// create vulnerability deferral or false-positive exception requests.
 type VulnerabilityExceptionConfig struct {
-	state         protoimpl.MessageState                      `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// expiry_options defines the expiry modes available when creating vulnerability exceptions.
 	ExpiryOptions *VulnerabilityExceptionConfig_ExpiryOptions `protobuf:"bytes,1,opt,name=expiry_options,json=expiryOptions,proto3" json:"expiry_options,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -164,7 +174,8 @@ func (x *VulnerabilityExceptionConfig) GetExpiryOptions() *VulnerabilityExceptio
 }
 
 type GetVulnerabilityExceptionConfigResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// config is the current vulnerability exception configuration.
 	Config        *VulnerabilityExceptionConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -207,8 +218,12 @@ func (x *GetVulnerabilityExceptionConfigResponse) GetConfig() *VulnerabilityExce
 	return nil
 }
 
+// UpdateVulnerabilityExceptionConfigRequest carries the desired vulnerability exception
+// configuration to store. All expiry_options validation rules apply.
 type UpdateVulnerabilityExceptionConfigRequest struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// config is the new vulnerability exception configuration to apply.
+	// Must be non-nil and pass all validation rules (see VulnerabilityExceptionConfig).
 	Config        *VulnerabilityExceptionConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -252,7 +267,8 @@ func (x *UpdateVulnerabilityExceptionConfigRequest) GetConfig() *VulnerabilityEx
 }
 
 type UpdateVulnerabilityExceptionConfigResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// config is the vulnerability exception configuration as stored after the update.
 	Config        *VulnerabilityExceptionConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -295,8 +311,13 @@ func (x *UpdateVulnerabilityExceptionConfigResponse) GetConfig() *VulnerabilityE
 	return nil
 }
 
+// PutPlatformComponentConfigRequest carries the namespace-matching rules used to classify
+// workloads as platform components rather than user workloads.
 type PutPlatformComponentConfigRequest struct {
-	state         protoimpl.MessageState                  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// rules is the ordered list of namespace-matching rules. Each rule must have a non-empty
+	// name and a valid RE2 namespace regex. Returns INVALID_ARGUMENT for empty names, empty
+	// regexes, or malformed regex patterns.
 	Rules         []*storage.PlatformComponentConfig_Rule `protobuf:"bytes,1,rep,name=rules,proto3" json:"rules,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -340,8 +361,10 @@ func (x *PutPlatformComponentConfigRequest) GetRules() []*storage.PlatformCompon
 }
 
 type GetDefaultRedHatLayeredProductsRegexResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Regex         string                 `protobuf:"bytes,1,opt,name=regex,proto3" json:"regex,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// regex is the built-in default RE2 pattern used to match namespaces that belong to
+	// Red Hat layered products (e.g. OpenShift operators).
+	Regex         string `protobuf:"bytes,1,opt,name=regex,proto3" json:"regex,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -383,13 +406,14 @@ func (x *GetDefaultRedHatLayeredProductsRegexResponse) GetRegex() string {
 	return ""
 }
 
+// FixableCVEOptions defines expiry conditions based on whether vulnerabilities become fixable.
 type VulnerabilityExceptionConfig_FixableCVEOptions struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// This options allows users to expire the vulnerability deferral request if and only if **all** vulnerabilities
-	// in the requests become fixable.
+	// all_fixable, when true, expires the deferral request only when **all** vulnerabilities
+	// in the request become fixable.
 	AllFixable bool `protobuf:"varint,1,opt,name=all_fixable,json=allFixable,proto3" json:"all_fixable,omitempty"`
-	// This options allows users to expire the vulnerability deferral request if **any** vulnerability
-	// in the requests become fixable.
+	// any_fixable, when true, expires the deferral request as soon as **any** vulnerability
+	// in the request becomes fixable.
 	AnyFixable    bool `protobuf:"varint,2,opt,name=any_fixable,json=anyFixable,proto3" json:"any_fixable,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -439,14 +463,21 @@ func (x *VulnerabilityExceptionConfig_FixableCVEOptions) GetAnyFixable() bool {
 	return false
 }
 
+// ExpiryOptions defines the full set of expiry modes presented to users when creating
+// a vulnerability exception. At least one option must be enabled.
 type VulnerabilityExceptionConfig_ExpiryOptions struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// This allows users to set expiry interval based on number of days.
+	// day_options lists the pre-set day-count durations offered as expiry choices.
+	// At least one DayOption must be provided; at least one must be enabled.
+	// All enabled entries must have a unique num_days value >= 1.
 	DayOptions []*DayOption `protobuf:"bytes,1,rep,name=day_options,json=dayOptions,proto3" json:"day_options,omitempty"`
-	// This allows users to set vulnerability request expiry based on the CVEs.
+	// fixable_cve_options configures expiry conditions tied to CVE fixability status.
+	// Must be present; at least one of all_fixable or any_fixable should be true.
 	FixableCveOptions *VulnerabilityExceptionConfig_FixableCVEOptions `protobuf:"bytes,2,opt,name=fixable_cve_options,json=fixableCveOptions,proto3" json:"fixable_cve_options,omitempty"`
-	// This option, if true, allows UI to show a custom date picker for setting expiry date.
-	CustomDate    bool `protobuf:"varint,3,opt,name=custom_date,json=customDate,proto3" json:"custom_date,omitempty"`
+	// custom_date, when true, allows the UI to display a date picker so users can
+	// specify an arbitrary expiry date for the exception.
+	CustomDate bool `protobuf:"varint,3,opt,name=custom_date,json=customDate,proto3" json:"custom_date,omitempty"`
+	// indefinite, when true, allows users to create exceptions with no expiry date.
 	Indefinite    bool `protobuf:"varint,4,opt,name=indefinite,proto3" json:"indefinite,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

@@ -58,10 +58,12 @@ message ListVirtualMachinesRequest {
 }
 
 service VirtualMachineService {
+  // GetVirtualMachine returns the virtual machine with the specified ID, including its latest scan results.
   rpc GetVirtualMachine(GetVirtualMachineRequest) returns (VirtualMachine) {
     option (google.api.http) = {get: "/v2/virtualmachines/{id}"};
   }
 
+  // ListVirtualMachines returns virtual machines matching the specified query.
   rpc ListVirtualMachines(ListVirtualMachinesRequest) returns (ListVirtualMachinesResponse) {
     option (google.api.http) = {get: "/v2/virtualmachines"};
   }

@@ -25,7 +25,14 @@ const (
 // GRPCPreferencesServiceClient is the client API for GRPCPreferencesService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// GRPCPreferencesService returns gRPC transport settings advertised by Central.
+// Clients use these settings to configure gRPC stream buffer sizes.
+//
+// Authentication: no authentication required.
 type GRPCPreferencesServiceClient interface {
+	// Get returns the gRPC preferences for this Central instance, including the
+	// maximum receive message size in bytes.
 	Get(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Preferences, error)
 }
 
@@ -50,7 +57,14 @@ func (c *gRPCPreferencesServiceClient) Get(ctx context.Context, in *Empty, opts 
 // GRPCPreferencesServiceServer is the server API for GRPCPreferencesService service.
 // All implementations should embed UnimplementedGRPCPreferencesServiceServer
 // for forward compatibility.
+//
+// GRPCPreferencesService returns gRPC transport settings advertised by Central.
+// Clients use these settings to configure gRPC stream buffer sizes.
+//
+// Authentication: no authentication required.
 type GRPCPreferencesServiceServer interface {
+	// Get returns the gRPC preferences for this Central instance, including the
+	// maximum receive message size in bytes.
 	Get(context.Context, *Empty) (*Preferences, error)
 }
 

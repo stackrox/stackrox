@@ -32,24 +32,65 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// `ProcessBaselineService` APIs can be used to manage process baselines.
+// ProcessBaselineService manages process baselines for deployments.
+//
+// A process baseline is the set of process names expected to run in a specific
+// container of a deployment (identified by cluster, namespace, deployment, and
+// container name). Processes not in the baseline may trigger policy violations.
+//
+// Baselines start in an unlocked (observation) state where new processes are
+// added automatically. Once locked, new processes are no longer added
+// automatically and violations are generated for unexpected processes.
+// After any update, deployment risks are reprocessed and the baseline is
+// sent to Sensor.
+//
+// Authentication: GetProcessBaseline requires View access to DeploymentExtension.
+// All write operations require Modify access to DeploymentExtension.
 type ProcessBaselineServiceClient interface {
-	// `GetProcessBaselineById` returns the single
-	// process baseline referenced by the given ID.
+	// GetProcessBaseline returns the process baseline identified by the composite
+	// key (cluster_id, namespace, deployment_id, container_name).
+	//
+	// If no baseline exists for the key and the deployment is still present, an
+	// empty unlocked baseline is created and returned.
+	//
+	// Returns INVALID_ARGUMENT if any key field is missing.
+	// Returns NOT_FOUND if the deployment does not exist.
 	GetProcessBaseline(ctx context.Context, in *GetProcessBaselineRequest, opts ...grpc.CallOption) (*storage.ProcessBaseline, error)
-	// `AddToProcessBaselines` adds a list of process
-	// names to each of a list of process baselines.
+	// UpdateProcessBaselines adds and/or removes process names from one or more
+	// process baselines.
+	//
+	// Accepts a list of baseline keys and separate lists of process names to add
+	// and remove. Returns the updated baseline objects and per-key errors for any
+	// failures. After all successful updates, deployment risks are reprocessed
+	// and updated baselines are sent to Sensor.
 	UpdateProcessBaselines(ctx context.Context, in *UpdateProcessBaselinesRequest, opts ...grpc.CallOption) (*UpdateProcessBaselinesResponse, error)
-	// `LockProcessBaselines` accepts a list of baseline IDs, locks
-	// those baselines, and returns the updated baseline objects.
+	// LockProcessBaselines locks or unlocks a list of process baselines
+	// identified by their composite keys.
+	//
+	// When locked is true, the baselines are user-locked; when false, they are
+	// user-unlocked. Returns the updated baseline objects. After updates,
+	// deployment risks are reprocessed and baselines are sent to Sensor.
 	LockProcessBaselines(ctx context.Context, in *LockProcessBaselinesRequest, opts ...grpc.CallOption) (*UpdateProcessBaselinesResponse, error)
-	// `BulkLockProcessBaselines` locks process baselines given a cluster and
-	// an optional set of namespaces. It returns success or an error.
+	// BulkLockProcessBaselines locks all process baselines in a cluster,
+	// optionally restricted to specific namespaces.
+	//
+	// Returns INVALID_ARGUMENT if cluster_id is empty. Returns success=true if
+	// all baselines were locked without error.
 	BulkLockProcessBaselines(ctx context.Context, in *BulkProcessBaselinesRequest, opts ...grpc.CallOption) (*BulkUpdateProcessBaselinesResponse, error)
-	// `BulkUnockProcessBaselines` unlocks process baselines given a cluster and
-	// an optional set of namespaces. It returns success or an error.
+	// BulkUnlockProcessBaselines unlocks all process baselines in a cluster,
+	// optionally restricted to specific namespaces.
+	//
+	// Returns INVALID_ARGUMENT if cluster_id is empty. Returns success=true if
+	// all baselines were unlocked without error.
 	BulkUnlockProcessBaselines(ctx context.Context, in *BulkProcessBaselinesRequest, opts ...grpc.CallOption) (*BulkUpdateProcessBaselinesResponse, error)
-	// `DeleteProcessBaselines` deletes baselines.
+	// DeleteProcessBaselines deletes baselines matching a StackRox search query.
+	//
+	// If confirm is false (dry run), returns num_deleted indicating how many
+	// baselines match without deleting any. If confirm is true, clears the
+	// baseline contents for deployments that still exist and removes baselines
+	// for deployments that have been deleted.
+	//
+	// Returns INVALID_ARGUMENT if the query is empty or malformed.
 	DeleteProcessBaselines(ctx context.Context, in *DeleteProcessBaselinesRequest, opts ...grpc.CallOption) (*DeleteProcessBaselinesResponse, error)
 }
 
@@ -125,24 +166,65 @@ func (c *processBaselineServiceClient) DeleteProcessBaselines(ctx context.Contex
 // All implementations should embed UnimplementedProcessBaselineServiceServer
 // for forward compatibility.
 //
-// `ProcessBaselineService` APIs can be used to manage process baselines.
+// ProcessBaselineService manages process baselines for deployments.
+//
+// A process baseline is the set of process names expected to run in a specific
+// container of a deployment (identified by cluster, namespace, deployment, and
+// container name). Processes not in the baseline may trigger policy violations.
+//
+// Baselines start in an unlocked (observation) state where new processes are
+// added automatically. Once locked, new processes are no longer added
+// automatically and violations are generated for unexpected processes.
+// After any update, deployment risks are reprocessed and the baseline is
+// sent to Sensor.
+//
+// Authentication: GetProcessBaseline requires View access to DeploymentExtension.
+// All write operations require Modify access to DeploymentExtension.
 type ProcessBaselineServiceServer interface {
-	// `GetProcessBaselineById` returns the single
-	// process baseline referenced by the given ID.
+	// GetProcessBaseline returns the process baseline identified by the composite
+	// key (cluster_id, namespace, deployment_id, container_name).
+	//
+	// If no baseline exists for the key and the deployment is still present, an
+	// empty unlocked baseline is created and returned.
+	//
+	// Returns INVALID_ARGUMENT if any key field is missing.
+	// Returns NOT_FOUND if the deployment does not exist.
 	GetProcessBaseline(context.Context, *GetProcessBaselineRequest) (*storage.ProcessBaseline, error)
-	// `AddToProcessBaselines` adds a list of process
-	// names to each of a list of process baselines.
+	// UpdateProcessBaselines adds and/or removes process names from one or more
+	// process baselines.
+	//
+	// Accepts a list of baseline keys and separate lists of process names to add
+	// and remove. Returns the updated baseline objects and per-key errors for any
+	// failures. After all successful updates, deployment risks are reprocessed
+	// and updated baselines are sent to Sensor.
 	UpdateProcessBaselines(context.Context, *UpdateProcessBaselinesRequest) (*UpdateProcessBaselinesResponse, error)
-	// `LockProcessBaselines` accepts a list of baseline IDs, locks
-	// those baselines, and returns the updated baseline objects.
+	// LockProcessBaselines locks or unlocks a list of process baselines
+	// identified by their composite keys.
+	//
+	// When locked is true, the baselines are user-locked; when false, they are
+	// user-unlocked. Returns the updated baseline objects. After updates,
+	// deployment risks are reprocessed and baselines are sent to Sensor.
 	LockProcessBaselines(context.Context, *LockProcessBaselinesRequest) (*UpdateProcessBaselinesResponse, error)
-	// `BulkLockProcessBaselines` locks process baselines given a cluster and
-	// an optional set of namespaces. It returns success or an error.
+	// BulkLockProcessBaselines locks all process baselines in a cluster,
+	// optionally restricted to specific namespaces.
+	//
+	// Returns INVALID_ARGUMENT if cluster_id is empty. Returns success=true if
+	// all baselines were locked without error.
 	BulkLockProcessBaselines(context.Context, *BulkProcessBaselinesRequest) (*BulkUpdateProcessBaselinesResponse, error)
-	// `BulkUnockProcessBaselines` unlocks process baselines given a cluster and
-	// an optional set of namespaces. It returns success or an error.
+	// BulkUnlockProcessBaselines unlocks all process baselines in a cluster,
+	// optionally restricted to specific namespaces.
+	//
+	// Returns INVALID_ARGUMENT if cluster_id is empty. Returns success=true if
+	// all baselines were unlocked without error.
 	BulkUnlockProcessBaselines(context.Context, *BulkProcessBaselinesRequest) (*BulkUpdateProcessBaselinesResponse, error)
-	// `DeleteProcessBaselines` deletes baselines.
+	// DeleteProcessBaselines deletes baselines matching a StackRox search query.
+	//
+	// If confirm is false (dry run), returns num_deleted indicating how many
+	// baselines match without deleting any. If confirm is true, clears the
+	// baseline contents for deployments that still exist and removes baselines
+	// for deployments that have been deleted.
+	//
+	// Returns INVALID_ARGUMENT if the query is empty or malformed.
 	DeleteProcessBaselines(context.Context, *DeleteProcessBaselinesRequest) (*DeleteProcessBaselinesResponse, error)
 }
 

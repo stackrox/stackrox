@@ -29,16 +29,44 @@ const (
 // MetadataServiceClient is the client API for MetadataService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// MetadataService provides system-level information about the Central instance.
+//
+// Endpoints expose version and build metadata, TLS certificate discovery for Sensor bootstrapping,
+// database status, backup status, and the set of features available in the current deployment.
+//
+// Authentication:
+//   - GetMetadata is accessible to authenticated users and Sensor (version only returned to authenticated callers).
+//   - TLSChallenge does not require authentication (used during Sensor bootstrap).
+//   - GetDatabaseStatus, GetDatabaseBackupStatus, and GetCentralCapabilities require authentication.
 type MetadataServiceClient interface {
-	GetMetadata(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Metadata, error)
-	// TLSChallenge
+	// GetMetadata returns version and build information about Central.
 	//
-	// Returns all trusted CAs, i.e., secret/additional-ca and Central's cert
-	// chain. This is necessary if Central is running behind a load balancer
-	// with self-signed certificates. Does not require authentication.
+	// The version field is only populated for authenticated callers; anonymous requests receive
+	// build_flavor and release_build only.
+	GetMetadata(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Metadata, error)
+	// TLSChallenge returns Central's trusted CA certificates and leaf certificate, signed with
+	// Central's internal key, to allow Sensor to verify Central's identity without pre-shared trust.
+	//
+	// This endpoint is unauthenticated to support Sensor bootstrap scenarios where Central is behind
+	// a load balancer with self-signed certificates or during CA rotation. The challenge_token
+	// (base64-encoded, fixed-length random bytes) prevents replay attacks.
+	//
+	// Returns INVALID_ARGUMENT if challenge_token is not valid base64 or has an incorrect length.
 	TLSChallenge(ctx context.Context, in *TLSChallengeRequest, opts ...grpc.CallOption) (*TLSChallengeResponse, error)
+	// GetDatabaseStatus reports whether Central can reach its database, and the database type and version.
+	//
+	// Database type and version are only returned to authenticated callers. The database_available
+	// field is always populated and can be used as a readiness indicator.
 	GetDatabaseStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*DatabaseStatus, error)
+	// GetDatabaseBackupStatus returns information about the most recent database backup recorded by Central.
+	//
+	// Returns NOT_FOUND if no backup has been performed or recorded yet.
 	GetDatabaseBackupStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*DatabaseBackupStatus, error)
+	// GetCentralCapabilities returns which optional Central features are available in the current deployment.
+	//
+	// Capabilities may be disabled for managed (cloud-hosted) Central deployments where certain
+	// self-managed integrations or operations are not applicable.
 	GetCentralCapabilities(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CentralServicesCapabilities, error)
 }
 
@@ -103,16 +131,44 @@ func (c *metadataServiceClient) GetCentralCapabilities(ctx context.Context, in *
 // MetadataServiceServer is the server API for MetadataService service.
 // All implementations should embed UnimplementedMetadataServiceServer
 // for forward compatibility.
+//
+// MetadataService provides system-level information about the Central instance.
+//
+// Endpoints expose version and build metadata, TLS certificate discovery for Sensor bootstrapping,
+// database status, backup status, and the set of features available in the current deployment.
+//
+// Authentication:
+//   - GetMetadata is accessible to authenticated users and Sensor (version only returned to authenticated callers).
+//   - TLSChallenge does not require authentication (used during Sensor bootstrap).
+//   - GetDatabaseStatus, GetDatabaseBackupStatus, and GetCentralCapabilities require authentication.
 type MetadataServiceServer interface {
-	GetMetadata(context.Context, *Empty) (*Metadata, error)
-	// TLSChallenge
+	// GetMetadata returns version and build information about Central.
 	//
-	// Returns all trusted CAs, i.e., secret/additional-ca and Central's cert
-	// chain. This is necessary if Central is running behind a load balancer
-	// with self-signed certificates. Does not require authentication.
+	// The version field is only populated for authenticated callers; anonymous requests receive
+	// build_flavor and release_build only.
+	GetMetadata(context.Context, *Empty) (*Metadata, error)
+	// TLSChallenge returns Central's trusted CA certificates and leaf certificate, signed with
+	// Central's internal key, to allow Sensor to verify Central's identity without pre-shared trust.
+	//
+	// This endpoint is unauthenticated to support Sensor bootstrap scenarios where Central is behind
+	// a load balancer with self-signed certificates or during CA rotation. The challenge_token
+	// (base64-encoded, fixed-length random bytes) prevents replay attacks.
+	//
+	// Returns INVALID_ARGUMENT if challenge_token is not valid base64 or has an incorrect length.
 	TLSChallenge(context.Context, *TLSChallengeRequest) (*TLSChallengeResponse, error)
+	// GetDatabaseStatus reports whether Central can reach its database, and the database type and version.
+	//
+	// Database type and version are only returned to authenticated callers. The database_available
+	// field is always populated and can be used as a readiness indicator.
 	GetDatabaseStatus(context.Context, *Empty) (*DatabaseStatus, error)
+	// GetDatabaseBackupStatus returns information about the most recent database backup recorded by Central.
+	//
+	// Returns NOT_FOUND if no backup has been performed or recorded yet.
 	GetDatabaseBackupStatus(context.Context, *Empty) (*DatabaseBackupStatus, error)
+	// GetCentralCapabilities returns which optional Central features are available in the current deployment.
+	//
+	// Capabilities may be disabled for managed (cloud-hosted) Central deployments where certain
+	// self-managed integrations or operations are not applicable.
 	GetCentralCapabilities(context.Context, *Empty) (*CentralServicesCapabilities, error)
 }
 

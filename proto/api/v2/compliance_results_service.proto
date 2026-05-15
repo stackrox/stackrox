@@ -13,10 +13,15 @@ option java_package = "io.stackrox.proto.api.v2";
 
 // ClusterCheckStatus groups the result of the check by cluster
 message ClusterCheckStatus {
+  // cluster identifies the cluster where this check result was recorded.
   ComplianceScanCluster cluster = 1;
+  // status is the pass/fail/error outcome of this check on the cluster.
   ComplianceCheckStatus status = 2;
+  // created_time is when this check result was first recorded.
   google.protobuf.Timestamp created_time = 3;
+  // check_uid is the unique identifier assigned by the Compliance Operator to this result.
   string check_uid = 4;
+  // last_scan_time is the time the most recent scan that produced this result completed.
   google.protobuf.Timestamp last_scan_time = 5;
 }
 
@@ -24,23 +29,35 @@ message ClusterCheckStatus {
 message ComplianceCheckResult {
   string check_id = 1;
   string check_name = 2;
+  // check_uid is the unique identifier assigned by the Compliance Operator to this result.
   string check_uid = 3;
+  // description explains what the check validates.
   string description = 4;
+  // instructions describes remediation steps when the check fails.
   string instructions = 5;
   reserved 6;
   reserved 7;
+  // rationale explains why this check is important.
   string rationale = 8;
+  // valuesUsed lists the variable values applied when this check was evaluated.
   repeated string valuesUsed = 9;
+  // warnings contains any non-fatal warnings generated during check evaluation.
   repeated string warnings = 10;
+  // status is the pass/fail/error outcome of this check.
   ComplianceCheckStatus status = 11;
+  // rule_name is the name of the Compliance Operator rule that produced this result.
   string rule_name = 12;
   map<string, string> labels = 13;
   map<string, string> annotations = 14;
+  // controls lists the compliance framework controls (e.g. CIS, NIST) this check maps to.
   repeated ComplianceControl controls = 15;
 }
 
+// ComplianceCheckData associates a check result with its cluster and scan context.
 message ComplianceCheckData {
+  // cluster_id identifies the cluster where this check was evaluated.
   string cluster_id = 1;
+  // scan_name identifies the compliance scan configuration that produced this result.
   string scan_name = 2;
   ComplianceCheckResult result = 3;
 }
@@ -50,24 +67,35 @@ message ComplianceClusterCheckStatus {
   string check_id = 1;
   string check_name = 2;
 
+  // clusters lists the per-cluster status of this check.
   repeated ClusterCheckStatus clusters = 3;
+  // description explains what the check validates.
   string description = 4;
+  // instructions describes remediation steps when the check fails.
   string instructions = 5;
   reserved 6;
   reserved 7;
+  // rationale explains why this check is important.
   string rationale = 8;
+  // valuesUsed lists the variable values applied when this check was evaluated.
   repeated string valuesUsed = 9;
+  // warnings contains any non-fatal warnings generated during check evaluation.
   repeated string warnings = 10;
   map<string, string> labels = 11;
   map<string, string> annotations = 12;
+  // controls lists the compliance framework controls this check maps to.
   repeated ComplianceControl controls = 13;
 }
 
 // ComplianceScanResult provides the results of a scan
 message ComplianceScanResult {
+  // scan_name is the name of the scan configuration that produced these results.
   string scan_name = 1;
+  // profile_name is the compliance profile that was applied during the scan.
   string profile_name = 2;
+  // check_results contains the per-check cross-cluster status for this scan.
   repeated ComplianceClusterCheckStatus check_results = 3;
+  // scan_config_id is the ID of the scan configuration that produced these results.
   string scan_config_id = 4;
 }
 
@@ -79,45 +107,81 @@ message ListComplianceScanResultsResponse {
 // ListComplianceResultsResponse provides the complete scan results
 message ListComplianceResultsResponse {
   repeated ComplianceCheckData scan_results = 1;
+  // total_count is the total number of check results matching the query, before pagination.
   int32 total_count = 2;
 }
 
 // ListComplianceCheckClusterResponse provides stats per cluster
 message ListComplianceCheckClusterResponse {
+  // check_results lists the per-cluster status for this check.
   repeated ClusterCheckStatus check_results = 1;
+  // profile_name is the profile that defines this check.
   string profile_name = 2;
+  // check_name is the name of the check being summarized.
   string check_name = 3;
+  // total_count is the total number of cluster results, before pagination.
   int32 total_count = 4;
+  // controls lists the compliance framework controls this check maps to.
   repeated ComplianceControl controls = 5;
 }
 
+// ListComplianceCheckResultResponse provides check results for a profile on a single cluster.
 message ListComplianceCheckResultResponse {
   repeated ComplianceCheckResult check_results = 1;
+  // profile_name is the profile applied during the scan.
   string profile_name = 2;
+  // cluster_id identifies the cluster these results are from.
   string cluster_id = 3;
+  // total_count is the total number of check results, before pagination.
   int32 total_count = 4;
+  // last_scan_time is the time the most recent scan completed on this cluster.
   google.protobuf.Timestamp last_scan_time = 5;
 }
 
+// ComplianceScanResultsRequest filters results to a specific scan configuration.
 message ComplianceScanResultsRequest {
+  // scan_config_name is required; identifies the scan configuration to retrieve results for.
   string scan_config_name = 1;
+  // query further filters results using StackRox search syntax. Supports pagination.
   RawQuery query = 2;
 }
 
+// ComplianceProfileClusterRequest filters check results to a specific profile and cluster.
 message ComplianceProfileClusterRequest {
+  // profile_name is required; the compliance profile to retrieve results for.
   string profile_name = 1;
+  // cluster_id is required; the cluster to retrieve results from.
   string cluster_id = 2;
+  // query further filters results using StackRox search syntax. Supports pagination.
   RawQuery query = 3;
 }
 
+// ComplianceCheckDetailRequest filters check detail to a specific profile and check name.
 message ComplianceCheckDetailRequest {
+  // profile_name is required; the compliance profile this check belongs to.
   string profile_name = 1;
+  // check_name is required; the name of the check to retrieve details for.
   string check_name = 2;
+  // query further filters results using StackRox search syntax.
   RawQuery query = 3;
 }
 
+// ComplianceResultsService provides access to compliance scan check results.
+//
+// Results are produced by the Compliance Operator running on secured clusters and
+// ingested into ACS. Each result records whether a specific check passed, failed,
+// or errored on a given cluster. Results can be queried by scan configuration,
+// profile, cluster, or individual check name.
+//
+// Authentication: all endpoints require View access to both the Compliance and Cluster resources.
 service ComplianceResultsService {
-  // GetComplianceScanCheckResult returns the specific result by ID
+  // GetComplianceScanCheckResult returns the specific result by ID.
+  //
+  // Returns the full cross-cluster check status including per-cluster outcomes,
+  // remediation instructions, rationale, and mapped compliance controls.
+  //
+  // Returns NOT_FOUND if no result with the given ID exists.
+  // Returns INVALID_ARGUMENT if the ID is empty.
   rpc GetComplianceScanCheckResult(ResourceByID) returns (ComplianceClusterCheckStatus) {
     option (google.api.http) = {get: "/v2/compliance/scan/result/{id}"};
   }
@@ -128,33 +192,62 @@ service ComplianceResultsService {
   // - scan: id(s) of the compliance scan
   // - cluster: id(s) of the cluster
   // - profile: id(s) of the profile
+  //
+  // Returns INVALID_ARGUMENT if the query syntax is malformed.
   rpc GetComplianceScanResults(RawQuery) returns (ListComplianceResultsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/results"};
   }
 
   // GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query
   // Optional RawQuery query fields can be combined.
+  //
+  // Filters results to those produced by the named scan configuration. The
+  // scan_config_name field is required. Additional query filters are ANDed in.
+  //
+  // Returns INVALID_ARGUMENT if scan_config_name is empty or the query is malformed.
   rpc GetComplianceScanConfigurationResults(ComplianceScanResultsRequest) returns (ListComplianceResultsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/results/{scan_config_name}"};
   }
 
   // GetComplianceProfileResults retrieves the most recent compliance operator scan results for the specified query
   // Optional RawQuery query fields can be combined.
+  //
+  // Returns per-check result counts grouped by check name for the specified profile.
+  // The profile_name field is required. Supports pagination.
+  //
+  // Returns INVALID_ARGUMENT if profile_name is empty or the query is malformed.
   rpc GetComplianceProfileResults(ComplianceProfileResultsRequest) returns (ListComplianceProfileResults) {
     option (google.api.http) = {get: "/v2/compliance/scan/results/profiles/{profile_name}/checks"};
   }
 
-  // GetComplianceProfileCheckResult lists status of a check per cluster
+  // GetComplianceProfileCheckResult lists status of a check per cluster.
+  //
+  // Returns the per-cluster pass/fail status for a specific check within a profile.
+  // Both profile_name and check_name are required. Supports pagination.
+  //
+  // Returns INVALID_ARGUMENT if profile_name or check_name is empty.
   rpc GetComplianceProfileCheckResult(ComplianceProfileCheckRequest) returns (ListComplianceCheckClusterResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/results/profiles/{profile_name}/checks/{check_name}"};
   }
 
-  // GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster
+  // GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster.
+  //
+  // Returns all check results for the profile/cluster combination, including
+  // per-check remediation details and mapped controls. The last_scan_time reflects
+  // when the most recent scan completed on this cluster.
+  //
+  // Returns INVALID_ARGUMENT if profile_name or cluster_id is empty.
   rpc GetComplianceProfileClusterResults(ComplianceProfileClusterRequest) returns (ListComplianceCheckResultResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/results/profiles/{profile_name}/clusters/{cluster_id}"};
   }
 
-  // GetComplianceProfileCheckDetails
+  // GetComplianceProfileCheckDetails returns normalized details of a check across all clusters.
+  //
+  // Returns a single ComplianceClusterCheckStatus that aggregates the check's description,
+  // instructions, rationale, and per-cluster outcomes. Since check names are versioned
+  // via the profile, the rule definition is consistent across clusters.
+  //
+  // Returns INVALID_ARGUMENT if profile_name or check_name is empty.
   rpc GetComplianceProfileCheckDetails(ComplianceCheckDetailRequest) returns (ComplianceClusterCheckStatus) {
     option (google.api.http) = {get: "/v2/compliance/scan/results/profiles/{profile_name}/checks/{check_name}/details"};
   }

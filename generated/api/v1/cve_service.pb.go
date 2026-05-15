@@ -23,17 +23,17 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// SuppressCVERequest is the request message for suppressing (snoozeing) one or more CVEs.
 type SuppressCVERequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
-	// For example, CVE-2021-44832.
+	// cves is the list of NVD vulnerability identifiers to suppress.
+	// These are the `cve` field values of `storage.CVE` (e.g. "CVE-2021-44832"),
+	// and *not* the internal `id` field.
 	Cves []string `protobuf:"bytes,1,rep,name=cves,proto3" json:"cves,omitempty"`
-	// In JSON format, the Duration type is encoded as a string rather than an object,
-	// where the string ends in the suffix "s" (indicating seconds) and is preceded by the number of seconds,
-	// with nanoseconds expressed as fractional seconds.
-	// For example, 3 seconds with 0 nanoseconds should be encoded in JSON format as "3s",
-	// while 3 seconds and 1 nanosecond should be expressed in JSON format as "3.000000001s",
-	// and 3 seconds and 1 microsecond should be expressed in JSON format as "3.000001s".
+	// duration specifies how long the CVE should remain suppressed (snoozed).
+	// After this duration elapses, the CVE returns to the OBSERVED state automatically.
+	// In JSON format, encode as a string with a trailing "s" suffix representing seconds;
+	// nanoseconds are expressed as fractional seconds (e.g. "3s", "3.000000001s", "3.000001s").
 	Duration      *durationpb.Duration `protobuf:"bytes,3,opt,name=duration,proto3" json:"duration,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -83,10 +83,12 @@ func (x *SuppressCVERequest) GetDuration() *durationpb.Duration {
 	return nil
 }
 
+// UnsuppressCVERequest is the request message for lifting suppression from one or more CVEs.
 type UnsuppressCVERequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
-	// For example, CVE-2021-44832.
+	// cves is the list of NVD vulnerability identifiers to unsuppress.
+	// These are the `cve` field values of `storage.CVE` (e.g. "CVE-2021-44832"),
+	// and *not* the internal `id` field.
 	Cves          []string `protobuf:"bytes,1,rep,name=cves,proto3" json:"cves,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

@@ -18,7 +18,8 @@
   "paths": {
     "/v1/administration/events": {
       "get": {
-        "summary": "ListAdministrationEvents returns the list of events after filtered by requested fields.",
+        "summary": "ListAdministrationEvents returns a paginated list of administration events matching the given filter.",
+        "description": "Results are sorted by last update time descending (most recent first) by default.\nThe maximum page size is 1000 events.\nFilters support time range (from/until based on creation time), domain, resource type,\nevent type, and level. All specified filters are ANDed.\nRequires read access to the Administration resource.",
         "operationId": "AdministrationEventService_ListAdministrationEvents",
         "responses": {
           "200": {
@@ -160,7 +161,8 @@
     },
     "/v1/administration/events/{id}": {
       "get": {
-        "summary": "GetAdministrationEvent retrieves an event by ID.",
+        "summary": "GetAdministrationEvent returns the administration event with the given ID.",
+        "description": "Requires read access to the Administration resource.",
         "operationId": "AdministrationEventService_GetAdministrationEvent",
         "responses": {
           "200": {
@@ -191,7 +193,8 @@
     },
     "/v1/count/administration/events": {
       "get": {
-        "summary": "CountAdministrationEvents returns the number of events after filtering by requested fields.",
+        "summary": "CountAdministrationEvents returns the number of events matching the given filter.",
+        "description": "The filter supports time range (from/until), domain, resource type, event type, and level.\nAll specified filters are ANDed. Requires read access to the Administration resource.",
         "operationId": "AdministrationEventService_CountAdministrationEvents",
         "responses": {
           "200": {

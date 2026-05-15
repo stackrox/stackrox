@@ -23,14 +23,20 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Scope enumerates the Kubernetes entity types that a compliance standard
+// evaluates. A standard may target multiple scopes simultaneously.
 type ComplianceStandardMetadata_Scope int32
 
 const (
-	ComplianceStandardMetadata_UNSET      ComplianceStandardMetadata_Scope = 0
-	ComplianceStandardMetadata_CLUSTER    ComplianceStandardMetadata_Scope = 1
-	ComplianceStandardMetadata_NAMESPACE  ComplianceStandardMetadata_Scope = 2
+	ComplianceStandardMetadata_UNSET ComplianceStandardMetadata_Scope = 0
+	// CLUSTER indicates the standard evaluates cluster-level configuration.
+	ComplianceStandardMetadata_CLUSTER ComplianceStandardMetadata_Scope = 1
+	// NAMESPACE indicates the standard evaluates namespace-level resources.
+	ComplianceStandardMetadata_NAMESPACE ComplianceStandardMetadata_Scope = 2
+	// DEPLOYMENT indicates the standard evaluates workload deployments.
 	ComplianceStandardMetadata_DEPLOYMENT ComplianceStandardMetadata_Scope = 3
-	ComplianceStandardMetadata_NODE       ComplianceStandardMetadata_Scope = 4
+	// NODE indicates the standard evaluates individual cluster nodes.
+	ComplianceStandardMetadata_NODE ComplianceStandardMetadata_Scope = 4
 )
 
 // Enum value maps for ComplianceStandardMetadata_Scope.
@@ -78,12 +84,33 @@ func (ComplianceStandardMetadata_Scope) EnumDescriptor() ([]byte, []int) {
 	return file_api_v1_compliance_service_proto_rawDescGZIP(), []int{1, 0}
 }
 
+// ComplianceAggregationRequest controls how compliance check results are
+// aggregated across the fleet.
+//
+// `unit` sets the granularity of each result row: what entity type each
+// num_passing/num_failing count refers to (e.g. CHECK means one row per
+// individual check, CONTROL means one row per control).
+//
+// `group_by` adds additional breakdown dimensions. For example,
+// group_by=[CLUSTER, STANDARD] with unit=CONTROL produces one row per
+// (cluster, standard, control) combination.
+//
+// If `unit` is omitted or UNKNOWN, the server defaults it to CHECK.
+//
 // Next available tag: 4
 type ComplianceAggregationRequest struct {
-	state         protoimpl.MessageState                `protogen:"open.v1"`
-	GroupBy       []storage.ComplianceAggregation_Scope `protobuf:"varint,1,rep,packed,name=group_by,json=groupBy,proto3,enum=storage.ComplianceAggregation_Scope" json:"group_by,omitempty"`
-	Unit          storage.ComplianceAggregation_Scope   `protobuf:"varint,2,opt,name=unit,proto3,enum=storage.ComplianceAggregation_Scope" json:"unit,omitempty"`
-	Where         *RawQuery                             `protobuf:"bytes,3,opt,name=where,proto3" json:"where,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// group_by adds breakdown dimensions to the aggregation result.
+	// Each scope in this list becomes an additional key in every result row.
+	// Example: [CLUSTER, STANDARD] groups results by cluster and standard.
+	GroupBy []storage.ComplianceAggregation_Scope `protobuf:"varint,1,rep,packed,name=group_by,json=groupBy,proto3,enum=storage.ComplianceAggregation_Scope" json:"group_by,omitempty"`
+	// unit specifies the granularity of each result row — the entity type that
+	// num_passing, num_failing, and num_skipped counts refer to.
+	// Defaults to CHECK when unset or UNKNOWN.
+	Unit storage.ComplianceAggregation_Scope `protobuf:"varint,2,opt,name=unit,proto3,enum=storage.ComplianceAggregation_Scope" json:"unit,omitempty"`
+	// where filters the compliance data before aggregation using StackRox search
+	// query syntax (e.g. "Cluster:production+Standard:CIS").
+	Where         *RawQuery `protobuf:"bytes,3,opt,name=where,proto3" json:"where,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -139,17 +166,30 @@ func (x *ComplianceAggregationRequest) GetWhere() *RawQuery {
 	return nil
 }
 
+// ComplianceStandardMetadata describes a compliance standard registered in
+// StackRox, such as CIS Kubernetes, NIST 800-53, NIST 800-190, PCI DSS 3.2,
+// or HIPAA 164.
 type ComplianceStandardMetadata struct {
-	state                protoimpl.MessageState             `protogen:"open.v1"`
-	Id                   string                             `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Standard ID,hidden"`     // @gotags: search:"Standard ID,hidden"
-	Name                 string                             `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Standard,hidden"` // @gotags: search:"Standard,hidden"
-	Description          string                             `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	NumImplementedChecks int32                              `protobuf:"varint,4,opt,name=num_implemented_checks,json=numImplementedChecks,proto3" json:"num_implemented_checks,omitempty"`
-	Scopes               []ComplianceStandardMetadata_Scope `protobuf:"varint,5,rep,packed,name=scopes,proto3,enum=v1.ComplianceStandardMetadata_Scope" json:"scopes,omitempty"`
-	Dynamic              bool                               `protobuf:"varint,6,opt,name=dynamic,proto3" json:"dynamic,omitempty"`
-	HideScanResults      bool                               `protobuf:"varint,7,opt,name=hideScanResults,proto3" json:"hideScanResults,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Standard ID,hidden"`     // @gotags: search:"Standard ID,hidden"
+	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Standard,hidden"` // @gotags: search:"Standard,hidden"
+	Description string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	// num_implemented_checks is the count of controls that have automated checks
+	// implemented in this StackRox version.
+	NumImplementedChecks int32 `protobuf:"varint,4,opt,name=num_implemented_checks,json=numImplementedChecks,proto3" json:"num_implemented_checks,omitempty"`
+	// scopes lists the entity types (CLUSTER, NAMESPACE, DEPLOYMENT, NODE) that
+	// this standard evaluates. Controls within this standard may target any
+	// subset of these scopes.
+	Scopes []ComplianceStandardMetadata_Scope `protobuf:"varint,5,rep,packed,name=scopes,proto3,enum=v1.ComplianceStandardMetadata_Scope" json:"scopes,omitempty"`
+	// dynamic indicates the standard is provided by an external compliance
+	// operator (e.g. OpenShift Compliance Operator) rather than built into
+	// StackRox. Dynamic standards may not have full scan result support.
+	Dynamic bool `protobuf:"varint,6,opt,name=dynamic,proto3" json:"dynamic,omitempty"`
+	// hideScanResults controls whether scan results for this standard are
+	// suppressed in aggregated views. Set via UpdateComplianceStandardConfig.
+	HideScanResults bool `protobuf:"varint,7,opt,name=hideScanResults,proto3" json:"hideScanResults,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ComplianceStandardMetadata) Reset() {
@@ -231,13 +271,17 @@ func (x *ComplianceStandardMetadata) GetHideScanResults() bool {
 	return false
 }
 
+// ComplianceControlGroup is a logical grouping of related controls within a
+// compliance standard (e.g. a section or chapter).
 type ComplianceControlGroup struct {
-	state                protoimpl.MessageState `protogen:"open.v1"`
-	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Control Group ID"`                                   // @gotags: search:"Control Group ID"
-	StandardId           string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" search:"Standard ID"` // @gotags: search:"Standard ID"
-	Name                 string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Control Group"`                               // @gotags: search:"Control Group"
-	Description          string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	NumImplementedChecks int32                  `protobuf:"varint,5,opt,name=num_implemented_checks,json=numImplementedChecks,proto3" json:"num_implemented_checks,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Control Group ID"`                                   // @gotags: search:"Control Group ID"
+	StandardId  string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" search:"Standard ID"` // @gotags: search:"Standard ID"
+	Name        string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Control Group"`                               // @gotags: search:"Control Group"
+	Description string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	// num_implemented_checks is the count of controls in this group that have
+	// automated checks implemented in this StackRox version.
+	NumImplementedChecks int32 `protobuf:"varint,5,opt,name=num_implemented_checks,json=numImplementedChecks,proto3" json:"num_implemented_checks,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -307,15 +351,22 @@ func (x *ComplianceControlGroup) GetNumImplementedChecks() int32 {
 	return 0
 }
 
+// ComplianceControl represents a single requirement or check within a
+// compliance standard (e.g. CIS Kubernetes 1.1.1 or NIST 800-53 AC-2).
 type ComplianceControl struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Control ID,hidden"`                                   // @gotags: search:"Control ID,hidden"
-	StandardId         string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" search:"Standard ID,hidden"` // @gotags: search:"Standard ID,hidden"
-	GroupId            string                 `protobuf:"bytes,3,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty" search:"Control Group ID,hidden"`          // @gotags: search:"Control Group ID,hidden"
-	Name               string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty" search:"Control"`                               // @gotags: search:"Control"
-	Description        string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
-	Implemented        bool                   `protobuf:"varint,6,opt,name=implemented,proto3" json:"implemented,omitempty"`
-	InterpretationText string                 `protobuf:"bytes,7,opt,name=interpretation_text,json=interpretationText,proto3" json:"interpretation_text,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Control ID,hidden"`                                   // @gotags: search:"Control ID,hidden"
+	StandardId  string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" search:"Standard ID,hidden"` // @gotags: search:"Standard ID,hidden"
+	GroupId     string                 `protobuf:"bytes,3,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty" search:"Control Group ID,hidden"`          // @gotags: search:"Control Group ID,hidden"
+	Name        string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty" search:"Control"`                               // @gotags: search:"Control"
+	Description string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	// implemented indicates this control has an automated check in StackRox.
+	// Controls where implemented=false are informational only and will not
+	// appear in scan results.
+	Implemented bool `protobuf:"varint,6,opt,name=implemented,proto3" json:"implemented,omitempty"`
+	// interpretation_text explains how StackRox evaluates this control and what
+	// evidence is collected. Only present when implemented=true.
+	InterpretationText string `protobuf:"bytes,7,opt,name=interpretation_text,json=interpretationText,proto3" json:"interpretation_text,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -399,6 +450,8 @@ func (x *ComplianceControl) GetInterpretationText() string {
 	return ""
 }
 
+// ComplianceStandard is the full definition of a compliance standard,
+// including its metadata, control groups, and individual controls.
 type ComplianceStandard struct {
 	state         protoimpl.MessageState      `protogen:"open.v1"`
 	Metadata      *ComplianceStandardMetadata `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
@@ -460,8 +513,10 @@ func (x *ComplianceStandard) GetControls() []*ComplianceControl {
 }
 
 type GetComplianceStandardResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Standard      *ComplianceStandard    `protobuf:"bytes,1,opt,name=standard,proto3" json:"standard,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// standard is the full compliance standard definition including all control
+	// groups and individual controls.
+	Standard      *ComplianceStandard `protobuf:"bytes,1,opt,name=standard,proto3" json:"standard,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -504,7 +559,9 @@ func (x *GetComplianceStandardResponse) GetStandard() *ComplianceStandard {
 }
 
 type GetComplianceStandardsResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// standards is the list of active compliance standards. Only standards that
+	// are active for at least one secured cluster are included.
 	Standards     []*ComplianceStandardMetadata `protobuf:"bytes,1,rep,name=standards,proto3" json:"standards,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -547,10 +604,14 @@ func (x *GetComplianceStandardsResponse) GetStandards() []*ComplianceStandardMet
 	return nil
 }
 
+// UpdateComplianceRequest configures display settings for a compliance standard.
 type UpdateComplianceRequest struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	HideScanResults bool                   `protobuf:"varint,2,opt,name=hideScanResults,proto3" json:"hideScanResults,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the compliance standard ID to update (e.g. the standard's short name).
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// hideScanResults controls whether scan results for this standard are
+	// suppressed in aggregated compliance views across the platform.
+	HideScanResults bool `protobuf:"varint,2,opt,name=hideScanResults,proto3" json:"hideScanResults,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -599,10 +660,14 @@ func (x *UpdateComplianceRequest) GetHideScanResults() bool {
 	return false
 }
 
+// GetComplianceRunResultsRequest identifies which compliance run results to fetch.
 type GetComplianceRunResultsRequest struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId  string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	StandardId string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id is the ID of the secured cluster whose results to return.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// standard_id is the compliance standard whose results to return
+	// (e.g. "CIS_Kubernetes_v1_5_0").
+	StandardId string `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty"`
 	// Specifies the run ID for which to return results. If empty, the most recent run is returned.
 	// CAVEAT: Setting this field circumvents the results cache on the server-side, which may lead to significantly
 	//
@@ -663,9 +728,15 @@ func (x *GetComplianceRunResultsRequest) GetRunId() string {
 	return ""
 }
 
+// GetComplianceRunResultsResponse contains the results of a compliance scan
+// run for a specific cluster and standard.
 type GetComplianceRunResultsResponse struct {
-	state         protoimpl.MessageState           `protogen:"open.v1"`
-	Results       *storage.ComplianceRunResults    `protobuf:"bytes,1,opt,name=results,proto3" json:"results,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// results contains the most recent successful run's per-entity check results,
+	// broken down by cluster, node, deployment, and machine config.
+	Results *storage.ComplianceRunResults `protobuf:"bytes,1,opt,name=results,proto3" json:"results,omitempty"`
+	// failed_runs lists metadata for any runs that failed before or after the
+	// most recent successful run. Useful for diagnosing scan errors.
 	FailedRuns    []*storage.ComplianceRunMetadata `protobuf:"bytes,2,rep,name=failed_runs,json=failedRuns,proto3" json:"failed_runs,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

@@ -18,9 +18,15 @@ option java_package = "io.stackrox.proto.api.v1";
 // API specific objects.
 ////////////////////////
 
+// GetNetworkPoliciesRequest filters the list of network policies returned for
+// a cluster.
 message GetNetworkPoliciesRequest {
+  // cluster_id restricts results to policies in this cluster. Required.
   string cluster_id = 1;
+  // deployment_query is an optional StackRox search query; when set, only
+  // policies that apply to at least one matching deployment are returned.
   string deployment_query = 2;
+  // namespace restricts results to policies in this Kubernetes namespace.
   string namespace = 3;
 }
 
@@ -28,90 +34,163 @@ message NetworkPoliciesResponse {
   repeated storage.NetworkPolicy network_policies = 1;
 }
 
+// SendNetworkPolicyYamlRequest delivers a network policy modification as YAML
+// to one or more configured notifiers (e.g. Slack, email).
 message SendNetworkPolicyYamlRequest {
+  // cluster_id identifies the target cluster. Required.
   string cluster_id = 1;
+  // notifier_ids is the list of notifier IDs to send the YAML to. Required.
   repeated string notifier_ids = 2;
+  // modification is the network policy change to send. Must be non-empty.
   storage.NetworkPolicyModification modification = 3;
 }
 
+// GetNetworkGraphRequest generates a policy-based network connectivity graph
+// for a cluster, reflecting which deployments can communicate based on
+// current NetworkPolicies (not observed flows).
 message GetNetworkGraphRequest {
+  // cluster_id is the cluster to generate the graph for. Required.
   string cluster_id = 1;
+  // query filters deployments shown as query-match nodes using StackRox search syntax.
   string query = 2;
 
   // If set to true, include port-level information in the network policy graph.
   bool include_ports = 3;
+  // scope further restricts the set of deployments shown as graph nodes.
   NetworkGraphScope scope = 4;
 }
 
+// SimulateNetworkGraphRequest previews how the network connectivity graph
+// would change if a set of NetworkPolicy modifications were applied.
 message SimulateNetworkGraphRequest {
+  // cluster_id is the cluster to simulate against. Required.
   string cluster_id = 1;
+  // query filters deployments shown as query-match nodes using StackRox search syntax.
   string query = 2;
+  // modification describes the network policies to add, modify, or delete in
+  // the simulation. Must be non-empty and must not affect restricted namespaces
+  // (stackrox, kube-system).
   storage.NetworkPolicyModification modification = 3;
 
   // If set to true, include port-level information in the network policy graph.
   bool include_ports = 4;
+  // include_node_diff controls whether added/removed edge diffs between the
+  // current and simulated graphs are computed and returned. When false, only
+  // the simulated graph and policy list are returned.
   bool include_node_diff = 5;
+  // scope further restricts the set of deployments shown as graph nodes.
   NetworkGraphScope scope = 6;
 }
 
+// ApplyNetworkPolicyYamlRequest applies a set of NetworkPolicy changes to a
+// cluster via the connected Sensor.
 message ApplyNetworkPolicyYamlRequest {
+  // cluster_id is the cluster to apply the modification to. Required.
   string cluster_id = 1;
+  // modification describes the policies to create/update and the policies to delete.
   storage.NetworkPolicyModification modification = 2;
 }
 
+// GetUndoModificationRequest fetches the undo record for the most recent
+// network policy application to a cluster.
 message GetUndoModificationRequest {
+  // cluster_id identifies the cluster whose undo record to retrieve.
   string cluster_id = 1;
 }
 
+// GetUndoModificationResponse contains the undo record for the last applied
+// network policy modification to a cluster.
 message GetUndoModificationResponse {
+  // undo_record describes the original modification and the modification
+  // needed to revert it.
   storage.NetworkPolicyApplicationUndoRecord undo_record = 1;
 }
 
+// NetworkPolicyInSimulation represents a single network policy in the context
+// of a simulation, annotated with whether it is unchanged, added, modified,
+// or deleted by the proposed modification.
 message NetworkPolicyInSimulation {
   enum Status {
     INVALID = 0;
+    // UNCHANGED means this policy is not affected by the proposed modification.
     UNCHANGED = 1;
+    // MODIFIED means this policy is replaced by a new version in the simulation.
     MODIFIED = 2;
+    // ADDED means this policy does not currently exist and would be created.
     ADDED = 3;
+    // DELETED means this policy would be removed by the modification.
     DELETED = 4;
   }
 
+  // policy is the network policy in its simulated state (nil if DELETED).
   storage.NetworkPolicy policy = 1;
+  // status indicates how this policy is affected by the proposed modification.
   Status status = 2;
+  // old_policy is the current (pre-simulation) version of the policy.
+  // Populated when status is MODIFIED or DELETED.
   storage.NetworkPolicy old_policy = 3; // if status is MODIFIED or DELETED, this contains the previous network policy.
 }
 
+// NetworkNodeDiff captures the change to a single network node's connectivity
+// between two graph states (e.g. current vs. simulated).
 message NetworkNodeDiff {
+  // policy_ids lists NetworkPolicy IDs that select this deployment in the new state.
   repeated string policy_ids = 1;
   map<int32, NetworkEdgePropertiesBundle> DEPRECATED_out_edges = 2 [deprecated = true];
+  // out_edges maps a destination node ID to the edge properties in the new state.
   map<string, NetworkEdgePropertiesBundle> out_edges = 5;
 
+  // non_isolated_ingress is true when no ingress policy selects this node in the new state.
   bool non_isolated_ingress = 3;
+  // non_isolated_egress is true when no egress policy selects this node in the new state.
   bool non_isolated_egress = 4;
 }
 
+// NetworkGraphDiff summarizes which edges were added or removed between two
+// network graph states.
 message NetworkGraphDiff {
   map<int32, NetworkNodeDiff> DEPRECATED_node_diffs = 1 [deprecated = true];
+  // node_diffs maps a node ID to the connectivity changes for that node.
   map<string, NetworkNodeDiff> node_diffs = 2;
 }
 
+// SimulateNetworkGraphResponse contains the results of a network policy
+// simulation, including the simulated graph, the policy states, and optional
+// edge diffs.
 message SimulateNetworkGraphResponse {
+  // simulated_graph is the network connectivity graph after applying the
+  // proposed modification.
   NetworkGraph simulated_graph = 1;
+  // policies is the full list of network policies in the simulation with their
+  // change status (UNCHANGED, ADDED, MODIFIED, DELETED).
   repeated NetworkPolicyInSimulation policies = 2;
 
+  // added contains nodes and edges that would be added by the modification.
+  // Only populated when include_node_diff is true and the modification has changes.
   NetworkGraphDiff added = 3;
+  // removed contains nodes and edges that would be removed by the modification.
+  // Only populated when include_node_diff is true and the modification has changes.
   NetworkGraphDiff removed = 4;
 }
 
+// GetNetworkGraphEpochRequest requests the current network graph epoch for a
+// cluster.
 message GetNetworkGraphEpochRequest {
+  // cluster_id identifies the cluster whose epoch to retrieve. Required.
   string cluster_id = 1;
 }
 
+// NetworkGraphEpoch is a version counter for the network policy graph of a
+// cluster. It increments whenever the underlying network policies change.
 message NetworkGraphEpoch {
+  // epoch is a monotonically increasing counter. Clients can poll this to
+  // detect when the graph needs to be refreshed.
   uint32 epoch = 1;
 }
 
 // Next available tag: 5
+// GenerateNetworkPoliciesRequest describes the parameters for auto-generating
+// Kubernetes NetworkPolicies based on observed network flows.
 message GenerateNetworkPoliciesRequest {
   enum DeleteExistingPoliciesMode {
     UNKNOWN = 0;
@@ -120,78 +199,181 @@ message GenerateNetworkPoliciesRequest {
     ALL = 3; // Delete all existing network policies in the respective namespace.
   }
 
+  // cluster_id is the cluster to generate policies for. Required.
   string cluster_id = 1;
+  // query filters the deployments whose observed flows are used for generation,
+  // using StackRox search syntax.
   string query = 2;
+  // delete_existing controls whether existing policies are deleted before applying
+  // the generated ones. Defaults to NONE if UNKNOWN.
   DeleteExistingPoliciesMode delete_existing = 3;
 
+  // network_data_since restricts flows used for generation to those observed
+  // after this timestamp.
   google.protobuf.Timestamp network_data_since = 4;
 
+  // include_ports controls whether per-port connection details are reflected in
+  // the generated policy rules.
   bool include_ports = 5;
 }
 
 // Next available tag: 2
+// GenerateNetworkPoliciesResponse contains the generated NetworkPolicy YAML
+// modification ready to be applied or previewed.
 message GenerateNetworkPoliciesResponse {
+  // modification contains the YAML for newly generated policies and references
+  // to policies that should be deleted, per the delete_existing mode.
   storage.NetworkPolicyModification modification = 1;
 }
 
+// GetBaselineGeneratedPolicyForDeploymentRequest requests auto-generation of
+// a NetworkPolicy for a specific deployment based on its network baseline.
 message GetBaselineGeneratedPolicyForDeploymentRequest {
+  // deployment_id is the ID of the deployment to generate the policy for. Required.
   string deployment_id = 1;
+  // delete_existing controls whether any existing baseline-generated policy for
+  // this deployment is included in the modification's delete list.
   GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode delete_existing = 2;
+  // include_ports controls whether per-port details are reflected in the generated rules.
   bool include_ports = 3;
 }
 
+// GetBaselineGeneratedPolicyForDeploymentResponse contains the generated
+// NetworkPolicy modification for a specific deployment.
 message GetBaselineGeneratedPolicyForDeploymentResponse {
+  // modification contains the generated policy YAML and any policies to delete.
   storage.NetworkPolicyModification modification = 1;
 }
 
+// GetAllowedPeersFromCurrentPolicyForDeploymentResponse lists all network
+// peers that are currently permitted to communicate with a deployment based
+// on the active NetworkPolicies.
 message GetAllowedPeersFromCurrentPolicyForDeploymentResponse {
+  // allowed_peers is the list of permitted peer connections, including port,
+  // protocol, and ingress/egress direction for each peer.
   repeated NetworkBaselineStatusPeer allowed_peers = 1;
 }
 
+// ApplyNetworkPolicyYamlForDeploymentRequest applies a network policy
+// modification to the cluster of the specified deployment and records an
+// undo record keyed by deployment ID.
 message ApplyNetworkPolicyYamlForDeploymentRequest {
+  // deployment_id is used to look up the target cluster and to key the undo record.
   string deployment_id = 1;
+  // modification describes the policies to create/update and the policies to delete.
   storage.NetworkPolicyModification modification = 2;
 }
 
+// GetUndoModificationForDeploymentResponse contains the undo record for the
+// last network policy modification applied via ApplyNetworkPolicyYamlForDeployment.
 message GetUndoModificationForDeploymentResponse {
+  // undo_record describes the original modification and the change needed to revert it.
   storage.NetworkPolicyApplicationUndoRecord undo_record = 1;
 }
 
+// GetDiffFlowsReconciledFlow captures the connection-level diff for a single
+// peer between two network policy states.
 message GetDiffFlowsReconciledFlow {
+  // entity is the peer network entity.
   storage.NetworkEntityInfo entity = 1;
+  // added lists connection properties that would be newly permitted in the new state.
   repeated storage.NetworkBaselineConnectionProperties added = 2;
+  // removed lists connection properties that would no longer be permitted.
   repeated storage.NetworkBaselineConnectionProperties removed = 3;
+  // unchanged lists connection properties permitted in both states.
   repeated storage.NetworkBaselineConnectionProperties unchanged = 4;
 }
 
+// GetDiffFlowsGroupedFlow groups connection properties for a single peer in
+// one of the two compared policy states (added or removed).
 message GetDiffFlowsGroupedFlow {
+  // entity is the peer network entity.
   storage.NetworkEntityInfo entity = 1;
+  // properties are the connection properties (port, protocol, direction) for this peer.
   repeated storage.NetworkBaselineConnectionProperties properties = 2;
 }
 
+// GetDiffFlowsResponse describes the diff between two sets of allowed peers
+// for a deployment (e.g. current policy vs. baseline-generated policy, or
+// current policy vs. undo state).
 message GetDiffFlowsResponse {
+  // added contains peers that are permitted in the new state but not in the current state.
   repeated GetDiffFlowsGroupedFlow added = 1;
+  // removed contains peers that are permitted in the current state but not in the new state.
   repeated GetDiffFlowsGroupedFlow removed = 2;
+  // reconciled contains peers present in both states, with per-connection property diffs.
   repeated GetDiffFlowsReconciledFlow reconciled = 3;
 }
 
+// NetworkPolicyService manages Kubernetes NetworkPolicies observed and applied
+// across secured clusters.
+//
+// This service provides read access to existing network policies, a
+// policy-based network connectivity graph (distinct from the flow-based graph
+// in NetworkGraphService), simulation of proposed policy changes, and the
+// ability to apply and undo policy modifications via the connected Sensor.
+// It also generates NetworkPolicies from observed flows or per-deployment
+// network baselines, and compares policy-allowed traffic against baselines.
+//
+// Authentication:
+//   - Read endpoints require View access to the NetworkPolicy resource.
+//   - ApplyNetworkPolicy and ApplyNetworkPolicyYamlForDeployment require
+//     Modify access to NetworkPolicy.
+//   - SendNetworkPolicyYAML requires Modify access to Integration.
+//   - GenerateNetworkPolicies requires View access to NetworkPolicy and NetworkGraph.
+//   - GetBaselineGeneratedNetworkPolicyForDeployment requires View access to
+//     NetworkPolicy and DeploymentExtension.
 service NetworkPolicyService {
+  // GetNetworkPolicy returns a single NetworkPolicy by ID.
+  //
+  // The YAML representation of the policy is populated in the response.
+  // Returns NOT_FOUND if no policy with the given ID exists.
   rpc GetNetworkPolicy(ResourceByID) returns (storage.NetworkPolicy) {
     option (google.api.http) = {get: "/v1/networkpolicies/{id}"};
   }
 
+  // GetNetworkPolicies returns all NetworkPolicies in a cluster, optionally
+  // filtered by namespace or by the set of deployments they apply to.
+  //
+  // When deployment_query is provided, only policies that are selected by at
+  // least one matching deployment are returned. YAML is populated for all
+  // returned policies.
+  //
+  // Returns NOT_FOUND if the cluster does not exist.
+  // Returns INVALID_ARGUMENT if deployment_query syntax is malformed.
   rpc GetNetworkPolicies(GetNetworkPoliciesRequest) returns (NetworkPoliciesResponse) {
     option (google.api.http) = {get: "/v1/networkpolicies"};
   }
 
+  // GetNetworkGraph returns a policy-based network connectivity graph for a
+  // cluster, showing which deployments are permitted to communicate based on
+  // the active NetworkPolicies (not observed flows).
+  //
+  // Returns NOT_FOUND if the cluster does not exist or is not visible.
+  // Returns INVALID_ARGUMENT if cluster_id is empty.
   rpc GetNetworkGraph(GetNetworkGraphRequest) returns (NetworkGraph) {
     option (google.api.http) = {get: "/v1/networkpolicies/cluster/{cluster_id}"};
   }
 
+  // GetNetworkGraphEpoch returns the current epoch counter for the network
+  // policy graph of a cluster.
+  //
+  // The epoch increments whenever the network policy state changes. Clients
+  // can poll this lightweight endpoint to detect when a full graph refresh
+  // is needed.
   rpc GetNetworkGraphEpoch(GetNetworkGraphEpochRequest) returns (NetworkGraphEpoch) {
     option (google.api.http) = {get: "/v1/networkpolicies/graph/epoch"};
   }
 
+  // ApplyNetworkPolicy applies a NetworkPolicy modification to a cluster via
+  // the connected Sensor and stores an undo record.
+  //
+  // The modification must be non-empty and all policies must have non-empty
+  // namespaces. Changes to the stackrox and kube-system namespaces are
+  // forbidden and will return INVALID_ARGUMENT. The caller must have write
+  // access to all namespaces referenced in the modification.
+  //
+  // Returns FAILED_PRECONDITION if no active Sensor connection exists for the cluster.
   rpc ApplyNetworkPolicy(ApplyNetworkPolicyYamlRequest) returns (Empty) {
     option (google.api.http) = {
       post: "/v1/networkpolicies/apply/{cluster_id}"
@@ -199,10 +381,27 @@ service NetworkPolicyService {
     };
   }
 
+  // GetUndoModification returns the undo record for the most recent network
+  // policy application to a cluster.
+  //
+  // The undo record contains the original modification and the modification
+  // needed to revert it.
+  //
+  // Returns NOT_FOUND if no undo record exists for the cluster.
   rpc GetUndoModification(GetUndoModificationRequest) returns (GetUndoModificationResponse) {
     option (google.api.http) = {get: "/v1/networkpolicies/undo/{cluster_id}"};
   }
 
+  // SimulateNetworkGraph previews how the network connectivity graph would
+  // change if the proposed NetworkPolicy modification were applied.
+  //
+  // Returns the simulated graph and the status of each affected policy.
+  // When include_node_diff is true, also returns the sets of added and removed
+  // connectivity edges.
+  //
+  // Modifications to the stackrox or kube-system namespaces are rejected
+  // unless the policy content is identical to the existing policy.
+  // Returns NOT_FOUND if the cluster does not exist.
   rpc SimulateNetworkGraph(SimulateNetworkGraphRequest) returns (SimulateNetworkGraphResponse) {
     option (google.api.http) = {
       post: "/v1/networkpolicies/simulate/{cluster_id}"
@@ -210,6 +409,12 @@ service NetworkPolicyService {
     };
   }
 
+  // SendNetworkPolicyYAML delivers the proposed network policy modification
+  // YAML to one or more configured notifiers (e.g. Slack, email).
+  //
+  // The cluster and all specified notifiers must exist. The modification must
+  // be non-empty. Returns INVALID_ARGUMENT if any required field is missing.
+  // Requires Modify access to the Integration resource.
   rpc SendNetworkPolicyYAML(SendNetworkPolicyYamlRequest) returns (Empty) {
     option (google.api.http) = {
       post: "/v1/networkpolicies/simulate/{cluster_id}/notify"
@@ -217,10 +422,26 @@ service NetworkPolicyService {
     };
   }
 
+  // GenerateNetworkPolicies auto-generates Kubernetes NetworkPolicies for
+  // deployments in a cluster based on observed network flows.
+  //
+  // The result is a NetworkPolicyModification containing YAML for the generated
+  // policies and references to existing policies to delete (per delete_existing
+  // mode). Flows are restricted to those after network_data_since if set.
+  //
+  // Returns INVALID_ARGUMENT if cluster_id is empty.
+  // Requires View access to NetworkPolicy and NetworkGraph.
   rpc GenerateNetworkPolicies(GenerateNetworkPoliciesRequest) returns (GenerateNetworkPoliciesResponse) {
     option (google.api.http) = {get: "/v1/networkpolicies/generate/{cluster_id}"};
   }
 
+  // GetBaselineGeneratedNetworkPolicyForDeployment generates a NetworkPolicy
+  // for a specific deployment based on its network baseline (the set of
+  // connections marked as expected).
+  //
+  // The result is a NetworkPolicyModification ready to be previewed or applied.
+  // Returns INVALID_ARGUMENT if deployment_id is empty.
+  // Requires View access to NetworkPolicy and DeploymentExtension.
   rpc GetBaselineGeneratedNetworkPolicyForDeployment(GetBaselineGeneratedPolicyForDeploymentRequest) returns (GetBaselineGeneratedPolicyForDeploymentResponse) {
     option (google.api.http) = {
       post: "/v1/networkpolicies/generate/baseline/{deployment_id}"
@@ -228,10 +449,24 @@ service NetworkPolicyService {
     };
   }
 
+  // GetAllowedPeersFromCurrentPolicyForDeployment returns all peers
+  // (deployments and external entities) that are currently permitted to
+  // communicate with the given deployment based on active NetworkPolicies.
+  //
+  // Each peer entry includes the port, protocol, and direction (ingress/egress).
+  // Returns INVALID_ARGUMENT if the deployment is not found.
   rpc GetAllowedPeersFromCurrentPolicyForDeployment(ResourceByID) returns (GetAllowedPeersFromCurrentPolicyForDeploymentResponse) {
     option (google.api.http) = {get: "/v1/networkpolicies/allowedpeers/{id}"};
   }
 
+  // ApplyNetworkPolicyYamlForDeployment applies a network policy modification
+  // to the cluster of the specified deployment and records an undo record keyed
+  // by deployment ID.
+  //
+  // Behaves like ApplyNetworkPolicy but stores the undo record per deployment
+  // rather than per cluster.
+  // Returns NOT_FOUND if the deployment does not exist.
+  // Returns FAILED_PRECONDITION if no active Sensor connection exists for the cluster.
   rpc ApplyNetworkPolicyYamlForDeployment(ApplyNetworkPolicyYamlForDeploymentRequest) returns (Empty) {
     option (google.api.http) = {
       post: "/v1/networkpolicies/apply/deployment/{deployment_id}"
@@ -239,14 +474,29 @@ service NetworkPolicyService {
     };
   }
 
+  // GetUndoModificationForDeployment returns the undo record for the most
+  // recent network policy application associated with a specific deployment.
+  //
+  // Returns NOT_FOUND if the deployment does not exist or has no undo record.
   rpc GetUndoModificationForDeployment(ResourceByID) returns (GetUndoModificationForDeploymentResponse) {
     option (google.api.http) = {get: "/v1/networkpolicies/undo/deployment/{id}"};
   }
 
+  // GetDiffFlowsBetweenPolicyAndBaselineForDeployment compares the peers
+  // currently allowed by active NetworkPolicies against those that would be
+  // allowed by the baseline-generated NetworkPolicy for the deployment.
+  //
+  // Returns added (newly allowed), removed (no longer allowed), and reconciled
+  // (present in both, with per-property diffs) peer groups.
   rpc GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ResourceByID) returns (GetDiffFlowsResponse) {
     option (google.api.http) = {get: "/v1/networkpolicies/baselinecomparison/{id}"};
   }
 
+  // GetDiffFlowsFromUndoModificationForDeployment compares the peers currently
+  // allowed by active NetworkPolicies against those that would be allowed if
+  // the last deployment-level undo modification were applied.
+  //
+  // Returns NOT_FOUND if the deployment has no stored undo record.
   rpc GetDiffFlowsFromUndoModificationForDeployment(ResourceByID) returns (GetDiffFlowsResponse) {
     option (google.api.http) = {get: "/v1/networkpolicies/undobaselinecomparison/{id}"};
   }

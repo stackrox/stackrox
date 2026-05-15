@@ -26,8 +26,20 @@ const (
 // ServiceAccountServiceClient is the client API for ServiceAccountService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ServiceAccountService provides read access to Kubernetes service accounts
+// discovered across secured clusters. Results include the K8s roles and
+// cluster roles bound to each service account, and the deployments using it.
+//
+// Authentication: requires View access to the ServiceAccount resource.
 type ServiceAccountServiceClient interface {
+	// GetServiceAccount returns a single service account by ID, including its
+	// bound K8s roles, cluster roles, and deployment relationships.
+	//
+	// Returns NOT_FOUND if the service account ID does not exist.
 	GetServiceAccount(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetServiceAccountResponse, error)
+	// ListServiceAccounts returns service accounts matching the search query,
+	// with their associated roles and deployment relationships.
 	ListServiceAccounts(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListServiceAccountResponse, error)
 }
 
@@ -62,8 +74,20 @@ func (c *serviceAccountServiceClient) ListServiceAccounts(ctx context.Context, i
 // ServiceAccountServiceServer is the server API for ServiceAccountService service.
 // All implementations should embed UnimplementedServiceAccountServiceServer
 // for forward compatibility.
+//
+// ServiceAccountService provides read access to Kubernetes service accounts
+// discovered across secured clusters. Results include the K8s roles and
+// cluster roles bound to each service account, and the deployments using it.
+//
+// Authentication: requires View access to the ServiceAccount resource.
 type ServiceAccountServiceServer interface {
+	// GetServiceAccount returns a single service account by ID, including its
+	// bound K8s roles, cluster roles, and deployment relationships.
+	//
+	// Returns NOT_FOUND if the service account ID does not exist.
 	GetServiceAccount(context.Context, *ResourceByID) (*GetServiceAccountResponse, error)
+	// ListServiceAccounts returns service accounts matching the search query,
+	// with their associated roles and deployment relationships.
 	ListServiceAccounts(context.Context, *RawQuery) (*ListServiceAccountResponse, error)
 }
 

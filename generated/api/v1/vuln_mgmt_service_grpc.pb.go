@@ -26,14 +26,39 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// VulnMgmtService APIs are used to manage workload vulnerabilities.
+// VulnMgmtService exports workload vulnerability data for deployments running
+// in secured clusters.
+//
+// The single streaming endpoint walks all deployments matching an optional
+// search filter and, for each deployment, returns the full image scan data
+// (components, CVEs, CVSS scores) together with the count of live pods. The
+// export runs inside a single database transaction to provide a consistent
+// point-in-time snapshot.
+//
+// Authentication: callers must have read access to both the Deployment and
+// Image resources. Requests with insufficient permissions are rejected with
+// PERMISSION_DENIED.
 type VulnMgmtServiceClient interface {
-	// Streams vulnerability data upon request. Each entry consists of a deployment and the associated container images.
+	// VulnMgmtExportWorkloads streams vulnerability data for all deployments
+	// matching the request filter.
 	//
-	// The response is structured as:
-	// {"result": {"deployment": {...}, "images": [...]}}
-	// ...
-	// {"result": {"deployment": {...}, "images": [...]}}
+	// Each stream message contains one deployment, its deduplicated container
+	// images with full CVE scan data, and the number of live pods. The entire
+	// export runs within a single read transaction, so all messages represent a
+	// consistent snapshot of the database at the time the call was made.
+	//
+	// Images are cached in an LRU cache (capacity 1000) during a single call so
+	// that images shared across multiple deployments are fetched from the
+	// database only once.
+	//
+	// The HTTP response body is a newline-delimited sequence of JSON objects:
+	//
+	//	{"result": {"deployment": {...}, "images": [...], "livePods": N}}
+	//	{"result": {"deployment": {...}, "images": [...], "livePods": N}}
+	//
+	// Returns INVALID_ARGUMENT if the query string cannot be parsed.
+	// Returns PERMISSION_DENIED if the caller lacks read access to Deployment
+	// or Image resources.
 	VulnMgmtExportWorkloads(ctx context.Context, in *VulnMgmtExportWorkloadsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[VulnMgmtExportWorkloadsResponse], error)
 }
 
@@ -68,14 +93,39 @@ type VulnMgmtService_VulnMgmtExportWorkloadsClient = grpc.ServerStreamingClient[
 // All implementations should embed UnimplementedVulnMgmtServiceServer
 // for forward compatibility.
 //
-// VulnMgmtService APIs are used to manage workload vulnerabilities.
+// VulnMgmtService exports workload vulnerability data for deployments running
+// in secured clusters.
+//
+// The single streaming endpoint walks all deployments matching an optional
+// search filter and, for each deployment, returns the full image scan data
+// (components, CVEs, CVSS scores) together with the count of live pods. The
+// export runs inside a single database transaction to provide a consistent
+// point-in-time snapshot.
+//
+// Authentication: callers must have read access to both the Deployment and
+// Image resources. Requests with insufficient permissions are rejected with
+// PERMISSION_DENIED.
 type VulnMgmtServiceServer interface {
-	// Streams vulnerability data upon request. Each entry consists of a deployment and the associated container images.
+	// VulnMgmtExportWorkloads streams vulnerability data for all deployments
+	// matching the request filter.
 	//
-	// The response is structured as:
-	// {"result": {"deployment": {...}, "images": [...]}}
-	// ...
-	// {"result": {"deployment": {...}, "images": [...]}}
+	// Each stream message contains one deployment, its deduplicated container
+	// images with full CVE scan data, and the number of live pods. The entire
+	// export runs within a single read transaction, so all messages represent a
+	// consistent snapshot of the database at the time the call was made.
+	//
+	// Images are cached in an LRU cache (capacity 1000) during a single call so
+	// that images shared across multiple deployments are fetched from the
+	// database only once.
+	//
+	// The HTTP response body is a newline-delimited sequence of JSON objects:
+	//
+	//	{"result": {"deployment": {...}, "images": [...], "livePods": N}}
+	//	{"result": {"deployment": {...}, "images": [...], "livePods": N}}
+	//
+	// Returns INVALID_ARGUMENT if the query string cannot be parsed.
+	// Returns PERMISSION_DENIED if the caller lacks read access to Deployment
+	// or Image resources.
 	VulnMgmtExportWorkloads(*VulnMgmtExportWorkloadsRequest, grpc.ServerStreamingServer[VulnMgmtExportWorkloadsResponse]) error
 }
 

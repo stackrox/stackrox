@@ -26,6 +26,14 @@ const (
 // AdministrationUsageServiceClient is the client API for AdministrationUsageService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// AdministrationUsageService exposes secured units (nodes and CPU) usage metrics for licensing
+// and capacity planning purposes.
+//
+// Secured units are collected from all connected clusters every 5 minutes. Historical peak values
+// are periodically persisted to the database with approximately 1-hour aggregation accuracy.
+//
+// All endpoints require read access to the Administration resource.
 type AdministrationUsageServiceClient interface {
 	// GetCurrentSecuredUnitsUsage returns the current secured units usage
 	// metrics values.
@@ -34,6 +42,7 @@ type AdministrationUsageServiceClient interface {
 	// 5 minutes, so the returned result includes data for the connected
 	// clusters accurate to about these 5 minutes, and potentially some outdated
 	// data for the disconnected clusters.
+	// Requires read access to the Administration resource.
 	GetCurrentSecuredUnitsUsage(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SecuredUnitsUsageResponse, error)
 	// GetMaxSecuredUnitsUsage returns the maximum, i.e. peak, secured units
 	// usage observed during a given time range, together with the time when
@@ -43,6 +52,9 @@ type AdministrationUsageServiceClient interface {
 	// clusters. The maximum values are kept for some period of time in memory,
 	// and then, periodically, are stored to the database.
 	// The last data from disconnected clusters are taken into account.
+	// The from field defaults to the Unix epoch and to defaults to the current time.
+	// Returns INVALID_ARGUMENT if from is not before to.
+	// Requires read access to the Administration resource.
 	GetMaxSecuredUnitsUsage(ctx context.Context, in *TimeRange, opts ...grpc.CallOption) (*MaxSecuredUnitsUsageResponse, error)
 }
 
@@ -77,6 +89,14 @@ func (c *administrationUsageServiceClient) GetMaxSecuredUnitsUsage(ctx context.C
 // AdministrationUsageServiceServer is the server API for AdministrationUsageService service.
 // All implementations should embed UnimplementedAdministrationUsageServiceServer
 // for forward compatibility.
+//
+// AdministrationUsageService exposes secured units (nodes and CPU) usage metrics for licensing
+// and capacity planning purposes.
+//
+// Secured units are collected from all connected clusters every 5 minutes. Historical peak values
+// are periodically persisted to the database with approximately 1-hour aggregation accuracy.
+//
+// All endpoints require read access to the Administration resource.
 type AdministrationUsageServiceServer interface {
 	// GetCurrentSecuredUnitsUsage returns the current secured units usage
 	// metrics values.
@@ -85,6 +105,7 @@ type AdministrationUsageServiceServer interface {
 	// 5 minutes, so the returned result includes data for the connected
 	// clusters accurate to about these 5 minutes, and potentially some outdated
 	// data for the disconnected clusters.
+	// Requires read access to the Administration resource.
 	GetCurrentSecuredUnitsUsage(context.Context, *Empty) (*SecuredUnitsUsageResponse, error)
 	// GetMaxSecuredUnitsUsage returns the maximum, i.e. peak, secured units
 	// usage observed during a given time range, together with the time when
@@ -94,6 +115,9 @@ type AdministrationUsageServiceServer interface {
 	// clusters. The maximum values are kept for some period of time in memory,
 	// and then, periodically, are stored to the database.
 	// The last data from disconnected clusters are taken into account.
+	// The from field defaults to the Unix epoch and to defaults to the current time.
+	// Returns INVALID_ARGUMENT if from is not before to.
+	// Requires read access to the Administration resource.
 	GetMaxSecuredUnitsUsage(context.Context, *TimeRange) (*MaxSecuredUnitsUsageResponse, error)
 }
 

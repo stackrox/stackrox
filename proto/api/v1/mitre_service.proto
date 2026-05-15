@@ -10,22 +10,40 @@ import "storage/mitre.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// ListMitreAttackVectorsResponse is the response message for ListMitreAttackVectors.
 message ListMitreAttackVectorsResponse {
+  // mitre_attack_vectors is the full list of MITRE ATT&CK vectors (tactics with their techniques).
+  // The response is approximately 1 MB in size.
   repeated storage.MitreAttackVector mitre_attack_vectors = 1;
 }
 
+// GetMitreVectorResponse is the response message for GetMitreAttackVector.
 message GetMitreVectorResponse {
+  // mitre_attack_vector is the requested MITRE ATT&CK tactic with all its associated techniques.
   storage.MitreAttackVector mitre_attack_vector = 1;
 }
 
-// MitreAttackService can be used to retrieve information about MITRE ATT&CK matrix.
+// MitreAttackService provides read access to the MITRE ATT&CK framework knowledge base.
+//
+// The MITRE ATT&CK matrix describes adversary tactics (high-level goals) and techniques
+// (specific methods). StackRox policies can be tagged with MITRE ATT&CK tactic and technique
+// IDs to indicate which attack behaviors they detect.
+//
+// Authentication: all endpoints require an authenticated user. Anonymous access is denied
+// to reduce the DoS surface, as the full vector list response is approximately 1 MB.
 service MitreAttackService {
   // ListMitreAttackVectors returns all MITRE ATT&CK vectors.
+  //
+  // Each vector represents a tactic (e.g. "Initial Access") and includes all its associated
+  // techniques. The response is approximately 1 MB. Requires an authenticated session.
   rpc ListMitreAttackVectors(Empty) returns (ListMitreAttackVectorsResponse) {
     option (google.api.http) = {get: "/v1/mitreattackvectors"};
   }
 
   // GetMitreAttackVector returns the full MITRE ATT&CK vector for a tactic with all its techniques.
+  //
+  // The id field must be a valid MITRE ATT&CK tactic ID (e.g. "TA0001").
+  // Returns NOT_FOUND if no tactic with the given ID exists in the local knowledge base.
   rpc GetMitreAttackVector(ResourceByID) returns (GetMitreVectorResponse) {
     option (google.api.http) = {get: "/v1/mitreattackvectors/{id}"};
   }

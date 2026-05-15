@@ -18,7 +18,8 @@
   "paths": {
     "/v1/processbaselines": {
       "delete": {
-        "summary": "`DeleteProcessBaselines` deletes baselines.",
+        "summary": "DeleteProcessBaselines deletes baselines matching a StackRox search query.",
+        "description": "If confirm is false (dry run), returns num_deleted indicating how many\nbaselines match without deleting any. If confirm is true, clears the\nbaseline contents for deployments that still exist and removes baselines\nfor deployments that have been deleted.\n\nReturns INVALID_ARGUMENT if the query is empty or malformed.",
         "operationId": "ProcessBaselineService_DeleteProcessBaselines",
         "responses": {
           "200": {
@@ -37,12 +38,14 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query selecting the baselines to delete. Required.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "confirm",
+            "description": "confirm must be set to true to perform actual deletion. If false, the\nresponse indicates how many baselines would be deleted (dry run).",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -53,7 +56,8 @@
         ]
       },
       "put": {
-        "summary": "`AddToProcessBaselines` adds a list of process\nnames to each of a list of process baselines.",
+        "summary": "UpdateProcessBaselines adds and/or removes process names from one or more\nprocess baselines.",
+        "description": "Accepts a list of baseline keys and separate lists of process names to add\nand remove. Returns the updated baseline objects and per-key errors for any\nfailures. After all successful updates, deployment risks are reprocessed\nand updated baselines are sent to Sensor.",
         "operationId": "ProcessBaselineService_UpdateProcessBaselines",
         "responses": {
           "200": {
@@ -72,6 +76,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "UpdateProcessBaselinesRequest adds or removes process names from one or more\nprocess baselines identified by their composite keys.",
             "in": "body",
             "required": true,
             "schema": {
@@ -86,7 +91,8 @@
     },
     "/v1/processbaselines/bulk/lock": {
       "put": {
-        "summary": "`BulkLockProcessBaselines` locks process baselines given a cluster and\nan optional set of namespaces. It returns success or an error.",
+        "summary": "BulkLockProcessBaselines locks all process baselines in a cluster,\noptionally restricted to specific namespaces.",
+        "description": "Returns INVALID_ARGUMENT if cluster_id is empty. Returns success=true if\nall baselines were locked without error.",
         "operationId": "ProcessBaselineService_BulkLockProcessBaselines",
         "responses": {
           "200": {
@@ -105,6 +111,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "BulkProcessBaselinesRequest identifies a set of baselines by cluster and\noptional namespaces for bulk lock/unlock operations.",
             "in": "body",
             "required": true,
             "schema": {
@@ -119,7 +126,8 @@
     },
     "/v1/processbaselines/bulk/unlock": {
       "put": {
-        "summary": "`BulkUnockProcessBaselines` unlocks process baselines given a cluster and\nan optional set of namespaces. It returns success or an error.",
+        "summary": "BulkUnlockProcessBaselines unlocks all process baselines in a cluster,\noptionally restricted to specific namespaces.",
+        "description": "Returns INVALID_ARGUMENT if cluster_id is empty. Returns success=true if\nall baselines were unlocked without error.",
         "operationId": "ProcessBaselineService_BulkUnlockProcessBaselines",
         "responses": {
           "200": {
@@ -138,6 +146,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "BulkProcessBaselinesRequest identifies a set of baselines by cluster and\noptional namespaces for bulk lock/unlock operations.",
             "in": "body",
             "required": true,
             "schema": {
@@ -152,7 +161,8 @@
     },
     "/v1/processbaselines/key": {
       "get": {
-        "summary": "`GetProcessBaselineById` returns the single\nprocess baseline referenced by the given ID.",
+        "summary": "GetProcessBaseline returns the process baseline identified by the composite\nkey (cluster_id, namespace, deployment_id, container_name).",
+        "description": "If no baseline exists for the key and the deployment is still present, an\nempty unlocked baseline is created and returned.\n\nReturns INVALID_ARGUMENT if any key field is missing.\nReturns NOT_FOUND if the deployment does not exist.",
         "operationId": "ProcessBaselineService_GetProcessBaseline",
         "responses": {
           "200": {
@@ -202,7 +212,8 @@
     },
     "/v1/processbaselines/lock": {
       "put": {
-        "summary": "`LockProcessBaselines` accepts a list of baseline IDs, locks\nthose baselines, and returns the updated baseline objects.",
+        "summary": "LockProcessBaselines locks or unlocks a list of process baselines\nidentified by their composite keys.",
+        "description": "When locked is true, the baselines are user-locked; when false, they are\nuser-unlocked. Returns the updated baseline objects. After updates,\ndeployment risks are reprocessed and baselines are sent to Sensor.",
         "operationId": "ProcessBaselineService_LockProcessBaselines",
         "responses": {
           "200": {
@@ -221,6 +232,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "LockProcessBaselinesRequest locks or unlocks a list of process baselines.",
             "in": "body",
             "required": true,
             "schema": {
@@ -347,21 +359,25 @@
       "type": "object",
       "properties": {
         "clusterId": {
-          "type": "string"
+          "type": "string",
+          "description": "cluster_id identifies the cluster whose baselines to operate on. Required."
         },
         "namespaces": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "namespaces optionally restricts the operation to baselines in these namespaces.\nIf empty, all namespaces in the cluster are included."
         }
-      }
+      },
+      "description": "BulkProcessBaselinesRequest identifies a set of baselines by cluster and\noptional namespaces for bulk lock/unlock operations."
     },
     "v1BulkUpdateProcessBaselinesResponse": {
       "type": "object",
       "properties": {
         "success": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "success is true if all baselines in the bulk operation were updated without error."
         }
       }
     },
@@ -370,12 +386,15 @@
       "properties": {
         "numDeleted": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "num_deleted is the number of baselines deleted (or that would be deleted in dry-run mode)."
         },
         "dryRun": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "dry_run is true if confirm was false and no deletion was performed."
         }
-      }
+      },
+      "description": "DeleteProcessBaselinesResponse reports the outcome of a baseline deletion."
     },
     "v1LockProcessBaselinesRequest": {
       "type": "object",
@@ -385,23 +404,29 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageProcessBaselineKey"
-          }
+          },
+          "description": "keys identifies the baselines to lock or unlock. Each key must be fully specified."
         },
         "locked": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "locked controls whether to lock (true) or unlock (false) the baselines."
         }
-      }
+      },
+      "description": "LockProcessBaselinesRequest locks or unlocks a list of process baselines."
     },
     "v1ProcessBaselineUpdateError": {
       "type": "object",
       "properties": {
         "error": {
-          "type": "string"
+          "type": "string",
+          "description": "error is the human-readable description of what went wrong."
         },
         "key": {
-          "$ref": "#/definitions/storageProcessBaselineKey"
+          "$ref": "#/definitions/storageProcessBaselineKey",
+          "description": "key identifies which baseline could not be updated."
         }
-      }
+      },
+      "description": "ProcessBaselineUpdateError records a failure to update a single baseline."
     },
     "v1UpdateProcessBaselinesRequest": {
       "type": "object",
@@ -411,23 +436,27 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageProcessBaselineKey"
-          }
+          },
+          "description": "keys identifies the baselines to update. Each key must have all four fields populated."
         },
         "addElements": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageBaselineItem"
-          }
+          },
+          "description": "add_elements is the list of process names to add to each baseline."
         },
         "removeElements": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageBaselineItem"
-          }
+          },
+          "description": "remove_elements is the list of process names to remove from each baseline."
         }
-      }
+      },
+      "description": "UpdateProcessBaselinesRequest adds or removes process names from one or more\nprocess baselines identified by their composite keys."
     },
     "v1UpdateProcessBaselinesResponse": {
       "type": "object",
@@ -437,16 +466,19 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageProcessBaseline"
-          }
+          },
+          "description": "baselines contains the updated baseline objects for all successful updates."
         },
         "errors": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1ProcessBaselineUpdateError"
-          }
+          },
+          "description": "errors contains entries for any baselines that could not be updated."
         }
-      }
+      },
+      "description": "UpdateProcessBaselinesResponse returns the updated baseline objects along\nwith any per-baseline errors."
     }
   }
 }

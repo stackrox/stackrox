@@ -40,21 +40,142 @@ const (
 // NetworkPolicyServiceClient is the client API for NetworkPolicyService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// NetworkPolicyService manages Kubernetes NetworkPolicies observed and applied
+// across secured clusters.
+//
+// This service provides read access to existing network policies, a
+// policy-based network connectivity graph (distinct from the flow-based graph
+// in NetworkGraphService), simulation of proposed policy changes, and the
+// ability to apply and undo policy modifications via the connected Sensor.
+// It also generates NetworkPolicies from observed flows or per-deployment
+// network baselines, and compares policy-allowed traffic against baselines.
+//
+// Authentication:
+//   - Read endpoints require View access to the NetworkPolicy resource.
+//   - ApplyNetworkPolicy and ApplyNetworkPolicyYamlForDeployment require
+//     Modify access to NetworkPolicy.
+//   - SendNetworkPolicyYAML requires Modify access to Integration.
+//   - GenerateNetworkPolicies requires View access to NetworkPolicy and NetworkGraph.
+//   - GetBaselineGeneratedNetworkPolicyForDeployment requires View access to
+//     NetworkPolicy and DeploymentExtension.
 type NetworkPolicyServiceClient interface {
+	// GetNetworkPolicy returns a single NetworkPolicy by ID.
+	//
+	// The YAML representation of the policy is populated in the response.
+	// Returns NOT_FOUND if no policy with the given ID exists.
 	GetNetworkPolicy(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.NetworkPolicy, error)
+	// GetNetworkPolicies returns all NetworkPolicies in a cluster, optionally
+	// filtered by namespace or by the set of deployments they apply to.
+	//
+	// When deployment_query is provided, only policies that are selected by at
+	// least one matching deployment are returned. YAML is populated for all
+	// returned policies.
+	//
+	// Returns NOT_FOUND if the cluster does not exist.
+	// Returns INVALID_ARGUMENT if deployment_query syntax is malformed.
 	GetNetworkPolicies(ctx context.Context, in *GetNetworkPoliciesRequest, opts ...grpc.CallOption) (*NetworkPoliciesResponse, error)
+	// GetNetworkGraph returns a policy-based network connectivity graph for a
+	// cluster, showing which deployments are permitted to communicate based on
+	// the active NetworkPolicies (not observed flows).
+	//
+	// Returns NOT_FOUND if the cluster does not exist or is not visible.
+	// Returns INVALID_ARGUMENT if cluster_id is empty.
 	GetNetworkGraph(ctx context.Context, in *GetNetworkGraphRequest, opts ...grpc.CallOption) (*NetworkGraph, error)
+	// GetNetworkGraphEpoch returns the current epoch counter for the network
+	// policy graph of a cluster.
+	//
+	// The epoch increments whenever the network policy state changes. Clients
+	// can poll this lightweight endpoint to detect when a full graph refresh
+	// is needed.
 	GetNetworkGraphEpoch(ctx context.Context, in *GetNetworkGraphEpochRequest, opts ...grpc.CallOption) (*NetworkGraphEpoch, error)
+	// ApplyNetworkPolicy applies a NetworkPolicy modification to a cluster via
+	// the connected Sensor and stores an undo record.
+	//
+	// The modification must be non-empty and all policies must have non-empty
+	// namespaces. Changes to the stackrox and kube-system namespaces are
+	// forbidden and will return INVALID_ARGUMENT. The caller must have write
+	// access to all namespaces referenced in the modification.
+	//
+	// Returns FAILED_PRECONDITION if no active Sensor connection exists for the cluster.
 	ApplyNetworkPolicy(ctx context.Context, in *ApplyNetworkPolicyYamlRequest, opts ...grpc.CallOption) (*Empty, error)
+	// GetUndoModification returns the undo record for the most recent network
+	// policy application to a cluster.
+	//
+	// The undo record contains the original modification and the modification
+	// needed to revert it.
+	//
+	// Returns NOT_FOUND if no undo record exists for the cluster.
 	GetUndoModification(ctx context.Context, in *GetUndoModificationRequest, opts ...grpc.CallOption) (*GetUndoModificationResponse, error)
+	// SimulateNetworkGraph previews how the network connectivity graph would
+	// change if the proposed NetworkPolicy modification were applied.
+	//
+	// Returns the simulated graph and the status of each affected policy.
+	// When include_node_diff is true, also returns the sets of added and removed
+	// connectivity edges.
+	//
+	// Modifications to the stackrox or kube-system namespaces are rejected
+	// unless the policy content is identical to the existing policy.
+	// Returns NOT_FOUND if the cluster does not exist.
 	SimulateNetworkGraph(ctx context.Context, in *SimulateNetworkGraphRequest, opts ...grpc.CallOption) (*SimulateNetworkGraphResponse, error)
+	// SendNetworkPolicyYAML delivers the proposed network policy modification
+	// YAML to one or more configured notifiers (e.g. Slack, email).
+	//
+	// The cluster and all specified notifiers must exist. The modification must
+	// be non-empty. Returns INVALID_ARGUMENT if any required field is missing.
+	// Requires Modify access to the Integration resource.
 	SendNetworkPolicyYAML(ctx context.Context, in *SendNetworkPolicyYamlRequest, opts ...grpc.CallOption) (*Empty, error)
+	// GenerateNetworkPolicies auto-generates Kubernetes NetworkPolicies for
+	// deployments in a cluster based on observed network flows.
+	//
+	// The result is a NetworkPolicyModification containing YAML for the generated
+	// policies and references to existing policies to delete (per delete_existing
+	// mode). Flows are restricted to those after network_data_since if set.
+	//
+	// Returns INVALID_ARGUMENT if cluster_id is empty.
+	// Requires View access to NetworkPolicy and NetworkGraph.
 	GenerateNetworkPolicies(ctx context.Context, in *GenerateNetworkPoliciesRequest, opts ...grpc.CallOption) (*GenerateNetworkPoliciesResponse, error)
+	// GetBaselineGeneratedNetworkPolicyForDeployment generates a NetworkPolicy
+	// for a specific deployment based on its network baseline (the set of
+	// connections marked as expected).
+	//
+	// The result is a NetworkPolicyModification ready to be previewed or applied.
+	// Returns INVALID_ARGUMENT if deployment_id is empty.
+	// Requires View access to NetworkPolicy and DeploymentExtension.
 	GetBaselineGeneratedNetworkPolicyForDeployment(ctx context.Context, in *GetBaselineGeneratedPolicyForDeploymentRequest, opts ...grpc.CallOption) (*GetBaselineGeneratedPolicyForDeploymentResponse, error)
+	// GetAllowedPeersFromCurrentPolicyForDeployment returns all peers
+	// (deployments and external entities) that are currently permitted to
+	// communicate with the given deployment based on active NetworkPolicies.
+	//
+	// Each peer entry includes the port, protocol, and direction (ingress/egress).
+	// Returns INVALID_ARGUMENT if the deployment is not found.
 	GetAllowedPeersFromCurrentPolicyForDeployment(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetAllowedPeersFromCurrentPolicyForDeploymentResponse, error)
+	// ApplyNetworkPolicyYamlForDeployment applies a network policy modification
+	// to the cluster of the specified deployment and records an undo record keyed
+	// by deployment ID.
+	//
+	// Behaves like ApplyNetworkPolicy but stores the undo record per deployment
+	// rather than per cluster.
+	// Returns NOT_FOUND if the deployment does not exist.
+	// Returns FAILED_PRECONDITION if no active Sensor connection exists for the cluster.
 	ApplyNetworkPolicyYamlForDeployment(ctx context.Context, in *ApplyNetworkPolicyYamlForDeploymentRequest, opts ...grpc.CallOption) (*Empty, error)
+	// GetUndoModificationForDeployment returns the undo record for the most
+	// recent network policy application associated with a specific deployment.
+	//
+	// Returns NOT_FOUND if the deployment does not exist or has no undo record.
 	GetUndoModificationForDeployment(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetUndoModificationForDeploymentResponse, error)
+	// GetDiffFlowsBetweenPolicyAndBaselineForDeployment compares the peers
+	// currently allowed by active NetworkPolicies against those that would be
+	// allowed by the baseline-generated NetworkPolicy for the deployment.
+	//
+	// Returns added (newly allowed), removed (no longer allowed), and reconciled
+	// (present in both, with per-property diffs) peer groups.
 	GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetDiffFlowsResponse, error)
+	// GetDiffFlowsFromUndoModificationForDeployment compares the peers currently
+	// allowed by active NetworkPolicies against those that would be allowed if
+	// the last deployment-level undo modification were applied.
+	//
+	// Returns NOT_FOUND if the deployment has no stored undo record.
 	GetDiffFlowsFromUndoModificationForDeployment(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetDiffFlowsResponse, error)
 }
 
@@ -219,21 +340,142 @@ func (c *networkPolicyServiceClient) GetDiffFlowsFromUndoModificationForDeployme
 // NetworkPolicyServiceServer is the server API for NetworkPolicyService service.
 // All implementations should embed UnimplementedNetworkPolicyServiceServer
 // for forward compatibility.
+//
+// NetworkPolicyService manages Kubernetes NetworkPolicies observed and applied
+// across secured clusters.
+//
+// This service provides read access to existing network policies, a
+// policy-based network connectivity graph (distinct from the flow-based graph
+// in NetworkGraphService), simulation of proposed policy changes, and the
+// ability to apply and undo policy modifications via the connected Sensor.
+// It also generates NetworkPolicies from observed flows or per-deployment
+// network baselines, and compares policy-allowed traffic against baselines.
+//
+// Authentication:
+//   - Read endpoints require View access to the NetworkPolicy resource.
+//   - ApplyNetworkPolicy and ApplyNetworkPolicyYamlForDeployment require
+//     Modify access to NetworkPolicy.
+//   - SendNetworkPolicyYAML requires Modify access to Integration.
+//   - GenerateNetworkPolicies requires View access to NetworkPolicy and NetworkGraph.
+//   - GetBaselineGeneratedNetworkPolicyForDeployment requires View access to
+//     NetworkPolicy and DeploymentExtension.
 type NetworkPolicyServiceServer interface {
+	// GetNetworkPolicy returns a single NetworkPolicy by ID.
+	//
+	// The YAML representation of the policy is populated in the response.
+	// Returns NOT_FOUND if no policy with the given ID exists.
 	GetNetworkPolicy(context.Context, *ResourceByID) (*storage.NetworkPolicy, error)
+	// GetNetworkPolicies returns all NetworkPolicies in a cluster, optionally
+	// filtered by namespace or by the set of deployments they apply to.
+	//
+	// When deployment_query is provided, only policies that are selected by at
+	// least one matching deployment are returned. YAML is populated for all
+	// returned policies.
+	//
+	// Returns NOT_FOUND if the cluster does not exist.
+	// Returns INVALID_ARGUMENT if deployment_query syntax is malformed.
 	GetNetworkPolicies(context.Context, *GetNetworkPoliciesRequest) (*NetworkPoliciesResponse, error)
+	// GetNetworkGraph returns a policy-based network connectivity graph for a
+	// cluster, showing which deployments are permitted to communicate based on
+	// the active NetworkPolicies (not observed flows).
+	//
+	// Returns NOT_FOUND if the cluster does not exist or is not visible.
+	// Returns INVALID_ARGUMENT if cluster_id is empty.
 	GetNetworkGraph(context.Context, *GetNetworkGraphRequest) (*NetworkGraph, error)
+	// GetNetworkGraphEpoch returns the current epoch counter for the network
+	// policy graph of a cluster.
+	//
+	// The epoch increments whenever the network policy state changes. Clients
+	// can poll this lightweight endpoint to detect when a full graph refresh
+	// is needed.
 	GetNetworkGraphEpoch(context.Context, *GetNetworkGraphEpochRequest) (*NetworkGraphEpoch, error)
+	// ApplyNetworkPolicy applies a NetworkPolicy modification to a cluster via
+	// the connected Sensor and stores an undo record.
+	//
+	// The modification must be non-empty and all policies must have non-empty
+	// namespaces. Changes to the stackrox and kube-system namespaces are
+	// forbidden and will return INVALID_ARGUMENT. The caller must have write
+	// access to all namespaces referenced in the modification.
+	//
+	// Returns FAILED_PRECONDITION if no active Sensor connection exists for the cluster.
 	ApplyNetworkPolicy(context.Context, *ApplyNetworkPolicyYamlRequest) (*Empty, error)
+	// GetUndoModification returns the undo record for the most recent network
+	// policy application to a cluster.
+	//
+	// The undo record contains the original modification and the modification
+	// needed to revert it.
+	//
+	// Returns NOT_FOUND if no undo record exists for the cluster.
 	GetUndoModification(context.Context, *GetUndoModificationRequest) (*GetUndoModificationResponse, error)
+	// SimulateNetworkGraph previews how the network connectivity graph would
+	// change if the proposed NetworkPolicy modification were applied.
+	//
+	// Returns the simulated graph and the status of each affected policy.
+	// When include_node_diff is true, also returns the sets of added and removed
+	// connectivity edges.
+	//
+	// Modifications to the stackrox or kube-system namespaces are rejected
+	// unless the policy content is identical to the existing policy.
+	// Returns NOT_FOUND if the cluster does not exist.
 	SimulateNetworkGraph(context.Context, *SimulateNetworkGraphRequest) (*SimulateNetworkGraphResponse, error)
+	// SendNetworkPolicyYAML delivers the proposed network policy modification
+	// YAML to one or more configured notifiers (e.g. Slack, email).
+	//
+	// The cluster and all specified notifiers must exist. The modification must
+	// be non-empty. Returns INVALID_ARGUMENT if any required field is missing.
+	// Requires Modify access to the Integration resource.
 	SendNetworkPolicyYAML(context.Context, *SendNetworkPolicyYamlRequest) (*Empty, error)
+	// GenerateNetworkPolicies auto-generates Kubernetes NetworkPolicies for
+	// deployments in a cluster based on observed network flows.
+	//
+	// The result is a NetworkPolicyModification containing YAML for the generated
+	// policies and references to existing policies to delete (per delete_existing
+	// mode). Flows are restricted to those after network_data_since if set.
+	//
+	// Returns INVALID_ARGUMENT if cluster_id is empty.
+	// Requires View access to NetworkPolicy and NetworkGraph.
 	GenerateNetworkPolicies(context.Context, *GenerateNetworkPoliciesRequest) (*GenerateNetworkPoliciesResponse, error)
+	// GetBaselineGeneratedNetworkPolicyForDeployment generates a NetworkPolicy
+	// for a specific deployment based on its network baseline (the set of
+	// connections marked as expected).
+	//
+	// The result is a NetworkPolicyModification ready to be previewed or applied.
+	// Returns INVALID_ARGUMENT if deployment_id is empty.
+	// Requires View access to NetworkPolicy and DeploymentExtension.
 	GetBaselineGeneratedNetworkPolicyForDeployment(context.Context, *GetBaselineGeneratedPolicyForDeploymentRequest) (*GetBaselineGeneratedPolicyForDeploymentResponse, error)
+	// GetAllowedPeersFromCurrentPolicyForDeployment returns all peers
+	// (deployments and external entities) that are currently permitted to
+	// communicate with the given deployment based on active NetworkPolicies.
+	//
+	// Each peer entry includes the port, protocol, and direction (ingress/egress).
+	// Returns INVALID_ARGUMENT if the deployment is not found.
 	GetAllowedPeersFromCurrentPolicyForDeployment(context.Context, *ResourceByID) (*GetAllowedPeersFromCurrentPolicyForDeploymentResponse, error)
+	// ApplyNetworkPolicyYamlForDeployment applies a network policy modification
+	// to the cluster of the specified deployment and records an undo record keyed
+	// by deployment ID.
+	//
+	// Behaves like ApplyNetworkPolicy but stores the undo record per deployment
+	// rather than per cluster.
+	// Returns NOT_FOUND if the deployment does not exist.
+	// Returns FAILED_PRECONDITION if no active Sensor connection exists for the cluster.
 	ApplyNetworkPolicyYamlForDeployment(context.Context, *ApplyNetworkPolicyYamlForDeploymentRequest) (*Empty, error)
+	// GetUndoModificationForDeployment returns the undo record for the most
+	// recent network policy application associated with a specific deployment.
+	//
+	// Returns NOT_FOUND if the deployment does not exist or has no undo record.
 	GetUndoModificationForDeployment(context.Context, *ResourceByID) (*GetUndoModificationForDeploymentResponse, error)
+	// GetDiffFlowsBetweenPolicyAndBaselineForDeployment compares the peers
+	// currently allowed by active NetworkPolicies against those that would be
+	// allowed by the baseline-generated NetworkPolicy for the deployment.
+	//
+	// Returns added (newly allowed), removed (no longer allowed), and reconciled
+	// (present in both, with per-property diffs) peer groups.
 	GetDiffFlowsBetweenPolicyAndBaselineForDeployment(context.Context, *ResourceByID) (*GetDiffFlowsResponse, error)
+	// GetDiffFlowsFromUndoModificationForDeployment compares the peers currently
+	// allowed by active NetworkPolicies against those that would be allowed if
+	// the last deployment-level undo modification were applied.
+	//
+	// Returns NOT_FOUND if the deployment has no stored undo record.
 	GetDiffFlowsFromUndoModificationForDeployment(context.Context, *ResourceByID) (*GetDiffFlowsResponse, error)
 }
 

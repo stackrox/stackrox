@@ -10,33 +10,61 @@ import "storage/user.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// GetUsersResponse contains all users known to Central.
 // Next Tag: 2
 message GetUsersResponse {
+  // users is the list of all users who have previously authenticated to Central.
   repeated storage.User users = 1;
 }
 
-// UserAttributeTuple descript the auth:key:value tuple that decides group membership.
+// UserAttributeTuple describes an auth-provider:key:value triple that drives group membership resolution.
 // Next Tag: 4
 message UserAttributeTuple {
+  // auth_provider_id is the ID of the auth provider that supplied this attribute.
   string auth_provider_id = 1;
+  // key is the attribute name (e.g. "groups", "email") as returned by the identity provider.
   string key = 2;
+  // value is one value for this attribute key.
   string value = 3;
 }
 
+// GetUsersAttributesResponse contains the deduplicated set of attribute tuples across all known users.
 // Next Tag: 2
 message GetUsersAttributesResponse {
+  // users_attributes is the deduplicated list of (auth_provider_id, key, value) tuples
+  // derived from all users' identity provider attributes. Used to populate group mapping UIs.
   repeated UserAttributeTuple users_attributes = 1;
 }
 
+// UserService provides read-only access to users who have authenticated to Central.
+//
+// Users are recorded when they log in via an auth provider. The attributes endpoint returns
+// deduplicated identity-provider claim tuples across all users, which are used to configure
+// group-to-role mappings.
+//
+// All endpoints require read access to the Access resource.
 service UserService {
+  // GetUsers returns all users who have previously authenticated to Central.
+  //
+  // Requires read access to the Access resource.
   rpc GetUsers(Empty) returns (GetUsersResponse) {
     option (google.api.http) = {get: "/v1/users"};
   }
 
+  // GetUser returns the user with the given ID.
+  //
+  // Returns NOT_FOUND if no user with the specified ID exists.
+  // Requires read access to the Access resource.
   rpc GetUser(ResourceByID) returns (storage.User) {
     option (google.api.http) = {get: "/v1/users/{id}"};
   }
 
+  // GetUsersAttributes returns the deduplicated set of identity-provider attribute tuples
+  // across all known users.
+  //
+  // Each tuple contains the auth provider ID, attribute key, and attribute value. Duplicates
+  // across users are collapsed. This endpoint is used to populate group mapping configuration UIs.
+  // Requires read access to the Access resource.
   rpc GetUsersAttributes(Empty) returns (GetUsersAttributesResponse) {
     option (google.api.http) = {get: "/v1/usersattributes"};
   }

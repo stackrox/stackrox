@@ -25,13 +25,20 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ErrorType classifies the reason a WatchImage request could not be completed.
 type WatchImageResponse_ErrorType int32
 
 const (
-	WatchImageResponse_NO_ERROR             WatchImageResponse_ErrorType = 0
-	WatchImageResponse_INVALID_IMAGE_NAME   WatchImageResponse_ErrorType = 1
+	// NO_ERROR indicates the image was scanned and registered for watching successfully.
+	WatchImageResponse_NO_ERROR WatchImageResponse_ErrorType = 0
+	// INVALID_IMAGE_NAME indicates the provided name could not be parsed as a valid
+	// image reference, or the name included a digest (which is not supported for watch).
+	WatchImageResponse_INVALID_IMAGE_NAME WatchImageResponse_ErrorType = 1
+	// NO_VALID_INTEGRATION indicates that no configured registry or scanner integration
+	// was able to scan the image.
 	WatchImageResponse_NO_VALID_INTEGRATION WatchImageResponse_ErrorType = 2
-	WatchImageResponse_SCAN_FAILED          WatchImageResponse_ErrorType = 3
+	// SCAN_FAILED indicates that image enrichment was attempted but failed.
+	WatchImageResponse_SCAN_FAILED WatchImageResponse_ErrorType = 3
 )
 
 // Enum value maps for WatchImageResponse_ErrorType.
@@ -77,11 +84,17 @@ func (WatchImageResponse_ErrorType) EnumDescriptor() ([]byte, []int) {
 	return file_api_v1_image_service_proto_rawDescGZIP(), []int{12, 0}
 }
 
+// GetImageRequest is the request message for GetImage.
 type GetImageRequest struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	IncludeSnoozed   bool                   `protobuf:"varint,2,opt,name=include_snoozed,json=includeSnoozed,proto3" json:"include_snoozed,omitempty"`
-	StripDescription bool                   `protobuf:"varint,3,opt,name=strip_description,json=stripDescription,proto3" json:"strip_description,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the image SHA (digest). Required.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// include_snoozed controls whether CVEs that have been snoozed (suppressed)
+	// are included in the returned scan data. Defaults to false (snoozed CVEs are excluded).
+	IncludeSnoozed bool `protobuf:"varint,2,opt,name=include_snoozed,json=includeSnoozed,proto3" json:"include_snoozed,omitempty"`
+	// strip_description removes verbose CVE description text from the response,
+	// reducing payload size when description details are not needed.
+	StripDescription bool `protobuf:"varint,3,opt,name=strip_description,json=stripDescription,proto3" json:"strip_description,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -138,8 +151,10 @@ func (x *GetImageRequest) GetStripDescription() bool {
 }
 
 type ListImagesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Images        []*storage.ListImage   `protobuf:"bytes,1,rep,name=images,proto3" json:"images,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// images is a list of images in slim (ListImage) form, omitting per-component
+	// vulnerability details. Use GetImage to retrieve the full scan data for a specific image.
+	Images        []*storage.ListImage `protobuf:"bytes,1,rep,name=images,proto3" json:"images,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -182,8 +197,9 @@ func (x *ListImagesResponse) GetImages() []*storage.ListImage {
 }
 
 type CountImagesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Count         int32                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// count is the number of images matching the query.
+	Count         int32 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -225,11 +241,18 @@ func (x *CountImagesResponse) GetCount() int32 {
 	return 0
 }
 
+// ScanImageRequest is the request message for ScanImage.
 type ScanImageRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	ImageName      string                 `protobuf:"bytes,1,opt,name=image_name,json=imageName,proto3" json:"image_name,omitempty"`
-	Force          bool                   `protobuf:"varint,2,opt,name=force,proto3" json:"force,omitempty"`
-	IncludeSnoozed bool                   `protobuf:"varint,3,opt,name=include_snoozed,json=includeSnoozed,proto3" json:"include_snoozed,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// image_name is the fully-qualified image reference to scan, including registry,
+	// repository, and tag (e.g. "docker.io/library/nginx:latest"). Required.
+	ImageName string `protobuf:"bytes,1,opt,name=image_name,json=imageName,proto3" json:"image_name,omitempty"`
+	// force bypasses the scan cache and triggers a fresh fetch of image metadata
+	// and vulnerability data even if a recent scan result already exists.
+	Force bool `protobuf:"varint,2,opt,name=force,proto3" json:"force,omitempty"`
+	// include_snoozed controls whether snoozed CVEs are included in the returned
+	// scan result. Defaults to false (snoozed CVEs are excluded).
+	IncludeSnoozed bool `protobuf:"varint,3,opt,name=include_snoozed,json=includeSnoozed,proto3" json:"include_snoozed,omitempty"`
 	// Cluster to delegate scan to, may be the cluster's name or ID.
 	Cluster string `protobuf:"bytes,4,opt,name=cluster,proto3" json:"cluster,omitempty"`
 	// Namespace on the secured cluster from which to read context information
@@ -305,10 +328,16 @@ func (x *ScanImageRequest) GetNamespace() string {
 	return ""
 }
 
+// ScanImageInternalRequest is sent by Sensor and Admission Controller to
+// request enrichment of an image observed in a cluster.
 type ScanImageInternalRequest struct {
-	state         protoimpl.MessageState           `protogen:"open.v1"`
-	Image         *storage.ContainerImage          `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
-	CachedOnly    bool                             `protobuf:"varint,3,opt,name=cached_only,json=cachedOnly,proto3" json:"cached_only,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// image is the container image reference as observed by Kubernetes.
+	Image *storage.ContainerImage `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+	// cached_only instructs Central to return a result from the in-memory metadata
+	// cache only, without contacting any external registry or scanner.
+	CachedOnly bool `protobuf:"varint,3,opt,name=cached_only,json=cachedOnly,proto3" json:"cached_only,omitempty"`
+	// source provides cluster and namespace context used to resolve registry credentials.
 	Source        *ScanImageInternalRequest_Source `protobuf:"bytes,4,opt,name=source,proto3" json:"source,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -366,8 +395,10 @@ func (x *ScanImageInternalRequest) GetSource() *ScanImageInternalRequest_Source 
 }
 
 type ScanImageInternalResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Image         *storage.Image         `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// image is the enriched image, including scan data and vulnerability information.
+	// Snoozed CVEs and verbose descriptions are stripped before returning to Sensor.
+	Image         *storage.Image `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -409,16 +440,25 @@ func (x *ScanImageInternalResponse) GetImage() *storage.Image {
 	return nil
 }
 
+// GetImageVulnerabilitiesInternalRequest is sent by Sensor (Scanner V1/Clairify)
+// to deliver pre-computed component data so Central can perform vulnerability matching.
 type GetImageVulnerabilitiesInternalRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	ImageId        string                 `protobuf:"bytes,1,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
-	ImageName      *storage.ImageName     `protobuf:"bytes,2,opt,name=image_name,json=imageName,proto3" json:"image_name,omitempty"`
-	Metadata       *storage.ImageMetadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	IsClusterLocal bool                   `protobuf:"varint,6,opt,name=is_cluster_local,json=isClusterLocal,proto3" json:"is_cluster_local,omitempty"`
-	Components     *v1.Components         `protobuf:"bytes,4,opt,name=components,proto3" json:"components,omitempty"`
-	Notes          []v1.Note              `protobuf:"varint,5,rep,packed,name=notes,proto3,enum=scannerV1.Note" json:"notes,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// image_id is the SHA digest of the image.
+	ImageId string `protobuf:"bytes,1,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
+	// image_name is the fully-qualified image name.
+	ImageName *storage.ImageName `protobuf:"bytes,2,opt,name=image_name,json=imageName,proto3" json:"image_name,omitempty"`
+	// metadata contains image layer and OS information from the registry.
+	Metadata *storage.ImageMetadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	// is_cluster_local indicates the image is only accessible within the secured cluster
+	// and cannot be scanned by Central directly.
+	IsClusterLocal bool `protobuf:"varint,6,opt,name=is_cluster_local,json=isClusterLocal,proto3" json:"is_cluster_local,omitempty"`
+	// components contains the indexed software components (packages) from the image.
+	Components *v1.Components `protobuf:"bytes,4,opt,name=components,proto3" json:"components,omitempty"`
+	// notes describes limitations of the scan data (e.g. missing OS CVEs).
+	Notes         []v1.Note `protobuf:"varint,5,rep,packed,name=notes,proto3,enum=scannerV1.Note" json:"notes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetImageVulnerabilitiesInternalRequest) Reset() {
@@ -493,22 +533,38 @@ func (x *GetImageVulnerabilitiesInternalRequest) GetNotes() []v1.Note {
 	return nil
 }
 
+// EnrichLocalImageInternalRequest is sent by Sensor to deliver scan and signature
+// data for images that were scanned locally within the secured cluster (delegated scanning).
 type EnrichLocalImageInternalRequest struct {
-	state          protoimpl.MessageState  `protogen:"open.v1"`
-	IndexerVersion string                  `protobuf:"bytes,12,opt,name=indexer_version,json=indexerVersion,proto3" json:"indexer_version,omitempty"`
-	ImageId        string                  `protobuf:"bytes,1,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
-	ImageName      *storage.ImageName      `protobuf:"bytes,2,opt,name=image_name,json=imageName,proto3" json:"image_name,omitempty"`
-	Metadata       *storage.ImageMetadata  `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// indexer_version identifies the Scanner V4 indexer version that produced the components.
+	IndexerVersion string `protobuf:"bytes,12,opt,name=indexer_version,json=indexerVersion,proto3" json:"indexer_version,omitempty"`
+	// image_id is the SHA digest of the image.
+	ImageId string `protobuf:"bytes,1,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
+	// image_name is the fully-qualified image name.
+	ImageName *storage.ImageName `protobuf:"bytes,2,opt,name=image_name,json=imageName,proto3" json:"image_name,omitempty"`
+	// metadata contains image layer and OS information from the registry.
+	Metadata *storage.ImageMetadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	// image_signature contains the cryptographic signature data for the image.
 	ImageSignature *storage.ImageSignature `protobuf:"bytes,4,opt,name=image_signature,json=imageSignature,proto3" json:"image_signature,omitempty"`
-	Components     *v1.Components          `protobuf:"bytes,5,opt,name=components,proto3" json:"components,omitempty"`
-	Notes          []v1.Note               `protobuf:"varint,6,rep,packed,name=notes,proto3,enum=scannerV1.Note" json:"notes,omitempty"`
-	ImageNotes     []storage.Image_Note    `protobuf:"varint,7,rep,packed,name=image_notes,json=imageNotes,proto3,enum=storage.Image_Note" json:"image_notes,omitempty"`
-	Error          string                  `protobuf:"bytes,8,opt,name=error,proto3" json:"error,omitempty"`
-	RequestId      string                  `protobuf:"bytes,9,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	Force          bool                    `protobuf:"varint,10,opt,name=force,proto3" json:"force,omitempty"`
-	V4Contents     *v4.Contents            `protobuf:"bytes,11,opt,name=v4_contents,json=v4Contents,proto3" json:"v4_contents,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// components contains the indexed software components (packages) from the image.
+	Components *v1.Components `protobuf:"bytes,5,opt,name=components,proto3" json:"components,omitempty"`
+	// notes describes limitations of the scan data (e.g. missing OS CVEs).
+	Notes []v1.Note `protobuf:"varint,6,rep,packed,name=notes,proto3,enum=scannerV1.Note" json:"notes,omitempty"`
+	// image_notes records high-level image-level scan problems (e.g. MISSING_METADATA).
+	ImageNotes []storage.Image_Note `protobuf:"varint,7,rep,packed,name=image_notes,json=imageNotes,proto3,enum=storage.Image_Note" json:"image_notes,omitempty"`
+	// error carries a non-empty error message when the local scan encountered a failure.
+	// Central will still persist the result with degraded data so users can see scan errors.
+	Error string `protobuf:"bytes,8,opt,name=error,proto3" json:"error,omitempty"`
+	// request_id is a correlation token set by Sensor for ad-hoc (on-demand) scan requests.
+	// When set, Central signals the waiting goroutine via the scan waiter mechanism.
+	RequestId string `protobuf:"bytes,9,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	// force bypasses the existing scan cache and forces a full re-enrichment.
+	Force bool `protobuf:"varint,10,opt,name=force,proto3" json:"force,omitempty"`
+	// v4_contents contains Scanner V4-specific index contents used to match vulnerabilities.
+	V4Contents    *v4.Contents `protobuf:"bytes,11,opt,name=v4_contents,json=v4Contents,proto3" json:"v4_contents,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *EnrichLocalImageInternalRequest) Reset() {
@@ -625,10 +681,15 @@ func (x *EnrichLocalImageInternalRequest) GetV4Contents() *v4.Contents {
 	return nil
 }
 
+// UpdateLocalScanStatusInternalRequest is sent by Sensor to report a delegated scan
+// failure that occurred before enrichment data could be produced (e.g. no scanner available,
+// request throttled).
 type UpdateLocalScanStatusInternalRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	Error         string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// request_id correlates this status update to the originating ad-hoc scan request.
+	RequestId string `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	// error is the human-readable error message describing the scan failure.
+	Error         string `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -677,10 +738,16 @@ func (x *UpdateLocalScanStatusInternalRequest) GetError() string {
 	return ""
 }
 
+// DeleteImagesRequest is the request message for DeleteImages.
 type DeleteImagesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Query         *RawQuery              `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
-	Confirm       bool                   `protobuf:"varint,2,opt,name=confirm,proto3" json:"confirm,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// query selects images to delete using StackRox search query syntax.
+	// A non-nil query is required; an empty query selects all images.
+	Query *RawQuery `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	// confirm must be set to true to perform the actual deletion.
+	// If false, the response reflects the number of images that would be deleted
+	// without making any changes (dry run).
+	Confirm       bool `protobuf:"varint,2,opt,name=confirm,proto3" json:"confirm,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -730,9 +797,11 @@ func (x *DeleteImagesRequest) GetConfirm() bool {
 }
 
 type DeleteImagesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	NumDeleted    uint32                 `protobuf:"varint,1,opt,name=num_deleted,json=numDeleted,proto3" json:"num_deleted,omitempty"`
-	DryRun        bool                   `protobuf:"varint,2,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// num_deleted is the number of images deleted (or that would be deleted in a dry run).
+	NumDeleted uint32 `protobuf:"varint,1,opt,name=num_deleted,json=numDeleted,proto3" json:"num_deleted,omitempty"`
+	// dry_run is true when confirm was not set in the request, meaning no images were deleted.
+	DryRun        bool `protobuf:"varint,2,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -781,6 +850,7 @@ func (x *DeleteImagesResponse) GetDryRun() bool {
 	return false
 }
 
+// WatchImageRequest is the request message for WatchImage.
 type WatchImageRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The name of the image.
@@ -828,13 +898,15 @@ func (x *WatchImageRequest) GetName() string {
 	return ""
 }
 
+// WatchImageResponse is the response message for WatchImage.
 type WatchImageResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// If the image was scanned successfully, this returns the normalized name of the image.
 	// This depends on what we get from the registry.
 	// For example, "docker.io/wordpress:latest" -> "docker.io/library/wordpress:latest"
-	NormalizedName string                       `protobuf:"bytes,1,opt,name=normalized_name,json=normalizedName,proto3" json:"normalized_name,omitempty"`
-	ErrorType      WatchImageResponse_ErrorType `protobuf:"varint,2,opt,name=error_type,json=errorType,proto3,enum=v1.WatchImageResponse_ErrorType" json:"error_type,omitempty"`
+	NormalizedName string `protobuf:"bytes,1,opt,name=normalized_name,json=normalizedName,proto3" json:"normalized_name,omitempty"`
+	// error_type classifies the failure when the watch operation did not succeed.
+	ErrorType WatchImageResponse_ErrorType `protobuf:"varint,2,opt,name=error_type,json=errorType,proto3,enum=v1.WatchImageResponse_ErrorType" json:"error_type,omitempty"`
 	// Only set if error_type is NOT equal to "NO_ERROR".
 	ErrorMessage  string `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -892,6 +964,7 @@ func (x *WatchImageResponse) GetErrorMessage() string {
 	return ""
 }
 
+// UnwatchImageRequest is the request message for UnwatchImage.
 type UnwatchImageRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The name of the image to unwatch.
@@ -939,7 +1012,8 @@ func (x *UnwatchImageRequest) GetName() string {
 }
 
 type GetWatchedImagesResponse struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// watched_images is the list of image names currently registered for continuous watching.
 	WatchedImages []*storage.WatchedImage `protobuf:"bytes,1,rep,name=watched_images,json=watchedImages,proto3" json:"watched_images,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1020,10 +1094,15 @@ func (*ScanImageInternalResponseDetails) Descriptor() ([]byte, []int) {
 	return file_api_v1_image_service_proto_rawDescGZIP(), []int{15}
 }
 
+// ExportImageRequest is the request message for the ExportImages streaming RPC.
 type ExportImageRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Timeout       int32                  `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	Query         string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// timeout is the maximum number of seconds the export may run before being canceled.
+	// A value of 0 means no timeout.
+	Timeout int32 `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	// query filters the exported images using StackRox search query syntax.
+	// An empty query exports all images.
+	Query         string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1073,8 +1152,9 @@ func (x *ExportImageRequest) GetQuery() string {
 }
 
 type ExportImageResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Image         *storage.Image         `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// image is one fully-enriched image object in the stream.
+	Image         *storage.Image `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1116,11 +1196,16 @@ func (x *ExportImageResponse) GetImage() *storage.Image {
 	return nil
 }
 
+// Source identifies the cluster and namespace context used to resolve
+// registry credentials when enriching the image.
 type ScanImageInternalRequest_Source struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId        string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Namespace        string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	ImagePullSecrets []string               `protobuf:"bytes,3,rep,name=image_pull_secrets,json=imagePullSecrets,proto3" json:"image_pull_secrets,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id is the ID of the secured cluster that reported the image.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// namespace is the Kubernetes namespace from which pull secrets are read.
+	Namespace string `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	// image_pull_secrets is the set of pull secret names available in the namespace.
+	ImagePullSecrets []string `protobuf:"bytes,3,rep,name=image_pull_secrets,json=imagePullSecrets,proto3" json:"image_pull_secrets,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }

@@ -31,17 +31,48 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// APITokenService APIs can be used to manage API tokens.
+// APITokenService manages long-lived API tokens used to authenticate programmatic access to Central.
+//
+// API tokens are scoped to one or more roles and optionally have an expiration time.
+// Tokens can be listed, retrieved by ID, generated, and revoked.
+//
+// Authentication requirements:
+// - GetAPIToken, GetAPITokens: require read access to the Integration resource.
+// - RevokeToken: requires write access to the Integration resource.
+// - GenerateToken: requires read access to the Access resource AND write access to the Integration resource.
+// - ListAllowedTokenRoles: requires read access to the Access resource.
 type APITokenServiceClient interface {
-	// GetAPIToken returns API token metadata for a given id.
+	// GetAPIToken returns the metadata for the API token with the given ID.
+	//
+	// Note: the raw token value is never returned; only metadata is available after creation.
+	// Returns INVALID_ARGUMENT if the ID is empty or no token with that ID exists.
+	// Requires read access to the Integration resource.
 	GetAPIToken(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.TokenMetadata, error)
-	// GetAPITokens returns all the API tokens.
+	// GetAPITokens returns metadata for all API tokens, optionally filtered by revocation status.
+	//
+	// Use the revoked field to filter for active or revoked tokens only.
+	// Requires read access to the Integration resource.
 	GetAPITokens(ctx context.Context, in *GetAPITokensRequest, opts ...grpc.CallOption) (*GetAPITokensResponse, error)
-	// GenerateToken generates API token for a given user and role.
+	// GenerateToken creates a new API token assigned to one or more roles.
+	//
+	// The token name must be non-empty. All requested roles must exist and must not exceed
+	// the caller's own permissions (privilege escalation prevention).
+	// The raw token value is returned only in this response; it cannot be retrieved later.
+	// Returns INVALID_ARGUMENT if the name is empty, both role and roles are set, or a role does not exist.
+	// Returns NOT_AUTHORIZED if any requested role has more permissions than the caller.
+	// Requires read access to the Access resource and write access to the Integration resource.
 	GenerateToken(ctx context.Context, in *GenerateTokenRequest, opts ...grpc.CallOption) (*GenerateTokenResponse, error)
-	// RevokeToken removes the API token for a given id.
+	// RevokeToken marks the API token with the given ID as revoked, immediately invalidating it.
+	//
+	// Revocation is permanent; revoked tokens cannot be reinstated.
+	// Returns an error if the ID is empty or no token with that ID exists.
+	// Requires write access to the Integration resource.
 	RevokeToken(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
-	// GetAllowedTokenRoles return roles that user is allowed to request for API token.
+	// ListAllowedTokenRoles returns the role names the caller is permitted to assign to a new API token.
+	//
+	// Roles with more permissions than the caller holds are excluded (privilege escalation prevention).
+	// The built-in "None" role is excluded. Results are sorted alphabetically.
+	// Requires read access to the Access resource.
 	ListAllowedTokenRoles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListAllowedTokenRolesResponse, error)
 }
 
@@ -107,17 +138,48 @@ func (c *aPITokenServiceClient) ListAllowedTokenRoles(ctx context.Context, in *E
 // All implementations should embed UnimplementedAPITokenServiceServer
 // for forward compatibility.
 //
-// APITokenService APIs can be used to manage API tokens.
+// APITokenService manages long-lived API tokens used to authenticate programmatic access to Central.
+//
+// API tokens are scoped to one or more roles and optionally have an expiration time.
+// Tokens can be listed, retrieved by ID, generated, and revoked.
+//
+// Authentication requirements:
+// - GetAPIToken, GetAPITokens: require read access to the Integration resource.
+// - RevokeToken: requires write access to the Integration resource.
+// - GenerateToken: requires read access to the Access resource AND write access to the Integration resource.
+// - ListAllowedTokenRoles: requires read access to the Access resource.
 type APITokenServiceServer interface {
-	// GetAPIToken returns API token metadata for a given id.
+	// GetAPIToken returns the metadata for the API token with the given ID.
+	//
+	// Note: the raw token value is never returned; only metadata is available after creation.
+	// Returns INVALID_ARGUMENT if the ID is empty or no token with that ID exists.
+	// Requires read access to the Integration resource.
 	GetAPIToken(context.Context, *ResourceByID) (*storage.TokenMetadata, error)
-	// GetAPITokens returns all the API tokens.
+	// GetAPITokens returns metadata for all API tokens, optionally filtered by revocation status.
+	//
+	// Use the revoked field to filter for active or revoked tokens only.
+	// Requires read access to the Integration resource.
 	GetAPITokens(context.Context, *GetAPITokensRequest) (*GetAPITokensResponse, error)
-	// GenerateToken generates API token for a given user and role.
+	// GenerateToken creates a new API token assigned to one or more roles.
+	//
+	// The token name must be non-empty. All requested roles must exist and must not exceed
+	// the caller's own permissions (privilege escalation prevention).
+	// The raw token value is returned only in this response; it cannot be retrieved later.
+	// Returns INVALID_ARGUMENT if the name is empty, both role and roles are set, or a role does not exist.
+	// Returns NOT_AUTHORIZED if any requested role has more permissions than the caller.
+	// Requires read access to the Access resource and write access to the Integration resource.
 	GenerateToken(context.Context, *GenerateTokenRequest) (*GenerateTokenResponse, error)
-	// RevokeToken removes the API token for a given id.
+	// RevokeToken marks the API token with the given ID as revoked, immediately invalidating it.
+	//
+	// Revocation is permanent; revoked tokens cannot be reinstated.
+	// Returns an error if the ID is empty or no token with that ID exists.
+	// Requires write access to the Integration resource.
 	RevokeToken(context.Context, *ResourceByID) (*Empty, error)
-	// GetAllowedTokenRoles return roles that user is allowed to request for API token.
+	// ListAllowedTokenRoles returns the role names the caller is permitted to assign to a new API token.
+	//
+	// Roles with more permissions than the caller holds are excluded (privilege escalation prevention).
+	// The built-in "None" role is excluded. Results are sorted alphabetically.
+	// Requires read access to the Access resource.
 	ListAllowedTokenRoles(context.Context, *Empty) (*ListAllowedTokenRolesResponse, error)
 }
 

@@ -14,6 +14,7 @@ message DiscoveredCluster {
   // UUIDv5 generated deterministically from the tuple (metadata.id, metadata.type, source.id).
   string id = 1;
 
+  // Metadata holds cloud-provider registration details for the discovered cluster.
   message Metadata {
     // Represents a unique ID under which the cluster is registered with the
     // cloud provider. Matches storage.ClusterMetadata.id for secured clusters.
@@ -21,23 +22,35 @@ message DiscoveredCluster {
     // Represents the name under which the cluster is registered with the
     // cloud provider. Matches storage.ClusterMetadata.name for secured clusters.
     string name = 2;
+    // Type identifies the managed Kubernetes distribution of the cluster.
     enum Type {
       UNSPECIFIED = 0;
+      // AKS is Azure Kubernetes Service.
       AKS = 1;
+      // ARO is Azure Red Hat OpenShift.
       ARO = 2;
+      // EKS is Amazon Elastic Kubernetes Service.
       EKS = 3;
+      // GKE is Google Kubernetes Engine.
       GKE = 4;
+      // OCP is OpenShift Container Platform (self-managed).
       OCP = 5;
+      // OSD is OpenShift Dedicated.
       OSD = 6;
+      // ROSA is Red Hat OpenShift Service on AWS.
       ROSA = 7;
     }
     // The cluster type. Matches storage.ClusterMetadata.type for secured clusters.
     Type type = 3;
 
+    // ProviderType identifies the underlying cloud platform hosting the cluster.
     enum ProviderType {
       PROVIDER_TYPE_UNSPECIFIED = 0;
+      // PROVIDER_TYPE_AWS indicates the cluster is hosted on Amazon Web Services.
       PROVIDER_TYPE_AWS = 1;
+      // PROVIDER_TYPE_GCP indicates the cluster is hosted on Google Cloud Platform.
       PROVIDER_TYPE_GCP = 2;
+      // PROVIDER_TYPE_AZURE indicates the cluster is hosted on Microsoft Azure.
       PROVIDER_TYPE_AZURE = 3;
     }
     // The cloud provider type.
@@ -48,8 +61,10 @@ message DiscoveredCluster {
     // Timestamp at which the cluster was first discovered by the cloud source.
     google.protobuf.Timestamp first_discovered_at = 6;
   }
+  // metadata holds registration details as reported by the cloud provider.
   Metadata metadata = 2;
 
+  // Status indicates whether a discovered cluster has been secured with StackRox Sensor.
   enum Status {
     // The status of the cluster is unknown. May occur if a secured cluster
     // is missing the metadata for a possible match.
@@ -65,13 +80,16 @@ message DiscoveredCluster {
   // on the provider details.
   Status status = 3;
 
+  // CloudSource identifies the cloud source integration that discovered this cluster.
   message CloudSource {
+    // id is the identifier of the cloud source integration.
     string id = 1;
   }
   // The cloud source integration from which the cluster was discovered.
   CloudSource source = 4;
 }
 
+// DiscoveredClustersFilter specifies criteria for filtering discovered clusters.
 message DiscoveredClustersFilter {
   // Matches discovered clusters of specific names.
   repeated string names = 1;
@@ -86,23 +104,31 @@ message DiscoveredClustersFilter {
   repeated string source_ids = 4;
 }
 
+// CountDiscoveredClustersRequest is the request message for CountDiscoveredClusters.
 message CountDiscoveredClustersRequest {
   // Filters discovered clusters based on the requested fields.
   DiscoveredClustersFilter filter = 1;
 }
 
+// CountDiscoveredClustersResponse is the response message for CountDiscoveredClusters.
 message CountDiscoveredClustersResponse {
+  // count is the total number of discovered clusters matching the filter.
   int32 count = 1;
 }
 
+// GetDiscoveredClusterRequest is the request message for GetDiscoveredCluster.
 message GetDiscoveredClusterRequest {
+  // id is the UUIDv5 identifier of the discovered cluster to retrieve.
   string id = 1;
 }
 
+// GetDiscoveredClusterResponse is the response message for GetDiscoveredCluster.
 message GetDiscoveredClusterResponse {
+  // cluster is the discovered cluster matching the requested ID.
   DiscoveredCluster cluster = 1;
 }
 
+// ListDiscoveredClustersRequest is the request message for ListDiscoveredClusters.
 message ListDiscoveredClustersRequest {
   // Divides the response into chunks.
   Pagination pagination = 1;
@@ -111,10 +137,19 @@ message ListDiscoveredClustersRequest {
   DiscoveredClustersFilter filter = 2;
 }
 
+// ListDiscoveredClustersResponse is the response message for ListDiscoveredClusters.
 message ListDiscoveredClustersResponse {
+  // clusters is the list of discovered clusters matching the filter, sorted by cluster name.
   repeated DiscoveredCluster clusters = 1;
 }
 
+// DiscoveredClustersService provides read access to clusters discovered through cloud source integrations.
+//
+// Cloud sources (AWS, GCP, Azure) periodically report the clusters registered with them. This service
+// exposes those discovered clusters and indicates whether each one is secured (has a Sensor connected)
+// or unsecured. Results can be filtered by name, type, status, and cloud source ID.
+//
+// Authentication: all endpoints require a valid API token with read access to the Administration resource.
 service DiscoveredClustersService {
   // CountDiscoveredClusters returns the number of discovered clusters after filtering by requested fields.
   rpc CountDiscoveredClusters(CountDiscoveredClustersRequest) returns (CountDiscoveredClustersResponse) {
@@ -122,11 +157,17 @@ service DiscoveredClustersService {
   }
 
   // GetDiscoveredCluster retrieves a discovered cluster by ID.
+  //
+  // Returns INVALID_ARGUMENT if id is empty.
+  // Returns NOT_FOUND if no discovered cluster exists with the given ID.
   rpc GetDiscoveredCluster(GetDiscoveredClusterRequest) returns (GetDiscoveredClusterResponse) {
     option (google.api.http) = {get: "/v1/discovered-clusters/{id}"};
   }
 
   // ListDiscoveredClusters returns the list of discovered clusters after filtered by requested fields.
+  //
+  // Results are sorted by cluster name ascending. Pagination is supported with a maximum of 1000
+  // results per page.
   rpc ListDiscoveredClusters(ListDiscoveredClustersRequest) returns (ListDiscoveredClustersResponse) {
     option (google.api.http) = {get: "/v1/discovered-clusters"};
   }

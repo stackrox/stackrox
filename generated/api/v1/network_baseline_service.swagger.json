@@ -18,6 +18,8 @@
   "paths": {
     "/v1/networkbaseline/{deploymentId}/peers": {
       "patch": {
+        "summary": "ModifyBaselineStatusForPeers adds or removes peer connections from a\ndeployment's network baseline.",
+        "description": "Peers with status BASELINE are added to the baseline; peers with status\nANOMALOUS are removed. Changes are persisted and propagated to Sensor so\nthat new observations are classified correctly.",
         "operationId": "NetworkBaselineService_ModifyBaselineStatusForPeers",
         "responses": {
           "200": {
@@ -36,6 +38,7 @@
         "parameters": [
           {
             "name": "deploymentId",
+            "description": "deployment_id is the ID of the deployment whose baseline to modify. Required.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -56,6 +59,8 @@
     },
     "/v1/networkbaseline/{deploymentId}/status": {
       "post": {
+        "summary": "GetNetworkBaselineStatusForFlows classifies a batch of peer connections\nas BASELINE or ANOMALOUS relative to the given deployment's network baseline.",
+        "description": "If no baseline exists for the deployment, one is created automatically\nbefore classification. Discovered external peers (e.g. dynamic CIDR blocks)\nare anonymized to the INTERNET entity for comparison purposes.",
         "operationId": "NetworkBaselineService_GetNetworkBaselineStatusForFlows",
         "responses": {
           "200": {
@@ -74,6 +79,7 @@
         "parameters": [
           {
             "name": "deploymentId",
+            "description": "deployment_id is the ID of the deployment whose baseline to check against. Required.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -94,6 +100,8 @@
     },
     "/v1/networkbaseline/{deploymentId}/status/external": {
       "get": {
+        "summary": "GetNetworkBaselineStatusForExternalFlows returns the baseline status of\nobserved external network flows for a deployment, paginated and split into\nanomalous and baseline groups.",
+        "description": "Flows are fetched from the network graph for the given time window (default:\nlast 1 hour). Results are sorted by peer entity name before pagination.\n\nIf no baseline exists for the deployment, one is created automatically.",
         "operationId": "NetworkBaselineService_GetNetworkBaselineStatusForExternalFlows",
         "responses": {
           "200": {
@@ -112,18 +120,21 @@
         "parameters": [
           {
             "name": "deploymentId",
+            "description": "deployment_id is the ID of the deployment to query. Required.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "query",
+            "description": "query additionally filters external entities using StackRox search syntax.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "since",
+            "description": "since restricts flows to those observed after this timestamp.\nDefaults to 1 hour before the current time if unset.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -182,6 +193,8 @@
     },
     "/v1/networkbaseline/{id}": {
       "get": {
+        "summary": "GetNetworkBaseline returns the network baseline for the given deployment ID.",
+        "description": "If no baseline exists, one is created automatically. The baseline contains\nall peer connections (port, protocol, direction) currently marked as expected.\n\nReturns INVALID_ARGUMENT if the deployment ID is empty.\nReturns NOT_FOUND if the deployment does not exist and a baseline cannot\nbe created.",
         "operationId": "NetworkBaselineService_GetNetworkBaseline",
         "responses": {
           "200": {
@@ -212,6 +225,8 @@
     },
     "/v1/networkbaseline/{id}/lock": {
       "patch": {
+        "summary": "LockNetworkBaseline locks a deployment's network baseline to prevent\nfurther automatic updates.",
+        "description": "Once locked, new observed connections are not automatically added to the\nbaseline and will be classified as anomalous. The baseline can still be\nmodified manually via ModifyBaselineStatusForPeers.",
         "operationId": "NetworkBaselineService_LockNetworkBaseline",
         "responses": {
           "200": {
@@ -250,6 +265,7 @@
     },
     "/v1/networkbaseline/{id}/unlock": {
       "patch": {
+        "summary": "UnlockNetworkBaseline unlocks a deployment's network baseline, allowing\nnew observed connections to be added automatically.",
         "operationId": "NetworkBaselineService_UnlockNetworkBaseline",
         "responses": {
           "200": {
@@ -308,9 +324,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1NetworkBaselineStatusPeer"
-          }
+          },
+          "description": "peers is the list of peer connections to classify as BASELINE or ANOMALOUS."
         }
-      }
+      },
+      "description": "NetworkBaselineStatusRequest describes a batch of peer connections to check\nagainst a deployment's network baseline."
     },
     "NetworkBaselineServiceLockNetworkBaselineBody": {
       "type": "object"
@@ -323,9 +341,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1NetworkBaselinePeerStatus"
-          }
+          },
+          "description": "peers is the list of peer connections with their desired status\n(BASELINE to add, ANOMALOUS to remove from baseline)."
         }
-      }
+      },
+      "description": "ModifyBaselineStatusForPeersRequest adds or removes peer connections from a\ndeployment's network baseline."
     },
     "NetworkBaselineServiceUnlockNetworkBaselineBody": {
       "type": "object"
@@ -573,41 +593,51 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1NetworkBaselinePeerStatus"
-          }
+          },
+          "description": "anomalous is the paginated list of external peer connections not in the baseline."
         },
         "totalAnomalous": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "total_anomalous is the total number of anomalous peers before pagination."
         },
         "baseline": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1NetworkBaselinePeerStatus"
-          }
+          },
+          "description": "baseline is the paginated list of external peer connections that match the baseline."
         },
         "totalBaseline": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "total_baseline is the total number of baseline peers before pagination."
         }
-      }
+      },
+      "description": "NetworkBaselineExternalStatusResponse classifies observed external flows for\na deployment as anomalous or baseline, with pagination."
     },
     "v1NetworkBaselinePeerEntity": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "id is the unique identifier of the peer entity."
         },
         "type": {
-          "$ref": "#/definitions/storageNetworkEntityInfoType"
+          "$ref": "#/definitions/storageNetworkEntityInfoType",
+          "description": "type is the entity type (DEPLOYMENT, EXTERNAL_SOURCE, INTERNET, etc.)."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is the display name of the peer entity."
         },
         "discovered": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "discovered is true if this entity was automatically discovered (e.g. a\ndiscovered external CIDR block) rather than user-defined."
         }
-      }
+      },
+      "description": "NetworkBaselinePeerEntity identifies a network entity (deployment, external\nsource, etc.) as a peer in a baseline connection check."
     },
     "v1NetworkBaselinePeerStatus": {
       "type": "object",
@@ -618,7 +648,8 @@
         "status": {
           "$ref": "#/definitions/v1NetworkBaselinePeerStatusStatus"
         }
-      }
+      },
+      "description": "NetworkBaselinePeerStatus pairs a peer connection with its baseline status\n(BASELINE or ANOMALOUS) relative to the deployment's network baseline."
     },
     "v1NetworkBaselinePeerStatusStatus": {
       "type": "string",
@@ -648,7 +679,8 @@
           "type": "boolean",
           "description": "A boolean representing whether the query is for an ingress or egress\nconnection. This is defined with respect to the current deployment.\nThus:\n  - If the connection in question is in the outEdges of the current deployment,\n    this should be false.\n  - If it is in the outEdges of the peer deployment, this\n    should be true."
         }
-      }
+      },
+      "description": "NetworkBaselineStatusPeer describes a single peer connection to be checked\nagainst a deployment's network baseline."
     },
     "v1NetworkBaselineStatusResponse": {
       "type": "object",
@@ -658,7 +690,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1NetworkBaselinePeerStatus"
-          }
+          },
+          "description": "statuses contains the classification result for each input peer, in the same order."
         }
       }
     },

@@ -18,6 +18,8 @@
   "paths": {
     "/v1/networkgraph/cluster/{clusterId}": {
       "get": {
+        "summary": "GetNetworkGraph returns a snapshot of observed network flows for all\ndeployments in the given cluster.",
+        "description": "Flows are filtered to those observed after the `since` timestamp (default:\n5 minutes ago). The result graph includes deployment nodes, external source\nnodes, and directed edges with per-port connection metadata when\n`include_ports` is true.\n\nDeployments invisible to the caller due to Scoped Access Control are masked\n(replaced with anonymized nodes) rather than omitted, to preserve graph\ntopology. Flows between two invisible deployments are omitted entirely.\n\nReturns INVALID_ARGUMENT if cluster_id is empty or the number of matching\ndeployments exceeds the configured maximum.\nReturns NOT_FOUND if the cluster does not exist or is not visible.",
         "operationId": "NetworkGraphService_GetNetworkGraph",
         "responses": {
           "200": {
@@ -36,18 +38,21 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id is the ID of the cluster to retrieve the network graph for. Required.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "query",
+            "description": "query filters deployments shown in the graph using StackRox search syntax.\nExample: \"Namespace:production+Label:app=frontend\"",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "since",
+            "description": "since restricts flows to those observed after this timestamp.\nDefaults to 5 minutes before the current time if unset.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -55,18 +60,21 @@
           },
           {
             "name": "includePorts",
+            "description": "include_ports controls whether per-port connection details are included in\nedge properties.",
             "in": "query",
             "required": false,
             "type": "boolean"
           },
           {
             "name": "scope.query",
+            "description": "query filters the scope using StackRox search syntax (e.g. \"Namespace:production\").",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "includePolicies",
+            "description": "include_policies controls whether NetworkPolicy isolation information\n(non_isolated_ingress, non_isolated_egress, policy_ids) is populated on\neach deployment node.",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -79,6 +87,8 @@
     },
     "/v1/networkgraph/cluster/{clusterId}/externalentities": {
       "get": {
+        "summary": "GetExternalNetworkEntities returns the user-defined external network\nentities (CIDR blocks) visible for the given cluster, optionally filtered\nby the search query.",
+        "description": "Results include both cluster-scoped entities and global (cluster-agnostic)\nentities. Returns INVALID_ARGUMENT if the query is malformed.",
         "operationId": "NetworkGraphService_GetExternalNetworkEntities",
         "responses": {
           "200": {
@@ -97,12 +107,14 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id restricts results to entities scoped to this cluster (or global entities).",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "query",
+            "description": "query further filters entities using StackRox search syntax.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -113,6 +125,8 @@
         ]
       },
       "post": {
+        "summary": "CreateExternalNetworkEntity creates a new user-defined external network\nentity (CIDR block) scoped to the given cluster.",
+        "description": "The entity ID is derived deterministically from the cluster ID and CIDR\nblock. Returns INVALID_ARGUMENT if the cluster ID or CIDR is invalid.\nReturns NOT_FOUND if the cluster does not exist or is not visible.",
         "operationId": "NetworkGraphService_CreateExternalNetworkEntity",
         "responses": {
           "200": {
@@ -131,6 +145,7 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id is the cluster to which this external entity is scoped. Required.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -151,6 +166,8 @@
     },
     "/v1/networkgraph/cluster/{clusterId}/externalentities/metadata": {
       "get": {
+        "summary": "GetExternalNetworkFlowsMetadata returns per-entity flow counts for all\nexternal network entities that have observed flows in the cluster.",
+        "description": "Results are sorted by entity ID and support pagination. Useful for\nbuilding summary views without fetching full flow details.",
         "operationId": "NetworkGraphService_GetExternalNetworkFlowsMetadata",
         "responses": {
           "200": {
@@ -169,18 +186,21 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id is the cluster to query. Required.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "query",
+            "description": "query filters deployments using StackRox search syntax.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "since",
+            "description": "since restricts flows to those observed after this timestamp.\nDefaults to 5 minutes before the current time if unset.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -239,6 +259,8 @@
     },
     "/v1/networkgraph/cluster/{clusterId}/externalentities/{entityId}/flows": {
       "get": {
+        "summary": "GetExternalNetworkFlows returns the observed network flows between cluster\ndeployments and a specific external network entity.",
+        "description": "Flows are paginated and sorted by source entity ID for deterministic\npagination. Only flows involving at least one deployment visible to the\ncaller are returned.\n\nReturns NOT_FOUND if the external entity does not exist.",
         "operationId": "NetworkGraphService_GetExternalNetworkFlows",
         "responses": {
           "200": {
@@ -257,24 +279,28 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id is the cluster to query for external flows. Required.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "entityId",
+            "description": "entity_id is the ID of the external network entity to retrieve flows for. Required.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "query",
+            "description": "query additionally filters the set of deployments considered, using StackRox search syntax.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "since",
+            "description": "since restricts flows to those observed after this timestamp.\nDefaults to 5 minutes before the current time if unset.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -333,6 +359,8 @@
     },
     "/v1/networkgraph/config": {
       "get": {
+        "summary": "GetNetworkGraphConfig returns the current network graph display configuration.",
+        "description": "The configuration controls settings such as whether default external\nnetwork sources are hidden in the graph. Requires View access to\nthe Administration resource.",
         "operationId": "NetworkGraphService_GetNetworkGraphConfig",
         "responses": {
           "200": {
@@ -353,6 +381,8 @@
         ]
       },
       "put": {
+        "summary": "PutNetworkGraphConfig replaces the network graph display configuration.",
+        "description": "Returns INVALID_ARGUMENT if the config body is missing.\nRequires Modify access to the Administration resource.",
         "operationId": "NetworkGraphService_PutNetworkGraphConfig",
         "responses": {
           "200": {
@@ -371,6 +401,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "PutNetworkGraphConfigRequest wraps the new network graph configuration to persist.",
             "in": "body",
             "required": true,
             "schema": {
@@ -385,6 +416,8 @@
     },
     "/v1/networkgraph/externalentities/{id}": {
       "delete": {
+        "summary": "DeleteExternalNetworkEntity removes a user-defined external network entity.",
+        "description": "Only user-created entities can be deleted; StackRox-generated default\nentities are immutable and will return PERMISSION_DENIED.\nReturns NOT_FOUND if the entity does not exist.",
         "operationId": "NetworkGraphService_DeleteExternalNetworkEntity",
         "responses": {
           "200": {
@@ -413,6 +446,8 @@
         ]
       },
       "patch": {
+        "summary": "PatchExternalNetworkEntity renames an existing user-defined external\nnetwork entity.",
+        "description": "Only user-created entities can be updated; StackRox-generated default\nentities are immutable and will return PERMISSION_DENIED.\nReturns INVALID_ARGUMENT if the entity ID is empty.\nReturns NOT_FOUND if the entity does not exist.",
         "operationId": "NetworkGraphService_PatchExternalNetworkEntity",
         "responses": {
           "200": {
@@ -431,6 +466,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "id is the ID of the external network entity to update. Required.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -508,17 +544,21 @@
       "type": "object",
       "properties": {
         "entity": {
-          "$ref": "#/definitions/NetworkEntityInfoExternalSource"
+          "$ref": "#/definitions/NetworkEntityInfoExternalSource",
+          "description": "entity contains the CIDR block and optional name for the new external source."
         }
-      }
+      },
+      "description": "CreateNetworkEntityRequest describes a new user-defined external network\nentity (CIDR block) scoped to a specific cluster."
     },
     "NetworkGraphServicePatchExternalNetworkEntityBody": {
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is the new display name for the entity."
         }
-      }
+      },
+      "description": "PatchNetworkEntityRequest renames an existing user-defined external network entity."
     },
     "googleRpcStatus": {
       "type": "object",
@@ -694,13 +734,16 @@
       "type": "object",
       "properties": {
         "entity": {
-          "$ref": "#/definitions/storageNetworkEntityInfo"
+          "$ref": "#/definitions/storageNetworkEntityInfo",
+          "description": "entity is the external network entity."
         },
         "flowsCount": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "flowsCount is the total number of observed flows involving this entity."
         }
-      }
+      },
+      "description": "ExternalNetworkFlowMetadata summarizes observed flow counts for a single\nexternal network entity."
     },
     "v1GetExternalNetworkEntitiesResponse": {
       "type": "object",
@@ -722,48 +765,59 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1ExternalNetworkFlowMetadata"
-          }
+          },
+          "description": "entities is the paginated list of external entities with their flow counts,\nsorted by entity ID for deterministic pagination."
         },
         "totalEntities": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "total_entities is the total number of external entities before pagination."
         }
-      }
+      },
+      "description": "GetExternalNetworkFlowsMetadataResponse contains per-entity flow counts for\nall external entities with observed flows."
     },
     "v1GetExternalNetworkFlowsResponse": {
       "type": "object",
       "properties": {
         "entity": {
-          "$ref": "#/definitions/storageNetworkEntityInfo"
+          "$ref": "#/definitions/storageNetworkEntityInfo",
+          "description": "entity is the external network entity these flows are associated with."
         },
         "totalFlows": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "total_flows is the total number of matching flows before pagination."
         },
         "flows": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageNetworkFlow"
-          }
+          },
+          "description": "flows is the paginated list of observed network flows."
         }
-      }
+      },
+      "description": "GetExternalNetworkFlowsResponse contains flows between cluster deployments\nand a single external network entity."
     },
     "v1NetworkEdgeProperties": {
       "type": "object",
       "properties": {
         "port": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "description": "port is the destination port of the connection."
         },
         "protocol": {
-          "$ref": "#/definitions/storageL4Protocol"
+          "$ref": "#/definitions/storageL4Protocol",
+          "description": "protocol is the Layer-4 protocol (TCP, UDP, etc.) of the connection."
         },
         "lastActiveTimestamp": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "last_active_timestamp is the most recent time this connection was observed."
         }
-      }
+      },
+      "description": "NetworkEdgeProperties describes a single observed connection on a specific\nport and protocol."
     },
     "v1NetworkEdgePropertiesBundle": {
       "type": "object",
@@ -775,63 +829,77 @@
             "$ref": "#/definitions/v1NetworkEdgeProperties"
           }
         }
-      }
+      },
+      "description": "NetworkEdgePropertiesBundle groups all connection properties observed on a\nsingle directed edge between two network nodes."
     },
     "v1NetworkGraph": {
       "type": "object",
       "properties": {
         "epoch": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "description": "epoch is a monotonically increasing counter that increments whenever the\nunderlying network policy graph changes. Clients can compare epochs to\ndetect staleness without re-fetching the full graph."
         },
         "nodes": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1NetworkNode"
-          }
+          },
+          "description": "nodes is the list of network entities in the graph. Edge indices in\nout_edges refer to positions in this list."
         }
-      }
+      },
+      "description": "NetworkGraph is the response to GetNetworkGraph, containing a snapshot of\nobserved network flows within a cluster."
     },
     "v1NetworkGraphScope": {
       "type": "object",
       "properties": {
         "query": {
-          "type": "string"
+          "type": "string",
+          "description": "query filters the scope using StackRox search syntax (e.g. \"Namespace:production\")."
         }
-      }
+      },
+      "description": "NetworkGraphScope restricts the network graph to a subset of deployments\nmatching the given search query."
     },
     "v1NetworkNode": {
       "type": "object",
       "properties": {
         "entity": {
-          "$ref": "#/definitions/storageNetworkEntityInfo"
+          "$ref": "#/definitions/storageNetworkEntityInfo",
+          "description": "entity identifies the network entity (deployment, CIDR block, internet, etc.)."
         },
         "internetAccess": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "internet_access is true if this node has observed flows to/from the internet."
         },
         "policyIds": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "policy_ids lists the IDs of NetworkPolicies that select this deployment.\nPopulated only when include_policies is set in the request."
         },
         "nonIsolatedIngress": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "non_isolated_ingress is true when no ingress NetworkPolicy selects this deployment,\nmeaning all ingress traffic is allowed."
         },
         "nonIsolatedEgress": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "non_isolated_egress is true when no egress NetworkPolicy selects this deployment,\nmeaning all egress traffic is allowed."
         },
         "queryMatch": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "query_match is true if this node matched the filter query in the request\n(as opposed to appearing only as a neighbor of a matching node)."
         },
         "outEdges": {
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/v1NetworkEdgePropertiesBundle"
-          }
+          },
+          "description": "out_edges maps the index of a destination node in the nodes list to the\nset of observed connection properties on that edge."
         }
-      }
+      },
+      "description": "NetworkNode represents a single entity (deployment, external source, or\ninternet) in the network graph."
     },
     "v1Pagination": {
       "type": "object",
@@ -861,9 +929,11 @@
       "type": "object",
       "properties": {
         "config": {
-          "$ref": "#/definitions/storageNetworkGraphConfig"
+          "$ref": "#/definitions/storageNetworkGraphConfig",
+          "description": "config is the new network graph configuration. Required."
         }
-      }
+      },
+      "description": "PutNetworkGraphConfigRequest wraps the new network graph configuration to persist."
     },
     "v1SortOption": {
       "type": "object",

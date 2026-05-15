@@ -18,6 +18,8 @@
   "paths": {
     "/v1/collections": {
       "get": {
+        "summary": "ListCollections returns all collections matching the optional search query.",
+        "description": "Results are sorted by collection name ascending. Pagination is controlled by the query's\npagination field with a default page size of 1000.",
         "operationId": "CollectionService_ListCollections",
         "responses": {
           "200": {
@@ -36,6 +38,7 @@
         "parameters": [
           {
             "name": "query.query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -91,6 +94,8 @@
         ]
       },
       "post": {
+        "summary": "CreateCollection creates a new resource collection.",
+        "description": "The collection name must be non-empty after whitespace trimming. At least one resource selector\nor embedded collection ID must be provided. The caller's identity is recorded as the creator.\n\nReturns INVALID_ARGUMENT if the name is empty, or if no selectors or embedded collections are provided.",
         "operationId": "CollectionService_CreateCollection",
         "responses": {
           "200": {
@@ -109,6 +114,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "CreateCollectionRequest is the request message for CreateCollection.",
             "in": "body",
             "required": true,
             "schema": {
@@ -123,6 +129,8 @@
     },
     "/v1/collections/dryrun": {
       "post": {
+        "summary": "DryRunCollection simulates creating or updating a collection without persisting it.",
+        "description": "Validates the collection definition and, when options.with_matches is true, resolves and\nreturns the deployments that would match. Set id to simulate an update to an existing\ncollection; leave id empty to simulate a new collection.\n\nReturns INVALID_ARGUMENT if the collection definition is invalid (empty name, no selectors).",
         "operationId": "CollectionService_DryRunCollection",
         "responses": {
           "200": {
@@ -141,6 +149,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "DryRunCollectionRequest is the request message for DryRunCollection.",
             "in": "body",
             "required": true,
             "schema": {
@@ -155,6 +164,8 @@
     },
     "/v1/collections/selectors": {
       "get": {
+        "summary": "ListCollectionSelectors returns all supported field labels that can be used in resource selectors.",
+        "description": "Supported selectors include fields such as \"Cluster\", \"Namespace\", and \"Deployment Label\".\nRequires read access to the WorkflowAdministration resource.",
         "operationId": "CollectionService_ListCollectionSelectors",
         "responses": {
           "200": {
@@ -177,6 +188,8 @@
     },
     "/v1/collections/{id}": {
       "get": {
+        "summary": "GetCollection returns a single collection by ID.",
+        "description": "When CollectionDeploymentMatchOptions.with_matches is true, also resolves and returns the\ndeployments currently matched by the collection's selectors, optionally further filtered\nby filter_query.\n\nReturns INVALID_ARGUMENT if id is empty.\nReturns NOT_FOUND if no collection with the given ID exists.",
         "operationId": "CollectionService_GetCollection",
         "responses": {
           "200": {
@@ -195,18 +208,21 @@
         "parameters": [
           {
             "name": "id",
+            "description": "id is the UUID of the collection to retrieve.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "options.withMatches",
+            "description": "with_matches, when true, resolves the collection's selectors and returns all deployments that match.",
             "in": "query",
             "required": false,
             "type": "boolean"
           },
           {
             "name": "options.filterQuery.query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -262,6 +278,8 @@
         ]
       },
       "delete": {
+        "summary": "DeleteCollection removes a collection permanently.",
+        "description": "Returns INVALID_ARGUMENT if id is empty.\nReturns a conflict error if the collection is referenced by another collection or by a\nvulnerability report configuration.",
         "operationId": "CollectionService_DeleteCollection",
         "responses": {
           "200": {
@@ -290,6 +308,8 @@
         ]
       },
       "patch": {
+        "summary": "UpdateCollection updates an existing collection's name, description, selectors, and embedded collections.",
+        "description": "Replaces the full set of selectors and embedded collection references.\nThe caller's identity is recorded as the last updater.\n\nReturns INVALID_ARGUMENT if id is empty, the name is empty, or no selectors or embedded collections are provided.",
         "operationId": "CollectionService_UpdateCollection",
         "responses": {
           "200": {
@@ -308,6 +328,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "id is the UUID of the collection to update.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -328,6 +349,8 @@
     },
     "/v1/collectionscount": {
       "get": {
+        "summary": "GetCollectionCount returns the count of collections matching the optional query.",
+        "description": "Matches all collections if the query is empty.",
         "operationId": "CollectionService_GetCollectionCount",
         "responses": {
           "200": {
@@ -346,6 +369,7 @@
         "parameters": [
           {
             "name": "query.query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -407,25 +431,30 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is the new display name for the collection. Must be non-empty after trimming whitespace."
         },
         "description": {
-          "type": "string"
+          "type": "string",
+          "description": "description is the new human-readable explanation of the collection's purpose."
         },
         "resourceSelectors": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageResourceSelector"
-          }
+          },
+          "description": "resource_selectors replaces the current set of rules that match deployments into this collection."
         },
         "embeddedCollectionIds": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "embedded_collection_ids replaces the current set of embedded collection references."
         }
-      }
+      },
+      "description": "UpdateCollectionRequest is the request message for UpdateCollection."
     },
     "ResourceCollectionEmbeddedResourceCollection": {
       "type": "object",
@@ -639,75 +668,91 @@
       "type": "object",
       "properties": {
         "withMatches": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "with_matches, when true, resolves the collection's selectors and returns all deployments that match."
         },
         "filterQuery": {
-          "$ref": "#/definitions/v1RawQuery"
+          "$ref": "#/definitions/v1RawQuery",
+          "description": "filter_query is an optional search query to further filter the matched deployments.\nUses StackRox search syntax (e.g. \"Namespace:production\"). Only used when with_matches is true."
         }
-      }
+      },
+      "description": "CollectionDeploymentMatchOptions controls whether the response includes matching deployments."
     },
     "v1CreateCollectionRequest": {
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is the display name for the new collection. Must be non-empty after trimming whitespace."
         },
         "description": {
-          "type": "string"
+          "type": "string",
+          "description": "description is an optional human-readable explanation of the collection's purpose."
         },
         "resourceSelectors": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageResourceSelector"
-          }
+          },
+          "description": "resource_selectors define the rules that match deployments into this collection.\nAt least one resource selector or embedded collection ID must be provided."
         },
         "embeddedCollectionIds": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "embedded_collection_ids are IDs of existing collections whose members are included in this collection.\nAt least one resource selector or embedded collection ID must be provided."
         }
-      }
+      },
+      "description": "CreateCollectionRequest is the request message for CreateCollection."
     },
     "v1CreateCollectionResponse": {
       "type": "object",
       "properties": {
         "collection": {
-          "$ref": "#/definitions/storageResourceCollection"
+          "$ref": "#/definitions/storageResourceCollection",
+          "description": "collection is the newly created resource collection with its assigned ID."
         }
-      }
+      },
+      "description": "CreateCollectionResponse is the response message for CreateCollection."
     },
     "v1DryRunCollectionRequest": {
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is the display name of the collection being dry-run."
         },
         "id": {
           "type": "string",
-          "title": "set if dryrun on existing collections"
+          "description": "id is the UUID of an existing collection; set when dry-running an update to an existing collection.\nLeave empty when simulating a new collection.\n\nset if dryrun on existing collections"
         },
         "description": {
-          "type": "string"
+          "type": "string",
+          "description": "description is the description for the collection being dry-run."
         },
         "resourceSelectors": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageResourceSelector"
-          }
+          },
+          "description": "resource_selectors define the rules to evaluate for this dry run."
         },
         "embeddedCollectionIds": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "embedded_collection_ids are IDs of collections to include in this dry run."
         },
         "options": {
-          "$ref": "#/definitions/v1CollectionDeploymentMatchOptions"
+          "$ref": "#/definitions/v1CollectionDeploymentMatchOptions",
+          "description": "options controls whether matching deployments are returned in the response."
         }
-      }
+      },
+      "description": "DryRunCollectionRequest is the request message for DryRunCollection."
     },
     "v1DryRunCollectionResponse": {
       "type": "object",
@@ -717,9 +762,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageListDeployment"
-          }
+          },
+          "description": "deployments contains deployments that would match the collection without persisting it.\nOnly populated when CollectionDeploymentMatchOptions.with_matches is true."
         }
-      }
+      },
+      "description": "DryRunCollectionResponse is the response message for DryRunCollection."
     },
     "v1Empty": {
       "type": "object"
@@ -729,24 +776,29 @@
       "properties": {
         "count": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "count is the number of collections matching the query."
         }
-      }
+      },
+      "description": "GetCollectionCountResponse is the response message for GetCollectionCount."
     },
     "v1GetCollectionResponse": {
       "type": "object",
       "properties": {
         "collection": {
-          "$ref": "#/definitions/storageResourceCollection"
+          "$ref": "#/definitions/storageResourceCollection",
+          "description": "collection is the requested resource collection."
         },
         "deployments": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageListDeployment"
-          }
+          },
+          "description": "deployments contains deployments matching the collection's selectors, populated only when\nCollectionDeploymentMatchOptions.with_matches is true."
         }
-      }
+      },
+      "description": "GetCollectionResponse is the response message for GetCollection."
     },
     "v1ListCollectionSelectorsResponse": {
       "type": "object",
@@ -755,9 +807,11 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "selectors is the list of supported field selector labels (e.g. \"Cluster\", \"Namespace\", \"Deployment Label\")."
         }
-      }
+      },
+      "description": "ListCollectionSelectorsResponse is the response message for ListCollectionSelectors."
     },
     "v1ListCollectionsResponse": {
       "type": "object",
@@ -767,9 +821,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageResourceCollection"
-          }
+          },
+          "description": "collections is the list of resource collections matching the query, sorted by name ascending."
         }
-      }
+      },
+      "description": "ListCollectionsResponse is the response message for ListCollections."
     },
     "v1Pagination": {
       "type": "object",
@@ -799,10 +855,12 @@
       "type": "object",
       "properties": {
         "query": {
-          "type": "string"
+          "type": "string",
+          "title": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\""
         },
         "pagination": {
-          "$ref": "#/definitions/v1Pagination"
+          "$ref": "#/definitions/v1Pagination",
+          "description": "pagination controls page size and sort order for list results."
         }
       },
       "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
@@ -826,9 +884,11 @@
       "type": "object",
       "properties": {
         "collection": {
-          "$ref": "#/definitions/storageResourceCollection"
+          "$ref": "#/definitions/storageResourceCollection",
+          "description": "collection is the updated resource collection."
         }
-      }
+      },
+      "description": "UpdateCollectionResponse is the response message for UpdateCollection."
     }
   }
 }

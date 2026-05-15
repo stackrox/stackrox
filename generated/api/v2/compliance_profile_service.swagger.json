@@ -18,7 +18,8 @@
   "paths": {
     "/v2/compliance/profile/{id}": {
       "get": {
-        "summary": "GetComplianceProfile retrieves the specified compliance profile",
+        "summary": "GetComplianceProfile retrieves the specified compliance profile by ID.",
+        "description": "Returns the full profile including its rules and associated benchmark standards.\n\nReturns NOT_FOUND if no profile with the given ID exists.\nReturns INVALID_ARGUMENT if the ID is empty.",
         "operationId": "ComplianceProfileService_GetComplianceProfile",
         "responses": {
           "200": {
@@ -50,6 +51,7 @@
     "/v2/compliance/profiles/cluster": {
       "get": {
         "summary": "ListComplianceProfiles returns profiles matching given request",
+        "description": "Returns all compliance profiles available on the specified cluster, including\ntheir full rule lists and benchmark mappings. The cluster_id is required.\nSupports pagination and search query filtering.\n\nReturns INVALID_ARGUMENT if cluster_id is empty or the query is malformed.",
         "operationId": "ComplianceProfileService_ListComplianceProfiles",
         "responses": {
           "200": {
@@ -68,6 +70,7 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id is required and restricts results to profiles installed on this cluster.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -132,6 +135,7 @@
     "/v2/compliance/profiles/summary": {
       "get": {
         "summary": "ListProfileSummaries returns profiles matching each cluster and the given query",
+        "description": "Returns a deduplicated list of profile summaries across the specified clusters.\nResults are sorted by profile name. At least one cluster ID is required.\nSupports pagination; total_count reflects distinct profile names, not raw rows.\n\nReturns INVALID_ARGUMENT if no cluster IDs are provided or the query is malformed.",
         "operationId": "ComplianceProfileService_ListProfileSummaries",
         "responses": {
           "200": {
@@ -150,6 +154,7 @@
         "parameters": [
           {
             "name": "clusterIds",
+            "description": "cluster_ids is required; at least one cluster ID must be provided.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -308,45 +313,54 @@
           "type": "string"
         },
         "profileVersion": {
-          "type": "string"
+          "type": "string",
+          "description": "profile_version is the version string of this profile (e.g. \"1.4.0\")."
         },
         "productType": {
-          "type": "string"
+          "type": "string",
+          "description": "product_type describes the target product category (e.g. \"Platform\", \"Node\")."
         },
         "description": {
-          "type": "string"
+          "type": "string",
+          "description": "description is the human-readable description of the profile's purpose and scope."
         },
         "rules": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v2ComplianceRule"
-          }
+          },
+          "description": "rules lists the compliance rules that are part of this profile."
         },
         "product": {
-          "type": "string"
+          "type": "string",
+          "description": "product is the name of the product this profile applies to (e.g. \"OpenShift\")."
         },
         "title": {
-          "type": "string"
+          "type": "string",
+          "description": "title is the display name of the profile (e.g. \"CIS Red Hat OpenShift Container Platform 4 Benchmark\")."
         },
         "values": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "values lists the variable values applied to this profile's checks."
         },
         "standards": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v2ComplianceBenchmark"
-          }
+          },
+          "description": "standards lists the compliance benchmarks (e.g. CIS, NIST) that this profile maps to."
         },
         "operatorKind": {
-          "$ref": "#/definitions/v2ComplianceProfileOperatorKind"
+          "$ref": "#/definitions/v2ComplianceProfileOperatorKind",
+          "description": "operator_kind indicates whether this profile originates from a Compliance Operator\nProfile or TailoredProfile resource."
         }
       },
-      "title": "Next Tag: 13"
+      "description": "Next Tag: 13\nComplianceProfile represents a compliance profile sourced from the Compliance Operator.\nA profile defines a set of rules and benchmarks that are evaluated during a compliance scan."
     },
     "v2ComplianceProfileOperatorKind": {
       "type": "string",
@@ -466,7 +480,8 @@
         },
         "totalCount": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "total_count is the total number of distinct profile names matching the query, before pagination."
         }
       },
       "title": "ListComplianceProfileSummaryResponse provides a list of profiles summaries"
@@ -483,7 +498,8 @@
         },
         "totalCount": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "total_count is the total number of profiles matching the query, before pagination."
         }
       },
       "title": "ListComplianceProfilesResponse provides a list of profiles"

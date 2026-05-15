@@ -25,7 +25,17 @@ const (
 // DeclarativeConfigHealthServiceClient is the client API for DeclarativeConfigHealthService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// DeclarativeConfigHealthService reports the health of resources managed via
+// declarative configuration (config-as-code). Declarative resources include
+// auth providers, roles, access scopes, and notifiers loaded from mounted
+// configuration files or Kubernetes secrets.
+//
+// Authentication: requires View access to the Administration resource.
 type DeclarativeConfigHealthServiceClient interface {
+	// GetDeclarativeConfigHealths returns the health status of all declaratively
+	// configured resources, including any errors encountered during the last
+	// reconciliation pass.
 	GetDeclarativeConfigHealths(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetDeclarativeConfigHealthsResponse, error)
 }
 
@@ -50,7 +60,17 @@ func (c *declarativeConfigHealthServiceClient) GetDeclarativeConfigHealths(ctx c
 // DeclarativeConfigHealthServiceServer is the server API for DeclarativeConfigHealthService service.
 // All implementations should embed UnimplementedDeclarativeConfigHealthServiceServer
 // for forward compatibility.
+//
+// DeclarativeConfigHealthService reports the health of resources managed via
+// declarative configuration (config-as-code). Declarative resources include
+// auth providers, roles, access scopes, and notifiers loaded from mounted
+// configuration files or Kubernetes secrets.
+//
+// Authentication: requires View access to the Administration resource.
 type DeclarativeConfigHealthServiceServer interface {
+	// GetDeclarativeConfigHealths returns the health status of all declaratively
+	// configured resources, including any errors encountered during the last
+	// reconciliation pass.
 	GetDeclarativeConfigHealths(context.Context, *Empty) (*GetDeclarativeConfigHealthsResponse, error)
 }
 

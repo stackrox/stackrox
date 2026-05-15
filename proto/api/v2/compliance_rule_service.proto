@@ -9,13 +9,29 @@ import weak "google/api/annotations.proto";
 option go_package = "./api/v2;v2";
 option java_package = "io.stackrox.proto.api.v2";
 
+// RuleRequest identifies a compliance rule by name with an optional query filter.
 message RuleRequest {
+  // rule_name is required; the name of the Compliance Operator rule to retrieve.
   string rule_name = 1;
+  // query optionally further filters the rule lookup using StackRox search syntax.
   RawQuery query = 2;
 }
 
+// ComplianceRuleService provides access to individual compliance rules sourced from the Compliance Operator.
+//
+// Rules define the specific checks evaluated during a compliance scan. Each rule
+// maps to one or more compliance controls (e.g. CIS, NIST) and includes remediation
+// instructions, rationale, and severity information.
+//
+// Authentication: all endpoints require View access to both the Compliance and Cluster resources.
 service ComplianceRuleService {
-  // GetComplianceRule returns rule matching given request
+  // GetComplianceRule returns rule matching given request.
+  //
+  // Looks up the rule by name and returns its full definition including severity,
+  // description, rationale, fix instructions, and mapped compliance standards.
+  // Returns the first matching rule if multiple exist; returns nil if none are found.
+  //
+  // Returns INVALID_ARGUMENT if rule_name is empty or the query is malformed.
   rpc GetComplianceRule(RuleRequest) returns (ComplianceRule) {
     option (google.api.http) = {get: "/v2/compliance/rule/summary/{rule_name}"};
   }

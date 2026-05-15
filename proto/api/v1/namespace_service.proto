@@ -10,26 +10,50 @@ import "storage/namespace_metadata.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// Namespace aggregates a namespace's metadata with workload and policy counts observed by StackRox.
 message Namespace {
   storage.NamespaceMetadata metadata = 1;
+  // num_deployments is the number of active deployments in this namespace.
   int32 num_deployments = 2;
+  // num_secrets is the number of secrets observed in this namespace.
   int32 num_secrets = 3;
+  // num_network_policies is the number of network policies applied in this namespace.
   int32 num_network_policies = 4;
 }
 
+// GetNamespacesResponse is the response for a list namespaces request.
 message GetNamespacesResponse {
   repeated Namespace namespaces = 1;
 }
 
+// GetNamespaceRequest is the request message for listing namespaces with an optional filter.
 message GetNamespaceRequest {
+  // query filters namespaces using StackRox search syntax.
+  // If empty, all accessible namespaces are returned.
   RawQuery query = 1;
 }
 
+// NamespaceService provides access to Kubernetes namespaces observed by StackRox.
+//
+// Namespaces are discovered from secured clusters and enriched with deployment,
+// secret, and network policy counts. Results are scoped to the namespaces
+// accessible to the requesting user.
+//
+// Authentication: all endpoints require a valid API token with read access to the Namespace resource.
 service NamespaceService {
+  // GetNamespaces returns a list of namespaces matching the optional query filter.
+  //
+  // Supports StackRox search query syntax to filter by cluster, namespace name, or label.
+  // Returns up to MaxInt32 results. Use the pagination field in the query for paging.
+  // Returns INVALID_ARGUMENT if the query syntax is malformed.
   rpc GetNamespaces(GetNamespaceRequest) returns (GetNamespacesResponse) {
     option (google.api.http) = {get: "/v1/namespaces"};
   }
 
+  // GetNamespace returns the namespace with the given ID, enriched with deployment,
+  // secret, and network policy counts.
+  //
+  // Returns INVALID_ARGUMENT if the ID is empty or the namespace is not found.
   rpc GetNamespace(ResourceByID) returns (Namespace) {
     option (google.api.http) = {get: "/v1/namespaces/{id}"};
   }

@@ -18,7 +18,8 @@
   "paths": {
     "/v1/deployments": {
       "get": {
-        "summary": "ListDeployments returns the list of deployments.",
+        "summary": "ListDeployments returns a paginated list of slim deployment summaries\nmatching the query.",
+        "description": "Each result is a storage.ListDeployment containing only identity and summary\nfields (id, name, cluster, namespace, created, priority). Use GetDeployment\nto retrieve the full object for a specific deployment.\n\nResults are capped at 1000 deployments per request. Use pagination to page\nthrough larger result sets. Supports sorting via the pagination.sortOption\nfield (e.g., by \"Deployment Risk Priority\").\n\nUses StackRox search query syntax. Searchable fields include Cluster,\nNamespace, Deployment, Deployment Type, and Deployment Label.\n\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "DeploymentService_ListDeployments",
         "responses": {
           "200": {
@@ -37,6 +38,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -94,7 +96,8 @@
     },
     "/v1/deployments/metadata/labels": {
       "get": {
-        "summary": "GetLabels returns the labels used by deployments.",
+        "summary": "GetLabels returns all label keys and their observed values across all\ndeployments visible to the caller.",
+        "description": "The response contains a map of label key to sorted list of distinct values,\nplus a flat sorted list of all values across all keys. This is typically\nused to populate filter dropdowns in the UI.\n\nNo query filtering is applied; all deployment labels are always returned.",
         "operationId": "DeploymentService_GetLabels",
         "responses": {
           "200": {
@@ -117,7 +120,8 @@
     },
     "/v1/deployments/{id}": {
       "get": {
-        "summary": "GetDeployment returns a deployment given its ID.",
+        "summary": "GetDeployment returns the full deployment object with the given ID.",
+        "description": "Returns NOT_FOUND if no deployment with the given ID exists within the\ncaller's authorized scope.",
         "operationId": "DeploymentService_GetDeployment",
         "responses": {
           "200": {
@@ -148,7 +152,8 @@
     },
     "/v1/deploymentscount": {
       "get": {
-        "summary": "CountDeployments returns the number of deployments.",
+        "summary": "CountDeployments returns the number of deployments that match the query.",
+        "description": "Uses StackRox search query syntax. If the query is empty, counts all\ndeployments visible to the caller.\nExample query: \"Cluster:production+Namespace:payments\"\n\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "DeploymentService_CountDeployments",
         "responses": {
           "200": {
@@ -167,6 +172,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -224,7 +230,8 @@
     },
     "/v1/deploymentswithprocessinfo": {
       "get": {
-        "summary": "ListDeploymentsWithProcessInfo returns the list of deployments with process information.",
+        "summary": "ListDeploymentsWithProcessInfo returns a paginated list of slim deployment\nsummaries, each paired with per-container process baseline evaluation results.",
+        "description": "Applies the same query, pagination, and 1000-result cap as ListDeployments.\n\nBaseline statuses indicate whether each container's process baseline is\nlocked, unlocked, or not yet generated, and whether anomalous processes have\nbeen observed. Baseline statuses are only populated when the caller has\nread access to the DeploymentExtension resource in addition to Deployment.\nIf the caller lacks DeploymentExtension access, deployments are still\nreturned but baseline_statuses will be empty on each entry.\n\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "DeploymentService_ListDeploymentsWithProcessInfo",
         "responses": {
           "200": {
@@ -243,6 +250,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -300,7 +308,8 @@
     },
     "/v1/deploymentswithrisk/{id}": {
       "get": {
-        "summary": "GetDeploymentWithRisk returns a deployment and its risk given its ID.",
+        "summary": "GetDeploymentWithRisk returns the full deployment object together with its\ncomputed risk score and the individual factors that contributed to it.",
+        "description": "Risk is calculated by the StackRox risk engine and reflects security\nposture signals such as image vulnerabilities, exposed ports, and\nprivileged container settings.\n\nReturns NOT_FOUND if no deployment with the given ID exists within the\ncaller's authorized scope.",
         "operationId": "DeploymentService_GetDeploymentWithRisk",
         "responses": {
           "200": {
@@ -331,6 +340,8 @@
     },
     "/v1/export/deployments": {
       "get": {
+        "summary": "ExportDeployments streams full deployment objects matching the query as a\nserver-sent stream of ExportDeploymentResponse messages.",
+        "description": "Unlike ListDeployments, this endpoint streams full storage.Deployment objects\n(not slim summaries) and has no upper bound on the number of results. It is\nintended for bulk data export scenarios.\n\nAn optional timeout (in seconds) can be set on the request; if the stream\ndoes not complete within the timeout, it is cancelled.\n\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "DeploymentService_ExportDeployments",
         "responses": {
           "200": {
@@ -358,6 +369,7 @@
         "parameters": [
           {
             "name": "timeout",
+            "description": "timeout is an optional deadline in seconds for the streaming export.\nIf zero, no deadline is applied. If positive, the stream will be\ncancelled after this many seconds.",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -365,6 +377,7 @@
           },
           {
             "name": "query",
+            "description": "query filters exported deployments using StackRox search syntax.\nIf empty, all deployments visible to the caller are exported.\nExample: \"Cluster:production+Namespace:payments\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -409,9 +422,11 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "values is the sorted list of distinct values seen for the label key."
         }
-      }
+      },
+      "description": "LabelValues holds the set of observed values for a single label key."
     },
     "EnvironmentConfigEnvVarSource": {
       "type": "string",
@@ -449,16 +464,19 @@
       "type": "object",
       "properties": {
         "deployment": {
-          "$ref": "#/definitions/storageListDeployment"
+          "$ref": "#/definitions/storageListDeployment",
+          "description": "deployment is the slim deployment summary (same as ListDeployments)."
         },
         "baselineStatuses": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageContainerNameAndBaselineStatus"
-          }
+          },
+          "description": "baseline_statuses holds one entry per container in the deployment,\nindicating whether its process baseline is locked, unlocked, or not yet\ngenerated, and whether anomalous processes have been observed.\nOnly populated when the caller also has View(DeploymentExtension) permission."
         }
-      }
+      },
+      "description": "DeploymentWithProcessInfo combines a slim deployment summary with\nthe process baseline evaluation result for each of its containers."
     },
     "PortConfigExposureInfo": {
       "type": "object",
@@ -1229,9 +1247,11 @@
       "properties": {
         "count": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "count is the number of deployments that match the request query."
         }
-      }
+      },
+      "description": "CountDeploymentsResponse holds the count of deployments matching a query."
     },
     "v1DeploymentLabelsResponse": {
       "type": "object",
@@ -1240,34 +1260,42 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/DeploymentLabelsResponseLabelValues"
-          }
+          },
+          "description": "labels maps each label key to its observed set of values."
         },
         "values": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "values is the sorted union of all label values across all keys."
         }
-      }
+      },
+      "description": "DeploymentLabelsResponse contains label keys and their possible values\nacross all deployments visible to the caller."
     },
     "v1ExportDeploymentResponse": {
       "type": "object",
       "properties": {
         "deployment": {
-          "$ref": "#/definitions/storageDeployment"
+          "$ref": "#/definitions/storageDeployment",
+          "description": "deployment is a full deployment object from the export stream."
         }
-      }
+      },
+      "description": "ExportDeploymentResponse is one streamed message in the export response,\ncontaining a single full deployment object."
     },
     "v1GetDeploymentWithRiskResponse": {
       "type": "object",
       "properties": {
         "deployment": {
-          "$ref": "#/definitions/storageDeployment"
+          "$ref": "#/definitions/storageDeployment",
+          "description": "deployment is the full deployment object."
         },
         "risk": {
-          "$ref": "#/definitions/storageRisk"
+          "$ref": "#/definitions/storageRisk",
+          "description": "risk is the risk record for this deployment, including the aggregate score\nand the individual risk factors that contributed to it."
         }
-      }
+      },
+      "description": "GetDeploymentWithRiskResponse holds a full deployment object together with\nits computed risk score and contributing factors."
     },
     "v1ListDeploymentsResponse": {
       "type": "object",
@@ -1279,7 +1307,8 @@
             "$ref": "#/definitions/storageListDeployment"
           }
         }
-      }
+      },
+      "description": "ListDeploymentsResponse wraps the slim deployment list returned by ListDeployments."
     },
     "v1ListDeploymentsWithProcessInfoResponse": {
       "type": "object",
@@ -1291,7 +1320,8 @@
             "$ref": "#/definitions/ListDeploymentsWithProcessInfoResponseDeploymentWithProcessInfo"
           }
         }
-      }
+      },
+      "description": "ListDeploymentsWithProcessInfoResponse pairs each deployment with its\nper-container process baseline statuses."
     },
     "v1Pagination": {
       "type": "object",

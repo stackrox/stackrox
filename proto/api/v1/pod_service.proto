@@ -9,26 +9,46 @@ import "storage/deployment.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// PodsResponse is the response for a list pods request.
 message PodsResponse {
   repeated storage.Pod pods = 1;
 }
 
+// ExportPodRequest is the request message for streaming a bulk pod export.
 message ExportPodRequest {
+  // timeout is the maximum number of seconds to wait for the export stream to complete.
+  // Zero means no timeout.
   int32 timeout = 1;
+  // query filters pods using StackRox search syntax. If empty, all pods are exported.
   string query = 2;
 }
 
+// ExportPodResponse is a single streamed item in a bulk pod export.
 message ExportPodResponse {
   storage.Pod pod = 1;
 }
 
-// PodService APIs can be used to manage pods.
+// PodService provides access to Kubernetes pods observed by StackRox across secured clusters.
+//
+// Pods are discovered from secured clusters and associated with deployments. They can be
+// listed with optional filtering using StackRox search syntax, or exported in bulk as a stream.
+//
+// Authentication: all endpoints require a valid API token with read access to the Deployment resource.
 service PodService {
-  // GetPods returns the pods.
+  // GetPods returns a list of pods matching the optional query filter.
+  //
+  // Uses StackRox search query syntax to filter by cluster, namespace, deployment, or label.
+  // Results are paginated; at most 1000 pods are returned per request.
+  // Returns INVALID_ARGUMENT if the query syntax is malformed.
   rpc GetPods(RawQuery) returns (PodsResponse) {
     option (google.api.http) = {get: "/v1/pods"};
   }
 
+  // ExportPods streams all pods matching the optional query as a sequence of ExportPodResponse messages.
+  //
+  // Unlike GetPods, ExportPods is not paginated and streams all matching pods. A timeout in
+  // seconds may be specified; if the stream is not completed within that time the request is cancelled.
+  // Returns INVALID_ARGUMENT if the query syntax is malformed.
   rpc ExportPods(ExportPodRequest) returns (stream ExportPodResponse) {
     option (google.api.http) = {get: "/v1/export/pods"};
   }

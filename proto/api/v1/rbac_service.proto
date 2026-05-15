@@ -16,9 +16,11 @@ option java_package = "io.stackrox.proto.api.v1";
 // A list of k8s roles (free of scoped information)
 // Next Tag: 2
 message ListRolesResponse {
+  // roles is the list of Kubernetes roles matching the search query.
   repeated storage.K8sRole roles = 1;
 }
 
+// GetRoleResponse contains a single Kubernetes role.
 message GetRoleResponse {
   storage.K8sRole role = 1;
 }
@@ -26,9 +28,11 @@ message GetRoleResponse {
 // A list of k8s role bindings (free of scoped information)
 // Next Tag: 2
 message ListRoleBindingsResponse {
+  // bindings is the list of Kubernetes role bindings matching the search query.
   repeated storage.K8sRoleBinding bindings = 1;
 }
 
+// GetRoleBindingResponse contains a single Kubernetes role binding.
 message GetRoleBindingResponse {
   storage.K8sRoleBinding binding = 1;
 }
@@ -36,48 +40,99 @@ message GetRoleBindingResponse {
 // A list of k8s subjects (users and groups only, for service accounts, try the service account service)
 // Next Tag: 2
 message ListSubjectsResponse {
+  // subject_and_roles pairs each matching subject with the K8s roles it is bound to.
   repeated SubjectAndRoles subject_and_roles = 1;
 }
 
+// SubjectAndRoles pairs a Kubernetes subject (user or group) with the K8s roles it is bound to.
 message SubjectAndRoles {
+  // subject is the Kubernetes user or group.
   storage.Subject subject = 1;
+  // roles is the list of K8s roles the subject is bound to across all namespaces.
   repeated storage.K8sRole roles = 2;
 }
 
+// GetSubjectResponse contains a subject with its cluster-wide and namespace-scoped role bindings.
 message GetSubjectResponse {
+  // subject is the Kubernetes user or group.
   storage.Subject subject = 1;
+  // cluster_roles is the list of K8s roles bound to this subject at the cluster scope.
   repeated storage.K8sRole cluster_roles = 2;
+  // scoped_roles groups the namespace-scoped role bindings of this subject by namespace.
   repeated ScopedRoles scoped_roles = 3;
 }
 
+// ScopedRoles groups K8s roles bound to a subject within a specific namespace.
 message ScopedRoles {
+  // namespace is the Kubernetes namespace in which these role bindings exist.
   string namespace = 1;
+  // roles is the list of K8s roles bound to the subject in this namespace.
   repeated storage.K8sRole roles = 2;
 }
 
+// RbacService provides read-only access to Kubernetes RBAC objects discovered by Sensor:
+// K8s roles, role bindings, and subjects (users and groups).
+//
+// These objects reflect the RBAC state of monitored clusters as observed by Sensor, not
+// the ACS access control model. Service accounts are served via a separate API.
+//
+// Authentication requirements:
+// - GetRole, ListRoles: require read access to the K8sRole resource.
+// - GetRoleBinding, ListRoleBindings: require read access to the K8sRoleBinding resource.
+// - GetSubject, ListSubjects: require read access to the K8sSubject resource.
 service RbacService {
+  // GetRole returns the Kubernetes role with the given ID.
+  //
+  // Returns NOT_FOUND if no K8s role with the specified ID exists.
+  // Requires read access to the K8sRole resource.
   rpc GetRole(ResourceByID) returns (GetRoleResponse) {
     option (google.api.http) = {get: "/v1/rbac/roles/{id}"};
   }
 
+  // ListRoles returns all Kubernetes roles matching the search query.
+  //
+  // Uses StackRox search query syntax. An empty query returns all roles.
+  // Returns INVALID_ARGUMENT if the query syntax is malformed.
+  // Requires read access to the K8sRole resource.
   rpc ListRoles(RawQuery) returns (ListRolesResponse) {
     option (google.api.http) = {get: "/v1/rbac/roles"};
   }
 
+  // GetRoleBinding returns the Kubernetes role binding with the given ID.
+  //
+  // Returns NOT_FOUND if no K8s role binding with the specified ID exists.
+  // Requires read access to the K8sRoleBinding resource.
   rpc GetRoleBinding(ResourceByID) returns (GetRoleBindingResponse) {
     option (google.api.http) = {get: "/v1/rbac/bindings/{id}"};
   }
 
+  // ListRoleBindings returns all Kubernetes role bindings matching the search query.
+  //
+  // Uses StackRox search query syntax. An empty query returns all role bindings.
+  // Returns INVALID_ARGUMENT if the query syntax is malformed.
+  // Requires read access to the K8sRoleBinding resource.
   rpc ListRoleBindings(RawQuery) returns (ListRoleBindingsResponse) {
     option (google.api.http) = {get: "/v1/rbac/bindings"};
   }
 
+  // GetSubject returns the Kubernetes subject (user or group) identified by the given name,
+  // together with their cluster-wide and namespace-scoped role bindings.
+  //
   // Subjects served from this API are Groups and Users only.
-  // Id in this case is the Name field, since for users and groups, that is unique, and subjects do not have IDs.
+  // The id in this case is the Name field, since for users and groups that is unique,
+  // and subjects do not have IDs.
+  // Requires read access to the K8sSubject resource.
   rpc GetSubject(ResourceByID) returns (GetSubjectResponse) {
     option (google.api.http) = {get: "/v1/rbac/subject/{id}"};
   }
 
+  // ListSubjects returns all Kubernetes subjects (users and groups) bound to roles matching
+  // the search query, along with the roles they are bound to.
+  //
+  // Only role-binding-specific search fields in the query are used to filter bindings.
+  // Additional subject-level filtering is applied on the aggregated results.
+  // Uses StackRox search query syntax. An empty query returns all subjects.
+  // Requires read access to the K8sSubject resource.
   rpc ListSubjects(RawQuery) returns (ListSubjectsResponse) {
     option (google.api.http) = {get: "/v1/rbac/subjects"};
   }

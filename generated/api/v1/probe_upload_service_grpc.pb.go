@@ -25,7 +25,15 @@ const (
 // ProbeUploadServiceClient is the client API for ProbeUploadService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ProbeUploadService supports uploading eBPF probes and kernel modules used
+// by the Collector component for runtime monitoring. Probes are cached on
+// Central and distributed to Collectors that cannot reach the internet.
+//
+// Authentication: requires Administration write access.
 type ProbeUploadServiceClient interface {
+	// GetExistingProbes returns which of the requested probe files are already
+	// cached on Central, allowing the uploader to skip files that are unchanged.
 	GetExistingProbes(ctx context.Context, in *GetExistingProbesRequest, opts ...grpc.CallOption) (*GetExistingProbesResponse, error)
 }
 
@@ -50,7 +58,15 @@ func (c *probeUploadServiceClient) GetExistingProbes(ctx context.Context, in *Ge
 // ProbeUploadServiceServer is the server API for ProbeUploadService service.
 // All implementations should embed UnimplementedProbeUploadServiceServer
 // for forward compatibility.
+//
+// ProbeUploadService supports uploading eBPF probes and kernel modules used
+// by the Collector component for runtime monitoring. Probes are cached on
+// Central and distributed to Collectors that cannot reach the internet.
+//
+// Authentication: requires Administration write access.
 type ProbeUploadServiceServer interface {
+	// GetExistingProbes returns which of the requested probe files are already
+	// cached on Central, allowing the uploader to skip files that are unchanged.
 	GetExistingProbes(context.Context, *GetExistingProbesRequest) (*GetExistingProbesResponse, error)
 }
 

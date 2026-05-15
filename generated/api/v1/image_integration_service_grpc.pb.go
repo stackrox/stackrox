@@ -34,23 +34,92 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// ImageIntegrationService APIs manage image registry and image scanner integration.
+// ImageIntegrationService manages image registry and image scanner integrations.
+//
+// Image integrations connect StackRox to external container registries (e.g.
+// Docker Hub, ECR, GCR, Quay) and image scanners (e.g. Clairify, StackRox
+// Scanner). Integrations can serve as a registry, a scanner, a node scanner,
+// or any combination of those categories.
+//
+// When an integration is created or updated, the change is broadcast to all
+// connected Sensors so that delegated scanning configurations remain current.
+// Scanner V4 integrations are managed automatically and cannot be created or
+// deleted via this API.
+//
+// Sensitive credential fields are scrubbed from read responses for non-sensor
+// callers.
+//
+// Authentication: read operations require the Integration resource with View
+// access (Sensor service accounts are also permitted). Write and test
+// operations require the Integration resource with Modify access.
 type ImageIntegrationServiceClient interface {
-	// GetImageIntegration returns the image integration given its ID.
+	// GetImageIntegration returns the image integration with the given ID.
+	//
+	// Sensitive credential fields are replaced with a placeholder in the
+	// response.
+	// Returns NOT_FOUND if no integration with the given ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	GetImageIntegration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.ImageIntegration, error)
-	// GetImageIntegrations returns all image integrations that match the request filters.
+	// GetImageIntegrations returns all image integrations, optionally filtered
+	// by name.
+	//
+	// Sensitive credential fields are scrubbed from the response for all callers
+	// except Sensor service accounts. Results can be filtered by exact name match
+	// using GetImageIntegrationsRequest.
 	GetImageIntegrations(ctx context.Context, in *GetImageIntegrationsRequest, opts ...grpc.CallOption) (*GetImageIntegrationsResponse, error)
-	// PostImageIntegration creates a image integration.
+	// PostImageIntegration creates a new image integration.
+	//
+	// The id field must be empty; a new ID is assigned and returned. The
+	// integration is validated and tested (unless skip_test_integration is set)
+	// before it is persisted. On success, connected Sensors are notified.
+	//
+	// Returns INVALID_ARGUMENT if the id field is set, if required fields are
+	// missing, if validation fails, or if the integration test fails.
+	// Returns INVALID_ARGUMENT if the type is "scanner_v4" (auto-managed).
 	PostImageIntegration(ctx context.Context, in *storage.ImageIntegration, opts ...grpc.CallOption) (*storage.ImageIntegration, error)
-	// PutImageIntegration modifies a given image integration, without using stored credential reconciliation.
+	// PutImageIntegration replaces an existing image integration, treating all
+	// credential fields in the request as authoritative (no stored credential
+	// reconciliation). Prefer UpdateImageIntegration for credential-preserving
+	// updates.
+	//
+	// Returns INVALID_ARGUMENT if validation or integration testing fails.
 	PutImageIntegration(ctx context.Context, in *storage.ImageIntegration, opts ...grpc.CallOption) (*Empty, error)
-	// TestImageIntegration checks if the given image integration is correctly configured, without using stored credential reconciliation.
+	// TestImageIntegration verifies that the given image integration
+	// configuration is reachable and correctly set up, treating all credential
+	// fields as authoritative (no stored credential reconciliation).
+	//
+	// Tests each configured category (registry, scanner, node scanner)
+	// individually.
+	// Returns INVALID_ARGUMENT if any test fails or validation fails.
 	TestImageIntegration(ctx context.Context, in *storage.ImageIntegration, opts ...grpc.CallOption) (*Empty, error)
-	// DeleteImageIntegration removes a image integration given its ID.
+	// DeleteImageIntegration removes the image integration with the given ID.
+	//
+	// Returns INVALID_ARGUMENT if the integration is of type "scanner_v4"
+	// (auto-managed integrations cannot be deleted).
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	DeleteImageIntegration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
-	// UpdateImageIntegration modifies a given image integration, with optional stored credential reconciliation.
+	// UpdateImageIntegration modifies an existing image integration with
+	// optional stored credential reconciliation.
+	//
+	// When updatePassword is false, credential fields in the request are ignored
+	// and the stored credentials are preserved. When updatePassword is true,
+	// credentials in the request replace stored credentials. On success,
+	// connected Sensors are notified of the change.
+	//
+	// Returns INVALID_ARGUMENT if validation or integration testing fails.
+	// Returns NOT_FOUND if updatePassword is false and the integration does not
+	// exist.
 	UpdateImageIntegration(ctx context.Context, in *UpdateImageIntegrationRequest, opts ...grpc.CallOption) (*Empty, error)
-	// TestUpdatedImageIntegration checks if the given image integration is correctly configured, with optional stored credential reconciliation.
+	// TestUpdatedImageIntegration verifies that the given image integration
+	// configuration is reachable with optional stored credential reconciliation.
+	//
+	// When updatePassword is false, credential fields in the request are replaced
+	// with the stored credentials before the test is performed. When
+	// updatePassword is true, the provided credentials are used directly.
+	//
+	// Returns INVALID_ARGUMENT if any test fails or validation fails.
+	// Returns NOT_FOUND if updatePassword is false and the integration does not
+	// exist.
 	TestUpdatedImageIntegration(ctx context.Context, in *UpdateImageIntegrationRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -146,23 +215,92 @@ func (c *imageIntegrationServiceClient) TestUpdatedImageIntegration(ctx context.
 // All implementations should embed UnimplementedImageIntegrationServiceServer
 // for forward compatibility.
 //
-// ImageIntegrationService APIs manage image registry and image scanner integration.
+// ImageIntegrationService manages image registry and image scanner integrations.
+//
+// Image integrations connect StackRox to external container registries (e.g.
+// Docker Hub, ECR, GCR, Quay) and image scanners (e.g. Clairify, StackRox
+// Scanner). Integrations can serve as a registry, a scanner, a node scanner,
+// or any combination of those categories.
+//
+// When an integration is created or updated, the change is broadcast to all
+// connected Sensors so that delegated scanning configurations remain current.
+// Scanner V4 integrations are managed automatically and cannot be created or
+// deleted via this API.
+//
+// Sensitive credential fields are scrubbed from read responses for non-sensor
+// callers.
+//
+// Authentication: read operations require the Integration resource with View
+// access (Sensor service accounts are also permitted). Write and test
+// operations require the Integration resource with Modify access.
 type ImageIntegrationServiceServer interface {
-	// GetImageIntegration returns the image integration given its ID.
+	// GetImageIntegration returns the image integration with the given ID.
+	//
+	// Sensitive credential fields are replaced with a placeholder in the
+	// response.
+	// Returns NOT_FOUND if no integration with the given ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	GetImageIntegration(context.Context, *ResourceByID) (*storage.ImageIntegration, error)
-	// GetImageIntegrations returns all image integrations that match the request filters.
+	// GetImageIntegrations returns all image integrations, optionally filtered
+	// by name.
+	//
+	// Sensitive credential fields are scrubbed from the response for all callers
+	// except Sensor service accounts. Results can be filtered by exact name match
+	// using GetImageIntegrationsRequest.
 	GetImageIntegrations(context.Context, *GetImageIntegrationsRequest) (*GetImageIntegrationsResponse, error)
-	// PostImageIntegration creates a image integration.
+	// PostImageIntegration creates a new image integration.
+	//
+	// The id field must be empty; a new ID is assigned and returned. The
+	// integration is validated and tested (unless skip_test_integration is set)
+	// before it is persisted. On success, connected Sensors are notified.
+	//
+	// Returns INVALID_ARGUMENT if the id field is set, if required fields are
+	// missing, if validation fails, or if the integration test fails.
+	// Returns INVALID_ARGUMENT if the type is "scanner_v4" (auto-managed).
 	PostImageIntegration(context.Context, *storage.ImageIntegration) (*storage.ImageIntegration, error)
-	// PutImageIntegration modifies a given image integration, without using stored credential reconciliation.
+	// PutImageIntegration replaces an existing image integration, treating all
+	// credential fields in the request as authoritative (no stored credential
+	// reconciliation). Prefer UpdateImageIntegration for credential-preserving
+	// updates.
+	//
+	// Returns INVALID_ARGUMENT if validation or integration testing fails.
 	PutImageIntegration(context.Context, *storage.ImageIntegration) (*Empty, error)
-	// TestImageIntegration checks if the given image integration is correctly configured, without using stored credential reconciliation.
+	// TestImageIntegration verifies that the given image integration
+	// configuration is reachable and correctly set up, treating all credential
+	// fields as authoritative (no stored credential reconciliation).
+	//
+	// Tests each configured category (registry, scanner, node scanner)
+	// individually.
+	// Returns INVALID_ARGUMENT if any test fails or validation fails.
 	TestImageIntegration(context.Context, *storage.ImageIntegration) (*Empty, error)
-	// DeleteImageIntegration removes a image integration given its ID.
+	// DeleteImageIntegration removes the image integration with the given ID.
+	//
+	// Returns INVALID_ARGUMENT if the integration is of type "scanner_v4"
+	// (auto-managed integrations cannot be deleted).
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	DeleteImageIntegration(context.Context, *ResourceByID) (*Empty, error)
-	// UpdateImageIntegration modifies a given image integration, with optional stored credential reconciliation.
+	// UpdateImageIntegration modifies an existing image integration with
+	// optional stored credential reconciliation.
+	//
+	// When updatePassword is false, credential fields in the request are ignored
+	// and the stored credentials are preserved. When updatePassword is true,
+	// credentials in the request replace stored credentials. On success,
+	// connected Sensors are notified of the change.
+	//
+	// Returns INVALID_ARGUMENT if validation or integration testing fails.
+	// Returns NOT_FOUND if updatePassword is false and the integration does not
+	// exist.
 	UpdateImageIntegration(context.Context, *UpdateImageIntegrationRequest) (*Empty, error)
-	// TestUpdatedImageIntegration checks if the given image integration is correctly configured, with optional stored credential reconciliation.
+	// TestUpdatedImageIntegration verifies that the given image integration
+	// configuration is reachable with optional stored credential reconciliation.
+	//
+	// When updatePassword is false, credential fields in the request are replaced
+	// with the stored credentials before the test is performed. When
+	// updatePassword is true, the provided credentials are used directly.
+	//
+	// Returns INVALID_ARGUMENT if any test fails or validation fails.
+	// Returns NOT_FOUND if updatePassword is false and the integration does not
+	// exist.
 	TestUpdatedImageIntegration(context.Context, *UpdateImageIntegrationRequest) (*Empty, error)
 }
 

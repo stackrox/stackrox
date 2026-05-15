@@ -28,9 +28,30 @@ const (
 // UserServiceClient is the client API for UserService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// UserService provides read-only access to users who have authenticated to Central.
+//
+// Users are recorded when they log in via an auth provider. The attributes endpoint returns
+// deduplicated identity-provider claim tuples across all users, which are used to configure
+// group-to-role mappings.
+//
+// All endpoints require read access to the Access resource.
 type UserServiceClient interface {
+	// GetUsers returns all users who have previously authenticated to Central.
+	//
+	// Requires read access to the Access resource.
 	GetUsers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetUsersResponse, error)
+	// GetUser returns the user with the given ID.
+	//
+	// Returns NOT_FOUND if no user with the specified ID exists.
+	// Requires read access to the Access resource.
 	GetUser(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.User, error)
+	// GetUsersAttributes returns the deduplicated set of identity-provider attribute tuples
+	// across all known users.
+	//
+	// Each tuple contains the auth provider ID, attribute key, and attribute value. Duplicates
+	// across users are collapsed. This endpoint is used to populate group mapping configuration UIs.
+	// Requires read access to the Access resource.
 	GetUsersAttributes(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetUsersAttributesResponse, error)
 }
 
@@ -75,9 +96,30 @@ func (c *userServiceClient) GetUsersAttributes(ctx context.Context, in *Empty, o
 // UserServiceServer is the server API for UserService service.
 // All implementations should embed UnimplementedUserServiceServer
 // for forward compatibility.
+//
+// UserService provides read-only access to users who have authenticated to Central.
+//
+// Users are recorded when they log in via an auth provider. The attributes endpoint returns
+// deduplicated identity-provider claim tuples across all users, which are used to configure
+// group-to-role mappings.
+//
+// All endpoints require read access to the Access resource.
 type UserServiceServer interface {
+	// GetUsers returns all users who have previously authenticated to Central.
+	//
+	// Requires read access to the Access resource.
 	GetUsers(context.Context, *Empty) (*GetUsersResponse, error)
+	// GetUser returns the user with the given ID.
+	//
+	// Returns NOT_FOUND if no user with the specified ID exists.
+	// Requires read access to the Access resource.
 	GetUser(context.Context, *ResourceByID) (*storage.User, error)
+	// GetUsersAttributes returns the deduplicated set of identity-provider attribute tuples
+	// across all known users.
+	//
+	// Each tuple contains the auth provider ID, attribute key, and attribute value. Duplicates
+	// across users are collapsed. This endpoint is used to populate group mapping configuration UIs.
+	// Requires read access to the Access resource.
 	GetUsersAttributes(context.Context, *Empty) (*GetUsersAttributesResponse, error)
 }
 

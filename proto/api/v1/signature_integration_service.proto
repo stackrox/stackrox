@@ -11,20 +11,42 @@ option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 message ListSignatureIntegrationsResponse {
+  // integrations contains all signature integrations, sorted by name.
   repeated storage.SignatureIntegration integrations = 1;
 }
 
+// SignatureIntegrationService manages cosign signature verification
+// integrations used to validate image provenance.
+//
+// Signature integrations hold public key material (cosign public keys) that
+// Central uses to verify image signatures at scan time. When an integration is
+// created or updated, Central triggers reprocessing of signature verification
+// results for all previously scanned images so that policy outcomes remain
+// current.
+//
+// Authentication: read operations require the Integration resource with View
+// access. Write operations require the Integration resource with Modify access.
 service SignatureIntegrationService {
+  // ListSignatureIntegrations returns all configured signature integrations,
+  // sorted alphabetically by name.
   rpc ListSignatureIntegrations(Empty) returns (ListSignatureIntegrationsResponse) {
     option (google.api.http) = {get: "/v1/signatureintegrations"};
   }
 
+  // GetSignatureIntegration returns the signature integration with the given ID.
+  //
+  // Returns NOT_FOUND if no integration with the given ID exists.
   rpc GetSignatureIntegration(ResourceByID) returns (storage.SignatureIntegration) {
     option (google.api.http) = {get: "/v1/signatureintegrations/{id}"};
   }
 
-  // Integration id should not be set.
-  // Returns signature integration with id filled.
+  // PostSignatureIntegration creates a new signature integration.
+  //
+  // The id field must not be set; a new ID is assigned and returned. If this
+  // is the first signature integration added, Central immediately triggers a
+  // full reprocessing of signature verifications for all images.
+  //
+  // Returns INVALID_ARGUMENT if the id field is set or if validation fails.
   rpc PostSignatureIntegration(storage.SignatureIntegration) returns (storage.SignatureIntegration) {
     option (google.api.http) = {
       post: "/v1/signatureintegrations"
@@ -32,6 +54,11 @@ service SignatureIntegrationService {
     };
   }
 
+  // PutSignatureIntegration replaces an existing signature integration.
+  //
+  // If the verification configuration (e.g. public keys) has changed, Central
+  // triggers reprocessing of signature verification results for all images.
+  // If the configuration is unchanged, no reprocessing is triggered.
   rpc PutSignatureIntegration(storage.SignatureIntegration) returns (Empty) {
     option (google.api.http) = {
       put: "/v1/signatureintegrations/{id}"
@@ -39,6 +66,9 @@ service SignatureIntegrationService {
     };
   }
 
+  // DeleteSignatureIntegration removes the signature integration with the
+  // given ID and triggers reprocessing of signature verification results for
+  // all images.
   rpc DeleteSignatureIntegration(ResourceByID) returns (Empty) {
     option (google.api.http) = {delete: "/v1/signatureintegrations/{id}"};
   }

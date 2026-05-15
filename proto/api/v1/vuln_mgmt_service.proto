@@ -10,33 +10,80 @@ option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 message VulnMgmtExportWorkloadsRequest {
-  // Request timeout in seconds.
+  // timeout is the maximum duration in seconds to wait for the export to
+  // complete. When set, the server cancels the streaming operation after the
+  // given number of seconds. When 0 or unset, no timeout is applied beyond
+  // the underlying connection deadline.
   int32 timeout = 1;
-  // Query to constrain the deployments for which vulnerability data is returned.
-  // The queries contain pairs of `Search Option:Value` separated by `+` signs.
-  // For HTTP requests the query should be quoted. For example
-  // > curl "$ROX_ENDPOINT/v1/export/vuln-mgmt/workloads?query=Deployment%3Ascanner%2BNamespace%3Astackrox"
-  // queries vulnerability data for all scanner deployments in the stackrox namespace.
-  // See https://docs.openshift.com/acs/operating/search-filter.html for more information.
+
+  // query constrains which deployments are included in the export using
+  // StackRox search syntax. Pairs of `Search Option:Value` are joined by `+`.
+  // When empty, all deployments visible to the caller are exported.
+  //
+  // Example (URL-encoded):
+  //   curl "$ROX_ENDPOINT/v1/export/vuln-mgmt/workloads?query=Deployment%3Ascanner%2BNamespace%3Astackrox"
+  //
+  // Supported search fields include Deployment, Namespace, Cluster, Label,
+  // and any other field accepted by the deployment search index.
+  //
+  // See https://docs.openshift.com/acs/operating/search-filter.html for
+  // the full query syntax reference.
   string query = 2;
 }
 
-// The workloads response contains the full image details including the
-// vulnerability data.
+// VulnMgmtExportWorkloadsResponse contains vulnerability data for a single
+// deployment. Each stream message corresponds to one deployment together with
+// its deduplicated container images (including full scan and CVE data) and the
+// number of currently running pods.
 message VulnMgmtExportWorkloadsResponse {
+  // deployment is the full deployment record, including container specs,
+  // resource configuration, labels, and risk metadata.
   storage.Deployment deployment = 1;
+
+  // images contains the deduplicated set of container images referenced by
+  // this deployment. Each image includes the full vulnerability scan with
+  // embedded components and CVEs. Images absent from the image store are
+  // silently omitted from this list.
   repeated storage.Image images = 2;
+
+  // live_pods is the count of pods belonging to this deployment that currently
+  // have at least one running container instance (i.e., pods with a live
+  // container image digest recorded in the pod store).
   int32 live_pods = 3;
 }
 
-// VulnMgmtService APIs are used to manage workload vulnerabilities.
+// VulnMgmtService exports workload vulnerability data for deployments running
+// in secured clusters.
+//
+// The single streaming endpoint walks all deployments matching an optional
+// search filter and, for each deployment, returns the full image scan data
+// (components, CVEs, CVSS scores) together with the count of live pods. The
+// export runs inside a single database transaction to provide a consistent
+// point-in-time snapshot.
+//
+// Authentication: callers must have read access to both the Deployment and
+// Image resources. Requests with insufficient permissions are rejected with
+// PERMISSION_DENIED.
 service VulnMgmtService {
-  // Streams vulnerability data upon request. Each entry consists of a deployment and the associated container images.
+  // VulnMgmtExportWorkloads streams vulnerability data for all deployments
+  // matching the request filter.
   //
-  // The response is structured as:
-  // {"result": {"deployment": {...}, "images": [...]}}
-  // ...
-  // {"result": {"deployment": {...}, "images": [...]}}
+  // Each stream message contains one deployment, its deduplicated container
+  // images with full CVE scan data, and the number of live pods. The entire
+  // export runs within a single read transaction, so all messages represent a
+  // consistent snapshot of the database at the time the call was made.
+  //
+  // Images are cached in an LRU cache (capacity 1000) during a single call so
+  // that images shared across multiple deployments are fetched from the
+  // database only once.
+  //
+  // The HTTP response body is a newline-delimited sequence of JSON objects:
+  //   {"result": {"deployment": {...}, "images": [...], "livePods": N}}
+  //   {"result": {"deployment": {...}, "images": [...], "livePods": N}}
+  //
+  // Returns INVALID_ARGUMENT if the query string cannot be parsed.
+  // Returns PERMISSION_DENIED if the caller lacks read access to Deployment
+  // or Image resources.
   rpc VulnMgmtExportWorkloads(VulnMgmtExportWorkloadsRequest) returns (stream VulnMgmtExportWorkloadsResponse) {
     option (google.api.http) = {get: "/v1/export/vuln-mgmt/workloads"};
   }

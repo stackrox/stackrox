@@ -18,6 +18,8 @@
   "paths": {
     "/v1/centralhealth/upgradestatus": {
       "get": {
+        "summary": "GetUpgradeStatus returns the current Central version and rollback capabilities.",
+        "description": "Reports the running version, the minimum DB version that can be safely rolled back to,\nand whether rollback after the current upgrade is supported.",
         "operationId": "CentralHealthService_GetUpgradeStatus",
         "responses": {
           "200": {
@@ -75,15 +77,15 @@
       "properties": {
         "version": {
           "type": "string",
-          "title": "Current Central Version"
+          "description": "version is the currently running Central version string (e.g. \"4.5.0\")."
         },
         "forceRollbackTo": {
           "type": "string",
-          "description": "The version of previous clone in Central. This is the version we can force rollback to."
+          "description": "force_rollback_to is the version of the previous database clone that Central can be\nforcibly rolled back to. This represents the minimum supported DB version."
         },
         "canRollbackAfterUpgrade": {
           "type": "boolean",
-          "description": "If true, we can rollback to the current version if an upgrade failed."
+          "description": "can_rollback_after_upgrade indicates whether Central can be safely rolled back to a\nprevious version if an upgrade fails or needs to be reverted."
         },
         "spaceRequiredForRollbackAfterUpgrade": {
           "type": "string",
@@ -94,7 +96,8 @@
           "type": "string",
           "format": "int64"
         }
-      }
+      },
+      "description": "CentralUpgradeStatus describes the current Central version and its rollback capabilities."
     },
     "v1GetUpgradeStatusResponse": {
       "type": "object",
@@ -102,7 +105,8 @@
         "upgradeStatus": {
           "$ref": "#/definitions/v1CentralUpgradeStatus"
         }
-      }
+      },
+      "description": "GetUpgradeStatusResponse is the response for querying Central's upgrade/rollback status."
     }
   }
 }

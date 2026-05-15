@@ -11,17 +11,27 @@ option go_package = "./api/v2;v2";
 option java_package = "io.stackrox.proto.api.v2";
 
 // Next Tag: 13
+// ComplianceProfile represents a compliance profile sourced from the Compliance Operator.
+// A profile defines a set of rules and benchmarks that are evaluated during a compliance scan.
 message ComplianceProfile {
   string id = 1;
   string name = 2;
+  // profile_version is the version string of this profile (e.g. "1.4.0").
   string profile_version = 3;
+  // product_type describes the target product category (e.g. "Platform", "Node").
   string product_type = 4;
   reserved 5;
+  // description is the human-readable description of the profile's purpose and scope.
   string description = 6;
+  // rules lists the compliance rules that are part of this profile.
   repeated ComplianceRule rules = 7;
+  // product is the name of the product this profile applies to (e.g. "OpenShift").
   string product = 8;
+  // title is the display name of the profile (e.g. "CIS Red Hat OpenShift Container Platform 4 Benchmark").
   string title = 9;
+  // values lists the variable values applied to this profile's checks.
   repeated string values = 10;
+  // standards lists the compliance benchmarks (e.g. CIS, NIST) that this profile maps to.
   repeated ComplianceBenchmark standards = 11;
   // OperatorKind is the kind of the Compliance Operator resource that this
   // `ComplianceProfile` was sourced from. ACS represents both Compliance
@@ -35,43 +45,77 @@ message ComplianceProfile {
     TAILORED_PROFILE = 2;
   }
 
+  // operator_kind indicates whether this profile originates from a Compliance Operator
+  // Profile or TailoredProfile resource.
   OperatorKind operator_kind = 12;
 }
 
 // ListComplianceProfilesResponse provides a list of profiles
 message ListComplianceProfilesResponse {
   repeated ComplianceProfile profiles = 1;
+  // total_count is the total number of profiles matching the query, before pagination.
   int32 total_count = 3;
 }
 
 // ListComplianceProfileSummaryResponse provides a list of profiles summaries
 message ListComplianceProfileSummaryResponse {
   repeated ComplianceProfileSummary profiles = 1;
+  // total_count is the total number of distinct profile names matching the query, before pagination.
   int32 total_count = 2;
 }
 
+// ProfilesForClusterRequest filters profiles to those available on a specific cluster.
 message ProfilesForClusterRequest {
+  // cluster_id is required and restricts results to profiles installed on this cluster.
   string cluster_id = 1;
+  // query further filters results using StackRox search syntax. Supports pagination.
   RawQuery query = 2;
 }
 
+// ClustersProfileSummaryRequest requests profile summaries across multiple clusters.
 message ClustersProfileSummaryRequest {
+  // cluster_ids is required; at least one cluster ID must be provided.
   repeated string cluster_ids = 1;
+  // query further filters and paginates the results using StackRox search syntax.
   RawQuery query = 2;
 }
 
+// ComplianceProfileService provides access to compliance profiles sourced from the Compliance Operator.
+//
+// Profiles define the rules and benchmarks evaluated during a compliance scan. They are
+// discovered from each cluster's installed Compliance Operator and may include both
+// standard Profiles and TailoredProfiles.
+//
+// Authentication: all endpoints require View access to both the Compliance and Cluster resources.
 service ComplianceProfileService {
-  // GetComplianceProfile retrieves the specified compliance profile
+  // GetComplianceProfile retrieves the specified compliance profile by ID.
+  //
+  // Returns the full profile including its rules and associated benchmark standards.
+  //
+  // Returns NOT_FOUND if no profile with the given ID exists.
+  // Returns INVALID_ARGUMENT if the ID is empty.
   rpc GetComplianceProfile(ResourceByID) returns (ComplianceProfile) {
     option (google.api.http) = {get: "/v2/compliance/profile/{id}"};
   }
 
   // ListComplianceProfiles returns profiles matching given request
+  //
+  // Returns all compliance profiles available on the specified cluster, including
+  // their full rule lists and benchmark mappings. The cluster_id is required.
+  // Supports pagination and search query filtering.
+  //
+  // Returns INVALID_ARGUMENT if cluster_id is empty or the query is malformed.
   rpc ListComplianceProfiles(ProfilesForClusterRequest) returns (ListComplianceProfilesResponse) {
     option (google.api.http) = {get: "/v2/compliance/profiles/cluster"};
   }
 
   // ListProfileSummaries returns profiles matching each cluster and the given query
+  //
+  // Returns a deduplicated list of profile summaries across the specified clusters.
+  // Results are sorted by profile name. At least one cluster ID is required.
+  // Supports pagination; total_count reflects distinct profile names, not raw rows.
+  //
+  // Returns INVALID_ARGUMENT if no cluster IDs are provided or the query is malformed.
   rpc ListProfileSummaries(ClustersProfileSummaryRequest) returns (ListComplianceProfileSummaryResponse) {
     option (google.api.http) = {get: "/v2/compliance/profiles/summary"};
   }

@@ -34,24 +34,84 @@ const (
 // ExternalBackupServiceClient is the client API for ExternalBackupService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ExternalBackupService manages external backup integrations that periodically
+// export Central's database to an external storage backend (e.g. S3, GCS).
+//
+// Each backup configuration includes a schedule (cron expression), a
+// retention count (number of backups to keep), and type-specific connectivity
+// settings. Backups can also be triggered on-demand.
+//
+// Sensitive credential fields are scrubbed from all read responses.
+//
+// Authentication: read operations require the Integration resource with View
+// access. Write, trigger, and test operations require the Integration resource
+// with Modify access.
 type ExternalBackupServiceClient interface {
-	// GetExternalBackup returns the external backup configuration given its ID.
+	// GetExternalBackup returns the external backup configuration with the given
+	// ID.
+	//
+	// Sensitive credential fields are replaced with a placeholder.
+	// Returns NOT_FOUND if no configuration with the given ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	GetExternalBackup(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.ExternalBackup, error)
 	// GetExternalBackups returns all external backup configurations.
+	//
+	// Sensitive credential fields are replaced with a placeholder in each
+	// returned configuration. The response is not paginated.
 	GetExternalBackups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetExternalBackupsResponse, error)
-	// PostExternalBackup creates an external backup configuration.
+	// PostExternalBackup creates a new external backup configuration.
+	//
+	// The id field must be empty; a new ID is assigned. The configuration is
+	// validated (name, schedule, backups_to_keep) and registered with the
+	// integration health reporter before being persisted.
+	//
+	// Returns INVALID_ARGUMENT if the id field is set, if required fields are
+	// missing or invalid, or if the schedule expression is malformed.
 	PostExternalBackup(ctx context.Context, in *storage.ExternalBackup, opts ...grpc.CallOption) (*storage.ExternalBackup, error)
-	// PutExternalBackup modifies a given external backup, without using stored credential reconciliation.
+	// PutExternalBackup replaces an existing external backup configuration,
+	// treating all credential fields in the request as authoritative (no stored
+	// credential reconciliation). Prefer UpdateExternalBackup for
+	// credential-preserving updates.
+	//
+	// Returns INVALID_ARGUMENT if the id field is empty or if validation fails.
 	PutExternalBackup(ctx context.Context, in *storage.ExternalBackup, opts ...grpc.CallOption) (*storage.ExternalBackup, error)
-	// TestExternalBackup tests an external backup configuration.
+	// TestExternalBackup verifies that the given backup configuration is
+	// reachable and correctly set up, treating all credential fields as
+	// authoritative (no stored credential reconciliation).
+	//
+	// Returns INVALID_ARGUMENT if validation or the connectivity test fails.
 	TestExternalBackup(ctx context.Context, in *storage.ExternalBackup, opts ...grpc.CallOption) (*Empty, error)
-	// DeleteExternalBackup removes an external backup configuration given its ID.
+	// DeleteExternalBackup removes the external backup configuration with the
+	// given ID and deregisters it from the integration health reporter.
+	//
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	DeleteExternalBackup(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
-	// TriggerExternalBackup initiates an external backup for the given configuration.
+	// TriggerExternalBackup initiates an on-demand backup using the
+	// configuration identified by the given ID.
+	//
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	TriggerExternalBackup(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
-	// UpdateExternalBackup modifies a given external backup, with optional stored credential reconciliation.
+	// UpdateExternalBackup modifies an existing external backup configuration
+	// with optional stored credential reconciliation.
+	//
+	// When update_password is false, credential fields in the request are
+	// ignored and the stored credentials are preserved. When update_password
+	// is true, credentials in the request replace stored credentials.
+	//
+	// Returns INVALID_ARGUMENT if the id field is empty, if validation fails,
+	// or if update_password is false and the configuration does not exist.
 	UpdateExternalBackup(ctx context.Context, in *UpdateExternalBackupRequest, opts ...grpc.CallOption) (*storage.ExternalBackup, error)
-	// TestUpdatedExternalBackup checks if the given external backup is correctly configured, with optional stored credential reconciliation.
+	// TestUpdatedExternalBackup verifies that the given external backup
+	// configuration is reachable with optional stored credential reconciliation.
+	//
+	// When update_password is false, credential fields in the request are
+	// replaced with the stored credentials before the test is performed.
+	// When update_password is true, the provided credentials are used directly.
+	//
+	// Returns INVALID_ARGUMENT if validation or the connectivity test fails.
+	// Returns NOT_FOUND if update_password is false and the configuration does
+	// not exist.
 	TestUpdatedExternalBackup(ctx context.Context, in *UpdateExternalBackupRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -156,24 +216,84 @@ func (c *externalBackupServiceClient) TestUpdatedExternalBackup(ctx context.Cont
 // ExternalBackupServiceServer is the server API for ExternalBackupService service.
 // All implementations should embed UnimplementedExternalBackupServiceServer
 // for forward compatibility.
+//
+// ExternalBackupService manages external backup integrations that periodically
+// export Central's database to an external storage backend (e.g. S3, GCS).
+//
+// Each backup configuration includes a schedule (cron expression), a
+// retention count (number of backups to keep), and type-specific connectivity
+// settings. Backups can also be triggered on-demand.
+//
+// Sensitive credential fields are scrubbed from all read responses.
+//
+// Authentication: read operations require the Integration resource with View
+// access. Write, trigger, and test operations require the Integration resource
+// with Modify access.
 type ExternalBackupServiceServer interface {
-	// GetExternalBackup returns the external backup configuration given its ID.
+	// GetExternalBackup returns the external backup configuration with the given
+	// ID.
+	//
+	// Sensitive credential fields are replaced with a placeholder.
+	// Returns NOT_FOUND if no configuration with the given ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	GetExternalBackup(context.Context, *ResourceByID) (*storage.ExternalBackup, error)
 	// GetExternalBackups returns all external backup configurations.
+	//
+	// Sensitive credential fields are replaced with a placeholder in each
+	// returned configuration. The response is not paginated.
 	GetExternalBackups(context.Context, *Empty) (*GetExternalBackupsResponse, error)
-	// PostExternalBackup creates an external backup configuration.
+	// PostExternalBackup creates a new external backup configuration.
+	//
+	// The id field must be empty; a new ID is assigned. The configuration is
+	// validated (name, schedule, backups_to_keep) and registered with the
+	// integration health reporter before being persisted.
+	//
+	// Returns INVALID_ARGUMENT if the id field is set, if required fields are
+	// missing or invalid, or if the schedule expression is malformed.
 	PostExternalBackup(context.Context, *storage.ExternalBackup) (*storage.ExternalBackup, error)
-	// PutExternalBackup modifies a given external backup, without using stored credential reconciliation.
+	// PutExternalBackup replaces an existing external backup configuration,
+	// treating all credential fields in the request as authoritative (no stored
+	// credential reconciliation). Prefer UpdateExternalBackup for
+	// credential-preserving updates.
+	//
+	// Returns INVALID_ARGUMENT if the id field is empty or if validation fails.
 	PutExternalBackup(context.Context, *storage.ExternalBackup) (*storage.ExternalBackup, error)
-	// TestExternalBackup tests an external backup configuration.
+	// TestExternalBackup verifies that the given backup configuration is
+	// reachable and correctly set up, treating all credential fields as
+	// authoritative (no stored credential reconciliation).
+	//
+	// Returns INVALID_ARGUMENT if validation or the connectivity test fails.
 	TestExternalBackup(context.Context, *storage.ExternalBackup) (*Empty, error)
-	// DeleteExternalBackup removes an external backup configuration given its ID.
+	// DeleteExternalBackup removes the external backup configuration with the
+	// given ID and deregisters it from the integration health reporter.
+	//
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	DeleteExternalBackup(context.Context, *ResourceByID) (*Empty, error)
-	// TriggerExternalBackup initiates an external backup for the given configuration.
+	// TriggerExternalBackup initiates an on-demand backup using the
+	// configuration identified by the given ID.
+	//
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	TriggerExternalBackup(context.Context, *ResourceByID) (*Empty, error)
-	// UpdateExternalBackup modifies a given external backup, with optional stored credential reconciliation.
+	// UpdateExternalBackup modifies an existing external backup configuration
+	// with optional stored credential reconciliation.
+	//
+	// When update_password is false, credential fields in the request are
+	// ignored and the stored credentials are preserved. When update_password
+	// is true, credentials in the request replace stored credentials.
+	//
+	// Returns INVALID_ARGUMENT if the id field is empty, if validation fails,
+	// or if update_password is false and the configuration does not exist.
 	UpdateExternalBackup(context.Context, *UpdateExternalBackupRequest) (*storage.ExternalBackup, error)
-	// TestUpdatedExternalBackup checks if the given external backup is correctly configured, with optional stored credential reconciliation.
+	// TestUpdatedExternalBackup verifies that the given external backup
+	// configuration is reachable with optional stored credential reconciliation.
+	//
+	// When update_password is false, credential fields in the request are
+	// replaced with the stored credentials before the test is performed.
+	// When update_password is true, the provided credentials are used directly.
+	//
+	// Returns INVALID_ARGUMENT if validation or the connectivity test fails.
+	// Returns NOT_FOUND if update_password is false and the configuration does
+	// not exist.
 	TestUpdatedExternalBackup(context.Context, *UpdateExternalBackupRequest) (*Empty, error)
 }
 

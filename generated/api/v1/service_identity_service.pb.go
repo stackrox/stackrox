@@ -23,6 +23,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ServiceIdentityResponse is the response listing all known service identities.
 type ServiceIdentityResponse struct {
 	state         protoimpl.MessageState     `protogen:"open.v1"`
 	Identities    []*storage.ServiceIdentity `protobuf:"bytes,1,rep,name=identities,proto3" json:"identities,omitempty"`
@@ -67,10 +68,14 @@ func (x *ServiceIdentityResponse) GetIdentities() []*storage.ServiceIdentity {
 	return nil
 }
 
+// CreateServiceIdentityRequest is the request to create a new mTLS service identity.
 type CreateServiceIdentityRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Type          storage.ServiceType    `protobuf:"varint,2,opt,name=type,proto3,enum=storage.ServiceType" json:"type,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the unique identifier to assign to the new service identity.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// type specifies the service type (e.g. SENSOR_SERVICE, COLLECTOR_SERVICE).
+	// Must not be UNKNOWN_SERVICE.
+	Type          storage.ServiceType `protobuf:"varint,2,opt,name=type,proto3,enum=storage.ServiceType" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -119,13 +124,19 @@ func (x *CreateServiceIdentityRequest) GetType() storage.ServiceType {
 	return storage.ServiceType(0)
 }
 
+// CreateServiceIdentityResponse contains the generated certificate and private key.
+// These credentials are never stored by Central and cannot be retrieved again after this response.
 type CreateServiceIdentityResponse struct {
-	state          protoimpl.MessageState   `protogen:"open.v1"`
-	Identity       *storage.ServiceIdentity `protobuf:"bytes,1,opt,name=identity,proto3" json:"identity,omitempty"`
-	CertificatePem []byte                   `protobuf:"bytes,2,opt,name=certificate_pem,json=certificatePem,proto3" json:"certificate_pem,omitempty"`
-	PrivateKeyPem  []byte                   `protobuf:"bytes,3,opt,name=private_key_pem,json=privateKeyPem,proto3" json:"private_key_pem,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// identity is the metadata record of the created service identity.
+	Identity *storage.ServiceIdentity `protobuf:"bytes,1,opt,name=identity,proto3" json:"identity,omitempty"`
+	// certificate_pem is the PEM-encoded certificate for the new service identity.
+	CertificatePem []byte `protobuf:"bytes,2,opt,name=certificate_pem,json=certificatePem,proto3" json:"certificate_pem,omitempty"`
+	// private_key_pem is the PEM-encoded private key for the new service identity.
+	// This is the only time the private key is available; Central does not retain it.
+	PrivateKeyPem []byte `protobuf:"bytes,3,opt,name=private_key_pem,json=privateKeyPem,proto3" json:"private_key_pem,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateServiceIdentityResponse) Reset() {
@@ -179,9 +190,11 @@ func (x *CreateServiceIdentityResponse) GetPrivateKeyPem() []byte {
 	return nil
 }
 
+// Authority represents a Certificate Authority certificate.
 type Authority struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	CertificatePem []byte                 `protobuf:"bytes,1,opt,name=certificate_pem,json=certificatePem,proto3" json:"certificate_pem,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// certificate_pem is the PEM-encoded CA certificate.
+	CertificatePem []byte `protobuf:"bytes,1,opt,name=certificate_pem,json=certificatePem,proto3" json:"certificate_pem,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -223,6 +236,7 @@ func (x *Authority) GetCertificatePem() []byte {
 	return nil
 }
 
+// Authorities is the list of Certificate Authority certificates currently trusted by Central.
 type Authorities struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Authorities   []*Authority           `protobuf:"bytes,1,rep,name=authorities,proto3" json:"authorities,omitempty"`

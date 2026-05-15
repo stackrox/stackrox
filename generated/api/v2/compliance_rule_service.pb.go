@@ -22,10 +22,13 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// RuleRequest identifies a compliance rule by name with an optional query filter.
 type RuleRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RuleName      string                 `protobuf:"bytes,1,opt,name=rule_name,json=ruleName,proto3" json:"rule_name,omitempty"`
-	Query         *RawQuery              `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// rule_name is required; the name of the Compliance Operator rule to retrieve.
+	RuleName string `protobuf:"bytes,1,opt,name=rule_name,json=ruleName,proto3" json:"rule_name,omitempty"`
+	// query optionally further filters the rule lookup using StackRox search syntax.
+	Query         *RawQuery `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

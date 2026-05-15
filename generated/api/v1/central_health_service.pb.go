@@ -22,6 +22,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// GetUpgradeStatusResponse is the response for querying Central's upgrade/rollback status.
 type GetUpgradeStatusResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UpgradeStatus *CentralUpgradeStatus  `protobuf:"bytes,1,opt,name=upgradeStatus,proto3" json:"upgradeStatus,omitempty"`
@@ -66,13 +67,16 @@ func (x *GetUpgradeStatusResponse) GetUpgradeStatus() *CentralUpgradeStatus {
 	return nil
 }
 
+// CentralUpgradeStatus describes the current Central version and its rollback capabilities.
 type CentralUpgradeStatus struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Current Central Version
+	// version is the currently running Central version string (e.g. "4.5.0").
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	// The version of previous clone in Central. This is the version we can force rollback to.
+	// force_rollback_to is the version of the previous database clone that Central can be
+	// forcibly rolled back to. This represents the minimum supported DB version.
 	ForceRollbackTo string `protobuf:"bytes,2,opt,name=force_rollback_to,json=forceRollbackTo,proto3" json:"force_rollback_to,omitempty"`
-	// If true, we can rollback to the current version if an upgrade failed.
+	// can_rollback_after_upgrade indicates whether Central can be safely rolled back to a
+	// previous version if an upgrade fails or needs to be reverted.
 	CanRollbackAfterUpgrade bool `protobuf:"varint,3,opt,name=can_rollback_after_upgrade,json=canRollbackAfterUpgrade,proto3" json:"can_rollback_after_upgrade,omitempty"`
 	// Current disk space stats for upgrade
 	//

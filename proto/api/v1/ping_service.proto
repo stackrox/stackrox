@@ -12,7 +12,13 @@ message PongMessage {
   string status = 1;
 }
 
+// PingService provides a health check endpoint for Central.
+//
+// Authentication: no authentication required. Used by load balancers and
+// readiness probes.
 service PingService {
+  // Ping confirms Central is reachable and responding. Returns HTTP 200 with
+  // {"status": "ok"} on success. Safe to call without credentials.
   rpc Ping(Empty) returns (PongMessage) {
     option (google.api.http) = {get: "/v1/ping"};
   }

@@ -25,14 +25,24 @@ const (
 
 type VulnMgmtExportWorkloadsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Request timeout in seconds.
+	// timeout is the maximum duration in seconds to wait for the export to
+	// complete. When set, the server cancels the streaming operation after the
+	// given number of seconds. When 0 or unset, no timeout is applied beyond
+	// the underlying connection deadline.
 	Timeout int32 `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	// Query to constrain the deployments for which vulnerability data is returned.
-	// The queries contain pairs of `Search Option:Value` separated by `+` signs.
-	// For HTTP requests the query should be quoted. For example
-	// > curl "$ROX_ENDPOINT/v1/export/vuln-mgmt/workloads?query=Deployment%3Ascanner%2BNamespace%3Astackrox"
-	// queries vulnerability data for all scanner deployments in the stackrox namespace.
-	// See https://docs.openshift.com/acs/operating/search-filter.html for more information.
+	// query constrains which deployments are included in the export using
+	// StackRox search syntax. Pairs of `Search Option:Value` are joined by `+`.
+	// When empty, all deployments visible to the caller are exported.
+	//
+	// Example (URL-encoded):
+	//
+	//	curl "$ROX_ENDPOINT/v1/export/vuln-mgmt/workloads?query=Deployment%3Ascanner%2BNamespace%3Astackrox"
+	//
+	// Supported search fields include Deployment, Namespace, Cluster, Label,
+	// and any other field accepted by the deployment search index.
+	//
+	// See https://docs.openshift.com/acs/operating/search-filter.html for
+	// the full query syntax reference.
 	Query         string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -82,13 +92,24 @@ func (x *VulnMgmtExportWorkloadsRequest) GetQuery() string {
 	return ""
 }
 
-// The workloads response contains the full image details including the
-// vulnerability data.
+// VulnMgmtExportWorkloadsResponse contains vulnerability data for a single
+// deployment. Each stream message corresponds to one deployment together with
+// its deduplicated container images (including full scan and CVE data) and the
+// number of currently running pods.
 type VulnMgmtExportWorkloadsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Deployment    *storage.Deployment    `protobuf:"bytes,1,opt,name=deployment,proto3" json:"deployment,omitempty"`
-	Images        []*storage.Image       `protobuf:"bytes,2,rep,name=images,proto3" json:"images,omitempty"`
-	LivePods      int32                  `protobuf:"varint,3,opt,name=live_pods,json=livePods,proto3" json:"live_pods,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// deployment is the full deployment record, including container specs,
+	// resource configuration, labels, and risk metadata.
+	Deployment *storage.Deployment `protobuf:"bytes,1,opt,name=deployment,proto3" json:"deployment,omitempty"`
+	// images contains the deduplicated set of container images referenced by
+	// this deployment. Each image includes the full vulnerability scan with
+	// embedded components and CVEs. Images absent from the image store are
+	// silently omitted from this list.
+	Images []*storage.Image `protobuf:"bytes,2,rep,name=images,proto3" json:"images,omitempty"`
+	// live_pods is the count of pods belonging to this deployment that currently
+	// have at least one running container instance (i.e., pods with a live
+	// container image digest recorded in the pod store).
+	LivePods      int32 `protobuf:"varint,3,opt,name=live_pods,json=livePods,proto3" json:"live_pods,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

@@ -13,58 +13,113 @@ import "storage/network_graph_config.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// NetworkGraphScope restricts the network graph to a subset of deployments
+// matching the given search query.
 message NetworkGraphScope {
+  // query filters the scope using StackRox search syntax (e.g. "Namespace:production").
   string query = 1;
 }
 
+// NetworkEdgeProperties describes a single observed connection on a specific
+// port and protocol.
 message NetworkEdgeProperties {
+  // port is the destination port of the connection.
   uint32 port = 1;
+  // protocol is the Layer-4 protocol (TCP, UDP, etc.) of the connection.
   storage.L4Protocol protocol = 2;
 
+  // last_active_timestamp is the most recent time this connection was observed.
   google.protobuf.Timestamp last_active_timestamp = 3;
 }
 
+// NetworkEdgePropertiesBundle groups all connection properties observed on a
+// single directed edge between two network nodes.
 message NetworkEdgePropertiesBundle {
   repeated NetworkEdgeProperties properties = 1;
 }
 
+// NetworkNode represents a single entity (deployment, external source, or
+// internet) in the network graph.
 message NetworkNode {
+  // entity identifies the network entity (deployment, CIDR block, internet, etc.).
   storage.NetworkEntityInfo entity = 1;
+  // internet_access is true if this node has observed flows to/from the internet.
   bool internet_access = 2;
+  // policy_ids lists the IDs of NetworkPolicies that select this deployment.
+  // Populated only when include_policies is set in the request.
   repeated string policy_ids = 3;
+  // non_isolated_ingress is true when no ingress NetworkPolicy selects this deployment,
+  // meaning all ingress traffic is allowed.
   bool non_isolated_ingress = 5;
+  // non_isolated_egress is true when no egress NetworkPolicy selects this deployment,
+  // meaning all egress traffic is allowed.
   bool non_isolated_egress = 6;
+  // query_match is true if this node matched the filter query in the request
+  // (as opposed to appearing only as a neighbor of a matching node).
   bool query_match = 7;
 
+  // out_edges maps the index of a destination node in the nodes list to the
+  // set of observed connection properties on that edge.
   map<int32, NetworkEdgePropertiesBundle> out_edges = 4;
 }
 
+// NetworkGraphRequest specifies the parameters for fetching a live network
+// flow graph for a cluster.
 message NetworkGraphRequest {
+  // cluster_id is the ID of the cluster to retrieve the network graph for. Required.
   string cluster_id = 1;
+  // query filters deployments shown in the graph using StackRox search syntax.
+  // Example: "Namespace:production+Label:app=frontend"
   string query = 2;
+  // since restricts flows to those observed after this timestamp.
+  // Defaults to 5 minutes before the current time if unset.
   google.protobuf.Timestamp since = 3;
+  // include_ports controls whether per-port connection details are included in
+  // edge properties.
   bool include_ports = 4;
+  // scope further restricts the set of deployments shown as graph nodes.
   NetworkGraphScope scope = 5;
+  // include_policies controls whether NetworkPolicy isolation information
+  // (non_isolated_ingress, non_isolated_egress, policy_ids) is populated on
+  // each deployment node.
   bool include_policies = 6;
 }
 
+// NetworkGraph is the response to GetNetworkGraph, containing a snapshot of
+// observed network flows within a cluster.
 message NetworkGraph {
+  // epoch is a monotonically increasing counter that increments whenever the
+  // underlying network policy graph changes. Clients can compare epochs to
+  // detect staleness without re-fetching the full graph.
   uint32 epoch = 1;
+  // nodes is the list of network entities in the graph. Edge indices in
+  // out_edges refer to positions in this list.
   repeated NetworkNode nodes = 2;
 }
 
+// CreateNetworkEntityRequest describes a new user-defined external network
+// entity (CIDR block) scoped to a specific cluster.
 message CreateNetworkEntityRequest {
+  // cluster_id is the cluster to which this external entity is scoped. Required.
   string cluster_id = 1;
+  // entity contains the CIDR block and optional name for the new external source.
   storage.NetworkEntityInfo.ExternalSource entity = 2;
 }
 
+// PatchNetworkEntityRequest renames an existing user-defined external network entity.
 message PatchNetworkEntityRequest {
+  // id is the ID of the external network entity to update. Required.
   string id = 1;
+  // name is the new display name for the entity.
   string name = 2;
 }
 
+// GetExternalNetworkEntitiesRequest retrieves user-defined external network
+// entities visible for a given cluster.
 message GetExternalNetworkEntitiesRequest {
+  // cluster_id restricts results to entities scoped to this cluster (or global entities).
   string cluster_id = 1;
+  // query further filters entities using StackRox search syntax.
   string query = 2;
 }
 
@@ -72,58 +127,141 @@ message GetExternalNetworkEntitiesResponse {
   repeated storage.NetworkEntity entities = 1;
 }
 
+// GetExternalNetworkFlowsRequest retrieves observed flows between deployments
+// and a specific external network entity.
 message GetExternalNetworkFlowsRequest {
+  // cluster_id is the cluster to query for external flows. Required.
   string cluster_id = 1;
+  // entity_id is the ID of the external network entity to retrieve flows for. Required.
   string entity_id = 2;
+  // query additionally filters the set of deployments considered, using StackRox search syntax.
   string query = 3;
+  // since restricts flows to those observed after this timestamp.
+  // Defaults to 5 minutes before the current time if unset.
   google.protobuf.Timestamp since = 4;
+  // pagination controls offset and limit for the returned flow list.
   Pagination pagination = 5;
 }
 
+// GetExternalNetworkFlowsResponse contains flows between cluster deployments
+// and a single external network entity.
 message GetExternalNetworkFlowsResponse {
+  // entity is the external network entity these flows are associated with.
   storage.NetworkEntityInfo entity = 1;
+  // total_flows is the total number of matching flows before pagination.
   int32 total_flows = 2;
+  // flows is the paginated list of observed network flows.
   repeated storage.NetworkFlow flows = 3;
 }
 
+// GetExternalNetworkFlowsMetadataRequest retrieves per-entity flow counts for
+// all external entities that have observed flows in a cluster.
 message GetExternalNetworkFlowsMetadataRequest {
+  // cluster_id is the cluster to query. Required.
   string cluster_id = 1;
+  // query filters deployments using StackRox search syntax.
   string query = 2;
+  // since restricts flows to those observed after this timestamp.
+  // Defaults to 5 minutes before the current time if unset.
   google.protobuf.Timestamp since = 3;
+  // pagination controls offset and limit for the returned entity metadata list.
   Pagination pagination = 4;
 }
 
+// ExternalNetworkFlowMetadata summarizes observed flow counts for a single
+// external network entity.
 message ExternalNetworkFlowMetadata {
+  // entity is the external network entity.
   storage.NetworkEntityInfo entity = 1;
+  // flowsCount is the total number of observed flows involving this entity.
   int32 flowsCount = 2;
 }
 
+// GetExternalNetworkFlowsMetadataResponse contains per-entity flow counts for
+// all external entities with observed flows.
 message GetExternalNetworkFlowsMetadataResponse {
+  // entities is the paginated list of external entities with their flow counts,
+  // sorted by entity ID for deterministic pagination.
   repeated ExternalNetworkFlowMetadata entities = 1;
+  // total_entities is the total number of external entities before pagination.
   int32 total_entities = 2;
 }
 
+// PutNetworkGraphConfigRequest wraps the new network graph configuration to persist.
 message PutNetworkGraphConfigRequest {
+  // config is the new network graph configuration. Required.
   storage.NetworkGraphConfig config = 1;
 }
 
+// NetworkGraphService provides APIs for viewing and managing the network graph,
+// external network entities, and network graph configuration.
+//
+// The network graph represents observed network flows between deployments in a
+// cluster, including flows to/from external CIDR blocks or the internet.
+// Users can define custom external network entities (CIDR blocks) to group
+// external traffic in the graph.
+//
+// Authentication: read endpoints require View access to the NetworkGraph
+// resource. Write endpoints (create, patch, delete external entities) require
+// Modify access to NetworkGraph. The network graph configuration endpoints
+// require View/Modify access to the Administration resource.
 service NetworkGraphService {
+  // GetNetworkGraph returns a snapshot of observed network flows for all
+  // deployments in the given cluster.
+  //
+  // Flows are filtered to those observed after the `since` timestamp (default:
+  // 5 minutes ago). The result graph includes deployment nodes, external source
+  // nodes, and directed edges with per-port connection metadata when
+  // `include_ports` is true.
+  //
+  // Deployments invisible to the caller due to Scoped Access Control are masked
+  // (replaced with anonymized nodes) rather than omitted, to preserve graph
+  // topology. Flows between two invisible deployments are omitted entirely.
+  //
+  // Returns INVALID_ARGUMENT if cluster_id is empty or the number of matching
+  // deployments exceeds the configured maximum.
+  // Returns NOT_FOUND if the cluster does not exist or is not visible.
   rpc GetNetworkGraph(NetworkGraphRequest) returns (NetworkGraph) {
     option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}"};
   }
 
+  // GetExternalNetworkEntities returns the user-defined external network
+  // entities (CIDR blocks) visible for the given cluster, optionally filtered
+  // by the search query.
+  //
+  // Results include both cluster-scoped entities and global (cluster-agnostic)
+  // entities. Returns INVALID_ARGUMENT if the query is malformed.
   rpc GetExternalNetworkEntities(GetExternalNetworkEntitiesRequest) returns (GetExternalNetworkEntitiesResponse) {
     option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities"};
   }
 
+  // GetExternalNetworkFlows returns the observed network flows between cluster
+  // deployments and a specific external network entity.
+  //
+  // Flows are paginated and sorted by source entity ID for deterministic
+  // pagination. Only flows involving at least one deployment visible to the
+  // caller are returned.
+  //
+  // Returns NOT_FOUND if the external entity does not exist.
   rpc GetExternalNetworkFlows(GetExternalNetworkFlowsRequest) returns (GetExternalNetworkFlowsResponse) {
     option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/{entity_id}/flows"};
   }
 
+  // GetExternalNetworkFlowsMetadata returns per-entity flow counts for all
+  // external network entities that have observed flows in the cluster.
+  //
+  // Results are sorted by entity ID and support pagination. Useful for
+  // building summary views without fetching full flow details.
   rpc GetExternalNetworkFlowsMetadata(GetExternalNetworkFlowsMetadataRequest) returns (GetExternalNetworkFlowsMetadataResponse) {
     option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/metadata"};
   }
 
+  // CreateExternalNetworkEntity creates a new user-defined external network
+  // entity (CIDR block) scoped to the given cluster.
+  //
+  // The entity ID is derived deterministically from the cluster ID and CIDR
+  // block. Returns INVALID_ARGUMENT if the cluster ID or CIDR is invalid.
+  // Returns NOT_FOUND if the cluster does not exist or is not visible.
   rpc CreateExternalNetworkEntity(CreateNetworkEntityRequest) returns (storage.NetworkEntity) {
     option (google.api.http) = {
       post: "/v1/networkgraph/cluster/{cluster_id}/externalentities"
@@ -131,6 +269,13 @@ service NetworkGraphService {
     };
   }
 
+  // PatchExternalNetworkEntity renames an existing user-defined external
+  // network entity.
+  //
+  // Only user-created entities can be updated; StackRox-generated default
+  // entities are immutable and will return PERMISSION_DENIED.
+  // Returns INVALID_ARGUMENT if the entity ID is empty.
+  // Returns NOT_FOUND if the entity does not exist.
   rpc PatchExternalNetworkEntity(PatchNetworkEntityRequest) returns (storage.NetworkEntity) {
     option (google.api.http) = {
       patch: "/v1/networkgraph/externalentities/{id}"
@@ -138,14 +283,28 @@ service NetworkGraphService {
     };
   }
 
+  // DeleteExternalNetworkEntity removes a user-defined external network entity.
+  //
+  // Only user-created entities can be deleted; StackRox-generated default
+  // entities are immutable and will return PERMISSION_DENIED.
+  // Returns NOT_FOUND if the entity does not exist.
   rpc DeleteExternalNetworkEntity(ResourceByID) returns (Empty) {
     option (google.api.http) = {delete: "/v1/networkgraph/externalentities/{id}"};
   }
 
+  // GetNetworkGraphConfig returns the current network graph display configuration.
+  //
+  // The configuration controls settings such as whether default external
+  // network sources are hidden in the graph. Requires View access to
+  // the Administration resource.
   rpc GetNetworkGraphConfig(Empty) returns (storage.NetworkGraphConfig) {
     option (google.api.http) = {get: "/v1/networkgraph/config"};
   }
 
+  // PutNetworkGraphConfig replaces the network graph display configuration.
+  //
+  // Returns INVALID_ARGUMENT if the config body is missing.
+  // Requires Modify access to the Administration resource.
   rpc PutNetworkGraphConfig(PutNetworkGraphConfigRequest) returns (storage.NetworkGraphConfig) {
     option (google.api.http) = {
       put: "/v1/networkgraph/config"

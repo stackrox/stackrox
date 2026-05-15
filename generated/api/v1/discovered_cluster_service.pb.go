@@ -23,6 +23,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Status indicates whether a discovered cluster has been secured with StackRox Sensor.
 type DiscoveredCluster_Status int32
 
 const (
@@ -76,17 +77,25 @@ func (DiscoveredCluster_Status) EnumDescriptor() ([]byte, []int) {
 	return file_api_v1_discovered_cluster_service_proto_rawDescGZIP(), []int{0, 0}
 }
 
+// Type identifies the managed Kubernetes distribution of the cluster.
 type DiscoveredCluster_Metadata_Type int32
 
 const (
 	DiscoveredCluster_Metadata_UNSPECIFIED DiscoveredCluster_Metadata_Type = 0
-	DiscoveredCluster_Metadata_AKS         DiscoveredCluster_Metadata_Type = 1
-	DiscoveredCluster_Metadata_ARO         DiscoveredCluster_Metadata_Type = 2
-	DiscoveredCluster_Metadata_EKS         DiscoveredCluster_Metadata_Type = 3
-	DiscoveredCluster_Metadata_GKE         DiscoveredCluster_Metadata_Type = 4
-	DiscoveredCluster_Metadata_OCP         DiscoveredCluster_Metadata_Type = 5
-	DiscoveredCluster_Metadata_OSD         DiscoveredCluster_Metadata_Type = 6
-	DiscoveredCluster_Metadata_ROSA        DiscoveredCluster_Metadata_Type = 7
+	// AKS is Azure Kubernetes Service.
+	DiscoveredCluster_Metadata_AKS DiscoveredCluster_Metadata_Type = 1
+	// ARO is Azure Red Hat OpenShift.
+	DiscoveredCluster_Metadata_ARO DiscoveredCluster_Metadata_Type = 2
+	// EKS is Amazon Elastic Kubernetes Service.
+	DiscoveredCluster_Metadata_EKS DiscoveredCluster_Metadata_Type = 3
+	// GKE is Google Kubernetes Engine.
+	DiscoveredCluster_Metadata_GKE DiscoveredCluster_Metadata_Type = 4
+	// OCP is OpenShift Container Platform (self-managed).
+	DiscoveredCluster_Metadata_OCP DiscoveredCluster_Metadata_Type = 5
+	// OSD is OpenShift Dedicated.
+	DiscoveredCluster_Metadata_OSD DiscoveredCluster_Metadata_Type = 6
+	// ROSA is Red Hat OpenShift Service on AWS.
+	DiscoveredCluster_Metadata_ROSA DiscoveredCluster_Metadata_Type = 7
 )
 
 // Enum value maps for DiscoveredCluster_Metadata_Type.
@@ -140,13 +149,17 @@ func (DiscoveredCluster_Metadata_Type) EnumDescriptor() ([]byte, []int) {
 	return file_api_v1_discovered_cluster_service_proto_rawDescGZIP(), []int{0, 0, 0}
 }
 
+// ProviderType identifies the underlying cloud platform hosting the cluster.
 type DiscoveredCluster_Metadata_ProviderType int32
 
 const (
 	DiscoveredCluster_Metadata_PROVIDER_TYPE_UNSPECIFIED DiscoveredCluster_Metadata_ProviderType = 0
-	DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS         DiscoveredCluster_Metadata_ProviderType = 1
-	DiscoveredCluster_Metadata_PROVIDER_TYPE_GCP         DiscoveredCluster_Metadata_ProviderType = 2
-	DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE       DiscoveredCluster_Metadata_ProviderType = 3
+	// PROVIDER_TYPE_AWS indicates the cluster is hosted on Amazon Web Services.
+	DiscoveredCluster_Metadata_PROVIDER_TYPE_AWS DiscoveredCluster_Metadata_ProviderType = 1
+	// PROVIDER_TYPE_GCP indicates the cluster is hosted on Google Cloud Platform.
+	DiscoveredCluster_Metadata_PROVIDER_TYPE_GCP DiscoveredCluster_Metadata_ProviderType = 2
+	// PROVIDER_TYPE_AZURE indicates the cluster is hosted on Microsoft Azure.
+	DiscoveredCluster_Metadata_PROVIDER_TYPE_AZURE DiscoveredCluster_Metadata_ProviderType = 3
 )
 
 // Enum value maps for DiscoveredCluster_Metadata_ProviderType.
@@ -196,7 +209,8 @@ func (DiscoveredCluster_Metadata_ProviderType) EnumDescriptor() ([]byte, []int) 
 type DiscoveredCluster struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// UUIDv5 generated deterministically from the tuple (metadata.id, metadata.type, source.id).
-	Id       string                      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// metadata holds registration details as reported by the cloud provider.
 	Metadata *DiscoveredCluster_Metadata `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	// If an equivalent internal cluster exists, the discovered cluster is
 	// considered secured. If an equivalent secured cluster does not exist, the
@@ -267,6 +281,7 @@ func (x *DiscoveredCluster) GetSource() *DiscoveredCluster_CloudSource {
 	return nil
 }
 
+// DiscoveredClustersFilter specifies criteria for filtering discovered clusters.
 type DiscoveredClustersFilter struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Matches discovered clusters of specific names.
@@ -339,6 +354,7 @@ func (x *DiscoveredClustersFilter) GetSourceIds() []string {
 	return nil
 }
 
+// CountDiscoveredClustersRequest is the request message for CountDiscoveredClusters.
 type CountDiscoveredClustersRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Filters discovered clusters based on the requested fields.
@@ -384,9 +400,11 @@ func (x *CountDiscoveredClustersRequest) GetFilter() *DiscoveredClustersFilter {
 	return nil
 }
 
+// CountDiscoveredClustersResponse is the response message for CountDiscoveredClusters.
 type CountDiscoveredClustersResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Count         int32                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// count is the total number of discovered clusters matching the filter.
+	Count         int32 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -428,9 +446,11 @@ func (x *CountDiscoveredClustersResponse) GetCount() int32 {
 	return 0
 }
 
+// GetDiscoveredClusterRequest is the request message for GetDiscoveredCluster.
 type GetDiscoveredClusterRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the UUIDv5 identifier of the discovered cluster to retrieve.
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -472,9 +492,11 @@ func (x *GetDiscoveredClusterRequest) GetId() string {
 	return ""
 }
 
+// GetDiscoveredClusterResponse is the response message for GetDiscoveredCluster.
 type GetDiscoveredClusterResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Cluster       *DiscoveredCluster     `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster is the discovered cluster matching the requested ID.
+	Cluster       *DiscoveredCluster `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -516,6 +538,7 @@ func (x *GetDiscoveredClusterResponse) GetCluster() *DiscoveredCluster {
 	return nil
 }
 
+// ListDiscoveredClustersRequest is the request message for ListDiscoveredClusters.
 type ListDiscoveredClustersRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Divides the response into chunks.
@@ -570,9 +593,11 @@ func (x *ListDiscoveredClustersRequest) GetFilter() *DiscoveredClustersFilter {
 	return nil
 }
 
+// ListDiscoveredClustersResponse is the response message for ListDiscoveredClusters.
 type ListDiscoveredClustersResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Clusters      []*DiscoveredCluster   `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// clusters is the list of discovered clusters matching the filter, sorted by cluster name.
+	Clusters      []*DiscoveredCluster `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -614,6 +639,7 @@ func (x *ListDiscoveredClustersResponse) GetClusters() []*DiscoveredCluster {
 	return nil
 }
 
+// Metadata holds cloud-provider registration details for the discovered cluster.
 type DiscoveredCluster_Metadata struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Represents a unique ID under which the cluster is registered with the
@@ -706,9 +732,11 @@ func (x *DiscoveredCluster_Metadata) GetFirstDiscoveredAt() *timestamppb.Timesta
 	return nil
 }
 
+// CloudSource identifies the cloud source integration that discovered this cluster.
 type DiscoveredCluster_CloudSource struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the identifier of the cloud source integration.
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

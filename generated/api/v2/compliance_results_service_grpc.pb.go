@@ -31,8 +31,23 @@ const (
 // ComplianceResultsServiceClient is the client API for ComplianceResultsService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ComplianceResultsService provides access to compliance scan check results.
+//
+// Results are produced by the Compliance Operator running on secured clusters and
+// ingested into ACS. Each result records whether a specific check passed, failed,
+// or errored on a given cluster. Results can be queried by scan configuration,
+// profile, cluster, or individual check name.
+//
+// Authentication: all endpoints require View access to both the Compliance and Cluster resources.
 type ComplianceResultsServiceClient interface {
-	// GetComplianceScanCheckResult returns the specific result by ID
+	// GetComplianceScanCheckResult returns the specific result by ID.
+	//
+	// Returns the full cross-cluster check status including per-cluster outcomes,
+	// remediation instructions, rationale, and mapped compliance controls.
+	//
+	// Returns NOT_FOUND if no result with the given ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	GetComplianceScanCheckResult(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ComplianceClusterCheckStatus, error)
 	// GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
 	// Optional RawQuery query fields can be combined.
@@ -40,18 +55,47 @@ type ComplianceResultsServiceClient interface {
 	// - scan: id(s) of the compliance scan
 	// - cluster: id(s) of the cluster
 	// - profile: id(s) of the profile
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	GetComplianceScanResults(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceResultsResponse, error)
 	// GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query
 	// Optional RawQuery query fields can be combined.
+	//
+	// Filters results to those produced by the named scan configuration. The
+	// scan_config_name field is required. Additional query filters are ANDed in.
+	//
+	// Returns INVALID_ARGUMENT if scan_config_name is empty or the query is malformed.
 	GetComplianceScanConfigurationResults(ctx context.Context, in *ComplianceScanResultsRequest, opts ...grpc.CallOption) (*ListComplianceResultsResponse, error)
 	// GetComplianceProfileResults retrieves the most recent compliance operator scan results for the specified query
 	// Optional RawQuery query fields can be combined.
+	//
+	// Returns per-check result counts grouped by check name for the specified profile.
+	// The profile_name field is required. Supports pagination.
+	//
+	// Returns INVALID_ARGUMENT if profile_name is empty or the query is malformed.
 	GetComplianceProfileResults(ctx context.Context, in *ComplianceProfileResultsRequest, opts ...grpc.CallOption) (*ListComplianceProfileResults, error)
-	// GetComplianceProfileCheckResult lists status of a check per cluster
+	// GetComplianceProfileCheckResult lists status of a check per cluster.
+	//
+	// Returns the per-cluster pass/fail status for a specific check within a profile.
+	// Both profile_name and check_name are required. Supports pagination.
+	//
+	// Returns INVALID_ARGUMENT if profile_name or check_name is empty.
 	GetComplianceProfileCheckResult(ctx context.Context, in *ComplianceProfileCheckRequest, opts ...grpc.CallOption) (*ListComplianceCheckClusterResponse, error)
-	// GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster
+	// GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster.
+	//
+	// Returns all check results for the profile/cluster combination, including
+	// per-check remediation details and mapped controls. The last_scan_time reflects
+	// when the most recent scan completed on this cluster.
+	//
+	// Returns INVALID_ARGUMENT if profile_name or cluster_id is empty.
 	GetComplianceProfileClusterResults(ctx context.Context, in *ComplianceProfileClusterRequest, opts ...grpc.CallOption) (*ListComplianceCheckResultResponse, error)
-	// GetComplianceProfileCheckDetails
+	// GetComplianceProfileCheckDetails returns normalized details of a check across all clusters.
+	//
+	// Returns a single ComplianceClusterCheckStatus that aggregates the check's description,
+	// instructions, rationale, and per-cluster outcomes. Since check names are versioned
+	// via the profile, the rule definition is consistent across clusters.
+	//
+	// Returns INVALID_ARGUMENT if profile_name or check_name is empty.
 	GetComplianceProfileCheckDetails(ctx context.Context, in *ComplianceCheckDetailRequest, opts ...grpc.CallOption) (*ComplianceClusterCheckStatus, error)
 }
 
@@ -136,8 +180,23 @@ func (c *complianceResultsServiceClient) GetComplianceProfileCheckDetails(ctx co
 // ComplianceResultsServiceServer is the server API for ComplianceResultsService service.
 // All implementations should embed UnimplementedComplianceResultsServiceServer
 // for forward compatibility.
+//
+// ComplianceResultsService provides access to compliance scan check results.
+//
+// Results are produced by the Compliance Operator running on secured clusters and
+// ingested into ACS. Each result records whether a specific check passed, failed,
+// or errored on a given cluster. Results can be queried by scan configuration,
+// profile, cluster, or individual check name.
+//
+// Authentication: all endpoints require View access to both the Compliance and Cluster resources.
 type ComplianceResultsServiceServer interface {
-	// GetComplianceScanCheckResult returns the specific result by ID
+	// GetComplianceScanCheckResult returns the specific result by ID.
+	//
+	// Returns the full cross-cluster check status including per-cluster outcomes,
+	// remediation instructions, rationale, and mapped compliance controls.
+	//
+	// Returns NOT_FOUND if no result with the given ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	GetComplianceScanCheckResult(context.Context, *ResourceByID) (*ComplianceClusterCheckStatus, error)
 	// GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
 	// Optional RawQuery query fields can be combined.
@@ -145,18 +204,47 @@ type ComplianceResultsServiceServer interface {
 	// - scan: id(s) of the compliance scan
 	// - cluster: id(s) of the cluster
 	// - profile: id(s) of the profile
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	GetComplianceScanResults(context.Context, *RawQuery) (*ListComplianceResultsResponse, error)
 	// GetComplianceScanConfigurationResults retrieves the most recent compliance operator scan results for the specified query
 	// Optional RawQuery query fields can be combined.
+	//
+	// Filters results to those produced by the named scan configuration. The
+	// scan_config_name field is required. Additional query filters are ANDed in.
+	//
+	// Returns INVALID_ARGUMENT if scan_config_name is empty or the query is malformed.
 	GetComplianceScanConfigurationResults(context.Context, *ComplianceScanResultsRequest) (*ListComplianceResultsResponse, error)
 	// GetComplianceProfileResults retrieves the most recent compliance operator scan results for the specified query
 	// Optional RawQuery query fields can be combined.
+	//
+	// Returns per-check result counts grouped by check name for the specified profile.
+	// The profile_name field is required. Supports pagination.
+	//
+	// Returns INVALID_ARGUMENT if profile_name is empty or the query is malformed.
 	GetComplianceProfileResults(context.Context, *ComplianceProfileResultsRequest) (*ListComplianceProfileResults, error)
-	// GetComplianceProfileCheckResult lists status of a check per cluster
+	// GetComplianceProfileCheckResult lists status of a check per cluster.
+	//
+	// Returns the per-cluster pass/fail status for a specific check within a profile.
+	// Both profile_name and check_name are required. Supports pagination.
+	//
+	// Returns INVALID_ARGUMENT if profile_name or check_name is empty.
 	GetComplianceProfileCheckResult(context.Context, *ComplianceProfileCheckRequest) (*ListComplianceCheckClusterResponse, error)
-	// GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster
+	// GetComplianceProfileClusterResults lists check results for a specific profile on a specific cluster.
+	//
+	// Returns all check results for the profile/cluster combination, including
+	// per-check remediation details and mapped controls. The last_scan_time reflects
+	// when the most recent scan completed on this cluster.
+	//
+	// Returns INVALID_ARGUMENT if profile_name or cluster_id is empty.
 	GetComplianceProfileClusterResults(context.Context, *ComplianceProfileClusterRequest) (*ListComplianceCheckResultResponse, error)
-	// GetComplianceProfileCheckDetails
+	// GetComplianceProfileCheckDetails returns normalized details of a check across all clusters.
+	//
+	// Returns a single ComplianceClusterCheckStatus that aggregates the check's description,
+	// instructions, rationale, and per-cluster outcomes. Since check names are versioned
+	// via the profile, the rule definition is consistent across clusters.
+	//
+	// Returns INVALID_ARGUMENT if profile_name or check_name is empty.
 	GetComplianceProfileCheckDetails(context.Context, *ComplianceCheckDetailRequest) (*ComplianceClusterCheckStatus, error)
 }
 

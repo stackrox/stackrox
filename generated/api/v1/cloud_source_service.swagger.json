@@ -18,7 +18,7 @@
   "paths": {
     "/v1/cloud-sources": {
       "get": {
-        "summary": "ListCloudSources returns the list of cloud sources after filtered by requested fields.",
+        "summary": "ListCloudSources returns all cloud sources matching the given filter,\nsorted by name. Supports pagination via the pagination field (max 1000\nresults per page).",
         "operationId": "CloudSourcesService_ListCloudSources",
         "responses": {
           "200": {
@@ -93,7 +93,7 @@
           },
           {
             "name": "filter.types",
-            "description": "Matches cloud sources based on their type.",
+            "description": "Matches cloud sources based on their type.\n\n - TYPE_PALADIN_CLOUD: TYPE_PALADIN_CLOUD connects to the Paladin Cloud API for cluster discovery.\n - TYPE_OCM: TYPE_OCM connects to the Red Hat OpenShift Cluster Manager for cluster discovery.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -113,7 +113,8 @@
         ]
       },
       "post": {
-        "summary": "CreateCloudSource creates a cloud source.",
+        "summary": "CreateCloudSource creates a new cloud source.",
+        "description": "The cloud_source.id field must be empty. Unless skip_test_integration is\ntrue, the cloud source is tested for connectivity before being persisted.\n\nReturns INVALID_ARGUMENT if id is set, if the cloud source is empty, or\nif the connectivity test fails.",
         "operationId": "CloudSourcesService_CreateCloudSource",
         "responses": {
           "200": {
@@ -146,7 +147,8 @@
     },
     "/v1/cloud-sources/test": {
       "post": {
-        "summary": "TestCloudSource tests a cloud source.",
+        "summary": "TestCloudSource verifies connectivity for the given cloud source\nconfiguration using a short timeout (8 seconds) and no retries.",
+        "description": "When update_credentials is false, the stored credentials for the existing\ncloud source are used. When update_credentials is true, the credentials in\nthe request are used directly.\n\nReturns INVALID_ARGUMENT if the cloud source is empty, if credential\nreconciliation fails, or if the connectivity test fails.",
         "operationId": "CloudSourcesService_TestCloudSource",
         "responses": {
           "200": {
@@ -179,7 +181,8 @@
     },
     "/v1/cloud-sources/{cloudSource.id}": {
       "put": {
-        "summary": "UpdateCloudSource creates or replaces a cloud source.",
+        "summary": "UpdateCloudSource replaces an existing cloud source configuration.",
+        "description": "When update_credentials is false, credentials in the request are ignored\nand the stored credentials are used instead (the resource must already\nexist). Unless skip_test_integration is true, connectivity is verified\nbefore the update is persisted.\n\nReturns INVALID_ARGUMENT if the cloud source is empty, if credential\nreconciliation fails, or if the connectivity test fails.",
         "operationId": "CloudSourcesService_UpdateCloudSource",
         "responses": {
           "200": {
@@ -198,6 +201,7 @@
         "parameters": [
           {
             "name": "cloudSource.id",
+            "description": "id is the unique identifier of the cloud source, assigned on creation.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -218,7 +222,8 @@
     },
     "/v1/cloud-sources/{id}": {
       "get": {
-        "summary": "GetCloudSource retrieves a cloud source by ID.",
+        "summary": "GetCloudSource retrieves a single cloud source by ID.",
+        "description": "Returns NOT_FOUND if no cloud source with the given ID exists.\nReturns INVALID_ARGUMENT if the ID is empty.",
         "operationId": "CloudSourcesService_GetCloudSource",
         "responses": {
           "200": {
@@ -237,6 +242,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "id is the unique identifier of the cloud source to retrieve.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -247,7 +253,8 @@
         ]
       },
       "delete": {
-        "summary": "DeleteCloudSource removes a cloud source.",
+        "summary": "DeleteCloudSource removes the cloud source with the given ID.",
+        "description": "Returns INVALID_ARGUMENT if the ID is empty.",
         "operationId": "CloudSourcesService_DeleteCloudSource",
         "responses": {
           "200": {
@@ -266,6 +273,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "id is the unique identifier of the cloud source to delete.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -278,7 +286,7 @@
     },
     "/v1/count/cloud-sources": {
       "get": {
-        "summary": "CountCloudSources returns the number of cloud sources after filtering by requested fields.",
+        "summary": "CountCloudSources returns the number of cloud sources matching the given\nfilter. Supports filtering by name or type.",
         "operationId": "CloudSourcesService_CountCloudSources",
         "responses": {
           "200": {
@@ -308,7 +316,7 @@
           },
           {
             "name": "filter.types",
-            "description": "Matches cloud sources based on their type.",
+            "description": "Matches cloud sources based on their type.\n\n - TYPE_PALADIN_CLOUD: TYPE_PALADIN_CLOUD connects to the Paladin Cloud API for cluster discovery.\n - TYPE_OCM: TYPE_OCM connects to the Red Hat OpenShift Cluster Manager for cluster discovery.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -354,16 +362,19 @@
           "type": "object",
           "properties": {
             "name": {
-              "type": "string"
+              "type": "string",
+              "description": "name is a human-readable label for the cloud source."
             },
             "type": {
               "$ref": "#/definitions/v1CloudSourceType"
             },
             "credentials": {
-              "$ref": "#/definitions/CloudSourceCredentials"
+              "$ref": "#/definitions/CloudSourceCredentials",
+              "description": "credentials holds the authentication material for the cloud source endpoint."
             },
             "skipTestIntegration": {
-              "type": "boolean"
+              "type": "boolean",
+              "description": "skip_test_integration, when true, skips connectivity verification when creating\nor updating this cloud source."
             },
             "paladinCloud": {
               "$ref": "#/definitions/v1PaladinCloudConfig"
@@ -372,7 +383,8 @@
               "$ref": "#/definitions/v1OCMConfig"
             }
           },
-          "description": "CloudSource is an integration which provides a source for discovered\nclusters."
+          "description": "cloud_source contains the updated configuration. The id field must be set.",
+          "title": "cloud_source contains the updated configuration. The id field must be set."
         },
         "updateCredentials": {
           "type": "boolean",
@@ -435,19 +447,23 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "id is the unique identifier of the cloud source, assigned on creation."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is a human-readable label for the cloud source."
         },
         "type": {
           "$ref": "#/definitions/v1CloudSourceType"
         },
         "credentials": {
-          "$ref": "#/definitions/CloudSourceCredentials"
+          "$ref": "#/definitions/CloudSourceCredentials",
+          "description": "credentials holds the authentication material for the cloud source endpoint."
         },
         "skipTestIntegration": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "skip_test_integration, when true, skips connectivity verification when creating\nor updating this cloud source."
         },
         "paladinCloud": {
           "$ref": "#/definitions/v1PaladinCloudConfig"
@@ -465,7 +481,8 @@
         "TYPE_PALADIN_CLOUD",
         "TYPE_OCM"
       ],
-      "default": "TYPE_UNSPECIFIED"
+      "default": "TYPE_UNSPECIFIED",
+      "description": "Type identifies which cloud provider or manager the source connects to.\n\n - TYPE_PALADIN_CLOUD: TYPE_PALADIN_CLOUD connects to the Paladin Cloud API for cluster discovery.\n - TYPE_OCM: TYPE_OCM connects to the Red Hat OpenShift Cluster Manager for cluster discovery."
     },
     "v1CloudSourcesFilter": {
       "type": "object",
@@ -491,7 +508,8 @@
       "properties": {
         "count": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "count is the total number of cloud sources matching the request filter."
         }
       }
     },
@@ -499,7 +517,8 @@
       "type": "object",
       "properties": {
         "cloudSource": {
-          "$ref": "#/definitions/v1CloudSource"
+          "$ref": "#/definitions/v1CloudSource",
+          "description": "cloud_source contains the configuration for the new cloud source.\nThe id field must be empty."
         }
       }
     },
@@ -507,7 +526,8 @@
       "type": "object",
       "properties": {
         "cloudSource": {
-          "$ref": "#/definitions/v1CloudSource"
+          "$ref": "#/definitions/v1CloudSource",
+          "description": "cloud_source is the created cloud source with its assigned id."
         }
       }
     },
@@ -518,7 +538,8 @@
       "type": "object",
       "properties": {
         "cloudSource": {
-          "$ref": "#/definitions/v1CloudSource"
+          "$ref": "#/definitions/v1CloudSource",
+          "description": "cloud_source is the requested cloud source configuration."
         }
       }
     },
@@ -530,7 +551,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1CloudSource"
-          }
+          },
+          "description": "cloud_sources contains the matching cloud source configurations, sorted by\nname in ascending order."
         }
       }
     },
@@ -597,7 +619,8 @@
       "type": "object",
       "properties": {
         "cloudSource": {
-          "$ref": "#/definitions/v1CloudSource"
+          "$ref": "#/definitions/v1CloudSource",
+          "description": "cloud_source contains the configuration to test."
         },
         "updateCredentials": {
           "type": "boolean",

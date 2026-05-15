@@ -28,10 +28,39 @@ const (
 // DBServiceClient is the client API for DBService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// DBService provides database export capability discovery and restore process
+// management for Central's PostgreSQL database.
+//
+// This service supports the database restore workflow: callers first query
+// export capabilities, then initiate a restore via a separate streaming
+// endpoint (not part of this service), and use this service to monitor or
+// control an in-progress restore.
+//
+// Authentication: GetExportCapabilities requires any authenticated user.
+// GetActiveRestoreProcess requires DB read access. CancelRestoreProcess and
+// InterruptRestoreProcess require DB write access.
 type DBServiceClient interface {
+	// GetExportCapabilities returns the database export formats and encoding
+	// types supported by this Central instance. Used to determine which format
+	// to request when initiating a restore.
 	GetExportCapabilities(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetDBExportCapabilitiesResponse, error)
+	// GetActiveRestoreProcess returns the status of the currently active
+	// database restore process, if any. Returns an empty response if no restore
+	// is currently in progress.
 	GetActiveRestoreProcess(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetActiveDBRestoreProcessResponse, error)
+	// InterruptRestoreProcess pauses the active restore process at the current
+	// byte position, allowing it to be resumed later.
+	//
+	// Returns the byte offset (resume_info) at which the restore was paused.
+	// Returns FAILED_PRECONDITION if no restore is active or if the provided
+	// process_id does not match the active process.
 	InterruptRestoreProcess(ctx context.Context, in *InterruptDBRestoreProcessRequest, opts ...grpc.CallOption) (*InterruptDBRestoreProcessResponse, error)
+	// CancelRestoreProcess permanently cancels the active database restore
+	// process identified by the given ID and waits for it to terminate.
+	//
+	// Returns FAILED_PRECONDITION if no restore is active or if the provided
+	// ID does not match the active process.
 	CancelRestoreProcess(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -86,10 +115,39 @@ func (c *dBServiceClient) CancelRestoreProcess(ctx context.Context, in *Resource
 // DBServiceServer is the server API for DBService service.
 // All implementations should embed UnimplementedDBServiceServer
 // for forward compatibility.
+//
+// DBService provides database export capability discovery and restore process
+// management for Central's PostgreSQL database.
+//
+// This service supports the database restore workflow: callers first query
+// export capabilities, then initiate a restore via a separate streaming
+// endpoint (not part of this service), and use this service to monitor or
+// control an in-progress restore.
+//
+// Authentication: GetExportCapabilities requires any authenticated user.
+// GetActiveRestoreProcess requires DB read access. CancelRestoreProcess and
+// InterruptRestoreProcess require DB write access.
 type DBServiceServer interface {
+	// GetExportCapabilities returns the database export formats and encoding
+	// types supported by this Central instance. Used to determine which format
+	// to request when initiating a restore.
 	GetExportCapabilities(context.Context, *Empty) (*GetDBExportCapabilitiesResponse, error)
+	// GetActiveRestoreProcess returns the status of the currently active
+	// database restore process, if any. Returns an empty response if no restore
+	// is currently in progress.
 	GetActiveRestoreProcess(context.Context, *Empty) (*GetActiveDBRestoreProcessResponse, error)
+	// InterruptRestoreProcess pauses the active restore process at the current
+	// byte position, allowing it to be resumed later.
+	//
+	// Returns the byte offset (resume_info) at which the restore was paused.
+	// Returns FAILED_PRECONDITION if no restore is active or if the provided
+	// process_id does not match the active process.
 	InterruptRestoreProcess(context.Context, *InterruptDBRestoreProcessRequest) (*InterruptDBRestoreProcessResponse, error)
+	// CancelRestoreProcess permanently cancels the active database restore
+	// process identified by the given ID and waits for it to terminate.
+	//
+	// Returns FAILED_PRECONDITION if no restore is active or if the provided
+	// ID does not match the active process.
 	CancelRestoreProcess(context.Context, *ResourceByID) (*Empty, error)
 }
 

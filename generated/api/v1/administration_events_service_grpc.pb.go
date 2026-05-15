@@ -27,12 +27,32 @@ const (
 // AdministrationEventServiceClient is the client API for AdministrationEventService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// AdministrationEventService provides read-only access to Central's administration events.
+//
+// Administration events are system-generated records of asynchronous background operations
+// that affect platform health, such as image scan failures or integration errors. They are
+// surfaced in Central's system health view and support filtering by level, type, domain,
+// resource type, and time range.
+//
+// All endpoints require read access to the Administration resource.
 type AdministrationEventServiceClient interface {
-	// CountAdministrationEvents returns the number of events after filtering by requested fields.
+	// CountAdministrationEvents returns the number of events matching the given filter.
+	//
+	// The filter supports time range (from/until), domain, resource type, event type, and level.
+	// All specified filters are ANDed. Requires read access to the Administration resource.
 	CountAdministrationEvents(ctx context.Context, in *CountAdministrationEventsRequest, opts ...grpc.CallOption) (*CountAdministrationEventsResponse, error)
-	// GetAdministrationEvent retrieves an event by ID.
+	// GetAdministrationEvent returns the administration event with the given ID.
+	//
+	// Requires read access to the Administration resource.
 	GetAdministrationEvent(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetAdministrationEventResponse, error)
-	// ListAdministrationEvents returns the list of events after filtered by requested fields.
+	// ListAdministrationEvents returns a paginated list of administration events matching the given filter.
+	//
+	// Results are sorted by last update time descending (most recent first) by default.
+	// The maximum page size is 1000 events.
+	// Filters support time range (from/until based on creation time), domain, resource type,
+	// event type, and level. All specified filters are ANDed.
+	// Requires read access to the Administration resource.
 	ListAdministrationEvents(ctx context.Context, in *ListAdministrationEventsRequest, opts ...grpc.CallOption) (*ListAdministrationEventsResponse, error)
 }
 
@@ -77,12 +97,32 @@ func (c *administrationEventServiceClient) ListAdministrationEvents(ctx context.
 // AdministrationEventServiceServer is the server API for AdministrationEventService service.
 // All implementations should embed UnimplementedAdministrationEventServiceServer
 // for forward compatibility.
+//
+// AdministrationEventService provides read-only access to Central's administration events.
+//
+// Administration events are system-generated records of asynchronous background operations
+// that affect platform health, such as image scan failures or integration errors. They are
+// surfaced in Central's system health view and support filtering by level, type, domain,
+// resource type, and time range.
+//
+// All endpoints require read access to the Administration resource.
 type AdministrationEventServiceServer interface {
-	// CountAdministrationEvents returns the number of events after filtering by requested fields.
+	// CountAdministrationEvents returns the number of events matching the given filter.
+	//
+	// The filter supports time range (from/until), domain, resource type, event type, and level.
+	// All specified filters are ANDed. Requires read access to the Administration resource.
 	CountAdministrationEvents(context.Context, *CountAdministrationEventsRequest) (*CountAdministrationEventsResponse, error)
-	// GetAdministrationEvent retrieves an event by ID.
+	// GetAdministrationEvent returns the administration event with the given ID.
+	//
+	// Requires read access to the Administration resource.
 	GetAdministrationEvent(context.Context, *ResourceByID) (*GetAdministrationEventResponse, error)
-	// ListAdministrationEvents returns the list of events after filtered by requested fields.
+	// ListAdministrationEvents returns a paginated list of administration events matching the given filter.
+	//
+	// Results are sorted by last update time descending (most recent first) by default.
+	// The maximum page size is 1000 events.
+	// Filters support time range (from/until based on creation time), domain, resource type,
+	// event type, and level. All specified filters are ANDed.
+	// Requires read access to the Administration resource.
 	ListAdministrationEvents(context.Context, *ListAdministrationEventsRequest) (*ListAdministrationEventsResponse, error)
 }
 

@@ -10,41 +10,76 @@ import weak "google/api/annotations.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// PolicyCategory represents a named grouping for security policies.
 message PolicyCategory {
+  // id is the unique identifier for this policy category.
   string id = 1;
+  // name is the human-readable display name for this category.
+  // Must be between 5 and 128 characters and must not contain newlines or dollar signs.
   string name = 2;
+  // isDefault indicates that this category is a built-in StackRox category and cannot be deleted.
   bool isDefault = 3;
 }
 
+// PostPolicyCategoryRequest is the request message for PostPolicyCategory.
 message PostPolicyCategoryRequest {
+  // policyCategory is the category to create. The name must be between 5 and 128 characters
+  // and must not contain newlines or dollar signs.
   v1.PolicyCategory policyCategory = 1;
 }
+
+// GetPolicyCategoriesResponse is the response message for GetPolicyCategories.
 message GetPolicyCategoriesResponse {
+  // categories is the list of policy categories matching the query.
   repeated v1.PolicyCategory categories = 1;
 }
 
+// RenamePolicyCategoryRequest is the request message for RenamePolicyCategory.
 message RenamePolicyCategoryRequest {
+  // id is the UUID of the policy category to rename.
   string id = 1;
+  // new_category_name is the new name for the category. Must be between 5 and 128 characters
+  // and must not contain newlines or dollar signs.
   string new_category_name = 2;
 }
 
+// DeletePolicyCategoryRequest is the request message for DeletePolicyCategory.
 message DeletePolicyCategoryRequest {
+  // id is the UUID of the policy category to delete.
   string id = 1;
 }
 
-// PolicyCategoryService APIs can be used to manage policy categories.
+// PolicyCategoryService manages the categories used to organize security policies.
+//
+// Policy categories are named groupings (e.g. "Vulnerability Management", "Network Security")
+// that help organize and filter policies. Default categories are built-in and cannot be deleted.
+// Custom categories can be created, renamed, and deleted.
+//
+// Authentication: read operations require View access to the WorkflowAdministration resource.
+// Write operations (create, rename, delete) require Modify access to WorkflowAdministration.
 service PolicyCategoryService {
-  // GetPolicyCategory returns the requested policy category by ID.
+  // GetPolicyCategory returns a single policy category by ID.
+  //
+  // Returns INVALID_ARGUMENT if id is empty.
+  // Returns NOT_FOUND if no category with the given ID exists.
   rpc GetPolicyCategory(ResourceByID) returns (v1.PolicyCategory) {
     option (google.api.http) = {get: "/v1/policycategories/{id}"};
   }
 
-  // GetPolicyCategories returns the list of policy categories
+  // GetPolicyCategories returns the list of policy categories matching the optional query.
+  //
+  // Uses StackRox search syntax. Returns all categories if the query is empty.
+  // Returns INVALID_ARGUMENT if the query syntax is malformed.
   rpc GetPolicyCategories(RawQuery) returns (GetPolicyCategoriesResponse) {
     option (google.api.http) = {get: "/v1/policycategories"};
   }
 
-  // PostPolicyCategory creates a new policy category
+  // PostPolicyCategory creates a new custom policy category.
+  //
+  // The category name must be between 5 and 128 characters and must not contain newlines or
+  // dollar signs. Returns the created category with its assigned ID.
+  //
+  // Returns INVALID_ARGUMENT if the request is empty or the name fails validation.
   rpc PostPolicyCategory(PostPolicyCategoryRequest) returns (v1.PolicyCategory) {
     option (google.api.http) = {
       post: "/v1/policycategories"
@@ -53,6 +88,12 @@ service PolicyCategoryService {
   }
 
   // RenamePolicyCategory renames the given policy category.
+  //
+  // The new name must be between 5 and 128 characters and must not contain newlines or dollar signs.
+  // Returns the updated category.
+  //
+  // Returns INVALID_ARGUMENT if the new name fails validation.
+  // Returns NOT_FOUND if no category with the given ID exists.
   rpc RenamePolicyCategory(RenamePolicyCategoryRequest) returns (v1.PolicyCategory) {
     option (google.api.http) = {
       put: "/v1/policycategories"
@@ -60,7 +101,12 @@ service PolicyCategoryService {
     };
   }
 
-  // DeletePolicyCategory removes the given policy category.
+  // DeletePolicyCategory removes the given policy category permanently.
+  //
+  // Default (built-in) categories cannot be deleted. Custom categories used by active policies
+  // are unlinked from those policies on deletion.
+  //
+  // Returns NOT_FOUND if no category with the given ID exists.
   rpc DeletePolicyCategory(DeletePolicyCategoryRequest) returns (Empty) {
     option (google.api.http) = {delete: "/v1/policycategories/{id}"};
   }

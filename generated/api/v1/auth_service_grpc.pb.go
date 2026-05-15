@@ -31,23 +31,63 @@ const (
 // AuthServiceClient is the client API for AuthService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// AuthService provides authentication status and machine-to-machine (M2M) token exchange
+// configuration for Central.
+//
+// GetAuthStatus can be called by any authenticated client (including anonymous callers, who
+// will receive HTTP 401). The M2M config management endpoints require the Access resource:
+// read access for list/get, write access for add/update/delete.
+// ExchangeAuthMachineToMachineToken is open to anonymous callers and exchanges a third-party
+// OIDC token for a Central access token based on configured M2M rules.
 type AuthServiceClient interface {
-	// GetAuthStatus returns the status for the current client.
+	// GetAuthStatus returns the authentication status of the caller making the request.
+	//
+	// The response includes the caller's identity (user ID or service identity), token expiry,
+	// associated auth provider (with sensitive config fields stripped), resolved roles and
+	// permissions, and raw identity-provider attributes.
+	//
+	// This endpoint allows anonymous calls; unauthenticated requests receive HTTP 401.
 	GetAuthStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AuthStatus, error)
-	// ListAuthMachineToMachineConfigs lists the available auth machine to machine configs.
+	// ListAuthMachineToMachineConfigs returns all configured machine-to-machine token exchange rules.
+	//
+	// Requires read access to the Access resource.
 	ListAuthMachineToMachineConfigs(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListAuthMachineToMachineConfigResponse, error)
-	// GetAuthMachineToMachineConfig retrieves the specific auth machine to machine config.
+	// GetAuthMachineToMachineConfig returns the machine-to-machine config with the given ID.
+	//
+	// Returns NOT_FOUND if no config with the specified ID exists.
+	// Requires read access to the Access resource.
 	GetAuthMachineToMachineConfig(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetAuthMachineToMachineConfigResponse, error)
-	// AddAuthMachineToMachineConfig creates a new auth machine to machine config.
+	// AddAuthMachineToMachineConfig creates a new machine-to-machine token exchange config.
+	//
+	// The config.id field must be empty; a UUID is assigned by the server.
+	// Validates token_expiration_duration (1 minute to 24 hours), issuer URL (must use HTTPS),
+	// and that all mapping value_expression fields are valid RE2 regular expressions.
+	// Returns INVALID_ARGUMENT if validation fails.
+	// Requires write access to the Access resource.
 	AddAuthMachineToMachineConfig(ctx context.Context, in *AddAuthMachineToMachineConfigRequest, opts ...grpc.CallOption) (*AddAuthMachineToMachineConfigResponse, error)
-	// UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.
+	// UpdateAuthMachineToMachineConfig updates an existing machine-to-machine token exchange config.
 	// In case the auth machine to machine config does not exist, a new one will be created.
+	//
+	// The config.id field must be set to the ID of the config to update.
+	// Applies the same validation as AddAuthMachineToMachineConfig.
+	// Returns INVALID_ARGUMENT if validation fails.
+	// Requires write access to the Access resource.
 	UpdateAuthMachineToMachineConfig(ctx context.Context, in *UpdateAuthMachineToMachineConfigRequest, opts ...grpc.CallOption) (*Empty, error)
-	// DeleteAuthMachineToMachineConfig deletes the specific auth machine to machine config.
+	// DeleteAuthMachineToMachineConfig removes the machine-to-machine config with the given ID.
 	// In case a specified auth machine to machine config does not exist is deleted, no error will be returned.
+	//
+	// Requires write access to the Access resource.
 	DeleteAuthMachineToMachineConfig(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
-	// ExchangeAuthMachineToMachineToken exchanges a given identity token for a Central access token based on
-	// configured auth machine to machine configs.
+	// ExchangeAuthMachineToMachineToken exchanges a third-party OIDC identity token for a
+	// Central access token, based on configured machine-to-machine rules.
+	//
+	// The issuer of the provided id_token is extracted and matched against configured M2M configs.
+	// Token claim values are then evaluated against the configured mappings to resolve a role.
+	// At least one mapping must match for a Central access token to be issued.
+	//
+	// Returns NO_CREDENTIALS if no M2M config is registered for the token's issuer.
+	// This endpoint allows anonymous calls (no prior authentication required).
 	ExchangeAuthMachineToMachineToken(ctx context.Context, in *ExchangeAuthMachineToMachineTokenRequest, opts ...grpc.CallOption) (*ExchangeAuthMachineToMachineTokenResponse, error)
 }
 
@@ -132,23 +172,63 @@ func (c *authServiceClient) ExchangeAuthMachineToMachineToken(ctx context.Contex
 // AuthServiceServer is the server API for AuthService service.
 // All implementations should embed UnimplementedAuthServiceServer
 // for forward compatibility.
+//
+// AuthService provides authentication status and machine-to-machine (M2M) token exchange
+// configuration for Central.
+//
+// GetAuthStatus can be called by any authenticated client (including anonymous callers, who
+// will receive HTTP 401). The M2M config management endpoints require the Access resource:
+// read access for list/get, write access for add/update/delete.
+// ExchangeAuthMachineToMachineToken is open to anonymous callers and exchanges a third-party
+// OIDC token for a Central access token based on configured M2M rules.
 type AuthServiceServer interface {
-	// GetAuthStatus returns the status for the current client.
+	// GetAuthStatus returns the authentication status of the caller making the request.
+	//
+	// The response includes the caller's identity (user ID or service identity), token expiry,
+	// associated auth provider (with sensitive config fields stripped), resolved roles and
+	// permissions, and raw identity-provider attributes.
+	//
+	// This endpoint allows anonymous calls; unauthenticated requests receive HTTP 401.
 	GetAuthStatus(context.Context, *Empty) (*AuthStatus, error)
-	// ListAuthMachineToMachineConfigs lists the available auth machine to machine configs.
+	// ListAuthMachineToMachineConfigs returns all configured machine-to-machine token exchange rules.
+	//
+	// Requires read access to the Access resource.
 	ListAuthMachineToMachineConfigs(context.Context, *Empty) (*ListAuthMachineToMachineConfigResponse, error)
-	// GetAuthMachineToMachineConfig retrieves the specific auth machine to machine config.
+	// GetAuthMachineToMachineConfig returns the machine-to-machine config with the given ID.
+	//
+	// Returns NOT_FOUND if no config with the specified ID exists.
+	// Requires read access to the Access resource.
 	GetAuthMachineToMachineConfig(context.Context, *ResourceByID) (*GetAuthMachineToMachineConfigResponse, error)
-	// AddAuthMachineToMachineConfig creates a new auth machine to machine config.
+	// AddAuthMachineToMachineConfig creates a new machine-to-machine token exchange config.
+	//
+	// The config.id field must be empty; a UUID is assigned by the server.
+	// Validates token_expiration_duration (1 minute to 24 hours), issuer URL (must use HTTPS),
+	// and that all mapping value_expression fields are valid RE2 regular expressions.
+	// Returns INVALID_ARGUMENT if validation fails.
+	// Requires write access to the Access resource.
 	AddAuthMachineToMachineConfig(context.Context, *AddAuthMachineToMachineConfigRequest) (*AddAuthMachineToMachineConfigResponse, error)
-	// UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.
+	// UpdateAuthMachineToMachineConfig updates an existing machine-to-machine token exchange config.
 	// In case the auth machine to machine config does not exist, a new one will be created.
+	//
+	// The config.id field must be set to the ID of the config to update.
+	// Applies the same validation as AddAuthMachineToMachineConfig.
+	// Returns INVALID_ARGUMENT if validation fails.
+	// Requires write access to the Access resource.
 	UpdateAuthMachineToMachineConfig(context.Context, *UpdateAuthMachineToMachineConfigRequest) (*Empty, error)
-	// DeleteAuthMachineToMachineConfig deletes the specific auth machine to machine config.
+	// DeleteAuthMachineToMachineConfig removes the machine-to-machine config with the given ID.
 	// In case a specified auth machine to machine config does not exist is deleted, no error will be returned.
+	//
+	// Requires write access to the Access resource.
 	DeleteAuthMachineToMachineConfig(context.Context, *ResourceByID) (*Empty, error)
-	// ExchangeAuthMachineToMachineToken exchanges a given identity token for a Central access token based on
-	// configured auth machine to machine configs.
+	// ExchangeAuthMachineToMachineToken exchanges a third-party OIDC identity token for a
+	// Central access token, based on configured machine-to-machine rules.
+	//
+	// The issuer of the provided id_token is extracted and matched against configured M2M configs.
+	// Token claim values are then evaluated against the configured mappings to resolve a role.
+	// At least one mapping must match for a Central access token to be issued.
+	//
+	// Returns NO_CREDENTIALS if no M2M config is registered for the token's issuer.
+	// This endpoint allows anonymous calls (no prior authentication required).
 	ExchangeAuthMachineToMachineToken(context.Context, *ExchangeAuthMachineToMachineTokenRequest) (*ExchangeAuthMachineToMachineTokenResponse, error)
 }
 

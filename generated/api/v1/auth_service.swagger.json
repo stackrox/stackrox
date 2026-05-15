@@ -18,7 +18,8 @@
   "paths": {
     "/v1/auth/m2m": {
       "get": {
-        "summary": "ListAuthMachineToMachineConfigs lists the available auth machine to machine configs.",
+        "summary": "ListAuthMachineToMachineConfigs returns all configured machine-to-machine token exchange rules.",
+        "description": "Requires read access to the Access resource.",
         "operationId": "AuthService_ListAuthMachineToMachineConfigs",
         "responses": {
           "200": {
@@ -39,7 +40,8 @@
         ]
       },
       "post": {
-        "summary": "AddAuthMachineToMachineConfig creates a new auth machine to machine config.",
+        "summary": "AddAuthMachineToMachineConfig creates a new machine-to-machine token exchange config.",
+        "description": "The config.id field must be empty; a UUID is assigned by the server.\nValidates token_expiration_duration (1 minute to 24 hours), issuer URL (must use HTTPS),\nand that all mapping value_expression fields are valid RE2 regular expressions.\nReturns INVALID_ARGUMENT if validation fails.\nRequires write access to the Access resource.",
         "operationId": "AuthService_AddAuthMachineToMachineConfig",
         "responses": {
           "200": {
@@ -72,7 +74,8 @@
     },
     "/v1/auth/m2m/exchange": {
       "post": {
-        "summary": "ExchangeAuthMachineToMachineToken exchanges a given identity token for a Central access token based on\nconfigured auth machine to machine configs.",
+        "summary": "ExchangeAuthMachineToMachineToken exchanges a third-party OIDC identity token for a\nCentral access token, based on configured machine-to-machine rules.",
+        "description": "The issuer of the provided id_token is extracted and matched against configured M2M configs.\nToken claim values are then evaluated against the configured mappings to resolve a role.\nAt least one mapping must match for a Central access token to be issued.\n\nReturns NO_CREDENTIALS if no M2M config is registered for the token's issuer.\nThis endpoint allows anonymous calls (no prior authentication required).",
         "operationId": "AuthService_ExchangeAuthMachineToMachineToken",
         "responses": {
           "200": {
@@ -105,7 +108,8 @@
     },
     "/v1/auth/m2m/{config.id}": {
       "put": {
-        "summary": "UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.\nIn case the auth machine to machine config does not exist, a new one will be created.",
+        "summary": "UpdateAuthMachineToMachineConfig updates an existing machine-to-machine token exchange config.\nIn case the auth machine to machine config does not exist, a new one will be created.",
+        "description": "The config.id field must be set to the ID of the config to update.\nApplies the same validation as AddAuthMachineToMachineConfig.\nReturns INVALID_ARGUMENT if validation fails.\nRequires write access to the Access resource.",
         "operationId": "AuthService_UpdateAuthMachineToMachineConfig",
         "responses": {
           "200": {
@@ -145,7 +149,8 @@
     },
     "/v1/auth/m2m/{id}": {
       "get": {
-        "summary": "GetAuthMachineToMachineConfig retrieves the specific auth machine to machine config.",
+        "summary": "GetAuthMachineToMachineConfig returns the machine-to-machine config with the given ID.",
+        "description": "Returns NOT_FOUND if no config with the specified ID exists.\nRequires read access to the Access resource.",
         "operationId": "AuthService_GetAuthMachineToMachineConfig",
         "responses": {
           "200": {
@@ -174,7 +179,8 @@
         ]
       },
       "delete": {
-        "summary": "DeleteAuthMachineToMachineConfig deletes the specific auth machine to machine config.\nIn case a specified auth machine to machine config does not exist is deleted, no error will be returned.",
+        "summary": "DeleteAuthMachineToMachineConfig removes the machine-to-machine config with the given ID.\nIn case a specified auth machine to machine config does not exist is deleted, no error will be returned.",
+        "description": "Requires write access to the Access resource.",
         "operationId": "AuthService_DeleteAuthMachineToMachineConfig",
         "responses": {
           "200": {
@@ -205,7 +211,8 @@
     },
     "/v1/auth/status": {
       "get": {
-        "summary": "GetAuthStatus returns the status for the current client.",
+        "summary": "GetAuthStatus returns the authentication status of the caller making the request.",
+        "description": "The response includes the caller's identity (user ID or service identity), token expiry,\nassociated auth provider (with sensitive config fields stripped), resolved roles and\npermissions, and raw identity-provider attributes.\n\nThis endpoint allows anonymous calls; unauthenticated requests receive HTTP 401.",
         "operationId": "AuthService_GetAuthStatus",
         "responses": {
           "200": {
@@ -604,36 +611,44 @@
       "type": "object",
       "properties": {
         "userId": {
-          "type": "string"
+          "type": "string",
+          "description": "user_id is the unique identifier of the human user, present when authenticated via an auth provider."
         },
         "serviceId": {
-          "$ref": "#/definitions/storageServiceIdentity"
+          "$ref": "#/definitions/storageServiceIdentity",
+          "description": "service_id identifies an internal service (e.g. Sensor) authenticated via mTLS."
         },
         "expires": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "expires is the UTC timestamp at which the current credential (token or certificate) expires."
         },
         "refreshUrl": {
-          "type": "string"
+          "type": "string",
+          "description": "refresh_url is the URL the client should call to refresh the token before it expires.\nOnly set when the auth provider backend supports token refresh."
         },
         "authProvider": {
-          "$ref": "#/definitions/storageAuthProvider"
+          "$ref": "#/definitions/storageAuthProvider",
+          "description": "auth_provider is the auth provider used to authenticate the caller.\nThe provider's sensitive config fields are stripped from this response."
         },
         "userInfo": {
-          "$ref": "#/definitions/storageUserInfo"
+          "$ref": "#/definitions/storageUserInfo",
+          "description": "user_info contains the display name, username, and aggregated permissions of the caller."
         },
         "userAttributes": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1UserAttribute"
-          }
+          },
+          "description": "user_attributes holds raw claim attributes from the identity provider token."
         },
         "idpToken": {
           "type": "string",
           "description": "Token returned to ACS by the underlying identity provider. This field is set only in a few,\nspecific contexts. Do not rely on this field being present in the response."
         }
-      }
+      },
+      "description": "AuthStatus describes the authentication state of the caller that made the request."
     },
     "v1Empty": {
       "type": "object"
@@ -723,15 +738,18 @@
       "type": "object",
       "properties": {
         "key": {
-          "type": "string"
+          "type": "string",
+          "description": "key is the attribute name as returned by the identity provider (e.g. \"groups\", \"email\")."
         },
         "values": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "values holds one or more values for this attribute key."
         }
-      }
+      },
+      "description": "UserAttribute represents a single key/multi-value attribute attached to an authenticated user,\nsourced from the identity provider's token claims."
     }
   }
 }

@@ -18,7 +18,8 @@
   "paths": {
     "/v1/processcount": {
       "get": {
-        "summary": "CountProcesses returns the count of processes.",
+        "summary": "CountProcesses returns the count of process indicators matching the given query.",
+        "description": "Accepts StackRox search query syntax (e.g. \"Deployment:frontend+Namespace:prod\").\nMatches all process indicators if the query is empty.\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "ProcessService_CountProcesses",
         "responses": {
           "200": {
@@ -37,6 +38,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -94,7 +96,8 @@
     },
     "/v1/processes/deployment/{deploymentId}": {
       "get": {
-        "summary": "GetProcessesByDeployment returns the processes executed in the given deployment.",
+        "summary": "GetProcessesByDeployment returns all raw process indicators observed in\nthe given deployment.",
+        "description": "Returns NOT_FOUND if the deployment does not exist.\nReturns INVALID_ARGUMENT if deployment_id is empty.",
         "operationId": "ProcessService_GetProcessesByDeployment",
         "responses": {
           "200": {
@@ -113,6 +116,7 @@
         "parameters": [
           {
             "name": "deploymentId",
+            "description": "deployment_id is the ID of the deployment to retrieve processes for. Required.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -125,7 +129,8 @@
     },
     "/v1/processes/deployment/{deploymentId}/grouped": {
       "get": {
-        "summary": "GetGroupedProcessByDeployment returns all the processes executed grouped by deployment.",
+        "summary": "GetGroupedProcessByDeployment returns all processes observed in the given\ndeployment, grouped by executable path and argument string.",
+        "description": "Each ProcessNameGroup contains the number of distinct containers in which\nthe process was observed and the individual signal observations per argument\nset, sorted by argument string. Results are sorted by executable path.\n\nReturns INVALID_ARGUMENT if deployment_id is empty.",
         "operationId": "ProcessService_GetGroupedProcessByDeployment",
         "responses": {
           "200": {
@@ -144,6 +149,7 @@
         "parameters": [
           {
             "name": "deploymentId",
+            "description": "deployment_id is the ID of the deployment to retrieve processes for. Required.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -156,7 +162,8 @@
     },
     "/v1/processes/deployment/{deploymentId}/grouped/container": {
       "get": {
-        "summary": "GetGroupedProcessByDeploymentAndContainer returns all the processes executed grouped by deployment and container.",
+        "summary": "GetGroupedProcessByDeploymentAndContainer returns all processes observed\nin the given deployment grouped by both executable path and container name.",
+        "description": "Each group is additionally annotated with a suspicious flag that is true\nwhen the process is not in the locked process baseline for that container,\nindicating it may be unexpected behavior.\n\nReturns INVALID_ARGUMENT if deployment_id is empty.",
         "operationId": "ProcessService_GetGroupedProcessByDeploymentAndContainer",
         "responses": {
           "200": {
@@ -175,6 +182,7 @@
         "parameters": [
           {
             "name": "deploymentId",
+            "description": "deployment_id is the ID of the deployment to retrieve processes for. Required.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -359,7 +367,8 @@
       "properties": {
         "count": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "count is the total number of process indicators matching the query."
         }
       }
     },
@@ -371,7 +380,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1ProcessNameGroup"
-          }
+          },
+          "description": "groups is the list of process name groups, sorted by executable path."
         }
       }
     },
@@ -383,7 +393,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1ProcessNameAndContainerNameGroup"
-          }
+          },
+          "description": "groups is the list of process name/container name groups, sorted by executable path."
         }
       }
     },
@@ -395,7 +406,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageProcessIndicator"
-          }
+          },
+          "description": "processes is the list of raw process indicators observed in the deployment."
         }
       }
     },
@@ -427,60 +439,73 @@
       "type": "object",
       "properties": {
         "args": {
-          "type": "string"
+          "type": "string",
+          "description": "args is the command-line argument string shared by all signals in this group."
         },
         "signals": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageProcessIndicator"
-          }
+          },
+          "description": "signals is the list of individual process indicator observations for this argument set."
         }
-      }
+      },
+      "description": "ProcessGroup groups all observed process indicator signals that share the\nsame command-line arguments."
     },
     "v1ProcessNameAndContainerNameGroup": {
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is the baseline item name (typically the executable path)."
         },
         "containerName": {
-          "type": "string"
+          "type": "string",
+          "description": "container_name is the name of the container within the deployment pod."
         },
         "timesExecuted": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "description": "times_executed is the number of distinct container IDs in which this\nprocess was observed in this container."
         },
         "groups": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1ProcessGroup"
-          }
+          },
+          "description": "groups contains sub-groups of observations keyed by argument string."
         },
         "suspicious": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "suspicious is true if this process is not present in the locked process\nbaseline for this container, indicating it may be unexpected."
         }
-      }
+      },
+      "description": "ProcessNameAndContainerNameGroup groups process observations for a single\nexecutable + container name combination."
     },
     "v1ProcessNameGroup": {
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is the full executable path (e.g. /usr/bin/python3)."
         },
         "timesExecuted": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "description": "times_executed is the number of distinct container IDs in which this\nprocess was observed."
         },
         "groups": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1ProcessGroup"
-          }
+          },
+          "description": "groups contains sub-groups of observations keyed by argument string."
         }
-      }
+      },
+      "description": "ProcessNameGroup groups all process observations for a single executable\npath, further subdivided by argument string."
     },
     "v1SortOption": {
       "type": "object",

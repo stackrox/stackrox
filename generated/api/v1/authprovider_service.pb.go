@@ -24,8 +24,9 @@ const (
 )
 
 type GetAuthProviderRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the unique identifier of the auth provider to retrieve.
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -67,10 +68,14 @@ func (x *GetAuthProviderRequest) GetId() string {
 	return ""
 }
 
+// GetAuthProvidersRequest filters the list of auth providers returned by GetAuthProviders.
+// All specified filters are ANDed. Omitting a field disables that filter.
 type GetAuthProvidersRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Type          string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// name filters results to providers whose name exactly matches this value.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// type filters results to providers of this type (e.g. "oidc", "saml2", "userpki", "iap", "openshift").
+	Type          string `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -119,8 +124,11 @@ func (x *GetAuthProvidersRequest) GetType() string {
 	return ""
 }
 
+// GetLoginAuthProvidersResponse contains the minimal provider information needed to render the login screen.
 type GetLoginAuthProvidersResponse struct {
-	state         protoimpl.MessageState                             `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// auth_providers is the list of enabled, visible providers available for login, sorted by name
+	// with the basic provider last.
 	AuthProviders []*GetLoginAuthProvidersResponse_LoginAuthProvider `protobuf:"bytes,1,rep,name=auth_providers,json=authProviders,proto3" json:"auth_providers,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -208,8 +216,10 @@ func (x *GetAuthProvidersResponse) GetAuthProviders() []*storage.AuthProvider {
 }
 
 type PostAuthProviderRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Provider      *storage.AuthProvider  `protobuf:"bytes,1,opt,name=provider,proto3" json:"provider,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// provider holds the new auth provider to create. The id and login_url fields must be empty;
+	// they are assigned by the server.
+	Provider      *storage.AuthProvider `protobuf:"bytes,1,opt,name=provider,proto3" json:"provider,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -251,9 +261,12 @@ func (x *PostAuthProviderRequest) GetProvider() *storage.AuthProvider {
 	return nil
 }
 
+// UpdateAuthProviderRequest updates specific mutable fields of an existing auth provider.
+// Only name and enabled can be changed via this endpoint; use PutAuthProvider for full replacement.
 type UpdateAuthProviderRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// id is the unique identifier of the auth provider to update.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are valid to be assigned to NameOpt:
 	//
 	//	*UpdateAuthProviderRequest_Name
@@ -340,6 +353,7 @@ type isUpdateAuthProviderRequest_NameOpt interface {
 }
 
 type UpdateAuthProviderRequest_Name struct {
+	// name sets a new display name for the auth provider.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3,oneof"`
 }
 
@@ -350,16 +364,20 @@ type isUpdateAuthProviderRequest_EnabledOpt interface {
 }
 
 type UpdateAuthProviderRequest_Enabled struct {
+	// enabled enables or disables the auth provider for login.
 	Enabled bool `protobuf:"varint,3,opt,name=enabled,proto3,oneof"`
 }
 
 func (*UpdateAuthProviderRequest_Enabled) isUpdateAuthProviderRequest_EnabledOpt() {}
 
+// ExchangeTokenRequest carries the external identity provider token to be exchanged for a Central token.
 type ExchangeTokenRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The external authentication token. The server will mask the value of this credential in responses and logs.
 	ExternalToken string `protobuf:"bytes,1,opt,name=external_token,json=externalToken,proto3" json:"external_token,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	Type          string `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	// type identifies the auth provider type that issued the token (e.g. "oidc").
+	Type string `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	// state is the opaque state value returned by the identity provider during the OAuth/OIDC callback.
 	State         string `protobuf:"bytes,3,opt,name=state,proto3" json:"state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -416,12 +434,17 @@ func (x *ExchangeTokenRequest) GetState() string {
 	return ""
 }
 
+// ExchangeTokenResponse contains either a Central access token (normal login) or auth status (test mode).
 type ExchangeTokenResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	ClientState   string                 `protobuf:"bytes,2,opt,name=client_state,json=clientState,proto3" json:"client_state,omitempty"`
-	Test          bool                   `protobuf:"varint,3,opt,name=test,proto3" json:"test,omitempty"`
-	User          *AuthStatus            `protobuf:"bytes,4,opt,name=user,proto3" json:"user,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// token is the Central access token issued after a successful exchange. Empty in test mode.
+	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	// client_state is the opaque state passed back from the identity provider, stripped of internal markers.
+	ClientState string `protobuf:"bytes,2,opt,name=client_state,json=clientState,proto3" json:"client_state,omitempty"`
+	// test is true when the exchange was triggered in test mode; in this case token is empty and user is set.
+	Test bool `protobuf:"varint,3,opt,name=test,proto3" json:"test,omitempty"`
+	// user contains the resolved auth status when test is true, used to preview what role the user would receive.
+	User          *AuthStatus `protobuf:"bytes,4,opt,name=user,proto3" json:"user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -484,8 +507,11 @@ func (x *ExchangeTokenResponse) GetUser() *AuthStatus {
 	return nil
 }
 
+// AvailableProviderTypesResponse lists auth provider types that can be created on this installation.
 type AvailableProviderTypesResponse struct {
-	state             protoimpl.MessageState                             `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// auth_provider_types is the list of available provider types, sorted by type name.
+	// The built-in "basic" provider type is excluded.
 	AuthProviderTypes []*AvailableProviderTypesResponse_AuthProviderType `protobuf:"bytes,1,rep,name=auth_provider_types,json=authProviderTypes,proto3" json:"auth_provider_types,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
@@ -528,12 +554,15 @@ func (x *AvailableProviderTypesResponse) GetAuthProviderTypes() []*AvailableProv
 	return nil
 }
 
+// LoginAuthProvider carries the subset of auth provider fields needed to render a login button.
 type GetLoginAuthProvidersResponse_LoginAuthProvider struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Type          string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
-	LoginUrl      string                 `protobuf:"bytes,5,opt,name=login_url,json=loginUrl,proto3" json:"login_url,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// type identifies the provider type (e.g. "oidc", "saml2").
+	Type string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	// login_url is the URL the client should redirect to in order to initiate the login flow.
+	LoginUrl      string `protobuf:"bytes,5,opt,name=login_url,json=loginUrl,proto3" json:"login_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -596,10 +625,14 @@ func (x *GetLoginAuthProvidersResponse_LoginAuthProvider) GetLoginUrl() string {
 	return ""
 }
 
+// AuthProviderType describes a single creatable auth provider type.
 type AvailableProviderTypesResponse_AuthProviderType struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	Type                string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
-	SuggestedAttributes []string               `protobuf:"bytes,2,rep,name=suggested_attributes,json=suggestedAttributes,proto3" json:"suggested_attributes,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// type is the identifier of the provider type (e.g. "oidc", "saml2", "userpki").
+	Type string `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	// suggested_attributes is the sorted list of token claim attributes that are commonly mapped
+	// for this provider type.
+	SuggestedAttributes []string `protobuf:"bytes,2,rep,name=suggested_attributes,json=suggestedAttributes,proto3" json:"suggested_attributes,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }

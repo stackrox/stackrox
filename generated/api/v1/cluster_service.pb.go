@@ -23,11 +23,15 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// DeploymentFormat specifies the format used to generate Secured Cluster deployment manifests.
 type DeploymentFormat int32
 
 const (
-	DeploymentFormat_KUBECTL     DeploymentFormat = 0
-	DeploymentFormat_HELM        DeploymentFormat = 1
+	// KUBECTL generates raw Kubernetes manifests applied with kubectl.
+	DeploymentFormat_KUBECTL DeploymentFormat = 0
+	// HELM generates a Helm chart for deployment.
+	DeploymentFormat_HELM DeploymentFormat = 1
+	// HELM_VALUES generates only the values file for an existing Helm chart installation.
 	DeploymentFormat_HELM_VALUES DeploymentFormat = 2
 )
 
@@ -72,13 +76,18 @@ func (DeploymentFormat) EnumDescriptor() ([]byte, []int) {
 	return file_api_v1_cluster_service_proto_rawDescGZIP(), []int{0}
 }
 
+// LoadBalancerType controls how the Sensor on the Secured Cluster exposes itself for external connectivity.
 type LoadBalancerType int32
 
 const (
-	LoadBalancerType_NONE          LoadBalancerType = 0
+	// NONE uses cluster-internal networking only.
+	LoadBalancerType_NONE LoadBalancerType = 0
+	// LOAD_BALANCER provisions a cloud load balancer (e.g. AWS ELB).
 	LoadBalancerType_LOAD_BALANCER LoadBalancerType = 1
-	LoadBalancerType_NODE_PORT     LoadBalancerType = 2
-	LoadBalancerType_ROUTE         LoadBalancerType = 3
+	// NODE_PORT exposes the service on each node's IP at a static port.
+	LoadBalancerType_NODE_PORT LoadBalancerType = 2
+	// ROUTE creates an OpenShift Route (OpenShift clusters only).
+	LoadBalancerType_ROUTE LoadBalancerType = 3
 )
 
 // Enum value maps for LoadBalancerType.
@@ -196,12 +205,15 @@ type isDecommissionedClusterRetentionInfo_RetentionInfo interface {
 }
 
 type DecommissionedClusterRetentionInfo_IsExcluded struct {
-	// indicates whether a cluster is protected from deletion
+	// is_excluded indicates whether a cluster is protected from automatic deletion
+	// due to a matching label in the decommissioned cluster retention configuration.
 	IsExcluded bool `protobuf:"varint,1,opt,name=is_excluded,json=isExcluded,proto3,oneof"`
 }
 
 type DecommissionedClusterRetentionInfo_DaysUntilDeletion struct {
-	// days after which cluster will be deleted if sensor health remains UNHEALTHY
+	// days_until_deletion is the number of days remaining before Central automatically
+	// deletes this cluster if its sensor health remains UNHEALTHY. Only present when
+	// retention is configured and the cluster is not excluded.
 	DaysUntilDeletion int32 `protobuf:"varint,2,opt,name=days_until_deletion,json=daysUntilDeletion,proto3,oneof"`
 }
 
@@ -211,9 +223,14 @@ func (*DecommissionedClusterRetentionInfo_IsExcluded) isDecommissionedClusterRet
 func (*DecommissionedClusterRetentionInfo_DaysUntilDeletion) isDecommissionedClusterRetentionInfo_RetentionInfo() {
 }
 
+// ClusterResponse wraps a single cluster with optional decommissioning retention information.
+// The retention info is only populated when the cluster's sensor health is UNHEALTHY and
+// the system decommissioned-cluster retention policy is enabled.
 type ClusterResponse struct {
-	state                protoimpl.MessageState              `protogen:"open.v1"`
-	Cluster              *storage.Cluster                    `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Cluster *storage.Cluster       `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	// cluster_retention_info describes automatic-deletion scheduling for this cluster.
+	// Only present when sensor health is UNHEALTHY and a retention policy is configured.
 	ClusterRetentionInfo *DecommissionedClusterRetentionInfo `protobuf:"bytes,2,opt,name=cluster_retention_info,json=clusterRetentionInfo,proto3" json:"cluster_retention_info,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
@@ -263,13 +280,20 @@ func (x *ClusterResponse) GetClusterRetentionInfo() *DecommissionedClusterRetent
 	return nil
 }
 
+// ClusterDefaultsResponse contains environment-level defaults used when registering new Secured Clusters.
 type ClusterDefaultsResponse struct {
-	state                    protoimpl.MessageState `protogen:"open.v1"`
-	MainImageRepository      string                 `protobuf:"bytes,1,opt,name=main_image_repository,json=mainImageRepository,proto3" json:"main_image_repository,omitempty"`
-	CollectorImageRepository string                 `protobuf:"bytes,2,opt,name=collector_image_repository,json=collectorImageRepository,proto3" json:"collector_image_repository,omitempty"`
-	KernelSupportAvailable   bool                   `protobuf:"varint,3,opt,name=kernel_support_available,json=kernelSupportAvailable,proto3" json:"kernel_support_available,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// main_image_repository is the default container image repository for the main StackRox component,
+	// derived from the Central deployment's image flavor environment variable.
+	MainImageRepository string `protobuf:"bytes,1,opt,name=main_image_repository,json=mainImageRepository,proto3" json:"main_image_repository,omitempty"`
+	// collector_image_repository is the default container image repository for the Collector DaemonSet,
+	// derived from the Central deployment's image flavor environment variable.
+	CollectorImageRepository string `protobuf:"bytes,2,opt,name=collector_image_repository,json=collectorImageRepository,proto3" json:"collector_image_repository,omitempty"`
+	// kernel_support_available indicates whether eBPF/kernel probe sources are reachable from Central,
+	// which determines the runtime collection methods available to Secured Clusters.
+	KernelSupportAvailable bool `protobuf:"varint,3,opt,name=kernel_support_available,json=kernelSupportAvailable,proto3" json:"kernel_support_available,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ClusterDefaultsResponse) Reset() {
@@ -323,10 +347,13 @@ func (x *ClusterDefaultsResponse) GetKernelSupportAvailable() bool {
 	return false
 }
 
+// ClustersList is the response for listing multiple Secured Clusters.
 type ClustersList struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Clusters []*storage.Cluster     `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters,omitempty"`
-	// Maps 'UNHEALTHY' clusters' IDs to their retention info
+	// cluster_id_to_retention_info maps UNHEALTHY cluster IDs to their decommission retention info.
+	// Only clusters whose sensor health status is UNHEALTHY and for which a retention policy is
+	// configured will appear in this map.
 	ClusterIdToRetentionInfo map[string]*DecommissionedClusterRetentionInfo `protobuf:"bytes,2,rep,name=cluster_id_to_retention_info,json=clusterIdToRetentionInfo,proto3" json:"cluster_id_to_retention_info,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
@@ -376,9 +403,13 @@ func (x *ClustersList) GetClusterIdToRetentionInfo() map[string]*DecommissionedC
 	return nil
 }
 
+// GetClustersRequest is the request message for listing Secured Clusters.
 type GetClustersRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// query filters clusters using StackRox search syntax.
+	// Example: "Cluster:production" or "Cluster Status:UNHEALTHY".
+	// If empty, all clusters visible to the caller are returned.
+	Query         string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -420,6 +451,8 @@ func (x *GetClustersRequest) GetQuery() string {
 	return ""
 }
 
+// KernelSupportAvailableResponse is deprecated. Use ClusterDefaultsResponse instead.
+//
 // Deprecated: Marked as deprecated in api/v1/cluster_service.proto.
 type KernelSupportAvailableResponse struct {
 	state                  protoimpl.MessageState `protogen:"open.v1"`

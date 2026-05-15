@@ -18,7 +18,8 @@
   "paths": {
     "/v1/imageintegrations": {
       "get": {
-        "summary": "GetImageIntegrations returns all image integrations that match the request filters.",
+        "summary": "GetImageIntegrations returns all image integrations, optionally filtered\nby name.",
+        "description": "Sensitive credential fields are scrubbed from the response for all callers\nexcept Sensor service accounts. Results can be filtered by exact name match\nusing GetImageIntegrationsRequest.",
         "operationId": "ImageIntegrationService_GetImageIntegrations",
         "responses": {
           "200": {
@@ -37,12 +38,14 @@
         "parameters": [
           {
             "name": "name",
+            "description": "name filters the results to integrations whose name exactly matches this value.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "cluster",
+            "description": "cluster is reserved for future use and is currently ignored.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -53,7 +56,8 @@
         ]
       },
       "post": {
-        "summary": "PostImageIntegration creates a image integration.",
+        "summary": "PostImageIntegration creates a new image integration.",
+        "description": "The id field must be empty; a new ID is assigned and returned. The\nintegration is validated and tested (unless skip_test_integration is set)\nbefore it is persisted. On success, connected Sensors are notified.\n\nReturns INVALID_ARGUMENT if the id field is set, if required fields are\nmissing, if validation fails, or if the integration test fails.\nReturns INVALID_ARGUMENT if the type is \"scanner_v4\" (auto-managed).",
         "operationId": "ImageIntegrationService_PostImageIntegration",
         "responses": {
           "200": {
@@ -86,7 +90,8 @@
     },
     "/v1/imageintegrations/test": {
       "post": {
-        "summary": "TestImageIntegration checks if the given image integration is correctly configured, without using stored credential reconciliation.",
+        "summary": "TestImageIntegration verifies that the given image integration\nconfiguration is reachable and correctly set up, treating all credential\nfields as authoritative (no stored credential reconciliation).",
+        "description": "Tests each configured category (registry, scanner, node scanner)\nindividually.\nReturns INVALID_ARGUMENT if any test fails or validation fails.",
         "operationId": "ImageIntegrationService_TestImageIntegration",
         "responses": {
           "200": {
@@ -119,7 +124,8 @@
     },
     "/v1/imageintegrations/test/updated": {
       "post": {
-        "summary": "TestUpdatedImageIntegration checks if the given image integration is correctly configured, with optional stored credential reconciliation.",
+        "summary": "TestUpdatedImageIntegration verifies that the given image integration\nconfiguration is reachable with optional stored credential reconciliation.",
+        "description": "When updatePassword is false, credential fields in the request are replaced\nwith the stored credentials before the test is performed. When\nupdatePassword is true, the provided credentials are used directly.\n\nReturns INVALID_ARGUMENT if any test fails or validation fails.\nReturns NOT_FOUND if updatePassword is false and the integration does not\nexist.",
         "operationId": "ImageIntegrationService_TestUpdatedImageIntegration",
         "responses": {
           "200": {
@@ -152,7 +158,8 @@
     },
     "/v1/imageintegrations/{config.id}": {
       "patch": {
-        "summary": "UpdateImageIntegration modifies a given image integration, with optional stored credential reconciliation.",
+        "summary": "UpdateImageIntegration modifies an existing image integration with\noptional stored credential reconciliation.",
+        "description": "When updatePassword is false, credential fields in the request are ignored\nand the stored credentials are preserved. When updatePassword is true,\ncredentials in the request replace stored credentials. On success,\nconnected Sensors are notified of the change.\n\nReturns INVALID_ARGUMENT if validation or integration testing fails.\nReturns NOT_FOUND if updatePassword is false and the integration does not\nexist.",
         "operationId": "ImageIntegrationService_UpdateImageIntegration",
         "responses": {
           "200": {
@@ -191,7 +198,8 @@
     },
     "/v1/imageintegrations/{id}": {
       "get": {
-        "summary": "GetImageIntegration returns the image integration given its ID.",
+        "summary": "GetImageIntegration returns the image integration with the given ID.",
+        "description": "Sensitive credential fields are replaced with a placeholder in the\nresponse.\nReturns NOT_FOUND if no integration with the given ID exists.\nReturns INVALID_ARGUMENT if the ID is empty.",
         "operationId": "ImageIntegrationService_GetImageIntegration",
         "responses": {
           "200": {
@@ -220,7 +228,8 @@
         ]
       },
       "delete": {
-        "summary": "DeleteImageIntegration removes a image integration given its ID.",
+        "summary": "DeleteImageIntegration removes the image integration with the given ID.",
+        "description": "Returns INVALID_ARGUMENT if the integration is of type \"scanner_v4\"\n(auto-managed integrations cannot be deleted).\nReturns INVALID_ARGUMENT if the ID is empty.",
         "operationId": "ImageIntegrationService_DeleteImageIntegration",
         "responses": {
           "200": {
@@ -249,7 +258,8 @@
         ]
       },
       "put": {
-        "summary": "PutImageIntegration modifies a given image integration, without using stored credential reconciliation.",
+        "summary": "PutImageIntegration replaces an existing image integration, treating all\ncredential fields in the request as authoritative (no stored credential\nreconciliation). Prefer UpdateImageIntegration for credential-preserving\nupdates.",
+        "description": "Returns INVALID_ARGUMENT if validation or integration testing fails.",
         "operationId": "ImageIntegrationService_PutImageIntegration",
         "responses": {
           "200": {
@@ -425,7 +435,8 @@
               "$ref": "#/definitions/storageImageIntegrationSource"
             }
           },
-          "title": "Next Tag: 25"
+          "description": "config contains the updated image integration configuration.",
+          "title": "config contains the updated image integration configuration."
         },
         "updatePassword": {
           "type": "boolean",
@@ -759,7 +770,8 @@
       "type": "object",
       "properties": {
         "config": {
-          "$ref": "#/definitions/storageImageIntegration"
+          "$ref": "#/definitions/storageImageIntegration",
+          "description": "config contains the updated image integration configuration."
         },
         "updatePassword": {
           "type": "boolean",

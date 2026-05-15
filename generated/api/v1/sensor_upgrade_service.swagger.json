@@ -18,6 +18,8 @@
   "paths": {
     "/v1/sensorupgrades/cluster/{id}": {
       "post": {
+        "summary": "TriggerSensorUpgrade initiates an upgrade for the sensor running in the specified cluster.",
+        "description": "Central signals the sensor to pull and apply a new version. The upgrade runs asynchronously;\nprogress can be observed via the cluster status.\nReturns INVALID_ARGUMENT if the cluster ID is empty.",
         "operationId": "SensorUpgradeService_TriggerSensorUpgrade",
         "responses": {
           "200": {
@@ -48,6 +50,8 @@
     },
     "/v1/sensorupgrades/config": {
       "get": {
+        "summary": "GetSensorUpgradeConfig returns the current sensor auto-upgrade configuration,\nincluding whether auto-upgrade is enabled and whether the feature is supported.",
+        "description": "Returns NOT_FOUND if no configuration has been persisted yet.",
         "operationId": "SensorUpgradeService_GetSensorUpgradeConfig",
         "responses": {
           "200": {
@@ -68,6 +72,8 @@
         ]
       },
       "post": {
+        "summary": "UpdateSensorUpgradeConfig persists a new sensor auto-upgrade configuration.",
+        "description": "When enable_auto_upgrade is set to true, Central will automatically trigger upgrades for\nsensors that report a version mismatch. Setting it to true fails with INVALID_ARGUMENT\nif the auto-upgrade feature is not supported in this deployment.",
         "operationId": "SensorUpgradeService_UpdateSensorUpgradeConfig",
         "responses": {
           "200": {
@@ -86,6 +92,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "UpdateSensorUpgradeConfigRequest is the request to update the sensor auto-upgrade configuration.",
             "in": "body",
             "required": true,
             "schema": {
@@ -100,6 +107,8 @@
     },
     "/v1/sensorupgrades/rotateclustercerts/{id}": {
       "post": {
+        "summary": "TriggerSensorCertRotation initiates a certificate rotation for the sensor in the specified cluster.",
+        "description": "This renews the sensor's mTLS certificates without performing a full sensor upgrade or redeploy.\nReturns INVALID_ARGUMENT if the cluster ID is empty.",
         "operationId": "SensorUpgradeService_TriggerSensorCertRotation",
         "responses": {
           "200": {
@@ -136,18 +145,22 @@
         "NOT_SUPPORTED",
         "SUPPORTED"
       ],
-      "default": "NOT_SUPPORTED"
+      "default": "NOT_SUPPORTED",
+      "description": "SensorAutoUpgradeFeatureStatus indicates whether the auto-upgrade feature is available\nin the current Central deployment.\n\n - NOT_SUPPORTED: NOT_SUPPORTED means the auto-upgrade feature is unavailable (upgrader is not enabled).\n - SUPPORTED: SUPPORTED means the auto-upgrade feature is available and can be enabled."
     },
     "GetSensorUpgradeConfigResponseUpgradeConfig": {
       "type": "object",
       "properties": {
         "enableAutoUpgrade": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "enable_auto_upgrade indicates whether sensors are automatically upgraded when Central detects a version mismatch."
         },
         "autoUpgradeFeature": {
-          "$ref": "#/definitions/GetSensorUpgradeConfigResponseSensorAutoUpgradeFeatureStatus"
+          "$ref": "#/definitions/GetSensorUpgradeConfigResponseSensorAutoUpgradeFeatureStatus",
+          "description": "auto_upgrade_feature reports whether the auto-upgrade feature is supported in this deployment."
         }
-      }
+      },
+      "description": "UpgradeConfig holds the current auto-upgrade settings."
     },
     "googleRpcStatus": {
       "type": "object",
@@ -198,15 +211,18 @@
         "config": {
           "$ref": "#/definitions/GetSensorUpgradeConfigResponseUpgradeConfig"
         }
-      }
+      },
+      "description": "GetSensorUpgradeConfigResponse is the response containing the current sensor upgrade configuration."
     },
     "v1UpdateSensorUpgradeConfigRequest": {
       "type": "object",
       "properties": {
         "config": {
-          "$ref": "#/definitions/storageSensorUpgradeConfig"
+          "$ref": "#/definitions/storageSensorUpgradeConfig",
+          "description": "config contains the new auto-upgrade settings to persist."
         }
-      }
+      },
+      "description": "UpdateSensorUpgradeConfigRequest is the request to update the sensor auto-upgrade configuration."
     }
   }
 }

@@ -28,13 +28,41 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// DetectionService APIs can be used to check for build and deploy time policy violations.
+// DetectionService evaluates images and deployments against build-time and deploy-time security policies.
+//
+// Build-time detection checks a container image against policies that apply during the CI/CD pipeline.
+// Deploy-time detection checks Kubernetes workload manifests against policies that apply at deployment.
+//
+// DetectBuildTime and DetectDeployTimeFromYAML require read access to the Detection resource.
+// DetectDeployTime requires modify access to the Detection resource (also callable by Sensor).
 type DetectionServiceClient interface {
-	// DetectBuildTime checks if any images violate build time policies.
+	// DetectBuildTime checks a container image against all active build-time policies.
+	//
+	// The image can be specified as a full storage.ContainerImage object or as an image name string.
+	// If a cluster is specified, the image scan is delegated to that cluster's scanner using the
+	// cluster's pull secrets to access private registries.
+	//
+	// Returns INVALID_ARGUMENT if neither image nor image_name is specified, if force and
+	// no_external_metadata are both set, or if a specified policy_category does not match any policy.
 	DetectBuildTime(ctx context.Context, in *BuildDetectionRequest, opts ...grpc.CallOption) (*BuildDetectionResponse, error)
-	// DetectDeployTime checks if any deployments violate deploy time policies.
+	// DetectDeployTime checks a single deployment object against all active deploy-time policies.
+	//
+	// Enriches the deployment's container images with vulnerability data before running detection.
+	// When enforcement_only is true, only evaluates policies with deploy-time enforcement actions
+	// (scale-to-zero or unsatisfiable node constraint); returns empty results if no such policies exist.
+	//
+	// Returns INVALID_ARGUMENT if the deployment is nil or if the specified cluster_id does not exist.
 	DetectDeployTime(ctx context.Context, in *DeployDetectionRequest, opts ...grpc.CallOption) (*DeployDetectionResponse, error)
-	// DetectDeployTimeFromYAML checks if the given deployment yaml violates any deploy time policies.
+	// DetectDeployTimeFromYAML checks Kubernetes workload manifests in YAML format against deploy-time policies.
+	//
+	// Parses one or more Kubernetes resource manifests from the yaml field (multi-document YAML supported).
+	// Non-deployment resources (e.g. ConfigMaps) and unrecognized resource types are skipped and reported
+	// in ignored_object_refs. When a cluster is specified, enriches deployments with live cluster data
+	// (service account permissions, applied network policies) via the connected Sensor.
+	//
+	// Returns INVALID_ARGUMENT if the yaml field is empty, if the YAML cannot be parsed, or if every
+	// deployment in the YAML fails to parse. Returns INVALID_ARGUMENT if the specified cluster is not found
+	// or its Sensor connection is not ready.
 	DetectDeployTimeFromYAML(ctx context.Context, in *DeployYAMLDetectionRequest, opts ...grpc.CallOption) (*DeployDetectionResponse, error)
 }
 
@@ -80,13 +108,41 @@ func (c *detectionServiceClient) DetectDeployTimeFromYAML(ctx context.Context, i
 // All implementations should embed UnimplementedDetectionServiceServer
 // for forward compatibility.
 //
-// DetectionService APIs can be used to check for build and deploy time policy violations.
+// DetectionService evaluates images and deployments against build-time and deploy-time security policies.
+//
+// Build-time detection checks a container image against policies that apply during the CI/CD pipeline.
+// Deploy-time detection checks Kubernetes workload manifests against policies that apply at deployment.
+//
+// DetectBuildTime and DetectDeployTimeFromYAML require read access to the Detection resource.
+// DetectDeployTime requires modify access to the Detection resource (also callable by Sensor).
 type DetectionServiceServer interface {
-	// DetectBuildTime checks if any images violate build time policies.
+	// DetectBuildTime checks a container image against all active build-time policies.
+	//
+	// The image can be specified as a full storage.ContainerImage object or as an image name string.
+	// If a cluster is specified, the image scan is delegated to that cluster's scanner using the
+	// cluster's pull secrets to access private registries.
+	//
+	// Returns INVALID_ARGUMENT if neither image nor image_name is specified, if force and
+	// no_external_metadata are both set, or if a specified policy_category does not match any policy.
 	DetectBuildTime(context.Context, *BuildDetectionRequest) (*BuildDetectionResponse, error)
-	// DetectDeployTime checks if any deployments violate deploy time policies.
+	// DetectDeployTime checks a single deployment object against all active deploy-time policies.
+	//
+	// Enriches the deployment's container images with vulnerability data before running detection.
+	// When enforcement_only is true, only evaluates policies with deploy-time enforcement actions
+	// (scale-to-zero or unsatisfiable node constraint); returns empty results if no such policies exist.
+	//
+	// Returns INVALID_ARGUMENT if the deployment is nil or if the specified cluster_id does not exist.
 	DetectDeployTime(context.Context, *DeployDetectionRequest) (*DeployDetectionResponse, error)
-	// DetectDeployTimeFromYAML checks if the given deployment yaml violates any deploy time policies.
+	// DetectDeployTimeFromYAML checks Kubernetes workload manifests in YAML format against deploy-time policies.
+	//
+	// Parses one or more Kubernetes resource manifests from the yaml field (multi-document YAML supported).
+	// Non-deployment resources (e.g. ConfigMaps) and unrecognized resource types are skipped and reported
+	// in ignored_object_refs. When a cluster is specified, enriches deployments with live cluster data
+	// (service account permissions, applied network policies) via the connected Sensor.
+	//
+	// Returns INVALID_ARGUMENT if the yaml field is empty, if the YAML cannot be parsed, or if every
+	// deployment in the YAML fails to parse. Returns INVALID_ARGUMENT if the specified cluster is not found
+	// or its Sensor connection is not ready.
 	DetectDeployTimeFromYAML(context.Context, *DeployYAMLDetectionRequest) (*DeployDetectionResponse, error)
 }
 

@@ -11,8 +11,11 @@ import "storage/user.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// InitBundleMeta holds metadata for an init bundle used to authenticate a new secured cluster.
+// Deprecated: use CRSMeta instead. Init bundles are superseded by Cluster Registration Secrets (CRS).
 message InitBundleMeta {
   option deprecated = true;
+  // ImpactedCluster identifies a cluster that was registered using this init bundle.
   message ImpactedCluster {
     string name = 1;
     string id = 2;
@@ -20,80 +23,122 @@ message InitBundleMeta {
 
   string id = 1;
   string name = 2;
+  // impacted_clusters lists the clusters currently authenticated with this init bundle.
   repeated ImpactedCluster impacted_clusters = 6;
   google.protobuf.Timestamp created_at = 3;
   storage.User created_by = 4;
+  // expires_at is the time after which this init bundle is no longer valid.
   google.protobuf.Timestamp expires_at = 5;
 }
 
+// CRSMeta holds metadata for a Cluster Registration Secret (CRS).
 message CRSMeta {
   string id = 1;
   string name = 2;
   google.protobuf.Timestamp created_at = 3;
   storage.User created_by = 4;
+  // expires_at is the time after which this CRS is no longer valid for new registrations.
+  // Zero value means the CRS does not expire.
   google.protobuf.Timestamp expires_at = 5;
+  // max_registrations is the maximum number of clusters that may register using this CRS.
+  // Zero value means no limit.
   uint64 max_registrations = 7;
+  // registrations_initiated lists cluster IDs for which a registration was started but not yet completed.
   repeated string registrations_initiated = 8;
+  // registrations_completed lists cluster IDs that have successfully registered using this CRS.
   repeated string registrations_completed = 9;
 }
 
+// InitBundleGenResponse is the response for generating an init bundle.
+// Deprecated: use CRSGenResponse instead.
 message InitBundleGenResponse {
   option deprecated = true;
   InitBundleMeta meta = 1;
+  // helm_values_bundle contains the Helm values YAML for deploying a secured cluster with this bundle.
   bytes helm_values_bundle = 2;
+  // kubectl_bundle contains the Kubernetes Secret manifests for deploying a secured cluster with this bundle.
   bytes kubectl_bundle = 3;
 }
 
+// CRSGenResponse is returned when generating a new Cluster Registration Secret.
 message CRSGenResponse {
   CRSMeta meta = 1;
+  // crs contains the Kubernetes Secret manifest (YAML) to be applied in the secured cluster.
   bytes crs = 2;
 }
 
+// GetCAConfigResponse contains the Central CA configuration as a Helm values bundle.
 message GetCAConfigResponse {
+  // helm_values_bundle contains the CA certificate rendered as a Helm values YAML snippet.
   bytes helm_values_bundle = 1;
 }
 
+// InitBundleMetasResponse is the response listing all init bundles.
+// Deprecated: use CRSMetasResponse instead.
 message InitBundleMetasResponse {
   option deprecated = true;
   repeated InitBundleMeta items = 1;
 }
 
+// CRSMetasResponse is the response listing all Cluster Registration Secrets.
 message CRSMetasResponse {
   repeated CRSMeta items = 1;
 }
 
+// InitBundleGenRequest is the request to generate a new init bundle.
+// Deprecated: use CRSGenRequest instead.
 message InitBundleGenRequest {
   option deprecated = true;
+  // name is a human-readable label for the init bundle. Must be unique across all init bundles.
   string name = 1;
 }
 
+// CRSGenRequest is the request to generate a new Cluster Registration Secret with default settings.
 message CRSGenRequest {
+  // name is a human-readable label for the CRS. Must be unique across all CRSs.
   string name = 1;
 }
 
+// CRSGenRequestExtended is the request to generate a new Cluster Registration Secret
+// with optional expiry and registration limits.
 message CRSGenRequestExtended {
+  // name is a human-readable label for the CRS. Must be unique across all CRSs.
   string name = 1;
+  // valid_until sets an absolute expiry time. Mutually exclusive with valid_for.
   google.protobuf.Timestamp valid_until = 2;
+  // valid_for sets a relative validity duration from time of creation. Mutually exclusive with valid_until.
   google.protobuf.Duration valid_for = 3;
   // 4 was int32 max_registrations
+  // max_registrations limits how many clusters may register with this CRS. Zero means unlimited.
   uint64 max_registrations = 5;
 }
 
+// InitBundleRevokeRequest is the request to revoke one or more init bundles.
+// Deprecated: use CRSRevokeRequest instead.
 message InitBundleRevokeRequest {
   option deprecated = true;
+  // ids lists the IDs of the init bundles to revoke.
   repeated string ids = 1;
+  // confirm_impacted_clusters_ids must contain the IDs of all clusters currently using the
+  // bundles being revoked. The request fails if any impacted cluster ID is not confirmed.
   repeated string confirm_impacted_clusters_ids = 2;
 }
 
+// CRSRevokeRequest is the request to revoke one or more Cluster Registration Secrets.
 message CRSRevokeRequest {
+  // ids lists the IDs of the CRSs to revoke.
   repeated string ids = 1;
 }
 
+// InitBundleRevokeResponse reports the outcome of an init bundle revocation.
+// Deprecated: use CRSRevokeResponse instead.
 message InitBundleRevokeResponse {
   option deprecated = true;
+  // InitBundleRevocationError describes a revocation failure for a single init bundle.
   message InitBundleRevocationError {
     string id = 1;
     string error = 2;
+    // impacted_clusters lists the clusters still using this bundle, which must be confirmed before revoking.
     repeated InitBundleMeta.ImpactedCluster impacted_clusters = 3;
   }
 
@@ -101,7 +146,9 @@ message InitBundleRevokeResponse {
   repeated string init_bundle_revoked_ids = 3;
 }
 
+// CRSRevokeResponse reports the outcome of a CRS revocation request.
 message CRSRevokeResponse {
+  // CRSRevocationError describes a revocation failure for a single CRS.
   message CRSRevocationError {
     string id = 1;
     string error = 2;
@@ -111,13 +158,22 @@ message CRSRevokeResponse {
   repeated string revoked_ids = 3;
 }
 
-// ClusterInitService manages cluster init bundles and CRSs.
+// ClusterInitService manages credentials for bootstrapping new secured clusters.
+//
+// A Cluster Registration Secret (CRS) is a Kubernetes Secret that, when applied to a new
+// secured cluster, allows Sensor to authenticate and register with Central. CRSs replace the
+// older Init Bundle mechanism and support optional expiry times and registration limits.
+//
+// Authentication: all endpoints require a valid API token with the Admin role.
 service ClusterInitService {
-  // RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster
-  // then its ID should be included in request.
-  // If confirm_impacted_clusters_ids does not match with current impacted clusters
-  // then request will fail with error that includes all impacted clusters.
-  // Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).
+  // RevokeInitBundle revokes one or more init bundles, preventing clusters from re-authenticating using them.
+  //
+  // If any of the specified bundles are currently in use by clusters, the caller must include all
+  // affected cluster IDs in confirm_impacted_clusters_ids. The request fails if any impacted cluster
+  // is not confirmed, returning the list of impacted clusters in the error response.
+  //
+  // Returns ALREADY_EXISTS if the revocation conflicts, or an error if confirmation is incomplete.
+  // Deprecated: use RevokeCRS instead.
   rpc RevokeInitBundle(InitBundleRevokeRequest) returns (InitBundleRevokeResponse) {
     option deprecated = true;
     option (google.api.http) = {
@@ -126,7 +182,10 @@ service ClusterInitService {
     };
   }
 
-  // RevokeCRSBundle deletes cluster registration secrets.
+  // RevokeCRS revokes one or more Cluster Registration Secrets.
+  //
+  // Revoked CRSs can no longer be used to register new clusters. Clusters that already completed
+  // registration are not affected. Partial failures are reported per-ID in crs_revocation_errors.
   rpc RevokeCRS(CRSRevokeRequest) returns (CRSRevokeResponse) {
     option (google.api.http) = {
       patch: "/v1/cluster-init/crs/revoke"
@@ -134,21 +193,31 @@ service ClusterInitService {
     };
   }
 
+  // GetCAConfig returns Central's CA certificate rendered as a Helm values YAML bundle.
+  //
+  // This can be used to configure trust for Central when deploying secured cluster components.
   rpc GetCAConfig(Empty) returns (GetCAConfigResponse) {
     option (google.api.http) = {get: "/v1/cluster-init/ca-config"};
   }
 
-  // Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).
+  // GetInitBundles returns metadata for all existing init bundles, including which clusters
+  // are currently authenticated using each bundle.
+  // Deprecated: use GetCRSs instead. Init bundles are superseded by Cluster Registration Secrets.
   rpc GetInitBundles(Empty) returns (InitBundleMetasResponse) {
     option deprecated = true;
     option (google.api.http) = {get: "/v1/cluster-init/init-bundles"};
   }
 
+  // GetCRSs returns metadata for all existing Cluster Registration Secrets.
   rpc GetCRSs(Empty) returns (CRSMetasResponse) {
     option (google.api.http) = {get: "/v1/cluster-init/crs"};
   }
 
-  // Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).
+  // GenerateInitBundle creates a new init bundle with the specified name and returns its
+  // credentials rendered as a Helm values YAML and as Kubernetes Secret manifests.
+  //
+  // Returns ALREADY_EXISTS if a bundle with the given name already exists.
+  // Deprecated: use GenerateCRS instead.
   rpc GenerateInitBundle(InitBundleGenRequest) returns (InitBundleGenResponse) {
     option deprecated = true;
     option (google.api.http) = {
@@ -157,6 +226,11 @@ service ClusterInitService {
     };
   }
 
+  // GenerateCRS creates a new Cluster Registration Secret with the specified name and
+  // returns the Kubernetes Secret manifest to apply in the secured cluster.
+  //
+  // Returns ALREADY_EXISTS if a CRS with the given name already exists.
+  // Returns UNIMPLEMENTED if the CRS feature is not enabled.
   rpc GenerateCRS(CRSGenRequest) returns (CRSGenResponse) {
     option (google.api.http) = {
       post: "/v1/cluster-init/crs"
@@ -164,6 +238,12 @@ service ClusterInitService {
     };
   }
 
+  // GenerateCRSExtended creates a new Cluster Registration Secret with optional expiry and
+  // registration limit constraints.
+  //
+  // Exactly one of valid_until or valid_for may be specified; providing both returns INVALID_ARGUMENT.
+  // Returns ALREADY_EXISTS if a CRS with the given name already exists.
+  // Returns UNIMPLEMENTED if the CRS feature is not enabled.
   rpc GenerateCRSExtended(CRSGenRequestExtended) returns (CRSGenResponse) {
     option (google.api.http) = {
       post: "/v1/cluster-init/crs-extended"

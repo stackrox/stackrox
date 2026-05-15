@@ -18,6 +18,7 @@
   "paths": {
     "/v1/integrationhealth/declarativeconfigs": {
       "get": {
+        "summary": "GetDeclarativeConfigs returns the health status for all declarative\nconfiguration sources (e.g. config maps used for GitOps-style management).",
         "operationId": "IntegrationHealthService_GetDeclarativeConfigs",
         "responses": {
           "200": {
@@ -40,6 +41,7 @@
     },
     "/v1/integrationhealth/externalbackups": {
       "get": {
+        "summary": "GetBackupPlugins returns the health status for all configured external\nbackup integrations.",
         "operationId": "IntegrationHealthService_GetBackupPlugins",
         "responses": {
           "200": {
@@ -62,6 +64,7 @@
     },
     "/v1/integrationhealth/imageintegrations": {
       "get": {
+        "summary": "GetImageIntegrations returns the health status for all configured image\nregistry and scanner integrations.",
         "operationId": "IntegrationHealthService_GetImageIntegrations",
         "responses": {
           "200": {
@@ -84,6 +87,7 @@
     },
     "/v1/integrationhealth/notifiers": {
       "get": {
+        "summary": "GetNotifiers returns the health status for all configured notifier\nintegrations (e.g. Slack, email, PagerDuty).",
         "operationId": "IntegrationHealthService_GetNotifiers",
         "responses": {
           "200": {
@@ -106,6 +110,7 @@
     },
     "/v1/integrationhealth/vulndefinitions": {
       "get": {
+        "summary": "GetVulnDefinitionsInfo returns metadata about the vulnerability definitions\ndatabase for the specified scanner component (Scanner or Scanner V4),\nincluding the timestamp of the last successful update.",
         "operationId": "IntegrationHealthService_GetVulnDefinitionsInfo",
         "responses": {
           "200": {
@@ -124,6 +129,7 @@
         "parameters": [
           {
             "name": "component",
+            "description": "component selects which scanner's vulnerability definition metadata to return.\n\n - SCANNER: SCANNER refers to the legacy StackRox Scanner (Clairify).\n - SCANNER_V4: SCANNER_V4 refers to the StackRox Scanner V4.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -224,7 +230,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageIntegrationHealth"
-          }
+          },
+          "description": "integrationHealth contains the health status for each configured integration."
         }
       }
     },
@@ -233,7 +240,8 @@
       "properties": {
         "lastUpdatedTimestamp": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "last_updated_timestamp is the time at which the vulnerability definitions\ndatabase was last updated for the selected scanner component."
         }
       }
     },
@@ -243,7 +251,8 @@
         "SCANNER",
         "SCANNER_V4"
       ],
-      "default": "SCANNER"
+      "default": "SCANNER",
+      "description": "Component identifies which scanner's vulnerability definitions to query.\n\n - SCANNER: SCANNER refers to the legacy StackRox Scanner (Clairify).\n - SCANNER_V4: SCANNER_V4 refers to the StackRox Scanner V4."
     }
   }
 }

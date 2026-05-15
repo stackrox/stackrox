@@ -9,16 +9,22 @@ import "google/protobuf/timestamp.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
-// TimeRange allows for requesting data by a time range.
+// TimeRange specifies an inclusive time window for usage queries.
 message TimeRange {
+  // from is the start of the time range (inclusive). If not set, defaults to the Unix epoch.
   google.protobuf.Timestamp from = 1;
+  // to is the end of the time range (inclusive). If not set, defaults to the current time.
+  // Must be after from; returns INVALID_ARGUMENT if from >= to.
   google.protobuf.Timestamp to = 2;
 }
 
 // SecuredUnitsUsageResponse holds the values of the currently observable
 // administration usage metrics.
 message SecuredUnitsUsageResponse {
+  // num_nodes is the total number of nodes currently reported across all connected clusters.
   int64 num_nodes = 1;
+  // num_cpu_units is the total number of CPU units (logical cores) currently reported
+  // across all connected clusters.
   int64 num_cpu_units = 2;
 }
 
@@ -26,12 +32,23 @@ message SecuredUnitsUsageResponse {
 // and CPU Units (as reported by Kubernetes) with the time at which these
 // values were aggregated, with the aggregation period accuracy (1h).
 message MaxSecuredUnitsUsageResponse {
+  // max_nodes_at is the timestamp (with ~1h accuracy) when the peak node count was observed.
   google.protobuf.Timestamp max_nodes_at = 1;
+  // max_nodes is the highest node count observed within the requested time range.
   int64 max_nodes = 2;
+  // max_cpu_units_at is the timestamp (with ~1h accuracy) when the peak CPU unit count was observed.
   google.protobuf.Timestamp max_cpu_units_at = 3;
+  // max_cpu_units is the highest CPU unit count observed within the requested time range.
   int64 max_cpu_units = 4;
 }
 
+// AdministrationUsageService exposes secured units (nodes and CPU) usage metrics for licensing
+// and capacity planning purposes.
+//
+// Secured units are collected from all connected clusters every 5 minutes. Historical peak values
+// are periodically persisted to the database with approximately 1-hour aggregation accuracy.
+//
+// All endpoints require read access to the Administration resource.
 service AdministrationUsageService {
   // GetCurrentSecuredUnitsUsage returns the current secured units usage
   // metrics values.
@@ -40,6 +57,7 @@ service AdministrationUsageService {
   // 5 minutes, so the returned result includes data for the connected
   // clusters accurate to about these 5 minutes, and potentially some outdated
   // data for the disconnected clusters.
+  // Requires read access to the Administration resource.
   rpc GetCurrentSecuredUnitsUsage(v1.Empty) returns (SecuredUnitsUsageResponse) {
     option (google.api.http) = {get: "/v1/administration/usage/secured-units/current"};
   }
@@ -52,6 +70,9 @@ service AdministrationUsageService {
   // clusters. The maximum values are kept for some period of time in memory,
   // and then, periodically, are stored to the database.
   // The last data from disconnected clusters are taken into account.
+  // The from field defaults to the Unix epoch and to defaults to the current time.
+  // Returns INVALID_ARGUMENT if from is not before to.
+  // Requires read access to the Administration resource.
   rpc GetMaxSecuredUnitsUsage(TimeRange) returns (MaxSecuredUnitsUsageResponse) {
     option (google.api.http) = {get: "/v1/administration/usage/secured-units/max"};
   }

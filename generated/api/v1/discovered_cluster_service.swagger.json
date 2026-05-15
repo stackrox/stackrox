@@ -48,7 +48,7 @@
           },
           {
             "name": "filter.types",
-            "description": "Matches discovered clusters of specific types.",
+            "description": "Matches discovered clusters of specific types.\n\n - AKS: AKS is Azure Kubernetes Service.\n - ARO: ARO is Azure Red Hat OpenShift.\n - EKS: EKS is Amazon Elastic Kubernetes Service.\n - GKE: GKE is Google Kubernetes Engine.\n - OCP: OCP is OpenShift Container Platform (self-managed).\n - OSD: OSD is OpenShift Dedicated.\n - ROSA: ROSA is Red Hat OpenShift Service on AWS.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -103,6 +103,7 @@
     "/v1/discovered-clusters": {
       "get": {
         "summary": "ListDiscoveredClusters returns the list of discovered clusters after filtered by requested fields.",
+        "description": "Results are sorted by cluster name ascending. Pagination is supported with a maximum of 1000\nresults per page.",
         "operationId": "DiscoveredClustersService_ListDiscoveredClusters",
         "responses": {
           "200": {
@@ -177,7 +178,7 @@
           },
           {
             "name": "filter.types",
-            "description": "Matches discovered clusters of specific types.",
+            "description": "Matches discovered clusters of specific types.\n\n - AKS: AKS is Azure Kubernetes Service.\n - ARO: ARO is Azure Red Hat OpenShift.\n - EKS: EKS is Amazon Elastic Kubernetes Service.\n - GKE: GKE is Google Kubernetes Engine.\n - OCP: OCP is OpenShift Container Platform (self-managed).\n - OSD: OSD is OpenShift Dedicated.\n - ROSA: ROSA is Red Hat OpenShift Service on AWS.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -232,6 +233,7 @@
     "/v1/discovered-clusters/{id}": {
       "get": {
         "summary": "GetDiscoveredCluster retrieves a discovered cluster by ID.",
+        "description": "Returns INVALID_ARGUMENT if id is empty.\nReturns NOT_FOUND if no discovered cluster exists with the given ID.",
         "operationId": "DiscoveredClustersService_GetDiscoveredCluster",
         "responses": {
           "200": {
@@ -250,6 +252,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "id is the UUIDv5 identifier of the discovered cluster to retrieve.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -274,7 +277,8 @@
         "OSD",
         "ROSA"
       ],
-      "default": "UNSPECIFIED"
+      "default": "UNSPECIFIED",
+      "description": "Type identifies the managed Kubernetes distribution of the cluster.\n\n - AKS: AKS is Azure Kubernetes Service.\n - ARO: ARO is Azure Red Hat OpenShift.\n - EKS: EKS is Amazon Elastic Kubernetes Service.\n - GKE: GKE is Google Kubernetes Engine.\n - OCP: OCP is OpenShift Container Platform (self-managed).\n - OSD: OSD is OpenShift Dedicated.\n - ROSA: ROSA is Red Hat OpenShift Service on AWS."
     },
     "MetadataProviderType": {
       "type": "string",
@@ -284,7 +288,8 @@
         "PROVIDER_TYPE_GCP",
         "PROVIDER_TYPE_AZURE"
       ],
-      "default": "PROVIDER_TYPE_UNSPECIFIED"
+      "default": "PROVIDER_TYPE_UNSPECIFIED",
+      "description": "ProviderType identifies the underlying cloud platform hosting the cluster.\n\n - PROVIDER_TYPE_AWS: PROVIDER_TYPE_AWS indicates the cluster is hosted on Amazon Web Services.\n - PROVIDER_TYPE_GCP: PROVIDER_TYPE_GCP indicates the cluster is hosted on Google Cloud Platform.\n - PROVIDER_TYPE_AZURE: PROVIDER_TYPE_AZURE indicates the cluster is hosted on Microsoft Azure."
     },
     "googleRpcStatus": {
       "type": "object",
@@ -342,9 +347,11 @@
       "properties": {
         "count": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "count is the total number of discovered clusters matching the filter."
         }
-      }
+      },
+      "description": "CountDiscoveredClustersResponse is the response message for CountDiscoveredClusters."
     },
     "v1DiscoveredCluster": {
       "type": "object",
@@ -354,7 +361,8 @@
           "description": "UUIDv5 generated deterministically from the tuple (metadata.id, metadata.type, source.id)."
         },
         "metadata": {
-          "$ref": "#/definitions/v1DiscoveredClusterMetadata"
+          "$ref": "#/definitions/v1DiscoveredClusterMetadata",
+          "description": "metadata holds registration details as reported by the cloud provider."
         },
         "status": {
           "$ref": "#/definitions/v1DiscoveredClusterStatus",
@@ -371,9 +379,11 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "id is the identifier of the cloud source integration."
         }
-      }
+      },
+      "description": "CloudSource identifies the cloud source integration that discovered this cluster."
     },
     "v1DiscoveredClusterMetadata": {
       "type": "object",
@@ -403,7 +413,8 @@
           "format": "date-time",
           "description": "Timestamp at which the cluster was first discovered by the cloud source."
         }
-      }
+      },
+      "description": "Metadata holds cloud-provider registration details for the discovered cluster."
     },
     "v1DiscoveredClusterStatus": {
       "type": "string",
@@ -413,7 +424,7 @@
         "STATUS_UNSECURED"
       ],
       "default": "STATUS_UNSPECIFIED",
-      "description": " - STATUS_UNSPECIFIED: The status of the cluster is unknown. May occur if a secured cluster\nis missing the metadata for a possible match.\n - STATUS_SECURED: The discovered cluster was matched with a secured cluster.\n - STATUS_UNSECURED: The discovered cluster was not matched with a secured cluster."
+      "description": "Status indicates whether a discovered cluster has been secured with StackRox Sensor.\n\n - STATUS_UNSPECIFIED: The status of the cluster is unknown. May occur if a secured cluster\nis missing the metadata for a possible match.\n - STATUS_SECURED: The discovered cluster was matched with a secured cluster.\n - STATUS_UNSECURED: The discovered cluster was not matched with a secured cluster."
     },
     "v1DiscoveredClustersFilter": {
       "type": "object",
@@ -446,15 +457,18 @@
           },
           "description": "Matches discovered clusters of specific cloud source IDs."
         }
-      }
+      },
+      "description": "DiscoveredClustersFilter specifies criteria for filtering discovered clusters."
     },
     "v1GetDiscoveredClusterResponse": {
       "type": "object",
       "properties": {
         "cluster": {
-          "$ref": "#/definitions/v1DiscoveredCluster"
+          "$ref": "#/definitions/v1DiscoveredCluster",
+          "description": "cluster is the discovered cluster matching the requested ID."
         }
-      }
+      },
+      "description": "GetDiscoveredClusterResponse is the response message for GetDiscoveredCluster."
     },
     "v1ListDiscoveredClustersResponse": {
       "type": "object",
@@ -464,9 +478,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1DiscoveredCluster"
-          }
+          },
+          "description": "clusters is the list of discovered clusters matching the filter, sorted by cluster name."
         }
-      }
+      },
+      "description": "ListDiscoveredClustersResponse is the response message for ListDiscoveredClusters."
     },
     "v1Pagination": {
       "type": "object",

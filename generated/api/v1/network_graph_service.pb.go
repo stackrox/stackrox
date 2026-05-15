@@ -24,9 +24,12 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// NetworkGraphScope restricts the network graph to a subset of deployments
+// matching the given search query.
 type NetworkGraphScope struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// query filters the scope using StackRox search syntax (e.g. "Namespace:production").
+	Query         string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -68,10 +71,15 @@ func (x *NetworkGraphScope) GetQuery() string {
 	return ""
 }
 
+// NetworkEdgeProperties describes a single observed connection on a specific
+// port and protocol.
 type NetworkEdgeProperties struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	Port                uint32                 `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
-	Protocol            storage.L4Protocol     `protobuf:"varint,2,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// port is the destination port of the connection.
+	Port uint32 `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
+	// protocol is the Layer-4 protocol (TCP, UDP, etc.) of the connection.
+	Protocol storage.L4Protocol `protobuf:"varint,2,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty"`
+	// last_active_timestamp is the most recent time this connection was observed.
 	LastActiveTimestamp *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_active_timestamp,json=lastActiveTimestamp,proto3" json:"last_active_timestamp,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
@@ -128,6 +136,8 @@ func (x *NetworkEdgeProperties) GetLastActiveTimestamp() *timestamppb.Timestamp 
 	return nil
 }
 
+// NetworkEdgePropertiesBundle groups all connection properties observed on a
+// single directed edge between two network nodes.
 type NetworkEdgePropertiesBundle struct {
 	state         protoimpl.MessageState   `protogen:"open.v1"`
 	Properties    []*NetworkEdgeProperties `protobuf:"bytes,1,rep,name=properties,proto3" json:"properties,omitempty"`
@@ -172,17 +182,31 @@ func (x *NetworkEdgePropertiesBundle) GetProperties() []*NetworkEdgeProperties {
 	return nil
 }
 
+// NetworkNode represents a single entity (deployment, external source, or
+// internet) in the network graph.
 type NetworkNode struct {
-	state              protoimpl.MessageState                 `protogen:"open.v1"`
-	Entity             *storage.NetworkEntityInfo             `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
-	InternetAccess     bool                                   `protobuf:"varint,2,opt,name=internet_access,json=internetAccess,proto3" json:"internet_access,omitempty"`
-	PolicyIds          []string                               `protobuf:"bytes,3,rep,name=policy_ids,json=policyIds,proto3" json:"policy_ids,omitempty"`
-	NonIsolatedIngress bool                                   `protobuf:"varint,5,opt,name=non_isolated_ingress,json=nonIsolatedIngress,proto3" json:"non_isolated_ingress,omitempty"`
-	NonIsolatedEgress  bool                                   `protobuf:"varint,6,opt,name=non_isolated_egress,json=nonIsolatedEgress,proto3" json:"non_isolated_egress,omitempty"`
-	QueryMatch         bool                                   `protobuf:"varint,7,opt,name=query_match,json=queryMatch,proto3" json:"query_match,omitempty"`
-	OutEdges           map[int32]*NetworkEdgePropertiesBundle `protobuf:"bytes,4,rep,name=out_edges,json=outEdges,proto3" json:"out_edges,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// entity identifies the network entity (deployment, CIDR block, internet, etc.).
+	Entity *storage.NetworkEntityInfo `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
+	// internet_access is true if this node has observed flows to/from the internet.
+	InternetAccess bool `protobuf:"varint,2,opt,name=internet_access,json=internetAccess,proto3" json:"internet_access,omitempty"`
+	// policy_ids lists the IDs of NetworkPolicies that select this deployment.
+	// Populated only when include_policies is set in the request.
+	PolicyIds []string `protobuf:"bytes,3,rep,name=policy_ids,json=policyIds,proto3" json:"policy_ids,omitempty"`
+	// non_isolated_ingress is true when no ingress NetworkPolicy selects this deployment,
+	// meaning all ingress traffic is allowed.
+	NonIsolatedIngress bool `protobuf:"varint,5,opt,name=non_isolated_ingress,json=nonIsolatedIngress,proto3" json:"non_isolated_ingress,omitempty"`
+	// non_isolated_egress is true when no egress NetworkPolicy selects this deployment,
+	// meaning all egress traffic is allowed.
+	NonIsolatedEgress bool `protobuf:"varint,6,opt,name=non_isolated_egress,json=nonIsolatedEgress,proto3" json:"non_isolated_egress,omitempty"`
+	// query_match is true if this node matched the filter query in the request
+	// (as opposed to appearing only as a neighbor of a matching node).
+	QueryMatch bool `protobuf:"varint,7,opt,name=query_match,json=queryMatch,proto3" json:"query_match,omitempty"`
+	// out_edges maps the index of a destination node in the nodes list to the
+	// set of observed connection properties on that edge.
+	OutEdges      map[int32]*NetworkEdgePropertiesBundle `protobuf:"bytes,4,rep,name=out_edges,json=outEdges,proto3" json:"out_edges,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkNode) Reset() {
@@ -264,14 +288,27 @@ func (x *NetworkNode) GetOutEdges() map[int32]*NetworkEdgePropertiesBundle {
 	return nil
 }
 
+// NetworkGraphRequest specifies the parameters for fetching a live network
+// flow graph for a cluster.
 type NetworkGraphRequest struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId       string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Query           string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
-	Since           *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
-	IncludePorts    bool                   `protobuf:"varint,4,opt,name=include_ports,json=includePorts,proto3" json:"include_ports,omitempty"`
-	Scope           *NetworkGraphScope     `protobuf:"bytes,5,opt,name=scope,proto3" json:"scope,omitempty"`
-	IncludePolicies bool                   `protobuf:"varint,6,opt,name=include_policies,json=includePolicies,proto3" json:"include_policies,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id is the ID of the cluster to retrieve the network graph for. Required.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// query filters deployments shown in the graph using StackRox search syntax.
+	// Example: "Namespace:production+Label:app=frontend"
+	Query string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	// since restricts flows to those observed after this timestamp.
+	// Defaults to 5 minutes before the current time if unset.
+	Since *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
+	// include_ports controls whether per-port connection details are included in
+	// edge properties.
+	IncludePorts bool `protobuf:"varint,4,opt,name=include_ports,json=includePorts,proto3" json:"include_ports,omitempty"`
+	// scope further restricts the set of deployments shown as graph nodes.
+	Scope *NetworkGraphScope `protobuf:"bytes,5,opt,name=scope,proto3" json:"scope,omitempty"`
+	// include_policies controls whether NetworkPolicy isolation information
+	// (non_isolated_ingress, non_isolated_egress, policy_ids) is populated on
+	// each deployment node.
+	IncludePolicies bool `protobuf:"varint,6,opt,name=include_policies,json=includePolicies,proto3" json:"include_policies,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -348,10 +385,17 @@ func (x *NetworkGraphRequest) GetIncludePolicies() bool {
 	return false
 }
 
+// NetworkGraph is the response to GetNetworkGraph, containing a snapshot of
+// observed network flows within a cluster.
 type NetworkGraph struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Epoch         uint32                 `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
-	Nodes         []*NetworkNode         `protobuf:"bytes,2,rep,name=nodes,proto3" json:"nodes,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// epoch is a monotonically increasing counter that increments whenever the
+	// underlying network policy graph changes. Clients can compare epochs to
+	// detect staleness without re-fetching the full graph.
+	Epoch uint32 `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	// nodes is the list of network entities in the graph. Edge indices in
+	// out_edges refer to positions in this list.
+	Nodes         []*NetworkNode `protobuf:"bytes,2,rep,name=nodes,proto3" json:"nodes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -400,9 +444,13 @@ func (x *NetworkGraph) GetNodes() []*NetworkNode {
 	return nil
 }
 
+// CreateNetworkEntityRequest describes a new user-defined external network
+// entity (CIDR block) scoped to a specific cluster.
 type CreateNetworkEntityRequest struct {
-	state         protoimpl.MessageState                    `protogen:"open.v1"`
-	ClusterId     string                                    `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id is the cluster to which this external entity is scoped. Required.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// entity contains the CIDR block and optional name for the new external source.
 	Entity        *storage.NetworkEntityInfo_ExternalSource `protobuf:"bytes,2,opt,name=entity,proto3" json:"entity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -452,10 +500,13 @@ func (x *CreateNetworkEntityRequest) GetEntity() *storage.NetworkEntityInfo_Exte
 	return nil
 }
 
+// PatchNetworkEntityRequest renames an existing user-defined external network entity.
 type PatchNetworkEntityRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the ID of the external network entity to update. Required.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// name is the new display name for the entity.
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -504,10 +555,14 @@ func (x *PatchNetworkEntityRequest) GetName() string {
 	return ""
 }
 
+// GetExternalNetworkEntitiesRequest retrieves user-defined external network
+// entities visible for a given cluster.
 type GetExternalNetworkEntitiesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Query         string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id restricts results to entities scoped to this cluster (or global entities).
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// query further filters entities using StackRox search syntax.
+	Query         string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -600,13 +655,21 @@ func (x *GetExternalNetworkEntitiesResponse) GetEntities() []*storage.NetworkEnt
 	return nil
 }
 
+// GetExternalNetworkFlowsRequest retrieves observed flows between deployments
+// and a specific external network entity.
 type GetExternalNetworkFlowsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	EntityId      string                 `protobuf:"bytes,2,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"`
-	Query         string                 `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
-	Since         *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=since,proto3" json:"since,omitempty"`
-	Pagination    *Pagination            `protobuf:"bytes,5,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id is the cluster to query for external flows. Required.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// entity_id is the ID of the external network entity to retrieve flows for. Required.
+	EntityId string `protobuf:"bytes,2,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"`
+	// query additionally filters the set of deployments considered, using StackRox search syntax.
+	Query string `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
+	// since restricts flows to those observed after this timestamp.
+	// Defaults to 5 minutes before the current time if unset.
+	Since *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=since,proto3" json:"since,omitempty"`
+	// pagination controls offset and limit for the returned flow list.
+	Pagination    *Pagination `protobuf:"bytes,5,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -676,11 +739,16 @@ func (x *GetExternalNetworkFlowsRequest) GetPagination() *Pagination {
 	return nil
 }
 
+// GetExternalNetworkFlowsResponse contains flows between cluster deployments
+// and a single external network entity.
 type GetExternalNetworkFlowsResponse struct {
-	state         protoimpl.MessageState     `protogen:"open.v1"`
-	Entity        *storage.NetworkEntityInfo `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
-	TotalFlows    int32                      `protobuf:"varint,2,opt,name=total_flows,json=totalFlows,proto3" json:"total_flows,omitempty"`
-	Flows         []*storage.NetworkFlow     `protobuf:"bytes,3,rep,name=flows,proto3" json:"flows,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// entity is the external network entity these flows are associated with.
+	Entity *storage.NetworkEntityInfo `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
+	// total_flows is the total number of matching flows before pagination.
+	TotalFlows int32 `protobuf:"varint,2,opt,name=total_flows,json=totalFlows,proto3" json:"total_flows,omitempty"`
+	// flows is the paginated list of observed network flows.
+	Flows         []*storage.NetworkFlow `protobuf:"bytes,3,rep,name=flows,proto3" json:"flows,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -736,12 +804,19 @@ func (x *GetExternalNetworkFlowsResponse) GetFlows() []*storage.NetworkFlow {
 	return nil
 }
 
+// GetExternalNetworkFlowsMetadataRequest retrieves per-entity flow counts for
+// all external entities that have observed flows in a cluster.
 type GetExternalNetworkFlowsMetadataRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Query         string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
-	Since         *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
-	Pagination    *Pagination            `protobuf:"bytes,4,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id is the cluster to query. Required.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// query filters deployments using StackRox search syntax.
+	Query string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	// since restricts flows to those observed after this timestamp.
+	// Defaults to 5 minutes before the current time if unset.
+	Since *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
+	// pagination controls offset and limit for the returned entity metadata list.
+	Pagination    *Pagination `protobuf:"bytes,4,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -804,10 +879,14 @@ func (x *GetExternalNetworkFlowsMetadataRequest) GetPagination() *Pagination {
 	return nil
 }
 
+// ExternalNetworkFlowMetadata summarizes observed flow counts for a single
+// external network entity.
 type ExternalNetworkFlowMetadata struct {
-	state         protoimpl.MessageState     `protogen:"open.v1"`
-	Entity        *storage.NetworkEntityInfo `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
-	FlowsCount    int32                      `protobuf:"varint,2,opt,name=flowsCount,proto3" json:"flowsCount,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// entity is the external network entity.
+	Entity *storage.NetworkEntityInfo `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
+	// flowsCount is the total number of observed flows involving this entity.
+	FlowsCount    int32 `protobuf:"varint,2,opt,name=flowsCount,proto3" json:"flowsCount,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -856,10 +935,15 @@ func (x *ExternalNetworkFlowMetadata) GetFlowsCount() int32 {
 	return 0
 }
 
+// GetExternalNetworkFlowsMetadataResponse contains per-entity flow counts for
+// all external entities with observed flows.
 type GetExternalNetworkFlowsMetadataResponse struct {
-	state         protoimpl.MessageState         `protogen:"open.v1"`
-	Entities      []*ExternalNetworkFlowMetadata `protobuf:"bytes,1,rep,name=entities,proto3" json:"entities,omitempty"`
-	TotalEntities int32                          `protobuf:"varint,2,opt,name=total_entities,json=totalEntities,proto3" json:"total_entities,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// entities is the paginated list of external entities with their flow counts,
+	// sorted by entity ID for deterministic pagination.
+	Entities []*ExternalNetworkFlowMetadata `protobuf:"bytes,1,rep,name=entities,proto3" json:"entities,omitempty"`
+	// total_entities is the total number of external entities before pagination.
+	TotalEntities int32 `protobuf:"varint,2,opt,name=total_entities,json=totalEntities,proto3" json:"total_entities,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -908,8 +992,10 @@ func (x *GetExternalNetworkFlowsMetadataResponse) GetTotalEntities() int32 {
 	return 0
 }
 
+// PutNetworkGraphConfigRequest wraps the new network graph configuration to persist.
 type PutNetworkGraphConfigRequest struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// config is the new network graph configuration. Required.
 	Config        *storage.NetworkGraphConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

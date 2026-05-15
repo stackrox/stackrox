@@ -23,14 +23,20 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// State describes the lifecycle stage of a database restore process.
 type DBRestoreProcessStatus_State int32
 
 const (
-	DBRestoreProcessStatus_UNKNOWN     DBRestoreProcessStatus_State = 0
+	DBRestoreProcessStatus_UNKNOWN DBRestoreProcessStatus_State = 0
+	// NOT_STARTED indicates the restore has been registered but not yet begun.
 	DBRestoreProcessStatus_NOT_STARTED DBRestoreProcessStatus_State = 1
+	// IN_PROGRESS indicates the restore is actively reading and applying data.
 	DBRestoreProcessStatus_IN_PROGRESS DBRestoreProcessStatus_State = 2
-	DBRestoreProcessStatus_PAUSED      DBRestoreProcessStatus_State = 3
-	DBRestoreProcessStatus_COMPLETED   DBRestoreProcessStatus_State = 4 // successful if error is empty, unsuccessful otherwise
+	// PAUSED indicates the restore was interrupted and can be resumed.
+	DBRestoreProcessStatus_PAUSED DBRestoreProcessStatus_State = 3
+	// COMPLETED indicates the restore finished; check the error field to
+	// determine success or failure.
+	DBRestoreProcessStatus_COMPLETED DBRestoreProcessStatus_State = 4 // successful if error is empty, unsuccessful otherwise
 )
 
 // Enum value maps for DBRestoreProcessStatus_State.
@@ -268,14 +274,24 @@ func (x *DBRestoreProcessMetadata) GetInitiatingUserName() string {
 }
 
 type DBRestoreProcessStatus struct {
-	state          protoimpl.MessageState             `protogen:"open.v1"`
-	Metadata       *DBRestoreProcessMetadata          `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	AttemptId      string                             `protobuf:"bytes,2,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`
-	State          DBRestoreProcessStatus_State       `protobuf:"varint,3,opt,name=state,proto3,enum=v1.DBRestoreProcessStatus_State" json:"state,omitempty"`
-	ResumeInfo     *DBRestoreProcessStatus_ResumeInfo `protobuf:"bytes,4,opt,name=resume_info,json=resumeInfo,proto3" json:"resume_info,omitempty"`              // only populated if state is PAUSED
-	Error          string                             `protobuf:"bytes,5,opt,name=error,proto3" json:"error,omitempty"`                                          // only populated when state is COMPLETED
-	BytesRead      int64                              `protobuf:"varint,6,opt,name=bytes_read,json=bytesRead,proto3" json:"bytes_read,omitempty"`                // Payload bytes read so far (approximate)
-	FilesProcessed int64                              `protobuf:"varint,7,opt,name=files_processed,json=filesProcessed,proto3" json:"files_processed,omitempty"` // Files processed so far (approximate)
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// metadata contains the static metadata for this restore process.
+	Metadata *DBRestoreProcessMetadata `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	// attempt_id identifies the current restore attempt (a process may be
+	// interrupted and resumed multiple times).
+	AttemptId string `protobuf:"bytes,2,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`
+	// state is the current lifecycle state of the restore process.
+	State DBRestoreProcessStatus_State `protobuf:"varint,3,opt,name=state,proto3,enum=v1.DBRestoreProcessStatus_State" json:"state,omitempty"`
+	// resume_info is only populated when state is PAUSED and contains the
+	// byte offset at which the process can be resumed.
+	ResumeInfo *DBRestoreProcessStatus_ResumeInfo `protobuf:"bytes,4,opt,name=resume_info,json=resumeInfo,proto3" json:"resume_info,omitempty"` // only populated if state is PAUSED
+	// error is only populated when state is COMPLETED and the restore was
+	// unsuccessful.
+	Error string `protobuf:"bytes,5,opt,name=error,proto3" json:"error,omitempty"` // only populated when state is COMPLETED
+	// bytes_read is an approximate count of payload bytes consumed so far.
+	BytesRead int64 `protobuf:"varint,6,opt,name=bytes_read,json=bytesRead,proto3" json:"bytes_read,omitempty"` // Payload bytes read so far (approximate)
+	// files_processed is an approximate count of manifest files applied so far.
+	FilesProcessed int64 `protobuf:"varint,7,opt,name=files_processed,json=filesProcessed,proto3" json:"files_processed,omitempty"` // Files processed so far (approximate)
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -363,7 +379,9 @@ func (x *DBRestoreProcessStatus) GetFilesProcessed() int64 {
 // interpreted as binding, i.e., the server must ensure that it will read and make use of every file listed in the
 // manifest, otherwise it must reject the request.
 type DBExportManifest struct {
-	state         protoimpl.MessageState   `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// files lists every file that must be present and consumed in the restore
+	// body, in the order they appear in the byte stream.
 	Files         []*DBExportManifest_File `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -408,8 +426,10 @@ func (x *DBExportManifest) GetFiles() []*DBExportManifest_File {
 
 // DBExportFormat describes a format (= a collection of files) for the database export.
 type DBExportFormat struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	FormatName    string                 `protobuf:"bytes,1,opt,name=format_name,json=formatName,proto3" json:"format_name,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// format_name is the human-readable identifier for this export format.
+	FormatName string `protobuf:"bytes,1,opt,name=format_name,json=formatName,proto3" json:"format_name,omitempty"`
+	// files lists all files that are part of this export format.
 	Files         []*DBExportFormat_File `protobuf:"bytes,2,rep,name=files,proto3" json:"files,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -460,8 +480,11 @@ func (x *DBExportFormat) GetFiles() []*DBExportFormat_File {
 }
 
 type GetDBExportCapabilitiesResponse struct {
-	state              protoimpl.MessageState          `protogen:"open.v1"`
-	Formats            []*DBExportFormat               `protobuf:"bytes,1,rep,name=formats,proto3" json:"formats,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// formats lists the export formats supported by this Central instance.
+	Formats []*DBExportFormat `protobuf:"bytes,1,rep,name=formats,proto3" json:"formats,omitempty"`
+	// supported_encodings lists the encoding types (e.g. deflate) accepted
+	// for file data in restore request bodies.
 	SupportedEncodings []DBExportManifest_EncodingType `protobuf:"varint,2,rep,packed,name=supported_encodings,json=supportedEncodings,proto3,enum=v1.DBExportManifest_EncodingType" json:"supported_encodings,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
@@ -512,7 +535,9 @@ func (x *GetDBExportCapabilitiesResponse) GetSupportedEncodings() []DBExportMani
 }
 
 type GetActiveDBRestoreProcessResponse struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// active_status is the status of the currently active restore process,
+	// or empty if no restore is in progress.
 	ActiveStatus  *DBRestoreProcessStatus `protobuf:"bytes,1,opt,name=active_status,json=activeStatus,proto3" json:"active_status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -556,9 +581,11 @@ func (x *GetActiveDBRestoreProcessResponse) GetActiveStatus() *DBRestoreProcessS
 }
 
 type InterruptDBRestoreProcessRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ProcessId     string                 `protobuf:"bytes,1,opt,name=process_id,json=processId,proto3" json:"process_id,omitempty"`
-	AttemptId     string                 `protobuf:"bytes,2,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// process_id identifies the restore process to interrupt.
+	ProcessId string `protobuf:"bytes,1,opt,name=process_id,json=processId,proto3" json:"process_id,omitempty"`
+	// attempt_id identifies the specific attempt to interrupt.
+	AttemptId     string `protobuf:"bytes,2,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -608,7 +635,9 @@ func (x *InterruptDBRestoreProcessRequest) GetAttemptId() string {
 }
 
 type InterruptDBRestoreProcessResponse struct {
-	state         protoimpl.MessageState             `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// resume_info contains the byte offset from which the interrupted restore
+	// can be resumed.
 	ResumeInfo    *DBRestoreProcessStatus_ResumeInfo `protobuf:"bytes,1,opt,name=resume_info,json=resumeInfo,proto3" json:"resume_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -707,9 +736,12 @@ func (x *DBRestoreRequestHeader_LocalFileInfo) GetBytesSize() int64 {
 	return 0
 }
 
+// ResumeInfo contains the byte offset from which a paused restore can be
+// resumed.
 type DBRestoreProcessStatus_ResumeInfo struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Pos           int64                  `protobuf:"varint,1,opt,name=pos,proto3" json:"pos,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// pos is the byte position in the restore data stream at which to resume.
+	Pos           int64 `protobuf:"varint,1,opt,name=pos,proto3" json:"pos,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -756,10 +788,13 @@ type DBExportManifest_File struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The name of the file. This may or may not be a (relative) file path and up to the server to interpret.
 	// For databases exported as ZIP files, this is the path relative to the root of the archive.
-	Name        string                        `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Encoding    DBExportManifest_EncodingType `protobuf:"varint,2,opt,name=encoding,proto3,enum=v1.DBExportManifest_EncodingType" json:"encoding,omitempty"`
-	EncodedSize int64                         `protobuf:"varint,3,opt,name=encoded_size,json=encodedSize,proto3" json:"encoded_size,omitempty"`
-	DecodedSize int64                         `protobuf:"varint,4,opt,name=decoded_size,json=decodedSize,proto3" json:"decoded_size,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// encoding specifies how the file data is encoded in the restore body.
+	Encoding DBExportManifest_EncodingType `protobuf:"varint,2,opt,name=encoding,proto3,enum=v1.DBExportManifest_EncodingType" json:"encoding,omitempty"`
+	// encoded_size is the size of the encoded file data in bytes.
+	EncodedSize int64 `protobuf:"varint,3,opt,name=encoded_size,json=encodedSize,proto3" json:"encoded_size,omitempty"`
+	// decoded_size is the expected size of the file after decoding.
+	DecodedSize int64 `protobuf:"varint,4,opt,name=decoded_size,json=decodedSize,proto3" json:"decoded_size,omitempty"`
 	// The CRC32 (IEEE) checksum of the decoded(!) data.
 	DecodedCrc32  uint32 `protobuf:"fixed32,5,opt,name=decoded_crc32,json=decodedCrc32,proto3" json:"decoded_crc32,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -832,9 +867,12 @@ func (x *DBExportManifest_File) GetDecodedCrc32() uint32 {
 }
 
 type DBExportFormat_File struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Optional      bool                   `protobuf:"varint,2,opt,name=optional,proto3" json:"optional,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// name is the identifier for the file within the export format.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// optional, when true, indicates that the file need not be present in a
+	// restore body that uses this format.
+	Optional      bool `protobuf:"varint,2,opt,name=optional,proto3" json:"optional,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

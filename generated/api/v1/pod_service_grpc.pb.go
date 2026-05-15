@@ -27,10 +27,24 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// PodService APIs can be used to manage pods.
+// PodService provides access to Kubernetes pods observed by StackRox across secured clusters.
+//
+// Pods are discovered from secured clusters and associated with deployments. They can be
+// listed with optional filtering using StackRox search syntax, or exported in bulk as a stream.
+//
+// Authentication: all endpoints require a valid API token with read access to the Deployment resource.
 type PodServiceClient interface {
-	// GetPods returns the pods.
+	// GetPods returns a list of pods matching the optional query filter.
+	//
+	// Uses StackRox search query syntax to filter by cluster, namespace, deployment, or label.
+	// Results are paginated; at most 1000 pods are returned per request.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	GetPods(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*PodsResponse, error)
+	// ExportPods streams all pods matching the optional query as a sequence of ExportPodResponse messages.
+	//
+	// Unlike GetPods, ExportPods is not paginated and streams all matching pods. A timeout in
+	// seconds may be specified; if the stream is not completed within that time the request is cancelled.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	ExportPods(ctx context.Context, in *ExportPodRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExportPodResponse], error)
 }
 
@@ -75,10 +89,24 @@ type PodService_ExportPodsClient = grpc.ServerStreamingClient[ExportPodResponse]
 // All implementations should embed UnimplementedPodServiceServer
 // for forward compatibility.
 //
-// PodService APIs can be used to manage pods.
+// PodService provides access to Kubernetes pods observed by StackRox across secured clusters.
+//
+// Pods are discovered from secured clusters and associated with deployments. They can be
+// listed with optional filtering using StackRox search syntax, or exported in bulk as a stream.
+//
+// Authentication: all endpoints require a valid API token with read access to the Deployment resource.
 type PodServiceServer interface {
-	// GetPods returns the pods.
+	// GetPods returns a list of pods matching the optional query filter.
+	//
+	// Uses StackRox search query syntax to filter by cluster, namespace, deployment, or label.
+	// Results are paginated; at most 1000 pods are returned per request.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	GetPods(context.Context, *RawQuery) (*PodsResponse, error)
+	// ExportPods streams all pods matching the optional query as a sequence of ExportPodResponse messages.
+	//
+	// Unlike GetPods, ExportPods is not paginated and streams all matching pods. A timeout in
+	// seconds may be specified; if the stream is not completed within that time the request is cancelled.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	ExportPods(*ExportPodRequest, grpc.ServerStreamingServer[ExportPodResponse]) error
 }
 

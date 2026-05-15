@@ -146,6 +146,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "CreateFalsePositiveVulnerabilityExceptionRequest contains the fields needed\nto create a false-positive exception. All fields are required.",
             "in": "body",
             "required": true,
             "schema": {
@@ -382,15 +383,19 @@
       "type": "object",
       "properties": {
         "registry": {
-          "type": "string"
+          "type": "string",
+          "description": "Container registry (e.g., \"docker.io\", \"quay.io\")."
         },
         "remote": {
-          "type": "string"
+          "type": "string",
+          "description": "Image repository name (e.g., \"library/nginx\")."
         },
         "tag": {
-          "type": "string"
+          "type": "string",
+          "description": "Image tag (e.g., \"latest\", \"1.25\")."
         }
-      }
+      },
+      "description": "Image identifies a specific container image by registry, repository, and tag."
     },
     "VulnerabilityExceptionServiceApproveVulnerabilityExceptionBody": {
       "type": "object",
@@ -399,7 +404,8 @@
           "type": "string",
           "description": "REQUIRED. The rationale for approving the exception."
         }
-      }
+      },
+      "description": "ApproveVulnerabilityExceptionRequest identifies the exception to approve and\nrequires a comment explaining the approval rationale."
     },
     "VulnerabilityExceptionServiceDenyVulnerabilityExceptionBody": {
       "type": "object",
@@ -408,7 +414,8 @@
           "type": "string",
           "description": "REQUIRED. The rationale for denying the exception."
         }
-      }
+      },
+      "description": "DenyVulnerabilityExceptionRequest identifies the exception to deny and\nrequires a comment explaining the denial rationale."
     },
     "VulnerabilityExceptionServiceUpdateVulnerabilityExceptionBody": {
       "type": "object",
@@ -425,7 +432,8 @@
           "$ref": "#/definitions/v2FalsePositiveUpdate",
           "description": "Use this field to update a false-positive exception."
         }
-      }
+      },
+      "description": "UpdateVulnerabilityExceptionRequest modifies an existing exception.\nExactly one of deferral_update or false_positive_update must be set."
     },
     "protobufAny": {
       "type": "object",
@@ -482,7 +490,8 @@
         "exception": {
           "$ref": "#/definitions/v2VulnerabilityException"
         }
-      }
+      },
+      "description": "ApproveVulnerabilityExceptionResponse wraps the approved exception."
     },
     "v2CancelVulnerabilityExceptionResponse": {
       "type": "object",
@@ -490,25 +499,31 @@
         "exception": {
           "$ref": "#/definitions/v2VulnerabilityException"
         }
-      }
+      },
+      "description": "CancelVulnerabilityExceptionResponse wraps the cancelled exception."
     },
     "v2Comment": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the comment."
         },
         "message": {
-          "type": "string"
+          "type": "string",
+          "description": "The comment text. Required for all request actions."
         },
         "user": {
-          "$ref": "#/definitions/v2SlimUser"
+          "$ref": "#/definitions/v2SlimUser",
+          "description": "User who created the comment."
         },
         "createdAt": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp when the comment was created."
         }
-      }
+      },
+      "description": "Comment represents a user comment on a vulnerability exception request.\nComments are required for all request actions (create, approve, deny, update)\nand provide an audit trail for the exception lifecycle."
     },
     "v2CreateDeferVulnerabilityExceptionRequest": {
       "type": "object",
@@ -533,7 +548,7 @@
           "description": "REQUIRED. The type of expiry to be enforced for the request."
         }
       },
-      "title": "next available tag: 6"
+      "title": "CreateDeferVulnerabilityExceptionRequest contains the fields needed to create\na deferral exception. All fields are required.\nnext available tag: 6"
     },
     "v2CreateDeferVulnerabilityExceptionResponse": {
       "type": "object",
@@ -541,7 +556,8 @@
         "exception": {
           "$ref": "#/definitions/v2VulnerabilityException"
         }
-      }
+      },
+      "description": "CreateDeferVulnerabilityExceptionResponse wraps the newly created deferral exception."
     },
     "v2CreateFalsePositiveVulnerabilityExceptionRequest": {
       "type": "object",
@@ -561,7 +577,8 @@
           "type": "string",
           "description": "REQUIRED. The rationale for creating the exception."
         }
-      }
+      },
+      "description": "CreateFalsePositiveVulnerabilityExceptionRequest contains the fields needed\nto create a false-positive exception. All fields are required."
     },
     "v2CreateFalsePositiveVulnerabilityExceptionResponse": {
       "type": "object",
@@ -569,15 +586,18 @@
         "exception": {
           "$ref": "#/definitions/v2VulnerabilityException"
         }
-      }
+      },
+      "description": "CreateFalsePositiveVulnerabilityExceptionResponse wraps the newly created false-positive exception."
     },
     "v2DeferralRequest": {
       "type": "object",
       "properties": {
         "expiry": {
-          "$ref": "#/definitions/v2ExceptionExpiry"
+          "$ref": "#/definitions/v2ExceptionExpiry",
+          "description": "REQUIRED. Expiry configuration for the deferral."
         }
-      }
+      },
+      "description": "DeferralRequest holds the expiry configuration for a deferral exception."
     },
     "v2DeferralUpdate": {
       "type": "object",
@@ -601,7 +621,8 @@
         "exception": {
           "$ref": "#/definitions/v2VulnerabilityException"
         }
-      }
+      },
+      "description": "DenyVulnerabilityExceptionResponse wraps the denied exception."
     },
     "v2Empty": {
       "type": "object"
@@ -632,7 +653,8 @@
       "description": "Indicates the status of a request.\n\n - PENDING: Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.\n - APPROVED: Indicates that the request has been approved by the approver.\n - DENIED: Indicates that the request has been denied by the approver.\n - APPROVED_PENDING_UPDATE: Indicates that the original request was approved, but an update is still pending an approval or denial."
     },
     "v2FalsePositiveRequest": {
-      "type": "object"
+      "type": "object",
+      "description": "FalsePositiveRequest marks vulnerabilities as false positive. False-positive\nexceptions are permanent and have no expiry configuration."
     },
     "v2FalsePositiveUpdate": {
       "type": "object",
@@ -652,7 +674,8 @@
         "exception": {
           "$ref": "#/definitions/v2VulnerabilityException"
         }
-      }
+      },
+      "description": "GetVulnerabilityExceptionResponse wraps a single vulnerability exception."
     },
     "v2ListVulnerabilityExceptionsResponse": {
       "type": "object",
@@ -664,7 +687,8 @@
             "$ref": "#/definitions/v2VulnerabilityException"
           }
         }
-      }
+      },
+      "description": "ListVulnerabilityExceptionsResponse wraps the list of vulnerability exceptions."
     },
     "v2Pagination": {
       "type": "object",
@@ -722,13 +746,15 @@
         "exception": {
           "$ref": "#/definitions/v2VulnerabilityException"
         }
-      }
+      },
+      "description": "UpdateVulnerabilityExceptionResponse wraps the updated exception."
     },
     "v2VulnerabilityException": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the exception (auto-generated)."
         },
         "name": {
           "type": "string",
@@ -797,16 +823,17 @@
           "description": "If set, indicates the update to be applied to the original false-positive exception."
         }
       },
-      "description": "Next available tag: 16\nVulnerabilityException represents a vulnerability exception such as deferral and false-positive."
+      "title": "VulnerabilityException represents a vulnerability exception such as deferral and false-positive.\nExceptions suppress specific CVEs from policy evaluation and risk scoring.\nNext available tag: 16"
     },
     "v2VulnerabilityExceptionScope": {
       "type": "object",
       "properties": {
         "imageScope": {
           "$ref": "#/definitions/ScopeImage",
-          "description": "This field can be used to apply the exception to selected images."
+          "description": "Applies the exception to a specific container image."
         }
-      }
+      },
+      "description": "Scope defines where the exception is enforced."
     },
     "v2VulnerabilityState": {
       "type": "string",

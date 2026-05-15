@@ -25,7 +25,14 @@ message GetExistingProbesResponse {
   repeated ProbeUploadManifest.File existing_files = 1;
 }
 
+// ProbeUploadService supports uploading eBPF probes and kernel modules used
+// by the Collector component for runtime monitoring. Probes are cached on
+// Central and distributed to Collectors that cannot reach the internet.
+//
+// Authentication: requires Administration write access.
 service ProbeUploadService {
+  // GetExistingProbes returns which of the requested probe files are already
+  // cached on Central, allowing the uploader to skip files that are unchanged.
   rpc GetExistingProbes(GetExistingProbesRequest) returns (GetExistingProbesResponse) {
     option (google.api.http) = {post: "/v1/probeupload/getexisting"};
   }

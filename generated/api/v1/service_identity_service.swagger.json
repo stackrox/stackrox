@@ -18,7 +18,8 @@
   "paths": {
     "/v1/authorities": {
       "get": {
-        "summary": "GetAuthorities returns the authorities currently in use.",
+        "summary": "GetAuthorities returns the CA certificates currently trusted by Central.",
+        "description": "These are the root certificates that can be used to verify service identity certificates\nissued by Central.",
         "operationId": "ServiceIdentityService_GetAuthorities",
         "responses": {
           "200": {
@@ -41,6 +42,8 @@
     },
     "/v1/serviceIdentities": {
       "get": {
+        "summary": "GetServiceIdentities returns metadata for all service identities registered in Central.",
+        "description": "Returns the list of known identities (without private keys, which are never stored).",
         "operationId": "ServiceIdentityService_GetServiceIdentities",
         "responses": {
           "200": {
@@ -61,7 +64,8 @@
         ]
       },
       "post": {
-        "summary": "CreateServiceIdentity creates a new key pair and certificate.\nThe key and certificate are not retained and can never be retrieved again.",
+        "summary": "CreateServiceIdentity issues a new mTLS certificate and private key for a service.",
+        "description": "The generated key pair is returned in the response and is never stored by Central.\nIf the credentials are lost, a new identity must be created; the existing one cannot be recovered.\nReturns INVALID_ARGUMENT if id is empty or type is UNKNOWN_SERVICE.",
         "operationId": "ServiceIdentityService_CreateServiceIdentity",
         "responses": {
           "200": {
@@ -80,6 +84,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "CreateServiceIdentityRequest is the request to create a new mTLS service identity.",
             "in": "body",
             "required": true,
             "schema": {
@@ -182,43 +187,53 @@
             "$ref": "#/definitions/v1Authority"
           }
         }
-      }
+      },
+      "description": "Authorities is the list of Certificate Authority certificates currently trusted by Central."
     },
     "v1Authority": {
       "type": "object",
       "properties": {
         "certificatePem": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "description": "certificate_pem is the PEM-encoded CA certificate."
         }
-      }
+      },
+      "description": "Authority represents a Certificate Authority certificate."
     },
     "v1CreateServiceIdentityRequest": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "id is the unique identifier to assign to the new service identity."
         },
         "type": {
-          "$ref": "#/definitions/storageServiceType"
+          "$ref": "#/definitions/storageServiceType",
+          "description": "type specifies the service type (e.g. SENSOR_SERVICE, COLLECTOR_SERVICE).\nMust not be UNKNOWN_SERVICE."
         }
-      }
+      },
+      "description": "CreateServiceIdentityRequest is the request to create a new mTLS service identity."
     },
     "v1CreateServiceIdentityResponse": {
       "type": "object",
       "properties": {
         "identity": {
-          "$ref": "#/definitions/storageServiceIdentity"
+          "$ref": "#/definitions/storageServiceIdentity",
+          "description": "identity is the metadata record of the created service identity."
         },
         "certificatePem": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "description": "certificate_pem is the PEM-encoded certificate for the new service identity."
         },
         "privateKeyPem": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "description": "private_key_pem is the PEM-encoded private key for the new service identity.\nThis is the only time the private key is available; Central does not retain it."
         }
-      }
+      },
+      "description": "CreateServiceIdentityResponse contains the generated certificate and private key.\nThese credentials are never stored by Central and cannot be retrieved again after this response."
     },
     "v1ServiceIdentityResponse": {
       "type": "object",
@@ -230,7 +245,8 @@
             "$ref": "#/definitions/storageServiceIdentity"
           }
         }
-      }
+      },
+      "description": "ServiceIdentityResponse is the response listing all known service identities."
     }
   }
 }

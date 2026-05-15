@@ -27,12 +27,26 @@ const (
 // DiscoveredClustersServiceClient is the client API for DiscoveredClustersService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// DiscoveredClustersService provides read access to clusters discovered through cloud source integrations.
+//
+// Cloud sources (AWS, GCP, Azure) periodically report the clusters registered with them. This service
+// exposes those discovered clusters and indicates whether each one is secured (has a Sensor connected)
+// or unsecured. Results can be filtered by name, type, status, and cloud source ID.
+//
+// Authentication: all endpoints require a valid API token with read access to the Administration resource.
 type DiscoveredClustersServiceClient interface {
 	// CountDiscoveredClusters returns the number of discovered clusters after filtering by requested fields.
 	CountDiscoveredClusters(ctx context.Context, in *CountDiscoveredClustersRequest, opts ...grpc.CallOption) (*CountDiscoveredClustersResponse, error)
 	// GetDiscoveredCluster retrieves a discovered cluster by ID.
+	//
+	// Returns INVALID_ARGUMENT if id is empty.
+	// Returns NOT_FOUND if no discovered cluster exists with the given ID.
 	GetDiscoveredCluster(ctx context.Context, in *GetDiscoveredClusterRequest, opts ...grpc.CallOption) (*GetDiscoveredClusterResponse, error)
 	// ListDiscoveredClusters returns the list of discovered clusters after filtered by requested fields.
+	//
+	// Results are sorted by cluster name ascending. Pagination is supported with a maximum of 1000
+	// results per page.
 	ListDiscoveredClusters(ctx context.Context, in *ListDiscoveredClustersRequest, opts ...grpc.CallOption) (*ListDiscoveredClustersResponse, error)
 }
 
@@ -77,12 +91,26 @@ func (c *discoveredClustersServiceClient) ListDiscoveredClusters(ctx context.Con
 // DiscoveredClustersServiceServer is the server API for DiscoveredClustersService service.
 // All implementations should embed UnimplementedDiscoveredClustersServiceServer
 // for forward compatibility.
+//
+// DiscoveredClustersService provides read access to clusters discovered through cloud source integrations.
+//
+// Cloud sources (AWS, GCP, Azure) periodically report the clusters registered with them. This service
+// exposes those discovered clusters and indicates whether each one is secured (has a Sensor connected)
+// or unsecured. Results can be filtered by name, type, status, and cloud source ID.
+//
+// Authentication: all endpoints require a valid API token with read access to the Administration resource.
 type DiscoveredClustersServiceServer interface {
 	// CountDiscoveredClusters returns the number of discovered clusters after filtering by requested fields.
 	CountDiscoveredClusters(context.Context, *CountDiscoveredClustersRequest) (*CountDiscoveredClustersResponse, error)
 	// GetDiscoveredCluster retrieves a discovered cluster by ID.
+	//
+	// Returns INVALID_ARGUMENT if id is empty.
+	// Returns NOT_FOUND if no discovered cluster exists with the given ID.
 	GetDiscoveredCluster(context.Context, *GetDiscoveredClusterRequest) (*GetDiscoveredClusterResponse, error)
 	// ListDiscoveredClusters returns the list of discovered clusters after filtered by requested fields.
+	//
+	// Results are sorted by cluster name ascending. Pagination is supported with a maximum of 1000
+	// results per page.
 	ListDiscoveredClusters(context.Context, *ListDiscoveredClustersRequest) (*ListDiscoveredClustersResponse, error)
 }
 

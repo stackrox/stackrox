@@ -11,39 +11,69 @@ option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 message GetIntegrationHealthResponse {
+  // integrationHealth contains the health status for each configured integration.
   repeated storage.IntegrationHealth integrationHealth = 1;
 }
 
 message VulnDefinitionsInfoRequest {
+  // Component identifies which scanner's vulnerability definitions to query.
   enum Component {
+    // SCANNER refers to the legacy StackRox Scanner (Clairify).
     SCANNER = 0;
+    // SCANNER_V4 refers to the StackRox Scanner V4.
     SCANNER_V4 = 1;
   }
 
+  // component selects which scanner's vulnerability definition metadata to return.
   Component component = 1;
 }
 
 message VulnDefinitionsInfo {
+  // last_updated_timestamp is the time at which the vulnerability definitions
+  // database was last updated for the selected scanner component.
   google.protobuf.Timestamp last_updated_timestamp = 1;
 }
 
+// IntegrationHealthService provides health status for all configured
+// integrations and scanner vulnerability definition metadata.
+//
+// Each endpoint returns the last-known health status recorded by Central for
+// integrations of a given category (image integrations, notifiers, backup
+// plugins, or declarative configs). Status is updated asynchronously as
+// integrations attempt their operations.
+//
+// Authentication: image integration, notifier, backup plugin, and declarative
+// config health endpoints require the Integration resource with View access.
+// Vulnerability definitions info requires the Administration resource with
+// View access.
 service IntegrationHealthService {
+  // GetImageIntegrations returns the health status for all configured image
+  // registry and scanner integrations.
   rpc GetImageIntegrations(Empty) returns (GetIntegrationHealthResponse) {
     option (google.api.http) = {get: "/v1/integrationhealth/imageintegrations"};
   }
 
+  // GetNotifiers returns the health status for all configured notifier
+  // integrations (e.g. Slack, email, PagerDuty).
   rpc GetNotifiers(Empty) returns (GetIntegrationHealthResponse) {
     option (google.api.http) = {get: "/v1/integrationhealth/notifiers"};
   }
 
+  // GetBackupPlugins returns the health status for all configured external
+  // backup integrations.
   rpc GetBackupPlugins(Empty) returns (GetIntegrationHealthResponse) {
     option (google.api.http) = {get: "/v1/integrationhealth/externalbackups"};
   }
 
+  // GetDeclarativeConfigs returns the health status for all declarative
+  // configuration sources (e.g. config maps used for GitOps-style management).
   rpc GetDeclarativeConfigs(Empty) returns (GetIntegrationHealthResponse) {
     option (google.api.http) = {get: "/v1/integrationhealth/declarativeconfigs"};
   }
 
+  // GetVulnDefinitionsInfo returns metadata about the vulnerability definitions
+  // database for the specified scanner component (Scanner or Scanner V4),
+  // including the timestamp of the last successful update.
   rpc GetVulnDefinitionsInfo(VulnDefinitionsInfoRequest) returns (VulnDefinitionsInfo) {
     option (google.api.http) = {get: "/v1/integrationhealth/vulndefinitions"};
   }

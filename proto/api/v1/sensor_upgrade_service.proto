@@ -10,29 +10,59 @@ import "storage/sensor_upgrade.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// UpdateSensorUpgradeConfigRequest is the request to update the sensor auto-upgrade configuration.
 message UpdateSensorUpgradeConfigRequest {
+  // config contains the new auto-upgrade settings to persist.
   storage.SensorUpgradeConfig config = 1;
 }
 
+// GetSensorUpgradeConfigResponse is the response containing the current sensor upgrade configuration.
 message GetSensorUpgradeConfigResponse {
+  // SensorAutoUpgradeFeatureStatus indicates whether the auto-upgrade feature is available
+  // in the current Central deployment.
   enum SensorAutoUpgradeFeatureStatus {
+    // NOT_SUPPORTED means the auto-upgrade feature is unavailable (upgrader is not enabled).
     NOT_SUPPORTED = 0;
+    // SUPPORTED means the auto-upgrade feature is available and can be enabled.
     SUPPORTED = 1;
   }
 
+  // UpgradeConfig holds the current auto-upgrade settings.
   message UpgradeConfig {
+    // enable_auto_upgrade indicates whether sensors are automatically upgraded when Central detects a version mismatch.
     bool enable_auto_upgrade = 1;
+    // auto_upgrade_feature reports whether the auto-upgrade feature is supported in this deployment.
     SensorAutoUpgradeFeatureStatus auto_upgrade_feature = 2;
   }
 
   UpgradeConfig config = 1;
 }
 
+// SensorUpgradeService manages sensor version upgrades across secured clusters.
+//
+// Central can automatically upgrade sensors when a version mismatch is detected, or operators
+// can trigger upgrades and certificate rotations manually per cluster. Auto-upgrade can be
+// enabled or disabled globally. Cert rotation updates only mTLS certificates without a full
+// sensor redeploy.
+//
+// Authentication:
+//   - GetSensorUpgradeConfig requires read access to the Administration resource.
+//   - UpdateSensorUpgradeConfig requires write access to the Administration resource.
+//   - TriggerSensorUpgrade and TriggerSensorCertRotation require write access to the Cluster resource.
 service SensorUpgradeService {
+  // GetSensorUpgradeConfig returns the current sensor auto-upgrade configuration,
+  // including whether auto-upgrade is enabled and whether the feature is supported.
+  //
+  // Returns NOT_FOUND if no configuration has been persisted yet.
   rpc GetSensorUpgradeConfig(Empty) returns (GetSensorUpgradeConfigResponse) {
     option (google.api.http) = {get: "/v1/sensorupgrades/config"};
   }
 
+  // UpdateSensorUpgradeConfig persists a new sensor auto-upgrade configuration.
+  //
+  // When enable_auto_upgrade is set to true, Central will automatically trigger upgrades for
+  // sensors that report a version mismatch. Setting it to true fails with INVALID_ARGUMENT
+  // if the auto-upgrade feature is not supported in this deployment.
   rpc UpdateSensorUpgradeConfig(UpdateSensorUpgradeConfigRequest) returns (Empty) {
     option (google.api.http) = {
       post: "/v1/sensorupgrades/config"
@@ -40,10 +70,19 @@ service SensorUpgradeService {
     };
   }
 
+  // TriggerSensorUpgrade initiates an upgrade for the sensor running in the specified cluster.
+  //
+  // Central signals the sensor to pull and apply a new version. The upgrade runs asynchronously;
+  // progress can be observed via the cluster status.
+  // Returns INVALID_ARGUMENT if the cluster ID is empty.
   rpc TriggerSensorUpgrade(ResourceByID) returns (Empty) {
     option (google.api.http) = {post: "/v1/sensorupgrades/cluster/{id}"};
   }
 
+  // TriggerSensorCertRotation initiates a certificate rotation for the sensor in the specified cluster.
+  //
+  // This renews the sensor's mTLS certificates without performing a full sensor upgrade or redeploy.
+  // Returns INVALID_ARGUMENT if the cluster ID is empty.
   rpc TriggerSensorCertRotation(ResourceByID) returns (Empty) {
     option (google.api.http) = {post: "/v1/sensorupgrades/rotateclustercerts/{id}"};
   }

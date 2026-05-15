@@ -23,10 +23,13 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// TimeRange allows for requesting data by a time range.
+// TimeRange specifies an inclusive time window for usage queries.
 type TimeRange struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	From          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// from is the start of the time range (inclusive). If not set, defaults to the Unix epoch.
+	From *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	// to is the end of the time range (inclusive). If not set, defaults to the current time.
+	// Must be after from; returns INVALID_ARGUMENT if from >= to.
 	To            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -79,9 +82,12 @@ func (x *TimeRange) GetTo() *timestamppb.Timestamp {
 // SecuredUnitsUsageResponse holds the values of the currently observable
 // administration usage metrics.
 type SecuredUnitsUsageResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	NumNodes      int64                  `protobuf:"varint,1,opt,name=num_nodes,json=numNodes,proto3" json:"num_nodes,omitempty"`
-	NumCpuUnits   int64                  `protobuf:"varint,2,opt,name=num_cpu_units,json=numCpuUnits,proto3" json:"num_cpu_units,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// num_nodes is the total number of nodes currently reported across all connected clusters.
+	NumNodes int64 `protobuf:"varint,1,opt,name=num_nodes,json=numNodes,proto3" json:"num_nodes,omitempty"`
+	// num_cpu_units is the total number of CPU units (logical cores) currently reported
+	// across all connected clusters.
+	NumCpuUnits   int64 `protobuf:"varint,2,opt,name=num_cpu_units,json=numCpuUnits,proto3" json:"num_cpu_units,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -134,11 +140,15 @@ func (x *SecuredUnitsUsageResponse) GetNumCpuUnits() int64 {
 // and CPU Units (as reported by Kubernetes) with the time at which these
 // values were aggregated, with the aggregation period accuracy (1h).
 type MaxSecuredUnitsUsageResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	MaxNodesAt    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=max_nodes_at,json=maxNodesAt,proto3" json:"max_nodes_at,omitempty"`
-	MaxNodes      int64                  `protobuf:"varint,2,opt,name=max_nodes,json=maxNodes,proto3" json:"max_nodes,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// max_nodes_at is the timestamp (with ~1h accuracy) when the peak node count was observed.
+	MaxNodesAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=max_nodes_at,json=maxNodesAt,proto3" json:"max_nodes_at,omitempty"`
+	// max_nodes is the highest node count observed within the requested time range.
+	MaxNodes int64 `protobuf:"varint,2,opt,name=max_nodes,json=maxNodes,proto3" json:"max_nodes,omitempty"`
+	// max_cpu_units_at is the timestamp (with ~1h accuracy) when the peak CPU unit count was observed.
 	MaxCpuUnitsAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=max_cpu_units_at,json=maxCpuUnitsAt,proto3" json:"max_cpu_units_at,omitempty"`
-	MaxCpuUnits   int64                  `protobuf:"varint,4,opt,name=max_cpu_units,json=maxCpuUnits,proto3" json:"max_cpu_units,omitempty"`
+	// max_cpu_units is the highest CPU unit count observed within the requested time range.
+	MaxCpuUnits   int64 `protobuf:"varint,4,opt,name=max_cpu_units,json=maxCpuUnits,proto3" json:"max_cpu_units,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

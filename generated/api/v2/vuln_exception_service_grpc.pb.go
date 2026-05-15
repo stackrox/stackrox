@@ -34,7 +34,19 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// VulnerabilityExceptionService APIs can be used to manage create and manage vulnerability exceptions.
+// VulnerabilityExceptionService manages vulnerability exceptions (deferrals
+// and false positives) that suppress specific CVEs from policy evaluation.
+//
+// Exception lifecycle:
+//  1. A user creates a deferral or false-positive exception (PENDING state).
+//  2. An approver approves or denies the exception.
+//  3. Approved exceptions suppress the specified CVEs from policy and risk evaluation.
+//  4. Exceptions can be updated, cancelled, or deleted.
+//  5. Expired/denied/cancelled exceptions are garbage-collected per the
+//     retention configuration (see GET /v1/config/).
+//
+// Permissions: requires Vulnerability Management Exception (VulnerabilityManagementRequests)
+// access. Approvers need the approver permission in addition to the base permission.
 type VulnerabilityExceptionServiceClient interface {
 	// GetVulnerabilityException returns the vulnerability exception with specified ID.
 	GetVulnerabilityException(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetVulnerabilityExceptionResponse, error)
@@ -172,7 +184,19 @@ func (c *vulnerabilityExceptionServiceClient) DeleteVulnerabilityException(ctx c
 // All implementations should embed UnimplementedVulnerabilityExceptionServiceServer
 // for forward compatibility.
 //
-// VulnerabilityExceptionService APIs can be used to manage create and manage vulnerability exceptions.
+// VulnerabilityExceptionService manages vulnerability exceptions (deferrals
+// and false positives) that suppress specific CVEs from policy evaluation.
+//
+// Exception lifecycle:
+//  1. A user creates a deferral or false-positive exception (PENDING state).
+//  2. An approver approves or denies the exception.
+//  3. Approved exceptions suppress the specified CVEs from policy and risk evaluation.
+//  4. Exceptions can be updated, cancelled, or deleted.
+//  5. Expired/denied/cancelled exceptions are garbage-collected per the
+//     retention configuration (see GET /v1/config/).
+//
+// Permissions: requires Vulnerability Management Exception (VulnerabilityManagementRequests)
+// access. Approvers need the approver permission in addition to the base permission.
 type VulnerabilityExceptionServiceServer interface {
 	// GetVulnerabilityException returns the vulnerability exception with specified ID.
 	GetVulnerabilityException(context.Context, *ResourceByID) (*GetVulnerabilityExceptionResponse, error)

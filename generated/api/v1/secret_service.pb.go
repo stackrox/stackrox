@@ -23,7 +23,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// A list of secrets (free of scoped information)
+// SecretList is a list of secrets including their full scoped information.
 // Next Tag: 2
 type SecretList struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -69,7 +69,8 @@ func (x *SecretList) GetSecrets() []*storage.Secret {
 	return nil
 }
 
-// A list of secrets with their relationships.
+// ListSecretsResponse is the response for a list secrets request, containing lightweight
+// secret summaries without full secret data.
 // Next Tag: 2
 type ListSecretsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -115,9 +116,11 @@ func (x *ListSecretsResponse) GetSecrets() []*storage.ListSecret {
 	return nil
 }
 
+// CountSecretsResponse is the response for a count secrets request.
 type CountSecretsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Count         int32                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// count is the number of secrets matching the query.
+	Count         int32 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

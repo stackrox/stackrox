@@ -30,13 +30,43 @@ const (
 // SignatureIntegrationServiceClient is the client API for SignatureIntegrationService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// SignatureIntegrationService manages cosign signature verification
+// integrations used to validate image provenance.
+//
+// Signature integrations hold public key material (cosign public keys) that
+// Central uses to verify image signatures at scan time. When an integration is
+// created or updated, Central triggers reprocessing of signature verification
+// results for all previously scanned images so that policy outcomes remain
+// current.
+//
+// Authentication: read operations require the Integration resource with View
+// access. Write operations require the Integration resource with Modify access.
 type SignatureIntegrationServiceClient interface {
+	// ListSignatureIntegrations returns all configured signature integrations,
+	// sorted alphabetically by name.
 	ListSignatureIntegrations(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListSignatureIntegrationsResponse, error)
+	// GetSignatureIntegration returns the signature integration with the given ID.
+	//
+	// Returns NOT_FOUND if no integration with the given ID exists.
 	GetSignatureIntegration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.SignatureIntegration, error)
-	// Integration id should not be set.
-	// Returns signature integration with id filled.
+	// PostSignatureIntegration creates a new signature integration.
+	//
+	// The id field must not be set; a new ID is assigned and returned. If this
+	// is the first signature integration added, Central immediately triggers a
+	// full reprocessing of signature verifications for all images.
+	//
+	// Returns INVALID_ARGUMENT if the id field is set or if validation fails.
 	PostSignatureIntegration(ctx context.Context, in *storage.SignatureIntegration, opts ...grpc.CallOption) (*storage.SignatureIntegration, error)
+	// PutSignatureIntegration replaces an existing signature integration.
+	//
+	// If the verification configuration (e.g. public keys) has changed, Central
+	// triggers reprocessing of signature verification results for all images.
+	// If the configuration is unchanged, no reprocessing is triggered.
 	PutSignatureIntegration(ctx context.Context, in *storage.SignatureIntegration, opts ...grpc.CallOption) (*Empty, error)
+	// DeleteSignatureIntegration removes the signature integration with the
+	// given ID and triggers reprocessing of signature verification results for
+	// all images.
 	DeleteSignatureIntegration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -101,13 +131,43 @@ func (c *signatureIntegrationServiceClient) DeleteSignatureIntegration(ctx conte
 // SignatureIntegrationServiceServer is the server API for SignatureIntegrationService service.
 // All implementations should embed UnimplementedSignatureIntegrationServiceServer
 // for forward compatibility.
+//
+// SignatureIntegrationService manages cosign signature verification
+// integrations used to validate image provenance.
+//
+// Signature integrations hold public key material (cosign public keys) that
+// Central uses to verify image signatures at scan time. When an integration is
+// created or updated, Central triggers reprocessing of signature verification
+// results for all previously scanned images so that policy outcomes remain
+// current.
+//
+// Authentication: read operations require the Integration resource with View
+// access. Write operations require the Integration resource with Modify access.
 type SignatureIntegrationServiceServer interface {
+	// ListSignatureIntegrations returns all configured signature integrations,
+	// sorted alphabetically by name.
 	ListSignatureIntegrations(context.Context, *Empty) (*ListSignatureIntegrationsResponse, error)
+	// GetSignatureIntegration returns the signature integration with the given ID.
+	//
+	// Returns NOT_FOUND if no integration with the given ID exists.
 	GetSignatureIntegration(context.Context, *ResourceByID) (*storage.SignatureIntegration, error)
-	// Integration id should not be set.
-	// Returns signature integration with id filled.
+	// PostSignatureIntegration creates a new signature integration.
+	//
+	// The id field must not be set; a new ID is assigned and returned. If this
+	// is the first signature integration added, Central immediately triggers a
+	// full reprocessing of signature verifications for all images.
+	//
+	// Returns INVALID_ARGUMENT if the id field is set or if validation fails.
 	PostSignatureIntegration(context.Context, *storage.SignatureIntegration) (*storage.SignatureIntegration, error)
+	// PutSignatureIntegration replaces an existing signature integration.
+	//
+	// If the verification configuration (e.g. public keys) has changed, Central
+	// triggers reprocessing of signature verification results for all images.
+	// If the configuration is unchanged, no reprocessing is triggered.
 	PutSignatureIntegration(context.Context, *storage.SignatureIntegration) (*Empty, error)
+	// DeleteSignatureIntegration removes the signature integration with the
+	// given ID and triggers reprocessing of signature verification results for
+	// all images.
 	DeleteSignatureIntegration(context.Context, *ResourceByID) (*Empty, error)
 }
 

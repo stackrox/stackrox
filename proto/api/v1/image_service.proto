@@ -14,23 +14,39 @@ import "storage/image.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// GetImageRequest is the request message for GetImage.
 message GetImageRequest {
+  // id is the image SHA (digest). Required.
   string id = 1;
+  // include_snoozed controls whether CVEs that have been snoozed (suppressed)
+  // are included in the returned scan data. Defaults to false (snoozed CVEs are excluded).
   bool include_snoozed = 2;
+  // strip_description removes verbose CVE description text from the response,
+  // reducing payload size when description details are not needed.
   bool strip_description = 3;
 }
 
 message ListImagesResponse {
+  // images is a list of images in slim (ListImage) form, omitting per-component
+  // vulnerability details. Use GetImage to retrieve the full scan data for a specific image.
   repeated storage.ListImage images = 1;
 }
 
 message CountImagesResponse {
+  // count is the number of images matching the query.
   int32 count = 1;
 }
 
+// ScanImageRequest is the request message for ScanImage.
 message ScanImageRequest {
+  // image_name is the fully-qualified image reference to scan, including registry,
+  // repository, and tag (e.g. "docker.io/library/nginx:latest"). Required.
   string image_name = 1;
+  // force bypasses the scan cache and triggers a fresh fetch of image metadata
+  // and vulnerability data even if a recent scan result already exists.
   bool force = 2;
+  // include_snoozed controls whether snoozed CVEs are included in the returned
+  // scan result. Defaults to false (snoozed CVEs are excluded).
   bool include_snoozed = 3;
   // Cluster to delegate scan to, may be the cluster's name or ID.
   string cluster = 4;
@@ -40,62 +56,114 @@ message ScanImageRequest {
   string namespace = 5;
 }
 
+// ScanImageInternalRequest is sent by Sensor and Admission Controller to
+// request enrichment of an image observed in a cluster.
 message ScanImageInternalRequest {
+  // Source identifies the cluster and namespace context used to resolve
+  // registry credentials when enriching the image.
   message Source {
+    // cluster_id is the ID of the secured cluster that reported the image.
     string cluster_id = 1;
+    // namespace is the Kubernetes namespace from which pull secrets are read.
     string namespace = 2;
+    // image_pull_secrets is the set of pull secret names available in the namespace.
     repeated string image_pull_secrets = 3;
   }
 
+  // image is the container image reference as observed by Kubernetes.
   storage.ContainerImage image = 1;
   reserved 2;
+  // cached_only instructs Central to return a result from the in-memory metadata
+  // cache only, without contacting any external registry or scanner.
   bool cached_only = 3;
+  // source provides cluster and namespace context used to resolve registry credentials.
   Source source = 4;
 }
 
 message ScanImageInternalResponse {
+  // image is the enriched image, including scan data and vulnerability information.
+  // Snoozed CVEs and verbose descriptions are stripped before returning to Sensor.
   storage.Image image = 1;
 }
 
+// GetImageVulnerabilitiesInternalRequest is sent by Sensor (Scanner V1/Clairify)
+// to deliver pre-computed component data so Central can perform vulnerability matching.
 message GetImageVulnerabilitiesInternalRequest {
+  // image_id is the SHA digest of the image.
   string image_id = 1;
+  // image_name is the fully-qualified image name.
   storage.ImageName image_name = 2;
+  // metadata contains image layer and OS information from the registry.
   storage.ImageMetadata metadata = 3;
+  // is_cluster_local indicates the image is only accessible within the secured cluster
+  // and cannot be scanned by Central directly.
   bool is_cluster_local = 6;
+  // components contains the indexed software components (packages) from the image.
   scannerV1.Components components = 4;
+  // notes describes limitations of the scan data (e.g. missing OS CVEs).
   repeated scannerV1.Note notes = 5;
 }
 
+// EnrichLocalImageInternalRequest is sent by Sensor to deliver scan and signature
+// data for images that were scanned locally within the secured cluster (delegated scanning).
 message EnrichLocalImageInternalRequest {
+  // indexer_version identifies the Scanner V4 indexer version that produced the components.
   string indexer_version = 12;
+  // image_id is the SHA digest of the image.
   string image_id = 1;
+  // image_name is the fully-qualified image name.
   storage.ImageName image_name = 2;
+  // metadata contains image layer and OS information from the registry.
   storage.ImageMetadata metadata = 3;
+  // image_signature contains the cryptographic signature data for the image.
   storage.ImageSignature image_signature = 4;
+  // components contains the indexed software components (packages) from the image.
   scannerV1.Components components = 5;
+  // notes describes limitations of the scan data (e.g. missing OS CVEs).
   repeated scannerV1.Note notes = 6;
+  // image_notes records high-level image-level scan problems (e.g. MISSING_METADATA).
   repeated storage.Image.Note image_notes = 7;
+  // error carries a non-empty error message when the local scan encountered a failure.
+  // Central will still persist the result with degraded data so users can see scan errors.
   string error = 8;
+  // request_id is a correlation token set by Sensor for ad-hoc (on-demand) scan requests.
+  // When set, Central signals the waiting goroutine via the scan waiter mechanism.
   string request_id = 9;
+  // force bypasses the existing scan cache and forces a full re-enrichment.
   bool force = 10;
+  // v4_contents contains Scanner V4-specific index contents used to match vulnerabilities.
   scanner.v4.Contents v4_contents = 11;
 }
 
+// UpdateLocalScanStatusInternalRequest is sent by Sensor to report a delegated scan
+// failure that occurred before enrichment data could be produced (e.g. no scanner available,
+// request throttled).
 message UpdateLocalScanStatusInternalRequest {
+  // request_id correlates this status update to the originating ad-hoc scan request.
   string request_id = 1;
+  // error is the human-readable error message describing the scan failure.
   string error = 2;
 }
 
+// DeleteImagesRequest is the request message for DeleteImages.
 message DeleteImagesRequest {
+  // query selects images to delete using StackRox search query syntax.
+  // A non-nil query is required; an empty query selects all images.
   RawQuery query = 1;
+  // confirm must be set to true to perform the actual deletion.
+  // If false, the response reflects the number of images that would be deleted
+  // without making any changes (dry run).
   bool confirm = 2;
 }
 
 message DeleteImagesResponse {
+  // num_deleted is the number of images deleted (or that would be deleted in a dry run).
   uint32 num_deleted = 1;
+  // dry_run is true when confirm was not set in the request, meaning no images were deleted.
   bool dry_run = 2;
 }
 
+// WatchImageRequest is the request message for WatchImage.
 message WatchImageRequest {
   // The name of the image.
   // This must be fully qualified, including a tag,
@@ -103,25 +171,35 @@ message WatchImageRequest {
   string name = 1;
 }
 
+// WatchImageResponse is the response message for WatchImage.
 message WatchImageResponse {
   // If the image was scanned successfully, this returns the normalized name of the image.
   // This depends on what we get from the registry.
   // For example, "docker.io/wordpress:latest" -> "docker.io/library/wordpress:latest"
   string normalized_name = 1;
 
+  // ErrorType classifies the reason a WatchImage request could not be completed.
   enum ErrorType {
+    // NO_ERROR indicates the image was scanned and registered for watching successfully.
     NO_ERROR = 0;
+    // INVALID_IMAGE_NAME indicates the provided name could not be parsed as a valid
+    // image reference, or the name included a digest (which is not supported for watch).
     INVALID_IMAGE_NAME = 1;
+    // NO_VALID_INTEGRATION indicates that no configured registry or scanner integration
+    // was able to scan the image.
     NO_VALID_INTEGRATION = 2;
+    // SCAN_FAILED indicates that image enrichment was attempted but failed.
     SCAN_FAILED = 3;
   }
 
+  // error_type classifies the failure when the watch operation did not succeed.
   ErrorType error_type = 2;
 
   // Only set if error_type is NOT equal to "NO_ERROR".
   string error_message = 3;
 }
 
+// UnwatchImageRequest is the request message for UnwatchImage.
 message UnwatchImageRequest {
   // The name of the image to unwatch.
   // Should match the name of a previously watched image.
@@ -129,6 +207,7 @@ message UnwatchImageRequest {
 }
 
 message GetWatchedImagesResponse {
+  // watched_images is the list of image names currently registered for continuous watching.
   repeated storage.WatchedImage watched_images = 1;
 }
 
@@ -140,33 +219,93 @@ message ScanImageInternalResponseDetails {
   message TooManyParallelScans {}
 }
 
+// ExportImageRequest is the request message for the ExportImages streaming RPC.
 message ExportImageRequest {
+  // timeout is the maximum number of seconds the export may run before being canceled.
+  // A value of 0 means no timeout.
   int32 timeout = 1;
+  // query filters the exported images using StackRox search query syntax.
+  // An empty query exports all images.
   string query = 2;
 }
 
 message ExportImageResponse {
+  // image is one fully-enriched image object in the stream.
   storage.Image image = 1;
 }
 
-// ImageService APIs manages image metadata.
+// ImageService manages container image metadata, vulnerability scan results, and image watching.
+//
+// Images are discovered automatically when Sensor reports workloads running in secured clusters.
+// Central enriches each image by fetching metadata from configured image registries and
+// vulnerability data from configured scanners (Clairify or Scanner V4). Enrichment runs
+// on an automatic reprocess interval and can also be triggered on-demand via ScanImage.
+//
+// ListImages returns lightweight (slim) image objects suitable for listing. GetImage returns
+// the full image with per-component vulnerability detail. ExportImages streams full image
+// objects for bulk export.
+//
+// The Watch API allows Central to continuously track images by tag even when no deployment
+// references them; this is useful for monitoring base images or pipeline images.
+//
+// Authentication:
+//   - Read (View Image): GetImage, CountImages, ListImages, ExportImages
+//   - Write (Modify Image): ScanImage, DeleteImages, InvalidateScanAndRegistryCaches
+//   - Read (View WatchedImage): GetWatchedImages
+//   - Write (Modify WatchedImage): WatchImage, UnwatchImage
+//   - Internal (Sensor/Admission Controller only): ScanImageInternal,
+//     GetImageVulnerabilitiesInternal, EnrichLocalImageInternal, UpdateLocalScanStatusInternal
 service ImageService {
-  // GetImage returns the image given its ID.
+  // GetImage returns the full image record for the given SHA digest, including all
+  // per-component vulnerability details.
+  //
+  // Unlike ListImages (which returns slim objects), GetImage returns the complete
+  // storage.Image including the embedded scan with all components and CVEs.
+  // Snoozed CVEs are excluded by default; set include_snoozed=true to include them.
+  // CVE descriptions are included by default; set strip_description=true to omit them.
+  //
+  // Returns INVALID_ARGUMENT if id is empty.
+  // Returns NOT_FOUND if no image with the given SHA exists.
   rpc GetImage(GetImageRequest) returns (storage.Image) {
     option (google.api.http) = {get: "/v1/images/{id}"};
   }
 
-  // CountImages returns a count of images that match the input query.
+  // CountImages returns the number of images matching the query.
+  //
+  // Accepts StackRox search query syntax (e.g. "Image:nginx+CVE:CVE-2021-44228").
+  // An empty query counts all images visible to the caller.
+  //
+  // Returns INVALID_ARGUMENT if the query syntax is malformed.
   rpc CountImages(RawQuery) returns (CountImagesResponse) {
     option (google.api.http) = {get: "/v1/imagescount"};
   }
 
-  // ListImages returns all the images that match the input query.
+  // ListImages returns lightweight image summaries matching the query.
+  //
+  // Returns storage.ListImage objects (slim form) which include name, scan time,
+  // component count, CVE count, and risk score, but omit per-component vulnerability
+  // details. Use GetImage to retrieve the full scan data for a specific image.
+  //
+  // Supports StackRox search query syntax and pagination. Results are capped at
+  // 1000 images per request.
+  //
+  // Returns INVALID_ARGUMENT if the query syntax is malformed.
   rpc ListImages(RawQuery) returns (ListImagesResponse) {
     option (google.api.http) = {get: "/v1/images"};
   }
 
-  // ScanImage scans a single image and returns the result
+  // ScanImage triggers an on-demand scan of the named image and returns the full result.
+  //
+  // Central contacts the configured image registry to fetch metadata, then runs the
+  // image through the configured scanner (Clairify or Scanner V4) to produce vulnerability
+  // data. The enriched image is persisted to Central's datastore.
+  //
+  // By default the scan may be served from the metadata cache; set force=true to bypass
+  // the cache and fetch fresh data from the registry and scanner. The scan can be
+  // delegated to a specific secured cluster by providing the cluster name or ID.
+  //
+  // Requires Modify Image permission.
+  // Returns INVALID_ARGUMENT if the image name cannot be resolved.
   rpc ScanImage(ScanImageRequest) returns (storage.Image) {
     option (google.api.http) = {
       post: "/v1/images/scan"
@@ -190,17 +329,43 @@ service ImageService {
   // prevent local enrichment from occurring (such as no scanner, throttled, etc.).
   rpc UpdateLocalScanStatusInternal(UpdateLocalScanStatusInternalRequest) returns (Empty);
 
-  // InvalidateScanAndRegistryCaches removes the image metadata cache.
+  // InvalidateScanAndRegistryCaches clears the in-memory image metadata cache used to
+  // avoid redundant registry and scanner calls.
+  //
+  // After invalidation, the next scan or enrichment request for any image will re-fetch
+  // metadata from the registry and re-run the scanner. This is useful after adding or
+  // updating image integrations.
+  //
+  // Requires Modify Image permission.
   rpc InvalidateScanAndRegistryCaches(Empty) returns (Empty) {
     option (google.api.http) = {get: "/v1/images/cache/invalidate"};
   }
 
-  // DeleteImage removes the images based on a query
+  // DeleteImages removes images matching the query from Central's datastore and
+  // broadcasts an invalidation message to all connected Sensors.
+  //
+  // The request requires a non-nil query; an empty query targets all images.
+  // When confirm=false the response reports the number of images that would be
+  // deleted without making any changes (dry run). Set confirm=true to perform
+  // the actual deletion.
+  //
+  // Requires Modify Image permission.
+  // Returns INVALID_ARGUMENT if no query is provided or the query syntax is malformed.
   rpc DeleteImages(DeleteImagesRequest) returns (DeleteImagesResponse) {
     option (google.api.http) = {delete: "/v1/images"};
   }
 
-  // WatchImage marks an image name as to be watched.
+  // WatchImage registers an image name for continuous monitoring and triggers an
+  // immediate scan.
+  //
+  // Central will periodically re-scan watched images so that vulnerability data
+  // stays current even when no deployment currently references them. The image name
+  // must be fully qualified including a tag but must NOT include a digest (SHA).
+  //
+  // The response always returns HTTP 200; scan failure is signaled via the error_type
+  // and error_message fields rather than an HTTP error code.
+  //
+  // Requires Modify WatchedImage permission.
   rpc WatchImage(WatchImageRequest) returns (WatchImageResponse) {
     option (google.api.http) = {
       post: "/v1/watchedimages"
@@ -208,19 +373,34 @@ service ImageService {
     };
   }
 
-  // UnwatchImage marks an image name to no longer be watched.
-  // It returns successfully if the image is no longer being watched
+  // UnwatchImage removes an image name from the watched list.
+  //
+  // Returns successfully if the image is no longer being watched
   // after the call, irrespective of whether the image was already being watched.
+  //
+  // Requires Modify WatchedImage permission.
   rpc UnwatchImage(UnwatchImageRequest) returns (Empty) {
     option (google.api.http) = {delete: "/v1/watchedimages"};
   }
 
   // GetWatchedImages returns the list of image names that are currently
   // being watched.
+  //
+  // Requires View WatchedImage permission.
   rpc GetWatchedImages(Empty) returns (GetWatchedImagesResponse) {
     option (google.api.http) = {get: "/v1/watchedimages"};
   }
 
+  // ExportImages streams all images matching the query as a sequence of full image objects.
+  //
+  // Each response message in the stream contains one fully-enriched storage.Image.
+  // This endpoint is intended for bulk export use cases where the full vulnerability
+  // detail of every matching image is needed. Use ListImages for interactive queries.
+  //
+  // An optional timeout (in seconds) can be set; the stream will be canceled if the
+  // export takes longer than the specified duration.
+  //
+  // Requires View Image permission.
   rpc ExportImages(ExportImageRequest) returns (stream ExportImageResponse) {
     option (google.api.http) = {get: "/v1/export/images"};
   }

@@ -76,10 +76,14 @@ func (AuthMachineToMachineConfig_Type) EnumDescriptor() ([]byte, []int) {
 	return file_api_v1_auth_service_proto_rawDescGZIP(), []int{2, 0}
 }
 
+// UserAttribute represents a single key/multi-value attribute attached to an authenticated user,
+// sourced from the identity provider's token claims.
 type UserAttribute struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Values        []string               `protobuf:"bytes,2,rep,name=values,proto3" json:"values,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// key is the attribute name as returned by the identity provider (e.g. "groups", "email").
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// values holds one or more values for this attribute key.
+	Values        []string `protobuf:"bytes,2,rep,name=values,proto3" json:"values,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -128,18 +132,26 @@ func (x *UserAttribute) GetValues() []string {
 	return nil
 }
 
+// AuthStatus describes the authentication state of the caller that made the request.
 type AuthStatus struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Id:
 	//
 	//	*AuthStatus_UserId
 	//	*AuthStatus_ServiceId
-	Id             isAuthStatus_Id        `protobuf_oneof:"id"`
-	Expires        *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires,proto3" json:"expires,omitempty"`
-	RefreshUrl     string                 `protobuf:"bytes,4,opt,name=refresh_url,json=refreshUrl,proto3" json:"refresh_url,omitempty"`
-	AuthProvider   *storage.AuthProvider  `protobuf:"bytes,5,opt,name=auth_provider,json=authProvider,proto3" json:"auth_provider,omitempty"`
-	UserInfo       *storage.UserInfo      `protobuf:"bytes,6,opt,name=user_info,json=userInfo,proto3" json:"user_info,omitempty"`
-	UserAttributes []*UserAttribute       `protobuf:"bytes,7,rep,name=user_attributes,json=userAttributes,proto3" json:"user_attributes,omitempty"`
+	Id isAuthStatus_Id `protobuf_oneof:"id"`
+	// expires is the UTC timestamp at which the current credential (token or certificate) expires.
+	Expires *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires,proto3" json:"expires,omitempty"`
+	// refresh_url is the URL the client should call to refresh the token before it expires.
+	// Only set when the auth provider backend supports token refresh.
+	RefreshUrl string `protobuf:"bytes,4,opt,name=refresh_url,json=refreshUrl,proto3" json:"refresh_url,omitempty"`
+	// auth_provider is the auth provider used to authenticate the caller.
+	// The provider's sensitive config fields are stripped from this response.
+	AuthProvider *storage.AuthProvider `protobuf:"bytes,5,opt,name=auth_provider,json=authProvider,proto3" json:"auth_provider,omitempty"`
+	// user_info contains the display name, username, and aggregated permissions of the caller.
+	UserInfo *storage.UserInfo `protobuf:"bytes,6,opt,name=user_info,json=userInfo,proto3" json:"user_info,omitempty"`
+	// user_attributes holds raw claim attributes from the identity provider token.
+	UserAttributes []*UserAttribute `protobuf:"bytes,7,rep,name=user_attributes,json=userAttributes,proto3" json:"user_attributes,omitempty"`
 	// Token returned to ACS by the underlying identity provider. This field is set only in a few,
 	// specific contexts. Do not rely on this field being present in the response.
 	IdpToken      string `protobuf:"bytes,8,opt,name=idp_token,json=idpToken,proto3" json:"idp_token,omitempty"`
@@ -249,10 +261,12 @@ type isAuthStatus_Id interface {
 }
 
 type AuthStatus_UserId struct {
+	// user_id is the unique identifier of the human user, present when authenticated via an auth provider.
 	UserId string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3,oneof"`
 }
 
 type AuthStatus_ServiceId struct {
+	// service_id identifies an internal service (e.g. Sensor) authenticated via mTLS.
 	ServiceId *storage.ServiceIdentity `protobuf:"bytes,2,opt,name=service_id,json=serviceId,proto3,oneof"`
 }
 

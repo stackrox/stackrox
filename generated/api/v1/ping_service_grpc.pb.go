@@ -25,7 +25,14 @@ const (
 // PingServiceClient is the client API for PingService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// PingService provides a health check endpoint for Central.
+//
+// Authentication: no authentication required. Used by load balancers and
+// readiness probes.
 type PingServiceClient interface {
+	// Ping confirms Central is reachable and responding. Returns HTTP 200 with
+	// {"status": "ok"} on success. Safe to call without credentials.
 	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PongMessage, error)
 }
 
@@ -50,7 +57,14 @@ func (c *pingServiceClient) Ping(ctx context.Context, in *Empty, opts ...grpc.Ca
 // PingServiceServer is the server API for PingService service.
 // All implementations should embed UnimplementedPingServiceServer
 // for forward compatibility.
+//
+// PingService provides a health check endpoint for Central.
+//
+// Authentication: no authentication required. Used by load balancers and
+// readiness probes.
 type PingServiceServer interface {
+	// Ping confirms Central is reachable and responding. Returns HTTP 200 with
+	// {"status": "ok"} on success. Safe to call without credentials.
 	Ping(context.Context, *Empty) (*PongMessage, error)
 }
 

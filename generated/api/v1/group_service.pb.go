@@ -23,6 +23,8 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// GetGroupsRequest filters groups by their properties. All specified fields are ANDed.
+// Omitting a field disables that filter; omitting all fields returns all groups.
 type GetGroupsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to AuthProviderIdOpt:
@@ -144,6 +146,7 @@ type isGetGroupsRequest_AuthProviderIdOpt interface {
 }
 
 type GetGroupsRequest_AuthProviderId struct {
+	// auth_provider_id filters groups to those belonging to the specified auth provider.
 	AuthProviderId string `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId,proto3,oneof"`
 }
 
@@ -154,6 +157,7 @@ type isGetGroupsRequest_KeyOpt interface {
 }
 
 type GetGroupsRequest_Key struct {
+	// key filters groups by the attribute key used for membership matching (e.g. "groups").
 	Key string `protobuf:"bytes,2,opt,name=key,proto3,oneof"`
 }
 
@@ -164,6 +168,7 @@ type isGetGroupsRequest_ValueOpt interface {
 }
 
 type GetGroupsRequest_Value struct {
+	// value filters groups by the attribute value used for membership matching.
 	Value string `protobuf:"bytes,3,opt,name=value,proto3,oneof"`
 }
 
@@ -174,6 +179,7 @@ type isGetGroupsRequest_IdOpt interface {
 }
 
 type GetGroupsRequest_Id struct {
+	// id filters groups by their unique group ID.
 	Id string `protobuf:"bytes,4,opt,name=id,proto3,oneof"`
 }
 
@@ -182,8 +188,9 @@ func (*GetGroupsRequest_Id) isGetGroupsRequest_IdOpt() {}
 // API for updating Groups and getting users.
 // Next Available Tag: 2
 type GetGroupsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Groups        []*storage.Group       `protobuf:"bytes,1,rep,name=groups,proto3" json:"groups,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// groups is the list of groups matching the request filter.
+	Groups        []*storage.Group `protobuf:"bytes,1,rep,name=groups,proto3" json:"groups,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -237,9 +244,10 @@ type GroupBatchUpdateRequest struct {
 	PreviousGroups []*storage.Group `protobuf:"bytes,1,rep,name=previous_groups,json=previousGroups,proto3" json:"previous_groups,omitempty"`
 	// Required groups are the groups we want to mutate the previous groups into.
 	RequiredGroups []*storage.Group `protobuf:"bytes,2,rep,name=required_groups,json=requiredGroups,proto3" json:"required_groups,omitempty"`
-	Force          bool             `protobuf:"varint,3,opt,name=force,proto3" json:"force,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// force bypasses immutability checks enforced by object traits (e.g. declarative-origin groups).
+	Force         bool `protobuf:"varint,3,opt,name=force,proto3" json:"force,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GroupBatchUpdateRequest) Reset() {
@@ -293,16 +301,22 @@ func (x *GroupBatchUpdateRequest) GetForce() bool {
 	return false
 }
 
+// DeleteGroupRequest identifies a group to delete by its properties.
 type DeleteGroupRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// We copy over parameters from storage.GroupProperties for seamless HTTP API migration.
+	// auth_provider_id identifies the auth provider the group belongs to.
 	AuthProviderId string `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId,proto3" json:"auth_provider_id,omitempty"`
-	Key            string `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
-	Value          string `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
-	Id             string `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty"`
-	Force          bool   `protobuf:"varint,5,opt,name=force,proto3" json:"force,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// key is the attribute key of the group properties to match.
+	Key string `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+	// value is the attribute value of the group properties to match.
+	Value string `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	// id is the unique identifier of the group to delete.
+	Id string `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty"`
+	// force bypasses immutability checks enforced by object traits (e.g. declarative-origin groups).
+	Force         bool `protobuf:"varint,5,opt,name=force,proto3" json:"force,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteGroupRequest) Reset() {
@@ -370,10 +384,13 @@ func (x *DeleteGroupRequest) GetForce() bool {
 	return false
 }
 
+// UpdateGroupRequest carries the group definition to update and an optional force flag.
 type UpdateGroupRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Group         *storage.Group         `protobuf:"bytes,1,opt,name=group,proto3" json:"group,omitempty"`
-	Force         bool                   `protobuf:"varint,2,opt,name=force,proto3" json:"force,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// group is the updated group definition. The group ID must be set and must match an existing group.
+	Group *storage.Group `protobuf:"bytes,1,opt,name=group,proto3" json:"group,omitempty"`
+	// force bypasses immutability checks enforced by object traits (e.g. declarative-origin groups).
+	Force         bool `protobuf:"varint,2,opt,name=force,proto3" json:"force,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

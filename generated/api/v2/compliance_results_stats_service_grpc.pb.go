@@ -31,6 +31,14 @@ const (
 // ComplianceResultsStatsServiceClient is the client API for ComplianceResultsStatsService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ComplianceResultsStatsService provides aggregated statistics over compliance scan results.
+//
+// This service answers questions like "how many checks pass/fail per profile?" or
+// "what is the overall compliance posture of a cluster?" without returning individual
+// check result details. Statistics are grouped by profile, cluster, or check name.
+//
+// Authentication: all endpoints require View access to both the Compliance and Cluster resources.
 type ComplianceResultsStatsServiceClient interface {
 	// GetComplianceProfileStats lists current scan stats grouped by profile
 	// Optional RawQuery query fields can be combined.
@@ -38,6 +46,11 @@ type ComplianceResultsStatsServiceClient interface {
 	// - scan: id(s) of the compliance scan
 	// - cluster: id(s) of the cluster
 	// - profile: id(s) of the profile
+	//
+	// Returns check status counts for the specified profile across all clusters.
+	// The profile_name field is required. Supports pagination.
+	//
+	// Returns INVALID_ARGUMENT if profile_name is empty or the query is malformed.
 	GetComplianceProfileStats(ctx context.Context, in *ComplianceProfileResultsRequest, opts ...grpc.CallOption) (*ListComplianceProfileScanStatsResponse, error)
 	// GetComplianceProfileScanStats lists current scan stats grouped by profile
 	// Optional RawQuery query fields can be combined.
@@ -45,15 +58,44 @@ type ComplianceResultsStatsServiceClient interface {
 	// - scan: id(s) of the compliance scan
 	// - cluster: id(s) of the cluster
 	// - profile: id(s) of the profile
+	//
+	// Returns check status counts for all profiles matching the query, across all clusters.
+	// Supports pagination; total_count reflects distinct profile names.
+	//
+	// Returns INVALID_ARGUMENT if the query is malformed.
 	GetComplianceProfilesStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceProfileScanStatsResponse, error)
-	// GetComplianceProfilesClusterStats lists cluster stats grouped by profile
+	// GetComplianceProfilesClusterStats lists cluster stats grouped by profile.
+	//
+	// Returns check status counts per profile for the specified cluster.
+	// The cluster_id field is required; returns INVALID_ARGUMENT if the cluster is not found.
+	// Supports pagination; total_count reflects distinct profile names.
+	//
+	// Returns INVALID_ARGUMENT if cluster_id is empty or the cluster does not exist.
 	GetComplianceProfilesClusterStats(ctx context.Context, in *ComplianceScanClusterRequest, opts ...grpc.CallOption) (*ListComplianceClusterProfileStatsResponse, error)
-	// GetComplianceProfileCheckStats lists current stats for a specific cluster check
+	// GetComplianceProfileCheckStats lists current stats for a specific cluster check.
+	//
+	// Returns per-cluster check status counts for a specific check within a profile.
+	// Both profile_name and check_name are required. Supports pagination.
+	//
+	// Returns INVALID_ARGUMENT if profile_name or check_name is empty.
 	GetComplianceProfileCheckStats(ctx context.Context, in *ComplianceProfileCheckRequest, opts ...grpc.CallOption) (*ListComplianceProfileResults, error)
-	// GetComplianceClusterScanStats lists the current scan stats for a cluster for each scan configuration
+	// GetComplianceClusterScanStats lists the current scan stats for a cluster for each scan configuration.
+	//
+	// Returns check status counts per scan configuration for the specified cluster.
+	// The cluster_id field is required. The scan_config_id is resolved from the scan configuration name.
+	// Supports pagination; total_count reflects distinct scan configuration names.
+	//
+	// Returns INVALID_ARGUMENT if cluster_id is empty.
 	GetComplianceClusterScanStats(ctx context.Context, in *ComplianceScanClusterRequest, opts ...grpc.CallOption) (*ListComplianceClusterScanStatsResponse, error)
 	// Deprecated in favor of GetComplianceClusterStats
 	GetComplianceOverallClusterStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceClusterOverallStatsResponse, error)
+	// GetComplianceClusterStats lists overall compliance check stats per cluster for a given profile.
+	//
+	// Returns pass/fail/error counts per cluster filtered to the specified profile.
+	// Also includes Compliance Operator integration status errors per cluster.
+	// The profile_name field is required. Supports pagination.
+	//
+	// Returns INVALID_ARGUMENT if profile_name is empty or the query is malformed.
 	GetComplianceClusterStats(ctx context.Context, in *ComplianceProfileResultsRequest, opts ...grpc.CallOption) (*ListComplianceClusterOverallStatsResponse, error)
 }
 
@@ -138,6 +180,14 @@ func (c *complianceResultsStatsServiceClient) GetComplianceClusterStats(ctx cont
 // ComplianceResultsStatsServiceServer is the server API for ComplianceResultsStatsService service.
 // All implementations should embed UnimplementedComplianceResultsStatsServiceServer
 // for forward compatibility.
+//
+// ComplianceResultsStatsService provides aggregated statistics over compliance scan results.
+//
+// This service answers questions like "how many checks pass/fail per profile?" or
+// "what is the overall compliance posture of a cluster?" without returning individual
+// check result details. Statistics are grouped by profile, cluster, or check name.
+//
+// Authentication: all endpoints require View access to both the Compliance and Cluster resources.
 type ComplianceResultsStatsServiceServer interface {
 	// GetComplianceProfileStats lists current scan stats grouped by profile
 	// Optional RawQuery query fields can be combined.
@@ -145,6 +195,11 @@ type ComplianceResultsStatsServiceServer interface {
 	// - scan: id(s) of the compliance scan
 	// - cluster: id(s) of the cluster
 	// - profile: id(s) of the profile
+	//
+	// Returns check status counts for the specified profile across all clusters.
+	// The profile_name field is required. Supports pagination.
+	//
+	// Returns INVALID_ARGUMENT if profile_name is empty or the query is malformed.
 	GetComplianceProfileStats(context.Context, *ComplianceProfileResultsRequest) (*ListComplianceProfileScanStatsResponse, error)
 	// GetComplianceProfileScanStats lists current scan stats grouped by profile
 	// Optional RawQuery query fields can be combined.
@@ -152,15 +207,44 @@ type ComplianceResultsStatsServiceServer interface {
 	// - scan: id(s) of the compliance scan
 	// - cluster: id(s) of the cluster
 	// - profile: id(s) of the profile
+	//
+	// Returns check status counts for all profiles matching the query, across all clusters.
+	// Supports pagination; total_count reflects distinct profile names.
+	//
+	// Returns INVALID_ARGUMENT if the query is malformed.
 	GetComplianceProfilesStats(context.Context, *RawQuery) (*ListComplianceProfileScanStatsResponse, error)
-	// GetComplianceProfilesClusterStats lists cluster stats grouped by profile
+	// GetComplianceProfilesClusterStats lists cluster stats grouped by profile.
+	//
+	// Returns check status counts per profile for the specified cluster.
+	// The cluster_id field is required; returns INVALID_ARGUMENT if the cluster is not found.
+	// Supports pagination; total_count reflects distinct profile names.
+	//
+	// Returns INVALID_ARGUMENT if cluster_id is empty or the cluster does not exist.
 	GetComplianceProfilesClusterStats(context.Context, *ComplianceScanClusterRequest) (*ListComplianceClusterProfileStatsResponse, error)
-	// GetComplianceProfileCheckStats lists current stats for a specific cluster check
+	// GetComplianceProfileCheckStats lists current stats for a specific cluster check.
+	//
+	// Returns per-cluster check status counts for a specific check within a profile.
+	// Both profile_name and check_name are required. Supports pagination.
+	//
+	// Returns INVALID_ARGUMENT if profile_name or check_name is empty.
 	GetComplianceProfileCheckStats(context.Context, *ComplianceProfileCheckRequest) (*ListComplianceProfileResults, error)
-	// GetComplianceClusterScanStats lists the current scan stats for a cluster for each scan configuration
+	// GetComplianceClusterScanStats lists the current scan stats for a cluster for each scan configuration.
+	//
+	// Returns check status counts per scan configuration for the specified cluster.
+	// The cluster_id field is required. The scan_config_id is resolved from the scan configuration name.
+	// Supports pagination; total_count reflects distinct scan configuration names.
+	//
+	// Returns INVALID_ARGUMENT if cluster_id is empty.
 	GetComplianceClusterScanStats(context.Context, *ComplianceScanClusterRequest) (*ListComplianceClusterScanStatsResponse, error)
 	// Deprecated in favor of GetComplianceClusterStats
 	GetComplianceOverallClusterStats(context.Context, *RawQuery) (*ListComplianceClusterOverallStatsResponse, error)
+	// GetComplianceClusterStats lists overall compliance check stats per cluster for a given profile.
+	//
+	// Returns pass/fail/error counts per cluster filtered to the specified profile.
+	// Also includes Compliance Operator integration status errors per cluster.
+	// The profile_name field is required. Supports pagination.
+	//
+	// Returns INVALID_ARGUMENT if profile_name is empty or the query is malformed.
 	GetComplianceClusterStats(context.Context, *ComplianceProfileResultsRequest) (*ListComplianceClusterOverallStatsResponse, error)
 }
 

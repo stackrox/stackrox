@@ -19,7 +19,7 @@
     "/v1/administration/usage/secured-units/current": {
       "get": {
         "summary": "GetCurrentSecuredUnitsUsage returns the current secured units usage\nmetrics values.",
-        "description": "The secured units metrics are collected from all connected clusters every\n5 minutes, so the returned result includes data for the connected\nclusters accurate to about these 5 minutes, and potentially some outdated\ndata for the disconnected clusters.",
+        "description": "The secured units metrics are collected from all connected clusters every\n5 minutes, so the returned result includes data for the connected\nclusters accurate to about these 5 minutes, and potentially some outdated\ndata for the disconnected clusters.\nRequires read access to the Administration resource.",
         "operationId": "AdministrationUsageService_GetCurrentSecuredUnitsUsage",
         "responses": {
           "200": {
@@ -43,7 +43,7 @@
     "/v1/administration/usage/secured-units/max": {
       "get": {
         "summary": "GetMaxSecuredUnitsUsage returns the maximum, i.e. peak, secured units\nusage observed during a given time range, together with the time when\nthis maximum was aggregated and stored.",
-        "description": "The usage metrics are continuously collected from all the connected\nclusters. The maximum values are kept for some period of time in memory,\nand then, periodically, are stored to the database.\nThe last data from disconnected clusters are taken into account.",
+        "description": "The usage metrics are continuously collected from all the connected\nclusters. The maximum values are kept for some period of time in memory,\nand then, periodically, are stored to the database.\nThe last data from disconnected clusters are taken into account.\nThe from field defaults to the Unix epoch and to defaults to the current time.\nReturns INVALID_ARGUMENT if from is not before to.\nRequires read access to the Administration resource.",
         "operationId": "AdministrationUsageService_GetMaxSecuredUnitsUsage",
         "responses": {
           "200": {
@@ -62,6 +62,7 @@
         "parameters": [
           {
             "name": "from",
+            "description": "from is the start of the time range (inclusive). If not set, defaults to the Unix epoch.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -69,6 +70,7 @@
           },
           {
             "name": "to",
+            "description": "to is the end of the time range (inclusive). If not set, defaults to the current time.\nMust be after from; returns INVALID_ARGUMENT if from >= to.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -117,19 +119,23 @@
       "properties": {
         "maxNodesAt": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "max_nodes_at is the timestamp (with ~1h accuracy) when the peak node count was observed."
         },
         "maxNodes": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "max_nodes is the highest node count observed within the requested time range."
         },
         "maxCpuUnitsAt": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "max_cpu_units_at is the timestamp (with ~1h accuracy) when the peak CPU unit count was observed."
         },
         "maxCpuUnits": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "max_cpu_units is the highest CPU unit count observed within the requested time range."
         }
       },
       "description": "MaxSecuredUnitsUsageResponse holds the maximum values of the secured nodes\nand CPU Units (as reported by Kubernetes) with the time at which these\nvalues were aggregated, with the aggregation period accuracy (1h)."
@@ -139,11 +145,13 @@
       "properties": {
         "numNodes": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "num_nodes is the total number of nodes currently reported across all connected clusters."
         },
         "numCpuUnits": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "num_cpu_units is the total number of CPU units (logical cores) currently reported\nacross all connected clusters."
         }
       },
       "description": "SecuredUnitsUsageResponse holds the values of the currently observable\nadministration usage metrics."

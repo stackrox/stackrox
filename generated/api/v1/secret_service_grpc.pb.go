@@ -28,12 +28,31 @@ const (
 // SecretServiceClient is the client API for SecretService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// SecretService provides access to Kubernetes secrets observed by StackRox across secured clusters.
+//
+// StackRox discovers secrets from secured clusters and tracks which deployments reference them.
+// Secret values are never stored; only metadata (name, namespace, type, expiry) and deployment
+// relationships are available.
+//
+// Authentication: all endpoints require a valid API token with read access to the Secret resource.
 type SecretServiceClient interface {
-	// GetSecret returns a secret given its ID.
+	// GetSecret returns the secret with the given ID, including its deployment relationships.
+	//
+	// The response includes all deployments in the same cluster and namespace that reference this
+	// secret by name, resolved at query time.
+	// Returns NOT_FOUND if no secret with the given ID exists.
 	GetSecret(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.Secret, error)
-	// CountSecrets returns the number of secrets.
+	// CountSecrets returns the total number of secrets matching the optional query.
+	//
+	// Supports StackRox search query syntax to filter by cluster, namespace, or secret name.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	CountSecrets(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountSecretsResponse, error)
-	// ListSecrets returns the list of secrets.
+	// ListSecrets returns lightweight summaries of secrets matching the optional query.
+	//
+	// Uses StackRox search query syntax to filter by cluster, namespace, or secret name.
+	// Results are paginated; at most 1000 secrets are returned per request.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	ListSecrets(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListSecretsResponse, error)
 }
 
@@ -78,12 +97,31 @@ func (c *secretServiceClient) ListSecrets(ctx context.Context, in *RawQuery, opt
 // SecretServiceServer is the server API for SecretService service.
 // All implementations should embed UnimplementedSecretServiceServer
 // for forward compatibility.
+//
+// SecretService provides access to Kubernetes secrets observed by StackRox across secured clusters.
+//
+// StackRox discovers secrets from secured clusters and tracks which deployments reference them.
+// Secret values are never stored; only metadata (name, namespace, type, expiry) and deployment
+// relationships are available.
+//
+// Authentication: all endpoints require a valid API token with read access to the Secret resource.
 type SecretServiceServer interface {
-	// GetSecret returns a secret given its ID.
+	// GetSecret returns the secret with the given ID, including its deployment relationships.
+	//
+	// The response includes all deployments in the same cluster and namespace that reference this
+	// secret by name, resolved at query time.
+	// Returns NOT_FOUND if no secret with the given ID exists.
 	GetSecret(context.Context, *ResourceByID) (*storage.Secret, error)
-	// CountSecrets returns the number of secrets.
+	// CountSecrets returns the total number of secrets matching the optional query.
+	//
+	// Supports StackRox search query syntax to filter by cluster, namespace, or secret name.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	CountSecrets(context.Context, *RawQuery) (*CountSecretsResponse, error)
-	// ListSecrets returns the list of secrets.
+	// ListSecrets returns lightweight summaries of secrets matching the optional query.
+	//
+	// Uses StackRox search query syntax to filter by cluster, namespace, or secret name.
+	// Results are paginated; at most 1000 secrets are returned per request.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	ListSecrets(context.Context, *RawQuery) (*ListSecretsResponse, error)
 }
 

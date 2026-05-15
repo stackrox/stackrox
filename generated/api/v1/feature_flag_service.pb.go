@@ -22,11 +22,15 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// FeatureFlag represents a single runtime feature flag and its current state.
 type FeatureFlag struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	EnvVar        string                 `protobuf:"bytes,2,opt,name=env_var,json=envVar,proto3" json:"env_var,omitempty"`
-	Enabled       bool                   `protobuf:"varint,3,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// name is the human-readable name of the feature flag.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// env_var is the environment variable that controls this flag (e.g. "ROX_SOME_FEATURE").
+	EnvVar string `protobuf:"bytes,2,opt,name=env_var,json=envVar,proto3" json:"env_var,omitempty"`
+	// enabled indicates whether the feature flag is currently active.
+	Enabled       bool `protobuf:"varint,3,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -82,9 +86,11 @@ func (x *FeatureFlag) GetEnabled() bool {
 	return false
 }
 
+// GetFeatureFlagsResponse is the response message for GetFeatureFlags.
 type GetFeatureFlagsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	FeatureFlags  []*FeatureFlag         `protobuf:"bytes,1,rep,name=feature_flags,json=featureFlags,proto3" json:"feature_flags,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// feature_flags is the list of all known feature flags, sorted alphabetically by name.
+	FeatureFlags  []*FeatureFlag `protobuf:"bytes,1,rep,name=feature_flags,json=featureFlags,proto3" json:"feature_flags,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

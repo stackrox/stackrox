@@ -33,26 +33,59 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// ClusterInitService manages cluster init bundles and CRSs.
+// ClusterInitService manages credentials for bootstrapping new secured clusters.
+//
+// A Cluster Registration Secret (CRS) is a Kubernetes Secret that, when applied to a new
+// secured cluster, allows Sensor to authenticate and register with Central. CRSs replace the
+// older Init Bundle mechanism and support optional expiry times and registration limits.
+//
+// Authentication: all endpoints require a valid API token with the Admin role.
 type ClusterInitServiceClient interface {
 	// Deprecated: Do not use.
-	// RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster
-	// then its ID should be included in request.
-	// If confirm_impacted_clusters_ids does not match with current impacted clusters
-	// then request will fail with error that includes all impacted clusters.
-	// Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).
+	// RevokeInitBundle revokes one or more init bundles, preventing clusters from re-authenticating using them.
+	//
+	// If any of the specified bundles are currently in use by clusters, the caller must include all
+	// affected cluster IDs in confirm_impacted_clusters_ids. The request fails if any impacted cluster
+	// is not confirmed, returning the list of impacted clusters in the error response.
+	//
+	// Returns ALREADY_EXISTS if the revocation conflicts, or an error if confirmation is incomplete.
+	// Deprecated: use RevokeCRS instead.
 	RevokeInitBundle(ctx context.Context, in *InitBundleRevokeRequest, opts ...grpc.CallOption) (*InitBundleRevokeResponse, error)
-	// RevokeCRSBundle deletes cluster registration secrets.
+	// RevokeCRS revokes one or more Cluster Registration Secrets.
+	//
+	// Revoked CRSs can no longer be used to register new clusters. Clusters that already completed
+	// registration are not affected. Partial failures are reported per-ID in crs_revocation_errors.
 	RevokeCRS(ctx context.Context, in *CRSRevokeRequest, opts ...grpc.CallOption) (*CRSRevokeResponse, error)
+	// GetCAConfig returns Central's CA certificate rendered as a Helm values YAML bundle.
+	//
+	// This can be used to configure trust for Central when deploying secured cluster components.
 	GetCAConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetCAConfigResponse, error)
 	// Deprecated: Do not use.
-	// Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).
+	// GetInitBundles returns metadata for all existing init bundles, including which clusters
+	// are currently authenticated using each bundle.
+	// Deprecated: use GetCRSs instead. Init bundles are superseded by Cluster Registration Secrets.
 	GetInitBundles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*InitBundleMetasResponse, error)
+	// GetCRSs returns metadata for all existing Cluster Registration Secrets.
 	GetCRSs(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CRSMetasResponse, error)
 	// Deprecated: Do not use.
-	// Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).
+	// GenerateInitBundle creates a new init bundle with the specified name and returns its
+	// credentials rendered as a Helm values YAML and as Kubernetes Secret manifests.
+	//
+	// Returns ALREADY_EXISTS if a bundle with the given name already exists.
+	// Deprecated: use GenerateCRS instead.
 	GenerateInitBundle(ctx context.Context, in *InitBundleGenRequest, opts ...grpc.CallOption) (*InitBundleGenResponse, error)
+	// GenerateCRS creates a new Cluster Registration Secret with the specified name and
+	// returns the Kubernetes Secret manifest to apply in the secured cluster.
+	//
+	// Returns ALREADY_EXISTS if a CRS with the given name already exists.
+	// Returns UNIMPLEMENTED if the CRS feature is not enabled.
 	GenerateCRS(ctx context.Context, in *CRSGenRequest, opts ...grpc.CallOption) (*CRSGenResponse, error)
+	// GenerateCRSExtended creates a new Cluster Registration Secret with optional expiry and
+	// registration limit constraints.
+	//
+	// Exactly one of valid_until or valid_for may be specified; providing both returns INVALID_ARGUMENT.
+	// Returns ALREADY_EXISTS if a CRS with the given name already exists.
+	// Returns UNIMPLEMENTED if the CRS feature is not enabled.
 	GenerateCRSExtended(ctx context.Context, in *CRSGenRequestExtended, opts ...grpc.CallOption) (*CRSGenResponse, error)
 }
 
@@ -151,26 +184,59 @@ func (c *clusterInitServiceClient) GenerateCRSExtended(ctx context.Context, in *
 // All implementations should embed UnimplementedClusterInitServiceServer
 // for forward compatibility.
 //
-// ClusterInitService manages cluster init bundles and CRSs.
+// ClusterInitService manages credentials for bootstrapping new secured clusters.
+//
+// A Cluster Registration Secret (CRS) is a Kubernetes Secret that, when applied to a new
+// secured cluster, allows Sensor to authenticate and register with Central. CRSs replace the
+// older Init Bundle mechanism and support optional expiry times and registration limits.
+//
+// Authentication: all endpoints require a valid API token with the Admin role.
 type ClusterInitServiceServer interface {
 	// Deprecated: Do not use.
-	// RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster
-	// then its ID should be included in request.
-	// If confirm_impacted_clusters_ids does not match with current impacted clusters
-	// then request will fail with error that includes all impacted clusters.
-	// Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).
+	// RevokeInitBundle revokes one or more init bundles, preventing clusters from re-authenticating using them.
+	//
+	// If any of the specified bundles are currently in use by clusters, the caller must include all
+	// affected cluster IDs in confirm_impacted_clusters_ids. The request fails if any impacted cluster
+	// is not confirmed, returning the list of impacted clusters in the error response.
+	//
+	// Returns ALREADY_EXISTS if the revocation conflicts, or an error if confirmation is incomplete.
+	// Deprecated: use RevokeCRS instead.
 	RevokeInitBundle(context.Context, *InitBundleRevokeRequest) (*InitBundleRevokeResponse, error)
-	// RevokeCRSBundle deletes cluster registration secrets.
+	// RevokeCRS revokes one or more Cluster Registration Secrets.
+	//
+	// Revoked CRSs can no longer be used to register new clusters. Clusters that already completed
+	// registration are not affected. Partial failures are reported per-ID in crs_revocation_errors.
 	RevokeCRS(context.Context, *CRSRevokeRequest) (*CRSRevokeResponse, error)
+	// GetCAConfig returns Central's CA certificate rendered as a Helm values YAML bundle.
+	//
+	// This can be used to configure trust for Central when deploying secured cluster components.
 	GetCAConfig(context.Context, *Empty) (*GetCAConfigResponse, error)
 	// Deprecated: Do not use.
-	// Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).
+	// GetInitBundles returns metadata for all existing init bundles, including which clusters
+	// are currently authenticated using each bundle.
+	// Deprecated: use GetCRSs instead. Init bundles are superseded by Cluster Registration Secrets.
 	GetInitBundles(context.Context, *Empty) (*InitBundleMetasResponse, error)
+	// GetCRSs returns metadata for all existing Cluster Registration Secrets.
 	GetCRSs(context.Context, *Empty) (*CRSMetasResponse, error)
 	// Deprecated: Do not use.
-	// Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).
+	// GenerateInitBundle creates a new init bundle with the specified name and returns its
+	// credentials rendered as a Helm values YAML and as Kubernetes Secret manifests.
+	//
+	// Returns ALREADY_EXISTS if a bundle with the given name already exists.
+	// Deprecated: use GenerateCRS instead.
 	GenerateInitBundle(context.Context, *InitBundleGenRequest) (*InitBundleGenResponse, error)
+	// GenerateCRS creates a new Cluster Registration Secret with the specified name and
+	// returns the Kubernetes Secret manifest to apply in the secured cluster.
+	//
+	// Returns ALREADY_EXISTS if a CRS with the given name already exists.
+	// Returns UNIMPLEMENTED if the CRS feature is not enabled.
 	GenerateCRS(context.Context, *CRSGenRequest) (*CRSGenResponse, error)
+	// GenerateCRSExtended creates a new Cluster Registration Secret with optional expiry and
+	// registration limit constraints.
+	//
+	// Exactly one of valid_until or valid_for may be specified; providing both returns INVALID_ARGUMENT.
+	// Returns ALREADY_EXISTS if a CRS with the given name already exists.
+	// Returns UNIMPLEMENTED if the CRS feature is not enabled.
 	GenerateCRSExtended(context.Context, *CRSGenRequestExtended) (*CRSGenResponse, error)
 }
 

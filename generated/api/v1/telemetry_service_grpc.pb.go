@@ -30,12 +30,46 @@ const (
 // TelemetryServiceClient is the client API for TelemetryService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// TelemetryService provides access to Central's telemetry configuration,
+// including the phone-home client configuration used by the UI.
+//
+// GetTelemetryConfiguration and ConfigureTelemetry are deprecated stubs
+// retained for backwards compatibility; they always return enabled=false
+// and do not affect collection behavior.
+//
+// GetConfig and PostConfigReload are the active endpoints. GetConfig returns
+// the current phone-home client configuration (endpoint, storage key, and a
+// hashed user ID) needed by the frontend. PostConfigReload triggers Central
+// to re-read its telemetry configuration from the environment.
+//
+// Authentication: GetTelemetryConfiguration requires the Administration
+// resource with View access. ConfigureTelemetry requires the Administration
+// resource with Modify access. GetConfig and PostConfigReload require any
+// authenticated user.
 type TelemetryServiceClient interface {
 	// Deprecated: Do not use.
+	// GetTelemetryConfiguration is deprecated and returns enabled=false
+	// unconditionally. It was previously used to check whether periodic
+	// telemetry collection was enabled.
+	//
+	// Deprecated: use GetConfig instead.
 	GetTelemetryConfiguration(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.TelemetryConfiguration, error)
 	// Deprecated: Do not use.
+	// ConfigureTelemetry is deprecated and has no effect. It was previously
+	// used to enable or disable periodic telemetry collection.
+	//
+	// Deprecated: use PostConfigReload instead.
 	ConfigureTelemetry(ctx context.Context, in *ConfigureTelemetryRequest, opts ...grpc.CallOption) (*storage.TelemetryConfiguration, error)
+	// GetConfig returns the current phone-home telemetry client configuration
+	// for the authenticated user.
+	//
+	// The response includes a hashed user ID derived from the caller's auth
+	// identity, the telemetry endpoint URL, and a storage key (empty when
+	// the telemetry client is disabled).
 	GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*central.TelemetryConfig, error)
+	// PostConfigReload triggers Central to re-read its telemetry configuration
+	// from the environment and reconfigure the phone-home client accordingly.
 	PostConfigReload(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -92,12 +126,46 @@ func (c *telemetryServiceClient) PostConfigReload(ctx context.Context, in *Empty
 // TelemetryServiceServer is the server API for TelemetryService service.
 // All implementations should embed UnimplementedTelemetryServiceServer
 // for forward compatibility.
+//
+// TelemetryService provides access to Central's telemetry configuration,
+// including the phone-home client configuration used by the UI.
+//
+// GetTelemetryConfiguration and ConfigureTelemetry are deprecated stubs
+// retained for backwards compatibility; they always return enabled=false
+// and do not affect collection behavior.
+//
+// GetConfig and PostConfigReload are the active endpoints. GetConfig returns
+// the current phone-home client configuration (endpoint, storage key, and a
+// hashed user ID) needed by the frontend. PostConfigReload triggers Central
+// to re-read its telemetry configuration from the environment.
+//
+// Authentication: GetTelemetryConfiguration requires the Administration
+// resource with View access. ConfigureTelemetry requires the Administration
+// resource with Modify access. GetConfig and PostConfigReload require any
+// authenticated user.
 type TelemetryServiceServer interface {
 	// Deprecated: Do not use.
+	// GetTelemetryConfiguration is deprecated and returns enabled=false
+	// unconditionally. It was previously used to check whether periodic
+	// telemetry collection was enabled.
+	//
+	// Deprecated: use GetConfig instead.
 	GetTelemetryConfiguration(context.Context, *Empty) (*storage.TelemetryConfiguration, error)
 	// Deprecated: Do not use.
+	// ConfigureTelemetry is deprecated and has no effect. It was previously
+	// used to enable or disable periodic telemetry collection.
+	//
+	// Deprecated: use PostConfigReload instead.
 	ConfigureTelemetry(context.Context, *ConfigureTelemetryRequest) (*storage.TelemetryConfiguration, error)
+	// GetConfig returns the current phone-home telemetry client configuration
+	// for the authenticated user.
+	//
+	// The response includes a hashed user ID derived from the caller's auth
+	// identity, the telemetry endpoint URL, and a storage key (empty when
+	// the telemetry client is disabled).
 	GetConfig(context.Context, *Empty) (*central.TelemetryConfig, error)
+	// PostConfigReload triggers Central to re-read its telemetry configuration
+	// from the environment and reconfigure the phone-home client accordingly.
 	PostConfigReload(context.Context, *Empty) (*Empty, error)
 }
 

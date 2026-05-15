@@ -11,13 +11,22 @@ option java_package = "io.stackrox.proto.api.v1";
 // These protobuf messages replace the family of existing *ProcessWhitelists* ones
 // and are identical to them except named differently. Reason: inclusive language.
 
+// GetProcessBaselineRequest identifies a process baseline by its composite key
+// (cluster, namespace, deployment, container).
 message GetProcessBaselineRequest {
+  // key uniquely identifies the process baseline. All four key fields
+  // (cluster_id, namespace, deployment_id, container_name) are required.
   storage.ProcessBaselineKey key = 1;
 }
 
+// UpdateProcessBaselinesRequest adds or removes process names from one or more
+// process baselines identified by their composite keys.
 message UpdateProcessBaselinesRequest {
+  // keys identifies the baselines to update. Each key must have all four fields populated.
   repeated storage.ProcessBaselineKey keys = 1;
+  // add_elements is the list of process names to add to each baseline.
   repeated storage.BaselineItem add_elements = 2;
+  // remove_elements is the list of process names to remove from each baseline.
   repeated storage.BaselineItem remove_elements = 3;
 }
 
@@ -25,50 +34,98 @@ message ProcessBaselinesResponse {
   repeated storage.ProcessBaseline baselines = 1;
 }
 
+// ProcessBaselineUpdateError records a failure to update a single baseline.
 message ProcessBaselineUpdateError {
+  // error is the human-readable description of what went wrong.
   string error = 1;
+  // key identifies which baseline could not be updated.
   storage.ProcessBaselineKey key = 2;
 }
 
 message BulkUpdateProcessBaselinesResponse {
+  // success is true if all baselines in the bulk operation were updated without error.
   bool success = 1;
 }
 
+// UpdateProcessBaselinesResponse returns the updated baseline objects along
+// with any per-baseline errors.
 message UpdateProcessBaselinesResponse {
+  // baselines contains the updated baseline objects for all successful updates.
   repeated storage.ProcessBaseline baselines = 1;
+  // errors contains entries for any baselines that could not be updated.
   repeated ProcessBaselineUpdateError errors = 2;
 }
 
+// LockProcessBaselinesRequest locks or unlocks a list of process baselines.
 message LockProcessBaselinesRequest {
+  // keys identifies the baselines to lock or unlock. Each key must be fully specified.
   repeated storage.ProcessBaselineKey keys = 1;
+  // locked controls whether to lock (true) or unlock (false) the baselines.
   bool locked = 2;
 }
 
+// BulkProcessBaselinesRequest identifies a set of baselines by cluster and
+// optional namespaces for bulk lock/unlock operations.
 message BulkProcessBaselinesRequest {
+  // cluster_id identifies the cluster whose baselines to operate on. Required.
   string cluster_id = 1;
+  // namespaces optionally restricts the operation to baselines in these namespaces.
+  // If empty, all namespaces in the cluster are included.
   repeated string namespaces = 2;
 }
 
+// DeleteProcessBaselinesRequest specifies which baselines to delete using a
+// search query, with a dry-run safeguard.
 message DeleteProcessBaselinesRequest {
+  // query is a StackRox search query selecting the baselines to delete. Required.
   string query = 1;
+  // confirm must be set to true to perform actual deletion. If false, the
+  // response indicates how many baselines would be deleted (dry run).
   bool confirm = 2;
 }
 
+// DeleteProcessBaselinesResponse reports the outcome of a baseline deletion.
 message DeleteProcessBaselinesResponse {
+  // num_deleted is the number of baselines deleted (or that would be deleted in dry-run mode).
   int32 num_deleted = 1;
+  // dry_run is true if confirm was false and no deletion was performed.
   bool dry_run = 2;
 }
 
-// `ProcessBaselineService` APIs can be used to manage process baselines.
+// ProcessBaselineService manages process baselines for deployments.
+//
+// A process baseline is the set of process names expected to run in a specific
+// container of a deployment (identified by cluster, namespace, deployment, and
+// container name). Processes not in the baseline may trigger policy violations.
+//
+// Baselines start in an unlocked (observation) state where new processes are
+// added automatically. Once locked, new processes are no longer added
+// automatically and violations are generated for unexpected processes.
+// After any update, deployment risks are reprocessed and the baseline is
+// sent to Sensor.
+//
+// Authentication: GetProcessBaseline requires View access to DeploymentExtension.
+// All write operations require Modify access to DeploymentExtension.
 service ProcessBaselineService {
-  // `GetProcessBaselineById` returns the single
-  // process baseline referenced by the given ID.
+  // GetProcessBaseline returns the process baseline identified by the composite
+  // key (cluster_id, namespace, deployment_id, container_name).
+  //
+  // If no baseline exists for the key and the deployment is still present, an
+  // empty unlocked baseline is created and returned.
+  //
+  // Returns INVALID_ARGUMENT if any key field is missing.
+  // Returns NOT_FOUND if the deployment does not exist.
   rpc GetProcessBaseline(GetProcessBaselineRequest) returns (storage.ProcessBaseline) {
     option (google.api.http) = {get: "/v1/processbaselines/key"};
   }
 
-  // `AddToProcessBaselines` adds a list of process
-  // names to each of a list of process baselines.
+  // UpdateProcessBaselines adds and/or removes process names from one or more
+  // process baselines.
+  //
+  // Accepts a list of baseline keys and separate lists of process names to add
+  // and remove. Returns the updated baseline objects and per-key errors for any
+  // failures. After all successful updates, deployment risks are reprocessed
+  // and updated baselines are sent to Sensor.
   rpc UpdateProcessBaselines(UpdateProcessBaselinesRequest) returns (UpdateProcessBaselinesResponse) {
     option (google.api.http) = {
       put: "/v1/processbaselines"
@@ -76,8 +133,12 @@ service ProcessBaselineService {
     };
   }
 
-  // `LockProcessBaselines` accepts a list of baseline IDs, locks
-  // those baselines, and returns the updated baseline objects.
+  // LockProcessBaselines locks or unlocks a list of process baselines
+  // identified by their composite keys.
+  //
+  // When locked is true, the baselines are user-locked; when false, they are
+  // user-unlocked. Returns the updated baseline objects. After updates,
+  // deployment risks are reprocessed and baselines are sent to Sensor.
   rpc LockProcessBaselines(LockProcessBaselinesRequest) returns (UpdateProcessBaselinesResponse) {
     option (google.api.http) = {
       put: "/v1/processbaselines/lock"
@@ -85,8 +146,11 @@ service ProcessBaselineService {
     };
   }
 
-  // `BulkLockProcessBaselines` locks process baselines given a cluster and
-  // an optional set of namespaces. It returns success or an error.
+  // BulkLockProcessBaselines locks all process baselines in a cluster,
+  // optionally restricted to specific namespaces.
+  //
+  // Returns INVALID_ARGUMENT if cluster_id is empty. Returns success=true if
+  // all baselines were locked without error.
   rpc BulkLockProcessBaselines(BulkProcessBaselinesRequest) returns (BulkUpdateProcessBaselinesResponse) {
     option (google.api.http) = {
       put: "/v1/processbaselines/bulk/lock"
@@ -94,8 +158,11 @@ service ProcessBaselineService {
     };
   }
 
-  // `BulkUnockProcessBaselines` unlocks process baselines given a cluster and
-  // an optional set of namespaces. It returns success or an error.
+  // BulkUnlockProcessBaselines unlocks all process baselines in a cluster,
+  // optionally restricted to specific namespaces.
+  //
+  // Returns INVALID_ARGUMENT if cluster_id is empty. Returns success=true if
+  // all baselines were unlocked without error.
   rpc BulkUnlockProcessBaselines(BulkProcessBaselinesRequest) returns (BulkUpdateProcessBaselinesResponse) {
     option (google.api.http) = {
       put: "/v1/processbaselines/bulk/unlock"
@@ -103,7 +170,14 @@ service ProcessBaselineService {
     };
   }
 
-  // `DeleteProcessBaselines` deletes baselines.
+  // DeleteProcessBaselines deletes baselines matching a StackRox search query.
+  //
+  // If confirm is false (dry run), returns num_deleted indicating how many
+  // baselines match without deleting any. If confirm is true, clears the
+  // baseline contents for deployments that still exist and removes baselines
+  // for deployments that have been deleted.
+  //
+  // Returns INVALID_ARGUMENT if the query is empty or malformed.
   rpc DeleteProcessBaselines(DeleteProcessBaselinesRequest) returns (DeleteProcessBaselinesResponse) {
     option (google.api.http) = {delete: "/v1/processbaselines"};
   }

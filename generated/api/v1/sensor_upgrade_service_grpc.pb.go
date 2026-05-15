@@ -28,10 +28,40 @@ const (
 // SensorUpgradeServiceClient is the client API for SensorUpgradeService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// SensorUpgradeService manages sensor version upgrades across secured clusters.
+//
+// Central can automatically upgrade sensors when a version mismatch is detected, or operators
+// can trigger upgrades and certificate rotations manually per cluster. Auto-upgrade can be
+// enabled or disabled globally. Cert rotation updates only mTLS certificates without a full
+// sensor redeploy.
+//
+// Authentication:
+//   - GetSensorUpgradeConfig requires read access to the Administration resource.
+//   - UpdateSensorUpgradeConfig requires write access to the Administration resource.
+//   - TriggerSensorUpgrade and TriggerSensorCertRotation require write access to the Cluster resource.
 type SensorUpgradeServiceClient interface {
+	// GetSensorUpgradeConfig returns the current sensor auto-upgrade configuration,
+	// including whether auto-upgrade is enabled and whether the feature is supported.
+	//
+	// Returns NOT_FOUND if no configuration has been persisted yet.
 	GetSensorUpgradeConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetSensorUpgradeConfigResponse, error)
+	// UpdateSensorUpgradeConfig persists a new sensor auto-upgrade configuration.
+	//
+	// When enable_auto_upgrade is set to true, Central will automatically trigger upgrades for
+	// sensors that report a version mismatch. Setting it to true fails with INVALID_ARGUMENT
+	// if the auto-upgrade feature is not supported in this deployment.
 	UpdateSensorUpgradeConfig(ctx context.Context, in *UpdateSensorUpgradeConfigRequest, opts ...grpc.CallOption) (*Empty, error)
+	// TriggerSensorUpgrade initiates an upgrade for the sensor running in the specified cluster.
+	//
+	// Central signals the sensor to pull and apply a new version. The upgrade runs asynchronously;
+	// progress can be observed via the cluster status.
+	// Returns INVALID_ARGUMENT if the cluster ID is empty.
 	TriggerSensorUpgrade(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
+	// TriggerSensorCertRotation initiates a certificate rotation for the sensor in the specified cluster.
+	//
+	// This renews the sensor's mTLS certificates without performing a full sensor upgrade or redeploy.
+	// Returns INVALID_ARGUMENT if the cluster ID is empty.
 	TriggerSensorCertRotation(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -86,10 +116,40 @@ func (c *sensorUpgradeServiceClient) TriggerSensorCertRotation(ctx context.Conte
 // SensorUpgradeServiceServer is the server API for SensorUpgradeService service.
 // All implementations should embed UnimplementedSensorUpgradeServiceServer
 // for forward compatibility.
+//
+// SensorUpgradeService manages sensor version upgrades across secured clusters.
+//
+// Central can automatically upgrade sensors when a version mismatch is detected, or operators
+// can trigger upgrades and certificate rotations manually per cluster. Auto-upgrade can be
+// enabled or disabled globally. Cert rotation updates only mTLS certificates without a full
+// sensor redeploy.
+//
+// Authentication:
+//   - GetSensorUpgradeConfig requires read access to the Administration resource.
+//   - UpdateSensorUpgradeConfig requires write access to the Administration resource.
+//   - TriggerSensorUpgrade and TriggerSensorCertRotation require write access to the Cluster resource.
 type SensorUpgradeServiceServer interface {
+	// GetSensorUpgradeConfig returns the current sensor auto-upgrade configuration,
+	// including whether auto-upgrade is enabled and whether the feature is supported.
+	//
+	// Returns NOT_FOUND if no configuration has been persisted yet.
 	GetSensorUpgradeConfig(context.Context, *Empty) (*GetSensorUpgradeConfigResponse, error)
+	// UpdateSensorUpgradeConfig persists a new sensor auto-upgrade configuration.
+	//
+	// When enable_auto_upgrade is set to true, Central will automatically trigger upgrades for
+	// sensors that report a version mismatch. Setting it to true fails with INVALID_ARGUMENT
+	// if the auto-upgrade feature is not supported in this deployment.
 	UpdateSensorUpgradeConfig(context.Context, *UpdateSensorUpgradeConfigRequest) (*Empty, error)
+	// TriggerSensorUpgrade initiates an upgrade for the sensor running in the specified cluster.
+	//
+	// Central signals the sensor to pull and apply a new version. The upgrade runs asynchronously;
+	// progress can be observed via the cluster status.
+	// Returns INVALID_ARGUMENT if the cluster ID is empty.
 	TriggerSensorUpgrade(context.Context, *ResourceByID) (*Empty, error)
+	// TriggerSensorCertRotation initiates a certificate rotation for the sensor in the specified cluster.
+	//
+	// This renews the sensor's mTLS certificates without performing a full sensor upgrade or redeploy.
+	// Returns INVALID_ARGUMENT if the cluster ID is empty.
 	TriggerSensorCertRotation(context.Context, *ResourceByID) (*Empty, error)
 }
 

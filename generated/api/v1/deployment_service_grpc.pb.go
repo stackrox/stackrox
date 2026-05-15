@@ -33,20 +33,96 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// DeploymentService APIs can be used to manage deployments.
+// DeploymentService provides read access to Kubernetes workload deployments
+// observed by StackRox Sensor across all secured clusters.
+//
+// Deployments represent Kubernetes workloads (Deployments, DaemonSets,
+// StatefulSets, etc.) and are the primary unit of risk evaluation and policy
+// enforcement in StackRox.
+//
+// The service offers two levels of detail:
+//   - Slim list objects (storage.ListDeployment) for listing and counting,
+//     containing only identity and summary fields.
+//   - Full objects (storage.Deployment) for single-item lookups and exports,
+//     containing container specs, security context, ports, volumes, and more.
+//
+// All endpoints require a valid API token or session with read access to the
+// Deployment resource. ListDeploymentsWithProcessInfo additionally requires
+// read access to the DeploymentExtension resource to receive baseline statuses.
 type DeploymentServiceClient interface {
-	// GetDeployment returns a deployment given its ID.
+	// GetDeployment returns the full deployment object with the given ID.
+	//
+	// Returns NOT_FOUND if no deployment with the given ID exists within the
+	// caller's authorized scope.
 	GetDeployment(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.Deployment, error)
-	// GetDeploymentWithRisk returns a deployment and its risk given its ID.
+	// GetDeploymentWithRisk returns the full deployment object together with its
+	// computed risk score and the individual factors that contributed to it.
+	//
+	// Risk is calculated by the StackRox risk engine and reflects security
+	// posture signals such as image vulnerabilities, exposed ports, and
+	// privileged container settings.
+	//
+	// Returns NOT_FOUND if no deployment with the given ID exists within the
+	// caller's authorized scope.
 	GetDeploymentWithRisk(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetDeploymentWithRiskResponse, error)
-	// CountDeployments returns the number of deployments.
+	// CountDeployments returns the number of deployments that match the query.
+	//
+	// Uses StackRox search query syntax. If the query is empty, counts all
+	// deployments visible to the caller.
+	// Example query: "Cluster:production+Namespace:payments"
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	CountDeployments(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountDeploymentsResponse, error)
-	// ListDeployments returns the list of deployments.
+	// ListDeployments returns a paginated list of slim deployment summaries
+	// matching the query.
+	//
+	// Each result is a storage.ListDeployment containing only identity and summary
+	// fields (id, name, cluster, namespace, created, priority). Use GetDeployment
+	// to retrieve the full object for a specific deployment.
+	//
+	// Results are capped at 1000 deployments per request. Use pagination to page
+	// through larger result sets. Supports sorting via the pagination.sortOption
+	// field (e.g., by "Deployment Risk Priority").
+	//
+	// Uses StackRox search query syntax. Searchable fields include Cluster,
+	// Namespace, Deployment, Deployment Type, and Deployment Label.
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	ListDeployments(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListDeploymentsResponse, error)
-	// ListDeploymentsWithProcessInfo returns the list of deployments with process information.
+	// ListDeploymentsWithProcessInfo returns a paginated list of slim deployment
+	// summaries, each paired with per-container process baseline evaluation results.
+	//
+	// Applies the same query, pagination, and 1000-result cap as ListDeployments.
+	//
+	// Baseline statuses indicate whether each container's process baseline is
+	// locked, unlocked, or not yet generated, and whether anomalous processes have
+	// been observed. Baseline statuses are only populated when the caller has
+	// read access to the DeploymentExtension resource in addition to Deployment.
+	// If the caller lacks DeploymentExtension access, deployments are still
+	// returned but baseline_statuses will be empty on each entry.
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	ListDeploymentsWithProcessInfo(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListDeploymentsWithProcessInfoResponse, error)
-	// GetLabels returns the labels used by deployments.
+	// GetLabels returns all label keys and their observed values across all
+	// deployments visible to the caller.
+	//
+	// The response contains a map of label key to sorted list of distinct values,
+	// plus a flat sorted list of all values across all keys. This is typically
+	// used to populate filter dropdowns in the UI.
+	//
+	// No query filtering is applied; all deployment labels are always returned.
 	GetLabels(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*DeploymentLabelsResponse, error)
+	// ExportDeployments streams full deployment objects matching the query as a
+	// server-sent stream of ExportDeploymentResponse messages.
+	//
+	// Unlike ListDeployments, this endpoint streams full storage.Deployment objects
+	// (not slim summaries) and has no upper bound on the number of results. It is
+	// intended for bulk data export scenarios.
+	//
+	// An optional timeout (in seconds) can be set on the request; if the stream
+	// does not complete within the timeout, it is cancelled.
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	ExportDeployments(ctx context.Context, in *ExportDeploymentRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExportDeploymentResponse], error)
 }
 
@@ -141,20 +217,96 @@ type DeploymentService_ExportDeploymentsClient = grpc.ServerStreamingClient[Expo
 // All implementations should embed UnimplementedDeploymentServiceServer
 // for forward compatibility.
 //
-// DeploymentService APIs can be used to manage deployments.
+// DeploymentService provides read access to Kubernetes workload deployments
+// observed by StackRox Sensor across all secured clusters.
+//
+// Deployments represent Kubernetes workloads (Deployments, DaemonSets,
+// StatefulSets, etc.) and are the primary unit of risk evaluation and policy
+// enforcement in StackRox.
+//
+// The service offers two levels of detail:
+//   - Slim list objects (storage.ListDeployment) for listing and counting,
+//     containing only identity and summary fields.
+//   - Full objects (storage.Deployment) for single-item lookups and exports,
+//     containing container specs, security context, ports, volumes, and more.
+//
+// All endpoints require a valid API token or session with read access to the
+// Deployment resource. ListDeploymentsWithProcessInfo additionally requires
+// read access to the DeploymentExtension resource to receive baseline statuses.
 type DeploymentServiceServer interface {
-	// GetDeployment returns a deployment given its ID.
+	// GetDeployment returns the full deployment object with the given ID.
+	//
+	// Returns NOT_FOUND if no deployment with the given ID exists within the
+	// caller's authorized scope.
 	GetDeployment(context.Context, *ResourceByID) (*storage.Deployment, error)
-	// GetDeploymentWithRisk returns a deployment and its risk given its ID.
+	// GetDeploymentWithRisk returns the full deployment object together with its
+	// computed risk score and the individual factors that contributed to it.
+	//
+	// Risk is calculated by the StackRox risk engine and reflects security
+	// posture signals such as image vulnerabilities, exposed ports, and
+	// privileged container settings.
+	//
+	// Returns NOT_FOUND if no deployment with the given ID exists within the
+	// caller's authorized scope.
 	GetDeploymentWithRisk(context.Context, *ResourceByID) (*GetDeploymentWithRiskResponse, error)
-	// CountDeployments returns the number of deployments.
+	// CountDeployments returns the number of deployments that match the query.
+	//
+	// Uses StackRox search query syntax. If the query is empty, counts all
+	// deployments visible to the caller.
+	// Example query: "Cluster:production+Namespace:payments"
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	CountDeployments(context.Context, *RawQuery) (*CountDeploymentsResponse, error)
-	// ListDeployments returns the list of deployments.
+	// ListDeployments returns a paginated list of slim deployment summaries
+	// matching the query.
+	//
+	// Each result is a storage.ListDeployment containing only identity and summary
+	// fields (id, name, cluster, namespace, created, priority). Use GetDeployment
+	// to retrieve the full object for a specific deployment.
+	//
+	// Results are capped at 1000 deployments per request. Use pagination to page
+	// through larger result sets. Supports sorting via the pagination.sortOption
+	// field (e.g., by "Deployment Risk Priority").
+	//
+	// Uses StackRox search query syntax. Searchable fields include Cluster,
+	// Namespace, Deployment, Deployment Type, and Deployment Label.
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	ListDeployments(context.Context, *RawQuery) (*ListDeploymentsResponse, error)
-	// ListDeploymentsWithProcessInfo returns the list of deployments with process information.
+	// ListDeploymentsWithProcessInfo returns a paginated list of slim deployment
+	// summaries, each paired with per-container process baseline evaluation results.
+	//
+	// Applies the same query, pagination, and 1000-result cap as ListDeployments.
+	//
+	// Baseline statuses indicate whether each container's process baseline is
+	// locked, unlocked, or not yet generated, and whether anomalous processes have
+	// been observed. Baseline statuses are only populated when the caller has
+	// read access to the DeploymentExtension resource in addition to Deployment.
+	// If the caller lacks DeploymentExtension access, deployments are still
+	// returned but baseline_statuses will be empty on each entry.
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	ListDeploymentsWithProcessInfo(context.Context, *RawQuery) (*ListDeploymentsWithProcessInfoResponse, error)
-	// GetLabels returns the labels used by deployments.
+	// GetLabels returns all label keys and their observed values across all
+	// deployments visible to the caller.
+	//
+	// The response contains a map of label key to sorted list of distinct values,
+	// plus a flat sorted list of all values across all keys. This is typically
+	// used to populate filter dropdowns in the UI.
+	//
+	// No query filtering is applied; all deployment labels are always returned.
 	GetLabels(context.Context, *Empty) (*DeploymentLabelsResponse, error)
+	// ExportDeployments streams full deployment objects matching the query as a
+	// server-sent stream of ExportDeploymentResponse messages.
+	//
+	// Unlike ListDeployments, this endpoint streams full storage.Deployment objects
+	// (not slim summaries) and has no upper bound on the number of results. It is
+	// intended for bulk data export scenarios.
+	//
+	// An optional timeout (in seconds) can be set on the request; if the stream
+	// does not complete within the timeout, it is cancelled.
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	ExportDeployments(*ExportDeploymentRequest, grpc.ServerStreamingServer[ExportDeploymentResponse]) error
 }
 

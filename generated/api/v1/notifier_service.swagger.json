@@ -19,6 +19,7 @@
     "/v1/notifiers": {
       "get": {
         "summary": "GetNotifiers returns all notifier configurations.",
+        "description": "Sensitive credential fields are replaced with a placeholder in each\nreturned notifier. The response is not paginated.",
         "operationId": "NotifierService_GetNotifiers",
         "responses": {
           "200": {
@@ -39,7 +40,8 @@
         ]
       },
       "post": {
-        "summary": "PostNotifier creates a notifier configuration.",
+        "summary": "PostNotifier creates a new notifier configuration.",
+        "description": "The id field must be empty; a new ID is assigned and returned. Credentials\nmust be provided in full. The notifier is validated and its connectivity\nis verified before it is persisted.\n\nReturns INVALID_ARGUMENT if the id field is set, if required fields are\nmissing, or if validation or connectivity checks fail.",
         "operationId": "NotifierService_PostNotifier",
         "responses": {
           "200": {
@@ -72,7 +74,8 @@
     },
     "/v1/notifiers/test": {
       "post": {
-        "summary": "TestNotifier checks if a notifier is correctly configured.",
+        "summary": "TestNotifier verifies that the given notifier configuration is reachable\nand correctly set up, treating all credential fields as authoritative\n(no stored credential reconciliation).",
+        "description": "Returns INVALID_ARGUMENT if validation fails or if the notifier cannot\nbe contacted successfully.",
         "operationId": "NotifierService_TestNotifier",
         "responses": {
           "200": {
@@ -105,7 +108,8 @@
     },
     "/v1/notifiers/test/updated": {
       "post": {
-        "summary": "TestUpdatedNotifier checks if the given notifier is correctly configured, with optional stored credential reconciliation.",
+        "summary": "TestUpdatedNotifier verifies that the given notifier configuration is\nreachable with optional stored credential reconciliation.",
+        "description": "When update_password is false, credential fields in the request are\nreplaced with the stored credentials before the test is performed.\nWhen update_password is true, the provided credentials are used directly.\n\nReturns INVALID_ARGUMENT if the notifier cannot be contacted or validation\nfails. Returns NOT_FOUND if update_password is false and the notifier does\nnot exist.",
         "operationId": "NotifierService_TestUpdatedNotifier",
         "responses": {
           "200": {
@@ -138,7 +142,8 @@
     },
     "/v1/notifiers/{id}": {
       "get": {
-        "summary": "GetNotifier returns the notifier configuration given its ID.",
+        "summary": "GetNotifier returns the notifier configuration with the given ID.",
+        "description": "Sensitive credential fields are replaced with a placeholder in the response.\nReturns NOT_FOUND if no notifier with the given ID exists.\nReturns INVALID_ARGUMENT if the ID is empty.",
         "operationId": "NotifierService_GetNotifier",
         "responses": {
           "200": {
@@ -167,7 +172,8 @@
         ]
       },
       "delete": {
-        "summary": "DeleteNotifier removes a notifier configuration given its ID.",
+        "summary": "DeleteNotifier removes a notifier configuration with the given ID.",
+        "description": "Returns FAILED_PRECONDITION if the notifier is still referenced by one\nor more policies (check policies before deletion or use force=true).\nReturns INVALID_ARGUMENT if the ID is empty.",
         "operationId": "NotifierService_DeleteNotifier",
         "responses": {
           "200": {
@@ -186,12 +192,14 @@
         "parameters": [
           {
             "name": "id",
+            "description": "id is the unique identifier of the notifier configuration to delete.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "force",
+            "description": "force, when true, removes the notifier even if it is still referenced by policies.",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -202,7 +210,8 @@
         ]
       },
       "put": {
-        "summary": "PutNotifier modifies a given notifier, without using stored credential reconciliation.",
+        "summary": "PutNotifier replaces an existing notifier configuration, treating all\ncredential fields in the request as authoritative (no stored credential\nreconciliation). Prefer UpdateNotifier for password-preserving updates.",
+        "description": "Returns INVALID_ARGUMENT if validation fails (missing name, type, or UI\nendpoint, or invalid endpoint configuration).",
         "operationId": "NotifierService_PutNotifier",
         "responses": {
           "200": {
@@ -241,7 +250,8 @@
     },
     "/v1/notifiers/{notifier.id}": {
       "patch": {
-        "summary": "UpdateNotifier modifies a given notifier, with optional stored credential reconciliation.",
+        "summary": "UpdateNotifier modifies an existing notifier configuration with optional\nstored credential reconciliation.",
+        "description": "When update_password is false, credential fields in the request are\nignored and the stored credentials are preserved. When update_password\nis true, credential fields in the request replace stored credentials.\n\nReturns INVALID_ARGUMENT if validation fails.\nReturns NOT_FOUND if update_password is false and no notifier with the\ngiven ID exists.",
         "operationId": "NotifierService_UpdateNotifier",
         "responses": {
           "200": {

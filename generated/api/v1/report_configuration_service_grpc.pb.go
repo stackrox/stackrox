@@ -30,16 +30,63 @@ const (
 // ReportConfigurationServiceClient is the client API for ReportConfigurationService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ReportConfigurationService manages vulnerability report configurations for scheduled reporting.
+//
+// Report configurations define the scope (resource collection), schedule, notifiers,
+// and filters for automated vulnerability reports. This service manages v1 report
+// configurations only; v2 configurations are managed by a separate service.
+//
+// Authentication: read operations require View access to WorkflowAdministration.
+// Create and update operations additionally require View access to Integration.
+// Delete requires Modify access to WorkflowAdministration.
 type ReportConfigurationServiceClient interface {
+	// GetReportConfigurations returns all v1 report configurations matching the query.
+	//
+	// Supports StackRox search query syntax to filter results. Only v1 report
+	// configurations are returned; v2 configurations are excluded automatically.
+	// Supports pagination via the query's pagination field.
+	//
+	// Requires View access to WorkflowAdministration.
 	GetReportConfigurations(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*GetReportConfigurationsResponse, error)
+	// GetReportConfiguration returns the v1 report configuration with the given ID.
+	//
+	// Returns NOT_FOUND if no configuration with the given ID exists.
+	// Returns INVALID_ARGUMENT if the ID refers to a v2 report configuration.
+	//
+	// Requires View access to WorkflowAdministration.
 	GetReportConfiguration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetReportConfigurationResponse, error)
 	// PostReportConfiguration creates a report configuration
+	//
+	// Validates the configuration (notifiers, schedule, resource collection) before
+	// persisting it and registering it with the report scheduler.
+	//
+	// Returns INVALID_ARGUMENT if the configuration fails validation.
+	// Requires Modify access to WorkflowAdministration and View access to Integration.
 	PostReportConfiguration(ctx context.Context, in *PostReportConfigurationRequest, opts ...grpc.CallOption) (*PostReportConfigurationResponse, error)
 	// UpdateReportConfiguration updates a report configuration
+	//
+	// Validates the updated configuration before persisting and re-registering it
+	// with the report scheduler. Only v1 configurations can be updated via this endpoint.
+	//
+	// Returns INVALID_ARGUMENT if validation fails or the ID refers to a v2 configuration.
+	// Requires Modify access to WorkflowAdministration and View access to Integration.
 	UpdateReportConfiguration(ctx context.Context, in *UpdateReportConfigurationRequest, opts ...grpc.CallOption) (*Empty, error)
 	// DeleteReportConfiguration removes a report configuration given its id
+	//
+	// Also removes the configuration from the report scheduler. Only v1 configurations
+	// can be deleted via this endpoint.
+	//
+	// Returns NOT_FOUND if no configuration with the given ID exists.
+	// Returns INVALID_ARGUMENT if the id is empty or refers to a v2 configuration.
+	// Requires Modify access to WorkflowAdministration.
 	DeleteReportConfiguration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 	// CountReportConfigurations returns the number of report configurations.
+	//
+	// Applies the same v1-only filter as GetReportConfigurations, so v2 configurations
+	// are excluded from the count. Supports StackRox search query syntax.
+	//
+	// Requires View access to WorkflowAdministration.
 	CountReportConfigurations(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountReportConfigurationsResponse, error)
 }
 
@@ -114,16 +161,63 @@ func (c *reportConfigurationServiceClient) CountReportConfigurations(ctx context
 // ReportConfigurationServiceServer is the server API for ReportConfigurationService service.
 // All implementations should embed UnimplementedReportConfigurationServiceServer
 // for forward compatibility.
+//
+// ReportConfigurationService manages vulnerability report configurations for scheduled reporting.
+//
+// Report configurations define the scope (resource collection), schedule, notifiers,
+// and filters for automated vulnerability reports. This service manages v1 report
+// configurations only; v2 configurations are managed by a separate service.
+//
+// Authentication: read operations require View access to WorkflowAdministration.
+// Create and update operations additionally require View access to Integration.
+// Delete requires Modify access to WorkflowAdministration.
 type ReportConfigurationServiceServer interface {
+	// GetReportConfigurations returns all v1 report configurations matching the query.
+	//
+	// Supports StackRox search query syntax to filter results. Only v1 report
+	// configurations are returned; v2 configurations are excluded automatically.
+	// Supports pagination via the query's pagination field.
+	//
+	// Requires View access to WorkflowAdministration.
 	GetReportConfigurations(context.Context, *RawQuery) (*GetReportConfigurationsResponse, error)
+	// GetReportConfiguration returns the v1 report configuration with the given ID.
+	//
+	// Returns NOT_FOUND if no configuration with the given ID exists.
+	// Returns INVALID_ARGUMENT if the ID refers to a v2 report configuration.
+	//
+	// Requires View access to WorkflowAdministration.
 	GetReportConfiguration(context.Context, *ResourceByID) (*GetReportConfigurationResponse, error)
 	// PostReportConfiguration creates a report configuration
+	//
+	// Validates the configuration (notifiers, schedule, resource collection) before
+	// persisting it and registering it with the report scheduler.
+	//
+	// Returns INVALID_ARGUMENT if the configuration fails validation.
+	// Requires Modify access to WorkflowAdministration and View access to Integration.
 	PostReportConfiguration(context.Context, *PostReportConfigurationRequest) (*PostReportConfigurationResponse, error)
 	// UpdateReportConfiguration updates a report configuration
+	//
+	// Validates the updated configuration before persisting and re-registering it
+	// with the report scheduler. Only v1 configurations can be updated via this endpoint.
+	//
+	// Returns INVALID_ARGUMENT if validation fails or the ID refers to a v2 configuration.
+	// Requires Modify access to WorkflowAdministration and View access to Integration.
 	UpdateReportConfiguration(context.Context, *UpdateReportConfigurationRequest) (*Empty, error)
 	// DeleteReportConfiguration removes a report configuration given its id
+	//
+	// Also removes the configuration from the report scheduler. Only v1 configurations
+	// can be deleted via this endpoint.
+	//
+	// Returns NOT_FOUND if no configuration with the given ID exists.
+	// Returns INVALID_ARGUMENT if the id is empty or refers to a v2 configuration.
+	// Requires Modify access to WorkflowAdministration.
 	DeleteReportConfiguration(context.Context, *ResourceByID) (*Empty, error)
 	// CountReportConfigurations returns the number of report configurations.
+	//
+	// Applies the same v1-only filter as GetReportConfigurations, so v2 configurations
+	// are excluded from the count. Supports StackRox search query syntax.
+	//
+	// Requires View access to WorkflowAdministration.
 	CountReportConfigurations(context.Context, *RawQuery) (*CountReportConfigurationsResponse, error)
 }
 

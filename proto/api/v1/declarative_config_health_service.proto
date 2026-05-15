@@ -13,7 +13,16 @@ message GetDeclarativeConfigHealthsResponse {
   repeated storage.DeclarativeConfigHealth healths = 1;
 }
 
+// DeclarativeConfigHealthService reports the health of resources managed via
+// declarative configuration (config-as-code). Declarative resources include
+// auth providers, roles, access scopes, and notifiers loaded from mounted
+// configuration files or Kubernetes secrets.
+//
+// Authentication: requires View access to the Administration resource.
 service DeclarativeConfigHealthService {
+  // GetDeclarativeConfigHealths returns the health status of all declaratively
+  // configured resources, including any errors encountered during the last
+  // reconciliation pass.
   rpc GetDeclarativeConfigHealths(Empty) returns (GetDeclarativeConfigHealthsResponse) {
     option (google.api.http) = {get: "/v1/declarative-config/health"};
   }

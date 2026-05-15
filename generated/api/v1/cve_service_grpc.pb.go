@@ -27,11 +27,35 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// NodeCVEService APIs can be used to manage node cves.
+// NodeCVEService manages suppression (snoozing) of CVEs that affect cluster nodes.
+//
+// Suppressing a node CVE temporarily hides it from vulnerability management views
+// for a specified duration (snooze). Once the duration expires the CVE reverts to
+// OBSERVED state automatically. Node CVEs are not part of the policy evaluation
+// workflow, so suppression has no effect on policy violations or risk scores.
+//
+// These APIs require the VulnMgmtLegacySnooze feature flag to be enabled
+// (env var ROX_VULN_MGMT_LEGACY_SNOOZE). When the flag is disabled all RPCs
+// return NOT_FOUND.
+//
+// Authentication: both endpoints require write access to the
+// VulnerabilityManagementRequests AND VulnerabilityManagementApprovals resources.
 type NodeCVEServiceClient interface {
-	// SuppressCVE suppresses node cves.
+	// SuppressCVEs snoozes the given node CVEs for the specified duration.
+	//
+	// Suppression sets the CVE state to snoozed, hiding it from vulnerability
+	// management views until the snooze duration elapses or UnsuppressCVEs is
+	// called. Because nodes are not part of the policy workflow, suppression does
+	// not affect policy violations or risk reprocessing.
+	//
+	// Returns INVALID_ARGUMENT if no CVE identifiers are provided.
+	// Returns NOT_FOUND if the VulnMgmtLegacySnooze feature flag is disabled.
 	SuppressCVEs(ctx context.Context, in *SuppressCVERequest, opts ...grpc.CallOption) (*Empty, error)
-	// UnsuppressCVE unsuppresses node cves.
+	// UnsuppressCVEs lifts the snooze from the given node CVEs, returning them to
+	// the OBSERVED state immediately regardless of any remaining snooze duration.
+	//
+	// Returns INVALID_ARGUMENT if no CVE identifiers are provided.
+	// Returns NOT_FOUND if the VulnMgmtLegacySnooze feature flag is disabled.
 	UnsuppressCVEs(ctx context.Context, in *UnsuppressCVERequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -67,11 +91,35 @@ func (c *nodeCVEServiceClient) UnsuppressCVEs(ctx context.Context, in *Unsuppres
 // All implementations should embed UnimplementedNodeCVEServiceServer
 // for forward compatibility.
 //
-// NodeCVEService APIs can be used to manage node cves.
+// NodeCVEService manages suppression (snoozing) of CVEs that affect cluster nodes.
+//
+// Suppressing a node CVE temporarily hides it from vulnerability management views
+// for a specified duration (snooze). Once the duration expires the CVE reverts to
+// OBSERVED state automatically. Node CVEs are not part of the policy evaluation
+// workflow, so suppression has no effect on policy violations or risk scores.
+//
+// These APIs require the VulnMgmtLegacySnooze feature flag to be enabled
+// (env var ROX_VULN_MGMT_LEGACY_SNOOZE). When the flag is disabled all RPCs
+// return NOT_FOUND.
+//
+// Authentication: both endpoints require write access to the
+// VulnerabilityManagementRequests AND VulnerabilityManagementApprovals resources.
 type NodeCVEServiceServer interface {
-	// SuppressCVE suppresses node cves.
+	// SuppressCVEs snoozes the given node CVEs for the specified duration.
+	//
+	// Suppression sets the CVE state to snoozed, hiding it from vulnerability
+	// management views until the snooze duration elapses or UnsuppressCVEs is
+	// called. Because nodes are not part of the policy workflow, suppression does
+	// not affect policy violations or risk reprocessing.
+	//
+	// Returns INVALID_ARGUMENT if no CVE identifiers are provided.
+	// Returns NOT_FOUND if the VulnMgmtLegacySnooze feature flag is disabled.
 	SuppressCVEs(context.Context, *SuppressCVERequest) (*Empty, error)
-	// UnsuppressCVE unsuppresses node cves.
+	// UnsuppressCVEs lifts the snooze from the given node CVEs, returning them to
+	// the OBSERVED state immediately regardless of any remaining snooze duration.
+	//
+	// Returns INVALID_ARGUMENT if no CVE identifiers are provided.
+	// Returns NOT_FOUND if the VulnMgmtLegacySnooze feature flag is disabled.
 	UnsuppressCVEs(context.Context, *UnsuppressCVERequest) (*Empty, error)
 }
 
@@ -173,11 +221,42 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// ClusterCVEService APIs can be used to manage cluster cves.
+// ClusterCVEService manages suppression (snoozing) of CVEs that affect Kubernetes
+// cluster infrastructure components (e.g. Kubernetes, Istio, OpenShift).
+//
+// Suppressing a cluster CVE temporarily hides it from vulnerability management
+// views for a specified duration (snooze). Once the duration expires the CVE
+// reverts to OBSERVED state automatically. Cluster CVEs are not evaluated as
+// part of the policy workflow, so suppression has no effect on policy violations
+// or risk scores.
+//
+// These APIs require the VulnMgmtLegacySnooze feature flag to be enabled
+// (env var ROX_VULN_MGMT_LEGACY_SNOOZE). When the flag is disabled all RPCs
+// return NOT_FOUND.
+//
+// Unlike image CVE suppression (which can be scoped per-cluster), cluster CVE
+// suppression applies globally across all secured clusters in Central.
+//
+// Authentication: both endpoints require write access to the
+// VulnerabilityManagementRequests AND VulnerabilityManagementApprovals resources.
 type ClusterCVEServiceClient interface {
-	// SuppressCVE suppresses cluster cves.
+	// SuppressCVEs snoozes the given cluster-infrastructure CVEs for the specified
+	// duration.
+	//
+	// Suppression sets the CVE state to snoozed, hiding it from vulnerability
+	// management views until the snooze duration elapses or UnsuppressCVEs is
+	// called. Because cluster CVEs are not part of the policy workflow, suppression
+	// does not affect policy violations or risk reprocessing.
+	//
+	// Returns INVALID_ARGUMENT if no CVE identifiers are provided.
+	// Returns NOT_FOUND if the VulnMgmtLegacySnooze feature flag is disabled.
 	SuppressCVEs(ctx context.Context, in *SuppressCVERequest, opts ...grpc.CallOption) (*Empty, error)
-	// UnsuppressCVE unsuppresses cluster cves.
+	// UnsuppressCVEs lifts the snooze from the given cluster-infrastructure CVEs,
+	// returning them to the OBSERVED state immediately regardless of any remaining
+	// snooze duration.
+	//
+	// Returns INVALID_ARGUMENT if no CVE identifiers are provided.
+	// Returns NOT_FOUND if the VulnMgmtLegacySnooze feature flag is disabled.
 	UnsuppressCVEs(ctx context.Context, in *UnsuppressCVERequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -213,11 +292,42 @@ func (c *clusterCVEServiceClient) UnsuppressCVEs(ctx context.Context, in *Unsupp
 // All implementations should embed UnimplementedClusterCVEServiceServer
 // for forward compatibility.
 //
-// ClusterCVEService APIs can be used to manage cluster cves.
+// ClusterCVEService manages suppression (snoozing) of CVEs that affect Kubernetes
+// cluster infrastructure components (e.g. Kubernetes, Istio, OpenShift).
+//
+// Suppressing a cluster CVE temporarily hides it from vulnerability management
+// views for a specified duration (snooze). Once the duration expires the CVE
+// reverts to OBSERVED state automatically. Cluster CVEs are not evaluated as
+// part of the policy workflow, so suppression has no effect on policy violations
+// or risk scores.
+//
+// These APIs require the VulnMgmtLegacySnooze feature flag to be enabled
+// (env var ROX_VULN_MGMT_LEGACY_SNOOZE). When the flag is disabled all RPCs
+// return NOT_FOUND.
+//
+// Unlike image CVE suppression (which can be scoped per-cluster), cluster CVE
+// suppression applies globally across all secured clusters in Central.
+//
+// Authentication: both endpoints require write access to the
+// VulnerabilityManagementRequests AND VulnerabilityManagementApprovals resources.
 type ClusterCVEServiceServer interface {
-	// SuppressCVE suppresses cluster cves.
+	// SuppressCVEs snoozes the given cluster-infrastructure CVEs for the specified
+	// duration.
+	//
+	// Suppression sets the CVE state to snoozed, hiding it from vulnerability
+	// management views until the snooze duration elapses or UnsuppressCVEs is
+	// called. Because cluster CVEs are not part of the policy workflow, suppression
+	// does not affect policy violations or risk reprocessing.
+	//
+	// Returns INVALID_ARGUMENT if no CVE identifiers are provided.
+	// Returns NOT_FOUND if the VulnMgmtLegacySnooze feature flag is disabled.
 	SuppressCVEs(context.Context, *SuppressCVERequest) (*Empty, error)
-	// UnsuppressCVE unsuppresses cluster cves.
+	// UnsuppressCVEs lifts the snooze from the given cluster-infrastructure CVEs,
+	// returning them to the OBSERVED state immediately regardless of any remaining
+	// snooze duration.
+	//
+	// Returns INVALID_ARGUMENT if no CVE identifiers are provided.
+	// Returns NOT_FOUND if the VulnMgmtLegacySnooze feature flag is disabled.
 	UnsuppressCVEs(context.Context, *UnsuppressCVERequest) (*Empty, error)
 }
 

@@ -10,4 +10,7 @@ IFS=$'\n' read -d '' -r -a all_service_protos_without_service_in_name < <(
   echo "Files were: "
   printf "  %s\n" ${all_service_protos_without_service_in_name[@]}
   exit 1
-} >&2 
+} >&2
+
+# Check that every RPC has a documentation comment.
+"$(dirname "$0")/check-rpc-docs.sh"

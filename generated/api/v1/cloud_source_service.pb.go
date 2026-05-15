@@ -22,12 +22,15 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Type identifies which cloud provider or manager the source connects to.
 type CloudSource_Type int32
 
 const (
-	CloudSource_TYPE_UNSPECIFIED   CloudSource_Type = 0
+	CloudSource_TYPE_UNSPECIFIED CloudSource_Type = 0
+	// TYPE_PALADIN_CLOUD connects to the Paladin Cloud API for cluster discovery.
 	CloudSource_TYPE_PALADIN_CLOUD CloudSource_Type = 1
-	CloudSource_TYPE_OCM           CloudSource_Type = 2
+	// TYPE_OCM connects to the Red Hat OpenShift Cluster Manager for cluster discovery.
+	CloudSource_TYPE_OCM CloudSource_Type = 2
 )
 
 // Enum value maps for CloudSource_Type.
@@ -74,12 +77,17 @@ func (CloudSource_Type) EnumDescriptor() ([]byte, []int) {
 // CloudSource is an integration which provides a source for discovered
 // clusters.
 type CloudSource struct {
-	state               protoimpl.MessageState   `protogen:"open.v1"`
-	Id                  string                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name                string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Type                CloudSource_Type         `protobuf:"varint,3,opt,name=type,proto3,enum=v1.CloudSource_Type" json:"type,omitempty"`
-	Credentials         *CloudSource_Credentials `protobuf:"bytes,4,opt,name=credentials,proto3" json:"credentials,omitempty"`
-	SkipTestIntegration bool                     `protobuf:"varint,5,opt,name=skip_test_integration,json=skipTestIntegration,proto3" json:"skip_test_integration,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the unique identifier of the cloud source, assigned on creation.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// name is a human-readable label for the cloud source.
+	Name string           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Type CloudSource_Type `protobuf:"varint,3,opt,name=type,proto3,enum=v1.CloudSource_Type" json:"type,omitempty"`
+	// credentials holds the authentication material for the cloud source endpoint.
+	Credentials *CloudSource_Credentials `protobuf:"bytes,4,opt,name=credentials,proto3" json:"credentials,omitempty"`
+	// skip_test_integration, when true, skips connectivity verification when creating
+	// or updating this cloud source.
+	SkipTestIntegration bool `protobuf:"varint,5,opt,name=skip_test_integration,json=skipTestIntegration,proto3" json:"skip_test_integration,omitempty"`
 	// Types that are valid to be assigned to Config:
 	//
 	//	*CloudSource_PaladinCloud
@@ -391,8 +399,9 @@ func (x *CountCloudSourcesRequest) GetFilter() *CloudSourcesFilter {
 }
 
 type CountCloudSourcesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Count         int32                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// count is the total number of cloud sources matching the request filter.
+	Count         int32 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -435,8 +444,9 @@ func (x *CountCloudSourcesResponse) GetCount() int32 {
 }
 
 type GetCloudSourceRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the unique identifier of the cloud source to retrieve.
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -479,8 +489,9 @@ func (x *GetCloudSourceRequest) GetId() string {
 }
 
 type GetCloudSourceResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CloudSource   *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource,proto3" json:"cloud_source,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cloud_source is the requested cloud source configuration.
+	CloudSource   *CloudSource `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource,proto3" json:"cloud_source,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -577,8 +588,10 @@ func (x *ListCloudSourcesRequest) GetFilter() *CloudSourcesFilter {
 }
 
 type ListCloudSourcesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CloudSources  []*CloudSource         `protobuf:"bytes,1,rep,name=cloud_sources,json=cloudSources,proto3" json:"cloud_sources,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cloud_sources contains the matching cloud source configurations, sorted by
+	// name in ascending order.
+	CloudSources  []*CloudSource `protobuf:"bytes,1,rep,name=cloud_sources,json=cloudSources,proto3" json:"cloud_sources,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -621,8 +634,10 @@ func (x *ListCloudSourcesResponse) GetCloudSources() []*CloudSource {
 }
 
 type CreateCloudSourceRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CloudSource   *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource,proto3" json:"cloud_source,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cloud_source contains the configuration for the new cloud source.
+	// The id field must be empty.
+	CloudSource   *CloudSource `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource,proto3" json:"cloud_source,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -665,8 +680,9 @@ func (x *CreateCloudSourceRequest) GetCloudSource() *CloudSource {
 }
 
 type CreateCloudSourceResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CloudSource   *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource,proto3" json:"cloud_source,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cloud_source is the created cloud source with its assigned id.
+	CloudSource   *CloudSource `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource,proto3" json:"cloud_source,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -709,8 +725,9 @@ func (x *CreateCloudSourceResponse) GetCloudSource() *CloudSource {
 }
 
 type UpdateCloudSourceRequest struct {
-	state       protoimpl.MessageState `protogen:"open.v1"`
-	CloudSource *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource,proto3" json:"cloud_source,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cloud_source contains the updated configuration. The id field must be set.
+	CloudSource *CloudSource `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource,proto3" json:"cloud_source,omitempty"`
 	// If true, cloud_source must include valid credentials.
 	// If false, the resource must already exist and
 	// credentials in cloud_source are ignored.
@@ -764,8 +781,9 @@ func (x *UpdateCloudSourceRequest) GetUpdateCredentials() bool {
 }
 
 type DeleteCloudSourceRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the unique identifier of the cloud source to delete.
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -808,8 +826,9 @@ func (x *DeleteCloudSourceRequest) GetId() string {
 }
 
 type TestCloudSourceRequest struct {
-	state       protoimpl.MessageState `protogen:"open.v1"`
-	CloudSource *CloudSource           `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource,proto3" json:"cloud_source,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cloud_source contains the configuration to test.
+	CloudSource *CloudSource `protobuf:"bytes,1,opt,name=cloud_source,json=cloudSource,proto3" json:"cloud_source,omitempty"`
 	// If true, cloud_source must include valid credentials.
 	// If false, the resource must already exist and
 	// credentials in cloud_source are ignored.

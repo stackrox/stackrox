@@ -112,7 +112,8 @@ func (x *GetReportConfigurationResponse) GetReportConfig() *storage.ReportConfig
 }
 
 type PostReportConfigurationResponse struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// report_config is the created configuration as stored, including its assigned ID.
 	ReportConfig  *storage.ReportConfiguration `protobuf:"bytes,1,opt,name=report_config,json=reportConfig,proto3" json:"report_config,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -156,7 +157,8 @@ func (x *PostReportConfigurationResponse) GetReportConfig() *storage.ReportConfi
 }
 
 type PostReportConfigurationRequest struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// report_config is the configuration to create. The id field is ignored and assigned by the server.
 	ReportConfig  *storage.ReportConfiguration `protobuf:"bytes,1,opt,name=report_config,json=reportConfig,proto3" json:"report_config,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -200,8 +202,10 @@ func (x *PostReportConfigurationRequest) GetReportConfig() *storage.ReportConfig
 }
 
 type UpdateReportConfigurationRequest struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
-	Id            string                       `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the ID of the report configuration to update.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// report_config is the updated configuration. Must be a v1 (non-v2) report configuration.
 	ReportConfig  *storage.ReportConfiguration `protobuf:"bytes,2,opt,name=report_config,json=reportConfig,proto3" json:"report_config,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -252,8 +256,9 @@ func (x *UpdateReportConfigurationRequest) GetReportConfig() *storage.ReportConf
 }
 
 type CountReportConfigurationsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Count         int32                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// count is the total number of report configurations matching the query.
+	Count         int32 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

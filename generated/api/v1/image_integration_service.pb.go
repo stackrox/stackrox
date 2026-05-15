@@ -24,9 +24,11 @@ const (
 )
 
 type GetImageIntegrationsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Cluster       string                 `protobuf:"bytes,2,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// name filters the results to integrations whose name exactly matches this value.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// cluster is reserved for future use and is currently ignored.
+	Cluster       string `protobuf:"bytes,2,opt,name=cluster,proto3" json:"cluster,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -120,7 +122,8 @@ func (x *GetImageIntegrationsResponse) GetIntegrations() []*storage.ImageIntegra
 }
 
 type UpdateImageIntegrationRequest struct {
-	state  protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// config contains the updated image integration configuration.
 	Config *storage.ImageIntegration `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
 	// When false, use the stored credentials of an existing image integration given its ID.
 	UpdatePassword bool `protobuf:"varint,2,opt,name=updatePassword,proto3" json:"updatePassword,omitempty"`

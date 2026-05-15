@@ -48,26 +48,45 @@ message DBRestoreProcessMetadata {
 }
 
 message DBRestoreProcessStatus {
+  // State describes the lifecycle stage of a database restore process.
   enum State {
     UNKNOWN = 0;
+    // NOT_STARTED indicates the restore has been registered but not yet begun.
     NOT_STARTED = 1;
+    // IN_PROGRESS indicates the restore is actively reading and applying data.
     IN_PROGRESS = 2;
+    // PAUSED indicates the restore was interrupted and can be resumed.
     PAUSED = 3;
+    // COMPLETED indicates the restore finished; check the error field to
+    // determine success or failure.
     COMPLETED = 4; // successful if error is empty, unsuccessful otherwise
   }
 
+  // ResumeInfo contains the byte offset from which a paused restore can be
+  // resumed.
   message ResumeInfo {
+    // pos is the byte position in the restore data stream at which to resume.
     int64 pos = 1;
   }
 
+  // metadata contains the static metadata for this restore process.
   DBRestoreProcessMetadata metadata = 1;
 
+  // attempt_id identifies the current restore attempt (a process may be
+  // interrupted and resumed multiple times).
   string attempt_id = 2;
+  // state is the current lifecycle state of the restore process.
   State state = 3;
+  // resume_info is only populated when state is PAUSED and contains the
+  // byte offset at which the process can be resumed.
   ResumeInfo resume_info = 4; // only populated if state is PAUSED
+  // error is only populated when state is COMPLETED and the restore was
+  // unsuccessful.
   string error = 5; // only populated when state is COMPLETED
 
+  // bytes_read is an approximate count of payload bytes consumed so far.
   int64 bytes_read = 6; // Payload bytes read so far (approximate)
+  // files_processed is an approximate count of manifest files applied so far.
   int64 files_processed = 7; // Files processed so far (approximate)
 }
 
@@ -88,60 +107,107 @@ message DBExportManifest {
     // For databases exported as ZIP files, this is the path relative to the root of the archive.
     string name = 1;
 
+    // encoding specifies how the file data is encoded in the restore body.
     EncodingType encoding = 2;
 
+    // encoded_size is the size of the encoded file data in bytes.
     int64 encoded_size = 3;
+    // decoded_size is the expected size of the file after decoding.
     int64 decoded_size = 4;
 
     // The CRC32 (IEEE) checksum of the decoded(!) data.
     fixed32 decoded_crc32 = 5;
   }
 
+  // files lists every file that must be present and consumed in the restore
+  // body, in the order they appear in the byte stream.
   repeated File files = 1;
 }
 
 // DBExportFormat describes a format (= a collection of files) for the database export.
 message DBExportFormat {
   message File {
+    // name is the identifier for the file within the export format.
     string name = 1;
+    // optional, when true, indicates that the file need not be present in a
+    // restore body that uses this format.
     bool optional = 2;
   }
 
+  // format_name is the human-readable identifier for this export format.
   string format_name = 1;
+  // files lists all files that are part of this export format.
   repeated File files = 2;
 }
 
 message GetDBExportCapabilitiesResponse {
+  // formats lists the export formats supported by this Central instance.
   repeated DBExportFormat formats = 1;
+  // supported_encodings lists the encoding types (e.g. deflate) accepted
+  // for file data in restore request bodies.
   repeated DBExportManifest.EncodingType supported_encodings = 2;
 }
 
 message GetActiveDBRestoreProcessResponse {
+  // active_status is the status of the currently active restore process,
+  // or empty if no restore is in progress.
   DBRestoreProcessStatus active_status = 1;
 }
 
 message InterruptDBRestoreProcessRequest {
+  // process_id identifies the restore process to interrupt.
   string process_id = 1;
+  // attempt_id identifies the specific attempt to interrupt.
   string attempt_id = 2;
 }
 
 message InterruptDBRestoreProcessResponse {
+  // resume_info contains the byte offset from which the interrupted restore
+  // can be resumed.
   DBRestoreProcessStatus.ResumeInfo resume_info = 1;
 }
 
+// DBService provides database export capability discovery and restore process
+// management for Central's PostgreSQL database.
+//
+// This service supports the database restore workflow: callers first query
+// export capabilities, then initiate a restore via a separate streaming
+// endpoint (not part of this service), and use this service to monitor or
+// control an in-progress restore.
+//
+// Authentication: GetExportCapabilities requires any authenticated user.
+// GetActiveRestoreProcess requires DB read access. CancelRestoreProcess and
+// InterruptRestoreProcess require DB write access.
 service DBService {
+  // GetExportCapabilities returns the database export formats and encoding
+  // types supported by this Central instance. Used to determine which format
+  // to request when initiating a restore.
   rpc GetExportCapabilities(Empty) returns (GetDBExportCapabilitiesResponse) {
     option (google.api.http) = {get: "/v1/db/exportcaps"};
   }
 
+  // GetActiveRestoreProcess returns the status of the currently active
+  // database restore process, if any. Returns an empty response if no restore
+  // is currently in progress.
   rpc GetActiveRestoreProcess(Empty) returns (GetActiveDBRestoreProcessResponse) {
     option (google.api.http) = {get: "/v1/db/restore"};
   }
 
+  // InterruptRestoreProcess pauses the active restore process at the current
+  // byte position, allowing it to be resumed later.
+  //
+  // Returns the byte offset (resume_info) at which the restore was paused.
+  // Returns FAILED_PRECONDITION if no restore is active or if the provided
+  // process_id does not match the active process.
   rpc InterruptRestoreProcess(InterruptDBRestoreProcessRequest) returns (InterruptDBRestoreProcessResponse) {
     option (google.api.http) = {post: "/v1/db/interruptrestore/{process_id}/{attempt_id}"};
   }
 
+  // CancelRestoreProcess permanently cancels the active database restore
+  // process identified by the given ID and waits for it to terminate.
+  //
+  // Returns FAILED_PRECONDITION if no restore is active or if the provided
+  // ID does not match the active process.
   rpc CancelRestoreProcess(ResourceByID) returns (Empty) {
     option (google.api.http) = {delete: "/v1/db/restore/{id}"};
   }

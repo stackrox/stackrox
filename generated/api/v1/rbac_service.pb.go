@@ -26,8 +26,9 @@ const (
 // A list of k8s roles (free of scoped information)
 // Next Tag: 2
 type ListRolesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Roles         []*storage.K8SRole     `protobuf:"bytes,1,rep,name=roles,proto3" json:"roles,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// roles is the list of Kubernetes roles matching the search query.
+	Roles         []*storage.K8SRole `protobuf:"bytes,1,rep,name=roles,proto3" json:"roles,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -69,6 +70,7 @@ func (x *ListRolesResponse) GetRoles() []*storage.K8SRole {
 	return nil
 }
 
+// GetRoleResponse contains a single Kubernetes role.
 type GetRoleResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Role          *storage.K8SRole       `protobuf:"bytes,1,opt,name=role,proto3" json:"role,omitempty"`
@@ -116,7 +118,8 @@ func (x *GetRoleResponse) GetRole() *storage.K8SRole {
 // A list of k8s role bindings (free of scoped information)
 // Next Tag: 2
 type ListRoleBindingsResponse struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// bindings is the list of Kubernetes role bindings matching the search query.
 	Bindings      []*storage.K8SRoleBinding `protobuf:"bytes,1,rep,name=bindings,proto3" json:"bindings,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -159,6 +162,7 @@ func (x *ListRoleBindingsResponse) GetBindings() []*storage.K8SRoleBinding {
 	return nil
 }
 
+// GetRoleBindingResponse contains a single Kubernetes role binding.
 type GetRoleBindingResponse struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Binding       *storage.K8SRoleBinding `protobuf:"bytes,1,opt,name=binding,proto3" json:"binding,omitempty"`
@@ -206,8 +210,9 @@ func (x *GetRoleBindingResponse) GetBinding() *storage.K8SRoleBinding {
 // A list of k8s subjects (users and groups only, for service accounts, try the service account service)
 // Next Tag: 2
 type ListSubjectsResponse struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	SubjectAndRoles []*SubjectAndRoles     `protobuf:"bytes,1,rep,name=subject_and_roles,json=subjectAndRoles,proto3" json:"subject_and_roles,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// subject_and_roles pairs each matching subject with the K8s roles it is bound to.
+	SubjectAndRoles []*SubjectAndRoles `protobuf:"bytes,1,rep,name=subject_and_roles,json=subjectAndRoles,proto3" json:"subject_and_roles,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -249,10 +254,13 @@ func (x *ListSubjectsResponse) GetSubjectAndRoles() []*SubjectAndRoles {
 	return nil
 }
 
+// SubjectAndRoles pairs a Kubernetes subject (user or group) with the K8s roles it is bound to.
 type SubjectAndRoles struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Subject       *storage.Subject       `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`
-	Roles         []*storage.K8SRole     `protobuf:"bytes,2,rep,name=roles,proto3" json:"roles,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// subject is the Kubernetes user or group.
+	Subject *storage.Subject `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`
+	// roles is the list of K8s roles the subject is bound to across all namespaces.
+	Roles         []*storage.K8SRole `protobuf:"bytes,2,rep,name=roles,proto3" json:"roles,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -301,11 +309,15 @@ func (x *SubjectAndRoles) GetRoles() []*storage.K8SRole {
 	return nil
 }
 
+// GetSubjectResponse contains a subject with its cluster-wide and namespace-scoped role bindings.
 type GetSubjectResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Subject       *storage.Subject       `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`
-	ClusterRoles  []*storage.K8SRole     `protobuf:"bytes,2,rep,name=cluster_roles,json=clusterRoles,proto3" json:"cluster_roles,omitempty"`
-	ScopedRoles   []*ScopedRoles         `protobuf:"bytes,3,rep,name=scoped_roles,json=scopedRoles,proto3" json:"scoped_roles,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// subject is the Kubernetes user or group.
+	Subject *storage.Subject `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`
+	// cluster_roles is the list of K8s roles bound to this subject at the cluster scope.
+	ClusterRoles []*storage.K8SRole `protobuf:"bytes,2,rep,name=cluster_roles,json=clusterRoles,proto3" json:"cluster_roles,omitempty"`
+	// scoped_roles groups the namespace-scoped role bindings of this subject by namespace.
+	ScopedRoles   []*ScopedRoles `protobuf:"bytes,3,rep,name=scoped_roles,json=scopedRoles,proto3" json:"scoped_roles,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -361,10 +373,13 @@ func (x *GetSubjectResponse) GetScopedRoles() []*ScopedRoles {
 	return nil
 }
 
+// ScopedRoles groups K8s roles bound to a subject within a specific namespace.
 type ScopedRoles struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Namespace     string                 `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Roles         []*storage.K8SRole     `protobuf:"bytes,2,rep,name=roles,proto3" json:"roles,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// namespace is the Kubernetes namespace in which these role bindings exist.
+	Namespace string `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	// roles is the list of K8s roles bound to the subject in this namespace.
+	Roles         []*storage.K8SRole `protobuf:"bytes,2,rep,name=roles,proto3" json:"roles,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

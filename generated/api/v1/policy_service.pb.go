@@ -23,8 +23,12 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// DryRunResponse contains the results of evaluating a policy against current
+// deployments without persisting or enforcing the policy.
 type DryRunResponse struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// alerts lists each deployment that would violate the policy, along with
+	// the specific violation messages for each.
 	Alerts        []*DryRunResponse_Alert `protobuf:"bytes,1,rep,name=alerts,proto3" json:"alerts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -67,9 +71,11 @@ func (x *DryRunResponse) GetAlerts() []*DryRunResponse_Alert {
 	return nil
 }
 
+// JobId identifies an asynchronous dry-run job.
 type JobId struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	JobId         string                 `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// job_id is the opaque identifier returned by SubmitDryRunPolicyJob.
+	JobId         string `protobuf:"bytes,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -111,10 +117,13 @@ func (x *JobId) GetJobId() string {
 	return ""
 }
 
+// DryRunJobStatusResponse reports the current state of an async dry-run job.
 type DryRunJobStatusResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Pending       bool                   `protobuf:"varint,1,opt,name=pending,proto3" json:"pending,omitempty"`
-	Result        *DryRunResponse        `protobuf:"bytes,2,opt,name=result,proto3" json:"result,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// pending is true if the job is still running and result is not yet available.
+	Pending bool `protobuf:"varint,1,opt,name=pending,proto3" json:"pending,omitempty"`
+	// result is populated once pending is false and contains the dry-run output.
+	Result        *DryRunResponse `protobuf:"bytes,2,opt,name=result,proto3" json:"result,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -163,9 +172,11 @@ func (x *DryRunJobStatusResponse) GetResult() *DryRunResponse {
 	return nil
 }
 
+// PolicyCategoriesResponse holds the distinct set of policy categories in use.
 type PolicyCategoriesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Categories    []string               `protobuf:"bytes,1,rep,name=categories,proto3" json:"categories,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// categories is the sorted list of all category names assigned to at least one policy.
+	Categories    []string `protobuf:"bytes,1,rep,name=categories,proto3" json:"categories,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -207,11 +218,16 @@ func (x *PolicyCategoriesResponse) GetCategories() []string {
 	return nil
 }
 
+// EnableDisablePolicyNotificationRequest enables or disables specific notifiers on a policy.
 type EnableDisablePolicyNotificationRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PolicyId      string                 `protobuf:"bytes,1,opt,name=policy_id,json=policyId,proto3" json:"policy_id,omitempty"`
-	NotifierIds   []string               `protobuf:"bytes,2,rep,name=notifier_ids,json=notifierIds,proto3" json:"notifier_ids,omitempty"`
-	Disable       bool                   `protobuf:"varint,3,opt,name=disable,proto3" json:"disable,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// policy_id is the UUID of the policy to update.
+	PolicyId string `protobuf:"bytes,1,opt,name=policy_id,json=policyId,proto3" json:"policy_id,omitempty"`
+	// notifier_ids is the list of notifier UUIDs to enable or disable.
+	NotifierIds []string `protobuf:"bytes,2,rep,name=notifier_ids,json=notifierIds,proto3" json:"notifier_ids,omitempty"`
+	// disable controls the direction: if true, the specified notifiers are removed
+	// from the policy; if false, they are added.
+	Disable       bool `protobuf:"varint,3,opt,name=disable,proto3" json:"disable,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -267,9 +283,11 @@ func (x *EnableDisablePolicyNotificationRequest) GetDisable() bool {
 	return false
 }
 
+// ListPoliciesResponse contains a lightweight summary of each matching policy.
 type ListPoliciesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Policies      []*storage.ListPolicy  `protobuf:"bytes,1,rep,name=policies,proto3" json:"policies,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// policies is the list of matching policies in ListPolicy (summary) form.
+	Policies      []*storage.ListPolicy `protobuf:"bytes,1,rep,name=policies,proto3" json:"policies,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -311,10 +329,16 @@ func (x *ListPoliciesResponse) GetPolicies() []*storage.ListPolicy {
 	return nil
 }
 
+// PostPolicyRequest carries the policy to create and optional validation settings.
 type PostPolicyRequest struct {
-	state                  protoimpl.MessageState `protogen:"open.v1"`
-	Policy                 *storage.Policy        `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
-	EnableStrictValidation bool                   `protobuf:"varint,2,opt,name=enable_strict_validation,json=enableStrictValidation,proto3" json:"enable_strict_validation,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// policy is the full policy definition to create. The id field must be empty;
+	// Central assigns the ID on creation and returns the populated policy.
+	Policy *storage.Policy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	// enable_strict_validation enables additional validation rules, such as
+	// restrictions on environment variable source values. Use this when
+	// importing policies from external sources to ensure stricter correctness.
+	EnableStrictValidation bool `protobuf:"varint,2,opt,name=enable_strict_validation,json=enableStrictValidation,proto3" json:"enable_strict_validation,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -363,9 +387,12 @@ func (x *PostPolicyRequest) GetEnableStrictValidation() bool {
 	return false
 }
 
+// PatchPolicyRequest is used to make partial updates to a policy, currently
+// limited to toggling the enabled/disabled state.
 type PatchPolicyRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// id is the UUID of the policy to patch.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Types that are valid to be assigned to SetDisabled:
 	//
 	//	*PatchPolicyRequest_Disabled
@@ -432,14 +459,19 @@ type isPatchPolicyRequest_SetDisabled interface {
 }
 
 type PatchPolicyRequest_Disabled struct {
+	// disabled sets whether the policy is enabled (false) or disabled (true).
+	// When disabled, the policy does not fire alerts or enforce actions.
 	Disabled bool `protobuf:"varint,2,opt,name=disabled,proto3,oneof"`
 }
 
 func (*PatchPolicyRequest_Disabled) isPatchPolicyRequest_SetDisabled() {}
 
+// ExportPoliciesRequest selects a set of policies to export by ID.
 type ExportPoliciesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PolicyIds     []string               `protobuf:"bytes,1,rep,name=policy_ids,json=policyIds,proto3" json:"policy_ids,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// policy_ids is the list of UUIDs of the policies to export.
+	// All IDs must exist; if any are missing the request returns INVALID_ARGUMENT.
+	PolicyIds     []string `protobuf:"bytes,1,rep,name=policy_ids,json=policyIds,proto3" json:"policy_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -481,9 +513,11 @@ func (x *ExportPoliciesRequest) GetPolicyIds() []string {
 	return nil
 }
 
+// PolicyError carries a human-readable error message for a single policy operation.
 type PolicyError struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         string                 `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// error is the human-readable description of what went wrong.
+	Error         string `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -525,10 +559,14 @@ func (x *PolicyError) GetError() string {
 	return ""
 }
 
+// PolicyOperationError associates a policy ID with the error that occurred
+// when operating on that policy.
 type PolicyOperationError struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PolicyId      string                 `protobuf:"bytes,1,opt,name=policy_id,json=policyId,proto3" json:"policy_id,omitempty"`
-	Error         *PolicyError           `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// policy_id is the UUID of the policy that caused the error.
+	PolicyId string `protobuf:"bytes,1,opt,name=policy_id,json=policyId,proto3" json:"policy_id,omitempty"`
+	// error describes what went wrong for this policy.
+	Error         *PolicyError `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -577,6 +615,8 @@ func (x *PolicyOperationError) GetError() *PolicyError {
 	return nil
 }
 
+// PolicyOperationErrorList is a collection of per-policy errors, used as gRPC
+// status detail when a batch operation partially fails.
 type PolicyOperationErrorList struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Errors        []*PolicyOperationError `protobuf:"bytes,1,rep,name=errors,proto3" json:"errors,omitempty"`
@@ -621,9 +661,14 @@ func (x *PolicyOperationErrorList) GetErrors() []*PolicyOperationError {
 	return nil
 }
 
+// PolicyFromSearchRequest converts a StackRox search query string into a draft policy.
 type PolicyFromSearchRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SearchParams  string                 `protobuf:"bytes,1,opt,name=search_params,json=searchParams,proto3" json:"search_params,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// search_params is a StackRox search query string
+	// (e.g. "Image Registry:docker.io+CVE:CVE-2021-44228").
+	// Search terms that cannot be represented as policy criteria are reported
+	// in the response's altered_search_terms field.
+	SearchParams  string `protobuf:"bytes,1,opt,name=search_params,json=searchParams,proto3" json:"search_params,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -665,9 +710,13 @@ func (x *PolicyFromSearchRequest) GetSearchParams() string {
 	return ""
 }
 
+// ImportPoliciesMetadata controls how conflicts are resolved during import.
 type ImportPoliciesMetadata struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Overwrite     bool                   `protobuf:"varint,1,opt,name=overwrite,proto3" json:"overwrite,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// overwrite controls conflict resolution: if true, an imported policy whose
+	// name or ID already exists in Central will replace the existing policy.
+	// If false, a conflict causes that policy's import to fail.
+	Overwrite     bool `protobuf:"varint,1,opt,name=overwrite,proto3" json:"overwrite,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -709,10 +758,13 @@ func (x *ImportPoliciesMetadata) GetOverwrite() bool {
 	return false
 }
 
+// ImportPoliciesRequest submits one or more policies for import into Central.
 type ImportPoliciesRequest struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
-	Metadata      *ImportPoliciesMetadata `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	Policies      []*storage.Policy       `protobuf:"bytes,2,rep,name=policies,proto3" json:"policies,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// metadata controls import behavior such as overwrite semantics.
+	Metadata *ImportPoliciesMetadata `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	// policies is the list of policy definitions to import.
+	Policies      []*storage.Policy `protobuf:"bytes,2,rep,name=policies,proto3" json:"policies,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -761,10 +813,13 @@ func (x *ImportPoliciesRequest) GetPolicies() []*storage.Policy {
 	return nil
 }
 
+// ImportPolicyError describes why a single policy failed to import.
 type ImportPolicyError struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	Message string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
-	Type    string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// message is a human-readable summary of the error.
+	Message string `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	// type is a machine-readable error category (e.g. "duplicate_name", "validation_error").
+	Type string `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
 	// Types that are valid to be assigned to Metadata:
 	//
 	//	*ImportPolicyError_DuplicateName
@@ -848,10 +903,13 @@ type isImportPolicyError_Metadata interface {
 }
 
 type ImportPolicyError_DuplicateName struct {
+	// duplicate_name is set when the import failed because a policy with
+	// the same name already exists and overwrite was not requested.
 	DuplicateName string `protobuf:"bytes,3,opt,name=duplicate_name,json=duplicateName,proto3,oneof"`
 }
 
 type ImportPolicyError_ValidationError struct {
+	// validation_error is set when the policy failed schema or semantic validation.
 	ValidationError string `protobuf:"bytes,4,opt,name=validation_error,json=validationError,proto3,oneof"`
 }
 
@@ -859,11 +917,17 @@ func (*ImportPolicyError_DuplicateName) isImportPolicyError_Metadata() {}
 
 func (*ImportPolicyError_ValidationError) isImportPolicyError_Metadata() {}
 
+// ImportPolicyResponse reports the outcome for a single policy in an import batch.
 type ImportPolicyResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Succeeded     bool                   `protobuf:"varint,1,opt,name=succeeded,proto3" json:"succeeded,omitempty"`
-	Policy        *storage.Policy        `protobuf:"bytes,2,opt,name=policy,proto3" json:"policy,omitempty"`
-	Errors        []*ImportPolicyError   `protobuf:"bytes,3,rep,name=errors,proto3" json:"errors,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// succeeded is true when the policy was imported without errors.
+	Succeeded bool `protobuf:"varint,1,opt,name=succeeded,proto3" json:"succeeded,omitempty"`
+	// policy is the policy as it was processed (post-validation, with internal
+	// fields stripped). Returned whether or not the import succeeded.
+	Policy *storage.Policy `protobuf:"bytes,2,opt,name=policy,proto3" json:"policy,omitempty"`
+	// errors lists all errors encountered for this policy. Non-empty only when
+	// succeeded is false.
+	Errors        []*ImportPolicyError `protobuf:"bytes,3,rep,name=errors,proto3" json:"errors,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -919,10 +983,14 @@ func (x *ImportPolicyResponse) GetErrors() []*ImportPolicyError {
 	return nil
 }
 
+// ImportPoliciesResponse reports the overall outcome of an import batch.
 type ImportPoliciesResponse struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
-	Responses     []*ImportPolicyResponse `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
-	AllSucceeded  bool                    `protobuf:"varint,2,opt,name=all_succeeded,json=allSucceeded,proto3" json:"all_succeeded,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// responses contains one entry per submitted policy, in the same order.
+	Responses []*ImportPolicyResponse `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
+	// all_succeeded is true only when every policy in the batch was imported
+	// successfully. Use this as a quick summary check.
+	AllSucceeded  bool `protobuf:"varint,2,opt,name=all_succeeded,json=allSucceeded,proto3" json:"all_succeeded,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -971,13 +1039,21 @@ func (x *ImportPoliciesResponse) GetAllSucceeded() bool {
 	return false
 }
 
+// PolicyFromSearchResponse contains a draft policy built from a search query,
+// along with metadata about search terms that could not be converted.
 type PolicyFromSearchResponse struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Policy             *storage.Policy        `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
-	AlteredSearchTerms []string               `protobuf:"bytes,2,rep,name=altered_search_terms,json=alteredSearchTerms,proto3" json:"altered_search_terms,omitempty"`
-	HasNestedFields    bool                   `protobuf:"varint,3,opt,name=has_nested_fields,json=hasNestedFields,proto3" json:"has_nested_fields,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// policy is the draft policy generated from the search parameters.
+	// It is not persisted; use PostPolicy to save it.
+	Policy *storage.Policy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	// altered_search_terms lists search field names that were dropped or
+	// partially converted because they have no direct policy criteria equivalent.
+	AlteredSearchTerms []string `protobuf:"bytes,2,rep,name=altered_search_terms,json=alteredSearchTerms,proto3" json:"altered_search_terms,omitempty"`
+	// has_nested_fields indicates whether any generated policy criteria use
+	// nested field evaluation, which may affect how violations are detected.
+	HasNestedFields bool `protobuf:"varint,3,opt,name=has_nested_fields,json=hasNestedFields,proto3" json:"has_nested_fields,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *PolicyFromSearchResponse) Reset() {
@@ -1031,9 +1107,13 @@ func (x *PolicyFromSearchResponse) GetHasNestedFields() bool {
 	return false
 }
 
+// GetPolicyMitreVectorsRequest identifies a policy and controls whether to
+// include the full policy object in the response.
 type GetPolicyMitreVectorsRequest struct {
-	state         protoimpl.MessageState                `protogen:"open.v1"`
-	Id            string                                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the UUID of the policy whose MITRE ATT&CK vectors to retrieve.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// options controls which fields appear in the response.
 	Options       *GetPolicyMitreVectorsRequest_Options `protobuf:"bytes,2,opt,name=options,proto3" json:"options,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1083,9 +1163,14 @@ func (x *GetPolicyMitreVectorsRequest) GetOptions() *GetPolicyMitreVectorsReques
 	return nil
 }
 
+// GetPolicyMitreVectorsResponse returns a policy and its expanded MITRE ATT&CK vectors.
 type GetPolicyMitreVectorsResponse struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
-	Policy        *storage.Policy              `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// policy is the full policy object. Omitted if options.exclude_policy is true.
+	Policy *storage.Policy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	// vectors is the list of MITRE ATT&CK tactic/technique pairs associated with
+	// the policy, expanded from the policy's mitre_attack_vectors field using the
+	// MITRE ATT&CK knowledge base.
 	Vectors       []*storage.MitreAttackVector `protobuf:"bytes,2,rep,name=vectors,proto3" json:"vectors,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1135,10 +1220,13 @@ func (x *GetPolicyMitreVectorsResponse) GetVectors() []*storage.MitreAttackVecto
 	return nil
 }
 
+// Alert represents a single deployment that would violate the policy.
 type DryRunResponse_Alert struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Deployment    string                 `protobuf:"bytes,1,opt,name=deployment,proto3" json:"deployment,omitempty"`
-	Violations    []string               `protobuf:"bytes,2,rep,name=violations,proto3" json:"violations,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// deployment is the name of the deployment that would violate the policy.
+	Deployment string `protobuf:"bytes,1,opt,name=deployment,proto3" json:"deployment,omitempty"`
+	// violations is the list of human-readable violation messages for this deployment.
+	Violations    []string `protobuf:"bytes,2,rep,name=violations,proto3" json:"violations,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

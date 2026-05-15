@@ -27,7 +27,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type VirtualMachineServiceClient interface {
+	// GetVirtualMachine returns the virtual machine with the specified ID, including its latest scan results.
 	GetVirtualMachine(ctx context.Context, in *GetVirtualMachineRequest, opts ...grpc.CallOption) (*VirtualMachine, error)
+	// ListVirtualMachines returns virtual machines matching the specified query.
 	ListVirtualMachines(ctx context.Context, in *ListVirtualMachinesRequest, opts ...grpc.CallOption) (*ListVirtualMachinesResponse, error)
 }
 
@@ -63,7 +65,9 @@ func (c *virtualMachineServiceClient) ListVirtualMachines(ctx context.Context, i
 // All implementations should embed UnimplementedVirtualMachineServiceServer
 // for forward compatibility.
 type VirtualMachineServiceServer interface {
+	// GetVirtualMachine returns the virtual machine with the specified ID, including its latest scan results.
 	GetVirtualMachine(context.Context, *GetVirtualMachineRequest) (*VirtualMachine, error)
+	// ListVirtualMachines returns virtual machines matching the specified query.
 	ListVirtualMachines(context.Context, *ListVirtualMachinesRequest) (*ListVirtualMachinesResponse, error)
 }
 

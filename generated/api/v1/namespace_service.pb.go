@@ -23,12 +23,16 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Namespace aggregates a namespace's metadata with workload and policy counts observed by StackRox.
 type Namespace struct {
-	state              protoimpl.MessageState     `protogen:"open.v1"`
-	Metadata           *storage.NamespaceMetadata `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	NumDeployments     int32                      `protobuf:"varint,2,opt,name=num_deployments,json=numDeployments,proto3" json:"num_deployments,omitempty"`
-	NumSecrets         int32                      `protobuf:"varint,3,opt,name=num_secrets,json=numSecrets,proto3" json:"num_secrets,omitempty"`
-	NumNetworkPolicies int32                      `protobuf:"varint,4,opt,name=num_network_policies,json=numNetworkPolicies,proto3" json:"num_network_policies,omitempty"`
+	state    protoimpl.MessageState     `protogen:"open.v1"`
+	Metadata *storage.NamespaceMetadata `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	// num_deployments is the number of active deployments in this namespace.
+	NumDeployments int32 `protobuf:"varint,2,opt,name=num_deployments,json=numDeployments,proto3" json:"num_deployments,omitempty"`
+	// num_secrets is the number of secrets observed in this namespace.
+	NumSecrets int32 `protobuf:"varint,3,opt,name=num_secrets,json=numSecrets,proto3" json:"num_secrets,omitempty"`
+	// num_network_policies is the number of network policies applied in this namespace.
+	NumNetworkPolicies int32 `protobuf:"varint,4,opt,name=num_network_policies,json=numNetworkPolicies,proto3" json:"num_network_policies,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -91,6 +95,7 @@ func (x *Namespace) GetNumNetworkPolicies() int32 {
 	return 0
 }
 
+// GetNamespacesResponse is the response for a list namespaces request.
 type GetNamespacesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Namespaces    []*Namespace           `protobuf:"bytes,1,rep,name=namespaces,proto3" json:"namespaces,omitempty"`
@@ -135,9 +140,12 @@ func (x *GetNamespacesResponse) GetNamespaces() []*Namespace {
 	return nil
 }
 
+// GetNamespaceRequest is the request message for listing namespaces with an optional filter.
 type GetNamespaceRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Query         *RawQuery              `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// query filters namespaces using StackRox search syntax.
+	// If empty, all accessible namespaces are returned.
+	Query         *RawQuery `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

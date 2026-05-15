@@ -22,82 +22,118 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// SearchCategory identifies a resource type that can be queried through SearchService.
+//
+// Not all categories are exposed via the global Search RPC — some are internal
+// or used only for autocomplete/options. The primary searchable categories are
+// ALERTS, DEPLOYMENTS, IMAGES, POLICIES, SECRETS, NAMESPACES, NODES, CLUSTERS,
+// SERVICE_ACCOUNTS, ROLES, ROLEBINDINGS, SUBJECTS, IMAGE_INTEGRATIONS, and POLICY_CATEGORIES.
+//
 // Next available tag: 85
 type SearchCategory int32
 
 const (
-	SearchCategory_SEARCH_UNSET                       SearchCategory = 0
-	SearchCategory_ALERTS                             SearchCategory = 1
-	SearchCategory_IMAGES                             SearchCategory = 2
-	SearchCategory_IMAGE_COMPONENTS                   SearchCategory = 20
-	SearchCategory_IMAGE_VULN_EDGE                    SearchCategory = 27
-	SearchCategory_IMAGE_COMPONENT_EDGE               SearchCategory = 23
-	SearchCategory_POLICIES                           SearchCategory = 3
-	SearchCategory_DEPLOYMENTS                        SearchCategory = 4
-	SearchCategory_PODS                               SearchCategory = 25
-	SearchCategory_SECRETS                            SearchCategory = 5
-	SearchCategory_PROCESS_INDICATORS                 SearchCategory = 6
-	SearchCategory_COMPLIANCE                         SearchCategory = 7
-	SearchCategory_CLUSTERS                           SearchCategory = 8
-	SearchCategory_NAMESPACES                         SearchCategory = 9
-	SearchCategory_NODES                              SearchCategory = 10
-	SearchCategory_NODE_COMPONENTS                    SearchCategory = 38
-	SearchCategory_NODE_VULN_EDGE                     SearchCategory = 28
-	SearchCategory_NODE_COMPONENT_EDGE                SearchCategory = 29
-	SearchCategory_NODE_COMPONENT_CVE_EDGE            SearchCategory = 33
-	SearchCategory_COMPLIANCE_STANDARD                SearchCategory = 11
-	SearchCategory_COMPLIANCE_CONTROL_GROUP           SearchCategory = 12
-	SearchCategory_COMPLIANCE_CONTROL                 SearchCategory = 13
-	SearchCategory_SERVICE_ACCOUNTS                   SearchCategory = 14
-	SearchCategory_ROLES                              SearchCategory = 15
-	SearchCategory_ROLEBINDINGS                       SearchCategory = 16
-	SearchCategory_REPORT_CONFIGURATIONS              SearchCategory = 37
-	SearchCategory_PROCESS_BASELINES                  SearchCategory = 17
-	SearchCategory_SUBJECTS                           SearchCategory = 18
-	SearchCategory_RISKS                              SearchCategory = 19
-	SearchCategory_VULNERABILITIES                    SearchCategory = 21
-	SearchCategory_CLUSTER_VULNERABILITIES            SearchCategory = 34
-	SearchCategory_IMAGE_VULNERABILITIES              SearchCategory = 35
-	SearchCategory_NODE_VULNERABILITIES               SearchCategory = 36
-	SearchCategory_COMPONENT_VULN_EDGE                SearchCategory = 22
-	SearchCategory_CLUSTER_VULN_EDGE                  SearchCategory = 24
-	SearchCategory_NETWORK_ENTITY                     SearchCategory = 26
-	SearchCategory_VULN_REQUEST                       SearchCategory = 32
-	SearchCategory_NETWORK_BASELINE                   SearchCategory = 39
-	SearchCategory_NETWORK_POLICIES                   SearchCategory = 40
-	SearchCategory_PROCESS_BASELINE_RESULTS           SearchCategory = 41
-	SearchCategory_COMPLIANCE_METADATA                SearchCategory = 42
-	SearchCategory_COMPLIANCE_RESULTS                 SearchCategory = 43
-	SearchCategory_COMPLIANCE_DOMAIN                  SearchCategory = 44
-	SearchCategory_CLUSTER_HEALTH                     SearchCategory = 45
-	SearchCategory_POLICY_CATEGORIES                  SearchCategory = 46
-	SearchCategory_IMAGE_INTEGRATIONS                 SearchCategory = 47
-	SearchCategory_COLLECTIONS                        SearchCategory = 48
-	SearchCategory_POLICY_CATEGORY_EDGE               SearchCategory = 49
-	SearchCategory_PROCESS_LISTENING_ON_PORT          SearchCategory = 50
-	SearchCategory_API_TOKEN                          SearchCategory = 51
-	SearchCategory_REPORT_METADATA                    SearchCategory = 52
-	SearchCategory_REPORT_SNAPSHOT                    SearchCategory = 53
-	SearchCategory_COMPLIANCE_INTEGRATIONS            SearchCategory = 54
-	SearchCategory_COMPLIANCE_SCAN_CONFIG             SearchCategory = 55
-	SearchCategory_COMPLIANCE_SCAN                    SearchCategory = 56
-	SearchCategory_COMPLIANCE_CHECK_RESULTS           SearchCategory = 57
-	SearchCategory_BLOB                               SearchCategory = 58
-	SearchCategory_ADMINISTRATION_EVENTS              SearchCategory = 60
-	SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS      SearchCategory = 61
-	SearchCategory_ADMINISTRATION_USAGE               SearchCategory = 62
-	SearchCategory_COMPLIANCE_PROFILES                SearchCategory = 63
-	SearchCategory_COMPLIANCE_RULES                   SearchCategory = 65
-	SearchCategory_COMPLIANCE_SCAN_SETTING_BINDINGS   SearchCategory = 66
-	SearchCategory_COMPLIANCE_SUITES                  SearchCategory = 67
-	SearchCategory_CLOUD_SOURCES                      SearchCategory = 68
-	SearchCategory_DISCOVERED_CLUSTERS                SearchCategory = 69
-	SearchCategory_COMPLIANCE_REMEDIATIONS            SearchCategory = 70
-	SearchCategory_COMPLIANCE_BENCHMARKS              SearchCategory = 71
-	SearchCategory_AUTH_PROVIDERS                     SearchCategory = 72
-	SearchCategory_COMPLIANCE_REPORT_SNAPSHOT         SearchCategory = 73
-	SearchCategory_IMAGE_COMPONENTS_V2                SearchCategory = 74
-	SearchCategory_IMAGE_VULNERABILITIES_V2           SearchCategory = 75
+	// SEARCH_UNSET means no category was specified. When passed to Search or
+	// Autocomplete it causes the service to search across all supported categories.
+	SearchCategory_SEARCH_UNSET SearchCategory = 0
+	// ALERTS searches active and resolved policy-violation alerts.
+	SearchCategory_ALERTS SearchCategory = 1
+	// IMAGES searches container images observed in the environment.
+	SearchCategory_IMAGES SearchCategory = 2
+	// IMAGE_COMPONENTS searches individual software components (packages) within images.
+	SearchCategory_IMAGE_COMPONENTS     SearchCategory = 20
+	SearchCategory_IMAGE_VULN_EDGE      SearchCategory = 27
+	SearchCategory_IMAGE_COMPONENT_EDGE SearchCategory = 23
+	// POLICIES searches security policies defined in StackRox.
+	SearchCategory_POLICIES SearchCategory = 3
+	// DEPLOYMENTS searches Kubernetes Deployments, DaemonSets, StatefulSets, and other workloads.
+	SearchCategory_DEPLOYMENTS SearchCategory = 4
+	// PODS searches individual Kubernetes Pods.
+	SearchCategory_PODS SearchCategory = 25
+	// SECRETS searches Kubernetes Secrets observed in secured clusters.
+	SearchCategory_SECRETS SearchCategory = 5
+	// PROCESS_INDICATORS searches runtime process execution events.
+	SearchCategory_PROCESS_INDICATORS SearchCategory = 6
+	// COMPLIANCE searches compliance aggregation results across standards and controls.
+	SearchCategory_COMPLIANCE SearchCategory = 7
+	// CLUSTERS searches secured Kubernetes clusters registered with Central.
+	SearchCategory_CLUSTERS SearchCategory = 8
+	// NAMESPACES searches Kubernetes namespaces across all secured clusters.
+	SearchCategory_NAMESPACES SearchCategory = 9
+	// NODES searches Kubernetes nodes across all secured clusters.
+	SearchCategory_NODES SearchCategory = 10
+	// NODE_COMPONENTS searches software components (packages) installed on nodes.
+	SearchCategory_NODE_COMPONENTS          SearchCategory = 38
+	SearchCategory_NODE_VULN_EDGE           SearchCategory = 28
+	SearchCategory_NODE_COMPONENT_EDGE      SearchCategory = 29
+	SearchCategory_NODE_COMPONENT_CVE_EDGE  SearchCategory = 33
+	SearchCategory_COMPLIANCE_STANDARD      SearchCategory = 11
+	SearchCategory_COMPLIANCE_CONTROL_GROUP SearchCategory = 12
+	SearchCategory_COMPLIANCE_CONTROL       SearchCategory = 13
+	// SERVICE_ACCOUNTS searches Kubernetes ServiceAccount objects.
+	SearchCategory_SERVICE_ACCOUNTS SearchCategory = 14
+	// ROLES searches Kubernetes Role and ClusterRole objects.
+	SearchCategory_ROLES SearchCategory = 15
+	// ROLEBINDINGS searches Kubernetes RoleBinding and ClusterRoleBinding objects.
+	SearchCategory_ROLEBINDINGS          SearchCategory = 16
+	SearchCategory_REPORT_CONFIGURATIONS SearchCategory = 37
+	SearchCategory_PROCESS_BASELINES     SearchCategory = 17
+	// SUBJECTS searches users and groups that appear as subjects in RBAC bindings.
+	SearchCategory_SUBJECTS SearchCategory = 18
+	// RISKS searches risk scores associated with deployments.
+	SearchCategory_RISKS SearchCategory = 19
+	// VULNERABILITIES searches CVEs across images, nodes, and cluster components.
+	SearchCategory_VULNERABILITIES         SearchCategory = 21
+	SearchCategory_CLUSTER_VULNERABILITIES SearchCategory = 34
+	// IMAGE_VULNERABILITIES searches CVEs found in container image components.
+	SearchCategory_IMAGE_VULNERABILITIES SearchCategory = 35
+	// NODE_VULNERABILITIES searches CVEs found in node components.
+	SearchCategory_NODE_VULNERABILITIES     SearchCategory = 36
+	SearchCategory_COMPONENT_VULN_EDGE      SearchCategory = 22
+	SearchCategory_CLUSTER_VULN_EDGE        SearchCategory = 24
+	SearchCategory_NETWORK_ENTITY           SearchCategory = 26
+	SearchCategory_VULN_REQUEST             SearchCategory = 32
+	SearchCategory_NETWORK_BASELINE         SearchCategory = 39
+	SearchCategory_NETWORK_POLICIES         SearchCategory = 40
+	SearchCategory_PROCESS_BASELINE_RESULTS SearchCategory = 41
+	SearchCategory_COMPLIANCE_METADATA      SearchCategory = 42
+	SearchCategory_COMPLIANCE_RESULTS       SearchCategory = 43
+	SearchCategory_COMPLIANCE_DOMAIN        SearchCategory = 44
+	SearchCategory_CLUSTER_HEALTH           SearchCategory = 45
+	// POLICY_CATEGORIES searches user-defined policy category labels.
+	SearchCategory_POLICY_CATEGORIES SearchCategory = 46
+	// IMAGE_INTEGRATIONS searches configured image registry integrations.
+	SearchCategory_IMAGE_INTEGRATIONS SearchCategory = 47
+	// COLLECTIONS searches resource collections (scoped sets of deployments).
+	SearchCategory_COLLECTIONS                      SearchCategory = 48
+	SearchCategory_POLICY_CATEGORY_EDGE             SearchCategory = 49
+	SearchCategory_PROCESS_LISTENING_ON_PORT        SearchCategory = 50
+	SearchCategory_API_TOKEN                        SearchCategory = 51
+	SearchCategory_REPORT_METADATA                  SearchCategory = 52
+	SearchCategory_REPORT_SNAPSHOT                  SearchCategory = 53
+	SearchCategory_COMPLIANCE_INTEGRATIONS          SearchCategory = 54
+	SearchCategory_COMPLIANCE_SCAN_CONFIG           SearchCategory = 55
+	SearchCategory_COMPLIANCE_SCAN                  SearchCategory = 56
+	SearchCategory_COMPLIANCE_CHECK_RESULTS         SearchCategory = 57
+	SearchCategory_BLOB                             SearchCategory = 58
+	SearchCategory_ADMINISTRATION_EVENTS            SearchCategory = 60
+	SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS    SearchCategory = 61
+	SearchCategory_ADMINISTRATION_USAGE             SearchCategory = 62
+	SearchCategory_COMPLIANCE_PROFILES              SearchCategory = 63
+	SearchCategory_COMPLIANCE_RULES                 SearchCategory = 65
+	SearchCategory_COMPLIANCE_SCAN_SETTING_BINDINGS SearchCategory = 66
+	SearchCategory_COMPLIANCE_SUITES                SearchCategory = 67
+	SearchCategory_CLOUD_SOURCES                    SearchCategory = 68
+	SearchCategory_DISCOVERED_CLUSTERS              SearchCategory = 69
+	SearchCategory_COMPLIANCE_REMEDIATIONS          SearchCategory = 70
+	SearchCategory_COMPLIANCE_BENCHMARKS            SearchCategory = 71
+	SearchCategory_AUTH_PROVIDERS                   SearchCategory = 72
+	SearchCategory_COMPLIANCE_REPORT_SNAPSHOT       SearchCategory = 73
+	// IMAGE_COMPONENTS_V2 is the v2 image components model used when the FlattenImageData feature flag is enabled.
+	SearchCategory_IMAGE_COMPONENTS_V2 SearchCategory = 74
+	// IMAGE_VULNERABILITIES_V2 is the v2 image vulnerabilities model used when the FlattenImageData feature flag is enabled.
+	SearchCategory_IMAGE_VULNERABILITIES_V2 SearchCategory = 75
+	// IMAGES_V2 is the v2 image model used when the FlattenImageData feature flag is enabled.
 	SearchCategory_IMAGES_V2                          SearchCategory = 76
 	SearchCategory_VIRTUAL_MACHINES                   SearchCategory = 77
 	SearchCategory_BASE_IMAGES                        SearchCategory = 78
@@ -306,15 +342,23 @@ func (SearchCategory) EnumDescriptor() ([]byte, []int) {
 	return file_api_v1_search_service_proto_rawDescGZIP(), []int{0}
 }
 
+// SearchDataType describes the type of values accepted for a search field,
+// as returned by the Options RPC.
 type SearchDataType int32
 
 const (
-	SearchDataType_SEARCH_BOOL     SearchDataType = 0
-	SearchDataType_SEARCH_NUMERIC  SearchDataType = 1
-	SearchDataType_SEARCH_STRING   SearchDataType = 2
+	// SEARCH_BOOL accepts "true" or "false".
+	SearchDataType_SEARCH_BOOL SearchDataType = 0
+	// SEARCH_NUMERIC accepts numeric comparisons, e.g. ">5" or "<=10".
+	SearchDataType_SEARCH_NUMERIC SearchDataType = 1
+	// SEARCH_STRING accepts substring or regex patterns.
+	SearchDataType_SEARCH_STRING SearchDataType = 2
+	// SEARCH_DATETIME accepts date/time values, e.g. ">01/02/2006".
 	SearchDataType_SEARCH_DATETIME SearchDataType = 3
-	SearchDataType_SEARCH_MAP      SearchDataType = 4
-	SearchDataType_SEARCH_ENUM     SearchDataType = 5
+	// SEARCH_MAP accepts key=value pairs for label-style fields.
+	SearchDataType_SEARCH_MAP SearchDataType = 4
+	// SEARCH_ENUM accepts named enum values such as "CRITICAL" or "HIGH".
+	SearchDataType_SEARCH_ENUM SearchDataType = 5
 )
 
 // Enum value maps for SearchDataType.
@@ -371,9 +415,13 @@ func (SearchDataType) EnumDescriptor() ([]byte, []int) {
 // "Deployment:central,sensor+Namespace:stackrox"
 // RawQuery is used in ListAPIs to search for a particular object.
 type RawQuery struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
-	Pagination    *Pagination            `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// query is a StackRox search query string. Multiple field:value pairs are
+	// joined with "+" (AND). Multiple values for one field are joined with ","
+	// (OR). Example: "Severity:CRITICAL+Cluster:production"
+	Query string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	// pagination controls page size and sort order for list results.
+	Pagination    *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -425,9 +473,13 @@ func (x *RawQuery) GetPagination() *Pagination {
 // RawSearchRequest is used to scope a given search in a specific category.
 // The search categories could be deployments, policies, images etc.
 type RawSearchRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
-	Categories    []SearchCategory       `protobuf:"varint,2,rep,packed,name=categories,proto3,enum=v1.SearchCategory" json:"categories,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// query is a StackRox search query string. Use the Options RPC to discover
+	// valid field names for each category. Example: "Severity:CRITICAL+Namespace:stackrox"
+	Query string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	// categories restricts the search to specific resource types. When empty,
+	// the service searches across all supported categories.
+	Categories    []SearchCategory `protobuf:"varint,2,rep,packed,name=categories,proto3,enum=v1.SearchCategory" json:"categories,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -477,9 +529,11 @@ func (x *RawSearchRequest) GetCategories() []SearchCategory {
 }
 
 type QuerySortOption struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	Field    string                 `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
-	Reversed bool                   `protobuf:"varint,2,opt,name=reversed,proto3" json:"reversed,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// field is the search field name to sort by (as returned by Options).
+	Field string `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
+	// reversed sets descending sort order when true.
+	Reversed bool `protobuf:"varint,2,opt,name=reversed,proto3" json:"reversed,omitempty"`
 	// Types that are valid to be assigned to SearchAfterOpt:
 	//
 	//	*QuerySortOption_SearchAfter
@@ -1077,10 +1131,15 @@ func (x *StringQuery) GetQuery() string {
 // MatchFieldQuery represents a query that matches documents containing the
 // query text in the provided field.
 type MatchFieldQuery struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Field         string                 `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
-	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
-	Highlight     bool                   `protobuf:"varint,3,opt,name=highlight,proto3" json:"highlight,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// field is the search field name, as returned by the Options RPC.
+	Field string `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
+	// value is the value to match against the field. Supports prefixes like
+	// "r/" for regex, ">" / "<" for numeric comparisons.
+	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	// highlight requests that the matched field values be returned in the
+	// search result's field_to_matches map.
+	Highlight     bool `protobuf:"varint,3,opt,name=highlight,proto3" json:"highlight,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1341,6 +1400,7 @@ func (*BaseQuery_DocIdQuery) isBaseQuery_Query() {}
 
 func (*BaseQuery_MatchNoneQuery) isBaseQuery_Query() {}
 
+// ConjunctionQuery matches documents that satisfy all of the sub-queries (logical AND).
 type ConjunctionQuery struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Queries       []*Query               `protobuf:"bytes,1,rep,name=queries,proto3" json:"queries,omitempty"`
@@ -1385,6 +1445,7 @@ func (x *ConjunctionQuery) GetQueries() []*Query {
 	return nil
 }
 
+// DisjunctionQuery matches documents that satisfy any of the sub-queries (logical OR).
 type DisjunctionQuery struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Queries       []*Query               `protobuf:"bytes,1,rep,name=queries,proto3" json:"queries,omitempty"`
@@ -1429,6 +1490,7 @@ func (x *DisjunctionQuery) GetQueries() []*Query {
 	return nil
 }
 
+// MatchNoneQuery matches no documents. Useful as a sentinel value.
 type MatchNoneQuery struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -1465,13 +1527,21 @@ func (*MatchNoneQuery) Descriptor() ([]byte, []int) {
 	return file_api_v1_search_service_proto_rawDescGZIP(), []int{17}
 }
 
+// SearchResult represents a single matched resource returned by the Search RPC.
 type SearchResult struct {
-	state          protoimpl.MessageState           `protogen:"open.v1"`
-	Id             string                           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name           string                           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Category       SearchCategory                   `protobuf:"varint,3,opt,name=category,proto3,enum=v1.SearchCategory" json:"category,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the unique identifier of the matched resource.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// name is the human-readable name of the matched resource.
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// category is the resource type of this result (e.g. DEPLOYMENTS, IMAGES).
+	Category SearchCategory `protobuf:"varint,3,opt,name=category,proto3,enum=v1.SearchCategory" json:"category,omitempty"`
+	// field_to_matches maps search field paths to the values that matched the query.
+	// Only populated for fields that had highlight=true in the query.
 	FieldToMatches map[string]*SearchResult_Matches `protobuf:"bytes,4,rep,name=field_to_matches,json=fieldToMatches,proto3" json:"field_to_matches,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Score          float64                          `protobuf:"fixed64,5,opt,name=score,proto3" json:"score,omitempty"`
+	// score is a relevance score for ranking. Higher values indicate stronger matches.
+	// Results are returned sorted by score descending.
+	Score float64 `protobuf:"fixed64,5,opt,name=score,proto3" json:"score,omitempty"`
 	// Location is intended to be a unique, yet human readable,
 	// identifier for the result. For example, for a deployment,
 	// the location will be "$cluster_name/$namespace/$deployment_name.
@@ -1554,9 +1624,14 @@ func (x *SearchResult) GetLocation() string {
 	return ""
 }
 
+// SearchResponse is returned by the Search RPC and contains matched results
+// grouped by category along with per-category counts.
 type SearchResponse struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
-	Results       []*SearchResult         `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// results contains matched resources sorted by relevance score (highest first).
+	Results []*SearchResult `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	// counts reports the number of results per category, useful for building
+	// faceted search UI components without iterating through all results.
 	Counts        []*SearchResponse_Count `protobuf:"bytes,2,rep,name=counts,proto3" json:"counts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1606,9 +1681,13 @@ func (x *SearchResponse) GetCounts() []*SearchResponse_Count {
 	return nil
 }
 
+// SearchOptionsRequest is the request message for the Options RPC.
 type SearchOptionsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Categories    []SearchCategory       `protobuf:"varint,1,rep,packed,name=categories,proto3,enum=v1.SearchCategory" json:"categories,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// categories restricts the response to field names applicable to those
+	// resource types. When empty, field names for all searchable categories
+	// are returned.
+	Categories    []SearchCategory `protobuf:"varint,1,rep,packed,name=categories,proto3,enum=v1.SearchCategory" json:"categories,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1650,9 +1729,13 @@ func (x *SearchOptionsRequest) GetCategories() []SearchCategory {
 	return nil
 }
 
+// SearchOptionsResponse is the response message for the Options RPC.
 type SearchOptionsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Options       []string               `protobuf:"bytes,1,rep,name=options,proto3" json:"options,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// options is the sorted list of valid search field names (e.g. "Severity",
+	// "Cluster", "Namespace", "Image Tag") that can be used in query strings
+	// for the requested categories.
+	Options       []string `protobuf:"bytes,1,rep,name=options,proto3" json:"options,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1694,9 +1777,12 @@ func (x *SearchOptionsResponse) GetOptions() []string {
 	return nil
 }
 
+// AutocompleteResponse is returned by the Autocomplete RPC.
 type AutocompleteResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Values        []string               `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// values contains up to 10 deduplicated candidate completion strings,
+	// sorted by relevance score descending.
+	Values        []string `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1738,9 +1824,11 @@ func (x *AutocompleteResponse) GetValues() []string {
 	return nil
 }
 
+// Matches holds the field values that caused this result to match the query.
 type SearchResult_Matches struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Values        []string               `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// values contains the matched text snippets for a given field.
+	Values        []string `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1782,10 +1870,13 @@ func (x *SearchResult_Matches) GetValues() []string {
 	return nil
 }
 
+// Count reports the number of matches found within a single SearchCategory.
 type SearchResponse_Count struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Category      SearchCategory         `protobuf:"varint,1,opt,name=category,proto3,enum=v1.SearchCategory" json:"category,omitempty"`
-	Count         int64                  `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// category identifies which resource type this count applies to.
+	Category SearchCategory `protobuf:"varint,1,opt,name=category,proto3,enum=v1.SearchCategory" json:"category,omitempty"`
+	// count is the number of resources matching the query in this category.
+	Count         int64 `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

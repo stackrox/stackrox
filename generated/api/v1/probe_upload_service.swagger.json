@@ -18,6 +18,7 @@
   "paths": {
     "/v1/probeupload/getexisting": {
       "post": {
+        "summary": "GetExistingProbes returns which of the requested probe files are already\ncached on Central, allowing the uploader to skip files that are unchanged.",
         "operationId": "ProbeUploadService_GetExistingProbes",
         "responses": {
           "200": {
