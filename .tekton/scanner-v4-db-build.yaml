@@ -79,6 +79,9 @@ spec:
     - name: use-trusted-artifact
       computeResources:
         limits:
+          # Default: 2Gi (namespace LimitRange). Downloads and decompresses full source+deps artifact.
+          # https://github.com/konflux-ci/build-trusted-artifacts
+          # Observed peak: 934Mi typical, but spikes past 2Gi during decompression of large monorepo.
           memory: 3Gi
 
   - pipelineTaskName: rpms-signature-scan
@@ -86,6 +89,9 @@ spec:
     - name: rpms-signature-scan
       computeResources:
         limits:
+          # Default: 256Mi/256Mi (set by task, request == limit, zero headroom).
+          # https://github.com/konflux-ci/build-definitions/tree/main/task/rpms-signature-scan
+          # Observed: 193-215Mi steady state with only 41-63Mi headroom. OOMKilled intermittently.
           memory: 512Mi
 
   taskRunTemplate:
