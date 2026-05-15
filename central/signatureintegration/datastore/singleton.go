@@ -16,7 +16,7 @@ import (
 )
 
 // redHatKeyBundlePath is the well-known path where the key bundle file is read from.
-// External processes (e.g. an HTTP updater sidecar) write to this location.
+// An external process downloads the bundle and writes it to this path.
 const redHatKeyBundlePath = "/tmp/redhat-signing-keys/bundle.json"
 
 // Stoppable represents a background process that can be stopped.

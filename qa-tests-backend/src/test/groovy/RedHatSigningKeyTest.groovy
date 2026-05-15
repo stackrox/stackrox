@@ -119,14 +119,14 @@ LKpdYJEldXnyRE4ppY5d7vnRZHvdZQMSE3KoRSMvVnzZtc9LTKLB3DlS/w==
         }
 
         cleanup:
-        "Remove the test bundle file and restore the default watch interval"
+        "Remove the test bundle file and the watch interval env var"
         if (centralPodName) {
             orchestrator.execInContainerByPodName(
                     centralPodName, Constants.STACKROX_NAMESPACE,
                     ["sh", "-c", "rm -f /tmp/redhat-signing-keys/bundle.json"] as String[])
         }
-        orchestrator.updateDeploymentEnv(Constants.STACKROX_NAMESPACE, "central", "central",
-                WATCH_INTERVAL_ENV, "4h")
+        orchestrator.removeDeploymentEnv(Constants.STACKROX_NAMESPACE, "central", "central",
+                WATCH_INTERVAL_ENV)
         waitForTrue(6, 10) {
             orchestrator.deploymentReady(Constants.STACKROX_NAMESPACE, "central")
         }
