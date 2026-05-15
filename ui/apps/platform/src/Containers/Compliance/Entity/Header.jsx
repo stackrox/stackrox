@@ -31,12 +31,14 @@ const EntityHeader = ({ entityType, listEntityType, entityName, entityId, search
                 {hasWriteAccessForCompliance && scanCluster && (
                     <ScanButton text="Scan" clusterId={scanCluster} standardId={scanStandard} />
                 )}
-                <ExportButton
-                    fileName={exportFilename}
-                    type={entityType}
-                    page={useCaseTypes.COMPLIANCE}
-                    id={entityId}
-                />
+                {(entityType === entityTypes.CLUSTER || entityType === entityTypes.STANDARD) && (
+                    <ExportButton
+                        fileName={exportFilename}
+                        type={entityType}
+                        page={useCaseTypes.COMPLIANCE}
+                        id={entityId}
+                    />
+                )}
             </div>
         </PageHeader>
     );

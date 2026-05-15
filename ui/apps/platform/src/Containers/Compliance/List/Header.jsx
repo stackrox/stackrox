@@ -34,12 +34,14 @@ const ListHeader = ({ entityType, searchComponent, standard }) => {
                 {hasWriteAccessForCompliance && standardId && (
                     <ScanButton text="Scan" standardId={standardId} />
                 )}
-                <ExportButton
-                    fileName={`${headerText} Compliance Report`}
-                    id={standardId || entityType}
-                    type={standardId ? 'STANDARD' : ''}
-                    page={useCaseTypes.COMPLIANCE}
-                />
+                {standardId && (
+                    <ExportButton
+                        fileName={`${headerText} Compliance Report`}
+                        id={standardId}
+                        type="STANDARD"
+                        page={useCaseTypes.COMPLIANCE}
+                    />
+                )}
             </div>
         </PageHeader>
     );
