@@ -76,6 +76,17 @@ spec:
           memory: 3Gi
         requests:
           memory: 3Gi
+    - name: use-trusted-artifact
+      computeResources:
+        limits:
+          memory: 3Gi
+
+  - pipelineTaskName: rpms-signature-scan
+    stepSpecs:
+    - name: rpms-signature-scan
+      computeResources:
+        limits:
+          memory: 512Mi
 
   taskRunTemplate:
     serviceAccountName: build-pipeline-scanner-v4-db

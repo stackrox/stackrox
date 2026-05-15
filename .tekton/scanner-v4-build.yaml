@@ -77,8 +77,13 @@ spec:
       computeResources:
         limits:
           cpu: 2
+          memory: 4Gi
         requests:
           cpu: 2
+    - name: create-trusted-artifact
+      computeResources:
+        limits:
+          memory: 4Gi
   - pipelineTaskName: build-source-image
     stepSpecs:
     # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
@@ -88,6 +93,17 @@ spec:
           memory: 3Gi
         requests:
           memory: 3Gi
+    - name: use-trusted-artifact
+      computeResources:
+        limits:
+          memory: 3Gi
+
+  - pipelineTaskName: rpms-signature-scan
+    stepSpecs:
+    - name: rpms-signature-scan
+      computeResources:
+        limits:
+          memory: 512Mi
 
   taskRunTemplate:
     serviceAccountName: build-pipeline-scanner-v4
