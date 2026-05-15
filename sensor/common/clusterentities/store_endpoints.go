@@ -194,30 +194,28 @@ func (e *endpointsStore) endpointsUnchangedNoLock(deploymentID string, newEndpoi
 
 		n := len(newTargetInfos)
 
-		if n > hintThreshold && n <= 254 {
-			// Build hint table: ContainerPort % 64 → 1-based slice index.
-			// Zero means "no entry"; values 1..255 encode indices 0..254.
-			clear(hints[:])
-			for i, ti := range newTargetInfos {
-				hints[ti.ContainerPort%hintBuckets] = uint8(i + 1)
-			}
-			for ti := range currentTargetInfos {
-				// Try the O(1) hint first.
-				idx := int(hints[ti.ContainerPort%hintBuckets]) - 1
-				if idx >= 0 && idx < n && newTargetInfos[idx] == ti {
-					continue
-				}
-				// Hint missed (collision or empty bucket) — fall back to scan.
-				if !slices.Contains(newTargetInfos, ti) {
-					return false
-				}
-			}
-		} else {
-			// Small n: linear scan is cheaper than building the hint table.
+		if n <= hintThreshold || n > 254 {
 			for ti := range currentTargetInfos {
 				if !slices.Contains(newTargetInfos, ti) {
 					return false
 				}
+			}
+			continue
+		}
+
+		// Build hint table: ContainerPort % 64 → 1-based slice index.
+		// Zero means "no entry"; values 1..255 encode indices 0..254.
+		clear(hints[:])
+		for i, ti := range newTargetInfos {
+			hints[ti.ContainerPort%hintBuckets] = uint8(i + 1)
+		}
+		for ti := range currentTargetInfos {
+			idx := int(hints[ti.ContainerPort%hintBuckets]) - 1
+			if idx >= 0 && idx < n && newTargetInfos[idx] == ti {
+				continue
+			}
+			if !slices.Contains(newTargetInfos, ti) {
+				return false
 			}
 		}
 	}
