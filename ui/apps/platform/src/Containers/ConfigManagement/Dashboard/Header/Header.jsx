@@ -16,7 +16,7 @@ const Header = () => {
                 <div className="flex w-32 mr-2">
                     <AppMenu />
                 </div>
-                <div className="flex w-32 mr-3 ">
+                <div className="flex w-32 mr-3">
                     <RBACMenu />
                 </div>
             </div>

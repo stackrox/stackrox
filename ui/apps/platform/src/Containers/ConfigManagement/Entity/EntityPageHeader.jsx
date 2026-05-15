@@ -20,13 +20,11 @@ const EntityPageHeader = ({ entityType, entityId }) => {
             subHeader={subHeader}
             classes="z-1 pr-0 ignore-react-onclickoutside"
         >
-            <div className="flex flex-1 justify-end h-full">
-                <div className="flex items-center pl-2">
-                    <EntitiesMenu
-                        text="All Entities"
-                        options={getConfigurationManagementEntityTypes()}
-                    />
-                </div>
+            <div className="flex flex-1 justify-end items-center h-full pl-2">
+                <EntitiesMenu
+                    text="All Entities"
+                    options={getConfigurationManagementEntityTypes()}
+                />
             </div>
         </PageHeader>
     );
