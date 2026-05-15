@@ -149,6 +149,11 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) {
 			continue
 		}
 		e.diffReplaceNoLock(deploymentID, currentEndpoints, data.endpoints)
+		if len(data.endpoints) == 0 {
+			if _, exists := e.reverseEndpointMap[deploymentID]; !exists {
+				e.reverseEndpointMap[deploymentID] = nil
+			}
+		}
 	}
 }
 

@@ -447,6 +447,16 @@ func (s *ClusterEntitiesStoreTestSuite) TestEmptyEndpointUpdatePreservesSeenStat
 			wantDeplA: theMap,
 			wantDeplB: theMap,
 		},
+		"known deployment that goes empty through diff replace should keep seen marker": {
+			steps: []applyStep{
+				endpointOverwrite("deplA"),
+				applyWithoutEndpoints("deplA"),
+				endpointUpdate("deplB"),
+				endpointOverwrite("deplA"),
+			},
+			wantDeplA: theMap,
+			wantDeplB: theMap,
+		},
 		"unseen deployment should trigger takeover as expected": {
 			steps: []applyStep{
 				endpointUpdate("deplB"),

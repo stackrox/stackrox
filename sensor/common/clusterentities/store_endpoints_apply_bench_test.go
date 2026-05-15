@@ -98,13 +98,13 @@ func BenchmarkApplyPartialChange(b *testing.B) {
 
 			// Build a variant with one endpoint's target info changed.
 			dataB := applyBenchGenerateEntityData(tc.numEndpoints, tc.targetsPerEndpoint)
-			for ep, tis := range dataB.endpoints {
-				if len(tis) > 0 {
-					tis[0] = EndpointTargetInfo{ContainerPort: 9999, PortName: "changed"}
-					dataB.endpoints[ep] = tis
-					break
-				}
+			ep := buildEndpoint("10.0.0.0", 8080)
+			tis, ok := dataB.endpoints[ep]
+			if !ok || len(tis) == 0 {
+				b.Fatalf("benchmark setup invariant broken: endpoint %v missing or empty", ep)
 			}
+			tis[0] = EndpointTargetInfo{ContainerPort: 9999, PortName: "changed"}
+			dataB.endpoints[ep] = tis
 			updatesB := map[string]*EntityData{"depl-bench": dataB}
 
 			for i := 0; b.Loop(); i++ {
