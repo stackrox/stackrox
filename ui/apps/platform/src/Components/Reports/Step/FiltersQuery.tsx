@@ -1,5 +1,12 @@
 import type { ReactElement } from 'react';
-import { Alert, Flex, FormGroup } from '@patternfly/react-core';
+import {
+    Flex,
+    FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+} from '@patternfly/react-core';
+import { getIn } from 'formik';
 import type { FormikProps } from 'formik';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
@@ -73,9 +80,16 @@ function FiltersQuery<T extends FiltersQueryConfiguration = FiltersQueryConfigur
                         searchFilter={searchFilter}
                     />
                 ) : (
-                    <Alert variant="warning" title="TODO" isInline component="p">
-                        To be determined
-                    </Alert>
+                    getIn(formik.touched, 'vulnReportFilters.query') &&
+                    getIn(formik.errors, 'vulnReportFilters.query') && (
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem variant="error">
+                                    {getIn(formik.errors, 'vulnReportFilters.query')}
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
+                    )
                 )}
             </Flex>
         </>
