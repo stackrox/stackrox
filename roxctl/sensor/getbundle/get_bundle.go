@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/istioutils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/sensor/util"
@@ -42,10 +43,11 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	var istioVersion string
 
 	c := &cobra.Command{
-		Use:   "get-bundle <cluster-name-or-id>",
-		Args:  cobra.ExactArgs(1),
-		Short: "Download a bundle with the files to deploy StackRox services into a cluster",
-		Long:  "Download a bundle with the required YAML configuration files to deploy StackRox Sensor, Collector, and Admission controller (optional).",
+		Use:        "get-bundle <cluster-name-or-id>",
+		Args:       cobra.ExactArgs(1),
+		Short:      "Download a bundle with the files to deploy StackRox services into a cluster",
+		Long:       "Download a bundle with the required YAML configuration files to deploy StackRox Sensor, Collector, and Admission controller (optional).",
+		Deprecated: common.DeprecatedInFavorOfOperator,
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := downloadBundle(outputDir, args[0], flags.Timeout(c), createUpgraderSA, istioVersion, cliEnvironment); err != nil {
 				return errors.Wrap(err, "error downloading sensor bundle")
