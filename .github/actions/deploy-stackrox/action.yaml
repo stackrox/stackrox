@@ -74,6 +74,11 @@ runs:
         export MAIN_IMAGE_TAG="${{ inputs.tag }}"
 
         deploy() {
+          for _ in $(seq 1 120); do
+            kubectl cluster-info && break
+            sleep 2
+          done
+
           yq -n ".securedCluster.spec.clusterName = \"${{ inputs.cluster-name }}\"" > /tmp/roxie-override.yaml
           case "${{ inputs.scanner }}" in
             v2)   yq -i '.central.spec.scanner.scannerComponent = "Enabled" | .central.spec.scannerV4.scannerComponent = "Disabled"' /tmp/roxie-override.yaml ;;
