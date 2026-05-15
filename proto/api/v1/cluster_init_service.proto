@@ -50,6 +50,7 @@ message CRSGenResponse {
 }
 
 message GetCAConfigResponse {
+  option deprecated = true;
   bytes helm_values_bundle = 1;
 }
 
@@ -134,7 +135,9 @@ service ClusterInitService {
     };
   }
 
+  // GetCAConfig is deprecated. Use operator-based installation with CRS instead.
   rpc GetCAConfig(Empty) returns (GetCAConfigResponse) {
+    option deprecated = true;
     option (google.api.http) = {get: "/v1/cluster-init/ca-config"};
   }
 

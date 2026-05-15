@@ -13,7 +13,7 @@ function ContainerArgumentsInfo({ args }: ContainerArgumentsInfoProps): ReactEle
                 <CardBody>
                     <List isPlain>
                         {args.map((arg) => (
-                            <ListItem key={arg}>--{arg}</ListItem>
+                            <ListItem key={arg}>{arg}</ListItem>
                         ))}
                     </List>
                 </CardBody>

@@ -175,8 +175,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	generateCmd := &sensorGenerateCommand{env: cliEnvironment, cluster: defaultCluster()}
 	c := &cobra.Command{
-		Use:   "generate",
-		Short: "Commands that generate files to deploy StackRox services into secured clusters",
+		Use:        "generate",
+		Short:      "Commands that generate files to deploy StackRox services into secured clusters",
+		Deprecated: common.DeprecatedInFavorOfOperator,
 		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
 			return generateCmd.Construct(c)
 		},

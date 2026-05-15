@@ -8,7 +8,6 @@ Available Commands:
   completion           Generate shell completion scripts
   declarative-config   Commands that help manage declarative configuration
   deployment           Commands related to deployments
-  helm                 Commands related to StackRox Helm Charts
   image                Commands that you can run on a specific image
   scanner              Commands related to the Scanner service
   sensor               Commands related to deploying StackRox services in 

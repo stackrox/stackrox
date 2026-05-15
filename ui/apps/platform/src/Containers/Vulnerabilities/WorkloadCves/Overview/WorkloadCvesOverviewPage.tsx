@@ -39,9 +39,11 @@ import type { VulnerabilityState } from 'types/cve.proto';
 import { searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport } from '../../searchFilterConfig';
 import { isVulnMgmtLocalStorage, workloadEntityTabValues } from '../../types';
 import type { DefaultFilters, VulnMgmtLocalStorage, WorkloadEntityTab } from '../../types';
+import { normalizeLocalStorageKeys } from '../../utils/localStorageUtils';
 import {
     getNamespaceViewPagePath,
     getRegexScopedQueryString,
+    normalizeSearchFilterKeys,
     parseQuerySearchFilter,
 } from '../../utils/searchUtils';
 import {
@@ -84,20 +86,20 @@ function mergeDefaultAndLocalFilters(
     newDefaults: DefaultFilters,
     searchFilter: SearchFilter
 ): SearchFilter {
-    const filter = cloneDeep(searchFilter);
+    const filter = cloneDeep(normalizeSearchFilterKeys(searchFilter));
 
-    let SEVERITY = filter.SEVERITY ?? [];
-    let FIXABLE = filter.FIXABLE ?? [];
+    let Severity = filter.Severity ?? [];
+    let Fixable = filter.Fixable ?? [];
 
     // Remove existing applied filters that are no longer in the default filters, then
     // add the new default filters.
-    SEVERITY = difference(SEVERITY, oldDefaults.SEVERITY, newDefaults.SEVERITY);
-    SEVERITY = SEVERITY.concat(newDefaults.SEVERITY);
+    Severity = difference(Severity, oldDefaults.Severity, newDefaults.Severity);
+    Severity = Severity.concat(newDefaults.Severity);
 
-    FIXABLE = difference(FIXABLE, oldDefaults.FIXABLE, newDefaults.FIXABLE);
-    FIXABLE = FIXABLE.concat(newDefaults.FIXABLE);
+    Fixable = difference(Fixable, oldDefaults.Fixable, newDefaults.Fixable);
+    Fixable = Fixable.concat(newDefaults.Fixable);
 
-    return { ...filter, SEVERITY, FIXABLE };
+    return { ...filter, Severity, Fixable };
 }
 
 const descriptionForVulnerabilityStateMap: Record<VulnerabilityState, string> = {
@@ -111,8 +113,8 @@ const descriptionForVulnerabilityStateMap: Record<VulnerabilityState, string> = 
 const defaultStorage: VulnMgmtLocalStorage = {
     preferences: {
         defaultFilters: {
-            SEVERITY: ['Critical', 'Important'],
-            FIXABLE: ['Fixable'],
+            Severity: ['Critical', 'Important'],
+            Fixable: ['Fixable'],
         },
     },
 } as const;
@@ -150,7 +152,8 @@ function WorkloadCvesOverviewPage() {
     const [localStorageValue, setStoredValue] = useLocalStorage(
         'vulnerabilityManagement',
         defaultStorage,
-        isVulnMgmtLocalStorage
+        isVulnMgmtLocalStorage,
+        normalizeLocalStorageKeys
     );
 
     const { searchFilter: urlSearchFilter, setSearchFilter: setURLSearchFilter } = useURLSearch();
