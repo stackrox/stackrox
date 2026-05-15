@@ -144,6 +144,16 @@
   {{ $_ := set $env "platform" $platform }}
 {{ end }}
 
+{{/* Infer Istio, if needed */}}
+{{ if kindIs "invalid" $env.istio }}
+  {{ if has "networking.istio.io/v1alpha3" $._rox._apiServer.apiResources }}
+    {{ $_ := set $env "istio" true }}
+    {{ include "srox.note" (list $ "Based on API server properties, we have inferred that you are deploying into an Istio-enabled cluster. Set the `env.istio` property explicitly to false/true to override the auto-sensed value.") }}
+  {{ else }}
+    {{ $_ := set $env "istio" false }}
+  {{ end }}
+{{ end }}
+
 [<- if .AutoSensePodSecurityPolicies >]
 {{/* Detect enablePodSecurityPolicies */}}
 {{ include "srox.autoSensePodSecurityPolicies" (list $) }}

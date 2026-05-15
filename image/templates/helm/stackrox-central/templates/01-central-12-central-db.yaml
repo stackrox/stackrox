@@ -26,6 +26,7 @@ spec:
         app: central-db
         {{- include "srox.podLabels" (list . "deployment" "central-db") | nindent 8 }}
       annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "5432"
         {{- $annotations := dict -}}
         {{- if eq ._rox.env.openshift 4 }}
           {{- $_ := set $annotations "openshift.io/required-scc" "nonroot-v2" -}}
@@ -188,6 +189,28 @@ spec:
   selector:
     app: central-db
   type: ClusterIP
+
+{{ if ._rox.env.istio }}
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: central-db-internal-no-istio-mtls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "destinationrule" "central-db-internal-no-istio-mtls") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "destinationrule" "central-db-internal-no-istio-mtls") | nindent 4 }}
+    stackrox.io/description: "Disable Istio mTLS for port 5432, since Central DB uses its own PostgreSQL TLS."
+spec:
+  host: central-db.{{ .Release.Namespace }}.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 5432
+        tls:
+          mode: DISABLE
+{{ end }}
 {{- end }}
 {{- if ._rox.central.db._password }}
 {{- if not (kindIs "invalid" ._rox.central.db._password.value) }}
