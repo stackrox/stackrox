@@ -192,6 +192,9 @@ func (s *serviceImpl) ListReportConfigurations(ctx context.Context, query *apiV2
 	v2Configs := make([]*apiV2.ReportConfiguration, 0, len(reportConfigs))
 
 	for _, config := range reportConfigs {
+		if config.GetResourceScope() == nil {
+			continue
+		}
 		converted, err := s.convertProtoReportConfigurationToV2(config)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error converting storage report configuration with id %s to response", config.GetId())
@@ -214,6 +217,10 @@ func (s *serviceImpl) GetReportConfiguration(ctx context.Context, req *apiV2.Res
 	}
 	if !common.IsV2ReportConfig(config) {
 		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 2.0")
+	}
+	if config.GetResourceScope() == nil {
+		return nil, errors.Wrapf(errox.InvalidArgs,
+			"Report configuration '%s' has an empty resource scope (no collection ID or entity scope)", req.GetId())
 	}
 
 	converted, err := s.convertProtoReportConfigurationToV2(config)

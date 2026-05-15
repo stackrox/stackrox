@@ -343,12 +343,15 @@ func (s *scheduler) queuePendingReports() {
 			continue
 		}
 
+		if snap.GetResourceScope() == nil {
+			log.Errorf("Report configuration '%s' has an empty resource scope (no collection ID or entity scope)", snap.GetReportConfigurationId())
+		}
 
 		repRequest := &reportGen.ReportRequest{
 			ReportSnapshot: snap,
 		}
 
-		if snap.GetCollection()!=nil{
+		if snap.GetCollection() != nil {
 			collection, found, err := s.collectionDatastore.Get(scheduledCtx, snap.GetCollection().GetId())
 			if err != nil {
 				log.Errorf("Error finding collection ID '%s': %s", snap.GetCollection().GetId(), err)
@@ -361,7 +364,6 @@ func (s *scheduler) queuePendingReports() {
 			repRequest.Collection = collection
 
 		}
-
 
 		_, err = s.SubmitReportRequest(scheduledCtx, repRequest, true)
 		if err != nil {
@@ -381,6 +383,9 @@ func (s *scheduler) queueScheduledReports() {
 		return
 	}
 	for _, rc := range reportConfigs {
+		if rc.GetResourceScope() == nil {
+			log.Errorf("Report configuration '%s' has an empty resource scope (no collection ID or entity scope)", rc.GetId())
+		}
 		if rc.GetSchedule() != nil {
 			if err := s.UpsertReportSchedule(rc); err != nil {
 				log.Errorf("Error queuing scheduled report for report configuration with ID %s: %v", rc.GetId(), err)
