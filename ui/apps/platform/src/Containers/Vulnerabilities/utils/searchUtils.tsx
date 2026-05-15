@@ -8,10 +8,12 @@ import {
 import { vulnerabilitySeverities } from 'types/cve.proto';
 import type { VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
 import type { SearchFilter } from 'types/search';
+import { searchFieldLabels } from 'types/searchOptions';
 import { getQueryString } from 'utils/queryStringUtils';
 import {
     applyRegexSearchModifiers,
     getRequestQueryStringForSearchFilter,
+    getValueByCaseInsensitiveKey,
     searchValueAsArray,
 } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
@@ -145,6 +147,34 @@ export function severityLabelToSeverity(label: VulnerabilitySeverityLabel): Vuln
     }
 }
 
+const canonicalKeysByLowerCase = new Map<string, string>();
+searchFieldLabels.forEach((label) => {
+    canonicalKeysByLowerCase.set(label.toLowerCase(), label);
+});
+
+/**
+ * Normalizes legacy search filter keys to their canonical form. For example,
+ * a bookmarked URL with `s[SEVERITY][0]=Critical` will be normalized to
+ * `s[Severity][0]=Critical`. Returns the original reference if no normalization
+ * is needed.
+ */
+export function normalizeSearchFilterKeys(searchFilter: SearchFilter): SearchFilter {
+    let normalized: SearchFilter | undefined;
+
+    Object.keys(searchFilter).forEach((key) => {
+        const canonical = canonicalKeysByLowerCase.get(key.toLowerCase());
+        if (canonical && canonical !== key) {
+            if (!normalized) {
+                normalized = { ...searchFilter };
+            }
+            normalized[canonical] = normalized[canonical] ?? normalized[key];
+            delete normalized[key];
+        }
+    });
+
+    return normalized ?? searchFilter;
+}
+
 /**
  * Parses an open `SearchFilter` obtained from the URL into a `SearchFilter` that
  * matches the fields and values expected by the backend.
@@ -159,47 +189,58 @@ export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySear
         }
     });
 
-    const fixable = searchValueAsArray(rawSearchFilter.FIXABLE);
+    const fixable = searchValueAsArray(getValueByCaseInsensitiveKey(rawSearchFilter, 'Fixable'));
 
     if (fixable.length > 0) {
-        cleanSearchFilter.FIXABLE = fixable.filter(isFixableStatus).map(fixableStatusToFixability);
+        cleanSearchFilter.Fixable = fixable.filter(isFixableStatus).map(fixableStatusToFixability);
     }
 
-    const clusterCveFixable = searchValueAsArray(rawSearchFilter['CLUSTER CVE FIXABLE']);
+    const clusterCveFixable = searchValueAsArray(
+        getValueByCaseInsensitiveKey(rawSearchFilter, 'Cluster CVE Fixable')
+    );
 
     if (clusterCveFixable.length > 0) {
-        cleanSearchFilter['CLUSTER CVE FIXABLE'] = clusterCveFixable
+        cleanSearchFilter['Cluster CVE Fixable'] = clusterCveFixable
             .filter(isFixableStatus)
             .map(fixableStatusToFixability);
     }
 
-    const severity = searchValueAsArray(rawSearchFilter.SEVERITY);
+    const severity = searchValueAsArray(getValueByCaseInsensitiveKey(rawSearchFilter, 'Severity'));
 
     if (severity.length > 0) {
-        cleanSearchFilter.SEVERITY = severity
+        cleanSearchFilter.Severity = severity
             .filter(isVulnerabilitySeverityLabel)
             .map(severityLabelToSeverity);
     }
+
+    // Remove non-canonical casing variants that were copied from the raw filter
+    Object.keys(cleanSearchFilter).forEach((key) => {
+        const canonical = canonicalKeysByLowerCase.get(key.toLowerCase());
+        if (canonical && canonical !== key) {
+            delete cleanSearchFilter[key];
+        }
+    });
 
     return cleanSearchFilter;
 }
 
 export function getAppliedSeverities(searchFilter: SearchFilter): VulnerabilitySeverityLabel[] {
-    return ensureStringArray(searchFilter.SEVERITY).filter(isVulnerabilitySeverityLabel);
+    const values = getValueByCaseInsensitiveKey(searchFilter, 'Severity');
+    return ensureStringArray(values).filter(isVulnerabilitySeverityLabel);
 }
 
 // Given a search filter, determine which severities should be hidden from the user
 export function getHiddenSeverities(
     querySearchFilter: QuerySearchFilter
 ): Set<VulnerabilitySeverity> {
-    return querySearchFilter.SEVERITY
-        ? new Set(vulnerabilitySeverities.filter((s) => !querySearchFilter.SEVERITY?.includes(s)))
+    return querySearchFilter.Severity
+        ? new Set(vulnerabilitySeverities.filter((s) => !querySearchFilter.Severity?.includes(s)))
         : new Set([]);
 }
 
 export function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<FixableStatus> {
     const hiddenStatuses = new Set<FixableStatus>([]);
-    const fixableFilters = querySearchFilter?.FIXABLE ?? [];
+    const fixableFilters = querySearchFilter?.Fixable ?? [];
 
     if (fixableFilters.length > 0) {
         if (!fixableFilters.includes('true')) {

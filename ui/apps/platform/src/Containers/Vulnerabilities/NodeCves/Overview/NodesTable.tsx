@@ -67,7 +67,7 @@ function NodesTable({
         searchFilter: querySearchFilter,
     });
 
-    const filteredSeverities = querySearchFilter.SEVERITY?.map(
+    const filteredSeverities = querySearchFilter.Severity?.map(
         (s) => vulnerabilitySeverityLabels[s]
     ).filter(isVulnerabilitySeverityLabel);
 

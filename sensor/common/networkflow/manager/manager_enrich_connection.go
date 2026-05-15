@@ -66,9 +66,7 @@ func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostCo
 func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *connection, status *connStatus, enrichedConnections map[indicator.NetworkConn]timestamp.MicroTS) (EnrichmentResult, EnrichmentReasonConn) {
 	isFresh := status.isFresh(now)
 
-	// Use shared container resolution logic
-	activeChecker := &connectionActiveChecker{mutex: &m.activeConnectionsMutex, activeConnections: m.activeConnections}
-	containerResult := resolveContainerID(m, now, conn.containerID, status, activeChecker, *conn)
+	containerResult := resolveContainerID(m, now, conn.containerID, status, &m.connectionChecker, *conn)
 
 	if !containerResult.Found {
 		// There is a connection involving a container that Sensor does not recognize. In this case we may do two things:
