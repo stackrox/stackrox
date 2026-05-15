@@ -69,6 +69,7 @@ func (GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus) EnumDescrip
 	return file_api_v1_sensor_upgrade_service_proto_rawDescGZIP(), []int{1, 0}
 }
 
+// Deprecated: Marked as deprecated in api/v1/sensor_upgrade_service.proto.
 type UpdateSensorUpgradeConfigRequest struct {
 	state         protoimpl.MessageState       `protogen:"open.v1"`
 	Config        *storage.SensorUpgradeConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
@@ -113,6 +114,7 @@ func (x *UpdateSensorUpgradeConfigRequest) GetConfig() *storage.SensorUpgradeCon
 	return nil
 }
 
+// Deprecated: Marked as deprecated in api/v1/sensor_upgrade_service.proto.
 type GetSensorUpgradeConfigResponse struct {
 	state         protoimpl.MessageState                        `protogen:"open.v1"`
 	Config        *GetSensorUpgradeConfigResponse_UpgradeConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
@@ -213,9 +215,9 @@ var File_api_v1_sensor_upgrade_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_sensor_upgrade_service_proto_rawDesc = "" +
 	"\n" +
-	"#api/v1/sensor_upgrade_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1cstorage/sensor_upgrade.proto\"X\n" +
+	"#api/v1/sensor_upgrade_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1cstorage/sensor_upgrade.proto\"\\\n" +
 	" UpdateSensorUpgradeConfigRequest\x124\n" +
-	"\x06config\x18\x01 \x01(\v2\x1c.storage.SensorUpgradeConfigR\x06config\"\xe5\x02\n" +
+	"\x06config\x18\x01 \x01(\v2\x1c.storage.SensorUpgradeConfigR\x06config:\x02\x18\x01\"\xe9\x02\n" +
 	"\x1eGetSensorUpgradeConfigResponse\x12H\n" +
 	"\x06config\x18\x01 \x01(\v20.v1.GetSensorUpgradeConfigResponse.UpgradeConfigR\x06config\x1a\xb4\x01\n" +
 	"\rUpgradeConfig\x12.\n" +
@@ -223,12 +225,12 @@ const file_api_v1_sensor_upgrade_service_proto_rawDesc = "" +
 	"\x14auto_upgrade_feature\x18\x02 \x01(\x0e2A.v1.GetSensorUpgradeConfigResponse.SensorAutoUpgradeFeatureStatusR\x12autoUpgradeFeature\"B\n" +
 	"\x1eSensorAutoUpgradeFeatureStatus\x12\x11\n" +
 	"\rNOT_SUPPORTED\x10\x00\x12\r\n" +
-	"\tSUPPORTED\x10\x012\xc2\x03\n" +
-	"\x14SensorUpgradeService\x12j\n" +
-	"\x16GetSensorUpgradeConfig\x12\t.v1.Empty\x1a\".v1.GetSensorUpgradeConfigResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/sensorupgrades/config\x12r\n" +
-	"\x19UpdateSensorUpgradeConfig\x12$.v1.UpdateSensorUpgradeConfigRequest\x1a\t.v1.Empty\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/v1/sensorupgrades/config\x12\\\n" +
-	"\x14TriggerSensorUpgrade\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"'\x82\xd3\xe4\x93\x02!\"\x1f/v1/sensorupgrades/cluster/{id}\x12l\n" +
-	"\x19TriggerSensorCertRotation\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"2\x82\xd3\xe4\x93\x02,\"*/v1/sensorupgrades/rotateclustercerts/{id}B'\n" +
+	"\tSUPPORTED\x10\x01:\x02\x18\x012\xce\x03\n" +
+	"\x14SensorUpgradeService\x12m\n" +
+	"\x16GetSensorUpgradeConfig\x12\t.v1.Empty\x1a\".v1.GetSensorUpgradeConfigResponse\"$\x82\xd3\xe4\x93\x02\x1b\x12\x19/v1/sensorupgrades/config\x88\x02\x01\x12u\n" +
+	"\x19UpdateSensorUpgradeConfig\x12$.v1.UpdateSensorUpgradeConfigRequest\x1a\t.v1.Empty\"'\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/v1/sensorupgrades/config\x88\x02\x01\x12_\n" +
+	"\x14TriggerSensorUpgrade\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"*\x82\xd3\xe4\x93\x02!\"\x1f/v1/sensorupgrades/cluster/{id}\x88\x02\x01\x12o\n" +
+	"\x19TriggerSensorCertRotation\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"5\x82\xd3\xe4\x93\x02,\"*/v1/sensorupgrades/rotateclustercerts/{id}\x88\x02\x01B'\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x02b\x06proto3"
 
 var (
