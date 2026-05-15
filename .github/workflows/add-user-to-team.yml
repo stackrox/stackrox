@@ -13,7 +13,6 @@ on:
         description: 'The slug of the team (e.g., "release-mgmt")'
         required: true
         type: string
-  push:  # Add this line temporarily
 
 jobs:
   # This workflow contains a single job
@@ -44,9 +43,9 @@ jobs:
             -f role='member')
 
           # Check the status code in the headers
-          if echo "$RESPONSE" | grep -q "HTTP/2 200"; then
+          if echo "$RESPONSE" | grep -q "HTTP/.* 200"; then
             echo "✅ $USER_TO_ADD was already a member. No changes needed."
-          elif echo "$RESPONSE" | grep -q "HTTP/2 201"; then
+          elif echo "$RESPONSE" | grep -q "HTTP/.* 201"; then
             echo "🎉 $USER_TO_ADD has been successfully added/invited to the team."
           else
             echo "❌ Failed to add user. Full response below:"
