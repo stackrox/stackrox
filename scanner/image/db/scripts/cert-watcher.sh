@@ -10,7 +10,7 @@ if ! command -v pg_ctl &>/dev/null; then
     sleep infinity
 fi
 
-echo "cert-watcher: watching ${CERT_DIR} for changes (interval: ${POLL_INTERVAL})"
+echo "cert-watcher: watching ${CERT_DIR} for changes (interval: ${POLL_INTERVAL}, pgdata: ${PGDATA})"
 
 HASH=""
 while true; do
