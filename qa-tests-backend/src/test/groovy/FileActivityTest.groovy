@@ -18,7 +18,8 @@ class FileActivityTest extends BaseSpecification {
 
     static final private String DEPLOY_PATH = "/tmp/fa-deploy-${RUN_ID}"
     static final private String NODE_PATH = "/tmp/fa-node-${RUN_ID}"
-    static final private String POLICY_PATH = "/tmp/fa-*"
+    static final private String DEPLOY_POLICY_PATH = "/tmp/fa-deploy-*"
+    static final private String NODE_POLICY_PATH = "/tmp/fa-node-*"
     static final private String DEPLOY_POLICY_NAME = "FA-E2E-deploy-${RUN_ID}"
     static final private String NODE_POLICY_NAME = "FA-E2E-node-${RUN_ID}"
 
@@ -53,12 +54,12 @@ class FileActivityTest extends BaseSpecification {
                         Constants.STACKROX_NAMESPACE, Constants.COLLECTOR_DS, Constants.FACT_CONTAINER))
 
         deployPolicyID = PolicyService.createNewPolicy(createFileActivityPolicy(
-                DEPLOY_POLICY_NAME, POLICY_PATH,
+                DEPLOY_POLICY_NAME, DEPLOY_POLICY_PATH,
                 PolicyOuterClass.EventSource.DEPLOYMENT_EVENT))
         assert deployPolicyID
 
         nodePolicyID = PolicyService.createNewPolicy(createFileActivityPolicy(
-                NODE_POLICY_NAME, POLICY_PATH,
+                NODE_POLICY_NAME, NODE_POLICY_PATH,
                 PolicyOuterClass.EventSource.NODE_EVENT))
         assert nodePolicyID
 
