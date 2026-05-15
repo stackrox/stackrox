@@ -18,13 +18,14 @@ import (
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/internal/httputil"
 	"github.com/stackrox/rox/scanner/matcher"
 )
 
-const dbPasswordEnvVar = "ROX_SCANNERCTL_DB_PASSWORD"
+const dbPasswordEnvVar = "ROX_SCANNERCTL_DB_PASSWORD" //nolint:gosec // Not a credential, just an env var name.
 
 // ccVulnReportCmd creates the ccvulnreport command.
 func ccVulnReportCmd(ctx context.Context) *cobra.Command {
@@ -94,7 +95,7 @@ func ccVulnReportCmd(ctx context.Context) *cobra.Command {
 		if err != nil {
 			return fmt.Errorf("failed to initialize indexer store: %w", err)
 		}
-		defer indexerStore.Close(ctx)
+		defer utils.IgnoreError(func() error { return indexerStore.Close(ctx) })
 
 		hashID := fmt.Sprintf("/v4/containerimage/%s", ref.DigestStr())
 		manifestDigest, err := indexer.CreateManifestDigest(hashID)
@@ -131,7 +132,7 @@ func ccVulnReportCmd(ctx context.Context) *cobra.Command {
 		if err != nil {
 			return fmt.Errorf("failed to create locker: %w", err)
 		}
-		defer locker.Close(ctx)
+		defer utils.IgnoreError(func() error { return locker.Close(ctx) })
 
 		libVuln, err := libvuln.New(ctx, &libvuln.Options{
 			Store:                    store,
@@ -145,7 +146,7 @@ func ccVulnReportCmd(ctx context.Context) *cobra.Command {
 		if err != nil {
 			return fmt.Errorf("failed to create libvuln: %w", err)
 		}
-		defer libVuln.Close(ctx)
+		defer utils.IgnoreError(func() error { return libVuln.Close(ctx) })
 
 		log.Printf("Scanning for vulnerabilities...")
 		vulnReport, err := libVuln.Scan(ctx, ccIndexReport)
