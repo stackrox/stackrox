@@ -37,13 +37,9 @@ const tableColumns = [
         Header: `Policy`,
         headerClassName: `w-1/4 ${defaultHeaderClassName}`,
         className: `w-1/4 ${defaultColumnClassName}`,
-        Cell: ({ original, pdf }) => {
+        Cell: ({ original }) => {
             const url = getConfigMgmtPathForEntitiesAndId('POLICY', original.id);
-            return (
-                <TableCellLink pdf={pdf} url={url}>
-                    {original.name}
-                </TableCellLink>
-            );
+            return <TableCellLink url={url}>{original.name}</TableCellLink>;
         },
         accessor: 'name',
         id: policySortFields.POLICY,
@@ -68,12 +64,12 @@ const tableColumns = [
         Header: `Policy Status`,
         headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
-        Cell: ({ original, pdf }) => {
+        Cell: ({ original }) => {
             const { disabled, policyStatus } = original;
             return disabled ? (
-                <PolicyDisabledIconText isDisabled={disabled} isTextOnly={pdf} />
+                <PolicyDisabledIconText isDisabled={disabled} />
             ) : (
-                <PolicyStatusIconText isPass={policyStatus === 'pass'} isTextOnly={pdf} />
+                <PolicyStatusIconText isPass={policyStatus === 'pass'} />
             );
         },
         accessor: 'policyStatus',
@@ -84,8 +80,8 @@ const tableColumns = [
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
         Cell: ({ original }) => {
-            const { severity, pdf } = original;
-            return <PolicySeverityIconText severity={severity} isTextOnly={pdf} />;
+            const { severity } = original;
+            return <PolicySeverityIconText severity={severity} />;
         },
         accessor: 'severity',
         sortMethod: sortSeverity,
