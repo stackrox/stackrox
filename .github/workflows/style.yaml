@@ -56,7 +56,7 @@ jobs:
   misc-checks:
     env:
       ARTIFACT_DIR: junit-reports/
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -199,7 +199,7 @@ jobs:
     # This job ensures that COLLECTOR_VERSION, FACT_VERSION or SCANNER_VERSION files cannot be updated to a version
     # for which the image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image
     # is there (no suffix) so that the failure also happens in this job.
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: Checkout repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -253,7 +253,7 @@ jobs:
     if: >-
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '^.github/')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       - uses: ./.github/actions/job-preamble
@@ -267,7 +267,7 @@ jobs:
     if: >-
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '^.github/')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       - uses: ./.github/actions/job-preamble
@@ -281,7 +281,7 @@ jobs:
     if: >-
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '^.openshift-ci/')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6

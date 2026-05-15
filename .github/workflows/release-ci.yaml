@@ -9,7 +9,7 @@ on:
 jobs:
   run-parameters:
     name: Run parameters
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - run: |
           echo "Event: ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
@@ -21,7 +21,7 @@ jobs:
     secrets: inherit
 
   check-is-release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       is_release: ${{ steps.is_release_check.outputs.is_release }}
     steps:
@@ -40,7 +40,7 @@ jobs:
           fi
 
   check-scanner-version:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -53,7 +53,7 @@ jobs:
             check_scanner_version
 
   check-collector-version:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -66,7 +66,7 @@ jobs:
             check_collector_version
 
   check-fact-version:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6

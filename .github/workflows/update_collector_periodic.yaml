@@ -6,7 +6,7 @@ on:
 jobs:
   update-collector:
     if:  ${{ github.repository_owner == 'stackrox' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
