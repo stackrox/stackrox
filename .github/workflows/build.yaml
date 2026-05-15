@@ -810,6 +810,7 @@ jobs:
 
       - uses: ./.github/actions/job-preamble
         with:
+          free-disk-space: 40
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
@@ -853,8 +854,8 @@ jobs:
               tar xzf go-binaries-build.tgz
               cd ../..
               # Move to expected location for Dockerfile
-              mkdir -p bin/linux_${arch}
-              cp "$dir/bin/linux_${arch}/stackrox-operator" bin/linux_${arch}/
+              mkdir -p "bin/linux_${arch}"
+              cp "$dir/bin/linux_${arch}/stackrox-operator" "bin/linux_${arch}/"
             fi
           done
 
@@ -887,17 +888,17 @@ jobs:
         run: |
           docker buildx imagetools create \
             --tag quay.io/stackrox-io/stackrox-operator:latest \
-            quay.io/stackrox-io/stackrox-operator:${{ env.BUILD_TAG }}
+            "quay.io/stackrox-io/stackrox-operator:${{ env.BUILD_TAG }}"
 
       - name: Add major.minor tag for release versions
         if: github.event_name == 'push' && github.ref_name == 'master'
         run: |
           TAG="${{ env.BUILD_TAG }}"
-          if [[ $TAG =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             MAJOR_MINOR="${TAG%.*}"
             docker buildx imagetools create \
-              --tag quay.io/stackrox-io/stackrox-operator:${MAJOR_MINOR} \
-              quay.io/stackrox-io/stackrox-operator:${{ env.BUILD_TAG }}
+              --tag "quay.io/stackrox-io/stackrox-operator:${MAJOR_MINOR}" \
+              "quay.io/stackrox-io/stackrox-operator:${{ env.BUILD_TAG }}"
           fi
 
       - name: Login to quay.io/rhacs-eng
@@ -909,27 +910,37 @@ jobs:
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
-      - name: Copy operator to rhacs-eng registry
+      - name: Build and push operator multi-arch to rhacs-eng
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        run: |
-          skopeo copy --retry-times 5 --all \
-            "docker://quay.io/stackrox-io/stackrox-operator:${{ env.BUILD_TAG }}" \
-            "docker://quay.io/rhacs-eng/stackrox-operator:${{ env.BUILD_TAG }}"
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # ratchet:docker/build-push-action@v7.1.0
+        with:
+          context: .
+          file: operator/prebuilt.Dockerfile
+          platforms: ${{ steps.platforms.outputs.platforms }}
+          push: true
+          tags: quay.io/rhacs-eng/stackrox-operator:${{ env.BUILD_TAG }}
+          build-args: |
+            ROX_IMAGE_FLAVOR=development_build
+          cache-from: type=gha,scope=stackrox-operator-rhacs
+          cache-to: type=gha,mode=max,scope=stackrox-operator-rhacs
 
-      - name: Copy additional tags to rhacs-eng
+      - name: Add latest tag for master merges to rhacs-eng
         if: github.event_name == 'push' && github.ref_name == 'master'
         run: |
-          skopeo copy --retry-times 5 --all \
-            "docker://quay.io/stackrox-io/stackrox-operator:latest" \
-            "docker://quay.io/rhacs-eng/stackrox-operator:latest"
+          docker buildx imagetools create \
+            --tag quay.io/rhacs-eng/stackrox-operator:latest \
+            "quay.io/rhacs-eng/stackrox-operator:${{ env.BUILD_TAG }}"
 
+      - name: Add major.minor tag for release versions to rhacs-eng
+        if: github.event_name == 'push' && github.ref_name == 'master'
+        run: |
           TAG="${{ env.BUILD_TAG }}"
-          if [[ $TAG =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             MAJOR_MINOR="${TAG%.*}"
-            skopeo copy --retry-times 5 --all \
-              "docker://quay.io/stackrox-io/stackrox-operator:${MAJOR_MINOR}" \
-              "docker://quay.io/rhacs-eng/stackrox-operator:${MAJOR_MINOR}"
+            docker buildx imagetools create \
+              --tag "quay.io/rhacs-eng/stackrox-operator:${MAJOR_MINOR}" \
+              "quay.io/rhacs-eng/stackrox-operator:${{ env.BUILD_TAG }}"
           fi
 
   build-and-push-scanner:
