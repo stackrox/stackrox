@@ -343,19 +343,27 @@ func (s *scheduler) queuePendingReports() {
 			continue
 		}
 
-		collection, found, err := s.collectionDatastore.Get(scheduledCtx, snap.GetCollection().GetId())
-		if err != nil {
-			log.Errorf("Error finding collection ID '%s': %s", snap.GetCollection().GetId(), err)
-			continue
-		}
-		if !found {
-			log.Errorf("Collection ID '%s' not found", snap.GetCollection().GetId())
+
+		repRequest := &reportGen.ReportRequest{
+			ReportSnapshot: snap,
 		}
 
-		_, err = s.SubmitReportRequest(scheduledCtx, &reportGen.ReportRequest{
-			ReportSnapshot: snap,
-			Collection:     collection,
-		}, true)
+		if snap.GetCollection()!=nil{
+			collection, found, err := s.collectionDatastore.Get(scheduledCtx, snap.GetCollection().GetId())
+			if err != nil {
+				log.Errorf("Error finding collection ID '%s': %s", snap.GetCollection().GetId(), err)
+				continue
+			}
+			if !found {
+				log.Errorf("Collection ID '%s' not found", snap.GetCollection().GetId())
+			}
+
+			repRequest.Collection = collection
+
+		}
+
+
+		_, err = s.SubmitReportRequest(scheduledCtx, repRequest, true)
 		if err != nil {
 			log.Errorf("Error rescheduling pending report job for report config ID '%s': %s", snap.GetReportConfigurationId(), err)
 		}
