@@ -102,7 +102,6 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     helm_repo_name="tmp-srox-compat"
     if ! helm repo list 2>/dev/null | grep -q "^${helm_repo_name}[[:space:]]"; then
         helm repo add "${helm_repo_name}" https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
-        helm repo update
     fi
 
     current_tag="$(make tag --quiet --no-print-directory)"
