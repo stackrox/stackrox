@@ -24,6 +24,12 @@ inputs:
   scanner:
     description: "Scanner config: v4 (default), v2, or both"
     default: v4
+  registry-username:
+    description: Registry username — sets REGISTRY_USERNAME for roxie
+    default: ""
+  registry-password:
+    description: Registry password — sets REGISTRY_PASSWORD for roxie
+    default: ""
   background:
     description: Run deploy in background
     default: "false"
@@ -53,8 +59,15 @@ runs:
 
     - name: Deploy StackRox
       shell: bash
+      env:
+        INPUT_REGISTRY_USERNAME: ${{ inputs.registry-username }}
+        INPUT_REGISTRY_PASSWORD: ${{ inputs.registry-password }}
       run: |
         set +x
+        if [ -n "$INPUT_REGISTRY_USERNAME" ]; then
+          export REGISTRY_USERNAME="$INPUT_REGISTRY_USERNAME"
+          export REGISTRY_PASSWORD="$INPUT_REGISTRY_PASSWORD"
+        fi
         export ROX_ADMIN_PASSWORD="$(openssl rand -base64 20)"
         echo "::add-mask::${ROX_ADMIN_PASSWORD}"
         echo "${ROX_ADMIN_PASSWORD}" > /tmp/rox-admin-password
@@ -83,6 +96,7 @@ runs:
 
           sed "s/^export //; s/['\"]//g" /tmp/roxie-env.sh >> "$GITHUB_ENV"
           source /tmp/roxie-env.sh
+          echo "$API_ENDPOINT" > /tmp/rox-api-endpoint
 
           curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
             "https://${API_ENDPOINT}/v1/apitokens/generate" \
@@ -95,5 +109,5 @@ runs:
           deploy > /tmp/deploy-stackrox.log 2>&1 &
           echo $! > /tmp/deploy-stackrox.pid
         else
-          deploy
+          deploy 2>&1 | tee /tmp/deploy-stackrox.log
         fi
