@@ -3,6 +3,7 @@ import find from 'lodash/find';
 import { Tooltip } from '@patternfly/react-core';
 import { CheckIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
+import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import { riskBasePath } from 'routePaths';
 
 type DeploymentNameColumnProps = {
@@ -13,9 +14,11 @@ type DeploymentNameColumnProps = {
 };
 
 export function DeploymentNameColumn({ original }: DeploymentNameColumnProps) {
+    const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
     const isSuspicious = find(original.baselineStatuses, {
         anomalousProcessesExecuted: true,
     });
+    const url = `${riskBasePath}/${original.deployment.id}?filteredWorkflowView=${filteredWorkflowView}`;
     // Borrow layout from IconText component.
     return (
         <div className="flex items-center">
@@ -30,9 +33,7 @@ export function DeploymentNameColumn({ original }: DeploymentNameColumnProps) {
                     </Tooltip>
                 )}
                 <span className="pf-v6-u-pl-sm pf-v6-u-text-nowrap">
-                    <Link to={`${riskBasePath}/${original.deployment.id}`}>
-                        {original.deployment.name}
-                    </Link>
+                    <Link to={url}>{original.deployment.name}</Link>
                 </span>
             </span>
         </div>

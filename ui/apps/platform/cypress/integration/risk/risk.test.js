@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import navigationSelectors from '../../selectors/navigation';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import pf6 from '../../selectors/pf6';
 
@@ -19,6 +20,22 @@ describe('Risk', () => {
             visitRiskDeployments('Platform view');
 
             cy.get(RiskPageSelectors.risk).should('have.class', 'pf-m-current');
+        });
+
+        it('should maintain active horizontal nav state on detail page for each view', () => {
+            cy.wrap([
+                { urlParam: 'Applications view', activeTab: 'User Workloads' },
+                { urlParam: 'Platform view', activeTab: 'Platform' },
+                { urlParam: 'Full view', activeTab: 'All Deployments' },
+            ]).each(({ urlParam, activeTab }) => {
+                visitRiskDeployments(urlParam);
+                viewFirstRiskDeployment();
+
+                cy.get(`${navigationSelectors.horizontalNavLinks}:contains("${activeTab}")`).should(
+                    'have.class',
+                    'pf-m-current'
+                );
+            });
         });
 
         it('should have title and table column headings', () => {
