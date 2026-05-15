@@ -256,8 +256,8 @@ image-scannerctl: image/scannerctl/bin/scannerctl
 ossls-notice: $(build-deps-t)
 	@echo "+ $@"
 ifdef CI
-	$(SILENT)ossls version
-	$(SILENT)ossls audit --export image/scanner/THIRD_PARTY_NOTICES
+	# OSS notice artifact is downloaded by workflow, just verify it exists
+	$(SILENT)test -d image/scanner/THIRD_PARTY_NOTICES || (echo "ERROR: THIRD_PARTY_NOTICES not found" && exit 1)
 else
 	$(SILENT)mkdir -p image/scanner/THIRD_PARTY_NOTICES
 endif

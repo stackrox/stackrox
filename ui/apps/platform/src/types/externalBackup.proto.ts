@@ -1,11 +1,11 @@
 import type { BackupIntegrationType } from './integration';
-import type { Schedule } from './schedule.proto';
+import type { LegacySchedule } from './schedule.proto';
 
 export type BaseBackupIntegration = {
     id: string;
     name: string;
     type: BackupIntegrationType;
-    schedule: Schedule;
+    schedule: LegacySchedule;
     backupsToKeep: number; // int32
 };
 
