@@ -1,0 +1,39 @@
+name: Add User to Team
+
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on:
+  workflow_dispatch:
+    inputs:
+      username:
+        description: 'The GitHub username to add'
+        required: true
+        type: string
+      team_slug:
+        description: 'The slug of the team (e.g., "release-mgmt")'
+        required: true
+        type: string
+
+jobs:
+  # This workflow contains a single job
+  add-to-team:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add user to organization team
+        env:
+          GH_TOKEN: ${{ secrets.STACKROX_TEAM_MGMT_TOKEN }}
+          ORG_NAME: ${{ github.repository_owner }}
+          USER_TO_ADD: ${{ inputs.username }}
+          TEAM_SLUG: ${{ inputs.team_slug }}
+        run: |
+          echo "Adding $USER_TO_ADD to team $TEAM_SLUG in organization $ORG_NAME..."
+          
+          # Using the GitHub CLI to add the user
+          # This command adds the user as a 'member'. Use --role maintainer if needed.
+          gh api \
+            --method PUT \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /orgs/$ORG_NAME/teams/$TEAM_SLUG/memberships/$USER_TO_ADD \
+            -f role='member'
+          echo "Successfully sent invitation/added $USER_TO_ADD to $TEAM_SLUG."
