@@ -13,6 +13,7 @@ on:
         description: 'The slug of the team (e.g., "release-mgmt")'
         required: true
         type: string
+  push:  # Add this line temporarily
 
 jobs:
   # This workflow contains a single job
