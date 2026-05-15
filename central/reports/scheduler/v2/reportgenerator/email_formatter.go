@@ -44,15 +44,19 @@ func formatEmailSubject(subjectTemplate string, snapshot *storage.ReportSnapshot
 	if len(configName) > maxConfigNameLenInSubject {
 		configName = fmt.Sprintf("%s...", configName[0:maxConfigNameLenInSubject])
 	}
-	collectionName := snapshot.GetCollection().GetName()
-	if len(collectionName) > maxCollectionNameLenInSubject {
-		collectionName = fmt.Sprintf("%s...", collectionName[0:maxCollectionNameLenInSubject])
+	scopeName := "Custom Scope"
+	if snapshot.GetCollection() != nil {
+		scopeName = snapshot.GetCollection().GetName()
+	}
+
+	if len(scopeName) > maxCollectionNameLenInSubject {
+		scopeName = fmt.Sprintf("%s...", scopeName[0:maxCollectionNameLenInSubject])
 	}
 
 	data := &reportEmailSubjectFormat{
 		BrandedProductNameShort: branding.GetProductNameShort(),
 		ReportConfigName:        configName,
-		CollectionName:          collectionName,
+		CollectionName:          scopeName,
 	}
 	tmpl, err := template.New("emailSubject").Parse(subjectTemplate)
 	if err != nil {
