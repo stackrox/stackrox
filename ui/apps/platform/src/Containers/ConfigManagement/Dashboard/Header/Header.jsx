@@ -10,7 +10,7 @@ const Header = () => {
     const hasReadAccessForCISControlsTile = hasReadAccess('Compliance');
     return (
         <div className="flex flex-1 justify-end">
-            <div className="border-base-400 border-r-2 mr-1 flex ">
+            <div className="flex">
                 {hasReadAccessForPoliciesTile && <PoliciesTile />}
                 {hasReadAccessForCISControlsTile && <CISControlsTile />}
                 <div className="flex w-32 mr-2">
