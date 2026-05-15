@@ -108,7 +108,6 @@ func formatReportConfigDetails(snapshot *storage.ReportSnapshot, numDeployedImag
 
 	if entityScope := snapshot.GetResourceScope().GetEntityScope(); entityScope != nil {
 		// Entity scope: show filter query and scope rules
-		reportFilters := snapshot.GetVulnReportFilters()
 		if query := reportFilters.GetQuery(); query != "" {
 			formatSingleDetail(&writer, "Filter", query)
 		}
