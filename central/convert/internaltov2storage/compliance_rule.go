@@ -92,6 +92,22 @@ func ComplianceOperatorRule(sensorData *central.ComplianceOperatorRuleV2, cluste
 	}
 }
 
+// CentralEffectiveRuleKind normalizes a central OperatorKind: UNSPECIFIED is
+// treated as RULE for backward compatibility with older sensors (<= 4.10).
+func CentralEffectiveRuleKind(kind central.ComplianceOperatorRuleV2_OperatorKind) central.ComplianceOperatorRuleV2_OperatorKind {
+	switch kind {
+	case central.ComplianceOperatorRuleV2_RULE:
+		return central.ComplianceOperatorRuleV2_RULE
+	case central.ComplianceOperatorRuleV2_CUSTOM_RULE:
+		return central.ComplianceOperatorRuleV2_CUSTOM_RULE
+	case central.ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED:
+		return central.ComplianceOperatorRuleV2_RULE
+	default:
+		log.Errorf("Unexpected rule operator kind %v", kind)
+		return central.ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED
+	}
+}
+
 func centralToStorageRuleKind(kind central.ComplianceOperatorRuleV2_OperatorKind) storage.ComplianceOperatorRuleV2_OperatorKind {
 	switch kind {
 	case central.ComplianceOperatorRuleV2_RULE:
