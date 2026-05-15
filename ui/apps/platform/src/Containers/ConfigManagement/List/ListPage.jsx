@@ -1,15 +1,12 @@
-import { useCallback, useContext, useRef, useState } from 'react';
+import { useCallback, useContext, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 import upperFirst from 'lodash/upperFirst';
-import startCase from 'lodash/startCase';
 
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import PageHeader from 'Components/PageHeader';
 import { PageBody } from 'Components/Panel';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
-import ExportButton from 'Components/ExportButton';
-import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import configMgmtPaginationContext, {
     MAIN_PAGINATION_PARAMS,
     SIDEPANEL_PAGINATION_PARAMS,
@@ -32,7 +29,6 @@ const ListPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const match = useWorkflowMatch();
-    const [isExporting, setIsExporting] = useState(false);
 
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
@@ -61,7 +57,6 @@ const ListPage = () => {
     }
 
     const header = upperFirst(pluralize(entityLabels[pageEntityListType]));
-    const exportFilename = `${pluralize(startCase(header))} Report`;
     return (
         <workflowStateContext.Provider value={pageState}>
             <PageHeader
@@ -70,16 +65,6 @@ const ListPage = () => {
                 classes="pr-0 ignore-react-onclickoutside"
             >
                 <div className="flex flex-1 justify-end h-full">
-                    <div className="flex items-center">
-                        <ExportButton
-                            fileName={exportFilename}
-                            type={pageEntityListType}
-                            page="configManagement"
-                            pdfId="capture-list"
-                            isExporting={isExporting}
-                            setIsExporting={setIsExporting}
-                        />
-                    </div>
                     <div className="flex items-center pl-2">
                         <EntitiesMenu
                             text="All Entities"
@@ -114,7 +99,6 @@ const ListPage = () => {
                     </configMgmtPaginationContext.Provider>
                 </searchContext.Provider>
             </PageBody>
-            {isExporting && <BackdropExporting />}
         </workflowStateContext.Provider>
     );
 };

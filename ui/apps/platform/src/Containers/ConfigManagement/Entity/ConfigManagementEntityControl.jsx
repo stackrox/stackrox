@@ -89,9 +89,9 @@ const ConfigManagementEntityControl = ({ id, entityListType, query, entityContex
                 } = entity;
 
                 return (
-                    <div className="w-full" id="capture-dashboard-stretch">
+                    <div className="w-full">
                         <CollapsibleSection title="Control Summary">
-                            <div className="flex flex-wrap pdf-page">
+                            <div className="flex flex-wrap">
                                 <ControlDetails
                                     standardId={standardId}
                                     control={name}
@@ -118,7 +118,7 @@ const ConfigManagementEntityControl = ({ id, entityListType, query, entityContex
                         </CollapsibleSection>
                         {!(entityContext && entityContext.NODE) && (
                             <CollapsibleSection title="Control Findings">
-                                <div className="flex pdf-page pdf-stretch shadow relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                                <div className="flex shadow relative rounded bg-base-100 mb-4 ml-4 mr-4">
                                     <NodesWithFailedControls
                                         entityType="CONTROL"
                                         entityContext={{

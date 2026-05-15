@@ -180,12 +180,12 @@ const ConfigManagementEntityPolicy = ({
                 ) : null;
 
                 return (
-                    <div className="w-full" id="capture-dashboard-stretch">
+                    <div className="w-full">
                         <CollapsibleSection
                             title="Policy Summary"
                             headerComponents={headerComponents}
                         >
-                            <div className="grid grid-gap-6 grid-columns-4 mx-4 grid-dense mb-4 pdf-page">
+                            <div className="grid grid-gap-6 grid-columns-4 mx-4 grid-dense mb-4">
                                 <Metadata
                                     className="sx-2 bg-base-100 min-h-48 h-full"
                                     keyValuePairs={metadataKeyValuePairs}
@@ -230,7 +230,7 @@ const ConfigManagementEntityPolicy = ({
                             title="Policy Findings"
                             dataTestId="policy-findings-section"
                         >
-                            <div className="flex mb-4 pdf-page pdf-stretch">
+                            <div className="flex mb-4">
                                 <PolicyFindings
                                     entityContext={entityContext}
                                     policyId={id}
