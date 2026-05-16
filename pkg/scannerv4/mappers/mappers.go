@@ -417,6 +417,7 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 			// We will take the version of the advisory associated with the highest NVD CVSS score.
 			vulnIDs = dedupeAdvisories(vulnIDs, vulnerabilities)
 		}
+		vulnIDs = dedupeCVEs(vulnIDs, vulnerabilities)
 		// Lastly, sort by severity in case we may still have any duplications we missed previously.
 		sortBySeverity(vulnIDs, vulnerabilities)
 		pkgVulns[id] = &v4.StringList{
@@ -1534,6 +1535,35 @@ func vulnsEqual(a, b *claircore.Vulnerability) bool {
 		a.Severity == b.Severity &&
 		a.NormalizedSeverity == b.NormalizedSeverity &&
 		a.FixedInVersion == b.FixedInVersion
+}
+
+// dedupeCVEs deduplicates vulnerabilities that resolved to the same CVE name
+// from different sources (e.g., GHSA and Go advisories that are aliases of the same CVE).
+// When duplicates are found, the entry with the highest NormalizedSeverity is kept.
+func dedupeCVEs(vulnIDs []string, protoVulns map[string]*v4.VulnerabilityReport_Vulnerability) []string {
+	filtered := make([]string, 0, len(vulnIDs))
+	seen := make(map[string]int) // CVE name -> index in filtered
+	for _, vulnID := range vulnIDs {
+		vuln := protoVulns[vulnID]
+		if vuln == nil {
+			continue
+		}
+		name := vuln.GetName()
+		if !cveIDPattern.MatchString(name) {
+			filtered = append(filtered, vulnID)
+			continue
+		}
+		if idx, ok := seen[name]; ok {
+			existing := protoVulns[filtered[idx]]
+			if vuln.GetNormalizedSeverity() > existing.GetNormalizedSeverity() {
+				filtered[idx] = vulnID
+			}
+			continue
+		}
+		seen[name] = len(filtered)
+		filtered = append(filtered, vulnID)
+	}
+	return filtered
 }
 
 // dedupeAdvisories deduplicates repeat advisories out of vulnIDs and returns the result.
