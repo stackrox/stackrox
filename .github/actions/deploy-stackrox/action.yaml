@@ -90,7 +90,19 @@ runs:
             --single-namespace \
             --envrc /tmp/roxie-env.sh \
             --override /tmp/roxie-override.yaml \
-            --tag ${{ inputs.tag }}
+            --tag ${{ inputs.tag }} \
+            --set central.spec.central.resources.requests.cpu=1m \
+            --set central.spec.central.resources.requests.memory=1Mi \
+            --set central.spec.central.db.resources.requests.cpu=1m \
+            --set central.spec.central.db.resources.requests.memory=1Mi \
+            --set central.spec.scanner.analyzer.resources.requests.cpu=1m \
+            --set central.spec.scanner.analyzer.resources.requests.memory=1Mi \
+            --set central.spec.scanner.db.resources.requests.cpu=1m \
+            --set central.spec.scanner.db.resources.requests.memory=1Mi \
+            --set securedCluster.spec.sensor.resources.requests.cpu=1m \
+            --set securedCluster.spec.sensor.resources.requests.memory=1Mi \
+            --set securedCluster.spec.admissionControl.resources.requests.cpu=1m \
+            --set securedCluster.spec.admissionControl.resources.requests.memory=1Mi
 
           sed "s/^export //; s/['\"]//g" /tmp/roxie-env.sh >> "$GITHUB_ENV"
           source /tmp/roxie-env.sh
