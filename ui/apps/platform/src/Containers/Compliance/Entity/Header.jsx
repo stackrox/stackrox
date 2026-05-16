@@ -10,15 +10,7 @@ import usePermissions from 'hooks/usePermissions';
 
 import { entityNounSentenceCaseSingular } from '../entitiesForCompliance';
 
-const EntityHeader = ({
-    entityType,
-    listEntityType,
-    entityName,
-    entityId,
-    searchComponent,
-    isExporting,
-    setIsExporting,
-}) => {
+const EntityHeader = ({ entityType, listEntityType, entityName, entityId, searchComponent }) => {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
 
@@ -29,8 +21,6 @@ const EntityHeader = ({
         ? `${pluralize(listEntityType)} ACROSS ${entityType} "${entityName.toUpperCase()}"`
         : `${entityType} "${entityName}"`;
     exportFilename = `${exportFilename} Report`;
-    const pdfId = listEntityType ? 'capture-list' : 'capture-dashboard';
-
     const scanCluster = entityType === entityTypes.CLUSTER ? entityId : '*';
     const scanStandard = entityType === entityTypes.STANDARD ? entityId : '*';
 
@@ -41,15 +31,14 @@ const EntityHeader = ({
                 {hasWriteAccessForCompliance && scanCluster && (
                     <ScanButton text="Scan" clusterId={scanCluster} standardId={scanStandard} />
                 )}
-                <ExportButton
-                    fileName={exportFilename}
-                    type={entityType}
-                    page={useCaseTypes.COMPLIANCE}
-                    id={entityId}
-                    pdfId={pdfId}
-                    isExporting={isExporting}
-                    setIsExporting={setIsExporting}
-                />
+                {(entityType === entityTypes.CLUSTER || entityType === entityTypes.STANDARD) && (
+                    <ExportButton
+                        fileName={exportFilename}
+                        type={entityType}
+                        page={useCaseTypes.COMPLIANCE}
+                        id={entityId}
+                    />
+                )}
             </div>
         </PageHeader>
     );
@@ -61,8 +50,6 @@ EntityHeader.propTypes = {
     entityName: PropTypes.string,
     entityId: PropTypes.string,
     searchComponent: PropTypes.node,
-    isExporting: PropTypes.bool.isRequired,
-    setIsExporting: PropTypes.func.isRequired,
 };
 
 EntityHeader.defaultProps = {
