@@ -15,7 +15,7 @@ settings=(
     --set clusterName=perf-test
     --set enableOpenShiftMonitoring=true
     --set exposeMonitoring=true
-    --set runtimeDataControl.excludeOpenshift=true
+    --set processIndicators.excludeOpenshiftNs=true
 )
 
 if [[ -n ${collector_image_tag:-} ]]; then
