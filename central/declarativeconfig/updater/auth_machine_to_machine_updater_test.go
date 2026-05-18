@@ -60,7 +60,7 @@ func (s *authMachineToMachineTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	mockSet := mocks.NewMockTokenExchangerSet(s.mockCtrl)
 	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
+	mockSet.EXPECT().RemoveTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, true).AnyTimes()
 	mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
