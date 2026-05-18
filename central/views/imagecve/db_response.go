@@ -26,6 +26,9 @@ type imageCVECoreResponse struct {
 	Published                          *time.Time `db:"cve_published_on_min"`
 	TopNVDCVSS                         *float32   `db:"nvd_cvss_max"`
 	AffectedImageCountV2               int        `db:"image_id_count"`
+	SourceCount                        int        `db:"datasource_count"`
+	OccurrenceCount                    int        `db:"cve_id_count"`
+	DistinctSeverityCount              int        `db:"severity_count"`
 }
 
 func (c *imageCVECoreResponse) GetCVE() string {
@@ -78,6 +81,18 @@ func (c *imageCVECoreResponse) GetFirstDiscoveredInSystem() *time.Time {
 
 func (c *imageCVECoreResponse) GetPublishDate() *time.Time {
 	return c.Published
+}
+
+func (c *imageCVECoreResponse) GetSourceCount() int {
+	return c.SourceCount
+}
+
+func (c *imageCVECoreResponse) GetOccurrenceCount() int {
+	return c.OccurrenceCount
+}
+
+func (c *imageCVECoreResponse) GetDistinctSeverityCount() int {
+	return c.DistinctSeverityCount
 }
 
 type imageCVECoreCount struct {

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
-import { LabelGroup } from '@patternfly/react-core';
+import { Label, LabelGroup } from '@patternfly/react-core';
 import {
     ActionsColumn,
     ExpandableRowContent,
@@ -123,6 +123,7 @@ export const imageVulnerabilitiesFragment = gql`
         severity
         cve
         summary
+        datasource
         cvss
         scoreVersion
         nvdCvss
@@ -145,6 +146,7 @@ export type ImageVulnerability = {
     severity: string;
     cve: string;
     summary: string;
+    datasource: string;
     cvss: number;
     scoreVersion: string;
     nvdCvss: number;
@@ -257,6 +259,7 @@ function ImageVulnerabilitiesTable({
                             cve,
                             severity,
                             summary,
+                            datasource,
                             cvss,
                             scoreVersion,
                             nvdCvss,
@@ -301,6 +304,13 @@ function ImageVulnerabilitiesTable({
                                     isCompact
                                     vulnerabilityState={vulnerabilityState}
                                 />
+                            );
+                        }
+                        if (datasource) {
+                            labels.push(
+                                <Label key="datasource" variant="outline" isCompact>
+                                    {datasource}
+                                </Label>
                             );
                         }
 

@@ -240,6 +240,13 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	if !options.SkipGetTopNVDCVSS {
 		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.NVDCVSS).AggrFunc(aggregatefunc.Max).Proto())
 	}
+	if !options.SkipGetOccurrenceInfo {
+		cloned.Selects = append(cloned.Selects,
+			search.NewQuerySelect(search.Datasource).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+			search.NewQuerySelect(search.CVEID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+			search.NewQuerySelect(search.Severity).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+		)
+	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
 	}

@@ -36,12 +36,15 @@ func init() {
 				"affectedImageCountBySeverity: ResourceCountByCVESeverity!",
 				"cve: String!",
 				"deployments(pagination: Pagination): [Deployment!]!",
+				"distinctSeverityCount: Int!",
 				"distroTuples: [ImageVulnerability!]!",
 				"firstDiscoveredInSystem: Time",
 				"exceptionCount(requestStatus: [String]): Int!",
 				"images(pagination: Pagination): [Image!]!",
+				"occurrenceCount: Int!",
 				"topCVSS: Float!",
 				"publishedOn: Time",
+				"sourceCount: Int!",
 				"topNvdCVSS: Float!",
 			}),
 		schema.AddQuery("imageCVECount(query: String): Int!"),
@@ -295,6 +298,18 @@ func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ P
 
 func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {
 	return float64(resolver.data.GetTopCVSS())
+}
+
+func (resolver *imageCVECoreResolver) SourceCount(_ context.Context) int32 {
+	return int32(resolver.data.GetSourceCount())
+}
+
+func (resolver *imageCVECoreResolver) OccurrenceCount(_ context.Context) int32 {
+	return int32(resolver.data.GetOccurrenceCount())
+}
+
+func (resolver *imageCVECoreResolver) DistinctSeverityCount(_ context.Context) int32 {
+	return int32(resolver.data.GetDistinctSeverityCount())
 }
 
 func (resolver *imageCVECoreResolver) TopNVDCVSS(_ context.Context) float64 {

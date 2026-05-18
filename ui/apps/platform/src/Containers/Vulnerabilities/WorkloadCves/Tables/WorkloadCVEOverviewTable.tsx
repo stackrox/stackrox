@@ -12,7 +12,8 @@ import {
     Tr,
 } from '@patternfly/react-table';
 import type { IAction } from '@patternfly/react-table';
-import { Content, LabelGroup } from '@patternfly/react-core';
+import { Content, Label, LabelGroup, Tooltip } from '@patternfly/react-core';
+import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -141,6 +142,9 @@ export const cveListQuery = gql`
             firstDiscoveredInSystem
             publishedOn
             topNvdCVSS
+            sourceCount
+            occurrenceCount
+            distinctSeverityCount
             distroTuples {
                 summary
                 operatingSystem
@@ -183,6 +187,9 @@ export type ImageCVE = {
     firstDiscoveredInSystem: string | null;
     publishedOn: string | null;
     topNvdCVSS: number;
+    sourceCount: number;
+    occurrenceCount: number;
+    distinctSeverityCount: number;
     distroTuples: {
         summary: string;
         operatingSystem: string;
@@ -324,6 +331,8 @@ function WorkloadCVEOverviewTable({
                                 publishedOn,
                                 distroTuples,
                                 pendingExceptionCount,
+                                sourceCount,
+                                distinctSeverityCount,
                             },
                             rowIndex
                         ) => {
@@ -373,6 +382,29 @@ function WorkloadCVEOverviewTable({
                                         isCompact
                                         vulnerabilityState={vulnerabilityState}
                                     />
+                                );
+                            }
+                            if (sourceCount > 1) {
+                                labels.push(
+                                    <Label key="sourceCount" isCompact>
+                                        {sourceCount} sources
+                                    </Label>
+                                );
+                            }
+                            if (distinctSeverityCount > 1) {
+                                labels.push(
+                                    <Tooltip
+                                        key="severityDisagreement"
+                                        content="Sources report different severities for this CVE"
+                                    >
+                                        <Label
+                                            isCompact
+                                            color="gold"
+                                            icon={<ExclamationTriangleIcon />}
+                                        >
+                                            Severity varies by source
+                                        </Label>
+                                    </Tooltip>
                                 );
                             }
 

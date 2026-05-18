@@ -87,6 +87,20 @@ func (mr *MockCveCoreMockRecorder) GetCVEIDs() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVEIDs", reflect.TypeOf((*MockCveCore)(nil).GetCVEIDs))
 }
 
+// GetDistinctSeverityCount mocks base method.
+func (m *MockCveCore) GetDistinctSeverityCount() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDistinctSeverityCount")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// GetDistinctSeverityCount indicates an expected call of GetDistinctSeverityCount.
+func (mr *MockCveCoreMockRecorder) GetDistinctSeverityCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDistinctSeverityCount", reflect.TypeOf((*MockCveCore)(nil).GetDistinctSeverityCount))
+}
+
 // GetFirstDiscoveredInSystem mocks base method.
 func (m *MockCveCore) GetFirstDiscoveredInSystem() *time.Time {
 	m.ctrl.T.Helper()
@@ -115,6 +129,20 @@ func (mr *MockCveCoreMockRecorder) GetImagesBySeverity() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesBySeverity", reflect.TypeOf((*MockCveCore)(nil).GetImagesBySeverity))
 }
 
+// GetOccurrenceCount mocks base method.
+func (m *MockCveCore) GetOccurrenceCount() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOccurrenceCount")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// GetOccurrenceCount indicates an expected call of GetOccurrenceCount.
+func (mr *MockCveCoreMockRecorder) GetOccurrenceCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOccurrenceCount", reflect.TypeOf((*MockCveCore)(nil).GetOccurrenceCount))
+}
+
 // GetPublishDate mocks base method.
 func (m *MockCveCore) GetPublishDate() *time.Time {
 	m.ctrl.T.Helper()
@@ -127,6 +155,20 @@ func (m *MockCveCore) GetPublishDate() *time.Time {
 func (mr *MockCveCoreMockRecorder) GetPublishDate() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublishDate", reflect.TypeOf((*MockCveCore)(nil).GetPublishDate))
+}
+
+// GetSourceCount mocks base method.
+func (m *MockCveCore) GetSourceCount() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSourceCount")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// GetSourceCount indicates an expected call of GetSourceCount.
+func (mr *MockCveCoreMockRecorder) GetSourceCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSourceCount", reflect.TypeOf((*MockCveCore)(nil).GetSourceCount))
 }
 
 // GetTopCVSS mocks base method.
