@@ -90,7 +90,7 @@ spec:
       computeResources:
         limits:
           # Default request=256Mi limit=256Mi. 180 OOMKilled at 256Mi limit in 10,492 runs (1.7%), Apr 15 - May 15, 2026.
-          # https://github.com/konflux-ci/build-definitions/tree/main/task/rpms-signature-scan
+          # https://github.com/konflux-ci/build-definitions/tree/main/external-task/rpms-signature-scan
           memory: 512Mi
 
   - pipelineTaskName: sast-snyk-check
@@ -99,7 +99,7 @@ spec:
       computeResources:
         limits:
           # Default request=4Gi limit=4Gi. 114 OOMKilled at 4Gi limit in 10,491 runs (1.1%), Apr 15 - May 15, 2026.
-          # https://github.com/konflux-ci/build-definitions/tree/main/task/sast-snyk-check-oci-ta
+          # https://github.com/konflux-ci/build-definitions/tree/main/external-task/sast-snyk-check-oci-ta
           memory: 6Gi
   - pipelineTaskName: sast-shell-check
     stepSpecs:
@@ -107,7 +107,7 @@ spec:
       computeResources:
         limits:
           # Default request=4Gi limit=4Gi. 125 OOMKilled at 4Gi limit in 10,490 runs (1.2%), Apr 15 - May 15, 2026.
-          # https://github.com/konflux-ci/build-definitions/tree/main/task/sast-shell-check-oci-ta
+          # https://github.com/konflux-ci/build-definitions/tree/main/external-task/sast-shell-check-oci-ta
           memory: 6Gi
   - pipelineTaskName: sast-unicode-check
     stepSpecs:
@@ -115,7 +115,7 @@ spec:
       computeResources:
         limits:
           # Default request=4Gi limit=4Gi. 105 OOMKilled at 4Gi limit in 10,489 runs (1.0%), Apr 15 - May 15, 2026.
-          # https://github.com/konflux-ci/build-definitions/tree/main/task/sast-unicode-check-oci-ta
+          # https://github.com/konflux-ci/build-definitions/tree/main/external-task/sast-unicode-check-oci-ta
           memory: 6Gi
 
   taskRunTemplate:
