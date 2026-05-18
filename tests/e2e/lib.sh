@@ -125,6 +125,8 @@ deploy_stackrox_with_roxie() {
 
     prepare_for_konflux "$config_file"
 
+    workaround_label_length_limitation "$config_file"
+
     # Print out the config file in use for transparency.
     # This does not contain secrets.
     info "roxie configuration:"
@@ -202,6 +204,27 @@ prepare_for_konflux() {
             info "Main image tag patched for Konflux usage: ${main_image_tag}"
         fi
     fi
+}
+
+# When deploying Konflux-built images, we might get an additional "-fast" suffix on the main image version,
+# which can easily cause the Helm chart labels to exceed the 63 character limit. To work around this, we
+# use shorter labels for the the roxie-deployed resources.
+workaround_label_length_limitation() {
+    local config_file="$1"
+    local version
+    version="$(yq eval ".roxie.version" "$config_file")"
+    merge_yaml "$config_file" <<EOF
+central:
+  spec:
+    customize:
+      labels:
+        helm.sh/chart: "stackrox-central-${version}"
+securedCluster:
+  spec:
+    customize:
+      labels:
+        helm.sh/chart: "stackrox-secured-cluster-${version}"
+EOF
 }
 
 check_for_roxie() {
