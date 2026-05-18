@@ -704,11 +704,16 @@ func (s *ClusterEntitiesStoreTestSuite) TestDiffReplaceNoLock() {
 	}
 
 	cases := map[string]struct {
+		memorySize   uint16
 		initial      map[net.NumericEndpoint][]EndpointTargetInfo
 		update       map[net.NumericEndpoint][]EndpointTargetInfo
 		expectations []expectation
+		// afterTicks maps tick count → expectations checked after that many
+		// RecordTick calls. Used to verify history expiry behavior.
+		afterTicks map[int][]expectation
 	}{
 		"partial change: one endpoint modified, others unchanged": {
+			memorySize: 5,
 			initial: map[net.NumericEndpoint][]EndpointTargetInfo{
 				ep1: {httpTarget},
 				ep2: {httpTarget},
@@ -726,6 +731,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestDiffReplaceNoLock() {
 			},
 		},
 		"endpoint removed: should move to history": {
+			memorySize: 5,
 			initial: map[net.NumericEndpoint][]EndpointTargetInfo{
 				ep1: {httpTarget},
 				ep2: {httpTarget},
@@ -739,6 +745,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestDiffReplaceNoLock() {
 			},
 		},
 		"endpoint added: should appear in current map": {
+			memorySize: 5,
 			initial: map[net.NumericEndpoint][]EndpointTargetInfo{
 				ep1: {httpTarget},
 			},
@@ -751,7 +758,8 @@ func (s *ClusterEntitiesStoreTestSuite) TestDiffReplaceNoLock() {
 				mkExpect("10.0.0.2", 9090, "metrics", theMap),
 			},
 		},
-		"target info changed on same endpoint: new replaces old, no history residue": {
+		"target info changed on same endpoint: old target info moves to history": {
+			memorySize: 5,
 			initial: map[net.NumericEndpoint][]EndpointTargetInfo{
 				ep1: {httpTarget},
 			},
@@ -760,13 +768,58 @@ func (s *ClusterEntitiesStoreTestSuite) TestDiffReplaceNoLock() {
 			},
 			expectations: []expectation{
 				mkExpect("10.0.0.1", 443, "https", theMap),
-				// deleteFromHistory in insertSingleEndpointNoLock clears the history
-				// entry for this (deployment, endpoint) pair, matching the original
-				// applySingleNoLock behavior.
-				mkExpect("10.0.0.1", 80, "http", nowhere),
+				mkExpect("10.0.0.1", 80, "http", history),
+			},
+		},
+		"target info changed: old info expires from history after configured ticks": {
+			memorySize: 2,
+			initial: map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {httpTarget},
+			},
+			update: map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {httpsTarget},
+			},
+			expectations: []expectation{
+				mkExpect("10.0.0.1", 443, "https", theMap),
+				mkExpect("10.0.0.1", 80, "http", history),
+			},
+			afterTicks: map[int][]expectation{
+				1: {
+					mkExpect("10.0.0.1", 443, "https", theMap),
+					mkExpect("10.0.0.1", 80, "http", history),
+				},
+				2: {
+					mkExpect("10.0.0.1", 443, "https", theMap),
+					mkExpect("10.0.0.1", 80, "http", nowhere),
+				},
+			},
+		},
+		"endpoint removed: history expires after configured ticks": {
+			memorySize: 2,
+			initial: map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {httpTarget},
+				ep2: {httpTarget},
+			},
+			update: map[net.NumericEndpoint][]EndpointTargetInfo{
+				ep1: {httpTarget},
+			},
+			expectations: []expectation{
+				mkExpect("10.0.0.1", 80, "http", theMap),
+				mkExpect("10.0.0.2", 80, "http", history),
+			},
+			afterTicks: map[int][]expectation{
+				1: {
+					mkExpect("10.0.0.1", 80, "http", theMap),
+					mkExpect("10.0.0.2", 80, "http", history),
+				},
+				2: {
+					mkExpect("10.0.0.1", 80, "http", theMap),
+					mkExpect("10.0.0.2", 80, "http", nowhere),
+				},
 			},
 		},
 		"all endpoints removed: should all move to history": {
+			memorySize: 5,
 			initial: map[net.NumericEndpoint][]EndpointTargetInfo{
 				ep1: {httpTarget},
 				ep2: {httpTarget},
@@ -778,6 +831,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestDiffReplaceNoLock() {
 			},
 		},
 		"all endpoints unchanged: no history pollution": {
+			memorySize: 5,
 			initial: map[net.NumericEndpoint][]EndpointTargetInfo{
 				ep1: {httpTarget},
 				ep2: {httpsTarget},
@@ -792,9 +846,10 @@ func (s *ClusterEntitiesStoreTestSuite) TestDiffReplaceNoLock() {
 			},
 		},
 	}
+
 	for name, tc := range cases {
 		s.Run(name, func() {
-			store := NewStore(5, nil, true)
+			store := NewStore(tc.memorySize, nil, true)
 			store.Apply(map[string]*EntityData{"depl": buildEntityData(tc.initial)}, false)
 			store.Apply(map[string]*EntityData{"depl": buildEntityData(tc.update)}, false)
 
@@ -812,49 +867,28 @@ func (s *ClusterEntitiesStoreTestSuite) TestDiffReplaceNoLock() {
 					s.NotContainsf(historical, want.wantLookupResult, "expected endpoint %s NOT in history", want.query.IPAndPort.String())
 				}
 			}
+
+			lastTick := slices.Max(append(slices.Collect(maps.Keys(tc.afterTicks)), 0))
+			for t := range lastTick {
+				tick := t + 1
+				store.RecordTick()
+				for _, want := range tc.afterTicks[tick] {
+					current, historical, _, _ := store.endpointsStore.lookupEndpoint(want.query, store.podIPsStore)
+					switch want.wantLocation {
+					case theMap:
+						s.Containsf(current, want.wantLookupResult, "after tick %d: expected endpoint %s in current", tick, want.query.IPAndPort.String())
+						s.NotContainsf(historical, want.wantLookupResult, "after tick %d: expected endpoint %s NOT in history", tick, want.query.IPAndPort.String())
+					case history:
+						s.NotContainsf(current, want.wantLookupResult, "after tick %d: expected endpoint %s NOT in current", tick, want.query.IPAndPort.String())
+						s.Containsf(historical, want.wantLookupResult, "after tick %d: expected endpoint %s in history", tick, want.query.IPAndPort.String())
+					case nowhere:
+						s.NotContainsf(current, want.wantLookupResult, "after tick %d: expected endpoint %s NOT in current", tick, want.query.IPAndPort.String())
+						s.NotContainsf(historical, want.wantLookupResult, "after tick %d: expected endpoint %s NOT in history", tick, want.query.IPAndPort.String())
+					}
+				}
+			}
 		})
 	}
-}
-
-// TestDiffReplaceHistoryExpiry verifies that endpoints moved to history by the
-// diff path expire correctly after the configured number of ticks.
-func (s *ClusterEntitiesStoreTestSuite) TestDiffReplaceHistoryExpiry() {
-	ep1 := buildEndpoint("10.0.0.1", 80)
-	ep2 := buildEndpoint("10.0.0.2", 80)
-	httpTarget := EndpointTargetInfo{ContainerPort: 80, PortName: "http"}
-
-	store := NewStore(2, nil, true)
-	store.Apply(map[string]*EntityData{
-		"depl": buildEntityData(map[net.NumericEndpoint][]EndpointTargetInfo{
-			ep1: {httpTarget},
-			ep2: {httpTarget},
-		}),
-	}, false)
-
-	// Remove ep2 via partial update (diff path).
-	store.Apply(map[string]*EntityData{
-		"depl": buildEntityData(map[net.NumericEndpoint][]EndpointTargetInfo{
-			ep1: {httpTarget},
-		}),
-	}, false)
-
-	// ep2 should now be in history.
-	_, hist, _, _ := store.endpointsStore.lookupEndpoint(ep2, store.podIPsStore)
-	s.NotEmpty(hist, "removed endpoint should be in history immediately after diff-replace")
-
-	// Tick 1: still in history.
-	store.RecordTick()
-	_, hist, _, _ = store.endpointsStore.lookupEndpoint(ep2, store.podIPsStore)
-	s.NotEmpty(hist, "removed endpoint should still be in history after 1 tick")
-
-	// Tick 2: history expires (memorySize=2).
-	store.RecordTick()
-	_, hist, _, _ = store.endpointsStore.lookupEndpoint(ep2, store.podIPsStore)
-	s.Empty(hist, "removed endpoint should have expired from history after 2 ticks")
-
-	// ep1 should still be current throughout.
-	cur, _, _, _ := store.endpointsStore.lookupEndpoint(ep1, store.podIPsStore)
-	s.NotEmpty(cur, "unchanged endpoint should still be in current map")
 }
 
 func (s *ClusterEntitiesStoreTestSuite) TestApplyCanonicalizesDuplicateTargetInfosWhenTheyMaskRemoval() {

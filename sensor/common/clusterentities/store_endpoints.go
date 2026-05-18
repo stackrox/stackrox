@@ -174,19 +174,37 @@ func (e *endpointsStore) diffReplaceNoLock(deploymentID string, currentEndpoints
 		}
 	}
 
-	// Pass 2: endpoints added or changed.
+	// Pass 2: endpoints added or changed target info.
+	// History recording for changed target info is deferred to Pass 3 so
+	// that the common path (unchanged / newly added) stays allocation-free.
+	// addToHistory must read the old etiSet, so it runs before the in-place
+	// clear+refill in Pass 3.
+	var changedTargetInfoEps []net.NumericEndpoint
 	for ep, newTargetInfos := range newEndpoints {
 		if !currentEndpoints.Contains(ep) {
-			// New endpoint: insert directly.
 			e.insertSingleEndpointNoLock(deploymentID, ep, newTargetInfos)
 			continue
 		}
 		if e.targetInfoUnchangedNoLock(deploymentID, ep, newTargetInfos) {
 			continue
 		}
-		// Changed: move old to history, then insert the new target info set.
-		e.moveToHistory(deploymentID, ep)
-		e.insertSingleEndpointNoLock(deploymentID, ep, newTargetInfos)
+		changedTargetInfoEps = append(changedTargetInfoEps, ep)
+	}
+
+	// Pass 3: apply changed target infos.
+	// This is the rare path (target info changes while the endpoint IP:port
+	// stays the same). Recording history and updating the set in-place is
+	// kept out of the hot comparison loop above.
+	recordHistory := e.historyEnabled()
+	for _, ep := range changedTargetInfoEps {
+		if recordHistory {
+			e.addToHistory(deploymentID, ep)
+		}
+		etiSet := e.endpointMap[ep][deploymentID]
+		clear(etiSet)
+		for _, ti := range newEndpoints[ep] {
+			etiSet.Add(ti)
+		}
 	}
 }
 
