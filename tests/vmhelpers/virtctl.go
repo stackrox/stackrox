@@ -338,13 +338,13 @@ func virtctlPositionalArgs(args []string) []string {
 	var positionals []string
 	for i := 2; i < len(args); i++ {
 		arg := args[i]
-		if strings.HasPrefix(arg, "--") {
-			if virtctlFlagConsumesValue(arg) {
-				i++
-			}
+		if !strings.HasPrefix(arg, "--") {
+			positionals = append(positionals, arg)
 			continue
 		}
-		positionals = append(positionals, arg)
+		if virtctlFlagConsumesValue(arg) {
+			i++
+		}
 	}
 	return positionals
 }
