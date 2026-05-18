@@ -85,6 +85,26 @@ jobs:
             scanner: v2
             tests: "--tests PaginationTest --tests AutocompleteTest --tests GraphQLResourcePaginationTest"
 
+          # Timing-sensitive tests: bisect warmup delay to find minimum.
+          # These tests need StackRox pipelines (collector, sensor, scanner)
+          # to be fully operational before assertions pass.
+          - name: slow-wait-5m
+            scanner: v2
+            warmup: 300
+            tests: "--tests BuiltinPoliciesTest --tests DefaultPoliciesTest --tests NetworkFlowTest --tests CSVTest"
+          - name: slow-wait-10m
+            scanner: v2
+            warmup: 600
+            tests: "--tests BuiltinPoliciesTest --tests DefaultPoliciesTest --tests NetworkFlowTest --tests CSVTest"
+          - name: slow-wait-15m
+            scanner: v2
+            warmup: 900
+            tests: "--tests BuiltinPoliciesTest --tests DefaultPoliciesTest --tests NetworkFlowTest --tests CSVTest"
+          - name: slow-wait-20m
+            scanner: v2
+            warmup: 1200
+            tests: "--tests BuiltinPoliciesTest --tests DefaultPoliciesTest --tests NetworkFlowTest --tests CSVTest"
+
     env:
       CLUSTER_NAME: qa-e2e-kind-${{ github.run_id }}-${{ strategy.job-index }}
       TAG: 4.11.x-879-g846c8632d9
@@ -255,6 +275,13 @@ jobs:
           ~/.gradle/caches
           ~/.gradle/wrapper
         key: gradle-qa-${{ hashFiles('qa-tests-backend/**/*.gradle*', 'qa-tests-backend/gradle/wrapper/gradle-wrapper.properties') }}
+
+    - name: Warmup delay
+      if: matrix.warmup
+      run: |
+        echo "Waiting ${{ matrix.warmup }}s for StackRox pipelines to stabilize..."
+        sleep ${{ matrix.warmup }}
+        echo "Warmup complete, starting tests"
 
     - name: "Run QA tests: ${{ matrix.name }}"
       working-directory: qa-tests-backend
