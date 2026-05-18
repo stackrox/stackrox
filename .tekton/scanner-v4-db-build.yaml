@@ -122,9 +122,9 @@ spec:
     - name: prefetch-dependencies
       computeResources:
         limits:
-          # Default request=3Gi limit=3Gi. 584 OOMKilled at 3Gi limit in 13,559 runs (4.3%), Apr 15 - May 15, 2026.
+          # Default request=3Gi limit=3Gi. 584 OOMKilled at 3Gi limit in 13,559 runs (4.3%), Apr 15 - May 15, 2026. Still OOMKills at 4Gi.
           # https://github.com/konflux-ci/build-definitions/tree/main/task/prefetch-dependencies-oci-ta
-          memory: 4Gi
+          memory: 6Gi
   taskRunTemplate:
     serviceAccountName: build-pipeline-scanner-v4-db
 
