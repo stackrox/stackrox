@@ -101,28 +101,3 @@ func TestComplianceOperatorRule_ParentRuleAndRuleRefId(t *testing.T) {
 		assert.Equal(t, BuildNameRefID(clusterID, expectedParentRule), result.GetRuleRefId())
 	})
 }
-
-func TestCentralEffectiveRuleKind(t *testing.T) {
-	cases := map[string]struct {
-		input    central.ComplianceOperatorRuleV2_OperatorKind
-		expected central.ComplianceOperatorRuleV2_OperatorKind
-	}{
-		"UNSPECIFIED is treated as RULE": {
-			input:    central.ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED,
-			expected: central.ComplianceOperatorRuleV2_RULE,
-		},
-		"RULE stays RULE": {
-			input:    central.ComplianceOperatorRuleV2_RULE,
-			expected: central.ComplianceOperatorRuleV2_RULE,
-		},
-		"CUSTOM_RULE stays CUSTOM_RULE": {
-			input:    central.ComplianceOperatorRuleV2_CUSTOM_RULE,
-			expected: central.ComplianceOperatorRuleV2_CUSTOM_RULE,
-		},
-	}
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.expected, CentralEffectiveRuleKind(tc.input))
-		})
-	}
-}

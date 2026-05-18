@@ -80,7 +80,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	event := msg.GetEvent()
 	rule := event.GetComplianceOperatorRuleV2()
 
-	if internaltov2storage.CentralEffectiveRuleKind(rule.GetOperatorKind()) == central.ComplianceOperatorRuleV2_RULE && rule.GetAnnotations()[v1alpha1.RuleIDAnnotationKey] == "" {
+	if rule.GetOperatorKind() != central.ComplianceOperatorRuleV2_CUSTOM_RULE && rule.GetAnnotations()[v1alpha1.RuleIDAnnotationKey] == "" {
 		return errors.Errorf("Rule %s is missing the annotation %s", rule.GetName(), v1alpha1.RuleIDAnnotationKey)
 	}
 
