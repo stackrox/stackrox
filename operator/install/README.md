@@ -8,7 +8,7 @@ An operator was available only for the "Red Hat Advanced Cluster Security"-brand
 This is changing. Due to significant maintenance burden of three installation methods,
 we are planning to consolidate on just one: the operator.
 
-**The following text describes the installation for the 4.11 release.**
+**The following text describes the installation for release 4.11 and later.**
 
 ## How to use it?
 
@@ -55,21 +55,25 @@ $ kubectl apply --namespace stackrox -f cr-central.yaml
 
 Please have a look at the [samples in this directory](.).
 
+First, create a namespace and apply a `Central` CR.
+
 ```shell
 kubectl create namespace stackrox
 kubectl apply -f https://raw.githubusercontent.com/stackrox/stackrox/refs/heads/master/operator/install/platform_v1alpha1_central.yaml
 ```
 
-You need to retrieve from central and apply on the cluster a cluster registration secret.
+Then, once central is up, you need to retrieve from central and apply on the cluster a Cluster Registration Secret (CRS).
 
 ```shell
+kubectl -n stackrox rollout status deployment central
 kubectl -n stackrox get secrets central-htpasswd --template='{{.data.password | base64decode}}' | \
 kubectl -n stackrox exec -i deploy/central -- bash -c \
   'ROX_ADMIN_PASSWORD=$(cat) roxctl --insecure-skip-tls-verify central crs generate crs1 -o -' |
 kubectl -n stackrox apply -f -
 ```
 
-Finally, apply a `SecuredCluster` CR:
+Finally, apply a `SecuredCluster` CR. You may want to adjust `spec.clusterName` to your preference.
+Also, you'll need to set `spec.centralEndpoint` when applying `SecuredCluster` on a different cluster than `Central`.
 
 ```shell
 kubectl apply -f https://raw.githubusercontent.com/stackrox/stackrox/refs/heads/master/operator/install/platform_v1alpha1_securedcluster.yaml
