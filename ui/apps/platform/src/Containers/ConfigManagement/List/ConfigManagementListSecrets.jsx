@@ -52,13 +52,9 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Secret`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const url = getConfigMgmtPathForEntitiesAndId('SECRET', original.id);
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {original.name}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{original.name}</TableCellLink>;
             },
             accessor: 'name',
             id: secretSortFields.SECRET,
@@ -101,17 +97,13 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'clusterName',
-                  Cell: ({ original, pdf }) => {
+                  Cell: ({ original }) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
                           .push('CLUSTER', clusterId)
                           .url();
-                      return (
-                          <TableCellLink pdf={pdf} url={url}>
-                              {clusterName}
-                          </TableCellLink>
-                      );
+                      return <TableCellLink url={url}>{clusterName}</TableCellLink>;
                   },
                   id: secretSortFields.CLUSTER,
                   sortField: secretSortFields.CLUSTER,
@@ -121,18 +113,14 @@ const buildTableColumns = (match, location, entityContext) => {
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'deployments',
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { deploymentCount, id } = original;
                 if (!deploymentCount) {
                     return 'No Deployments';
                 }
                 const url = URLService.getURL(match, location).push(id).push('DEPLOYMENT').url();
                 const text = `${deploymentCount} ${pluralize('Deployment', deploymentCount)}`;
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {text}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{text}</TableCellLink>;
             },
             sortable: false,
         },
