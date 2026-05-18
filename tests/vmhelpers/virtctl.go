@@ -335,9 +335,6 @@ func virtctlFlagConsumesValue(flag string) bool {
 
 // virtctlPositionalArgs returns non-flag arguments from a virtctl argv (skipping the binary and subcommand).
 func virtctlPositionalArgs(args []string) []string {
-	if len(args) <= 2 {
-		return nil
-	}
 	var positionals []string
 	for i := 2; i < len(args); i++ {
 		arg := args[i]
