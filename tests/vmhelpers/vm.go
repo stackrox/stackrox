@@ -95,6 +95,11 @@ func CreateVirtualMachine(ctx context.Context, client dynamic.Interface, req VMR
 			Template: &kubevirtv1.VirtualMachineInstanceTemplateSpec{
 				Spec: kubevirtv1.VirtualMachineInstanceSpec{
 					Domain: kubevirtv1.DomainSpec{
+						Resources: kubevirtv1.ResourceRequirements{
+							Requests: coreV1.ResourceList{
+								coreV1.ResourceMemory: resource.MustParse(defaultVMMemoryRequest),
+							},
+						},
 						Devices: kubevirtv1.Devices{
 							AutoattachVSOCK: &autoattachVSOCK,
 							Disks: []kubevirtv1.Disk{
@@ -132,9 +137,6 @@ func CreateVirtualMachine(ctx context.Context, client dynamic.Interface, req VMR
 				},
 			},
 		},
-	}
-	vm.Spec.Template.Spec.Domain.Resources.Requests = coreV1.ResourceList{
-		coreV1.ResourceMemory: resource.MustParse(defaultVMMemoryRequest),
 	}
 	u, err := k8sruntime.DefaultUnstructuredConverter.ToUnstructured(vm)
 	if err != nil {
