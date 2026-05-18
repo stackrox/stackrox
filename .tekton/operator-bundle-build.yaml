@@ -119,6 +119,11 @@ spec:
           memory: 6Gi
 
   - pipelineTaskName: prefetch-dependencies
+    podTemplate:
+      env:
+      - name: GOMEMLIMIT
+        # Tell Go GC to be aggressive near 4GiB, keeping peak RSS under the 6Gi limit.
+        value: "4GiB"
     stepSpecs:
     - name: prefetch-dependencies
       computeResources:

@@ -72,6 +72,12 @@ spec:
 
   taskRunSpecs:
   - pipelineTaskName: prefetch-dependencies
+    podTemplate:
+      env:
+      - name: GOMEMLIMIT
+        # Tell Go GC to be aggressive near 4GiB, keeping peak RSS under the 6Gi limit.
+        # The go subprocess (go mod download) is the primary memory consumer.
+        value: "4GiB"
     stepSpecs:
     # Limit CPU for Go dependencies prefetch, as it tends to be OOM-killed when it gets lots of it without OOTB limit.
     - name: prefetch-dependencies
