@@ -119,14 +119,16 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 	}
 
 	if opts.UseClientCert != DontUseClientCert {
-		clientCert, err := mtls.LeafCertificateFromFile()
-		if err != nil {
-			if opts.UseClientCert == MustUseClientCert {
-				return nil, errors.Wrap(err, "client credentials")
+		conf.GetClientCertificate = func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
+			cert, err := mtls.LeafCertificateFromFile()
+			if err != nil {
+				if opts.UseClientCert == MustUseClientCert {
+					return nil, err
+				}
+				log.Warnf("Failed to load client certificate for TLS connection: %v", err)
+				return &tls.Certificate{}, nil
 			}
-			log.Warnf("Failed to load client certificate for TLS connection: %v", err)
-		} else {
-			conf.Certificates = []tls.Certificate{clientCert}
+			return &cert, nil
 		}
 	}
 
