@@ -139,6 +139,20 @@ func TestGetEntityMetadata(t *testing.T) {
 			expectedCluster:    "prod cluster",
 			expectedNamespace:  "stackrox",
 		},
+		"image": {
+			alert:              fixtures.GetImageAlert(),
+			expectedName:       "stackrox.io/srox/mongo:latest",
+			expectedEntityType: "Image",
+			expectedCluster:    "",
+			expectedNamespace:  "",
+		},
+		"node": {
+			alert:              fixtures.GetNodeAlert(),
+			expectedName:       "bbaaaaaa-bbbb-4011-0000-111111111111",
+			expectedEntityType: "Node",
+			expectedCluster:    "Cluster1",
+			expectedNamespace:  "",
+		},
 	}
 
 	for name, tc := range cases {
