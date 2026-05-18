@@ -19,11 +19,11 @@ package controller
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/pkg/errors"
 	configstackroxiov1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
 	"github.com/stackrox/rox/config-controller/pkg/client"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
@@ -37,8 +37,7 @@ import (
 )
 
 const (
-	policyFinalizer   = "securitypolicies.config.stackrox.io/finalizer"
-	reconcileInterval = 30 * time.Minute
+	policyFinalizer = "securitypolicies.config.stackrox.io/finalizer"
 )
 
 var (
@@ -251,7 +250,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	if retErr != nil {
 		return ctrl.Result{}, retErr
 	}
-	return ctrl.Result{RequeueAfter: reconcileInterval}, nil
+	return ctrl.Result{RequeueAfter: env.ConfigControllerReconcileInterval.DurationSetting()}, nil
 }
 
 func (r *SecurityPolicyReconciler) UpdateCentralCaches(policyCR *configstackroxiov1alpha1.SecurityPolicy, ctx context.Context, refreshFunc func(context.Context) error) (ctrl.Result, error) {
