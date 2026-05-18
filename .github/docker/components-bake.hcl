@@ -25,19 +25,7 @@ variable "DEBUG_BUILD" {
   default = "no"
 }
 
-variable "MAIN_REGISTRY" {
-  default = "quay.io/stackrox-io"
-}
-
-variable "SCANNER_REGISTRY" {
-  default = "quay.io/stackrox-io"
-}
-
-variable "OPERATOR_REGISTRY" {
-  default = "quay.io/stackrox-io"
-}
-
-variable "ROXCTL_REGISTRY" {
+variable "REGISTRY" {
   default = "quay.io/stackrox-io"
 }
 
@@ -64,7 +52,7 @@ target "main" {
   dockerfile = "image/rhel/Dockerfile"
   platforms = split(",", PLATFORMS)
   tags = [
-    "${MAIN_REGISTRY}/main:${TAG}"
+    "${REGISTRY}/main:${TAG}"
   ]
   args = {
     DEBUG_BUILD = DEBUG_BUILD
@@ -84,7 +72,7 @@ target "scanner" {
   dockerfile = "scanner/image/scanner/Dockerfile"
   platforms = split(",", PLATFORMS)
   tags = [
-    "${SCANNER_REGISTRY}/scanner:${TAG}"
+    "${REGISTRY}/scanner:${TAG}"
   ]
   args = {
     DEBUG_BUILD = DEBUG_BUILD
@@ -102,7 +90,7 @@ target "operator" {
   dockerfile = "operator/prebuilt.Dockerfile"
   platforms = split(",", PLATFORMS)
   tags = [
-    "${OPERATOR_REGISTRY}/stackrox-operator:${TAG}"
+    "${REGISTRY}/stackrox-operator:${TAG}"
   ]
   args = {
     ROX_IMAGE_FLAVOR = ROX_IMAGE_FLAVOR
@@ -117,7 +105,7 @@ target "roxctl" {
   dockerfile = "image/roxctl/Dockerfile"
   platforms = split(",", PLATFORMS)
   tags = [
-    "${ROXCTL_REGISTRY}/roxctl:${TAG}"
+    "${REGISTRY}/roxctl:${TAG}"
   ]
   cache-from = ["type=gha,scope=roxctl"]
   cache-to = ["type=gha,mode=max,scope=roxctl"]

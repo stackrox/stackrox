@@ -652,10 +652,7 @@ jobs:
         env:
           TAG: ${{ env.BUILD_TAG }}
           PLATFORMS: ${{ steps.platforms.outputs.platforms }}
-          MAIN_REGISTRY: ${{ matrix.branding == 'STACKROX_BRANDING' && 'quay.io/stackrox-io' || 'quay.io/rhacs-eng' }}
-          SCANNER_REGISTRY: ${{ matrix.branding == 'STACKROX_BRANDING' && 'quay.io/stackrox-io' || 'quay.io/rhacs-eng' }}
-          OPERATOR_REGISTRY: ${{ matrix.branding == 'STACKROX_BRANDING' && 'quay.io/stackrox-io' || 'quay.io/rhacs-eng' }}
-          ROXCTL_REGISTRY: ${{ matrix.branding == 'STACKROX_BRANDING' && 'quay.io/stackrox-io' || 'quay.io/rhacs-eng' }}
+          REGISTRY: ${{ matrix.branding == 'STACKROX_BRANDING' && 'quay.io/stackrox-io' || 'quay.io/rhacs-eng' }}
           LABEL_VERSION: ${{ env.BUILD_TAG }}
           LABEL_RELEASE: ${{ env.BUILD_TAG }}
         run: |
