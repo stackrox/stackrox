@@ -49,6 +49,41 @@ func TestEncodeIssuer(t *testing.T) {
 	}
 }
 
+func TestDecodeIssuer(t *testing.T) {
+	tests := map[string]struct {
+		encoded  string
+		expected string
+	}{
+		"DECLARATIVE encoded issuer": {
+			encoded:  "DECLARATIVE|https://example.com",
+			expected: "https://example.com",
+		},
+		"IMPERATIVE encoded issuer": {
+			encoded:  "IMPERATIVE|https://token.actions.githubusercontent.com",
+			expected: "https://token.actions.githubusercontent.com",
+		},
+		"DEFAULT encoded issuer": {
+			encoded:  "DEFAULT|https://kubernetes.default.svc",
+			expected: "https://kubernetes.default.svc",
+		},
+		"unencoded issuer (backwards compatibility)": {
+			encoded:  "https://plain.issuer.com",
+			expected: "https://plain.issuer.com",
+		},
+		"issuer with pipe in URL": {
+			encoded:  "DECLARATIVE|https://example.com/path|with|pipes",
+			expected: "https://example.com/path|with|pipes",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			decoded := decodeIssuer(tc.encoded)
+			assert.Equal(t, tc.expected, decoded)
+		})
+	}
+}
+
 func TestWithEncodedIssuer(t *testing.T) {
 	tests := map[string]struct {
 		config         *storage.AuthMachineToMachineConfig
