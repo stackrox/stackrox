@@ -278,13 +278,10 @@ jobs:
             || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
         run: make cli
 
-      - name: Bundle build to preserve permissions
-        run: tar -cvzf cli-build.tgz bin
-
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
           name: cli-build
-          path: cli-build.tgz
+          path: bin/
 
   pre-build-go-binaries:
     strategy:
@@ -569,10 +566,21 @@ jobs:
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: cli-build
+          path: .
 
-      - name: Unpack cli build
+      - name: Verify binary permissions after artifact download
         run: |
-          tar xvzf cli-build.tgz
+          # Verify binaries are executable
+          for binary in bin/*/roxctl bin/*/roxagent; do
+            if [ -f "$binary" ]; then
+              if [ ! -x "$binary" ]; then
+                echo "ERROR: $binary is not executable"
+                ls -la "$binary"
+                exit 1
+              fi
+              echo "✓ $binary is executable ($(stat -c '%a' "$binary"))"
+            fi
+          done
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -1123,10 +1131,7 @@ jobs:
     - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: cli-build
-
-    - name: Unpack cli build
-      run: |
-        tar xvzf cli-build.tgz
+        path: .
 
     - uses: ./.github/actions/download-artifact-with-retry
       with:
