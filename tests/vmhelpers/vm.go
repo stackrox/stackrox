@@ -51,6 +51,16 @@ func vmFromUnstructured(obj *unstructured.Unstructured) (*kubevirtv1.VirtualMach
 	return &vm, nil
 }
 
+// vmiFromUnstructured converts an unstructured object returned by the dynamic client
+// into a typed VirtualMachineInstance.
+func vmiFromUnstructured(obj *unstructured.Unstructured) (*kubevirtv1.VirtualMachineInstance, error) {
+	var vmi kubevirtv1.VirtualMachineInstance
+	if err := k8sruntime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &vmi); err != nil {
+		return nil, fmt.Errorf("decode VirtualMachineInstance: %w", err)
+	}
+	return &vmi, nil
+}
+
 // VMRequest describes inputs for cloud-init rendering and VirtualMachine creation.
 type VMRequest struct {
 	Name         string
@@ -204,7 +214,7 @@ func WaitForVirtualMachineInstanceRunning(t testing.TB, ctx context.Context, cli
 	t.Helper()
 	return pollKubeVirtCondition(t, ctx, vmPollInterval, fmt.Sprintf("wait VMI %s/%s running", namespace, name),
 		func(ctx context.Context, attempt int) (bool, string, error) {
-			vmi, err := client.Resource(vmiGVR).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+			obj, err := client.Resource(vmiGVR).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 			if err != nil {
 				if apierrors.IsNotFound(err) {
 					detail, termErr := handleVMINotFound(ctx, client, namespace, name, attempt, "VMI failed before becoming Running")
@@ -212,18 +222,15 @@ func WaitForVirtualMachineInstanceRunning(t testing.TB, ctx context.Context, cli
 				}
 				return false, "", fmt.Errorf("attempt %d: get VMI: %w", attempt, err)
 			}
-			phase, found, err := unstructured.NestedString(vmi.Object, "status", "phase")
+			vmi, err := vmiFromUnstructured(obj)
 			if err != nil {
-				return false, "", fmt.Errorf("attempt %d: read VMI phase: %w", attempt, err)
-			}
-			if !found {
-				return false, vmiPhaseDetail(vmi), nil
+				return false, "", fmt.Errorf("attempt %d: decode VMI: %w", attempt, err)
 			}
 			detail := vmiPhaseDetail(vmi)
-			switch phase {
-			case string(kubevirtv1.Running):
+			switch vmi.Status.Phase {
+			case kubevirtv1.Running:
 				return true, detail, nil
-			case string(kubevirtv1.Failed), string(kubevirtv1.Succeeded):
+			case kubevirtv1.Failed, kubevirtv1.Succeeded:
 				return false, detail, fmt.Errorf("attempt %d: VMI reached terminal phase: %s", attempt, detail)
 			default:
 				vmDetail, terminal, _ := virtualMachineStatusDetail(ctx, client, namespace, name)
@@ -269,51 +276,39 @@ func vmPrintableStatus(vm *kubevirtv1.VirtualMachine) (string, bool) {
 
 // GetVMINodeName returns the Kubernetes node name that hosts the given VirtualMachineInstance.
 func GetVMINodeName(ctx context.Context, client dynamic.Interface, namespace, name string) (string, error) {
-	vmi, err := client.Resource(vmiGVR).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	obj, err := client.Resource(vmiGVR).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return "", fmt.Errorf("get VMI %s/%s: %w", namespace, name, err)
 	}
-	nodeName, found, err := unstructured.NestedString(vmi.Object, "status", "nodeName")
+	vmi, err := vmiFromUnstructured(obj)
 	if err != nil {
-		return "", fmt.Errorf("read VMI %s/%s status.nodeName: %w", namespace, name, err)
+		return "", fmt.Errorf("decode VMI %s/%s: %w", namespace, name, err)
 	}
-	if !found || nodeName == "" {
+	if vmi.Status.NodeName == "" {
 		return "", fmt.Errorf("VMI %s/%s has no status.nodeName (phase=%s)", namespace, name, vmiPhaseDetail(vmi))
 	}
-	return nodeName, nil
+	return vmi.Status.NodeName, nil
 }
 
 // vmiPhaseDetail summarizes VMI phase and Ready condition fields for poll attempt logs.
-func vmiPhaseDetail(vmi *unstructured.Unstructured) string {
+func vmiPhaseDetail(vmi *kubevirtv1.VirtualMachineInstance) string {
 	parts := make([]string, 0, 2)
-	phase, found, _ := unstructured.NestedString(vmi.Object, "status", "phase")
-	if found && strings.TrimSpace(phase) != "" {
-		parts = append(parts, fmt.Sprintf("phase=%q", phase))
+	if vmi.Status.Phase != "" {
+		parts = append(parts, fmt.Sprintf("phase=%q", vmi.Status.Phase))
 	}
-	conds, found, _ := unstructured.NestedSlice(vmi.Object, "status", "conditions")
-	if found {
-		for _, raw := range conds {
-			cond, ok := raw.(map[string]any)
-			if !ok {
-				continue
-			}
-			typ, _ := cond["type"].(string)
-			if !strings.EqualFold(strings.TrimSpace(typ), "Ready") {
-				continue
-			}
-			status, _ := cond["status"].(string)
-			reason, _ := cond["reason"].(string)
-			message, _ := cond["message"].(string)
-			part := fmt.Sprintf("ready.status=%q", strings.TrimSpace(status))
-			if strings.TrimSpace(reason) != "" {
-				part += fmt.Sprintf(" ready.reason=%q", strings.TrimSpace(reason))
-			}
-			if strings.TrimSpace(message) != "" {
-				part += fmt.Sprintf(" ready.message=%q", strings.TrimSpace(message))
-			}
-			parts = append(parts, part)
-			break
+	for _, cond := range vmi.Status.Conditions {
+		if cond.Type != kubevirtv1.VirtualMachineInstanceReady {
+			continue
 		}
+		part := fmt.Sprintf("ready.status=%q", cond.Status)
+		if reason := strings.TrimSpace(cond.Reason); reason != "" {
+			part += fmt.Sprintf(" ready.reason=%q", reason)
+		}
+		if message := strings.TrimSpace(cond.Message); message != "" {
+			part += fmt.Sprintf(" ready.message=%q", message)
+		}
+		parts = append(parts, part)
+		break
 	}
 	if len(parts) == 0 {
 		return "vmi status unavailable"
