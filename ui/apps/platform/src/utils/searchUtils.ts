@@ -461,12 +461,10 @@ export function isQuotedString(value: string): boolean {
 }
 
 /**
- * Wraps a string in double quotes, escaping any internal double quotes with backslashes.
- * Used to indicate exact-match search values from autocomplete selections.
+ * Wraps a string in double quotes to indicate exact-match search values.
  */
 export function wrapInQuotes(value: string): string {
-    const escapedValue = value.replace(/"/g, '\\"');
-    return `"${escapedValue}"`;
+    return `"${value}"`;
 }
 
 /**
