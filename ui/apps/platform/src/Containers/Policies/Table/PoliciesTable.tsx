@@ -40,7 +40,6 @@ import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisable
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import PolicyEvaluationFilterLabels from './PolicyEvaluationFilterLabels';
-
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
 import useSet from 'hooks/useSet';

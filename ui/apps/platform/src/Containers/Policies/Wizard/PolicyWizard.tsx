@@ -20,6 +20,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { policiesBasePath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import type { ExtendedPageAction } from 'utils/queryStringUtils';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import {
     POLICY_BEHAVIOR_ACTIONS_ID,
@@ -41,7 +42,6 @@ import PolicyScopeForm from './Step4/PolicyScopeForm';
 import PolicyFiltersForm from './StepFilters/PolicyFiltersForm';
 import PolicyActionsForm from './Step5/PolicyActionsForm';
 import ReviewPolicyForm from './Step6/ReviewPolicyForm';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import './PolicyWizard.css';
 

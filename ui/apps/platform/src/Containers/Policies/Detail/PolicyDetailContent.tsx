@@ -38,14 +38,6 @@ function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentPr
         scope,
         lifecycleStages,
     } = policy;
-    const {
-        enforcementActions,
-        evaluationFilter,
-        eventSource,
-        exclusions,
-        scope,
-        lifecycleStages,
-    } = policy;
     return (
         <div data-testid="policy-details">
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
