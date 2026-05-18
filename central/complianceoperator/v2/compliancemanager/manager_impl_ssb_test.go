@@ -70,7 +70,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequestSSBConflicts() {
 		suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, errors.New("db connection failed")).Times(1)
 
 		config, err := suite.manager.ProcessScanRequest(ctx, getTestRecNoID(), []string{testconsts.Cluster1})
-		suite.Require().ErrorContains(err, "checking for external SSB conflicts")
+		suite.Require().ErrorContains(err, "getting scan setting bindings for cluster")
 		suite.Require().Nil(config)
 	})
 
