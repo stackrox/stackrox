@@ -56,35 +56,37 @@ if [[ "$DEBUG_BUILD" != "yes" ]]; then
   ldflags+=(-s -w)
 fi
 
-if [[ "${CGO_ENABLED}" != 0 ]]; then
-  echo >&2 "CGO_ENABLED is not 0. Compiling with -linkmode=external"
-
-  # Use musl for static linking to avoid GLIBC version mismatches
-  # between builder (ubuntu-latest) and runtime (UBI9)
-  # Only use musl-gcc if it's available (not in apollo-ci container)
-  if command -v musl-gcc &> /dev/null; then
-    echo >&2 "Using musl-gcc for static linking to avoid GLIBC dependencies"
-    export CC=musl-gcc
-    ldflags+=('-linkmode=external' '-extldflags=-static')
-  else
-    echo >&2 "musl-gcc not found, using default linker (tests in container)"
-    ldflags+=('-linkmode=external')
-  fi
-fi
-
 function invoke_go() {
   local tool="${1:?"invoke_go tool argument required"}"
   shift
   local args=()
-  local CGO_ENABLED
 
   args+=("-buildvcs=false")
-  args+=(-ldflags="${ldflags[*]}")
   args+=(-tags "$(tr , ' ' <<<"$GOTAGS")")
+
+  # Enable CGO and race detector if RACE is set
   if [[ "$RACE" == "true" ]]; then
     export CGO_ENABLED=1
     args+=("-race")
   fi
+
+  # Set up musl-gcc for static linking if CGO is enabled
+  # This avoids GLIBC version mismatches between builder and runtime
+  if [[ "${CGO_ENABLED}" != 0 ]]; then
+    echo >&2 "CGO_ENABLED is not 0. Compiling with -linkmode=external"
+
+    # Use musl-gcc if available (ubuntu-latest), fall back to default (apollo-ci)
+    if command -v musl-gcc &> /dev/null; then
+      echo >&2 "Using musl-gcc for static linking to avoid GLIBC dependencies"
+      export CC=musl-gcc
+      ldflags+=('-linkmode=external' '-extldflags=-static')
+    else
+      echo >&2 "musl-gcc not found, using default linker (tests in container)"
+      ldflags+=('-linkmode=external')
+    fi
+  fi
+
+  args+=(-ldflags="${ldflags[*]}")
   go "$tool" "${args[@]}" "$@"
 }
 
