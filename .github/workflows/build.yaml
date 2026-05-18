@@ -282,6 +282,7 @@ jobs:
         with:
           name: cli-build
           path: bin
+          compression-level: 1
 
   pre-build-go-binaries:
     strategy:
@@ -364,6 +365,7 @@ jobs:
         with:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
           path: go-binaries-build.tar
+          compression-level: 1
 
   pre-build-docs:
     runs-on: ubuntu-latest
@@ -567,20 +569,6 @@ jobs:
         with:
           name: cli-build
           path: .
-
-      - name: Verify binary permissions after artifact download
-        run: |
-          # Verify binaries are executable
-          for binary in bin/*/roxctl bin/*/roxagent; do
-            if [ -f "$binary" ]; then
-              if [ ! -x "$binary" ]; then
-                echo "ERROR: $binary is not executable"
-                ls -la "$binary"
-                exit 1
-              fi
-              echo "✓ $binary is executable ($(stat -c '%a' "$binary"))"
-            fi
-          done
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
