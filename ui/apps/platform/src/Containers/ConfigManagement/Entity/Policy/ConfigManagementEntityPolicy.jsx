@@ -150,7 +150,7 @@ const ConfigManagementEntityPolicy = ({
                     },
                     {
                         key: 'Severity',
-                        value: <PolicySeverityIconText severity={severity} isTextOnly={false} />,
+                        value: <PolicySeverityIconText severity={severity} />,
                     },
                     {
                         key: 'Enforced',
