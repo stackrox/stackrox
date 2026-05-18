@@ -69,6 +69,11 @@ spec:
 
   taskRunSpecs:
   - pipelineTaskName: build-source-image
+    podTemplate:
+      env:
+      - name: GOMEMLIMIT
+        # use-trusted-artifact (oras, Go) peaks at 1495Mi without GOMEMLIMIT. 139 OOMKilled/mo at 2Gi.
+        value: "1GiB"
     stepSpecs:
     # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
     - name: build

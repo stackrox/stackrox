@@ -92,6 +92,11 @@ spec:
   # exits with 137 (OOMKilled):
   # /tekton/scripts/script-2-h7nll: line 7:    33 Killed                  syft dir:$(cat /shared/container_path) --output cyclonedx-json=/var/workdir/sbom-image.json
   - pipelineTaskName: build-source-image
+    podTemplate:
+      env:
+      - name: GOMEMLIMIT
+        # use-trusted-artifact (oras, Go) peaks at 1495Mi without GOMEMLIMIT. 139 OOMKilled/mo at 2Gi.
+        value: "1GiB"
     stepSpecs:
     - name: use-trusted-artifact
       computeResources:
@@ -106,6 +111,11 @@ spec:
         requests:
           memory: 3Gi
   - pipelineTaskName: build-images
+    podTemplate:
+      env:
+      - name: GOMEMLIMIT
+        # sbom-syft-generate (syft, Go) peaks at 1011Mi.
+        value: "1GiB"
     stepSpecs:
     - name: sbom-syft-generate
       computeResources:
@@ -114,6 +124,11 @@ spec:
         requests:
           memory: 3Gi
   - pipelineTaskName: build-source-image
+    podTemplate:
+      env:
+      - name: GOMEMLIMIT
+        # use-trusted-artifact (oras, Go) peaks at 1495Mi without GOMEMLIMIT. 139 OOMKilled/mo at 2Gi.
+        value: "1GiB"
     stepSpecs:
     # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
     - name: build
