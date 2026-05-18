@@ -70,8 +70,9 @@ func logWaitAttempt(t testing.TB, desc string, attempt, max int, maxKnown bool, 
 var ErrAuthenticationExpired = errors.New("authentication expired — kubeconfig token or API credentials may have expired; remaining operations will fail")
 
 // IsAuthenticationExpired reports whether err looks like an expired or revoked
-// credential. It checks gRPC Unauthenticated status codes and Kubernetes API
-// errors classified as Unauthorized by k8s API machinery.
+// credential. It checks for wrapped ErrAuthenticationExpired sentinels (so
+// callers that already tagged an error can re-check without false negatives),
+// gRPC Unauthenticated status codes, and Kubernetes API Unauthorized errors.
 func IsAuthenticationExpired(err error) bool {
 	if err == nil {
 		return false
