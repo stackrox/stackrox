@@ -358,10 +358,13 @@ jobs:
             GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
           fi
 
+      - name: Bundle build with tar (single file for reliable download)
+        run: tar -cf go-binaries-build.tar bin/linux_${{ matrix.arch }}
+
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
-          path: bin/linux_${{ matrix.arch }}
+          path: go-binaries-build.tar
           compression-level: 1
 
   pre-build-docs:
@@ -570,7 +573,9 @@ jobs:
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: ${{ env.GO_BINARIES_BUILD_ARTIFACT }}
-          path: .
+
+      - name: Extract Go binaries
+        run: tar -xf go-binaries-build.tar
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -820,7 +825,9 @@ jobs:
         uses: ./.github/actions/download-artifact-with-retry
         with:
           name: go-binaries-build-${{ matrix.arch }}-default
-          path: .
+
+      - name: Extract prebuilt binaries
+        run: tar -xf go-binaries-build.tar
 
       - name: PR labels
         uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
@@ -937,7 +944,9 @@ jobs:
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
-          path: .
+
+      - name: Extract Go binaries
+        run: tar -xf go-binaries-build.tar
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -1113,7 +1122,9 @@ jobs:
     - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: go-binaries-build-amd64-default
-        path: .
+
+    - name: Extract Go binaries
+      run: tar -xf go-binaries-build.tar
 
     - name: Scan
       run: |
