@@ -58,6 +58,21 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
+// GetDeploymentIDsByDigest mocks base method.
+func (m *MockDataStore) GetDeploymentIDsByDigest(ctx context.Context, digest string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDeploymentIDsByDigest", ctx, digest)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDeploymentIDsByDigest indicates an expected call of GetDeploymentIDsByDigest.
+func (mr *MockDataStoreMockRecorder) GetDeploymentIDsByDigest(ctx, digest any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeploymentIDsByDigest", reflect.TypeOf((*MockDataStore)(nil).GetDeploymentIDsByDigest), ctx, digest)
+}
+
 // GetPod mocks base method.
 func (m *MockDataStore) GetPod(ctx context.Context, id string) (*storage.Pod, bool, error) {
 	m.ctrl.T.Helper()

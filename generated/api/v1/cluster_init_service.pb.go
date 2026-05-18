@@ -323,6 +323,7 @@ func (x *CRSGenResponse) GetCrs() []byte {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in api/v1/cluster_init_service.proto.
 type GetCAConfigResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	HelmValuesBundle []byte                 `protobuf:"bytes,1,opt,name=helm_values_bundle,json=helmValuesBundle,proto3" json:"helm_values_bundle,omitempty"`
@@ -1016,9 +1017,9 @@ const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"\x0ekubectl_bundle\x18\x03 \x01(\fR\rkubectlBundle:\x02\x18\x01\"C\n" +
 	"\x0eCRSGenResponse\x12\x1f\n" +
 	"\x04meta\x18\x01 \x01(\v2\v.v1.CRSMetaR\x04meta\x12\x10\n" +
-	"\x03crs\x18\x02 \x01(\fR\x03crs\"C\n" +
+	"\x03crs\x18\x02 \x01(\fR\x03crs\"G\n" +
 	"\x13GetCAConfigResponse\x12,\n" +
-	"\x12helm_values_bundle\x18\x01 \x01(\fR\x10helmValuesBundle\"G\n" +
+	"\x12helm_values_bundle\x18\x01 \x01(\fR\x10helmValuesBundle:\x02\x18\x01\"G\n" +
 	"\x17InitBundleMetasResponse\x12(\n" +
 	"\x05items\x18\x01 \x03(\v2\x12.v1.InitBundleMetaR\x05items:\x02\x18\x01\"5\n" +
 	"\x10CRSMetasResponse\x12!\n" +
@@ -1051,11 +1052,11 @@ const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"revokedIds\x1a:\n" +
 	"\x12CRSRevocationError\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error2\xbe\x06\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error2\xc1\x06\n" +
 	"\x12ClusterInitService\x12\x81\x01\n" +
 	"\x10RevokeInitBundle\x12\x1b.v1.InitBundleRevokeRequest\x1a\x1c.v1.InitBundleRevokeResponse\"2\x82\xd3\xe4\x93\x02):\x01*2$/v1/cluster-init/init-bundles/revoke\x88\x02\x01\x12`\n" +
-	"\tRevokeCRS\x12\x14.v1.CRSRevokeRequest\x1a\x15.v1.CRSRevokeResponse\"&\x82\xd3\xe4\x93\x02 :\x01*2\x1b/v1/cluster-init/crs/revoke\x12U\n" +
-	"\vGetCAConfig\x12\t.v1.Empty\x1a\x17.v1.GetCAConfigResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/v1/cluster-init/ca-config\x12b\n" +
+	"\tRevokeCRS\x12\x14.v1.CRSRevokeRequest\x1a\x15.v1.CRSRevokeResponse\"&\x82\xd3\xe4\x93\x02 :\x01*2\x1b/v1/cluster-init/crs/revoke\x12X\n" +
+	"\vGetCAConfig\x12\t.v1.Empty\x1a\x17.v1.GetCAConfigResponse\"%\x82\xd3\xe4\x93\x02\x1c\x12\x1a/v1/cluster-init/ca-config\x88\x02\x01\x12b\n" +
 	"\x0eGetInitBundles\x12\t.v1.Empty\x1a\x1b.v1.InitBundleMetasResponse\"(\x82\xd3\xe4\x93\x02\x1f\x12\x1d/v1/cluster-init/init-bundles\x88\x02\x01\x12H\n" +
 	"\aGetCRSs\x12\t.v1.Empty\x1a\x14.v1.CRSMetasResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/cluster-init/crs\x12v\n" +
 	"\x12GenerateInitBundle\x12\x18.v1.InitBundleGenRequest\x1a\x19.v1.InitBundleGenResponse\"+\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/v1/cluster-init/init-bundles\x88\x02\x01\x12U\n" +

@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
@@ -83,6 +85,35 @@ func (ds *datastoreImpl) GetPod(ctx context.Context, id string) (*storage.Pod, b
 		return nil, false, err
 	}
 	return pod, true, nil
+}
+
+func (ds *datastoreImpl) GetDeploymentIDsByDigest(ctx context.Context, digest string) ([]string, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "GetDeploymentIDsByDigest")
+
+	if digest == "" {
+		return nil, nil
+	}
+
+	// Filter pods with the given digest and a valid (non-NULL) deployment.
+	query := pkgSearch.NewQueryBuilder().
+		AddExactMatches(pkgSearch.ContainerImageDigest, digest).
+		AddStrings(pkgSearch.DeploymentID, pkgSearch.WildcardString).
+		ForSearchResults(pkgSearch.DeploymentID).
+		ProtoQuery()
+	results, err := ds.Search(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	deploymentIDs := make([]string, 0, len(results))
+	for _, res := range results {
+		if res.FieldValues != nil {
+			if depID, ok := res.FieldValues[strings.ToLower(pkgSearch.DeploymentID.String())]; ok && depID != "" {
+				deploymentIDs = append(deploymentIDs, depID)
+			}
+		}
+	}
+	return deploymentIDs, nil
 }
 
 func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(p *storage.Pod) error) error {

@@ -3,7 +3,7 @@ module github.com/stackrox/rox
 go 1.25.7
 
 require (
-	cloud.google.com/go/artifactregistry v1.24.0
+	cloud.google.com/go/artifactregistry v1.25.0
 	cloud.google.com/go/compute/metadata v0.9.0
 	cloud.google.com/go/containeranalysis v0.19.0
 	cloud.google.com/go/securitycenter v1.44.0
@@ -90,7 +90,7 @@ require (
 	github.com/np-guard/netpol-analyzer v1.4.4
 	github.com/nxadm/tail v1.4.11
 	github.com/olekukonko/tablewriter v1.1.4
-	github.com/onsi/ginkgo/v2 v2.28.3
+	github.com/onsi/ginkgo/v2 v2.29.0
 	github.com/onsi/gomega v1.40.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
