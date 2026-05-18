@@ -6,7 +6,9 @@ FROM registry.access.redhat.com/ubi9/ubi:latest AS package_installer
 COPY --from=ubi-micro-base / /out/
 
 # Install packages directly to /out/ using --installroot
-RUN dnf install -y \
+RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
+    --mount=type=cache,target=/var/cache/yum,sharing=locked \
+    dnf install -y \
     --installroot=/out/ \
     --releasever=9 \
     --setopt=install_weak_deps=False \
@@ -18,7 +20,8 @@ RUN dnf install -y \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
-COPY ./roxctl-linux /out/usr/bin/roxctl
+ARG TARGETARCH
+COPY bin/linux_${TARGETARCH}/roxctl /out/usr/bin/roxctl
 
 FROM ubi-micro-base
 COPY --from=package_installer /out/ /
