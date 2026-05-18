@@ -120,13 +120,11 @@ const WorkflowEntityPage = ({
         />
     ) : (
         <div className="flex w-full min-h-full bg-base-200">
-            <div className="w-full min-h-full">
-                <OverviewComponent
-                    data={result}
-                    entityContext={entityContext}
-                    setRefreshTrigger={setRefreshTrigger}
-                />
-            </div>
+            <OverviewComponent
+                data={result}
+                entityContext={entityContext}
+                setRefreshTrigger={setRefreshTrigger}
+            />
         </div>
     );
 };
