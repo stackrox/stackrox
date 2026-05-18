@@ -77,20 +77,17 @@ spec:
       computeResources:
         limits:
           cpu: 2
-          # Default: 3Gi/3Gi (set by task, request == limit, zero headroom).
+          # Default: 3Gi (set by task, request == limit, zero headroom).
           # https://github.com/konflux-ci/build-definitions/tree/main/task/prefetch-dependencies-oci-ta
           # Observed peak: 3448Mi (75k samples at 10s intervals). OOMKilled intermittently at 3Gi.
           # OOMKilled: 584/13,559 runs (4.3%), Apr 15 - May 15, 2026. Most common OOM task.
           memory: 4Gi
         requests:
           cpu: 2
-          memory: 4Gi
     - name: create-trusted-artifact
       computeResources:
         limits:
-          # Default: 3Gi/3Gi (set by task, request == limit). Cascading failure when prefetch step OOMs.
-          memory: 4Gi
-        requests:
+          # Default: 3Gi (set by task, request == limit). Cascading failure when prefetch step OOMs.
           memory: 4Gi
   - pipelineTaskName: build-source-image
     stepSpecs:
