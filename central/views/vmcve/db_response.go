@@ -29,10 +29,6 @@ func (c *vmCVECoreResponse) GetCVE() string {
 	return c.CVE
 }
 
-func (c *vmCVECoreResponse) GetCVEIDs() []string {
-	return nil
-}
-
 func (c *vmCVECoreResponse) GetVMsBySeverity() common.ResourceCountByCVESeverity {
 	return &resourceCountByVMCVESeverity{
 		CriticalSeverityCount:         c.VMsWithCriticalSeverity,
