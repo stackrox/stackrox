@@ -13,18 +13,22 @@ if ! command -v pg_ctl &>/dev/null; then
     sleep infinity
 fi
 
+log "waiting for PostgreSQL to start..."
+while ! pg_ctl status -D "$PGDATA" >/dev/null 2>&1; do sleep 1s; done
+
 log "watching ${CERT_DIR} for changes (interval: ${POLL_INTERVAL}, pgdata: ${PGDATA})"
 
+# HASH starts empty so the first iteration always triggers a reload. This is
+# harmless (postgres re-reads the same certs) and eliminates any race between
+# postgres startup and secret volume updates.
 HASH=""
 while true; do
     NEW_HASH=$(cat "$CERT_DIR"/server.crt "$CERT_DIR"/server.key 2>/dev/null | md5sum | awk '{print $1}')
     if [ -n "$NEW_HASH" ] && [ "$NEW_HASH" != "$HASH" ]; then
-        if [ -n "$HASH" ]; then
-            log "TLS certificates changed, reloading PostgreSQL"
-            if ! pg_ctl reload -D "$PGDATA"; then
-                log "pg_ctl reload failed, will retry"
-                continue
-            fi
+        log "TLS certificates changed, reloading PostgreSQL"
+        if ! pg_ctl reload -D "$PGDATA"; then
+            log "pg_ctl reload failed, will retry"
+            continue
         fi
         HASH="$NEW_HASH"
     fi
