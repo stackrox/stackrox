@@ -83,11 +83,7 @@ spec:
           memory: 4Gi
         requests:
           cpu: 2
-    - name: create-trusted-artifact
-      computeResources:
-        limits:
-          # Default: 3Gi/3Gi. Cascading failure when prefetch-dependencies step OOMs.
-          memory: 4Gi
+
   # For all sbom-syft-generate steps:
   # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container
   # exits with 137 (OOMKilled):

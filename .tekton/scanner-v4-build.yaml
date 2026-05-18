@@ -82,11 +82,7 @@ spec:
           memory: 4Gi
         requests:
           cpu: 2
-    - name: create-trusted-artifact
-      computeResources:
-        limits:
-          # Default: 3Gi/3Gi. Cascading failure when prefetch-dependencies step OOMs.
-          memory: 4Gi
+
   - pipelineTaskName: build-source-image
     stepSpecs:
     # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
