@@ -59,6 +59,9 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 
+- ROX-34351: ACS components now always prevent Istio sidecar injection, removing the need for the
+  `env.istio` Helm value and `--istio-support` CLI flag. Existing Istio service mesh deployments
+  continue to work without configuration changes.
 - OpenShift 3 support removed from all installation methods.
 - ROX-34524: Fixed proxy bypass for non-HTTP schemes (e.g., TLS checks) when only `HTTPS_PROXY`/`HTTP_PROXY` are configured without `ALL_PROXY`. Previously, sensor's lazy TLS registry initialization would fail in proxy-only environments.
 
