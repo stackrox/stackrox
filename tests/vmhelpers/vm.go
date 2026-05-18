@@ -406,12 +406,8 @@ func virtualMachineStatusDetail(ctx context.Context, client dynamic.Interface, n
 	if detail, terminal := vmFailureConditionDetail(vm); terminal {
 		return detail, true, nil
 	}
-	printableStatus, found, nestedErr := unstructured.NestedString(vm.Object, "status", "printableStatus")
-	if nestedErr != nil {
-		return "", false, nestedErr
-	}
-	if found && strings.TrimSpace(printableStatus) != "" {
-		return fmt.Sprintf("vm printableStatus=%q", printableStatus), false, nil
+	if detail, terminal := vmPrintableStatusFromUnstructured(vm); detail != "" {
+		return detail, terminal, nil
 	}
 	return "vm status unavailable", false, nil
 }
