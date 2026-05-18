@@ -118,6 +118,29 @@ spec:
           # OOMKilled: 180/10,492 runs (1.7%), Apr 15 - May 15, 2026.
           memory: 512Mi
 
+  - pipelineTaskName: sast-snyk-check
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources:
+        limits:
+          # Default: 4Gi/4Gi (set by task). OOMKilled decompressing large source artifact.
+          # OOMKilled: 114/10,491 runs (1.1%), Apr 15 - May 15, 2026. Still occurring (11 in last 3 days).
+          memory: 6Gi
+  - pipelineTaskName: sast-shell-check
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources:
+        limits:
+          # Default: 4Gi/4Gi (set by task). OOMKilled: 125/10,490 runs (1.2%).
+          memory: 6Gi
+  - pipelineTaskName: sast-unicode-check
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources:
+        limits:
+          # Default: 4Gi/4Gi (set by task). OOMKilled: 105/10,489 runs (1.0%).
+          memory: 6Gi
+
   taskRunTemplate:
     serviceAccountName: build-pipeline-roxctl
 
