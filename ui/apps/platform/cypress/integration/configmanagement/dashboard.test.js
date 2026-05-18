@@ -1,5 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasOrchestratorFlavor } from '../../helpers/features';
+import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import {
@@ -56,7 +56,12 @@ describe('Configuration Management Dashboard', () => {
             });
     });
 
-    it('should show same number of controls between the tile and the controls list', () => {
+    it('should show same number of controls between the tile and the controls list', function () {
+        // Skip although Controls and CIS Kubernetes v1.5 are visible, because these tests assume compliance tests ran and triggered a scan (pardon rhyme).
+        if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
+            this.skip();
+        }
+
         const entitiesKey = 'controls';
 
         visitConfigurationManagementDashboard();
@@ -88,7 +93,12 @@ describe('Configuration Management Dashboard', () => {
         }, entitiesKey);
     });
 
-    it('should properly navigate to the cis controls list', () => {
+    it('should properly navigate to the cis controls list', function () {
+        // Skip although Controls and CIS Kubernetes v1.5 are visible, because these tests assume compliance tests ran and triggered a scan (pardon rhyme).
+        if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
+            this.skip();
+        }
+
         const entitiesKey = 'controls';
 
         visitConfigurationManagementDashboard();
@@ -209,7 +219,12 @@ describe('Configuration Management Dashboard', () => {
         }, entitiesKey);
     });
 
-    it('go to controls list from View link in CIS widget', () => {
+    it('go to controls list from View link in CIS widget', function () {
+        // Skip although Controls and CIS Kubernetes v1.5 are visible, because these tests assume compliance tests ran and triggered a scan (pardon rhyme).
+        if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
+            this.skip();
+        }
+
         const entitiesKey = 'controls';
 
         visitConfigurationManagementDashboard();
@@ -275,6 +290,11 @@ describe('Configuration Management Dashboard', () => {
     });
 
     it('clicking the "CIS Standard Across Clusters" widget\'s "passing controls" link should take you to the controls list and filter by passing controls', function () {
+        // Skip although Controls and CIS Kubernetes v1.5 are visible, because these tests assume compliance tests ran and triggered a scan (pardon rhyme).
+        if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
+            this.skip();
+        }
+
         if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
@@ -303,6 +323,11 @@ describe('Configuration Management Dashboard', () => {
     });
 
     it('clicking the "CIS Standard Across Clusters" widget\'s "failing controls" link should take you to the controls list and filter by failing controls', function () {
+        // Skip although Controls and CIS Kubernetes v1.5 are visible, because these tests assume compliance tests ran and triggered a scan (pardon rhyme).
+        if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
+            this.skip();
+        }
+
         if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }

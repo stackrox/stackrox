@@ -11,6 +11,7 @@ option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 enum DeploymentFormat {
+  option deprecated = true;
   KUBECTL = 0;
   HELM = 1;
   HELM_VALUES = 2;
@@ -68,14 +69,18 @@ service ClustersService {
     option (google.api.http) = {get: "/v1/clusters/{id}"};
   }
 
+  // PostCluster is deprecated. Use operator-based installation with CRS instead.
   rpc PostCluster(storage.Cluster) returns (ClusterResponse) {
+    option deprecated = true;
     option (google.api.http) = {
       post: "/v1/clusters"
       body: "*"
     };
   }
 
+  // PutCluster is deprecated. Use operator-based installation with CRS instead.
   rpc PutCluster(storage.Cluster) returns (ClusterResponse) {
+    option deprecated = true;
     option (google.api.http) = {
       put: "/v1/clusters/{id}"
       body: "*"

@@ -94,6 +94,27 @@ func ValidateGetSBOMRequest(req *v4.GetSBOMRequest) error {
 	return nil
 }
 
+var supportedSBOMMediaTypes = map[string]bool{
+	"application/spdx+json": true,
+	"text/spdx+json":        true,
+}
+
+func ValidateScanSBOMRequest(req *v4.ScanSBOMRequest) error {
+	if req == nil {
+		return errox.InvalidArgs.New("empty request")
+	}
+	if len(req.GetSbom()) == 0 {
+		return errox.InvalidArgs.New("sbom is required")
+	}
+	if req.GetMediaType() == "" {
+		return errox.InvalidArgs.New("media type is required")
+	}
+	if !supportedSBOMMediaTypes[req.GetMediaType()] {
+		return errox.InvalidArgs.Newf("unsupported media type %q", req.GetMediaType())
+	}
+	return nil
+}
+
 func validateContents(contents *v4.Contents) error {
 	if contents == nil {
 		return nil

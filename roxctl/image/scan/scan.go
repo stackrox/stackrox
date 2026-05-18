@@ -28,8 +28,16 @@ import (
 )
 
 const (
-	deprecationNote = "please use --output/-o to specify the output format. " +
-		"NOTE: The new JSON / CSV format contains breaking changes, make sure you adapt to the new structure before migrating."
+	legacyOutputMigrationNote = "NOTE: The new JSON / CSV format contains breaking changes, make sure you adapt to the new structure before migrating."
+	deprecationNote           = "please use --output/-o to specify the output format. " +
+		legacyOutputMigrationNote
+	defaultLegacyJSONInfoNote = "Default image scan output currently uses deprecated legacy-json for backwards compatibility. " +
+		"Use --output=json to migrate to the new JSON output format. NOTE: it contains breaking changes in the format."
+	legacyJSONOutputFormat          = "legacy-json"
+	legacyCSVOutputFormat           = "legacy-csv"
+	legacyJSONOutputDeprecationNote = "please use --output=json to migrate to the new JSON output format. " + legacyOutputMigrationNote
+	legacyCSVOutputDeprecationNote  = "please use --output=csv to migrate to the new CSV output format. " + legacyOutputMigrationNote
+	outputFlagUsageSuffix           = ". If omitted, defaults to deprecated legacy-json for backwards compatibility."
 )
 
 var (
@@ -46,9 +54,12 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	imageScanCmd := &imageScanCommand{env: cliEnvironment}
 
-	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table",
-		append(supportedObjectPrinters,
-			printer.NewSarifPrinterFactory(printers.SarifVulnerabilityReport, scan.SarifJSONPathExpressions, &imageScanCmd.image))...)
+	customPrinterFactories := append(
+		slices.Clone(supportedObjectPrinters),
+		printer.NewSarifPrinterFactory(printers.SarifVulnerabilityReport, scan.SarifJSONPathExpressions, &imageScanCmd.image),
+	)
+
+	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", customPrinterFactories...)
 	// should not happen when using default values, must be a programming error
 	utils.Must(err)
 	// Set the Output Format to empty, so by default the new output format will not be used and the legacy one will be
@@ -74,6 +85,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 
 	objectPrinterFactory.AddFlags(c)
+	// provide flag usage, including supported values and default.
+	c.Flag("output").Usage = outputFlagUsage(customPrinterFactories...)
 
 	c.Flags().StringVarP(&imageScanCmd.image, "image", "i", "", "Image name and reference. (e.g. nginx:latest or nginx@sha256:...).")
 	c.Flags().BoolVarP(&imageScanCmd.force, "force", "f", false, "Bypass Central's cache for the image and force a new pull from the Scanner.")
@@ -87,8 +100,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	// Deprecated flag
 	// The error message will be prefixed by "command <command-name> has been deprecated".
-	//
-	// TODO(ROX-29120): This may NOT be removed until we find another place to put this or we replace this with another equivalent format.
 	c.Flags().StringVarP(&imageScanCmd.format, "format", "", "json", "Format of the output. Choose output format from json and csv.")
 	utils.Must(c.Flags().MarkDeprecated("format", deprecationNote))
 
@@ -125,13 +136,17 @@ func (i *imageScanCommand) Construct(_ []string, cmd *cobra.Command, f *printer.
 		return common.ErrInvalidCommandOption.CausedBy(err)
 	}
 
-	// There is a case where cobra is not printing the deprecation warning to stderr, when a deprecated flag is not
-	// specified, but has default values. So, when --format is left with default values and --output is not specified,
-	// we manually print the deprecation note. We do not need to do this when i.e. --format csv is used, because
-	// then a deprecated flag will be explicitly used and cobra will take over the printing of the deprecation note.
-	if !cmd.Flag("format").Changed && !cmd.Flag("output").Changed {
-		i.env.Logger().WarnfLn("Flag --format has been deprecated, %s", deprecationNote)
+	if legacyFormat, deprecationNote, isLegacy := legacyOutputFormat(f.OutputFormat); isLegacy {
+		i.format = legacyFormat
+		if cmd.Flag("output").Changed {
+			i.env.Logger().WarnfLn("Output format %q has been deprecated, %s", f.OutputFormat, deprecationNote)
+		}
+		return nil
 	}
+	if !cmd.Flag("format").Changed && !cmd.Flag("output").Changed {
+		i.env.Logger().InfofLn("%s", defaultLegacyJSONInfoNote)
+	}
+
 	// Only create the printer when the old, deprecated output format is not used
 	// TODO(ROX-8303): This can be removed once the old output format is fully deprecated
 	if f.OutputFormat != "" {
@@ -144,6 +159,31 @@ func (i *imageScanCommand) Construct(_ []string, cmd *cobra.Command, f *printer.
 	}
 
 	return nil
+}
+
+func legacyOutputFormat(outputFormat string) (string, string, bool) {
+	switch outputFormat {
+	case legacyJSONOutputFormat:
+		return "json", legacyJSONOutputDeprecationNote, true
+	case legacyCSVOutputFormat:
+		return "csv", legacyCSVOutputDeprecationNote, true
+	default:
+		return "", "", false
+	}
+}
+
+func outputFlagUsage(customPrinterFactories ...printer.CustomPrinterFactory) string {
+	supportedFormats := make([]string, 0, len(customPrinterFactories)+2)
+	for _, customPrinterFactory := range customPrinterFactories {
+		for _, format := range customPrinterFactory.SupportedFormats() {
+			if !slices.Contains(supportedFormats, format) {
+				supportedFormats = append(supportedFormats, format)
+			}
+		}
+	}
+
+	supportedFormats = append(supportedFormats, legacyJSONOutputFormat, legacyCSVOutputFormat)
+	return "Output format. Choose one of: " + strings.Join(supportedFormats, " | ") + outputFlagUsageSuffix
 }
 
 // Validate will validate the injected values and check whether it's possible to execute the operation with the

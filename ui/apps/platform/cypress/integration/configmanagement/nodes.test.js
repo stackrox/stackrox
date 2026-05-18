@@ -1,5 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasOrchestratorFlavor } from '../../helpers/features';
+import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
 import { triggerScan } from '../compliance/Compliance.helpers';
 
 import {
@@ -58,6 +58,11 @@ describe('Configuration Management Nodes', () => {
     });
 
     it('should click on the controls count widget in the entity page and show the controls tab', function () {
+        // Skip although Controls and CIS Kubernetes v1.5 are visible, because these tests assume compliance tests ran and triggered a scan (pardon rhyme).
+        if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
+            this.skip();
+        }
+
         if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
@@ -71,6 +76,13 @@ describe('Configuration Management Nodes', () => {
     });
 
     describe('should go to controls table from widget link', () => {
+        // Skip although Controls and CIS Kubernetes v1.5 are visible, because these tests assume compliance tests ran and triggered a scan (pardon rhyme).
+        before(function () {
+            if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
+                this.skip();
+            }
+        });
+
         const entitiesKey2 = 'controls';
 
         it('in single page', () => {

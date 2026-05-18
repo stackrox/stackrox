@@ -9,6 +9,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 
 import SummaryCounts from './SummaryCounts';
@@ -35,6 +36,13 @@ function DashboardPage() {
     const hasReadAccessForNamespace = hasReadAccess('Namespace');
     const hasReadAccessForNode = hasReadAccess('Node');
     const hasReadAccessForSecret = hasReadAccess('Secret');
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDeprecatedComplianceDashboardEnabled = isFeatureFlagEnabled(
+        'ROX_DEPRECATED_COMPLIANCE_DASHBOARD'
+    );
+    const hasComplianceLevelsByStandard =
+        isDeprecatedComplianceDashboardEnabled && hasReadAccessForCompliance;
 
     const hasReadAccessForSummaryCounts =
         hasReadAccessForAlert ||
@@ -102,7 +110,7 @@ function DashboardPage() {
                     {hasReadAccessForDeployment && <DeploymentsAtMostRisk />}
                     {hasReadAccessForImage && <AgingImages />}
                     {hasReadAccessForAlert && <ViolationsByPolicyCategory />}
-                    {hasReadAccessForCompliance && <ComplianceLevelsByStandard />}
+                    {hasComplianceLevelsByStandard && <ComplianceLevelsByStandard />}
                 </Gallery>
             </PageSection>
         </>
