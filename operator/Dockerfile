@@ -1,11 +1,11 @@
 # We have to emulate directory layout as in the repo so that imports in go files work fine.
 ARG roxpath=/workspace/src/github.com/stackrox/rox
-ARG TARGET_ARCH=amd64
+ARG TARGETARCH
 
 FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/go-toolset:1.25 AS builder
 
 # Build the manager binary
-ARG TARGET_ARCH
+ARG TARGETARCH
 ARG roxpath
 
 WORKDIR ${roxpath}/
@@ -53,10 +53,10 @@ RUN git init && git add .
 ENV CGO_ENABLED=0
 
 # Build the operator binary.
-RUN GOOS=linux GOARCH=${TARGET_ARCH} scripts/go-build-file.sh operator/cmd/main.go stackrox-operator
+RUN GOOS=linux GOARCH=${TARGETARCH} scripts/go-build-file.sh operator/cmd/main.go stackrox-operator
 
-ARG TARGET_ARCH
-FROM --platform=linux/${TARGET_ARCH} registry.access.redhat.com/ubi9-micro:latest
+ARG TARGETARCH
+FROM --platform=linux/${TARGETARCH} registry.access.redhat.com/ubi9-micro:latest
 
 ARG roxpath
 
