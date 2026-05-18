@@ -417,7 +417,7 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 			// We will take the version of the advisory associated with the highest NVD CVSS score.
 			vulnIDs = dedupeAdvisories(vulnIDs, vulnerabilities)
 		}
-		// Lastly, sort by severity in case we may still have any duplications we missed previously.
+		vulnIDs = dedupeCVEs(vulnIDs, vulnerabilities)
 		sortBySeverity(vulnIDs, vulnerabilities)
 		pkgVulns[id] = &v4.StringList{
 			Values: vulnIDs,
@@ -1534,6 +1534,58 @@ func vulnsEqual(a, b *claircore.Vulnerability) bool {
 		a.Severity == b.Severity &&
 		a.NormalizedSeverity == b.NormalizedSeverity &&
 		a.FixedInVersion == b.FixedInVersion
+}
+
+// dedupeCVEs deduplicates vulnerabilities that resolved to the same CVE name
+// from different advisory sources (e.g., GHSA and Go vulndb entries that are aliases of the same CVE).
+// When duplicates are found, the entry with the highest NormalizedSeverity is kept;
+// if severities are equal, the entry with richer CVSS data wins.
+func dedupeCVEs(vulnIDs []string, protoVulns map[string]*v4.VulnerabilityReport_Vulnerability) []string {
+	filtered := make([]string, 0, len(vulnIDs))
+	seen := make(map[string]int) // CVE name -> index in filtered
+	for _, vulnID := range vulnIDs {
+		vuln := protoVulns[vulnID]
+		if vuln == nil {
+			continue
+		}
+		name := vuln.GetName()
+		if !cveIDPattern.MatchString(name) {
+			filtered = append(filtered, vulnID)
+			continue
+		}
+		if idx, ok := seen[name]; ok {
+			existing := protoVulns[filtered[idx]]
+			if preferVuln(vuln, existing) {
+				filtered[idx] = vulnID
+			}
+			continue
+		}
+		seen[name] = len(filtered)
+		filtered = append(filtered, vulnID)
+	}
+	return filtered
+}
+
+// preferVuln returns true if candidate should replace existing during CVE deduplication.
+func preferVuln(candidate, existing *v4.VulnerabilityReport_Vulnerability) bool {
+	if candidate.GetNormalizedSeverity() != existing.GetNormalizedSeverity() {
+		return candidate.GetNormalizedSeverity() > existing.GetNormalizedSeverity()
+	}
+	return hasCVSSData(candidate) && !hasCVSSData(existing)
+}
+
+func hasCVSSData(vuln *v4.VulnerabilityReport_Vulnerability) bool {
+	if c := vuln.GetCvss(); c != nil {
+		if c.GetV3() != nil || c.GetV2() != nil {
+			return true
+		}
+	}
+	for _, m := range vuln.GetCvssMetrics() {
+		if m.GetV3() != nil || m.GetV2() != nil {
+			return true
+		}
+	}
+	return false
 }
 
 // dedupeAdvisories deduplicates repeat advisories out of vulnIDs and returns the result.

@@ -219,7 +219,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 			},
 			wantErr: "",
 		},
-		"when there are similar vulnerabilities with different severities and updaters then they are not filtered": {
+		"when there are similar vulnerabilities with different severities and updaters then the higher severity is kept": {
 			arg: &claircore.VulnerabilityReport{
 				Hash: claircore.MustParseDigest("sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e"),
 				Vulnerabilities: map[string]*claircore.Vulnerability{
@@ -291,7 +291,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 				},
 				PackageVulnerabilities: map[string]*v4.StringList{
 					"sample pkg id": {
-						Values: []string{"1", "0"}, // "1" has a higher severity
+						Values: []string{"1"}, // "1" has a higher severity; "0" is deduplicated as a same-CVE alias
 					},
 				},
 				Contents: &v4.Contents{},
@@ -3030,6 +3030,171 @@ func Test_dedupeAdvisories(t *testing.T) {
 	for _, tt := range testcases {
 		t.Run(tt.name, func(t *testing.T) {
 			got := dedupeAdvisories(tt.vulnIDs, tt.vulns)
+			assert.ElementsMatch(t, tt.expected, got)
+		})
+	}
+}
+
+func Test_dedupeCVEs(t *testing.T) {
+	testcases := map[string]struct {
+		vulnIDs  []string
+		vulns    map[string]*v4.VulnerabilityReport_Vulnerability
+		expected []string
+	}{
+		"aliases with different severities keeps higher": {
+			vulnIDs: []string{"ghsa-1", "go-1"},
+			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"ghsa-1": {
+					Id:                 "ghsa-1",
+					Name:               "CVE-2022-23648",
+					Severity:           "High",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				},
+				"go-1": {
+					Id:                 "go-1",
+					Name:               "CVE-2022-23648",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED,
+				},
+			},
+			expected: []string{"ghsa-1"},
+		},
+		"aliases with higher severity second replaces first": {
+			vulnIDs: []string{"go-1", "ghsa-1"},
+			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"go-1": {
+					Id:                 "go-1",
+					Name:               "CVE-2022-23648",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED,
+				},
+				"ghsa-1": {
+					Id:                 "ghsa-1",
+					Name:               "CVE-2022-23648",
+					Severity:           "High",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				},
+			},
+			expected: []string{"ghsa-1"},
+		},
+		"same severity prefers entry with CVSS data": {
+			vulnIDs: []string{"a", "b"},
+			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"a": {
+					Id:                 "a",
+					Name:               "CVE-2023-0001",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				},
+				"b": {
+					Id:                 "b",
+					Name:               "CVE-2023-0001",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 6.5,
+							Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N",
+						},
+					},
+				},
+			},
+			expected: []string{"b"},
+		},
+		"same severity both without CVSS keeps first": {
+			vulnIDs: []string{"a", "b"},
+			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"a": {
+					Id:                 "a",
+					Name:               "CVE-2023-0001",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				},
+				"b": {
+					Id:                 "b",
+					Name:               "CVE-2023-0001",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				},
+			},
+			expected: []string{"a"},
+		},
+		"non-CVE names pass through": {
+			vulnIDs: []string{"a", "b", "c"},
+			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"a": {
+					Id:   "a",
+					Name: "GHSA-5wvp-7f3h-6wmm",
+				},
+				"b": {
+					Id:   "b",
+					Name: "RHSA-2021:0735",
+				},
+				"c": {
+					Id:                 "c",
+					Name:               "CVE-2023-0001",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				},
+			},
+			expected: []string{"a", "b", "c"},
+		},
+		"no duplicates preserves all": {
+			vulnIDs: []string{"a", "b"},
+			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"a": {
+					Id:                 "a",
+					Name:               "CVE-2023-0001",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				},
+				"b": {
+					Id:                 "b",
+					Name:               "CVE-2023-0002",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+				},
+			},
+			expected: []string{"a", "b"},
+		},
+		"nil vuln in map is skipped": {
+			vulnIDs: []string{"a", "b"},
+			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"a": nil,
+				"b": {
+					Id:                 "b",
+					Name:               "CVE-2023-0001",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+				},
+			},
+			expected: []string{"b"},
+		},
+		"mixed CVE and non-CVE with duplicates": {
+			vulnIDs: []string{"ghsa-1", "go-1", "rhsa-1", "ghsa-2", "go-2"},
+			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"ghsa-1": {
+					Id:                 "ghsa-1",
+					Name:               "CVE-2022-23648",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				},
+				"go-1": {
+					Id:                 "go-1",
+					Name:               "CVE-2022-23648",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED,
+				},
+				"rhsa-1": {
+					Id:   "rhsa-1",
+					Name: "RHSA-2021:0735",
+				},
+				"ghsa-2": {
+					Id:                 "ghsa-2",
+					Name:               "CVE-2023-25761",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				},
+				"go-2": {
+					Id:                 "go-2",
+					Name:               "CVE-2023-25761",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
+				},
+			},
+			expected: []string{"ghsa-1", "rhsa-1", "go-2"},
+		},
+	}
+
+	for name, tt := range testcases {
+		t.Run(name, func(t *testing.T) {
+			got := dedupeCVEs(tt.vulnIDs, tt.vulns)
 			assert.ElementsMatch(t, tt.expected, got)
 		})
 	}
