@@ -1127,7 +1127,7 @@ verify_cert_watcher_running() {
     info "Verifying cert-watcher sidecar is running in ${namespace}/${deployment}..."
     local retries=12
     for ((i=1; i<=retries; i++)); do
-        if "${ORCH_CMD}" </dev/null -n "$namespace" logs "deploy/${deployment}" -c cert-watcher 2>/dev/null | grep -q "cert-watcher: watching"; then
+        if "${ORCH_CMD}" </dev/null -n "$namespace" logs "deploy/${deployment}" -c cert-watcher 2>/dev/null | grep "cert-watcher: watching" >/dev/null; then
             info "** cert-watcher is running in ${namespace}/${deployment}"
             return 0
         fi
