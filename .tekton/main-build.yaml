@@ -139,32 +139,6 @@ spec:
           # OOMKilled: 180/10,492 runs (1.7%), Apr 15 - May 15, 2026.
           memory: 512Mi
 
-  - pipelineTaskName: sast-snyk-check
-    stepSpecs:
-    - name: use-trusted-artifact
-      computeResources:
-        limits:
-          # Default: 2Gi (namespace LimitRange). Downloads source artifact for scanning.
-          # https://github.com/konflux-ci/build-trusted-artifacts
-          # Observed peak: 1287Mi. OOMKilled: 114/10,491 runs (1.1%), Apr 15 - May 15, 2026.
-          memory: 3Gi
-  - pipelineTaskName: sast-shell-check
-    stepSpecs:
-    - name: use-trusted-artifact
-      computeResources:
-        limits:
-          # Default: 2Gi (namespace LimitRange). Downloads source artifact for scanning.
-          # OOMKilled: 125/10,490 runs (1.2%), Apr 15 - May 15, 2026.
-          memory: 3Gi
-  - pipelineTaskName: sast-unicode-check
-    stepSpecs:
-    - name: use-trusted-artifact
-      computeResources:
-        limits:
-          # Default: 2Gi (namespace LimitRange). Downloads source artifact for scanning.
-          # OOMKilled: 105/10,489 runs (1.0%), Apr 15 - May 15, 2026.
-          memory: 3Gi
-
   taskRunTemplate:
     serviceAccountName: build-pipeline-main
 
