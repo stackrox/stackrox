@@ -58,7 +58,12 @@ fi
 
 if [[ "${CGO_ENABLED}" != 0 ]]; then
   echo >&2 "CGO_ENABLED is not 0. Compiling with -linkmode=external"
-  ldflags+=('-linkmode=external')
+
+  # Use musl for static linking to avoid GLIBC version mismatches
+  # between builder (ubuntu-latest) and runtime (UBI9)
+  echo >&2 "Using musl-gcc for static linking to avoid GLIBC dependencies"
+  export CC=musl-gcc
+  ldflags+=('-linkmode=external' '-extldflags=-static')
 fi
 
 function invoke_go() {

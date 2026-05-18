@@ -322,6 +322,12 @@ jobs:
           )
         run: echo "RACE=true" >> "$GITHUB_ENV"
 
+      - name: Install musl-tools for CGO builds
+        if: matrix.arch == 'amd64'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y musl-tools
+
       - name: Build Go Binaries
         run: |
           if [[ "${{ matrix.arch }}" != "amd64" ]]; then
