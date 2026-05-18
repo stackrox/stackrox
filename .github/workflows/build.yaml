@@ -557,6 +557,42 @@ jobs:
             fi
           done
 
+      - name: Stage binaries for main image
+        run: |
+          mkdir -p image/rhel/bin
+          for arch in amd64 arm64 ppc64le s390x; do
+            [ -f bin/linux_${arch}/central ] && cp bin/linux_${arch}/central image/rhel/bin/central-${arch}
+            [ -f bin/linux_${arch}/migrator ] && cp bin/linux_${arch}/migrator image/rhel/bin/migrator-${arch}
+            [ -f bin/linux_${arch}/compliance ] && cp bin/linux_${arch}/compliance image/rhel/bin/compliance-${arch}
+            [ -f bin/linux_${arch}/kubernetes ] && cp bin/linux_${arch}/kubernetes image/rhel/bin/kubernetes-${arch}
+            [ -f bin/linux_${arch}/upgrader ] && cp bin/linux_${arch}/upgrader image/rhel/bin/upgrader-${arch}
+            [ -f bin/linux_${arch}/admission-control ] && cp bin/linux_${arch}/admission-control image/rhel/bin/admission-control-${arch}
+            [ -f bin/linux_${arch}/config-controller ] && cp bin/linux_${arch}/config-controller image/rhel/bin/config-controller-${arch}
+            [ -f bin/linux_${arch}/roxagent ] && cp bin/linux_${arch}/roxagent image/rhel/bin/roxagent-${arch}
+          done
+          # Copy roxctl binaries for all platforms
+          for f in bin/roxctl-*; do
+            [ -f "$f" ] && cp "$f" image/rhel/bin/
+          done
+
+      - name: Stage binaries for operator image
+        run: |
+          mkdir -p operator/bin
+          for arch in amd64 arm64 ppc64le s390x; do
+            if [ -f bin/linux_${arch}/stackrox-operator ]; then
+              cp bin/linux_${arch}/stackrox-operator operator/bin/stackrox-operator-${arch}
+            fi
+          done
+
+      - name: Stage binaries for roxctl image
+        run: |
+          mkdir -p image/roxctl/bin
+          for arch in amd64 arm64 ppc64le s390x; do
+            if [ -f bin/linux_${arch}/roxctl ]; then
+              cp bin/linux_${arch}/roxctl image/roxctl/bin/roxctl-${arch}
+            fi
+          done
+
       - name: Login to docker.io to mitigate rate limiting
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
         if: |
@@ -722,6 +758,42 @@ jobs:
             if [ -f bin/linux_${arch}/scanner ]; then
               mkdir -p scanner/image/scanner/bin/${arch}
               cp bin/linux_${arch}/scanner scanner/image/scanner/bin/${arch}/scanner
+            fi
+          done
+
+      - name: Stage binaries for main image
+        run: |
+          mkdir -p image/rhel/bin
+          for arch in amd64 arm64 ppc64le s390x; do
+            [ -f bin/linux_${arch}/central ] && cp bin/linux_${arch}/central image/rhel/bin/central-${arch}
+            [ -f bin/linux_${arch}/migrator ] && cp bin/linux_${arch}/migrator image/rhel/bin/migrator-${arch}
+            [ -f bin/linux_${arch}/compliance ] && cp bin/linux_${arch}/compliance image/rhel/bin/compliance-${arch}
+            [ -f bin/linux_${arch}/kubernetes ] && cp bin/linux_${arch}/kubernetes image/rhel/bin/kubernetes-${arch}
+            [ -f bin/linux_${arch}/upgrader ] && cp bin/linux_${arch}/upgrader image/rhel/bin/upgrader-${arch}
+            [ -f bin/linux_${arch}/admission-control ] && cp bin/linux_${arch}/admission-control image/rhel/bin/admission-control-${arch}
+            [ -f bin/linux_${arch}/config-controller ] && cp bin/linux_${arch}/config-controller image/rhel/bin/config-controller-${arch}
+            [ -f bin/linux_${arch}/roxagent ] && cp bin/linux_${arch}/roxagent image/rhel/bin/roxagent-${arch}
+          done
+          # Copy roxctl binaries for all platforms
+          for f in bin/roxctl-*; do
+            [ -f "$f" ] && cp "$f" image/rhel/bin/
+          done
+
+      - name: Stage binaries for operator image
+        run: |
+          mkdir -p operator/bin
+          for arch in amd64 arm64 ppc64le s390x; do
+            if [ -f bin/linux_${arch}/stackrox-operator ]; then
+              cp bin/linux_${arch}/stackrox-operator operator/bin/stackrox-operator-${arch}
+            fi
+          done
+
+      - name: Stage binaries for roxctl image
+        run: |
+          mkdir -p image/roxctl/bin
+          for arch in amd64 arm64 ppc64le s390x; do
+            if [ -f bin/linux_${arch}/roxctl ]; then
+              cp bin/linux_${arch}/roxctl image/roxctl/bin/roxctl-${arch}
             fi
           done
 
