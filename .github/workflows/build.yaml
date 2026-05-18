@@ -1083,7 +1083,7 @@ jobs:
           push_scanner_image_manifest_lists "${{ matrix.registry }}" "$architectures"
 
   push-operator-manifests:
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     needs:
     - define-job-matrix
     - build-and-push-operator
