@@ -1585,13 +1585,10 @@ jobs:
     if: github.event_name == 'push' ||
       contains(github.event.pull_request.labels.*.name, 'scan-images-with-roxctl')
     needs:
-      - build-and-push-main
-      - build-and-push-operator
-      - build-and-push-scanner
+      - build-and-push-components-stackrox
+      - build-and-push-components-rhacs
       - define-job-matrix
-      - push-main-manifests
       - push-matching-collector-scanner
-      - push-scanner-manifests
     name: Check images for vulnerabilities
     runs-on: ubuntu-latest
     permissions:
@@ -1659,10 +1656,8 @@ jobs:
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
-      - build-and-push-main
-      - build-and-push-operator
-      - build-and-push-roxctl
-      - build-and-push-scanner
+      - build-and-push-components-stackrox
+      - build-and-push-components-rhacs
       - build-operator-bundle
       - go-version-ceiling
       - pre-build-cli
