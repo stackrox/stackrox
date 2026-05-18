@@ -6,7 +6,6 @@ import { toast } from 'react-toastify';
 import { Button } from '@patternfly/react-core';
 
 import downloadCSV from 'services/CSVDownloadService';
-import WorkflowPDFExportButton from 'Components/WorkflowPDFExportButton';
 import ButtonClassic from 'Components/Button';
 import useCaseTypes from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
@@ -40,13 +39,9 @@ class ExportButton extends Component {
         fileName: PropTypes.string,
         type: PropTypes.string,
         id: PropTypes.string,
-        pdfId: PropTypes.string,
-        tableOptions: PropTypes.shape({}),
         customCsvExportHandler: PropTypes.func,
         page: PropTypes.string,
         disabled: PropTypes.bool,
-        isExporting: PropTypes.bool,
-        setIsExporting: PropTypes.func,
     };
 
     static defaultProps = {
@@ -55,13 +50,9 @@ class ExportButton extends Component {
         fileName: 'compliance',
         type: null,
         id: '',
-        pdfId: '',
-        tableOptions: {},
         customCsvExportHandler: null,
         page: '',
         disabled: false,
-        isExporting: false,
-        setIsExporting: () => {},
     };
 
     constructor(props) {
@@ -128,14 +119,8 @@ class ExportButton extends Component {
             return null;
         }
 
-        const headerText = this.props.fileName;
-
-        const fileName = addBrandedTimestampToString(headerText);
-
-        const wrapperClass = !!this.props.pdfId && !this.isCsvSupported() ? 'min-w-64' : '';
-
-        return !!this.props.pdfId || this.isCsvSupported() ? (
-            <div className={`absolute right-0 z-20 flex flex-col text-base-600 ${wrapperClass}`}>
+        return this.isCsvSupported() ? (
+            <div className="absolute right-0 z-20 flex flex-col text-base-600">
                 <div className="arrow-up self-end mr-5" />
                 <ul
                     className="bg-base-100 rounded"
@@ -146,28 +131,13 @@ class ExportButton extends Component {
                 >
                     <li className="p-4 border-b">
                         <div className="flex">
-                            {!!this.props.pdfId && (
-                                <WorkflowPDFExportButton
-                                    id={this.props.pdfId}
-                                    className={`min-w-48 ${
-                                        this.isCsvSupported() ? 'mr-2' : 'w-full'
-                                    }`}
-                                    tableOptions={this.props.tableOptions}
-                                    fileName={fileName}
-                                    pdfTitle={headerText}
-                                    isExporting={this.props.isExporting}
-                                    setIsExporting={this.props.setIsExporting}
-                                />
-                            )}
-                            {this.isCsvSupported() && (
-                                <Button
-                                    variant="primary"
-                                    onClick={this.downloadCSVFile}
-                                    isLoading={csvIsDownloading}
-                                >
-                                    {csvButtonText}
-                                </Button>
-                            )}
+                            <Button
+                                variant="primary"
+                                onClick={this.downloadCSVFile}
+                                isLoading={csvIsDownloading}
+                            >
+                                {csvButtonText}
+                            </Button>
                         </div>
                     </li>
                     <li className="hidden">

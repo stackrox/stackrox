@@ -947,7 +947,6 @@ module.exports = [
             'src/Components/Select.jsx', // deprecated
             'src/Components/Table.jsx', // deprecated
             'src/Components/Tabs.jsx', // deprecated
-            'src/Components/WorkflowPDFExportButton.jsx', // deprecated
             'src/Components/visuals/Sunburst.jsx', // deprecated
             'src/Components/visuals/SunburstDetailSection.jsx', // deprecated
             'src/Containers/Compliance/**', // deprecated
@@ -1039,7 +1038,6 @@ module.exports = [
             'src/utils/getEntityName.js', // deprecated
             'src/utils/getPaginatedList.js', // move into Containers/Risk/EventTimeline
             'src/utils/gqlLoading.js', // deferred
-            'src/utils/pdfUtils.js', // deprecated
             'src/utils/permissionRuleGroupUtils.js', // deferred
             'src/utils/queryMap.js', // deprecated
             'src/utils/queryService.js', // deferred
