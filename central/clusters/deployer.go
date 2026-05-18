@@ -19,7 +19,8 @@ import (
 // RenderOptions are options that control the rendering.
 type RenderOptions struct {
 	CreateUpgraderSA bool
-	IstioVersion     string
+	// Deprecated: IstioVersion is ignored. ACS now automatically prevents Istio sidecar injection.
+	IstioVersion string
 
 	DisablePodSecurityPolicies bool
 }

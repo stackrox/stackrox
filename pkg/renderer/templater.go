@@ -122,7 +122,7 @@ type K8sConfig struct {
 
 	OfflineMode bool
 
-	// IstioVersion is the version of Istio to render for (if any)
+	// Deprecated: IstioVersion is ignored. ACS now automatically prevents Istio sidecar injection.
 	IstioVersion string
 
 	ImageOverrides map[string]interface{}
