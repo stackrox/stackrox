@@ -333,7 +333,7 @@ jobs:
           )
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y musl-tools
+          sudo apt-get install -y musl-tools linux-libc-dev
 
       - name: Build Go Binaries
         run: GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
