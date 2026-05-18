@@ -83,9 +83,9 @@ spec:
     - name: prefetch-dependencies
       computeResources:
         limits:
-          memory: 3Gi
+          memory: 4Gi
         requests:
-          memory: 3Gi
+          memory: 4Gi
 
   taskRunTemplate:
     serviceAccountName: build-pipeline-operator-bundle
