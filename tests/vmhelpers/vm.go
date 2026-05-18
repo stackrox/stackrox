@@ -1,17 +1,13 @@
 package vmhelpers
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"testing"
-	"text/template"
 	"time"
 
-	vmscanning "github.com/stackrox/rox/tests/testdata/vm-scanning"
 	coreV1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -54,20 +50,16 @@ type VMRequest struct {
 	SSHPublicKey string
 }
 
-// renderCloudInit expands the embedded cloud-init template using req.
+// renderCloudInit produces cloud-init user-data YAML for the given request.
 // Callers must validate that GuestUser and SSHPublicKey are non-empty.
-func renderCloudInit(req VMRequest) ([]byte, error) {
-	tmpl, err := template.New("cloud-init").Funcs(template.FuncMap{
-		"yamlQuote": strconv.Quote,
-	}).Parse(string(vmscanning.CloudInitUserDataTemplate))
-	if err != nil {
-		return nil, fmt.Errorf("parse cloud-init template: %w", err)
-	}
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, req); err != nil {
-		return nil, fmt.Errorf("execute cloud-init template: %w", err)
-	}
-	return buf.Bytes(), nil
+func renderCloudInit(req VMRequest) string {
+	return fmt.Sprintf(`#cloud-config
+users:
+  - name: %q
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    ssh_authorized_keys:
+      - %q
+`, req.GuestUser, req.SSHPublicKey)
 }
 
 // CreateVirtualMachine submits a KubeVirt VirtualMachine with a container disk and NoCloud user-data.
@@ -75,10 +67,7 @@ func CreateVirtualMachine(ctx context.Context, client dynamic.Interface, req VMR
 	if req.Name == "" || req.Namespace == "" || req.Image == "" || req.GuestUser == "" || req.SSHPublicKey == "" {
 		return errors.New("VMRequest Name, Namespace, Image, GuestUser, and SSHPublicKey are required")
 	}
-	userData, err := renderCloudInit(req)
-	if err != nil {
-		return err
-	}
+	userData := renderCloudInit(req)
 	runStrategy := kubevirtv1.RunStrategyAlways
 	autoattachVSOCK := true
 	vm := &kubevirtv1.VirtualMachine{
@@ -132,7 +121,7 @@ func CreateVirtualMachine(ctx context.Context, client dynamic.Interface, req VMR
 							Name: "cloudinitdisk",
 							VolumeSource: kubevirtv1.VolumeSource{
 								CloudInitNoCloud: &kubevirtv1.CloudInitNoCloudSource{
-									UserData: string(userData),
+									UserData: userData,
 								},
 							},
 						},
