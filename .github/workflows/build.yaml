@@ -31,7 +31,7 @@ jobs:
       build-tag: ${{ steps.build-tag.outputs.tag }}
       short-commit: ${{ steps.short-commit.outputs.shortcommit }}
       gotags: ${{ steps.gotags.outputs.gotags }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
