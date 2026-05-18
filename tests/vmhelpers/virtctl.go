@@ -339,7 +339,7 @@ func virtctlPositionalArgs(args []string) []string {
 	for i := 2; i < len(args); i++ {
 		arg := args[i]
 		if strings.HasPrefix(arg, "--") {
-			if virtctlFlagConsumesValue(arg) && i+1 < len(args) {
+			if virtctlFlagConsumesValue(arg) {
 				i++
 			}
 			continue
