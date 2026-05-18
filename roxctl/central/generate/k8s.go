@@ -146,12 +146,11 @@ func k8s(cliEnvironment environment.Environment) *cobra.Command {
 	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", fmt.Sprintf("The deployment tool to use (%s).", strings.Join(validFormats, ", ")), "central")
 
 	flagWrap.Var(istioSupportWrapper{}, "istio-support",
-		"Deprecated: has no effect. ACS now automatically prevents Istio sidecar injection.",
+		"Istio version when deploying into an Istio-enabled cluster (has no effect; ACS now automatically prevents Istio sidecar injection).",
 		"central", "output-format=kubectl",
 	)
 	utils.Must(
 		flagWrap.SetAnnotation("istio-support", flags.OptionalKey, []string{"true"}),
-		flagWrap.MarkDeprecated("istio-support", "has no effect. ACS now automatically prevents Istio sidecar injection."),
 	)
 
 	return c
@@ -183,12 +182,11 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 	flagWrap.IntVar(&openshiftVersion, "openshift-version", 0, "The OpenShift major version to deploy on (currently only 4 is supported).")
 	flagWrap.OptBoolVar(&k8sConfig.Monitoring.OpenShiftMonitoring, "openshift-monitoring", "", "Integration with OpenShift 4 monitoring.", "auto", "central")
 	flagWrap.Var(istioSupportWrapper{}, "istio-support",
-		"Deprecated: has no effect. ACS now automatically prevents Istio sidecar injection.",
+		"Istio version when deploying into an Istio-enabled cluster (has no effect; ACS now automatically prevents Istio sidecar injection).",
 		"central",
 	)
 	utils.Must(
 		flagWrap.SetAnnotation("istio-support", flags.OptionalKey, []string{"true"}),
-		flagWrap.MarkDeprecated("istio-support", "has no effect. ACS now automatically prevents Istio sidecar injection."),
 	)
 
 	return c

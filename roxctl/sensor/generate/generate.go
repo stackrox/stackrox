@@ -193,8 +193,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().BoolVar(&generateCmd.createUpgraderSA, "create-upgrader-sa", true, "Whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades.")
 
 	c.PersistentFlags().StringVar(&generateCmd.istioVersion, "istio-support", "",
-		"Deprecated: has no effect. ACS now automatically prevents Istio sidecar injection.")
-	utils.Must(c.PersistentFlags().MarkDeprecated("istio-support", "has no effect. ACS now automatically prevents Istio sidecar injection."))
+		"Istio version when deploying into an Istio-enabled cluster (has no effect; ACS now automatically prevents Istio sidecar injection).")
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes.")
 	c.PersistentFlags().BoolVar(&generateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).")

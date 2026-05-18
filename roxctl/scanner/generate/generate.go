@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -94,8 +93,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().StringVar(&scannerGenerateCmd.apiParams.ScannerV4Image, flags.FlagNameScannerV4Image, "", "Scanner V4 image to use (leave blank to use server default).")
 	c.Flags().StringVar(&scannerGenerateCmd.apiParams.ScannerV4DBImage, flags.FlagNameScannerV4DBImage, "", "Scanner V4 DB image to use (leave blank to use server default).")
 	c.Flags().StringVar(&scannerGenerateCmd.apiParams.IstioVersion, istioSupportArg, "",
-		"Deprecated: has no effect. ACS now automatically prevents Istio sidecar injection.")
-	utils.Must(c.Flags().MarkDeprecated(istioSupportArg, "has no effect. ACS now automatically prevents Istio sidecar injection."))
+		"Istio version when deploying into an Istio-enabled cluster (has no effect; ACS now automatically prevents Istio sidecar injection).")
 	c.PersistentFlags().BoolVar(&scannerGenerateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).")
 
 	flags.AddTimeout(c)
