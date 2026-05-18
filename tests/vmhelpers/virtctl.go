@@ -73,13 +73,13 @@ func CreateKnownHostsFile(t testing.TB) string {
 
 // run starts a virtctl (or argv[0]) subprocess, captures stdout/stderr, and honors optional logging and heartbeats.
 func (v Virtctl) run(ctx context.Context, args []string) (stdout string, stderr string, err error) {
+	if len(args) == 0 {
+		return "", "", errors.New("virtctl: empty args")
+	}
 	if v.CommandTimeout > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, v.CommandTimeout)
 		defer cancel()
-	}
-	if len(args) == 0 {
-		return "", "", errors.New("virtctl: empty args")
 	}
 	cmd := exec.Command(args[0], args[1:]...)
 	configureVirtctlCmdForCancellation(cmd)
