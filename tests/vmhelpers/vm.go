@@ -27,7 +27,7 @@ import (
 // Defaults for VM resource requests and polling/logging during KubeVirt VM/VMI wait helpers.
 const (
 	defaultVMMemoryRequest = "2Gi"
-	defaultVMCPUCores      = int64(3)
+	defaultVMCPUCores      = uint32(3)
 	vmPollInterval         = 2 * time.Second
 )
 
@@ -95,6 +95,9 @@ func CreateVirtualMachine(ctx context.Context, client dynamic.Interface, req VMR
 			Template: &kubevirtv1.VirtualMachineInstanceTemplateSpec{
 				Spec: kubevirtv1.VirtualMachineInstanceSpec{
 					Domain: kubevirtv1.DomainSpec{
+						CPU: &kubevirtv1.CPU{
+							Cores: defaultVMCPUCores,
+						},
 						Resources: kubevirtv1.ResourceRequirements{
 							Requests: coreV1.ResourceList{
 								coreV1.ResourceMemory: resource.MustParse(defaultVMMemoryRequest),
@@ -141,9 +144,6 @@ func CreateVirtualMachine(ctx context.Context, client dynamic.Interface, req VMR
 	u, err := k8sruntime.DefaultUnstructuredConverter.ToUnstructured(vm)
 	if err != nil {
 		return fmt.Errorf("convert VirtualMachine to unstructured: %w", err)
-	}
-	if err := unstructured.SetNestedField(u, defaultVMCPUCores, "spec", "template", "spec", "domain", "cpu", "cores"); err != nil {
-		return fmt.Errorf("set vm cpu cores in manifest: %w", err)
 	}
 	_, err = client.Resource(vmGVR).Namespace(req.Namespace).Create(ctx, &unstructured.Unstructured{Object: u}, metav1.CreateOptions{})
 	if err != nil {
