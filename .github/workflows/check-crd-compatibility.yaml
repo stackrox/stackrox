@@ -88,16 +88,16 @@ jobs:
     - name: Run crdify for platform operator
       run: |
         set -e
-        old_path=$PWD/.old-stackrox/operator/config/crd/bases
-        new_path=$PWD/operator/config/crd/bases
+        old_path="$PWD/.old-stackrox/operator/config/crd/bases"
+        new_path="$PWD/operator/config/crd/bases"
         set -x
-        crdify file://$old_path/platform.stackrox.io_securedclusters.yaml file://$new_path/platform.stackrox.io_securedclusters.yaml
-        crdify file://$old_path/platform.stackrox.io_centrals.yaml file://$new_path/platform.stackrox.io_centrals.yaml
+        crdify "file://${old_path}/platform.stackrox.io_securedclusters.yaml" "file://${new_path}/platform.stackrox.io_securedclusters.yaml"
+        crdify "file://${old_path}/platform.stackrox.io_centrals.yaml" "file://${new_path}/platform.stackrox.io_centrals.yaml"
 
     - name: Run crdify for config operator
       run: |
         set -e
-        old_path=$PWD/.old-stackrox/config-controller/config/crd/bases
-        new_path=$PWD/config-controller/config/crd/bases
+        old_path="$PWD/.old-stackrox/config-controller/config/crd/bases"
+        new_path="$PWD/config-controller/config/crd/bases"
         set -x
-        crdify file://$old_path/config.stackrox.io_securitypolicies.yaml file://$new_path/config.stackrox.io_securitypolicies.yaml
+        crdify "file://${old_path}/config.stackrox.io_securitypolicies.yaml" "file://${new_path}/config.stackrox.io_securitypolicies.yaml"
