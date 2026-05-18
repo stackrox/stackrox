@@ -116,7 +116,7 @@ func (u *keyBundleUpdater) doDownload() error {
 	defer utils.IgnoreError(resp.Body.Close)
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.Errorf("unexpected HTTP status %d", resp.StatusCode)
+		return errors.Errorf("unexpected HTTP status %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
 
 	limitedReader := io.LimitReader(resp.Body, maxResponseBodySize+1)

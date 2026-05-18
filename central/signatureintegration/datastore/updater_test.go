@@ -64,7 +64,7 @@ func TestUpdaterHTTPErrorDoesNotModifyFile(t *testing.T) {
 
 	err := u.doDownload()
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "unexpected HTTP status 500")
+	assert.Contains(t, err.Error(), "unexpected HTTP status 500 Internal Server Error")
 
 	data, err := os.ReadFile(filePath)
 	require.NoError(t, err)
