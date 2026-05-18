@@ -77,6 +77,15 @@ spec:
           memory: 3Gi
         requests:
           memory: 3Gi
+  - pipelineTaskName: prefetch-dependencies
+    stepSpecs:
+    # Bump memory for prefetch-dependencies step because the one with defaults tends to get sometimes OOM-killed.
+    - name: build
+      computeResources:
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
 
   taskRunTemplate:
     serviceAccountName: build-pipeline-operator-bundle
