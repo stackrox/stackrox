@@ -26,9 +26,6 @@ type sshCommandRunOptions struct {
 	description            string
 	transportRetryAttempts int
 	retryInterval          time.Duration
-	// suppressLog disables command-level logging for this call (use when the
-	// command contains secrets such as activation keys).
-	suppressLog bool
 }
 
 // classifySSHStderrCategory returns a descriptive category for known SSH
@@ -115,11 +112,8 @@ func retryOnSSHTransport(ctx context.Context, logf func(string, ...any), desc st
 	}
 }
 
-// runSSHCommandWithFramework runs virt.SSH with transport classification, bounded retries, and optional logging.
+// runSSHCommandWithFramework runs virt.SSH with transport classification and bounded retries.
 func runSSHCommandWithFramework(ctx context.Context, virt Virtctl, namespace, vm string, opts sshCommandRunOptions, command ...string) (stdout, stderr string, err error) {
-	if opts.suppressLog {
-		virt.Logf = nil
-	}
 	attempts := opts.transportRetryAttempts
 	if attempts <= 0 {
 		attempts = defaultSSHTransportRetryAttempts
@@ -152,10 +146,8 @@ func runSSHCommandWithFramework(ctx context.Context, virt Virtctl, namespace, vm
 				errSSHTransport, description, namespace, vm, category, attempts, err)
 		}
 
-		if virt.Logf != nil {
-			virt.Logf("%s on %s/%s: retryable SSH %s condition (attempt %d/%d): %s",
-				description, namespace, vm, category, attempt, attempts, formatGuestCommandOutputForError(stderr))
-		}
+		virt.Logf("%s on %s/%s: retryable SSH %s condition (attempt %d/%d): %s",
+			description, namespace, vm, category, attempt, attempts, formatGuestCommandOutputForError(stderr))
 
 		select {
 		case <-ctx.Done():

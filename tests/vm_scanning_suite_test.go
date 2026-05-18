@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -163,7 +164,7 @@ func (s *VMScanningSuite) SetupSuite() {
 		Path:              s.cfg.VirtctlPath,
 		IdentityFile:      identity,
 		CommandTimeout:    cmdTimeout,
-		KnownHostsFile:    vmhelpers.CreateKnownHostsFile(t),
+		KnownHostsFile:    filepath.Join(t.TempDir(), "known_hosts"),
 		Logf:              s.logf,
 		HeartbeatInterval: defaultVirtctlHeartbeatInterval,
 	}

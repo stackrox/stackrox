@@ -8,7 +8,7 @@ import (
 
 // SSH runs `virtctl ssh` against the VM and returns captured streams.
 func (v Virtctl) SSH(ctx context.Context, namespace, vm string, command ...string) (stdout string, stderr string, err error) {
-	args := buildVirtctlSSHArgs(v.Path, namespace, vm, v.IdentityFile, v.Username, v.knownHostsFile(), command...)
+	args := buildVirtctlSSHArgs(v.Path, namespace, vm, v.IdentityFile, v.Username, v.KnownHostsFile, command...)
 	return v.run(ctx, args)
 }
 
