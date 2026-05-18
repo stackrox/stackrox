@@ -257,7 +257,7 @@ function ImageCvePage({
     function getDeploymentSearchQuery(severity?: VulnerabilitySeverity) {
         const filters = { CVE: [exactCveIdSearchRegex], ...baseSearchFilter, ...querySearchFilter };
         if (severity) {
-            filters.SEVERITY = [severity];
+            filters.Severity = [severity];
         }
         return getVulnStateScopedQueryString(filters, vulnerabilityState);
     }
@@ -520,7 +520,7 @@ function ImageCvePage({
                             getSortParams={getSortParams}
                             isFiltered={isFiltered}
                             filteredSeverities={
-                                searchFilter.SEVERITY as VulnerabilitySeverityLabel[]
+                                searchFilter.Severity as VulnerabilitySeverityLabel[]
                             }
                             cve={cveId}
                             vulnerabilityState={vulnerabilityState}

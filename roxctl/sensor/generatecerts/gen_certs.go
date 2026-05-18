@@ -81,9 +81,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	var outputDir string
 
 	c := &cobra.Command{
-		Use:   "generate-certs <cluster-name-or-id>",
-		Short: "Download a YAML file with renewed certificates for StackRox Sensor, Collector, and Admission controller (if deployed)",
-		Args:  common.ExactArgsWithCustomErrMessage(1, "No cluster name or ID specified"),
+		Use:        "generate-certs <cluster-name-or-id>",
+		Short:      "Download a YAML file with renewed certificates for StackRox Sensor, Collector, and Admission controller (if deployed)",
+		Deprecated: common.DeprecatedInFavorOfOperator,
+		Args:       common.ExactArgsWithCustomErrMessage(1, "No cluster name or ID specified"),
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := downloadCerts(cliEnvironment, outputDir, args[0], flags.Timeout(c), flags.RetryTimeout(c)); err != nil {
 				return errors.Wrap(err, "error downloading regenerated certs")

@@ -86,7 +86,6 @@ const PodEventTimeline = ({
                     <div className="ml-3 mr-3">
                         <ExportMenu
                             fileName={`Event-Timeline-Report-${name}`}
-                            pdfId="capture-timeline"
                             csvEndpoint="/api/risk/timeline/export/csv"
                             csvQueryString={csvQueryString}
                         />

@@ -46,7 +46,7 @@ const TimelineGraph = ({
     return (
         <ClusteredEventsVisibilityContext.Provider value={showClusteredEvents}>
             <div className="flex flex-1 flex-col" data-testid="timeline-graph">
-                <div className="flex w-full" id="capture-timeline">
+                <div className="flex w-full">
                     <div className="w-1/4 min-w-55 border-r border-base-300">
                         <NameList names={names} onClick={goToNextView} />
                     </div>

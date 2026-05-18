@@ -88,7 +88,6 @@ function ScheduleFormSection<T extends DeliveryType = DeliveryType>({
             <FormLabelGroup
                 label="Frequency"
                 fieldId="schedule.intervalType"
-                isRequired
                 errors={formik.errors}
                 touched={formik.touched}
             >
@@ -134,7 +133,10 @@ function ScheduleFormSection<T extends DeliveryType = DeliveryType>({
                 label="Time"
                 fieldId="time"
                 errors={formik.errors}
-                isRequired
+                isRequired={
+                    formik.values.schedule?.intervalType != null &&
+                    formik.values.schedule.intervalType !== 'UNSET'
+                }
                 touched={formik.touched}
                 helperText="Select or enter time between 00:00 and 23:59 UTC"
             >

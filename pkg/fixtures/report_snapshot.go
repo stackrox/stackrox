@@ -16,6 +16,9 @@ func GetReportSnapshot() *storage.ReportSnapshot {
 			Id:   "collection-1",
 			Name: "collection-1",
 		},
+		ResourceScope: &storage.ResourceScope{
+			ScopeReference: &storage.ResourceScope_CollectionId{CollectionId: "collection-1"},
+		},
 		Schedule: &storage.Schedule{
 			IntervalType: storage.Schedule_WEEKLY,
 			Interval: &storage.Schedule_DaysOfWeek_{

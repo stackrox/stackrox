@@ -31,13 +31,7 @@ func migrate(database *types.Databases) error {
 		return errors.Wrap(err, "backfilling deployment_type")
 	}
 
-	// Step 3: Backfill deployment_type for orphaned alerts (deployment deleted)
-	// by reading the value from the serialized blob.
-	if err := backfillOrphanedDeploymentType(ctx, database.PostgresDB); err != nil {
-		return errors.Wrap(err, "backfilling orphaned deployment_type")
-	}
-
-	// Step 4: Backfill enforcement_count for all alerts with enforcement.
+	// Step 3: Backfill enforcement_count for all alerts with enforcement.
 	// This requires deserializing the blob to compute the count, then
 	// re-serializing to keep columns and blob consistent.
 	if err := backfillEnforcementCount(ctx, database.PostgresDB); err != nil {
@@ -66,116 +60,6 @@ func backfillDeploymentType(ctx context.Context, db postgres.DB) error {
 	}
 	log.WriteToStderrf("Backfilled deployment_type for %d alerts via JOIN", result.RowsAffected())
 	return nil
-}
-
-// backfillOrphanedDeploymentType handles alerts whose deployment has been deleted.
-// These must be read from the serialized blob since the deployments table no longer
-// has the record.
-func backfillOrphanedDeploymentType(ctx context.Context, db postgres.DB) error {
-	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
-	defer cancel()
-
-	totalBackfilled := 0
-	lastID := ""
-
-	for {
-		ids, deployTypes, newLastID, err := readOrphanedDeploymentTypes(db, ctx, lastID)
-		if err != nil {
-			return err
-		}
-		lastID = newLastID
-
-		if len(ids) == 0 {
-			break
-		}
-
-		if err := batchUpdateDeploymentType(db, ctx, ids, deployTypes); err != nil {
-			return err
-		}
-
-		totalBackfilled += len(ids)
-		log.WriteToStderrf("Backfilled deployment_type for %d orphaned alerts (total: %d)", len(ids), totalBackfilled)
-
-		if len(ids) < batchSize {
-			break
-		}
-	}
-
-	log.WriteToStderrf("Successfully backfilled deployment_type for %d total orphaned alerts", totalBackfilled)
-	return nil
-}
-
-func readOrphanedDeploymentTypes(db postgres.DB, ctx context.Context, lastID string) (ids []string, deployTypes []string, newLastID string, err error) {
-	var rows pgx.Rows
-
-	if lastID == "" {
-		rows, err = db.Query(ctx,
-			`SELECT a.id, a.serialized FROM alerts a
-			WHERE a.entitytype = $1
-			  AND (a.deployment_type IS NULL OR a.deployment_type = '')
-			ORDER BY a.id LIMIT $2`,
-			storage.Alert_DEPLOYMENT, batchSize)
-	} else {
-		rows, err = db.Query(ctx,
-			`SELECT a.id, a.serialized FROM alerts a
-			WHERE a.entitytype = $1
-			  AND (a.deployment_type IS NULL OR a.deployment_type = '')
-			  AND a.id > $2
-			ORDER BY a.id LIMIT $3`,
-			storage.Alert_DEPLOYMENT, lastID, batchSize)
-	}
-	if err != nil {
-		return nil, nil, "", errors.Wrap(err, "querying orphaned deployment alerts")
-	}
-	defer rows.Close()
-
-	ids = make([]string, 0, batchSize)
-	deployTypes = make([]string, 0, batchSize)
-
-	for rows.Next() {
-		var id string
-		var serialized []byte
-		if err := rows.Scan(&id, &serialized); err != nil {
-			return nil, nil, "", errors.Wrap(err, "scanning orphaned alert row")
-		}
-
-		alert := &storage.Alert{}
-		if err := alert.UnmarshalVT(serialized); err != nil {
-			return nil, nil, "", errors.Wrapf(err, "deserializing alert %s", id)
-		}
-
-		ids = append(ids, id)
-		deployTypes = append(deployTypes, alert.GetDeployment().GetType())
-		newLastID = id
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, nil, "", errors.Wrap(err, "iterating orphaned alert rows")
-	}
-
-	return ids, deployTypes, newLastID, nil
-}
-
-func batchUpdateDeploymentType(db postgres.DB, ctx context.Context, ids []string, deployTypes []string) error {
-	conn, err := db.Acquire(ctx)
-	if err != nil {
-		return errors.Wrap(err, "acquiring connection")
-	}
-	defer conn.Release()
-
-	batch := &pgx.Batch{}
-	for i := range ids {
-		batch.Queue("UPDATE alerts SET deployment_type = $1 WHERE id = $2", deployTypes[i], ids[i])
-	}
-
-	results := conn.SendBatch(ctx, batch)
-	for i := 0; i < len(ids); i++ {
-		if _, err := results.Exec(); err != nil {
-			_ = results.Close()
-			return errors.Wrapf(err, "updating deployment_type for alert at index %d", i)
-		}
-	}
-	return results.Close()
 }
 
 // backfillEnforcementCount computes and stores enforcement_count for all

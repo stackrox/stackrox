@@ -1,8 +1,128 @@
 import {
+    getAppliedSeverities,
+    getHiddenSeverities,
     getNodeEntityPagePath,
     getPlatformEntityPagePath,
     getWorkloadEntityPagePath,
+    normalizeSearchFilterKeys,
+    parseQuerySearchFilter,
 } from './searchUtils';
+
+describe('normalizeSearchFilterKeys', () => {
+    it('should rename SEVERITY to Severity', () => {
+        const filter = { SEVERITY: ['Critical'], Namespace: ['stackrox'] };
+        const result = normalizeSearchFilterKeys(filter);
+        expect(result).toEqual({ Severity: ['Critical'], Namespace: ['stackrox'] });
+    });
+
+    it('should not modify a filter that already uses canonical keys', () => {
+        const filter = { Severity: ['Critical'], Fixable: ['Fixable'] };
+        const result = normalizeSearchFilterKeys(filter);
+        expect(result).toBe(filter);
+    });
+
+    it('should prefer an existing canonical key', () => {
+        const filter = { SEVERITY: ['Low'], Severity: ['Critical'] };
+        const result = normalizeSearchFilterKeys(filter);
+        expect(result).toEqual({ Severity: ['Critical'] });
+    });
+
+    it('should handle an empty filter', () => {
+        const filter = {};
+        const result = normalizeSearchFilterKeys(filter);
+        expect(result).toBe(filter);
+    });
+
+    it('should leave unrelated keys untouched', () => {
+        const filter = { SEVERITY: ['Critical'], Namespace: ['stackrox'], CVE: ['CVE-2024-1234'] };
+        const result = normalizeSearchFilterKeys(filter);
+        expect(result).toEqual({
+            Severity: ['Critical'],
+            Namespace: ['stackrox'],
+            CVE: ['CVE-2024-1234'],
+        });
+    });
+});
+
+describe('parseQuerySearchFilter', () => {
+    it('should convert Severity labels to backend severity enums', () => {
+        const result = parseQuerySearchFilter({ Severity: ['Critical', 'Important'] });
+        expect(result.Severity).toEqual([
+            'CRITICAL_VULNERABILITY_SEVERITY',
+            'IMPORTANT_VULNERABILITY_SEVERITY',
+        ]);
+    });
+
+    it('should handle legacy SEVERITY key via case-insensitive lookup', () => {
+        const result = parseQuerySearchFilter({ SEVERITY: ['Critical', 'Low'] });
+        expect(result.Severity).toEqual([
+            'CRITICAL_VULNERABILITY_SEVERITY',
+            'LOW_VULNERABILITY_SEVERITY',
+        ]);
+    });
+
+    it('should filter out invalid severity labels', () => {
+        const result = parseQuerySearchFilter({ Severity: ['Critical', 'InvalidValue'] });
+        expect(result.Severity).toEqual(['CRITICAL_VULNERABILITY_SEVERITY']);
+    });
+
+    it('should pass through unrelated keys unchanged', () => {
+        const result = parseQuerySearchFilter({ Namespace: ['stackrox'] });
+        expect(result.Namespace).toEqual(['stackrox']);
+        expect(result.Severity).toBeUndefined();
+    });
+
+    it('should handle empty search filter', () => {
+        const result = parseQuerySearchFilter({});
+        expect(result.Severity).toBeUndefined();
+    });
+});
+
+describe('getAppliedSeverities', () => {
+    it('should return severity labels from Severity key', () => {
+        expect(getAppliedSeverities({ Severity: ['Critical', 'Moderate'] })).toEqual([
+            'Critical',
+            'Moderate',
+        ]);
+    });
+
+    it('should return severity labels from legacy SEVERITY key', () => {
+        expect(getAppliedSeverities({ SEVERITY: ['Critical', 'Low'] })).toEqual([
+            'Critical',
+            'Low',
+        ]);
+    });
+
+    it('should filter out non-severity values', () => {
+        expect(getAppliedSeverities({ Severity: ['Critical', 'NotASeverity'] })).toEqual([
+            'Critical',
+        ]);
+    });
+
+    it('should return empty array when no severity is present', () => {
+        expect(getAppliedSeverities({})).toEqual([]);
+    });
+});
+
+describe('getHiddenSeverities', () => {
+    it('should return empty set when no severity filter is applied', () => {
+        expect(getHiddenSeverities({})).toEqual(new Set([]));
+    });
+
+    it('should return hidden severities based on applied filter', () => {
+        const result = getHiddenSeverities({
+            Severity: ['CRITICAL_VULNERABILITY_SEVERITY'],
+        });
+        expect(result).toEqual(
+            new Set([
+                'IMPORTANT_VULNERABILITY_SEVERITY',
+                'MODERATE_VULNERABILITY_SEVERITY',
+                'LOW_VULNERABILITY_SEVERITY',
+                'UNKNOWN_VULNERABILITY_SEVERITY',
+            ])
+        );
+    });
+});
 
 describe('getWorkloadEntityPagePath', () => {
     it('should return the correct path for CVE entity', () => {
@@ -18,10 +138,10 @@ describe('getWorkloadEntityPagePath', () => {
 
         expect(
             getWorkloadEntityPagePath('CVE', 'CVE-123-456', 'OBSERVED', {
-                s: { SEVERITY: ['CRITICAL', 'IMPORTANT'], FIXABLE: [], NAMESPACE: ['stackrox'] },
+                s: { Severity: ['Critical', 'Important'], Fixable: [], Namespace: ['stackrox'] },
             })
         ).toEqual(
-            `cves/CVE-123-456?s[SEVERITY][0]=CRITICAL&s[SEVERITY][1]=IMPORTANT&s[NAMESPACE][0]=stackrox&vulnerabilityState=OBSERVED`
+            `cves/CVE-123-456?s[Severity][0]=Critical&s[Severity][1]=Important&s[Namespace][0]=stackrox&vulnerabilityState=OBSERVED`
         );
     });
 
@@ -38,10 +158,10 @@ describe('getWorkloadEntityPagePath', () => {
 
         expect(
             getWorkloadEntityPagePath('Image', 'sha256:123-456', 'OBSERVED', {
-                s: { SEVERITY: ['CRITICAL', 'IMPORTANT'], FIXABLE: [], NAMESPACE: ['stackrox'] },
+                s: { Severity: ['Critical', 'Important'], Fixable: [], Namespace: ['stackrox'] },
             })
         ).toEqual(
-            `images/sha256:123-456?s[SEVERITY][0]=CRITICAL&s[SEVERITY][1]=IMPORTANT&s[NAMESPACE][0]=stackrox&vulnerabilityState=OBSERVED`
+            `images/sha256:123-456?s[Severity][0]=Critical&s[Severity][1]=Important&s[Namespace][0]=stackrox&vulnerabilityState=OBSERVED`
         );
     });
 
@@ -58,10 +178,10 @@ describe('getWorkloadEntityPagePath', () => {
 
         expect(
             getWorkloadEntityPagePath('Deployment', 'deployment-123-456', 'OBSERVED', {
-                s: { SEVERITY: ['CRITICAL', 'IMPORTANT'], FIXABLE: [], NAMESPACE: ['stackrox'] },
+                s: { Severity: ['Critical', 'Important'], Fixable: [], Namespace: ['stackrox'] },
             })
         ).toEqual(
-            `deployments/deployment-123-456?s[SEVERITY][0]=CRITICAL&s[SEVERITY][1]=IMPORTANT&s[NAMESPACE][0]=stackrox&vulnerabilityState=OBSERVED`
+            `deployments/deployment-123-456?s[Severity][0]=Critical&s[Severity][1]=Important&s[Namespace][0]=stackrox&vulnerabilityState=OBSERVED`
         );
     });
 });
@@ -75,8 +195,8 @@ describe('getPlatformEntityPagePath', () => {
         );
 
         expect(
-            getPlatformEntityPagePath('CVE', 'CVE-123-456', { s: { SEVERITY: ['CRITICAL'] } })
-        ).toEqual(`${platformUrlBase}/cves/CVE-123-456?s[SEVERITY][0]=CRITICAL`);
+            getPlatformEntityPagePath('CVE', 'CVE-123-456', { s: { Severity: ['Critical'] } })
+        ).toEqual(`${platformUrlBase}/cves/CVE-123-456?s[Severity][0]=Critical`);
     });
 
     it('should return the correct path for Cluster entity', () => {
@@ -86,10 +206,10 @@ describe('getPlatformEntityPagePath', () => {
 
         expect(
             getPlatformEntityPagePath('Cluster', 'cluster-123-456', {
-                s: { SEVERITY: ['CRITICAL'], NAMESPACE: ['stackrox'] },
+                s: { Severity: ['Critical'], Namespace: ['stackrox'] },
             })
         ).toEqual(
-            `${platformUrlBase}/clusters/cluster-123-456?s[SEVERITY][0]=CRITICAL&s[NAMESPACE][0]=stackrox`
+            `${platformUrlBase}/clusters/cluster-123-456?s[Severity][0]=Critical&s[Namespace][0]=stackrox`
         );
     });
 });
@@ -103,8 +223,8 @@ describe('getNodeEntityPagePath', () => {
         );
 
         expect(
-            getNodeEntityPagePath('CVE', 'CVE-123-456', { s: { SEVERITY: ['CRITICAL'] } })
-        ).toEqual(`${nodeUrlBase}/cves/CVE-123-456?s[SEVERITY][0]=CRITICAL`);
+            getNodeEntityPagePath('CVE', 'CVE-123-456', { s: { Severity: ['Critical'] } })
+        ).toEqual(`${nodeUrlBase}/cves/CVE-123-456?s[Severity][0]=Critical`);
     });
 
     it('should return the correct path for Node entity', () => {
@@ -114,10 +234,10 @@ describe('getNodeEntityPagePath', () => {
 
         expect(
             getNodeEntityPagePath('Node', 'node-123-456', {
-                s: { SEVERITY: ['CRITICAL'], NAMESPACE: ['stackrox'] },
+                s: { Severity: ['Critical'], Namespace: ['stackrox'] },
             })
         ).toEqual(
-            `${nodeUrlBase}/nodes/node-123-456?s[SEVERITY][0]=CRITICAL&s[NAMESPACE][0]=stackrox`
+            `${nodeUrlBase}/nodes/node-123-456?s[Severity][0]=Critical&s[Namespace][0]=stackrox`
         );
     });
 });
