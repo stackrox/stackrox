@@ -444,7 +444,8 @@ func (m *managerImpl) HandleScanRequestResponse(ctx context.Context, requestID s
 }
 
 // checkForExternalSSBConflicts checks if any non-ACS-managed ScanSettingBindings in the target
-// clusters already reference any of the requested profiles.
+// clusters already reference any of the requested profiles. ACS-managed SSBs are skipped because
+// conflicts with those are already enforced by ScanConfigurationProfileExists.
 func (m *managerImpl) checkForExternalSSBConflicts(ctx context.Context, profiles []string, clusters []string) error {
 	requestedProfiles := set.NewStringSet(profiles...)
 	if requestedProfiles.Cardinality() == 0 {
@@ -458,6 +459,7 @@ func (m *managerImpl) checkForExternalSSBConflicts(ctx context.Context, profiles
 			return errors.Wrapf(err, "getting scan setting bindings for cluster %q", clusterID)
 		}
 
+		clusterRef := ""
 		for _, ssb := range ssbs {
 			if ssb.GetLabels()["app.kubernetes.io/name"] == "stackrox" {
 				continue
@@ -470,17 +472,27 @@ func (m *managerImpl) checkForExternalSSBConflicts(ctx context.Context, profiles
 				}
 			}
 			if len(conflicting) > 0 {
+				if clusterRef == "" {
+					clusterRef = clusterID
+					if name, exists, err := m.clusterDS.GetClusterName(ctx, clusterID); err == nil && exists {
+						clusterRef = name
+					}
+				}
+				quoted := make([]string, 0, len(conflicting))
+				for _, p := range conflicting {
+					quoted = append(quoted, fmt.Sprintf("%q", p))
+				}
 				errList.AddStringf(
-					"profiles %v conflict with external ScanSettingBinding %q in cluster %q",
-					conflicting, ssb.GetName(), clusterID)
+					"profiles [%s] conflict with external ScanSettingBinding %q in cluster %q",
+					strings.Join(quoted, ", "), ssb.GetName(), clusterRef)
 			}
 		}
 	}
 
-	if !errList.Empty() {
-		errList.AddStrings("remove the external ScanSettingBindings or choose different profiles")
+	if err := errList.ToError(); err != nil {
+		return fmt.Errorf("%w, remove the external ScanSettingBindings or choose different profiles", err)
 	}
-	return errList.ToError()
+	return nil
 }
 
 func (m *managerImpl) ProcessRescanRequest(ctx context.Context, scanID string) error {

@@ -30,12 +30,14 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequestSSBConflicts() {
 
 	suite.Run("Profile conflict with external ScanSettingBinding", func() {
 		suite.expectPassesPreSSBChecks()
+		suite.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), testconsts.Cluster1).Return("test_cluster", true, nil).Times(1)
 		suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return([]*storage.ComplianceOperatorScanSettingBindingV2{
 			{Name: "external-argocd-ssb", ClusterId: testconsts.Cluster1, ProfileNames: []string{"ocp4-cis"}, Labels: map[string]string{"managed-by": "argocd"}},
 		}, nil).Times(1)
 
 		config, err := suite.manager.ProcessScanRequest(ctx, getTestRecNoID(), []string{testconsts.Cluster1})
 		suite.Require().ErrorContains(err, "conflict with external ScanSettingBinding")
+		suite.Require().ErrorContains(err, "test_cluster")
 		suite.Require().Nil(config)
 	})
 
@@ -75,6 +77,8 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequestSSBConflicts() {
 	suite.Run("Conflicts across multiple clusters reported together", func() {
 		suite.expectPassesPreSSBChecks()
 		clusters := []string{testconsts.Cluster1, testconsts.Cluster2}
+		suite.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), testconsts.Cluster1).Return("cluster_one", true, nil).Times(1)
+		suite.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), testconsts.Cluster2).Return("cluster_two", true, nil).Times(1)
 		suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return([]*storage.ComplianceOperatorScanSettingBindingV2{
 			{Name: "external-ssb-cluster1", ClusterId: testconsts.Cluster1, ProfileNames: []string{"ocp4-cis"}, Labels: map[string]string{"managed-by": "argocd"}},
 		}, nil).Times(1)
@@ -85,12 +89,15 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequestSSBConflicts() {
 		config, err := suite.manager.ProcessScanRequest(ctx, getTestRecNoID(), clusters)
 		suite.Require().ErrorContains(err, "external-ssb-cluster1")
 		suite.Require().ErrorContains(err, "external-ssb-cluster2")
+		suite.Require().ErrorContains(err, "cluster_one")
+		suite.Require().ErrorContains(err, "cluster_two")
 		suite.Require().ErrorContains(err, "remove the external ScanSettingBindings")
 		suite.Require().Nil(config)
 	})
 
 	suite.Run("SSB with nil labels is treated as external", func() {
 		suite.expectPassesPreSSBChecks()
+		suite.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), testconsts.Cluster1).Return("test_cluster", true, nil).Times(1)
 		suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return([]*storage.ComplianceOperatorScanSettingBindingV2{
 			{Name: "unlabeled-ssb", ClusterId: testconsts.Cluster1, ProfileNames: []string{"ocp4-cis"}},
 		}, nil).Times(1)
