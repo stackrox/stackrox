@@ -57,8 +57,12 @@ func TestParseKeyBundle(t *testing.T) {
 			input:   `{"keys": [{"name": "  \t ", "pem": "` + testKeyPEMJSON + `"}]}`,
 			wantErr: errKeyNameEmpty,
 		},
-		"name with path separator": {
+		"name with forward slash": {
 			input:   `{"keys": [{"name": "foo/bar", "pem": "` + testKeyPEMJSON + `"}]}`,
+			wantErr: errKeyNamePathSeparator,
+		},
+		"name with backslash": {
+			input:   `{"keys": [{"name": "foo\\bar", "pem": "` + testKeyPEMJSON + `"}]}`,
 			wantErr: errKeyNamePathSeparator,
 		},
 		"invalid PEM": {
