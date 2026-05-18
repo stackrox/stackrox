@@ -455,7 +455,7 @@ func (m *managerImpl) checkForExternalSSBConflicts(ctx context.Context, profiles
 	for _, clusterID := range clusters {
 		ssbs, err := m.ssbDS.GetScanSettingBindingsByCluster(ctx, clusterID)
 		if err != nil {
-			return errors.Wrapf(err, "checking for external SSB conflicts in cluster %q", clusterID)
+			return errors.Wrapf(err, "getting scan setting bindings for cluster %q", clusterID)
 		}
 
 		for _, ssb := range ssbs {
