@@ -278,10 +278,13 @@ jobs:
             || contains(github.event.pull_request.labels.*.name, 'ci-build-cli')
         run: make cli
 
+      - name: Bundle build to preserve permissions
+        run: tar -cvf cli-build.tar bin
+
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
           name: cli-build
-          path: bin
+          path: cli-build.tar
           compression-level: 1
 
   pre-build-go-binaries:
@@ -358,8 +361,8 @@ jobs:
             GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
           fi
 
-      - name: Bundle build with tar (single file for reliable download)
-        run: tar -cf go-binaries-build.tar bin/linux_${{ matrix.arch }}
+      - name: Bundle the build to preserve permissions
+        run: tar -cvf go-binaries-build.tar bin/linux_${{ matrix.arch }}
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
@@ -568,14 +571,18 @@ jobs:
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: cli-build
-          path: .
+
+      - name: Unpack cli build
+        run: |
+          tar xvf cli-build.tar
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: ${{ env.GO_BINARIES_BUILD_ARTIFACT }}
 
-      - name: Extract Go binaries
-        run: tar -xf go-binaries-build.tar
+      - name: Unpack Go binaries build
+        run: |
+          tar xvf go-binaries-build.tar
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -827,7 +834,7 @@ jobs:
           name: go-binaries-build-${{ matrix.arch }}-default
 
       - name: Extract prebuilt binaries
-        run: tar -xf go-binaries-build.tar
+        run: tar xf go-binaries-build.tar
 
       - name: PR labels
         uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
@@ -945,8 +952,8 @@ jobs:
         with:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
 
-      - name: Extract Go binaries
-        run: tar -xf go-binaries-build.tar
+      - name: Unpack Go binaries
+        run: tar xvf go-binaries-build.tar
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -1117,14 +1124,18 @@ jobs:
     - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: cli-build
-        path: .
+
+    - name: Unpack cli build
+      run: |
+        tar xvf cli-build.tar
 
     - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: go-binaries-build-amd64-default
 
-    - name: Extract Go binaries
-      run: tar -xf go-binaries-build.tar
+    - name: Unpack Go binaries build
+      run: |
+        tar xvf go-binaries-build.tar
 
     - name: Scan
       run: |
