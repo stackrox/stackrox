@@ -76,7 +76,7 @@ INSTALL_CHANNEL ?= latest
 # INDEX_IMG_BASE and INDEX_IMG_TAG define the image:tag used for the index (a.k.a. catalog) image.
 # These variables can be overridden when calling deploy*-via-olm targets,
 # e.g. to deploy catalogs from IIB or other externally-built indexes.
-INDEX_IMG_BASE = $(IMAGE_TAG_BASE)-index
+INDEX_IMG_BASE ?= $(IMAGE_TAG_BASE)-index
 INDEX_IMG_TAG ?= $(CSV_VERSION)
 INDEX_IMG ?= $(INDEX_IMG_BASE):$(INDEX_IMG_TAG)
 
