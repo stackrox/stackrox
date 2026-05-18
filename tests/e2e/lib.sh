@@ -10,6 +10,8 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$TEST_ROOT/scripts/lib.sh"
 # shellcheck source=../../scripts/ci/lib.sh
 source "$TEST_ROOT/scripts/ci/lib.sh"
+# shellcheck source=../../scripts/ci/sensor-wait.sh
+source "$TEST_ROOT/scripts/ci/sensor-wait.sh"
 # shellcheck source=../../scripts/ci/test_state.sh
 source "$TEST_ROOT/scripts/ci/test_state.sh"
 # shellcheck source=lib-yaml.sh
