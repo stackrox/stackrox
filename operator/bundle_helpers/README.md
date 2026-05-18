@@ -13,13 +13,6 @@ and related images configuration.
 
 ## Usage
 
-### Via dispatch wrapper:
-```bash
-./dispatch.sh patch-csv [flags] < input.yaml > output.yaml
-./dispatch.sh fix-spec-descriptor-order < input.yaml > output.yaml
-```
-
-### Direct Go execution:
 ```bash
 go run ./main.go patch-csv [flags] < input.yaml > output.yaml
 go run ./main.go fix-spec-descriptor-order < input.yaml > output.yaml
@@ -41,9 +34,3 @@ go test ./...
 - `pkg/rewrite/` - String replacement utilities
 - `pkg/values/` - Values handling
 
-## Testing
-
-The Go implementation supports all three related-images modes:
-- `omit` - No related images in CSV
-- `downstream` - Related images populated from environment variables
-- `konflux` - Related images with explicit relatedImages section

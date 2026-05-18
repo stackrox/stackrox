@@ -11,7 +11,7 @@ import (
 )
 
 // FixSpecDescriptorOrder fixes the ordering of specDescriptors in a CSV file.
-// It reads from stdin and writes to stdout, matching the Python script behavior.
+// It reads from stdin and writes to stdout.
 func FixSpecDescriptorOrder(args []string) error {
 	if len(args) > 0 && (args[0] == "-h" || args[0] == "--help") {
 		fmt.Println("Usage: bundle-helper fix-spec-descriptor-order < input.yaml > output.yaml")

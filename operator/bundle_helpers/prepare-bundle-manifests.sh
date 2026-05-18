@@ -9,6 +9,7 @@ mkdir -p build/
 rm -rf build/bundle
 cp -a bundle build/
 
-"$(dirname "$0")/dispatch.sh" patch-csv "$@" \
+cd "$(dirname "$0")"
+go run ./main.go patch-csv "$@" \
     < bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
     > build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml

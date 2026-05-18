@@ -292,10 +292,6 @@ test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 	NEW_PRODUCT_VERSION=$$(make --quiet --no-print-directory -C .. tag) \
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(KUTTL) test --config kuttl-test.yaml --artifacts-dir build/kuttl-test-artifacts-upgrade $(KUTTL_TEST_RUN_ARGS) tests/upgrade
 
-.PHONY: test-bundle-helpers
-test-bundle-helpers: ## Run Go unit tests for bundle helper scripts.
-	cd bundle_helpers && go test ./...
-
 .PHONY: stackrox-image-pull-secret
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on Quay.io. Used by Helm chart.
 # Create stackrox namespace if not exists.
@@ -502,7 +498,7 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 	cat bundle.Dockerfile.extra >> bundle.Dockerfile
 # Fix the orders in the specDescriptors (children must not appear before their parents).
 	set -euo pipefail ;\
-	./bundle_helpers/dispatch.sh fix-spec-descriptor-order \
+	go run ./bundle_helpers/main.go fix-spec-descriptor-order \
 	  <bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
 	  >bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed
 	mv bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed \
@@ -510,10 +506,10 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 	$(OPERATOR_SDK) bundle validate ./bundle --select-optional suite=operatorframework
 
 .PHONY: bundle-post-process
-bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
+bundle-post-process: operator-sdk ## Post-process CSV file to include correct operator versions, etc.
 	set -euo pipefail ;\
 	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
-	candidate_version=$$(./bundle_helpers/dispatch.sh patch-csv \
+	candidate_version=$$(go run ./bundle_helpers/main.go patch-csv \
 		--use-version $(VERSION) \
 		--first-version $${first_version} \
 		--operator-image $(IMG) \
