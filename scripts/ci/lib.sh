@@ -223,7 +223,7 @@ get_central_diagnostics() {
 }
 
 push_image_manifest_lists() {
-    info "Pushing main, roxctl and central-db images as manifest lists"
+    info "Pushing main and central-db images as manifest lists"
 
     if [[ "$#" -ne 3 ]]; then
         die "missing arg. usage: push_image_manifest_lists <push_context> <brand> <architectures (CSV)>"
@@ -233,7 +233,7 @@ push_image_manifest_lists() {
     local brand="$2"
     local architectures="$3"
 
-    local main_image_set=("main" "roxctl" "central-db")
+    local main_image_set=("main" "central-db")
 
     local registry
     registry="$(registry_from_branding "$brand")"
@@ -265,7 +265,7 @@ registry_from_branding() {
 }
 
 push_main_image_set() {
-    info "Pushing main, roxctl and central-db images"
+    info "Pushing main and central-db images"
 
     if [[ "$#" -ne 3 ]]; then
         die "missing arg. usage: push_main_image_set <push_context> <brand> <arch>"
@@ -275,7 +275,7 @@ push_main_image_set() {
     local brand="$2"
     local arch="$3"
 
-    local main_image_set=("main" "roxctl" "central-db")
+    local main_image_set=("main" "central-db")
 
     _push_main_image_set() {
         local registry="$1"

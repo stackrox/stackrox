@@ -18,7 +18,8 @@ RUN dnf install -y \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
-COPY ./roxctl-linux /out/usr/bin/roxctl
+ARG TARGETARCH
+COPY bin/linux_${TARGETARCH}/roxctl /out/usr/bin/roxctl
 
 FROM ubi-micro-base
 COPY --from=package_installer /out/ /
