@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Add user to organization team
+        id: add_step
         env:
           GH_TOKEN: ${{ secrets.STACKROX_TEAM_MGMT_TOKEN }}
           ORG_NAME: ${{ github.repository_owner }}
@@ -27,12 +28,12 @@ jobs:
           TEAM_SLUG: ${{ inputs.team_slug }}
         run: |
           echo "Adding $USER_TO_ADD to team $TEAM_SLUG in organization $ORG_NAME..."
-          
+
           # Using the GitHub CLI to add the user
           # This command adds the user as a 'member'. Use --role maintainer if needed.
 
           echo "Processing $USER_TO_ADD for team $TEAM_SLUG..."
-          
+
           # We capture the HTTP status code and the response body
           RESPONSE=$(gh api \
             --method PUT \
@@ -44,11 +45,30 @@ jobs:
 
           # Check the status code in the headers
           if echo "$RESPONSE" | grep -q "HTTP/.* 200"; then
-            echo "✅ $USER_TO_ADD was already a member. No changes needed."
+            MSG="✅ $USER_TO_ADD was already a member of $TEAM_SLUG. No changes needed."
           elif echo "$RESPONSE" | grep -q "HTTP/.* 201"; then
-            echo "🎉 $USER_TO_ADD has been successfully added/invited to the team."
+            MSG="🎉 $USER_TO_ADD has been successfully added/invited to the team, $TEAM_SLUG."
           else
-            echo "❌ Failed to add user. Full response below:"
-            echo "$RESPONSE"
+            MSG="❌ Failed to add user $USER_TO_ADD to team, $TEAM_SLUG.. Full response below:"
+            
             exit 1
           fi
+
+          if ERR=true
+
+          # Write it to the special GitHub output file
+          echo "message=$MSG" >> $GITHUB_OUTPUT
+          
+      - name: Slack notification
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # ratchet:slackapi/slack-github-action@v3.0.1
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: "CMH5M8MHN" #forum-acs-eng-release
+            text: "Add user to release team in GitHub"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "${{ steps.add_step.outputs.message }}"
