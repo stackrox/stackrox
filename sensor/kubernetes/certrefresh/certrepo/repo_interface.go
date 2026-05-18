@@ -1,8 +1,9 @@
 package certrepo
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
-	"golang.org/x/net/context"
 )
 
 // ServiceCertificatesRepo is in charge of persisting and retrieving a set of service certificates, thus implementing

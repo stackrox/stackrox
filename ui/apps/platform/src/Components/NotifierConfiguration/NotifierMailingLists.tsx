@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { Button, Flex, FlexItem, SelectOption, TextInput } from '@patternfly/react-core';
-import type { FormikErrors } from 'formik';
+import type { FormikErrors, FormikTouched } from 'formik';
 
 import EmailNotifierModal from 'Components/EmailNotifier/EmailNotifierModal';
 import SelectSingle from 'Components/SelectSingle';
@@ -29,6 +29,7 @@ type NotifierMailingListsProps = {
     setMailingLists: (mailingListsString: string) => void;
     setNotifier: (notifier: NotifierIntegrationBase) => void;
     setNotifiers: (notifiers: NotifierIntegrationBase[]) => void;
+    touched?: FormikTouched<unknown>;
 };
 
 function NotifierMailingLists({
@@ -43,6 +44,7 @@ function NotifierMailingLists({
     setMailingLists,
     setNotifier,
     setNotifiers,
+    touched,
 }: NotifierMailingListsProps): ReactElement {
     const [isEmailNotifierModalOpen, setIsEmailNotifierModalOpen] = useState(false);
 
@@ -109,13 +111,14 @@ function NotifierMailingLists({
             <FormLabelGroup
                 isRequired
                 label="Email notifier"
-                fieldId={`${fieldIdPrefixForFormikAndPatternFly}.notifier`}
+                fieldId={`${fieldIdPrefixForFormikAndPatternFly}.emailConfig.notifierId`}
                 errors={errors}
+                touched={touched}
             >
                 <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsFlexEnd' }}>
                     <FlexItem>
                         <SelectSingle
-                            id={`${fieldIdPrefixForFormikAndPatternFly}.notifier`}
+                            id={`${fieldIdPrefixForFormikAndPatternFly}.emailConfig.notifierId`}
                             isDisabled={isLoadingNotifiers}
                             toggleAriaLabel="Select a notifier"
                             value={notifierId}
@@ -143,29 +146,36 @@ function NotifierMailingLists({
                 isRequired
                 label="Distribution list"
                 fieldId={`${fieldIdPrefixForFormikAndPatternFly}.emailConfig.mailingLists`}
-                helperText="Enter an audience, who will receive the scheduled report. Multiple email addresses can be entered with comma separators."
+                helperText="Multiple email addresses can be entered with comma separators."
                 errors={errors}
+                touched={touched}
             >
-                <TextInput
-                    isRequired
-                    type="text"
-                    id={`${fieldIdPrefixForFormikAndPatternFly}.emailConfig.mailingLists`}
-                    value={mailingListsString}
-                    onChange={(_event, value) => setMailingLists(value)}
-                    placeholder="annie@example.com,jack@example.com"
-                />
+                <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsFlexEnd' }}>
+                    <FlexItem>
+                        <TextInput
+                            isRequired
+                            type="text"
+                            id={`${fieldIdPrefixForFormikAndPatternFly}.emailConfig.mailingLists`}
+                            value={mailingListsString}
+                            onChange={(_event, value) => setMailingLists(value)}
+                            placeholder="annie@example.com,jack@example.com"
+                        />
+                    </FlexItem>
+                    {!!notifierId && (
+                        <FlexItem>
+                            <Button
+                                variant="link"
+                                onClick={onSetToDefaultNotifierMailingLists}
+                                isDisabled={
+                                    mailingListsString === getMailingListsStringFromNotifier()
+                                }
+                            >
+                                Reset to default
+                            </Button>
+                        </FlexItem>
+                    )}
+                </Flex>
             </FormLabelGroup>
-            {!!notifierId && (
-                <div>
-                    <Button
-                        variant="link"
-                        onClick={onSetToDefaultNotifierMailingLists}
-                        isDisabled={mailingListsString === getMailingListsStringFromNotifier()}
-                    >
-                        Reset to default
-                    </Button>
-                </div>
-            )}
             <EmailNotifierModal
                 isOpen={isEmailNotifierModalOpen}
                 updateNotifierList={updateNotifierList}

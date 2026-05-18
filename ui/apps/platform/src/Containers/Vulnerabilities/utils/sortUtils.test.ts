@@ -166,7 +166,7 @@ describe('syncSeveritySortOption', () => {
     });
 
     it('should update the sort option if the current sort option is sorting by severity and a new severity filter is applied', () => {
-        const searchFilter = { SEVERITY: ['Critical', 'Important'] };
+        const searchFilter = { Severity: ['Critical', 'Important'] };
         const currentSortOption = [{ field: 'Critical Severity Count', reversed: false }];
         const applySort = vi.fn();
 

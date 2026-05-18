@@ -184,5 +184,75 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 					</div>`,
 		},
 	}
+	cases = append(cases, s.entityScopeTestCases()...)
 	return cases
+}
+
+func (s *EmailFormatterTestSuite) entityScopeTestCases() []configDetailsTestCase {
+	return []configDetailsTestCase{
+		{
+			desc: "Entity scope with filter query cvss > 7",
+			snapshot: func() *storage.ReportSnapshot {
+				snap := fixtures.GetReportSnapshot()
+				snap.Collection = nil
+				snap.ResourceScope = &storage.ResourceScope{
+					ScopeReference: &storage.ResourceScope_EntityScope{
+						EntityScope: &storage.EntityScope{
+							Rules: []*storage.EntityScopeRule{
+								{
+									Entity: storage.EntityType_ENTITY_TYPE_NAMESPACE,
+									Field:  storage.EntityField_FIELD_NAME,
+									Values: []*storage.RuleValue{
+										{Value: "production"},
+										{Value: "staging"},
+									},
+								},
+								{
+									Entity: storage.EntityType_ENTITY_TYPE_CLUSTER,
+									Field:  storage.EntityField_FIELD_NAME,
+									Values: []*storage.RuleValue{
+										{Value: "main-cluster"},
+									},
+								},
+							},
+						},
+					},
+				}
+				snap.GetVulnReportFilters().Query = "CVSS > 7"
+				return snap
+			}(),
+			expectedHTML: `<div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Config name: </span>
+							<span>App Team 1 Report</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Number of CVEs found: </span>
+							<span>50 in Deployed images, 30 in Watched images</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Filter: </span>
+							<span>CVSS > 7</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Report scope: </span>
+							<span>Namespace Name: production, staging, Cluster Name: main-cluster</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Image type: </span>
+							<span>Deployed images, Watched images</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								CVEs discovered since: </span>
+							<span>All time</span>
+						</div>
+					</div>`,
+		},
+	}
 }

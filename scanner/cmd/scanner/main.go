@@ -235,7 +235,7 @@ func createBackends(ctx context.Context, cfg *config.Config) (*Backends, error) 
 				return nil, fmt.Errorf("matcher: remote indexer: %w", err)
 			}
 		}
-		b.Matcher, err = matcher.NewMatcher(ctx, cfg.Matcher)
+		b.Matcher, err = matcher.NewMatcher(ctx, cfg.Matcher, b.RemoteIndexer)
 		if err != nil {
 			return nil, fmt.Errorf("matcher: %w", err)
 		}
@@ -254,7 +254,7 @@ func (b *Backends) APIServices() []grpc.APIService {
 	if b.Matcher != nil {
 		// Set the index report getter to the remote indexer if available, otherwise the
 		// local indexer. A nil getter is ok, see implementation.
-		var getter indexer.ReportGetter
+		var getter indexer.ReportProvider
 		getter = b.RemoteIndexer
 		if getter == nil {
 			getter = b.Indexer

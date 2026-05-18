@@ -945,24 +945,6 @@ func (s *storeImpl) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*view
 	return results, err
 }
 
-// GetImagesIdAndDigestView retrieves an image id and digest for pruning purposes
-func (s *storeImpl) GetImagesIdAndDigestView(ctx context.Context, q *v1.Query) ([]*views.ImageIDAndDigestView, error) {
-	selects := []*v1.QuerySelect{
-		search.NewQuerySelect(search.ImageID).Proto(),
-		search.NewQuerySelect(search.ImageSHA).Proto(),
-	}
-	q.Selects = selects
-	var results []*views.ImageIDAndDigestView
-	err := pgSearch.RunSelectRequestForSchemaFn[views.ImageIDAndDigestView](ctx, s.db, pkgSchema.ImagesV2Schema, q, func(row *views.ImageIDAndDigestView) error {
-		results = append(results, row)
-		return nil
-	})
-	if err != nil {
-		log.Errorf("unable to retrieve image id and digests: %v", err)
-	}
-	return results, err
-}
-
 // GetListImagesView retrieves the fields needed for ListImage responses.
 func (s *storeImpl) GetListImagesView(ctx context.Context, q *v1.Query) ([]*views.ListImageV2View, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "ListImagesView")

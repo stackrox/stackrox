@@ -83,6 +83,77 @@ func (s *PodDatastoreSuite) getProcessIndicatorsFromDB() []*storage.ProcessIndic
 	return indicatorsFromDB
 }
 
+func (s *PodDatastoreSuite) TestGetDeploymentIDsByDigest() {
+	deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.postgres.DB)
+	s.Require().NoError(err)
+
+	dep1 := fixtureconsts.Deployment1
+	dep2 := fixtureconsts.Deployment2
+
+	s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{
+		Id: dep1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1,
+	}))
+	s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{
+		Id: dep2, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1,
+	}))
+
+	digest1 := "sha256:aaaa"
+	digest2 := "sha256:bbbb"
+
+	s.NoError(s.datastore.UpsertPod(s.ctx, &storage.Pod{
+		Id:           fixtureconsts.PodUID1,
+		Name:         "pod1",
+		DeploymentId: dep1,
+		ClusterId:    fixtureconsts.Cluster1,
+		Namespace:    fixtureconsts.Namespace1,
+		LiveInstances: []*storage.ContainerInstance{{
+			InstanceId:    &storage.ContainerInstanceID{Id: "c1"},
+			ContainerName: "container1",
+			ImageDigest:   digest1,
+		}},
+	}))
+	s.NoError(s.datastore.UpsertPod(s.ctx, &storage.Pod{
+		Id:           fixtureconsts.PodUID2,
+		Name:         "pod2",
+		DeploymentId: dep2,
+		ClusterId:    fixtureconsts.Cluster1,
+		Namespace:    fixtureconsts.Namespace1,
+		LiveInstances: []*storage.ContainerInstance{{
+			InstanceId:    &storage.ContainerInstanceID{Id: "c2"},
+			ContainerName: "container2",
+			ImageDigest:   digest1,
+		}},
+	}))
+	s.NoError(s.datastore.UpsertPod(s.ctx, &storage.Pod{
+		Id:           fixtureconsts.PodUID3,
+		Name:         "pod3",
+		DeploymentId: dep2,
+		ClusterId:    fixtureconsts.Cluster1,
+		Namespace:    fixtureconsts.Namespace1,
+		LiveInstances: []*storage.ContainerInstance{{
+			InstanceId:    &storage.ContainerInstanceID{Id: "c3"},
+			ContainerName: "container3",
+			ImageDigest:   digest2,
+		}},
+	}))
+
+	ids, err := s.datastore.GetDeploymentIDsByDigest(s.ctx, digest1)
+	s.NoError(err)
+	s.ElementsMatch([]string{dep1, dep2}, ids)
+
+	ids, err = s.datastore.GetDeploymentIDsByDigest(s.ctx, digest2)
+	s.NoError(err)
+	s.ElementsMatch([]string{dep2}, ids)
+
+	ids, err = s.datastore.GetDeploymentIDsByDigest(s.ctx, "sha256:nonexistent")
+	s.NoError(err)
+	s.Empty(ids)
+
+	ids, err = s.datastore.GetDeploymentIDsByDigest(s.ctx, "")
+	s.NoError(err)
+	s.Nil(ids)
+}
+
 // Add plops, process indicators, pods. Delete one of the pods.
 // Check that the correct pod, process indicators, and plops are deleted.
 func (s *PodDatastoreSuite) TestRemovePod() {

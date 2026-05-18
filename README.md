@@ -58,6 +58,13 @@ To [report a vulnerability or bug](https://github.com/stackrox/stackrox/security
 
 ## Deploying StackRox
 
+### Installation using the Operator
+
+As of release 4.10 it's possible to [install StackRox using the operator](operator/install).
+
+> [!WARNING]
+> The following installation methods are deprecated.
+
 ### Quick Installation using Helm
 
 StackRox offers quick installation via Helm Charts. Follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) to get `helm` CLI on your system.
@@ -214,11 +221,6 @@ To further customize your Helm installation consult these documents:
 
 </details>
 
-### Installation using the Operator
-
-As of release 4.10 it's possible to [install StackRox using the operator](operator/install).
-We encourage you to try this out and give us your feedback.
-
 ### Installation via Scripts
 
 The `deploy` script will:
@@ -300,11 +302,11 @@ After a few minutes, all resources should be deployed.
 
 </details>
 
-### Accessing the StackRox User Interface (UI)
+## Accessing the StackRox User Interface (UI)
 
 <details><summary>Click to expand</summary>
 
-After the deployment has completed (Helm or script install) a port-forward should exist, so you can connect to https://localhost:8000/. Run the following
+After the deployment has completed (operator, Helm or script install) a port-forward should exist, so you can connect to https://localhost:8000/. Run the following
 
 ```sh
 kubectl port-forward -n 'stackrox' svc/central "8000:443"

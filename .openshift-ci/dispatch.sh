@@ -31,7 +31,8 @@ ci_export CI_JOB_NAME "$ci_job"
 
 case "$ci_job" in
     gke*qa-e2e-tests|gke*nongroovy-e2e-tests|gke*upgrade-tests|gke-ui-e2e-tests|\
-    eks-qa-e2e-tests|osd*qa-e2e-tests|gke*sensor-integration-tests)
+    eks-qa-e2e-tests|osd*qa-e2e-tests|gke*sensor-integration-tests|\
+    *vm-scanning-e2e-tests)
         openshift_ci_e2e_mods
         ;;
     *-operator-e2e-tests)
@@ -40,7 +41,8 @@ case "$ci_job" in
 esac
 
 case "$ci_job" in
-    eks-qa-e2e-tests|osd*qa-e2e-tests|ocp*ui-e2e-tests)
+    eks-qa-e2e-tests|osd*qa-e2e-tests|ocp*ui-e2e-tests|\
+    *vm-scanning-e2e-tests)
         setup_automation_flavor_e2e_cluster "$ci_job"
         ;;
 esac

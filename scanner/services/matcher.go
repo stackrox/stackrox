@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
@@ -20,7 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/matcher"
-	"github.com/stackrox/rox/scanner/sbom"
+	scannersbom "github.com/stackrox/rox/scanner/sbom"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -32,6 +33,7 @@ var matcherAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 		v4.Matcher_GetVulnerabilities_FullMethodName,
 		v4.Matcher_GetMetadata_FullMethodName,
 		v4.Matcher_GetSBOM_FullMethodName,
+		v4.Matcher_ScanSBOM_FullMethodName,
 	},
 })
 
@@ -39,7 +41,7 @@ var matcherAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 type matcherService struct {
 	v4.UnimplementedMatcherServer
 	// indexer is used to retrieve index reports.
-	indexer indexer.ReportGetter
+	indexer indexer.ReportProvider
 	// matcher is used to match vulnerabilities with index contents.
 	matcher matcher.Matcher
 	// disableEmptyContents allows the vulnerability matching API to reject requests with empty contents.
@@ -50,7 +52,7 @@ type matcherService struct {
 
 // NewMatcherService creates a new vulnerability matcher gRPC service, to enable
 // empty content in enrich requests, pass a non-nil indexer.
-func NewMatcherService(matcher matcher.Matcher, indexer indexer.ReportGetter) *matcherService {
+func NewMatcherService(matcher matcher.Matcher, indexer indexer.ReportProvider) *matcherService {
 	return &matcherService{
 		matcher:              matcher,
 		indexer:              indexer,
@@ -195,7 +197,7 @@ func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*
 		return nil, err
 	}
 
-	sbom, err := s.matcher.GetSBOM(ctx, ir, &sbom.Options{
+	sbom, err := s.matcher.GetSBOM(ctx, ir, &scannersbom.Options{
 		Name:      req.GetId(),
 		Namespace: req.GetUri(),
 		Comment:   fmt.Sprintf("Generated for '%s'", req.GetName()),
@@ -206,4 +208,36 @@ func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*
 	}
 
 	return &v4.GetSBOMResponse{Sbom: sbom}, nil
+}
+
+func (s *matcherService) ScanSBOM(ctx context.Context, req *v4.ScanSBOMRequest) (*v4.ScanSBOMResponse, error) {
+	if err := validators.ValidateScanSBOMRequest(req); err != nil {
+		return nil, errox.InvalidArgs.CausedBy(err)
+	}
+
+	if err := s.matcher.Initialized(ctx); err != nil {
+		return nil, status.Errorf(codes.FailedPrecondition, "the matcher is not initialized: %v", err)
+	}
+
+	ir, err := s.matcher.DecodeSBOM(ctx, bytes.NewReader(req.GetSbom()))
+	if err != nil {
+		slog.ErrorContext(ctx, "decoding SBOM", "reason", err)
+		return nil, errox.InvalidArgs.CausedBy(err)
+	}
+
+	ccReport, err := s.matcher.GetVulnerabilities(ctx, ir)
+	if err != nil {
+		slog.ErrorContext(ctx, "getting vulnerabilities", "reason", err)
+		return nil, err
+	}
+
+	report, err := mappers.ToProtoV4VulnerabilityReport(ctx, ccReport)
+	if err != nil {
+		slog.ErrorContext(ctx, "internal error: converting to v4.VulnerabilityReport", "reason", err)
+		return nil, err
+	}
+
+	report.Notes = s.notes(ctx, report)
+
+	return &v4.ScanSBOMResponse{VulnerabilityReport: report}, nil
 }

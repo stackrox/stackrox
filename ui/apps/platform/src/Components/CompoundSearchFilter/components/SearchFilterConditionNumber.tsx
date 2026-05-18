@@ -22,11 +22,16 @@ function roundToOneDecimalPlace(value: number) {
 
 export type SearchFilterConditionNumberProps = {
     attribute: GenericSearchFilterAttribute;
+    isDisabled?: boolean;
     onSearch: OnSearchCallback;
     // does not depend on searchFilter
 };
 
-function SearchFilterConditionNumber({ attribute, onSearch }: SearchFilterConditionNumberProps) {
+function SearchFilterConditionNumber({
+    attribute,
+    isDisabled = false,
+    onSearch,
+}: SearchFilterConditionNumberProps) {
     const { searchTerm: category } = attribute;
 
     const [conditionExternal, setConditionExternal] = useState(conditions[0]);
@@ -52,6 +57,7 @@ function SearchFilterConditionNumber({ attribute, onSearch }: SearchFilterCondit
         <>
             <ToolbarItem>
                 <SimpleSelect
+                    isDisabled={isDisabled}
                     value={conditionExternal}
                     onChange={(conditionSelected) =>
                         setConditionExternal(conditionSelected as (typeof conditions)[number])
@@ -71,6 +77,7 @@ function SearchFilterConditionNumber({ attribute, onSearch }: SearchFilterCondit
             <ToolbarItem>
                 <NumberInput
                     inputAriaLabel="Condition value input"
+                    isDisabled={isDisabled}
                     value={value}
                     min={minValue}
                     max={maxValue}

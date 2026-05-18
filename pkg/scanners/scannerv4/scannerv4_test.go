@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strings"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -81,6 +83,86 @@ func TestGetVulnDefinitionsInfo(t *testing.T) {
 
 }
 
+func TestScanSBOM(t *testing.T) {
+	vulnReport := &v4.VulnerabilityReport{
+		HashId: "test-hash-id",
+		Contents: &v4.Contents{
+			Packages: map[string]*v4.Package{
+				"p1": {Name: "pkg-a", Version: "1.0.0"},
+			},
+		},
+		PackageVulnerabilities: map[string]*v4.StringList{
+			"p1": {Values: []string{"v1"}},
+		},
+		Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+			"v1": {
+				Name:               "CVE-2024-0001",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+			},
+		},
+	}
+
+	tests := map[string]struct {
+		reader       func() *strings.Reader
+		readerErr    bool
+		clientRet    *v4.VulnerabilityReport
+		clientRetErr error
+		wantErr      string
+	}{
+		"success": {
+			reader:    func() *strings.Reader { return strings.NewReader(`{"fake":"sbom"}`) },
+			clientRet: vulnReport,
+		},
+		"client error": {
+			reader:       func() *strings.Reader { return strings.NewReader(`{"fake":"sbom"}`) },
+			clientRetErr: errors.New("matcher unavailable"),
+			wantErr:      "scanning sbom",
+		},
+		"reader error": {
+			readerErr: true,
+			wantErr:   "reading sbom",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			scannerClient := s4ClientMocks.NewMockScanner(ctrl)
+
+			if tc.readerErr {
+				s := scannerv4{scannerClient: scannerClient}
+				resp, err := s.ScanSBOM(context.Background(), iotest.ErrReader(errors.New("bad reader")), "application/json")
+				require.ErrorContains(t, err, tc.wantErr)
+				assert.Nil(t, resp)
+				return
+			}
+
+			scannerClient.EXPECT().
+				ScanSBOM(gomock.Any(), gomock.Any(), gomock.Eq("application/json"), gomock.Any()).
+				Return(tc.clientRet, tc.clientRetErr)
+
+			s := scannerv4{scannerClient: scannerClient}
+			resp, err := s.ScanSBOM(context.Background(), tc.reader(), "application/json")
+
+			if tc.wantErr != "" {
+				require.ErrorContains(t, err, tc.wantErr)
+				assert.Nil(t, resp)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, "test-hash-id", resp.GetId())
+			require.NotNil(t, resp.GetScan())
+			assert.NotEmpty(t, resp.GetScan().GetComponents())
+			for _, c := range resp.GetScan().GetComponents() {
+				for _, v := range c.GetVulns() {
+					assert.Equal(t, storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY, v.GetVulnerabilityType())
+				}
+			}
+		})
+	}
+}
+
 // TestGetVirtualMachineScan_Success tests the successful enrichment flow.
 // The test verifies that the enricher correctly converts vulnerability reports to VM scans
 // by creating index reports with different package configurations and checking that:
@@ -96,6 +178,7 @@ func TestGetVirtualMachineScan_Success(t *testing.T) {
 		indexReport                  *v4.IndexReport
 		expectedVulnerabilitiesCount int
 		expectedScanNotesCount       int
+		expectedOS                   string
 	}{
 		{
 			name: "successful enrichment with vulnerabilities",
@@ -121,6 +204,7 @@ func TestGetVirtualMachineScan_Success(t *testing.T) {
 			},
 			expectedVulnerabilitiesCount: 3,
 			expectedScanNotesCount:       0,
+			expectedOS:                   "unknown",
 		},
 		{
 			name: "successful enrichment with no vulnerabilities",
@@ -141,6 +225,7 @@ func TestGetVirtualMachineScan_Success(t *testing.T) {
 			},
 			expectedVulnerabilitiesCount: 0,
 			expectedScanNotesCount:       0,
+			expectedOS:                   "unknown",
 		},
 		{
 			name: "enrichment with empty package list",
@@ -155,6 +240,7 @@ func TestGetVirtualMachineScan_Success(t *testing.T) {
 			},
 			expectedVulnerabilitiesCount: 0,
 			expectedScanNotesCount:       0,
+			expectedOS:                   "unknown",
 		},
 		{
 			name: "enrichment with scan notes",
@@ -175,6 +261,7 @@ func TestGetVirtualMachineScan_Success(t *testing.T) {
 			},
 			expectedVulnerabilitiesCount: 0,
 			expectedScanNotesCount:       2,
+			expectedOS:                   "unknown",
 		},
 		{
 			name: "enrichment with multiple scan notes",
@@ -195,6 +282,35 @@ func TestGetVirtualMachineScan_Success(t *testing.T) {
 			},
 			expectedVulnerabilitiesCount: 1,
 			expectedScanNotesCount:       4, // Test with 4 notes to show cycling
+			expectedOS:                   "unknown",
+		},
+		{
+			name: "enrichment with single distribution",
+			vm: &storage.VirtualMachine{
+				Id:   "vm-id-6",
+				Name: "distributed-vm",
+			},
+			indexReport: &v4.IndexReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"pkg-1": {
+							Id:      "pkg-1",
+							Name:    "dist-package",
+							Version: "3.0.0",
+						},
+					},
+					Distributions: map[string]*v4.Distribution{
+						"rhel-9": {
+							Id:        "rhel-9",
+							Did:       "rhel",
+							VersionId: "9",
+						},
+					},
+				},
+			},
+			expectedVulnerabilitiesCount: 0,
+			expectedScanNotesCount:       0,
+			expectedOS:                   "rhel:9",
 		},
 	}
 
@@ -247,7 +363,7 @@ func TestGetVirtualMachineScan_Success(t *testing.T) {
 
 			// Verify scan metadata
 			assert.NotNil(t, tt.vm.GetScan().GetScanTime())
-			assert.Equal(t, "", tt.vm.GetScan().GetOperatingSystem())
+			assert.Equal(t, tt.expectedOS, tt.vm.GetScan().GetOperatingSystem())
 		})
 	}
 }

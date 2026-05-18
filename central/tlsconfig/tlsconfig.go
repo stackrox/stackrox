@@ -201,13 +201,9 @@ func LoadInternalCertificateFromDirectory(dir string) (*tls.Certificate, error) 
 	certFile := filepath.Join(dir, mtls.ServiceCertFileName)
 	keyFile := filepath.Join(dir, mtls.ServiceKeyFileName)
 
-	if filesExist, err := fileutils.AllExist(certFile, keyFile); err != nil || !filesExist {
-		return nil, err
-	}
-
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		return nil, errors.Wrap(err, "loading internal certificate")
+		return nil, errors.Wrapf(err, "loading internal certificate from %q", dir)
 	}
 
 	trustPool, err := verifier.TrustedCertPool()

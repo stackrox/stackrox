@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 import searchSelectors from '../../selectors/search';
 
 import {
@@ -13,6 +14,12 @@ import { selectors } from './Compliance.selectors';
 
 describe('Compliance entities list', () => {
     withAuth();
+
+    before(function () {
+        if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
+            this.skip();
+        }
+    });
 
     // TODO: ROX-30939: fix test for OCP4.20 "1 namespace" (openshift-cloud-credential-operator)
     it.skip('should filter namespaces table with passing controls', () => {

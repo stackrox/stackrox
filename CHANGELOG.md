@@ -24,10 +24,27 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-33673: A new default policy has been added to detect missing egress NetworkPolicy associated with deployments. The policy is disabled by default.
 - ROX-33336: The Operator now reads the cluster-wide TLS profile from `apiserver.config.openshift.io/cluster` on OpenShift and propagates it to all managed ACS components via environment variables. The Operator's own metrics server always honors the cluster TLS profile when running on OpenShift.
 - ROX-26033: Compliance now tracks tailored profiles and custom rules from the Compliance Operator. Tailored profiles can be included in scan configurations, and their check results are shown in the Coverage page and CSV reports.
+- ROX-34407: Deprecated fields to select optional columns NVD CVSS, EPSS Probability and Advisory from Vulnerability Reporting. These columns will be included by default next to similar columns. This change also affects column order in reports. 
+- ROX-33108: Added Component Version Column in Vulnerability Reporting.
 
 ### Removed Features
 
 ### Deprecated Features
+
+- The following `roxctl` commands related to manifest-based and Helm-based installation are now deprecated.
+  They will be removed in a future release. Please use the operator for deployment management instead.
+  - `roxctl sensor generate {k8s,openshift}`
+  - `roxctl sensor get-bundle`
+  - `roxctl sensor generate-certs`
+  - `roxctl central generate {interactive,k8s,openshift}`
+  - `roxctl helm output {central-services,secured-cluster-services}`
+  - `roxctl helm derive-local-values`
+- Deprecated gRPC endpoints for manifest-based and Helm-based installation: `GetCAConfig`,
+  `SensorUpgradeService` (all RPCs), `DeploymentFormat` enum, `PostCluster`, and
+  `PutCluster`. The REST endpoints `/api/extensions/clusters/zip`,
+  `/api/extensions/clusters/helm-config.yaml`, and `/api/extensions/helm-charts/`
+  are also deprecated.
+  They will be removed in a future release. Please use the operator for deployment management instead.
 
 ### Technical Changes
 

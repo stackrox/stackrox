@@ -134,7 +134,7 @@ func (o *AugmentedObjMeta) addPathsForSearchTags(parentType, currentType reflect
 	switch currentType.Kind() {
 	case reflect.Struct:
 		o.addPathsForSearchTagsFromStruct(currentType, pathUntilThisObj, pathWithinThisObj, outputMap, seenAugmentKeys)
-	case reflect.Ptr, reflect.Array, reflect.Slice:
+	case reflect.Pointer, reflect.Array, reflect.Slice:
 		o.addPathsForSearchTags(currentType, currentType.Elem(), pathUntilThisObj, pathWithinThisObj, outputMap, seenAugmentKeys)
 	case reflect.Interface:
 		// assume that the interface type is a OneOf field, because everything else compiled from a proto will be a Ptr to a

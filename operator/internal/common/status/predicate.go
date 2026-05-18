@@ -147,8 +147,46 @@ func (p PassThroughUpdatedStatusPredicate) Update(e event.TypedUpdateEvent[*apps
 	return true
 }
 
-// reduceDeploymentStatus
+// reduceDeploymentStatus removes properties of the Deployment status, which should not
+// be taken into account for the equality check.
 func reduceDeploymentStatus(status *appsv1.DeploymentStatus) *appsv1.DeploymentStatus {
+	statusCopy := status.DeepCopy()
+	statusCopy.ObservedGeneration = 0
+	return statusCopy
+}
+
+// PassThroughUpdatedDaemonSetStatusPredicate filters DaemonSet events to only react to status changes.
+// This prevents unnecessary reconciliation when daemonset properties are changed which have no effect on availability.
+type PassThroughUpdatedDaemonSetStatusPredicate struct {
+	predicate.TypedFuncs[*appsv1.DaemonSet]
+	logger logr.Logger
+}
+
+func NewPassThroughUpdatedDaemonSetStatusPredicate(logger logr.Logger) PassThroughUpdatedDaemonSetStatusPredicate {
+	return PassThroughUpdatedDaemonSetStatusPredicate{
+		logger: logger.WithName("passthrough-updated-daemonset-status-predicate"),
+	}
+}
+
+// Update returns true only if DaemonSet status changed (ignores spec-only changes).
+func (p PassThroughUpdatedDaemonSetStatusPredicate) Update(e event.TypedUpdateEvent[*appsv1.DaemonSet]) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return true
+	}
+	objectStatusOld := reduceDaemonSetStatus(&e.ObjectOld.Status)
+	objectStatusNew := reduceDaemonSetStatus(&e.ObjectNew.Status)
+
+	if equality.Semantic.DeepEqual(objectStatusOld, objectStatusNew) {
+		p.logger.V(1).Info("DaemonSet status unchanged, skipping reconciliation")
+		return false
+	}
+
+	return true
+}
+
+// reduceDaemonSetStatus removes properties of the DaemonSet status, which should not
+// be taken into account for the equality check.
+func reduceDaemonSetStatus(status *appsv1.DaemonSetStatus) *appsv1.DaemonSetStatus {
 	statusCopy := status.DeepCopy()
 	statusCopy.ObservedGeneration = 0
 	return statusCopy

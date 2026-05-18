@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/roxctl/central/initbundles"
 	"github.com/stackrox/rox/roxctl/central/login"
 	"github.com/stackrox/rox/roxctl/central/m2m"
+	"github.com/stackrox/rox/roxctl/central/migratetooperator"
 	"github.com/stackrox/rox/roxctl/central/userpki"
 	"github.com/stackrox/rox/roxctl/central/whoami"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -37,6 +38,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		login.Command(cliEnvironment),
 		export.Command(cliEnvironment),
 		m2m.Command(cliEnvironment),
+		migratetooperator.Command(cliEnvironment),
 	)
 	if features.ClusterRegistrationSecrets.Enabled() {
 		c.AddCommand(crs.Command(cliEnvironment))

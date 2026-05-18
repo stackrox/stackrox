@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package sensor;
+
+option cc_enable_arenas = true;
+option go_package = "./internalapi/sensor;sensor";
+
+// FactSettings mirrors a subset of Fact's configuration
+// (see stackrox/fact/fact/src/config/mod.rs). Only the fields
+// that Sensor needs to control are included here; additional
+// fields can be added as needed.
+message FactSettings {
+  repeated string paths = 1;
+}

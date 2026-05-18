@@ -8,7 +8,7 @@ type nonDereferencingLeafTransformer struct{}
 
 func (t nonDereferencingLeafTransformer) Transformer(typ reflect.Type) func(dst, src reflect.Value) error {
 	// Only handle pointer types here.
-	if typ.Kind() != reflect.Ptr {
+	if typ.Kind() != reflect.Pointer {
 		return nil
 	}
 

@@ -309,7 +309,7 @@ func validateStructTagsOnType(ty reflect.Type) error {
 }
 
 func validateStructTagsOnTypeHelper(ty reflect.Type, visited map[reflect.Type]struct{}) error {
-	if ty.Kind() == reflect.Ptr {
+	if ty.Kind() == reflect.Pointer {
 		ty = ty.Elem()
 	}
 	if ty.Kind() == reflect.Interface || ty.Kind() != reflect.Struct {
@@ -322,7 +322,7 @@ func validateStructTagsOnTypeHelper(ty reflect.Type, visited map[reflect.Type]st
 	for i := 0; i < ty.NumField(); i++ {
 		fieldType := ty.Field(i).Type
 		switch fieldType.Kind() {
-		case reflect.Struct, reflect.Ptr, reflect.Interface:
+		case reflect.Struct, reflect.Pointer, reflect.Interface:
 			if err := validateStructTagsOnTypeHelper(fieldType, visited); err != nil {
 				return err
 			}
