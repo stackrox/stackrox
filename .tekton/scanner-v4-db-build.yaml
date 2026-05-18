@@ -121,15 +121,15 @@ spec:
     podTemplate:
       env:
       - name: GOMEMLIMIT
-        # Tell Go GC to be aggressive near 4GiB, keeping peak RSS under the 6Gi limit.
-        value: "4GiB"
+        # Tell Go GC to be aggressive near 2GiB. With GOMEMLIMIT, peak RSS stays under 1Gi even without CPU throttling.
+        value: "2GiB"
     stepSpecs:
     - name: prefetch-dependencies
       computeResources:
         limits:
           # Default request=3Gi limit=3Gi. 584 OOMKilled at 3Gi limit in 13,559 runs (4.3%), Apr 15 - May 15, 2026. Still OOMKills at 4Gi.
           # https://github.com/konflux-ci/build-definitions/tree/main/task/prefetch-dependencies-oci-ta
-          memory: 6Gi
+          memory: 3Gi
   taskRunTemplate:
     serviceAccountName: build-pipeline-scanner-v4-db
 

@@ -75,20 +75,17 @@ spec:
     podTemplate:
       env:
       - name: GOMEMLIMIT
-        # Tell Go GC to be aggressive near 4GiB, keeping peak RSS under the 6Gi limit.
+        # Tell Go GC to be aggressive near 2GiB. With GOMEMLIMIT, peak RSS stays under 1Gi even without CPU throttling.
         # The go subprocess (go mod download) is the primary memory consumer.
-        value: "4GiB"
+        value: "2GiB"
     stepSpecs:
-    # Limit CPU for Go dependencies prefetch, as it tends to be OOM-killed when it gets lots of it without OOTB limit.
     - name: prefetch-dependencies
       computeResources:
         limits:
-          cpu: 2
           # Default request=3Gi limit=3Gi. 584 OOMKilled at 3Gi limit in 13,559 runs (4.3%), Apr 15 - May 15, 2026. Still OOMKills at 4Gi.
           # https://github.com/konflux-ci/build-definitions/tree/main/task/prefetch-dependencies-oci-ta
-          memory: 6Gi
+          memory: 3Gi
         requests:
-          cpu: 2
 
   # For all sbom-syft-generate steps:
   # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container
