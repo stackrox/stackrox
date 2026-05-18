@@ -636,7 +636,7 @@ func (m *ManagerTestSuite) setupExpectCallsFromFailAllScans(sc *storage.Complian
 				GetScanConfigurationByName(gomock.Any(), gomock.Eq(sc.GetScanConfigName())).
 				Times(1).Return(sc, nil),
 			m.checkResultDataStore.EXPECT().
-				DeleteOldResults(gomock.Any(), gomock.Eq(scan.GetLastStartedTime()), gomock.Eq(scan.GetScanRefId()), gomock.Eq(true)).
+				DeleteOldResults(gomock.Any(), gomock.Eq(scan.GetLastStartedTime()), gomock.Eq(scan.GetScanRefId()), gomock.Eq(false)).
 				Times(1).Return(nil),
 			m.snapshotDataStore.EXPECT().
 				UpsertSnapshot(gomock.Any(), gomock.Any()).

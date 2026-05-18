@@ -370,11 +370,7 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 		}
 		return err
 	}
-	numChecks, err := watcher.GetExpectedNumChecks(scan)
-	if err != nil {
-		log.Warnf("Failed to get expected number of checks from annotations for %s: %v", scan.GetScanName(), err)
-	}
-	w := m.getWatcher(sensorCtx, id, numChecks)
+	w := m.getWatcher(sensorCtx, id)
 	if w != nil {
 		return w.PushScan(scan)
 	}
@@ -428,16 +424,11 @@ func (m *managerImpl) HandleScanRemove(scanID string) error {
 	return nil
 }
 
-func (m *managerImpl) getWatcher(sensorCtx context.Context, id string, numChecks int) watcher.ScanWatcher {
+func (m *managerImpl) getWatcher(sensorCtx context.Context, id string) watcher.ScanWatcher {
 	var scanWatcher watcher.ScanWatcher
 	concurrency.WithLock(&m.watchingScansLock, func() {
 		var found bool
-		// The check for `numChecks == 0` is here to prevent starting a watcher twice per scan.
-		// It may happen that additional status updates (e.g., state) from CO arrive
-		// after the watcher is removed from the watchingScans (i.e., we have all the checks).
-		// Not checking that would cause a new watcher to be created here and in some circumstances
-		// (when no e-mail is provided for notification), the watcher would time-out and delete the data from DB.
-		if scanWatcher, found = m.watchingScans[id]; !found && numChecks == 0 {
+		if scanWatcher, found = m.watchingScans[id]; !found {
 			scanWatcher = watcher.NewScanWatcher(m.automaticReportingCtx, sensorCtx, id, m.readyQueue)
 			m.watchingScans[id] = scanWatcher
 			m.watchingScansStartTime[id] = time.Now()
@@ -468,7 +459,7 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 		}
 		return err
 	}
-	w := m.getWatcher(sensorCtx, id, 0)
+	w := m.getWatcher(sensorCtx, id)
 	if w != nil {
 		return w.PushCheckResult(result)
 	}
