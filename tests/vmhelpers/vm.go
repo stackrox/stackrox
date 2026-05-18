@@ -55,13 +55,8 @@ type VMRequest struct {
 }
 
 // renderCloudInit expands the embedded cloud-init template using req.
+// Callers must validate that GuestUser and SSHPublicKey are non-empty.
 func renderCloudInit(req VMRequest) ([]byte, error) {
-	if req.GuestUser == "" {
-		return nil, errors.New("VMRequest GuestUser is required")
-	}
-	if req.SSHPublicKey == "" {
-		return nil, errors.New("VMRequest SSHPublicKey is required")
-	}
 	tmpl, err := template.New("cloud-init").Funcs(template.FuncMap{
 		"yamlQuote": strconv.Quote,
 	}).Parse(string(vmscanning.CloudInitUserDataTemplate))
@@ -77,8 +72,8 @@ func renderCloudInit(req VMRequest) ([]byte, error) {
 
 // CreateVirtualMachine submits a KubeVirt VirtualMachine with a container disk and NoCloud user-data.
 func CreateVirtualMachine(ctx context.Context, client dynamic.Interface, req VMRequest) error {
-	if req.Name == "" || req.Namespace == "" || req.Image == "" {
-		return errors.New("VMRequest Name, Namespace, and Image are required")
+	if req.Name == "" || req.Namespace == "" || req.Image == "" || req.GuestUser == "" || req.SSHPublicKey == "" {
+		return errors.New("VMRequest Name, Namespace, Image, GuestUser, and SSHPublicKey are required")
 	}
 	userData, err := renderCloudInit(req)
 	if err != nil {
