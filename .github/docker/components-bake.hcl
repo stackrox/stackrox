@@ -68,8 +68,8 @@ target "main" {
 
 # Scanner image
 target "scanner" {
-  context = "."
-  dockerfile = "scanner/image/scanner/Dockerfile"
+  context = "scanner/image/scanner"
+  dockerfile = "Dockerfile"
   platforms = split(",", PLATFORMS)
   tags = [
     "${REGISTRY}/scanner:${TAG}"

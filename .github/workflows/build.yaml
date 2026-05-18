@@ -629,6 +629,15 @@ jobs:
           mkdir -p scanner/image/scanner/THIRD_PARTY_NOTICES
           cp -r image/rhel/THIRD_PARTY_NOTICES/* scanner/image/scanner/THIRD_PARTY_NOTICES/
 
+      - name: Stage scanner binaries for scanner context
+        run: |
+          for arch in amd64 arm64 ppc64le s390x; do
+            if [ -f bin/linux_${arch}/scanner ]; then
+              mkdir -p scanner/image/scanner/bin/${arch}
+              ln -sf ../../../../bin/linux_${arch}/scanner scanner/image/scanner/bin/${arch}/scanner
+            fi
+          done
+
       - name: Login to docker.io to mitigate rate limiting
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
         if: |

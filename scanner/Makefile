@@ -73,7 +73,8 @@ DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
 DOCKERBUILD_ARGS = --build-arg LABEL_VERSION=$(TAG) \
                    --build-arg LABEL_RELEASE=$(TAG) \
                    --build-arg QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
-                   --build-arg DEBUG_BUILD=$(DEBUG_BUILD)
+                   --build-arg DEBUG_BUILD=$(DEBUG_BUILD) \
+                   --build-arg TARGETARCH=$(GOARCH)
 
 DB_DOCKERBUILD_ARGS =
 ifeq ($(GOARCH),s390x)
@@ -174,9 +175,10 @@ image-db-init-t       := $(image-db-init-d)/db-init.dump.zst
 .PHONY: images
 images: image-scanner
 
-image/scanner/bin/scanner: GOOS=$(DEFAULT_GOOS)
-image/scanner/bin/scanner: bin/scanner
+image/scanner/bin/$(GOARCH)/scanner: GOOS=$(DEFAULT_GOOS)
+image/scanner/bin/$(GOARCH)/scanner: bin/scanner
 	@echo "+ $@"
+	mkdir -p $(@D)
 	cp $< $@
 
 $(image-scripts-prefix)/%: ../image/rhel/static-bin/%
@@ -189,7 +191,7 @@ copy-scripts: $(image-scripts-t)
 	@echo "+ $@"
 
 .PHONY: image-scanner
-image-scanner: $(if $(CI),,image/scanner/bin/scanner) \
+image-scanner: $(if $(CI),,image/scanner/bin/$(GOARCH)/scanner) \
                $(image-scripts-t) \
                ossls-notice
 	@echo "+ $@"

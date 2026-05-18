@@ -1,6 +1,6 @@
 FROM registry.access.redhat.com/ubi9/ubi:latest AS mappings
 
-COPY scanner/image/scanner/download-mappings.sh /download-mappings.sh
+COPY download-mappings.sh /download-mappings.sh
 RUN /download-mappings.sh /mappings
 
 # Build Delve debugger when DEBUG_BUILD=yes.
@@ -8,7 +8,7 @@ FROM registry.access.redhat.com/ubi9/ubi:latest AS debugger
 
 ARG DEBUG_BUILD=no
 
-COPY scanner/image/scanner/download-dlv.sh /download-dlv.sh
+COPY download-dlv.sh /download-dlv.sh
 RUN DEBUG_BUILD=${DEBUG_BUILD} /download-dlv.sh
 
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS ubi-micro-base
@@ -50,12 +50,12 @@ LABEL name="scanner-v4" \
 SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 
 COPY --from=package_installer /out/ /
-COPY scanner/image/scanner/scripts/entrypoint.sh \
-     scanner/image/scanner/scripts/import-additional-cas \
-     scanner/image/scanner/scripts/restore-all-dir-contents \
-     scanner/image/scanner/scripts/save-dir-contents /usr/local/bin/
-COPY bin/linux_${TARGETARCH}/scanner /usr/local/bin/scanner
-COPY scanner/image/scanner/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
+COPY scripts/entrypoint.sh \
+     scripts/import-additional-cas \
+     scripts/restore-all-dir-contents \
+     scripts/save-dir-contents /usr/local/bin/
+COPY bin/${TARGETARCH}/scanner /usr/local/bin/scanner
+COPY THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=mappings /mappings/repository-to-cpe.json /mappings/container-name-repos-map.json /run/mappings/
 # Copy Delve debugger if built (empty dir when DEBUG_BUILD=no).
 COPY --from=debugger /output/go/ /go/
