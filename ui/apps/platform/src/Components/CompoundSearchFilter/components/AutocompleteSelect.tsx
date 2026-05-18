@@ -133,7 +133,7 @@ function AutocompleteSelect({
         // included in the query.
         // We also need to exclude the current search term from the autocomplete query otherwise following
         // autocomplete requests will return only the current search term as a suggestion.
-        if (key !== 'FIXABLE' && key.toLowerCase() !== searchTerm.toLowerCase()) {
+        if (key !== 'Fixable' && key.toLowerCase() !== searchTerm.toLowerCase()) {
             acc[key] = searchContext[key];
         }
         return acc;

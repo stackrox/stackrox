@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import {
@@ -19,6 +20,12 @@ function getStandardAcrossEntitiesLink(entityNameOrdinaryCasePlural) {
 
 describe('Compliance Dashboard', () => {
     withAuth();
+
+    before(function () {
+        if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
+            this.skip();
+        }
+    });
 
     it('should scan for compliance data', () => {
         triggerScan(); // prerequisite for the following tests

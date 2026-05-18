@@ -31,6 +31,21 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Deprecated Features
 
+- The following `roxctl` commands related to manifest-based and Helm-based installation are now deprecated.
+  They will be removed in a future release. Please use the operator for deployment management instead.
+  - `roxctl sensor generate {k8s,openshift}`
+  - `roxctl sensor get-bundle`
+  - `roxctl sensor generate-certs`
+  - `roxctl central generate {interactive,k8s,openshift}`
+  - `roxctl helm output {central-services,secured-cluster-services}`
+  - `roxctl helm derive-local-values`
+- Deprecated gRPC endpoints for manifest-based and Helm-based installation: `GetCAConfig`,
+  `SensorUpgradeService` (all RPCs), `DeploymentFormat` enum, `PostCluster`, and
+  `PutCluster`. The REST endpoints `/api/extensions/clusters/zip`,
+  `/api/extensions/clusters/helm-config.yaml`, and `/api/extensions/helm-charts/`
+  are also deprecated.
+  They will be removed in a future release. Please use the operator for deployment management instead.
+
 ### Technical Changes
 
 - OpenShift 3 support removed from all installation methods.

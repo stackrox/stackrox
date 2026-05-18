@@ -21,7 +21,7 @@ import TechnologyPreviewLabel from 'Components/PatternFly/PreviewLabel/Technolog
 import { getIntegrationLabel } from './utils/integrationsList';
 import { getEditDisabledMessage, getIsMachineAccessConfig } from './utils/integrationUtils';
 import usePageState from './hooks/usePageState';
-import useIntegrationPermissions from './hooks/useIntegrationPermissions';
+import usePermissions from 'hooks/usePermissions';
 
 export type IntegrationPageProps = {
     title: string;
@@ -31,7 +31,8 @@ export type IntegrationPageProps = {
 };
 
 function IntegrationPage({ title, name, traits, children }: IntegrationPageProps): ReactElement {
-    const permissions = useIntegrationPermissions();
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWritePermission = hasReadWriteAccess('Integration');
     const {
         pageState,
         params: { source, type, id },
@@ -50,7 +51,7 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
         pageState !== 'LIST' &&
         (type === 'generic' || type === 'splunk' || type === 'machineAccess');
     const hasEditButton =
-        pageState === 'VIEW_DETAILS' && permissions[source].write && isUserResource(traits);
+        pageState === 'VIEW_DETAILS' && hasWritePermission && isUserResource(traits);
     return (
         <>
             <PageTitle title={title} />

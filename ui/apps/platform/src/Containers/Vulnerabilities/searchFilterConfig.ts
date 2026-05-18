@@ -170,7 +170,7 @@ const optionsForFixableInFrontendAndLocalStorage: SelectSearchFilterOption[] = [
 export const attributeForClusterCveFixableInFrontend: SelectSearchFilterAttribute = {
     displayName: 'CVE status',
     filterChipLabel: 'CVE status',
-    searchTerm: 'CLUSTER CVE FIXABLE', // why ALL CAPS instead of 'Cluster CVE Fixable'
+    searchTerm: 'Cluster CVE Fixable',
     inputType: 'select',
     inputProps: {
         options: optionsForFixableInFrontendAndLocalStorage,
@@ -180,7 +180,7 @@ export const attributeForClusterCveFixableInFrontend: SelectSearchFilterAttribut
 export const attributeForFixableInFrontendAndLocalStorage: SelectSearchFilterAttribute = {
     displayName: 'CVE status',
     filterChipLabel: 'CVE status',
-    searchTerm: 'FIXABLE', // why ALL CAPS instead of 'Fixable'
+    searchTerm: 'Fixable',
     inputType: 'select',
     inputProps: {
         options: optionsForFixableInFrontendAndLocalStorage,
@@ -203,7 +203,7 @@ export const attributeForFixableInBackendAndViewBasedReport: SelectSearchFilterA
 export const attributeForSeverityInFrontendAndLocalStorage: SelectSearchFilterAttribute = {
     displayName: 'CVE severity',
     filterChipLabel: 'CVE severity',
-    searchTerm: 'SEVERITY', // why ALL CAPS instead of 'Severity'
+    searchTerm: 'Severity',
     inputType: 'select',
     inputProps: {
         options: [
@@ -230,7 +230,12 @@ export const attributeForSeverityInBackendAndViewBasedReport: SelectSearchFilter
 
 // Scheduled report has resources instead of cluster, deployment, namespace.
 export const searchFilterConfigForImageVulnerabilityReport = [
-    imageCVESearchFilterConfig,
+    {
+        ...imageCVESearchFilterConfig,
+        attributes: imageCVESearchFilterConfig.attributes.filter(
+            ({ searchTerm }) => searchTerm !== 'CVE Created Time'
+        ),
+    },
     imageSearchFilterConfig,
     imageComponentSearchFilterConfig,
 ];

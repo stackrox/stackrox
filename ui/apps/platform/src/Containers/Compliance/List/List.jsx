@@ -45,7 +45,6 @@ const ComplianceList = ({ entityType, query, selectedRowId, noSearch }) => {
                     entityType={entityType}
                     query={query}
                     updateSelectedRow={setSelectedRowId}
-                    pdfId="capture-list"
                 />
             </div>
             {selectedRowId && (

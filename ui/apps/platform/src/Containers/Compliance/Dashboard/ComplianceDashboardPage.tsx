@@ -9,7 +9,6 @@ import ComplianceUsageDisclaimer, {
 } from 'Components/ComplianceUsageDisclaimer';
 import ExportButton from 'Components/ExportButton';
 import PageHeader from 'Components/PageHeader';
-import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import { resourceTypes } from 'constants/entityTypes';
 import useCaseTypes from 'constants/useCaseTypes';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
@@ -84,8 +83,6 @@ function ComplianceDashboardPage(): ReactElement {
     const [isManageStandardsModalOpen, setIsManageStandardsModalOpen] = useState(false);
 
     const client = useApolloClient();
-
-    const [isExporting, setIsExporting] = useState(false);
 
     const { runs, error, restartPolling, inProgressScanDetected, isCurrentScanIncomplete } =
         useComplianceRunStatuses(queriesToRefetchOnPollingComplete);
@@ -173,14 +170,11 @@ function ComplianceDashboardPage(): ReactElement {
                             textClass="hidden lg:block"
                             type="ALL"
                             page={useCaseTypes.COMPLIANCE}
-                            pdfId="capture-dashboard"
-                            isExporting={isExporting}
-                            setIsExporting={setIsExporting}
                         />
                     </div>
                 </div>
             </PageHeader>
-            <div className="flex-1 relative p-6 xxxl:p-8 bg-base-200" id="capture-dashboard">
+            <div className="flex-1 relative p-6 xxxl:p-8 bg-base-200">
                 {!isDisclaimerAccepted && (
                     <ComplianceUsageDisclaimer
                         onAccept={() => setIsDisclaimerAccepted(true)}
@@ -209,32 +203,24 @@ function ComplianceDashboardPage(): ReactElement {
                     <StandardsAcrossEntity
                         entityType={resourceTypes.CLUSTER}
                         bodyClassName="pr-4 py-1"
-                        className="pdf-page"
                     />
                     {isComplianceRouteEnabledForClusters && (
-                        <StandardsByEntity
-                            entityType={resourceTypes.CLUSTER}
-                            bodyClassName="p-4"
-                            className="pdf-page"
-                        />
+                        <StandardsByEntity entityType={resourceTypes.CLUSTER} bodyClassName="p-4" />
                     )}
                     {isComplianceRouteEnabledForNamespaces && (
                         <StandardsAcrossEntity
                             entityType={resourceTypes.NAMESPACE}
                             bodyClassName="px-4 pt-1"
-                            className="pdf-page"
                         />
                     )}
                     {isComplianceRouteEnabledForNodes && (
                         <StandardsAcrossEntity
                             entityType={resourceTypes.NODE}
                             bodyClassName="pr-4 py-1"
-                            className="pdf-page"
                         />
                     )}
                 </div>
             </div>
-            {isExporting && <BackdropExporting />}
             {errorMessageFetching ? (
                 <ManageStandardsError
                     onClose={onCloseManageStandardsError}

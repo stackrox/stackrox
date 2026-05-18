@@ -18,6 +18,7 @@
   "paths": {
     "/v1/cluster-init/ca-config": {
       "get": {
+        "summary": "GetCAConfig is deprecated. Use operator-based installation with CRS instead.",
         "operationId": "ClusterInitService_GetCAConfig",
         "responses": {
           "200": {

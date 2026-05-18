@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
+	roxctlCommon "github.com/stackrox/rox/roxctl/common"
 	env "github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
@@ -23,9 +24,10 @@ func Command(cliEnvironment env.Environment) *cobra.Command {
 	helmDeriveLocalValuesCmd := &helmDeriveLocalValuesCommand{env: cliEnvironment}
 
 	c := &cobra.Command{
-		Use:   fmt.Sprintf("derive-local-values --output <path> <%s>", common.MakePrettyChartNameList(supportedCharts...)),
-		Short: "Derive local Helm values from cluster configuration",
-		Args:  cobra.ExactArgs(1),
+		Use:        fmt.Sprintf("derive-local-values --output <path> <%s>", common.MakePrettyChartNameList(supportedCharts...)),
+		Short:      "Derive local Helm values from cluster configuration",
+		Deprecated: roxctlCommon.DeprecatedInFavorOfOperator,
+		Args:       cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			helmDeriveLocalValuesCmd.Construct(cmd, args[0])

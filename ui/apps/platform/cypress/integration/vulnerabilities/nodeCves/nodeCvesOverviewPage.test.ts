@@ -268,7 +268,7 @@ describe('Node CVEs - Overview Page', () => {
                 // filtering by Severity should not report counts for hidden severities
                 applyLocalSeverityFilters('Low');
                 waitAndYieldRequestBodyVariables().then(
-                    expectRequestedQuery('SEVERITY:LOW_VULNERABILITY_SEVERITY')
+                    expectRequestedQuery('Severity:LOW_VULNERABILITY_SEVERITY')
                 );
                 assertOnEachRowForColumn('Nodes by severity', (_, cell) => {
                     const { critical, important, moderate, low } = getSeverityLabelCounts(cell);
@@ -328,7 +328,7 @@ describe('Node CVEs - Overview Page', () => {
                 // filtering by Severity should not report counts for hidden severities
                 applyLocalSeverityFilters('Low');
                 waitAndYieldRequestBodyVariables().then(
-                    expectRequestedQuery('SEVERITY:LOW_VULNERABILITY_SEVERITY')
+                    expectRequestedQuery('Severity:LOW_VULNERABILITY_SEVERITY')
                 );
                 assertOnEachRowForColumn('CVEs by severity', (_, cell) => {
                     const { critical, important, moderate, low } = getSeverityLabelCounts(cell);

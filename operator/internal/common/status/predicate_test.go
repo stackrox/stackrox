@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,7 +29,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			old: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 						{Type: platform.ConditionDeployed, Status: platform.StatusTrue, Reason: "InstallSuccessful"},
 					},
@@ -37,7 +38,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			new: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 						{Type: platform.ConditionDeployed, Status: platform.StatusTrue, Reason: "UpgradeSuccessful"}, // Changed
 					},
@@ -50,7 +51,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			old: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusFalse, Reason: "DeploymentsNotReady"},
+						{Type: "Available", Status: platform.StatusFalse, Reason: "WorkloadsNotReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 					},
 				},
@@ -58,7 +59,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			new: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"}, // Changed
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"}, // Changed
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 					},
 				},
@@ -70,7 +71,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			old: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusTrue, Reason: "Reconciling"},
 					},
 				},
@@ -78,7 +79,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			new: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"}, // Changed
 					},
 				},
@@ -90,7 +91,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			old: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusFalse, Reason: "DeploymentsNotReady"},
+						{Type: "Available", Status: platform.StatusFalse, Reason: "WorkloadsNotReady"},
 						{Type: "Progressing", Status: platform.StatusTrue, Reason: "Reconciling"},
 					},
 				},
@@ -98,7 +99,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			new: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},       // Changed
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},         // Changed
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"}, // Changed
 					},
 				},
@@ -110,7 +111,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			old: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 						{Type: platform.ConditionDeployed, Status: platform.StatusUnknown},
 					},
@@ -119,7 +120,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			new: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 						{Type: platform.ConditionDeployed, Status: platform.StatusTrue, Reason: "InstallSuccessful"}, // Changed
 					},
@@ -132,7 +133,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			old: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: platform.ConditionDeployed, Status: platform.StatusUnknown},
 					},
 				},
@@ -140,7 +141,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			new: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusFalse, Reason: "DeploymentsNotReady"},             // Changed
+						{Type: "Available", Status: platform.StatusFalse, Reason: "WorkloadsNotReady"},               // Changed
 						{Type: platform.ConditionDeployed, Status: platform.StatusTrue, Reason: "InstallSuccessful"}, // Changed
 					},
 				},
@@ -152,7 +153,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			old: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 					},
 					ObservedGeneration: 5,
@@ -161,7 +162,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			new: &platform.Central{
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 					},
 					ObservedGeneration: 6, // Changed
@@ -207,7 +208,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 				},
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 					},
 				},
@@ -218,7 +219,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 				},
 				Status: platform.CentralStatus{
 					Conditions: []platform.StackRoxCondition{
-						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: "Available", Status: platform.StatusTrue, Reason: "WorkloadsReady"},
 						{Type: "Progressing", Status: platform.StatusFalse, Reason: "ReconcileSuccessful"},
 					},
 				},
@@ -445,6 +446,150 @@ func TestDeploymentStatusUpdatePredicate(t *testing.T) {
 	}
 }
 
+func TestDaemonSetStatusUpdatePredicate(t *testing.T) {
+	tests := map[string]struct {
+		old            *appsv1.DaemonSet
+		new            *appsv1.DaemonSet
+		shallReconcile bool
+	}{
+		"status.numberAvailable changed should trigger reconciliation": {
+			old: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        2,
+					NumberReady:            2,
+				},
+			},
+			new: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+					NumberReady:            3,
+				},
+			},
+			shallReconcile: true,
+		},
+		"status.desiredNumberScheduled changed should trigger reconciliation": {
+			old: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+					NumberReady:            3,
+				},
+			},
+			new: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 5,
+					NumberAvailable:        3,
+					NumberReady:            3,
+				},
+			},
+			shallReconcile: true,
+		},
+		"status.numberReady changed should trigger reconciliation": {
+			old: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+					NumberReady:            2,
+				},
+			},
+			new: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+					NumberReady:            3,
+				},
+			},
+			shallReconcile: true,
+		},
+		"only observedGeneration changed should NOT trigger reconciliation": {
+			old: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+					NumberReady:            3,
+					ObservedGeneration:     1,
+				},
+			},
+			new: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+					NumberReady:            3,
+					ObservedGeneration:     2,
+				},
+			},
+			shallReconcile: false,
+		},
+		"no changes should NOT trigger reconciliation": {
+			old: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+					NumberReady:            3,
+				},
+			},
+			new: &appsv1.DaemonSet{
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+					NumberReady:            3,
+				},
+			},
+			shallReconcile: false,
+		},
+		"spec change only should NOT trigger reconciliation": {
+			old: &appsv1.DaemonSet{
+				Spec: appsv1.DaemonSetSpec{
+					MinReadySeconds: 5,
+				},
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+				},
+			},
+			new: &appsv1.DaemonSet{
+				Spec: appsv1.DaemonSetSpec{
+					MinReadySeconds: 10,
+				},
+				Status: appsv1.DaemonSetStatus{
+					DesiredNumberScheduled: 3,
+					NumberAvailable:        3,
+				},
+			},
+			shallReconcile: false,
+		},
+		"old object nil should allow reconciliation": {
+			old:            nil,
+			new:            &appsv1.DaemonSet{},
+			shallReconcile: true,
+		},
+		"new object nil should allow reconciliation": {
+			old:            &appsv1.DaemonSet{},
+			new:            nil,
+			shallReconcile: true,
+		},
+		"both objects nil should allow reconciliation": {
+			old:            nil,
+			new:            nil,
+			shallReconcile: true,
+		},
+	}
+
+	pred := PassThroughUpdatedDaemonSetStatusPredicate{logger: logr.Discard()}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := pred.Update(event.TypedUpdateEvent[*appsv1.DaemonSet]{
+				ObjectOld: tt.old,
+				ObjectNew: tt.new,
+			})
+
+			assert.Equal(t, tt.shallReconcile, result, "unexpected predicate result")
+		})
+	}
+}
+
 // TestUnstructuredStatusControllerUpdatePredicate verifies that the predicate correctly handles
 // unstructured objects (as sent by the helm reconciler) by converting them to typed objects
 func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
@@ -490,7 +635,7 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 							map[string]interface{}{
 								"type":   "Available",
 								"status": "True",
-								"reason": "DeploymentsReady",
+								"reason": "WorkloadsReady",
 							},
 						},
 					},
@@ -512,7 +657,7 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 							map[string]interface{}{
 								"type":   "Available",
 								"status": "True",
-								"reason": "DeploymentsReady",
+								"reason": "WorkloadsReady",
 							},
 							map[string]interface{}{
 								"type":   "Deployed",
@@ -535,7 +680,7 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 							map[string]interface{}{
 								"type":   "Available",
 								"status": "True",
-								"reason": "DeploymentsReady",
+								"reason": "WorkloadsReady",
 							},
 							map[string]interface{}{
 								"type":   "Deployed",
