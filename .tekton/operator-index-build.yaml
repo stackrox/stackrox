@@ -402,6 +402,7 @@ spec:
       - name: IMAGE
         value: $(params.output-image-repo):$(tasks.determine-index-tag.results.INDEX_TAG)
       - name: DOCKERFILE
+        # The Dockerfile si generated in the build-index-image.sh script (via OPM generate dockerfile)
         value: rhacs-operator-index.Dockerfile
       - name: CONTEXT
         value: .
