@@ -1,6 +1,8 @@
 **/node_modules/
 /.git/
 /bin/
+# Allow linux arch-specific binaries for multi-platform builds
+!/bin/linux_*/
 /image/bin/
 /image/rhel/bin/
 /linux-gocache/
