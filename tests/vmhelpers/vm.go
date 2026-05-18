@@ -233,11 +233,7 @@ func WaitForVirtualMachineInstanceRunning(t testing.TB, ctx context.Context, cli
 			case string(kubevirtv1.Failed), string(kubevirtv1.Succeeded):
 				return false, detail, fmt.Errorf("attempt %d: VMI reached terminal phase: %s", attempt, detail)
 			default:
-				var vmDetail string
-				var terminal bool
-				if vm, vmErr := client.Resource(vmGVR).Namespace(namespace).Get(ctx, name, metav1.GetOptions{}); vmErr == nil {
-					vmDetail, terminal = vmPrintableStatusFromUnstructured(vm)
-				}
+				vmDetail, terminal, _ := virtualMachineStatusDetail(ctx, client, namespace, name)
 				if terminal {
 					return false, detail + " " + vmDetail, fmt.Errorf("attempt %d: unrecoverable VM error: %s", attempt, vmDetail)
 				}
