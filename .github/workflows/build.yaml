@@ -634,7 +634,7 @@ jobs:
           for arch in amd64 arm64 ppc64le s390x; do
             if [ -f bin/linux_${arch}/scanner ]; then
               mkdir -p scanner/image/scanner/bin/${arch}
-              ln -sf ../../../../bin/linux_${arch}/scanner scanner/image/scanner/bin/${arch}/scanner
+              cp bin/linux_${arch}/scanner scanner/image/scanner/bin/${arch}/scanner
             fi
           done
 
