@@ -11,7 +11,7 @@ ARG ROX_IMAGE_FLAVOR
 ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
 
 ARG TARGETARCH
-COPY operator/bin/stackrox-operator-${TARGETARCH} /usr/local/bin/stackrox-operator
+COPY bin/stackrox-operator-${TARGETARCH} /usr/local/bin/stackrox-operator
 
 # The following are numeric uid and gid of `nobody` user in UBI.
 # We can't use symbolic names because otherwise k8s will fail to start the pod with an error like this:

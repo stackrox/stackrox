@@ -548,8 +548,15 @@ jobs:
           mkdir -p scanner/image/scanner/THIRD_PARTY_NOTICES
           cp -r image/rhel/THIRD_PARTY_NOTICES/* scanner/image/scanner/THIRD_PARTY_NOTICES/
 
-      - name: Stage scanner binaries for scanner context
+      - name: Stage scanner binaries and scripts for scanner context
         run: |
+          # Copy scripts from main image static-bin
+          mkdir -p scanner/image/scanner/scripts
+          cp image/rhel/static-bin/import-additional-cas scanner/image/scanner/scripts/
+          cp image/rhel/static-bin/restore-all-dir-contents scanner/image/scanner/scripts/
+          cp image/rhel/static-bin/save-dir-contents scanner/image/scanner/scripts/
+
+          # Copy scanner binaries
           for arch in amd64 arm64 ppc64le s390x; do
             if [ -f bin/linux_${arch}/scanner ]; then
               mkdir -p scanner/image/scanner/bin/${arch}
@@ -752,8 +759,15 @@ jobs:
           mkdir -p scanner/image/scanner/THIRD_PARTY_NOTICES
           cp -r image/rhel/THIRD_PARTY_NOTICES/* scanner/image/scanner/THIRD_PARTY_NOTICES/
 
-      - name: Stage scanner binaries for scanner context
+      - name: Stage scanner binaries and scripts for scanner context
         run: |
+          # Copy scripts from main image static-bin
+          mkdir -p scanner/image/scanner/scripts
+          cp image/rhel/static-bin/import-additional-cas scanner/image/scanner/scripts/
+          cp image/rhel/static-bin/restore-all-dir-contents scanner/image/scanner/scripts/
+          cp image/rhel/static-bin/save-dir-contents scanner/image/scanner/scripts/
+
+          # Copy scanner binaries
           for arch in amd64 arm64 ppc64le s390x; do
             if [ -f bin/linux_${arch}/scanner ]; then
               mkdir -p scanner/image/scanner/bin/${arch}

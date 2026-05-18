@@ -21,7 +21,7 @@ RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
 ARG TARGETARCH
-COPY image/roxctl/bin/roxctl-${TARGETARCH} /out/usr/bin/roxctl
+COPY bin/roxctl-${TARGETARCH} /out/usr/bin/roxctl
 
 FROM ubi-micro-base
 COPY --from=package_installer /out/ /

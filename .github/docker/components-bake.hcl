@@ -60,8 +60,8 @@ group "all" {
 
 # Main image - central, sensor, etc.
 target "main" {
-  context = "."
-  dockerfile = "image/rhel/Dockerfile"
+  context = "image/rhel"
+  dockerfile = "Dockerfile"
   platforms = split(",", PLATFORMS)
   tags = [
     "${MAIN_REGISTRY}/main:${TAG}"
@@ -80,8 +80,8 @@ target "main" {
 
 # Scanner image
 target "scanner" {
-  context = "."
-  dockerfile = "scanner/image/scanner/Dockerfile"
+  context = "scanner/image/scanner"
+  dockerfile = "Dockerfile"
   platforms = split(",", PLATFORMS)
   tags = [
     "${SCANNER_REGISTRY}/scanner:${TAG}"
@@ -98,8 +98,8 @@ target "scanner" {
 
 # Operator image
 target "operator" {
-  context = "."
-  dockerfile = "operator/prebuilt.Dockerfile"
+  context = "operator"
+  dockerfile = "prebuilt.Dockerfile"
   platforms = split(",", PLATFORMS)
   tags = [
     "${OPERATOR_REGISTRY}/stackrox-operator:${TAG}"
@@ -113,8 +113,8 @@ target "operator" {
 
 # Roxctl CLI image
 target "roxctl" {
-  context = "."
-  dockerfile = "image/roxctl/Dockerfile"
+  context = "image/roxctl"
+  dockerfile = "Dockerfile"
   platforms = split(",", PLATFORMS)
   tags = [
     "${ROXCTL_REGISTRY}/roxctl:${TAG}"

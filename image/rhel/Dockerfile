@@ -87,15 +87,15 @@ COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 
 COPY ui /ui
 
-COPY image/rhel/bin/central-${TARGETARCH}            /stackrox/central
-COPY image/rhel/bin/migrator-${TARGETARCH}           /stackrox/bin/migrator
-COPY image/rhel/bin/compliance-${TARGETARCH}         /stackrox/bin/compliance
-COPY image/rhel/bin/kubernetes-${TARGETARCH}         /stackrox/bin/kubernetes-sensor
-COPY image/rhel/bin/upgrader-${TARGETARCH}           /stackrox/bin/sensor-upgrader
-COPY image/rhel/bin/admission-control-${TARGETARCH}  /stackrox/bin/admission-control
-COPY image/rhel/bin/config-controller-${TARGETARCH}  /stackrox/bin/config-controller
-COPY image/rhel/bin/roxagent-${TARGETARCH}           /stackrox/bin/roxagent
-COPY image/rhel/bin/roxctl-*            /assets/downloads/cli/
+COPY bin/central-${TARGETARCH}            /stackrox/central
+COPY bin/migrator-${TARGETARCH}           /stackrox/bin/migrator
+COPY bin/compliance-${TARGETARCH}         /stackrox/bin/compliance
+COPY bin/kubernetes-${TARGETARCH}         /stackrox/bin/kubernetes-sensor
+COPY bin/upgrader-${TARGETARCH}           /stackrox/bin/sensor-upgrader
+COPY bin/admission-control-${TARGETARCH}  /stackrox/bin/admission-control
+COPY bin/config-controller-${TARGETARCH}  /stackrox/bin/config-controller
+COPY bin/roxagent-${TARGETARCH}           /stackrox/bin/roxagent
+COPY bin/roxctl-*            /assets/downloads/cli/
 
 RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGETARCH} /stackrox/roxctl && \
     ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux
