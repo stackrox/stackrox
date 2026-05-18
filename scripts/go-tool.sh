@@ -61,9 +61,15 @@ if [[ "${CGO_ENABLED}" != 0 ]]; then
 
   # Use musl for static linking to avoid GLIBC version mismatches
   # between builder (ubuntu-latest) and runtime (UBI9)
-  echo >&2 "Using musl-gcc for static linking to avoid GLIBC dependencies"
-  export CC=musl-gcc
-  ldflags+=('-linkmode=external' '-extldflags=-static')
+  # Only use musl-gcc if it's available (not in apollo-ci container)
+  if command -v musl-gcc &> /dev/null; then
+    echo >&2 "Using musl-gcc for static linking to avoid GLIBC dependencies"
+    export CC=musl-gcc
+    ldflags+=('-linkmode=external' '-extldflags=-static')
+  else
+    echo >&2 "musl-gcc not found, using default linker (tests in container)"
+    ldflags+=('-linkmode=external')
+  fi
 fi
 
 function invoke_go() {
