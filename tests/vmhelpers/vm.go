@@ -54,8 +54,8 @@ type VMRequest struct {
 	SSHPublicKey string
 }
 
-// RenderCloudInit expands the embedded cloud-init template using req.
-func RenderCloudInit(req VMRequest) ([]byte, error) {
+// renderCloudInit expands the embedded cloud-init template using req.
+func renderCloudInit(req VMRequest) ([]byte, error) {
 	if req.GuestUser == "" {
 		return nil, errors.New("VMRequest GuestUser is required")
 	}
@@ -80,7 +80,7 @@ func CreateVirtualMachine(ctx context.Context, client dynamic.Interface, req VMR
 	if req.Name == "" || req.Namespace == "" || req.Image == "" {
 		return errors.New("VMRequest Name, Namespace, and Image are required")
 	}
-	userData, err := RenderCloudInit(req)
+	userData, err := renderCloudInit(req)
 	if err != nil {
 		return err
 	}
