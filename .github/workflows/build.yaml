@@ -693,6 +693,11 @@ jobs:
           go-version-file: go.mod
           cache: false
 
+      - name: Install skopeo
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq skopeo
+
       - name: Push matching collector and scanner images
         if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         env:
