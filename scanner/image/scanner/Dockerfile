@@ -17,7 +17,9 @@ FROM registry.access.redhat.com/ubi9/ubi:latest AS package_installer
 
 COPY --from=ubi-micro-base / /out/
 
-RUN dnf install -y \
+RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
+    --mount=type=cache,target=/var/cache/yum,sharing=locked \
+    dnf install -y \
     --installroot=/out/ \
     --releasever=9 \
     --setopt=install_weak_deps=0 \
@@ -34,6 +36,7 @@ FROM ubi-micro-base
 ARG LABEL_VERSION
 ARG LABEL_RELEASE
 ARG QUAY_TAG_EXPIRATION
+ARG TARGETARCH=amd64
 
 LABEL name="scanner-v4" \
       vendor="StackRox" \
@@ -51,7 +54,7 @@ COPY scripts/entrypoint.sh \
      scripts/import-additional-cas \
      scripts/restore-all-dir-contents \
      scripts/save-dir-contents /usr/local/bin/
-COPY bin/scanner /usr/local/bin/
+COPY bin/linux_${TARGETARCH}/scanner /usr/local/bin/scanner
 COPY THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=mappings /mappings/repository-to-cpe.json /mappings/container-name-repos-map.json /run/mappings/
 # Copy Delve debugger if built (empty dir when DEBUG_BUILD=no).

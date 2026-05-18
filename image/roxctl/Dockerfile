@@ -6,7 +6,9 @@ FROM registry.access.redhat.com/ubi9/ubi:latest AS package_installer
 COPY --from=ubi-micro-base / /out/
 
 # Install packages directly to /out/ using --installroot
-RUN dnf install -y \
+RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
+    --mount=type=cache,target=/var/cache/yum,sharing=locked \
+    dnf install -y \
     --installroot=/out/ \
     --releasever=9 \
     --setopt=install_weak_deps=False \

@@ -3,15 +3,15 @@
 # Simplified Dockerfile for operator that uses a pre-built binary.
 # This avoids rebuilding the binary inside Docker and leverages external caching.
 
-ARG TARGET_ARCH=amd64
+ARG TARGETARCH=amd64
 
-FROM --platform=linux/${TARGET_ARCH} registry.access.redhat.com/ubi9-micro:latest
+FROM --platform=linux/${TARGETARCH} registry.access.redhat.com/ubi9-micro:latest
 
 ARG ROX_IMAGE_FLAVOR
 ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
 
-ARG TARGET_ARCH
-COPY bin/linux_${TARGET_ARCH}/stackrox-operator /usr/local/bin/
+ARG TARGETARCH
+COPY bin/linux_${TARGETARCH}/stackrox-operator /usr/local/bin/
 
 # The following are numeric uid and gid of `nobody` user in UBI.
 # We can't use symbolic names because otherwise k8s will fail to start the pod with an error like this:

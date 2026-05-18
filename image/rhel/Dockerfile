@@ -23,7 +23,9 @@ COPY --from=ubi-micro-base / /out/
 COPY --from=downloads /output/rpms/ /tmp/
 COPY signatures/RPM-GPG-KEY-CentOS-Official /tmp/
 
-RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
+RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
+    --mount=type=cache,target=/var/cache/yum,sharing=locked \
+    rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
     dnf install -y \
         --installroot=/out/ \
         --releasever=9 \
@@ -46,7 +48,7 @@ ARG LABEL_RELEASE
 ARG QUAY_TAG_EXPIRATION
 ARG ROX_IMAGE_FLAVOR
 ARG ROX_PRODUCT_BRANDING
-ARG TARGET_ARCH=amd64
+ARG TARGETARCH=amd64
 
 LABEL name="main" \
       vendor="StackRox" \
@@ -85,17 +87,17 @@ COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 
 COPY ui /ui
 
-COPY bin/central            /stackrox/central
-COPY bin/migrator           /stackrox/bin/migrator
-COPY bin/compliance         /stackrox/bin/compliance
-COPY bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
-COPY bin/sensor-upgrader    /stackrox/bin/sensor-upgrader
-COPY bin/admission-control  /stackrox/bin/admission-control
-COPY bin/config-controller  /stackrox/bin/config-controller
-COPY bin/roxagent           /stackrox/bin/roxagent
+COPY bin/linux_${TARGETARCH}/central            /stackrox/central
+COPY bin/linux_${TARGETARCH}/migrator           /stackrox/bin/migrator
+COPY bin/linux_${TARGETARCH}/compliance         /stackrox/bin/compliance
+COPY bin/linux_${TARGETARCH}/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
+COPY bin/linux_${TARGETARCH}/sensor-upgrader    /stackrox/bin/sensor-upgrader
+COPY bin/linux_${TARGETARCH}/admission-control  /stackrox/bin/admission-control
+COPY bin/linux_${TARGETARCH}/config-controller  /stackrox/bin/config-controller
+COPY bin/linux_${TARGETARCH}/roxagent           /stackrox/bin/roxagent
 COPY bin/roxctl*            /assets/downloads/cli/
 
-RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
+RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGETARCH} /stackrox/roxctl && \
     ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux
 
 EXPOSE 8443
