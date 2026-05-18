@@ -297,6 +297,44 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 	}
 }
 
+func (s *ReportServiceTestSuite) TestListReportConfigurationsFiltersEmptyResourceScope() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	validConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
+	emptyResourceScopeConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
+	emptyResourceScopeConfig.Id = "config-empty-scope"
+	emptyResourceScopeConfig.ResourceScope = &storage.ResourceScope{}
+
+	nilResourceScopeConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
+	nilResourceScopeConfig.Id = "config-nil-scope"
+	nilResourceScopeConfig.ResourceScope = nil
+
+	expectedQ := func() *v1.Query {
+		query := search.ConjunctionQuery(
+			search.EmptyQuery(),
+			withoutV1ConfigsQuery)
+		query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+		return query
+	}()
+
+	s.reportConfigDataStore.EXPECT().GetReportConfigurations(allAccessContext, expectedQ).
+		Return([]*storage.ReportConfiguration{validConfig, emptyResourceScopeConfig, nilResourceScopeConfig}, nil).Times(1)
+
+	s.notifierDataStore.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ interface{}, id string) (*storage.Notifier, bool, error) {
+			return &storage.Notifier{Id: id, Name: id}, true, nil
+		}).AnyTimes()
+	s.collectionDataStore.EXPECT().Get(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ interface{}, id string) (*storage.ResourceCollection, bool, error) {
+			return &storage.ResourceCollection{Id: id, Name: id}, true, nil
+		}).AnyTimes()
+
+	configs, err := s.service.ListReportConfigurations(allAccessContext, &apiV2.RawQuery{Query: ""})
+	s.NoError(err)
+	s.Len(configs.GetReportConfigs(), 1)
+	s.Equal("report1", configs.GetReportConfigs()[0].GetId())
+}
+
 func (s *ReportServiceTestSuite) TestGetReportConfigurationByID() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 	testCases := []struct {

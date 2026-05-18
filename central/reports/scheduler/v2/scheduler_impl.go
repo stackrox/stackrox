@@ -343,8 +343,9 @@ func (s *scheduler) queuePendingReports() {
 			continue
 		}
 
-		if snap.GetResourceScope() == nil {
+		if !common.HasValidResourceScope(snap.GetResourceScope()) {
 			log.Errorf("Report configuration '%s' has an empty resource scope (no collection ID or entity scope)", snap.GetReportConfigurationId())
+			continue
 		}
 
 		repRequest := &reportGen.ReportRequest{
@@ -383,8 +384,10 @@ func (s *scheduler) queueScheduledReports() {
 		return
 	}
 	for _, rc := range reportConfigs {
-		if rc.GetResourceScope() == nil {
-			log.Errorf("Report configuration '%s' has an empty resource scope (no collection ID or entity scope)", rc.GetId())
+		if !common.HasValidResourceScope(rc.GetResourceScope()) {
+			log.Warnf("Skipping scheduled report for config '%s' (ID: %s): resource scope is empty",
+				rc.GetName(), rc.GetId())
+			continue
 		}
 		if rc.GetSchedule() != nil {
 			if err := s.UpsertReportSchedule(rc); err != nil {

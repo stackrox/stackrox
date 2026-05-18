@@ -304,7 +304,7 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 2.0")
 	}
 	// Verify ResourceScope is non-nil
-	if config.GetResourceScope() == nil {
+	if !common.HasValidResourceScope(config.GetResourceScope()) {
 		return nil, errors.Wrapf(errox.InvalidArgs,
 			"Report configuration '%s' has an empty resource scope (no collection ID or entity scope)",
 			configID)

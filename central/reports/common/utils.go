@@ -49,6 +49,16 @@ func IsV2ReportConfig(config *storage.ReportConfiguration) bool {
 	return config.GetResourceScope() != nil
 }
 
+// HasValidResourceScope returns true if the report config has a non-empty resource scope
+// containing either a collection ID or an entity scope. Returns false when ResourceScope
+// is nil or is an empty message with no scope_reference set. Later can happen in downgrade scenarios.
+func HasValidResourceScope(scope *storage.ResourceScope) bool {
+	if scope == nil {
+		return false
+	}
+	return scope.GetCollectionId() != "" || scope.GetEntityScope() != nil
+}
+
 // WithoutV2ReportConfigs adds a conjunction query to exclude v2 report configs
 func WithoutV2ReportConfigs(query *v1.Query) *v1.Query {
 	return search.ConjunctionQuery(
