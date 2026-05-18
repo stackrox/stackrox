@@ -59,7 +59,7 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:03bcee28f6137a3103a9218d2d7e6a453658d04a084ec9a41d1501c0d28cff37
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:f0ed53122215c6cccdc992166caa9f6b56c08b202e8b1144dd1c2ad04579415d
 
 ARG PG_VERSION
 
