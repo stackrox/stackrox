@@ -24,7 +24,8 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.yaml.in/yaml/v3"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	grpcStatus "google.golang.org/grpc/status"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -440,7 +441,7 @@ func (pc *PolicyAsCodeSuite) deleteCRandObserveInCentral(k8sPolicy *v1alpha1.Sec
 	pc.Require().EventuallyWithT(func(collect *assert.CollectT) {
 		_, err := pc.policyClient.GetPolicy(pc.ctx, &v1.ResourceByID{Id: id})
 		if err != nil {
-			statusErr, _ := status.FromError(err)
+			statusErr, _ := grpcStatus.FromError(err)
 			if statusErr.Code() != codes.NotFound {
 				collect.Errorf("Unexpected error when geting policy: %s", err.Error())
 			}
@@ -475,10 +476,22 @@ func (pc *PolicyAsCodeSuite) TearDownSuite() {
 	// TODO: Don't double delete
 	for _, policy := range pc.policies {
 		pc.T().Logf("Deleting policy with name \"%s\"", policy.GetName())
-		_, err := pc.policyClient.DeletePolicy(pc.ctx, &v1.ResourceByID{
-			Id: policy.GetId(),
-		})
-		pc.Require().NoError(err)
+		if policy.GetSource() == storage.PolicySource_DECLARATIVE {
+			err := pc.k8sClient.Delete(pc.ctx, policy.GetName(), metav1.DeleteOptions{})
+			if err != nil && !k8serr.IsNotFound(err) {
+				pc.Require().NoError(err)
+			}
+		} else {
+			_, err := pc.policyClient.DeletePolicy(pc.ctx, &v1.ResourceByID{
+				Id: policy.GetId(),
+			})
+			if err != nil {
+				st, ok := grpcStatus.FromError(err)
+				if !ok || st.Code() != codes.NotFound {
+					pc.Require().NoError(err)
+				}
+			}
+		}
 	}
 
 	if pc.notifier != nil {

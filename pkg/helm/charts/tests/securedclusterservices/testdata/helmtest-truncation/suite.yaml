@@ -1,0 +1,27 @@
+server:
+  visibleSchemas:
+    - kubernetes-1.20.2
+  objects:
+    - apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: some-sc
+        annotations:
+          storageclass.kubernetes.io/is-default-class: false
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        namespace: stackrox
+        name: dummy-pvc
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "100Mi"
+
+values:
+  clusterName: "testcluster"
+  createSecrets: false
+  ca:
+    cert: "DUMMY CA CERTIFICATE"
