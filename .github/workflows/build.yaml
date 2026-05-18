@@ -322,21 +322,21 @@ jobs:
           )
         run: echo "RACE=true" >> "$GITHUB_ENV"
 
-      - name: Install musl-tools for CGO builds
-        if: matrix.arch == 'amd64'
+      - name: Install musl-tools for race builds
+        if: |
+          matrix.arch == 'amd64'
+            &&
+          (
+            contains(github.event.pull_request.labels.*.name, 'ci-race-tests')
+              ||
+            matrix.name == 'race-condition-debug'
+          )
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y musl-tools
 
       - name: Build Go Binaries
-        run: |
-          if [[ "${{ matrix.arch }}" != "amd64" ]]; then
-            echo "Building non-amd binary"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
-          else
-            echo "Building amd binary"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
-          fi
+        run: GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
 
       - name: Bundle the build to preserve permissions
         run: tar -cvf go-binaries-build.tar bin/linux_${{ matrix.arch }}
