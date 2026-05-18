@@ -38,6 +38,8 @@ type Virtctl struct {
 	HeartbeatInterval time.Duration
 }
 
+// startHeartbeat launches periodic progress logging for a running virtctl command
+// and returns a stop function that shuts the heartbeat down and waits for exit.
 func (v Virtctl) startHeartbeat(start time.Time, summary string, args []string) func() {
 	interval := v.HeartbeatInterval
 	if interval <= 0 {
