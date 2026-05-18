@@ -381,6 +381,11 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
@@ -417,6 +422,11 @@ jobs:
       with:
         node-version-file: ui/package.json
 
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
@@ -451,6 +461,11 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
