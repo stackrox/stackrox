@@ -1,16 +1,13 @@
 package generate
 
 // Deprecated: istioSupportWrapper is kept for backward compatibility with the deprecated --istio-support flag.
-type istioSupportWrapper struct {
-	istioSupport *string
-}
+type istioSupportWrapper struct{}
 
 func (w istioSupportWrapper) String() string {
-	return *w.istioSupport
+	return ""
 }
 
-func (w istioSupportWrapper) Set(input string) error {
-	*w.istioSupport = input
+func (w istioSupportWrapper) Set(_ string) error {
 	return nil
 }
 
