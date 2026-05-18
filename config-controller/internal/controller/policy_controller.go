@@ -38,7 +38,7 @@ import (
 
 const (
 	policyFinalizer   = "securitypolicies.config.stackrox.io/finalizer"
-	reconcileInterval = 5 * time.Minute
+	reconcileInterval = 30 * time.Minute
 )
 
 var (
