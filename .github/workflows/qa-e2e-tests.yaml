@@ -669,6 +669,7 @@ jobs:
     - name: "Run QA tests: ${{ matrix.name }}"
       working-directory: qa-tests-backend
       env:
+        ROX_USERNAME: admin
         API_HOSTNAME: ${{ env.API_HOSTNAME }}
         API_PORT: ${{ env.API_PORT }}
         ROX_ADMIN_PASSWORD_FILE: /tmp/rox-admin-password
