@@ -281,7 +281,7 @@ jobs:
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
           name: cli-build
-          path: bin/
+          path: bin
 
   pre-build-go-binaries:
     strategy:
@@ -357,13 +357,10 @@ jobs:
             GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
           fi
 
-      - name: Bundle the build to preserve permissions
-        run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
-
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
-          path: go-binaries-build.tgz
+          path: bin/linux_${{ matrix.arch }}
 
   pre-build-docs:
     runs-on: ubuntu-latest
@@ -585,10 +582,7 @@ jobs:
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: ${{ env.GO_BINARIES_BUILD_ARTIFACT }}
-
-      - name: Unpack Go binaries build
-        run: |
-          tar xvzf go-binaries-build.tgz
+          path: .
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -840,9 +834,6 @@ jobs:
           name: go-binaries-build-${{ matrix.arch }}-default
           path: .
 
-      - name: Extract prebuilt binaries
-        run: tar xzf go-binaries-build.tgz
-
       - name: PR labels
         uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
 
@@ -958,9 +949,7 @@ jobs:
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
-
-      - name: Unpack Go binaries
-        run: tar xvzf go-binaries-build.tgz
+          path: .
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -1136,10 +1125,7 @@ jobs:
     - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: go-binaries-build-amd64-default
-
-    - name: Unpack Go binaries build
-      run: |
-        tar xvzf go-binaries-build.tgz
+        path: .
 
     - name: Scan
       run: |
