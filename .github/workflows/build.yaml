@@ -483,19 +483,6 @@ jobs:
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
-      - name: Build and push central-db multi-arch to stackrox-io
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # ratchet:docker/build-push-action@v7.1.0
-        with:
-          context: image/postgres
-          file: image/postgres/Dockerfile
-          platforms: ${{ steps.platforms.outputs.platforms }}
-          push: true
-          tags: quay.io/stackrox-io/central-db:${{ env.BUILD_TAG }}
-          cache-from: type=gha,scope=central-db
-          cache-to: type=gha,mode=max,scope=central-db
-
       # scanner/image/db/Dockerfile does COPY init-bundles/db-init.dump.zst.
       # This file is not in git - the Makefile creates it as empty by default
       # (or populated if SCANNER_DB_INIT_BUNDLE_ENABLED=force, which is not used).
@@ -506,21 +493,20 @@ jobs:
           mkdir -p scanner/image/db/init-bundles
           touch scanner/image/db/init-bundles/db-init.dump.zst
 
-      - name: Build and push scanner-v4-db multi-arch to stackrox-io
+      - name: Build and push DB images in parallel with bake
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # ratchet:docker/build-push-action@v7.1.0
+        uses: docker/bake-action@5be5f02ff8819ecd3092ea6b2e6261c31774f2b4 # ratchet:docker/bake-action@v6
         with:
-          context: scanner/image/db
-          file: scanner/image/db/Dockerfile
-          platforms: ${{ steps.platforms.outputs.platforms }}
+          files: .github/docker/db-bake.hcl
+          targets: all
           push: true
-          tags: quay.io/stackrox-io/scanner-v4-db:${{ env.BUILD_TAG }}
-          build-args: |
-            LABEL_VERSION=${{ env.BUILD_TAG }}
-            LABEL_RELEASE=${{ env.BUILD_TAG }}
-          cache-from: type=gha,scope=scanner-v4-db
-          cache-to: type=gha,mode=max,scope=scanner-v4-db
+        env:
+          TAG: ${{ env.BUILD_TAG }}
+          PLATFORMS: ${{ steps.platforms.outputs.platforms }}
+          REGISTRY: quay.io/stackrox-io
+          LABEL_VERSION: ${{ env.BUILD_TAG }}
+          LABEL_RELEASE: ${{ env.BUILD_TAG }}
 
       # We can't push to both quay.io/stackrox-io and quay.io/rhacs-eng in a single
       # build because they require different credentials (different organizations).
