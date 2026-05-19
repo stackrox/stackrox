@@ -35,6 +35,15 @@ LKpdYJEldXnyRE4ppY5d7vnRZHvdZQMSE3KoRSMvVnzZtc9LTKLB3DlS/w==
 `
 )
 
+type bundleKey struct {
+	Name string `json:"name"`
+	PEM  string `json:"pem"`
+}
+
+type keyBundle struct {
+	Keys []bundleKey `json:"keys"`
+}
+
 type RedHatSigningKeySuite struct {
 	KubernetesSuite
 	conn *grpc.ClientConn
@@ -53,8 +62,43 @@ func (s *RedHatSigningKeySuite) siClient() v1.SignatureIntegrationServiceClient 
 	return v1.NewSignatureIntegrationServiceClient(s.conn)
 }
 
-func (s *RedHatSigningKeySuite) getRedHatIntegration(ctx context.Context) (*v1.ListSignatureIntegrationsResponse, error) {
+func (s *RedHatSigningKeySuite) listIntegrations(ctx context.Context) (*v1.ListSignatureIntegrationsResponse, error) {
 	return s.siClient().ListSignatureIntegrations(ctx, &v1.Empty{})
+}
+
+// waitForIntegrationKeys polls until the Red Hat integration has exactly the expected key names.
+func (s *RedHatSigningKeySuite) waitForIntegrationKeys(ctx context.Context, expectedNames []string, description string) {
+	t := s.T()
+	sort.Strings(expectedNames)
+	mustEventually(t, ctx, func() error {
+		rpcCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+		resp, err := s.listIntegrations(rpcCtx)
+		if err != nil {
+			return fmt.Errorf("listing integrations: %w", err)
+		}
+		for _, si := range resp.GetIntegrations() {
+			if si.GetId() != redHatIntegrationID {
+				continue
+			}
+			keys := si.GetCosign().GetPublicKeys()
+			if len(keys) != len(expectedNames) {
+				return fmt.Errorf("expected %d keys, got %d", len(expectedNames), len(keys))
+			}
+			names := make([]string, len(keys))
+			for i, k := range keys {
+				names[i] = k.GetName()
+			}
+			sort.Strings(names)
+			for i := range expectedNames {
+				if names[i] != expectedNames[i] {
+					return fmt.Errorf("expected key names %v, got %v", expectedNames, names)
+				}
+			}
+			return nil
+		}
+		return fmt.Errorf("integration %q not found", redHatIntegrationID)
+	}, 5*time.Second, description)
 }
 
 func (s *RedHatSigningKeySuite) TestDefaultIntegrationExists() {
@@ -62,7 +106,7 @@ func (s *RedHatSigningKeySuite) TestDefaultIntegrationExists() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	resp, err := s.getRedHatIntegration(ctx)
+	resp, err := s.listIntegrations(ctx)
 	s.Require().NoError(err, "listing signature integrations")
 
 	var found bool
@@ -91,26 +135,17 @@ func (s *RedHatSigningKeySuite) TestWatcherPicksUpBundleFile() {
 	testCtx, overallCtx, cancel := testContexts(t, "TestWatcherPicksUpBundleFile", 10*time.Minute)
 	defer cancel()
 
-	// Cleanup: remove env var and wait for rollout (runs even if the test fails).
 	defer func() {
 		s.logf("Cleanup: removing %s env var", watchIntervalEnv)
 		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", watchIntervalEnv)
 		s.waitUntilK8sDeploymentReady(overallCtx, ns, "central")
 	}()
 
-	// Set a short watch interval so we don't wait 4 hours.
 	s.logf("Setting %s=%s on central", watchIntervalEnv, shortWatchInterval)
 	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
 	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
 
-	// Build the bundle JSON.
-	type bundleKey struct {
-		Name string `json:"name"`
-		PEM  string `json:"pem"`
-	}
-	bundle := struct {
-		Keys []bundleKey `json:"keys"`
-	}{
+	bundle := keyBundle{
 		Keys: []bundleKey{
 			{Name: "test-key-1", PEM: testPublicKeyPEM1},
 			{Name: "test-key-2", PEM: testPublicKeyPEM2},
@@ -122,45 +157,17 @@ func (s *RedHatSigningKeySuite) TestWatcherPicksUpBundleFile() {
 	b64 := base64.StdEncoding.EncodeToString(bundleJSON)
 	writeCmd := fmt.Sprintf("mkdir -p /tmp/redhat-signing-keys && echo %s | base64 -d > /tmp/redhat-signing-keys/bundle.json", b64)
 
-	// Write the bundle file into the Central pod.
 	s.logf("Writing test key bundle to Central pod")
 	execInDeployment(t, s.k8s, "central", ns, "sh", "-c", writeCmd)
 
-	// Cleanup: remove the bundle file.
 	defer func() {
 		s.logf("Cleanup: removing test bundle file")
 		execInDeployment(t, s.k8s, "central", ns, "sh", "-c", "rm -f /tmp/redhat-signing-keys/bundle.json")
 	}()
 
-	// Poll until the watcher picks up the file and upserts the integration.
 	s.logf("Waiting for watcher to pick up the bundle")
-	mustEventually(t, testCtx, func() error {
-		ctx, cancel := context.WithTimeout(testCtx, 10*time.Second)
-		defer cancel()
-		resp, err := s.getRedHatIntegration(ctx)
-		if err != nil {
-			return fmt.Errorf("listing integrations: %w", err)
-		}
-		for _, si := range resp.GetIntegrations() {
-			if si.GetId() != redHatIntegrationID {
-				continue
-			}
-			keys := si.GetCosign().GetPublicKeys()
-			if len(keys) != 2 {
-				return fmt.Errorf("expected 2 keys, got %d", len(keys))
-			}
-			names := make([]string, len(keys))
-			for i, k := range keys {
-				names[i] = k.GetName()
-			}
-			sort.Strings(names)
-			if names[0] != "test-key-1" || names[1] != "test-key-2" {
-				return fmt.Errorf("unexpected key names: %v", names)
-			}
-			return nil
-		}
-		return fmt.Errorf("integration %q not found", redHatIntegrationID)
-	}, 5*time.Second, "watcher did not pick up the bundle file")
+	s.waitForIntegrationKeys(testCtx, []string{"test-key-1", "test-key-2"},
+		"watcher did not pick up the bundle file")
 
 	t.Log("Watcher successfully picked up the bundle with 2 test keys")
 }
