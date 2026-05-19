@@ -30,6 +30,9 @@ inputs:
   registry-password:
     description: Registry password — sets REGISTRY_PASSWORD for roxie
     default: ""
+  exposure:
+    description: "Service exposure: auto (default), none, loadbalancer, route"
+    default: ""
   background:
     description: Run deploy in background
     default: "false"
@@ -85,12 +88,18 @@ runs:
             both) yq -i '.central.spec.scanner.scannerComponent = "Enabled"' /tmp/roxie-override.yaml ;;
           esac
 
+          exposure_flag=""
+          if [ -n "${{ inputs.exposure }}" ]; then
+            exposure_flag="--exposure=${{ inputs.exposure }}"
+          fi
+
           roxie deploy both \
             --resources=${{ inputs.resources }} \
             --single-namespace \
             --envrc /tmp/roxie-env.sh \
             --override /tmp/roxie-override.yaml \
-            --tag ${{ inputs.tag }}
+            --tag ${{ inputs.tag }} \
+            $exposure_flag
 
           sed "s/^export //; s/['\"]//g" /tmp/roxie-env.sh >> "$GITHUB_ENV"
           source /tmp/roxie-env.sh
