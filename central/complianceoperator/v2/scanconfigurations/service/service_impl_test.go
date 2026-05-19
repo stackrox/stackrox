@@ -185,7 +185,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 	request.ScanConfig = nil
 	config, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().Error(err)
-	s.Require().Contains(err.Error(), "The scan configuration is nil.")
+	s.Require().Contains(err.Error(), "The scan configuration is nil")
 	s.Require().Nil(config)
 
 	request = getTestAPIRec()
@@ -228,7 +228,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestUpdateComplianceScanConfigura
 	request.ScanConfig = nil
 	_, err = s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().Error(err)
-	s.Require().Contains(err.Error(), "The scan configuration is nil.")
+	s.Require().Contains(err.Error(), "The scan configuration is nil")
 
 	// Test Case 4: No clusters
 	request = getTestAPIRec()
@@ -277,7 +277,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestDeleteComplianceScanConfigura
 
 	_, err = s.service.DeleteComplianceScanConfiguration(allAccessContext, &v2.ResourceByID{Id: failingID})
 	s.Require().Error(err)
-	s.Require().Contains(err.Error(), "Unable to delete scan config")
+	s.Require().Contains(err.Error(), "manager error")
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigurationScanExists() {
@@ -285,9 +285,9 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 
 	request := getTestAPIRec()
 	storageRequest := convertV2ScanConfigToStorage(allAccessContext, request)
-	managerErr := errors.Errorf("Scan Configuration named %q already exists.", request.GetScanName())
+	managerErr := errors.Errorf("Scan Configuration named %q already exists", request.GetScanName())
 	s.manager.EXPECT().ProcessScanRequest(gomock.Any(), storageRequest, []string{fixtureconsts.Cluster1}).Return(nil, managerErr).Times(1)
-	expectedErr := errors.Wrapf(errox.InvalidArgs, "Unable to process scan config. Scan Configuration named %q already exists.", request.GetScanName())
+	expectedErr := errors.Wrap(errox.InvalidArgs, managerErr.Error())
 
 	config, err := s.service.CreateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().Equal(expectedErr.Error(), err.Error())

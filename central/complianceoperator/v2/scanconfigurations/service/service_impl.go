@@ -144,7 +144,7 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 	// Process scan request, config may be updated in the event of errors from sensor.
 	scanConfig, err := s.manager.ProcessScanRequest(ctx, scanConfig, clusterIDs)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process scan config. %v", err)
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	return convertStorageScanConfigToV2(ctx, scanConfig, s.scanConfigDS)
@@ -169,7 +169,7 @@ func (s *serviceImpl) UpdateComplianceScanConfiguration(ctx context.Context, req
 	// Update scan request, config may be updated in the event of errors from sensor.
 	_, err := s.manager.UpdateScanRequest(ctx, scanConfig, clusterIDs)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process scan config. %v", err)
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	return &v2.Empty{}, nil
@@ -212,7 +212,7 @@ func (s *serviceImpl) DeleteComplianceScanConfiguration(ctx context.Context, req
 
 	err = s.manager.DeleteScan(ctx, req.GetId())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to delete scan config: %v", err)
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	return &v2.Empty{}, nil
@@ -238,7 +238,7 @@ func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, quer
 
 	scanStatuses, err := convertStorageScanConfigToV2ScanStatuses(ctx, scanConfigs, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS, s.notifierDS)
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "failed to convert compliance scan configurations.")
+		return nil, errors.Wrap(errox.InvalidArgs, "failed to convert compliance scan configurations")
 	}
 
 	scanConfigCount, err := s.scanConfigDS.CountScanConfigurations(ctx, countQuery)
@@ -520,7 +520,7 @@ func validateScanConfiguration(req *v2.ComplianceScanConfiguration) error {
 	}
 
 	if req.GetScanConfig() == nil {
-		return errors.Wrap(errox.InvalidArgs, "The scan configuration is nil.")
+		return errors.Wrap(errox.InvalidArgs, "The scan configuration is nil")
 	}
 
 	if len(req.GetScanConfig().GetProfiles()) == 0 {
