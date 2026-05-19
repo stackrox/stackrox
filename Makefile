@@ -139,6 +139,7 @@ style: golangci-lint style-slim
 .PHONY: style-slim
 style-slim: \
 	blanks \
+	check-cert-watcher-sync \
 	check-service-protos \
 	github-actions-pin-check \
 	newlines \
@@ -262,6 +263,12 @@ fast-migrator-build: migrator-build-nodeps
 migrator-build-nodeps:
 	@echo "+ $@"
 	$(GOBUILD) migrator
+
+.PHONY: check-cert-watcher-sync
+check-cert-watcher-sync:
+	@echo "+ $@"
+	@diff image/postgres/scripts/cert-watcher.sh scanner/image/db/scripts/cert-watcher.sh \
+		|| (echo "ERROR: cert-watcher.sh files are out of sync" && exit 1)
 
 .PHONY: check-service-protos
 check-service-protos:

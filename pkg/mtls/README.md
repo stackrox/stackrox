@@ -39,6 +39,7 @@
 - Operator TLS reconciliation: `operator/internal/central/extensions/reconcile_tls.go`
 - Sensor cert init (one-time copy at startup): `sensor/kubernetes/certinit/init_tls_certs.go`
 - Sensor cert refresh (TLS challenge + CA bundle): `sensor/kubernetes/certrefresh/`
+- Postgres DB cert reload (Central DB, Scanner V4 DB): `image/postgres/scripts/cert-watcher.sh`, `image/templates/helm/shared/templates/_cert-watcher.tpl`
 
 ### Central has three independent cert-handling paths
 
@@ -56,7 +57,7 @@ The following certificates are currently known to be cached at start-up and not 
 - Scanner V4 (indexer/matcher) client certs: cached at dial time via `clientconn.TLSConfig`
 - Admission controller client cert for Sensor connection: `clientconn.AuthenticatedGRPCConnection` at startup
 - Compliance client cert for Sensor connection: `clientconn.AuthenticatedGRPCConnection` at startup
-- Postgres (Central DB, Scanner DB, Scanner V4 DB): need SIGHUP to reload SSL certs
+
 
 ## Certificate management — who manages what
 
