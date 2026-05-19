@@ -33,7 +33,7 @@ group "all" {
 # Central database (PostgreSQL 15)
 target "central-db" {
   context = "image/postgres"
-  dockerfile = "image/postgres/Dockerfile"
+  dockerfile = "Dockerfile"
   platforms = split(",", PLATFORMS)
   tags = [
     "${REGISTRY}/central-db:${TAG}"
@@ -45,7 +45,7 @@ target "central-db" {
 # Scanner V4 database (PostgreSQL 15)
 target "scanner-v4-db" {
   context = "scanner/image/db"
-  dockerfile = "scanner/image/db/Dockerfile"
+  dockerfile = "Dockerfile"
   platforms = split(",", PLATFORMS)
   tags = [
     "${REGISTRY}/scanner-v4-db:${TAG}"
