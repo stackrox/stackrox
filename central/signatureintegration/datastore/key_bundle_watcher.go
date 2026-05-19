@@ -43,17 +43,17 @@ func newKeyBundleWatcher(filePath string, interval time.Duration, siStore store.
 }
 
 func (w *keyBundleWatcher) Start() {
+	log.Info("Starting Red Hat signing key bundle watcher")
 	go w.run()
 }
 
 func (w *keyBundleWatcher) Stop() {
 	w.stopSig.Signal()
 	<-w.doneSig.Done()
+	log.Info("Stopped Red Hat signing key bundle watcher")
 }
 
 func (w *keyBundleWatcher) run() {
-	log.Info("Starting Red Hat signing key bundle watcher")
-	defer log.Info("Stopped Red Hat signing key bundle watcher")
 	defer w.doneSig.Signal()
 
 	w.checkAndUpsert()
