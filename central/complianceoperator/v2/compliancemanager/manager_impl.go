@@ -299,6 +299,9 @@ func (m *managerImpl) validateScan(ctx context.Context, scanRequest *storage.Com
 		return nil, errors.Errorf("Unable to find all profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
+	// UNSPECIFIED should not appear here because centralToStorageProfileKind normalizes it to
+	// PROFILE at ingestion time, but we allow it through defensively — StorageToCentralProfileKind
+	// will map it to PROFILE. Truly unknown kinds are rejected.
 	for _, p := range returnedProfiles {
 		switch p.GetOperatorKind() {
 		case storage.ComplianceOperatorProfileV2_PROFILE, storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
