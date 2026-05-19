@@ -204,7 +204,7 @@ jobs:
           if [ ! -s /tmp/rox-auth-token ]; then
             echo "::error::Auth token not generated after 10 minutes"
             echo "--- deploy.log (last 80 lines) ---"
-            tail -80 /tmp/deploy.log 2>/dev/null || echo "(no log)"
+            tail -80 /tmp/deploy-stackrox.log 2>/dev/null || echo "(no log)"
             echo "--- pods ---"
             kubectl -n stackrox get pods --no-headers 2>/dev/null || true
             exit 1
@@ -222,7 +222,7 @@ jobs:
           npx cypress run \
             --browser chrome \
             --spec "${{ matrix.specs }}" \
-            --config "baseUrl=https://localhost:8000,specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false,retries=0"
+            --config "baseUrl=https://localhost:8443,specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false,retries=0"
         env:
           CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
           CYPRESS_ORCHESTRATOR_FLAVOR: k8s
