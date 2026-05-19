@@ -110,7 +110,6 @@ patch_global_openshift_pull_secret() {
 
     info "Patching global OpenShift pull-secret to include credentials for ${registry}"
     local tmp_pull_secret; tmp_pull_secret=$(mktemp)
-    trap '[[ -n "$tmp_pull_secret" ]] && rm -f "$tmp_pull_secret"' RETURN
 
     oc get secret/pull-secret \
         -n openshift-config \
@@ -123,6 +122,8 @@ patch_global_openshift_pull_secret() {
     oc set data secret/pull-secret \
         -n openshift-config \
         --from-file=.dockerconfigjson="$tmp_pull_secret"
+
+    rm -f "$tmp_pull_secret"
 }
 
 reuse_config_part_1() {

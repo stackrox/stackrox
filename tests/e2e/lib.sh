@@ -143,7 +143,6 @@ deploy_stackrox_with_roxie() {
     # - pause_stackrox_operator_reconcile (--pause-reconciliation)
     # - wait_for_api (implicit)
     local roxie_envrc; roxie_envrc="$(mktemp)"
-    trap '[[ -n "$roxie_envrc" ]] && rm -f "$roxie_envrc"' RETURN
 
     roxie deploy \
         --envrc "$roxie_envrc" \
@@ -171,6 +170,7 @@ deploy_stackrox_with_roxie() {
     fi
 
     touch "${STATE_DEPLOYED}"
+    rm -f "$roxie_envrc"
 
     info "╔═════════════════════╗"
     info "║                     ║"

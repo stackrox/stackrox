@@ -9,7 +9,6 @@ set -euo pipefail
 merge_yaml() {
     local input="$1"
     local tmpfile; tmpfile="$(mktemp)"
-    trap '[[ -n "$tmpfile" ]] && rm -f "$tmpfile"' RETURN
 
     # This merges the existing YAML in the input file ("fi == 0") with the new YAML provided on stdin ("fi == 1").
     #
@@ -20,6 +19,7 @@ merge_yaml() {
     # taking precedence over those from the first (the existing YAML).
     yq eval-all '(select(fi == 0) // {}) * select(fi == 1)' "$input" <(cat) > "$tmpfile"
     cat "$tmpfile" > "$input"
+    rm -f "$tmpfile"
 }
 
 patch_yaml() {
