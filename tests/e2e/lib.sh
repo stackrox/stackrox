@@ -120,7 +120,6 @@ deploy_stackrox_with_roxie() {
         info "Deploying SecuredCluster into standard namespace"
     fi
 
-
     info "Creating admin password"
     ROX_ADMIN_PASSWORD="$(gen_admin_password)"
     export ROX_ADMIN_PASSWORD # Let roxie pick it up automatically.
@@ -144,6 +143,8 @@ deploy_stackrox_with_roxie() {
     # - pause_stackrox_operator_reconcile (--pause-reconciliation)
     # - wait_for_api (implicit)
     local roxie_envrc; roxie_envrc="$(mktemp)"
+    trap '[[ -n "$roxie_envrc" ]] && rm -f "$roxie_envrc"' RETURN
+
     roxie deploy \
         --envrc "$roxie_envrc" \
         --config "$config_file"
@@ -170,7 +171,6 @@ deploy_stackrox_with_roxie() {
     fi
 
     touch "${STATE_DEPLOYED}"
-    rm -f "$roxie_envrc"
 
     info "╔═════════════════════╗"
     info "║                     ║"
