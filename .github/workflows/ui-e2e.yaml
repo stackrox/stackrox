@@ -156,6 +156,7 @@ jobs:
         uses: ./.github/actions/deploy-stackrox
         with:
           tag: ${{ inputs.tag }}
+          scanner: v2
           github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
           quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
