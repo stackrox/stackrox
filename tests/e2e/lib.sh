@@ -246,6 +246,9 @@ extend_roxie_envrc() {
 
     # roxie does not export these (yet?) via envrc, but they are needed by the tests.
     ## First validation
+    if [[ "${API_ENDPOINT:-}" == "" ]]; then
+        die "API_ENDPOINT is missing from roxies envrc file."
+    fi
     if [[ ! "$API_ENDPOINT" =~ ^[^:]+:[0-9]+$ ]]; then
         die "API_ENDPOINT has unexpected format: $API_ENDPOINT (expected hostname:port)"
     fi
