@@ -21,8 +21,6 @@ ENV LANG="en_US.utf8"
 # This will be ignored if empty in the init script.
 COPY --link init-bundles/db-init.dump.zst /db-init.dump.zst
 
-COPY --link scripts/docker-entrypoint.sh scripts/init-entrypoint.sh scripts/cert-watcher.sh /usr/local/bin/
-
 RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
     --mount=type=cache,target=/var/cache/yum,sharing=locked \
     dnf upgrade -y --nobest && \
@@ -37,6 +35,8 @@ RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
     # Cleanup - cache mounts are automatically unmounted, no need to clean
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     mkdir /docker-entrypoint-initdb.d
+
+COPY --link scripts/docker-entrypoint.sh scripts/init-entrypoint.sh scripts/cert-watcher.sh /usr/local/bin/
 
 STOPSIGNAL SIGINT
 
