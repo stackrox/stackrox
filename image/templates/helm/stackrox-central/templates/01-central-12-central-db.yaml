@@ -74,6 +74,7 @@ spec:
       {{- end }}
       serviceAccountName: central-db
       terminationGracePeriodSeconds: 120
+      shareProcessNamespace: true
       initContainers:
       - name: init-db
         image: {{ ._rox.central.db.image.fullRef | quote }}
@@ -138,6 +139,7 @@ spec:
           mountPath: /run/secrets/stackrox.io/certs
         - mountPath: /dev/shm
           name: shared-memory
+      {{- include "srox.certWatcherSidecar" (list . "central-db" ._rox.central.db.image.fullRef "central-db-tls-volume") | nindent 6 }}
       securityContext:
         fsGroup: 70
       volumes:

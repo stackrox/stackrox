@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/compliance/utils"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/pkg/concurrency"
 )
 
 // NodeNameProvider provides node name
@@ -28,15 +27,4 @@ type NodeScanner interface {
 type NodeIndexer interface {
 	IndexNode(ctx context.Context) (*v4.IndexReport, error)
 	GetIntervals() *utils.NodeScanIntervals
-}
-
-// UnconfirmedMessageHandler handles the observation of sending, and ACK/NACK messages.
-// Each resource (identified by resourceID) has independent retry state.
-type UnconfirmedMessageHandler interface {
-	HandleACK(resourceID string)
-	HandleNACK(resourceID string)
-	ObserveSending(resourceID string)
-	RetryCommand() <-chan string // Returns resourceID to retry
-	OnACK(callback func(resourceID string))
-	Stopped() concurrency.ReadOnlyErrorSignal
 }

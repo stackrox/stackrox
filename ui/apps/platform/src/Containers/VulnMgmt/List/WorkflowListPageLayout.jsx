@@ -71,7 +71,7 @@ const WorkflowListPageLayout = () => {
                         </div>
                     </div>
                 </PageHeader>
-                <div className="h-full relative z-0 min-h-0 bg-base-100" id="capture-list">
+                <div className="h-full relative z-0 min-h-0 bg-base-100">
                     <ListComponent
                         entityListType={pageListType}
                         selectedRowId={selectedRow && selectedRow.entityId}

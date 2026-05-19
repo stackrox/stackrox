@@ -117,6 +117,7 @@ func GetProfileV2Storage(_ *testing.T) *storage.ComplianceOperatorProfileV2 {
 		Values:         values,
 		ClusterId:      fixtureconsts.Cluster1,
 		ProfileRefId:   internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""),
+		OperatorKind:   storage.ComplianceOperatorProfileV2_PROFILE,
 	}
 }
 
@@ -139,6 +140,7 @@ func GetProfilesV2Storage(_ *testing.T) []*storage.ComplianceOperatorProfileV2 {
 			Values:         values,
 			ClusterId:      fixtureconsts.Cluster1,
 			ProfileRefId:   internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""),
+			OperatorKind:   storage.ComplianceOperatorProfileV2_PROFILE,
 		},
 		{
 			Id:             profileUID2,
@@ -156,6 +158,7 @@ func GetProfilesV2Storage(_ *testing.T) []*storage.ComplianceOperatorProfileV2 {
 			Values:         values,
 			ClusterId:      fixtureconsts.Cluster1,
 			ProfileRefId:   internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""),
+			OperatorKind:   storage.ComplianceOperatorProfileV2_PROFILE,
 		},
 	}
 }
@@ -176,8 +179,9 @@ func GetProfileV2Api(_ *testing.T) *v2.ComplianceProfile {
 			ShortName: "CIS-OCP",
 			Version:   "4.2",
 		}},
-		Product: "",
-		Values:  values,
+		Product:      "",
+		Values:       values,
+		OperatorKind: v2.ComplianceProfile_PROFILE,
 	}
 }
 
@@ -198,8 +202,9 @@ func GetProfilesV2Api(_ *testing.T) []*v2.ComplianceProfile {
 				ShortName: "CIS-OCP",
 				Version:   "4.2",
 			}},
-			Product: "",
-			Values:  values,
+			Product:      "",
+			Values:       values,
+			OperatorKind: v2.ComplianceProfile_PROFILE,
 		},
 		{
 			Id:             profileUID2,
@@ -215,8 +220,9 @@ func GetProfilesV2Api(_ *testing.T) []*v2.ComplianceProfile {
 				ShortName: "NIST-800-53",
 				Version:   "4.1.2",
 			}},
-			Product: "",
-			Values:  values,
+			Product:      "",
+			Values:       values,
+			OperatorKind: v2.ComplianceProfile_PROFILE,
 		},
 	}
 }

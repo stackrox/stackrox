@@ -30,10 +30,12 @@ function setup() {
   tag="$(make --quiet --no-print-directory tag)"
   local image_list
   image_list="$(mktemp)"
-  CI_JOB_NAME="master-race-condition-qa-e2e-tests" populate_stackrox_image_list "$image_list"
+  # Simulate the real job: gke_race_condition_qa_e2e_tests.py sets MAIN_IMAGE_TAG with -rcd
+  MAIN_IMAGE_TAG="${tag}-rcd" CI_JOB_NAME="master-race-condition-qa-e2e-tests" populate_stackrox_image_list "$image_list"
   run cat "${image_list}"
   assert_success
   assert_output --partial "main ${tag}-rcd"
+  refute_output --partial "-rcd-rcd"
   assert_output --partial "roxctl ${tag}"
   assert_output --partial "central-db ${tag}"
 }
