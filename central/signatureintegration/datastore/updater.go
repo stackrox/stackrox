@@ -17,6 +17,7 @@ import (
 const (
 	maxResponseBodySize = 5 * 1024 * 1024 // 5 MB
 	requestTimeout      = 60 * time.Second
+	minUpdateInterval   = 5 * time.Minute
 )
 
 type keyBundleUpdater struct {
@@ -27,8 +28,6 @@ type keyBundleUpdater struct {
 	stopSig  concurrency.Signal
 	doneSig  concurrency.Signal
 }
-
-const minUpdateInterval = 5 * time.Minute
 
 func newKeyBundleUpdater(url, filePath string, interval time.Duration) *keyBundleUpdater {
 	if interval < minUpdateInterval {
@@ -58,7 +57,6 @@ func (u *keyBundleUpdater) Stop() {
 
 func (u *keyBundleUpdater) run() {
 	log.Info("Starting Red Hat signing key bundle updater")
-	defer log.Info("Stopped Red Hat signing key bundle updater")
 	defer u.doneSig.Signal()
 
 	if err := os.MkdirAll(filepath.Dir(u.filePath), 0700); err != nil {
