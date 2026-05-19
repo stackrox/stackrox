@@ -269,7 +269,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 				suite.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), mockScanName).Return(getTestRec(), nil).Times(1)
 			},
 			isErrorTest: true,
-			expectedErr: fmt.Sprintf("Scan configuration named %q already exists", mockScanName),
+			expectedErr: fmt.Sprintf("Scan configuration named %q already exists.", mockScanName),
 		},
 		{
 			desc:        "Scan configuration has duplicate profiles",

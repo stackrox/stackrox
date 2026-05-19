@@ -238,7 +238,7 @@ func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, quer
 
 	scanStatuses, err := convertStorageScanConfigToV2ScanStatuses(ctx, scanConfigs, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS, s.notifierDS)
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "failed to convert compliance scan configurations")
+		return nil, errors.Wrap(errox.InvalidArgs, "failed to convert compliance scan configurations.")
 	}
 
 	scanConfigCount, err := s.scanConfigDS.CountScanConfigurations(ctx, countQuery)
@@ -520,7 +520,7 @@ func validateScanConfiguration(req *v2.ComplianceScanConfiguration) error {
 	}
 
 	if req.GetScanConfig() == nil {
-		return errors.Wrap(errox.InvalidArgs, "The scan configuration is nil")
+		return errors.Wrap(errox.InvalidArgs, "The scan configuration is nil.")
 	}
 
 	if len(req.GetScanConfig().GetProfiles()) == 0 {

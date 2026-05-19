@@ -93,7 +93,7 @@ func (m *managerImpl) ProcessComplianceOperatorInfo(ctx context.Context, complia
 	// TODO (ROX-18101):  Shouldn't happen once ROX-18101 is implemented.  Deferring more thorough handling
 	// of this condition to that ticket.
 	if len(existingIntegrations) > 1 {
-		return errors.Errorf("multiple compliance operators for cluster %q exist", complianceIntegration.GetClusterId())
+		return errors.Errorf("multiple compliance operators for cluster %q exist.", complianceIntegration.GetClusterId())
 	}
 
 	// Not found so an add
@@ -137,7 +137,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		return nil, err
 	}
 	if scanConfig != nil {
-		return nil, errors.Errorf("Scan configuration named %q already exists", scanRequest.GetScanConfigName())
+		return nil, errors.Errorf("Scan configuration named %q already exists.", scanRequest.GetScanConfigName())
 	}
 
 	scanRequest.Id = uuid.NewV4().String()
@@ -174,12 +174,12 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 		return nil, err
 	}
 	if !found {
-		return nil, errors.Errorf("Scan configuration with ID %q does not exist", scanRequest.GetId())
+		return nil, errors.Errorf("Scan configuration with ID %q does not exist.", scanRequest.GetId())
 	}
 
 	// We are using scan schedule name as FK in scan results. Changing name would break relation.
 	if oldScanConfig.GetScanConfigName() != scanRequest.GetScanConfigName() {
-		return nil, errors.New("Changing the scan schedule name is not allowed")
+		return nil, errors.New("Changing the scan schedule name is not allowed.")
 	}
 
 	// TODO(ROX-22398): if we restrict cluster deletion, this is where we would do it before any updates are done.
@@ -290,7 +290,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 	}
 
 	if len(returnedProfiles) != len(profiles) {
-		return nil, errors.Errorf("Unable to find all profiles for scan configuration named %q", scanRequest.GetScanConfigName())
+		return nil, errors.Errorf("Unable to find all profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
 	// Validate profile kinds. UNSPECIFIED should not appear here because centralToStorageProfileKind
@@ -314,7 +314,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
 	if err != nil {
 		log.Error(err)
-		return nil, errors.Errorf("Unable to save scan configuration named %q", scanRequest.GetScanConfigName())
+		return nil, errors.Errorf("Unable to save scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
 	profileRefs := internaltov2storage.ScanConfigRefsToCentral(scanRequest.GetProfileRefs())
@@ -560,7 +560,7 @@ func (m *managerImpl) DeleteScan(ctx context.Context, scanID string) error {
 	}
 
 	if scanConfigName == "" {
-		return errors.Errorf("Unable to find scan configuration name for ID %q", scanID)
+		return errors.Errorf("Unable to find scan configuration name for ID %q.", scanID)
 	}
 
 	// send delete request to sensor
@@ -622,7 +622,7 @@ func convertSchedule(scanRequest *storage.ComplianceOperatorScanConfigurationV2)
 		}
 		cronValidator := gronx.New()
 		if !cronValidator.IsValid(cron) {
-			err = errors.Errorf("Schedule for scan configuration named %q is invalid", scanRequest.GetScanConfigName())
+			err = errors.Errorf("Schedule for scan configuration named %q is invalid.", scanRequest.GetScanConfigName())
 			log.Error(err)
 			return "", err
 		}
