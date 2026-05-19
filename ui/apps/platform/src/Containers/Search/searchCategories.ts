@@ -37,12 +37,14 @@ type SearchLinkDescriptor = {
     basePath: string;
     linkText: string;
     routeKey: RouteKey;
+    searchParams?: string;
 };
 
 const filterOnRisk: SearchLinkDescriptor = {
     basePath: riskBasePath,
     linkText: 'Risk',
     routeKey: 'risk',
+    searchParams: 'filteredWorkflowView=Full view',
 };
 
 const filterOnViolations: SearchLinkDescriptor = {
@@ -90,6 +92,7 @@ function getSearchResultCategoryMap(
                     basePath: `${riskBasePath}/:id`,
                     linkText: 'Risk',
                     routeKey: 'risk',
+                    searchParams: 'filteredWorkflowView=Full view',
                 },
             ],
         },
