@@ -104,12 +104,10 @@ type VMScanningSuite struct {
 
 	virtctl vmhelpers.Virtctl
 
-	// vmSpecs is the provisioning blueprint for each persistent VM.
+	// vmSpecs is the provisioning blueprint for each VM.
 	vmSpecs []vmSpec
-	// persistentVMs are the long-lived guests provisioned in SetupSuite.
-	persistentVMs []VMHandle
-	// allVMs tracks every VM provisioned by the suite; TearDownSuite deletes each.
-	allVMs []VMHandle
+	// vms tracks every VM provisioned by the suite; TearDownSuite deletes each.
+	vms []VMHandle
 }
 
 // TestVMScanning is the suite entrypoint for VM scanning E2E tests.
@@ -170,10 +168,10 @@ func (s *VMScanningSuite) SetupSuite() {
 	}
 
 	s.vmSpecs = s.cfg.vmSpecs()
-	s.logf("VM scanning setup: provision persistent VMs (%d specs)", len(s.vmSpecs))
-	s.provisionPersistentVMs(s.vmSpecs)
+	s.logf("VM scanning setup: provision VMs (%d specs)", len(s.vmSpecs))
+	s.provisionVMs(s.vmSpecs)
 	s.logf("VM scanning setup: prepare guests (ssh/cloud-init/sudo readiness)")
-	s.preparePersistentGuests()
+	s.prepareGuests()
 	s.logf("VM scanning setup: complete")
 }
 
@@ -193,7 +191,7 @@ func (s *VMScanningSuite) TearDownSuite() {
 
 	deleteTimeout := s.vmDeleteTimeout()
 	if s.dynamicClient != nil {
-		for _, vm := range s.allVMs {
+		for _, vm := range s.vms {
 			vmCtx, vmCancel := context.WithTimeout(s.cleanupCtx, deleteTimeout)
 			if err := vmhelpers.DeleteVirtualMachine(vmCtx, s.dynamicClient, vm.Namespace, vm.Name); err != nil {
 				if vmhelpers.IsAuthenticationExpired(err) {
@@ -215,8 +213,8 @@ func (s *VMScanningSuite) TearDownSuite() {
 			}
 			vmCancel()
 		}
-	} else if len(s.allVMs) > 0 {
-		s.logf("teardown: skipping VM cleanup (%d handle(s)): dynamic client is nil", len(s.allVMs))
+	} else if len(s.vms) > 0 {
+		s.logf("teardown: skipping VM cleanup (%d handle(s)): dynamic client is nil", len(s.vms))
 	}
 
 	if s.k8sClient != nil && s.namespace != "" {
@@ -374,10 +372,10 @@ func formatContainerNames(containers []coreV1.Container) string {
 	return strings.Join(names, ", ")
 }
 
-func (s *VMScanningSuite) provisionPersistentVMs(specs []vmSpec) {
+func (s *VMScanningSuite) provisionVMs(specs []vmSpec) {
 	ctx := s.ctx
 
-	s.logf("provision persistent VMs: creating namespace %q", s.namespace)
+	s.logf("provision VMs: creating namespace %q", s.namespace)
 	_, err := s.k8sClient.CoreV1().Namespaces().Create(ctx, &coreV1.Namespace{
 		ObjectMeta: metaV1.ObjectMeta{Name: s.namespace},
 	}, metaV1.CreateOptions{})
@@ -385,7 +383,7 @@ func (s *VMScanningSuite) provisionPersistentVMs(specs []vmSpec) {
 		require.NoError(s.T(), err, "create test namespace %q", s.namespace)
 	}
 	if apierrors.IsAlreadyExists(err) {
-		s.logf("provision persistent VMs: namespace %q already exists; reusing it", s.namespace)
+		s.logf("provision VMs: namespace %q already exists; reusing it", s.namespace)
 	}
 
 	s.ensureImagePullSecret(ctx)
@@ -398,18 +396,18 @@ func (s *VMScanningSuite) provisionPersistentVMs(specs []vmSpec) {
 			GuestUser:    sp.GuestUser,
 			SSHPublicKey: s.cfg.SSHPublicKey,
 		}
-		s.logf("provision persistent VMs: ensuring VM exists %s/%s with image %q", s.namespace, sp.Name, sp.Image)
+		s.logf("provision VMs: ensuring VM exists %s/%s with image %q", s.namespace, sp.Name, sp.Image)
 		createErr := vmhelpers.CreateVirtualMachine(ctx, s.dynamicClient, req)
 		if createErr == nil {
-			s.logf("provision persistent VMs: created VM %s/%s", s.namespace, sp.Name)
+			s.logf("provision VMs: created VM %s/%s", s.namespace, sp.Name)
 		} else if apierrors.IsAlreadyExists(createErr) {
 			currentImage, imgErr := vmhelpers.GetVMContainerDiskImage(ctx, s.dynamicClient, s.namespace, sp.Name)
 			if imgErr != nil {
-				s.logf("provision persistent VMs: could not read image for existing VM %s/%s: %v; recreating", s.namespace, sp.Name, imgErr)
+				s.logf("provision VMs: could not read image for existing VM %s/%s: %v; recreating", s.namespace, sp.Name, imgErr)
 			}
 			if imgErr != nil || currentImage != sp.Image {
 				if imgErr == nil {
-					s.logf("provision persistent VMs: VM %s/%s has image %q but want %q; deleting and recreating",
+					s.logf("provision VMs: VM %s/%s has image %q but want %q; deleting and recreating",
 						s.namespace, sp.Name, currentImage, sp.Image)
 				}
 				delCtx, delCancel := context.WithTimeout(ctx, s.vmDeleteTimeout())
@@ -420,36 +418,32 @@ func (s *VMScanningSuite) provisionPersistentVMs(specs []vmSpec) {
 				delCancel()
 				require.NoError(s.T(), vmhelpers.CreateVirtualMachine(ctx, s.dynamicClient, req),
 					"CreateVirtualMachine %s/%s after image mismatch delete", s.namespace, sp.Name)
-				s.logf("provision persistent VMs: recreated VM %s/%s with correct image", s.namespace, sp.Name)
+				s.logf("provision VMs: recreated VM %s/%s with correct image", s.namespace, sp.Name)
 			} else {
-				s.logf("provision persistent VMs: VM %s/%s already exists with correct image; reusing it", s.namespace, sp.Name)
+				s.logf("provision VMs: VM %s/%s already exists with correct image; reusing it", s.namespace, sp.Name)
 			}
 		} else {
 			require.NoError(s.T(), createErr, "EnsureVirtualMachineExists %s/%s", s.namespace, sp.Name)
 		}
-		h := VMHandle{Name: sp.Name, Namespace: s.namespace, GuestUser: sp.GuestUser}
-		s.persistentVMs = append(s.persistentVMs, h)
-		s.allVMs = append(s.allVMs, h)
+		s.vms = append(s.vms, VMHandle{Name: sp.Name, Namespace: s.namespace, GuestUser: sp.GuestUser})
 	}
-	for i := range s.persistentVMs {
-		vm := &s.persistentVMs[i]
+	for i := range s.vms {
+		vm := &s.vms[i]
 		vmCtx, vmCancel := context.WithTimeout(ctx, s.vmProvisionTimeout())
-		s.logf("provision persistent VMs: waiting for VMI object %s/%s (timeout=%v)", vm.Namespace, vm.Name, s.vmProvisionTimeout())
+		s.logf("provision VMs: waiting for VMI object %s/%s (timeout=%v)", vm.Namespace, vm.Name, s.vmProvisionTimeout())
 		require.NoError(s.T(), vmhelpers.WaitForVirtualMachineInstanceExists(s.T(), vmCtx, s.dynamicClient, vm.Namespace, vm.Name),
 			"WaitForVirtualMachineInstanceExists %s/%s", vm.Namespace, vm.Name)
-		s.logf("provision persistent VMs: waiting for VMI Running %s/%s (timeout=%v)", vm.Namespace, vm.Name, s.vmProvisionTimeout())
+		s.logf("provision VMs: waiting for VMI Running %s/%s (timeout=%v)", vm.Namespace, vm.Name, s.vmProvisionTimeout())
 		require.NoError(s.T(), vmhelpers.WaitForVirtualMachineInstanceRunning(s.T(), vmCtx, s.dynamicClient, vm.Namespace, vm.Name),
 			"WaitForVirtualMachineInstanceRunning %s/%s", vm.Namespace, vm.Name)
 		vmCancel()
 
 		nodeName, err := vmhelpers.GetVMINodeName(ctx, s.dynamicClient, vm.Namespace, vm.Name)
 		if err != nil {
-			s.logf("provision persistent VMs: could not determine node for %s/%s: %v", vm.Namespace, vm.Name, err)
+			s.logf("provision VMs: could not determine node for %s/%s: %v", vm.Namespace, vm.Name, err)
 		} else {
 			vm.NodeName = nodeName
-			s.allVMs[i].NodeName = nodeName
 		}
-
 	}
 
 	s.logf("VM placement:\n%s", s.vmPlacementSummary(ctx))
@@ -466,7 +460,7 @@ func (s *VMScanningSuite) ensureImagePullSecret(ctx context.Context) {
 	if s.cfg.ImagePullSecretPath == "" {
 		return
 	}
-	s.logf("provision persistent VMs: creating image pull secret from %q", s.cfg.ImagePullSecretPath)
+	s.logf("provision VMs: creating image pull secret from %q", s.cfg.ImagePullSecretPath)
 	dockerCfg, err := os.ReadFile(s.cfg.ImagePullSecretPath)
 	require.NoError(s.T(), err, "read image pull secret file %q", s.cfg.ImagePullSecretPath)
 
@@ -502,7 +496,7 @@ func (s *VMScanningSuite) ensureImagePullSecret(ctx context.Context) {
 		_, err = s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Update(ctx, sa, metaV1.UpdateOptions{})
 		require.NoError(s.T(), err, "link image pull secret to default service account in namespace %q", s.namespace)
 	}
-	s.logf("provision persistent VMs: image pull secret %q ready in namespace %q", vmImagePullSecretName, s.namespace)
+	s.logf("provision VMs: image pull secret %q ready in namespace %q", vmImagePullSecretName, s.namespace)
 }
 
 func (s *VMScanningSuite) waitForDefaultServiceAccount(ctx context.Context) (*coreV1.ServiceAccount, error) {
@@ -546,7 +540,7 @@ func (s *VMScanningSuite) vmPlacementSummary(ctx context.Context) string {
 	}
 
 	var b strings.Builder
-	for _, vm := range s.persistentVMs {
+	for _, vm := range s.vms {
 		node := vm.NodeName
 		if node == "" {
 			node = "<unknown>"
@@ -560,14 +554,14 @@ func (s *VMScanningSuite) vmPlacementSummary(ctx context.Context) string {
 	return strings.TrimRight(b.String(), "\n")
 }
 
-func (s *VMScanningSuite) preparePersistentGuests() {
+func (s *VMScanningSuite) prepareGuests() {
 	t := s.T()
-	for i := range s.persistentVMs {
-		require.NoError(t, s.preparePersistentGuestWithRecovery(&s.persistentVMs[i]))
+	for i := range s.vms {
+		require.NoError(t, s.prepareGuestWithRecovery(&s.vms[i]))
 	}
 }
 
-func (s *VMScanningSuite) preparePersistentGuestWithRecovery(vm *VMHandle) error {
+func (s *VMScanningSuite) prepareGuestWithRecovery(vm *VMHandle) error {
 	const maxRecoveries = 2
 	for recoveryAttempt := 0; recoveryAttempt <= maxRecoveries; recoveryAttempt++ {
 		err := s.prepareGuest(*vm)
@@ -584,15 +578,15 @@ func (s *VMScanningSuite) preparePersistentGuestWithRecovery(vm *VMHandle) error
 		}
 		s.logf("SSH became unhealthy for %s/%s, recreating VM and retrying guest preparation (%d/%d): %v",
 			vm.Namespace, vm.Name, recoveryAttempt+1, maxRecoveries, err)
-		if recreateErr := s.recreatePersistentVM(vm); recreateErr != nil {
-			return fmt.Errorf("recreate persistent VM %s/%s after recoverable SSH failure: %w", vm.Namespace, vm.Name, recreateErr)
+		if recreateErr := s.recreateVM(vm); recreateErr != nil {
+			return fmt.Errorf("recreate VM %s/%s after recoverable SSH failure: %w", vm.Namespace, vm.Name, recreateErr)
 		}
 	}
 	return nil
 }
 
-func (s *VMScanningSuite) recreatePersistentVM(vm *VMHandle) error {
-	req, err := s.vmRequestForExistingPersistentVM(*vm)
+func (s *VMScanningSuite) recreateVM(vm *VMHandle) error {
+	req, err := s.vmRequestForVM(*vm)
 	if err != nil {
 		return err
 	}
@@ -626,21 +620,10 @@ func (s *VMScanningSuite) recreatePersistentVM(vm *VMHandle) error {
 		s.logf("recreate VM: %s/%s now on node %s (was %s)", vm.Namespace, vm.Name, nodeName, vm.NodeName)
 		vm.NodeName = nodeName
 	}
-	s.syncVMHandleToAllVMs(*vm)
 	return nil
 }
 
-// syncVMHandleToAllVMs propagates field updates from a VMHandle to the matching entry in allVMs.
-func (s *VMScanningSuite) syncVMHandleToAllVMs(vm VMHandle) {
-	for i := range s.allVMs {
-		if s.allVMs[i].Name == vm.Name && s.allVMs[i].Namespace == vm.Namespace {
-			s.allVMs[i] = vm
-			return
-		}
-	}
-}
-
-func (s *VMScanningSuite) vmRequestForExistingPersistentVM(vm VMHandle) (vmhelpers.VMRequest, error) {
+func (s *VMScanningSuite) vmRequestForVM(vm VMHandle) (vmhelpers.VMRequest, error) {
 	for _, sp := range s.vmSpecs {
 		if sp.Name == vm.Name {
 			guestUser := strings.TrimSpace(vm.GuestUser)
