@@ -95,6 +95,15 @@ spec:
   # /tekton/scripts/script-2-h7nll: line 7:    33 Killed                  syft dir:$(cat /shared/container_path) --output cyclonedx-json=/var/workdir/sbom-image.json
   - pipelineTaskName: build-images
     stepSpecs:
+    # Should prevent occasional OOM-kills in use-trusted-artifact.
+    - name: use-trusted-artifact
+      computeResources:
+        limits:
+          cpu: 1
+          memory: 4Gi
+        requests:
+          cpu: 1
+          memory: 4Gi
     - name: sbom-syft-generate
       computeResources:
         limits:

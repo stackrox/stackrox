@@ -88,6 +88,17 @@ spec:
         requests:
           cpu: 1
           memory: 4Gi
+  - pipelineTaskName: build-images
+    stepSpecs:
+    # Should prevent occasional OOM-kills in use-trusted-artifact.
+    - name: use-trusted-artifact
+      computeResources:
+        limits:
+          cpu: 1
+          memory: 4Gi
+        requests:
+          cpu: 1
+          memory: 4Gi
   - pipelineTaskName: build-source-image
     stepSpecs:
     # Should prevent occasional OOM-kills in use-trusted-artifact.
