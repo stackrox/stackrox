@@ -74,8 +74,8 @@ spec:
     podTemplate:
       env:
       - name: GOMEMLIMIT
-        # Go GC at request. Limit is set higher to allow for spikes GC does not catch.
-        value: "3GiB"
+        # Go GC aggressive — prefetch memory is transient download buffers. Limit is set higher to allow for spikes GC does not catch.
+        value: "1GiB"
     stepSpecs:
     - name: prefetch-dependencies
       computeResources:
