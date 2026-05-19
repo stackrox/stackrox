@@ -219,14 +219,15 @@ func (e *endpointsStore) insertSingleEndpointNoLock(deploymentID string, ep net.
 	}
 	dSet.Add(ep)
 
-	if _, ok := e.endpointMap[ep]; !ok {
-		e.endpointMap[ep] = make(map[string]set.Set[EndpointTargetInfo], 1)
-	}
 	etiSet := make(set.Set[EndpointTargetInfo], len(targetInfos))
 	for _, ti := range targetInfos {
 		etiSet.Add(ti)
 	}
-	e.endpointMap[ep][deploymentID] = etiSet
+	if _, ok := e.endpointMap[ep]; !ok {
+		e.endpointMap[ep] = map[string]set.Set[EndpointTargetInfo]{deploymentID: etiSet}
+	} else {
+		e.endpointMap[ep][deploymentID] = etiSet
+	}
 	e.deleteFromHistory(deploymentID, ep)
 }
 
