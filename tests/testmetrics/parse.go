@@ -129,6 +129,10 @@ func parseCounter(body, metricPrefix string) (float64, bool) {
 		if !strings.HasPrefix(line, metricPrefix) {
 			continue
 		}
+		rest := line[len(metricPrefix):]
+		if len(rest) > 0 && rest[0] != '{' && rest[0] != ' ' {
+			continue
+		}
 		fields := strings.Fields(line)
 		if len(fields) < 2 {
 			continue

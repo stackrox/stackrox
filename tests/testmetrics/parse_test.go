@@ -44,6 +44,31 @@ func TestParse_FoundAndMissing(t *testing.T) {
 	assertMissing(queries[4])
 }
 
+func TestParse_PrefixDoesNotFalseMatch(t *testing.T) {
+	text := strings.Join([]string{
+		"rox_scan_connections_total 5",
+		`rox_scan_connections_errors_total{reason="timeout"} 3`,
+	}, "\n")
+
+	queries := []Query{
+		{Name: "rox_scan_connections_total"},
+		{Name: "rox_scan_connections_errors_total"},
+		{Name: "rox_scan_connections"},
+	}
+	m := Parse(text, queries)
+
+	v := m[Key(queries[0])]
+	require.True(t, v.Found)
+	require.Equal(t, float64(5), v.Val)
+
+	v = m[Key(queries[1])]
+	require.True(t, v.Found)
+	require.Equal(t, float64(3), v.Val)
+
+	v = m[Key(queries[2])]
+	require.False(t, v.Found, "rox_scan_connections should NOT match rox_scan_connections_total")
+}
+
 func TestParse_EmptyInput(t *testing.T) {
 	queries := []Query{
 		{Name: "foo_total"},
