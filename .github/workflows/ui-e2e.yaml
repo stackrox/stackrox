@@ -216,6 +216,19 @@ jobs:
           echo "::add-mask::${ROX_AUTH_TOKEN}"
           set -x
 
+      - name: Wait for platform data
+        run: |
+          set +x
+          ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+          for _ in $(seq 1 60); do
+            count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://localhost:8443/v1/cves/cluster?query=" 2>/dev/null \
+              | jq -r '.items | length // 0' 2>/dev/null)
+            [ "${count:-0}" -gt 0 ] && echo "Platform CVEs found: ${count}" && break
+            sleep 5
+          done
+          set -x
+
       - name: Run Cypress
         working-directory: ui/apps/platform
         run: |
