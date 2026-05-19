@@ -118,7 +118,8 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 		} else {
 			ns.Labels = map[string]string{"env": "dev"}
 		}
-		s.Require().NoError(s.namespaceDatastore.AddNamespace(s.ctx, ns))
+		nsErr := s.namespaceDatastore.AddNamespace(s.ctx, ns)
+		s.Require().NoError(nsErr)
 	}
 
 	deployments, images := testDeploymentsWithImages(namespaces, 1)

@@ -331,7 +331,7 @@ func TestBuildEntityScopeQuery(t *testing.T) {
 			assertQueries: assertByDirectComparison,
 		},
 		{
-			name: "Namespace label regex match type uses r/ prefix on value in map query",
+			name: "Namespace label regex match type",
 			scope: &storage.EntityScope{
 				Rules: []*storage.EntityScopeRule{
 					{
@@ -343,7 +343,8 @@ func TestBuildEntityScopeQuery(t *testing.T) {
 					},
 				},
 			},
-			expected:      search.NewQueryBuilder().AddMapQuery(search.NamespaceLabel, `"env"`, "r/pr.*").ProtoQuery(),
+			// key "env" has no metacharacters → exact match; value "pr.*" has "." and "*" → regex
+			expected:      search.NewQueryBuilder().AddMapQuery(search.NamespaceLabel, "r/env", "r/pr.*").ProtoQuery(),
 			assertQueries: assertByDirectComparison,
 		},
 		{

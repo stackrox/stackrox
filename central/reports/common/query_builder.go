@@ -183,13 +183,13 @@ func (q *queryBuilder) buildEntityScopeQuery() (*v1.Query, error) {
 				val := rv.GetValue()
 				key, value := splitLabelValue(val)
 				if rv.GetMatchType() == storage.MatchType_REGEX {
-					// splitLabelValue wraps the value in quotes for exact matching.
-					// For regex we need the raw (unquoted) value with the r/ prefix.
+					// For regex use the r/ prefix in both key and value
 					rawParts := strings.SplitN(val, "=", 2)
 					rawValue := ""
 					if len(rawParts) == 2 {
 						rawValue = rawParts[1]
 					}
+					key = search.RegexQueryString(rawParts[0])
 					value = search.RegexQueryString(rawValue)
 				}
 				mapQueries = append(mapQueries,
