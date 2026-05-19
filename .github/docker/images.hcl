@@ -19,12 +19,8 @@ variable "REGISTRY" {
   default = "quay.io/stackrox-io"
 }
 
-variable "LABEL_VERSION" {
-  default = ""
-}
-
-variable "LABEL_RELEASE" {
-  default = ""
+variable "QUAY_TAG_EXPIRATION" {
+  default = "13w"
 }
 
 # Group to build database images
@@ -40,6 +36,10 @@ target "central-db" {
   tags = [
     "${REGISTRY}/central-db:${TAG}"
   ]
+  args = {
+    MAIN_IMAGE_TAG = TAG
+    QUAY_TAG_EXPIRATION = QUAY_TAG_EXPIRATION
+  }
   cache-from = ["type=gha,scope=central-db"]
   cache-to = ["type=gha,mode=max,scope=central-db"]
 }
@@ -53,8 +53,9 @@ target "scanner-v4-db" {
     "${REGISTRY}/scanner-v4-db:${TAG}"
   ]
   args = {
-    LABEL_VERSION = notequal("", LABEL_VERSION) ? LABEL_VERSION : TAG
-    LABEL_RELEASE = notequal("", LABEL_RELEASE) ? LABEL_RELEASE : TAG
+    LABEL_VERSION = TAG
+    LABEL_RELEASE = TAG
+    QUAY_TAG_EXPIRATION = QUAY_TAG_EXPIRATION
   }
   cache-from = ["type=gha,scope=scanner-v4-db"]
   cache-to = ["type=gha,mode=max,scope=scanner-v4-db"]

@@ -31,6 +31,7 @@ jobs:
       build-tag: ${{ steps.build-tag.outputs.tag }}
       short-commit: ${{ steps.short-commit.outputs.shortcommit }}
       gotags: ${{ steps.gotags.outputs.gotags }}
+      quay-tag-expiration: ${{ steps.quay-tag-expiration.outputs.expiration }}
     runs-on: ubuntu-slim
     steps:
       - name: Checkout
@@ -62,6 +63,16 @@ jobs:
             GOTAGS="release"
           fi
           echo "gotags=${GOTAGS}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute Quay tag expiration
+        id: quay-tag-expiration
+        run: |
+          EXPIRATION="13w"
+          if [[ "${GITHUB_REF}" =~ ^refs/tags/ ]]; then
+            # Tag builds (release or nightly) never expire
+            EXPIRATION="never"
+          fi
+          echo "expiration=${EXPIRATION}" >> "$GITHUB_OUTPUT"
 
       - name: Define the matrix for build jobs
         id: define-job-matrix
@@ -506,8 +517,7 @@ jobs:
           TAG: ${{ env.BUILD_TAG }}
           PLATFORMS: ${{ steps.platforms.outputs.platforms }}
           REGISTRY: quay.io/stackrox-io
-          LABEL_VERSION: ${{ env.BUILD_TAG }}
-          LABEL_RELEASE: ${{ env.BUILD_TAG }}
+          QUAY_TAG_EXPIRATION: ${{ needs.define-job-matrix.outputs.quay-tag-expiration }}
 
       # We can't push to both quay.io/stackrox-io and quay.io/rhacs-eng in a single
       # build because they require different credentials (different organizations).

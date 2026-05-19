@@ -4,6 +4,7 @@ FROM quay.io/sclorg/postgresql-${PG_VERSION}-c9s:latest AS final
 USER root
 
 ARG MAIN_IMAGE_TAG
+ARG QUAY_TAG_EXPIRATION
 
 LABEL \
     com.redhat.component="rhacs-central-db-container" \
@@ -19,7 +20,8 @@ LABEL \
     version="${MAIN_IMAGE_TAG}" \
     # Release label is required by EC although has no practical semantics.
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
-    release="1"
+    release="1" \
+    quay.expires-after="${QUAY_TAG_EXPIRATION}"
 
 RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
     --mount=type=cache,target=/var/cache/yum,sharing=locked \
