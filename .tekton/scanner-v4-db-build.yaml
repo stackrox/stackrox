@@ -155,7 +155,7 @@ spec:
           # https://github.com/konflux-ci/build-definitions/tree/main/task/prefetch-dependencies-oci-ta
           memory: 3Gi
         requests:
-          memory: 1Gi
+          memory: 2Gi
   taskRunTemplate:
     serviceAccountName: build-pipeline-scanner-v4-db
 

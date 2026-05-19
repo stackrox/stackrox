@@ -85,7 +85,7 @@ spec:
           # https://github.com/konflux-ci/build-definitions/tree/main/task/prefetch-dependencies-oci-ta
           memory: 3Gi
         requests:
-          memory: 1Gi
+          memory: 2Gi
 
   # For all sbom-syft-generate steps:
   # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container
