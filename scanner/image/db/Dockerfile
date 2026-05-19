@@ -3,19 +3,6 @@ FROM quay.io/sclorg/postgresql-${PG_VERSION}-c9s:latest
 
 USER root
 
-ARG LABEL_VERSION
-ARG LABEL_RELEASE
-ARG QUAY_TAG_EXPIRATION
-
-LABEL name="scanner-v4-db" \
-      vendor="StackRox" \
-      maintainer="https://stackrox.io/" \
-      summary="Static vulnerability scanner database for the StackRox Security Platform" \
-      description="This image supports static vulnerability scanning for the StackRox Security Platform." \
-      version="${LABEL_VERSION}" \
-      release="${LABEL_RELEASE}" \
-      quay.expires-after="${QUAY_TAG_EXPIRATION}"
-
 ENV LANG="en_US.utf8"
 
 # This will be ignored if empty in the init script.
@@ -37,6 +24,19 @@ RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
     mkdir /docker-entrypoint-initdb.d
 
 COPY --link scripts/docker-entrypoint.sh scripts/init-entrypoint.sh scripts/cert-watcher.sh /usr/local/bin/
+
+ARG LABEL_VERSION
+ARG LABEL_RELEASE
+ARG QUAY_TAG_EXPIRATION
+
+LABEL name="scanner-v4-db" \
+      vendor="StackRox" \
+      maintainer="https://stackrox.io/" \
+      summary="Static vulnerability scanner database for the StackRox Security Platform" \
+      description="This image supports static vulnerability scanning for the StackRox Security Platform." \
+      version="${LABEL_VERSION}" \
+      release="${LABEL_RELEASE}" \
+      quay.expires-after="${QUAY_TAG_EXPIRATION}"
 
 STOPSIGNAL SIGINT
 
