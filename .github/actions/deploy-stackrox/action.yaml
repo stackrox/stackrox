@@ -17,7 +17,7 @@ inputs:
     default: small
   roxie-version:
     description: roxie release version
-    default: v0.2.2-test2
+    default: v0.4.0
   github-token:
     description: GitHub token with access to stackrox/roxie
     required: true
