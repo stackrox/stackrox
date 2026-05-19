@@ -7,6 +7,7 @@ import { Button } from '@patternfly/react-core';
 import downloadCSV from 'services/CSVDownloadService';
 import ButtonClassic from 'Components/Button';
 import entityTypes from 'constants/entityTypes';
+import useCaseTypes from 'constants/useCaseTypes';
 import { addBrandedTimestampToString } from 'utils/dateUtils';
 
 const queryParamMap = {
@@ -60,7 +61,7 @@ class ExportButton extends Component {
 
     isSupported = () => {
         const { page, type } = this.props;
-        return page === 'compliance' && Object.keys(queryParamMap).includes(type);
+        return page === useCaseTypes.COMPLIANCE && Object.keys(queryParamMap).includes(type);
     };
 
     renderContent = () => {
