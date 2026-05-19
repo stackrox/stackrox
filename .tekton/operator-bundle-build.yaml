@@ -77,6 +77,15 @@ spec:
           memory: 6Gi
         requests:
           memory: 6Gi
+    # The default CPU in create-trusted-artifact is unlimited, and we see some OOMs with default 3Gi memory.
+    - name: create-trusted-artifact
+      computeResources:
+        limits:
+          cpu: 1
+          memory: 4Gi
+        requests:
+          cpu: 1
+          memory: 4Gi
   - pipelineTaskName: build-source-image
     stepSpecs:
     # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
