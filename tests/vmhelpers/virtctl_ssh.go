@@ -2,6 +2,7 @@ package vmhelpers
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -38,4 +39,27 @@ func buildVirtctlSSHCommand(command ...string) string {
 		quoted[i] = strconv.Quote(arg)
 	}
 	return strings.Join(quoted, " ")
+}
+
+// SCPTo copies a local file to the guest using `virtctl scp`.
+func (v Virtctl) SCPTo(ctx context.Context, namespace, vm, src, dst string) (stderr string, err error) {
+	args := buildVirtctlSCPToArgs(v.Path, namespace, vm, v.IdentityFile, v.Username, v.KnownHostsFile, src, dst)
+	_, stderrStr, err := v.run(ctx, args)
+	return stderrStr, err
+}
+
+// buildVirtctlSCPToArgs builds the full argument list for `virtctl scp` uploading src to dst on the guest.
+func buildVirtctlSCPToArgs(virtctlPath, namespace, vm, identityFile, username, knownHostsFile, src, dst string) []string {
+	args := []string{
+		virtctlPath, "scp",
+		"--namespace", namespace,
+		"--identity-file", identityFile,
+		"--known-hosts", knownHostsFile,
+	}
+	args = appendLocalSSHOpts(args, knownHostsFile)
+	if username != "" {
+		args = append(args, "--username", username)
+	}
+	args = append(args, src, fmt.Sprintf("%s:%s", normalizeVirtctlTarget(vm), dst))
+	return args
 }
