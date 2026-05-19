@@ -4,6 +4,8 @@
 # Usage:
 #   docker buildx bake -f .github/docker/images.hcl --print databases
 #   docker buildx bake -f .github/docker/images.hcl --push databases
+#
+# Cache verification commit
 
 variable "TAG" {
   default = "latest"
