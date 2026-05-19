@@ -225,21 +225,17 @@ jobs:
           kubectl create namespace qa-test 2>/dev/null || true
           kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null || true
 
-          # Wait for image scan data (up to 5 min)
-          for _ in $(seq 1 60); do
-            count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-              "https://localhost:8443/v1/imagescount?query=" 2>/dev/null \
-              | jq -r '.count // 0' 2>/dev/null)
-            [ "${count:-0}" -gt 5 ] && echo "Images found: ${count}" && break
-            sleep 5
-          done
+          # Trigger an explicit scan of nginx:1.12 so CVE data is indexed
+          curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+            "https://localhost:8443/v1/images/scan" \
+            -X POST -d '{"imageName": "nginx:1.12"}' || true
 
-          # Wait for at least one image to have CVEs
+          # Wait for scanned images with vulnerabilities (up to 5 min)
           for _ in $(seq 1 60); do
-            cves=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-              "https://localhost:8443/v1/cvecount?query=" 2>/dev/null \
-              | jq -r '.count // 0' 2>/dev/null)
-            [ "${cves:-0}" -gt 0 ] && echo "CVEs found: ${cves}" && break
+            vuln_images=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://localhost:8443/v1/images?query=Image:nginx" 2>/dev/null \
+              | jq -r '[.images[]? | select(.components > 0)] | length' 2>/dev/null)
+            [ "${vuln_images:-0}" -gt 0 ] && echo "Scanned images with components: ${vuln_images}" && break
             sleep 5
           done
           set -x
