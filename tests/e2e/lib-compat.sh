@@ -95,7 +95,13 @@ roxie_config_from_environment_compat() {
     handle_load_balancer_setting "$config_file"
 
     info "Configuring custom central environment..."
-    {
+    while read -r var_val; do
+        local name="${var_val%%=*}"
+        local value="${var_val#*=}"
+        info "  ${name}=${value}"
+        set_custom_env "$config_file" "central" "$name" "$value"
+        ci_export "$name" "$value"
+    done < <(
         # These are set in env.sh and picked up roxctl/central/generate/generate.go:updateConfig().
         env_with_default ROX_DEVELOPMENT_BUILD "true"   # pkg/devbuild/setting.go.
         env_with_default ROX_HOTRELOAD "false"          # pkg/env/hot_reload.go.
@@ -133,32 +139,31 @@ roxie_config_from_environment_compat() {
             env_with_default GOEXPERIMENT "cgocheck2"
             env_with_default MUTEX_WATCHDOG_TIMEOUT_SECS "15"
         fi
-    } | while read -r var_val; do
-        local name="${var_val%%=*}"
-        local value="${var_val#*=}"
-        info "  ${name}=${value}"
-        set_custom_env "$config_file" "central" "$name" "$value"
-        ci_export "$name" "$value"
-    done
+    )
 
     info "Configuring custom securedCluster environment..."
-    {
-        # Set in export_test_environment() and deploy_sensor_via_operator().
-        env_with_default ROX_NETFLOW_BATCHING "true"       # pkg/env/sensor.go.
-        env_with_default ROX_NETFLOW_CACHE_LIMITING "true" # pkg/env/sensor.go.
-
-        collect_feature_flags
-
-    } | while read -r var_val; do
+    while read -r var_val; do
         local name="${var_val%%=*}"
         local value="${var_val#*=}"
         info "  ${name}=${value}"
         set_custom_env "$config_file" "securedCluster" "$name" "$value"
         ci_export "$name" "$value"
-    done
+    done < <(
+        # Set in export_test_environment() and deploy_sensor_via_operator().
+        env_with_default ROX_NETFLOW_BATCHING "true"       # pkg/env/sensor.go.
+        env_with_default ROX_NETFLOW_CACHE_LIMITING "true" # pkg/env/sensor.go.
+
+        collect_feature_flags
+    )
 
     info "Configuring custom securedCluster/collector environment..."
-    {
+    while read -r var_val; do
+        local name="${var_val%%=*}"
+        local value="${var_val#*=}"
+        info "  ${name}=${value} for DaemonSet/collector"
+        set_overlay_env "$config_file" "securedCluster" "apps/v1" "DaemonSet" "collector" "collector" "$name" "$value"
+        ci_export "$name" "$value"
+    done < <(
         # Set in deploy_sensor_via_operator() and deploy_sensor().
         env_with_default ROX_AFTERGLOW_PERIOD "15"
         env_with_default ROX_COLLECTOR_INTROSPECTION_ENABLE "true"
@@ -169,13 +174,7 @@ roxie_config_from_environment_compat() {
         else
             env_with_default ROX_NON_AGGREGATED_NETWORKS
         fi
-    } | while read -r var_val; do
-        local name="${var_val%%=*}"
-        local value="${var_val#*=}"
-        info "  ${name}=${value} for DaemonSet/collector"
-        set_overlay_env "$config_file" "securedCluster" "apps/v1" "DaemonSet" "collector" "collector" "$name" "$value"
-        ci_export "$name" "$value"
-    done
+    )
 
     info "Configuring scanner V4..."
     handle_scanner_v4_setting "$config_file" ".central.spec.scannerV4.scannerComponent"
