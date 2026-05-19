@@ -38,8 +38,8 @@ func TestPollUntil_SucceedsAfterRetries(t *testing.T) {
 func TestPollUntil_TimesOutWithDetail(t *testing.T) {
 	ctx := context.Background()
 	err := pollUntil(ctx, WaitOptions{
-		Timeout:      30 * time.Millisecond,
-		PollInterval: 5 * time.Millisecond,
+		Timeout:      150 * time.Millisecond,
+		PollInterval: 15 * time.Millisecond,
 	}, "timeout-test", func(context.Context) (bool, string, error) {
 		return false, "still waiting", nil
 	})
