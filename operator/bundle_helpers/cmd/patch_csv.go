@@ -92,8 +92,7 @@ func PatchCSV(args []string) error {
 		return fmt.Errorf("failed to patch CSV: %w", err)
 	}
 
-	// Encode to YAML and normalize through Python to match PyYAML's exact formatting
-	return encodeAndNormalizeYAML(doc, os.Stdout)
+	return encodeYAML(doc, os.Stdout)
 }
 
 func echoReplacedVersion(doc chartutil.Values, version, firstVersion, unreleased string) error {
