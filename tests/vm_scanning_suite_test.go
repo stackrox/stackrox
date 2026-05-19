@@ -69,9 +69,15 @@ const (
 	// for diagnostic VM-to-node-to-collector placement logging.
 	vmPlacementLookupTimeout = 60 * time.Second
 
-	// namespacePollInterval is the polling cadence for waiting on namespace
-	// deletion during teardown.
-	namespacePollInterval = 2 * time.Second
+	// k8sResourcePollInterval is the polling cadence for waiting on k8s
+	// resources (namespace deletion, service account readiness, etc.).
+	k8sResourcePollInterval = 2 * time.Second
+
+	// defaultServiceAccountWaitTimeout is the ceiling for waiting on the
+	// default service account to appear in a newly-created namespace.
+	defaultServiceAccountWaitTimeout = 10 * time.Second
+
+	vmImagePullSecretName = "vm-image-pull-secret" //nolint:gosec // G101: not a credential, just the k8s Secret resource name
 )
 
 // VMHandle tracks a KubeVirt VM used by the suite (persistent or transient).
@@ -282,7 +288,7 @@ func (s *VMScanningSuite) guestStepTimeout() time.Duration {
 }
 
 func waitForNamespaceDeleted(ctx context.Context, k8s kubernetes.Interface, name string) error {
-	return wait.PollUntilContextCancel(ctx, namespacePollInterval, true, func(ctx context.Context) (bool, error) {
+	return wait.PollUntilContextCancel(ctx, k8sResourcePollInterval, true, func(ctx context.Context) (bool, error) {
 		_, err := k8s.CoreV1().Namespaces().Get(ctx, name, metaV1.GetOptions{})
 		if apierrors.IsNotFound(err) {
 			return true, nil
@@ -449,13 +455,6 @@ func (s *VMScanningSuite) provisionVMs(specs []vmSpec) {
 	s.logf("VM placement:\n%s", s.vmPlacementSummary(ctx))
 }
 
-const (
-	vmImagePullSecretName = "vm-image-pull-secret" //nolint:gosec // G101: not a credential, just the k8s Secret resource name
-
-	defaultServiceAccountWaitTimeout  = 10 * time.Second
-	defaultServiceAccountPollInterval = 100 * time.Millisecond
-)
-
 func (s *VMScanningSuite) ensureImagePullSecret(ctx context.Context) {
 	if s.cfg.ImagePullSecretPath == "" {
 		return
@@ -504,7 +503,7 @@ func (s *VMScanningSuite) waitForDefaultServiceAccount(ctx context.Context) (*co
 	defer cancel()
 
 	var serviceAccount *coreV1.ServiceAccount
-	err := wait.PollUntilContextCancel(waitCtx, defaultServiceAccountPollInterval, true, func(ctx context.Context) (bool, error) {
+	err := wait.PollUntilContextCancel(waitCtx, k8sResourcePollInterval, true, func(ctx context.Context) (bool, error) {
 		sa, err := s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Get(ctx, "default", metaV1.GetOptions{})
 		if apierrors.IsNotFound(err) {
 			return false, nil
