@@ -424,11 +424,11 @@ func (s *VMScanningSuite) provisionVMs(specs []vmSpec) {
 						s.namespace, sp.Name, currentImage, sp.Image)
 				}
 				delCtx, delCancel := context.WithTimeout(ctx, s.resourceDeleteTimeout())
+				defer delCancel()
 				require.NoError(s.T(), vmhelpers.DeleteVirtualMachine(delCtx, s.dynamicClient, s.namespace, sp.Name),
 					"DeleteVirtualMachine %s/%s for image mismatch", s.namespace, sp.Name)
 				require.NoError(s.T(), vmhelpers.WaitForVirtualMachineDeleted(s.T(), delCtx, s.dynamicClient, s.namespace, sp.Name),
 					"WaitForVirtualMachineDeleted %s/%s for image mismatch", s.namespace, sp.Name)
-				delCancel()
 				require.NoError(s.T(), vmhelpers.CreateVirtualMachine(ctx, s.dynamicClient, req),
 					"CreateVirtualMachine %s/%s after image mismatch delete", s.namespace, sp.Name)
 				s.logf("provision VMs: recreated VM %s/%s with correct image", s.namespace, sp.Name)
