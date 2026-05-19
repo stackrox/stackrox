@@ -18,19 +18,7 @@ type SSHReachabilityPolicy struct {
 	ProbeTimeoutThreshold       int
 }
 
-// DefaultSSHReachabilityPolicy is the package default used by
-// WaitForSSHReachable for poll cadence, per-probe timeout, and
-// consecutive-failure thresholds that classify stuck or broken SSH.
-var DefaultSSHReachabilityPolicy = SSHReachabilityPolicy{
-	PollInterval:                sshReachablePollInterval,
-	ProbeTimeout:                sshProbeAttemptTimeout,
-	AuthFailureThreshold:        sshAuthFailureThreshold,
-	BannerTimeoutThreshold:      sshBannerTimeoutThreshold,
-	NetworkUnreachableThreshold: sshNetworkUnreachableThreshold,
-	ProbeTimeoutThreshold:       sshProbeTimeoutThreshold,
-}
-
-// FirstContactSSHPolicy is a lenient variant of DefaultSSHReachabilityPolicy
+// FirstContactSSHPolicy is a lenient SSH reachability policy
 // for the initial "is SSH up yet?" probe after VM creation, where auth/banner/
 // network failures are expected while the guest boots. Thresholds are high so
 // the context timeout is the only real bound; callers should set a generous
