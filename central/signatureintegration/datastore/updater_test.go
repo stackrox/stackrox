@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -34,7 +35,7 @@ func TestUpdaterSuccessfulDownload(t *testing.T) {
 		doneSig:  concurrency.NewSignal(),
 	}
 
-	err := u.doDownload()
+	err := u.doDownload(context.Background())
 	require.NoError(t, err)
 
 	data, err := os.ReadFile(filePath)
@@ -62,7 +63,7 @@ func TestUpdaterHTTPErrorDoesNotModifyFile(t *testing.T) {
 		doneSig:  concurrency.NewSignal(),
 	}
 
-	err := u.doDownload()
+	err := u.doDownload(context.Background())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unexpected HTTP status 500 Internal Server Error")
 
@@ -90,7 +91,7 @@ func TestUpdaterOversizedResponseRejected(t *testing.T) {
 		doneSig:  concurrency.NewSignal(),
 	}
 
-	err := u.doDownload()
+	err := u.doDownload(context.Background())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "exceeds maximum size")
 	assert.NoFileExists(t, filePath)
@@ -122,12 +123,12 @@ func TestUpdaterSequentialDownloads(t *testing.T) {
 		doneSig:  concurrency.NewSignal(),
 	}
 
-	require.NoError(t, u.doDownload())
+	require.NoError(t, u.doDownload(context.Background()))
 	data, err := os.ReadFile(filePath)
 	require.NoError(t, err)
 	assert.Equal(t, content1, string(data))
 
-	require.NoError(t, u.doDownload())
+	require.NoError(t, u.doDownload(context.Background()))
 	data, err = os.ReadFile(filePath)
 	require.NoError(t, err)
 	assert.Equal(t, content2, string(data))

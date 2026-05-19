@@ -59,20 +59,23 @@ func (u *keyBundleUpdater) run() {
 	log.Info("Starting Red Hat signing key bundle updater")
 	defer u.doneSig.Signal()
 
+	ctx, cancel := concurrency.DependentContext(context.Background(), &u.stopSig)
+	defer cancel()
+
 	if err := os.MkdirAll(filepath.Dir(u.filePath), 0700); err != nil {
 		log.Errorf("Failed to create directory for key bundle file %q, updater will not run: %v",
 			u.filePath, err)
 		return
 	}
 
-	u.download()
+	u.download(ctx)
 
 	t := time.NewTimer(u.interval)
 	defer t.Stop()
 	for {
 		select {
 		case <-t.C:
-			u.download()
+			u.download(ctx)
 			t.Reset(u.interval)
 		case <-u.stopSig.Done():
 			return
@@ -80,9 +83,9 @@ func (u *keyBundleUpdater) run() {
 	}
 }
 
-func (u *keyBundleUpdater) download() {
+func (u *keyBundleUpdater) download(ctx context.Context) {
 	start := time.Now()
-	err := u.doDownload()
+	err := u.doDownload(ctx)
 	updaterDownloadDuration.Observe(time.Since(start).Seconds())
 
 	if err != nil {
@@ -94,12 +97,10 @@ func (u *keyBundleUpdater) download() {
 	}
 }
 
-func (u *keyBundleUpdater) doDownload() error {
+func (u *keyBundleUpdater) doDownload(ctx context.Context) error {
 	log.Debugf("Downloading Red Hat signing key bundle from %q", u.url)
 
-	ctx, cancel := concurrency.DependentContext(context.Background(), &u.stopSig)
-	defer cancel()
-	ctx, cancel = context.WithTimeout(ctx, requestTimeout)
+	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
