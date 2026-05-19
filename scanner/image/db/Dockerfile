@@ -19,9 +19,9 @@ LABEL name="scanner-v4-db" \
 ENV LANG="en_US.utf8"
 
 # This will be ignored if empty in the init script.
-COPY init-bundles/db-init.dump.zst /db-init.dump.zst
+COPY --link init-bundles/db-init.dump.zst /db-init.dump.zst
 
-COPY scripts/docker-entrypoint.sh scripts/init-entrypoint.sh scripts/cert-watcher.sh /usr/local/bin/
+COPY --link scripts/docker-entrypoint.sh scripts/init-entrypoint.sh scripts/cert-watcher.sh /usr/local/bin/
 
 RUN --mount=type=cache,target=/var/cache/dnf,sharing=locked \
     --mount=type=cache,target=/var/cache/yum,sharing=locked \
