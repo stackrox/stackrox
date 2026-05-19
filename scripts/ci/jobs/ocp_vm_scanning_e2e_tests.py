@@ -24,6 +24,7 @@ os.environ["SENSOR_HELM_MANAGED"] = "true"
 os.environ["INSTALL_CNV_OPERATOR"] = "true"
 os.environ["ROX_VIRTUAL_MACHINES"] = "true"
 os.environ["ROX_SCANNER_V4"] = "true"
+os.environ["ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE"] = "10"
 os.environ["VM_IMAGES"] = ",".join([
     "quay.io/rhacs-eng/vm-images:rhel9-dnf-primed-latest",
     "quay.io/rhacs-eng/vm-images:rhel10-dnf-primed-latest",
