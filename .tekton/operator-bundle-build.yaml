@@ -111,6 +111,8 @@ spec:
           # Default request=4Gi limit=4Gi. 114 OOMKilled at 4Gi limit in 10,491 runs (1.1%), Apr 15 - May 15, 2026.
           # https://github.com/konflux-ci/build-definitions/tree/main/external-task/sast-snyk-check-oci-ta
           memory: 5Gi
+        requests:
+          memory: 2Gi
   - pipelineTaskName: sast-shell-check
     podTemplate:
       env:
@@ -123,6 +125,8 @@ spec:
           # Default request=4Gi limit=4Gi. 125 OOMKilled at 4Gi limit in 10,490 runs (1.2%), Apr 15 - May 15, 2026.
           # https://github.com/konflux-ci/build-definitions/tree/main/external-task/sast-shell-check-oci-ta
           memory: 5Gi
+        requests:
+          memory: 2Gi
   - pipelineTaskName: sast-unicode-check
     podTemplate:
       env:
@@ -135,20 +139,24 @@ spec:
           # Default request=4Gi limit=4Gi. 105 OOMKilled at 4Gi limit in 10,489 runs (1.0%), Apr 15 - May 15, 2026.
           # https://github.com/konflux-ci/build-definitions/tree/main/external-task/sast-unicode-check-oci-ta
           memory: 5Gi
+        requests:
+          memory: 2Gi
 
   - pipelineTaskName: prefetch-dependencies
     podTemplate:
       env:
       - name: GOMEMLIMIT
-        # GOMEMLIMIT at task default (3Gi); limit 33% above as safety margin.
-        value: "3GiB"
+        # GOMEMLIMIT below task default so GC prevents hitting kernel limit.
+        value: "2GiB"
     stepSpecs:
     - name: prefetch-dependencies
       computeResources:
         limits:
           # Default request=3Gi limit=3Gi. 584 OOMKilled at 3Gi limit in 13,559 runs (4.3%), Apr 15 - May 15, 2026. Still OOMKills at 4Gi.
           # https://github.com/konflux-ci/build-definitions/tree/main/task/prefetch-dependencies-oci-ta
-          memory: 4Gi
+          memory: 3Gi
+        requests:
+          memory: 1Gi
   taskRunTemplate:
     serviceAccountName: build-pipeline-operator-bundle
 
