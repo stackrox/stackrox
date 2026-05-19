@@ -278,16 +278,20 @@ func (m *managerImpl) validateScan(ctx context.Context, scanRequest *storage.Com
 		profiles = append(profiles, profile.GetProfileName())
 	}
 
+	// Check if there are any existing clusters that have a scan configuration with any of profiles
+	// being referenced by the scan request. If so, then we cannot create the scan configuration.
 	err := m.scanSettingDS.ScanConfigurationProfileExists(ctx, scanRequest.GetId(), profiles, clusters)
 	if err != nil {
 		log.Error(err)
 		return nil, err
 	}
 
+	// Check if any non-ACS-managed ScanSettingBindings already reference the requested profiles.
 	if err := m.checkForExternalSSBConflicts(ctx, profiles, clusters); err != nil {
 		return nil, err
 	}
 
+	// Get all profiles from the database to validate that they exist and are compatible
 	returnedProfiles, err := m.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusters[0]).
 		AddExactMatches(search.ComplianceOperatorProfileName, profiles...).ProtoQuery())
