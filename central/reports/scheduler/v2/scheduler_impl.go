@@ -385,7 +385,7 @@ func (s *scheduler) queueScheduledReports() {
 	}
 	for _, rc := range reportConfigs {
 		if !common.HasValidResourceScope(rc.GetResourceScope()) {
-			log.Warnf("Skipping scheduled report for config '%s' (ID: %s): resource scope is empty",
+			log.Errorf("Skipping scheduled report for config '%s' (ID: %s): resource scope is empty",
 				rc.GetName(), rc.GetId())
 			continue
 		}
