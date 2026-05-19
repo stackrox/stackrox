@@ -216,15 +216,30 @@ jobs:
           echo "::add-mask::${ROX_AUTH_TOKEN}"
           set -x
 
-      - name: Wait for platform data
+      - name: Seed test data
         run: |
           set +x
           ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+
+          # Deploy a known-vulnerable image so vulnerability data exists
+          kubectl create namespace qa-test 2>/dev/null || true
+          kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null || true
+
+          # Wait for image scan data (up to 5 min)
           for _ in $(seq 1 60); do
             count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-              "https://localhost:8443/v1/cves/cluster?query=" 2>/dev/null \
-              | jq -r '.items | length // 0' 2>/dev/null)
-            [ "${count:-0}" -gt 0 ] && echo "Platform CVEs found: ${count}" && break
+              "https://localhost:8443/v1/imagescount?query=" 2>/dev/null \
+              | jq -r '.count // 0' 2>/dev/null)
+            [ "${count:-0}" -gt 5 ] && echo "Images found: ${count}" && break
+            sleep 5
+          done
+
+          # Wait for at least one image to have CVEs
+          for _ in $(seq 1 60); do
+            cves=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://localhost:8443/v1/cvecount?query=" 2>/dev/null \
+              | jq -r '.count // 0' 2>/dev/null)
+            [ "${cves:-0}" -gt 0 ] && echo "CVEs found: ${cves}" && break
             sleep 5
           done
           set -x
