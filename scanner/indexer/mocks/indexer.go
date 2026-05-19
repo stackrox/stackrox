@@ -18,32 +18,32 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-// MockReportGetter is a mock of ReportGetter interface.
-type MockReportGetter struct {
+// MockReportProvider is a mock of ReportProvider interface.
+type MockReportProvider struct {
 	ctrl     *gomock.Controller
-	recorder *MockReportGetterMockRecorder
+	recorder *MockReportProviderMockRecorder
 	isgomock struct{}
 }
 
-// MockReportGetterMockRecorder is the mock recorder for MockReportGetter.
-type MockReportGetterMockRecorder struct {
-	mock *MockReportGetter
+// MockReportProviderMockRecorder is the mock recorder for MockReportProvider.
+type MockReportProviderMockRecorder struct {
+	mock *MockReportProvider
 }
 
-// NewMockReportGetter creates a new mock instance.
-func NewMockReportGetter(ctrl *gomock.Controller) *MockReportGetter {
-	mock := &MockReportGetter{ctrl: ctrl}
-	mock.recorder = &MockReportGetterMockRecorder{mock}
+// NewMockReportProvider creates a new mock instance.
+func NewMockReportProvider(ctrl *gomock.Controller) *MockReportProvider {
+	mock := &MockReportProvider{ctrl: ctrl}
+	mock.recorder = &MockReportProviderMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockReportGetter) EXPECT() *MockReportGetterMockRecorder {
+func (m *MockReportProvider) EXPECT() *MockReportProviderMockRecorder {
 	return m.recorder
 }
 
 // GetIndexReport mocks base method.
-func (m *MockReportGetter) GetIndexReport(arg0 context.Context, arg1 string, arg2 bool) (*claircore.IndexReport, bool, error) {
+func (m *MockReportProvider) GetIndexReport(arg0 context.Context, arg1 string, arg2 bool) (*claircore.IndexReport, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIndexReport", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*claircore.IndexReport)
@@ -53,9 +53,24 @@ func (m *MockReportGetter) GetIndexReport(arg0 context.Context, arg1 string, arg
 }
 
 // GetIndexReport indicates an expected call of GetIndexReport.
-func (mr *MockReportGetterMockRecorder) GetIndexReport(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockReportProviderMockRecorder) GetIndexReport(arg0, arg1, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndexReport", reflect.TypeOf((*MockReportGetter)(nil).GetIndexReport), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndexReport", reflect.TypeOf((*MockReportProvider)(nil).GetIndexReport), arg0, arg1, arg2)
+}
+
+// GetRepositoryToCPEMapping mocks base method.
+func (m *MockReportProvider) GetRepositoryToCPEMapping(arg0 context.Context, arg1 string) (*indexer.FetchResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRepositoryToCPEMapping", arg0, arg1)
+	ret0, _ := ret[0].(*indexer.FetchResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRepositoryToCPEMapping indicates an expected call of GetRepositoryToCPEMapping.
+func (mr *MockReportProviderMockRecorder) GetRepositoryToCPEMapping(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepositoryToCPEMapping", reflect.TypeOf((*MockReportProvider)(nil).GetRepositoryToCPEMapping), arg0, arg1)
 }
 
 // MockReportStorer is a mock of ReportStorer interface.

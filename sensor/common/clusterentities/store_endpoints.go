@@ -2,6 +2,7 @@ package clusterentities
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -104,9 +105,8 @@ func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool)
 func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) {
 	defer e.updateMetricsNoLock()
 	if !incremental {
-		for deploymentID := range updates {
-			e.purgeNoLock(deploymentID)
-		}
+		e.replaceNoLock(updates)
+		return
 	}
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
@@ -115,6 +115,111 @@ func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental
 		}
 		e.applySingleNoLock(deploymentID, *data)
 	}
+}
+
+func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) {
+	for deploymentID, data := range updates {
+		if data.isDeleteOnly() {
+			// A call to Apply() with empty payload of the updates map (no values) is meant to be a delete operation.
+			e.purgeNoLock(deploymentID)
+			continue
+		}
+		if e.endpointsUnchangedNoLock(deploymentID, data.endpoints) {
+			// applySingleNoLock records a nil "seen" marker in reverseEndpointMap
+			// the first time a deployment arrives with zero endpoints (e.g. a pod
+			// exists but no Service selects it yet). That marker later prevents
+			// the endpoint-takeover path from incorrectly moving other deployments
+			// to history when this deployment finally acquires real endpoints.
+			// Because endpointsUnchangedNoLock short-circuits "not-in-store +
+			// empty" as unchanged, we must replicate the marker here.
+			if _, exists := e.reverseEndpointMap[deploymentID]; !exists && len(data.endpoints) == 0 {
+				e.reverseEndpointMap[deploymentID] = nil
+			}
+			continue
+		}
+		e.purgeNoLock(deploymentID)
+		e.applySingleNoLock(deploymentID, *data)
+	}
+}
+
+// endpointsUnchangedNoLock checks whether the incoming endpoints are
+// identical to the ones already stored for the given deployment.
+//
+// # Correctness
+//
+// The stored set (currentTargetInfos) is duplicate-free by definition.
+// The incoming slice (newTargetInfos) may contain duplicates.
+// We iterate the set and verify every element exists in the slice.
+// Combined with the length check |set| == |slice|, this is sufficient:
+// if every one of the n distinct set elements appears in a slice of length n,
+// the slice must be an exact permutation of the set (pigeonhole principle).
+// No separate duplicate-tracking structure is needed, so the function
+// allocates nothing on the heap.
+//
+// # Hint table
+//
+// For target lists above a small threshold, a stack-allocated [64]uint8 array
+// accelerates element lookup. The table maps ContainerPort % 64 to a 1-based
+// index into newTargetInfos. During lookup, the hint gives an O(1) candidate
+// position; if the candidate matches, we skip the linear scan entirely.
+//
+// Collisions (two ports mapping to the same bucket) are harmless: the last
+// writer wins during construction, and any lookup that finds a non-matching
+// candidate simply falls through to slices.Contains for that single element.
+// Correctness never depends on the hint table — it is purely a performance
+// optimisation that degrades gracefully from O(n) (no collisions) to O(n²)
+// (all collisions, equivalent to the plain linear scan path).
+func (e *endpointsStore) endpointsUnchangedNoLock(deploymentID string, newEndpoints map[net.NumericEndpoint][]EndpointTargetInfo) bool {
+	currentEndpoints, found := e.reverseEndpointMap[deploymentID]
+	if !found {
+		return len(newEndpoints) == 0
+	}
+	if len(currentEndpoints) != len(newEndpoints) {
+		return false
+	}
+
+	const hintBuckets = 64
+	const hintThreshold = 6
+	var hints [hintBuckets]uint8
+
+	for endpoint, newTargetInfos := range newEndpoints {
+		if !currentEndpoints.Contains(endpoint) {
+			return false
+		}
+
+		currentTargetInfos, found := e.endpointMap[endpoint][deploymentID]
+		if !found || len(currentTargetInfos) != len(newTargetInfos) {
+			return false
+		}
+
+		n := len(newTargetInfos)
+
+		if n <= hintThreshold || n > 254 {
+			for ti := range currentTargetInfos {
+				if !slices.Contains(newTargetInfos, ti) {
+					return false
+				}
+			}
+			continue
+		}
+
+		// Build hint table: ContainerPort % 64 → 1-based slice index.
+		// Zero means "no entry"; values 1..255 encode indices 0..254.
+		clear(hints[:])
+		for i, ti := range newTargetInfos {
+			hints[ti.ContainerPort%hintBuckets] = uint8(i + 1)
+		}
+		for ti := range currentTargetInfos {
+			idx := int(hints[ti.ContainerPort%hintBuckets]) - 1
+			if idx >= 0 && idx < n && newTargetInfos[idx] == ti {
+				continue
+			}
+			if !slices.Contains(newTargetInfos, ti) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func (e *endpointsStore) purgeNoLock(deploymentID string) {
@@ -127,21 +232,30 @@ func (e *endpointsStore) purgeNoLock(deploymentID string) {
 }
 
 func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData) {
+	if len(data.endpoints) == 0 {
+		if _, exists := e.reverseEndpointMap[deploymentID]; !exists {
+			e.reverseEndpointMap[deploymentID] = nil
+		}
+		return
+	}
+
 	dSet, deploymentFound := e.reverseEndpointMap[deploymentID]
 	if !deploymentFound || dSet == nil {
-		dSet = set.NewSet[net.NumericEndpoint]()
+		dSet = make(set.Set[net.NumericEndpoint], len(data.endpoints))
+		e.reverseEndpointMap[deploymentID] = dSet
 	}
 
 	for ep, targetInfos := range data.endpoints {
 		dSet.Add(ep)
-		e.reverseEndpointMap[deploymentID] = dSet
 
 		deploymentsOnThisEp, epFound := e.endpointMap[ep]
 		if !epFound {
-			e.endpointMap[ep] = make(map[string]set.Set[EndpointTargetInfo])
+			e.endpointMap[ep] = map[string]set.Set[EndpointTargetInfo]{
+				deploymentID: make(set.Set[EndpointTargetInfo], len(targetInfos)),
+			}
 		} else if !deploymentFound {
 			// New deployment, but the endpoint exists - the new deployment takes over the already existing endpoint
-			e.endpointMap[ep][deploymentID] = set.NewSet[EndpointTargetInfo]()
+			e.endpointMap[ep][deploymentID] = make(set.Set[EndpointTargetInfo], len(targetInfos))
 			// Mark all other deployments having with this endpoint as historical
 			for otherDeploymentID := range deploymentsOnThisEp {
 				// Currently added deployment is already in the map, so do not mark it historical
@@ -149,15 +263,13 @@ func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData)
 					e.moveToHistory(otherDeploymentID, ep)
 				}
 			}
+		} else if _, targetFound := e.endpointMap[ep][deploymentID]; !targetFound {
+			e.endpointMap[ep][deploymentID] = make(set.Set[EndpointTargetInfo], len(targetInfos))
 		}
-		etiSet, targetFound := e.endpointMap[ep][deploymentID]
-		if !targetFound {
-			etiSet = set.NewSet[EndpointTargetInfo]()
-		}
+		etiSet := e.endpointMap[ep][deploymentID]
 		for _, tgtInfo := range targetInfos {
 			etiSet.Add(tgtInfo)
 		}
-		e.endpointMap[ep][deploymentID] = etiSet
 		// Endpoints previously marked as historical may need to be restored.
 		e.deleteFromHistory(deploymentID, ep)
 	}

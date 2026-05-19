@@ -34,8 +34,8 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import { ALL_NAMESPACES_KEY } from '../constants';
 
 const emptyDefaultFilters: DefaultFilters = {
-    SEVERITY: [],
-    FIXABLE: [],
+    Severity: [],
+    Fixable: [],
 };
 
 export function VulnerabilitiesOverviewContainer() {

@@ -450,7 +450,7 @@ metadata:
     {{- include "srox.annotations" (list . "destinationrule" "sensor-internal-no-istio-mtls") | nindent 4 }}
     stackrox.io/description: "Disable Istio mTLS for port 443, since StackRox services use built-in mTLS."
 spec:
-  host: sensor.stackrox.svc.cluster.local
+  host: sensor.{{ ._rox._namespace }}.svc.cluster.local
   trafficPolicy:
     portLevelSettings:
     - port:

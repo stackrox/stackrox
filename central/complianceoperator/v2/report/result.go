@@ -2,16 +2,17 @@ package report
 
 // ResultRow struct which hold all columns of a report row
 type ResultRow struct {
-	ClusterName  string
-	CheckName    string
-	Profile      string
-	ProfileType  string
-	ControlRef   string
-	Description  string
-	Status       string
-	Remediation  string
-	Rationale    string
-	Instructions string
+	ClusterName    string
+	CheckName      string
+	Profile        string
+	ProfileType    string
+	ControlRef     string
+	Description    string
+	Status         string
+	Remediation    string
+	Rationale      string
+	Instructions   string
+	AssessmentTime string
 }
 
 // Results struct which holds the results of a report.

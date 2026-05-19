@@ -1,0 +1,188 @@
+{
+    "virtualMachines": [
+        {
+            "id": "vm-001",
+            "namespace": "default",
+            "name": "cypress-vm-1",
+            "clusterId": "cluster-001",
+            "clusterName": "production-cluster",
+            "facts": {
+                "guestOS": "Red Hat Enterprise Linux 9.2",
+                "ipAddresses": "10.0.1.50",
+                "nodeName": "worker-node-1",
+                "activePodCount": "3",
+                "bootOrder": "disk,network"
+            },
+            "scan": {
+                "scanTime": "2025-04-15T10:30:00.000Z",
+                "operatingSystem": "rhel:9",
+                "components": [
+                    {
+                        "name": "openssl",
+                        "version": "3.0.7-20.el9",
+                        "vulns": [
+                            {
+                                "cve": "CVE-2024-0001",
+                                "advisory": {
+                                    "name": "RHSA-2024:0001",
+                                    "link": "https://access.redhat.com/errata/RHSA-2024:0001"
+                                },
+                                "cvss": 9.8,
+                                "summary": "Critical vulnerability in openssl",
+                                "link": "https://nvd.nist.gov/vuln/detail/CVE-2024-0001",
+                                "fixedBy": "3.0.7-25.el9",
+                                "publishedOn": "2024-01-15T00:00:00.000Z",
+                                "lastModified": "2024-02-01T00:00:00.000Z",
+                                "firstSystemOccurrence": "2024-01-20T00:00:00.000Z",
+                                "severity": "CRITICAL_VULNERABILITY_SEVERITY",
+                                "cvssMetrics": [],
+                                "epss": {
+                                    "epssProbability": 0.85,
+                                    "epssPercentile": 0.97
+                                }
+                            },
+                            {
+                                "cve": "CVE-2024-0002",
+                                "advisory": {
+                                    "name": "RHSA-2024:0002",
+                                    "link": "https://access.redhat.com/errata/RHSA-2024:0002"
+                                },
+                                "cvss": 5.3,
+                                "summary": "Moderate vulnerability in openssl",
+                                "link": "https://nvd.nist.gov/vuln/detail/CVE-2024-0002",
+                                "fixedBy": "3.0.7-25.el9",
+                                "publishedOn": "2024-02-10T00:00:00.000Z",
+                                "lastModified": "2024-03-01T00:00:00.000Z",
+                                "firstSystemOccurrence": "2024-02-15T00:00:00.000Z",
+                                "severity": "MODERATE_VULNERABILITY_SEVERITY",
+                                "cvssMetrics": [],
+                                "epss": {
+                                    "epssProbability": 0.12,
+                                    "epssPercentile": 0.45
+                                }
+                            }
+                        ],
+                        "source": "OS",
+                        "topCvss": 9.8,
+                        "riskScore": 9.8,
+                        "architecture": "x86_64",
+                        "notes": []
+                    },
+                    {
+                        "name": "curl",
+                        "version": "7.76.1-26.el9",
+                        "vulns": [
+                            {
+                                "cve": "CVE-2024-0003",
+                                "advisory": {
+                                    "name": "RHSA-2024:0003",
+                                    "link": "https://access.redhat.com/errata/RHSA-2024:0003"
+                                },
+                                "cvss": 7.5,
+                                "summary": "Important vulnerability in curl",
+                                "link": "https://nvd.nist.gov/vuln/detail/CVE-2024-0003",
+                                "fixedBy": "7.76.1-29.el9",
+                                "publishedOn": "2024-03-01T00:00:00.000Z",
+                                "lastModified": "2024-03-15T00:00:00.000Z",
+                                "firstSystemOccurrence": "2024-03-05T00:00:00.000Z",
+                                "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+                                "cvssMetrics": [],
+                                "epss": {
+                                    "epssProbability": 0.45,
+                                    "epssPercentile": 0.82
+                                }
+                            }
+                        ],
+                        "source": "OS",
+                        "topCvss": 7.5,
+                        "riskScore": 7.5,
+                        "architecture": "x86_64",
+                        "notes": []
+                    },
+                    {
+                        "name": "systemd",
+                        "version": "252-18.el9",
+                        "vulns": [],
+                        "source": "OS",
+                        "topCvss": 0,
+                        "riskScore": 0,
+                        "architecture": "x86_64",
+                        "notes": ["UNSCANNED"]
+                    }
+                ],
+                "notes": []
+            },
+            "lastUpdated": "2025-04-15T10:30:00.000Z",
+            "vsockCid": 3,
+            "state": "RUNNING"
+        },
+        {
+            "id": "vm-002",
+            "namespace": "monitoring",
+            "name": "cypress-vm-2",
+            "clusterId": "cluster-001",
+            "clusterName": "production-cluster",
+            "facts": {
+                "guestOS": "Red Hat Enterprise Linux 8.8",
+                "ipAddresses": "10.0.1.51",
+                "nodeName": "worker-node-2",
+                "activePodCount": "1",
+                "bootOrder": "disk"
+            },
+            "scan": {
+                "scanTime": "2025-04-14T08:15:00.000Z",
+                "operatingSystem": "rhel:8",
+                "components": [
+                    {
+                        "name": "kernel",
+                        "version": "4.18.0-477.el8",
+                        "vulns": [
+                            {
+                                "cve": "CVE-2024-0004",
+                                "advisory": {
+                                    "name": "",
+                                    "link": ""
+                                },
+                                "cvss": 4.0,
+                                "summary": "Low severity kernel vulnerability",
+                                "link": "https://nvd.nist.gov/vuln/detail/CVE-2024-0004",
+                                "publishedOn": "2024-04-01T00:00:00.000Z",
+                                "lastModified": "2024-04-15T00:00:00.000Z",
+                                "firstSystemOccurrence": "2024-04-05T00:00:00.000Z",
+                                "severity": "LOW_VULNERABILITY_SEVERITY",
+                                "cvssMetrics": [],
+                                "epss": {
+                                    "epssProbability": 0.02,
+                                    "epssPercentile": 0.15
+                                }
+                            }
+                        ],
+                        "source": "OS",
+                        "topCvss": 4.0,
+                        "riskScore": 4.0,
+                        "architecture": "x86_64",
+                        "notes": []
+                    }
+                ],
+                "notes": []
+            },
+            "lastUpdated": "2025-04-14T08:15:00.000Z",
+            "vsockCid": 4,
+            "state": "RUNNING"
+        },
+        {
+            "id": "vm-003",
+            "namespace": "default",
+            "name": "cypress-vm-3",
+            "clusterId": "cluster-002",
+            "clusterName": "staging-cluster",
+            "facts": {
+                "guestOS": "Red Hat Enterprise Linux 9.3"
+            },
+            "lastUpdated": "2025-04-13T12:00:00.000Z",
+            "vsockCid": 5,
+            "state": "STOPPED"
+        }
+    ],
+    "totalCount": 3
+}

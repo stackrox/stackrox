@@ -78,6 +78,8 @@ const (
 	VirtualMachineV2_MISSING_SCAN_DATA                   VirtualMachineV2_Note = 1
 	VirtualMachineV2_MISSING_SIGNATURE                   VirtualMachineV2_Note = 2
 	VirtualMachineV2_MISSING_SIGNATURE_VERIFICATION_DATA VirtualMachineV2_Note = 3
+	VirtualMachineV2_MISSING_SCANNER                     VirtualMachineV2_Note = 4
+	VirtualMachineV2_SCAN_FAILED                         VirtualMachineV2_Note = 5
 )
 
 // Enum value maps for VirtualMachineV2_Note.
@@ -87,12 +89,16 @@ var (
 		1: "MISSING_SCAN_DATA",
 		2: "MISSING_SIGNATURE",
 		3: "MISSING_SIGNATURE_VERIFICATION_DATA",
+		4: "MISSING_SCANNER",
+		5: "SCAN_FAILED",
 	}
 	VirtualMachineV2_Note_value = map[string]int32{
 		"MISSING_METADATA":                    0,
 		"MISSING_SCAN_DATA":                   1,
 		"MISSING_SIGNATURE":                   2,
 		"MISSING_SIGNATURE_VERIFICATION_DATA": 3,
+		"MISSING_SCANNER":                     4,
+		"SCAN_FAILED":                         5,
 	}
 )
 
@@ -267,7 +273,7 @@ var File_storage_virtual_machine_v2_proto protoreflect.FileDescriptor
 
 const file_storage_virtual_machine_v2_proto_rawDesc = "" +
 	"\n" +
-	" storage/virtual_machine_v2.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa9\x05\n" +
+	" storage/virtual_machine_v2.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd0\x05\n" +
 	"\x10VirtualMachineV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1c\n" +
@@ -290,12 +296,14 @@ const file_storage_virtual_machine_v2_proto_rawDesc = "" +
 	"\x05State\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aSTOPPED\x10\x01\x12\v\n" +
-	"\aRUNNING\x10\x02\"s\n" +
+	"\aRUNNING\x10\x02\"\x99\x01\n" +
 	"\x04Note\x12\x14\n" +
 	"\x10MISSING_METADATA\x10\x00\x12\x15\n" +
 	"\x11MISSING_SCAN_DATA\x10\x01\x12\x15\n" +
 	"\x11MISSING_SIGNATURE\x10\x02\x12'\n" +
-	"#MISSING_SIGNATURE_VERIFICATION_DATA\x10\x03B.\n" +
+	"#MISSING_SIGNATURE_VERIFICATION_DATA\x10\x03\x12\x13\n" +
+	"\x0fMISSING_SCANNER\x10\x04\x12\x0f\n" +
+	"\vSCAN_FAILED\x10\x05B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (

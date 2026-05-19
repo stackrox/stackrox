@@ -152,5 +152,5 @@ export function fetchDeploymentWithRisk(id: string): Promise<DeploymentWithRisk>
 
 export type DeploymentWithRisk = {
     deployment: Deployment;
-    risk: Risk;
+    risk?: Risk;
 };

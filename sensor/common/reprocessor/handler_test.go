@@ -52,7 +52,7 @@ func TestProcessInvalidateImageCache(t *testing.T) {
 		wantKept    []cache.Key
 	}{
 		{
-			name:    "without flatten uses ImageId",
+			name:    "without flatten uses ImageId and ImageFullName",
 			flatten: false,
 			cache: map[cache.Key]string{
 				"sha256:abc123": "docker.io/library/nginx:latest",
@@ -65,11 +65,11 @@ func TestProcessInvalidateImageCache(t *testing.T) {
 				{ImageId: "sha256:def456", ImageFullName: "quay.io/stackrox/main:4.0.0"},
 				{ImageFullName: "redis:alpine"},
 			},
-			wantRemoved: []cache.Key{"sha256:abc123", "sha256:def456", "redis:alpine"},
+			wantRemoved: []cache.Key{"sha256:abc123", "sha256:def456", "redis:alpine", "docker.io/library/nginx:latest", "quay.io/stackrox/main:4.0.0"},
 			wantKept:    []cache.Key{"nginx:latest"},
 		},
 		{
-			name:    "with flatten uses ImageIdV2",
+			name:    "with flatten uses ImageIdV2 and ImageFullName",
 			flatten: true,
 			cache: map[cache.Key]string{
 				"uuid-v5-id-1": "docker.io/library/nginx:latest",
@@ -82,8 +82,19 @@ func TestProcessInvalidateImageCache(t *testing.T) {
 				{ImageIdV2: "uuid-v5-id-2", ImageFullName: "quay.io/stackrox/main:4.0.0"},
 				{ImageFullName: "redis:alpine"},
 			},
-			wantRemoved: []cache.Key{"uuid-v5-id-1", "uuid-v5-id-2", "redis:alpine"},
+			wantRemoved: []cache.Key{"uuid-v5-id-1", "uuid-v5-id-2", "redis:alpine", "docker.io/library/nginx:latest", "quay.io/stackrox/main:4.0.0"},
 			wantKept:    []cache.Key{"nginx:latest"},
+		},
+		{
+			name:    "with flatten removes entry cached by full name when no digest was available",
+			flatten: true,
+			cache: map[cache.Key]string{
+				"docker.io/example/app:v1": "docker.io/example/app:v1",
+			},
+			imageKeys: []*central.ImageKey{
+				{ImageIdV2: "uuid-v5-id-app", ImageFullName: "docker.io/example/app:v1"},
+			},
+			wantRemoved: []cache.Key{"uuid-v5-id-app", "docker.io/example/app:v1"},
 		},
 	}
 

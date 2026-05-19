@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 import { getInputByLabel } from '../../helpers/formHelpers';
 
 import { triggerScan, visitComplianceDashboard } from './Compliance.helpers';
@@ -51,6 +52,12 @@ function assertCheckedAndClickStandard(forStandard, checked) {
 
 describe('Compliance hideScanResults', () => {
     withAuth();
+
+    before(function () {
+        if (!hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')) {
+            this.skip();
+        }
+    });
 
     it('should open modal and then cancel', () => {
         triggerScan(); // in case complianceDashboard.test.js is skipped

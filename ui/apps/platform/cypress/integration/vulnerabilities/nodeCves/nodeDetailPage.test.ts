@@ -25,11 +25,10 @@ import {
     applyLocalStatusFilters,
 } from '../workloadCves/WorkloadCves.helpers';
 import {
-    getNodeMetadataOpname,
-    getNodeVulnSummaryOpname,
     getNodeVulnerabilitiesOpname,
     routeMatcherMapForNodePage,
     routeMatcherMapForNodes,
+    staticResponseMapForNodePage,
     visitFirstNodeFromOverviewPage,
 } from './NodeCve.helpers';
 
@@ -38,18 +37,6 @@ const { assertAvailableFilters } = filterHelpers;
 const nodeBaseUrl = '/main/vulnerabilities/node-cves/nodes';
 const mockNodeId = '1';
 const mockNodeName = 'cypress-node-1';
-
-export const staticResponseMapForNodePage = {
-    [getNodeMetadataOpname]: {
-        fixture: `vulnerabilities/nodeCves/${getNodeMetadataOpname}`,
-    },
-    [getNodeVulnSummaryOpname]: {
-        fixture: `vulnerabilities/nodeCves/${getNodeVulnSummaryOpname}`,
-    },
-    [getNodeVulnerabilitiesOpname]: {
-        fixture: `vulnerabilities/nodeCves/${getNodeVulnerabilitiesOpname}`,
-    },
-};
 
 const mockNodePageUrl = `${nodeBaseUrl}/${mockNodeId}`;
 
@@ -188,7 +175,7 @@ describe('Node CVEs - Node Detail Page', () => {
             // filtering by Severity should only display rows with a matching top severity
             applyLocalSeverityFilters('Low');
             waitAndYieldRequestBodyVariables().then(
-                expectRequestedQuery('SEVERITY:LOW_VULNERABILITY_SEVERITY')
+                expectRequestedQuery('Severity:LOW_VULNERABILITY_SEVERITY')
             );
             assertOnEachRowForColumn('Top severity', (_, cell) => {
                 expect(cell.innerText).to.contain('Low');
@@ -198,7 +185,7 @@ describe('Node CVEs - Node Detail Page', () => {
 
             // filtering by CVE Status should only display rows with a matching status
             applyLocalStatusFilters('Fixable');
-            waitAndYieldRequestBodyVariables().then(expectRequestedQuery('FIXABLE:true'));
+            waitAndYieldRequestBodyVariables().then(expectRequestedQuery('Fixable:true'));
             assertOnEachRowForColumn('CVE status', (_, cell) => {
                 expect(cell.innerText).to.contain('Fixable');
             });

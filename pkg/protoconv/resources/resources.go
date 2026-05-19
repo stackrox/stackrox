@@ -127,7 +127,7 @@ func SpecToPodTemplateSpec(spec reflect.Value) (v1.PodTemplateSpec, error) {
 	if !doesFieldExist(templateInterface) {
 		return v1.PodTemplateSpec{}, errors.Errorf("obj %+v does not have a Template field", spec)
 	}
-	if templateInterface.Type().Kind() == reflect.Ptr && !templateInterface.IsNil() {
+	if templateInterface.Type().Kind() == reflect.Pointer && !templateInterface.IsNil() {
 		templateInterface = templateInterface.Elem()
 	}
 	podTemplate, ok := templateInterface.Interface().(v1.PodTemplateSpec)
@@ -355,7 +355,7 @@ func (w *DeploymentWrap) populateImagePullSecrets(podSpec v1.PodSpec) {
 
 func (w *DeploymentWrap) populateDaemonSetReplicaSet(obj interface{}) {
 	ds := reflect.ValueOf(obj)
-	if ds.Kind() == reflect.Ptr {
+	if ds.Kind() == reflect.Pointer {
 		ds = ds.Elem()
 	}
 	status := ds.FieldByName("Status")

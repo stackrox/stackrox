@@ -198,7 +198,7 @@ query getComponentId(\$imageId: ID!, \$componentQuery: String) {
 
         imageDigest               | imageName           | component | cve              | severity | cvss
         RHEL_IMAGE_LEGACY_DIGEST  | RHEL_IMAGE_LEGACY   | "glib2"   | "CVE-2019-13012" | LOW      | 4.4
-        UBUNTU_IMAGE_DIGEST       | UBUNTU_IMAGE        | "gnupg2"  | "CVE-2022-3219"  | LOW      | 3.3
+        UBUNTU_IMAGE_DIGEST       | UBUNTU_IMAGE        | "systemd"  | "CVE-2023-7008" | LOW      | 5.9
     }
 
     @Unroll

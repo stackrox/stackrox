@@ -50,7 +50,7 @@ function EntityScopeCompoundSearchFilter({
     }
 
     return (
-        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
+        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
             <CompoundSearchFilter
                 config={searchFilterConfig}
                 isDisabled={entityScope === null}
@@ -61,6 +61,7 @@ function EntityScopeCompoundSearchFilter({
                 <CompoundSearchFilterLabels
                     attributesSeparateFromConfig={[]}
                     config={searchFilterConfig}
+                    hasClearFilters={false}
                     onFilterChange={onFilterChange}
                     searchFilter={searchFilter}
                 />

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"time"
@@ -23,10 +24,12 @@ import (
 	"github.com/quay/claircore/oracle"
 	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/pkg/ctxlock/v2"
+	"github.com/quay/claircore/purl"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/ruby"
+	ccsbom "github.com/quay/claircore/sbom"
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -36,6 +39,7 @@ import (
 	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
+	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/internal/httputil"
 	"github.com/stackrox/rox/scanner/matcher/repo2cpe"
 	"github.com/stackrox/rox/scanner/matcher/updater/vuln"
@@ -77,6 +81,7 @@ type Matcher interface {
 	GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error)
 	GetKnownDistributions(ctx context.Context) []claircore.Distribution
 	GetSBOM(ctx context.Context, ir *claircore.IndexReport, opts *sbom.Options) ([]byte, error)
+	DecodeSBOM(ctx context.Context, data io.Reader) (*claircore.IndexReport, error)
 	Ready(ctx context.Context) error
 	Initialized(ctx context.Context) error
 	Close(ctx context.Context) error
@@ -89,16 +94,14 @@ type matcherImpl struct {
 	pool          *pgxpool.Pool
 
 	vulnUpdater     *vuln.Updater
-	repo2cpeUpdater *repo2cpe.Updater
 	sbomer          *sbom.SBOMer
+	sbomDecoder     ccsbom.Decoder
+	repo2CPEUpdater *repo2cpe.Updater
 
 	readyWithVulns bool
 }
 
-// NewMatcher creates a new matcher. If repo2cpeGetter is non-nil and SBOM
-// scanning is enabled, a background updater is started for the
-// repository-to-CPE mapping.
-func NewMatcher(ctx context.Context, cfg config.MatcherConfig, repo2cpeGetter repo2cpe.Getter) (Matcher, error) {
+func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider indexer.ReportProvider) (Matcher, error) {
 	var success bool
 
 	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libvuln")
@@ -203,14 +206,17 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, repo2cpeGetter re
 	// include vulnerabilities vs. not.
 	sbomer := sbom.NewSBOMer()
 
-	var repo2cpeUpdater *repo2cpe.Updater
+	var repo2CPEUpdater *repo2cpe.Updater
+	var rhelTransformFuncs []purl.TransformerFunc
 	if features.SBOMScanning.Enabled() {
-		if repo2cpeGetter != nil {
-			repo2cpeUpdater = repo2cpe.NewUpdater(repo2cpeGetter)
+		if reportProvider != nil {
+			repo2CPEUpdater = repo2cpe.NewUpdater(reportProvider)
+			rhelTransformFuncs = append(rhelTransformFuncs, sbom.NewRHELCPETransformFunc(repo2CPEUpdater))
 		} else {
-			slog.ErrorContext(ctx, "failed to create remote indexer for repo-to-CPE mapping; SBOM CPE data may be incomplete")
+			slog.ErrorContext(ctx, "unconfigured remote indexer may lead to inaccurate SBOM scanning results")
 		}
 	}
+	sbomDecoder := sbom.NewSPDXDecoder(sbom.NewPURLRegistry(rhelTransformFuncs...))
 
 	// Start the vulnerability updater.
 	go func() {
@@ -226,8 +232,9 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, repo2cpeGetter re
 		pool:          pool,
 
 		vulnUpdater:     vulnUpdater,
-		repo2cpeUpdater: repo2cpeUpdater,
 		sbomer:          sbomer,
+		sbomDecoder:     sbomDecoder,
+		repo2CPEUpdater: repo2CPEUpdater,
 
 		readyWithVulns: cfg.Readiness == config.ReadinessVulnerability,
 	}, nil
@@ -249,10 +256,13 @@ func (m *matcherImpl) GetSBOM(ctx context.Context, ir *claircore.IndexReport, op
 	return m.sbomer.GetSBOM(ctx, ir, opts)
 }
 
-// Close closes the matcher.
+func (m *matcherImpl) DecodeSBOM(ctx context.Context, data io.Reader) (*claircore.IndexReport, error) {
+	return m.sbomDecoder.Decode(ctx, data)
+}
+
 func (m *matcherImpl) Close(ctx context.Context) error {
-	if m.repo2cpeUpdater != nil {
-		m.repo2cpeUpdater.Close()
+	if m.repo2CPEUpdater != nil {
+		m.repo2CPEUpdater.Close()
 	}
 	err := errors.Join(m.vulnUpdater.Stop(), m.libVuln.Close(ctx))
 	m.pool.Close()

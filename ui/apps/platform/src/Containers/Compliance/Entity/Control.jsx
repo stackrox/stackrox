@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext } from 'react';
 
 import entityTypes from 'constants/entityTypes';
 import Widget from 'Components/Widget';
@@ -10,7 +10,6 @@ import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPag
 import useCases from 'constants/useCaseTypes';
 import ComplianceList from 'Containers/Compliance/List/List';
 import Loader from 'Components/Loader';
-import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import PageNotFound from 'Components/PageNotFound';
 import searchContext from 'Containers/searchContext';
 import isGQLLoading from 'utils/gqlLoading';
@@ -28,7 +27,6 @@ const ControlPage = ({
     query,
     sidePanelMode,
 }) => {
-    const [isExporting, setIsExporting] = useState(false);
     const searchParam = useContext(searchContext);
 
     return (
@@ -50,7 +48,6 @@ const ControlPage = ({
                 const { results: control, complianceStandards: standards } = data;
                 const standard = standards.find((item) => item.id === control.standardId);
                 const { name, standardId, interpretationText, description } = control;
-                const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 const standardName = standard ? standard.name : '';
                 let contents;
 
@@ -61,10 +58,7 @@ const ControlPage = ({
                     };
 
                     contents = (
-                        <section
-                            id="capture-list"
-                            className="flex flex-col flex-1 overflow-y-auto h-full"
-                        >
+                        <section className="flex flex-col flex-1 overflow-y-auto h-full">
                             <ComplianceList
                                 entityType={listEntityType1}
                                 query={listQuery}
@@ -72,7 +66,6 @@ const ControlPage = ({
                                 entityType2={entityType2}
                                 entityListType2={entityListType2}
                                 entityId2={entityId2}
-                                className={pdfClassName}
                             />
                         </section>
                     );
@@ -82,7 +75,6 @@ const ControlPage = ({
                             className={`flex-1 relative bg-base-200 overflow-auto ${
                                 !sidePanelMode ? `p-6` : `p-4`
                             } `}
-                            id="capture-dashboard"
                         >
                             <div
                                 className={`grid ${
@@ -96,13 +88,10 @@ const ControlPage = ({
                                     standardName={standardName}
                                     control={name}
                                     description={description}
-                                    className={`sx-2 ${pdfClassName}`}
+                                    className="sx-2"
                                 />
                                 {!!interpretationText.length && (
-                                    <Widget
-                                        className={`sx-2 ${pdfClassName}`}
-                                        header="Control guidance"
-                                    >
+                                    <Widget className="sx-2" header="Control guidance">
                                         <div className="p-4 leading-loose whitespace-pre-wrap">
                                             {interpretationText}
                                         </div>
@@ -115,28 +104,24 @@ const ControlPage = ({
                                             pageEntityType={entityTypes.CONTROL}
                                             pageEntity={control}
                                             standard={standardName}
-                                            className={pdfClassName}
                                         />
                                         <ControlRelatedResourceList
                                             listEntityType={entityTypes.NAMESPACE}
                                             pageEntityType={entityTypes.CONTROL}
                                             pageEntity={control}
                                             standard={standardName}
-                                            className={pdfClassName}
                                         />
                                         <ControlRelatedResourceList
                                             listEntityType={entityTypes.NODE}
                                             pageEntityType={entityTypes.CONTROL}
                                             pageEntity={control}
                                             standard={standardName}
-                                            className={pdfClassName}
                                         />
                                         <ControlRelatedResourceList
                                             listEntityType={entityTypes.DEPLOYMENT}
                                             pageEntityType={entityTypes.CONTROL}
                                             pageEntity={control}
                                             standard={standardName}
-                                            className={pdfClassName}
                                         />
                                     </>
                                 )}
@@ -154,8 +139,6 @@ const ControlPage = ({
                                     listEntityType={listEntityType1}
                                     entity={control}
                                     entityName={`${standardName} ${name}`}
-                                    isExporting={isExporting}
-                                    setIsExporting={setIsExporting}
                                 />
                                 <ResourceTabs
                                     entityId={entityId}
@@ -171,7 +154,6 @@ const ControlPage = ({
                             </>
                         )}
                         {contents}
-                        {isExporting && <BackdropExporting />}
                     </section>
                 );
             }}

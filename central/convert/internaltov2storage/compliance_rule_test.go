@@ -5,6 +5,7 @@ import (
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stretchr/testify/assert"
 )
@@ -58,6 +59,23 @@ func TestComplianceOperatorRule_ParentRuleAndRuleRefId(t *testing.T) {
 
 		assert.Equal(t, "kubelet-configure-tls-cert", result.GetParentRule())
 		assert.Equal(t, BuildNameRefID(clusterID, "kubelet-configure-tls-cert"), result.GetRuleRefId())
+	})
+
+	t.Run("unspecified OperatorKind is treated as RULE", func(t *testing.T) {
+		msg := &central.ComplianceOperatorRuleV2{
+			Id:     "rule-uid",
+			RuleId: "xccdf_org.ssgproject.content_rule_some_rule",
+			Name:   "some-rule",
+			Annotations: map[string]string{
+				v1alpha1.RuleIDAnnotationKey: "some-rule",
+			},
+		}
+
+		result := ComplianceOperatorRule(msg, clusterID)
+
+		assert.Equal(t, storage.ComplianceOperatorRuleV2_RULE, result.GetOperatorKind())
+		assert.Equal(t, "some-rule", result.GetParentRule())
+		assert.Equal(t, BuildNameRefID(clusterID, "some-rule"), result.GetRuleRefId())
 	})
 
 	t.Run("custom rule derives parentRule from RuleId, ignoring RuleIDAnnotationKey annotation", func(t *testing.T) {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -24,6 +25,8 @@ func createManager(mockCtrl *gomock.Controller, enrichTicker <-chan time.Time) (
 	mockEntityStore := mocksManager.NewMockEntityStore(mockCtrl)
 	mockExternalStore := mocksExternalSrc.NewMockStore(mockCtrl)
 	mockDetector := mocksDetector.NewMockDetector(mockCtrl)
+	activeConns := make(map[connection]*networkConnIndicatorWithAge)
+	activeEps := make(map[containerEndpoint]*containerEndpointIndicatorWithAge)
 	mgr := &networkFlowManager{
 		clusterEntities:   mockEntityStore,
 		externalSrcs:      mockExternalStore,
@@ -34,9 +37,17 @@ func createManager(mockCtrl *gomock.Controller, enrichTicker <-chan time.Time) (
 		publicIPs:         newPublicIPsManager(),
 		enricherTicker:    time.NewTicker(time.Hour),
 		enricherTickerC:   enrichTicker,
-		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
-		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
+		activeConnections: activeConns,
+		activeEndpoints:   activeEps,
 		stopper:           concurrency.NewStopper(),
+	}
+	mgr.endpointChecker = endpointActiveChecker{
+		mutex:           &mgr.activeEndpointsMutex,
+		activeEndpoints: activeEps,
+	}
+	mgr.connectionChecker = connectionActiveChecker{
+		mutex:             &mgr.activeConnectionsMutex,
+		activeConnections: activeConns,
 	}
 	return mgr, mockEntityStore, mockExternalStore, mockDetector
 }
@@ -144,6 +155,11 @@ func (c *connectionPair) external() *connectionPair {
 
 func (c *connectionPair) invalidAddress() *connectionPair {
 	c.conn.remote.IPAndPort.Address = net.ParseIP("invalid")
+	return c
+}
+
+func (c *connectionPair) notFresh() *connectionPair {
+	c.status.firstSeen = timestamp.Now().Add(-env.ClusterEntityResolutionWaitPeriod.DurationSetting() * 2)
 	return c
 }
 

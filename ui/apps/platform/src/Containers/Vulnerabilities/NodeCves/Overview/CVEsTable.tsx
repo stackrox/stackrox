@@ -109,7 +109,7 @@ function CVEsTable({
     const expandedRowSet = useSet<string>();
     const colSpan = canSelectRows ? 8 : 6;
 
-    const filteredSeverities = querySearchFilter.SEVERITY?.map(
+    const filteredSeverities = querySearchFilter.Severity?.map(
         (s) => vulnerabilitySeverityLabels[s]
     ).filter(isVulnerabilitySeverityLabel);
 

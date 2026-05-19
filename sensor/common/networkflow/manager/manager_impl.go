@@ -146,6 +146,8 @@ func NewManager(
 	opts ...Option,
 ) Manager {
 	enricherTicker := time.NewTicker(enricherCycle)
+	activeConns := make(map[connection]*networkConnIndicatorWithAge)
+	activeEps := make(map[containerEndpoint]*containerEndpointIndicatorWithAge)
 	mgr := &networkFlowManager{
 		connectionsByHost:    make(map[string]*hostConnections),
 		clusterEntities:      clusterEntities,
@@ -157,10 +159,18 @@ func NewManager(
 		updateComputer:       updateComputer,
 		initialSync:          &atomic.Bool{},
 		enrichmentDoneSignal: concurrency.NewSignal(),
-		activeConnections:    make(map[connection]*networkConnIndicatorWithAge),
-		activeEndpoints:      make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
+		activeConnections:    activeConns,
+		activeEndpoints:      activeEps,
 		stopper:              concurrency.NewStopper(),
 		pubSub:               pubSub,
+	}
+	mgr.endpointChecker = endpointActiveChecker{
+		mutex:           &mgr.activeEndpointsMutex,
+		activeEndpoints: activeEps,
+	}
+	mgr.connectionChecker = connectionActiveChecker{
+		mutex:             &mgr.activeConnectionsMutex,
+		activeConnections: activeConns,
 	}
 	maxAgeSetting := env.EnrichmentPurgerTickerMaxAge.DurationSetting()
 	if maxAgeSetting > 0 && maxAgeSetting <= enricherCycle {
@@ -215,6 +225,11 @@ type networkFlowManager struct {
 	// An endpoint is active until Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value,
 	// or until Sensor decides that such message may never arrive and decides that a given endpoint is no longer active.
 	activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge
+
+	// Reusable checkers for resolveContainerID, initialized once at construction to
+	// avoid per-iteration heap allocations in the enrichment hot loop.
+	endpointChecker   endpointActiveChecker
+	connectionChecker connectionActiveChecker
 
 	sensorUpdates chan *message.ExpiringMessage
 
@@ -307,6 +322,7 @@ func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
 		// If the m.sensorUpdates queue is full, we bounce the Network Flow update.
 		// They will still be processed by the detection engine for newer entities, but
 		// sensor will not keep ordered updates indefinitely in memory.
+		flowMetrics.NumMessagesDroppedOnSendCounter.Inc()
 		return false
 	}
 }
@@ -402,6 +418,8 @@ func (m *networkFlowManager) send(result *enrichmentResult) {
 		} else {
 			m.updateComputer.OnSendConnectionsFailure(result.updatedConns)
 			m.updateComputer.OnSendEndpointsFailure(result.updatedEndpoints)
+			flowMetrics.NumUpdatesDroppedOnSendCounter.WithLabelValues("connections").Add(float64(len(result.updatedConns)))
+			flowMetrics.NumUpdatesDroppedOnSendCounter.WithLabelValues("endpoints").Add(float64(len(result.updatedEndpoints)))
 		}
 	}
 
@@ -411,6 +429,7 @@ func (m *networkFlowManager) send(result *enrichmentResult) {
 			m.updateComputer.OnSuccessfulSendProcesses(result.currentEndpointsProcesses)
 		} else {
 			m.updateComputer.OnSendProcessesFailure(result.updatedProcesses)
+			flowMetrics.NumUpdatesDroppedOnSendCounter.WithLabelValues("endpoints_with_processes").Add(float64(len(result.updatedProcesses)))
 		}
 	}
 	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))

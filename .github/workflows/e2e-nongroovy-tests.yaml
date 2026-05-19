@@ -171,6 +171,7 @@ jobs:
       shell: python
       env:
         PYTHONUNBUFFERED: "1"
+        ROX_USERNAME: admin
       run: |
         import os, sys
         sys.path.append('.openshift-ci')

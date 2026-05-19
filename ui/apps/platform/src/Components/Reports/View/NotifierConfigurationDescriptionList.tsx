@@ -6,7 +6,6 @@ import {
     DescriptionListTerm,
 } from '@patternfly/react-core';
 
-import { isDefaultEmailTemplate } from 'Components/EmailTemplate/EmailTemplate.utils';
 import type { NotifierConfiguration } from 'services/ReportsService.types';
 
 export type NotifierConfigurationDescriptionListProps = {
@@ -18,10 +17,6 @@ function NotifierConfigurationDescriptionList({
 }: NotifierConfigurationDescriptionListProps): ReactElement {
     const { emailConfig, notifierName } = notifier;
     const { customBody, customSubject, mailingLists } = emailConfig;
-    const hasDefaultEmailTemplate = isDefaultEmailTemplate({
-        customBody,
-        customSubject,
-    });
 
     return (
         <DescriptionList isCompact isHorizontal>
@@ -33,12 +28,18 @@ function NotifierConfigurationDescriptionList({
                 <DescriptionListTerm>Distribution list</DescriptionListTerm>
                 <DescriptionListDescription>{mailingLists.join(', ')}</DescriptionListDescription>
             </DescriptionListGroup>
-            <DescriptionListGroup>
-                <DescriptionListTerm>Email template</DescriptionListTerm>
-                <DescriptionListDescription>
-                    {hasDefaultEmailTemplate ? 'Default template' : 'Custom template'}
-                </DescriptionListDescription>
-            </DescriptionListGroup>
+            {customSubject && (
+                <DescriptionListGroup>
+                    <DescriptionListTerm>Custom subject</DescriptionListTerm>
+                    <DescriptionListDescription>{customSubject}</DescriptionListDescription>
+                </DescriptionListGroup>
+            )}
+            {customBody && (
+                <DescriptionListGroup>
+                    <DescriptionListTerm>Custom body</DescriptionListTerm>
+                    <DescriptionListDescription>{customBody}</DescriptionListDescription>
+                </DescriptionListGroup>
+            )}
         </DescriptionList>
     );
 }

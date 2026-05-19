@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Simulates a remote mktemp that outputs the __STAGE_DIR__ marker.
+# Used to test create_remote_stage_dir parsing.
+echo "__STAGE_DIR__=/var/tmp/roxagent-install.ABC123"

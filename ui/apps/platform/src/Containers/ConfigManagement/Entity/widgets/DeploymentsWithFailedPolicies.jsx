@@ -90,7 +90,7 @@ const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
                     headerClassName: defaultHeaderClassName,
                     className: defaultColumnClassName,
                     accessor: 'name',
-                    Cell: ({ original, pdf }) => {
+                    Cell: ({ original }) => {
                         const { severity, categories, name } = original;
 
                         const groupHeader = (
@@ -98,11 +98,7 @@ const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
                                 <div className="flex flex-1">{name}</div>
                                 <div>
                                     <span>
-                                        Severity:{' '}
-                                        <PolicySeverityIconText
-                                            severity={severity}
-                                            isTextOnly={pdf}
-                                        />
+                                        Severity: <PolicySeverityIconText severity={severity} />
                                     </span>
                                     <span className="pl-2 pr-2">|</span>
                                     <span>Categories: {categories.join(',')}</span>

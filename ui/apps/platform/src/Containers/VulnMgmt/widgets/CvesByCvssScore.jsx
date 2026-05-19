@@ -152,7 +152,7 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
     }
 
     return (
-        <Widget className="h-full pdf-page" header="CVEs by CVSS score" headerComponents={header}>
+        <Widget className="h-full" header="CVEs by CVSS score" headerComponents={header}>
             {content}
         </Widget>
     );

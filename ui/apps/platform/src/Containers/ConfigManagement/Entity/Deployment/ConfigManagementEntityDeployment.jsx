@@ -169,9 +169,9 @@ const ConfigManagementEntityDeployment = ({
                 ];
 
                 return (
-                    <div className="w-full" id="capture-dashboard-stretch">
+                    <div className="w-full">
                         <CollapsibleSection title="Deployment Summary">
-                            <div className="flex mb-4 flex-wrap pdf-page">
+                            <div className="flex mb-4 flex-wrap">
                                 <Metadata
                                     className="mx-4 bg-base-100 min-h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
@@ -220,7 +220,7 @@ const ConfigManagementEntityDeployment = ({
                             </div>
                         </CollapsibleSection>
                         <CollapsibleSection title="Deployment Findings">
-                            <div className="flex mb-4 pdf-page pdf-stretch">
+                            <div className="flex mb-4">
                                 <DeploymentFindings
                                     entityContext={entityContext}
                                     deploymentID={id}
