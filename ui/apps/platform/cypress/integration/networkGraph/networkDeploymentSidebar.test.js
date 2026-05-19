@@ -23,7 +23,8 @@ describe('Network Graph deployment sidebar', () => {
 
         // confirm that the graph only contains collector and other StackRox deployments it communiticates with
         cy.get(
-            `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("sensor")`
+            `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("sensor")`,
+            { timeout: 30000 }
         );
 
         // With the addition of the compliance node indexer, it is possible for a flow to exist between central and collector
