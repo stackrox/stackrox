@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stackrox/rox/central/globaldb/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
@@ -108,7 +109,7 @@ func (s *PostgresUtilitySuite) TestCollectPostgresIndexStats() {
 
 	// On a clean test DB there should be no invalid indexes.
 	CollectPostgresIndexStats(ctx, tp.DB)
-	s.Equal(0.0, testutil.ToFloat64(metrics.PostgresInvalidIndexes))
+	s.Equal(0, testutil.CollectAndCount(metrics.PostgresInvalidIndexes))
 
 	// Create a table and index, then mark the index invalid.
 	_, err := tp.DB.Exec(ctx, "CREATE TABLE test_invalid_idx_check (id int)")
@@ -119,7 +120,11 @@ func (s *PostgresUtilitySuite) TestCollectPostgresIndexStats() {
 	s.Require().NoError(err)
 
 	CollectPostgresIndexStats(ctx, tp.DB)
-	s.Equal(1.0, testutil.ToFloat64(metrics.PostgresInvalidIndexes))
+	s.Equal(1, testutil.CollectAndCount(metrics.PostgresInvalidIndexes))
+	s.Equal(1.0, testutil.ToFloat64(metrics.PostgresInvalidIndexes.With(prometheus.Labels{
+		"index_name": "test_idx",
+		"table_name": "test_invalid_idx_check",
+	})))
 
 	// Clean up: restore validity so DROP works cleanly.
 	_, err = tp.DB.Exec(ctx, "UPDATE pg_index SET indisvalid = true WHERE indexrelid = 'test_idx'::regclass")
@@ -128,5 +133,5 @@ func (s *PostgresUtilitySuite) TestCollectPostgresIndexStats() {
 	s.Require().NoError(err)
 
 	CollectPostgresIndexStats(ctx, tp.DB)
-	s.Equal(0.0, testutil.ToFloat64(metrics.PostgresInvalidIndexes))
+	s.Equal(0, testutil.CollectAndCount(metrics.PostgresInvalidIndexes))
 }

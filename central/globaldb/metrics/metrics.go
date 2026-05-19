@@ -117,10 +117,10 @@ var (
 		Help:      "dead tuples for the table",
 	}, []string{"table"})
 
-	PostgresInvalidIndexes = prometheus.NewGauge(prometheus.GaugeOpts{
+	PostgresInvalidIndexes = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_invalid_indexes",
-		Help:      "number of invalid indexes in the database",
-	})
+		Help:      "invalid indexes in the database (1 per invalid index)",
+	}, []string{"index_name", "table_name"})
 )

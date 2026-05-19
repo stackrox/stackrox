@@ -416,7 +416,7 @@ func CollectPostgresIndexStats(ctx context.Context, db postgres.DB) {
 	rows, err := db.Query(ctx, invalidIndexQuery)
 	if err != nil {
 		log.Errorf("error checking for invalid indexes: %v", err)
-		metrics.PostgresInvalidIndexes.Set(0)
+		metrics.PostgresInvalidIndexes.Reset()
 		return
 	}
 	defer rows.Close()
@@ -439,7 +439,13 @@ func CollectPostgresIndexStats(ctx context.Context, db postgres.DB) {
 		log.Errorf("error reading invalid index rows: %v", err)
 	}
 
-	metrics.PostgresInvalidIndexes.Set(float64(len(invalidIndexes)))
+	metrics.PostgresInvalidIndexes.Reset()
+	for _, idx := range invalidIndexes {
+		metrics.PostgresInvalidIndexes.With(prometheus.Labels{
+			"index_name": idx.indexName,
+			"table_name": idx.tableName,
+		}).Set(1)
+	}
 
 	if len(invalidIndexes) > 0 {
 		var details strings.Builder
