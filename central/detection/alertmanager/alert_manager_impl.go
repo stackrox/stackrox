@@ -428,19 +428,21 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	// Phase 2: fetch full alerts only for matched keys, then merge.
 	if len(mergeCandidates) > 0 {
 		// Collect unique old IDs and batch-fetch.
-		oldAlertsByID := make(map[string]*storage.Alert, len(mergeCandidates))
+		uniqueIDs := set.NewStringSet()
 		for _, mc := range mergeCandidates {
-			oldAlertsByID[mc.oldKeyID] = nil // deduplicate
+			uniqueIDs.Add(mc.oldKeyID)
 		}
-		for id := range oldAlertsByID {
-			oldAlert, exists, getErr := d.alerts.GetAlert(ctx, id)
-			if getErr != nil {
-				err = errors.Wrapf(getErr, "failed to fetch alert %s for merge", id)
-				return
-			}
-			if exists {
-				oldAlertsByID[id] = oldAlert
-			}
+		mergeQuery := search.NewQueryBuilder().
+			AddExactMatches(search.AlertID, uniqueIDs.AsSlice()...).
+			ProtoQuery()
+		fetched, fetchErr := d.alerts.SearchRawAlerts(ctx, mergeQuery, false)
+		if fetchErr != nil {
+			err = errors.Wrap(fetchErr, "failed to fetch alerts for merge")
+			return
+		}
+		oldAlertsByID := make(map[string]*storage.Alert, len(fetched))
+		for _, a := range fetched {
+			oldAlertsByID[a.GetId()] = a
 		}
 
 		for _, mc := range mergeCandidates {

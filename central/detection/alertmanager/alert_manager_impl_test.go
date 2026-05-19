@@ -317,10 +317,8 @@ func (suite *AlertManagerTestSuite) TestOnUpdatesWhenAlertsDoNotChange() {
 
 	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts), nil)
 
-	// Mock GetAlert for each matching alert (they match exactly so mergeAlerts returns the old alert unchanged)
-	for _, alert := range alerts {
-		suite.alertsMock.EXPECT().GetAlert(suite.ctx, alert.GetId()).Return(alert, true, nil)
-	}
+	// Phase 2 batch-fetches all matching alerts (they match exactly so mergeAlerts returns the old alert unchanged)
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return(alerts, nil)
 	// No updates should be attempted because the merged alerts equal the old alerts
 
 	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, alerts)
@@ -333,9 +331,8 @@ func (suite *AlertManagerTestSuite) TestMarksOldAlertsResolved() {
 
 	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts), nil)
 
-	// Mock GetAlert for the alerts that match (alerts[1] and alerts[2])
-	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[1].GetId()).Return(alerts[1], true, nil)
-	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[2].GetId()).Return(alerts[2], true, nil)
+	// Phase 2 batch-fetches the matched alerts (alerts[1] and alerts[2])
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return(alerts[1:], nil)
 
 	// Unchanged alerts should not be updated (they match exactly so mergeAlerts returns old == new).
 
@@ -355,9 +352,8 @@ func (suite *AlertManagerTestSuite) TestSendsNotificationsForNewAlerts() {
 	// Make one of the alerts not appear in the previous alerts.
 	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts[1:]), nil)
 
-	// Mock GetAlert for the alerts that match (alerts[1] and alerts[2])
-	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[1].GetId()).Return(alerts[1], true, nil)
-	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[2].GetId()).Return(alerts[2], true, nil)
+	// Phase 2 batch-fetches the matched alerts (alerts[1] and alerts[2])
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return(alerts[1:], nil)
 
 	// Only the new alert (alerts[0]) will be notified and upserted.
 	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), alerts[0]).Return()
@@ -399,8 +395,8 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlerts() {
 	expectedMergedAlert := newAlert.CloneVT()
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].GetViolations()...)
 
-	// Mock GetAlert to fetch the full alert for merging
-	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[0].GetId()).Return(alerts[0], true, nil)
+	// Phase 2 batch-fetches the matched alert for merging
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return([]*storage.Alert{alerts[0]}, nil)
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
@@ -430,8 +426,8 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsNoNotify() {
 	expectedMergedAlert := newAlert.CloneVT()
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].GetViolations()...)
 
-	// Mock GetAlert to fetch the full alert for merging
-	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[0].GetId()).Return(alerts[0], true, nil)
+	// Phase 2 batch-fetches the matched alert for merging
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return([]*storage.Alert{alerts[0]}, nil)
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
@@ -458,8 +454,8 @@ func (suite *AlertManagerTestSuite) TestMergeMultipleResourceAlerts() {
 	newAlert2 := alerts[0].CloneVT()
 	newAlert2.Violations[0].Message = "new-violation-2"
 
-	// Mock GetAlert to fetch the full alert for merging (called once - batched by unique ID)
-	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[0].GetId()).Return(alerts[0], true, nil)
+	// Phase 2 batch-fetches the matched alert for merging (one unique ID)
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return([]*storage.Alert{alerts[0]}, nil)
 
 	// There will be two calls to Upsert
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).Return(nil)
@@ -494,8 +490,8 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].GetViolations()...)
 	expectedMergedAlert.Violations = expectedMergedAlert.GetViolations()[:maxRunTimeViolationsPerAlert]
 
-	// Mock GetAlert to fetch the full alert for merging
-	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[0].GetId()).Return(alerts[0], true, nil)
+	// Phase 2 batch-fetches the matched alert for merging
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return([]*storage.Alert{alerts[0]}, nil)
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
@@ -531,8 +527,8 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].GetViolations()...)
 	expectedMergedAlert.Violations = expectedMergedAlert.GetViolations()[:maxRunTimeViolationsPerAlert]
 
-	// Mock GetAlert to fetch the full alert for merging
-	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[0].GetId()).Return(alerts[0], true, nil)
+	// Phase 2 batch-fetches the matched alert for merging
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return([]*storage.Alert{alerts[0]}, nil)
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
@@ -563,8 +559,8 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 
 	expectedMergedAlert := newAlert.CloneVT()
 
-	// Mock GetAlert to fetch the full alert for merging
-	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[0].GetId()).Return(alerts[0], true, nil)
+	// Phase 2 batch-fetches the matched alert for merging
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return([]*storage.Alert{alerts[0]}, nil)
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
@@ -597,8 +593,8 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 
 	expectedMergedAlert := newAlert.CloneVT()
 
-	// Mock GetAlert to fetch the full alert for merging
-	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[0].GetId()).Return(alerts[0], true, nil)
+	// Phase 2 batch-fetches the matched alert for merging
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return([]*storage.Alert{alerts[0]}, nil)
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
@@ -657,8 +653,8 @@ func (suite *AlertManagerTestSuite) TestAlertDeletedBetweenPhases() {
 	// Phase 1 returns a key that matches the incoming alert.
 	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts[:1]), nil)
 
-	// Phase 2: the alert was deleted between phases.
-	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[0].GetId()).Return(nil, false, nil)
+	// Phase 2: the alert was deleted between phases — SearchRawAlerts returns empty.
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return(nil, nil)
 
 	// Since the alert is gone, it should be treated as new.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).DoAndReturn(func(_ context.Context, a *storage.Alert) error {
@@ -695,9 +691,9 @@ func (suite *AlertManagerTestSuite) TestDeploymentMarkedInactiveOnRemoval() {
 	suite.runtimeDetectorMock.EXPECT().DeploymentInactive("dep-to-remove").Return(true).AnyTimes()
 	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
 
-	// Phase 2: fetch full alert for inactive marking.
+	// Batch-fetch full alert for inactive marking.
 	fullAlert := previousAlert.CloneVT()
-	suite.alertsMock.EXPECT().GetAlert(suite.ctx, "runtime-alert-1").Return(fullAlert, true, nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return([]*storage.Alert{fullAlert}, nil)
 
 	// The alert should be updated with deployment.Inactive = true.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).DoAndReturn(func(_ context.Context, a *storage.Alert) error {
@@ -724,9 +720,8 @@ func (suite *AlertManagerTestSuite) TestResolvedDeploymentAlertReturnsDeployment
 		Return(alertsToMatchKeys(alerts), nil)
 
 	// Incoming has alerts[1] and alerts[2] but not alerts[0].
-	// alerts[1] and alerts[2] match their keys, so Phase 2 fetches them.
-	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[1].GetId()).Return(alerts[1], true, nil)
-	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[2].GetId()).Return(alerts[2], true, nil)
+	// alerts[1] and alerts[2] match their keys, so Phase 2 batch-fetches them.
+	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), false).Return(alerts[1:], nil)
 
 	// alerts[0] should be resolved.
 	suite.alertsMock.EXPECT().MarkAlertsResolvedBatch(suite.ctx, alerts[0].GetId()).Return([]*storage.Alert{alerts[0]}, nil)
