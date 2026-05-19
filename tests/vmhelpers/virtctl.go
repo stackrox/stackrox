@@ -204,12 +204,12 @@ func normalizeVirtctlTarget(vm string) string {
 	return "vmi/" + vm
 }
 
-// appendLocalSSHOpts appends defaultLocalSSHOpts plus a dynamic UserKnownHostsFile to args as --local-ssh-opts pairs.
-func appendLocalSSHOpts(args []string, knownHostsFile string) []string {
+// appendLocalSSHOpts appends defaultLocalSSHOpts plus the suite-scoped UserKnownHostsFile to args as --local-ssh-opts pairs.
+func (v Virtctl) appendLocalSSHOpts(args []string) []string {
 	for _, opt := range defaultLocalSSHOpts {
 		args = append(args, "--local-ssh-opts", opt)
 	}
-	args = append(args, "--local-ssh-opts", "-o UserKnownHostsFile="+knownHostsFile)
+	args = append(args, "--local-ssh-opts", "-o UserKnownHostsFile="+v.KnownHostsFile)
 	return args
 }
 

@@ -9,21 +9,21 @@ import (
 
 // SSH runs `virtctl ssh` against the VM and returns captured streams.
 func (v Virtctl) SSH(ctx context.Context, namespace, vm string, command ...string) (stdout string, stderr string, err error) {
-	args := buildVirtctlSSHArgs(v.Path, namespace, vm, v.IdentityFile, v.Username, v.KnownHostsFile, command...)
+	args := v.buildSSHArgs(namespace, vm, command...)
 	return v.run(ctx, args)
 }
 
-// buildVirtctlSSHArgs builds the full argv for `virtctl ssh`, optionally with a quoted remote --command.
-func buildVirtctlSSHArgs(virtctlPath, namespace, vm, identityFile, username, knownHostsFile string, command ...string) []string {
+// buildSSHArgs builds the full argv for `virtctl ssh`, optionally with a quoted remote --command.
+func (v Virtctl) buildSSHArgs(namespace, vm string, command ...string) []string {
 	args := []string{
-		virtctlPath, "ssh",
+		v.Path, "ssh",
 		"--namespace", namespace,
-		"--identity-file", identityFile,
-		"--known-hosts", knownHostsFile,
+		"--identity-file", v.IdentityFile,
+		"--known-hosts", v.KnownHostsFile,
 	}
-	args = appendLocalSSHOpts(args, knownHostsFile)
-	if username != "" {
-		args = append(args, "--username", username)
+	args = v.appendLocalSSHOpts(args)
+	if v.Username != "" {
+		args = append(args, "--username", v.Username)
 	}
 	args = append(args, normalizeVirtctlTarget(vm))
 	if len(command) > 0 {
@@ -43,22 +43,22 @@ func buildVirtctlSSHCommand(command ...string) string {
 
 // SCPTo copies a local file to the guest using `virtctl scp`.
 func (v Virtctl) SCPTo(ctx context.Context, namespace, vm, src, dst string) (stderr string, err error) {
-	args := buildVirtctlSCPToArgs(v.Path, namespace, vm, v.IdentityFile, v.Username, v.KnownHostsFile, src, dst)
+	args := v.buildSCPToArgs(namespace, vm, src, dst)
 	_, stderrStr, err := v.run(ctx, args)
 	return stderrStr, err
 }
 
-// buildVirtctlSCPToArgs builds the full argument list for `virtctl scp` uploading src to dst on the guest.
-func buildVirtctlSCPToArgs(virtctlPath, namespace, vm, identityFile, username, knownHostsFile, src, dst string) []string {
+// buildSCPToArgs builds the full argument list for `virtctl scp` uploading src to dst on the guest.
+func (v Virtctl) buildSCPToArgs(namespace, vm, src, dst string) []string {
 	args := []string{
-		virtctlPath, "scp",
+		v.Path, "scp",
 		"--namespace", namespace,
-		"--identity-file", identityFile,
-		"--known-hosts", knownHostsFile,
+		"--identity-file", v.IdentityFile,
+		"--known-hosts", v.KnownHostsFile,
 	}
-	args = appendLocalSSHOpts(args, knownHostsFile)
-	if username != "" {
-		args = append(args, "--username", username)
+	args = v.appendLocalSSHOpts(args)
+	if v.Username != "" {
+		args = append(args, "--username", v.Username)
 	}
 	args = append(args, src, fmt.Sprintf("%s:%s", normalizeVirtctlTarget(vm), dst))
 	return args
