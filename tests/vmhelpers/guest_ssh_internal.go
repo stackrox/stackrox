@@ -115,19 +115,18 @@ func WaitForSSHReachableWithPolicy(t testing.TB, ctx context.Context, virt Virtc
 	counters := &sshProbeCounters{}
 	lastDetail := ""
 	desc := fmt.Sprintf("wait SSH %s/%s reachable", namespace, vm)
-	maxAttempts, maxKnown := estimateMaxPollAttempts(ctx, policy.PollInterval)
 	err := wait.PollUntilContextCancel(ctx, policy.PollInterval, true, func(ctx context.Context) (bool, error) {
 		attempts++
 		stderr, err := runSSHReachabilityProbe(ctx, policy, virt, namespace, vm)
 		if err == nil {
 			counters.resetAll()
 			lastDetail = "ssh command succeeded"
-			logWaitAttempt(t, desc, attempts, maxAttempts, maxKnown, lastDetail)
+			logWaitAttempt(t, desc, attempts, lastDetail)
 			return true, nil
 		}
 		decision := policy.classifyFailure(counters, virt, err, stderr)
 		lastDetail = decision.detail
-		logWaitAttempt(t, desc, attempts, maxAttempts, maxKnown, lastDetail)
+		logWaitAttempt(t, desc, attempts, lastDetail)
 		if decision.terminalErr != nil {
 			return false, decision.terminalErr
 		}

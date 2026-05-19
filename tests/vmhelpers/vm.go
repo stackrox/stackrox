@@ -344,14 +344,13 @@ func pollKubeVirtCondition(t testing.TB, ctx context.Context, interval time.Dura
 	t.Helper()
 	attempts := 0
 	lastDetail := ""
-	maxAttempts, maxKnown := estimateMaxPollAttempts(ctx, interval)
 	err := wait.PollUntilContextCancel(ctx, interval, true, func(ctx context.Context) (bool, error) {
 		attempts++
 		done, detail, err := check(ctx, attempts)
 		if detail != "" {
 			lastDetail = detail
 		}
-		logWaitAttempt(t, desc, attempts, maxAttempts, maxKnown, detail)
+		logWaitAttempt(t, desc, attempts, detail)
 		return done, err
 	})
 	if err == nil {
