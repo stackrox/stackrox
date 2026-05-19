@@ -84,10 +84,10 @@ spec:
       computeResources: &ta-resources
         limits:
           cpu: 1
-          memory: 4Gi
+          memory: 5Gi
         requests:
           cpu: 1
-          memory: 4Gi
+          memory: 5Gi
   - pipelineTaskName: build-images
     stepSpecs:
     # Should prevent occasional OOM-kills in use-trusted-artifact.
