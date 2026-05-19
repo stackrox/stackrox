@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/sender"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/stream"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry/handler"
@@ -88,27 +87,6 @@ func defaultBackOff() backoff.BackOff {
 	eb.MaxInterval = 5 * time.Minute
 	eb.MaxElapsedTime = 0
 	return eb
-}
-
-// noopUMH is a no-op UnconfirmedMessageHandler used as a fallback
-// when RunWithRetry is called without explicit UMH wiring.
-type noopUMH struct {
-	retryCh chan string
-}
-
-func newNoopUMH() *noopUMH {
-	return &noopUMH{retryCh: make(chan string)}
-}
-
-func (n *noopUMH) HandleACK(string)              {}
-func (n *noopUMH) HandleNACK(string)             {}
-func (n *noopUMH) ObserveSending(string)         {}
-func (n *noopUMH) RetryCommand() <-chan string   { return n.retryCh }
-func (n *noopUMH) OnACK(func(resourceID string)) {}
-func (n *noopUMH) Stopped() concurrency.ReadOnlyErrorSignal {
-	s := concurrency.NewStopper()
-	s.Flow().ReportStopped()
-	return s.Client().Stopped()
 }
 
 func makeDefaultOperation(umh handler.UnconfirmedMessageHandler) Operation {
