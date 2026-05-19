@@ -142,18 +142,18 @@ func atomicWriteFile(path string, data []byte) error {
 		return errors.Wrap(err, "creating temp file")
 	}
 	tmpPath := tmp.Name()
-	defer func() { _ = os.Remove(tmpPath) }()
+	defer func() {
+		_ = tmp.Close()
+		_ = os.Remove(tmpPath)
+	}()
 
 	if err := os.Chmod(tmpPath, 0600); err != nil {
-		_ = tmp.Close()
 		return errors.Wrap(err, "setting temp file permissions")
 	}
 	if _, err := tmp.Write(data); err != nil {
-		_ = tmp.Close()
 		return errors.Wrap(err, "writing temp file")
 	}
 	if err := tmp.Sync(); err != nil {
-		_ = tmp.Close()
 		return errors.Wrap(err, "syncing temp file")
 	}
 	if err := tmp.Close(); err != nil {
