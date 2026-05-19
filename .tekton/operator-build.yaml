@@ -81,7 +81,7 @@ spec:
           memory: 6Gi
     # The default CPU in create-trusted-artifact is unlimited, and we see some OOMs with default 3Gi memory.
     - name: create-trusted-artifact
-      computeResources:
+      computeResources: &ta-resources
         limits:
           cpu: 1
           memory: 4Gi
@@ -92,22 +92,12 @@ spec:
     stepSpecs:
     # Should prevent occasional OOM-kills in use-trusted-artifact.
     - name: use-trusted-artifact
-      computeResources:
-        limits:
-          cpu: 1
-          memory: 4Gi
-        requests:
-          cpu: 1
-          memory: 4Gi
+      computeResources: *ta-resources
   - pipelineTaskName: build-source-image
     stepSpecs:
     # Should prevent occasional OOM-kills in use-trusted-artifact.
     - name: use-trusted-artifact
-      computeResources:
-        limits:
-          memory: 3Gi
-        requests:
-          memory: 3Gi
+      computeResources: *ta-resources
     # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
     - name: build
       computeResources:
@@ -115,6 +105,18 @@ spec:
           memory: 3Gi
         requests:
           memory: 3Gi
+  - pipelineTaskName: sast-shell-check
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: sast-unicode-check
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: sast-snyk-check
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
 
   taskRunTemplate:
     serviceAccountName: build-pipeline-operator
