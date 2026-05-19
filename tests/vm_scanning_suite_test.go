@@ -195,7 +195,7 @@ func (s *VMScanningSuite) TearDownSuite() {
 		return
 	}
 
-	deleteTimeout := s.vmDeleteTimeout()
+	deleteTimeout := s.resourceDeleteTimeout()
 	if s.dynamicClient != nil {
 		for _, vm := range s.vms {
 			vmCtx, vmCancel := context.WithTimeout(s.cleanupCtx, deleteTimeout)
@@ -410,7 +410,7 @@ func (s *VMScanningSuite) provisionVMs(specs []vmSpec) {
 					s.logf("provision VMs: VM %s/%s has image %q but want %q; deleting and recreating",
 						s.namespace, sp.Name, currentImage, sp.Image)
 				}
-				delCtx, delCancel := context.WithTimeout(ctx, s.vmDeleteTimeout())
+				delCtx, delCancel := context.WithTimeout(ctx, s.resourceDeleteTimeout())
 				require.NoError(s.T(), vmhelpers.DeleteVirtualMachine(delCtx, s.dynamicClient, s.namespace, sp.Name),
 					"DeleteVirtualMachine %s/%s for image mismatch", s.namespace, sp.Name)
 				require.NoError(s.T(), vmhelpers.WaitForVirtualMachineDeleted(s.T(), delCtx, s.dynamicClient, s.namespace, sp.Name),
@@ -584,7 +584,7 @@ func (s *VMScanningSuite) recreateVM(vm *VMHandle) error {
 		return err
 	}
 
-	delCtx, delCancel := context.WithTimeout(s.ctx, s.vmDeleteTimeout())
+	delCtx, delCancel := context.WithTimeout(s.ctx, s.resourceDeleteTimeout())
 	defer delCancel()
 	if err := vmhelpers.DeleteVirtualMachine(delCtx, s.dynamicClient, vm.Namespace, vm.Name); err != nil {
 		return fmt.Errorf("DeleteVirtualMachine: %w", err)
@@ -641,7 +641,7 @@ func (s *VMScanningSuite) vmSpecToRequest(sp vmSpec) vmhelpers.VMRequest {
 	}
 }
 
-func (s *VMScanningSuite) vmDeleteTimeout() time.Duration {
+func (s *VMScanningSuite) resourceDeleteTimeout() time.Duration {
 	if s.cfg != nil && s.cfg.DeleteTimeout > 0 {
 		return s.cfg.DeleteTimeout
 	}
