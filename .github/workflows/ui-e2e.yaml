@@ -221,23 +221,21 @@ jobs:
           set +x
           ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
 
-          # Deploy a known-vulnerable image so vulnerability data exists
+          # Deploy a test workload so sensor reports deployments
           kubectl create namespace qa-test 2>/dev/null || true
           kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null || true
 
-          # Trigger an explicit scan of nginx:1.12 so CVE data is indexed
-          curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-            "https://localhost:8443/v1/images/scan" \
-            -X POST -d '{"imageName": "nginx:1.12"}' || true
-
-          # Wait for scanned images with vulnerabilities (up to 5 min)
-          for _ in $(seq 1 60); do
-            vuln_images=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-              "https://localhost:8443/v1/images?query=Image:nginx" 2>/dev/null \
-              | jq -r '[.images[]? | select(.components > 0)] | length' 2>/dev/null)
-            [ "${vuln_images:-0}" -gt 0 ] && echo "Scanned images with components: ${vuln_images}" && break
+          # Wait for platform image CVEs — scanner v2 automatically scans
+          # StackRox images (central, scanner-db, etc.) after deployment.
+          # The exception management tests need these CVEs to exist.
+          for _ in $(seq 1 90); do
+            cve_count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://localhost:8443/v2/image-cves?pagination.limit=1" 2>/dev/null \
+              | jq -r '.imageCVEs | length // 0' 2>/dev/null)
+            [ "${cve_count:-0}" -gt 0 ] && echo "Image CVEs found: ${cve_count}" && break
             sleep 5
           done
+          [ "${cve_count:-0}" -eq 0 ] && echo "::warning::No image CVEs found after 7.5 minutes"
           set -x
 
       - name: Run Cypress
