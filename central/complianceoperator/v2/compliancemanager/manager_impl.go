@@ -289,25 +289,16 @@ func (m *managerImpl) validateScan(ctx context.Context, scanRequest *storage.Com
 		return err
 	}
 
-	return nil
-}
-
-func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, cron string, clusters []string, createScanRequest bool) (*storage.ComplianceOperatorScanConfigurationV2, error) {
-	var profiles []string
-	for _, profile := range scanRequest.GetProfiles() {
-		profiles = append(profiles, profile.GetProfileName())
-	}
-
-	// Get all profiles from the database to validate that they exist and are compatible
+	// Validate that all profiles exist in the database and have compatible kinds
 	returnedProfiles, err := m.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusters[0]).
 		AddExactMatches(search.ComplianceOperatorProfileName, profiles...).ProtoQuery())
 	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to retrieve profiles for scan configuration named %q", scanRequest.GetScanConfigName())
+		return errors.Wrapf(err, "Unable to retrieve profiles for scan configuration named %q", scanRequest.GetScanConfigName())
 	}
 
 	if len(returnedProfiles) != len(profiles) {
-		return nil, errors.Errorf("Unable to find all profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
+		return errors.Errorf("Unable to find all profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
 	// UNSPECIFIED should not appear here because centralToStorageProfileKind normalizes it to
@@ -320,10 +311,26 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
 			log.Warnf("Profile %q in scan configuration %q has UNSPECIFIED operator kind; treating as PROFILE", p.GetName(), scanRequest.GetScanConfigName())
 		default:
-			return nil, errors.Errorf("profile %q has unsupported operator kind %v (scan configuration %q)", p.GetName(), p.GetOperatorKind(), scanRequest.GetScanConfigName())
+			return errors.Errorf("profile %q has unsupported operator kind %v (scan configuration %q)", p.GetName(), p.GetOperatorKind(), scanRequest.GetScanConfigName())
 		}
 	}
 
+	return nil
+}
+
+func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, cron string, clusters []string, createScanRequest bool) (*storage.ComplianceOperatorScanConfigurationV2, error) {
+	var profiles []string
+	for _, profile := range scanRequest.GetProfiles() {
+		profiles = append(profiles, profile.GetProfileName())
+	}
+
+	// Build profile refs (name + kind) for Sensor and persistence.
+	returnedProfiles, err := m.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, clusters[0]).
+		AddExactMatches(search.ComplianceOperatorProfileName, profiles...).ProtoQuery())
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve profiles for scan configuration named %q", scanRequest.GetScanConfigName())
+	}
 	scanRequest.ProfileRefs = internaltov2storage.ProfileV2ToScanConfigRefs(returnedProfiles)
 
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
