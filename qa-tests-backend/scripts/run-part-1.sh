@@ -83,16 +83,7 @@ EOF
             #     managing-images#images-update-global-pull-secret_using-image-pull-secrets.
             #
             # Can be removed once https://github.com/stackrox/roxie/pull/186 lands.
-            info "Patching global pull-secret to include credentials for quay.io/rhacs-eng"
-            local tmp_pull_secret
-            tmp_pull_secret=$(mktemp)
-            oc get secret/pull-secret -n openshift-config --template='{{index .data ".dockerconfigjson" | base64decode}}' \
-                > "$tmp_pull_secret"
-            oc registry login --registry="quay.io/rhacs-eng" \
-                --auth-basic="${QUAY_RHACS_ENG_RO_USERNAME}:${QUAY_RHACS_ENG_RO_PASSWORD}" \
-                --to="$tmp_pull_secret"
-            oc set data secret/pull-secret -n openshift-config --from-file=.dockerconfigjson="$tmp_pull_secret"
-            rm -f "$tmp_pull_secret"
+            patch_global_openshift_pull_secret "quay.io/rhacs-eng" "${QUAY_RHACS_ENG_RO_USERNAME}" "${QUAY_RHACS_ENG_RO_PASSWORD}"
         fi
         deploy_stackrox_with_roxie_compat "$config_file"
         setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
@@ -110,6 +101,28 @@ EOF
     #deploy_clair_v4
 
     image_prefetcher_prebuilt_await
+}
+
+patch_global_openshift_pull_secret() {
+    local registry="$1"
+    local username="$2"
+    local password="$3"
+
+    info "Patching global OpenShift pull-secret to include credentials for ${registry}"
+    local tmp_pull_secret; tmp_pull_secret=$(mktemp)
+    trap '[[ -n "$tmp_pull_secret" ]] && rm -f "$tmp_pull_secret"' RETURN
+
+    oc get secret/pull-secret \
+        -n openshift-config \
+        --template='{{index .data ".dockerconfigjson" | base64decode}}' \
+        > "$tmp_pull_secret"
+    oc registry login \
+        --registry="$registry" \
+        --auth-basic="${username}:${password}" \
+        --to="$tmp_pull_secret"
+    oc set data secret/pull-secret \
+        -n openshift-config \
+        --from-file=.dockerconfigjson="$tmp_pull_secret"
 }
 
 reuse_config_part_1() {
