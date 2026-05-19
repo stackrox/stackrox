@@ -488,18 +488,20 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	}
 
 	// Batch-fetch and mutate alerts that need deployment marked inactive.
-	for _, id := range needInactiveIDs {
-		fullAlert, exists, getErr := d.alerts.GetAlert(ctx, id)
-		if getErr != nil {
-			err = errors.Wrapf(getErr, "failed to fetch alert %s for inactive marking", id)
+	if len(needInactiveIDs) > 0 {
+		inactiveQuery := search.NewQueryBuilder().
+			AddExactMatches(search.AlertID, needInactiveIDs...).
+			ProtoQuery()
+		inactiveAlerts, fetchErr := d.alerts.SearchRawAlerts(ctx, inactiveQuery, false)
+		if fetchErr != nil {
+			err = errors.Wrap(fetchErr, "failed to fetch alerts for inactive marking")
 			return
 		}
-		if !exists {
-			continue
-		}
-		if deployment := fullAlert.GetDeployment(); deployment != nil && !deployment.GetInactive() {
-			deployment.Inactive = true
-			updatedAlerts = append(updatedAlerts, fullAlert)
+		for _, fullAlert := range inactiveAlerts {
+			if deployment := fullAlert.GetDeployment(); deployment != nil && !deployment.GetInactive() {
+				deployment.Inactive = true
+				updatedAlerts = append(updatedAlerts, fullAlert)
+			}
 		}
 	}
 
