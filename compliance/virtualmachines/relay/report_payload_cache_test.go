@@ -6,7 +6,6 @@ import (
 	"time"
 
 	relaytest "github.com/stackrox/rox/compliance/virtualmachines/relay/testutils"
-	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,7 +32,7 @@ func TestReportPayloadCache_LRUByUpdatedAt_EvictionScenario(t *testing.T) {
 
 	payload0 := relaytest.NewTestVMReport("cid0")
 	payload1 := relaytest.NewTestVMReport("cid1")
-	payload2 := cloneVMReport(t, payload0)
+	payload2 := payload0.CloneVT()
 	payload2.DiscoveredData.OsVersion = "changed"
 	payload3 := relaytest.NewTestVMReport("cid3")
 
@@ -41,7 +40,7 @@ func TestReportPayloadCache_LRUByUpdatedAt_EvictionScenario(t *testing.T) {
 	c.Upsert(vm1, payload1, t1)
 
 	// Identical payload for vm0 — no recency / updatedAt change.
-	c.Upsert(vm0, cloneVMReport(t, payload0), t2)
+	c.Upsert(vm0, payload0.CloneVT(), t2)
 
 	c.Upsert(vm0, payload2, t3)
 
@@ -114,30 +113,7 @@ func TestReportPayloadCache_Get_TTLExpiry_DoesNotEvict(t *testing.T) {
 
 	evictions := c.SweepExpired(base.Add(10 * time.Minute))
 	require.Lenf(t, evictions, 1, "expected sweep eviction count %d, got %d", 1, len(evictions))
-	require.Equalf(
-		t,
-		key1,
-		evictions[0].resourceID,
-		"expected ttl eviction resourceID %q, got %q",
-		key1,
-		evictions[0].resourceID,
-	)
-	require.Equalf(
-		t,
-		10*time.Minute,
-		evictions[0].residency,
-		"expected ttl eviction residency %s, got %s",
-		10*time.Minute,
-		evictions[0].residency,
-	)
-	require.Equalf(
-		t,
-		10*time.Minute,
-		evictions[0].lifetime,
-		"expected ttl eviction lifetime %s, got %s",
-		10*time.Minute,
-		evictions[0].lifetime,
-	)
+	assertEviction(t, evictions[0], key1, 10*time.Minute, 10*time.Minute)
 	require.Equalf(t, 0, c.Len(), "expected cache length after sweep %d, got %d", 0, c.Len())
 }
 
@@ -290,54 +266,8 @@ func TestReportPayloadCache_SweepExpired_MultipleExpired_OrderedOldestUpdatedFir
 	sweepAt := base.Add(90 * time.Minute)
 	evictions := c.SweepExpired(sweepAt)
 	require.Lenf(t, evictions, 2, "expected sweep eviction count %d, got %d", 2, len(evictions))
-	require.Equalf(
-		t,
-		"older",
-		evictions[0].resourceID,
-		"expected first eviction resourceID %q, got %q",
-		"older",
-		evictions[0].resourceID,
-	)
-	require.Equalf(
-		t,
-		90*time.Minute,
-		evictions[0].residency,
-		"expected first eviction residency %s, got %s",
-		90*time.Minute,
-		evictions[0].residency,
-	)
-	require.Equalf(
-		t,
-		90*time.Minute,
-		evictions[0].lifetime,
-		"expected first eviction lifetime %s, got %s",
-		90*time.Minute,
-		evictions[0].lifetime,
-	)
-	require.Equalf(
-		t,
-		"newer",
-		evictions[1].resourceID,
-		"expected second eviction resourceID %q, got %q",
-		"newer",
-		evictions[1].resourceID,
-	)
-	require.Equalf(
-		t,
-		70*time.Minute,
-		evictions[1].residency,
-		"expected second eviction residency %s, got %s",
-		70*time.Minute,
-		evictions[1].residency,
-	)
-	require.Equalf(
-		t,
-		70*time.Minute,
-		evictions[1].lifetime,
-		"expected second eviction lifetime %s, got %s",
-		70*time.Minute,
-		evictions[1].lifetime,
-	)
+	assertEviction(t, evictions[0], "older", 90*time.Minute, 90*time.Minute)
+	assertEviction(t, evictions[1], "newer", 70*time.Minute, 70*time.Minute)
 	require.Equalf(t, 0, c.Len(), "expected cache length after sweep %d, got %d", 0, c.Len())
 }
 
@@ -351,30 +281,8 @@ func TestReportPayloadCache_Remove_ReturnsEvictionDurations(t *testing.T) {
 
 	ev, removed := c.Remove(key1, base.Add(7*time.Minute+3*time.Second))
 	require.Truef(t, removed, "expected remove(existing key) to return true, but got false")
-	require.Equalf(
-		t,
-		7*time.Minute+3*time.Second,
-		ev.residency,
-		"expected remove(existing key) residency %s, got %s",
-		7*time.Minute+3*time.Second,
-		ev.residency,
-	)
-	require.Equalf(
-		t,
-		7*time.Minute+3*time.Second,
-		ev.lifetime,
-		"expected remove(existing key) lifetime %s, got %s",
-		7*time.Minute+3*time.Second,
-		ev.lifetime,
-	)
-	require.Equalf(
-		t,
-		0,
-		c.Len(),
-		"expected cache length after remove(existing key) %d, got %d",
-		0,
-		c.Len(),
-	)
+	assertEviction(t, ev, key1, 7*time.Minute+3*time.Second, 7*time.Minute+3*time.Second)
+	require.Equalf(t, 0, c.Len(), "expected cache length after remove(existing key) %d, got %d", 0, c.Len())
 
 	ev2, removed2 := c.Remove(key1, base)
 	require.Falsef(t, removed2, "expected remove(missing key) to return false, but got true")
@@ -397,30 +305,7 @@ func TestReportPayloadCache_SweepExpired_KeepsFreshRemovesExpired(t *testing.T) 
 	evictions := c.SweepExpired(sweepAt)
 
 	require.Lenf(t, evictions, 1, "expected sweep eviction count %d, got %d", 1, len(evictions))
-	require.Equalf(
-		t,
-		"old",
-		evictions[0].resourceID,
-		"expected evicted resourceID %q, got %q",
-		"old",
-		evictions[0].resourceID,
-	)
-	require.Equalf(
-		t,
-		80*time.Minute,
-		evictions[0].residency,
-		"expected evicted residency %s, got %s",
-		80*time.Minute,
-		evictions[0].residency,
-	)
-	require.Equalf(
-		t,
-		80*time.Minute,
-		evictions[0].lifetime,
-		"expected evicted lifetime %s, got %s",
-		80*time.Minute,
-		evictions[0].lifetime,
-	)
+	assertEviction(t, evictions[0], "old", 80*time.Minute, 80*time.Minute)
 
 	require.Equalf(t, 1, c.Len(), "expected cache length after sweep %d, got %d", 1, c.Len())
 	gotFresh, ok := c.Get("fresh")
@@ -501,7 +386,9 @@ func TestReportPayloadCache_Get_DoesNotPromoteRecency(t *testing.T) {
 	require.Truef(t, okC, "expected lookup for c after insert to be a hit, but got a miss")
 }
 
-func cloneVMReport(t *testing.T, r *v1.VMReport) *v1.VMReport {
+func assertEviction(t *testing.T, ev payloadEviction, wantID string, wantResidency, wantLifetime time.Duration) {
 	t.Helper()
-	return r.CloneVT()
+	require.Equalf(t, wantID, ev.resourceID, "expected eviction resourceID %q, got %q", wantID, ev.resourceID)
+	require.Equalf(t, wantResidency, ev.residency, "expected eviction residency %s, got %s", wantResidency, ev.residency)
+	require.Equalf(t, wantLifetime, ev.lifetime, "expected eviction lifetime %s, got %s", wantLifetime, ev.lifetime)
 }
