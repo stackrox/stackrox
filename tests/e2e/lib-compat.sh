@@ -43,13 +43,14 @@ deploy_stackrox_with_roxie_compat() {
         retrying_kubectl create ns "${namespace}" </dev/null
     fi
 
-    local cleanup_config_file="false"
+    local cleanup_config_file=""
     if [[ -z "$config_file" ]]; then
         config_file="$(mktemp)"
-        cleanup_config_file="true"
+        cleanup_config_file="$config_file"
     elif [[ ! -e "$config_file" ]]; then
         touch "$config_file"
     fi
+    trap '[[ -n "$cleanup_config_file" ]] && rm -f "$cleanup_config_file"' RETURN
 
     info "Using config file ${config_file}"
 
@@ -71,9 +72,6 @@ EOF
 
     deploy_stackrox_with_roxie "$config_file"
 
-    if [[ "$cleanup_config_file" == "true" ]]; then
-        rm -f "$config_file"
-    fi
 }
 
 # This function translates environment settings into a roxie configuration.
