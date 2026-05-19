@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -148,7 +149,8 @@ func ScrapePodViaPortForward(ctx context.Context, clientset kubernetes.Interface
 		<-errCh
 		return nil, err
 	}
-	resp, err := http.DefaultClient.Do(httpReq)
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(httpReq)
 	if err != nil {
 		close(stopCh)
 		<-errCh
