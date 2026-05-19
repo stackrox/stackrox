@@ -75,9 +75,9 @@ spec:
     podTemplate:
       env:
       - name: GOMEMLIMIT
-        # Tell Go GC to be aggressive near 2GiB. With GOMEMLIMIT, peak RSS stays under 1Gi even without CPU throttling.
+        # Tell Go GC to be aggressive near 3GiB. 2GiB OOMKilled without CPU throttle; 4GiB peaked at 752Mi.
         # The go subprocess (go mod download) is the primary memory consumer.
-        value: "2GiB"
+        value: "3GiB"
     stepSpecs:
     - name: prefetch-dependencies
       computeResources:

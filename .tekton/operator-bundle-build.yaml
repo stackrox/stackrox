@@ -127,8 +127,8 @@ spec:
     podTemplate:
       env:
       - name: GOMEMLIMIT
-        # Tell Go GC to be aggressive near 2GiB. With GOMEMLIMIT, peak RSS stays under 1Gi even without CPU throttling.
-        value: "2GiB"
+        # Tell Go GC to be aggressive near 3GiB. 2GiB OOMKilled without CPU throttle; 4GiB peaked at 752Mi.
+        value: "3GiB"
     stepSpecs:
     - name: prefetch-dependencies
       computeResources:
