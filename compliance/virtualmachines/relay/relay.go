@@ -88,6 +88,17 @@ func (r *Relay) evictStaleEntries(now time.Time, threshold time.Duration) {
 	}
 }
 
+// newHalfIntervalTicker creates a ticker that fires at half the given duration,
+// falling back to the full duration when halving would produce a non-positive interval.
+func newHalfIntervalTicker(d time.Duration) (*time.Ticker, <-chan time.Time) {
+	interval := d / 2
+	if interval <= 0 {
+		interval = d
+	}
+	t := time.NewTicker(interval)
+	return t, t.C
+}
+
 // New creates a Relay with the given report stream, sender, and unconfirmed message handler.
 func New(
 	reportStream IndexReportStream,
@@ -113,22 +124,10 @@ func New(
 	if staleAckThreshold <= 0 {
 		log.Warnf("VM relay stale ACK threshold is non-positive (%s); disabling stale cache eviction", staleAckThreshold)
 	} else {
-		cacheEvictInterval := staleAckThreshold / 2
-		if cacheEvictInterval <= 0 {
-			cacheEvictInterval = staleAckThreshold
-		}
-		ticker := time.NewTicker(cacheEvictInterval)
-		r.cacheEvictTicker = ticker
-		r.cacheEvictTickCh = ticker.C
+		r.cacheEvictTicker, r.cacheEvictTickCh = newHalfIntervalTicker(staleAckThreshold)
 	}
 	if payloadCacheTTL > 0 {
-		payloadSweepInterval := payloadCacheTTL / 2
-		if payloadSweepInterval <= 0 {
-			payloadSweepInterval = payloadCacheTTL
-		}
-		pt := time.NewTicker(payloadSweepInterval)
-		r.payloadSweepTicker = pt
-		r.payloadSweepTickCh = pt.C
+		r.payloadSweepTicker, r.payloadSweepTickCh = newHalfIntervalTicker(payloadCacheTTL)
 	}
 	r.umh.OnACK(r.markAcked)
 	return r
