@@ -1,7 +1,6 @@
 package augmentedobjs
 
 import (
-	"fmt"
 	"slices"
 
 	"github.com/pkg/errors"
@@ -256,7 +255,9 @@ func constructDeployment(deployment *storage.Deployment, images []*storage.Image
 
 	for idx, container := range deployment.GetContainers() {
 		for i, env := range container.GetConfig().GetEnv() {
-			envVarObj := &envVar{EnvVar: fmt.Sprintf("%s%s%s%s%s", env.GetEnvVarSource(), CompositeFieldCharSep, env.GetKey(), CompositeFieldCharSep, env.GetValue())}
+			envVarObj := &envVar{
+				EnvVar: env.GetEnvVarSource().String() + CompositeFieldCharSep + env.GetKey() + CompositeFieldCharSep + env.GetValue(),
+			}
 			err := obj.AddPlainObjAt(
 				envVarObj,
 				pathutil.FieldStep("Containers"), pathutil.IndexStep(idx), pathutil.FieldStep("Config"),
@@ -331,7 +332,9 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 	// Since policies query for Dockerfile Line as a single compound field, we simulate it by creating a "composite"
 	// dockerfile line under each layer.
 	for i, layer := range image.GetMetadata().GetV1().GetLayers() {
-		lineObj := &dockerfileLine{Line: fmt.Sprintf("%s%s%s", layer.GetInstruction(), CompositeFieldCharSep, layer.GetValue())}
+		lineObj := &dockerfileLine{
+			Line: layer.GetInstruction() + CompositeFieldCharSep + layer.GetValue(),
+		}
 		err := obj.AddPlainObjAt(
 			lineObj,
 			pathutil.FieldStep("Metadata"), pathutil.FieldStep("V1"), pathutil.FieldStep("Layers"),
@@ -346,7 +349,7 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 	// "composite" component and version field.
 	for i, component := range image.GetScan().GetComponents() {
 		compAndVersionObj := &componentAndVersion{
-			ComponentAndVersion: fmt.Sprintf("%s%s%s", component.GetName(), CompositeFieldCharSep, component.GetVersion()),
+			ComponentAndVersion: component.GetName() + CompositeFieldCharSep + component.GetVersion(),
 		}
 		err := obj.AddPlainObjAt(
 			compAndVersionObj,

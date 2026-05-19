@@ -324,7 +324,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
 
     return (
         <Widget
-            className="h-full pdf-page pdf-stretch"
+            className="h-full"
             titleComponents={titleComponents}
             headerComponents={viewAll}
             bodyClassName="pr-2"

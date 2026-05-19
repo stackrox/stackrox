@@ -113,7 +113,7 @@ const RecentlyDetectedImageVulnerabilities = ({ entityContext, search, limit }) 
 
     return (
         <Widget
-            className="h-full pdf-page"
+            className="h-full"
             header="Recently detected image vulnerabilities"
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >

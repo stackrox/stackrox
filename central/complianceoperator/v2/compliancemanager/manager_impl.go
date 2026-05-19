@@ -13,10 +13,12 @@ import (
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scansDatastore "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
+	ssbDatastore "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -45,6 +47,7 @@ type managerImpl struct {
 	sensorConnMgr connection.Manager
 	integrationDS compIntegration.DataStore
 	scanSettingDS compScanSetting.DataStore
+	ssbDS         ssbDatastore.DataStore
 	clusterDS     clusterDatastore.DataStore
 	profileDS     profileDatastore.DataStore
 	scansDS       scansDatastore.DataStore
@@ -57,11 +60,12 @@ type managerImpl struct {
 }
 
 // New returns on instance of Manager interface that provides functionality to process compliance requests and forward them to Sensor.
-func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, clusterDS clusterDatastore.DataStore, profileDS profileDatastore.DataStore, scansDS scansDatastore.DataStore, resultsDS resultsDatastore.DataStore) Manager {
+func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, ssbDS ssbDatastore.DataStore, clusterDS clusterDatastore.DataStore, profileDS profileDatastore.DataStore, scansDS scansDatastore.DataStore, resultsDS resultsDatastore.DataStore) Manager {
 	return &managerImpl{
 		sensorConnMgr:   sensorConnMgr,
 		integrationDS:   integrationDS,
 		scanSettingDS:   scanSettingDS,
+		ssbDS:           ssbDS,
 		runningRequests: make(map[string]clusterScan),
 		clusterDS:       clusterDS,
 		profileDS:       profileDS,
@@ -272,6 +276,10 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
+	if err := m.checkForExternalSSBConflicts(ctx, profiles, clusters); err != nil {
+		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+	}
+
 	// Get all profiles from the database to validate that they exist and are compatible
 	returnedProfiles, err := m.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusters[0]).
@@ -310,6 +318,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 	}
 
 	profileRefs := internaltov2storage.ScanConfigRefsToCentral(scanRequest.GetProfileRefs())
+
 	for _, clusterID := range clusters {
 		// id for the request message to sensor
 		sensorRequestID := uuid.NewV4().String()
@@ -431,6 +440,58 @@ func (m *managerImpl) HandleScanRequestResponse(ctx context.Context, requestID s
 		return err
 	}
 
+	return nil
+}
+
+// checkForExternalSSBConflicts checks if any non-ACS-managed ScanSettingBindings in the target
+// clusters already reference any of the requested profiles. ACS-managed SSBs are skipped because
+// conflicts with those are already enforced by ScanConfigurationProfileExists.
+func (m *managerImpl) checkForExternalSSBConflicts(ctx context.Context, profiles []string, clusters []string) error {
+	requestedProfiles := set.NewStringSet(profiles...)
+	if requestedProfiles.Cardinality() == 0 {
+		return nil
+	}
+
+	var errList errorhelpers.ErrorList
+	for _, clusterID := range clusters {
+		ssbs, err := m.ssbDS.GetScanSettingBindingsByCluster(ctx, clusterID)
+		if err != nil {
+			return errors.Wrapf(err, "getting scan setting bindings for cluster %q", clusterID)
+		}
+
+		clusterRef := ""
+		for _, ssb := range ssbs {
+			if ssb.GetLabels()["app.kubernetes.io/name"] == "stackrox" {
+				continue
+			}
+
+			var conflicting []string
+			for _, profileName := range ssb.GetProfileNames() {
+				if requestedProfiles.Contains(profileName) {
+					conflicting = append(conflicting, profileName)
+				}
+			}
+			if len(conflicting) > 0 {
+				if clusterRef == "" {
+					clusterRef = clusterID
+					if name, exists, err := m.clusterDS.GetClusterName(ctx, clusterID); err == nil && exists {
+						clusterRef = name
+					}
+				}
+				quoted := make([]string, 0, len(conflicting))
+				for _, p := range conflicting {
+					quoted = append(quoted, fmt.Sprintf("%q", p))
+				}
+				errList.AddStringf(
+					"profiles [%s] conflict with external ScanSettingBinding %q in cluster %q",
+					strings.Join(quoted, ", "), ssb.GetName(), clusterRef)
+			}
+		}
+	}
+
+	if err := errList.ToError(); err != nil {
+		return fmt.Errorf("%w, remove the external ScanSettingBindings or choose different profiles", err)
+	}
 	return nil
 }
 
