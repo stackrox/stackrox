@@ -12,8 +12,8 @@ import (
 )
 
 func (s *VMScanningSuite) TestScanPipeline() {
-	for i := range s.persistentVMs {
-		vm := &s.persistentVMs[i]
+	for i := range s.vms {
+		vm := &s.vms[i]
 		s.T().Run(vm.Name, func(t *testing.T) {
 			var result *vmhelpers.RoxagentRunResult
 			var first *v2.VirtualMachine
