@@ -498,6 +498,7 @@ jobs:
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         uses: docker/bake-action@5be5f02ff8819ecd3092ea6b2e6261c31774f2b4 # ratchet:docker/bake-action@v6
         with:
+          source: .
           files: .github/docker/db-bake.hcl
           targets: all
           push: true
