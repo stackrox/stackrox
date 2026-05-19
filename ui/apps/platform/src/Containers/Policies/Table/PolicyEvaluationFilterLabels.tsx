@@ -6,7 +6,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { EvaluationFilter } from 'types/policy.proto';
 
 type PolicyEvaluationFilterLabelsProps = {
-    evaluationFilter: EvaluationFilter | undefined;
+    evaluationFilter: EvaluationFilter | null;
 };
 
 function PolicyEvaluationFilterLabels({

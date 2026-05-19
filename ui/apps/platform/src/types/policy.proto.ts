@@ -10,7 +10,7 @@ export type ListPolicy = {
     eventSource: PolicyEventSource;
     readonly isDefault: boolean; // Indicates the policy is a default policy if true and a custom policy if false.
     readonly source: 'IMPERATIVE' | 'DECLARATIVE';
-    evaluationFilter?: EvaluationFilter;
+    evaluationFilter: EvaluationFilter | null;
 };
 
 export const policySeverities = [

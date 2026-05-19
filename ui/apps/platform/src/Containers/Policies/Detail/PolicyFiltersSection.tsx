@@ -3,14 +3,15 @@ import { Card, CardBody, DescriptionList, Stack, Title } from '@patternfly/react
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { EvaluationFilter, LifecycleStage } from 'types/policy.proto';
 import DescriptionListItem from 'Components/DescriptionListItem';
+import { ensureExhaustive } from 'utils/type.utils';
 
 type PolicyFiltersSectionProps = {
-    evaluationFilter: EvaluationFilter | undefined;
+    evaluationFilter: EvaluationFilter | null;
     lifecycleStages: LifecycleStage[];
 };
 
 function getContainerTypeLabel(
-    evaluationFilter: EvaluationFilter | undefined,
+    evaluationFilter: EvaluationFilter | null,
     lifecycleStages: LifecycleStage[]
 ): string | null {
     const hasDeployOrRuntime =
@@ -27,14 +28,20 @@ function getContainerTypeLabel(
     return null;
 }
 
-function getImageLayerLabel(evaluationFilter: EvaluationFilter | undefined): string | null {
-    switch (evaluationFilter?.skipImageLayers) {
+function getImageLayerLabel(evaluationFilter: EvaluationFilter | null): string | null {
+    if (!evaluationFilter) {
+        return null;
+    }
+
+    switch (evaluationFilter.skipImageLayers) {
         case 'SKIP_BASE':
             return 'Skip base image layers';
         case 'SKIP_APP':
             return 'Skip application layers';
-        default:
+        case 'SKIP_NONE':
             return null;
+        default:
+            return ensureExhaustive(evaluationFilter.skipImageLayers);
     }
 }
 

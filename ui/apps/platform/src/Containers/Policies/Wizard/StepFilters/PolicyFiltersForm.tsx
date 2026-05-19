@@ -40,7 +40,7 @@ function hasImageCriteria(policy: ClientPolicy): boolean {
 const imageLayerDescriptions: Record<SkipImageLayers, string> = {
     SKIP_NONE: 'Policy will evaluate all image layers, including both base and application layers.',
     SKIP_BASE:
-        'Base image layers (e.g., OS packages, system libraries) will be skipped. Only application layers added on top of the base image will be evaluated.',
+        'Base image layers (OS packages, system libraries) will be skipped. Only application layers added on top of the base image will be evaluated.',
     SKIP_APP:
         'Application layers added during the build will be skipped. Only base image layers will be evaluated.',
 };

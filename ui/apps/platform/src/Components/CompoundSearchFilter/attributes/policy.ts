@@ -140,7 +140,7 @@ export const SkipContainerType: CompoundSearchFilterAttribute = {
     filterChipLabel: 'Skip container type',
     searchTerm: 'Skip Container Type',
     inputType: 'select',
-    featureFlagDependency: ['ROX_INIT_CONTAINER_SUPPORT'],
+    featureFlagDependency: ['ROX_POLICY_FILTERS_UI', 'ROX_INIT_CONTAINER_SUPPORT'],
     inputProps: {
         options: [{ value: 'SKIP_INIT', label: 'Skip init containers' }],
     },
