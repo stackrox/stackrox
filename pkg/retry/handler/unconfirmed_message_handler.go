@@ -10,6 +10,17 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+// UnconfirmedMessageHandler handles the observation of sending, and ACK/NACK messages.
+// Each resource (identified by resourceID) has independent retry state.
+type UnconfirmedMessageHandler interface {
+	HandleACK(resourceID string)
+	HandleNACK(resourceID string)
+	ObserveSending(resourceID string)
+	RetryCommand() <-chan string
+	OnACK(callback func(resourceID string))
+	Stopped() concurrency.ReadOnlyErrorSignal
+}
+
 var (
 	log                 = logging.LoggerForModule()
 	defaultBaseInterval = 1 * time.Minute
