@@ -76,6 +76,15 @@ spec:
           memory: 3Gi
         requests:
           memory: 3Gi
+  - pipelineTaskName: rpms-signature-scan
+    stepSpecs:
+    # Bump memory for rpms-signature-scan step because the one with defaults tends to get sometimes OOM-killed.
+    - name: rpms-signature-scan
+      computeResources:
+        limits:
+          memory: 512Mi
+        requests:
+          memory: 512Mi
 
   taskRunTemplate:
     serviceAccountName: build-pipeline-central-db
