@@ -9,10 +9,10 @@ set -euo pipefail
 merge_yaml() {
     local input="$1"
     local tmpfile; tmpfile="$(mktemp)"
+    trap '[[ -n "$tmpfile" ]] && rm -f "$tmpfile"' RETURN
 
     yq eval-all '(select(fi == 0) // {}) * select(fi == 1)' "$input" <(cat) > "$tmpfile"
     cat "$tmpfile" > "$input"
-    rm -f "$tmpfile"
 }
 
 patch_yaml() {
