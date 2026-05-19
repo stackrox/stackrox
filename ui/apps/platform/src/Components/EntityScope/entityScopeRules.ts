@@ -173,7 +173,7 @@ function getEntityScopeRulesFromSearchFilter(
 }
 
 export const ruleFieldValueMapper = ({ matchType, value }: RuleValue): string =>
-    matchType === 'EXACT' ? wrapInQuotes(value) : `r/${value}`;
+    matchType === 'EXACT' ? wrapInQuotes(value) : value;
 
 /**
  * Return search filter in EntityScopeCompoundSearchFilter component.
