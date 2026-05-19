@@ -11,6 +11,13 @@ merge_yaml() {
     local tmpfile; tmpfile="$(mktemp)"
     trap '[[ -n "$tmpfile" ]] && rm -f "$tmpfile"' RETURN
 
+    # This merges the existing YAML in the input file ("fi == 0") with the new YAML provided on stdin ("fi == 1").
+    #
+    # The 'select(fi == 0) // {}' part ensures that if the input file is empty, it will be treated as an empty YAML document
+    # rather than causing an error.
+    #
+    # The "*" operator performs a deep merge of the two YAML documents, with values from the second document (the new YAML)
+    # taking precedence over those from the first (the existing YAML).
     yq eval-all '(select(fi == 0) // {}) * select(fi == 1)' "$input" <(cat) > "$tmpfile"
     cat "$tmpfile" > "$input"
 }
