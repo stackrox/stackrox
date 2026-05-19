@@ -19,18 +19,6 @@ const (
 	rhsmPrecheckSSHRetryThreshold = 5
 	// sshReachablePollInterval is the sleep between consecutive SSH probe attempts.
 	sshReachablePollInterval = 10 * time.Second
-	// sshAuthFailureThreshold is the number of consecutive "permission denied" probe
-	// failures required to classify credentials as stale/missing before recovery kicks in.
-	sshAuthFailureThreshold = 3
-	// sshBannerTimeoutThreshold is the number of consecutive "banner exchange timeout"
-	// probe failures required to classify SSH connectivity as stalled.
-	sshBannerTimeoutThreshold = 6
-	// sshNetworkUnreachableThreshold is the number of consecutive network failures
-	// ("no route to host"/"connection refused") required to classify connectivity as stalled.
-	sshNetworkUnreachableThreshold = 36
-	// sshProbeTimeoutThreshold is the number of consecutive per-probe timeout failures
-	// required to classify SSH connectivity as stalled.
-	sshProbeTimeoutThreshold = 6
 	// sshProbeAttemptTimeout bounds one SSH probe attempt so wait-loop diagnostics
 	// continue even when a single virtctl invocation gets stuck.
 	sshProbeAttemptTimeout = 20 * time.Second
