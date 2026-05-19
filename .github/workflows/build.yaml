@@ -591,7 +591,6 @@ jobs:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:
       - define-job-matrix
-      - build-and-push-db
       - pre-build-cli
       - pre-build-docs
       - pre-build-go-binaries
@@ -1277,6 +1276,7 @@ jobs:
     if: github.event_name == 'push' ||
       contains(github.event.pull_request.labels.*.name, 'scan-images-with-roxctl')
     needs:
+      - build-and-push-db
       - build-and-push-main
       - build-and-push-operator
       - build-and-push-scanner
@@ -1351,6 +1351,7 @@ jobs:
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
+      - build-and-push-db
       - build-and-push-main
       - build-and-push-operator
       - build-and-push-scanner
