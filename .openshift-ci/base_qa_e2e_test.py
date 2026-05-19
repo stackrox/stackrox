@@ -13,6 +13,7 @@ from ci_tests import (
 from post_tests import PostClusterTest, CheckStackroxLogs, FinalPost
 from runners import ClusterTestSetsRunner, TestSet
 
+
 def make_qa_e2e_test_runner(cluster):
     return ClusterTestSetsRunner(
         cluster=cluster,
