@@ -67,9 +67,9 @@ spec:
     name: basic-component-pipeline
 
   taskRunSpecs:
+  # The following are overrides to default step resources to prevent occasional or deterministic OOM kills.
   - pipelineTaskName: build-source-image
     stepSpecs:
-    # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
     - name: build
       computeResources:
         limits:
@@ -78,7 +78,6 @@ spec:
           memory: 3Gi
   - pipelineTaskName: rpms-signature-scan
     stepSpecs:
-    # Bump memory for rpms-signature-scan step because the one with defaults tends to get sometimes OOM-killed.
     - name: rpms-signature-scan
       computeResources:
         limits:
