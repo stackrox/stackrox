@@ -30,6 +30,9 @@ inputs:
   registry-password:
     description: Registry password — sets REGISTRY_PASSWORD for roxie
     default: ""
+  exposure:
+    description: "Service exposure: auto (default), none, loadbalancer, route"
+    default: ""
   background:
     description: Run deploy in background
     default: "false"
@@ -85,24 +88,18 @@ runs:
             both) yq -i '.central.spec.scanner.scannerComponent = "Enabled"' /tmp/roxie-override.yaml ;;
           esac
 
+          exposure_flag=""
+          if [ -n "${{ inputs.exposure }}" ]; then
+            exposure_flag="--exposure=${{ inputs.exposure }}"
+          fi
+
           roxie deploy both \
             --resources=${{ inputs.resources }} \
             --single-namespace \
             --envrc /tmp/roxie-env.sh \
             --override /tmp/roxie-override.yaml \
             --tag ${{ inputs.tag }} \
-            --set central.spec.central.resources.requests.cpu=1m \
-            --set central.spec.central.resources.requests.memory=1Mi \
-            --set central.spec.central.db.resources.requests.cpu=1m \
-            --set central.spec.central.db.resources.requests.memory=1Mi \
-            --set central.spec.scanner.analyzer.resources.requests.cpu=1m \
-            --set central.spec.scanner.analyzer.resources.requests.memory=1Mi \
-            --set central.spec.scanner.db.resources.requests.cpu=1m \
-            --set central.spec.scanner.db.resources.requests.memory=1Mi \
-            --set securedCluster.spec.sensor.resources.requests.cpu=1m \
-            --set securedCluster.spec.sensor.resources.requests.memory=1Mi \
-            --set securedCluster.spec.admissionControl.resources.requests.cpu=1m \
-            --set securedCluster.spec.admissionControl.resources.requests.memory=1Mi
+            $exposure_flag
 
           sed "s/^export //; s/['\"]//g" /tmp/roxie-env.sh >> "$GITHUB_ENV"
           source /tmp/roxie-env.sh
