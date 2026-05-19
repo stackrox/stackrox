@@ -7,7 +7,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "serviceaccount" "admission-control") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "serviceaccount" "admission-control") | nindent 4 }}
 {{- if ._rox.mainImagePullSecrets._names }}
@@ -24,7 +23,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "role" "watch-config") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "role" "watch-config") | nindent 4 }}
 rules:
@@ -39,7 +37,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "admission-control-watch-config") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "rolebinding" "admission-control-watch-config") | nindent 4 }}
 subjects:
