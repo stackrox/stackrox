@@ -5,7 +5,7 @@
 #   docker buildx bake -f .github/docker/images.hcl --print databases
 #   docker buildx bake -f .github/docker/images.hcl --push databases
 #
-# Cache test after fix
+# Final cache verification
 
 variable "TAG" {
   default = "latest"
