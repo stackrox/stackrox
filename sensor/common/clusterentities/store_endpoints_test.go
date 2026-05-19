@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type expectation struct {
@@ -913,4 +914,83 @@ func (s *ClusterEntitiesStoreTestSuite) TestApplyCanonicalizesDuplicateTargetInf
 	s.Len(targetInfos, 1)
 	s.True(targetInfos.Contains(httpTarget))
 	s.False(targetInfos.Contains(httpsTarget))
+}
+
+func (s *ClusterEntitiesStoreTestSuite) TestTargetInfoUnchangedNoLock() {
+	ep := buildEndpoint("10.0.0.1", 8080)
+	deplID := "depl-1"
+
+	ti1 := EndpointTargetInfo{ContainerPort: 8080, PortName: "http"}
+	ti2 := EndpointTargetInfo{ContainerPort: 8443, PortName: "https"}
+	ti3 := EndpointTargetInfo{ContainerPort: 9090, PortName: "metrics"}
+
+	cases := map[string]struct {
+		stored []EndpointTargetInfo
+		input  []EndpointTargetInfo
+		want   bool
+	}{
+		"should return true when both are empty": {
+			stored: nil,
+			input:  nil,
+			want:   true,
+		},
+		"should return true when nothing stored and input is empty slice": {
+			stored: nil,
+			input:  []EndpointTargetInfo{},
+			want:   true,
+		},
+		"should return false when nothing stored but input is non-empty": {
+			stored: nil,
+			input:  []EndpointTargetInfo{ti1},
+			want:   false,
+		},
+		"should return false when stored but input is empty": {
+			stored: []EndpointTargetInfo{ti1},
+			input:  []EndpointTargetInfo{},
+			want:   false,
+		},
+		"should return true for single identical element": {
+			stored: []EndpointTargetInfo{ti1},
+			input:  []EndpointTargetInfo{ti1},
+			want:   true,
+		},
+		"should return false for single different element": {
+			stored: []EndpointTargetInfo{ti1},
+			input:  []EndpointTargetInfo{ti2},
+			want:   false,
+		},
+		"should return true for multiple elements same order": {
+			stored: []EndpointTargetInfo{ti1, ti2, ti3},
+			input:  []EndpointTargetInfo{ti1, ti2, ti3},
+			want:   true,
+		},
+		"should return true for multiple elements different order": {
+			stored: []EndpointTargetInfo{ti1, ti2, ti3},
+			input:  []EndpointTargetInfo{ti3, ti1, ti2},
+			want:   true,
+		},
+		"should return false when lengths differ": {
+			stored: []EndpointTargetInfo{ti1, ti2},
+			input:  []EndpointTargetInfo{ti1, ti2, ti3},
+			want:   false,
+		},
+		"should return false when one element differs": {
+			stored: []EndpointTargetInfo{ti1, ti2},
+			input:  []EndpointTargetInfo{ti1, ti3},
+			want:   false,
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			store := newEndpointsStoreWithMemory(5)
+			if len(tc.stored) > 0 {
+				store.endpointMap[ep] = map[string]set.Set[EndpointTargetInfo]{
+					deplID: set.NewSet(tc.stored...),
+				}
+			}
+			got := store.targetInfoUnchangedNoLock(deplID, ep, tc.input)
+			s.Equal(tc.want, got)
+		})
+	}
 }

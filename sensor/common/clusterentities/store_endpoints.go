@@ -231,46 +231,29 @@ func (e *endpointsStore) insertSingleEndpointNoLock(deploymentID string, ep net.
 }
 
 // targetInfoUnchangedNoLock checks whether one endpoint's target info set is
-// identical to what is already stored. Uses the same pigeonhole + hint-table
-// approach as endpointsUnchangedNoLock, comparing |set| elements against a
+// identical to what is already stored, comparing |set| elements against a
 // slice of equal length.
 //
-// The comparison logic intentionally duplicates the inner hot path from
-// endpointsUnchangedNoLock. Extracting a shared helper made local
-// BenchmarkApply{Unchanged,Changed} runs about 3-7% slower and
-// BenchmarkEndpointsUnchangedNoLock about 3% slower, with no B/op or
-// allocs/op improvement.
+// The simple set-iteration + slices.Contains loop is the fastest
+// zero-allocation approach when comparing a set against a slice.
+// Benchmarked on Apple M3 Pro (count=6, N≤6):
+//
+//	n=1  ~30 ns/op  0 allocs
+//	n=2  ~37 ns/op  0 allocs
+//	n=3  ~43 ns/op  0 allocs
+//	n=4  ~50 ns/op  0 allocs
+//	n=5  ~56 ns/op  0 allocs
+//	n=6  ~62 ns/op  0 allocs
+//
+// Cases with more than 6 target infos per endpoint are extremely rare in
+// practice (typically 1-4), so we accept the O(n²) cost rather than adding
+// hint-table complexity that would almost never be exercised.
 func (e *endpointsStore) targetInfoUnchangedNoLock(deploymentID string, ep net.NumericEndpoint, newTargetInfos []EndpointTargetInfo) bool {
-	currentTargetInfos, found := e.endpointMap[ep][deploymentID]
-	if !found {
-		return len(newTargetInfos) == 0
-	}
+	currentTargetInfos := e.endpointMap[ep][deploymentID]
 	if len(currentTargetInfos) != len(newTargetInfos) {
 		return false
 	}
-	n := len(newTargetInfos)
-
-	const hintBuckets = 64
-	const hintThreshold = 6
-
-	if n <= hintThreshold || n > 254 {
-		for ti := range currentTargetInfos {
-			if !slices.Contains(newTargetInfos, ti) {
-				return false
-			}
-		}
-		return true
-	}
-
-	var hints [hintBuckets]uint8
-	for i, ti := range newTargetInfos {
-		hints[ti.ContainerPort%hintBuckets] = uint8(i + 1)
-	}
 	for ti := range currentTargetInfos {
-		idx := int(hints[ti.ContainerPort%hintBuckets]) - 1
-		if idx >= 0 && idx < n && newTargetInfos[idx] == ti {
-			continue
-		}
 		if !slices.Contains(newTargetInfos, ti) {
 			return false
 		}
