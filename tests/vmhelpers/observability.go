@@ -15,7 +15,7 @@ const (
 	MetricComplianceRelayIndexReportsMismatchingVsockTotal = prometheusNamespace + "_compliance_virtual_machine_relay_index_reports_mismatching_vsock_cid_total"
 	MetricComplianceRelaySemaphoreAcquisitionFailuresTotal = prometheusNamespace + "_compliance_virtual_machine_relay_sem_acquisition_failures_total"
 
-	MetricComplianceRelayIndexReportAcksReceivedTotal = prometheusNamespace + "_compliance_virtual_machine_relay_index_report_acks_received_total"
+	MetricComplianceRelayIndexReportAcksReceivedTotal = prometheusNamespace + "_compliance_virtual_machine_relay_acks_received_total"
 )
 
 // Sensor VM index series (subsystem "sensor").
