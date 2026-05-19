@@ -139,8 +139,8 @@ spec:
     podTemplate:
       env:
       - name: GOMEMLIMIT
-        # Go GC aggressive — prefetch memory is transient download buffers. Limit is set higher to allow for spikes GC does not catch.
-        value: "1GiB"
+        # Go GC at default request (3Gi). Limit is set higher to allow for spikes GC does not catch.
+        value: "3GiB"
     stepSpecs:
     - name: prefetch-dependencies
       computeResources:
@@ -149,7 +149,7 @@ spec:
         # GOMEMLIMIT keeps Go near default; limit +1Gi catches spikes that outrun GC.
         # https://github.com/konflux-ci/build-definitions/tree/main/task/prefetch-dependencies-oci-ta
         limits:
-          memory: 4Gi
+          memory: 5Gi
   taskRunTemplate:
     serviceAccountName: build-pipeline-operator-bundle
 

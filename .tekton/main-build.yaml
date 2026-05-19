@@ -75,15 +75,15 @@ spec:
     podTemplate:
       env:
       - name: GOMEMLIMIT
-        # Go GC aggressive — prefetch memory is transient download buffers. Limit is set higher to allow for spikes GC does not catch.
-        value: "1GiB"
+        # Go GC at default request (3Gi). Limit is set higher to allow for spikes GC does not catch.
+        value: "3GiB"
     stepSpecs:
     - name: prefetch-dependencies
       computeResources:
         # Default request=3Gi limit=3Gi. 584 OOMKilled in 13,559 runs (4.3%), Apr 15 - May 15, 2026.
         # https://github.com/konflux-ci/build-definitions/tree/main/task/prefetch-dependencies-oci-ta
         limits:
-          memory: 4Gi
+          memory: 5Gi
 
   # For all sbom-syft-generate steps:
   # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container
