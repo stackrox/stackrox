@@ -83,7 +83,7 @@ spec:
           memory: 3Gi
     - name: use-trusted-artifact
       computeResources:
-        # Default request=256Mi limit=2Gi (namespace default, not set by task). 139 OOMKilled at 2Gi limit in 10,381 runs (1.3%), Apr 15 - May 15, 2026.
+        # Default request=256Mi limit=2Gi (LimitRange). 139 OOMKilled in 10,381 runs (1.3%), Apr 15 - May 15, 2026.
         # https://github.com/konflux-ci/build-trusted-artifacts
         limits:
           memory: 3Gi
@@ -92,7 +92,7 @@ spec:
     stepSpecs:
     - name: rpms-signature-scan
       computeResources:
-        # Default request=256Mi limit=256Mi. 180 OOMKilled at 256Mi limit in 10,492 runs (1.7%), Apr 15 - May 15, 2026.
+        # Default request=256Mi limit=256Mi. 180 OOMKilled in 10,492 runs (1.7%), Apr 15 - May 15, 2026.
         # https://github.com/konflux-ci/tekton-tools/tree/main/tasks/rpms-signature-scan
         limits:
           memory: 512Mi
@@ -145,8 +145,6 @@ spec:
     - name: prefetch-dependencies
       computeResources:
         # Default request=3Gi limit=3Gi. 584 OOMKilled in 13,559 runs (4.3%), Apr 15 - May 15, 2026.
-        # https://github.com/konflux-ci/build-definitions/tree/main/task/prefetch-dependencies-oci-ta
-        # GOMEMLIMIT keeps Go near default; limit +1Gi catches spikes that outrun GC.
         # https://github.com/konflux-ci/build-definitions/tree/main/task/prefetch-dependencies-oci-ta
         limits:
           memory: 5Gi
