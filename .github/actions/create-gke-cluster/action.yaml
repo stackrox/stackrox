@@ -13,7 +13,7 @@ inputs:
     required: true
   registry:
     description: Image registry
-    default: quay.io/rhacs-eng
+    default: quay.io/stackrox-io
   num-nodes:
     description: Number of GKE nodes
     default: "3"
@@ -30,6 +30,14 @@ inputs:
     description: Quay.io password
     required: true
 
+outputs:
+  cluster-name:
+    description: Actual GKE cluster name (may be truncated from input)
+    value: ${{ steps.create.outputs.cluster-name }}
+  zone:
+    description: GKE zone where cluster was created
+    value: ${{ steps.create.outputs.zone }}
+
 runs:
   using: composite
   steps:
@@ -45,16 +53,8 @@ runs:
       with:
         install_components: "gke-gcloud-auth-plugin,beta"
 
-    - name: Render charts
-      shell: bash
-      run: |
-        SCANNER_TAG=$(cat SCANNER_VERSION)
-        .github/workflows/scripts/render-chart.sh central /tmp/central-chart \
-          "${{ inputs.tag }}" "$SCANNER_TAG" "${{ inputs.registry }}"
-        .github/workflows/scripts/render-chart.sh sensor /tmp/sensor-chart \
-          "${{ inputs.tag }}" "$SCANNER_TAG" "${{ inputs.registry }}"
-
     - name: Create GKE cluster
+      id: create
       shell: bash
       env:
         USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
@@ -65,6 +65,8 @@ runs:
         provision_gke_cluster "${{ inputs.cluster-name }}"
         echo "CLUSTER_NAME=${CLUSTER_NAME}" >> "$GITHUB_ENV"
         echo "ZONE=${ZONE}" >> "$GITHUB_ENV"
+        echo "cluster-name=${CLUSTER_NAME}" >> "$GITHUB_OUTPUT"
+        echo "zone=${ZONE}" >> "$GITHUB_OUTPUT"
 
     - name: Wait for cluster
       shell: bash
