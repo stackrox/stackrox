@@ -395,13 +395,7 @@ func (s *VMScanningSuite) provisionVMs(specs []vmSpec) {
 	s.ensureImagePullSecret(ctx)
 
 	for _, sp := range specs {
-		req := vmhelpers.VMRequest{
-			Name:         sp.Name,
-			Namespace:    s.namespace,
-			Image:        sp.Image,
-			GuestUser:    sp.GuestUser,
-			SSHPublicKey: s.cfg.SSHPublicKey,
-		}
+		req := s.vmSpecToRequest(sp)
 		s.logf("provision VMs: ensuring VM exists %s/%s with image %q", s.namespace, sp.Name, sp.Image)
 		createErr := vmhelpers.CreateVirtualMachine(ctx, s.dynamicClient, req)
 		if createErr == nil {
@@ -625,20 +619,26 @@ func (s *VMScanningSuite) recreateVM(vm *VMHandle) error {
 func (s *VMScanningSuite) vmRequestForVM(vm VMHandle) (vmhelpers.VMRequest, error) {
 	for _, sp := range s.vmSpecs {
 		if sp.Name == vm.Name {
-			guestUser := strings.TrimSpace(vm.GuestUser)
-			if guestUser == "" {
-				guestUser = sp.GuestUser
+			req := s.vmSpecToRequest(sp)
+			if u := strings.TrimSpace(vm.GuestUser); u != "" {
+				req.GuestUser = u
 			}
-			return vmhelpers.VMRequest{
-				Name:         vm.Name,
-				Namespace:    vm.Namespace,
-				Image:        sp.Image,
-				GuestUser:    guestUser,
-				SSHPublicKey: s.cfg.SSHPublicKey,
-			}, nil
+			req.Namespace = vm.Namespace
+			return req, nil
 		}
 	}
-	return vmhelpers.VMRequest{}, fmt.Errorf("no spec found for persistent VM %s/%s", vm.Namespace, vm.Name)
+	return vmhelpers.VMRequest{}, fmt.Errorf("no spec found for VM %s/%s", vm.Namespace, vm.Name)
+}
+
+// vmSpecToRequest converts a vmSpec into a VMRequest using suite-level defaults.
+func (s *VMScanningSuite) vmSpecToRequest(sp vmSpec) vmhelpers.VMRequest {
+	return vmhelpers.VMRequest{
+		Name:         sp.Name,
+		Namespace:    s.namespace,
+		Image:        sp.Image,
+		GuestUser:    sp.GuestUser,
+		SSHPublicKey: s.cfg.SSHPublicKey,
+	}
 }
 
 func (s *VMScanningSuite) vmDeleteTimeout() time.Duration {
