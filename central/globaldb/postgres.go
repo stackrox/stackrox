@@ -378,7 +378,7 @@ func getMaxConnections(ctx context.Context, db postgres.DB) {
 }
 
 func startMonitoringPostgres(ctx context.Context, db postgres.DB, postgresConfig *postgres.Config) {
-	t := time.NewTicker(1 * time.Minute)
+	t := time.NewTicker(env.PostgresMonitoringInterval.DurationSetting())
 	defer t.Stop()
 	for range t.C {
 		_ = CollectPostgresStats(ctx, db)
