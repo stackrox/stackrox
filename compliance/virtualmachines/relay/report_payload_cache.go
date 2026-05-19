@@ -8,6 +8,10 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+// upsertExpiredEvictionPerInsert caps the number of expired entries swept from
+// the LRU front during a single Upsert call. A bounded sweep keeps per-upsert
+// latency predictable while still making steady progress on expired entries
+// without relying solely on the periodic SweepExpired path.
 const upsertExpiredEvictionPerInsert = 16
 
 // reportPayloadCache stores VM reports keyed by resource ID with bounded capacity.
@@ -145,7 +149,7 @@ func (c *reportPayloadCache) removeElementNoLock(elem *list.Element) {
 // Get returns the cached report reference if present. Get does not enforce TTL and does not
 // modify cache contents. Reads do not affect eviction order by updatedAt. Callers must treat
 // returned reports as read-only.
-func (c *reportPayloadCache) Get(resourceID string, _ time.Time) (report *v1.VMReport, ok bool) {
+func (c *reportPayloadCache) Get(resourceID string) (report *v1.VMReport, ok bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

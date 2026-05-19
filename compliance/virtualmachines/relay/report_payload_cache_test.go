@@ -47,15 +47,15 @@ func TestReportPayloadCache_LRUByUpdatedAt_EvictionScenario(t *testing.T) {
 
 	c.Upsert(vm2, payload3, t4)
 
-	got0, ok0 := c.Get(vm0, t4)
+	got0, ok0 := c.Get(vm0)
 	require.Truef(t, ok0, "expected vm0 cache lookup to be a hit, but got a miss")
 	require.Truef(t, got0.EqualVT(payload2), "expected vm0 cached payload to match payload2, but it did not")
 
-	got1, ok1 := c.Get(vm1, t4)
+	got1, ok1 := c.Get(vm1)
 	require.Falsef(t, ok1, "expected vm1 cache lookup to be a miss, but got a hit")
 	require.Nilf(t, got1, "expected vm1 cached payload to be nil, got %v", got1)
 
-	got2, ok2 := c.Get(vm2, t4)
+	got2, ok2 := c.Get(vm2)
 	require.Truef(t, ok2, "expected vm2 cache lookup to be a hit, but got a miss")
 	require.Truef(t, got2.EqualVT(payload3), "expected vm2 cached payload to match payload3, but it did not")
 }
@@ -71,7 +71,7 @@ func TestReportPayloadCache_Upsert_StoresClone(t *testing.T) {
 	c.Upsert(key1, r, now)
 	r.DiscoveredData.OsVersion = "mutated-after-upsert"
 
-	got, ok := c.Get(key1, now)
+	got, ok := c.Get(key1)
 	require.Truef(t, ok, "expected a cache hit, but got a miss")
 	require.Truef(t, got.EqualVT(expected), "expected cached payload to match the pre-mutation clone, but it did not")
 }
@@ -84,13 +84,13 @@ func TestReportPayloadCache_Get_ReturnsCachedReference(t *testing.T) {
 	r := relaytest.NewTestVMReport("x")
 	c.Upsert(key1, r, now)
 
-	out, ok := c.Get(key1, now)
+	out, ok := c.Get(key1)
 	require.Truef(t, ok, "expected initial cache lookup to be a hit, but got a miss")
 	require.Truef(t, out.EqualVT(r), "expected initial cached payload to match inserted payload, but it did not")
 	changedOsVersion := "mutated"
 	out.DiscoveredData.OsVersion = changedOsVersion
 
-	out2, ok2 := c.Get(key1, now)
+	out2, ok2 := c.Get(key1)
 	require.Truef(t, ok2, "expected second cache lookup to be a hit, but got a miss")
 	got := out2.GetDiscoveredData().GetOsVersion()
 	require.Equalf(t, changedOsVersion, got, "expected second cached OS version %q, got %q", changedOsVersion, got)
@@ -104,10 +104,10 @@ func TestReportPayloadCache_Get_TTLExpiry_DoesNotEvict(t *testing.T) {
 	r := relaytest.NewTestVMReport("x")
 	c.Upsert(key1, r, base)
 
-	_, ok := c.Get(key1, base.Add(10*time.Minute).Add(-time.Nanosecond))
+	_, ok := c.Get(key1)
 	require.Truef(t, ok, "expected pre-expiry lookup to be a hit, but got a miss")
 
-	got, ok := c.Get(key1, base.Add(10*time.Minute))
+	got, ok := c.Get(key1)
 	require.Truef(t, ok, "expected expiry-boundary lookup to still be a hit, but got a miss")
 	require.Truef(t, got.EqualVT(r), "expected cached payload at ttl boundary to match inserted payload, but it did not")
 	require.Equalf(t, 1, c.Len(), "expected expired entry to remain cached until sweep/upsert, got len=%d", c.Len())
@@ -183,7 +183,7 @@ func TestReportPayloadCache_Upsert_ExpiresAtMostBudgetPerInsert(t *testing.T) {
 		len(remaining),
 	)
 	require.Equalf(t, 1, c.Len(), "expected cache to retain only fresh entry, got len=%d", c.Len())
-	_, ok := c.Get("fresh", now)
+	_, ok := c.Get("fresh")
 	require.Truef(t, ok, "expected fresh entry lookup to be a hit, but got a miss")
 }
 
@@ -213,7 +213,7 @@ func TestReportPayloadCache_MaxSlotsNonPositive_NewKeyUpsertNoOps(t *testing.T) 
 		0,
 		c.Len(),
 	)
-	_, ok := c.Get("new", now)
+	_, ok := c.Get("new")
 	require.Falsef(t, ok, "expected zero-capacity cache lookup to be a miss, but got a hit")
 
 	cNeg := newReportPayloadCache(-3, time.Hour)
@@ -269,9 +269,9 @@ func TestReportPayloadCache_SweepExpired_NoWork_UnchangedLen(t *testing.T) {
 			2,
 			c.Len(),
 		)
-		_, okA := c.Get(key2, sweepAt)
+		_, okA := c.Get(key2)
 		require.Truef(t, okA, "expected within-ttl lookup for a to be a hit, but got a miss")
-		_, okB := c.Get(key3, sweepAt)
+		_, okB := c.Get(key3)
 		require.Truef(t, okB, "expected within-ttl lookup for b to be a hit, but got a miss")
 	})
 }
@@ -423,11 +423,11 @@ func TestReportPayloadCache_SweepExpired_KeepsFreshRemovesExpired(t *testing.T) 
 	)
 
 	require.Equalf(t, 1, c.Len(), "expected cache length after sweep %d, got %d", 1, c.Len())
-	gotFresh, ok := c.Get("fresh", sweepAt)
+	gotFresh, ok := c.Get("fresh")
 	require.Truef(t, ok, "expected fresh entry lookup to be a hit, but got a miss")
 	require.Truef(t, gotFresh.EqualVT(freshReport), "expected fresh payload to match freshReport, but it did not")
 
-	_, okOld := c.Get("old", sweepAt)
+	_, okOld := c.Get("old")
 	require.Falsef(t, okOld, "expected old entry lookup to be a miss, but got a hit")
 }
 
@@ -463,14 +463,14 @@ func TestReportPayloadCache_SweepExpired_ThenUpsert_EvictsLRUByUpdatedAt(t *test
 	now := base.Add(86 * time.Minute)
 	c.Upsert("d", payloadD, now)
 
-	_, okA := c.Get(key2, now)
+	_, okA := c.Get(key2)
 	require.Falsef(t, okA, "expected lookup for a to be a miss, but got a hit")
-	_, okB := c.Get(key3, now)
+	_, okB := c.Get(key3)
 	require.Falsef(t, okB, "expected lookup for b to be a miss, but got a hit")
-	gotC, okC := c.Get("c", now)
+	gotC, okC := c.Get("c")
 	require.Truef(t, okC, "expected lookup for c to be a hit, but got a miss")
 	require.Truef(t, gotC.EqualVT(payloadC), "expected payload for c to match payloadC, but it did not")
-	gotD, okD := c.Get("d", now)
+	gotD, okD := c.Get("d")
 	require.Truef(t, okD, "expected lookup for d to be a hit, but got a miss")
 	require.Truef(t, gotD.EqualVT(payloadD), "expected payload for d to match payloadD, but it did not")
 }
@@ -487,17 +487,17 @@ func TestReportPayloadCache_Get_DoesNotPromoteRecency(t *testing.T) {
 	c.Upsert(key3, relaytest.NewTestVMReport(key3), t1)
 
 	// Read "a" (oldest by updatedAt) — must not move it to MRU.
-	_, ok := c.Get(key2, t1)
+	_, ok := c.Get(key2)
 	require.Truef(t, ok, "expected lookup for a before eviction to be a hit, but got a miss")
 
 	// Adding "c" should evict LRU by updatedAt ("a"), not "b".
 	c.Upsert("c", relaytest.NewTestVMReport("c"), t2)
 
-	_, okA := c.Get(key2, t2)
+	_, okA := c.Get(key2)
 	require.Falsef(t, okA, "expected lookup for a after eviction to be a miss, but got a hit")
-	_, okB := c.Get(key3, t2)
+	_, okB := c.Get(key3)
 	require.Truef(t, okB, "expected lookup for b after eviction to be a hit, but got a miss")
-	_, okC := c.Get("c", t2)
+	_, okC := c.Get("c")
 	require.Truef(t, okC, "expected lookup for c after insert to be a hit, but got a miss")
 }
 

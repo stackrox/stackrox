@@ -295,8 +295,7 @@ func (r *Relay) sweepPayloadCache(now time.Time) {
 
 // handleRetryCommand attempts to resend a cached payload for the given resource ID.
 func (r *Relay) handleRetryCommand(ctx context.Context, resourceID string) {
-	now := time.Now()
-	cached, ok := r.payloadCache.Get(resourceID, now)
+	cached, ok := r.payloadCache.Get(resourceID)
 	if ok {
 		metrics.IndexReportCacheLookupsTotal.WithLabelValues("hit").Inc()
 		if err := r.reportSender.Send(ctx, cached); err != nil {
