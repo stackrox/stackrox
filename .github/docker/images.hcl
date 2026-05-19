@@ -1,9 +1,9 @@
-# Docker Buildx bake file for database images
+# Docker Buildx bake file for container images
 # Builds: central-db, scanner-v4-db
 #
 # Usage:
-#   docker buildx bake -f .github/docker/db-bake.hcl --print all
-#   docker buildx bake -f .github/docker/db-bake.hcl --push all
+#   docker buildx bake -f .github/docker/images.hcl --print databases
+#   docker buildx bake -f .github/docker/images.hcl --push databases
 
 variable "TAG" {
   default = "latest"
@@ -25,8 +25,8 @@ variable "LABEL_RELEASE" {
   default = ""
 }
 
-# Group to build all DB images
-group "all" {
+# Group to build database images
+group "databases" {
   targets = ["central-db", "scanner-v4-db"]
 }
 
