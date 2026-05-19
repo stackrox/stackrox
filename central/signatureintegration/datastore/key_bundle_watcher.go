@@ -50,7 +50,6 @@ func (w *keyBundleWatcher) Start() {
 func (w *keyBundleWatcher) Stop() {
 	w.stopSig.Signal()
 	<-w.doneSig.Done()
-	log.Info("Stopped Red Hat signing key bundle watcher")
 }
 
 func (w *keyBundleWatcher) run() {
