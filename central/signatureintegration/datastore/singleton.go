@@ -2,6 +2,8 @@ package datastore
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
@@ -17,7 +19,7 @@ import (
 
 // redHatKeyBundlePath is the well-known path where the key bundle file is read from.
 // An external process downloads the bundle and writes it to this path.
-const redHatKeyBundlePath = "/tmp/redhat-signing-keys/bundle.json"
+var redHatKeyBundlePath = filepath.Join(os.TempDir(), "redhat-signing-keys", "bundle.json")
 
 // Stoppable represents a background process that can be stopped.
 type Stoppable interface {
