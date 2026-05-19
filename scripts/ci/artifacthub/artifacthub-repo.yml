@@ -25,3 +25,6 @@ owners:
   email: gh@maddosaurus.de
 - name: Marcin Owsiany
   email: mowsiany@redhat.com
+- name: Red Hat ACS Engineers
+  email: rhacs-eng+artifacthub@redhat.com
+  # Credentials are in shared BitWarden vault.
