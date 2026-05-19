@@ -143,11 +143,12 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 	scanRequest.Id = uuid.NewV4().String()
 	scanRequest.CreatedTime = protocompat.TimestampNow()
 
-	if err := m.validateScan(ctx, scanRequest, clusters); err != nil {
+	validatedProfiles, err := m.validateScan(ctx, scanRequest, clusters)
+	if err != nil {
 		return nil, err
 	}
 
-	return m.processRequestToSensor(ctx, scanRequest, cron, clusters, true)
+	return m.processRequestToSensor(ctx, scanRequest, cron, clusters, true, validatedProfiles)
 }
 
 // UpdateScanRequest processes a request to apply a compliance scan configuration to one or more Sensors.
@@ -186,7 +187,8 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 		return nil, errors.New("Changing the scan schedule name is not allowed.")
 	}
 
-	if err := m.validateScan(ctx, scanRequest, clusters); err != nil {
+	validatedProfiles, err := m.validateScan(ctx, scanRequest, clusters)
+	if err != nil {
 		return nil, err
 	}
 
@@ -196,7 +198,7 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 
 	// Use the created time from the DB
 	scanRequest.CreatedTime = oldScanConfig.GetCreatedTime()
-	scanRequest, err = m.processRequestToSensor(ctx, scanRequest, cron, clusters, false)
+	scanRequest, err = m.processRequestToSensor(ctx, scanRequest, cron, clusters, false, validatedProfiles)
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +272,7 @@ func (m *managerImpl) removeObsoleteResultsByProfiles(ctx context.Context, oldSc
 	}
 }
 
-func (m *managerImpl) validateScan(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) error {
+func (m *managerImpl) validateScan(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) ([]*storage.ComplianceOperatorProfileV2, error) {
 	var profiles []string
 	for _, profile := range scanRequest.GetProfiles() {
 		profiles = append(profiles, profile.GetProfileName())
@@ -281,12 +283,12 @@ func (m *managerImpl) validateScan(ctx context.Context, scanRequest *storage.Com
 	err := m.scanSettingDS.ScanConfigurationProfileExists(ctx, scanRequest.GetId(), profiles, clusters)
 	if err != nil {
 		log.Error(err)
-		return err
+		return nil, err
 	}
 
 	// Check if any non-ACS-managed ScanSettingBindings already reference the requested profiles.
 	if err := m.checkForExternalSSBConflicts(ctx, profiles, clusters); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Validate that all profiles exist in the database and have compatible kinds
@@ -294,11 +296,11 @@ func (m *managerImpl) validateScan(ctx context.Context, scanRequest *storage.Com
 		AddExactMatches(search.ClusterID, clusters[0]).
 		AddExactMatches(search.ComplianceOperatorProfileName, profiles...).ProtoQuery())
 	if err != nil {
-		return errors.Wrapf(err, "Unable to retrieve profiles for scan configuration named %q", scanRequest.GetScanConfigName())
+		return nil, errors.Wrapf(err, "Unable to retrieve profiles for scan configuration named %q", scanRequest.GetScanConfigName())
 	}
 
 	if len(returnedProfiles) != len(profiles) {
-		return errors.Errorf("Unable to find all profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
+		return nil, errors.Errorf("Unable to find all profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
 	// UNSPECIFIED should not appear here because centralToStorageProfileKind normalizes it to
@@ -311,29 +313,22 @@ func (m *managerImpl) validateScan(ctx context.Context, scanRequest *storage.Com
 		case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
 			log.Warnf("Profile %q in scan configuration %q has UNSPECIFIED operator kind; treating as PROFILE", p.GetName(), scanRequest.GetScanConfigName())
 		default:
-			return errors.Errorf("profile %q has unsupported operator kind %v (scan configuration %q)", p.GetName(), p.GetOperatorKind(), scanRequest.GetScanConfigName())
+			return nil, errors.Errorf("profile %q has unsupported operator kind %v (scan configuration %q)", p.GetName(), p.GetOperatorKind(), scanRequest.GetScanConfigName())
 		}
 	}
 
-	return nil
+	return returnedProfiles, nil
 }
 
-func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, cron string, clusters []string, createScanRequest bool) (*storage.ComplianceOperatorScanConfigurationV2, error) {
+func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, cron string, clusters []string, createScanRequest bool, validatedProfiles []*storage.ComplianceOperatorProfileV2) (*storage.ComplianceOperatorScanConfigurationV2, error) {
 	var profiles []string
 	for _, profile := range scanRequest.GetProfiles() {
 		profiles = append(profiles, profile.GetProfileName())
 	}
 
-	// Build profile refs (name + kind) for Sensor and persistence.
-	returnedProfiles, err := m.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ClusterID, clusters[0]).
-		AddExactMatches(search.ComplianceOperatorProfileName, profiles...).ProtoQuery())
-	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to retrieve profiles for scan configuration named %q", scanRequest.GetScanConfigName())
-	}
-	scanRequest.ProfileRefs = internaltov2storage.ProfileV2ToScanConfigRefs(returnedProfiles)
+	scanRequest.ProfileRefs = internaltov2storage.ProfileV2ToScanConfigRefs(validatedProfiles)
 
-	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
+	err := m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
 	if err != nil {
 		log.Error(err)
 		return nil, errors.Errorf("Unable to save scan configuration named %q.", scanRequest.GetScanConfigName())

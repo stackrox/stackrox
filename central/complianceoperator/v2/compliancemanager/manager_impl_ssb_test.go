@@ -18,7 +18,7 @@ func (suite *complianceManagerTestSuite) expectSingleClusterSuccess() {
 	ctx := suite.testContexts[testutils.UnrestrictedReadWriteCtx]
 	suite.profileDS.EXPECT().SearchProfiles(ctx, gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
 		getTestProfile("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1),
-	}, nil).Times(2)
+	}, nil).Times(1)
 	suite.scanConfigDS.EXPECT().UpsertScanConfiguration(ctx, gomock.Any()).Return(nil).Times(1)
 	suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
 	suite.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("test_cluster", true, nil).Times(1)
