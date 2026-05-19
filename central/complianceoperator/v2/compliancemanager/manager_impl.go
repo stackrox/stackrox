@@ -273,11 +273,11 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 	err := m.scanSettingDS.ScanConfigurationProfileExists(ctx, scanRequest.GetId(), profiles, clusters)
 	if err != nil {
 		log.Error(err)
-		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q", scanRequest.GetScanConfigName())
+		return nil, err
 	}
 
 	if err := m.checkForExternalSSBConflicts(ctx, profiles, clusters); err != nil {
-		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+		return nil, err
 	}
 
 	// Get all profiles from the database to validate that they exist and are compatible
