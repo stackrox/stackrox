@@ -76,12 +76,6 @@ EOF
             info "PR label 'test-konflux-images' detected, will be using Konflux-built images for deploying StackRox"
             patch_yaml "$config_file" ".roxie.konfluxImages = true"
         fi
-        if [[ "$ORCHESTRATOR_FLAVOR" == "openshift" ]]; then
-            # In openshift/release rehearsal jobs we cannot set the label that we need for this workflow, hence we will simply
-            # enable this if we are running on OpenShift.
-            info "Temporarily enabling usage of Konflux-built images for deploying StackRox due to ORCHESTRATOR_FLAVOR==openshift"
-            patch_yaml "$config_file" ".roxie.konfluxImages = true"
-        fi
         if [[ "$(yq eval ".roxie.konfluxImages" "$config_file")" == "true" ]]; then
             # Due to https://access.redhat.com/solutions/6540591 we need to patch the global pull secrets
             # to be able to pull images after applying image-rewriting rules for downstream images.
