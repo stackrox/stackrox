@@ -71,7 +71,6 @@ EOF
     roxie_config_from_environment_compat "$config_file" "$namespace"
 
     deploy_stackrox_with_roxie "$config_file"
-
 }
 
 # This function translates environment settings into a roxie configuration.
