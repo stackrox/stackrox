@@ -212,18 +212,18 @@ type AlertMatcher interface {
 // alerts and determine resolution/inactive status. Avoids TOAST I/O by
 // reading only inline columns.
 type AlertMatchKey struct {
-	ID                 string `db:"alert_id"`
-	PolicyID           string `db:"policy_id"`
-	State              int    `db:"violation_state"`
-	LifecycleStage     int    `db:"lifecycle_stage"`
-	DeploymentID       string `db:"deployment_id"`
-	DeploymentInactive bool   `db:"inactive_deployment"`
-	ResourceType       int    `db:"resource_type"`
-	ResourceName       string `db:"resource"`
-	ClusterID          string `db:"cluster_id"`
-	Namespace          string `db:"namespace"`
-	NodeID             string `db:"node_id"`
-	NodeName           string `db:"node"`
+	ID                 string  `db:"alert_id"`
+	PolicyID           string  `db:"policy_id"`
+	State              int     `db:"violation_state"`
+	LifecycleStage     int     `db:"lifecycle_stage"`
+	DeploymentID       *string `db:"deployment_id"`
+	DeploymentInactive *bool   `db:"inactive_deployment"`
+	ResourceType       *int    `db:"resource_type"`
+	ResourceName       *string `db:"resource"`
+	ClusterID          *string `db:"cluster_id"`
+	Namespace          *string `db:"namespace"`
+	NodeID             *string `db:"node_id"`
+	NodeName           *string `db:"node"`
 }
 
 func (k *AlertMatchKey) GetId() string                    { return k.ID }
@@ -232,19 +232,61 @@ func (k *AlertMatchKey) GetState() storage.ViolationState { return storage.Viola
 func (k *AlertMatchKey) GetLifecycleStage() storage.LifecycleStage {
 	return storage.LifecycleStage(k.LifecycleStage)
 }
-func (k *AlertMatchKey) HasDeployment() bool        { return k.DeploymentID != "" }
-func (k *AlertMatchKey) GetDeploymentId() string    { return k.DeploymentID }
-func (k *AlertMatchKey) IsDeploymentInactive() bool { return k.DeploymentInactive }
-func (k *AlertMatchKey) HasResource() bool          { return k.ResourceName != "" }
-func (k *AlertMatchKey) GetResourceType() storage.Alert_Resource_ResourceType {
-	return storage.Alert_Resource_ResourceType(k.ResourceType)
+
+func (k *AlertMatchKey) HasDeployment() bool {
+	return k.DeploymentID != nil && *k.DeploymentID != ""
 }
-func (k *AlertMatchKey) GetResourceName() string { return k.ResourceName }
-func (k *AlertMatchKey) HasNode() bool           { return k.NodeID != "" }
-func (k *AlertMatchKey) GetNodeId() string       { return k.NodeID }
-func (k *AlertMatchKey) GetNodeName() string     { return k.NodeName }
-func (k *AlertMatchKey) GetClusterId() string    { return k.ClusterID }
-func (k *AlertMatchKey) GetNamespace() string    { return k.Namespace }
+func (k *AlertMatchKey) GetDeploymentId() string {
+	if k.DeploymentID == nil {
+		return ""
+	}
+	return *k.DeploymentID
+}
+func (k *AlertMatchKey) IsDeploymentInactive() bool {
+	return k.DeploymentInactive != nil && *k.DeploymentInactive
+}
+func (k *AlertMatchKey) HasResource() bool {
+	return k.ResourceName != nil && *k.ResourceName != ""
+}
+func (k *AlertMatchKey) GetResourceType() storage.Alert_Resource_ResourceType {
+	if k.ResourceType == nil {
+		return 0
+	}
+	return storage.Alert_Resource_ResourceType(*k.ResourceType)
+}
+func (k *AlertMatchKey) GetResourceName() string {
+	if k.ResourceName == nil {
+		return ""
+	}
+	return *k.ResourceName
+}
+func (k *AlertMatchKey) HasNode() bool {
+	return k.NodeID != nil && *k.NodeID != ""
+}
+func (k *AlertMatchKey) GetNodeId() string {
+	if k.NodeID == nil {
+		return ""
+	}
+	return *k.NodeID
+}
+func (k *AlertMatchKey) GetNodeName() string {
+	if k.NodeName == nil {
+		return ""
+	}
+	return *k.NodeName
+}
+func (k *AlertMatchKey) GetClusterId() string {
+	if k.ClusterID == nil {
+		return ""
+	}
+	return *k.ClusterID
+}
+func (k *AlertMatchKey) GetNamespace() string {
+	if k.Namespace == nil {
+		return ""
+	}
+	return *k.Namespace
+}
 
 // WithAlertMatchKeyQuery augments a query with SELECT on the 12 inline columns
 // needed for alert matching: alert_id, policy_id, violation_state, lifecycle_stage,

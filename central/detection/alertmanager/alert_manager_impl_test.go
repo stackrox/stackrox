@@ -52,6 +52,8 @@ var (
 
 // alertToMatchKey converts a *storage.Alert to an *alertviews.AlertMatchKey,
 // extracting the fields the same way the alertAdapter does in the impl file.
+func ptr[T any](v T) *T { return &v }
+
 func alertToMatchKey(a *storage.Alert) *alertviews.AlertMatchKey {
 	key := &alertviews.AlertMatchKey{
 		ID:             a.GetId(),
@@ -62,35 +64,35 @@ func alertToMatchKey(a *storage.Alert) *alertviews.AlertMatchKey {
 
 	// Deployment fields
 	if dep := a.GetDeployment(); dep != nil {
-		key.DeploymentID = dep.GetId()
-		key.DeploymentInactive = dep.GetInactive()
+		key.DeploymentID = ptr(dep.GetId())
+		key.DeploymentInactive = ptr(dep.GetInactive())
 	}
 
 	// Resource fields
 	if res := a.GetResource(); res != nil {
-		key.ResourceType = int(res.GetResourceType())
-		key.ResourceName = res.GetName()
-		key.ClusterID = res.GetClusterId()
-		key.Namespace = res.GetNamespace()
+		key.ResourceType = ptr(int(res.GetResourceType()))
+		key.ResourceName = ptr(res.GetName())
+		key.ClusterID = ptr(res.GetClusterId())
+		key.Namespace = ptr(res.GetNamespace())
 	}
 
 	// Node fields
 	if node := a.GetNode(); node != nil {
-		key.NodeID = node.GetId()
-		key.NodeName = node.GetName()
-		if key.ClusterID == "" {
-			key.ClusterID = node.GetClusterId()
+		key.NodeID = ptr(node.GetId())
+		key.NodeName = ptr(node.GetName())
+		if key.ClusterID == nil || *key.ClusterID == "" {
+			key.ClusterID = ptr(node.GetClusterId())
 		}
 	}
 
 	// Top-level cluster ID fallback (for deployment alerts)
-	if key.ClusterID == "" {
-		key.ClusterID = a.GetClusterId()
+	if key.ClusterID == nil || *key.ClusterID == "" {
+		key.ClusterID = ptr(a.GetClusterId())
 	}
 
 	// Top-level namespace fallback (for deployment alerts)
-	if key.Namespace == "" {
-		key.Namespace = a.GetNamespace()
+	if key.Namespace == nil || *key.Namespace == "" {
+		key.Namespace = ptr(a.GetNamespace())
 	}
 
 	return key
@@ -646,6 +648,94 @@ func (suite *AlertManagerTestSuite) TestOldResourceAlertAreMarkedAsResolvedWhenP
 	modifiedDeployments, err := suite.alertManager.AlertAndNotify(suite.ctx, []*storage.Alert{newAlert})
 	suite.Equal(0, modifiedDeployments.Cardinality(), "no deployments should be modified when only resource alerts are provided")
 	suite.NoError(err, "update should succeed")
+}
+
+func (suite *AlertManagerTestSuite) TestAlertDeletedBetweenPhases() {
+	alerts := getAlerts()
+	incoming := []*storage.Alert{alerts[0]}
+
+	// Phase 1 returns a key that matches the incoming alert.
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts[:1]), nil)
+
+	// Phase 2: the alert was deleted between phases.
+	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[0].GetId()).Return(nil, false, nil)
+
+	// Since the alert is gone, it should be treated as new.
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).DoAndReturn(func(_ context.Context, a *storage.Alert) error {
+		suite.Equal(alerts[0].GetId(), a.GetId())
+		suite.NotNil(a.GetFirstOccurred(), "FirstOccurred should be set for new alerts")
+		return nil
+	})
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return()
+
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, incoming)
+	suite.NoError(err)
+	suite.True(modified.Cardinality() > 0)
+}
+
+func (suite *AlertManagerTestSuite) TestDeploymentMarkedInactiveOnRemoval() {
+	dep := &storage.Alert_Deployment{
+		Id:   "dep-to-remove",
+		Name: "dep-to-remove",
+	}
+	previousAlert := &storage.Alert{
+		Id:             "runtime-alert-1",
+		Policy:         getPolicies()[0],
+		Entity:         &storage.Alert_Deployment_{Deployment: dep},
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+		State:          storage.ViolationState_ACTIVE,
+		Time:           protocompat.GetProtoTimestampFromSeconds(100),
+	}
+
+	// Phase 1 returns the key for the previous runtime alert.
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).
+		Return(alertsToMatchKeys([]*storage.Alert{previousAlert}), nil)
+
+	// The runtime detector says the deployment is being removed.
+	suite.runtimeDetectorMock.EXPECT().DeploymentInactive("dep-to-remove").Return(true).AnyTimes()
+	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
+
+	// Phase 2: fetch full alert for inactive marking.
+	fullAlert := previousAlert.CloneVT()
+	suite.alertsMock.EXPECT().GetAlert(suite.ctx, "runtime-alert-1").Return(fullAlert, true, nil)
+
+	// The alert should be updated with deployment.Inactive = true.
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).DoAndReturn(func(_ context.Context, a *storage.Alert) error {
+		suite.True(a.GetDeployment().GetInactive(), "deployment should be marked inactive")
+		return nil
+	})
+
+	// The alert should also be resolved (no incoming alerts match it).
+	suite.alertsMock.EXPECT().MarkAlertsResolvedBatch(suite.ctx, "runtime-alert-1").Return([]*storage.Alert{previousAlert}, nil)
+	// Two notifications: one for the resolved alert, one from notifyUpdatedRuntimeAlerts.
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Return().Times(2)
+
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, nil,
+		WithDeploymentID("dep-to-remove", true))
+	suite.NoError(err)
+	suite.True(modified.Contains("dep-to-remove"), "removed deployment should appear in modified set")
+}
+
+func (suite *AlertManagerTestSuite) TestResolvedDeploymentAlertReturnsDeploymentID() {
+	alerts := getAlerts()
+
+	// Phase 1: return all 3 deployment alerts.
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).
+		Return(alertsToMatchKeys(alerts), nil)
+
+	// Incoming has alerts[1] and alerts[2] but not alerts[0].
+	// alerts[1] and alerts[2] match their keys, so Phase 2 fetches them.
+	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[1].GetId()).Return(alerts[1], true, nil)
+	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[2].GetId()).Return(alerts[2], true, nil)
+
+	// alerts[0] should be resolved.
+	suite.alertsMock.EXPECT().MarkAlertsResolvedBatch(suite.ctx, alerts[0].GetId()).Return([]*storage.Alert{alerts[0]}, nil)
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), alerts[0]).Return()
+
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, alerts[1:])
+	suite.NoError(err)
+	suite.True(modified.Contains(alerts[0].GetDeployment().GetId()),
+		"resolved deployment alert's deployment ID should appear in modified set")
 }
 
 func TestMergeProcessesFromOldIntoNew(t *testing.T) {
