@@ -265,7 +265,7 @@ EOF
 }
 
 gen_admin_password() {
-    tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true
+    head -c 20 </dev/urandom | base64
 }
 
 # shellcheck disable=SC2120
