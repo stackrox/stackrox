@@ -50,7 +50,6 @@ deploy_stackrox_with_roxie_compat() {
     elif [[ ! -e "$config_file" ]]; then
         touch "$config_file"
     fi
-    trap '[[ -n "$cleanup_config_file" ]] && rm -f "$cleanup_config_file"' RETURN
 
     info "Using config file ${config_file}"
 
@@ -71,6 +70,10 @@ EOF
     roxie_config_from_environment_compat "$config_file" "$namespace"
 
     deploy_stackrox_with_roxie "$config_file"
+
+    if [[ -n "$cleanup_config_file" ]]; then
+        rm -f "$cleanup_config_file"
+    fi
 }
 
 # This function translates environment settings into a roxie configuration.
