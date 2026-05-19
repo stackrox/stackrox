@@ -126,8 +126,8 @@ spec:
     podTemplate:
       env:
       - name: GOMEMLIMIT
-        # Tell Go GC to be aggressive near 3GiB. 2GiB OOMKilled without CPU throttle; 4GiB peaked at 752Mi.
-        value: "3GiB"
+        # Tell Go GC to be aggressive near 2GiB. 3GiB peaked at 300-800Mi across all components.
+        value: "2GiB"
     stepSpecs:
     - name: prefetch-dependencies
       computeResources:
