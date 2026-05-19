@@ -50,6 +50,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Technical Changes
 
 - OpenShift 3 support removed from all installation methods.
+- ROX-34524: Fixed proxy bypass for non-HTTP schemes (e.g., TLS checks) when only `HTTPS_PROXY`/`HTTP_PROXY` are configured without `ALL_PROXY`. Previously, sensor's lazy TLS registry initialization would fail in proxy-only environments.
 
 ## [4.10.0]
 
