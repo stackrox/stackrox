@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"sort"
+	"slices"
 	"testing"
 	"time"
 
@@ -69,7 +69,7 @@ func (s *RedHatSigningKeySuite) listIntegrations(ctx context.Context) (*v1.ListS
 // waitForIntegrationKeys polls until the Red Hat integration has exactly the expected key names.
 func (s *RedHatSigningKeySuite) waitForIntegrationKeys(ctx context.Context, expectedNames []string, description string) {
 	t := s.T()
-	sort.Strings(expectedNames)
+	slices.Sort(expectedNames)
 	mustEventually(t, ctx, func() error {
 		rpcCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
@@ -89,7 +89,7 @@ func (s *RedHatSigningKeySuite) waitForIntegrationKeys(ctx context.Context, expe
 			for i, k := range keys {
 				names[i] = k.GetName()
 			}
-			sort.Strings(names)
+			slices.Sort(names)
 			for i := range expectedNames {
 				if names[i] != expectedNames[i] {
 					return fmt.Errorf("expected key names %v, got %v", expectedNames, names)
