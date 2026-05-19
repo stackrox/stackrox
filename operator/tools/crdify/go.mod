@@ -2,7 +2,7 @@ module github.com/stackrox/rox/operator/tools/crdify
 
 go 1.24.0
 
-require sigs.k8s.io/crdify v0.4.0
+require sigs.k8s.io/crdify v0.6.0
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
