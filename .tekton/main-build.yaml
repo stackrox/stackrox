@@ -73,13 +73,13 @@ spec:
   taskRunSpecs:
   - pipelineTaskName: prefetch-dependencies
     stepSpecs:
-    # Limit CPU for Go dependencies prefetch, as it tends to be OOM-killed when it gets lots of it without OOTB limit.
+    # Bump memory for prefetch-dependencies step because the one with defaults tends to get sometimes OOM-killed.
     - name: prefetch-dependencies
       computeResources:
         limits:
-          cpu: 2
+          memory: 6Gi
         requests:
-          cpu: 2
+          memory: 6Gi
   # For all sbom-syft-generate steps:
   # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container
   # exits with 137 (OOMKilled):
