@@ -59,12 +59,13 @@ func seedRedHatDefaultSignatureIntegration(siStore store.SignatureIntegrationSto
 }
 
 func startKeyBundleWatcher(siStore store.SignatureIntegrationStore) {
-	if env.DisableRedHatSigningKeyBundleWatcher.BooleanSetting() {
-		log.Info("Red Hat signing key bundle watcher is disabled via ROX_DISABLE_REDHAT_SIGNING_KEY_BUNDLE_WATCHER")
+	interval := env.RedHatSigningKeyWatchInterval.DurationSetting()
+	if interval == 0 {
+		log.Info("Red Hat signing key bundle watcher is disabled (ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=0)")
 		return
 	}
 
-	w := newKeyBundleWatcher(redHatKeyBundlePath, env.RedHatSigningKeyWatchInterval.DurationSetting(), siStore)
+	w := newKeyBundleWatcher(redHatKeyBundlePath, interval, siStore)
 	w.Start()
 	bundleWatcher = w
 }

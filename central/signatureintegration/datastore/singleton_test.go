@@ -21,7 +21,7 @@ func TestSeedFirstInstall(t *testing.T) {
 }
 
 func TestStartKeyBundleWatcherDisabled(t *testing.T) {
-	t.Setenv("ROX_DISABLE_REDHAT_SIGNING_KEY_BUNDLE_WATCHER", "true")
+	t.Setenv("ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL", "0")
 
 	ctrl := gomock.NewController(t)
 	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
