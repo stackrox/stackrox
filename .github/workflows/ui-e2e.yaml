@@ -55,7 +55,8 @@ jobs:
         run: |
           WATERLINE=15
 
-          find cypress/integration -name "*.test.js" -o -name "*.test.ts" \
+          # Exclude exceptionManagement — requires scanner v4 CVE data
+          find cypress/integration -path '*/exceptionManagement/*' -prune -o \( -name "*.test.js" -o -name "*.test.ts" \) -print \
             | while read -r f; do
                 rel="${f#cypress/integration/}"
                 if [[ "$rel" == */* ]]; then
