@@ -383,7 +383,7 @@ jobs:
         registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
-    - name: Seed test data and wait for CVEs
+    - name: Seed test data and wait for readiness
       run: |
         set +x
         ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
@@ -391,14 +391,16 @@ jobs:
         kubectl create namespace qa-test 2>/dev/null || true
         kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null || true
 
-        for _ in $(seq 1 90); do
-          cve_count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-            "https://${API_ENDPOINT}/v2/image-cves?pagination.limit=1" 2>/dev/null \
-            | jq -r '.imageCVEs | length // 0' 2>/dev/null)
-          [ "${cve_count:-0}" -gt 0 ] && echo "Image CVEs found: ${cve_count}" && break
+        # Wait for network flow data (collector→sensor communication)
+        for _ in $(seq 1 60); do
+          flows=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+            "https://${API_ENDPOINT}/v1/networkgraph/cluster/$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://${API_ENDPOINT}/v1/clusters" 2>/dev/null | jq -r '.clusters[0].id // empty' 2>/dev/null)?query=Namespace:stackrox" 2>/dev/null \
+            | jq -r '.nodes | length // 0' 2>/dev/null)
+          [ "${flows:-0}" -gt 3 ] && echo "Network graph nodes: ${flows}" && break
           sleep 5
         done
-        [ "${cve_count:-0}" -eq 0 ] && echo "::warning::No image CVEs found after 7.5 minutes"
+        [ "${flows:-0}" -le 3 ] && echo "::warning::Few network graph nodes after 5 minutes"
         set -x
 
     - name: Upload credentials

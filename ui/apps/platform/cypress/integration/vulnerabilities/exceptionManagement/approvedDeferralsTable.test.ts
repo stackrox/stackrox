@@ -51,8 +51,8 @@ describe('Exception Management - Approved Deferrals Table', () => {
             visitWorkloadCveOverview();
             viewCvesByObservationState('Deferred');
 
-            // Verify correct CVE filter
-            cy.get('td[data-label="Request details"] a:contains("View")').first().click();
+            // Verify correct CVE filter — click the View link in the row with the deferred CVE
+            cy.get(`tr:has(td:contains("${cveName}")) td[data-label="Request details"] a:contains("View")`).click();
             cy.get(workloadSelectors.filterLabelGroupItem('CVE', cveName));
 
             // Verify a link in the table containing the request
