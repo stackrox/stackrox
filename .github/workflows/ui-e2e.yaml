@@ -406,6 +406,16 @@ jobs:
         done
         [ "${flows:-0}" -le 3 ] && echo "::warning::Few network graph nodes (${flows}) after 5 minutes"
 
+        # Wait for network flow edges (collector→sensor communication)
+        for _ in $(seq 1 60); do
+          edges=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+            "https://${API_ENDPOINT}/v1/networkgraph/cluster/${cluster_id}?query=Namespace:stackrox" \
+            | jq -r '[.nodes[]? | .outEdges // {} | keys[]] | length // 0')
+          [ "${edges:-0}" -gt 3 ] && echo "Network flow edges: ${edges}" && break
+          sleep 5
+        done
+        [ "${edges:-0}" -le 3 ] && echo "::warning::Few network flow edges (${edges}) after 5 minutes"
+
         # Wait for deployments to be detected (risk timeline needs deployment events)
         for _ in $(seq 1 30); do
           deps=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
