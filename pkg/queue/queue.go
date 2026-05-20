@@ -80,25 +80,7 @@ func NewQueue[T comparable](opts ...OptionFunc[T]) *Queue[T] {
 // Pull will pull an item from the queue. If the queue is empty, the default value of T will be returned.
 // Note that his does not wait for items to be available in the queue, use PullBlocking instead.
 func (q *Queue[T]) Pull() T {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-
-	if q.queue.Len() == 0 {
-		var nilT T
-		return nilT
-	}
-
-	item := q.queue.Remove(q.queue.Front()).(T)
-
-	if q.counterMetric != nil {
-		// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
-		q.counterMetric.WithLabelValues(metrics.Remove.String()).Inc()
-	}
-
-	if q.queue.Len() == 0 {
-		q.notEmptySignal.Reset()
-	}
-
+	item, _ := q.pull()
 	return item
 }
 
@@ -135,7 +117,7 @@ func (q *Queue[T]) Seq(waitable concurrency.Waitable) func(yield func(T) bool) {
 	}
 }
 
-func (q *Queue[T]) pull() (T, bool) {
+func (q *Queue[T]) innerPull() (T, bool) {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
@@ -145,12 +127,6 @@ func (q *Queue[T]) pull() (T, bool) {
 	}
 
 	item := q.queue.Remove(q.queue.Front()).(T)
-
-	if q.counterMetric != nil {
-		// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
-		q.counterMetric.WithLabelValues(metrics.Remove.String()).Inc()
-	}
-
 	if q.queue.Len() == 0 {
 		q.notEmptySignal.Reset()
 	}
@@ -158,14 +134,31 @@ func (q *Queue[T]) pull() (T, bool) {
 	return item, true
 }
 
-// Push adds an item to the queue.
-// Note that in case the queue is full, no error will be returned but rather only a log emitted.
-func (q *Queue[T]) Push(item T) {
+func (q *Queue[T]) pull() (T, bool) {
+	item, ok := q.innerPull()
+	if ok && q.counterMetric != nil {
+		// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+		q.counterMetric.WithLabelValues(metrics.Remove.String()).Inc()
+	}
+	return item, ok
+}
+
+func (q *Queue[T]) innerPush(item T) bool {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
 	if q.maxSize != 0 && q.queue.Len() >= q.maxSize {
+		return false
+	}
 
+	q.queue.PushBack(item)
+	return true
+}
+
+// Push adds an item to the queue.
+// Note that in case the queue is full, no error will be returned but rather only a log emitted.
+func (q *Queue[T]) Push(item T) {
+	if !q.innerPush(item) {
 		logging.GetRateLimitedLogger().WarnL(loggingRateLimiter, "Queue (%s) size limit reached (%d). New items added to the queue will be dropped.", q.name, q.maxSize)
 		if q.droppedMetric != nil {
 			q.droppedMetric.Inc()
@@ -173,12 +166,11 @@ func (q *Queue[T]) Push(item T) {
 		return
 	}
 
-	defer q.notEmptySignal.Signal()
+	q.notEmptySignal.Signal()
 	if q.counterMetric != nil {
 		// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
 		q.counterMetric.WithLabelValues(metrics.Add.String()).Inc()
 	}
-	q.queue.PushBack(item)
 }
 
 // Len returns the number of elements in the queue.
