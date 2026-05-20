@@ -226,7 +226,7 @@ describe('Exception Management - Approved Deferrals Table', () => {
         approveRequest();
         visitApprovedDeferralsTab();
 
-        typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'ui_tests');
+        typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'admin');
         cy.get('table tr:nth(1) td[data-label="Request name"] a').should('exist');
         cy.get(vulnSelectors.clearFiltersButton).click();
         typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'BLAH');

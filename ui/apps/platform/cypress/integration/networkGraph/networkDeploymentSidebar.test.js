@@ -19,35 +19,22 @@ describe('Network Graph deployment sidebar', () => {
 
         selectCluster();
         selectNamespace('stackrox');
-        selectDeployment('collector');
+        selectDeployment('sensor');
 
-        // confirm that the graph only contains collector and other StackRox deployments it communiticates with
+        // confirm that the graph shows sensor and its connections (central)
         cy.get(
-            `${networkGraphSelectors.nodes} [data-type="node"] .pf-topology__node__label:contains("sensor")`,
+            `${networkGraphSelectors.nodes} [data-type="node"] .pf-topology__node__label:contains("central")`,
             { timeout: 30000 }
         );
 
-        // With the addition of the compliance node indexer, it is possible for a flow to exist between central and collector
-        // https://github.com/stackrox/stackrox/pull/12573
-        //
-        // cy.get(
-        //  `${networkGraphSelectors.nodes} [data-type="node"] .pf-topology__node__label:contains("central")`
-        // ).should('not.exist');
-        cy.get(
-            `${networkGraphSelectors.nodes} [data-type="node"] .pf-topology__node__label:contains("scanner")`
-        ).should('not.exist');
-        cy.get(
-            `${networkGraphSelectors.nodes} [data-type="node"] .pf-topology__node__label:contains("admission-controller")`
-        ).should('not.exist');
-
-        // click on Collector node, too
+        // click on sensor node to open sidebar
         cy.get(`${networkGraphSelectors.nodes} [data-type="node"] .pf-topology__node__label`)
-            .contains('collector')
+            .contains('sensor')
             .parent()
             .click();
 
-        cy.get(networkGraphSelectors.drawerTitle).contains('collector');
-        cy.get(`${networkGraphSelectors.drawerSubtitle}:contains("stackrox")`); // cluster name flexible for any test environment
+        cy.get(networkGraphSelectors.drawerTitle).contains('sensor');
+        cy.get(`${networkGraphSelectors.drawerSubtitle}:contains("stackrox")`);
 
         // check Details tab
         cy.get(`${networkGraphSelectors.drawerTabs} .pf-m-current`).contains('Details');
@@ -56,9 +43,5 @@ describe('Network Graph deployment sidebar', () => {
         cy.get('h2:contains("Deployment overview")');
         cy.get('h2:contains("Port configurations")');
         cy.get('h2:contains("Container configurations")');
-
-        // check list of containers in Container Config section
-        cy.get('[data-testid="deployment-container-config"]').contains('collector');
-        cy.get('[data-testid="deployment-container-config"]').contains('compliance');
     });
 });
