@@ -473,8 +473,8 @@ describe('searchUtils', () => {
             expect(formatKeyValue('visa', (v) => `r/${v}`)).toEqual(['r/visa=r/.*', 'r/.*=r/visa']);
         });
 
-        it('escapes internal double quotes in key and value', () => {
-            expect(formatKeyValue('k"ey=v"al', wrapInQuotes)).toEqual(['"k\\"ey"="v\\"al"']);
+        it('wraps key and value with internal double quotes', () => {
+            expect(formatKeyValue('k"ey=v"al', wrapInQuotes)).toEqual(['"k"ey"="v"al"']);
         });
 
         it('uses wildcard for empty key or value around equals sign', () => {
@@ -491,9 +491,9 @@ describe('searchUtils', () => {
             expect(wrapInQuotes('test value')).toBe('"test value"');
         });
 
-        it('escapes internal double quotes', () => {
-            expect(wrapInQuotes('hello"world')).toBe('"hello\\"world"');
-            expect(wrapInQuotes('say "hello"')).toBe('"say \\"hello\\""');
+        it('does not escape internal double quotes', () => {
+            expect(wrapInQuotes('hello"world')).toBe('"hello"world"');
+            expect(wrapInQuotes('say "hello"')).toBe('"say "hello""');
         });
 
         it('handles empty string', () => {
