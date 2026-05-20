@@ -586,16 +586,14 @@ func SetTelemetryMetrics(clusterIDPeeker func() string, cm *central.ClusterMetri
 
 // ObserveCentralReceiverProcessMessageDuration records the duration of a ProcessMessage call
 func ObserveCentralReceiverProcessMessageDuration(componentName string, duration time.Duration) {
-	componentProcessMessageDurationSeconds.With(prometheus.Labels{
-		ComponentName: componentName,
-	}).Observe(duration.Seconds())
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	componentProcessMessageDurationSeconds.WithLabelValues(componentName).Observe(duration.Seconds())
 }
 
 // IncrementCentralReceiverProcessMessageErrors increments the error count for a component's ProcessMessage call
 func IncrementCentralReceiverProcessMessageErrors(componentName string) {
-	componentProcessMessageErrorsCount.With(prometheus.Labels{
-		ComponentName: componentName,
-	}).Inc()
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	componentProcessMessageErrorsCount.WithLabelValues(componentName).Inc()
 }
 
 // ObserveInformerSyncDuration sets the sync duration metric for an informer.

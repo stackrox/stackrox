@@ -372,16 +372,14 @@ func ObserveTimeSpentInExponentialBackoff(t time.Duration) {
 
 // ObserveNetworkPolicyStoreState observes the metric.
 func ObserveNetworkPolicyStoreState(ns string, num int) {
-	networkPoliciesStored.With(prometheus.Labels{"k8sNamespace": ns}).Set(float64(num))
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	networkPoliciesStored.WithLabelValues(ns).Set(float64(num))
 }
 
 // ObserveNetworkPolicyStoreEvent observes the metric.
 func ObserveNetworkPolicyStoreEvent(event, namespace string, numSelectors int) {
-	networkPoliciesStoreEvents.With(prometheus.Labels{
-		"event":        event,
-		"k8sNamespace": namespace,
-		"numSelectors": fmt.Sprintf("%d", numSelectors),
-	}).Inc()
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	networkPoliciesStoreEvents.WithLabelValues(event, namespace, fmt.Sprintf("%d", numSelectors)).Inc()
 }
 
 // ObserveNodeScan observes the metric.
@@ -421,18 +419,14 @@ func ObserveNodeScanningAck(nodeName, ackType, messageType string, op AckOperati
 
 // AddBlockingScanCall records a call to blockingScan
 func AddBlockingScanCall(path string) {
-	detectorBlockScanCalls.With(prometheus.Labels{
-		"Operation": metrics.Add.String(),
-		"Path":      path,
-	}).Inc()
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	detectorBlockScanCalls.WithLabelValues(metrics.Add.String(), path).Inc()
 }
 
 // RemoveBlockingScanCall records a call to blockingScan has finished
 func RemoveBlockingScanCall() {
-	detectorBlockScanCalls.With(prometheus.Labels{
-		"Operation": metrics.Remove.String(),
-		"Path":      "",
-	}).Inc()
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	detectorBlockScanCalls.WithLabelValues(metrics.Remove.String(), "").Inc()
 }
 
 // SetScanCallDuration records the duration of the scan call to central/scanner
@@ -444,18 +438,14 @@ func SetScanCallDuration(start time.Time) {
 
 // AddScanAndSetCall records a call to ScanAndSet
 func AddScanAndSetCall(reason string) {
-	scanAndSetCall.With(prometheus.Labels{
-		"Operation": metrics.Add.String(),
-		"Reason":    reason,
-	}).Inc()
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	scanAndSetCall.WithLabelValues(metrics.Add.String(), reason).Inc()
 }
 
 // RemoveScanAndSetCall records a call to ScanAndSet has finished
 func RemoveScanAndSetCall(reason string) {
-	scanAndSetCall.With(prometheus.Labels{
-		"Operation": metrics.Remove.String(),
-		"Reason":    reason,
-	}).Inc()
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	scanAndSetCall.WithLabelValues(metrics.Remove.String(), reason).Inc()
 }
 
 // scannerConfigMu serialises UpdateScannerConfigurationInfo so that the

@@ -52,32 +52,45 @@ var (
 	}, []string{"store", "operation"})
 )
 
+const (
+	containerStoreTypeCurrent    = "current"
+	containerStoreTypeHistorical = "historical"
+)
+
 // UpdateNumberOfContainerIDs updates the metric tracking the number of containers stored in-memory store
 func UpdateNumberOfContainerIDs(current, historical int) {
-	containersStored.With(prometheus.Labels{"type": "current"}).Set(float64(current))
-	containersStored.With(prometheus.Labels{"type": "historical"}).Set(float64(historical))
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	containersStored.WithLabelValues(containerStoreTypeCurrent).Set(float64(current))
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	containersStored.WithLabelValues(containerStoreTypeHistorical).Set(float64(historical))
 }
 
 // UpdateNumberOfIPs updates the metric tracking the number of IPs stored in-memory store
 func UpdateNumberOfIPs(current, historical int) {
-	ipsStored.With(prometheus.Labels{"type": "current"}).Set(float64(current))
-	ipsStored.With(prometheus.Labels{"type": "historical"}).Set(float64(historical))
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	ipsStored.WithLabelValues(containerStoreTypeCurrent).Set(float64(current))
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	ipsStored.WithLabelValues(containerStoreTypeHistorical).Set(float64(historical))
 }
 
 // UpdateNumberOfEndpoints updates the metric tracking the number of endpoints stored in-memory store
 func UpdateNumberOfEndpoints(current, historical int) {
-	endpointsStored.With(prometheus.Labels{"type": "current"}).Set(float64(current))
-	endpointsStored.With(prometheus.Labels{"type": "historical"}).Set(float64(historical))
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	endpointsStored.WithLabelValues(containerStoreTypeCurrent).Set(float64(current))
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	endpointsStored.WithLabelValues(containerStoreTypeHistorical).Set(float64(historical))
 }
 
 // ObserveManyDeploymentsSharingSingleIP records a situation when one IP belongs to more than one container
 func ObserveManyDeploymentsSharingSingleIP(ip string) {
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
 	ipsHavingMultipleContainers.WithLabelValues(ip).Inc()
 }
 
 // ObserveStoreLockHeldDurationWithOperation records how long a store mutex was held
 // for the given high-level operation.
 func ObserveStoreLockHeldDurationWithOperation(store, operation string, duration time.Duration) {
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
 	storeLockHeldDurationSeconds.WithLabelValues(store, operation).Observe(duration.Seconds())
 }
 
