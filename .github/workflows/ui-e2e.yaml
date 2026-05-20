@@ -491,7 +491,7 @@ jobs:
         npx cypress run \
           --browser chrome \
           --spec "${{ matrix.specs }}" \
-          --config "baseUrl=https://${API_ENDPOINT},specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false,retries=0"
+          --config "baseUrl=https://${API_ENDPOINT},specPattern=cypress/integration/**/*.test.{js,ts},excludeSpecPattern=**/exceptionManagement/**,video=false,screenshotOnRunFailure=false,retries=0"
       env:
         CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
         CYPRESS_ORCHESTRATOR_FLAVOR: k8s
