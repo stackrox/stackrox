@@ -348,8 +348,8 @@ spec:
           - use
           - $(params.SOURCE_ARTIFACT)=/var/workdir/source
         - name: build-index-content
-          # Using the image with go and yq preinstalled
-          image: quay.io/stackrox-io/apollo-ci:stackrox-test-stable@sha256:4830f867bf50f9084d03d8ba32ea0eea098284b99e69d2039bb3a66763c7742b
+          # The build script will download opm and yq from GitHub releases
+          image: registry.redhat.io/ubi9/go-toolset@sha256:90a36bc2013b3fcb28e2a4b082c9b895d7c2c679e58b95aed9721970f3339d0e
           workingDir: /var/workdir/source/operator
           securityContext:
             runAsUser: 0
@@ -358,8 +358,6 @@ spec:
             value: $(params.BUNDLE_IMAGE)
           - name: INDEX_IMAGE
             value: $(params.INDEX_IMAGE)
-          - name: YQ
-            value: yq
           script: |
             #!/bin/bash
             set -euo pipefail
