@@ -23,7 +23,7 @@ describe('Network Graph deployment sidebar', () => {
 
         // confirm that the graph only contains collector and other StackRox deployments it communiticates with
         cy.get(
-            `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("sensor")`,
+            `${networkGraphSelectors.nodes} [data-type="node"] .pf-topology__node__label:contains("sensor")`,
             { timeout: 30000 }
         );
 
@@ -31,17 +31,17 @@ describe('Network Graph deployment sidebar', () => {
         // https://github.com/stackrox/stackrox/pull/12573
         //
         // cy.get(
-        //  `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("central")`
+        //  `${networkGraphSelectors.nodes} [data-type="node"] .pf-topology__node__label:contains("central")`
         // ).should('not.exist');
         cy.get(
-            `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("scanner")`
+            `${networkGraphSelectors.nodes} [data-type="node"] .pf-topology__node__label:contains("scanner")`
         ).should('not.exist');
         cy.get(
-            `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("admission-controller")`
+            `${networkGraphSelectors.nodes} [data-type="node"] .pf-topology__node__label:contains("admission-controller")`
         ).should('not.exist');
 
         // click on Collector node, too
-        cy.get(`${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label`)
+        cy.get(`${networkGraphSelectors.nodes} [data-type="node"] .pf-topology__node__label`)
             .contains('collector')
             .parent()
             .click();

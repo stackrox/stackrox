@@ -435,7 +435,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.setup-shards.outputs.matrix-all) }}
+      matrix: ${{ fromJSON(needs.setup-shards.outputs.matrix) }}
 
     env:
       ARTIFACT_DIR: ./test-artifacts
