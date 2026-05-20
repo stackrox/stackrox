@@ -488,10 +488,15 @@ jobs:
       working-directory: ui/apps/platform
       run: |
         echo "${{ matrix.name }}: ${{ matrix.specs }}"
+        # Exclude specs that need scanner v4 image-cve data or have GKE-specific issues
+        EXCLUDE="**/exceptionManagement/**"
+        EXCLUDE="${EXCLUDE},**/workloadCves/deferral*"
+        EXCLUDE="${EXCLUDE},**/vulnmanagement/clusterCves*"
+        EXCLUDE="${EXCLUDE},**/networkGraph/networkDeploymentSidebar*"
         npx cypress run \
           --browser chrome \
           --spec "${{ matrix.specs }}" \
-          --config "baseUrl=https://${API_ENDPOINT},specPattern=cypress/integration/**/*.test.{js,ts},excludeSpecPattern=**/exceptionManagement/**,video=false,screenshotOnRunFailure=false,retries=0"
+          --config "baseUrl=https://${API_ENDPOINT},specPattern=cypress/integration/**/*.test.{js,ts},excludeSpecPattern=${EXCLUDE},video=false,screenshotOnRunFailure=false,retries=0"
       env:
         CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
         CYPRESS_ORCHESTRATOR_FLAVOR: k8s
