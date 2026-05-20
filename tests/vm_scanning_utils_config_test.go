@@ -22,12 +22,7 @@ func TestLoadVMScanConfig_Defaults(t *testing.T) {
 	t.Setenv("VM_USERS", "")
 	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
 	t.Setenv("ROXAGENT_BINARY_PATH", "/bin/true")
-	for _, key := range []string{
-		"VM_SCAN_NAMESPACE_PREFIX",
-		"ROXAGENT_REPO2CPE_PRIMARY_URL", "ROXAGENT_REPO2CPE_FALLBACK_URL",
-	} {
-		t.Setenv(key, "")
-	}
+	t.Setenv("VM_SCAN_NAMESPACE_PREFIX", "")
 	cfg, err := loadVMScanConfig()
 	require.NoError(t, err)
 	require.Equal(t, []string{"registry.example.com/rhel9:latest", "registry.example.com/rhel10:latest"}, cfg.Images)
@@ -36,7 +31,6 @@ func TestLoadVMScanConfig_Defaults(t *testing.T) {
 	require.Equal(t, 20*time.Minute, cfg.ScanTimeout)
 	require.Equal(t, 10*time.Second, cfg.ScanPollInterval)
 	require.Equal(t, 5*time.Minute, cfg.DeleteTimeout)
-	require.Equal(t, 3, cfg.Repo2CPEPrimaryAttempts)
 
 	specs := cfg.vmSpecs()
 	require.Len(t, specs, 2)
