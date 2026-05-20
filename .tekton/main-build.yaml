@@ -122,7 +122,7 @@ spec:
       computeResources:
         limits:
           memory: 3Gi
-    # build step is not Go (bash/bsi), so GOMEMLIMIT does not help. p90=2202Mi, needs 3Gi request.
+    # build step is not Go (bash), so GOMEMLIMIT does not help. p90=2202Mi, needs 3Gi request.
     - name: build
       computeResources:
         limits:
