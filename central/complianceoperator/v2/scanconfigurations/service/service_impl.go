@@ -212,7 +212,7 @@ func (s *serviceImpl) DeleteComplianceScanConfiguration(ctx context.Context, req
 
 	err = s.manager.DeleteScan(ctx, req.GetId())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
 	return &v2.Empty{}, nil
