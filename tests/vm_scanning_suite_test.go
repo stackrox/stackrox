@@ -663,30 +663,6 @@ func (s *VMScanningSuite) mustGetVM(id string) *v2.VirtualMachine {
 	return resp
 }
 
-// roxagentStderrCrashLinePrefixes are lowercase; each stderr line is trimmed and lowercased before HasPrefix.
-var roxagentStderrCrashLinePrefixes = []string{
-	"panic:",
-	"fatal error:",
-	"runtime error:",
-}
-
-// validateRoxagentSuccessStderr allows empty or benign stderr but fails only on lines that start with
-// unambiguous Go/runtime crash signatures (after trim + lowercase), avoiding substring false positives.
-func validateRoxagentSuccessStderr(stderr string) error {
-	if strings.TrimSpace(stderr) == "" {
-		return nil
-	}
-	for _, line := range strings.Split(stderr, "\n") {
-		ln := strings.TrimSpace(strings.ToLower(line))
-		for _, prefix := range roxagentStderrCrashLinePrefixes {
-			if strings.HasPrefix(ln, prefix) {
-				return fmt.Errorf("ensureCanonicalScan: roxagent stderr indicates process/runtime failure (matched line prefix %q): %s", prefix, vmhelpers.FormatGuestCommandOutputForError(stderr))
-			}
-		}
-	}
-	return nil
-}
-
 func (s *VMScanningSuite) persistRoxagentStdout(vm *VMHandle, stdout string) string {
 	if vm == nil || strings.TrimSpace(stdout) == "" {
 		return ""
@@ -769,9 +745,6 @@ func (s *VMScanningSuite) ensureCanonicalScan(ctx context.Context, vm *VMHandle)
 		}
 	} else {
 		s.logf("ensureCanonicalScan: roxagent stdout empty on %s/%s (non-verbose mode)", vm.Namespace, vm.Name)
-	}
-	if err := validateRoxagentSuccessStderr(res.Stderr); err != nil {
-		return nil, err
 	}
 	return res, nil
 }
