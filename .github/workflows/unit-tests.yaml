@@ -132,18 +132,18 @@ jobs:
         sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
         sudo systemctl start postgresql.service
 
-    # Image digest kept in sync with .github/test-images/postgres.dockerfile
-    # (Dependabot auto-bumps the digest; update this SHA to match).
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    # Image pinned in .github/test-images/postgres.dockerfile (Dependabot auto-bumps).
     - name: Start Postgres (${{ matrix.pg }})
       if: matrix.pg != 'default'
       run: |
+        docker build -t postgres-test -f .github/test-images/postgres.dockerfile .
         docker run --rm -d --name postgres --network=host \
           -e POSTGRESQL_ADMIN_PASSWORD="$POSTGRES_PASSWORD" \
           -e LANG=C.UTF-8 \
-          quay.io/sclorg/postgresql-${{ matrix.pg }}-c9s@sha256:77c1e962234c598f3ed2b5e581f0845fca333bd262e9b0ee542bf8fa96fbc03d
-
-    - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+          postgres-test
 
     - uses: ./.github/actions/job-preamble
       with:
