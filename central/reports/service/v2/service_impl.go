@@ -215,6 +215,7 @@ func (s *serviceImpl) GetReportConfiguration(ctx context.Context, req *apiV2.Res
 	if !common.IsV2ReportConfig(config) {
 		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 2.0")
 	}
+	// Remove report configs with empty scope. This can happen after downgrade to a version that has less scoping methods and doesn't support the new scoping method.
 	if !common.HasValidResourceScope(config.GetResourceScope()) {
 		return nil, errors.Wrapf(errox.InvalidArgs,
 			"Report configuration '%s' has an empty resource scope (no collection ID or entity scope)", req.GetId())
