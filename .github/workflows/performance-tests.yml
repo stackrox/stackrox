@@ -166,7 +166,7 @@ jobs:
           flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 50 --duration 20m --tag github_run_id=${{ github.run_id }} --tag github_ref=${{ github.ref }} --tag github_sha=${{ github.sha }}
 
       - name: Publish JUnit test report in job summary
-        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+        uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
         with:
           paths: performance-results/report.xml
 
