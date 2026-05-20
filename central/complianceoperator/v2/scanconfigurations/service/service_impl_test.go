@@ -287,10 +287,10 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 	storageRequest := convertV2ScanConfigToStorage(allAccessContext, request)
 	managerErr := errors.Errorf("Scan configuration named %q already exists.", request.GetScanName())
 	s.manager.EXPECT().ProcessScanRequest(gomock.Any(), storageRequest, []string{fixtureconsts.Cluster1}).Return(nil, managerErr).Times(1)
-	expectedErr := errors.Wrap(errox.InvalidArgs, managerErr.Error())
 
 	config, err := s.service.CreateComplianceScanConfiguration(allAccessContext, request)
-	s.Require().Equal(expectedErr.Error(), err.Error())
+	s.Require().ErrorIs(err, errox.InvalidArgs)
+	s.Require().Contains(err.Error(), managerErr.Error())
 	s.Require().Nil(config)
 }
 
