@@ -663,23 +663,6 @@ func (s *VMScanningSuite) mustGetVM(id string) *v2.VirtualMachine {
 	return resp
 }
 
-func (s *VMScanningSuite) persistRoxagentStdout(vm *VMHandle, stdout string) string {
-	if vm == nil || strings.TrimSpace(stdout) == "" {
-		return ""
-	}
-	f, err := os.CreateTemp(s.T().TempDir(), fmt.Sprintf("roxagent-%s-%s-*.stdout", vm.Namespace, vm.Name))
-	if err != nil {
-		s.logf("ensureCanonicalScan: could not persist roxagent stdout for %s/%s: %v", vm.Namespace, vm.Name, err)
-		return ""
-	}
-	defer func() { _ = f.Close() }()
-	if _, err := f.WriteString(stdout); err != nil {
-		s.logf("ensureCanonicalScan: could not write roxagent stdout file %q: %v", f.Name(), err)
-		return ""
-	}
-	return f.Name()
-}
-
 // waitForScannerV4Initialized blocks until the Scanner V4 matcher has finished
 // loading its vulnerability database. It polls Central's GetVulnDefinitionsInfo API
 // (which internally calls GetMatcherMetadata on the matcher) until a non-zero
@@ -736,16 +719,7 @@ func (s *VMScanningSuite) ensureCanonicalScan(ctx context.Context, vm *VMHandle)
 	if res == nil {
 		return nil, errors.New("ensureCanonicalScan: nil result from RunRoxagentOnce")
 	}
-	stdoutPath := s.persistRoxagentStdout(vm, res.Stdout)
-	if stdoutPath != "" {
-		s.logf("ensureCanonicalScan: roxagent stdout saved to %q (%d bytes)", stdoutPath, len(res.Stdout))
-		if !vmhelpers.VerboseOutputLooksLikeReport(res.Stdout) {
-			s.logf("ensureCanonicalScan: roxagent stdout on %s/%s does not match known report shapes; continuing (stdout_file=%q)",
-				vm.Namespace, vm.Name, stdoutPath)
-		}
-	} else {
-		s.logf("ensureCanonicalScan: roxagent stdout empty on %s/%s (non-verbose mode)", vm.Namespace, vm.Name)
-	}
+	s.logf("ensureCanonicalScan: roxagent completed on %s/%s (%d bytes stdout)", vm.Namespace, vm.Name, len(res.Stdout))
 	return res, nil
 }
 
