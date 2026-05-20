@@ -9,7 +9,10 @@ import (
 
 const (
 	guestCommandErrorMaxLen = 4096
-	vsockReadinessMarker    = "VSOCK_READY"
+	// vsockReadinessMarker is a structured prefix emitted in poll-loop detail strings when
+	// /dev/vsock is confirmed present on the guest. It enables log grep/filtering during
+	// CI triage to distinguish successful vsock checks from VSOCK_MISSING diagnostics.
+	vsockReadinessMarker = "VSOCK_READY"
 )
 
 // checkVsockReadiness tests /dev/vsock presence and gathers diagnostics when absent.
@@ -70,8 +73,8 @@ func ensureVsockReady(ctx context.Context, virt Virtctl, namespace, vm, stage st
 	})
 }
 
-// formatGuestCommandOutputForError trims guest command output and truncates it for error message inclusion.
-func formatGuestCommandOutputForError(output string) string {
+// FormatGuestCommandOutputForError trims guest command output and truncates it for error message inclusion.
+func FormatGuestCommandOutputForError(output string) string {
 	output = strings.TrimSpace(output)
 	if output == "" {
 		return "<no guest stdout/stderr>"

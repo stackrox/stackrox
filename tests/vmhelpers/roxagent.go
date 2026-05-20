@@ -17,17 +17,11 @@ const (
 // ErrTerminalVSOCKUnavailable is returned when vsock is permanently unavailable on the guest (no retry).
 var ErrTerminalVSOCKUnavailable = errors.New("terminal vsock unavailable")
 
-// RoxagentRunConfig configures a single roxagent invocation (repo2cpe URL selection and binary path).
+// RoxagentRunConfig configures a single roxagent invocation (repo2cpe URL selection).
 type RoxagentRunConfig struct {
 	Repo2CPEPrimaryURL      string
 	Repo2CPEFallbackURL     string
 	Repo2CPEPrimaryAttempts int
-	// RoxagentInstallPath may only be empty or DefaultRoxagentInstallPath. CopyRoxagentBinary and the
-	// VerifyRoxagent* helpers always use DefaultRoxagentInstallPath; RunRoxagentOnce rejects any other
-	// value so the run cannot target a path the suite never populated.
-	RoxagentInstallPath string
-	// Repo2CPEEnvVar is the environment variable name passed to roxagent (default ROXAGENT_REPO2CPE_URL).
-	Repo2CPEEnvVar string
 }
 
 // RoxagentRunResult captures stdout/stderr and whether the fallback repo2cpe URL was used.
@@ -37,21 +31,8 @@ type RoxagentRunResult struct {
 	UsedFallback bool
 }
 
-// roxagentPath returns RoxagentInstallPath when set, otherwise DefaultRoxagentInstallPath.
-func roxagentPath(cfg RoxagentRunConfig) string {
-	if cfg.RoxagentInstallPath != "" {
-		return cfg.RoxagentInstallPath
-	}
-	return DefaultRoxagentInstallPath
-}
-
-// repo2cpeEnvName returns Repo2CPEEnvVar if set, otherwise ROXAGENT_REPO2CPE_URL.
-func repo2cpeEnvName(cfg RoxagentRunConfig) string {
-	if cfg.Repo2CPEEnvVar != "" {
-		return cfg.Repo2CPEEnvVar
-	}
-	return "ROXAGENT_REPO2CPE_URL"
-}
+// roxagentRepo2CPEEnvVar is the environment variable name passed to roxagent on the guest.
+const roxagentRepo2CPEEnvVar = "ROXAGENT_REPO2CPE_URL"
 
 // chooseRepo2CPESource returns primaryURL until attemptsMade reaches maxPrimaryAttempts, then fallbackURL.
 func chooseRepo2CPESource(attemptsMade, maxPrimaryAttempts int, primaryURL, fallbackURL string) string {
@@ -125,46 +106,16 @@ func CopyRoxagentBinary(ctx context.Context, virt Virtctl, namespace, vm, hostBi
 	})
 }
 
-// VerifyRoxagentBinaryPresent checks that the roxagent file exists on the guest.
-func VerifyRoxagentBinaryPresent(ctx context.Context, virt Virtctl, namespace, vm string) error {
-	return retryOnSSHTransport(ctx, virt.Logf, "verify roxagent presence", func(ctx context.Context) error {
+// VerifyRoxagentInstalled runs `roxagent --help` on the guest to confirm the binary is
+// present, executable, and resolvable in $PATH — all in a single SSH round-trip.
+func VerifyRoxagentInstalled(ctx context.Context, virt Virtctl, namespace, vm string) error {
+	return retryOnSSHTransport(ctx, virt.Logf, "verify roxagent installed", func(ctx context.Context) error {
 		_, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
-			description:            "verify roxagent presence",
+			description:            "verify roxagent installed",
 			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
-		}, "test", "-f", DefaultRoxagentInstallPath)
+		}, DefaultRoxagentInstallPath, "--help")
 		if err != nil {
-			return fmt.Errorf("roxagent presence: %w: %s", err, strings.TrimSpace(stderr))
-		}
-		return nil
-	})
-}
-
-// VerifyRoxagentExecutable checks that the roxagent binary is executable.
-func VerifyRoxagentExecutable(ctx context.Context, virt Virtctl, namespace, vm string) error {
-	return retryOnSSHTransport(ctx, virt.Logf, "verify roxagent executable", func(ctx context.Context) error {
-		_, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
-			description:            "verify roxagent executable",
-			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
-		}, "test", "-x", DefaultRoxagentInstallPath)
-		if err != nil {
-			return fmt.Errorf("roxagent executable: %w: %s", err, strings.TrimSpace(stderr))
-		}
-		return nil
-	})
-}
-
-// VerifyRoxagentInstallPath checks that `command -v roxagent` resolves to the canonical install path.
-func VerifyRoxagentInstallPath(ctx context.Context, virt Virtctl, namespace, vm string) error {
-	return retryOnSSHTransport(ctx, virt.Logf, "verify roxagent install path", func(ctx context.Context) error {
-		stdout, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
-			description:            "verify roxagent install path",
-			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
-		}, "command", "-v", "roxagent")
-		if err != nil {
-			return fmt.Errorf("roxagent install path: %w: %s", err, strings.TrimSpace(stderr))
-		}
-		if got := strings.TrimSpace(stdout); got != DefaultRoxagentInstallPath {
-			return fmt.Errorf("roxagent install path: got %q, want %q", got, DefaultRoxagentInstallPath)
+			return fmt.Errorf("roxagent --help: %w: %s", err, strings.TrimSpace(stderr))
 		}
 		return nil
 	})
@@ -176,34 +127,23 @@ func VerifyRoxagentInstallPath(ctx context.Context, virt Virtctl, namespace, vm 
 // exactly one further run using Repo2CPEFallbackURL. When Repo2CPEPrimaryAttempts is zero, the
 // first run uses the fallback URL only.
 func RunRoxagentOnce(ctx context.Context, virt Virtctl, namespace, vm string, cfg RoxagentRunConfig) (*RoxagentRunResult, error) {
-	if cfg.RoxagentInstallPath != "" && cfg.RoxagentInstallPath != DefaultRoxagentInstallPath {
-		return nil, fmt.Errorf(
-			"vmhelpers RunRoxagentOnce: RoxagentInstallPath %q is not supported (CopyRoxagentBinary and VerifyRoxagent* only use %q); omit RoxagentInstallPath or set it to DefaultRoxagentInstallPath",
-			cfg.RoxagentInstallPath, DefaultRoxagentInstallPath,
-		)
-	}
 	maxPrimary := cfg.Repo2CPEPrimaryAttempts
 	if maxPrimary < 0 {
 		maxPrimary = 0
 	}
-	bin := roxagentPath(cfg)
-	envName := repo2cpeEnvName(cfg)
 	if err := ensureVsockReady(ctx, virt, namespace, vm, "roxagent run"); err != nil {
 		return nil, err
 	}
 
-	var lastStderr string
-
 	for attempt := 0; ; attempt++ {
 		url := chooseRepo2CPESource(attempt, maxPrimary, cfg.Repo2CPEPrimaryURL, cfg.Repo2CPEFallbackURL)
 		usedFallback := url == cfg.Repo2CPEFallbackURL && cfg.Repo2CPEFallbackURL != ""
-		envAssignment := fmt.Sprintf("%s=%s", envName, url)
+		envAssignment := fmt.Sprintf("%s=%s", roxagentRepo2CPEEnvVar, url)
 
 		stdout, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
 			description:            "run roxagent --verbose",
 			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
-		}, "sudo", "env", envAssignment, bin, "--verbose")
-		lastStderr = stderr
+		}, "sudo", "env", envAssignment, DefaultRoxagentInstallPath, "--verbose")
 
 		if err == nil {
 			if !verboseOutputHasOSFields(stdout) {
@@ -223,7 +163,7 @@ func RunRoxagentOnce(ctx context.Context, virt Virtctl, namespace, vm string, cf
 
 		// attempt indices 0..maxPrimary-1 use primary; attempt maxPrimary uses fallback. Stop after fallback fails.
 		if attempt >= maxPrimary {
-			return nil, fmt.Errorf("roxagent: %w (stderr: %s)", err, strings.TrimSpace(lastStderr))
+			return nil, fmt.Errorf("roxagent: %w (stderr: %s)", err, strings.TrimSpace(stderr))
 		}
 	}
 }

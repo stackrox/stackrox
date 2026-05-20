@@ -14,47 +14,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func TestHasReportedComponents_TrueForNComponents(t *testing.T) {
-	vm := &v2.VirtualMachine{
-		Scan: &v2.VirtualMachineScan{
-			Components: []*v2.ScanComponent{{Name: "pkg-a"}},
-		},
-	}
-	require.True(t, hasReportedComponents(vm))
-}
-
-func TestHasReportedComponents_FalseWhenNilScan(t *testing.T) {
-	require.False(t, hasReportedComponents(&v2.VirtualMachine{}))
-	require.False(t, hasReportedComponents(nil))
-}
-
-func TestAllComponentsScanned(t *testing.T) {
-	t.Run("true when no UNSCANNED notes", func(t *testing.T) {
-		vm := &v2.VirtualMachine{
-			Scan: &v2.VirtualMachineScan{
-				Components: []*v2.ScanComponent{
-					{Name: "a", Notes: []v2.ScanComponent_Note{v2.ScanComponent_UNSPECIFIED}},
-				},
-			},
-		}
-		require.True(t, allComponentsScanned(vm))
-	})
-	t.Run("false when UNSCANNED present", func(t *testing.T) {
-		vm := &v2.VirtualMachine{
-			Scan: &v2.VirtualMachineScan{
-				Components: []*v2.ScanComponent{
-					{Name: "a", Notes: []v2.ScanComponent_Note{v2.ScanComponent_UNSCANNED}},
-				},
-			},
-		}
-		require.False(t, allComponentsScanned(vm))
-	})
-	t.Run("false when empty components", func(t *testing.T) {
-		vm := &v2.VirtualMachine{Scan: &v2.VirtualMachineScan{}}
-		require.False(t, allComponentsScanned(vm))
-	})
-}
-
 func TestRawListQueryNamespaceAndName(t *testing.T) {
 	q := rawListQueryNamespaceAndName("stackrox", "vm-rhel9")
 	require.Contains(t, q, "Namespace:stackrox")
@@ -191,66 +150,6 @@ func TestCentralWaitStubClients(t *testing.T) {
 				vm, err := WaitForVMScanNonNil(ctx, client, opts, "s1")
 				require.NoError(t, err)
 				require.NotNil(t, vm.GetScan())
-				require.GreaterOrEqual(t, calls, 2)
-			},
-		},
-		{
-			name: "WaitForVMComponentsReported",
-			run: func(t *testing.T) {
-				var calls int
-				client := &stubVirtualMachineClient{
-					getFn: func(_ context.Context, req *v2.GetVirtualMachineRequest) (*v2.VirtualMachine, error) {
-						calls++
-						if calls == 1 {
-							return &v2.VirtualMachine{
-								Id:   req.GetId(),
-								Scan: &v2.VirtualMachineScan{Components: nil},
-							}, nil
-						}
-						return &v2.VirtualMachine{
-							Id: req.GetId(),
-							Scan: &v2.VirtualMachineScan{
-								Components: []*v2.ScanComponent{{Name: "c1"}},
-							},
-						}, nil
-					},
-				}
-				vm, err := WaitForVMComponentsReported(ctx, client, opts, "cvm")
-				require.NoError(t, err)
-				require.Len(t, vm.GetScan().GetComponents(), 1)
-				require.GreaterOrEqual(t, calls, 2)
-			},
-		},
-		{
-			name: "WaitForAllVMComponentsScanned",
-			run: func(t *testing.T) {
-				var calls int
-				client := &stubVirtualMachineClient{
-					getFn: func(_ context.Context, req *v2.GetVirtualMachineRequest) (*v2.VirtualMachine, error) {
-						calls++
-						if calls == 1 {
-							return &v2.VirtualMachine{
-								Id: req.GetId(),
-								Scan: &v2.VirtualMachineScan{
-									Components: []*v2.ScanComponent{
-										{Name: "p", Notes: []v2.ScanComponent_Note{v2.ScanComponent_UNSCANNED}},
-									},
-								},
-							}, nil
-						}
-						return &v2.VirtualMachine{
-							Id: req.GetId(),
-							Scan: &v2.VirtualMachineScan{
-								Components: []*v2.ScanComponent{
-									{Name: "p", Notes: []v2.ScanComponent_Note{v2.ScanComponent_UNSPECIFIED}},
-								},
-							},
-						}, nil
-					},
-				}
-				vm, err := WaitForAllVMComponentsScanned(ctx, client, opts, "all1")
-				require.NoError(t, err)
-				require.True(t, allComponentsScanned(vm))
 				require.GreaterOrEqual(t, calls, 2)
 			},
 		},

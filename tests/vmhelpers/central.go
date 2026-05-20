@@ -118,30 +118,6 @@ func WaitForScanTimestampAfter(ctx context.Context, client v2.VirtualMachineServ
 	})
 }
 
-// WaitForVMComponentsReported polls until at least one scan component exists.
-func WaitForVMComponentsReported(ctx context.Context, client v2.VirtualMachineServiceClient, opts WaitOptions, id string) (*v2.VirtualMachine, error) {
-	return waitForVMCondition(ctx, client, opts, id, fmt.Sprintf("VM components reported (id=%q)", id), func(vm *v2.VirtualMachine) (bool, string) {
-		if hasReportedComponents(vm) {
-			return true, "components present"
-		}
-		n := 0
-		if vm.GetScan() != nil {
-			n = len(vm.GetScan().GetComponents())
-		}
-		return false, fmt.Sprintf("component count=%d", n)
-	})
-}
-
-// WaitForAllVMComponentsScanned polls until every scan component lacks the UNSCANNED note.
-func WaitForAllVMComponentsScanned(ctx context.Context, client v2.VirtualMachineServiceClient, opts WaitOptions, id string) (*v2.VirtualMachine, error) {
-	return waitForVMCondition(ctx, client, opts, id, fmt.Sprintf("all VM components scanned (id=%q)", id), func(vm *v2.VirtualMachine) (bool, string) {
-		if allComponentsScanned(vm) {
-			return true, "all components scanned"
-		}
-		return false, "pending UNSCANNED components or empty component list"
-	})
-}
-
 // WaitForScanReady polls GetVirtualMachine in a single loop until every field
 // requested in conds is populated. Each poll iteration logs which conditions
 // are already met and which are still pending, so partial progress is visible.
@@ -221,29 +197,4 @@ func ListVMByNamespaceName(ctx context.Context, client v2.VirtualMachineServiceC
 			return nil, nil
 		}
 	}
-}
-
-// hasReportedComponents reports whether the VM scan lists at least one component.
-func hasReportedComponents(vm *v2.VirtualMachine) bool {
-	if vm == nil || vm.GetScan() == nil {
-		return false
-	}
-	return len(vm.GetScan().GetComponents()) > 0
-}
-
-// allComponentsScanned reports whether every scan component lacks the UNSCANNED note.
-func allComponentsScanned(vm *v2.VirtualMachine) bool {
-	if vm == nil || vm.GetScan() == nil {
-		return false
-	}
-	comps := vm.GetScan().GetComponents()
-	if len(comps) == 0 {
-		return false
-	}
-	for _, c := range comps {
-		if slices.Contains(c.GetNotes(), v2.ScanComponent_UNSCANNED) {
-			return false
-		}
-	}
-	return true
 }
