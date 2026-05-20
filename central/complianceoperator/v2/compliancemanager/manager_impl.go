@@ -321,9 +321,9 @@ func (m *managerImpl) validateScan(ctx context.Context, scanRequest *storage.Com
 }
 
 func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, cron string, clusters []string, createScanRequest bool, validatedProfiles []*storage.ComplianceOperatorProfileV2) (*storage.ComplianceOperatorScanConfigurationV2, error) {
-	var profiles []string
-	for _, profile := range scanRequest.GetProfiles() {
-		profiles = append(profiles, profile.GetProfileName())
+	profiles := make([]string, 0, len(validatedProfiles))
+	for _, p := range validatedProfiles {
+		profiles = append(profiles, p.GetName())
 	}
 
 	scanRequest.ProfileRefs = internaltov2storage.ProfileV2ToScanConfigRefs(validatedProfiles)
