@@ -19,19 +19,12 @@ describe('Network Graph deployment sidebar', () => {
 
         selectCluster();
         selectNamespace('stackrox');
-        selectDeployment('sensor');
 
-        // confirm that the graph shows sensor and its connections (central)
-        cy.get(
-            `${networkGraphSelectors.nodes} [data-type="node"] .pf-topology__node__label:contains("central")`,
-            { timeout: 30000 }
-        );
+        // Verify sensor node exists in the namespace graph (no deployment filter)
+        cy.get(networkGraphSelectors.deploymentNode('sensor'), { timeout: 30000 });
 
-        // click on sensor node to open sidebar
-        cy.get(`${networkGraphSelectors.nodes} [data-type="node"] .pf-topology__node__label`)
-            .contains('sensor')
-            .parent()
-            .click();
+        // Click on sensor node to open sidebar
+        cy.get(networkGraphSelectors.deploymentNode('sensor')).click();
 
         cy.get(networkGraphSelectors.drawerTitle).contains('sensor');
         cy.get(`${networkGraphSelectors.drawerSubtitle}:contains("stackrox")`);

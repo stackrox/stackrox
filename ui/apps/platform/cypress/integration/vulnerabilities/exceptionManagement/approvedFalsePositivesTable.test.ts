@@ -203,10 +203,15 @@ describe('Exception Management - Approved False Positives Table', () => {
         approveRequest();
         visitApprovedFalsePositivesTab();
 
-        typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'admin');
-        cy.get('table tr:nth(1) td[data-label="Request name"] a').should('exist');
-        cy.get(vulnSelectors.clearFiltersButton).click();
-        typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'BLAH');
-        cy.get('table tr:nth(1) td[data-label="Request name"] a').should('not.exist');
+        cy.get('table tr:nth(1) td[data-label="Requester"]')
+            .invoke('text')
+            .then((requesterName) => {
+                const name = requesterName.trim();
+                typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', name);
+                cy.get('table tr:nth(1) td[data-label="Request name"] a').should('exist');
+                cy.get(vulnSelectors.clearFiltersButton).click();
+                typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'BLAH');
+                cy.get('table tr:nth(1) td[data-label="Request name"] a').should('not.exist');
+            });
     });
 });
