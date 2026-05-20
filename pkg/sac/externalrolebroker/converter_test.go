@@ -60,6 +60,34 @@ func TestConvertClusterRoleToPermissionSet(t *testing.T) {
 				string(resources.K8sRole.GetResource()): storage.Access_READ_WRITE_ACCESS,
 			},
 		},
+		"read-only access to clusterroles": {
+			clusterRoleDef: clusterviewv1alpha1.ClusterRoleDefinition{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{"rbac.authorization.k8s.io"},
+						Resources: []string{"clusterroles"},
+						Verbs:     []string{"get", "list", "watch"},
+					},
+				},
+			},
+			expectedPermissions: map[string]storage.Access{
+				string(resources.K8sRole.GetResource()): storage.Access_READ_ACCESS,
+			},
+		},
+		"read and write access to clusterrolebindings": {
+			clusterRoleDef: clusterviewv1alpha1.ClusterRoleDefinition{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{"rbac.authorization.k8s.io"},
+						Resources: []string{"clusterrolebindings"},
+						Verbs:     []string{"*"},
+					},
+				},
+			},
+			expectedPermissions: map[string]storage.Access{
+				string(resources.K8sRoleBinding.GetResource()): storage.Access_READ_WRITE_ACCESS,
+			},
+		},
 		"multiple resources with different access levels": {
 			clusterRoleDef: clusterviewv1alpha1.ClusterRoleDefinition{
 				Rules: []rbacv1.PolicyRule{
@@ -240,6 +268,82 @@ func TestConvertClusterRoleToPermissionSet(t *testing.T) {
 			},
 			expectedPermissions: map[string]storage.Access{},
 		},
+		"read-only access to alerts": {
+			clusterRoleDef: clusterviewv1alpha1.ClusterRoleDefinition{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{"api.stackrox.io"},
+						Resources: []string{"alerts"},
+						Verbs:     []string{"get", "list", "watch"},
+					},
+				},
+			},
+			expectedPermissions: map[string]storage.Access{
+				string(resources.Alert.GetResource()): storage.Access_READ_ACCESS,
+			},
+		},
+		"read-write access to deployments": {
+			clusterRoleDef: clusterviewv1alpha1.ClusterRoleDefinition{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{"api.stackrox.io"},
+						Resources: []string{"deployments"},
+						Verbs:     []string{"get", "list", "create", "update", "delete"},
+					},
+				},
+			},
+			expectedPermissions: map[string]storage.Access{
+				string(resources.Deployment.GetResource()): storage.Access_READ_WRITE_ACCESS,
+			},
+		},
+		"access to multiple StackRox API resources": {
+			clusterRoleDef: clusterviewv1alpha1.ClusterRoleDefinition{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{"api.stackrox.io"},
+						Resources: []string{"compliances", "detections"},
+						Verbs:     []string{"get", "list"},
+					},
+					{
+						APIGroups: []string{"api.stackrox.io"},
+						Resources: []string{"networkgraphs"},
+						Verbs:     []string{"*"},
+					},
+				},
+			},
+			expectedPermissions: map[string]storage.Access{
+				string(resources.Compliance.GetResource()):   storage.Access_READ_ACCESS,
+				string(resources.Detection.GetResource()):    storage.Access_READ_ACCESS,
+				string(resources.NetworkGraph.GetResource()): storage.Access_READ_WRITE_ACCESS,
+			},
+		},
+		"access to vulnerability management resources": {
+			clusterRoleDef: clusterviewv1alpha1.ClusterRoleDefinition{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{"api.stackrox.io"},
+						Resources: []string{"vulnerabilitymanagementrequests", "vulnerabilitymanagementapprovals"},
+						Verbs:     []string{"get", "list", "create"},
+					},
+				},
+			},
+			expectedPermissions: map[string]storage.Access{
+				string(resources.VulnerabilityManagementRequests.GetResource()):  storage.Access_READ_WRITE_ACCESS,
+				string(resources.VulnerabilityManagementApprovals.GetResource()): storage.Access_READ_WRITE_ACCESS,
+			},
+		},
+		"StackRox API resources with wrong API group are ignored": {
+			clusterRoleDef: clusterviewv1alpha1.ClusterRoleDefinition{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{"apps"},
+						Resources: []string{"alerts", "deployments"},
+						Verbs:     []string{"get"},
+					},
+				},
+			},
+			expectedPermissions: map[string]storage.Access{},
+		},
 	}
 
 	for name, tc := range tests {
@@ -344,11 +448,20 @@ func TestComputeAccessLevel(t *testing.T) {
 
 func TestK8sToACSResourceMapping(t *testing.T) {
 	expectedMappings := map[string]string{
-		"namespaces":      string(resources.Namespace.GetResource()),
-		"roles":           string(resources.K8sRole.GetResource()),
-		"rolebindings":    string(resources.K8sRoleBinding.GetResource()),
-		"secrets":         string(resources.Secret.GetResource()),
-		"serviceaccounts": string(resources.ServiceAccount.GetResource()),
+		"namespaces":                       string(resources.Namespace.GetResource()),
+		"roles":                            "K8sRole",
+		"clusterroles":                     "K8sRole",
+		"rolebindings":                     "K8sRoleBinding",
+		"clusterrolebindings":              "K8sRoleBinding",
+		"secrets":                          string(resources.Secret.GetResource()),
+		"serviceaccounts":                  string(resources.ServiceAccount.GetResource()),
+		"alerts":                           string(resources.Alert.GetResource()),
+		"compliances":                      string(resources.Compliance.GetResource()),
+		"deployments":                      string(resources.Deployment.GetResource()),
+		"detections":                       string(resources.Detection.GetResource()),
+		"networkgraphs":                    string(resources.NetworkGraph.GetResource()),
+		"vulnerabilitymanagementrequests":  string(resources.VulnerabilityManagementRequests.GetResource()),
+		"vulnerabilitymanagementapprovals": string(resources.VulnerabilityManagementApprovals.GetResource()),
 	}
 
 	for k8sResource, expectedACSResource := range expectedMappings {
