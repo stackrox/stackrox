@@ -109,9 +109,9 @@ spec:
         requests:
           memory: 3Gi
 
-  # sbom-syft-generate previously OOMKilled without the memory override on master (3Gi/3Gi).
-  # GOMEMLIMIT keeps it bounded (peak observed: 1047Mi). Default 4Gi/4Gi limit is sufficient.
+  # Default request=4Gi limit=4Gi. 0 OOMKilled in 10,381 runs, peak observed 1068Mi, Apr 15 - May 15, 2026.
   # https://github.com/konflux-ci/build-definitions/tree/main/task/buildah-oci-ta
+  # Previously OOMKilled before master's 3Gi override; GOMEMLIMIT replaces that override.
   - pipelineTaskName: build-images
     podTemplate:
       env:
