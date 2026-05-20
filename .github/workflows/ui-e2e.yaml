@@ -383,6 +383,11 @@ jobs:
         registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
+    - name: Enable FlattenImageData for v2 CVE APIs
+      run: |
+        kubectl -n stackrox set env deploy/central ROX_FLATTEN_IMAGE_DATA=true
+        kubectl -n stackrox rollout status deploy/central --timeout=3m
+
     - name: Seed test data and wait for readiness
       run: |
         set +x
@@ -445,7 +450,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.setup-shards.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.setup-shards.outputs.matrix-all) }}
 
     env:
       ARTIFACT_DIR: ./test-artifacts
@@ -498,11 +503,6 @@ jobs:
       working-directory: ui/apps/platform
       run: |
         echo "${{ matrix.name }}: ${{ matrix.specs }}"
-        # Exclude specs that need scanner v4 image-cve data or have GKE-specific issues
-        EXCLUDE="**/exceptionManagement/**"
-        EXCLUDE="${EXCLUDE},**/workloadCves/deferral*"
-        EXCLUDE="${EXCLUDE},**/vulnmanagement/clusterCves*"
-        EXCLUDE="${EXCLUDE},**/networkGraph/networkDeploymentSidebar*"
         npx cypress run \
           --browser chrome \
           --spec "${{ matrix.specs }}" \
