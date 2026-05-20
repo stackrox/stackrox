@@ -110,7 +110,7 @@ const descriptionForVulnerabilityStateMap: Record<VulnerabilityState, string> = 
         'View workload vulnerabilities identified as false positives and excluded from active prioritization',
 };
 
-const defaultStorage: VulnMgmtLocalStorage = {
+export const defaultStorage: VulnMgmtLocalStorage = {
     preferences: {
         defaultFilters: {
             Severity: ['Critical', 'Important'],

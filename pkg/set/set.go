@@ -212,6 +212,16 @@ func (k Set[KeyType]) Equal(other Set[KeyType]) bool {
 	return true
 }
 
+// IsSubsetOf returns true if every element in k is also in other.
+func (k Set[KeyType]) IsSubsetOf(other Set[KeyType]) bool {
+	for elem := range k {
+		if _, ok := other[elem]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
 // AsSlice returns a slice of the elements in the set. The order is unspecified.
 func (k Set[KeyType]) AsSlice() []KeyType {
 	if len(k) == 0 {

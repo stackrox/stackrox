@@ -57,13 +57,9 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Node`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const url = getConfigMgmtPathForEntitiesAndId('NODE', original.id);
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {original.name}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{original.name}</TableCellLink>;
             },
             accessor: 'name',
             id: nodeSortFields.NODE,
@@ -107,17 +103,13 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'clusterName',
-                  Cell: ({ original, pdf }) => {
+                  Cell: ({ original }) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
                           .push('CLUSTER', clusterId)
                           .url();
-                      return (
-                          <TableCellLink pdf={pdf} url={url}>
-                              {clusterName}
-                          </TableCellLink>
-                      );
+                      return <TableCellLink url={url}>{clusterName}</TableCellLink>;
                   },
                   id: nodeSortFields.CLUSTER,
                   sortField: nodeSortFields.CLUSTER,
@@ -129,24 +121,20 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'nodeComplianceControlCount',
-                  Cell: ({ original, pdf }) => {
+                  Cell: ({ original }) => {
                       const { nodeComplianceControlCount } = original;
                       const { passingCount, failingCount, unknownCount } =
                           nodeComplianceControlCount;
                       const controlCount = passingCount + failingCount + unknownCount;
                       if (!controlCount) {
-                          return <NoEntitiesIconText text="No Controls" isTextOnly={pdf} />;
+                          return <NoEntitiesIconText text="No Controls" />;
                       }
                       const url = URLService.getURL(match, location)
                           .push(original.id)
                           .push('CONTROL')
                           .url();
                       const text = `${controlCount} ${pluralize('Controls', controlCount)}`;
-                      return (
-                          <TableCellLink pdf={pdf} url={url}>
-                              {text}
-                          </TableCellLink>
-                      );
+                      return <TableCellLink url={url}>{text}</TableCellLink>;
                   },
                   sortable: false,
               },

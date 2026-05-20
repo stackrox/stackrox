@@ -40,13 +40,9 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Deployment`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const url = getConfigMgmtPathForEntitiesAndId('DEPLOYMENT', original.id);
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {original.name}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{original.name}</TableCellLink>;
             },
             accessor: 'name',
             id: deploymentSortFields.DEPLOYMENT,
@@ -59,17 +55,13 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'clusterName',
-                  Cell: ({ original, pdf }) => {
+                  Cell: ({ original }) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
                           .push('CLUSTER', clusterId)
                           .url();
-                      return (
-                          <TableCellLink pdf={pdf} url={url}>
-                              {clusterName}
-                          </TableCellLink>
-                      );
+                      return <TableCellLink url={url}>{clusterName}</TableCellLink>;
                   },
                   id: deploymentSortFields.CLUSTER,
                   sortField: deploymentSortFields.CLUSTER,
@@ -81,17 +73,13 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'namespace',
-                  Cell: ({ original, pdf }) => {
+                  Cell: ({ original }) => {
                       const { namespace, namespaceId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
                           .push('NAMESPACE', namespaceId)
                           .url();
-                      return (
-                          <TableCellLink pdf={pdf} url={url}>
-                              {namespace}
-                          </TableCellLink>
-                      );
+                      return <TableCellLink url={url}>{namespace}</TableCellLink>;
                   },
                   id: deploymentSortFields.NAMESPACE,
                   sortField: deploymentSortFields.NAMESPACE,
@@ -100,9 +88,9 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Policy Status`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { policyStatus } = original;
-                return <PolicyStatusIconText isPass={policyStatus === 'pass'} isTextOnly={pdf} />;
+                return <PolicyStatusIconText isPass={policyStatus === 'pass'} />;
             },
             id: 'policyStatus',
             accessor: 'policyStatus',
@@ -112,18 +100,14 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Images`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { imageCount, id } = original;
                 if (imageCount === 0) {
                     return 'No images';
                 }
                 const url = URLService.getURL(match, location).push(id).push('IMAGE').url();
                 const text = `${imageCount} ${pluralize('image', imageCount)}`;
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {text}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{text}</TableCellLink>;
             },
             accessor: 'imageCount',
             sortable: false,
@@ -132,18 +116,14 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Secrets`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { secretCount, id } = original;
                 if (secretCount === 0) {
                     return 'No secrets';
                 }
                 const url = URLService.getURL(match, location).push(id).push('SECRET').url();
                 const text = `${secretCount} ${pluralize('secret', secretCount)}`;
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {text}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{text}</TableCellLink>;
             },
             accessor: 'secretCount',
             sortable: false,
@@ -155,17 +135,13 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'serviceAccount',
-                  Cell: ({ original, pdf }) => {
+                  Cell: ({ original }) => {
                       const { serviceAccount, serviceAccountID, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
                           .push('SERVICE_ACCOUNT', serviceAccountID)
                           .url();
-                      return (
-                          <TableCellLink pdf={pdf} url={url}>
-                              {serviceAccount}
-                          </TableCellLink>
-                      );
+                      return <TableCellLink url={url}>{serviceAccount}</TableCellLink>;
                   },
                   id: deploymentSortFields.SERVICE_ACCOUNT,
                   sortField: deploymentSortFields.SERVICE_ACCOUNT,

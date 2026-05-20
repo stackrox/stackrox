@@ -35,7 +35,11 @@ const (
 type ClustersServiceClient interface {
 	GetClusters(ctx context.Context, in *GetClustersRequest, opts ...grpc.CallOption) (*ClustersList, error)
 	GetCluster(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ClusterResponse, error)
+	// Deprecated: Do not use.
+	// PostCluster is deprecated. Use operator-based installation with CRS instead.
 	PostCluster(ctx context.Context, in *storage.Cluster, opts ...grpc.CallOption) (*ClusterResponse, error)
+	// Deprecated: Do not use.
+	// PutCluster is deprecated. Use operator-based installation with CRS instead.
 	PutCluster(ctx context.Context, in *storage.Cluster, opts ...grpc.CallOption) (*ClusterResponse, error)
 	DeleteCluster(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 	// Deprecated: Do not use.
@@ -72,6 +76,7 @@ func (c *clustersServiceClient) GetCluster(ctx context.Context, in *ResourceByID
 	return out, nil
 }
 
+// Deprecated: Do not use.
 func (c *clustersServiceClient) PostCluster(ctx context.Context, in *storage.Cluster, opts ...grpc.CallOption) (*ClusterResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ClusterResponse)
@@ -82,6 +87,7 @@ func (c *clustersServiceClient) PostCluster(ctx context.Context, in *storage.Clu
 	return out, nil
 }
 
+// Deprecated: Do not use.
 func (c *clustersServiceClient) PutCluster(ctx context.Context, in *storage.Cluster, opts ...grpc.CallOption) (*ClusterResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ClusterResponse)
@@ -129,7 +135,11 @@ func (c *clustersServiceClient) GetClusterDefaultValues(ctx context.Context, in 
 type ClustersServiceServer interface {
 	GetClusters(context.Context, *GetClustersRequest) (*ClustersList, error)
 	GetCluster(context.Context, *ResourceByID) (*ClusterResponse, error)
+	// Deprecated: Do not use.
+	// PostCluster is deprecated. Use operator-based installation with CRS instead.
 	PostCluster(context.Context, *storage.Cluster) (*ClusterResponse, error)
+	// Deprecated: Do not use.
+	// PutCluster is deprecated. Use operator-based installation with CRS instead.
 	PutCluster(context.Context, *storage.Cluster) (*ClusterResponse, error)
 	DeleteCluster(context.Context, *ResourceByID) (*Empty, error)
 	// Deprecated: Do not use.

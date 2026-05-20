@@ -35,13 +35,9 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Service Accounts`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const url = getConfigMgmtPathForEntitiesAndId('SERVICE_ACCOUNT', original.id);
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {original.name}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{original.name}</TableCellLink>;
             },
             accessor: 'name',
             id: serviceAccountSortFields.SERVCE_ACCOUNT,
@@ -65,17 +61,13 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'clusterName',
-                  Cell: ({ original, pdf }) => {
+                  Cell: ({ original }) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
                           .push('CLUSTER', clusterId)
                           .url();
-                      return (
-                          <TableCellLink pdf={pdf} url={url}>
-                              {clusterName}
-                          </TableCellLink>
-                      );
+                      return <TableCellLink url={url}>{clusterName}</TableCellLink>;
                   },
                   id: serviceAccountSortFields.CLUSTER,
                   sortField: serviceAccountSortFields.CLUSTER,
@@ -87,7 +79,7 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                   className: `w-1/10 ${defaultColumnClassName}`,
                   accessor: 'namespace',
-                  Cell: ({ original, pdf }) => {
+                  Cell: ({ original }) => {
                       const {
                           id,
                           saNamespace: { metadata },
@@ -100,11 +92,7 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(id)
                           .push('NAMESPACE', namespaceId)
                           .url();
-                      return (
-                          <TableCellLink pdf={pdf} url={url}>
-                              {name}
-                          </TableCellLink>
-                      );
+                      return <TableCellLink url={url}>{name}</TableCellLink>;
                   },
                   id: serviceAccountSortFields.NAMESPACE,
                   sortField: serviceAccountSortFields.NAMESPACE,
@@ -113,7 +101,7 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Roles`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { id, k8sRoles } = original;
                 const { length } = k8sRoles;
                 if (!length) {
@@ -122,11 +110,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 const url = URLService.getURL(match, location).push(id).push('ROLE').url();
                 if (length > 1) {
                     const text = `${length} ${pluralize('Roles', length)}`;
-                    return (
-                        <TableCellLink pdf={pdf} url={url}>
-                            {text}
-                        </TableCellLink>
-                    );
+                    return <TableCellLink url={url}>{text}</TableCellLink>;
                 }
                 return original.k8sRoles[0].name;
             },
@@ -138,18 +122,14 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Deployments`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { id, deploymentCount } = original;
                 if (!deploymentCount) {
                     return 'No Deployments';
                 }
                 const url = URLService.getURL(match, location).push(id).push('DEPLOYMENT').url();
                 const text = `${deploymentCount} ${pluralize('Deployment', deploymentCount)}`;
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {text}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{text}</TableCellLink>;
             },
             accessor: 'deploymentCount',
             sortable: false,

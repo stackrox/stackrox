@@ -15,7 +15,6 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	"github.com/stackrox/rox/central/metrics"
@@ -634,37 +633,30 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 		log.Info("[Image Pruning] pruning is disabled.")
 		return
 	}
-	qb := search.NewQueryBuilder().AddDays(search.LastUpdatedTime, int64(pruneImageAfterDays)).ProtoQuery()
 	if features.FlattenImageData.Enabled() {
-		imageResults, err := g.imagesV2.GetImageIDsAndDigests(pruningCtx, qb)
+		imageResults, err := postgres.GetInactiveImageIdentifiers(pruningCtx, g.postgres, int(pruneImageAfterDays))
 		if err != nil {
 			log.Error(err)
 			return
 		}
-		log.Infof("[Image pruning] Found %d image search results", len(imageResults))
+		log.Infof("[Image pruning] Found %d inactive images", len(imageResults))
 
 		imagesToPrune := make([]string, 0, len(imageResults))
 		for _, result := range imageResults {
-			q1 := search.NewQueryBuilder().AddExactMatches(search.ImageID, result.ImageID).ProtoQuery()
-			deploymentResults, err := g.deployments.Search(pruningCtx, q1)
-			if err != nil {
-				log.Errorf("[Image pruning] searching deployments: %v", err)
+			// TODO(ROX-34650): This would be simpler if we stored image full name and IdV2 in
+			// pods_live_instances. Then we could just look up pods running the same image IdV2.
+			// But we don't have that right now, so this is a temporary workaround.
+			//
+			// Check if the image is still running in any terminating pods. This can happen if the deployment was updated
+			// to run a different image but the pods running the old image are not yet terminated.
+			// We should keep the image around in this case. There is an issue with this appraoch too.
+			// If there is one stuck image, then all images with the same digest will be kept. But it is still
+			// better than not pruning an image at all when there are pods running an image with the
+			// same digest - even though none are stuck.
+			if g.anyTerminatingPodsWithDigest(result) {
 				continue
 			}
-			if len(deploymentResults) != 0 {
-				continue
-			}
-
-			q2 := search.NewQueryBuilder().AddExactMatches(search.ContainerImageDigest, result.Digest).ProtoQuery()
-			podResults, err := g.pods.Search(pruningCtx, q2)
-			if err != nil {
-				log.Errorf("[Image pruning] searching pods: %v", err)
-				continue
-			}
-			if len(podResults) != 0 {
-				continue
-			}
-			imagesToPrune = append(imagesToPrune, result.ImageID)
+			imagesToPrune = append(imagesToPrune, result.ID)
 		}
 		if len(imagesToPrune) > 0 {
 			log.Infof("[Image Pruning] Removing %d images", len(imagesToPrune))
@@ -674,6 +666,7 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 			}
 		}
 	} else {
+		qb := search.NewQueryBuilder().AddDays(search.LastUpdatedTime, int64(pruneImageAfterDays)).ProtoQuery()
 		imageResults, err := g.images.Search(pruningCtx, qb)
 		if err != nil {
 			log.Error(err)
@@ -712,6 +705,42 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 			}
 		}
 	}
+}
+
+// anyTerminatingPodsWithDigest checks if a pod is still running an image with this digest while its
+// deployment has moved on to a different image. Returns true if a stuck/terminating pod is found,
+// meaning the image should be kept until the pod terminates.
+//
+// TODO(ROX-34650): Rename this to isImageActiveInPods and use IDV2 to look up pods directly.
+func (g *garbageCollectorImpl) anyTerminatingPodsWithDigest(img *postgres.ImageIdentifier) bool {
+	// Step 1: Get deployment IDs from pods running images with this digest.
+	depIDsFromPods, err := g.pods.GetDeploymentIDsByDigest(pruningCtx, img.Digest)
+	if err != nil {
+		log.Errorf("[Image pruning] getting deployment IDs by digest: %v", err)
+		return true
+	}
+	if len(depIDsFromPods) == 0 {
+		return false
+	}
+
+	// Step 2: Get deployment IDs whose container specs reference this digest
+	// but with a different image name. This will give us deploymentIDs running an image with the
+	// same digest but a different name. If there is a stuck pod whose deployment spec is updated with a
+	// different image, then this will not return that deployment ID.
+	depQ := search.NewQueryBuilder().
+		AddExactMatches(search.ImageSHA, img.Digest).
+		AddStrings(search.ImageName, search.NegateQueryString(search.ExactMatchString(img.FullName))).
+		ProtoQuery()
+	depResults, err := g.deployments.Search(pruningCtx, depQ)
+	if err != nil {
+		log.Errorf("[Image pruning] searching deployments by digest: %v", err)
+		return true
+	}
+	depIDsWithDigest := search.ResultsToIDSet(depResults)
+
+	// Step 3: If there is a stuck pod, its deploymentID will not be in depIDsWithDigest.
+	podDepIDSet := set.NewStringSet(depIDsFromPods...)
+	return !podDepIDSet.IsSubsetOf(depIDsWithDigest)
 }
 
 func (g *garbageCollectorImpl) removeOldReportHistory(config *storage.PrivateConfig) {

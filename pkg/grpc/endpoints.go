@@ -202,9 +202,18 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			actualHTTPHandler = downgradingServer.CreateDowngradingHandler(grpcSrv, actualHTTPHandler, downgradingServer.PreferGRPCWeb(true))
 		}
 
+		// When both gRPC and HTTP are served over TLS, the ALPN demux
+		// listener is already accepting connections (and performing TLS
+		// handshakes) on tlsConf. Clone the config for the HTTP server so
+		// that http2.ConfigureServer does not mutate it concurrently.
+		httpTLSConf := tlsConf
+		if c.ServeGRPC && c.ServeHTTP && tlsConf != nil {
+			httpTLSConf = tlsConf.Clone()
+		}
+
 		httpSrv := &http.Server{
 			Handler:   actualHTTPHandler,
-			TLSConfig: tlsConf,
+			TLSConfig: httpTLSConf,
 			ErrorLog:  golog.New(httpErrorLogger{}, "", golog.LstdFlags),
 		}
 		if !c.NoHTTP2 {

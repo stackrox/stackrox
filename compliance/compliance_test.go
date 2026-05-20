@@ -68,10 +68,12 @@ func (s *ComplianceTestSuite) TestHandleComplianceACK() {
 		s.Run(name, func() {
 			mockInventory := &fakeUMH{retryC: make(chan string)}
 			mockIndex := &fakeUMH{retryC: make(chan string)}
+			mockVMIndex := &fakeUMH{retryC: make(chan string)}
 
 			c := &Compliance{
 				umhNodeInventory: mockInventory,
 				umhNodeIndex:     mockIndex,
+				umhVMIndex:       mockVMIndex,
 			}
 
 			c.handleComplianceACK(tc.ack)
@@ -87,10 +89,12 @@ func (s *ComplianceTestSuite) TestHandleComplianceACK() {
 func (s *ComplianceTestSuite) TestHandleComplianceACK_NilACK() {
 	mockInventory := &fakeUMH{retryC: make(chan string)}
 	mockIndex := &fakeUMH{retryC: make(chan string)}
+	mockVMIndex := &fakeUMH{retryC: make(chan string)}
 
 	c := &Compliance{
 		umhNodeInventory: mockInventory,
 		umhNodeIndex:     mockIndex,
+		umhVMIndex:       mockVMIndex,
 	}
 
 	// Should not panic and should not call any handlers
@@ -100,6 +104,8 @@ func (s *ComplianceTestSuite) TestHandleComplianceACK_NilACK() {
 	s.Equal(0, mockInventory.nackCount)
 	s.Equal(0, mockIndex.ackCount)
 	s.Equal(0, mockIndex.nackCount)
+	s.Equal(0, mockVMIndex.ackCount)
+	s.Equal(0, mockVMIndex.nackCount)
 }
 
 func TestCheckNodeRelayEligibility(t *testing.T) {

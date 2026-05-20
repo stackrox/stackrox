@@ -969,14 +969,6 @@ h6 {
     padding-bottom: 1px; /* necessary to fix bug where descenders are cut off */
 }
 
-.pdf-export .line-clamp {
-    display: flex;
-    -webkit-line-clamp: initial;
-    -webkit-box-orient: initial;
-    overflow: initial;
-    padding-bottom: 0; /* necessary to fix bug where descenders are cut off */
-}
-
 .drag-grip {
     width: 18px;
     height: 40px;

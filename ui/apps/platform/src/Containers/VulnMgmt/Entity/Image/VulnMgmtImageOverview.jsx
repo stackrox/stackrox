@@ -137,7 +137,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
-                                className="h-full sm:min-h-64 min-w-48 bg-base-100 pdf-page"
+                                className="h-full sm:min-h-64 min-w-48 bg-base-100"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={imageStats}
                                 title="Details and metadata"
@@ -152,7 +152,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Dockerfile" defaultOpen={false}>
-                    <div className="flex pdf-page pdf-stretch pdf-new rounded relative mb-4 ml-4 mr-4">
+                    <div className="flex rounded relative mb-4 ml-4 mr-4">
                         <TableWidget
                             header={`${layers.length} ${pluralize(
                                 'layer',
@@ -169,7 +169,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection id="image-findings" title="Image Findings" defaultOpen>
-                    <div className="flex pdf-page pdf-stretch pdf-new rounded relative mb-4 ml-4 mr-4 pb-20">
+                    <div className="flex rounded relative mb-4 ml-4 mr-4 pb-20">
                         <Alert
                             variant="warning"
                             isInline

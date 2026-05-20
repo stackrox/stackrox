@@ -271,8 +271,16 @@ func (s *serviceImpl) convertProtoReportConfigurationToV2(config *storage.Report
 	}
 
 	if config.GetVulnReportFilters() != nil {
+		vulnReportFilter := s.convertProtoVulnReportFiltersToV2(config.GetVulnReportFilters())
+
+		if config.GetResourceScope().GetEntityScope() != nil {
+			// fixability field value does not matter for enhanced filters. Hence, set the value to BOTH to disable the field.
+			vulnReportFilter.Fixability = apiV2.VulnerabilityReportFilters_BOTH
+			// severities field not apply when enhanced filters are enabled. Hence, set the value to empty list.
+			vulnReportFilter.Severities = []apiV2.VulnerabilityReportFilters_VulnerabilitySeverity{}
+		}
 		ret.Filter = &apiV2.ReportConfiguration_VulnReportFilters{
-			VulnReportFilters: s.convertProtoVulnReportFiltersToV2(config.GetVulnReportFilters()),
+			VulnReportFilters: vulnReportFilter,
 		}
 	}
 
@@ -295,9 +303,9 @@ func (s *serviceImpl) convertProtoVulnReportFiltersToV2(filters *storage.Vulnera
 
 	ret := &apiV2.VulnerabilityReportFilters{
 		Fixability:             apiV2.VulnerabilityReportFilters_Fixability(filters.GetFixability()),
-		IncludeNvdCvss:         filters.GetIncludeNvdCvss(),
-		IncludeEpssProbability: filters.GetIncludeEpssProbability(),
-		IncludeAdvisory:        filters.GetIncludeAdvisory(),
+		IncludeNvdCvss:         true,
+		IncludeEpssProbability: true,
+		IncludeAdvisory:        true,
 	}
 	if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
 		ret.Query = filters.GetQuery()

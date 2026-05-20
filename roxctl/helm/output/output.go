@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
+	roxctlCommon "github.com/stackrox/rox/roxctl/common"
 	env "github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -28,10 +29,11 @@ func Command(cliEnvironment env.Environment) *cobra.Command {
 	helmOutputCmd := &helmOutputCommand{env: cliEnvironment}
 
 	c := &cobra.Command{
-		Use:       fmt.Sprintf("output <%s>", common.PrettyChartNameList),
-		Short:     "Output a Helm Chart",
-		ValidArgs: []string{common.ChartCentralServices, common.ChartSecuredClusterServices},
-		Args:      cobra.ExactValidArgs(1),
+		Use:        fmt.Sprintf("output <%s>", common.PrettyChartNameList),
+		Short:      "Output a Helm Chart",
+		Deprecated: roxctlCommon.DeprecatedInFavorOfOperator,
+		ValidArgs:  []string{common.ChartCentralServices, common.ChartSecuredClusterServices},
+		Args:       cobra.ExactValidArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			helmOutputCmd.Construct(args[0], cmd)
 
