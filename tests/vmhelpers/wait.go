@@ -61,8 +61,8 @@ func IsAuthenticationExpired(err error) bool {
 	if s, ok := status.FromError(err); ok && s.Code() == codes.Unauthenticated {
 		return true
 	}
-	msg := err.Error()
-	return strings.Contains(msg, "Unauthorized") || strings.Contains(msg, "the server has asked for the client to provide credentials")
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "unauthorized") || strings.Contains(msg, "the server has asked for the client to provide credentials")
 }
 
 // WaitOptions configures a single-condition poll loop used by Central wait helpers.

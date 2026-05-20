@@ -56,8 +56,8 @@ func collectVsockDiagnostics(ctx context.Context, virt Virtctl, namespace, vm st
 	return strings.Join(diag, "; ")
 }
 
-// ensureVsockReady retries the virtio-vsock device check until /dev/vsock exists or SSH transport errors are exhausted.
-func ensureVsockReady(ctx context.Context, virt Virtctl, namespace, vm, stage string) error {
+// EnsureVsockReady retries the virtio-vsock device check until /dev/vsock exists or SSH transport errors are exhausted.
+func EnsureVsockReady(ctx context.Context, virt Virtctl, namespace, vm, stage string) error {
 	return retryOnSSHTransport(ctx, virt.Logf, fmt.Sprintf("vsock precheck before %s", stage), func(ctx context.Context) error {
 		ready, detail, err := checkVsockReadiness(ctx, virt, namespace, vm)
 		if err != nil {

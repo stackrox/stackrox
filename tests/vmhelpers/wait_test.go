@@ -4,10 +4,14 @@ package vmhelpers
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestPollUntil_ImmediateSuccess(t *testing.T) {
@@ -53,4 +57,25 @@ func TestPollUntil_RejectsInvalidOptions(t *testing.T) {
 	err := pollUntil(ctx, WaitOptions{Timeout: -1, PollInterval: 1 * time.Millisecond}, "bad", nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "Timeout must be positive")
+}
+
+func TestIsAuthenticationExpired(t *testing.T) {
+	tests := map[string]struct {
+		err  error
+		want bool
+	}{
+		"nil error":                        {err: nil, want: false},
+		"gRPC Unauthenticated":             {err: status.Error(codes.Unauthenticated, "token expired"), want: true},
+		"Unauthorized substring":           {err: errors.New("request failed: Unauthorized 401"), want: true},
+		"lowercase unauthorized":           {err: errors.New("unauthorized access"), want: true},
+		"server asked for credentials":     {err: errors.New("the server has asked for the client to provide credentials"), want: true},
+		"wrapped ErrAuthenticationExpired": {err: fmt.Errorf("op: %w", ErrAuthenticationExpired), want: true},
+		"unrelated error":                  {err: errors.New("connection refused"), want: false},
+		"gRPC unavailable (not auth)":      {err: status.Error(codes.Unavailable, "service down"), want: false},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			require.Equal(t, tc.want, IsAuthenticationExpired(tc.err))
+		})
+	}
 }

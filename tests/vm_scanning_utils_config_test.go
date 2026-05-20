@@ -57,6 +57,7 @@ func TestLoadVMScanConfig_PartialUsers(t *testing.T) {
 func TestLoadVMScanConfig_InvalidSSHKeyContent(t *testing.T) {
 	t.Setenv("VM_IMAGES", "registry.example.com/rhel9:latest")
 	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
+	t.Setenv("ROXAGENT_BINARY_PATH", "/bin/true")
 
 	tests := map[string]string{
 		"should reject a file path":         "/home/user/.ssh/id_ed25519",
