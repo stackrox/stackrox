@@ -157,6 +157,11 @@ create_cluster() {
     if [[ "${POD_SECURITY_POLICIES}" == "true" ]]; then
         PSP_ARG="--enable-pod-security-policy"
     fi
+    SPOT_ARG=
+    if [[ "${GKE_SPOT:-false}" == "true" ]]; then
+        SPOT_ARG="--spot"
+        echo "Using spot (preemptible) VMs for cost savings"
+    fi
     zones=$(gcloud compute zones list --format="value(name,region.basename(),status)" | awk "/${REGION}\tUP\$/{print \$1}" | shuf)
     success=0
     for zone in $zones; do
@@ -181,6 +186,7 @@ create_cluster() {
             --tags="${tags}" \
             --labels="${labels}" \
             ${PSP_ARG} \
+            ${SPOT_ARG} \
             "${CLUSTER_NAME}" || status="$?"
         if [[ "${status}" == 0 ]]; then
             success=1

@@ -29,6 +29,9 @@ inputs:
   quay-pass:
     description: Quay.io password
     required: true
+  spot:
+    description: Use spot (preemptible) VMs for cost savings
+    default: "false"
 
 outputs:
   cluster-name:
@@ -60,6 +63,7 @@ runs:
         USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
         MACHINE_TYPE: ${{ inputs.machine-type }}
         NUM_NODES: ${{ inputs.num-nodes }}
+        GKE_SPOT: ${{ inputs.spot }}
       run: |
         source scripts/ci/gke.sh
         provision_gke_cluster "${{ inputs.cluster-name }}"
