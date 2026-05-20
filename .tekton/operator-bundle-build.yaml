@@ -94,7 +94,7 @@ spec:
       computeResources:
         limits:
           memory: 3Gi
-    # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
+    # build step is not Go (bash/bsi), so GOMEMLIMIT does not help. p90=2202Mi, needs 3Gi request.
     - name: build
       computeResources:
         limits:
