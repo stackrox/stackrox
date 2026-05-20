@@ -9,10 +9,20 @@ runs:
   using: composite
   steps:
     - name: Cache UI Dependencies
+      if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
       with:
         path: |
           ~/.npm
           ~/.cache/Cypress
         key: npm-v4-${{ hashFiles(inputs.lockFile) }}
-        restore-keys: npm-v4-
+
+    - name: Restore UI Dependencies
+      if: ${{ !(github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) }}
+      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache/restore@v5
+      with:
+        path: |
+          ~/.npm
+          ~/.cache/Cypress
+        key: npm-v3-${{ hashFiles(inputs.lockFile) }}
+        restore-keys: npm-v3-
