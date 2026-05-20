@@ -246,8 +246,10 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 					return errors.Wrapf(errox.InvalidArgs, "%v values must be in 'key=value' format", rule.GetField())
 				}
 				// Check the key for a Kubernetes qualified name.
-				if errs := k8sValidation.IsLabelKey(mapKey); len(errs) > 0 {
-					return errors.Wrapf(errox.InvalidArgs, "invalid %v key %q: %s", rule.GetField(), mapKey, strings.Join(errs, "; "))
+				if rv.GetMatchType() == apiV2.MatchType_EXACT {
+					if errs := k8sValidation.IsLabelKey(mapKey); len(errs) > 0 {
+						return errors.Wrapf(errox.InvalidArgs, "invalid %v key %q: %s", rule.GetField(), mapKey, strings.Join(errs, "; "))
+					}
 				}
 				valOfValue = mapValue
 			}
