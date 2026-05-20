@@ -389,10 +389,8 @@ var (
 
 // IncrementEntityNotFound increments an instance of entity not found
 func IncrementEntityNotFound(kind, orientation string) {
-	entitiesNotFound.With(prometheus.Labels{
-		"kind":        kind,
-		"orientation": orientation,
-	}).Inc()
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	entitiesNotFound.WithLabelValues(kind, orientation).Inc()
 }
 
 // IncrementDetectorCacheHit increments the number of deployments deduped by the detector
@@ -510,10 +508,8 @@ func SetFileActivityBufferSize(size int) {
 
 // IncK8sEventCount increments the number of objects we're receiving from k8s
 func IncK8sEventCount(action string, resource string) {
-	k8sObjectCounts.With(prometheus.Labels{
-		"Action":   action,
-		"Resource": resource,
-	}).Inc()
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	k8sObjectCounts.WithLabelValues(action, resource).Inc()
 }
 
 // SetResourceProcessingDurationForResource sets the duration for how long it takes to process the resource
@@ -541,30 +537,29 @@ func DecOutputChannelSize() {
 	outputChannelSize.Dec()
 }
 
-func getResponsesChannelLabel(op string, msg *central.MsgFromSensor) prometheus.Labels {
-	msgType := "nil"
-	if msg.GetMsg() != nil {
-		msgType = strings.TrimPrefix(reflect.TypeOf(msg.GetMsg()).String(), "*central.MsgFromSensor_")
+func getResponsesChannelMessageType(msg *central.MsgFromSensor) string {
+	if msg.GetMsg() == nil {
+		return "nil"
 	}
-	return prometheus.Labels{
-		"MessageType": msgType,
-		Operation:     op,
-	}
+	return strings.TrimPrefix(reflect.TypeOf(msg.GetMsg()).String(), "*central.MsgFromSensor_")
 }
 
 // ResponsesChannelAdd increases the responsesChannelOperationCount's Add operation by 1
 func ResponsesChannelAdd(msg *central.MsgFromSensor) {
-	responsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Add.String(), msg)).Inc()
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	responsesChannelOperationCount.WithLabelValues(metrics.Add.String(), getResponsesChannelMessageType(msg)).Inc()
 }
 
 // ResponsesChannelRemove increases the responsesChannelOperationCount's Remove operation by 1
 func ResponsesChannelRemove(msg *central.MsgFromSensor) {
-	responsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Remove.String(), msg)).Inc()
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	responsesChannelOperationCount.WithLabelValues(metrics.Remove.String(), getResponsesChannelMessageType(msg)).Inc()
 }
 
 // ResponsesChannelDrop increases the responsesChannelDroppedCount by 1
 func ResponsesChannelDrop(msg *central.MsgFromSensor) {
-	responsesChannelOperationCount.With(getResponsesChannelLabel(metrics.Dropped.String(), msg)).Inc()
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	responsesChannelOperationCount.WithLabelValues(metrics.Dropped.String(), getResponsesChannelMessageType(msg)).Inc()
 }
 
 // SetTelemetryMetrics sets the cluster metrics for the telemetry metrics.
