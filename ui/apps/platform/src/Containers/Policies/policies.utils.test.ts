@@ -844,7 +844,6 @@ describe('policies.utils', () => {
                 eventSource: 'NOT_APPLICABLE',
                 enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
                 excludedImageNames: ['docker.io/library/archlinux:latest'],
-                evaluationFilter: null,
             });
         });
 
@@ -864,7 +863,6 @@ describe('policies.utils', () => {
                 eventSource: 'NOT_APPLICABLE',
                 enforcementActions: ['SCALE_TO_ZERO_ENFORCEMENT'],
                 excludedImageNames: [],
-                evaluationFilter: null,
             });
         });
 
@@ -884,7 +882,6 @@ describe('policies.utils', () => {
                 eventSource: 'NOT_APPLICABLE',
                 enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
                 excludedImageNames: ['docker.io/library/archlinux:latest'],
-                evaluationFilter: null,
             });
         });
     });
