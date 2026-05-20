@@ -83,7 +83,10 @@ spec:
     - name: prefetch-dependencies
       computeResources:
         limits:
+          cpu: 2
           memory: 5Gi
+        requests:
+          cpu: 2
 
   - pipelineTaskName: build-source-image
     # Default request=256Mi limit=2Gi (LimitRange). 139 OOMKilled in 10,381 runs (1.3%), Apr 15 - May 15, 2026.
@@ -106,18 +109,13 @@ spec:
           memory: 3Gi
 
   - pipelineTaskName: build-images
-    # Default request=4Gi limit=4Gi.
+    # Default request=4Gi limit=4Gi. Peak observed: 1047Mi.
     # https://github.com/konflux-ci/build-definitions/tree/main/task/buildah-oci-ta
     # Go GC at default limit (2Gi). Limit is set higher to allow for spikes GC does not catch.
     podTemplate:
       env:
       - name: GOMEMLIMIT
         value: "2GiB"
-    stepSpecs:
-    - name: sbom-syft-generate
-      computeResources:
-        limits:
-          memory: 5Gi
 
   - pipelineTaskName: build-source-image
     # Default request=256Mi limit=2Gi (LimitRange). 139 OOMKilled in 10,381 runs (1.3%), Apr 15 - May 15, 2026.
