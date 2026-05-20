@@ -30,11 +30,6 @@ func isVsockUnavailableOutput(output string) bool {
 		strings.Contains(lower, "no such file or directory")
 }
 
-// IsTerminalVSOCKUnavailableError reports whether err wraps ErrTerminalVSOCKUnavailable.
-func IsTerminalVSOCKUnavailableError(err error) bool {
-	return errors.Is(err, ErrTerminalVSOCKUnavailable)
-}
-
 // verboseOutputHasOSFields reports whether a roxagent --verbose stdout
 // contains at least one recognised OS-detection field.
 func verboseOutputHasOSFields(stdout string) bool {
