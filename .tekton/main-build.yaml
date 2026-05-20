@@ -94,9 +94,9 @@ spec:
   # exits with 137 (OOMKilled):
   # /tekton/scripts/script-2-h7nll: line 7:    33 Killed                  syft dir:$(cat /shared/container_path) --output cyclonedx-json=/var/workdir/sbom-image.json
   - pipelineTaskName: build-images
-    # Default request=4Gi limit=4Gi. 0 OOMKilled in 10,381 runs, peak observed 1068Mi, Apr 15 - May 15, 2026.
+    # Default request=4Gi limit=4Gi. 0 OOMKilled in 10,381 runs, Apr 15 - May 15, 2026.
     # https://github.com/konflux-ci/build-definitions/tree/main/task/buildah-oci-ta
-    # Previously OOMKilled before master's 3Gi override; GOMEMLIMIT replaces that override.
+    # Go GC at 2Gi because peak observed 1068Mi. Limit is set higher to allow for spikes GC does not catch.
     podTemplate:
       env:
       - name: GOMEMLIMIT
@@ -107,7 +107,7 @@ spec:
         limits:
           memory: 3Gi
         requests:
-          memory: 3Gi
+          memory: 2Gi
 
   - pipelineTaskName: build-source-image
     # Default request=256Mi limit=2Gi (LimitRange). 139 OOMKilled in 10,381 runs (1.3%), Apr 15 - May 15, 2026.
