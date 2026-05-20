@@ -91,7 +91,8 @@ func (q *Queue[T]) Pull() T {
 	item := q.queue.Remove(q.queue.Front()).(T)
 
 	if q.counterMetric != nil {
-		q.counterMetric.With(prometheus.Labels{"Operation": metrics.Remove.String()}).Inc()
+		// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+		q.counterMetric.WithLabelValues(metrics.Remove.String()).Inc()
 	}
 
 	if q.queue.Len() == 0 {
@@ -146,7 +147,8 @@ func (q *Queue[T]) pull() (T, bool) {
 	item := q.queue.Remove(q.queue.Front()).(T)
 
 	if q.counterMetric != nil {
-		q.counterMetric.With(prometheus.Labels{"Operation": metrics.Remove.String()}).Inc()
+		// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+		q.counterMetric.WithLabelValues(metrics.Remove.String()).Inc()
 	}
 
 	if q.queue.Len() == 0 {
@@ -173,7 +175,8 @@ func (q *Queue[T]) Push(item T) {
 
 	defer q.notEmptySignal.Signal()
 	if q.counterMetric != nil {
-		q.counterMetric.With(prometheus.Labels{"Operation": metrics.Add.String()}).Inc()
+		// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+		q.counterMetric.WithLabelValues(metrics.Add.String()).Inc()
 	}
 	q.queue.PushBack(item)
 }
