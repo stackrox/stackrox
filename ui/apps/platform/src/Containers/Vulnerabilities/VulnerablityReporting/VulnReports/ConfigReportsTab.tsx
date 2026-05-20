@@ -422,7 +422,9 @@ function ConfigReportsTab() {
                                         runReport(report.id, 'EMAIL');
                                     },
                                     isDisabled:
-                                        isReportStatusPending || report.notifiers.length === 0,
+                                        isReportStatusPending ||
+                                        report.notifiers.length === 0 ||
+                                        isResourceScopeAbsent(reportArg),
                                 },
                                 {
                                     title: 'Generate download',
@@ -430,7 +432,8 @@ function ConfigReportsTab() {
                                         event.preventDefault();
                                         runReport(report.id, 'DOWNLOAD');
                                     },
-                                    isDisabled: isReportStatusPending,
+                                    isDisabled:
+                                        isReportStatusPending || isResourceScopeAbsent(reportArg),
                                 },
                                 {
                                     title: 'Clone report',

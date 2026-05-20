@@ -211,7 +211,8 @@ function ViewVulnReportPage() {
                                     isDisabled={
                                         isReportStatusPending ||
                                         isRunning ||
-                                        reportConfiguration.notifiers.length === 0
+                                        reportConfiguration.notifiers.length === 0 ||
+                                        isResourceScopeAbsent(reportConfiguration)
                                     }
                                     description={
                                         reportConfiguration.notifiers.length === 0
@@ -224,7 +225,11 @@ function ViewVulnReportPage() {
                                 <DropdownItem
                                     key="Generate download"
                                     onClick={() => runReport(reportId, 'DOWNLOAD')}
-                                    isDisabled={isReportStatusPending || isRunning}
+                                    isDisabled={
+                                        isReportStatusPending ||
+                                        isRunning ||
+                                        isResourceScopeAbsent(reportConfiguration)
+                                    }
                                 >
                                     Generate download
                                 </DropdownItem>
