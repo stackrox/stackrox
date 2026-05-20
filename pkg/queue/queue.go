@@ -168,7 +168,6 @@ func (q *Queue[T]) Push(item T) {
 
 	q.notEmptySignal.Signal()
 	if q.counterMetric != nil {
-		// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
 		q.counterMetric.WithLabelValues(metrics.Add.String()).Inc()
 	}
 }
