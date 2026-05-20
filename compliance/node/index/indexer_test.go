@@ -3,7 +3,6 @@ package index
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	"github.com/quay/claircore"
+	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stretchr/testify/suite"
 )
@@ -59,19 +59,27 @@ func (s *nodeIndexerSuite) createTestServer(tlsEnabled bool) *httptest.Server {
 	if !tlsEnabled {
 		server.Start()
 	} else {
-		serverCert, err := tls.LoadX509KeyPair(
-			filepath.Join("testdata", "certs", "server-cert.pem"),
-			filepath.Join("testdata", "certs", "server-key.pem"),
-		)
+		ca, err := certgen.GenerateCA()
 		s.Require().NoError(err)
-		caCert, err := os.ReadFile(filepath.Join("testdata", "certs", "ca-cert.pem"))
+
+		serverCertIssued, err := ca.IssueCertForSubject(mtls.SensorSubject)
 		s.Require().NoError(err)
-		caCertPool := x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(caCert)
+		serverCert, err := tls.X509KeyPair(serverCertIssued.CertPEM, serverCertIssued.KeyPEM)
+		s.Require().NoError(err)
+
+		clientCertIssued, err := ca.IssueCertForSubject(mtls.SensorSubject)
+		s.Require().NoError(err)
+
+		certDir := s.T().TempDir()
+		s.Require().NoError(os.WriteFile(filepath.Join(certDir, "client-cert.pem"), clientCertIssued.CertPEM, 0600))
+		s.Require().NoError(os.WriteFile(filepath.Join(certDir, "client-key.pem"), clientCertIssued.KeyPEM, 0600))
+		s.T().Setenv(mtls.CertFilePathEnvName, filepath.Join(certDir, "client-cert.pem"))
+		s.T().Setenv(mtls.KeyFileEnvName, filepath.Join(certDir, "client-key.pem"))
+
 		server.TLS = &tls.Config{
 			Certificates: []tls.Certificate{serverCert},
 			ClientAuth:   tls.RequireAndVerifyClientCert,
-			ClientCAs:    caCertPool,
+			ClientCAs:    ca.CertPool(),
 		}
 		server.StartTLS()
 	}
@@ -226,8 +234,6 @@ func (s *nodeIndexerSuite) TestBuildMappingURL() {
 }
 
 func (s *nodeIndexerSuite) TestIndexerE2E() {
-	s.T().Setenv(mtls.CertFilePathEnvName, filepath.Join("testdata", "certs", "client-cert.pem"))
-	s.T().Setenv(mtls.KeyFileEnvName, filepath.Join("testdata", "certs", "client-key.pem"))
 	server := s.createTestServer(true)
 	cfg := DefaultNodeIndexerConfig()
 	cfg.HostPath = "testdata"
