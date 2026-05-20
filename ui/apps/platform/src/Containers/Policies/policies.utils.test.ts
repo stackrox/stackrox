@@ -136,6 +136,7 @@ describe('policies.utils', () => {
                 mitreVectorsLocked: false,
                 isDefault: false,
                 source: 'IMPERATIVE',
+                evaluationFilter: null,
             };
 
             const clientPolicy: ClientPolicy = {
@@ -340,6 +341,7 @@ describe('policies.utils', () => {
                     },
                 ],
                 source: 'IMPERATIVE',
+                evaluationFilter: null,
             };
 
             expect(getClientWizardPolicy(serverPolicy)).toEqual(clientPolicy);
@@ -468,6 +470,7 @@ describe('policies.utils', () => {
                 mitreVectorsLocked: false,
                 isDefault: false,
                 source: 'IMPERATIVE',
+                evaluationFilter: null,
             };
 
             const clientPolicy: ClientPolicy = {
@@ -672,6 +675,7 @@ describe('policies.utils', () => {
                     },
                 ],
                 source: 'IMPERATIVE',
+                evaluationFilter: null,
             };
 
             expect(getServerPolicy(clientPolicy)).toEqual(serverPolicy);
@@ -712,6 +716,7 @@ describe('policies.utils', () => {
                 isDefault: false,
                 policyVersion: '1.1',
                 source: 'IMPERATIVE' as const,
+                evaluationFilter: null,
             } satisfies ClientPolicy;
 
             const serverPolicy = getServerPolicy(clientPolicy);
@@ -761,6 +766,7 @@ describe('policies.utils', () => {
                 isDefault: false,
                 policyVersion: '1.1',
                 source: 'IMPERATIVE' as const,
+                evaluationFilter: null,
             } satisfies ClientPolicy;
 
             expect(getServerPolicy(clientPolicy).exclusions?.[0]?.deployment?.scope).toBeNull();
