@@ -13,8 +13,7 @@ on:
     - synchronize
     paths:
     - 'ui/**'
-    - '.github/workflows/unit-tests-ui.yaml'
-    - '.github/actions/cache-ui-dependencies/**'
+    - '.github/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -36,7 +35,6 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache UI dependencies
-      uses: ./.github/actions/cache-ui-dependencies
 
     - name: UI Unit Tests
       run: make ui-test
@@ -73,7 +71,6 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache UI dependencies
-      uses: ./.github/actions/cache-ui-dependencies
 
     - name: UI Component Tests
       run: make ui-component-tests
