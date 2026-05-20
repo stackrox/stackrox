@@ -132,7 +132,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 	// Check if scan configuration already exists by name.
 	scanConfig, err := m.scanSettingDS.GetScanConfigurationByName(ctx, scanRequest.GetScanConfigName())
 	if err != nil {
-		err = errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+		err = errors.Wrapf(err, "Unable to create scan configuration named %q", scanRequest.GetScanConfigName())
 		log.Error(err)
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 	// Verify the scan configuration ID is valid
 	oldScanConfig, found, err := m.scanSettingDS.GetScanConfiguration(ctx, scanRequest.GetId())
 	if err != nil {
-		err = errors.Wrapf(err, "Unable to find scan configuration with ID %q.", scanRequest.GetId())
+		err = errors.Wrapf(err, "Unable to find scan configuration with ID %q", scanRequest.GetId())
 		log.Error(err)
 		return nil, err
 	}
@@ -273,11 +273,11 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 	err := m.scanSettingDS.ScanConfigurationProfileExists(ctx, scanRequest.GetId(), profiles, clusters)
 	if err != nil {
 		log.Error(err)
-		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+		return nil, err
 	}
 
 	if err := m.checkForExternalSSBConflicts(ctx, profiles, clusters); err != nil {
-		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+		return nil, err
 	}
 
 	// Get all profiles from the database to validate that they exist and are compatible
@@ -286,7 +286,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		AddExactMatches(search.ComplianceOperatorProfileName, profiles...).ProtoQuery())
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to retrieve profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
+		return nil, errors.Wrapf(err, "Unable to retrieve profiles for scan configuration named %q", scanRequest.GetScanConfigName())
 	}
 
 	if len(returnedProfiles) != len(profiles) {
@@ -556,7 +556,7 @@ func (m *managerImpl) DeleteScan(ctx context.Context, scanID string) error {
 	// Remove the scan configuration from the database
 	scanConfigName, err := m.scanSettingDS.DeleteScanConfiguration(ctx, scanID)
 	if err != nil {
-		return errors.Wrapf(err, "Unable to delete scan configuration ID %q.", scanID)
+		return errors.Wrapf(err, "Unable to delete scan configuration ID %q", scanID)
 	}
 
 	if scanConfigName == "" {
@@ -616,7 +616,7 @@ func convertSchedule(scanRequest *storage.ComplianceOperatorScanConfigurationV2)
 	if scanRequest.GetSchedule() != nil {
 		cron, err = schedule.ConvertToCronTab(scanRequest.GetSchedule())
 		if err != nil {
-			err = errors.Wrapf(err, "Unable to convert schedule for scan configuration named %q to cron.", scanRequest.GetScanConfigName())
+			err = errors.Wrapf(err, "Unable to convert schedule for scan configuration named %q to cron", scanRequest.GetScanConfigName())
 			log.Error(err)
 			return "", err
 		}
