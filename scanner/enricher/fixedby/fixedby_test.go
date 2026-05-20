@@ -201,7 +201,7 @@ func TestEnrich_AWS(t *testing.T) {
 						},
 					},
 					"2": {
-						FixedInVersion: "3.40.1",
+						FixedInVersion: "3.40.1-1.amzn2023.0.1",
 						Package:        &claircore.Package{},
 						Dist: &claircore.Distribution{
 							DID: "amzn",
@@ -226,7 +226,7 @@ func TestEnrich_AWS(t *testing.T) {
 					"1": {"1", "2", "3", "4"},
 				},
 			},
-			expected: "3.40.1",
+			expected: "3.40.1-1.amzn2023.0.1",
 		},
 	}
 
