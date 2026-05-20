@@ -3,13 +3,13 @@ package queue
 import (
 	"fmt"
 	"runtime"
-	gosync "sync"
 	"sync/atomic"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 )
 
 func newCounterVec(name string) *prometheus.CounterVec {
@@ -249,7 +249,7 @@ func BenchmarkContention_CriticalSectionLength(b *testing.B) {
 		for _, goroutines := range []int{1, 4, 16, 64, 256} {
 			name := fmt.Sprintf("hold=%dns/goroutines=%d", holdNs, goroutines)
 			b.Run(name, func(b *testing.B) {
-				var mu gosync.Mutex
+				var mu pkgsync.Mutex
 				b.SetParallelism(goroutines)
 				b.ResetTimer()
 				b.RunParallel(func(pb *testing.PB) {
