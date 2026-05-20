@@ -753,12 +753,7 @@ func (s *VMScanningSuite) ensureCanonicalScan(ctx context.Context, vm *VMHandle)
 		s.scannerV4Checked = true
 	}
 	virt := s.virtctlForVM(*vm)
-	cfg := vmhelpers.RoxagentRunConfig{
-		Repo2CPEPrimaryURL:      s.cfg.Repo2CPEPrimaryURL,
-		Repo2CPEFallbackURL:     s.cfg.Repo2CPEFallbackURL,
-		Repo2CPEPrimaryAttempts: s.cfg.Repo2CPEPrimaryAttempts,
-	}
-	res, err := vmhelpers.RunRoxagentOnce(ctx, virt, vm.Namespace, vm.Name, cfg)
+	res, err := vmhelpers.RunRoxagentOnce(ctx, virt, vm.Namespace, vm.Name, s.cfg.Repo2CPEURL)
 	if err != nil {
 		return nil, err
 	}

@@ -17,30 +17,14 @@ const (
 // ErrTerminalVSOCKUnavailable is returned when vsock is permanently unavailable on the guest (no retry).
 var ErrTerminalVSOCKUnavailable = errors.New("terminal vsock unavailable")
 
-// RoxagentRunConfig configures a single roxagent invocation (repo2cpe URL selection).
-type RoxagentRunConfig struct {
-	Repo2CPEPrimaryURL      string
-	Repo2CPEFallbackURL     string
-	Repo2CPEPrimaryAttempts int
-}
-
-// RoxagentRunResult captures stdout/stderr and whether the fallback repo2cpe URL was used.
+// RoxagentRunResult captures stdout/stderr from a roxagent invocation.
 type RoxagentRunResult struct {
-	Stdout       string
-	Stderr       string
-	UsedFallback bool
+	Stdout string
+	Stderr string
 }
 
-// roxagentRepo2CPEEnvVar is the environment variable name passed to roxagent on the guest.
-const roxagentRepo2CPEEnvVar = "ROXAGENT_REPO2CPE_URL"
-
-// chooseRepo2CPESource returns primaryURL until attemptsMade reaches maxPrimaryAttempts, then fallbackURL.
-func chooseRepo2CPESource(attemptsMade, maxPrimaryAttempts int, primaryURL, fallbackURL string) string {
-	if attemptsMade < maxPrimaryAttempts {
-		return primaryURL
-	}
-	return fallbackURL
-}
+// roxagentMaxAttempts is the number of times to retry roxagent before giving up.
+const roxagentMaxAttempts = 3
 
 // isVsockUnavailableOutput detects terminal vsock device errors in roxagent combined output.
 func isVsockUnavailableOutput(output string) bool {
@@ -121,24 +105,13 @@ func VerifyRoxagentInstalled(ctx context.Context, virt Virtctl, namespace, vm st
 	})
 }
 
-// RunRoxagentOnce runs roxagent on the guest. It uses Repo2CPEPrimaryURL for each attempt
-// index in [0, Repo2CPEPrimaryAttempts) (i.e. up to Repo2CPEPrimaryAttempts primary runs when that
-// count is positive), stopping as soon as one run succeeds. If all primary runs fail, it performs
-// exactly one further run using Repo2CPEFallbackURL. When Repo2CPEPrimaryAttempts is zero, the
-// first run uses the fallback URL only.
-func RunRoxagentOnce(ctx context.Context, virt Virtctl, namespace, vm string, cfg RoxagentRunConfig) (*RoxagentRunResult, error) {
-	maxPrimary := cfg.Repo2CPEPrimaryAttempts
-	if maxPrimary < 0 {
-		maxPrimary = 0
-	}
-	for attempt := 0; ; attempt++ {
-		if attempt >= maxPrimary && cfg.Repo2CPEFallbackURL == "" {
-			return nil, fmt.Errorf("roxagent: all %d primary attempt(s) failed and no fallback URL configured", maxPrimary)
-		}
-		url := chooseRepo2CPESource(attempt, maxPrimary, cfg.Repo2CPEPrimaryURL, cfg.Repo2CPEFallbackURL)
-		usedFallback := url == cfg.Repo2CPEFallbackURL && cfg.Repo2CPEFallbackURL != ""
-		envAssignment := fmt.Sprintf("%s=%s", roxagentRepo2CPEEnvVar, url)
+// RunRoxagentOnce runs roxagent on the guest with the given repo2cpe URL.
+// It retries up to roxagentMaxAttempts times before giving up.
+func RunRoxagentOnce(ctx context.Context, virt Virtctl, namespace, vm, repo2cpeURL string) (*RoxagentRunResult, error) {
+	envAssignment := fmt.Sprintf("ROXAGENT_REPO2CPE_URL=%s", repo2cpeURL)
 
+	var lastErr error
+	for attempt := range roxagentMaxAttempts {
 		stdout, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
 			description:            "run roxagent --verbose",
 			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
@@ -149,9 +122,8 @@ func RunRoxagentOnce(ctx context.Context, virt Virtctl, namespace, vm string, cf
 				return nil, fmt.Errorf("roxagent: verbose output OS assertion failed: no OS detection fields in output (stdout: %.200s)", strings.TrimSpace(stdout))
 			}
 			return &RoxagentRunResult{
-				Stdout:       stdout,
-				Stderr:       stderr,
-				UsedFallback: usedFallback,
+				Stdout: stdout,
+				Stderr: stderr,
 			}, nil
 		}
 		combined := strings.TrimSpace(stdout + "\n" + stderr)
@@ -159,10 +131,10 @@ func RunRoxagentOnce(ctx context.Context, virt Virtctl, namespace, vm string, cf
 			return nil, fmt.Errorf("%w: roxagent: no retry for vsock device error: %w (stderr: %s)",
 				ErrTerminalVSOCKUnavailable, err, strings.TrimSpace(stderr))
 		}
-
-		// attempt indices 0..maxPrimary-1 use primary; attempt maxPrimary uses fallback. Stop after fallback fails.
-		if attempt >= maxPrimary {
-			return nil, fmt.Errorf("roxagent: %w (stderr: %s)", err, strings.TrimSpace(stderr))
+		lastErr = err
+		if virt.Logf != nil {
+			virt.Logf("roxagent attempt %d/%d failed: %v", attempt+1, roxagentMaxAttempts, err)
 		}
 	}
+	return nil, fmt.Errorf("roxagent: all %d attempts failed: %w", roxagentMaxAttempts, lastErr)
 }

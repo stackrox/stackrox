@@ -29,17 +29,14 @@ const (
 	defaultDeleteTimeout    = 5 * time.Minute
 	defaultGuestUser        = "cloud-user"
 
-	defaultRepo2CPEPrimaryURL  = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
-	defaultRepo2CPEFallbackURL = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
-	defaultRepo2CPEAttempts    = 3
+	defaultRepo2CPEURL = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
 )
 
 var (
 	vmScanNamespacePrefix = env.RegisterSetting("VM_SCAN_NAMESPACE_PREFIX", env.WithDefault("vm-scan-e2e"))
 	vmScanSkipCleanup     = env.RegisterBooleanSetting("VM_SCAN_SKIP_CLEANUP", false)
 
-	repo2CPEPrimaryURL  = env.RegisterSetting("ROXAGENT_REPO2CPE_PRIMARY_URL", env.WithDefault(defaultRepo2CPEPrimaryURL))
-	repo2CPEFallbackURL = env.RegisterSetting("ROXAGENT_REPO2CPE_FALLBACK_URL", env.WithDefault(defaultRepo2CPEFallbackURL))
+	repo2CPEURL = env.RegisterSetting("ROXAGENT_REPO2CPE_URL", env.WithDefault(defaultRepo2CPEURL))
 )
 
 // vmSpec describes a VM to provision: container-disk image and guest SSH user.
@@ -50,21 +47,19 @@ type vmSpec struct {
 }
 
 type vmScanConfig struct {
-	Images                  []string // container-disk images (from VM_IMAGES, comma-separated)
-	GuestUsers              []string // per-image SSH users (from VM_USERS, comma-separated; shorter lists are padded with defaultGuestUser)
-	VirtctlPath             string
-	RoxagentBinaryPath      string
-	Repo2CPEPrimaryURL      string
-	Repo2CPEFallbackURL     string
-	Repo2CPEPrimaryAttempts int
-	SSHPrivateKey           string // PEM-encoded private key content (not a file path)
-	SSHPublicKey            string // OpenSSH authorized_keys line (not a file path)
-	NamespacePrefix         string
-	ScanTimeout             time.Duration
-	ScanPollInterval        time.Duration
-	DeleteTimeout           time.Duration
-	SkipCleanup             bool
-	ImagePullSecretPath     string // Path to docker config JSON for private registries
+	Images              []string // container-disk images (from VM_IMAGES, comma-separated)
+	GuestUsers          []string // per-image SSH users (from VM_USERS, comma-separated; shorter lists are padded with defaultGuestUser)
+	VirtctlPath         string
+	RoxagentBinaryPath  string
+	Repo2CPEURL         string
+	SSHPrivateKey       string // PEM-encoded private key content (not a file path)
+	SSHPublicKey        string // OpenSSH authorized_keys line (not a file path)
+	NamespacePrefix     string
+	ScanTimeout         time.Duration
+	ScanPollInterval    time.Duration
+	DeleteTimeout       time.Duration
+	SkipCleanup         bool
+	ImagePullSecretPath string // Path to docker config JSON for private registries
 }
 
 func loadVMScanConfig() (*vmScanConfig, error) {
@@ -98,9 +93,7 @@ func loadVMScanConfig() (*vmScanConfig, error) {
 		return nil, err
 	}
 
-	cfg.Repo2CPEPrimaryURL = repo2CPEPrimaryURL.Setting()
-	cfg.Repo2CPEFallbackURL = repo2CPEFallbackURL.Setting()
-	cfg.Repo2CPEPrimaryAttempts = defaultRepo2CPEAttempts
+	cfg.Repo2CPEURL = repo2CPEURL.Setting()
 
 	cfg.SSHPrivateKey = os.Getenv("VM_SSH_PRIVATE_KEY")
 	cfg.SSHPublicKey = strings.TrimSpace(os.Getenv("VM_SSH_PUBLIC_KEY"))

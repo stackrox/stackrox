@@ -9,32 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestChooseRepo2CPESource(t *testing.T) {
-	t.Parallel()
-	primary := "https://remote/repo2cpe.json"
-	fallback := "file:///var/lib/rox/repo2cpe.json"
-	cases := map[string]struct {
-		attemptsMade, maxPrimary int
-		want                     string
-	}{
-		"zero attempts uses primary when budget positive":  {0, 5, primary},
-		"mid range still primary":                          {2, 5, primary},
-		"last primary slot before boundary":                {4, 5, primary},
-		"boundary falls back when attemptsMade equals max": {5, 5, fallback},
-		"plan boundary three of three":                     {3, 3, fallback},
-		"zero max immediate fallback on first index":       {0, 0, fallback},
-		"after boundary stays fallback":                    {10, 3, fallback},
-		"single primary slot then fallback":                {1, 1, fallback},
-	}
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			got := chooseRepo2CPESource(tc.attemptsMade, tc.maxPrimary, primary, fallback)
-			require.Equal(t, tc.want, got)
-		})
-	}
-}
-
 func TestVerboseOutputHasOSFields(t *testing.T) {
 	t.Parallel()
 	cases := map[string]struct {

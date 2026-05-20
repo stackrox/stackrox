@@ -27,14 +27,11 @@ func (s *VMScanningSuite) TestScanPipeline() {
 
 			t.Run("RunRoxagent", func(t *testing.T) {
 				t.Logf("running roxagent: sudo env ROXAGENT_REPO2CPE_URL=%s %s --verbose",
-					s.cfg.Repo2CPEPrimaryURL, vmhelpers.DefaultRoxagentInstallPath)
+					s.cfg.Repo2CPEURL, vmhelpers.DefaultRoxagentInstallPath)
 				var err error
 				result, err = s.ensureCanonicalScan(s.ctx, vm)
 				require.NoError(t, err)
 				require.NotNil(t, result)
-				if result.UsedFallback {
-					t.Logf("repo2cpe fallback was used")
-				}
 			})
 			if result == nil {
 				return
