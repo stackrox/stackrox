@@ -101,6 +101,13 @@ spec:
       env:
       - name: GOMEMLIMIT
         value: "2GiB"
+    stepSpecs:
+    - name: sbom-syft-generate
+      computeResources:
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
 
   - pipelineTaskName: build-source-image
     # Default request=256Mi limit=2Gi (LimitRange). 139 OOMKilled in 10,381 runs (1.3%), Apr 15 - May 15, 2026.
