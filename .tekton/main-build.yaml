@@ -72,7 +72,7 @@ spec:
 
   taskRunSpecs:
   - pipelineTaskName: prefetch-dependencies
-    # Default request=3Gi limit=3Gi. 584 OOMKilled in 13,559 runs (4.3%), Apr 15 - May 15, 2026.
+    # Default request=3Gi limit=3Gi. 584 OOMKilled in 13,559 runs (4.3%), p90=2311Mi. Apr 15 - May 15, 2026.
     # https://github.com/konflux-ci/build-definitions/tree/main/task/prefetch-dependencies-oci-ta
     # Go GC at default request (3Gi). Limit 5Gi (+2Gi buffer); observed spikes over 4Gi if not limited cpu.
     podTemplate:
@@ -94,7 +94,7 @@ spec:
   # exits with 137 (OOMKilled):
   # /tekton/scripts/script-2-h7nll: line 7:    33 Killed                  syft dir:$(cat /shared/container_path) --output cyclonedx-json=/var/workdir/sbom-image.json
   - pipelineTaskName: build-images
-    # Default request=4Gi limit=4Gi. 0 OOMKilled in 10,381 runs, Apr 15 - May 15, 2026.
+    # Default request=4Gi limit=4Gi. 0 OOMKilled in 10,381 runs, p90=849Mi. Apr 15 - May 15, 2026.
     # https://github.com/konflux-ci/build-definitions/tree/main/task/buildah-oci-ta
     # Go GC at 2Gi because peak observed 1068Mi. Limit is set higher to allow for spikes GC does not catch.
     podTemplate:
@@ -110,7 +110,7 @@ spec:
           memory: 2Gi
 
   - pipelineTaskName: build-source-image
-    # Default request=256Mi limit=2Gi (LimitRange). 139 OOMKilled in 10,381 runs (1.3%), Apr 15 - May 15, 2026.
+    # Default request=256Mi limit=2Gi (LimitRange). 139 OOMKilled in 10,381 runs (1.3%), p90=765Mi. Apr 15 - May 15, 2026.
     # https://github.com/konflux-ci/build-trusted-artifacts
     # Go GC at default limit (2Gi). Limit is set higher to allow for spikes GC does not catch.
     podTemplate:
@@ -131,7 +131,7 @@ spec:
           memory: 3Gi
 
   - pipelineTaskName: rpms-signature-scan
-    # Default request=256Mi limit=256Mi. 180 OOMKilled in 10,492 runs (1.7%), Apr 15 - May 15, 2026.
+    # Default request=256Mi limit=256Mi. 180 OOMKilled in 10,492 runs (1.7%), p90=215Mi. Apr 15 - May 15, 2026.
     # https://github.com/konflux-ci/tekton-tools/tree/main/tasks/rpms-signature-scan
     stepSpecs:
     - name: rpms-signature-scan
@@ -140,7 +140,7 @@ spec:
           memory: 512Mi
 
   - pipelineTaskName: sast-snyk-check
-    # Default request=4Gi limit=4Gi. 114 OOMKilled in 10,491 runs (1.1%), Apr 15 - May 15, 2026.
+    # Default request=4Gi limit=4Gi. 114 OOMKilled in 10,491 runs (1.1%), p90=68Mi. Apr 15 - May 15, 2026.
     # https://github.com/konflux-ci/konflux-sast-tasks/tree/main/task/sast-snyk-check-oci-ta
     # Go GC at default request (4Gi). Limit is set higher to allow for spikes GC does not catch.
     podTemplate:
@@ -154,7 +154,7 @@ spec:
           memory: 5Gi
 
   - pipelineTaskName: sast-shell-check
-    # Default request=4Gi limit=4Gi. 125 OOMKilled in 10,490 runs (1.2%), Apr 15 - May 15, 2026.
+    # Default request=4Gi limit=4Gi. 125 OOMKilled in 10,490 runs (1.2%), p90=68Mi. Apr 15 - May 15, 2026.
     # https://github.com/konflux-ci/konflux-sast-tasks/tree/main/task/sast-shell-check-oci-ta
     # Go GC at default request (4Gi). Limit is set higher to allow for spikes GC does not catch.
     podTemplate:
@@ -168,7 +168,7 @@ spec:
           memory: 5Gi
 
   - pipelineTaskName: sast-unicode-check
-    # Default request=4Gi limit=4Gi. 105 OOMKilled in 10,489 runs (1.0%), Apr 15 - May 15, 2026.
+    # Default request=4Gi limit=4Gi. 105 OOMKilled in 10,489 runs (1.0%), p90=68Mi. Apr 15 - May 15, 2026.
     # https://github.com/konflux-ci/konflux-sast-tasks/tree/main/task/sast-unicode-check-oci-ta
     # Go GC at default request (4Gi). Limit is set higher to allow for spikes GC does not catch.
     podTemplate:
