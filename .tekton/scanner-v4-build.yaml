@@ -130,6 +130,7 @@ spec:
   - pipelineTaskName: sast-shell-check
     # Default request=4Gi limit=4Gi. 125 OOMKilled in 10,490 runs (1.2%), Apr 15 - May 15, 2026.
     # https://github.com/konflux-ci/konflux-sast-tasks/tree/main/task/sast-shell-check-oci-ta
+    # Go GC at default request (4Gi). Limit is set higher to allow for spikes GC does not catch.
     podTemplate:
       env:
       - name: GOMEMLIMIT
@@ -143,6 +144,7 @@ spec:
   - pipelineTaskName: sast-unicode-check
     # Default request=4Gi limit=4Gi. 105 OOMKilled in 10,489 runs (1.0%), Apr 15 - May 15, 2026.
     # https://github.com/konflux-ci/konflux-sast-tasks/tree/main/task/sast-unicode-check-oci-ta
+    # Go GC at default request (4Gi). Limit is set higher to allow for spikes GC does not catch.
     podTemplate:
       env:
       - name: GOMEMLIMIT
