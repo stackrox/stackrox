@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/utils"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -50,25 +51,29 @@ var (
 	// so we use a fake one for all nodes.
 	layerDigest   = fmt.Sprintf("sha256:%s", strings.Repeat("a", 64))
 	ccLayerDigest = claircore.MustParseDigest(layerDigest)
+)
 
-	defaultClient = &http.Client{
+func newDefaultClient() (*http.Client, error) {
+	var tlsConf *tls.Config
+	if env.NodeIndexMappingURL.Setting() != "" {
+		tlsConf = &tls.Config{}
+	} else {
+		var err error
+		tlsConf, err = clientconn.TLSConfig(mtls.SensorSubject, clientconn.TLSConfigOptions{
+			UseClientCert: clientconn.MustUseClientCert,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "creating TLS config for Sensor connection")
+		}
+	}
+	return &http.Client{
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				// TODO(ROX-34752): InsecureSkipVerify should be replaced with proper server verification.
-				InsecureSkipVerify: true,
-				GetClientCertificate: func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
-					cert, err := mtls.LeafCertificateFromFile()
-					if err != nil {
-						return nil, errors.Wrap(err, "loading client certificate")
-					}
-					return &cert, nil
-				},
-			},
-			Proxy: proxy.FromConfig(),
+			TLSClientConfig: tlsConf,
+			Proxy:           proxy.FromConfig(),
 		},
 		Timeout: 30 * time.Second,
-	}
-)
+	}, nil
+}
 
 // NodeIndexerConfig represents Scanner V4 node indexer configuration parameters.
 type NodeIndexerConfig struct {
@@ -92,9 +97,7 @@ type NodeIndexerConfig struct {
 // DefaultNodeIndexerConfig provides the default configuration for a node indexer.
 func DefaultNodeIndexerConfig() NodeIndexerConfig {
 	return NodeIndexerConfig{
-		HostPath: env.NodeIndexHostPath.Setting(),
-		// The default, mTLS-capable client will be used.
-		Client:             nil,
+		HostPath:           env.NodeIndexHostPath.Setting(),
 		Repo2CPEMappingURL: buildMappingURL(),
 		Timeout:            10 * time.Second,
 		PackageDBFilter:    rhcosPackageDB,
@@ -193,7 +196,11 @@ func layer(ctx context.Context, digest string, hostPath string) (*claircore.Laye
 func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *claircore.Layer) ([]*claircore.Repository, error) {
 	client := cfg.Client
 	if client == nil {
-		client = defaultClient
+		var err error
+		client, err = newDefaultClient()
+		if err != nil {
+			return nil, errors.Wrap(err, "creating repository scanner http client")
+		}
 	}
 
 	scanner := rhel.RepositoryScanner{}

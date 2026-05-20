@@ -71,8 +71,10 @@ func (s *nodeIndexerSuite) createTestServer(tlsEnabled bool) *httptest.Server {
 		s.Require().NoError(err)
 
 		certDir := s.T().TempDir()
+		s.Require().NoError(os.WriteFile(filepath.Join(certDir, "ca.pem"), ca.CertPEM(), 0644))
 		s.Require().NoError(os.WriteFile(filepath.Join(certDir, "client-cert.pem"), clientCertIssued.CertPEM, 0600))
 		s.Require().NoError(os.WriteFile(filepath.Join(certDir, "client-key.pem"), clientCertIssued.KeyPEM, 0600))
+		s.T().Setenv(mtls.CAFileEnvName, filepath.Join(certDir, "ca.pem"))
 		s.T().Setenv(mtls.CertFilePathEnvName, filepath.Join(certDir, "client-cert.pem"))
 		s.T().Setenv(mtls.KeyFileEnvName, filepath.Join(certDir, "client-key.pem"))
 
