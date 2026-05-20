@@ -11,20 +11,14 @@ on:
     - opened
     - reopened
     - synchronize
+    paths-ignore:
+    - 'ui/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  detect-changes:
-    uses: ./.github/workflows/detect-changes.yml
-    with:
-      run_all: |
-        ^Makefile$
-        ^make/
-        ^.github/workflows/unit-tests.yaml$
-        ^.github/actions/job-preamble/
 
   go:
     strategy:
@@ -238,97 +232,6 @@ jobs:
     # Do not create junit report for bench tests:
     # https://github.com/jstemmer/go-junit-report/issues/174
 
-  ui:
-    needs: detect-changes
-    if: >-
-      !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^ui/') ||
-      contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
-    runs-on: ubuntu-latest
-    outputs:
-      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-    steps:
-    - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Cache UI dependencies
-      uses: ./.github/actions/cache-ui-dependencies
-
-    - name: UI Unit Tests
-      run: make ui-test
-
-    - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
-      if: always()
-      with:
-        paths: 'ui/apps/platform/test-results/reports/*.xml'
-
-    - name: Report junit failures in jira
-      if: (!cancelled())
-      id: junit2jira
-      uses: ./.github/actions/junit2jira
-      with:
-        create-jiras: ${{ github.event_name == 'push' }}
-        jira-user: ${{ secrets.JIRA_USER }}
-        jira-token: ${{ secrets.JIRA_TOKEN }}
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        directory: 'ui/apps/platform/test-results/reports'
-
-  ui-component:
-    needs: detect-changes
-    if: >-
-      !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^ui/') ||
-      contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
-    runs-on: ubuntu-latest
-    outputs:
-      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.11@sha256:996ca7bf256805e4003f711a3915d5f7a86d58c9263bfca4402f0a0f3b47c025 # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.11
-    steps:
-    - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Cache UI dependencies
-      uses: ./.github/actions/cache-ui-dependencies
-
-    - name: UI Component Tests
-      run: make ui-component-tests
-
-    - name: Upload Cypress test result artifacts
-      uses: ./.github/actions/upload-artifact-with-retry
-      if: always()
-      with:
-        name: Cypress test results
-        path: ui/apps/platform/cypress/test-results/
-
-    - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
-      if: always()
-      with:
-        paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
-
-    - name: Report junit failures in jira
-      if: (!cancelled())
-      id: junit2jira
-      uses: ./.github/actions/junit2jira
-      with:
-        create-jiras: ${{ github.event_name == 'push' }}
-        jira-user: ${{ secrets.JIRA_USER }}
-        jira-token: ${{ secrets.JIRA_TOKEN }}
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        directory: 'ui/apps/platform/cypress/test-results/reports'
-
   local-roxctl-tests:
     runs-on: ubuntu-latest
     outputs:
@@ -525,8 +428,6 @@ jobs:
       - openshift-ci-unit-tests
       - sensor-integration-tests
       - shell-unit-tests
-      - ui
-      - ui-component
     permissions:
       actions: read
     steps:

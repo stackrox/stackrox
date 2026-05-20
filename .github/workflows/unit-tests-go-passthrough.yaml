@@ -1,0 +1,35 @@
+name: Unit Tests
+# Passthrough jobs that satisfy required status checks when Go tests are
+# skipped on UI-only PRs. Without these, GitHub blocks merge because the
+# paths-filtered Go workflow doesn't run and required checks stay "Pending".
+#
+# Future: replace individual required check names in the GitHub ruleset with
+# a single summary job, then remove this file entirely.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths:
+      - 'ui/**'
+
+jobs:
+  go:
+    name: go (GOTAGS="")
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Skipped — UI-only PR"
+
+  go-postgres:
+    name: go-postgres (GOTAGS="", 15)
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Skipped — UI-only PR"
+
+  go-bench:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Skipped — UI-only PR"
+
+  local-roxctl-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Skipped — UI-only PR"
