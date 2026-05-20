@@ -331,6 +331,23 @@ func TestBuildEntityScopeQuery(t *testing.T) {
 			assertQueries: assertByDirectComparison,
 		},
 		{
+			name: "Namespace label regex match type with regex prefix",
+			scope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_NAMESPACE,
+						Field:  storage.EntityField_FIELD_LABEL,
+						Values: []*storage.RuleValue{
+							{Value: "r/env=pr.*", MatchType: storage.MatchType_REGEX},
+						},
+					},
+				},
+			},
+			// key "env" has regex prefix
+			expected:      search.NewQueryBuilder().AddMapQuery(search.NamespaceLabel, "r/env", "r/pr.*").ProtoQuery(),
+			assertQueries: assertByDirectComparison,
+		},
+		{
 			name: "Namespace label regex match type",
 			scope: &storage.EntityScope{
 				Rules: []*storage.EntityScopeRule{
