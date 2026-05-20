@@ -80,6 +80,7 @@ spec:
       - name: GOMEMLIMIT
         value: "3GiB"
     stepSpecs:
+    # Limit CPU for Go dependencies prefetch, as it tends to be OOM-killed when it gets lots of it without OOTB limit.
     - name: prefetch-dependencies
       computeResources:
         limits:
@@ -126,6 +127,7 @@ spec:
       - name: GOMEMLIMIT
         value: "2GiB"
     stepSpecs:
+    # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
     - name: build
       computeResources:
         limits:

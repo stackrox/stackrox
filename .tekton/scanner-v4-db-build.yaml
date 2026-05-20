@@ -94,6 +94,7 @@ spec:
       computeResources:
         limits:
           memory: 3Gi
+    # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
     - name: build
       computeResources:
         limits:
