@@ -66,8 +66,7 @@ func DeleteOldResults(ctx context.Context, results *ScanWatcherResults, store re
 	if results == nil {
 		return errors.New("unable to delete old CheckResults from an nil ScanWatcherResults")
 	}
-	// If the scan failed we remove old and current results
-	includeCurrentResults := results.Error != nil
+	includeCurrentResults := errors.Is(results.Error, ErrScanRemoved)
 	scan := results.Scan
 	return store.DeleteOldResults(ctx, scan.GetLastStartedTime(), scan.GetScanRefId(), includeCurrentResults)
 }

@@ -491,18 +491,46 @@ func TestDeleteOldResults(t *testing.T) {
 	t.Run("nil results should return an error", func(tt *testing.T) {
 		assert.Error(tt, DeleteOldResults(context.Background(), nil, ds))
 	})
-	t.Run("results with error should also delete current CheckResults", func(tt *testing.T) {
+	t.Run("results with ErrScanRemoved should delete current CheckResults", func(tt *testing.T) {
 		results := &ScanWatcherResults{
 			Scan: &storage.ComplianceOperatorScanV2{
 				ScanRefId:       "ref-id",
 				LastStartedTime: timeNow,
 			},
-			Error: errors.New("some error"),
+			Error: ErrScanRemoved,
 		}
 		ds.EXPECT().DeleteOldResults(gomock.Any(),
 			gomock.Eq(results.Scan.GetLastStartedTime()),
 			gomock.Eq(results.Scan.GetScanRefId()),
 			gomock.Eq(true)).Times(1).Return(nil)
+		assert.NoError(tt, DeleteOldResults(context.Background(), results, ds))
+	})
+	t.Run("results with ErrScanTimeout should not delete current CheckResults", func(tt *testing.T) {
+		results := &ScanWatcherResults{
+			Scan: &storage.ComplianceOperatorScanV2{
+				ScanRefId:       "ref-id",
+				LastStartedTime: timeNow,
+			},
+			Error: ErrScanTimeout,
+		}
+		ds.EXPECT().DeleteOldResults(gomock.Any(),
+			gomock.Eq(results.Scan.GetLastStartedTime()),
+			gomock.Eq(results.Scan.GetScanRefId()),
+			gomock.Eq(false)).Times(1).Return(nil)
+		assert.NoError(tt, DeleteOldResults(context.Background(), results, ds))
+	})
+	t.Run("results with ErrScanContextCancelled should not delete current CheckResults", func(tt *testing.T) {
+		results := &ScanWatcherResults{
+			Scan: &storage.ComplianceOperatorScanV2{
+				ScanRefId:       "ref-id",
+				LastStartedTime: timeNow,
+			},
+			Error: ErrScanContextCancelled,
+		}
+		ds.EXPECT().DeleteOldResults(gomock.Any(),
+			gomock.Eq(results.Scan.GetLastStartedTime()),
+			gomock.Eq(results.Scan.GetScanRefId()),
+			gomock.Eq(false)).Times(1).Return(nil)
 		assert.NoError(tt, DeleteOldResults(context.Background(), results, ds))
 	})
 	t.Run("results with no error should not delete current CheckResults", func(tt *testing.T) {
