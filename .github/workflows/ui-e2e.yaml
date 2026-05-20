@@ -391,16 +391,28 @@ jobs:
         kubectl create namespace qa-test 2>/dev/null || true
         kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null || true
 
-        # Wait for network flow data (collector→sensor communication)
+        # Get cluster ID
+        cluster_id=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+          "https://${API_ENDPOINT}/v1/clusters" | jq -r '.clusters[0].id')
+        echo "Cluster ID: ${cluster_id}"
+
+        # Wait for network flow data (collector→sensor)
         for _ in $(seq 1 60); do
           flows=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-            "https://${API_ENDPOINT}/v1/networkgraph/cluster/$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-              "https://${API_ENDPOINT}/v1/clusters" 2>/dev/null | jq -r '.clusters[0].id // empty' 2>/dev/null)?query=Namespace:stackrox" 2>/dev/null \
-            | jq -r '.nodes | length // 0' 2>/dev/null)
+            "https://${API_ENDPOINT}/v1/networkgraph/cluster/${cluster_id}?query=Namespace:stackrox" \
+            | jq -r '.nodes | length // 0')
           [ "${flows:-0}" -gt 3 ] && echo "Network graph nodes: ${flows}" && break
           sleep 5
         done
-        [ "${flows:-0}" -le 3 ] && echo "::warning::Few network graph nodes after 5 minutes"
+        [ "${flows:-0}" -le 3 ] && echo "::warning::Few network graph nodes (${flows}) after 5 minutes"
+
+        # Wait for deployments to be detected (risk timeline needs deployment events)
+        for _ in $(seq 1 30); do
+          deps=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+            "https://${API_ENDPOINT}/v1/deploymentscount?query=" | jq -r '.count // 0')
+          [ "${deps:-0}" -gt 5 ] && echo "Deployments detected: ${deps}" && break
+          sleep 5
+        done
         set -x
 
     - name: Upload credentials
