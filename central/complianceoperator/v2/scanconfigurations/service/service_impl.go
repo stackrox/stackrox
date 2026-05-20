@@ -144,7 +144,7 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 	// Process scan request, config may be updated in the event of errors from sensor.
 	scanConfig, err := s.manager.ProcessScanRequest(ctx, scanConfig, clusterIDs)
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
 	return convertStorageScanConfigToV2(ctx, scanConfig, s.scanConfigDS)
