@@ -74,7 +74,7 @@ spec:
   - pipelineTaskName: prefetch-dependencies
     # Default request=3Gi limit=3Gi. 584 OOMKilled in 13,559 runs (4.3%). Apr 15 - May 15, 2026.
     # https://github.com/konflux-ci/build-definitions/tree/main/task/prefetch-dependencies-oci-ta
-    # p90=2311Mi, peak=3136Mi. Go GC at default request (3Gi). Limit 5Gi (+2Gi buffer); observed spikes over 4Gi if not limited cpu.
+    # p90=2311Mi, peak=3136Mi (sampled), OOMKilled at 4Gi. Go GC at default request (3Gi). Limit 5Gi (+2Gi buffer).
     podTemplate:
       env:
       - name: GOMEMLIMIT
