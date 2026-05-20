@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
@@ -379,7 +378,7 @@ func ObserveNetworkPolicyStoreState(ns string, num int) {
 // ObserveNetworkPolicyStoreEvent observes the metric.
 func ObserveNetworkPolicyStoreEvent(event, namespace string, numSelectors int) {
 	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
-	networkPoliciesStoreEvents.WithLabelValues(event, namespace, fmt.Sprintf("%d", numSelectors)).Inc()
+	networkPoliciesStoreEvents.WithLabelValues(event, namespace, strconv.Itoa(numSelectors)).Inc()
 }
 
 // ObserveNodeScan observes the metric.

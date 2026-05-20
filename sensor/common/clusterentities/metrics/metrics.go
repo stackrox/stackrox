@@ -53,32 +53,32 @@ var (
 )
 
 const (
-	containerStoreTypeCurrent    = "current"
-	containerStoreTypeHistorical = "historical"
+	storeTypeCurrent    = "current"
+	storeTypeHistorical = "historical"
 )
 
 // UpdateNumberOfContainerIDs updates the metric tracking the number of containers stored in-memory store
 func UpdateNumberOfContainerIDs(current, historical int) {
 	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
-	containersStored.WithLabelValues(containerStoreTypeCurrent).Set(float64(current))
+	containersStored.WithLabelValues(storeTypeCurrent).Set(float64(current))
 	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
-	containersStored.WithLabelValues(containerStoreTypeHistorical).Set(float64(historical))
+	containersStored.WithLabelValues(storeTypeHistorical).Set(float64(historical))
 }
 
 // UpdateNumberOfIPs updates the metric tracking the number of IPs stored in-memory store
 func UpdateNumberOfIPs(current, historical int) {
 	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
-	ipsStored.WithLabelValues(containerStoreTypeCurrent).Set(float64(current))
+	ipsStored.WithLabelValues(storeTypeCurrent).Set(float64(current))
 	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
-	ipsStored.WithLabelValues(containerStoreTypeHistorical).Set(float64(historical))
+	ipsStored.WithLabelValues(storeTypeHistorical).Set(float64(historical))
 }
 
 // UpdateNumberOfEndpoints updates the metric tracking the number of endpoints stored in-memory store
 func UpdateNumberOfEndpoints(current, historical int) {
 	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
-	endpointsStored.WithLabelValues(containerStoreTypeCurrent).Set(float64(current))
+	endpointsStored.WithLabelValues(storeTypeCurrent).Set(float64(current))
 	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
-	endpointsStored.WithLabelValues(containerStoreTypeHistorical).Set(float64(historical))
+	endpointsStored.WithLabelValues(storeTypeHistorical).Set(float64(historical))
 }
 
 // ObserveManyDeploymentsSharingSingleIP records a situation when one IP belongs to more than one container
