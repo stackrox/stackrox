@@ -46,7 +46,7 @@ func (rm *acmBasedMapperImpl) FromUserDescriptor(ctx context.Context, ud *permis
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to instantiate ACM client")
 	}
-	//ctxForACM := request.WithUser(ctx, userForCtx)
+	// ctxForACM := request.WithUser(ctx, userForCtx)
 	//log.Info("Querying ACM for user", userForCtx)
 	roles, err := externalrolebroker.GetResolvedRolesFromACM(ctx, acmClient)
 	if err != nil {
