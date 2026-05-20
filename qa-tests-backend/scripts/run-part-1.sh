@@ -63,11 +63,9 @@ config_part_1() {
 
         merge_yaml "$config_file" <<EOF
 central:
-  namespace: stackrox
   pauseReconciliation: true
   resourceProfile: ci
 securedCluster:
-  namespace: stackrox
   pauseReconciliation: true
   resourceProfile: ci
 EOF
