@@ -1,10 +1,12 @@
 import type { EntityScopeRule } from 'services/ReportsService.types';
 import {
+    collapseMapRuleValues,
     getEntityScopeRulesFromSearchFilterForClusterNamespaceDeployment,
     getSearchFilterFromEntityScopeRules,
     getSearchFilterWithoutEntityScope,
     ruleValueToSearchValue,
     searchFieldLabelMapForClusterNamespaceDeployment,
+    searchValueToMapRuleValues,
     searchValueToRuleValue,
 } from './utils';
 
@@ -310,6 +312,50 @@ describe('EntityScope utils', () => {
         });
     });
 
+    describe('searchValueToMapRuleValues', () => {
+        it('expands equal-less regex to two rule values', () => {
+            expect(searchValueToMapRuleValues('visa')).toEqual([
+                { matchType: 'REGEX', value: 'visa=.*' },
+                { matchType: 'REGEX', value: '.*=visa' },
+            ]);
+        });
+
+        it('does not expand key=value regex', () => {
+            expect(searchValueToMapRuleValues('app=reporting')).toEqual([
+                { matchType: 'REGEX', value: 'app=reporting' },
+            ]);
+        });
+
+        it('does not expand key=value exact', () => {
+            expect(searchValueToMapRuleValues('"app=reporting"')).toEqual([
+                { matchType: 'EXACT', value: 'app=reporting' },
+            ]);
+        });
+    });
+
+    describe('collapseMapRuleValues', () => {
+        it('collapses complementary regex pair to single value', () => {
+            expect(
+                collapseMapRuleValues([
+                    { matchType: 'REGEX', value: 'visa=.*' },
+                    { matchType: 'REGEX', value: '.*=visa' },
+                ])
+            ).toEqual(['visa']);
+        });
+
+        it('passes through key=value without collapsing', () => {
+            expect(collapseMapRuleValues([{ matchType: 'REGEX', value: 'app=reporting' }])).toEqual(
+                ['app=reporting']
+            );
+        });
+
+        it('does not collapse when complement is missing', () => {
+            expect(collapseMapRuleValues([{ matchType: 'REGEX', value: 'visa=.*' }])).toEqual([
+                'visa=.*',
+            ]);
+        });
+    });
+
     describe('searchValueToRuleValue and ruleValueToSearchValue round-trip', () => {
         it('round-trips an EXACT value', () => {
             const original = '"production"';
@@ -337,6 +383,87 @@ describe('EntityScope utils', () => {
             const ruleValue = searchValueToRuleValue(original);
             const result = ruleValueToSearchValue(ruleValue);
             expect(result).toBe(original);
+        });
+    });
+
+    describe('equal-less label round-trip through full conversion', () => {
+        it('round-trips equal-less regex label through SearchFilter → rules → SearchFilter', () => {
+            const original = { 'Deployment Label': ['visa'] };
+            const rules =
+                getEntityScopeRulesFromSearchFilterForClusterNamespaceDeployment(original);
+            const result = getSearchFilterFromEntityScopeRules(
+                rules,
+                searchFieldLabelMapForClusterNamespaceDeployment
+            );
+            expect(result).toEqual(original);
+        });
+
+        it('round-trips mixed equal-less and key=value labels', () => {
+            const original = {
+                'Deployment Label': ['visa', '"app=web"', 'env=prod'],
+                Cluster: ['"production"'],
+            };
+            const rules =
+                getEntityScopeRulesFromSearchFilterForClusterNamespaceDeployment(original);
+            const result = getSearchFilterFromEntityScopeRules(
+                rules,
+                searchFieldLabelMapForClusterNamespaceDeployment
+            );
+            expect(result).toEqual(original);
+        });
+
+        it('does not expand equal-less values for non-map fields', () => {
+            const original = { Cluster: ['production'] };
+            const rules =
+                getEntityScopeRulesFromSearchFilterForClusterNamespaceDeployment(original);
+            expect(rules[0].values).toEqual([{ matchType: 'REGEX', value: 'production' }]);
+        });
+
+        it('round-trips equal-less regex label through rules → SearchFilter → rules', () => {
+            const originalRules: EntityScopeRule[] = [
+                {
+                    entity: 'SCOPE_ENTITY_DEPLOYMENT',
+                    field: 'FIELD_LABEL',
+                    values: [
+                        { matchType: 'REGEX', value: 'visa=.*' },
+                        { matchType: 'REGEX', value: '.*=visa' },
+                    ],
+                },
+            ];
+            const searchFilter = getSearchFilterFromEntityScopeRules(
+                originalRules,
+                searchFieldLabelMapForClusterNamespaceDeployment
+            );
+            const result =
+                getEntityScopeRulesFromSearchFilterForClusterNamespaceDeployment(searchFilter);
+            expect(result).toEqual(originalRules);
+        });
+
+        it('round-trips mixed equal-less and key=value labels through rules → SearchFilter → rules', () => {
+            const originalRules: EntityScopeRule[] = [
+                {
+                    entity: 'SCOPE_ENTITY_DEPLOYMENT',
+                    field: 'FIELD_LABEL',
+                    values: [
+                        { matchType: 'REGEX', value: 'visa=.*' },
+                        { matchType: 'REGEX', value: '.*=visa' },
+                        { matchType: 'EXACT', value: 'app=web' },
+                        { matchType: 'REGEX', value: 'env=prod' },
+                    ],
+                },
+                {
+                    entity: 'SCOPE_ENTITY_CLUSTER',
+                    field: 'FIELD_NAME',
+                    values: [{ matchType: 'EXACT', value: 'production' }],
+                },
+            ];
+            const searchFilter = getSearchFilterFromEntityScopeRules(
+                originalRules,
+                searchFieldLabelMapForClusterNamespaceDeployment
+            );
+            const result =
+                getEntityScopeRulesFromSearchFilterForClusterNamespaceDeployment(searchFilter);
+            expect(result).toEqual(originalRules);
         });
     });
 });
