@@ -3,6 +3,7 @@ package queue
 import (
 	"fmt"
 	"runtime"
+	gosync "sync"
 	"sync/atomic"
 	"testing"
 
@@ -129,10 +130,6 @@ func BenchmarkPushPull_Concurrent(b *testing.B) {
 					)
 				}
 				q := NewQueue[int](opts...)
-				opsPerProducer := b.N / numProducers
-				if opsPerProducer == 0 {
-					opsPerProducer = 1
-				}
 
 				b.ResetTimer()
 
@@ -219,5 +216,50 @@ func BenchmarkRateLimitedLogger(b *testing.B) {
 		logging.GetRateLimitedLogger().WarnL(loggingRateLimiter,
 			"Queue (%s) size limit reached (%d). New items added to the queue will be dropped.",
 			"BenchQueue", 40960)
+	}
+}
+
+// busyWork burns CPU for approximately the given duration using a calibrated
+// spin loop. We avoid time.Sleep because its minimum granularity (~1ms) is
+// far too coarse for nanosecond-scale experiments.
+//
+//go:noinline
+func busyWork(approxNs int) {
+	// Each iteration of this loop takes ~1ns on modern hardware.
+	for range approxNs {
+		runtime.KeepAlive(approxNs)
+	}
+}
+
+// BenchmarkContention_CriticalSectionLength demonstrates the relationship
+// between critical section duration, goroutine count, and throughput.
+//
+// This is the key experiment: it proves that the same amount of work becomes
+// dramatically more expensive when done inside a contended lock. With 1
+// goroutine, doubling the critical section roughly doubles the time. With 64+
+// goroutines, doubling the critical section causes far worse degradation
+// because every goroutine must wait for every other goroutine's critical
+// section to complete.
+//
+// The hold_ns values are chosen to match the real queue scenario:
+//   - 60ns  ≈ pushLocked (PR branch: just length check + PushBack)
+//   - 1000ns ≈ Push on master (length check + logger + metrics + signal + PushBack)
+func BenchmarkContention_CriticalSectionLength(b *testing.B) {
+	for _, holdNs := range []int{60, 200, 500, 1000} {
+		for _, goroutines := range []int{1, 4, 16, 64, 256} {
+			name := fmt.Sprintf("hold=%dns/goroutines=%d", holdNs, goroutines)
+			b.Run(name, func(b *testing.B) {
+				var mu gosync.Mutex
+				b.SetParallelism(goroutines)
+				b.ResetTimer()
+				b.RunParallel(func(pb *testing.PB) {
+					for pb.Next() {
+						mu.Lock()
+						busyWork(holdNs)
+						mu.Unlock()
+					}
+				})
+			})
+		}
 	}
 }
