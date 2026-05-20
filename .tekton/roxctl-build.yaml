@@ -72,13 +72,17 @@ spec:
   taskRunSpecs:
   # The following are overrides to default step resources to prevent occasional or deterministic OOM kills.
   - pipelineTaskName: prefetch-dependencies
+    podTemplate: &go-memlimit
+      env:
+      - name: GOMEMLIMIT
+        value: 2500MiB
     stepSpecs:
     - name: prefetch-dependencies
       computeResources:
         limits:
-          memory: 6Gi
+          memory: 5Gi
         requests:
-          memory: 6Gi
+          memory: 5Gi
     - name: create-trusted-artifact
       computeResources: &ta-resources
         limits:
@@ -88,10 +92,12 @@ spec:
           cpu: 1
           memory: 5Gi
   - pipelineTaskName: build-images
+    podTemplate: *go-memlimit
     stepSpecs:
     - name: use-trusted-artifact
       computeResources: *ta-resources
   - pipelineTaskName: build-source-image
+    podTemplate: *go-memlimit
     stepSpecs:
     - name: use-trusted-artifact
       computeResources: *ta-resources
@@ -102,14 +108,17 @@ spec:
         requests:
           memory: 3Gi
   - pipelineTaskName: sast-shell-check
+    podTemplate: *go-memlimit
     stepSpecs:
     - name: use-trusted-artifact
       computeResources: *ta-resources
   - pipelineTaskName: sast-unicode-check
+    podTemplate: *go-memlimit
     stepSpecs:
     - name: use-trusted-artifact
       computeResources: *ta-resources
   - pipelineTaskName: sast-snyk-check
+    podTemplate: *go-memlimit
     stepSpecs:
     - name: use-trusted-artifact
       computeResources: *ta-resources
