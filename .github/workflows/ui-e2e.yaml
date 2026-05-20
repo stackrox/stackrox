@@ -425,57 +425,10 @@ jobs:
         registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
-    - name: Seed test data and wait for readiness
+    - name: Seed test workloads
       run: |
-        set +x
-        ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
-
         kubectl create namespace qa-test 2>/dev/null || true
         kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null || true
-
-        # Get cluster ID
-        cluster_id=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-          "https://${API_ENDPOINT}/v1/clusters" | jq -r '.clusters[0].id')
-        echo "Cluster ID: ${cluster_id}"
-
-        # Wait for network flow data (collector→sensor)
-        for _ in $(seq 1 60); do
-          flows=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-            "https://${API_ENDPOINT}/v1/networkgraph/cluster/${cluster_id}?query=Namespace:stackrox" \
-            | jq -r '.nodes | length // 0')
-          [ "${flows:-0}" -gt 3 ] && echo "Network graph nodes: ${flows}" && break
-          sleep 5
-        done
-        [ "${flows:-0}" -le 3 ] && echo "::warning::Few network graph nodes (${flows}) after 5 minutes"
-
-        # Wait for network flow edges (collector→sensor communication)
-        for _ in $(seq 1 60); do
-          edges=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-            "https://${API_ENDPOINT}/v1/networkgraph/cluster/${cluster_id}?query=Namespace:stackrox" \
-            | jq -r '[.nodes[]? | .outEdges // {} | keys[]] | length // 0')
-          [ "${edges:-0}" -gt 3 ] && echo "Network flow edges: ${edges}" && break
-          sleep 5
-        done
-        [ "${edges:-0}" -le 3 ] && echo "::warning::Few network flow edges (${edges}) after 5 minutes"
-
-        # Wait for deployments to be detected (risk timeline needs deployment events)
-        for _ in $(seq 1 30); do
-          deps=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-            "https://${API_ENDPOINT}/v1/deploymentscount?query=" | jq -r '.count // 0')
-          [ "${deps:-0}" -gt 5 ] && echo "Deployments detected: ${deps}" && break
-          sleep 5
-        done
-
-        # Wait for image CVEs (FlattenImageData is enabled by default)
-        for _ in $(seq 1 60); do
-          cves=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-            "https://${API_ENDPOINT}/v2/image-cves?pagination.limit=1" \
-            | jq -r '.imageCVEs | length // 0')
-          [ "${cves:-0}" -gt 0 ] && echo "Image CVEs (v2): ${cves}" && break
-          sleep 5
-        done
-        [ "${cves:-0}" -eq 0 ] && echo "::warning::No v2 image CVEs found after 5 minutes"
-        set -x
 
     - name: Upload credentials
       uses: actions/upload-artifact@v4
@@ -557,6 +510,59 @@ jobs:
       with:
         path: ~/.cache/Cypress
         key: cypress-${{ hashFiles('ui/apps/platform/package-lock.json') }}
+
+    - name: Wait for shard-specific data
+      run: |
+        set +x
+        ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+        SHARD="${{ matrix.name }}"
+
+        case "$SHARD" in
+          *networkGraph*)
+            echo "Waiting for network flow edges..."
+            cluster_id=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+              "https://${API_ENDPOINT}/v1/clusters" | jq -r '.clusters[0].id')
+            for _ in $(seq 1 60); do
+              edges=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/networkgraph/cluster/${cluster_id}?query=Namespace:stackrox" \
+                | jq -r '[.nodes[]? | .outEdges // {} | keys[]] | length // 0')
+              [ "${edges:-0}" -gt 3 ] && echo "Network flow edges: ${edges}" && break
+              sleep 5
+            done
+            ;;
+          *vulnerabilities*)
+            echo "Waiting for image CVEs (v2 API)..."
+            for _ in $(seq 1 60); do
+              cves=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v2/image-cves?pagination.limit=1" \
+                | jq -r '.imageCVEs | length // 0')
+              [ "${cves:-0}" -gt 0 ] && echo "Image CVEs: ${cves}" && break
+              sleep 5
+            done
+            ;;
+          *vulnmanagement*)
+            echo "Waiting for platform CVE data..."
+            for _ in $(seq 1 60); do
+              deps=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/deploymentscount?query=" | jq -r '.count // 0')
+              [ "${deps:-0}" -gt 5 ] && echo "Deployments: ${deps}" && break
+              sleep 5
+            done
+            ;;
+          *policies*|*risk*)
+            echo "Waiting for deployment events..."
+            for _ in $(seq 1 30); do
+              deps=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/deploymentscount?query=" | jq -r '.count // 0')
+              [ "${deps:-0}" -gt 5 ] && echo "Deployments: ${deps}" && break
+              sleep 5
+            done
+            ;;
+          *)
+            echo "No extra data wait needed for $SHARD"
+            ;;
+        esac
+        set -x
 
     - name: Run Cypress
       working-directory: ui/apps/platform
