@@ -109,10 +109,10 @@ spec:
         requests:
           memory: 3Gi
 
+  # sbom-syft-generate previously OOMKilled without the memory override on master (3Gi/3Gi).
+  # GOMEMLIMIT keeps it bounded (peak observed: 1047Mi). Default 4Gi/4Gi limit is sufficient.
+  # https://github.com/konflux-ci/build-definitions/tree/main/task/buildah-oci-ta
   - pipelineTaskName: build-images
-    # Default request=4Gi limit=4Gi. Peak observed: 1047Mi.
-    # https://github.com/konflux-ci/build-definitions/tree/main/task/buildah-oci-ta
-    # Go GC at default limit (2Gi). Limit is set higher to allow for spikes GC does not catch.
     podTemplate:
       env:
       - name: GOMEMLIMIT
