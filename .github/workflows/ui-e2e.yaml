@@ -18,6 +18,14 @@ on:
         description: "Image tag to test (e.g., 4.11.x-831-g8f262d83ee)"
         required: true
         type: string
+      gke-cluster-name:
+        description: "Pre-provisioned GKE cluster name (skips provision if set)"
+        required: false
+        type: string
+      gke-zone:
+        description: "GKE zone of pre-provisioned cluster"
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       tag:
@@ -344,15 +352,15 @@ jobs:
           kill "$MONITOR_PID" 2>/dev/null || true
           kind delete cluster --name "$CLUSTER_NAME" 2>/dev/null || true
 
-  # ── GKE mode: shared cluster, scanner v4, all specs ──────────────────
+  # ── GKE mode: shared cluster, scanner v2, all specs ──────────────────
   provision-gke:
     name: Provision GKE
     if: contains(github.event.pull_request.labels.*.name, 'ui-e2e-gke')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
-      cluster-name: ${{ steps.cluster.outputs.cluster-name }}
-      gke-zone: ${{ steps.cluster.outputs.zone }}
+      cluster-name: ${{ inputs.gke-cluster-name || steps.cluster.outputs.cluster-name }}
+      gke-zone: ${{ inputs.gke-zone || steps.cluster.outputs.zone }}
     env:
       CLUSTER_NAME: ui-e2e-gke-${{ github.run_id }}
 
@@ -362,7 +370,28 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         fetch-depth: 1
 
+    - name: Connect to pre-provisioned cluster
+      if: inputs.gke-cluster-name
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Setup gcloud (pre-provisioned)
+      if: inputs.gke-cluster-name
+      uses: google-github-actions/setup-gcloud@v3
+      with:
+        install_components: "gke-gcloud-auth-plugin"
+
+    - name: Get kubeconfig (pre-provisioned)
+      if: inputs.gke-cluster-name
+      run: |
+        gcloud container clusters get-credentials \
+          "${{ inputs.gke-cluster-name }}" \
+          --zone "${{ inputs.gke-zone }}" \
+          --project acs-san-stackroxci
+
     - name: Create GKE cluster
+      if: "!inputs.gke-cluster-name"
       id: cluster
       uses: ./.github/actions/create-gke-cluster
       with:
@@ -534,7 +563,7 @@ jobs:
 
   cleanup-gke:
     name: Cleanup GKE
-    if: always() && needs.provision-gke.result != 'skipped'
+    if: always() && needs.provision-gke.result != 'skipped' && !inputs.gke-cluster-name
     needs: [provision-gke, gke-e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 10

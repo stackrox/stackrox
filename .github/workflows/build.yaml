@@ -830,17 +830,67 @@ jobs:
     - name: Export cluster name
       run: echo "cluster-name=e2e-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
 
+  # Start GKE cluster in parallel with build — ready before images are pushed.
+  # Spot VMs for cost savings. Only when ui-e2e-gke label is present.
+  create-ui-e2e-gke-cluster:
+    if: contains(github.event.pull_request.labels.*.name, 'ui-e2e-gke')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      cluster-name: ${{ steps.create.outputs.cluster-name }}
+      zone: ${{ steps.create.outputs.zone }}
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 1
+    - name: Create GKE cluster (spot)
+      id: create
+      uses: ./.github/actions/create-gke-cluster
+      with:
+        cluster-name: ui-e2e-${{ github.run_id }}
+        tag: placeholder
+        spot: "true"
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
   ui-e2e:
     needs:
     - define-job-matrix
     - push-main-manifests
+    - create-ui-e2e-gke-cluster
     if: >-
       !cancelled() && needs.push-main-manifests.result == 'success' &&
-      contains(github.event.pull_request.labels.*.name, 'ui-e2e')
+      contains(github.event.pull_request.labels.*.name, 'ui-e2e') &&
+      (needs.create-ui-e2e-gke-cluster.result == 'success' || needs.create-ui-e2e-gke-cluster.result == 'skipped')
     uses: ./.github/workflows/ui-e2e.yaml
     with:
       tag: ${{ needs.define-job-matrix.outputs.build-tag }}
+      gke-cluster-name: ${{ needs.create-ui-e2e-gke-cluster.outputs.cluster-name || '' }}
+      gke-zone: ${{ needs.create-ui-e2e-gke-cluster.outputs.zone || '' }}
     secrets: inherit
+
+  # Cleanup the pre-provisioned GKE cluster after UI E2E tests complete
+  cleanup-ui-e2e-gke:
+    if: always() && needs.create-ui-e2e-gke-cluster.result == 'success'
+    needs: [create-ui-e2e-gke-cluster, ui-e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+    - uses: google-github-actions/setup-gcloud@v3
+      with:
+        install_components: "gke-gcloud-auth-plugin"
+    - name: Delete GKE cluster
+      run: |
+        gcloud container clusters delete \
+          "${{ needs.create-ui-e2e-gke-cluster.outputs.cluster-name }}" \
+          --zone "${{ needs.create-ui-e2e-gke-cluster.outputs.zone }}" \
+          --project acs-san-stackroxci \
+          --async --quiet || true
 
   build-and-push-operator:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
