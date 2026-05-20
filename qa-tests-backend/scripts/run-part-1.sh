@@ -85,6 +85,10 @@ EOF
         fi
         deploy_stackrox_with_roxie_compat "$config_file"
         setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+        # Note: The traditional deployment path still references PodSecurityPolicies,
+        # even though they are not actually used anymore.
+        # The new roxie-based deployment path is cleaned up in this regard and doesn't
+        # bother with PSPs anymore at all.
     else
         info "Using traditional config_part_1 for qa-tests-backend"
         setup_podsecuritypolicies_config
