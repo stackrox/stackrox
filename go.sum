@@ -927,8 +927,6 @@ github.com/hashicorp/serf v0.9.5/go.mod h1:UWDWwZeL5cuWDJdl0C6wrvrUwEqtQ4ZKBKKEN
 github.com/hashicorp/serf v0.9.6/go.mod h1:TXZNMjZQijwlDvp+r0b63xZ45H7JmCmgg4gpTwn9UV4=
 github.com/hashicorp/vault/api v1.22.0 h1:+HYFquE35/B74fHoIeXlZIP2YADVboaPjaSicHEZiH0=
 github.com/hashicorp/vault/api v1.22.0/go.mod h1:IUZA2cDvr4Ok3+NtK2Oq/r+lJeXkeCrHRmqdyWfpmGM=
-github.com/hdonnay/claircore v0.0.13-0.20260518201209-a9bf6603446f h1:zkOHxVWulKZdKehVAqg7BCvBeYRxtGpT9JBFEylNX0o=
-github.com/hdonnay/claircore v0.0.13-0.20260518201209-a9bf6603446f/go.mod h1:ssze43TK6zt8UgLQh3+VIWGDKYMH8YKZd+OLWjEXGU8=
 github.com/heimdalr/dag v1.5.1 h1:Oug6YdjFpQN1Itrc/deoIDqtWUk4FO96ulod23/TOr8=
 github.com/heimdalr/dag v1.5.1/go.mod h1:lthekrHl01dddmzqyBQ1YZbi7XcVGGzjFo0jIky5knc=
 github.com/helm/helm-mapkubeapis v0.6.1 h1:GDEEe8ol1MiSs4a9TD8LzBb+ftkC+V7M67gkxx7UmAE=
@@ -994,6 +992,8 @@ github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
 github.com/jtolds/gls v4.20.0+incompatible/go.mod h1:QJZ7F/aHp+rZTRtaJ1ow/lLfFfVYBRgL+9YlvaHOwJU=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
+github.com/jvdm/hdonnay-claircore v0.0.0-20260520091144-e2f5f8836835 h1:eBNGVGPU4pT8OQqUxs99SDowdKCutFgES03PPlKz+oQ=
+github.com/jvdm/hdonnay-claircore v0.0.0-20260520091144-e2f5f8836835/go.mod h1:lLkLrq+vlFUPo4w/oYsztpemd1o8Z43ecQaECAA8MQ8=
 github.com/kevinburke/ssh_config v1.2.0 h1:x584FjTGwHzMwvHx18PXxbBVzfnxogHaAReU4gf13a4=
 github.com/kevinburke/ssh_config v1.2.0/go.mod h1:CT57kijsi8u/K/BOFA39wgDQJ9CxiF4nAY/ojJ6r6mM=
 github.com/keybase/go-keychain v0.0.1 h1:way+bWYa6lDppZoZcgMbYsvC7GxljxrskdNInRtuthU=

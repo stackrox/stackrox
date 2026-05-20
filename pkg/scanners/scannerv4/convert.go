@@ -39,10 +39,6 @@ func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, 
 	return scan
 }
 
-func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) []*storage.EmbeddedImageScanComponent {
-	return componentsWithLayerMap(metadata, report, clair.BuildSHAToIndexMap(metadata))
-}
-
 func componentsWithLayerMap(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, layerSHAToIndex map[string]int32) []*storage.EmbeddedImageScanComponent {
 	pkgs := report.GetContents().GetPackages()
 	if len(pkgs) == 0 {
@@ -455,6 +451,18 @@ func distributions(report *v4.VulnerabilityReport) map[string]*v4.Distribution {
 	return dists
 }
 
+func aliasKey(alias *v4.VulnerabilityReport_Alias) string {
+	return alias.GetSpace() + ":" + alias.GetName()
+}
+
+func getPackageLayerSHA(report *v4.VulnerabilityReport, pkgID string) (string, bool) {
+	envList := report.GetContents().GetEnvironments()[pkgID]
+	if envList == nil || len(envList.GetEnvironments()) == 0 {
+		return "", false
+	}
+	return envList.GetEnvironments()[0].GetIntroducedIn(), true
+}
+
 // filterNotAffectedVulnerabilities removes vulnerabilities from PackageVulnerabilities
 // when they are covered by VEX not-affected assertions via AncestryPackage entries.
 // A package is covered if it was introduced at or below the AncestryPackage's layer
@@ -477,11 +485,10 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 			continue
 		}
 
-		envList := report.GetContents().GetEnvironments()[pkgID]
-		if envList == nil || len(envList.GetEnvironments()) == 0 {
+		layerSHA, ok := getPackageLayerSHA(report, pkgID)
+		if !ok {
 			continue
 		}
-		layerSHA := envList.GetEnvironments()[0].GetIntroducedIn()
 		layerIdx, ok := layerSHAToIndex[layerSHA]
 		if !ok {
 			continue
@@ -494,8 +501,7 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 				continue
 			}
 			for _, alias := range vuln.GetAliases() {
-				key := alias.GetSpace() + ":" + alias.GetName()
-				aliasKeys.Add(key)
+				aliasKeys.Add(aliasKey(alias))
 			}
 		}
 
@@ -513,11 +519,10 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 
 	// Filter PackageVulnerabilities based on boundaries.
 	for pkgID, vulnIDs := range report.GetPackageVulnerabilities() {
-		envList := report.GetContents().GetEnvironments()[pkgID]
-		if envList == nil || len(envList.GetEnvironments()) == 0 {
+		pkgLayerSHA, ok := getPackageLayerSHA(report, pkgID)
+		if !ok {
 			continue
 		}
-		pkgLayerSHA := envList.GetEnvironments()[0].GetIntroducedIn()
 		pkgLayerIdx, ok := layerSHAToIndex[pkgLayerSHA]
 		if !ok {
 			continue
@@ -537,8 +542,7 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 					continue
 				}
 				for _, alias := range vuln.GetAliases() {
-					key := alias.GetSpace() + ":" + alias.GetName()
-					if b.notAffectedKeys.Contains(key) {
+					if b.notAffectedKeys.Contains(aliasKey(alias)) {
 						suppressed = true
 						break
 					}
@@ -548,15 +552,17 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 				}
 			}
 
-			if !suppressed {
+			if suppressed {
+				log.Debugf("Suppressing vuln %q for package %q due to VEX not-affected assertion", vuln.GetName(), pkgID)
+			} else {
 				filtered = append(filtered, vulnID)
 			}
 		}
 
 		if len(filtered) == 0 {
-			delete(report.PackageVulnerabilities, pkgID)
+			delete(report.PackageVulnerabilities, pkgID) //nolint:protogetter // mutation requires direct field access
 		} else {
-			report.PackageVulnerabilities[pkgID] = &v4.StringList{Values: filtered}
+			report.PackageVulnerabilities[pkgID] = &v4.StringList{Values: filtered} //nolint:protogetter // mutation requires direct field access
 		}
 	}
 }

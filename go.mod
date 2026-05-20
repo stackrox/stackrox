@@ -585,4 +585,4 @@ replace (
 	github.com/mholt/archiver/v3 => github.com/anchore/archiver/v3 v3.5.2
 )
 
-replace github.com/quay/claircore => github.com/hdonnay/claircore v0.0.13-0.20260518201209-a9bf6603446f
+replace github.com/quay/claircore => github.com/jvdm/hdonnay-claircore v0.0.0-20260520091144-e2f5f8836835

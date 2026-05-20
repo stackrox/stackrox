@@ -7,6 +7,7 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
@@ -557,7 +558,7 @@ func TestComponents(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := components(tc.metadata, tc.report)
+			got := componentsWithLayerMap(tc.metadata, tc.report, clair.BuildSHAToIndexMap(tc.metadata))
 			protoassert.SlicesEqual(t, tc.expected, got, fmt.Sprintf("expected: %+#v\ngot: %+#v", tc.expected, got))
 		})
 	}
@@ -1591,10 +1592,9 @@ func TestFilterNotAffectedVulnerabilities(t *testing.T) {
 	}
 
 	testcases := []struct {
-		name                   string
-		report                 *v4.VulnerabilityReport
-		expectedPkgVulns       map[string][]string
-		expectedPkgNotVulns    map[string][]string
+		name             string
+		report           *v4.VulnerabilityReport
+		expectedPkgVulns map[string][]string
 	}{
 		{
 			name: "nil PackageNotVulnerable - no filtering",

@@ -1,7 +1,3 @@
-**/go.sum
-**/zz_generated.deepcopy.go
-.github/workflows/build.yaml
-CHANGELOG.md
 central/alert/datastore/internal/store/postgres/store.go
 central/baseimage/watcher/watcher_impl_test.go
 central/cluster/datastore/datastore_impl_postgres_test.go
@@ -21,11 +17,14 @@ central/sensor/service/connection/sensor-central-data-flow.excalidraw.svg
 central/splunk/violations_test.go
 central/testutils/testdata/imgdata.json.gz
 central/vulnmgmt/vulnerabilityrequest/datastore/datastore_impl_postgres_test.go
+CHANGELOG.md
 compliance/node/index/testdata/usr/share/rpm/rpmdb.sqlite
 deploy/charts/monitoring/dashboards/*.json
 generated/**/*.pb.go
 generated/**/*.pb.gw.go
 generated/**/*.swagger.json
+.github/workflows/build.yaml
+**/go.sum
 go.sum
 operator/bundle/manifests/*.yaml
 operator/config/crd/bases/*.yaml
@@ -40,8 +39,8 @@ pkg/continuousprofiling/docs/img/*.png
 pkg/cve/testdata_IDV2Golden.txt
 pkg/docker/types/types_easyjson.go
 pkg/fixtures/graph.go
-pkg/fixtures/image.go
 pkg/fixtures/image/files/*
+pkg/fixtures/image.go
 pkg/fixtures/vmindexreport/packages_fixture.go
 pkg/grpc/authn/tokenbased/extractor_test.go
 pkg/images/enricher/enricher_impl_test.go
@@ -50,6 +49,7 @@ pkg/mitre/files/mitre.json
 pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks/mocks.go
 pkg/sac/effectiveaccessscope/effective_access_scope_test.go
 pkg/scancomponent/testdata_ComponentIDV2Golden.txt
+pkg/scanners/scannerv4/convert_test.go
 pkg/scannerv4/mappers/mappers.go
 pkg/scannerv4/mappers/mappers_test.go
 pkg/search/postgres/common_test.go
@@ -84,3 +84,4 @@ ui/apps/platform/src/Containers/Integrations/IntegrationForm/Forms/SignatureInte
 ui/apps/platform/src/Containers/Policies/Wizard/Step3/policyCriteriaDescriptors.tsx
 ui/apps/platform/src/fonts/Open_Sans_Regular.json
 ui/apps/platform/src/images/globalSearchEmptyState.svg
+**/zz_generated.deepcopy.go
