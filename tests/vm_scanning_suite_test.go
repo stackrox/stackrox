@@ -698,29 +698,21 @@ func (s *VMScanningSuite) waitForScannerV4Initialized() error {
 	})
 }
 
-// ensureCanonicalScan runs a single guest-side roxagent invocation and validates failure signals.
+// ensureCanonicalScan runs a single guest-side roxagent invocation.
 // It verifies the ROX_VIRTUAL_MACHINES feature flag is enabled before triggering the scan.
-func (s *VMScanningSuite) ensureCanonicalScan(ctx context.Context, vm *VMHandle) (*vmhelpers.RoxagentRunResult, error) {
+func (s *VMScanningSuite) ensureCanonicalScan(ctx context.Context, vm *VMHandle) error {
 	if vm == nil {
-		return nil, errors.New("ensureCanonicalScan: nil VM handle")
+		return errors.New("ensureCanonicalScan: nil VM handle")
 	}
 	s.mustVerifyVirtualMachinesFeatureEnabled()
 	if !s.scannerV4Checked {
 		if err := s.waitForScannerV4Initialized(); err != nil {
-			return nil, fmt.Errorf("Scanner V4 matcher did not initialize within timeout: %w", err)
+			return fmt.Errorf("Scanner V4 matcher did not initialize within timeout: %w", err)
 		}
 		s.scannerV4Checked = true
 	}
 	virt := s.virtctlForVM(*vm)
-	res, err := vmhelpers.RunRoxagentOnce(ctx, virt, vm.Namespace, vm.Name, s.cfg.Repo2CPEURL)
-	if err != nil {
-		return nil, err
-	}
-	if res == nil {
-		return nil, errors.New("ensureCanonicalScan: nil result from RunRoxagentOnce")
-	}
-	s.logf("ensureCanonicalScan: roxagent completed on %s/%s (%d bytes stdout)", vm.Namespace, vm.Name, len(res.Stdout))
-	return res, nil
+	return vmhelpers.RunRoxagentOnce(ctx, virt, vm.Namespace, vm.Name, s.cfg.Repo2CPEURL)
 }
 
 // waitForScan polls Central in order until scan data is visible.
@@ -738,36 +730,29 @@ func (s *VMScanningSuite) waitForScan(ctx context.Context, vm *VMHandle) (*v2.Vi
 		Logf:         s.logf,
 	}
 
-	s.logf("scan wait %s/%s step 1/6: wait VM present in Central", vm.Namespace, vm.Name)
 	present, err := vmhelpers.WaitForVMPresentInCentral(waitCtx, s.vmClient, baseOpts, vm.Namespace, vm.Name)
 	if err != nil {
 		return nil, err
 	}
 	vm.ID = present.GetId()
-	s.logf("scan wait %s/%s step 1/6 complete: id=%q", vm.Namespace, vm.Name, vm.ID)
 
-	s.logf("scan wait %s/%s step 2/6: wait VM identity fields", vm.Namespace, vm.Name)
+	s.logf("%s/%s: VM appeared in Central (id=%q), waiting for namespace/name fields to be populated", vm.Namespace, vm.Name, vm.ID)
 	if _, err := vmhelpers.WaitForVMIdentityFields(waitCtx, s.vmClient, baseOpts, present.GetId(), vm.Namespace, vm.Name); err != nil {
 		return nil, err
 	}
-	s.logf("scan wait %s/%s step 2/6 complete", vm.Namespace, vm.Name)
-	s.logf("scan wait %s/%s step 3/6: wait VM running in Central", vm.Namespace, vm.Name)
+	s.logf("%s/%s: waiting for Central to report VM as Running", vm.Namespace, vm.Name)
 	if _, err := vmhelpers.WaitForVMRunningInCentral(waitCtx, s.vmClient, baseOpts, present.GetId()); err != nil {
 		return nil, err
 	}
-	s.logf("scan wait %s/%s step 3/6 complete", vm.Namespace, vm.Name)
-	s.logf("scan wait %s/%s step 4/6: wait non-nil scan", vm.Namespace, vm.Name)
+	s.logf("%s/%s: waiting for roxagent scan payload to arrive in Central", vm.Namespace, vm.Name)
 	if _, err := vmhelpers.WaitForVMScanNonNil(waitCtx, s.vmClient, baseOpts, present.GetId()); err != nil {
 		return nil, err
 	}
-	s.logf("scan wait %s/%s step 4/6 complete", vm.Namespace, vm.Name)
-	s.logf("scan wait %s/%s step 5/6: wait scan timestamp", vm.Namespace, vm.Name)
+	s.logf("%s/%s: waiting for Scanner to assign a scan timestamp", vm.Namespace, vm.Name)
 	if _, err := vmhelpers.WaitForVMScanTimestamp(waitCtx, s.vmClient, baseOpts, present.GetId()); err != nil {
 		return nil, err
 	}
-	s.logf("scan wait %s/%s step 5/6 complete", vm.Namespace, vm.Name)
-
-	s.logf("scan wait %s/%s step 6/6: wait scan ready (components + all-scanned)", vm.Namespace, vm.Name)
+	s.logf("%s/%s: waiting for all components to be vulnerability-matched (no UNSCANNED)", vm.Namespace, vm.Name)
 	return vmhelpers.WaitForScanReady(waitCtx, s.vmClient, baseOpts, present.GetId())
 }
 

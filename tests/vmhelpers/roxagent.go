@@ -17,12 +17,6 @@ const (
 // ErrTerminalVSOCKUnavailable is returned when vsock is permanently unavailable on the guest (no retry).
 var ErrTerminalVSOCKUnavailable = errors.New("terminal vsock unavailable")
 
-// RoxagentRunResult captures stdout/stderr from a roxagent invocation.
-type RoxagentRunResult struct {
-	Stdout string
-	Stderr string
-}
-
 // roxagentMaxAttempts is the number of times to retry roxagent before giving up.
 const roxagentMaxAttempts = 3
 
@@ -49,11 +43,6 @@ func verboseOutputHasOSFields(stdout string) bool {
 		strings.Contains(stdout, `"operating_system"`)
 }
 
-// buildRoxagentInstallArgs is the remote argv for `sudo install` to place the staged binary at dst.
-func buildRoxagentInstallArgs(src, dst string) []string {
-	return []string{"sudo", "install", "-m", "0755", src, dst}
-}
-
 // CopyRoxagentBinary copies a local roxagent binary into the guest install path.
 func CopyRoxagentBinary(ctx context.Context, virt Virtctl, namespace, vm, hostBinaryPath string) error {
 	return retryOnSSHTransport(ctx, virt.Logf, "copy roxagent binary", func(ctx context.Context) error {
@@ -64,7 +53,7 @@ func CopyRoxagentBinary(ctx context.Context, virt Virtctl, namespace, vm, hostBi
 		_, stderr, err = runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
 			description:            "install roxagent binary",
 			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
-		}, buildRoxagentInstallArgs(roxagentStagingPath, DefaultRoxagentInstallPath)...)
+		}, "sudo", "install", "-m", "0755", roxagentStagingPath, DefaultRoxagentInstallPath)
 		if err != nil {
 			return fmt.Errorf("install roxagent binary on guest: %w: %s", err, strings.TrimSpace(stderr))
 		}
@@ -93,7 +82,7 @@ func VerifyRoxagentInstalled(ctx context.Context, virt Virtctl, namespace, vm st
 
 // RunRoxagentOnce runs roxagent on the guest with the given repo2cpe URL.
 // It retries up to roxagentMaxAttempts times before giving up.
-func RunRoxagentOnce(ctx context.Context, virt Virtctl, namespace, vm, repo2cpeURL string) (*RoxagentRunResult, error) {
+func RunRoxagentOnce(ctx context.Context, virt Virtctl, namespace, vm, repo2cpeURL string) error {
 	envAssignment := fmt.Sprintf("ROXAGENT_REPO2CPE_URL=%s", repo2cpeURL)
 
 	var lastErr error
@@ -105,22 +94,18 @@ func RunRoxagentOnce(ctx context.Context, virt Virtctl, namespace, vm, repo2cpeU
 
 		if err == nil {
 			if !verboseOutputHasOSFields(stdout) {
-				return nil, fmt.Errorf("roxagent: verbose output OS assertion failed: no OS detection fields in output (stdout: %.200s)", strings.TrimSpace(stdout))
+				return fmt.Errorf("roxagent: verbose output OS assertion failed: no OS detection fields in output (stdout: %.200s)", strings.TrimSpace(stdout))
 			}
-			return &RoxagentRunResult{
-				Stdout: stdout,
-				Stderr: stderr,
-			}, nil
+			virt.Logf("roxagent completed (%d bytes stdout, %d bytes stderr)", len(stdout), len(stderr))
+			return nil
 		}
 		combined := strings.TrimSpace(stdout + "\n" + stderr)
 		if isVsockUnavailableOutput(combined) {
-			return nil, fmt.Errorf("%w: roxagent: no retry for vsock device error: %w (stderr: %s)",
+			return fmt.Errorf("%w: roxagent: no retry for vsock device error: %w (stderr: %s)",
 				ErrTerminalVSOCKUnavailable, err, strings.TrimSpace(stderr))
 		}
 		lastErr = err
-		if virt.Logf != nil {
-			virt.Logf("roxagent attempt %d/%d failed: %v", attempt+1, roxagentMaxAttempts, err)
-		}
+		virt.Logf("roxagent attempt %d/%d failed: %v", attempt+1, roxagentMaxAttempts, err)
 	}
-	return nil, fmt.Errorf("roxagent: all %d attempts failed: %w", roxagentMaxAttempts, lastErr)
+	return fmt.Errorf("roxagent: all %d attempts failed: %w", roxagentMaxAttempts, lastErr)
 }

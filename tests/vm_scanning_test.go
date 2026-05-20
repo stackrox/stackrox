@@ -22,18 +22,18 @@ func (s *VMScanningSuite) TestScanPipeline() {
 		}
 
 		s.T().Run(vm.Name, func(t *testing.T) {
-			var result *vmhelpers.RoxagentRunResult
 			var first *v2.VirtualMachine
+			roxagentOK := false
 
 			t.Run("RunRoxagent", func(t *testing.T) {
 				t.Logf("running roxagent: sudo env ROXAGENT_REPO2CPE_URL=%s %s --verbose",
 					s.cfg.Repo2CPEURL, vmhelpers.DefaultRoxagentInstallPath)
-				var err error
-				result, err = s.ensureCanonicalScan(s.ctx, vm)
+				err := s.ensureCanonicalScan(s.ctx, vm)
 				require.NoError(t, err)
-				require.NotNil(t, result)
+				roxagentOK = true
 			})
-			if result == nil {
+			if !roxagentOK {
+				t.Log("skipping remaining subtests: roxagent invocation failed")
 				return
 			}
 
@@ -44,6 +44,7 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				vm.ID = first.GetId()
 			})
 			if first == nil {
+				t.Log("skipping remaining subtests: scan did not appear in Central")
 				return
 			}
 
@@ -76,7 +77,7 @@ func (s *VMScanningSuite) TestScanPipeline() {
 			var rescan *v2.VirtualMachine
 
 			t.Run("Rescan", func(t *testing.T) {
-				_, err := s.ensureCanonicalScan(s.ctx, vm)
+				err := s.ensureCanonicalScan(s.ctx, vm)
 				require.NoError(t, err)
 
 				waitCtx, cancel := context.WithTimeout(s.ctx, s.cfg.ScanTimeout)

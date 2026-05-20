@@ -29,14 +29,6 @@ func TestVerboseOutputHasOSFields(t *testing.T) {
 	}
 }
 
-func TestBuildRoxagentInstallArgs_UsesSudoInstallModeAndPaths(t *testing.T) {
-	t.Parallel()
-	require.Equal(t,
-		[]string{"sudo", "install", "-m", "0755", "/tmp/roxagent", "/usr/local/bin/roxagent"},
-		buildRoxagentInstallArgs("/tmp/roxagent", "/usr/local/bin/roxagent"),
-	)
-}
-
 func TestIsVsockUnavailableOutput(t *testing.T) {
 	t.Parallel()
 	tests := map[string]struct {
