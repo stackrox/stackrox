@@ -15,7 +15,7 @@ const (
 	vsockReadinessMarker = "VSOCK_READY"
 )
 
-// checkVsockReadiness tests /dev/vsock presence and gathers diagnostics when absent.
+// checkVsockReadiness tests /dev/vsock presence on the guest.
 func checkVsockReadiness(ctx context.Context, virt Virtctl, namespace, vm string) (ready bool, detail string, err error) {
 	_, _, testErr := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
 		description:            "vsock device check",
@@ -27,33 +27,7 @@ func checkVsockReadiness(ctx context.Context, virt Virtctl, namespace, vm string
 	if errors.Is(testErr, errSSHTransport) {
 		return false, "", testErr
 	}
-	// /dev/vsock absent — gather diagnostics via separate calls.
-	diagStr := collectVsockDiagnostics(ctx, virt, namespace, vm)
-	return false, fmt.Sprintf("VSOCK_MISSING /dev/vsock absent (%s)", diagStr), nil
-}
-
-// collectVsockDiagnostics gathers /dev/vsock and kernel module info from the guest for troubleshooting.
-func collectVsockDiagnostics(ctx context.Context, virt Virtctl, namespace, vm string) string {
-	var diag []string
-	lsOut, _, _ := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
-		description: "vsock diagnostic ls", transportRetryAttempts: 1,
-	}, "ls", "-l", "/dev/vsock")
-	if s := strings.TrimSpace(lsOut); s != "" {
-		diag = append(diag, "ls: "+s)
-	}
-	lsmodOut, _, _ := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
-		description: "vsock diagnostic lsmod", transportRetryAttempts: 1,
-	}, "lsmod")
-	for _, line := range strings.Split(lsmodOut, "\n") {
-		lower := strings.ToLower(line)
-		if strings.Contains(lower, "vsock") || strings.Contains(lower, "vhost") {
-			diag = append(diag, "module: "+strings.TrimSpace(line))
-		}
-	}
-	if len(diag) == 0 {
-		return "no diagnostic info available"
-	}
-	return strings.Join(diag, "; ")
+	return false, "VSOCK_MISSING /dev/vsock absent", nil
 }
 
 // EnsureVsockReady retries the virtio-vsock device check until /dev/vsock exists or SSH transport errors are exhausted.
@@ -66,9 +40,7 @@ func EnsureVsockReady(ctx context.Context, virt Virtctl, namespace, vm, stage st
 		if !ready {
 			return fmt.Errorf("vsock precheck before %s on %s/%s: %s", stage, namespace, vm, detail)
 		}
-		if virt.Logf != nil {
-			virt.Logf("vsock precheck before %s on %s/%s: ready", stage, namespace, vm)
-		}
+		virt.Logf("vsock precheck before %s on %s/%s: ready", stage, namespace, vm)
 		return nil
 	})
 }
