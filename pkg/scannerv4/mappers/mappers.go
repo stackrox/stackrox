@@ -20,6 +20,7 @@ import (
 	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rhel/vex"
+	cctypes "github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
@@ -255,7 +256,7 @@ func v4Package(p *claircore.Package) (*v4.Package, error) {
 		Name:              p.Name,
 		Version:           p.Version,
 		NormalizedVersion: toNormalizedVersion(p.NormalizedVersion),
-		Kind:              p.Kind,
+		Kind:              p.Kind.String(),
 		Source:            srcPkg,
 		PackageDb:         p.PackageDB,
 		RepositoryHint:    p.RepositoryHint,
@@ -840,6 +841,10 @@ func ccPackage(p *v4.Package) (string, *claircore.Package, error) {
 		return
 	}
 	// Fields that might fail.
+	var kind cctypes.PackageKind
+	if err := kind.UnmarshalText([]byte(p.GetKind())); err != nil {
+		return "", nil, fmt.Errorf("package %q: invalid kind %q: %w", p.GetId(), p.GetKind(), err)
+	}
 	ccCPE, err := toClairCoreCPE(p.GetCpe())
 	if err != nil {
 		return "", nil, fmt.Errorf("package %q: %w", p.GetId(), err)
@@ -856,7 +861,7 @@ func ccPackage(p *v4.Package) (string, *claircore.Package, error) {
 		ID:                p.GetId(),
 		Name:              p.GetName(),
 		Version:           p.GetVersion(),
-		Kind:              p.GetKind(),
+		Kind:              kind,
 		Source:            src,
 		PackageDB:         p.GetPackageDb(),
 		RepositoryHint:    p.GetRepositoryHint(),

@@ -10,6 +10,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/test"
+	cctypes "github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/features"
@@ -411,6 +412,7 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 							Id:      "1",
 							Name:    "nodejs1",
 							Version: "1",
+							Kind:    cctypes.UnknownPackage.String(),
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
@@ -422,6 +424,7 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 							Id:      "1",
 							Name:    "nodejs1",
 							Version: "1",
+							Kind:    cctypes.UnknownPackage.String(),
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
@@ -432,7 +435,8 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 						"1": {
 							Environments: []*v4.Environment{
 								{
-									PackageDb: "nodejs:/app/nodejs1",
+									PackageDb:     "nodejs:/app/nodejs1",
+									RepositoryIds: []string{},
 								},
 							},
 						},
@@ -611,6 +615,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							Id:      "0",
 							Name:    "my go binary",
 							Version: "0",
+							Kind:    cctypes.UnknownPackage.String(),
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
@@ -620,6 +625,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							Id:      "1",
 							Name:    "my java jar",
 							Version: "1",
+							Kind:    cctypes.UnknownPackage.String(),
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
@@ -629,6 +635,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							Id:      "2",
 							Name:    "my python egg",
 							Version: "2",
+							Kind:    cctypes.UnknownPackage.String(),
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
@@ -638,6 +645,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							Id:      "3",
 							Name:    "my ruby gem",
 							Version: "3",
+							Kind:    cctypes.UnknownPackage.String(),
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
@@ -649,6 +657,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							Id:      "0",
 							Name:    "my go binary",
 							Version: "0",
+							Kind:    cctypes.UnknownPackage.String(),
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
@@ -658,6 +667,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							Id:      "1",
 							Name:    "my java jar",
 							Version: "1",
+							Kind:    cctypes.UnknownPackage.String(),
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
@@ -667,6 +677,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							Id:      "2",
 							Name:    "my python egg",
 							Version: "2",
+							Kind:    cctypes.UnknownPackage.String(),
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
@@ -676,6 +687,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							Id:      "3",
 							Name:    "my ruby gem",
 							Version: "3",
+							Kind:    cctypes.UnknownPackage.String(),
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
@@ -884,7 +896,7 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 							Kind: "test",
 							V:    []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
 						},
-						Kind: "sample pkg kind",
+						Kind: cctypes.BinaryPackage.String(),
 						Source: &v4.Package{
 							Id:   "sample source id",
 							Name: "sample source name",
@@ -906,7 +918,7 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 							Kind: "test",
 							V:    []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
 						},
-						Kind: "sample pkg kind",
+						Kind: cctypes.BinaryPackage.String(),
 						Source: &v4.Package{
 							Id:   "sample source id",
 							Name: "sample source name",
@@ -984,7 +996,7 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 						ID:      "sample pkg id",
 						Name:    "sample pkg name",
 						Version: "sample pkg version",
-						Kind:    "sample pkg kind",
+						Kind:    cctypes.BinaryPackage,
 						Source: &claircore.Package{
 							ID:   "sample source id",
 							Name: "sample source name",
@@ -1065,7 +1077,7 @@ func Test_toProtoV4Package(t *testing.T) {
 				ID:             "sample id",
 				Name:           "sample name",
 				Version:        "sample version",
-				Kind:           "sample kind",
+				Kind:           cctypes.BinaryPackage,
 				Source:         nil,
 				PackageDB:      "sample package db",
 				Filepath:       "sample file path",
@@ -1086,7 +1098,7 @@ func Test_toProtoV4Package(t *testing.T) {
 					Kind: "test",
 					V:    []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
 				},
-				Kind:           "sample kind",
+				Kind:           cctypes.BinaryPackage.String(),
 				Source:         nil,
 				PackageDb:      "sample package db",
 				RepositoryHint: "sample hint",
@@ -1289,7 +1301,8 @@ func Test_toProtoV4Contents(t *testing.T) {
 			want: &v4.Contents{
 				Packages: map[string]*v4.Package{
 					"sample pkg": {
-						Cpe: emptyCPE,
+						Cpe:  emptyCPE,
+						Kind: cctypes.UnknownPackage.String(),
 						NormalizedVersion: &v4.NormalizedVersion{
 							Kind: "",
 							V:    make([]int32, 10),
@@ -1297,7 +1310,8 @@ func Test_toProtoV4Contents(t *testing.T) {
 					},
 				},
 				PackagesDEPRECATED: []*v4.Package{{
-					Cpe: emptyCPE,
+					Cpe:  emptyCPE,
+					Kind: cctypes.UnknownPackage.String(),
 					NormalizedVersion: &v4.NormalizedVersion{
 						Kind: "",
 						V:    make([]int32, 10),
@@ -1322,7 +1336,9 @@ func Test_toProtoV4Contents(t *testing.T) {
 				},
 				EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
 					"sample env": {
-						Environments: []*v4.Environment{{}},
+						Environments: []*v4.Environment{{
+							RepositoryIds: []string{},
+						}},
 					},
 				},
 			},
