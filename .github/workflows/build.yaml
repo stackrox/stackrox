@@ -31,7 +31,7 @@ jobs:
       build-tag: ${{ steps.build-tag.outputs.tag }}
       short-commit: ${{ steps.short-commit.outputs.shortcommit }}
       gotags: ${{ steps.gotags.outputs.gotags }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -74,6 +74,8 @@ jobs:
             "push_main_multiarch_manifests": { "name":[] },
             "build_and_push_operator": { "name":[], "arch":[] },
             "push_operator_multiarch_manifests": { "name":[] },
+            "build_and_push_scanner": { "name":[], "goos":[], "arch":[], "registry":[] },
+            "push_scanner_manifests": { "name":[], "registry":[] },
             "scan_images_with_roxctl": { "name":[], "image":[], "exclude":[] }
           }'
 
@@ -92,14 +94,24 @@ jobs:
           matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.push_operator_multiarch_manifests.archs = [.build_and_push_operator.arch | join(",")]' <<< "$matrix")"
 
+          matrix="$(jq '.build_and_push_scanner.name += ["default"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_scanner.goos += ["linux"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_scanner.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_scanner.registry += ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
+
+          matrix="$(jq '.push_scanner_manifests.name += ["default"]' <<< "$matrix")"
+          matrix="$(jq '.push_scanner_manifests.registry += ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
+
           matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "fact", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
+          matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "fact", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator", "scanner-v4", "scanner-v4-db"]' <<< "$matrix")"
           # TODO(ROX-27191): remove the exclusion once there's a community operator.
           matrix="$(jq '.scan_images_with_roxctl.exclude += [{ "name": "STACKROX_BRANDING", "image": "stackrox-operator" }]' <<< "$matrix")"
 
           if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
             matrix="$(jq '.pre_build_go_binaries.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_operator.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_scanner.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
           fi;
 
           # Conditionally add a prerelease build (binaries built with GOTAGS=release)
@@ -108,6 +120,8 @@ jobs:
               matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
               matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
               matrix="$(jq '.push_main_multiarch_manifests.name += ["prerelease"]' <<< "$matrix")"
+              matrix="$(jq '.build_and_push_scanner.name += ["prerelease"]' <<< "$matrix")"
+              matrix="$(jq '.push_scanner_manifests.name += ["prerelease"]' <<< "$matrix")"
             fi
           fi
 
@@ -116,6 +130,8 @@ jobs:
             matrix="$(jq '.pre_build_go_binaries.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.push_main_multiarch_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_scanner.name += ["race-condition-debug"]' <<< "$matrix")"
+            matrix="$(jq '.push_scanner_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
             # Exclude "arm64", "ppc64le", "s390x"
             matrix="$(jq '.pre_build_go_binaries.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
             matrix="$(jq '.pre_build_go_binaries.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
@@ -123,6 +139,9 @@ jobs:
             matrix="$(jq '.build_and_push_main.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_scanner.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_scanner.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_scanner.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
           fi
 
           echo "Job matrix after conditionals:"
@@ -438,11 +457,6 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
-      - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # ratchet:actions/setup-python@v6.2.0
-        with:
-          python-version-file: operator/bundle_helpers/.python-version
-
       - name: Build Operator Bundle
         run: make -C operator/ bundle bundle-build
 
@@ -648,9 +662,6 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
 
       - name: Push matching collector and scanner images
         if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
@@ -895,6 +906,147 @@ jobs:
             fi
             echo "Operator image push completed successfully"
 
+  build-and-push-scanner:
+    runs-on: ubuntu-latest
+    needs:
+      - define-job-matrix
+      - pre-build-go-binaries
+      - pre-build-oss-notice
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_scanner }}
+    env:
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Login to docker.io to mitigate rate limiting on downloading images
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        with:
+          username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
+
+      - name: Set up QEMU
+        if: matrix.arch != 'amd64'
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
+
+      - name: Unpack Go binaries
+        run: tar xvzf go-binaries-build.tgz
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: oss-notice
+          path: scanner/image/scanner/THIRD_PARTY_NOTICES
+
+      - name: Copy scanner binary to expected location
+        run: |
+          mkdir -p scanner/image/scanner/bin
+          cp bin/linux_${{ matrix.arch }}/scanner scanner/image/scanner/bin/scanner
+
+      - name: Set build tag for prerelease images
+        if: matrix.name == 'prerelease'
+        run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
+
+      - name: Set build tag for race condition images
+        if: matrix.name == 'race-condition-debug'
+        run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
+
+      - name: Build Scanner and ScannerDB images
+        run: scripts/lib.sh retry 6 true make -C scanner GOOS=${{ matrix.goos }} GOARCH=${{ matrix.arch }} images
+
+      - name: Push Scanner and ScannerDB images
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+        run: |
+          source ./scripts/ci/lib.sh
+          push_scanner_image_set "${{ matrix.registry }}" "${{ matrix.arch }}"
+
+  push-scanner-manifests:
+    runs-on: ubuntu-latest
+    needs:
+      - define-job-matrix
+      - build-and-push-scanner
+    # This step will run even if some of the build-and-push-scanner steps failed.
+    # By following this approach as much of the build matrix as possible is
+    # completed despite transient issues e.g. docker pull timeouts. In this way
+    # some e2e jobs that require some part of the build matrix can still
+    # proceed.
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_scanner_manifests }}
+    env:
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
+      GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      with:
+        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+
+    - name: Set build tag for prerelease images
+      if: matrix.name == 'prerelease'
+      run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
+
+    - name: Set build tag for race condition images
+      if: matrix.name == 'race-condition-debug'
+      run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
+
+    - name: Push Scanner and ScannerDB image manifests
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      env:
+        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+      run: |
+          source ./scripts/ci/lib.sh
+
+          architectures="amd64,arm64"
+          if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
+            architectures="amd64,arm64,ppc64le,s390x"
+          fi
+          if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
+            architectures="amd64"
+          fi
+
+          push_scanner_image_manifest_lists "${{ matrix.registry }}" "$architectures"
+
   push-operator-manifests:
     runs-on: ubuntu-latest
     needs:
@@ -1009,9 +1161,11 @@ jobs:
     needs:
       - build-and-push-main
       - build-and-push-operator
+      - build-and-push-scanner
       - define-job-matrix
       - push-main-manifests
       - push-matching-collector-scanner
+      - push-scanner-manifests
     name: Check images for vulnerabilities
     runs-on: ubuntu-latest
     permissions:
@@ -1081,6 +1235,7 @@ jobs:
     needs:
       - build-and-push-main
       - build-and-push-operator
+      - build-and-push-scanner
       - build-operator-bundle
       - go-version-ceiling
       - pre-build-cli

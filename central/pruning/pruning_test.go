@@ -216,6 +216,7 @@ func newPod(live bool, imageIDs ...string) *storage.Pod {
 	if live {
 		return &storage.Pod{
 			Id:                  fixtureconsts.PodUID1,
+			DeploymentId:        fixtureconsts.Deployment1,
 			LiveInstances:       instances,
 			TerminatedInstances: instanceLists,
 		}
@@ -223,6 +224,7 @@ func newPod(live bool, imageIDs ...string) *storage.Pod {
 
 	return &storage.Pod{
 		Id:                  fixtureconsts.PodUID2,
+		DeploymentId:        fixtureconsts.Deployment1,
 		TerminatedInstances: instanceLists,
 	}
 }
@@ -576,13 +578,16 @@ func (s *PruningTestSuite) TestImagePruning() {
 				nil, nil, nil, config, nil,
 				nil, nil, nil, nil, nil, nil, nil,
 				nil, nil, nil).(*garbageCollectorImpl)
+			gc.postgres = s.pool
 
 			// Add images, deployments, and pods into the datastores
 			if c.deployment != nil {
 				require.NoError(t, deployments.UpsertDeployment(ctx, c.deployment))
 			}
 			if c.pod != nil {
-				c.pod.DeploymentId = c.deployment.GetId()
+				if c.deployment != nil {
+					c.pod.DeploymentId = c.deployment.GetId()
+				}
 				require.NoError(t, pods.UpsertPod(ctx, c.pod))
 			}
 			for _, image := range c.images {
@@ -649,6 +654,181 @@ func (s *PruningTestSuite) TestImagePruning() {
 					require.NoError(t, pods.RemovePod(ctx, c.pod.GetId()))
 				}
 			}
+		})
+	}
+}
+
+func (s *PruningTestSuite) TestImagePruningSameDigestDifferentName() {
+	if !features.FlattenImageData.Enabled() {
+		s.T().Skip("only applicable when FlattenImageData is enabled")
+	}
+
+	ctx := sac.WithAllAccess(context.Background())
+
+	digest := types.NewDigest("shareddigest").Digest()
+	differentDigest := types.NewDigest("newdigest").Digest()
+
+	nameA := &storage.ImageName{FullName: "ghcr.io/stackrox/imageA:latest@" + digest}
+	nameB := &storage.ImageName{FullName: "ghcr.io/stackrox/imageB:latest@" + digest}
+	oldTimestamp := protoconv.ConvertTimeToTimestamp(
+		time.Now().Add(-24 * time.Duration(configDatastore.DefaultImageRetention+1) * time.Hour),
+	)
+
+	imageA := &storage.ImageV2{
+		Id:          utils.NewImageV2ID(nameA, digest),
+		Digest:      digest,
+		Name:        nameA,
+		LastUpdated: oldTimestamp,
+	}
+	imageB := &storage.ImageV2{
+		Id:          utils.NewImageV2ID(nameB, digest),
+		Digest:      digest,
+		Name:        nameB,
+		LastUpdated: oldTimestamp,
+	}
+
+	type testCase struct {
+		name             string
+		images           []*storage.ImageV2
+		deployments      []*storage.Deployment
+		pods             []*storage.Pod
+		expectedImageIDs []string
+	}
+
+	cases := []testCase{
+		{
+			name:   "active pod from different deployment with same digest - should prune unreferenced image",
+			images: []*storage.ImageV2{imageA, imageB},
+			deployments: []*storage.Deployment{
+				{
+					Id: fixtureconsts.Deployment1,
+					Containers: []*storage.Container{
+						{
+							Image: &storage.ContainerImage{
+								Id:   digest,
+								IdV2: imageB.GetId(),
+								Name: nameB,
+							},
+						},
+					},
+				},
+			},
+			pods: []*storage.Pod{
+				{
+					Id:           fixtureconsts.PodUID1,
+					DeploymentId: fixtureconsts.Deployment1,
+					LiveInstances: []*storage.ContainerInstance{
+						{ImageDigest: digest},
+					},
+				},
+			},
+			expectedImageIDs: []string{imageB.GetId()},
+		},
+		{
+			name:   "stuck pod - deployment no longer references digest - should not prune",
+			images: []*storage.ImageV2{imageA},
+			deployments: []*storage.Deployment{
+				{
+					Id: fixtureconsts.Deployment1,
+					Containers: []*storage.Container{
+						{
+							Image: &storage.ContainerImage{
+								Id:   differentDigest,
+								IdV2: uuid.NewV5FromNonUUIDs("ghcr.io/stackrox/imageA:v2@"+differentDigest, differentDigest).String(),
+								Name: &storage.ImageName{FullName: "ghcr.io/stackrox/imageA:v2@" + differentDigest},
+							},
+						},
+					},
+				},
+			},
+			pods: []*storage.Pod{
+				{
+					Id:           fixtureconsts.PodUID1,
+					DeploymentId: fixtureconsts.Deployment1,
+					LiveInstances: []*storage.ContainerInstance{
+						{ImageDigest: digest},
+					},
+				},
+			},
+			expectedImageIDs: []string{imageA.GetId()},
+		},
+		{
+			name:   "stuck pod in one deployment, different deployment has same digest - should not prune",
+			images: []*storage.ImageV2{imageA, imageB},
+			deployments: []*storage.Deployment{
+				{
+					Id: fixtureconsts.Deployment1,
+					Containers: []*storage.Container{
+						{
+							Image: &storage.ContainerImage{
+								Id:   differentDigest,
+								IdV2: uuid.NewV5FromNonUUIDs("ghcr.io/stackrox/imageA:v2@"+differentDigest, differentDigest).String(),
+								Name: &storage.ImageName{FullName: "ghcr.io/stackrox/imageA:v2@" + differentDigest},
+							},
+						},
+					},
+				},
+				{
+					Id: fixtureconsts.Deployment2,
+					Containers: []*storage.Container{
+						{
+							Image: &storage.ContainerImage{
+								Id:   digest,
+								IdV2: imageB.GetId(),
+								Name: nameB,
+							},
+						},
+					},
+				},
+			},
+			pods: []*storage.Pod{
+				{
+					Id:           fixtureconsts.PodUID1,
+					DeploymentId: fixtureconsts.Deployment1,
+					LiveInstances: []*storage.ContainerInstance{
+						{ImageDigest: digest},
+					},
+				},
+			},
+			expectedImageIDs: []string{imageA.GetId(), imageB.GetId()},
+		},
+	}
+
+	for _, c := range cases {
+		s.T().Run(c.name, func(t *testing.T) {
+			defer func() {
+				_, _ = s.pool.Exec(ctx, "TRUNCATE images_v2, deployments, pods CASCADE")
+			}()
+
+			_, config, _, imagesV2, deployments, pods := s.generateImageDataStructures(ctx)
+			gc := newGarbageCollector(nil, nil, nil, imagesV2, nil, deployments, pods,
+				nil, nil, nil, config, nil,
+				nil, nil, nil, nil, nil, nil, nil,
+				nil, nil, nil).(*garbageCollectorImpl)
+			gc.postgres = s.pool
+
+			for _, dep := range c.deployments {
+				require.NoError(t, deployments.UpsertDeployment(ctx, dep))
+			}
+			for _, pod := range c.pods {
+				require.NoError(t, pods.UpsertPod(ctx, pod))
+			}
+			for _, img := range c.images {
+				require.NoError(t, imagesV2.UpsertImage(ctx, img))
+			}
+
+			privateConfig, err := config.GetPrivateConfig(ctx)
+			require.NoError(t, err)
+			gc.collectImages(privateConfig)
+
+			remainingImages, err := imagesV2.SearchRawImages(ctx, search.EmptyQuery())
+			require.NoError(t, err)
+
+			var remainingIDs []string
+			for _, img := range remainingImages {
+				remainingIDs = append(remainingIDs, img.GetId())
+			}
+			assert.ElementsMatch(t, c.expectedImageIDs, remainingIDs)
 		})
 	}
 }

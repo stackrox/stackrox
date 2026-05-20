@@ -68,6 +68,7 @@
         ]
       },
       "post": {
+        "summary": "PostCluster is deprecated. Use operator-based installation with CRS instead.",
         "operationId": "ClustersService_PostCluster",
         "responses": {
           "200": {
@@ -179,6 +180,7 @@
         ]
       },
       "put": {
+        "summary": "PutCluster is deprecated. Use operator-based installation with CRS instead.",
         "operationId": "ClustersService_PutCluster",
         "responses": {
           "200": {

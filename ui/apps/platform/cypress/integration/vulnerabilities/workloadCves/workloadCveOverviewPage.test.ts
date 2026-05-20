@@ -106,7 +106,7 @@ describe('Workload CVE overview page tests', () => {
             // Ensure the correct search filter is present in the request
             cy.wait(`@${opname}`).should((xhr) => {
                 expect(xhr.request.body.variables.query).to.contain(
-                    'SEVERITY:CRITICAL_VULNERABILITY_SEVERITY'
+                    'Severity:CRITICAL_VULNERABILITY_SEVERITY'
                 );
             });
             */
@@ -335,6 +335,15 @@ describe('Workload CVE overview page tests', () => {
 
                     // Check that visiting via a direct link that includes a severity filter maintains
                     // the correct sort
+                    visitWorkloadCveOverview({
+                        clearFiltersOnVisit: false,
+                        urlSearch: '?s[Severity][0]=Important',
+                    });
+                    waitAndYieldRequestBodyVariables().then(
+                        expectRequestedSort([{ field: 'Important Severity Count', reversed: true }])
+                    );
+
+                    // Check that visiting via a legacy link with SEVERITY (uppercase) still works
                     visitWorkloadCveOverview({
                         clearFiltersOnVisit: false,
                         urlSearch: '?s[SEVERITY][0]=Important',

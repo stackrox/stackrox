@@ -279,9 +279,9 @@ const ConfigManagementEntitySecret = ({
                 ];
 
                 return (
-                    <div className="w-full" id="capture-dashboard-stretch">
+                    <div className="w-full">
                         <CollapsibleSection title="Secret Summary">
-                            <div className="flex mb-4 flex-wrap pdf-page">
+                            <div className="flex mb-4 flex-wrap">
                                 <Metadata
                                     className="mx-4 bg-base-100 min-h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
@@ -306,7 +306,7 @@ const ConfigManagementEntitySecret = ({
                             </div>
                         </CollapsibleSection>
                         <CollapsibleSection title="Secret Values">
-                            <div className="flex pdf-page pdf-stretch mb-4 ml-4 mr-4">
+                            <div className="flex mb-4 ml-4 mr-4">
                                 <SecretValues files={files} />
                             </div>
                         </CollapsibleSection>

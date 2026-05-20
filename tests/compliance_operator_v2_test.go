@@ -44,6 +44,7 @@ const (
 	defaultInterval     = 5 * time.Second
 	waitForDoneTimeout  = 5 * time.Minute
 	waitForDoneInterval = 30 * time.Second
+	knownRuleName       = "ocp4-api-server-encryption-provider-cipher"
 )
 
 var (
@@ -283,7 +284,7 @@ func createTailoredProfile(ctx context.Context, t *testing.T, client ctrlClient.
 			Title:       fmt.Sprintf("E2E TailoredProfile %s", name),
 			Description: "Extends ocp4-e8 for e2e testing",
 			DisableRules: []complianceoperatorv1.RuleReferenceSpec{
-				{Name: "ocp4-api-server-encryption-provider-cipher", Rationale: "e2e test"},
+				{Name: knownRuleName, Rationale: "e2e test"},
 			},
 		},
 	}
@@ -1052,7 +1053,7 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 				{Name: "ocp4-api-server-admission-control-plugin-alwaysadmit", Rationale: "e2e test"},
 			},
 			DisableRules: []complianceoperatorv1.RuleReferenceSpec{
-				{Name: "ocp4-api-server-encryption-provider-cipher", Rationale: "e2e test"},
+				{Name: knownRuleName, Rationale: "e2e test"},
 			},
 		},
 		"custom-rules": {
@@ -1117,4 +1118,64 @@ func TestComplianceV2TailoredProfileVariants(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestComplianceV2GetComplianceRule(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	ruleClient := v2.NewComplianceRuleServiceClient(conn)
+	serviceCluster := v1.NewClustersServiceClient(conn)
+	clusters, err := serviceCluster.GetClusters(ctx, &v1.GetClustersRequest{})
+	require.NoError(t, err)
+	require.Greater(t, len(clusters.GetClusters()), 0)
+	clusterID := clusters.GetClusters()[0].GetId()
+
+	t.Run("regular", func(t *testing.T) {
+		t.Parallel()
+		ruleName := knownRuleName
+		resp, err := ruleClient.GetComplianceRule(ctx, &v2.RuleRequest{
+			RuleName: ruleName,
+			Query:    &v2.RawQuery{Query: "Cluster ID:" + clusterID},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, ruleName, resp.GetName())
+		assert.NotEmpty(t, resp.GetRuleId(), "RuleId (XCCDF ID) should be non-empty")
+		assert.NotEmpty(t, resp.GetTitle(), "Title should be non-empty")
+		assert.NotEmpty(t, resp.GetRuleType(), "RuleType should be non-empty")
+		assert.NotEmpty(t, resp.GetSeverity(), "Severity should be non-empty")
+		assert.Equal(t, v2.ComplianceRule_RULE, resp.GetOperatorKind(), "OperatorKind should be RULE for built-in rules")
+	})
+
+	t.Run("custom", func(t *testing.T) {
+		t.Parallel()
+		dynClient := createDynamicClient(t)
+		crName := fmt.Sprintf("rule-get-%s", uuid.NewV4().String())
+		createCustomRule(ctx, t, dynClient, crName)
+
+		require.EventuallyWithT(t, func(c *assert.CollectT) {
+			resp, err := ruleClient.GetComplianceRule(ctx, &v2.RuleRequest{
+				RuleName: crName,
+			})
+			require.NoError(c, err)
+			require.NotNil(c, resp)
+			assert.Equal(c, crName, resp.GetName())
+			assert.NotEmpty(c, resp.GetTitle(), "Title should be non-empty")
+			assert.Equal(c, v2.ComplianceRule_CUSTOM_RULE, resp.GetOperatorKind(), "OperatorKind should be CUSTOM_RULE")
+		}, 10*time.Second, 1*time.Second)
+	})
+
+	t.Run("not-found", func(t *testing.T) {
+		t.Parallel()
+		// Server returns (nil, nil) for no matches; gRPC serializes nil as
+		// an empty message, so the client gets a zero-value ComplianceRule.
+		resp, err := ruleClient.GetComplianceRule(ctx, &v2.RuleRequest{
+			RuleName: "nonexistent-rule-that-does-not-exist",
+			Query:    &v2.RawQuery{Query: "Cluster ID:" + clusterID},
+		})
+		require.NoError(t, err)
+		assert.Empty(t, resp.GetName())
+		assert.Equal(t, v2.ComplianceRule_OPERATOR_KIND_UNSPECIFIED, resp.GetOperatorKind())
+	})
 }

@@ -402,7 +402,7 @@ const TopRiskiestEntities = ({ entityContext, search, limit }) => {
 
     return (
         <Widget
-            className="h-full pdf-page"
+            className="h-full"
             titleComponents={
                 <TextSelect value={selectedEntity} options={entities} onChange={onEntityChange} />
             }

@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext } from 'react';
 import pluralize from 'pluralize';
 
 import entityTypes from 'constants/entityTypes';
@@ -15,7 +15,6 @@ import InfoWidget from 'Components/InfoWidget';
 import Labels from 'Containers/Compliance/widgets/Labels';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import Loader from 'Components/Loader';
-import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import ComplianceList from 'Containers/Compliance/List/List';
 import PageNotFound from 'Components/PageNotFound';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
@@ -51,7 +50,6 @@ const NodePage = ({
     query,
     sidePanelMode,
 }) => {
-    const [isExporting, setIsExporting] = useState(false);
     const searchParam = useContext(searchContext);
     return (
         <Query query={NODE_QUERY} variables={{ id: entityId }}>
@@ -80,7 +78,6 @@ const NodePage = ({
                     kernelVersion,
                     labels,
                 } = node;
-                const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
 
                 if (listEntityType1 && !sidePanelMode) {
@@ -91,10 +88,7 @@ const NodePage = ({
                         ...query[searchParam],
                     };
                     contents = (
-                        <section
-                            id="capture-list"
-                            className="flex flex-col flex-1 overflow-y-auto h-full"
-                        >
+                        <section className="flex flex-col flex-1 overflow-y-auto h-full">
                             <ComplianceList
                                 entityType={listEntityType1}
                                 query={listQuery}
@@ -111,7 +105,6 @@ const NodePage = ({
                             className={`flex-1 relative bg-base-200 overflow-auto ${
                                 !sidePanelMode ? `p-6` : `p-4`
                             } `}
-                            id="capture-dashboard"
                         >
                             <div
                                 style={{ '--min-tile-height': '190px' }}
@@ -122,7 +115,7 @@ const NodePage = ({
                                 } sm:grid-columns-1 grid-gap-5`}
                             >
                                 <div
-                                    className={`grid s-2 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
+                                    className="grid s-2 md:grid-auto-fit md:grid-dense"
                                     style={{ '--min-tile-width': '50%' }}
                                 >
                                     <div className="s-full pb-3">
@@ -152,7 +145,7 @@ const NodePage = ({
                                 </div>
 
                                 <div
-                                    className={`grid s-2 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
+                                    className="grid s-2 md:grid-auto-fit md:grid-dense"
                                     style={{ '--min-tile-width': '50%' }}
                                 >
                                     <div className="md:pr-3 pb-3">
@@ -195,7 +188,7 @@ const NodePage = ({
                                 </div>
 
                                 <Widget
-                                    className={`sx-2 ${pdfClassName}`}
+                                    className="sx-2"
                                     header={`${labels.length} ${pluralize('Label', labels.length)}`}
                                 >
                                     <Labels labels={labels} />
@@ -219,8 +212,6 @@ const NodePage = ({
                                     listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
-                                    isExporting={isExporting}
-                                    setIsExporting={setIsExporting}
                                 />
                                 <ResourceTabs
                                     entityId={id}
@@ -235,7 +226,6 @@ const NodePage = ({
                             </>
                         )}
                         {contents}
-                        {isExporting && <BackdropExporting />}
                     </section>
                 );
             }}
