@@ -291,7 +291,7 @@ func (m *managerImpl) validateScan(ctx context.Context, scanRequest *storage.Com
 		return nil, err
 	}
 
-	// Validate that all profiles exist in the database and have compatible kinds
+	// Validate that all profiles exist in the database and have compatible kinds.
 	returnedProfiles, err := m.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusters[0]).
 		AddExactMatches(search.ComplianceOperatorProfileName, profiles...).ProtoQuery())
