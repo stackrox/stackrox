@@ -147,7 +147,7 @@ func runSSHCommandWithFramework(ctx context.Context, virt Virtctl, namespace, vm
 		}
 
 		virt.Logf("%s on %s/%s: retryable SSH %s condition (attempt %d/%d): %s",
-			description, namespace, vm, category, attempt, attempts, formatGuestCommandOutputForError(stderr))
+			description, namespace, vm, category, attempt, attempts, FormatGuestCommandOutputForError(stderr))
 
 		select {
 		case <-ctx.Done():

@@ -672,16 +672,6 @@ func (s *VMScanningSuite) mustGetVM(id string) *v2.VirtualMachine {
 	return resp
 }
 
-const maxRoxagentStderrInError = 4096
-
-func formatRoxagentStderrForError(stderr string) string {
-	s := strings.TrimSpace(stderr)
-	if len(s) > maxRoxagentStderrInError {
-		return s[:maxRoxagentStderrInError] + fmt.Sprintf(" ... (truncated from %d bytes)", len(s))
-	}
-	return s
-}
-
 // roxagentStderrCrashLinePrefixes are lowercase; each stderr line is trimmed and lowercased before HasPrefix.
 var roxagentStderrCrashLinePrefixes = []string{
 	"panic:",
@@ -699,7 +689,7 @@ func validateRoxagentSuccessStderr(stderr string) error {
 		ln := strings.TrimSpace(strings.ToLower(line))
 		for _, prefix := range roxagentStderrCrashLinePrefixes {
 			if strings.HasPrefix(ln, prefix) {
-				return fmt.Errorf("ensureCanonicalScan: roxagent stderr indicates process/runtime failure (matched line prefix %q): %s", prefix, formatRoxagentStderrForError(stderr))
+				return fmt.Errorf("ensureCanonicalScan: roxagent stderr indicates process/runtime failure (matched line prefix %q): %s", prefix, vmhelpers.FormatGuestCommandOutputForError(stderr))
 			}
 		}
 	}
@@ -911,18 +901,9 @@ func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {
 	}); err != nil {
 		return err
 	}
-	if err := runStep("Verify roxagent binary presence", "VerifyRoxagentBinaryPresent", stepTimeout, func(stepCtx context.Context) error {
-		return vmhelpers.VerifyRoxagentBinaryPresent(stepCtx, virt, vm.Namespace, vm.Name)
-	}); err != nil {
-		return err
-	}
-	if err := runStep("Verify roxagent executable mode", "VerifyRoxagentExecutable", stepTimeout, func(stepCtx context.Context) error {
-		return vmhelpers.VerifyRoxagentExecutable(stepCtx, virt, vm.Namespace, vm.Name)
-	}); err != nil {
-		return err
-	}
-	if err := runStep("Verify roxagent install path", "VerifyRoxagentInstallPath", stepTimeout, func(stepCtx context.Context) error {
-		return vmhelpers.VerifyRoxagentInstallPath(stepCtx, virt, vm.Namespace, vm.Name)
+	// Runs `roxagent --help` to confirm the binary is present, executable, and in $PATH.
+	if err := runStep("Verify roxagent installed", "VerifyRoxagentInstalled", stepTimeout, func(stepCtx context.Context) error {
+		return vmhelpers.VerifyRoxagentInstalled(stepCtx, virt, vm.Namespace, vm.Name)
 	}); err != nil {
 		return err
 	}

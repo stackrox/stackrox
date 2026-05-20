@@ -35,17 +35,6 @@ func TestChooseRepo2CPESource(t *testing.T) {
 	}
 }
 
-func TestRunRoxagentOnce_RejectsUnsupportedInstallPath(t *testing.T) {
-	t.Parallel()
-	ctx := t.Context()
-	_, err := RunRoxagentOnce(ctx, Virtctl{}, "ns", "vm", RoxagentRunConfig{
-		RoxagentInstallPath: "/opt/roxagent",
-	})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "not supported")
-	require.Contains(t, err.Error(), "/opt/roxagent")
-}
-
 func TestVerboseOutputHasOSFields(t *testing.T) {
 	t.Parallel()
 	cases := map[string]struct {
