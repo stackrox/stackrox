@@ -608,6 +608,10 @@ jobs:
         if: github.event_name != 'pull_request'
         run: make check-debugger
 
+      - name: Prepare roxctl build context
+        run: |
+          cp -r image/rhel/THIRD_PARTY_NOTICES image/roxctl/THIRD_PARTY_NOTICES
+
       - name: Build roxctl image
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
@@ -834,6 +838,11 @@ jobs:
 
       - name: Extract prebuilt binaries
         run: tar xzf go-binaries-build.tgz
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: oss-notice
+          path: THIRD_PARTY_NOTICES
 
       - name: PR labels
         uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
