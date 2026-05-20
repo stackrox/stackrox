@@ -192,9 +192,6 @@ func (s *serviceImpl) ListReportConfigurations(ctx context.Context, query *apiV2
 	v2Configs := make([]*apiV2.ReportConfiguration, 0, len(reportConfigs))
 
 	for _, config := range reportConfigs {
-		if !common.HasValidResourceScope(config.GetResourceScope()) {
-			continue
-		}
 		converted, err := s.convertProtoReportConfigurationToV2(config)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error converting storage report configuration with id %s to response", config.GetId())
