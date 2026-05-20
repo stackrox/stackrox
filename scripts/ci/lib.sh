@@ -506,7 +506,7 @@ registry_ro_login() {
 }
 
 push_matching_collector_scanner_images() {
-    info "Pushing collector & scanner images tagged with main-version using buildx imagetools"
+    info "Pushing collector & scanner images tagged with main-version using skopeo"
 
     if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: push_matching_collector_scanner_images <brand>"
@@ -518,7 +518,7 @@ push_matching_collector_scanner_images() {
     registry="$(registry_from_branding "$brand")"
 
     _retag() {
-        retry 5 true docker buildx imagetools create -t "$2" "$1"
+        skopeo copy --retry-times 5 --all "docker://$1" "docker://$2"
     }
 
     local main_tag
@@ -990,10 +990,12 @@ scanner-v4-db ${tag}
 END
             ;;
         *-race-condition-qa-e2e-tests)
+            local base_tag="${tag%-rcd}"
+            local rcd_tag="${base_tag}-rcd"
             cat >> "${image_list}" << END
-central-db ${tag}
-main ${tag}-rcd
-roxctl ${tag}
+central-db ${base_tag}
+main ${rcd_tag}
+roxctl ${base_tag}
 END
             if is_in_PR_context && ! pr_has_label "ci-build-race-condition-debug"; then
                 echo "ERROR: Your PR is missing the \"ci-build-race-condition-debug\" label."
@@ -1073,12 +1075,6 @@ check_build_workflows() {
         info "GitHub Actions workflow status for build.yaml:"
         check-workflow-run \
             --workflow=build.yaml \
-            --head-SHA="${commit_sha}"
-
-        echo
-        info "GitHub Actions workflow status for scanner-build.yaml:"
-        check-workflow-run \
-            --workflow=scanner-build.yaml \
             --head-SHA="${commit_sha}"
     } | tee "${STATE_BUILD_RESULTS}" || true
 }

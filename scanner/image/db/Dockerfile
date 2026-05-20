@@ -21,7 +21,7 @@ ENV LANG="en_US.utf8"
 # This will be ignored if empty in the init script.
 COPY init-bundles/db-init.dump.zst /db-init.dump.zst
 
-COPY scripts/docker-entrypoint.sh scripts/init-entrypoint.sh /usr/local/bin/
+COPY scripts/docker-entrypoint.sh scripts/init-entrypoint.sh scripts/cert-watcher.sh /usr/local/bin/
 
 RUN dnf upgrade -y --nobest && \
     localedef -f UTF-8 -i en_US en_US.UTF-8 && \

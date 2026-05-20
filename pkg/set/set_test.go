@@ -143,3 +143,22 @@ func TestDifference(t *testing.T) {
 
 	assertSetContainsExactly(t, a, "a", "b", "c")
 }
+
+func TestIsSubsetOf(t *testing.T) {
+	a := assert.New(t)
+
+	a.True(NewSet("a", "b").IsSubsetOf(NewSet("a", "b", "c")))
+	a.True(NewSet("a", "b", "c").IsSubsetOf(NewSet("a", "b", "c")))
+	a.False(NewSet("a", "b", "d").IsSubsetOf(NewSet("a", "b", "c")))
+	a.False(NewSet("a").IsSubsetOf(StringSet{}))
+
+	// Empty set is a subset of every set.
+	a.True(StringSet{}.IsSubsetOf(NewSet("a")))
+	a.True(StringSet{}.IsSubsetOf(StringSet{}))
+
+	// Nil sets.
+	var nilSet StringSet
+	a.True(nilSet.IsSubsetOf(NewSet("a")))
+	a.True(nilSet.IsSubsetOf(nilSet))
+	a.False(NewSet("a").IsSubsetOf(nilSet))
+}

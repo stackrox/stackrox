@@ -204,3 +204,55 @@ func GetPGStatActivities(ctx context.Context, db postgres.DB, limit int) *PGStat
 	}
 	return &activities
 }
+
+// PGIndexStat is the data model for a single index from pg_stat_user_indexes joined with pg_index
+type PGIndexStat struct {
+	TableName      string
+	IndexName      string
+	IndexType      string
+	IndexSizeBytes int64
+	IsValid        bool
+	IsReady        bool
+	IndexScans     int64
+}
+
+// PGIndexStats is a wrapper around PGIndexStat
+type PGIndexStats struct {
+	Indexes []*PGIndexStat
+	Error   string
+}
+
+// GetPGIndexStats returns index health information from pg_stat_user_indexes joined with pg_index.
+// pg_stat_user_indexes is used to scope results to the current user's indexes only,
+// avoiding exposure of indexes from management or infrastructure schemas on external databases.
+func GetPGIndexStats(ctx context.Context, db postgres.DB, limit int) *PGIndexStats {
+	var indexStats PGIndexStats
+	rows, err := db.Query(ctx,
+		`SELECT s.relname, s.indexrelname, am.amname,
+			pg_relation_size(ix.indexrelid), ix.indisvalid, ix.indisready,
+			s.idx_scan
+		FROM pg_stat_user_indexes s
+		JOIN pg_index ix ON ix.indexrelid = s.indexrelid
+		JOIN pg_class i ON i.oid = ix.indexrelid
+		JOIN pg_am am ON am.oid = i.relam
+		ORDER BY pg_relation_size(ix.indexrelid) DESC
+		LIMIT $1`, limit)
+	if err != nil {
+		indexStats.Error = err.Error()
+		return &indexStats
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var idx PGIndexStat
+		if err := rows.Scan(&idx.TableName, &idx.IndexName, &idx.IndexType, &idx.IndexSizeBytes, &idx.IsValid, &idx.IsReady, &idx.IndexScans); err != nil {
+			indexStats.Error = errors.Wrap(err, "error scanning rows from pg_stat_user_indexes").Error()
+			return &indexStats
+		}
+		indexStats.Indexes = append(indexStats.Indexes, &idx)
+	}
+	if err := rows.Err(); err != nil {
+		indexStats.Error = err.Error()
+	}
+	return &indexStats
+}

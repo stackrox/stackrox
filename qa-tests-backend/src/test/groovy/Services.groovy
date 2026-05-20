@@ -162,7 +162,7 @@ class Services extends BaseService {
         return null
     }
 
-    static waitForViolation(String deploymentName, String policyName, int timeoutSeconds = 30) {
+    static boolean waitForViolation(String deploymentName, String policyName, int timeoutSeconds = 30) {
         List<AlertOuterClass.ListAlert> violations = getViolationsWithTimeout(
                 deploymentName, policyName, timeoutSeconds)
         if (violations == null || violations.size() == 0) {
@@ -171,7 +171,7 @@ class Services extends BaseService {
         return violations != null && violations.size() > 0
     }
 
-    static waitForNodeViolation(String policyName, int timeoutSeconds = 30) {
+    static boolean waitForNodeViolation(String policyName, int timeoutSeconds = 30) {
         def query = "Policy:${policyName}+Violation State:ACTIVE+Entity Type:NODE"
         List<AlertOuterClass.ListAlert> violations = getViolationsHelper(query, policyName, timeoutSeconds)
         if (violations == null || violations.size() == 0) {
@@ -180,7 +180,7 @@ class Services extends BaseService {
         return violations != null && violations.size() > 0
     }
 
-    static waitForResolvedViolation(String deploymentName, String policyName, int timeoutSeconds = 30) {
+    static boolean waitForResolvedViolation(String deploymentName, String policyName, int timeoutSeconds = 30) {
         def query = "Deployment:${deploymentName}+Policy:${policyName}+Violation State:resolved"
         List<AlertOuterClass.ListAlert> violations = getViolationsHelper(query, policyName, timeoutSeconds)
         if (violations == null || violations.size() == 0) {
@@ -505,7 +505,7 @@ class Services extends BaseService {
     // When changing the timeout here, remember there might be other enclosing
     // timeout that should be in sync. For example,`globalTimeout` which aborts
     // tests but should be generally avoided.
-    static waitForDeployment(objects.Deployment deployment, int retries = 60, int interval = 5) {
+    static boolean waitForDeployment(objects.Deployment deployment, int retries = 60, int interval = 5) {
         if (deployment.deploymentUid == null) {
             LOG.info "deploymentID for [${deployment.name}] is null, checking orchestrator directly for deployment ID"
             deployment.deploymentUid = OrchestratorType.orchestrator.getDeploymentId(deployment)
@@ -517,7 +517,7 @@ class Services extends BaseService {
         return waitForDeploymentByID(deployment.deploymentUid, deployment.name, retries, interval)
     }
 
-    static waitForDeploymentByID(String id, String name, int retries = 30, int interval = 2) {
+    static boolean waitForDeploymentByID(String id, String name, int retries = 30, int interval = 2) {
         Timer t = new Timer(retries, interval)
         while (t.IsValid()) {
             if (roxDetectedDeployment(id, name)) {

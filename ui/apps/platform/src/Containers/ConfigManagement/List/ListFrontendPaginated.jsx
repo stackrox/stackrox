@@ -17,7 +17,6 @@ import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import entityLabels from 'messages/entity';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import isGQLLoading from 'utils/gqlLoading';
-import createPDFTable from 'utils/pdfUtils';
 import URLService from 'utils/URLService';
 
 const ListFrontendPaginated = ({
@@ -67,7 +66,6 @@ const ListFrontendPaginated = ({
                         columns={tableColumns}
                         onRowClick={onRowClickHandler}
                         idAttribute={idAttribute}
-                        id="capture-list"
                         selectedRowId={selectedRowId}
                         noDataText={noDataText}
                         page={page}
@@ -112,14 +110,11 @@ const ListFrontendPaginated = ({
 
     if (data) {
         const headerComponents = getHeaderComponents(data.length);
-        if (data.length) {
-            createPDFTable(data, entityType, query, 'capture-list', tableColumns);
-        }
         return getRenderComponents(headerComponents, data);
     }
 
     return (
-        <section className="h-full w-full" id="capture-list">
+        <section className="h-full w-full">
             <Query query={query} variables={variables}>
                 {({ loading, data: queryData }) => {
                     if (isGQLLoading(loading, data)) {
@@ -135,10 +130,6 @@ const ListFrontendPaginated = ({
                     }
                     const tableRows = createTableRows(queryData) ?? [];
                     const headerComponents = getHeaderComponents(tableRows.length);
-
-                    if (tableRows.length) {
-                        createPDFTable(tableRows, entityType, query, 'capture-list', tableColumns);
-                    }
                     return getRenderComponents(headerComponents, tableRows);
                 }}
             </Query>

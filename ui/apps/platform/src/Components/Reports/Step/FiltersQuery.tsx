@@ -1,5 +1,12 @@
 import type { ReactElement } from 'react';
-import { Alert, Flex, FormGroup } from '@patternfly/react-core';
+import {
+    Flex,
+    FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+} from '@patternfly/react-core';
+import { getIn } from 'formik';
 import type { FormikProps } from 'formik';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
@@ -13,6 +20,7 @@ import type {
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import type { SearchFilter } from 'types/search';
 import {
+    applyRegexSearchModifiers,
     getRequestQueryStringForSearchFilter,
     getSearchFilterFromSearchString,
 } from 'utils/searchUtils';
@@ -39,7 +47,7 @@ function FiltersQuery<T extends FiltersQueryConfiguration = FiltersQueryConfigur
     function onFilterChange(searchFilterChanged: SearchFilter) {
         formik.setFieldValue(
             'vulnReportFilters.query',
-            getRequestQueryStringForSearchFilter(searchFilterChanged)
+            getRequestQueryStringForSearchFilter(applyRegexSearchModifiers(searchFilterChanged))
         );
     }
 
@@ -58,7 +66,7 @@ function FiltersQuery<T extends FiltersQueryConfiguration = FiltersQueryConfigur
                     />
                 </FormGroup>
             ))}
-            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
                 <CompoundSearchFilter
                     config={searchFilterConfig}
                     onSearch={onSearch}
@@ -68,13 +76,21 @@ function FiltersQuery<T extends FiltersQueryConfiguration = FiltersQueryConfigur
                     <CompoundSearchFilterLabels
                         attributesSeparateFromConfig={attributesSeparateFromConfig}
                         config={searchFilterConfig}
+                        hasClearFilters={false}
                         onFilterChange={onFilterChange}
                         searchFilter={searchFilter}
                     />
                 ) : (
-                    <Alert variant="warning" title="TODO" isInline component="p">
-                        To be determined
-                    </Alert>
+                    getIn(formik.touched, 'vulnReportFilters.query') &&
+                    getIn(formik.errors, 'vulnReportFilters.query') && (
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem variant="error">
+                                    {getIn(formik.errors, 'vulnReportFilters.query')}
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
+                    )
                 )}
             </Flex>
         </>

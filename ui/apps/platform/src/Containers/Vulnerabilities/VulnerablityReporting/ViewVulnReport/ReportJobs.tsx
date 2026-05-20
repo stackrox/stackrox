@@ -14,9 +14,7 @@ import {
     AlertGroup,
     Bullseye,
     Button,
-    Card,
     Content,
-    Divider,
     Flex,
     FlexItem,
     Pagination,
@@ -29,7 +27,7 @@ import {
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon, FilterIcon } from '@patternfly/react-icons';
 
-import type { ConfiguredReportSnapshot, ReportConfiguration } from 'services/ReportsService.types';
+import type { ConfiguredReportSnapshot } from 'services/ReportsService.types';
 import { getDateTime } from 'utils/dateUtils';
 import useSet from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
@@ -41,21 +39,21 @@ import useAuthStatus from 'hooks/useAuthStatus';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
-import type { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
-import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 
 import { runStates } from 'types/reportJob';
 import type { RunState } from 'types/reportJob';
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
 
+import ImageVulnerabilityReportView from '../../ImageVulnerabilityReports/View/ImageVulnerabilityReportView';
+import type { ImageVulnerabilityReportConfiguration } from '../../ImageVulnerabilityReports/imageVulnerabilityReports.types';
+import {
+    attributesSeparateFromConfigForImageVulnerabilityReport,
+    searchFilterConfigForImageVulnerabilityReport,
+} from '../../searchFilterConfig';
+
 import { getRequestQueryString } from '../api/apiUtils';
 import useFetchReportHistory from '../api/useFetchReportHistory';
-import EmailTemplatePreview from '../components/EmailTemplatePreview';
-import ReportParametersDetails from '../components/ReportParametersDetails';
-import ScheduleDetails from '../components/ScheduleDetails';
-import { defaultEmailBody, getDefaultEmailSubject } from '../forms/emailTemplateFormUtils';
 import useDeleteDownloadModal from '../hooks/useDeleteDownloadModal';
-import { getReportFormValuesFromConfiguration } from '../utils';
 import JobDetails from './JobDetails';
 
 export type ReportJobsProps = {
@@ -237,37 +235,9 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                         </Tbody>
                     )}
                     {reportSnapshots.map((reportSnapshot, rowIndex) => {
-                        const {
-                            reportConfigId,
-                            reportJobId,
-                            name,
-                            description,
-                            vulnReportFilters,
-                            collectionSnapshot,
-                            schedule,
-                            notifiers,
-                            reportStatus,
-                            user,
-                            isDownloadAvailable,
-                        } = reportSnapshot;
+                        const { reportJobId, reportStatus, user, isDownloadAvailable } =
+                            reportSnapshot;
                         const isExpanded = expandedRowSet.has(reportJobId);
-                        const reportConfiguration: ReportConfiguration = {
-                            id: reportConfigId,
-                            name,
-                            description: description ?? '',
-                            type: 'VULNERABILITY',
-                            vulnReportFilters,
-                            notifiers,
-                            schedule,
-                            resourceScope: {
-                                collectionScope: {
-                                    collectionId: collectionSnapshot.id,
-                                    collectionName: collectionSnapshot.name,
-                                },
-                            },
-                        };
-                        const formValues =
-                            getReportFormValuesFromConfiguration(reportConfiguration);
                         const areDownloadActionsDisabled = currentUser.userId !== user.id;
 
                         const rowActions = [
@@ -321,70 +291,34 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                                 <Tr isExpanded={isExpanded}>
                                     <Td colSpan={5}>
                                         <ExpandableRowContent>
-                                            <Card className="pf-v6-u-m-md pf-v6-u-p-md">
-                                                <Flex>
-                                                    <FlexItem>
-                                                        <JobDetails
-                                                            reportStatus={reportStatus}
-                                                            isDownloadAvailable={
-                                                                isDownloadAvailable
-                                                            }
-                                                        />
-                                                    </FlexItem>
-                                                    <Divider
-                                                        component="div"
-                                                        className="pf-v6-u-my-md"
+                                            <Flex
+                                                direction={{ default: 'column' }}
+                                                spaceItems={{ default: 'spaceItemsLg' }}
+                                            >
+                                                <FlexItem>
+                                                    <JobDetails
+                                                        reportStatus={reportStatus}
+                                                        isDownloadAvailable={isDownloadAvailable}
                                                     />
-                                                    <FlexItem>
-                                                        <ReportParametersDetails
-                                                            headingLevel={headingLevel}
-                                                            formValues={formValues}
-                                                        />
-                                                    </FlexItem>
-                                                    <Divider
-                                                        component="div"
-                                                        className="pf-v6-u-my-md"
+                                                </FlexItem>
+                                                <FlexItem>
+                                                    <ImageVulnerabilityReportView
+                                                        attributesSeparateFromConfig={
+                                                            attributesSeparateFromConfigForImageVulnerabilityReport
+                                                        }
+                                                        headingLevel={headingLevel}
+                                                        horizontalTermWidthModifier={{
+                                                            default: '24ch',
+                                                        }}
+                                                        searchFilterConfig={
+                                                            searchFilterConfigForImageVulnerabilityReport
+                                                        }
+                                                        values={
+                                                            reportSnapshot as unknown as ImageVulnerabilityReportConfiguration
+                                                        }
                                                     />
-                                                    <FlexItem>
-                                                        <NotifierConfigurationView
-                                                            headingLevel={headingLevel}
-                                                            customBodyDefault={defaultEmailBody}
-                                                            customSubjectDefault={getDefaultEmailSubject(
-                                                                formValues.reportParameters
-                                                                    .reportName,
-                                                                formValues.reportParameters
-                                                                    .reportScope?.name
-                                                            )}
-                                                            notifierConfigurations={
-                                                                formValues.deliveryDestinations
-                                                            }
-                                                            renderTemplatePreview={({
-                                                                customBody,
-                                                                customSubject,
-                                                                customSubjectDefault,
-                                                            }: TemplatePreviewArgs) => (
-                                                                <EmailTemplatePreview
-                                                                    emailSubject={customSubject}
-                                                                    emailBody={customBody}
-                                                                    defaultEmailSubject={
-                                                                        customSubjectDefault
-                                                                    }
-                                                                    reportParameters={
-                                                                        formValues.reportParameters
-                                                                    }
-                                                                />
-                                                            )}
-                                                        />
-                                                    </FlexItem>
-                                                    <Divider
-                                                        component="div"
-                                                        className="pf-v6-u-my-md"
-                                                    />
-                                                    <FlexItem>
-                                                        <ScheduleDetails formValues={formValues} />
-                                                    </FlexItem>
-                                                </Flex>
-                                            </Card>
+                                                </FlexItem>
+                                            </Flex>
                                         </ExpandableRowContent>
                                     </Td>
                                 </Tr>

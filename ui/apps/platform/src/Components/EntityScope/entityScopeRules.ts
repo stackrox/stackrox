@@ -1,3 +1,5 @@
+import cloneDeep from 'lodash/cloneDeep';
+
 import type {
     EntityScopeRule,
     RuleValue,
@@ -114,6 +116,29 @@ const searchFieldLabelMapForClusterNamespaceDeployment: Record<
     },
 } as const;
 
+// One size omits all of cluster, namespace, deployment, for simplicity.
+// For initial query string when ?action=createFromFilters
+export function getSearchFilterWithoutEntityScope(
+    searchFilterWithEntityScopeRules: SearchFilter
+): SearchFilter {
+    const searchFilterWithoutEntityScopeRules: SearchFilter = cloneDeep(
+        searchFilterWithEntityScopeRules
+    );
+
+    Object.entries(searchFilterWithEntityScopeRules).forEach(([searchFieldLabel]) => {
+        if (
+            getValueByCaseInsensitiveKey(
+                searchFieldLabelMapForClusterNamespaceDeployment,
+                searchFieldLabel
+            )
+        ) {
+            delete searchFilterWithoutEntityScopeRules[searchFieldLabel];
+        }
+    });
+
+    return searchFilterWithoutEntityScopeRules;
+}
+
 export const searchFieldValueMapper = (value: string): RuleValue =>
     isQuotedString(value)
         ? { matchType: 'EXACT', value: value.slice(1, -1) }
@@ -148,7 +173,7 @@ function getEntityScopeRulesFromSearchFilter(
 }
 
 export const ruleFieldValueMapper = ({ matchType, value }: RuleValue): string =>
-    matchType === 'EXACT' ? wrapInQuotes(value) : `r/${value}`;
+    matchType === 'EXACT' ? wrapInQuotes(value) : value;
 
 /**
  * Return search filter in EntityScopeCompoundSearchFilter component.

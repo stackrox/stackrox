@@ -191,6 +191,7 @@ export_test_environment() {
     ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_ADMISSION_CONTROLLER_CONFIG "${ROX_ADMISSION_CONTROLLER_CONFIG:-true}"
     ci_export ROX_CISA_KEV "${ROX_CISA_KEV:-true}"
+    ci_export ROX_DEPRECATED_COMPLIANCE_DASHBOARD "${ROX_DEPRECATED_COMPLIANCE_DASHBOARD:-true}"
     ci_export ROX_SENSITIVE_FILE_ACTIVITY "${ROX_SENSITIVE_FILE_ACTIVITY:-true}"
     ci_export ROX_CVE_FIX_TIMESTAMP "${ROX_CVE_FIX_TIMESTAMP:-true}"
     ci_export ROX_BASE_IMAGE_DETECTION "${ROX_BASE_IMAGE_DETECTION:-true}"
@@ -199,7 +200,6 @@ export_test_environment() {
     ci_export ROX_NODE_VULNERABILITY_REPORTS "${ROX_NODE_VULNERABILITY_REPORTS:-true}"
     ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
-    ci_export ROX_TAILORED_PROFILES "${ROX_TAILORED_PROFILES:-true}"
     ci_export ROX_INIT_CONTAINER_SUPPORT "${ROX_INIT_CONTAINER_SUPPORT:-true}"
     ci_export SCANNER_V4_VULN_READINESS "${SCANNER_V4_VULN_READINESS:-true}"
 
@@ -359,6 +359,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CISA_KEV'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_DEPRECATED_COMPLIANCE_DASHBOARD'
+    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_SENSITIVE_FILE_ACTIVITY'
     customize_envVars+=$'\n        value: "'"${SFA_AGENT}"'"'
     customize_envVars+=$'\n      - name: ROX_CVE_FIX_TIMESTAMP'
@@ -370,8 +372,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_BASE_IMAGE_DETECTION'
     customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_LABEL_BASED_POLICY_SCOPING'
-    customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_TAILORED_PROFILES'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_INIT_CONTAINER_SUPPORT'
     customize_envVars+=$'\n        value: "true"'

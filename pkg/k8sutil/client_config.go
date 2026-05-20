@@ -25,6 +25,7 @@ func GetK8sInClusterConfig() (*rest.Config, error) {
 		return nil, err
 	}
 	restCfg.ContentType = clientContentType
+	restCfg.WarningHandler = NewFilteredWarningHandler()
 
 	// Replacing raw IP address with kubernetes.default.svc
 	// allows for easier proxy configuration.

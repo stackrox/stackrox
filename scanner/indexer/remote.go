@@ -12,8 +12,7 @@ import (
 
 // RemoteIndexer represents the interface offered by remote indexers.
 type RemoteIndexer interface {
-	ReportGetter
-	GetRepositoryToCPEMapping(context.Context, string) (*FetchResult, error)
+	ReportProvider
 	Close(context.Context) error
 }
 

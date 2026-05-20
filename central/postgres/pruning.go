@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
@@ -120,6 +121,14 @@ const (
 			revoked = TRUE OR
 			expiration < now() at time zone 'utc' - INTERVAL '%d MINUTES'
 		)` // #nosec G101
+
+	inactiveImageIdentifiersQuery = `SELECT img.id, img.digest, img.name_fullname
+		FROM images_v2 img
+		WHERE img.lastupdated < now() AT TIME ZONE 'utc' - INTERVAL '%d DAYS'
+		AND NOT EXISTS (
+			SELECT 1 FROM deployments_containers dc
+			WHERE dc.image_idv2 = img.id
+		)`
 )
 
 var (
@@ -268,4 +277,33 @@ func PruneInvalidAPITokens(ctx context.Context, pool postgres.DB, retentionDurat
 	if _, err := pool.Exec(pruneCtx, query); err != nil {
 		log.Errorf("failed to prune invalid api tokens: %v", err)
 	}
+}
+
+// ImageIdentifier holds the id, digest, and full name of an image.
+type ImageIdentifier struct {
+	ID       string
+	Digest   string
+	FullName string
+}
+
+// GetInactiveImageIdentifiers returns images that are older than retentionDays and have no
+// deployment container referencing them.
+func GetInactiveImageIdentifiers(ctx context.Context, pool postgres.DB, retentionDays int) ([]*ImageIdentifier, error) {
+	return pgutils.Retry2(ctx, func() ([]*ImageIdentifier, error) {
+		ctx, cancel := context.WithTimeout(ctx, orphanedQueryTimeout)
+		defer cancel()
+
+		query := fmt.Sprintf(inactiveImageIdentifiersQuery, retentionDays)
+		rows, err := pool.Query(ctx, query)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get inactive image identifiers")
+		}
+		return pgx.CollectRows(rows, func(row pgx.CollectableRow) (*ImageIdentifier, error) {
+			var img ImageIdentifier
+			if err := row.Scan(&img.ID, &img.Digest, &img.FullName); err != nil {
+				return nil, errors.Wrap(err, "scanning image identifier")
+			}
+			return &img, nil
+		})
+	})
 }

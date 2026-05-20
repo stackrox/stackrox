@@ -143,6 +143,12 @@ func (s *ImageCVEFlatViewTestSuite) SetupSuite() {
 	// Upsert images using the appropriate datastore based on feature flag.
 	var deployments []*storage.Deployment
 	if features.FlattenImageData.Enabled() {
+		// Insert a V1 image to verify that V1 rows are excluded from all view queries.
+		s.T().Setenv(features.FlattenImageData.EnvVar(), "false")
+		v1Store := imageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+		s.Require().NoError(v1Store.UpsertImage(ctx, fixtures.GetImageSherlockHolmes1()))
+		s.T().Setenv(features.FlattenImageData.EnvVar(), "true")
+
 		imageV2Store := imageV2DS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 		imagesV2, err := imageSamples.GetTestImagesV2(s.T())
 		s.Require().NoError(err)

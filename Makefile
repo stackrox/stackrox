@@ -139,6 +139,7 @@ style: golangci-lint style-slim
 .PHONY: style-slim
 style-slim: \
 	blanks \
+	check-cert-watcher-sync \
 	check-service-protos \
 	github-actions-pin-check \
 	newlines \
@@ -262,6 +263,12 @@ fast-migrator-build: migrator-build-nodeps
 migrator-build-nodeps:
 	@echo "+ $@"
 	$(GOBUILD) migrator
+
+.PHONY: check-cert-watcher-sync
+check-cert-watcher-sync:
+	@echo "+ $@"
+	@diff image/postgres/scripts/cert-watcher.sh scanner/image/db/scripts/cert-watcher.sh \
+		|| (echo "ERROR: cert-watcher.sh files are out of sync" && exit 1)
 
 .PHONY: check-service-protos
 check-service-protos:
@@ -501,6 +508,7 @@ main-build-nodeps:
 		migrator \
 		operator/cmd \
 		roxctl \
+		scanner/cmd/scanner \
 		sensor/admission-control \
 		sensor/kubernetes \
 		sensor/upgrader \
@@ -826,7 +834,7 @@ roxvet: $(ROXVET_BIN)
 	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
 	$(SILENT)go list -e ./... \
 	    | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
-	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)" -tags "sql_integration test_e2e test race destructive integration scanner_db_integration compliance externalbackups"
+	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)" -tags "sql_integration test_e2e test_e2e_vm test race destructive integration scanner_db_integration compliance externalbackups"
 
 ##########
 ## Misc ##

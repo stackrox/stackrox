@@ -1,4 +1,4 @@
-//go:build test_e2e || sql_integration || compliance || destructive || externalbackups || test_compatibility
+//go:build test_e2e || test_e2e_vm || sql_integration || compliance || destructive || externalbackups || test_compatibility
 
 package tests
 
@@ -208,10 +208,20 @@ func waitForDeploymentReadyInK8s(t testutils.T, deploymentName, namespace string
 				continue
 			}
 
-			// Ensure all pods are from the current generation (no old pods during rollout)
-			if deploy.Status.UpdatedReplicas > 0 && deploy.Status.UpdatedReplicas != deploy.Status.Replicas {
+			// Ensure all pods are from the current generation (no old pods during rollout).
+			if deploy.Spec.Replicas != nil && deploy.Status.UpdatedReplicas < *deploy.Spec.Replicas {
 				t.Logf("Deployment %q in namespace %q NOT ready: rollout incomplete (%d/%d updated replicas)",
-					deploymentName, namespace, deploy.Status.UpdatedReplicas, deploy.Status.Replicas)
+					deploymentName, namespace, deploy.Status.UpdatedReplicas, *deploy.Spec.Replicas)
+				continue
+			}
+			if deploy.Status.Replicas > deploy.Status.UpdatedReplicas {
+				t.Logf("Deployment %q in namespace %q NOT ready: old replicas pending termination (%d total, %d updated)",
+					deploymentName, namespace, deploy.Status.Replicas, deploy.Status.UpdatedReplicas)
+				continue
+			}
+			if deploy.Status.AvailableReplicas < deploy.Status.UpdatedReplicas {
+				t.Logf("Deployment %q in namespace %q NOT ready: updated replicas not yet available (%d/%d available)",
+					deploymentName, namespace, deploy.Status.AvailableReplicas, deploy.Status.UpdatedReplicas)
 				continue
 			}
 
@@ -993,8 +1003,16 @@ func (ks *KubernetesSuite) waitUntilK8sDeploymentReady(ctx context.Context, name
 			}
 
 			// Ensure all pods are from the current generation (no old pods during rollout).
-			if deploy.Status.UpdatedReplicas > 0 && deploy.Status.UpdatedReplicas != deploy.Status.Replicas {
-				ks.logf("deployment %q in namespace %q NOT ready, rollout incomplete (%d/%d updated replicas)", deploymentName, namespace, deploy.Status.UpdatedReplicas, deploy.Status.Replicas)
+			if deploy.Spec.Replicas != nil && deploy.Status.UpdatedReplicas < *deploy.Spec.Replicas {
+				ks.logf("deployment %q in namespace %q NOT ready, rollout incomplete (%d/%d updated replicas)", deploymentName, namespace, deploy.Status.UpdatedReplicas, *deploy.Spec.Replicas)
+				continue
+			}
+			if deploy.Status.Replicas > deploy.Status.UpdatedReplicas {
+				ks.logf("deployment %q in namespace %q NOT ready, old replicas pending termination (%d total, %d updated)", deploymentName, namespace, deploy.Status.Replicas, deploy.Status.UpdatedReplicas)
+				continue
+			}
+			if deploy.Status.AvailableReplicas < deploy.Status.UpdatedReplicas {
+				ks.logf("deployment %q in namespace %q NOT ready, updated replicas not yet available (%d/%d available)", deploymentName, namespace, deploy.Status.AvailableReplicas, deploy.Status.UpdatedReplicas)
 				continue
 			}
 

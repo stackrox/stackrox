@@ -49,7 +49,7 @@ func CheckStruct(t *testing.T, s any, schema chartutil.Values) {
 			fieldSchema, err := schema.Table("properties." + jsonName)
 			require.NoError(t, err)
 			switch field.Type().Kind() {
-			case reflect.Ptr:
+			case reflect.Pointer:
 				switch field.Type().Elem().Kind() {
 				case reflect.Struct:
 					if field.IsNil() {

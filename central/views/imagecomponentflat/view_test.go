@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -97,6 +98,12 @@ type ImageComponentFlatViewTestSuite struct {
 func (s *ImageComponentFlatViewTestSuite) SetupSuite() {
 	ctx := sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
+
+	// Insert a V1 image to verify that V1 rows are excluded from all view queries.
+	s.T().Setenv(features.FlattenImageData.EnvVar(), "false")
+	v1Store := imageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Require().NoError(v1Store.UpsertImage(ctx, fixtures.GetImageSherlockHolmes1()))
+	s.T().Setenv(features.FlattenImageData.EnvVar(), "true")
 
 	// Initialize the ImageV2 datastore
 	imageStore := imageV2DS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
