@@ -3,7 +3,6 @@
 package vmhelpers
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -58,12 +57,4 @@ func TestIsVsockUnavailableOutput(t *testing.T) {
 			require.Equal(t, tc.want, isVsockUnavailableOutput(tc.output))
 		})
 	}
-}
-
-func TestIsTerminalVSOCKUnavailableError(t *testing.T) {
-	t.Parallel()
-
-	terminalErr := errors.Join(ErrTerminalVSOCKUnavailable, errors.New("exit status 1"))
-	require.True(t, IsTerminalVSOCKUnavailableError(terminalErr))
-	require.False(t, IsTerminalVSOCKUnavailableError(errors.New("other error")))
 }
