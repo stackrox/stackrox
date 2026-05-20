@@ -72,7 +72,8 @@ INSERT INTO vuln (hash_kind, hash, dist_id, dist_version_id, dist_version, repo_
 }
 
 func TestHummingbirdDist(t *testing.T) {
-	dist := hummingbirdDist()
+	dist, err := hummingbirdDist()
+	require.NoError(t, err)
 	assert.Equal(t, claircore.Distribution{DID: "hummingbird"}, dist)
 }
 

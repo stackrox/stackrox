@@ -54,7 +54,7 @@ func (m *matcherStore) Distributions(ctx context.Context) ([]claircore.Distribut
 			case rhelCPE.MatchString(repoName):
 				dist, err = rhelDist(repoName)
 			case hummingbirdCPE.MatchString(repoName):
-				dist = hummingbirdDist()
+				dist, err = hummingbirdDist()
 			default:
 				err = fmt.Errorf("unexpected repo name: %s", repoName)
 			}
@@ -78,10 +78,10 @@ func (m *matcherStore) Distributions(ctx context.Context) ([]claircore.Distribut
 	return dists, nil
 }
 
-func hummingbirdDist() claircore.Distribution {
+func hummingbirdDist() (claircore.Distribution, error) {
 	return claircore.Distribution{
 		DID: "hummingbird",
-	}
+	}, nil
 }
 
 func rhelDist(repoName string) (claircore.Distribution, error) {
