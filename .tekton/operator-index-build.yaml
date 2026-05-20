@@ -193,6 +193,7 @@ spec:
       taskRef: *post-bigquery-metrics-ref
 
     - name: clone-repository
+      retries: 3
       params:
       - name: url
         value: $(params.git-url)
@@ -299,6 +300,7 @@ spec:
       timeout: 3h20m
 
     - name: generate-index-content
+      retries: 3
       runAfter:
       - wait-for-bundle-image
       params:
@@ -391,6 +393,7 @@ spec:
           emptyDir: {}
 
     - name: build-images
+      retries: 3
       runAfter:
       - generate-index-content
       matrix:
@@ -427,6 +430,7 @@ spec:
         resolver: bundles
 
     - name: build-image-index
+      retries: 3
       params:
       - name: IMAGE
         value: $(params.output-image-repo):$(tasks.determine-index-tag.results.INDEX_TAG)
