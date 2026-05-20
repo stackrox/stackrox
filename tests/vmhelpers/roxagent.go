@@ -54,20 +54,6 @@ func buildRoxagentInstallArgs(src, dst string) []string {
 	return []string{"sudo", "install", "-m", "0755", src, dst}
 }
 
-// VerboseOutputLooksLikeReport returns true when stdout appears to contain a known
-// structured roxagent report shape (legacy scan-shaped or indexReport-shaped JSON).
-func VerboseOutputLooksLikeReport(stdout string) bool {
-	s := strings.TrimSpace(stdout)
-	if s == "" {
-		return false
-	}
-	if strings.Contains(s, `"indexReport"`) || strings.Contains(s, `"discoveredData"`) {
-		return true
-	}
-	return strings.Contains(s, `"components"`) &&
-		(strings.Contains(s, `"scan"`) || strings.Contains(s, `"operatingSystem"`) || strings.Contains(s, `"operating_system"`))
-}
-
 // CopyRoxagentBinary copies a local roxagent binary into the guest install path.
 func CopyRoxagentBinary(ctx context.Context, virt Virtctl, namespace, vm, hostBinaryPath string) error {
 	return retryOnSSHTransport(ctx, virt.Logf, "copy roxagent binary", func(ctx context.Context) error {

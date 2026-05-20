@@ -29,23 +29,6 @@ func TestVerboseOutputHasOSFields(t *testing.T) {
 	}
 }
 
-func TestVerboseOutputLooksLikeReport_FalseForQuietOutput(t *testing.T) {
-	t.Parallel()
-	require.False(t, VerboseOutputLooksLikeReport("done"))
-}
-
-func TestVerboseOutputLooksLikeReport_TrueForSampleReportJSON(t *testing.T) {
-	t.Parallel()
-	sample := `{"scan":{"operatingSystem":"rhel"},"components":[{"name":"a"}]}`
-	require.True(t, VerboseOutputLooksLikeReport(sample))
-}
-
-func TestVerboseOutputLooksLikeReport_TrueForIndexReportJSON(t *testing.T) {
-	t.Parallel()
-	sample := `{"indexReport":{"state":"IndexFinished"},"discoveredData":{"operatingSystem":{"name":"rhel"}}}`
-	require.True(t, VerboseOutputLooksLikeReport(sample))
-}
-
 func TestBuildRoxagentInstallArgs_UsesSudoInstallModeAndPaths(t *testing.T) {
 	t.Parallel()
 	require.Equal(t,
