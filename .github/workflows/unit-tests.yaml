@@ -132,7 +132,8 @@ jobs:
         sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
         sudo systemctl start postgresql.service
 
-    # Same base image as production (image/postgres/Dockerfile).
+    # Image digest kept in sync with .github/test-images/postgres-15/Dockerfile
+    # (Dependabot auto-bumps the Dockerfile; update this SHA to match).
     - name: Start Postgres (${{ matrix.pg }})
       if: matrix.pg != 'default'
       run: |
