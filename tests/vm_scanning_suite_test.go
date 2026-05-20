@@ -116,8 +116,6 @@ type VMScanningSuite struct {
 	vmSpecs []vmSpec
 	// vms tracks every VM provisioned by the suite; TearDownSuite deletes each.
 	vms []VMHandle
-	// terminalVSOCKFailure captures a hard vsock/device failure; subsequent tests are skipped.
-	terminalVSOCKFailure string
 	// scannerV4Checked is set after the one-time Scanner V4 matcher initialization check.
 	scannerV4Checked bool
 }
@@ -185,13 +183,6 @@ func (s *VMScanningSuite) SetupSuite() {
 	s.logf("VM scanning setup: prepare guests (ssh/cloud-init/sudo readiness)")
 	s.prepareGuests()
 	s.logf("VM scanning setup: complete")
-}
-
-func (s *VMScanningSuite) BeforeTest(_, testName string) {
-	if s.terminalVSOCKFailure == "" {
-		return
-	}
-	s.T().Skipf("skipping %s due to prior terminal vsock failure: %s", testName, s.terminalVSOCKFailure)
 }
 
 func (s *VMScanningSuite) TearDownSuite() {
@@ -769,12 +760,6 @@ func (s *VMScanningSuite) ensureCanonicalScan(ctx context.Context, vm *VMHandle)
 	}
 	res, err := vmhelpers.RunRoxagentOnce(ctx, virt, vm.Namespace, vm.Name, cfg)
 	if err != nil {
-		if vmhelpers.IsTerminalVSOCKUnavailableError(err) {
-			s.terminalVSOCKFailure = fmt.Sprintf("%s/%s: %v", vm.Namespace, vm.Name, err)
-			s.logf("terminal vsock failure detected; skipping remaining suite tests: %s", s.terminalVSOCKFailure)
-			return nil, fmt.Errorf("ensureCanonicalScan: terminal vsock failure for %s/%s; subsequent suite tests will be skipped: %w",
-				vm.Namespace, vm.Name, err)
-		}
 		return nil, err
 	}
 	if res == nil {
@@ -840,10 +825,8 @@ func (s *VMScanningSuite) waitForScan(ctx context.Context, vm *VMHandle) (*v2.Vi
 	}
 	s.logf("scan wait %s/%s step 5/6 complete", vm.Namespace, vm.Name)
 
-	conds := vmhelpers.ScanReadiness{Components: true, AllScanned: true}
-	s.logf("scan wait %s/%s step 6/6: wait scan ready (components=%v all-scanned=%v)",
-		vm.Namespace, vm.Name, conds.Components, conds.AllScanned)
-	return vmhelpers.WaitForScanReady(waitCtx, s.vmClient, baseOpts, present.GetId(), conds)
+	s.logf("scan wait %s/%s step 6/6: wait scan ready (components + all-scanned)", vm.Namespace, vm.Name)
+	return vmhelpers.WaitForScanReady(waitCtx, s.vmClient, baseOpts, present.GetId())
 }
 
 func (s *VMScanningSuite) resourceDeleteTimeout() time.Duration {

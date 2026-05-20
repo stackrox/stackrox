@@ -11,13 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// ScanReadiness configures which scan fields must be present before
-// WaitForScanReady considers the scan complete.
-type ScanReadiness struct {
-	Components bool // at least one component reported
-	AllScanned bool // no UNSCANNED notes on any component
-}
-
 // WaitForVMPresentInCentral polls ListVirtualMachines until a VM matches namespace and name.
 func WaitForVMPresentInCentral(ctx context.Context, client v2.VirtualMachineServiceClient, opts WaitOptions, namespace, name string) (*v2.VirtualMachine, error) {
 	var found *v2.VirtualMachine
@@ -118,10 +111,10 @@ func WaitForScanTimestampAfter(ctx context.Context, client v2.VirtualMachineServ
 	})
 }
 
-// WaitForScanReady polls GetVirtualMachine in a single loop until every field
-// requested in conds is populated. Each poll iteration logs which conditions
-// are already met and which are still pending, so partial progress is visible.
-func WaitForScanReady(ctx context.Context, client v2.VirtualMachineServiceClient, opts WaitOptions, id string, conds ScanReadiness) (*v2.VirtualMachine, error) {
+// WaitForScanReady polls GetVirtualMachine until at least one component is
+// reported and none are marked UNSCANNED. Each poll iteration logs which
+// conditions are met and which are still pending.
+func WaitForScanReady(ctx context.Context, client v2.VirtualMachineServiceClient, opts WaitOptions, id string) (*v2.VirtualMachine, error) {
 	return waitForVMCondition(ctx, client, opts, id, fmt.Sprintf("scan ready (id=%q)", id), func(vm *v2.VirtualMachine) (bool, string) {
 		scan := vm.GetScan()
 		if scan == nil {
@@ -131,21 +124,21 @@ func WaitForScanReady(ctx context.Context, client v2.VirtualMachineServiceClient
 		var ready, pending []string
 		comps := scan.GetComponents()
 
-		if conds.Components {
-			if n := len(comps); n > 0 {
-				ready = append(ready, fmt.Sprintf("components=%d", n))
-			} else {
-				pending = append(pending, "components")
-			}
+		// At least one component must be reported - Central has ingested the scan payload.
+		if n := len(comps); n > 0 {
+			ready = append(ready, fmt.Sprintf("components=%d", n))
+		} else {
+			pending = append(pending, "components")
 		}
-		if conds.AllScanned {
-			if len(comps) > 0 && !slices.ContainsFunc(comps, func(c *v2.ScanComponent) bool {
-				return slices.Contains(c.GetNotes(), v2.ScanComponent_UNSCANNED)
-			}) {
-				ready = append(ready, "all-scanned")
-			} else {
-				pending = append(pending, "all-scanned")
-			}
+
+		// Every reported component must have been matched by the vulnerability scanner
+		// (no UNSCANNED note). This confirms Scanner has processed the full SBOM.
+		if len(comps) > 0 && !slices.ContainsFunc(comps, func(c *v2.ScanComponent) bool {
+			return slices.Contains(c.GetNotes(), v2.ScanComponent_UNSCANNED)
+		}) {
+			ready = append(ready, "all-scanned")
+		} else {
+			pending = append(pending, "all-scanned")
 		}
 
 		// OS is informational: it arrives in the same message as components,

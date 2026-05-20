@@ -131,11 +131,10 @@ func RunRoxagentOnce(ctx context.Context, virt Virtctl, namespace, vm string, cf
 	if maxPrimary < 0 {
 		maxPrimary = 0
 	}
-	if err := ensureVsockReady(ctx, virt, namespace, vm, "roxagent run"); err != nil {
-		return nil, err
-	}
-
 	for attempt := 0; ; attempt++ {
+		if attempt >= maxPrimary && cfg.Repo2CPEFallbackURL == "" {
+			return nil, fmt.Errorf("roxagent: all %d primary attempt(s) failed and no fallback URL configured", maxPrimary)
+		}
 		url := chooseRepo2CPESource(attempt, maxPrimary, cfg.Repo2CPEPrimaryURL, cfg.Repo2CPEFallbackURL)
 		usedFallback := url == cfg.Repo2CPEFallbackURL && cfg.Repo2CPEFallbackURL != ""
 		envAssignment := fmt.Sprintf("%s=%s", roxagentRepo2CPEEnvVar, url)

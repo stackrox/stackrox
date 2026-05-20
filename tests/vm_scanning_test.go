@@ -14,6 +14,13 @@ import (
 func (s *VMScanningSuite) TestScanPipeline() {
 	for i := range s.vms {
 		vm := &s.vms[i]
+		virt := s.virtctlForVM(*vm)
+
+		if err := vmhelpers.EnsureVsockReady(s.ctx, virt, vm.Namespace, vm.Name, "scan pipeline"); err != nil {
+			s.T().Fatalf("VSOCK unavailable on %s/%s — cluster does not support vsock, cannot continue: %v",
+				vm.Namespace, vm.Name, err)
+		}
+
 		s.T().Run(vm.Name, func(t *testing.T) {
 			var result *vmhelpers.RoxagentRunResult
 			var first *v2.VirtualMachine
