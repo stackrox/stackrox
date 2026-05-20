@@ -169,7 +169,7 @@ func (s *serviceImpl) UpdateComplianceScanConfiguration(ctx context.Context, req
 	// Update scan request, config may be updated in the event of errors from sensor.
 	_, err := s.manager.UpdateScanRequest(ctx, scanConfig, clusterIDs)
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
 	return &v2.Empty{}, nil
