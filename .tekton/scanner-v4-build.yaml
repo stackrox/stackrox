@@ -79,14 +79,10 @@ spec:
       - name: GOMEMLIMIT
         value: "3GiB"
     stepSpecs:
-    # Limit CPU for Go dependencies prefetch, as it tends to be OOM-killed when it gets lots of it without OOTB limit.
     - name: prefetch-dependencies
       computeResources:
         limits:
-          cpu: 2
           memory: 5Gi
-        requests:
-          cpu: 2
 
   - pipelineTaskName: build-source-image
     # Default request=256Mi limit=2Gi (LimitRange). 139 OOMKilled in 10,381 runs (1.3%), Apr 15 - May 15, 2026.

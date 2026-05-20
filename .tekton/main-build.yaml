@@ -84,10 +84,7 @@ spec:
     - name: prefetch-dependencies
       computeResources:
         limits:
-          cpu: 2
           memory: 5Gi
-        requests:
-          cpu: 2
 
   # For all sbom-syft-generate steps:
   # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container
