@@ -235,9 +235,21 @@ jobs:
           ) > /tmp/resource-monitor.log 2>&1 &
           echo "MONITOR_PID=$!" >> "$GITHUB_ENV"
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ui/.nvmrc
+          cache: npm
+          cache-dependency-path: ui/apps/platform/package-lock.json
+
       - name: Install Cypress dependencies
         working-directory: ui/apps/platform
         run: npm ci
+
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ hashFiles('ui/apps/platform/package-lock.json') }}
 
       - name: Wait for auth token
         run: |
@@ -530,9 +542,21 @@ jobs:
         echo "API_ENDPOINT=${ENDPOINT}" >> "$GITHUB_ENV"
         set -x
 
+    - uses: actions/setup-node@v4
+      with:
+        node-version-file: ui/.nvmrc
+        cache: npm
+        cache-dependency-path: ui/apps/platform/package-lock.json
+
     - name: Install Cypress dependencies
       working-directory: ui/apps/platform
       run: npm ci
+
+    - name: Cache Cypress binary
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/Cypress
+        key: cypress-${{ hashFiles('ui/apps/platform/package-lock.json') }}
 
     - name: Run Cypress
       working-directory: ui/apps/platform
