@@ -50,8 +50,8 @@ describe('Exception Management - Approved False Positives Table', () => {
                 visitWorkloadCveOverview();
                 viewCvesByObservationState('False positives');
 
-                // Verify correct CVE filter
-                cy.get('td[data-label="Request details"] a:contains("View")').click();
+                // Verify correct CVE filter — click the View link for the specific CVE
+                cy.get(`tr:has(td:contains("${cveName}")) td[data-label="Request details"] a:contains("View")`).click();
                 cy.get(workloadSelectors.filterLabelGroupItem('CVE', cveName));
 
                 // Verify a link in the table containing the request

@@ -521,13 +521,16 @@ jobs:
             done
             ;;
           *vulnmanagement*)
-            echo "Waiting for platform CVE data..."
-            for _ in $(seq 1 60); do
-              deps=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/v1/deploymentscount?query=" | jq -r '.count // 0')
-              [ "${deps:-0}" -gt 5 ] && echo "Deployments: ${deps}" && break
+            echo "Waiting for cluster (platform) CVE data..."
+            cluster_id=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+              "https://${API_ENDPOINT}/v1/clusters" | jq -r '.clusters[0].id')
+            for _ in $(seq 1 90); do
+              cves=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/cves/cluster?query=" | jq -r '.items | length // 0')
+              [ "${cves:-0}" -gt 0 ] && echo "Cluster CVEs: ${cves}" && break
               sleep 5
             done
+            [ "${cves:-0}" -eq 0 ] && echo "::warning::No cluster CVEs after 7.5 minutes"
             ;;
           *policies*|*risk*)
             echo "Waiting for deployment events..."
