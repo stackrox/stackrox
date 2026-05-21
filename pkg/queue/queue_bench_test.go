@@ -7,8 +7,6 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/metrics"
 )
 
 var benchSeq atomic.Int64
@@ -217,26 +215,5 @@ func BenchmarkPush_Full_Concurrent(b *testing.B) {
 				})
 			}
 		}
-	}
-}
-
-// BenchmarkPush_NotFull_WithPrometheusLabels isolates the cost of
-// prometheus.CounterVec.With(Labels{}).Inc() inside vs outside the lock.
-// The queue code calls this on every successful Push and Pull.
-func BenchmarkPush_NotFull_WithPrometheusLabels(b *testing.B) {
-	cv := newCounterVec("labels_bench")
-	_ = cv.With(prometheus.Labels{"Operation": metrics.Add.String()})
-	for b.Loop() {
-		cv.With(prometheus.Labels{"Operation": metrics.Add.String()}).Inc()
-	}
-}
-
-// BenchmarkRateLimitedLogger isolates the cost of the rate-limited logger call
-// that happens on the drop path (full queue).
-func BenchmarkRateLimitedLogger(b *testing.B) {
-	for b.Loop() {
-		logging.GetRateLimitedLogger().WarnL(loggingRateLimiter,
-			"Queue (%s) size limit reached (%d). New items added to the queue will be dropped.",
-			"BenchQueue", 40960)
 	}
 }
