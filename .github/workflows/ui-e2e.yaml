@@ -529,37 +529,36 @@ jobs:
                 -X POST -d '{"imageName":"docker.io/nginx:1.12","force":true}' 2>&1 | jq -r '.name // .error // .message' || true
             fi
 
-            # Periodic CVE check — log at intervals to find when data appears
-            check_cves() {
+            # Wait for image component data (not just CVEs — component enrichment takes longer)
+            check_components() {
               local label="$1"
-              local v1=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/v1/images?query=Image:nginx" \
-                | jq '[.images[]? | .cves // 0] | add // 0' 2>/dev/null)
+              local components=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/api/graphql" \
+                -X POST -H 'Content-Type: application/json' \
+                -d '{"query":"{ images(pagination:{limit:1}) { imageComponents { name } } }"}' \
+                | jq '[.data.images[]?.imageComponents // [] | length] | add // 0' 2>/dev/null)
               local gql=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
                 "https://${API_ENDPOINT}/api/graphql" \
                 -X POST -H 'Content-Type: application/json' \
                 -d '{"query":"{ imageCVEs(pagination:{limit:1}) { cve } }"}' \
                 | jq '.data.imageCVEs | length // 0' 2>/dev/null)
-              local v2=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/v2/image-cves?pagination.limit=1" \
-                | jq '.imageCVEs | length // 0' 2>/dev/null)
-              echo "${label}: v1=${v1:-0} graphql=${gql:-0} v2rest=${v2:-0}"
-              [ "${gql:-0}" -gt 0 ] && return 0 || return 1
+              echo "${label}: cves=${gql:-0} components=${components:-0}"
+              [ "${gql:-0}" -gt 0 ] && [ "${components:-0}" -gt 0 ] && return 0 || return 1
             }
 
-            # Check at 0, 1, 3, 5, 7, 10, 15 min after scan trigger
+            # Check at 0, 1, 3, 5, 7, 10, 15, 20, 25, 30 min after scan trigger
             total=0
-            cve_found=false
-            check_cves "+0s" && cve_found=true
-            if [ "$cve_found" != "true" ]; then
-              for wait in 60 120 120 120 180 300; do
+            data_ready=false
+            check_components "+0s" && data_ready=true
+            if [ "$data_ready" != "true" ]; then
+              for wait in 60 120 120 120 180 300 300 300 300; do
                 sleep "$wait"
                 total=$((total + wait))
-                check_cves "+$((total/60))m" && cve_found=true && break
+                check_components "+$((total/60))m" && data_ready=true && break
               done
             fi
-            if [ "$cve_found" != "true" ]; then
-              echo "::error::No image CVE data available after 15 minutes — vulnerability tests will fail"
+            if [ "$data_ready" != "true" ]; then
+              echo "::error::No image component data after 30 minutes — vulnerability tests will fail"
               exit 1
             fi
             ;;
