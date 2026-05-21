@@ -139,6 +139,21 @@ runs:
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
+    - name: Monitor runner resources
+      shell: bash
+      run: |
+        (
+          while true; do
+            ts=$(date -u +%H:%M:%S)
+            cpu=$(top -bn1 2>/dev/null | awk '/^%Cpu/{printf "%.0f", 100-$8}' || echo 0)
+            mem=$(free -m 2>/dev/null | awk '/^Mem:/{printf "%d/%dMB(%.0f%%)", $3, $2, $3/$2*100}' || echo "?")
+            disk=$(df -BGB --output=avail / 2>/dev/null | tail -1 | tr -d ' ' || echo "?")
+            echo "${ts} cpu=${cpu}% mem=${mem} disk=${disk}"
+            sleep 30
+          done
+        ) >> /dev/shm/runner-monitor.log 2>&1 &
+        echo $! > /dev/shm/runner-monitor.pid
+
     - name: Record job info
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       id: record_job_info
@@ -152,6 +167,8 @@ runs:
         run: >
           echo "started_at=${EPOCHSECONDS:-$(date -u +%s)}" >> "$GITHUB_OUTPUT"
         post: >
+          kill "$(cat /dev/shm/runner-monitor.pid 2>/dev/null)" 2>/dev/null || true;
+          [ -f /dev/shm/runner-monitor.log ] && echo "::group::Runner resource monitor" && cat /dev/shm/runner-monitor.log && echo "::endgroup::" || true;
           source scripts/ci/lib.sh || true;
           save_job_record "${{ github.job }}" "gha" \
             outcome "${{ job.status }}" \
