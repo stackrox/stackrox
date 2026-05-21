@@ -354,11 +354,7 @@ slack_job_failure_streaks() {
 WITH ordered_jobs AS (
   SELECT
     name,
-    repo,
-    branch,
-    id,
     started_at,
-    stopped_at,
     CASE
       WHEN branch LIKE "%.x-nightly-%" THEN REGEXP_EXTRACT(branch, r"^(.+\.x-nightly)-\d+$")
       ELSE branch
@@ -368,21 +364,31 @@ WITH ordered_jobs AS (
       WHEN outcome IN ("passed", "success", "Succeeded") THEN "SUCCESS"
       ELSE "OTHER"
     END as normalized_outcome,
-    ROW_NUMBER() OVER (PARTITION BY name, repo ORDER BY started_at) as run_number
+    ROW_NUMBER() OVER (PARTITION BY name ORDER BY started_at) as run_number
   FROM `acs-san-stackroxci.ci_metrics.stackrox_jobs`
   WHERE outcome IS NOT NULL
     AND stopped_at IS NOT NULL
+    AND repo = "stackrox/stackrox"
     AND (branch LIKE "%.x-nightly-%" OR branch = "nightlies" OR branch = "master")
     AND started_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)
 ),
 jobs_with_prev AS (
-  SELECT *,
-    LAG(normalized_outcome) OVER (PARTITION BY name, repo ORDER BY started_at) AS prev_outcome,
-    LAG(run_number) OVER (PARTITION BY name, repo ORDER BY started_at) AS prev_run_number
+  SELECT
+    name,
+    started_at,
+    branch_group,
+    normalized_outcome,
+    run_number,
+    LAG(normalized_outcome) OVER (PARTITION BY name ORDER BY started_at) AS prev_outcome,
+    LAG(run_number) OVER (PARTITION BY name ORDER BY started_at) AS prev_run_number
   FROM ordered_jobs
 ),
 streak_starts AS (
-  SELECT *,
+  SELECT
+    name,
+    started_at,
+    branch_group,
+    normalized_outcome,
     CASE
       WHEN prev_outcome IS NULL THEN 1
       WHEN normalized_outcome != prev_outcome THEN 1
@@ -392,27 +398,28 @@ streak_starts AS (
   FROM jobs_with_prev
 ),
 streak_groups AS (
-  SELECT *,
-    SUM(is_streak_start) OVER (PARTITION BY name, repo ORDER BY started_at) as streak_id
+  SELECT
+    name,
+    started_at,
+    branch_group,
+    normalized_outcome,
+    SUM(is_streak_start) OVER (PARTITION BY name ORDER BY started_at) as streak_id
   FROM streak_starts
 ),
 consecutive_failures AS (
   SELECT
     name,
-    repo,
     branch_group,
-    streak_id,
     normalized_outcome,
     COUNT(*) as consecutive_count,
     MIN(started_at) as first_failure_at,
     MAX(started_at) as last_failure_at
   FROM streak_groups
-  GROUP BY name, repo, branch_group, streak_id, normalized_outcome
+  GROUP BY name, branch_group, streak_id, normalized_outcome
   HAVING normalized_outcome = "FAILED" AND COUNT(*) > @min_streak
 )
 SELECT
   IF(LENGTH(name) > 60, CONCAT(RPAD(name, 57), "..."), name) AS name,
-  repo,
   branch_group,
   consecutive_count,
   FORMAT_TIMESTAMP("%Y-%m-%d", first_failure_at) as first_failure_date,
@@ -451,8 +458,8 @@ LIMIT @limit
             (.[] | {"type": "section", "fields": [
                 {"type": "mrkdwn", "text": .name},
                 {"type": "plain_text", "text": .branch_group},
-                {"type": "plain_text", "text": (.consecutive_count|tostring) + " failures"},
-                {"type": "plain_text", "text": .first_failure_date + " → " + .last_failure_date + " (" + (.streak_duration_days|tostring) + " days)"}
+                {"type": "plain_text", "text": "\(.consecutive_count) failures"},
+                {"type": "plain_text", "text": "\(.first_failure_date) -> \(.last_failure_date) (\(.streak_duration_days) days)"}
             ]})]}'
     else
         body='{"blocks":[
