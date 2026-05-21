@@ -234,7 +234,8 @@ multiple binary layers to that single base image.
   `/usr/local/bin/scanner`, push to ttl.sh, and patch deployment/scanner.
 - **Operator** changes are out of scope for this skill. Inform the user.
 
-If no code changes are detected, inform the user and ask what they want to do.
+If no code changes are detected, stop and ask the user what they want to do — even in
+YOLO mode. Building nothing is not a useful default.
 
 ## Phase 4: Build
 
