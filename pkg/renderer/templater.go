@@ -122,9 +122,6 @@ type K8sConfig struct {
 
 	OfflineMode bool
 
-	// Deprecated: IstioVersion is ignored. ACS now automatically prevents Istio sidecar injection.
-	IstioVersion string
-
 	ImageOverrides map[string]interface{}
 
 	EnableCentralDB bool
