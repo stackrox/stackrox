@@ -19,6 +19,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/klauspost/compress/zstd"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -687,5 +689,122 @@ func TestUpdater_Import(t *testing.T) {
 		if !cmp.Equal(got, want) {
 			t.Error(cmp.Diff(got, want))
 		}
+	})
+}
+
+// makeZstZipFile creates a zip archive containing one entry with
+// zst-compressed empty payload and returns the zip.File for that entry.
+func makeZstZipFile(t *testing.T, name string) *zip.File {
+	t.Helper()
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	w, err := zw.Create(name)
+	require.NoError(t, err)
+	enc, err := zstd.NewWriter(w)
+	require.NoError(t, err)
+	require.NoError(t, enc.Close())
+	require.NoError(t, zw.Close())
+	r, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	require.NoError(t, err)
+	require.Len(t, r.File, 1)
+	return r.File[0]
+}
+
+func fkViolationError() error {
+	return &pgconn.PgError{
+		Code:    "23503",
+		Message: `insert or update on table "uo_vuln" violates foreign key constraint "uo_vuln_vuln_fkey"`,
+	}
+}
+
+func TestUpdateBundle_RetryOnFKViolation(t *testing.T) {
+	ctx := test.Logging(t)
+
+	t.Run("retries on FK violation and succeeds", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		metadataStore := mocks.NewMockMatcherMetadataStore(ctrl)
+
+		calls := 0
+		u := &Updater{
+			locker:        &testLocker{locker: updates.NewLocalLockSource()},
+			metadataStore: metadataStore,
+			importFunc: func(_ context.Context, _ io.Reader) error {
+				calls++
+				if calls == 1 {
+					return fkViolationError()
+				}
+				return nil
+			},
+		}
+
+		zipF := makeZstZipFile(t, "bundles/test.json.zst")
+		zipTime := time.Now()
+		prevTime := zipTime.Add(-time.Hour)
+
+		metadataStore.EXPECT().
+			GetOrSetLastVulnerabilityUpdate(gomock.Any(), zipF.Name, prevTime).
+			Return(prevTime, nil)
+		metadataStore.EXPECT().
+			SetLastVulnerabilityUpdate(gomock.Any(), zipF.Name, zipTime).
+			Return(nil)
+
+		err := u.updateBundle(ctx, zipF, zipTime, prevTime)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, calls, "import should be called twice (1 failure + 1 success)")
+	})
+
+	t.Run("does not retry non-FK errors", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		metadataStore := mocks.NewMockMatcherMetadataStore(ctrl)
+
+		calls := 0
+		u := &Updater{
+			locker:        &testLocker{locker: updates.NewLocalLockSource()},
+			metadataStore: metadataStore,
+			importFunc: func(_ context.Context, _ io.Reader) error {
+				calls++
+				return errors.New("some other error")
+			},
+		}
+
+		zipF := makeZstZipFile(t, "bundles/test.json.zst")
+		zipTime := time.Now()
+		prevTime := zipTime.Add(-time.Hour)
+
+		metadataStore.EXPECT().
+			GetOrSetLastVulnerabilityUpdate(gomock.Any(), zipF.Name, prevTime).
+			Return(prevTime, nil)
+
+		err := u.updateBundle(ctx, zipF, zipTime, prevTime)
+		assert.Error(t, err)
+		assert.Equal(t, 1, calls, "import should only be called once for non-FK errors")
+	})
+
+	t.Run("gives up after max attempts", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		metadataStore := mocks.NewMockMatcherMetadataStore(ctrl)
+
+		calls := 0
+		u := &Updater{
+			locker:        &testLocker{locker: updates.NewLocalLockSource()},
+			metadataStore: metadataStore,
+			importFunc: func(_ context.Context, _ io.Reader) error {
+				calls++
+				return fkViolationError()
+			},
+		}
+
+		zipF := makeZstZipFile(t, "bundles/test.json.zst")
+		zipTime := time.Now()
+		prevTime := zipTime.Add(-time.Hour)
+
+		metadataStore.EXPECT().
+			GetOrSetLastVulnerabilityUpdate(gomock.Any(), zipF.Name, prevTime).
+			Return(prevTime, nil)
+
+		err := u.updateBundle(ctx, zipF, zipTime, prevTime)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "importing vulnerabilities")
+		assert.Equal(t, maxImportAttempts, calls, "should exhaust all retry attempts")
 	})
 }
