@@ -62,33 +62,39 @@ describe('Exception Management Request Details Page', () => {
             comment,
             expiry,
             scope,
-        }).then(({ requestName }) => {
-            approveRequest();
-            cy.get('button:contains("Cancel request")').click();
-            cy.get('div[role="dialog"]').should('exist');
-            cy.get('div[role="dialog"] button:contains("Cancel request")').click();
-            cy.get('div[role="dialog"]').should('not.exist');
-            visitPendingRequestsTab();
-            cy.get(selectors.approvedDeferralsTab).click();
-            cy.get('table').should('exist');
-            cy.get('table').should('not.contain', requestName);
         });
+        approveRequest();
+        cy.get('button:contains("Cancel request")').click();
+        cy.get('div[role="dialog"]').should('exist');
+        cy.get('div[role="dialog"] button:contains("Cancel request")').click();
+        cy.get('div[role="dialog"]').should('not.exist');
+        visitPendingRequestsTab();
+        cy.get(selectors.approvedDeferralsTab).click();
+        cy.get(
+            'table tbody div.pf-v6-c-empty-state__content h2:contains("No approved deferral requests")'
+        ).should('exist');
+        cy.get(
+            'table tbody div.pf-v6-c-empty-state__content div.pf-v6-c-empty-state__body p:contains("There are currently no approved deferral requests. Feel free to review pending requests or return to your dashboard.")'
+        ).should('exist');
     });
 
     it('should not see a cancelled request in the approved false positives table', () => {
         markFalsePositiveAndVisitRequestDetails({
             comment,
             scope,
-        }).then(({ requestName }) => {
-            approveRequest();
-            cy.get('button:contains("Cancel request")').click();
-            cy.get('div[role="dialog"]').should('exist');
-            cy.get('div[role="dialog"] button:contains("Cancel request")').click();
-            cy.get('div[role="dialog"]').should('not.exist');
-            visitPendingRequestsTab();
-            cy.get(selectors.approvedFalsePositivesTab).click();
-            cy.get('table').should('exist');
-            cy.get('table').should('not.contain', requestName);
         });
+        approveRequest();
+        cy.get('button:contains("Cancel request")').click();
+        cy.get('div[role="dialog"]').should('exist');
+        cy.get('div[role="dialog"] button:contains("Cancel request")').click();
+        cy.get('div[role="dialog"]').should('not.exist');
+        visitPendingRequestsTab();
+        cy.get(selectors.approvedFalsePositivesTab).click();
+        cy.get(
+            'table tbody div.pf-v6-c-empty-state__content h2:contains("No approved false positive requests")'
+        ).should('exist');
+        cy.get(
+            'table tbody div.pf-v6-c-empty-state__content div.pf-v6-c-empty-state__body p:contains("There are currently no approved false positive requests. Feel free to review pending requests or return to your dashboard.")'
+        ).should('exist');
     });
 });

@@ -51,8 +51,8 @@ describe('Exception Management - Approved Deferrals Table', () => {
             visitWorkloadCveOverview();
             viewCvesByObservationState('Deferred');
 
-            // Verify correct CVE filter — click the View link in the row with the deferred CVE
-            cy.get(`tr:has(td:contains("${cveName}")) td[data-label="Request details"] a:contains("View")`).click();
+            // Verify correct CVE filter
+            cy.get('td[data-label="Request details"] a:contains("View")').click();
             cy.get(workloadSelectors.filterLabelGroupItem('CVE', cveName));
 
             // Verify a link in the table containing the request
@@ -226,16 +226,10 @@ describe('Exception Management - Approved Deferrals Table', () => {
         approveRequest();
         visitApprovedDeferralsTab();
 
-        // Read the actual requester name from the table (varies by auth method)
-        cy.get('table tr:nth(1) td[data-label="Requester"]')
-            .invoke('text')
-            .then((requesterName) => {
-                const name = requesterName.trim();
-                typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', name);
-                cy.get('table tr:nth(1) td[data-label="Request name"] a').should('exist');
-                cy.get(vulnSelectors.clearFiltersButton).click();
-                typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'BLAH');
-                cy.get('table tr:nth(1) td[data-label="Request name"] a').should('not.exist');
-            });
+        typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'ui_tests');
+        cy.get('table tr:nth(1) td[data-label="Request name"] a').should('exist');
+        cy.get(vulnSelectors.clearFiltersButton).click();
+        typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'BLAH');
+        cy.get('table tr:nth(1) td[data-label="Request name"] a').should('not.exist');
     });
 });

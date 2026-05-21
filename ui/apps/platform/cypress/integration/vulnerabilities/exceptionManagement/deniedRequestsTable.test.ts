@@ -218,15 +218,10 @@ describe('Exception Management - Denied Requests Table', () => {
         denyRequest();
         visitDeniedRequestsTab();
 
-        cy.get('table tr:nth(1) td[data-label="Requester"]')
-            .invoke('text')
-            .then((requesterName) => {
-                const name = requesterName.trim();
-                typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', name);
-                cy.get('table tr:nth(1) td[data-label="Request name"] a').should('exist');
-                cy.get(vulnSelectors.clearFiltersButton).click();
-                typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'BLAH');
-                cy.get('table tr:nth(1) td[data-label="Request name"] a').should('not.exist');
-            });
+        typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'ui_tests');
+        cy.get('table tr:nth(1) td[data-label="Request name"] a').should('exist');
+        cy.get(vulnSelectors.clearFiltersButton).click();
+        typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'BLAH');
+        cy.get('table tr:nth(1) td[data-label="Request name"] a').should('not.exist');
     });
 });

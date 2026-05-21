@@ -91,10 +91,9 @@ describe('Exception Management Pending Requests Page', () => {
                 const requestNameLink = 'table td[data-label="Request name"]';
 
                 cy.get(requestNameLink)
-                    .first()
                     .invoke('text')
                     .then((requestName) => {
-                        cy.get(requestNameLink).first().click();
+                        cy.get(requestNameLink).click();
                         cy.get(`h1:contains("${requestName}")`).should('exist');
                     });
             });
@@ -237,7 +236,7 @@ describe('Exception Management Pending Requests Page', () => {
 
             visitPendingRequestsTab();
 
-            cy.get('table td[data-label="Request name"] a').first().then((element) => {
+            cy.get('table td[data-label="Request name"] a').then((element) => {
                 const requestName = element.text().trim();
                 typeAndEnterCustomSearchFilterValue('Exception', 'Request Name', requestName);
                 cy.get('table td[data-label="Request name"] a').should('exist');
@@ -264,16 +263,11 @@ describe('Exception Management Pending Requests Page', () => {
 
             visitPendingRequestsTab();
 
-            cy.get('table tr:nth(1) td[data-label="Requester"]')
-                .invoke('text')
-                .then((requesterName) => {
-                    const name = requesterName.trim();
-                    typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', name);
-                    cy.get('table td[data-label="Request name"] a').should('exist');
-                    cy.get(vulnSelectors.clearFiltersButton).click();
-                    typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'BLAH');
-                    cy.get('table td[data-label="Request name"] a').should('not.exist');
-                });
+            typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'ui_tests');
+            cy.get('table td[data-label="Request name"] a').should('exist');
+            cy.get(vulnSelectors.clearFiltersButton).click();
+            typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'BLAH');
+            cy.get('table td[data-label="Request name"] a').should('not.exist');
         });
     });
 });
