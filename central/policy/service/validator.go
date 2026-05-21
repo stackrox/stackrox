@@ -480,8 +480,8 @@ func (s *policyValidator) validateEvaluationFilter(policy *storage.Policy) error
 	}
 
 	if ef.GetSkipImageLayers() != storage.SkipImageLayers_SKIP_NONE {
-		if !features.ImageLayerFilter.Enabled() {
-			return fmt.Errorf("image layer filtering requires %s to be enabled", features.ImageLayerFilter.EnvVar())
+		if !features.EvaluationFilter.Enabled() {
+			return fmt.Errorf("image layer filtering requires %s to be enabled", features.EvaluationFilter.EnvVar())
 		}
 		if _, ok := storage.SkipImageLayers_name[int32(ef.GetSkipImageLayers())]; !ok {
 			return errors.Errorf("unknown image layer filter value: %d", ef.GetSkipImageLayers())

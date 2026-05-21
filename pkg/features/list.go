@@ -145,6 +145,9 @@ var (
 
 	// EvaluationFilter enables evaluation filtering in policy evaluation.
 	EvaluationFilter = registerFeature("Enable evaluation filtering in policy evaluation", "ROX_EVALUATION_FILTER")
+
+	// ImageLayerFilter enables image layer filtering in policy evaluation filters.
+	ImageLayerFilter = registerFeature("Enable image layer filtering in policy evaluation", "ROX_IMAGE_LAYER_FILTER")
 )
 
 // The following feature flags are related to Scanner V4.
