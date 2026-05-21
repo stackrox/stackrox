@@ -314,7 +314,6 @@ jobs:
       uses: cypress-io/github-action@dace029018fcdf86e0df89a31bc3cfa5b32570d8 # ratchet:cypress-io/github-action@v7
       with:
         working-directory: ui/apps/platform
-        install-command: npm ci --prefer-offline --fetch-timeout=60000 --no-audit --no-fund
         command: >-
           npx cypress run --component --browser chrome --config video=false
           --reporter mocha-multi-reporters
