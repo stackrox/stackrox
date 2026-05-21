@@ -296,6 +296,10 @@ jobs:
       fail-fast: false
       matrix:
         shards: [1, 2, 3, 4]
+        display: ['unique', 'unset']
+        exclude:
+          - shards: 1
+            display: unset
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -318,7 +322,7 @@ jobs:
       working-directory: ui/apps/platform
       run: npm ci --prefer-offline --fetch-timeout=60000 --no-audit --no-fund
 
-    - name: Run ${{ matrix.shards }} parallel Cypress processes
+    - name: Run ${{ matrix.shards }} parallel Cypress (display=${{ matrix.display }})
       working-directory: ui/apps/platform
       run: |
         shards=${{ matrix.shards }}
@@ -335,7 +339,13 @@ jobs:
 
           mkdir -p "cypress/test-results/shard-$i"
           echo "Shard $i: $(echo "$shard_specs" | tr ',' '\n' | wc -l | tr -d ' ') specs"
-          ( DISPLAY=:$((99 + i)) npx cypress run --component \
+          ( display="${{ matrix.display }}"
+            if [ "$display" = "unique" ]; then
+              export DISPLAY=:$((99 + i))
+            else
+              unset DISPLAY
+            fi
+            npx cypress run --component \
             --browser chrome \
             --config "video=false,screenshotsFolder=cypress/test-results/shard-$i/screenshots" \
             --reporter mocha-multi-reporters \
@@ -374,7 +384,7 @@ jobs:
       uses: ./.github/actions/upload-artifact-with-retry
       if: always()
       with:
-        name: Cypress test results (${{ matrix.shards }} shards)
+        name: Cypress test results (${{ matrix.shards }} shards, ${{ matrix.display }})
         path: ui/apps/platform/cypress/test-results/
 
     - name: Publish Test Report
