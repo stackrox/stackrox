@@ -548,12 +548,19 @@ jobs:
 
             # Check at 0, 1, 3, 5, 7, 10, 15 min after scan trigger
             total=0
-            check_cves "+0s"
-            for wait in 60 120 120 120 180 300; do
-              sleep "$wait"
-              total=$((total + wait))
-              check_cves "+$((total/60))m" && break
-            done
+            cve_found=false
+            check_cves "+0s" && cve_found=true
+            if [ "$cve_found" != "true" ]; then
+              for wait in 60 120 120 120 180 300; do
+                sleep "$wait"
+                total=$((total + wait))
+                check_cves "+$((total/60))m" && cve_found=true && break
+              done
+            fi
+            if [ "$cve_found" != "true" ]; then
+              echo "::error::No image CVE data available after 15 minutes — vulnerability tests will fail"
+              exit 1
+            fi
             ;;
           *vulnmanagement*)
             echo "Waiting for cluster (platform) CVE data..."
