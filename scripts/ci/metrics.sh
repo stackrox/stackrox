@@ -310,16 +310,33 @@ LIMIT
     if [[ $(cat "${data_file}") != "[]" ]]; then
         jq < "${data_file}"
         # shellcheck disable=SC2016
-        body='{"blocks":[
-            {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
-            {"type": "section", "fields": [
-                {"type": "mrkdwn", "text": ("`Rate %` *Suite*")},
-                {"type": "mrkdwn", "text": "*Case*"}
-            ]},
-            (.[] | {"type": "section", "fields": [
-                {"type": "mrkdwn", "text": ("`"+.["%"]+"` "+.["Suite"])},
-                {"type": "plain_text", "text": .["Case"]}
-            ]})]}'
+        body='{
+            "blocks": [
+                {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
+                {
+                    "type": "table",
+                    "rows": (
+                        [
+                            [
+                                {"type": "raw_text", "text": "Rate %"},
+                                {"type": "raw_text", "text": "Suite"},
+                                {"type": "raw_text", "text": "Case"}
+                            ]
+                        ] +
+                        [.[] | [
+                            {"type": "raw_text", "text": .["%"]},
+                            {"type": "raw_text", "text": .Suite},
+                            {"type": "raw_text", "text": .Case}
+                        ]]
+                    ),
+                    "column_settings": [
+                        {"align": "right", "is_wrapped": false},
+                        {"align": "left", "is_wrapped": true},
+                        {"align": "left", "is_wrapped": true}
+                    ]
+                }
+            ]
+        }'
     else
         body='{"blocks":[
             {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
