@@ -412,9 +412,30 @@ Execute the test plan based on `$context`. Common patterns:
 - Report whether the bug reproduces or not, with evidence (command output, API responses)
 
 ### Fix verification
-- First, check if the fix is already deployed (it should be from Phase 6)
+Verify the fix works AND prove the bug exists without it (regression proof).
+
+**Step 1 — Verify the fix works:**
+- The fix should already be deployed from Phase 6
 - Follow the reproduction steps — the bug should NOT reproduce
-- Report pass/fail with evidence
+- Capture all output as **"with fix"** evidence
+
+**Step 2 — Prove the bug exists without the fix:**
+- Stash the fix: `git stash`
+- Rebuild the affected component(s) from the reverted state (Phase 4-5)
+- Redeploy the old build (Phase 6)
+- Follow the same reproduction steps — the bug SHOULD reproduce
+- Capture all output as **"without fix"** evidence
+
+**Step 3 — Restore the fix:**
+- Re-apply: `git stash pop`
+- Rebuild and redeploy the fixed version (Phase 4-6)
+- Optionally re-run reproduction steps to confirm the fix is back
+
+**Step 4 — Report:**
+- Present before/after proof side by side:
+  - **Without fix**: [output showing the bug]
+  - **With fix**: [output showing the bug is gone]
+- This evidence is suitable for attaching to the PR description
 
 ### API testing
 - Use curl with the authenticated endpoint:
