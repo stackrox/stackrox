@@ -1,0 +1,128 @@
+{{- include "srox.init" . -}}
+{{- if ._rox.ha.reports.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central-reports
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: central-reports
+    {{- include "srox.labels" (list . "deployment" "central-reports") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "deployment" "central-reports") | nindent 4 }}
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: central-reports
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: central-reports
+        {{- include "srox.podLabels" (list . "deployment" "central-reports") | nindent 8 }}
+      annotations:
+        {{- include "srox.podAnnotations" (list . "deployment" "central-reports") | nindent 8 }}
+        {{- if eq ._rox.env.openshift 4 }}
+        openshift.io/required-scc: nonroot-v2
+        {{- end }}
+    spec:
+      {{- if ._rox.central._nodeSelector }}
+      nodeSelector:
+        {{- ._rox.central._nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if ._rox.central.tolerations }}
+      tolerations:
+        {{- toYaml ._rox.central.tolerations | nindent 8 }}
+      {{- end }}
+      affinity:
+        {{- toYaml ._rox.central.affinity | nindent 8 }}
+      {{- if ._rox.central.priorityClassName }}
+      priorityClassName: {{ quote ._rox.central.priorityClassName }}
+      {{- end }}
+      serviceAccountName: central
+      securityContext:
+        fsGroup: 4000
+        runAsUser: 4000
+      containers:
+      - name: central-reports
+        image: {{ ._rox.central.image.fullRef | quote }}
+        command:
+          - /stackrox/central-entrypoint.sh
+        env:
+        - name: ROX_CENTRAL_MODE
+          value: "reports"
+        - name: ROX_MEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        {{- include "srox.envVars" (list . "deployment" "central-reports" "central-reports") | nindent 8 }}
+        resources:
+          requests:
+            cpu: 500m
+            memory: "2Gi"
+          limits:
+            cpu: "1"
+            memory: "4Gi"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["NET_RAW"]
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log/stackrox/
+        - name: central-reports-tmp-volume
+          mountPath: /tmp
+        - name: central-etc-ssl-volume
+          mountPath: /etc/ssl
+        - name: central-etc-pki-volume
+          mountPath: /etc/pki/ca-trust
+        - name: central-certs-volume
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
+        - name: central-config-volume
+          mountPath: /etc/stackrox
+        - name: central-db-password
+          mountPath: /run/secrets/stackrox.io/db-password
+        - name: central-external-db-volume
+          mountPath: /etc/ext-db
+      volumes:
+      - name: varlog
+        emptyDir: {}
+      - name: central-reports-tmp-volume
+        emptyDir: {}
+      - name: central-etc-ssl-volume
+        emptyDir: {}
+      - name: central-etc-pki-volume
+        emptyDir: {}
+      - name: central-certs-volume
+        secret:
+          secretName: central-tls
+      - name: central-config-volume
+        configMap:
+          name: central-config
+          optional: true
+      - name: central-db-password
+        secret:
+          secretName: central-db-password
+      - name: central-external-db-volume
+        configMap:
+          name: central-external-db
+          optional: true
+{{- end }}
