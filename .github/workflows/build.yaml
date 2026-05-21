@@ -878,10 +878,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: google-github-actions/auth@v2
+    - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-    - uses: google-github-actions/setup-gcloud@v3
+    - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
         install_components: "gke-gcloud-auth-plugin"
     - name: Delete GKE cluster

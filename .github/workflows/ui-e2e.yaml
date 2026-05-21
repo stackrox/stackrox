@@ -375,13 +375,13 @@ jobs:
 
     - name: Connect to pre-provisioned cluster
       if: inputs.gke-cluster-name
-      uses: google-github-actions/auth@v2
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Setup gcloud (pre-provisioned)
       if: inputs.gke-cluster-name
-      uses: google-github-actions/setup-gcloud@v3
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
         install_components: "gke-gcloud-auth-plugin"
 
@@ -422,7 +422,7 @@ jobs:
         kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null || true
 
     - name: Upload credentials
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
       with:
         name: gke-ui-credentials
         path: |
@@ -452,11 +452,11 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         fetch-depth: 1
 
-    - uses: google-github-actions/auth@v2
+    - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - uses: google-github-actions/setup-gcloud@v3
+    - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
         install_components: "gke-gcloud-auth-plugin"
 
@@ -469,7 +469,7 @@ jobs:
         kubectl cluster-info
 
     - name: Download credentials
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # ratchet:actions/download-artifact@v4
       with:
         name: gke-ui-credentials
         path: /tmp
@@ -625,11 +625,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: google-github-actions/auth@v2
+    - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - uses: google-github-actions/setup-gcloud@v3
+    - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
         install_components: "gke-gcloud-auth-plugin"
 
