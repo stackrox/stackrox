@@ -527,14 +527,22 @@ jobs:
                 "https://${API_ENDPOINT}/v1/images/scan" \
                 -X POST -d '{"imageName":"docker.io/nginx:1.12","force":true}' 2>&1 | jq -r '.name // .error // .message' || true
             fi
+            # Wait for scanned image to have CVEs (check via v1 API which is known to work)
             for _ in $(seq 1 120); do
-              cves=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/v2/image-cves?pagination.limit=1" \
-                | jq -r '.imageCVEs | length // 0')
-              [ "${cves:-0}" -gt 0 ] && echo "Image CVEs found: ${cves}" && break
+              vuln_count=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/images?query=Image:nginx" \
+                | jq -r '[.images[]? | .cves // 0] | add // 0')
+              [ "${vuln_count:-0}" -gt 0 ] && echo "Image vulns (v1): ${vuln_count}" && break
               sleep 5
             done
-            [ "${cves:-0}" -eq 0 ] && echo "::warning::No v2 image CVEs after waiting"
+            # Also check GraphQL (what the UI actually uses)
+            gql_count=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+              "https://${API_ENDPOINT}/api/graphql" \
+              -X POST -H 'Content-Type: application/json' \
+              -d '{"query":"{ imageCVEs(pagination:{limit:1}) { cve } }"}' \
+              | jq -r '.data.imageCVEs | length // 0') || true
+            echo "GraphQL imageCVEs count: ${gql_count:-0}"
+            [ "${vuln_count:-0}" -eq 0 ] && [ "${gql_count:-0}" -eq 0 ] && echo "::warning::No image CVEs found"
             ;;
           *vulnmanagement*)
             echo "Waiting for cluster (platform) CVE data..."
