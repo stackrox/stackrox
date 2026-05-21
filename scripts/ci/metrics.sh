@@ -257,6 +257,8 @@ slack_top_n_failures() {
     local subject="${3:-Top 10 QA E2E Test failures for the last 7 days}"
     local is_test="${4:-false}"
 
+    echo "::group::${subject}"
+
     local sql
     # shellcheck disable=SC2016
     sql='
@@ -334,6 +336,7 @@ LIMIT
     fi
     jq "$body" "${data_file}" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
     rm -f "${data_file}"
+    echo "::endgroup::"
 }
 
 slack_job_failure_streaks() {
@@ -342,6 +345,8 @@ slack_job_failure_streaks() {
     local limit="${3:-10}"
     local subject="${4:-Jobs with 5+ consecutive failures in last 10 days}"
     local is_test="${5:-false}"
+
+    echo "::group::${subject}"
 
     local sql
     # shellcheck disable=SC2016
@@ -465,6 +470,7 @@ LIMIT @limit
     fi
     jq "$body" "${data_file}" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
     rm -f "${data_file}"
+    echo "::endgroup::"
 }
 
 # Saving test metrics directly after tests complete results in GCP quota issues.
