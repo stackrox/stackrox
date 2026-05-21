@@ -332,9 +332,7 @@ jobs:
             matrix.name == 'race-condition-debug'
           )
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y musl-tools musl-dev linux-libc-dev
-          # Symlink kernel headers to musl include directory
+          sudo apt-get update -qq && sudo apt-get install -y -qq musl-tools musl-dev linux-libc-dev
           # musl-gcc searches /usr/include/x86_64-linux-musl by default
           sudo ln -sf /usr/include/linux /usr/include/x86_64-linux-musl/linux
           sudo ln -sf /usr/include/asm-generic /usr/include/x86_64-linux-musl/asm-generic

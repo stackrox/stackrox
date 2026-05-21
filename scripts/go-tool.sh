@@ -60,19 +60,17 @@ function invoke_go() {
   local tool="${1:?"invoke_go tool argument required"}"
   shift
   local args=()
-  local cgo_ldflags=("${ldflags[@]}")  # Copy base ldflags
+  local cgo_ldflags=("${ldflags[@]}")
   local cc_compiler=""
-  local cgo_enabled="${CGO_ENABLED:-0}"  # Copy from environment, default to 0 (disabled)
+  local cgo_enabled="${CGO_ENABLED:-0}"
 
   args+=("-buildvcs=false")
   args+=(-tags "$(tr , ' ' <<<"$GOTAGS")")
 
-  # Enable CGO and race detector if RACE is set
   if [[ "$RACE" == "true" ]]; then
     cgo_enabled=1
     args+=("-race")
 
-    # Set up musl-gcc for static linking with race detector
     # This avoids GLIBC version mismatches between builder and runtime
     if command -v musl-gcc &> /dev/null; then
       echo >&2 "Using musl-gcc for static linking to avoid GLIBC dependencies"
@@ -86,14 +84,11 @@ function invoke_go() {
 
   args+=(-ldflags="${cgo_ldflags[*]}")
 
-  # Set CGO_ENABLED and CC only for this command
-  if [[ -n "$cc_compiler" ]]; then
-    CGO_ENABLED="$cgo_enabled" CC="$cc_compiler" go "$tool" "${args[@]}" "$@"
-  elif [[ "$cgo_enabled" != "${CGO_ENABLED:-0}" ]]; then
-    CGO_ENABLED="$cgo_enabled" go "$tool" "${args[@]}" "$@"
-  else
-    go "$tool" "${args[@]}" "$@"
-  fi
+  local env_vars=()
+  [[ "$cgo_enabled" != "${CGO_ENABLED:-0}" ]] && env_vars+=(CGO_ENABLED="$cgo_enabled")
+  [[ -n "$cc_compiler" ]] && env_vars+=(CC="$cc_compiler")
+
+  "${env_vars[@]}" go "$tool" "${args[@]}" "$@"
 }
 
 function go_build() (
