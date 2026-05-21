@@ -646,8 +646,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EmbeddedVulnerability_ScoreVersion(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EmbeddedVulnerability_VulnerabilityType(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EnforcementAction(0)))
-	utils.Must(builder.AddType("EvaluationFilter", []string{
-	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EventSource(0)))
 	utils.Must(builder.AddType("Exclusion", []string{
 		"deployment: Exclusion_Deployment",
@@ -1106,7 +1104,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"description: String!",
 		"disabled: Boolean!",
 		"enforcementActions: [EnforcementAction!]!",
-		"evaluationFilter: EvaluationFilter",
 		"eventSource: EventSource!",
 		"exclusions: [Exclusion]!",
 		"id: ID!",
@@ -7795,48 +7792,6 @@ func toEnforcementActions(values *[]string) []storage.EnforcementAction {
 	return output
 }
 
-type evaluationFilterResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.EvaluationFilter
-}
-
-func (resolver *Resolver) wrapEvaluationFilter(value *storage.EvaluationFilter, ok bool, err error) (*evaluationFilterResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &evaluationFilterResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapEvaluationFilters(values []*storage.EvaluationFilter, err error) ([]*evaluationFilterResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*evaluationFilterResolver, len(values))
-	for i, v := range values {
-		output[i] = &evaluationFilterResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapEvaluationFilterWithContext(ctx context.Context, value *storage.EvaluationFilter, ok bool, err error) (*evaluationFilterResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &evaluationFilterResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapEvaluationFiltersWithContext(ctx context.Context, values []*storage.EvaluationFilter, err error) ([]*evaluationFilterResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*evaluationFilterResolver, len(values))
-	for i, v := range values {
-		output[i] = &evaluationFilterResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
 func toEventSource(value *string) storage.EventSource {
 	if value != nil {
 		return storage.EventSource(storage.EventSource_value[*value])
@@ -12367,11 +12322,6 @@ func (resolver *policyResolver) Disabled(ctx context.Context) bool {
 func (resolver *policyResolver) EnforcementActions(ctx context.Context) []string {
 	value := resolver.data.GetEnforcementActions()
 	return stringSlice(value)
-}
-
-func (resolver *policyResolver) EvaluationFilter(ctx context.Context) (*evaluationFilterResolver, error) {
-	value := resolver.data.GetEvaluationFilter()
-	return resolver.root.wrapEvaluationFilter(value, true, nil)
 }
 
 func (resolver *policyResolver) EventSource(ctx context.Context) string {
