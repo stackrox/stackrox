@@ -570,26 +570,22 @@ func (suite *ImageCriteriaTestSuite) TestFilter_ExcludeLowLayerComponents() {
 	})
 
 	suite.Run("filter excluding low layers produces only high-layer violations", func() {
-		sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, cvssPolicy, storage.LifecycleStage_DEPLOY)
+		matcher, err := BuildDeploymentMatcher(cvssPolicy)
 		suite.NoError(err)
-		m := &matcherImpl{
-			evaluators: sectionsAndEvals,
-			filters:    []filter.EvaluationFilter{excludeLowLayerComponents()},
-		}
-		violations, err := m.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+		ed := enhancedDeployment(dep, []*storage.Image{img})
+		ed = applyTestFilters(ed, excludeLowLayerComponents())
+		violations, err := matcher.MatchDeployment(nil, ed)
 		suite.NoError(err)
 		suite.Len(violations.AlertViolations, 1)
 		suite.Contains(violations.AlertViolations[0].GetMessage(), "CVE-2024-0002")
 	})
 
 	suite.Run("filter excluding high layers produces only low-layer violations", func() {
-		sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, cvssPolicy, storage.LifecycleStage_DEPLOY)
+		matcher, err := BuildDeploymentMatcher(cvssPolicy)
 		suite.NoError(err)
-		m := &matcherImpl{
-			evaluators: sectionsAndEvals,
-			filters:    []filter.EvaluationFilter{excludeHighLayerComponents()},
-		}
-		violations, err := m.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+		ed := enhancedDeployment(dep, []*storage.Image{img})
+		ed = applyTestFilters(ed, excludeHighLayerComponents())
+		violations, err := matcher.MatchDeployment(nil, ed)
 		suite.NoError(err)
 		suite.Len(violations.AlertViolations, 1)
 		suite.Contains(violations.AlertViolations[0].GetMessage(), "CVE-2024-0001")
@@ -623,13 +619,11 @@ func (suite *ImageCriteriaTestSuite) TestFilter_MissingBaseImageInfo() {
 		&storage.PolicyGroup{FieldName: fieldnames.CVSS, Values: []*storage.PolicyValue{{Value: "> 7"}}},
 	)
 
-	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, cvssPolicy, storage.LifecycleStage_DEPLOY)
+	matcher, err := BuildDeploymentMatcher(cvssPolicy)
 	suite.NoError(err)
-	m := &matcherImpl{
-		evaluators: sectionsAndEvals,
-		filters:    []filter.EvaluationFilter{excludeLowLayerComponents()},
-	}
-	violations, err := m.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+	ed := enhancedDeployment(dep, []*storage.Image{img})
+	ed = applyTestFilters(ed, excludeLowLayerComponents())
+	violations, err := matcher.MatchDeployment(nil, ed)
 	suite.NoError(err)
 	suite.Len(violations.AlertViolations, 1,
 		"without BaseImageInfo, filter is a no-op and image should produce violations")

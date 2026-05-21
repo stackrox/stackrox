@@ -1027,6 +1027,18 @@ func (suite *WorkloadCriteriaTestSuite) TestReadinessProbePolicyCriteria() {
 	}
 }
 
+func applyTestFilters(ed EnhancedDeployment, filters ...filter.EvaluationFilter) EnhancedDeployment {
+	dep, imgs := ed.Deployment, ed.Images
+	for _, f := range filters {
+		dep, imgs = f.Apply(dep, imgs)
+	}
+	return EnhancedDeployment{
+		Deployment:             dep,
+		Images:                 imgs,
+		NetworkPoliciesApplied: ed.NetworkPoliciesApplied,
+	}
+}
+
 func excludeContainerByName(name string) filter.EvaluationFilter {
 	return filter.NewTestFilter(func(dep *storage.Deployment, imgs []*storage.Image) (*storage.Deployment, []*storage.Image) {
 		var kept []*storage.Container
@@ -1108,13 +1120,11 @@ func (suite *WorkloadCriteriaTestSuite) TestFilter_ExcludeByContainerName() {
 	})
 
 	suite.Run("filter excludes one container", func() {
-		sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, privPolicy, storage.LifecycleStage_DEPLOY)
+		matcher, err := BuildDeploymentMatcher(privPolicy)
 		suite.NoError(err)
-		m := &matcherImpl{
-			evaluators: sectionsAndEvals,
-			filters:    []filter.EvaluationFilter{excludeContainerByName("helper")},
-		}
-		violations, err := m.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+		ed := enhancedDeployment(dep, suite.getImagesForDeployment(dep))
+		ed = applyTestFilters(ed, excludeContainerByName("helper"))
+		violations, err := matcher.MatchDeployment(nil, ed)
 		suite.NoError(err)
 		suite.Len(violations.AlertViolations, 1)
 		suite.Contains(violations.AlertViolations[0].GetMessage(), "app")
@@ -1182,13 +1192,11 @@ func (suite *WorkloadCriteriaTestSuite) TestFilter_CombinedContainerAndImage() {
 	})
 
 	suite.Run("combined filters produce only high-layer violations from app container", func() {
-		sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, cvssPolicy, storage.LifecycleStage_DEPLOY)
+		matcher, err := BuildDeploymentMatcher(cvssPolicy)
 		suite.NoError(err)
-		m := &matcherImpl{
-			evaluators: sectionsAndEvals,
-			filters:    []filter.EvaluationFilter{excludeContainerByName("excluded"), excludeLowLayerComponents()},
-		}
-		violations, err := m.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+		ed := enhancedDeployment(dep, suite.getImagesForDeployment(dep))
+		ed = applyTestFilters(ed, excludeContainerByName("excluded"), excludeLowLayerComponents())
+		violations, err := matcher.MatchDeployment(nil, ed)
 		suite.NoError(err)
 		suite.Len(violations.AlertViolations, 1)
 		suite.Contains(violations.AlertViolations[0].GetMessage(), "CVE-2024-HIGH")
