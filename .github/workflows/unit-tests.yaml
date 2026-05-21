@@ -292,6 +292,10 @@ jobs:
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '^ui/') ||
       contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
+    strategy:
+      fail-fast: false
+      matrix:
+        shards: [2, 3, 4]
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -310,27 +314,52 @@ jobs:
         cache: 'npm'
         cache-dependency-path: ui/apps/platform/package-lock.json
 
-    - name: UI Component Tests
-      uses: cypress-io/github-action@dace029018fcdf86e0df89a31bc3cfa5b32570d8 # ratchet:cypress-io/github-action@v7
-      with:
-        working-directory: ui/apps/platform
-        install-command: npm ci --prefer-offline --fetch-timeout=60000 --no-audit --no-fund
-        component: true
-        command: npx cypress run --component --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.js
+    - name: Install dependencies
+      working-directory: ui/apps/platform
+      run: npm ci --prefer-offline --fetch-timeout=60000 --no-audit --no-fund
+
+    - name: Run ${{ matrix.shards }} parallel Cypress processes
+      working-directory: ui/apps/platform
+      run: |
+        shards=${{ matrix.shards }}
+        specs=($(find src -name '*.cy.*' | sort))
+        total=${#specs[@]}
+        chunk=$(( (total + shards - 1) / shards ))
+
+        pids=()
+        for (( i=0; i<shards; i++ )); do
+          start=$(( i * chunk ))
+          shard_specs=$(IFS=,; echo "${specs[*]:$start:$chunk}")
+          [ -z "$shard_specs" ] && continue
+
+          mkdir -p "cypress/test-results/shard-$i"
+          npx cypress run --component             --browser chrome             --config "video=false,screenshotsFolder=cypress/test-results/shard-$i/screenshots"             --reporter mocha-multi-reporters             --reporter-options "configFile=cypress/mocha.config.js"             --spec "$shard_specs"             > "cypress/test-results/shard-$i/stdout.log" 2>&1 &
+          pids+=($!)
+        done
+
+        failed=0
+        for pid in "${pids[@]}"; do
+          wait "$pid" || (( failed++ ))
+        done
+
+        echo "=== Results ==="
+        for (( i=0; i<shards; i++ )); do
+          echo "--- Shard $i ---"
+          tail -5 "cypress/test-results/shard-$i/stdout.log" 2>/dev/null
+        done
+
+        exit $failed
       env:
         TZ: UTC
         CYPRESS_COMPONENT_TEST: 'true'
         CYPRESS_INTERNAL_BROWSER_CONNECT_TIMEOUT: '180000'
-        CYPRESS_VIDEOS_FOLDER: cypress/test-results/artifacts/videos
-        CYPRESS_SCREENSHOTS_FOLDER: cypress/test-results/artifacts/screenshots
-        DEBUG: 'cypress*'
         NO_COLOR: '1'
 
     - name: Upload Cypress test result artifacts
       uses: ./.github/actions/upload-artifact-with-retry
       if: always()
       with:
-        name: Cypress test results
+        name: Cypress test results (${{ matrix.shards }} shards)
         path: ui/apps/platform/cypress/test-results/
 
     - name: Publish Test Report
