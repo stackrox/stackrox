@@ -104,12 +104,6 @@ describe('Workload CVE Image CVE Single page', () => {
     it('should have consistent behavior within the data table', () => {
         visitFirstCve();
 
-        // Wait for component data to be enriched — the v2 pipeline processes
-        // image components asynchronously after initial scan
-        cy.get(`${selectors.firstTableRow} td[data-label="Affected components"]`, {
-            timeout: 30000,
-        }).should('not.have.text', '');
-
         // Test that the number of components in the top level row matches the table in the expanded row
         cy.get(`${selectors.firstTableRow} .pf-v6-c-table__toggle button`).click();
         cy.get(`${selectors.firstTableRow} td[data-label="Affected components"]`).then(
@@ -119,9 +113,10 @@ describe('Workload CVE Image CVE Single page', () => {
                     ? parseInt(componentText.replace(/ components?/, ''), 10)
                     : 1;
 
-                cy.get(`${selectors.firstTableRow} + tr.pf-m-expanded table tbody`, {
-                    timeout: 15000,
-                }).should('have.length', componentCount);
+                cy.get(`${selectors.firstTableRow} + tr.pf-m-expanded table tbody`).should(
+                    'have.length',
+                    componentCount
+                );
             }
         );
 
