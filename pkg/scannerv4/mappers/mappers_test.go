@@ -2634,6 +2634,31 @@ func Test_versionID(t *testing.T) {
 	}
 }
 
+func TestIsVersionAgnostic(t *testing.T) {
+	tests := map[string]struct {
+		did  string
+		want bool
+	}{
+		"hummingbird is version-agnostic": {
+			did:  "hummingbird",
+			want: true,
+		},
+		"rhel is not version-agnostic": {
+			did:  "rhel",
+			want: false,
+		},
+		"empty DID is not version-agnostic": {
+			did:  "",
+			want: false,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tt.want, IsVersionAgnostic(tt.did))
+		})
+	}
+}
+
 func Test_sortByNVDCVSS(t *testing.T) {
 	type args struct {
 		ids             []string
