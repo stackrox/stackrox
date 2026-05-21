@@ -62,7 +62,7 @@ function invoke_go() {
   local args=()
   local cgo_ldflags=("${ldflags[@]}")  # Copy base ldflags
   local cc_compiler=""
-  local cgo_enabled="${CGO_ENABLED}"  # Copy from environment
+  local cgo_enabled="${CGO_ENABLED:-0}"  # Copy from environment, default to 0 (disabled)
 
   args+=("-buildvcs=false")
   args+=(-tags "$(tr , ' ' <<<"$GOTAGS")")
