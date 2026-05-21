@@ -325,7 +325,7 @@ jobs:
         specs=($(find src -name '*.cy.*' | sort))
         total=${#specs[@]}
         chunk=$(( (total + shards - 1) / shards ))
-        echo "Total specs: $total, shards: $shards, chunk: $chunk"
+        echo "Specs: $total, shards: $shards, chunk: $chunk"
 
         pids=()
         for (( i=0; i<shards; i++ )); do
