@@ -457,26 +457,14 @@ LIMIT @limit
         jq < "${data_file}"
         # shellcheck disable=SC2016
         body='{
-            "blocks": [
-                {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
-                {
-                    "type": "table",
-                    "cells": (
-                        [[
-                            {"text": "*Job Name*", "type": "mrkdwn"},
-                            {"text": "*Branch*", "type": "mrkdwn"},
-                            {"text": "*Failures*", "type": "mrkdwn"},
-                            {"text": "*Duration*", "type": "mrkdwn"}
-                        ]] +
-                        [.[] | [
-                            {"text": .name, "type": "plain_text"},
-                            {"text": .branch_group, "type": "plain_text"},
-                            {"text": "\(.consecutive_count)", "type": "plain_text"},
-                            {"text": "\(.duration_days) days", "type": "plain_text"}
-                        ]]
-                    )
-                }
-            ]
+            "blocks": (
+                [
+                    {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
+                    {"type": "section", "text": {"type": "mrkdwn", "text": "*Job Name* | *Branch* | *Failures* | *Duration*"}},
+                    {"type": "divider"}
+                ] +
+                [.[] | {"type": "section", "text": {"type": "mrkdwn", "text": (.name + " | `" + .branch_group + "` | " + (.consecutive_count|tostring) + " | " + (.duration_days|tostring) + " days")}}]
+            )
         }'
     else
         body='{"blocks":[
