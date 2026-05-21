@@ -500,16 +500,24 @@ jobs:
 
         case "$SHARD" in
           *networkGraph*)
-            echo "Waiting for network flow edges..."
+            echo "Waiting for collector→sensor network flow..."
             cluster_id=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
               "https://${API_ENDPOINT}/v1/clusters" | jq -r '.clusters[0].id')
-            for _ in $(seq 1 60); do
-              edges=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/v1/networkgraph/cluster/${cluster_id}?query=Namespace:stackrox" \
-                | jq -r '[.nodes[]? | .outEdges // {} | keys[]] | length // 0')
-              [ "${edges:-0}" -gt 3 ] && echo "Network flow edges: ${edges}" && break
+            for i in $(seq 1 120); do
+              graph=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/networkgraph/cluster/${cluster_id}?query=Namespace:stackrox")
+              edges=$(echo "$graph" | jq -r '[.nodes[]? | .outEdges // {} | keys[]] | length // 0')
+              # Check if collector node has outgoing edges (connects to sensor)
+              collector_edges=$(echo "$graph" | jq -r '
+                [.nodes[] | select(.entity.deployment.name == "collector") | .outEdges // {} | keys[]] | length // 0')
+              if [ "${collector_edges:-0}" -gt 0 ]; then
+                echo "Collector has ${collector_edges} outgoing edges (total: ${edges})"
+                break
+              fi
+              [ $((i % 12)) -eq 0 ] && echo "+$((i*5/60))m: edges=${edges:-0} collector_edges=${collector_edges:-0}"
               sleep 5
             done
+            [ "${collector_edges:-0}" -eq 0 ] && echo "::warning::No collector outgoing edges after 10 minutes"
             ;;
           *vulnerabilities*)
             echo "Waiting for scanner registration..."
