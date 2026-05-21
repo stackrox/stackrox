@@ -149,22 +149,8 @@ jobs:
 
     - name: Run Postgres
       run: |
-        mkdir -p /dev/shm/pgdata
-        chown postgres:postgres /dev/shm/pgdata
-        su postgres -c 'initdb -D /dev/shm/pgdata'
-        cat >> /dev/shm/pgdata/postgresql.conf << 'PGCONF'
-        shared_buffers = 1GB
-        work_mem = 256MB
-        maintenance_work_mem = 512MB
-        effective_cache_size = 4GB
-        fsync = off
-        synchronous_commit = off
-        full_page_writes = off
-        max_wal_size = 2GB
-        checkpoint_completion_target = 0.9
-        random_page_cost = 1.1
-        PGCONF
-        su postgres -c 'pg_ctl -D /dev/shm/pgdata start'
+        su postgres -c 'initdb -D /tmp/data'
+        su postgres -c 'pg_ctl -D /tmp/data start'
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
@@ -205,31 +191,18 @@ jobs:
 
   go-bench:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+    env:
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
     steps:
-    - name: Set Postgres version
+    - name: Start Postgres on tmpfs
       run: |
-        echo "/usr/pgsql-15/bin" >> "${GITHUB_PATH}"
-
-    - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      with:
-        fetch-depth: 0
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Run Postgres
-      run: |
-        mkdir -p /dev/shm/pgdata
-        chown postgres:postgres /dev/shm/pgdata
-        su postgres -c 'initdb -D /dev/shm/pgdata'
-        cat >> /dev/shm/pgdata/postgresql.conf << 'PGCONF'
+        sudo systemctl stop postgresql.service
+        sudo mkdir -p /dev/shm/pgdata
+        sudo chown postgres:postgres /dev/shm/pgdata
+        sudo -u postgres /usr/lib/postgresql/*/bin/initdb -D /dev/shm/pgdata
+        sudo sed -i '/^host/s/scram-sha-256/trust/' /dev/shm/pgdata/pg_hba.conf
+        cat << 'PGCONF' | sudo tee -a /dev/shm/pgdata/postgresql.conf
         shared_buffers = 1GB
         work_mem = 256MB
         maintenance_work_mem = 512MB
@@ -241,13 +214,22 @@ jobs:
         checkpoint_completion_target = 0.9
         random_page_cost = 1.1
         PGCONF
-        su postgres -c 'pg_ctl -D /dev/shm/pgdata start'
+        sudo -u postgres /usr/lib/postgresql/*/bin/pg_ctl -D /dev/shm/pgdata start
+
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Is Postgres ready
-      run: pg_isready -h 127.0.0.1
+      run: |
+        timeout 60 bash -c 'until pg_isready; do sleep 1; done' \
+          || { sudo journalctl -u postgresql --no-pager -n 20; exit 1; }
 
     - name: Go Bench Tests
       run: make go-postgres-bench-tests
