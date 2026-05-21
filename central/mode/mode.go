@@ -1,6 +1,10 @@
 package mode
 
-import "github.com/stackrox/rox/pkg/env"
+import (
+	"fmt"
+
+	"github.com/stackrox/rox/pkg/env"
+)
 
 // CentralMode represents the operational mode for Central.
 type CentralMode string
@@ -16,7 +20,13 @@ const (
 
 // Get returns the current Central mode from the ROX_CENTRAL_MODE environment variable.
 func Get() CentralMode {
-	return CentralMode(env.CentralMode.Setting())
+	m := CentralMode(env.CentralMode.Setting())
+	switch m {
+	case Full, Reports, CronJob:
+		return m
+	default:
+		panic(fmt.Sprintf("invalid ROX_CENTRAL_MODE: %q (must be full, reports, or cronjob)", m))
+	}
 }
 
 // IsBackgroundWorkersEnabled returns true if background workers should start.
