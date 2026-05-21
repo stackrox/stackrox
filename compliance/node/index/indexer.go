@@ -3,7 +3,6 @@ package index
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -53,19 +52,20 @@ var (
 	ccLayerDigest = claircore.MustParseDigest(layerDigest)
 )
 
-func newDefaultClient() (*http.Client, error) {
-	var tlsConf *tls.Config
-	if env.NodeIndexMappingURL.Setting() != "" {
-		tlsConf = &tls.Config{}
-	} else {
-		var err error
-		tlsConf, err = clientconn.TLSConfig(mtls.SensorSubject, clientconn.TLSConfigOptions{
-			UseClientCert: clientconn.MustUseClientCert,
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "creating TLS config for Sensor connection")
-		}
+func newDefaultClient(mappingURL string) (*http.Client, error) {
+	serverName, err := extractHostname(mappingURL)
+	if err != nil {
+		return nil, err
 	}
+	tlsConf, err := clientconn.TLSConfig(mtls.SensorSubject, clientconn.TLSConfigOptions{
+		UseClientCert: clientconn.MustUseClientCert,
+		ServerName:    serverName,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "creating TLS config")
+	}
+	// Clear gRPC ALPN protos to avoid HTTP/2 framing issues (see ROX-21861).
+	tlsConf.NextProtos = nil
 	return &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: tlsConf,
@@ -73,6 +73,17 @@ func newDefaultClient() (*http.Client, error) {
 		},
 		Timeout: 30 * time.Second,
 	}, nil
+}
+
+func extractHostname(rawURL string) (string, error) {
+	if !strings.Contains(rawURL, "://") {
+		rawURL = "https://" + rawURL
+	}
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return "", errors.Wrapf(err, "parsing URL %q", rawURL)
+	}
+	return parsed.Hostname(), nil
 }
 
 // NodeIndexerConfig represents Scanner V4 node indexer configuration parameters.
@@ -197,7 +208,7 @@ func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *clairco
 	client := cfg.Client
 	if client == nil {
 		var err error
-		client, err = newDefaultClient()
+		client, err = newDefaultClient(cfg.Repo2CPEMappingURL)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating repository scanner http client")
 		}

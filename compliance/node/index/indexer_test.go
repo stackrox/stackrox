@@ -235,6 +235,35 @@ func (s *nodeIndexerSuite) TestBuildMappingURL() {
 	}
 }
 
+func (s *nodeIndexerSuite) TestExtractHostname() {
+	tcs := map[string]struct {
+		input     string
+		expected  string
+		wantError bool
+	}{
+		"full URL":             {"https://sensor.stackrox.svc:443/scanner/definitions?file=repo2cpe", "sensor.stackrox.svc", false},
+		"URL without port":     {"https://sensor.stackrox.svc/scanner/definitions", "sensor.stackrox.svc", false},
+		"URL without path":     {"https://example.com", "example.com", false},
+		"URL with port":        {"https://example.com:8080", "example.com", false},
+		"IP address with port": {"https://10.96.0.1:443/path", "10.96.0.1", false},
+		"empty string":         {"", "", false},
+		"just hostname":        {"sensor.stackrox.svc", "sensor.stackrox.svc", false},
+		"hostname with port":   {"sensor.stackrox.svc:443", "sensor.stackrox.svc", false},
+		"invalid URL":          {"https://[invalid", "", true},
+	}
+	for name, tc := range tcs {
+		s.Run(name, func() {
+			got, err := extractHostname(tc.input)
+			if tc.wantError {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+				s.Equal(tc.expected, got)
+			}
+		})
+	}
+}
+
 func (s *nodeIndexerSuite) TestIndexerE2E() {
 	server := s.createTestServer(true)
 	cfg := DefaultNodeIndexerConfig()
