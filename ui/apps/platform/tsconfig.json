@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
     "target": "es2020",
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
     "lib": [
       "dom",
       "dom.iterable",

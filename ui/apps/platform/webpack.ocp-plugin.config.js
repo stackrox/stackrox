@@ -52,6 +52,20 @@ function getSrcAliases() {
 
 const config = {
     mode: isProd ? 'production' : 'development',
+    cache: {
+        type: 'filesystem',
+        buildDependencies: {
+            config: [
+                __filename,
+                path.resolve(__dirname, 'tsconfig.json'),
+                path.resolve(__dirname, 'package.json'),
+            ],
+        },
+        version: JSON.stringify({
+            NODE_ENV: process.env.NODE_ENV,
+            ROX_PRODUCT_BRANDING: process.env.ROX_PRODUCT_BRANDING,
+        }),
+    },
     // No regular entry points needed. All plugin related scripts are generated via ConsoleRemotePlugin.
     entry: {},
     context: path.resolve(__dirname, 'src'),

@@ -5,6 +5,7 @@ node_modules/
 lint
 /build
 /apps/platform/build
+*.tsbuildinfo
 
 # development
 .vscode
