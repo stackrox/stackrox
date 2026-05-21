@@ -54,12 +54,16 @@ EOF
     assert_success
     assert_output --partial 'No vulnerabilities found'
 
-    # Verify success JUnit record was created
-    local junit_file="${ARTIFACT_DIR}/junit-misc/junit-test-image:latest.xml"
+    # Verify success JUnit record was created (one file per image)
+    local junit_file="${ARTIFACT_DIR}/junit-misc/junit-test-image_latest.xml"
     assert [ -f "${junit_file}" ]
-    run grep '<testsuite' "${junit_file}"
-    assert_success
+
+    # Verify structure: testsuite name is image name, no failures
+    run cat "${junit_file}"
+    assert_output --partial '<testsuite name="test-image:latest"'
+    assert_output --partial 'tests="1"'
     assert_output --partial 'failures="0"'
+    assert_output --partial '<testcase name="vulnerability-scan" classname="vulnerability-scan">'
 }
 
 @test "converts sarif violations to junit failures" {
@@ -118,25 +122,25 @@ EOF
     assert_success
     assert_output --partial 'Converted 2 vulnerabilities'
 
-    # Verify JUnit files were created for each CVE
-    local junit_file1="${ARTIFACT_DIR}/junit-misc/junit-CVE-2024-1234_nginx_1.19.0.xml"
-    local junit_file2="${ARTIFACT_DIR}/junit-misc/junit-CVE-2024-5678_openssl_1.1.1.xml"
+    # One JUnit file per image (testsuite), contains all vulnerabilities
+    local junit_file="${ARTIFACT_DIR}/junit-misc/junit-quay.io_stackrox-io_main_4.6.0.xml"
+    assert [ -f "${junit_file}" ]
 
-    assert [ -f "${junit_file1}" ]
-    assert [ -f "${junit_file2}" ]
+    # Verify testsuite structure: name is image, 2 tests, 2 failures
+    run cat "${junit_file}"
+    assert_output --partial '<testsuite name="quay.io/stackrox-io/main:4.6.0"'
+    assert_output --partial 'tests="2"'
+    assert_output --partial 'failures="2"'
 
-    # Verify first failure contains expected details
-    run cat "${junit_file1}"
-    assert_output --partial 'CVE-2024-1234'
-    assert_output --partial 'Severity: error'
+    # Verify first testcase: classname is CVE, name is component_version
+    assert_output --partial '<testcase name="nginx_1.19.0" classname="CVE-2024-1234">'
     assert_output --partial 'Critical vulnerability in nginx'
-    assert_output --partial 'failures="1"'
+    assert_output --partial 'Severity: error'
 
-    # Verify second failure
-    run cat "${junit_file2}"
-    assert_output --partial 'CVE-2024-5678'
-    assert_output --partial 'Severity: warning'
+    # Verify second testcase
+    assert_output --partial '<testcase name="openssl_1.1.1" classname="CVE-2024-5678">'
     assert_output --partial 'Important vulnerability in openssl'
+    assert_output --partial 'Severity: warning'
 }
 
 @test "handles sarif results without locations" {
@@ -170,6 +174,55 @@ EOF
     assert_output --partial 'Converted 1 vulnerabilities'
 
     # Should still create JUnit record even without location
-    local junit_file="${ARTIFACT_DIR}/junit-misc/junit-CVE-2024-9999_test_1.0.0.xml"
+    local junit_file="${ARTIFACT_DIR}/junit-misc/junit-test-image_latest.xml"
     assert [ -f "${junit_file}" ]
+
+    # Verify structure
+    run cat "${junit_file}"
+    assert_output --partial '<testsuite name="test-image:latest"'
+    assert_output --partial '<testcase name="test_1.0.0" classname="CVE-2024-9999">'
+}
+
+@test "parses CVE from ruleId correctly" {
+    local sarif_file="${BATS_TEST_TMPDIR}/parse-test.sarif"
+    cat > "${sarif_file}" <<'EOF'
+{
+  "version": "2.1.0",
+  "runs": [{
+    "tool": {"driver": {"name": "roxctl"}},
+    "results": [
+      {
+        "ruleId": "CVE-2024-1234_nginx_1.19.0",
+        "level": "error",
+        "message": {"text": "Test with proper CVE format"}
+      },
+      {
+        "ruleId": "GHSA-abcd-1234_golang_1.20.0",
+        "level": "warning",
+        "message": {"text": "Test with GHSA format"}
+      },
+      {
+        "ruleId": "no-underscore-format",
+        "level": "note",
+        "message": {"text": "Test without underscore"}
+      }
+    ]
+  }]
+}
+EOF
+
+    run "${BATS_TEST_DIRNAME}/sarif-to-junit.sh" "${sarif_file}" "test:latest"
+    assert_success
+
+    local junit_file="${ARTIFACT_DIR}/junit-misc/junit-test_latest.xml"
+    run cat "${junit_file}"
+
+    # First: CVE-2024-1234 as classname, nginx_1.19.0 as name
+    assert_output --partial '<testcase name="nginx_1.19.0" classname="CVE-2024-1234">'
+
+    # Second: GHSA-abcd-1234 as classname, golang_1.20.0 as name
+    assert_output --partial '<testcase name="golang_1.20.0" classname="GHSA-abcd-1234">'
+
+    # Third: no underscore, use full ruleId as classname, "unknown" as name
+    assert_output --partial '<testcase name="unknown" classname="no-underscore-format">'
 }
