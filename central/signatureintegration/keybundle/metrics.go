@@ -1,4 +1,4 @@
-package datastore
+package keybundle
 
 import (
 	"github.com/prometheus/client_golang/prometheus"

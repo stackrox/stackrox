@@ -1,4 +1,4 @@
-package datastore
+package keybundle
 
 import (
 	"context"
@@ -19,7 +19,8 @@ const (
 	minWatchInterval  = 5 * time.Second
 )
 
-type keyBundleWatcher struct {
+// Watcher monitors a key bundle file on disk and upserts it into the store.
+type Watcher struct {
 	filePath string
 	interval time.Duration
 	siStore  store.SignatureIntegrationStore
@@ -28,12 +29,13 @@ type keyBundleWatcher struct {
 	lastHash [sha256.Size]byte
 }
 
-func newKeyBundleWatcher(filePath string, interval time.Duration, siStore store.SignatureIntegrationStore) *keyBundleWatcher {
+// NewWatcher creates a Watcher for the given file path and poll interval.
+func NewWatcher(filePath string, interval time.Duration, siStore store.SignatureIntegrationStore) *Watcher {
 	if interval < minWatchInterval {
 		log.Warnf("Watch interval %v is below minimum %v, clamping", interval, minWatchInterval)
 		interval = minWatchInterval
 	}
-	return &keyBundleWatcher{
+	return &Watcher{
 		filePath: filePath,
 		interval: interval,
 		siStore:  siStore,
@@ -42,17 +44,19 @@ func newKeyBundleWatcher(filePath string, interval time.Duration, siStore store.
 	}
 }
 
-func (w *keyBundleWatcher) Start() {
+// Start launches the watcher loop in a background goroutine.
+func (w *Watcher) Start() {
 	log.Info("Starting Red Hat signing key bundle watcher")
 	go w.run()
 }
 
-func (w *keyBundleWatcher) Stop() {
+// Stop signals the watcher to stop and blocks until it exits.
+func (w *Watcher) Stop() {
 	w.stopSig.Signal()
 	<-w.doneSig.Done()
 }
 
-func (w *keyBundleWatcher) run() {
+func (w *Watcher) run() {
 	defer w.doneSig.Signal()
 
 	w.checkAndUpsert()
@@ -69,7 +73,7 @@ func (w *keyBundleWatcher) run() {
 	}
 }
 
-func (w *keyBundleWatcher) checkAndUpsert() {
+func (w *Watcher) checkAndUpsert() {
 	info, err := os.Stat(w.filePath)
 	if errors.Is(err, os.ErrNotExist) {
 		log.Debugf("Key bundle file %q does not exist, skipping", w.filePath)
