@@ -227,10 +227,8 @@ multiple binary layers to that single base image.
   available locally.
 - **Sensor binary rename**: `go build ./sensor/kubernetes` produces a binary named `kubernetes`.
   You MUST rename it to `kubernetes-sensor` when creating the tar layer (see Phase 5 example).
-- **Compliance pods** are not a static Deployment — they run as a container in the `collector`
-  DaemonSet. To patch compliance, use:
-  `oc -n <ns> set image daemonset/collector compliance=<tag>`
-  Note: new compliance pods launched by sensor will also use the updated DaemonSet image.
+- **Compliance** runs as a container in the `collector` DaemonSet, not a standalone
+  Deployment. To patch it: `oc -n <ns> set image daemonset/collector compliance=<tag>`
 - **Scanner uses a separate image** — you cannot append scanner binaries to the main image.
   To patch scanner, pull the current scanner image separately, append the scanner binary to
   `/usr/local/bin/scanner`, push to ttl.sh, and patch deployment/scanner.
