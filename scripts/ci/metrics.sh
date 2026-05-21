@@ -484,14 +484,14 @@ LIMIT @limit
                                 {"type": "raw_text", "text": "Job Name"},
                                 {"type": "raw_text", "text": "Branch"},
                                 {"type": "raw_text", "text": "Failures"},
-                                {"type": "raw_text", "text": "Duration"}
+                                {"type": "raw_text", "text": "Days"}
                             ]
                         ] +
                         [.[] | [
                             {"type": "raw_text", "text": .name},
                             {"type": "raw_text", "text": .branch_group},
-                            {"type": "raw_text", "text": "\(.consecutive_count) failures"},
-                            {"type": "raw_text", "text": "\(.duration_days) days"}
+                            {"type": "raw_text", "text": .consecutive_count},
+                            {"type": "raw_text", "text": .duration_days}
                         ]]
                     ),
                     "column_settings": [
