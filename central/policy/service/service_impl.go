@@ -33,6 +33,7 @@ import (
 	pkgDetection "github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -157,26 +158,36 @@ func (s *serviceImpl) getPolicy(ctx context.Context, id string) (*storage.Policy
 	if len(policy.GetCategories()) == 0 {
 		policy.Categories = []string{uncategorizedCategory}
 	}
+	stripEvaluationFilterIfDisabled(policy)
 	return policy, nil
+}
+
+func stripEvaluationFilterIfDisabled(p *storage.Policy) {
+	if !features.EvaluationFilter.Enabled() {
+		p.EvaluationFilter = nil
+	}
 }
 
 func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPolicy {
 	listPolicies := make([]*storage.ListPolicy, 0, len(policies))
 	for _, p := range policies {
-		listPolicies = append(listPolicies, &storage.ListPolicy{
-			Id:               p.GetId(),
-			Name:             p.GetName(),
-			Description:      p.GetDescription(),
-			Severity:         p.GetSeverity(),
-			Disabled:         p.GetDisabled(),
-			LifecycleStages:  p.GetLifecycleStages(),
-			Notifiers:        p.GetNotifiers(),
-			LastUpdated:      p.GetLastUpdated(),
-			EventSource:      p.GetEventSource(),
-			IsDefault:        p.GetIsDefault(),
-			Source:           p.GetSource(),
-			EvaluationFilter: p.GetEvaluationFilter(),
-		})
+		lp := &storage.ListPolicy{
+			Id:              p.GetId(),
+			Name:            p.GetName(),
+			Description:     p.GetDescription(),
+			Severity:        p.GetSeverity(),
+			Disabled:        p.GetDisabled(),
+			LifecycleStages: p.GetLifecycleStages(),
+			Notifiers:       p.GetNotifiers(),
+			LastUpdated:     p.GetLastUpdated(),
+			EventSource:     p.GetEventSource(),
+			IsDefault:       p.GetIsDefault(),
+			Source:          p.GetSource(),
+		}
+		if features.EvaluationFilter.Enabled() {
+			lp.EvaluationFilter = p.GetEvaluationFilter()
+		}
+		listPolicies = append(listPolicies, lp)
 	}
 	return listPolicies
 }
@@ -766,6 +777,7 @@ func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoli
 
 	for _, policy := range policyList {
 		removeInternal(policy)
+		stripEvaluationFilterIfDisabled(policy)
 	}
 	return &storage.ExportPoliciesResponse{
 		Policies: policyList,
