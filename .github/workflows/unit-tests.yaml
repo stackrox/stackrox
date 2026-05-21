@@ -296,6 +296,7 @@ jobs:
       fail-fast: false
       matrix:
         shards: [1, 2, 3, 4]
+        xvfb: [true, false]
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -319,6 +320,7 @@ jobs:
       run: npm ci --prefer-offline --fetch-timeout=60000 --no-audit --no-fund
 
     - name: Start Xvfb
+      if: matrix.xvfb
       run: |
         for i in $(seq 0 $(( ${{ matrix.shards }} - 1 )) ); do
           display=:$((99 + i))
@@ -344,9 +346,13 @@ jobs:
 
           mkdir -p "cypress/test-results/shard-$i"
           echo "Shard $i: $(echo "$shard_specs" | tr ',' '\n' | wc -l | tr -d ' ') specs"
-          ( export DISPLAY=:$((99 + i))
+          ( if [ "${{ matrix.xvfb }}" = "true" ]; then
+              export DISPLAY=:$((99 + i))
+            else
+              unset DISPLAY
+            fi
             npx cypress run --component \
-            --browser chrome \
+            --browser chrome --headless \
             --config "video=false,screenshotsFolder=cypress/test-results/shard-$i/screenshots" \
             --reporter mocha-multi-reporters \
             --reporter-options "configFile=cypress/mocha.config.js" \
@@ -384,7 +390,7 @@ jobs:
       uses: ./.github/actions/upload-artifact-with-retry
       if: always()
       with:
-        name: Cypress test results (${{ matrix.shards }} shards)
+        name: Cypress test results (${{ matrix.shards }} shards, xvfb=${{ matrix.xvfb }})
         path: ui/apps/platform/cypress/test-results/
 
     - name: Publish Test Report
