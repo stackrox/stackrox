@@ -151,6 +151,8 @@ func BenchmarkPushPull_Concurrent(b *testing.B) {
 					}
 					q := NewQueue[int](opts...)
 
+					b.SetParallelism(numProducers)
+
 					var done atomic.Bool
 					go func() {
 						for !done.Load() {
