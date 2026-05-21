@@ -52,6 +52,8 @@ var (
 	ccLayerDigest = claircore.MustParseDigest(layerDigest)
 )
 
+// newDefaultClient configures an HTTP client that works with both internal
+// mTLS endpoints (Sensor) and external publicly-trusted endpoints.
 func newDefaultClient(mappingURL string) (*http.Client, error) {
 	serverName, err := extractHostname(mappingURL)
 	if err != nil {
