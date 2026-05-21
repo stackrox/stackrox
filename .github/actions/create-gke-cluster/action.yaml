@@ -1,8 +1,8 @@
-name: Create GKE cluster with StackRox charts
+name: Create GKE cluster
 description: >
-  Creates a GKE cluster via scripts/ci/gke.sh and renders helm charts.
-  Drop-in alternative to create-kind-cluster for running the same
-  tests against real cloud infrastructure.
+  Creates a GKE cluster via scripts/ci/gke.sh with image pull secrets.
+  Supports spot VMs for cost savings. Use with deploy-stackrox action
+  for a complete StackRox deployment.
 
 inputs:
   cluster-name:
