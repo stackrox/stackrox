@@ -31,6 +31,7 @@ var templates = map[string]string{
 	"raw":          `value`,
 	"rawslice":     `value`,
 	"time":         `protocompat.ConvertTimestampToGraphqlTimeOrError(value)`,
+	"bytes":        `string(value)`,
 }
 
 func listName(td typeData) string {
@@ -87,6 +88,10 @@ func getFieldTransform(fd fieldData) (templateName string, returnType string) {
 			return "pointer", fmt.Sprintf("(*%sResolver, error)", lower(fd.Type.Elem().Name()))
 		}
 	case reflect.Slice:
+		// Handle []byte (protobuf bytes) as raw strings
+		if fd.Type.Elem().Kind() == reflect.Uint8 {
+			return "bytes", "string"
+		}
 		template, ret := getFieldTransform(fieldData{Name: fd.Name, Type: fd.Type.Elem()})
 		if len(ret) > 0 && ret[0] == '(' {
 			// this converts (*fooResolver, error) into ([]*fooResolver, error)

@@ -35,6 +35,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 {{- range $td.Data.UnionData }}
 		"{{lower .Name }}: {{ $td.Data.Name }}{{.Name}}",
 {{- end }}
+{{- if and (not $td.Data.FieldData) (not $td.Data.UnionData) }}
+		"unused: String!",
+{{- end }}
 	}))
 {{- range $ud := $td.Data.UnionData }}
 	utils.Must(builder.AddUnionType("{{ $td.Data.Name }}{{ $ud.Name }}", []string{
@@ -163,4 +166,9 @@ func (resolver *{{lower $td.Data.Name}}{{$ud.Name}}Resolver) To{{$ut.Type.Elem.N
 	res, ok := resolver.resolver.(*{{lower $ut.Type.Elem.Name}}Resolver)
 	return res, ok
 }
-{{end}}{{end}}{{end}}{{- end -}}
+{{end}}{{end}}
+{{- if and (not $td.Data.FieldData) (not $td.Data.UnionData) }}
+func (resolver *{{lower $td.Data.Name}}Resolver) Unused(ctx context.Context) string {
+	return ""
+}
+{{ end -}}{{end}}{{- end -}}
