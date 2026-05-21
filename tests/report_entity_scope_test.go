@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestReportEntityScope(t *testing.T) {
@@ -105,7 +106,7 @@ func (s *ReportEntityScopeSuite) TestCreateReportConfigWithEntityScope() {
 	scope := created.GetResourceScope().GetEntityScope()
 	s.Require().NotNil(scope, "entity scope should be set on the created config")
 	s.Require().Len(scope.GetRules(), 2)
-	//verify entity scope rules
+	// verify entity scope rules
 	firstRule := scope.GetRules()[0]
 	assert.Equal(s.T(), apiV2.ScopeEntity_SCOPE_ENTITY_NAMESPACE, firstRule.GetEntity())
 	assert.Equal(s.T(), apiV2.ScopeField_FIELD_NAME, firstRule.GetField())
@@ -135,7 +136,7 @@ func (s *ReportEntityScopeSuite) TestCreateReportConfigWithEntityScope() {
 	fetchedScope := fetched.GetResourceScope().GetEntityScope()
 	s.Require().NotNil(fetchedScope)
 	s.Require().Len(fetchedScope.GetRules(), 2)
-	//verify entity scope rules
+	// verify entity scope rules
 	fetchedFirstRule := fetchedScope.GetRules()[0]
 	assert.Equal(s.T(), apiV2.ScopeEntity_SCOPE_ENTITY_NAMESPACE, fetchedFirstRule.GetEntity())
 	assert.Equal(s.T(), apiV2.ScopeField_FIELD_NAME, fetchedFirstRule.GetField())
@@ -200,7 +201,7 @@ func (s *ReportEntityScopeSuite) TestUpdateReportConfigEntityScope() {
 	fetchedScope := fetched.GetResourceScope().GetEntityScope()
 	s.Require().NotNil(fetchedScope)
 	s.Require().Len(fetchedScope.GetRules(), 1)
-	//verify entity scope rules
+	// verify entity scope rules
 	fetchedRule := fetchedScope.GetRules()[0]
 	assert.Equal(s.T(), apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER, fetchedRule.GetEntity())
 	assert.Equal(s.T(), apiV2.ScopeField_FIELD_NAME, fetchedRule.GetField())
@@ -328,16 +329,14 @@ func (s *ReportEntityScopeSuite) TestReportHistoryWithEntityScope() {
 	assert.Equal(s.T(), created.GetId(), snapshot.GetReportConfigId())
 
 	snapshotScope := snapshot.GetResourceScope()
-	if snapshotScope != nil {
-		entityScope := snapshotScope.GetEntityScope()
-		s.Require().NotNil(entityScope, "snapshot should have entity scope")
-		assert.NotEmpty(s.T(), entityScope.GetRules())
-	}
+	s.Require().NotNil(snapshotScope, "snapshot should have resource scope")
+	entityScope := snapshotScope.GetEntityScope()
+	s.Require().NotNil(entityScope, "snapshot should have entity scope")
+	assert.NotEmpty(s.T(), entityScope.GetRules())
 
 	snapshotFilters := snapshot.GetVulnReportFilters()
-	if snapshotFilters != nil {
-		assert.Equal(s.T(), "CVSS:>=7+Fixable:true", snapshotFilters.GetQuery())
-	}
+	s.Require().NotNil(snapshotFilters, "snapshot should have vuln report filters")
+	assert.Equal(s.T(), "CVSS:>=7+Fixable:true", snapshotFilters.GetQuery())
 }
 
 func (s *ReportEntityScopeSuite) waitForReportCompletion(reportID string) {
