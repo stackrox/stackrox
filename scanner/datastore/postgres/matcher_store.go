@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/claircore"
@@ -18,6 +19,11 @@ type MatcherStore interface {
 	datastore.MatcherStore
 
 	Distributions(ctx context.Context) ([]claircore.Distribution, error)
+
+	// ReindexVulnTables rebuilds indexes on the vuln and uo_vuln tables.
+	// This repairs index corruption that can cause persistent FK violations
+	// during vulnerability imports.
+	ReindexVulnTables(ctx context.Context) error
 }
 
 type matcherStore struct {
@@ -40,4 +46,13 @@ func InitPostgresMatcherStore(ctx context.Context, pool *pgxpool.Pool, doMigrati
 		MatcherStore: store,
 		pool:         pool,
 	}, nil
+}
+
+func (m *matcherStore) ReindexVulnTables(ctx context.Context) error {
+	for _, table := range []string{"vuln", "uo_vuln"} {
+		if _, err := m.pool.Exec(ctx, "REINDEX TABLE "+table); err != nil {
+			return fmt.Errorf("reindexing %s: %w", table, err)
+		}
+	}
+	return nil
 }

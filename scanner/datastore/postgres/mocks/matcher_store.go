@@ -248,6 +248,20 @@ func (mr *MockMatcherStoreMockRecorder) RecordUpdaterStatus(ctx, updaterName, up
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUpdaterStatus", reflect.TypeOf((*MockMatcherStore)(nil).RecordUpdaterStatus), ctx, updaterName, updateTime, fingerprint, updaterError)
 }
 
+// ReindexVulnTables mocks base method.
+func (m *MockMatcherStore) ReindexVulnTables(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReindexVulnTables", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReindexVulnTables indicates an expected call of ReindexVulnTables.
+func (mr *MockMatcherStoreMockRecorder) ReindexVulnTables(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReindexVulnTables", reflect.TypeOf((*MockMatcherStore)(nil).ReindexVulnTables), ctx)
+}
+
 // UpdateEnrichments mocks base method.
 func (m *MockMatcherStore) UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerprint, enrichments []driver.EnrichmentRecord) (uuid.UUID, error) {
 	m.ctrl.T.Helper()

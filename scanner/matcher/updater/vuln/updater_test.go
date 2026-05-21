@@ -722,11 +722,13 @@ func TestUpdateBundle_RetryOnFKViolation(t *testing.T) {
 
 	t.Run("retries on FK violation and succeeds", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
+		store := mocks.NewMockMatcherStore(ctrl)
 		metadataStore := mocks.NewMockMatcherMetadataStore(ctrl)
 
 		calls := 0
 		u := &Updater{
 			locker:        &testLocker{locker: updates.NewLocalLockSource()},
+			store:         store,
 			metadataStore: metadataStore,
 			importFunc: func(_ context.Context, _ io.Reader) error {
 				calls++
@@ -744,6 +746,9 @@ func TestUpdateBundle_RetryOnFKViolation(t *testing.T) {
 		metadataStore.EXPECT().
 			GetOrSetLastVulnerabilityUpdate(gomock.Any(), zipF.Name, prevTime).
 			Return(prevTime, nil)
+		store.EXPECT().
+			ReindexVulnTables(gomock.Any()).
+			Return(nil)
 		metadataStore.EXPECT().
 			SetLastVulnerabilityUpdate(gomock.Any(), zipF.Name, zipTime).
 			Return(nil)
@@ -782,11 +787,13 @@ func TestUpdateBundle_RetryOnFKViolation(t *testing.T) {
 
 	t.Run("gives up after max attempts", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
+		store := mocks.NewMockMatcherStore(ctrl)
 		metadataStore := mocks.NewMockMatcherMetadataStore(ctrl)
 
 		calls := 0
 		u := &Updater{
 			locker:        &testLocker{locker: updates.NewLocalLockSource()},
+			store:         store,
 			metadataStore: metadataStore,
 			importFunc: func(_ context.Context, _ io.Reader) error {
 				calls++
@@ -801,6 +808,10 @@ func TestUpdateBundle_RetryOnFKViolation(t *testing.T) {
 		metadataStore.EXPECT().
 			GetOrSetLastVulnerabilityUpdate(gomock.Any(), zipF.Name, prevTime).
 			Return(prevTime, nil)
+		store.EXPECT().
+			ReindexVulnTables(gomock.Any()).
+			Return(nil).
+			Times(maxImportAttempts - 1)
 
 		err := u.updateBundle(ctx, zipF, zipTime, prevTime)
 		assert.Error(t, err)

@@ -502,8 +502,11 @@ func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time
 			break
 		}
 		if attempt < maxImportAttempts && isFKViolation(importErr) {
-			slog.WarnContext(ctx, "foreign key violation during import (likely concurrent GC), retrying",
+			slog.WarnContext(ctx, "foreign key violation during import, reindexing and retrying",
 				"attempt", attempt, "reason", importErr)
+			if reindexErr := u.store.ReindexVulnTables(ctx); reindexErr != nil {
+				slog.ErrorContext(ctx, "failed to reindex vuln tables", "reason", reindexErr)
+			}
 			continue
 		}
 		return fmt.Errorf("importing vulnerabilities: %w", importErr)
