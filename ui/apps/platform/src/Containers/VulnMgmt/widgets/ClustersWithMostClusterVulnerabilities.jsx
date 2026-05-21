@@ -233,7 +233,7 @@ const ClustersWithMostClusterVulnerabilities = ({ entityContext, limit }) => {
 
     return (
         <Widget
-            className="h-full pdf-page"
+            className="h-full"
             header="Clusters with most orchestrator and Istio vulnerabilities"
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >

@@ -20,7 +20,6 @@ import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import entityLabels from 'messages/entity';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import isGQLLoading from 'utils/gqlLoading';
-import createPDFTable from 'utils/pdfUtils';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 
@@ -80,7 +79,6 @@ const List = ({
                         columns={tableColumns}
                         onRowClick={onRowClickHandler}
                         idAttribute={idAttribute}
-                        id="capture-list"
                         selectedRowId={selectedRowId}
                         noDataText={noDataText}
                         page={page}
@@ -147,9 +145,6 @@ const List = ({
 
     if (data) {
         const headerComponents = getHeaderComponents(totalResults);
-        if (data.length) {
-            createPDFTable(data, entityType, query, 'capture-list', tableColumns);
-        }
         return getRenderComponents(headerComponents, data, totalResults);
     }
 
@@ -158,7 +153,7 @@ const List = ({
         pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
     };
     return (
-        <section className="h-full w-full" id="capture-list">
+        <section className="h-full w-full">
             <Query query={query} variables={varsWithPagination}>
                 {({ loading, data: queryData }) => {
                     if (isGQLLoading(loading, data)) {
@@ -175,10 +170,6 @@ const List = ({
                     const tableRows = createTableRows(queryData) ?? [];
                     const totalCount = queryData?.count || 0;
                     const headerComponents = getHeaderComponents(totalCount);
-
-                    if (tableRows.length) {
-                        createPDFTable(tableRows, entityType, query, 'capture-list', tableColumns);
-                    }
                     return getRenderComponents(headerComponents, tableRows, totalCount);
                 }}
             </Query>

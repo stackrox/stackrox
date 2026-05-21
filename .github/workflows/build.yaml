@@ -150,25 +150,6 @@ jobs:
           condensed="$(jq -c <<< "$matrix")"
           echo "matrix=$condensed" >> "$GITHUB_OUTPUT"
 
-  # Ensures go.mod doesn't require a Go version newer than what Konflux
-  # builders support. Remove once Konflux tracks upstream Go releases:
-  # https://github.com/stackrox/stackrox/pull/19737
-  go-version-ceiling:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-        with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
-        with:
-          go-version: '1.25.7'
-          cache: false
-
-      - name: Verify go.mod is compatible with Konflux builders
-        run: go mod tidy
-
   pre-build-ui:
     strategy:
       fail-fast: false
@@ -279,12 +260,13 @@ jobs:
         run: make cli
 
       - name: Bundle build to preserve permissions
-        run: tar -cvzf cli-build.tgz bin
+        run: tar -cvf cli-build.tar bin
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
           name: cli-build
-          path: cli-build.tgz
+          path: cli-build.tar
+          compression-level: 1
 
   pre-build-go-binaries:
     strategy:
@@ -361,12 +343,13 @@ jobs:
           fi
 
       - name: Bundle the build to preserve permissions
-        run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
+        run: tar -cvf go-binaries-build.tar bin/linux_${{ matrix.arch }}
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
-          path: go-binaries-build.tgz
+          path: go-binaries-build.tar
+          compression-level: 1
 
   pre-build-docs:
     runs-on: ubuntu-latest
@@ -456,11 +439,6 @@ jobs:
         uses: ./.github/actions/cache-go-dependencies
 
       - uses: ./.github/actions/handle-tagged-build
-
-      - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # ratchet:actions/setup-python@v6.2.0
-        with:
-          python-version-file: operator/bundle_helpers/.python-version
 
       - name: Build Operator Bundle
         run: make -C operator/ bundle bundle-build
@@ -577,7 +555,7 @@ jobs:
 
       - name: Unpack cli build
         run: |
-          tar xvzf cli-build.tgz
+          tar xvf cli-build.tar
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -585,7 +563,7 @@ jobs:
 
       - name: Unpack Go binaries build
         run: |
-          tar xvzf go-binaries-build.tgz
+          tar xvf go-binaries-build.tar
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -925,10 +903,9 @@ jobs:
         uses: ./.github/actions/download-artifact-with-retry
         with:
           name: go-binaries-build-${{ matrix.arch }}-default
-          path: .
 
       - name: Extract prebuilt binaries
-        run: tar xzf go-binaries-build.tgz
+        run: tar xf go-binaries-build.tar
 
       - name: PR labels
         uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
@@ -1047,7 +1024,7 @@ jobs:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
 
       - name: Unpack Go binaries
-        run: tar xvzf go-binaries-build.tgz
+        run: tar xvf go-binaries-build.tar
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -1221,7 +1198,7 @@ jobs:
 
     - name: Unpack cli build
       run: |
-        tar xvzf cli-build.tgz
+        tar xvf cli-build.tar
 
     - uses: ./.github/actions/download-artifact-with-retry
       with:
@@ -1229,7 +1206,7 @@ jobs:
 
     - name: Unpack Go binaries build
       run: |
-        tar xvzf go-binaries-build.tgz
+        tar xvf go-binaries-build.tar
 
     - name: Scan
       run: |
@@ -1332,7 +1309,6 @@ jobs:
       - build-and-push-operator
       - build-and-push-scanner
       - build-operator-bundle
-      - go-version-ceiling
       - pre-build-cli
       - pre-build-docs
       - pre-build-go-binaries

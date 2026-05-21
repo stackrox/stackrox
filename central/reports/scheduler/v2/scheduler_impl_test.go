@@ -4,7 +4,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/central/reports/config/datastore/mocks"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 	"gopkg.in/robfig/cron.v2"
 )
 
@@ -75,4 +78,84 @@ func TestFindPreviousFireTimeReturnsZeroWhenNoFireInWindow(t *testing.T) {
 	// Now is March 1, 2027 (non-leap year). Feb 29 doesn't exist, so no fire in window.
 	previousFire := findPreviousFireTime(schedule, time.Date(2027, 3, 1, 0, 0, 0, 0, loc))
 	assert.True(t, previousFire.IsZero(), "Expected zero time when no fire exists in lookback window")
+}
+
+func TestQueueScheduledReportsSkipsEmptyResourceScope(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockReportConfigDS := mocks.NewMockDataStore(ctrl)
+
+	weeklySchedule := &storage.Schedule{
+		IntervalType: storage.Schedule_WEEKLY,
+		Interval: &storage.Schedule_DaysOfWeek_{
+			DaysOfWeek: &storage.Schedule_DaysOfWeek{
+				Days: []int32{1},
+			},
+		},
+	}
+
+	validCollectionScope := &storage.ReportConfiguration{
+		Id:   "config-with-collection",
+		Name: "Valid Collection Config",
+		Type: storage.ReportConfiguration_VULNERABILITY,
+		ResourceScope: &storage.ResourceScope{
+			ScopeReference: &storage.ResourceScope_CollectionId{CollectionId: "collection-1"},
+		},
+		Schedule: weeklySchedule,
+	}
+	validEntityScope := &storage.ReportConfiguration{
+		Id:   "config-with-entity-scope",
+		Name: "Valid Entity Scope Config",
+		Type: storage.ReportConfiguration_VULNERABILITY,
+		ResourceScope: &storage.ResourceScope{
+			ScopeReference: &storage.ResourceScope_EntityScope{
+				EntityScope: &storage.EntityScope{
+					Rules: []*storage.EntityScopeRule{
+						{
+							Entity: storage.EntityType_ENTITY_TYPE_NAMESPACE,
+							Field:  storage.EntityField_FIELD_NAME,
+							Values: []*storage.RuleValue{{Value: "production"}},
+						},
+					},
+				},
+			},
+		},
+		Schedule: weeklySchedule,
+	}
+	emptyResourceScope := &storage.ReportConfiguration{
+		Id:            "config-empty-scope",
+		Name:          "Empty Scope Config (downgrade scenario)",
+		Type:          storage.ReportConfiguration_VULNERABILITY,
+		ResourceScope: &storage.ResourceScope{},
+		Schedule:      weeklySchedule,
+	}
+	nilResourceScope := &storage.ReportConfiguration{
+		Id:            "config-nil-scope",
+		Name:          "Nil Scope Config",
+		Type:          storage.ReportConfiguration_VULNERABILITY,
+		ResourceScope: nil,
+		Schedule:      weeklySchedule,
+	}
+
+	mockReportConfigDS.EXPECT().
+		GetReportConfigurations(gomock.Any(), gomock.Any()).
+		Return([]*storage.ReportConfiguration{
+			validCollectionScope,
+			validEntityScope,
+			emptyResourceScope,
+			nilResourceScope,
+		}, nil)
+
+	cronScheduler := cron.New()
+	cronScheduler.Start()
+	defer cronScheduler.Stop()
+
+	s := newSchedulerImpl(mockReportConfigDS, nil, nil, nil, nil, nil, cronScheduler, nil)
+	s.queueScheduledReports()
+
+	// Only the two valid configs should have been scheduled
+	assert.Len(t, s.reportConfigToEntryIDs, 2)
+	assert.Contains(t, s.reportConfigToEntryIDs, "config-with-collection")
+	assert.Contains(t, s.reportConfigToEntryIDs, "config-with-entity-scope")
+	assert.NotContains(t, s.reportConfigToEntryIDs, "config-empty-scope")
+	assert.NotContains(t, s.reportConfigToEntryIDs, "config-nil-scope")
 }

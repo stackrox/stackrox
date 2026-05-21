@@ -10,7 +10,9 @@ import (
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/sender"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/stream"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/retry/handler"
 )
 
 const retryRateLimitKey = "vm-relay-retry"
@@ -46,13 +48,15 @@ func WithBackoff(factory func() backoff.BackOff) RetryOption {
 // exits on context cancellation, which is treated as a permanent (non-retryable) error.
 //
 // Retries continue indefinitely until the parent context is cancelled at shutdown.
-func RunWithRetry(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient, opts ...RetryOption) error {
+func RunWithRetry(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient, umh handler.UnconfirmedMessageHandler, opts ...RetryOption) error {
 	cfg := retryConfig{
-		operation:      defaultOperation,
 		backOffFactory: defaultBackOff,
 	}
 	for _, opt := range opts {
 		opt(&cfg)
+	}
+	if cfg.operation == nil {
+		cfg.operation = makeDefaultOperation(umh)
 	}
 
 	operation := func() error {
@@ -85,16 +89,25 @@ func defaultBackOff() backoff.BackOff {
 	return eb
 }
 
-func defaultOperation(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+func makeDefaultOperation(umh handler.UnconfirmedMessageHandler) Operation {
+	return func(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
 
-	reportStream, err := stream.New()
-	if err != nil {
-		return err
+		reportStream, err := stream.New()
+		if err != nil {
+			return err
+		}
+
+		reportSender := sender.New(sensorClient)
+
+		vmRelay := New(
+			reportStream,
+			reportSender,
+			umh,
+			env.VMRelayMaxReportsPerMinute.FloatSetting(),
+			env.VMRelayStaleAckThreshold.DurationSetting(),
+		)
+		return vmRelay.Run(ctx)
 	}
-
-	reportSender := sender.New(sensorClient)
-	vmRelay := New(reportStream, reportSender)
-	return vmRelay.Run(ctx)
 }

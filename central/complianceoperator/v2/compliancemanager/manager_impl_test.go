@@ -12,6 +12,7 @@ import (
 	profileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	scansMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
+	ssbMocks "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore/mocks"
 	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	sensorMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -70,6 +71,7 @@ type complianceManagerTestSuite struct {
 	mockCtrl         *gomock.Controller
 	integrationDS    *mocks.MockDataStore
 	scanConfigDS     *scanConfigMocks.MockDataStore
+	ssbDS            *ssbMocks.MockDataStore
 	profileDS        *profileMocks.MockDataStore
 	scansDS          *scansMocks.MockDataStore
 	resultsDS        *resultsMocks.MockDataStore
@@ -98,12 +100,13 @@ func (suite *complianceManagerTestSuite) SetupTest() {
 
 	suite.integrationDS = mocks.NewMockDataStore(suite.mockCtrl)
 	suite.scanConfigDS = scanConfigMocks.NewMockDataStore(suite.mockCtrl)
+	suite.ssbDS = ssbMocks.NewMockDataStore(suite.mockCtrl)
 	suite.connectionMgr = sensorMocks.NewMockManager(suite.mockCtrl)
 	suite.clusterDatastore = clusterDatastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.profileDS = profileMocks.NewMockDataStore(suite.mockCtrl)
 	suite.scansDS = scansMocks.NewMockDataStore(suite.mockCtrl)
 	suite.resultsDS = resultsMocks.NewMockDataStore(suite.mockCtrl)
-	suite.manager = New(suite.connectionMgr, suite.integrationDS, suite.scanConfigDS, suite.clusterDatastore, suite.profileDS, suite.scansDS, suite.resultsDS)
+	suite.manager = New(suite.connectionMgr, suite.integrationDS, suite.scanConfigDS, suite.ssbDS, suite.clusterDatastore, suite.profileDS, suite.scansDS, suite.resultsDS)
 }
 
 func (suite *complianceManagerTestSuite) TearDownTest() {
@@ -205,6 +208,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, nil).Times(1)
 				suite.profileDS.EXPECT().SearchProfiles(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
 					getTestProfile("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1),
 				}, nil).Times(1)
@@ -224,6 +228,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), mockScanName).Return(nil, nil).Times(1)
 				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, nil).Times(1)
 				suite.profileDS.EXPECT().SearchProfiles(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
 					getTestProfile("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1),
 					getTestProfile("rhcos4-cis", "1.0.0", "node", "rhcos4", testconsts.Cluster1, 1),
@@ -243,6 +248,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), mockScanName).Return(nil, nil).Times(1)
 				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, nil).Times(1)
 				suite.profileDS.EXPECT().SearchProfiles(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
 					getTestProfile("ocp4-cis-node", "1.0.0", "node", "ocp4", testconsts.Cluster1, 1),
 					getTestProfile("rhcos4-cis", "1.0.0", "node", "rhcos4", testconsts.Cluster1, 1),
@@ -284,6 +290,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, nil).Times(1)
 				suite.profileDS.EXPECT().SearchProfiles(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
 					getTestProfile("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1),
 				}, nil).Times(1)
@@ -294,12 +301,13 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			expectedErr: fmt.Sprintf("Unable to save scan configuration named %q", mockScanName),
 		},
 		{
-			desc:        "Error from sensor",
+			desc:        "SendMessage failure from sensor",
 			testRequest: getTestRecNoID(),
 			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
 			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, nil).Times(1)
 				suite.scanConfigDS.EXPECT().GetScanConfigurationByName(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(nil, nil).Times(1)
 				suite.profileDS.EXPECT().SearchProfiles(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
 					getTestProfile("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1),
@@ -348,6 +356,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 				suite.scanConfigDS.EXPECT().GetScanConfigurationByName(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(nil, nil).Times(1)
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, nil).Times(1)
 				suite.profileDS.EXPECT().SearchProfiles(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
 					getTestProfile("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1),
 				}, nil).Times(1)
@@ -405,6 +414,7 @@ func (suite *complianceManagerTestSuite) TestUpdateScanRequest() {
 			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, nil).Times(1)
 				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(getTestRec(), true, nil).Times(1)
 				suite.profileDS.EXPECT().SearchProfiles(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
 					getTestProfile("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1),
@@ -415,12 +425,13 @@ func (suite *complianceManagerTestSuite) TestUpdateScanRequest() {
 			expectedErr: fmt.Sprintf("Unable to save scan configuration named %q", mockScanName),
 		},
 		{
-			desc:        "Error from sensor",
+			desc:        "SendMessage failure from sensor",
 			testRequest: getTestRec(),
 			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
 			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, nil).Times(1)
 				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(getTestRec(), true, nil).Times(1)
 				suite.profileDS.EXPECT().SearchProfiles(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
 					getTestProfile("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1),
@@ -460,6 +471,7 @@ func (suite *complianceManagerTestSuite) TestUpdateScanRequest() {
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(getTestRec(), true, nil).Times(1)
 				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, nil).Times(1)
 				suite.profileDS.EXPECT().SearchProfiles(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
 					getTestProfile("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1),
 				}, nil).Times(1)
@@ -478,14 +490,15 @@ func (suite *complianceManagerTestSuite) TestUpdateScanRequest() {
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(getTestRecMultiCluster(), true, nil).Times(1)
 				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, nil).Times(1)
 				suite.profileDS.EXPECT().SearchProfiles(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
 					getTestProfile("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1),
 				}, nil).Times(1)
-				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(nil).Times(1)
 				suite.scanConfigDS.EXPECT().RemoveClusterStatus(gomock.Any(), mockScanID, testconsts.Cluster2).Return(nil).Times(1)
-				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster2, gomock.Any()).Return(nil).Times(1)
 				suite.resultsDS.EXPECT().DeleteResultsByScanConfigAndCluster(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(nil).Times(1)
+				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
 				suite.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("test_cluster", true, nil).Times(1)
 				suite.scanConfigDS.EXPECT().UpdateClusterStatus(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), testconsts.Cluster1, "", "test_cluster")
 			},
@@ -514,6 +527,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequestSendsProfileRefsW
 
 	suite.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), mockScanName).Return(nil, nil).Times(1)
 	suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, nil).Times(1)
 	suite.profileDS.EXPECT().SearchProfiles(ctx, gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
 		getTestProfileWithKind("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1, storage.ComplianceOperatorProfileV2_PROFILE),
 		getTestProfileWithKind("rhcos4-cis", "1.0.0", "node", "rhcos4", testconsts.Cluster1, 1, storage.ComplianceOperatorProfileV2_TAILORED_PROFILE),
@@ -555,6 +569,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequestUnspecifiedKindFa
 
 	suite.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), mockScanName).Return(nil, nil).Times(1)
 	suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, nil).Times(1)
 	suite.profileDS.EXPECT().SearchProfiles(ctx, gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
 		getTestProfileWithKind("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1, storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED),
 		getTestProfileWithKind("rhcos4-cis", "1.0.0", "node", "rhcos4", testconsts.Cluster1, 1, storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED),
@@ -587,6 +602,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequestRejectsUnknownPro
 
 	suite.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), mockScanName).Return(nil, nil).Times(1)
 	suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), testconsts.Cluster1).Return(nil, nil).Times(1)
 	suite.profileDS.EXPECT().SearchProfiles(ctx, gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
 		getTestProfileWithKind("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1, storage.ComplianceOperatorProfileV2_PROFILE),
 		getTestProfileWithKind("bad-profile", "1.0.0", "node", "ocp4", testconsts.Cluster1, 1, storage.ComplianceOperatorProfileV2_OperatorKind(999)),
@@ -829,19 +845,21 @@ func (suite *complianceManagerTestSuite) TestRemoveObsoleteResultsByClusters() {
 			// Default scan update calls.
 			suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(oldScanConfig, true, nil).Times(1)
 			suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+			for _, clusterID := range tc.newClusterIDs {
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), clusterID).Return(nil, nil).Times(1)
+			}
 			testProfiles := make([]*storage.ComplianceOperatorProfileV2, 0)
 			for _, profileName := range tc.profileNames {
 				testProfiles = append(testProfiles, getTestProfile(profileName, "1.0.0", "platform", "ocp4", tc.newClusterIDs[0], 1))
 			}
 			suite.profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Return(testProfiles, nil).Times(1)
-			suite.scanConfigDS.EXPECT().UpsertScanConfiguration(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-			// Remove cluster calls.
-			suite.connectionMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any()).Return(nil).Times(len(expectedRemovedClusters))
+			// Remove cluster calls (fire-and-forget via processClusterDelete).
 			suite.scanConfigDS.EXPECT().RemoveClusterStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(len(expectedRemovedClusters))
 
-			// Update cluster calls.
-			suite.connectionMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any()).Return(nil).Times(len(tc.newClusterIDs))
+			totalSendMessages := len(expectedRemovedClusters) + len(tc.newClusterIDs)
+			suite.connectionMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any()).Return(nil).Times(totalSendMessages)
+			suite.scanConfigDS.EXPECT().UpsertScanConfiguration(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 			suite.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("test_cluster", true, nil).Times(len(tc.newClusterIDs))
 			suite.scanConfigDS.EXPECT().UpdateClusterStatus(gomock.Any(), gomock.Any(), gomock.Any(), "", "test_cluster").Return(nil).Times(len(tc.newClusterIDs))
 
@@ -906,10 +924,13 @@ func (suite *complianceManagerTestSuite) TestRemoveObsoleteResultsByProfiles() {
 
 			suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(oldScanConfig, true, nil).Times(1)
 			suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+			for _, clusterID := range tc.clusterIDs {
+				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), clusterID).Return(nil, nil).Times(1)
+			}
 			suite.profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Return(newTestProfiles, nil).Times(1)
-			suite.scanConfigDS.EXPECT().UpsertScanConfiguration(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 			suite.connectionMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any()).Return(nil).Times(len(tc.clusterIDs))
+			suite.scanConfigDS.EXPECT().UpsertScanConfiguration(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 			suite.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("test_cluster", true, nil).Times(len(tc.clusterIDs))
 			suite.scanConfigDS.EXPECT().UpdateClusterStatus(gomock.Any(), gomock.Any(), gomock.Any(), "", "test_cluster").Return(nil).Times(len(tc.clusterIDs))
 

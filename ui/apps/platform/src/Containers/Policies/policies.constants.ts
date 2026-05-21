@@ -5,5 +5,6 @@ export const POLICY_DEFINITION_LIFECYCLE_ID = 'policy-definition-lifecycle';
 export const POLICY_DEFINITION_RULES_ID = 'policy-definition-rules';
 export const POLICY_BEHAVIOR_ID = 'policy-behavior';
 export const POLICY_BEHAVIOR_RESOURCES_ID = 'policy-behavior-resources';
+export const POLICY_BEHAVIOR_FILTERS_ID = 'policy-behavior-filters';
 export const POLICY_BEHAVIOR_ACTIONS_ID = 'policy-behavior-actions';
 export const POLICY_REVIEW_ID = 'policy-review';

@@ -93,7 +93,7 @@ const searchFieldLabelMapForClusterNamespace: Record<
     },
 } as const;
 
-const searchFieldLabelMapForClusterNamespaceDeployment: Record<
+export const searchFieldLabelMapForClusterNamespaceDeployment: Record<
     EntityScopeSearchFieldLabelForClusterNamespaceDeployment,
     EntityScopeRuleWithoutValues
 > = {
@@ -139,10 +139,30 @@ export function getSearchFilterWithoutEntityScope(
     return searchFilterWithoutEntityScopeRules;
 }
 
-export const searchFieldValueMapper = (value: string): RuleValue =>
+function isLabelOrAnnotationField(field: string): boolean {
+    return field === 'FIELD_LABEL' || field === 'FIELD_ANNOTATION';
+}
+
+export const searchValueToRuleValue = (value: string): RuleValue =>
     isQuotedString(value)
         ? { matchType: 'EXACT', value: value.slice(1, -1) }
         : { matchType: 'REGEX', value };
+
+// For label/annotation fields, equal-less values expand to two rule values
+// so the backend queries both the key and value sides of the map field.
+export function searchValueToMapRuleValues(value: string): RuleValue[] {
+    const raw = isQuotedString(value) ? value.slice(1, -1) : value;
+    const matchType = isQuotedString(value) ? 'EXACT' : 'REGEX';
+
+    if (raw.includes('=')) {
+        return [{ matchType, value: raw }];
+    }
+
+    return [
+        { matchType: 'REGEX', value: `${raw}=.*` },
+        { matchType: 'REGEX', value: `.*=${raw}` },
+    ];
+}
 
 /**
  * Return initial entity scope rules for corresponding search fields
@@ -164,7 +184,11 @@ function getEntityScopeRulesFromSearchFilter(
         if (ruleWithoutValues && searchFieldValues.length !== 0) {
             rules.push({
                 ...ruleWithoutValues,
-                values: searchFieldValues.map(searchFieldValueMapper),
+                values: searchFieldValues.flatMap((v) =>
+                    isLabelOrAnnotationField(ruleWithoutValues.field)
+                        ? searchValueToMapRuleValues(v)
+                        : [searchValueToRuleValue(v)]
+                ),
             });
         }
     });
@@ -172,13 +196,36 @@ function getEntityScopeRulesFromSearchFilter(
     return rules;
 }
 
-export const ruleFieldValueMapper = ({ matchType, value }: RuleValue): string =>
-    matchType === 'EXACT' ? wrapInQuotes(value) : `r/${value}`;
+export const ruleValueToSearchValue = ({ matchType, value }: RuleValue): string =>
+    matchType === 'EXACT' ? wrapInQuotes(value) : value;
+
+// Collapses complementary equal-less pairs ([`value=.*`, `.*=value`]) back to a single
+// search value. Inverse of searchValueToMapRuleValues.
+export function collapseMapRuleValues(ruleValues: RuleValue[]): string[] {
+    const pairKeys = new Set(ruleValues.map(({ matchType, value }) => `${matchType}:${value}`));
+
+    return ruleValues.flatMap(({ matchType, value }) => {
+        if (value.startsWith('.*=')) {
+            if (pairKeys.has(`${matchType}:${value.slice(3)}=.*`)) {
+                return [];
+            }
+        }
+
+        if (value.endsWith('=.*') && !value.startsWith('.*=')) {
+            const raw = value.slice(0, -3);
+            if (pairKeys.has(`${matchType}:.*=${raw}`)) {
+                return [raw];
+            }
+        }
+
+        return [ruleValueToSearchValue({ matchType, value })];
+    });
+}
 
 /**
  * Return search filter in EntityScopeCompoundSearchFilter component.
  */
-function getSearchFilterFromEntityScopeRules(
+export function getSearchFilterFromEntityScopeRules(
     rules: EntityScopeRule[],
     searchFieldLabelMap: Record<string, EntityScopeRuleWithoutValues>
 ) {
@@ -193,7 +240,9 @@ function getSearchFilterFromEntityScopeRules(
             const [searchFieldLabel] = found;
             const searchFilterValue = getValueByCaseInsensitiveKey(searchFilter, searchFieldLabel);
             const searchFilterValues = searchValueAsArray(searchFilterValue);
-            const ruleValues = rule.values.map(ruleFieldValueMapper);
+            const ruleValues = isLabelOrAnnotationField(rule.field)
+                ? collapseMapRuleValues(rule.values)
+                : rule.values.map(ruleValueToSearchValue);
             searchFilter[searchFieldLabel] = [...searchFilterValues, ...ruleValues];
         }
     });
