@@ -195,14 +195,10 @@ jobs:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
     steps:
-    - name: Start Postgres on tmpfs
+    - name: Start Postgres
       run: |
-        sudo systemctl stop postgresql.service
-        sudo mkdir -p /dev/shm/pgdata
-        sudo chown postgres:postgres /dev/shm/pgdata
-        sudo -u postgres /usr/lib/postgresql/*/bin/initdb -D /dev/shm/pgdata
-        sudo sed -i '/^host/s/scram-sha-256/trust/' /dev/shm/pgdata/pg_hba.conf
-        cat << 'PGCONF' | sudo tee -a /dev/shm/pgdata/postgresql.conf
+        sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
+        cat << 'PGCONF' | sudo tee -a /etc/postgresql/*/main/postgresql.conf
         shared_buffers = 1GB
         work_mem = 256MB
         maintenance_work_mem = 512MB
@@ -214,7 +210,7 @@ jobs:
         checkpoint_completion_target = 0.9
         random_page_cost = 1.1
         PGCONF
-        sudo -u postgres /usr/lib/postgresql/*/bin/pg_ctl -D /dev/shm/pgdata start
+        sudo systemctl start postgresql.service
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
