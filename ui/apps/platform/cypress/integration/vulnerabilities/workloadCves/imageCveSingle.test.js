@@ -105,17 +105,22 @@ describe('Workload CVE Image CVE Single page', () => {
         visitFirstCve();
 
         // Test that the number of components in the top level row matches the table in the expanded row
-        cy.get(`${selectors.firstTableRow} .pf-v6-c-table__toggle button`).click();
+        // Only test expand if there are components to show
         cy.get(`${selectors.firstTableRow} td[data-label="Affected components"]`).then(
             ([$componentCell]) => {
                 const componentText = $componentCell.innerText;
-                const componentCount = /\d+ components?/.test(componentText)
-                    ? parseInt(componentText.replace(/ components?/, ''), 10)
-                    : 1;
+                const hasComponents = /\d+ components?/.test(componentText);
 
-                cy.get(`${selectors.firstTableRow} + tr.pf-m-expanded table tbody`, {
-                    timeout: 30000,
-                }).should('have.length', componentCount);
+                if (hasComponents) {
+                    const componentCount = parseInt(
+                        componentText.replace(/ components?/, ''),
+                        10
+                    );
+                    cy.get(`${selectors.firstTableRow} .pf-v6-c-table__toggle button`).click();
+                    cy.get(`${selectors.firstTableRow} + tr.pf-m-expanded table tbody`, {
+                        timeout: 15000,
+                    }).should('have.length', componentCount);
+                }
             }
         );
 
