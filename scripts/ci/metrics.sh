@@ -417,15 +417,26 @@ consecutive_failures AS (
   FROM streak_groups
   GROUP BY name, branch_group, streak_id, normalized_outcome
   HAVING normalized_outcome = "FAILED" AND COUNT(*) > @min_streak
+),
+trimmed_names AS (
+  SELECT
+    REGEXP_REPLACE(name,
+      r"^(periodic-ci-stackrox-stackrox-master-|branch-ci-stackrox-stackrox-(nightlies|master)-)",
+      "") AS trimmed_name,
+    branch_group,
+    consecutive_count,
+    first_failure_at,
+    last_failure_at
+  FROM consecutive_failures
 )
 SELECT
-  IF(LENGTH(name) > 60, CONCAT(RPAD(name, 57), "..."), name) AS name,
+  IF(LENGTH(trimmed_name) > 60, CONCAT(RPAD(trimmed_name, 57), "..."), trimmed_name) AS name,
   branch_group,
   consecutive_count,
   FORMAT_TIMESTAMP("%Y-%m-%d", first_failure_at) as first_failure_date,
   FORMAT_TIMESTAMP("%Y-%m-%d", last_failure_at) as last_failure_date,
   TIMESTAMP_DIFF(last_failure_at, first_failure_at, DAY) as streak_duration_days
-FROM consecutive_failures
+FROM trimmed_names
 ORDER BY consecutive_count DESC, last_failure_at DESC
 LIMIT @limit
 '
