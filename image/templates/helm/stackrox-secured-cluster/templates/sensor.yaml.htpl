@@ -1,5 +1,12 @@
 {{- include "srox.init" . -}}
 
+{{- /*
+  Every resource in this file must have the auto-upgrade.stackrox.io/component label.
+  For manifest-based installs (non-Helm, non-Operator), the sensor-upgrader validates
+  this label on all bundle objects before applying them. Missing it will cause the
+  auto-upgrade to fail. See also: sensor/upgrader/bundle/instantiator.go
+*/ -}}
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -421,6 +428,7 @@ metadata:
   namespace: {{ ._rox._namespace | quote }}
   labels:
     {{- include "srox.labels" (list . "service" "sensor-proxy") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- $annotations := dict -}}
     {{- $_ := set $annotations "service.beta.openshift.io/serving-cert-secret-name" "sensor-proxy-tls" -}}

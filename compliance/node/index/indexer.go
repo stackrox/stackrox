@@ -27,7 +27,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	pkgutils "github.com/stackrox/rox/pkg/utils"
 )
@@ -52,32 +51,24 @@ var (
 	layerDigest   = fmt.Sprintf("sha256:%s", strings.Repeat("a", 64))
 	ccLayerDigest = claircore.MustParseDigest(layerDigest)
 
-	clientOnce       sync.Once
-	defaultClient    *http.Client
-	defaultClientErr error
-)
-
-func getDefaultClient() (*http.Client, error) {
-	clientOnce.Do(func() {
-		clientCert, err := mtls.LeafCertificateFromFile()
-		if err != nil {
-			defaultClientErr = errors.Wrap(err, "obtaining defaultClient certificate")
-			return
-		}
-		defaultClient = &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					// TODO: Should this always be set to true...?
-					InsecureSkipVerify: true,
-					Certificates:       []tls.Certificate{clientCert},
+	defaultClient = &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				// TODO(ROX-34752): InsecureSkipVerify should be replaced with proper server verification.
+				InsecureSkipVerify: true,
+				GetClientCertificate: func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
+					cert, err := mtls.LeafCertificateFromFile()
+					if err != nil {
+						return nil, errors.Wrap(err, "loading client certificate")
+					}
+					return &cert, nil
 				},
-				Proxy: proxy.FromConfig(),
 			},
-			Timeout: 30 * time.Second,
-		}
-	})
-	return defaultClient, defaultClientErr
-}
+			Proxy: proxy.FromConfig(),
+		},
+		Timeout: 30 * time.Second,
+	}
+)
 
 // NodeIndexerConfig represents Scanner V4 node indexer configuration parameters.
 type NodeIndexerConfig struct {
@@ -202,11 +193,7 @@ func layer(ctx context.Context, digest string, hostPath string) (*claircore.Laye
 func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *claircore.Layer) ([]*claircore.Repository, error) {
 	client := cfg.Client
 	if client == nil {
-		var err error
-		client, err = getDefaultClient()
-		if err != nil {
-			return nil, errors.Wrap(err, "creating repository scanner http client - check TLS config")
-		}
+		client = defaultClient
 	}
 
 	scanner := rhel.RepositoryScanner{}

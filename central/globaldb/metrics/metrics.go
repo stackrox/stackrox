@@ -20,6 +20,7 @@ func init() {
 		PostgresMaximumConnections,
 		PostgresTableLiveTuples,
 		PostgresTableDeadTuples,
+		PostgresInvalidIndexes,
 	)
 }
 
@@ -115,4 +116,11 @@ var (
 		Name:      "postgres_dead_tuples",
 		Help:      "dead tuples for the table",
 	}, []string{"table"})
+
+	PostgresInvalidIndexes = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_invalid_indexes",
+		Help:      "invalid indexes in the database (1 per invalid index)",
+	}, []string{"index_name", "table_name"})
 )
