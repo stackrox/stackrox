@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/booleanpolicy/filter"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -1060,13 +1061,13 @@ func (suite *WorkloadCriteriaTestSuite) TestEvaluationFilter_SkipInitContainers(
 	})
 
 	suite.Run("SKIP_INIT only matches regular container", func() {
-		p := privPolicy.CloneVT()
-		p.EvaluationFilter = &storage.EvaluationFilter{
-			SkipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
-		}
-		matcher, err := BuildDeploymentMatcher(p)
+		matcher, err := BuildDeploymentMatcher(privPolicy)
 		suite.NoError(err)
-		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+		filters := filter.CompileEvaluationFilter(&storage.EvaluationFilter{
+			SkipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+		})
+		ed := applyTestFilters(enhancedDeployment(dep, suite.getImagesForDeployment(dep)), filters...)
+		violations, err := matcher.MatchDeployment(nil, ed)
 		suite.NoError(err)
 		suite.Len(violations.AlertViolations, 1)
 		suite.Contains(violations.AlertViolations[0].GetMessage(), "app")
@@ -1137,16 +1138,28 @@ func (suite *WorkloadCriteriaTestSuite) TestEvaluationFilter_SkipInitAndSkipBase
 	})
 
 	suite.Run("skip init + skip base only produces app-layer violations from regular container", func() {
-		p := cvssPolicy.CloneVT()
-		p.EvaluationFilter = &storage.EvaluationFilter{
+		matcher, err := BuildDeploymentMatcher(cvssPolicy)
+		suite.NoError(err)
+		filters := filter.CompileEvaluationFilter(&storage.EvaluationFilter{
 			SkipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
 			SkipImageLayers:    storage.SkipImageLayers_SKIP_BASE,
-		}
-		matcher, err := BuildDeploymentMatcher(p)
-		suite.NoError(err)
-		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+		})
+		ed := applyTestFilters(enhancedDeployment(dep, suite.getImagesForDeployment(dep)), filters...)
+		violations, err := matcher.MatchDeployment(nil, ed)
 		suite.NoError(err)
 		suite.Len(violations.AlertViolations, 1)
 		suite.Contains(violations.AlertViolations[0].GetMessage(), "CVE-2024-APP")
 	})
+}
+
+func applyTestFilters(ed EnhancedDeployment, filters ...filter.EvaluationFilter) EnhancedDeployment {
+	dep, imgs := ed.Deployment, ed.Images
+	for _, f := range filters {
+		dep, imgs = f.Apply(dep, imgs)
+	}
+	return EnhancedDeployment{
+		Deployment:             dep,
+		Images:                 imgs,
+		NetworkPoliciesApplied: ed.NetworkPoliciesApplied,
+	}
 }

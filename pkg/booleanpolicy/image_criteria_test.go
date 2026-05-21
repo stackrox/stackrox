@@ -491,26 +491,26 @@ func (suite *ImageCriteriaTestSuite) TestEvaluationFilter_SkipBaseLayers() {
 	})
 
 	suite.Run("SKIP_BASE only produces app-layer violations", func() {
-		p := cvssPolicy.CloneVT()
-		p.EvaluationFilter = &storage.EvaluationFilter{
-			SkipImageLayers: storage.SkipImageLayers_SKIP_BASE,
-		}
-		matcher, err := BuildDeploymentMatcher(p)
+		matcher, err := BuildDeploymentMatcher(cvssPolicy)
 		suite.NoError(err)
-		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+		filters := filter.CompileEvaluationFilter(&storage.EvaluationFilter{
+			SkipImageLayers: storage.SkipImageLayers_SKIP_BASE,
+		})
+		ed := applyTestFilters(enhancedDeployment(dep, []*storage.Image{img}), filters...)
+		violations, err := matcher.MatchDeployment(nil, ed)
 		suite.NoError(err)
 		suite.Len(violations.AlertViolations, 1)
 		suite.Contains(violations.AlertViolations[0].GetMessage(), "CVE-2024-0002")
 	})
 
 	suite.Run("SKIP_APP only produces base-layer violations", func() {
-		p := cvssPolicy.CloneVT()
-		p.EvaluationFilter = &storage.EvaluationFilter{
-			SkipImageLayers: storage.SkipImageLayers_SKIP_APP,
-		}
-		matcher, err := BuildDeploymentMatcher(p)
+		matcher, err := BuildDeploymentMatcher(cvssPolicy)
 		suite.NoError(err)
-		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+		filters := filter.CompileEvaluationFilter(&storage.EvaluationFilter{
+			SkipImageLayers: storage.SkipImageLayers_SKIP_APP,
+		})
+		ed := applyTestFilters(enhancedDeployment(dep, []*storage.Image{img}), filters...)
+		violations, err := matcher.MatchDeployment(nil, ed)
 		suite.NoError(err)
 		suite.Len(violations.AlertViolations, 1)
 		suite.Contains(violations.AlertViolations[0].GetMessage(), "CVE-2024-0001")
@@ -561,26 +561,26 @@ func (suite *ImageCriteriaTestSuite) TestEvaluationFilter_DockerfileLineSkipBase
 	})
 
 	suite.Run("SKIP_BASE only matches ADD in app layers", func() {
-		p := addPolicy.CloneVT()
-		p.EvaluationFilter = &storage.EvaluationFilter{
-			SkipImageLayers: storage.SkipImageLayers_SKIP_BASE,
-		}
-		matcher, err := BuildDeploymentMatcher(p)
+		matcher, err := BuildDeploymentMatcher(addPolicy)
 		suite.NoError(err)
-		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+		filters := filter.CompileEvaluationFilter(&storage.EvaluationFilter{
+			SkipImageLayers: storage.SkipImageLayers_SKIP_BASE,
+		})
+		ed := applyTestFilters(enhancedDeployment(dep, []*storage.Image{img}), filters...)
+		violations, err := matcher.MatchDeployment(nil, ed)
 		suite.NoError(err)
 		suite.Len(violations.AlertViolations, 1)
 		suite.Contains(violations.AlertViolations[0].GetMessage(), "app.tar.gz")
 	})
 
 	suite.Run("SKIP_APP only matches ADD in base layers", func() {
-		p := addPolicy.CloneVT()
-		p.EvaluationFilter = &storage.EvaluationFilter{
-			SkipImageLayers: storage.SkipImageLayers_SKIP_APP,
-		}
-		matcher, err := BuildDeploymentMatcher(p)
+		matcher, err := BuildDeploymentMatcher(addPolicy)
 		suite.NoError(err)
-		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+		filters := filter.CompileEvaluationFilter(&storage.EvaluationFilter{
+			SkipImageLayers: storage.SkipImageLayers_SKIP_APP,
+		})
+		ed := applyTestFilters(enhancedDeployment(dep, []*storage.Image{img}), filters...)
+		violations, err := matcher.MatchDeployment(nil, ed)
 		suite.NoError(err)
 		suite.Len(violations.AlertViolations, 1)
 		suite.Contains(violations.AlertViolations[0].GetMessage(), "base-config")
@@ -610,16 +610,16 @@ func (suite *ImageCriteriaTestSuite) TestEvaluationFilter_MissingBaseImageInfo()
 	}
 	suite.addDepAndImages(dep, img)
 
-	p := policyWithGroups(storage.EventSource_NOT_APPLICABLE,
+	cvssPolicy := policyWithGroups(storage.EventSource_NOT_APPLICABLE,
 		&storage.PolicyGroup{FieldName: fieldnames.CVSS, Values: []*storage.PolicyValue{{Value: "> 7"}}},
 	)
-	p.EvaluationFilter = &storage.EvaluationFilter{
-		SkipImageLayers: storage.SkipImageLayers_SKIP_BASE,
-	}
-
-	matcher, err := BuildDeploymentMatcher(p)
+	matcher, err := BuildDeploymentMatcher(cvssPolicy)
 	suite.NoError(err)
-	violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+	filters := filter.CompileEvaluationFilter(&storage.EvaluationFilter{
+		SkipImageLayers: storage.SkipImageLayers_SKIP_BASE,
+	})
+	ed := applyTestFilters(enhancedDeployment(dep, []*storage.Image{img}), filters...)
+	violations, err := matcher.MatchDeployment(nil, ed)
 	suite.NoError(err)
 	suite.Len(violations.AlertViolations, 1,
 		"without BaseImageInfo, image should be returned unmodified and produce violations")
@@ -808,6 +808,34 @@ func (suite *ImageCriteriaTestSuite) TestFilter_MissingBaseImageInfo() {
 	suite.NoError(err)
 	suite.Len(violations.AlertViolations, 1,
 		"without BaseImageInfo, filter is a no-op and image should produce violations")
+}
+
+func excludeLowLayerComponents() filter.EvaluationFilter {
+	return filter.NewTestFilter(func(dep *storage.Deployment, imgs []*storage.Image) (*storage.Deployment, []*storage.Image) {
+		result := make([]*storage.Image, len(imgs))
+		for i, img := range imgs {
+			if img == nil || img.GetScan() == nil || len(img.GetBaseImageInfo()) == 0 {
+				result[i] = img
+				continue
+			}
+			maxBase := img.GetBaseImageInfo()[0].GetMaxLayerIndex()
+			var kept []*storage.EmbeddedImageScanComponent
+			for _, c := range img.GetScan().GetComponents() {
+				li, hasIdx := c.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex)
+				if !hasIdx || li.LayerIndex > maxBase {
+					kept = append(kept, c)
+				}
+			}
+			if len(kept) == len(img.GetScan().GetComponents()) {
+				result[i] = img
+				continue
+			}
+			cloned := img.CloneVT()
+			cloned.Scan.Components = kept
+			result[i] = cloned
+		}
+		return dep, result
+	})
 }
 
 func excludeHighLayerComponents() filter.EvaluationFilter {
