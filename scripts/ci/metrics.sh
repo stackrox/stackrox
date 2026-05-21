@@ -457,18 +457,34 @@ LIMIT @limit
         jq < "${data_file}"
         # shellcheck disable=SC2016
         body='{
-            "blocks": (
-                [
-                    {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}}
-                ] +
-                [.[] | {
-                    "type": "section",
-                    "fields": [
-                        {"type": "mrkdwn", "text": "*\(.name)*\n`\(.branch_group)`"},
-                        {"type": "mrkdwn", "text": "*\(.consecutive_count) failures*\n\(.duration_days) days"}
+            "blocks": [
+                {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
+                {
+                    "type": "table",
+                    "rows": (
+                        [
+                            [
+                                {"type": "raw_text", "text": "Job Name"},
+                                {"type": "raw_text", "text": "Branch"},
+                                {"type": "raw_text", "text": "Failures"},
+                                {"type": "raw_text", "text": "Duration"}
+                            ]
+                        ] +
+                        [.[] | [
+                            {"type": "raw_text", "text": .name},
+                            {"type": "raw_text", "text": .branch_group},
+                            {"type": "raw_text", "text": "\(.consecutive_count) failures"},
+                            {"type": "raw_text", "text": "\(.duration_days) days"}
+                        ]]
+                    ),
+                    "column_settings": [
+                        {"align": "left", "is_wrapped": true},
+                        {"align": "center", "is_wrapped": false},
+                        {"align": "right", "is_wrapped": false},
+                        {"align": "right", "is_wrapped": false}
                     ]
-                }]
-            )
+                }
+            ]
         }'
     else
         body='{"blocks":[
