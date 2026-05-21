@@ -261,8 +261,13 @@ jobs:
         cache: 'npm'
         cache-dependency-path: ui/apps/platform/package-lock.json
 
+    - name: Install UI dependencies
+      working-directory: ui/apps/platform
+      run: npm ci --prefer-offline --fetch-timeout=60000 --no-audit --no-fund
+
     - name: UI Unit Tests
-      run: make ui-test
+      working-directory: ui/apps/platform
+      run: npm run test
 
     - name: Publish Test Report
       uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
