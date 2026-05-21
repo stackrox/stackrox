@@ -77,6 +77,27 @@ spec:
                   - FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT
                   type: string
                 type: array
+              evaluationFilter:
+                description: EvaluationFilter controls which parts of a deployment
+                  or image this policy evaluates.
+                properties:
+                  skipContainerTypes:
+                    description: SkipContainerTypes lists container types to skip
+                      during evaluation. Empty list evaluates all container types.
+                    items:
+                      enum:
+                      - SKIP_INIT
+                      type: string
+                    type: array
+                  skipImageLayers:
+                    description: SkipImageLayers selects which image layers to skip.
+                      SKIP_NONE evaluates all layers.
+                    enum:
+                    - SKIP_NONE
+                    - SKIP_BASE
+                    - SKIP_APP
+                    type: string
+                type: object
               eventSource:
                 description: EventSource describes which events should trigger execution
                   of this policy

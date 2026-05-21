@@ -1374,3 +1374,162 @@ func (s *PolicyValidatorTestSuite) TestValidateScope() {
 		})
 	}
 }
+
+func (s *PolicyValidatorTestSuite) TestValidateEvaluationFilter() {
+	testutils.MustUpdateFeature(s.T(), features.InitContainerSupport, true)
+	testutils.MustUpdateFeature(s.T(), features.ImageLayerFilter, true)
+	defer testutils.MustUpdateFeature(s.T(), features.InitContainerSupport, false)
+	defer testutils.MustUpdateFeature(s.T(), features.ImageLayerFilter, false)
+
+	testCases := map[string]struct {
+		lifecycleStages []storage.LifecycleStage
+		filter          *storage.EvaluationFilter
+		errExpected     bool
+	}{
+		"nil filter is valid": {
+			lifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+			filter:          nil,
+			errExpected:     false,
+		},
+		"empty filter is valid": {
+			lifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+			filter:          &storage.EvaluationFilter{},
+			errExpected:     false,
+		},
+		"skip init containers with DEPLOY lifecycle": {
+			lifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+			filter: &storage.EvaluationFilter{
+				SkipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			},
+			errExpected: false,
+		},
+		"skip init containers with RUNTIME lifecycle": {
+			lifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			filter: &storage.EvaluationFilter{
+				SkipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			},
+			errExpected: false,
+		},
+		"skip init containers with BUILD-only lifecycle is invalid": {
+			lifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+			filter: &storage.EvaluationFilter{
+				SkipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			},
+			errExpected: true,
+		},
+		"duplicate container type values are invalid": {
+			lifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+			filter: &storage.EvaluationFilter{
+				SkipContainerTypes: []storage.SkipContainerType{
+					storage.SkipContainerType_SKIP_INIT,
+					storage.SkipContainerType_SKIP_INIT,
+				},
+			},
+			errExpected: true,
+		},
+		"SKIP_BASE with DEPLOY lifecycle": {
+			lifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+			filter: &storage.EvaluationFilter{
+				SkipImageLayers: storage.SkipImageLayers_SKIP_BASE,
+			},
+			errExpected: false,
+		},
+		"SKIP_APP with BUILD lifecycle": {
+			lifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+			filter: &storage.EvaluationFilter{
+				SkipImageLayers: storage.SkipImageLayers_SKIP_APP,
+			},
+			errExpected: false,
+		},
+		"SKIP_BASE with RUNTIME lifecycle": {
+			lifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			filter: &storage.EvaluationFilter{
+				SkipImageLayers: storage.SkipImageLayers_SKIP_BASE,
+			},
+			errExpected: false,
+		},
+		"combined container and image filters are valid": {
+			lifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+			filter: &storage.EvaluationFilter{
+				SkipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+				SkipImageLayers:    storage.SkipImageLayers_SKIP_BASE,
+			},
+			errExpected: false,
+		},
+	}
+
+	for name, tc := range testCases {
+		s.T().Run(name, func(t *testing.T) {
+			policy := &storage.Policy{
+				LifecycleStages:  tc.lifecycleStages,
+				EvaluationFilter: tc.filter,
+			}
+			err := s.validator.validateEvaluationFilter(policy)
+			if tc.errExpected {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func (s *PolicyValidatorTestSuite) TestValidateEvaluationFilterFeatureFlags() {
+	testCases := map[string]struct {
+		initContainerFlag bool
+		imageLayerFlag    bool
+		filter            *storage.EvaluationFilter
+		errExpected       bool
+	}{
+		"container type filter rejected when InitContainerSupport is off": {
+			initContainerFlag: false,
+			imageLayerFlag:    true,
+			filter: &storage.EvaluationFilter{
+				SkipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			},
+			errExpected: true,
+		},
+		"image layer filter rejected when ImageLayerFilter is off": {
+			initContainerFlag: true,
+			imageLayerFlag:    false,
+			filter: &storage.EvaluationFilter{
+				SkipImageLayers: storage.SkipImageLayers_SKIP_BASE,
+			},
+			errExpected: true,
+		},
+		"empty filter accepted when both flags are off": {
+			initContainerFlag: false,
+			imageLayerFlag:    false,
+			filter:            &storage.EvaluationFilter{},
+			errExpected:       false,
+		},
+		"SKIP_NONE accepted when ImageLayerFilter is off": {
+			initContainerFlag: false,
+			imageLayerFlag:    false,
+			filter: &storage.EvaluationFilter{
+				SkipImageLayers: storage.SkipImageLayers_SKIP_NONE,
+			},
+			errExpected: false,
+		},
+	}
+
+	for name, tc := range testCases {
+		s.T().Run(name, func(t *testing.T) {
+			testutils.MustUpdateFeature(s.T(), features.InitContainerSupport, tc.initContainerFlag)
+			testutils.MustUpdateFeature(s.T(), features.ImageLayerFilter, tc.imageLayerFlag)
+			defer testutils.MustUpdateFeature(s.T(), features.InitContainerSupport, false)
+			defer testutils.MustUpdateFeature(s.T(), features.ImageLayerFilter, false)
+
+			policy := &storage.Policy{
+				LifecycleStages:  []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+				EvaluationFilter: tc.filter,
+			}
+			err := s.validator.validateEvaluationFilter(policy)
+			if tc.errExpected {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}

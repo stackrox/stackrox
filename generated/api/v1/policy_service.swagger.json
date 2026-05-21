@@ -803,7 +803,7 @@
         },
         "evaluationFilter": {
           "$ref": "#/definitions/storageEvaluationFilter",
-          "description": "Pre-filters which entities the policy evaluates."
+          "description": "Controls which parts of a deployment or image the policy evaluates."
         }
       },
       "title": "Next tag: 29"
@@ -863,7 +863,20 @@
     },
     "storageEvaluationFilter": {
       "type": "object",
-      "description": "EvaluationFilter pre-filters which entities a policy evaluates."
+      "properties": {
+        "skipContainerTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageSkipContainerType"
+          },
+          "description": "Container types to skip during evaluation. Empty list = evaluate all container types."
+        },
+        "skipImageLayers": {
+          "$ref": "#/definitions/storageSkipImageLayers",
+          "description": "Image layers to skip. SKIP_NONE = evaluate all layers."
+        }
+      },
+      "description": "EvaluationFilter controls which parts of a deployment or image a policy evaluates.\nEmpty/zero-value means evaluate everything (no filtering)."
     },
     "storageEventSource": {
       "type": "string",
@@ -1134,7 +1147,7 @@
         },
         "evaluationFilter": {
           "$ref": "#/definitions/storageEvaluationFilter",
-          "description": "Pre-filters which entities the policy evaluates."
+          "description": "Controls which parts of a deployment or image the policy evaluates."
         }
       },
       "title": "Next tag: 29"
@@ -1238,6 +1251,24 @@
         "CRITICAL_SEVERITY"
       ],
       "default": "UNSET_SEVERITY"
+    },
+    "storageSkipContainerType": {
+      "type": "string",
+      "enum": [
+        "SKIP_INIT"
+      ],
+      "default": "SKIP_INIT",
+      "description": "SkipContainerType identifies container types that can be skipped during policy evaluation."
+    },
+    "storageSkipImageLayers": {
+      "type": "string",
+      "enum": [
+        "SKIP_NONE",
+        "SKIP_BASE",
+        "SKIP_APP"
+      ],
+      "default": "SKIP_NONE",
+      "description": "SkipImageLayers controls which image layers to skip during policy evaluation."
     },
     "v1AggregateBy": {
       "type": "object",

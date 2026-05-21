@@ -1,0 +1,47 @@
+{
+  "id": "b2f5d3a1-e8c7-4f2a-9d1b-3c6e8f9a0b4d",
+  "name": "Fixable Severity at least Important in Application Layers",
+  "description": "Alert on deployments with fixable vulnerabilities with a Severity Rating at least Important, evaluating only application image layers (excluding base image layers).",
+  "rationale": "Base image vulnerabilities are typically managed by the base image maintainer. Application layer vulnerabilities are under the developer's control and should be prioritized for remediation.",
+  "remediation": "Use your package manager to update to a fixed version in future builds. Base image vulnerabilities are excluded from this policy — address those by updating the base image separately.",
+  "categories": [
+    "Vulnerability Management"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "severity": "HIGH_SEVERITY",
+  "enforcementActions": [
+    "FAIL_BUILD_ENFORCEMENT"
+  ],
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Fixed By",
+          "values": [
+            {
+              "value": ".*"
+            }
+          ]
+        },
+        {
+          "fieldName": "Severity",
+          "values": [
+            {
+              "value": ">= IMPORTANT"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "evaluationFilter": {
+    "skipImageLayers": "SKIP_BASE"
+  },
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

@@ -10,9 +10,19 @@ import (
 // nil. Every filter in the returned slice is guaranteed to be non-default
 // (i.e. IsNonDefault() == true), so callers can treat a non-empty slice as
 // an indication that filtering is active.
-func CompileEvaluationFilter(_ *storage.EvaluationFilter) []EvaluationFilter {
+func CompileEvaluationFilter(proto *storage.EvaluationFilter) []EvaluationFilter {
 	if !features.EvaluationFilter.Enabled() {
 		return nil
 	}
-	return nil
+	if proto == nil {
+		return nil
+	}
+	var filters []EvaluationFilter
+	if f := newContainerTypeFilter(proto.GetSkipContainerTypes()); f != nil {
+		filters = append(filters, *f)
+	}
+	if f := newImageLayerFilter(proto.GetSkipImageLayers()); f != nil {
+		filters = append(filters, *f)
+	}
+	return filters
 }

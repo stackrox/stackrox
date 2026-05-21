@@ -7,7 +7,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/rox/pkg/booleanpolicy/filter"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -1027,86 +1026,27 @@ func (suite *WorkloadCriteriaTestSuite) TestReadinessProbePolicyCriteria() {
 	}
 }
 
-func applyTestFilters(ed EnhancedDeployment, filters ...filter.EvaluationFilter) EnhancedDeployment {
-	dep, imgs := ed.Deployment, ed.Images
-	for _, f := range filters {
-		dep, imgs = f.Apply(dep, imgs)
-	}
-	return EnhancedDeployment{
-		Deployment:             dep,
-		Images:                 imgs,
-		NetworkPoliciesApplied: ed.NetworkPoliciesApplied,
-	}
-}
-
-func excludeContainerByName(name string) filter.EvaluationFilter {
-	return filter.NewTestFilter(func(dep *storage.Deployment, imgs []*storage.Image) (*storage.Deployment, []*storage.Image) {
-		var kept []*storage.Container
-		var keptImgs []*storage.Image
-		for i, c := range dep.GetContainers() {
-			if c.GetName() != name {
-				kept = append(kept, c)
-				if i < len(imgs) {
-					keptImgs = append(keptImgs, imgs[i])
-				}
-			}
-		}
-		if len(kept) == len(dep.GetContainers()) {
-			return dep, imgs
-		}
-		cloned := dep.CloneVT()
-		cloned.Containers = kept
-		return cloned, keptImgs
-	})
-}
-
-func excludeLowLayerComponents() filter.EvaluationFilter {
-	return filter.NewTestFilter(func(dep *storage.Deployment, imgs []*storage.Image) (*storage.Deployment, []*storage.Image) {
-		result := make([]*storage.Image, len(imgs))
-		for i, img := range imgs {
-			if img == nil || img.GetScan() == nil || len(img.GetBaseImageInfo()) == 0 {
-				result[i] = img
-				continue
-			}
-			maxBase := img.GetBaseImageInfo()[0].GetMaxLayerIndex()
-			var kept []*storage.EmbeddedImageScanComponent
-			for _, c := range img.GetScan().GetComponents() {
-				li, hasIdx := c.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex)
-				if !hasIdx || li.LayerIndex > maxBase {
-					kept = append(kept, c)
-				}
-			}
-			if len(kept) == len(img.GetScan().GetComponents()) {
-				result[i] = img
-				continue
-			}
-			cloned := img.CloneVT()
-			cloned.Scan.Components = kept
-			result[i] = cloned
-		}
-		return dep, result
-	})
-}
-
-func (suite *WorkloadCriteriaTestSuite) TestFilter_ExcludeByContainerName() {
-	containerA := &storage.Container{
+func (suite *WorkloadCriteriaTestSuite) TestEvaluationFilter_SkipInitContainers() {
+	regularContainer := &storage.Container{
 		Name:            "app",
+		Type:            storage.ContainerType_REGULAR,
 		SecurityContext: &storage.SecurityContext{Privileged: true},
 		Image:           &storage.ContainerImage{Id: "app-img"},
 	}
-	containerB := &storage.Container{
-		Name:            "helper",
+	initContainer := &storage.Container{
+		Name:            "init",
+		Type:            storage.ContainerType_INIT,
 		SecurityContext: &storage.SecurityContext{Privileged: true},
-		Image:           &storage.ContainerImage{Id: "helper-img"},
+		Image:           &storage.ContainerImage{Id: "init-img"},
 	}
 
 	dep := &storage.Deployment{
-		Id:         "DEP_FILTER_CONTAINER",
-		Containers: []*storage.Container{containerA, containerB},
+		Id:         "DEP_INIT_FILTER",
+		Containers: []*storage.Container{regularContainer, initContainer},
 	}
 	suite.addDepAndImages(dep,
 		&storage.Image{Id: "app-img", Name: &storage.ImageName{FullName: "app:latest"}},
-		&storage.Image{Id: "helper-img", Name: &storage.ImageName{FullName: "helper:latest"}},
+		&storage.Image{Id: "init-img", Name: &storage.ImageName{FullName: "init:latest"}},
 	)
 
 	privPolicy := policyWithSingleKeyValue(fieldnames.PrivilegedContainer, "true", false)
@@ -1119,55 +1059,59 @@ func (suite *WorkloadCriteriaTestSuite) TestFilter_ExcludeByContainerName() {
 		suite.Len(violations.AlertViolations, 2)
 	})
 
-	suite.Run("filter excludes one container", func() {
-		matcher, err := BuildDeploymentMatcher(privPolicy)
+	suite.Run("SKIP_INIT only matches regular container", func() {
+		p := privPolicy.CloneVT()
+		p.EvaluationFilter = &storage.EvaluationFilter{
+			SkipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+		}
+		matcher, err := BuildDeploymentMatcher(p)
 		suite.NoError(err)
-		ed := enhancedDeployment(dep, suite.getImagesForDeployment(dep))
-		ed = applyTestFilters(ed, excludeContainerByName("helper"))
-		violations, err := matcher.MatchDeployment(nil, ed)
+		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
 		suite.NoError(err)
 		suite.Len(violations.AlertViolations, 1)
 		suite.Contains(violations.AlertViolations[0].GetMessage(), "app")
 	})
 }
 
-func (suite *WorkloadCriteriaTestSuite) TestFilter_CombinedContainerAndImage() {
-	containerA := &storage.Container{
+func (suite *WorkloadCriteriaTestSuite) TestEvaluationFilter_SkipInitAndSkipBaseCombined() {
+	regularContainer := &storage.Container{
 		Name:  "app",
+		Type:  storage.ContainerType_REGULAR,
 		Image: &storage.ContainerImage{Id: "app-img"},
 	}
-	containerB := &storage.Container{
-		Name:  "excluded",
-		Image: &storage.ContainerImage{Id: "excluded-img"},
+	initContainer := &storage.Container{
+		Name:  "init",
+		Type:  storage.ContainerType_INIT,
+		Image: &storage.ContainerImage{Id: "init-img"},
 	}
 
-	lowLayerComp := &storage.EmbeddedImageScanComponent{
-		Name: "low-layer-pkg", Version: "1.0",
+	baseComponent := &storage.EmbeddedImageScanComponent{
+		Name: "base-pkg", Version: "1.0",
 		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 1},
-		Vulns:         []*storage.EmbeddedVulnerability{{Cve: "CVE-2024-LOW", Cvss: 9, Link: "https://low"}},
+		Vulns:         []*storage.EmbeddedVulnerability{{Cve: "CVE-2024-BASE", Cvss: 9, Link: "https://base"}},
 	}
-	highLayerComp := &storage.EmbeddedImageScanComponent{
-		Name: "high-layer-pkg", Version: "2.0",
+	appComponent := &storage.EmbeddedImageScanComponent{
+		Name: "app-pkg", Version: "2.0",
 		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 5},
-		Vulns:         []*storage.EmbeddedVulnerability{{Cve: "CVE-2024-HIGH", Cvss: 8, Link: "https://high"}},
+		Vulns:         []*storage.EmbeddedVulnerability{{Cve: "CVE-2024-APP", Cvss: 8, Link: "https://app"}},
 	}
 
 	appImage := &storage.Image{
 		Id:   "app-img",
 		Name: &storage.ImageName{FullName: "docker.io/app"},
 		Scan: &storage.ImageScan{
-			Components: []*storage.EmbeddedImageScanComponent{lowLayerComp, highLayerComp},
+			Components: []*storage.EmbeddedImageScanComponent{baseComponent, appComponent},
 		},
 		BaseImageInfo: []*storage.BaseImageInfo{{MaxLayerIndex: 3}},
 	}
-	excludedImage := &storage.Image{
-		Id:   "excluded-img",
-		Name: &storage.ImageName{FullName: "docker.io/excluded"},
+	initImage := &storage.Image{
+		Id:   "init-img",
+		Name: &storage.ImageName{FullName: "docker.io/init"},
 		Scan: &storage.ImageScan{
 			Components: []*storage.EmbeddedImageScanComponent{
-				{Name: "excluded-pkg", Version: "1.0",
+				{Name: "init-pkg", Version: "1.0",
 					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 1},
-					Vulns:         []*storage.EmbeddedVulnerability{{Cve: "CVE-2024-EXCL", Cvss: 9, Link: "https://excl"}}},
+					Vulns:         []*storage.EmbeddedVulnerability{{Cve: "CVE-2024-INIT", Cvss: 9, Link: "https://init"}}},
 			},
 		},
 		BaseImageInfo: []*storage.BaseImageInfo{{MaxLayerIndex: 3}},
@@ -1175,9 +1119,9 @@ func (suite *WorkloadCriteriaTestSuite) TestFilter_CombinedContainerAndImage() {
 
 	dep := &storage.Deployment{
 		Id:         "DEP_COMBO_FILTER",
-		Containers: []*storage.Container{containerA, containerB},
+		Containers: []*storage.Container{regularContainer, initContainer},
 	}
-	suite.addDepAndImages(dep, appImage, excludedImage)
+	suite.addDepAndImages(dep, appImage, initImage)
 
 	cvssPolicy := policyWithGroups(storage.EventSource_NOT_APPLICABLE,
 		&storage.PolicyGroup{FieldName: fieldnames.CVSS, Values: []*storage.PolicyValue{{Value: "> 7"}}},
@@ -1188,17 +1132,21 @@ func (suite *WorkloadCriteriaTestSuite) TestFilter_CombinedContainerAndImage() {
 		suite.NoError(err)
 		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
 		suite.NoError(err)
-		suite.GreaterOrEqual(len(violations.AlertViolations), 3)
+		suite.GreaterOrEqual(len(violations.AlertViolations), 3,
+			"should have violations from base+app layers of app container and init container")
 	})
 
-	suite.Run("combined filters produce only high-layer violations from app container", func() {
-		matcher, err := BuildDeploymentMatcher(cvssPolicy)
+	suite.Run("skip init + skip base only produces app-layer violations from regular container", func() {
+		p := cvssPolicy.CloneVT()
+		p.EvaluationFilter = &storage.EvaluationFilter{
+			SkipContainerTypes: []storage.SkipContainerType{storage.SkipContainerType_SKIP_INIT},
+			SkipImageLayers:    storage.SkipImageLayers_SKIP_BASE,
+		}
+		matcher, err := BuildDeploymentMatcher(p)
 		suite.NoError(err)
-		ed := enhancedDeployment(dep, suite.getImagesForDeployment(dep))
-		ed = applyTestFilters(ed, excludeContainerByName("excluded"), excludeLowLayerComponents())
-		violations, err := matcher.MatchDeployment(nil, ed)
+		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
 		suite.NoError(err)
 		suite.Len(violations.AlertViolations, 1)
-		suite.Contains(violations.AlertViolations[0].GetMessage(), "CVE-2024-HIGH")
+		suite.Contains(violations.AlertViolations[0].GetMessage(), "CVE-2024-APP")
 	})
 }

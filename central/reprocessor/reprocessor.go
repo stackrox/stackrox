@@ -369,6 +369,9 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 			log.Errorw("The image was not found after enrichment", logging.ImageName(img.GetName().GetFullName()), logging.ImageID(img.GetId()))
 			return nil, false, false
 		}
+		// BaseImageInfo is not persisted (sql:"-") so it's lost on re-fetch.
+		// Carry it forward from the enriched image for policy evaluation filters.
+		newImage.BaseImageInfo = img.GetBaseImageInfo()
 		return newImage, true, true
 	}
 	return img, true, false
@@ -527,6 +530,9 @@ func (l *loopImpl) reprocessImageV2(ref imageRef, fetchOpt imageEnricher.FetchOp
 			log.Errorw("The image was not found after enrichment", logging.ImageName(image.GetName().GetFullName()), logging.ImageID(image.GetId()))
 			return nil, false, false
 		}
+		// BaseImageInfo is not persisted (sql:"-") so it's lost on re-fetch.
+		// Carry it forward from the enriched image for policy evaluation filters.
+		newImage.BaseImageInfo = image.GetBaseImageInfo()
 		return newImage, true, true
 	}
 	return image, true, false

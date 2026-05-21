@@ -96,6 +96,7 @@ func (s *policyValidator) internalValidate(policy *storage.Policy, additionalVal
 	errorList.AddError(s.validateCapabilities(policy))
 	errorList.AddError(s.validateEventSource(policy))
 	errorList.AddError(s.validateEnforcement(policy))
+	errorList.AddError(s.validateEvaluationFilter(policy))
 
 	for _, validator := range additionalValidators {
 		errorList.AddError(validator(policy))
@@ -450,6 +451,44 @@ func (s *policyValidator) isAuditEventPolicy(policy *storage.Policy) bool {
 
 func (s *policyValidator) isNodeEventPolicy(policy *storage.Policy) bool {
 	return policy.GetEventSource() == storage.EventSource_NODE_EVENT
+}
+
+func (s *policyValidator) validateEvaluationFilter(policy *storage.Policy) error {
+	ef := policy.GetEvaluationFilter()
+	if ef == nil {
+		return nil
+	}
+
+	hasDeployOrRuntime := policies.AppliesAtDeployTime(policy) || policies.AppliesAtRunTime(policy)
+
+	if len(ef.GetSkipContainerTypes()) > 0 {
+		if !features.InitContainerSupport.Enabled() {
+			return fmt.Errorf("container type filtering requires %s to be enabled", features.InitContainerSupport.EnvVar())
+		}
+		if !hasDeployOrRuntime {
+			return errors.New("container type filtering is only valid for DEPLOY or RUNTIME lifecycle stages")
+		}
+		seen := set.NewSet[storage.SkipContainerType]()
+		for _, ct := range ef.GetSkipContainerTypes() {
+			if _, ok := storage.SkipContainerType_name[int32(ct)]; !ok {
+				return errors.Errorf("unknown container type filter value: %d", ct)
+			}
+			if !seen.Add(ct) {
+				return errors.Errorf("duplicate container type filter value: %s", ct.String())
+			}
+		}
+	}
+
+	if ef.GetSkipImageLayers() != storage.SkipImageLayers_SKIP_NONE {
+		if !features.ImageLayerFilter.Enabled() {
+			return fmt.Errorf("image layer filtering requires %s to be enabled", features.ImageLayerFilter.EnvVar())
+		}
+		if _, ok := storage.SkipImageLayers_name[int32(ef.GetSkipImageLayers())]; !ok {
+			return errors.Errorf("unknown image layer filter value: %d", ef.GetSkipImageLayers())
+		}
+	}
+
+	return nil
 }
 
 func (s *policyValidator) validateEnforcement(policy *storage.Policy) error {

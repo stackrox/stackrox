@@ -78,7 +78,7 @@ message Policy {
 
   PolicySource source = 27; // @gotags: crYaml:"-"
 
-  // Pre-filters which entities the policy evaluates.
+  // Controls which parts of a deployment or image the policy evaluates.
   EvaluationFilter evaluation_filter = 28; // @gotags: crYaml:"evaluationFilter,omitempty"
 }
 
@@ -177,8 +177,25 @@ enum Comparator {
   GREATER_THAN = 4;
 }
 
-// EvaluationFilter pre-filters which entities a policy evaluates.
+// SkipContainerType identifies container types that can be skipped during policy evaluation.
+enum SkipContainerType {
+  SKIP_INIT = 0;
+}
+
+// SkipImageLayers controls which image layers to skip during policy evaluation.
+enum SkipImageLayers {
+  SKIP_NONE = 0;
+  SKIP_BASE = 1;
+  SKIP_APP = 2;
+}
+
+// EvaluationFilter controls which parts of a deployment or image a policy evaluates.
+// Empty/zero-value means evaluate everything (no filtering).
 message EvaluationFilter {
+  // Container types to skip during evaluation. Empty list = evaluate all container types.
+  repeated SkipContainerType skip_container_types = 1; // @gotags: search:"Skip Container Type" crYaml:"skipContainerTypes,omitempty,stringer"
+  // Image layers to skip. SKIP_NONE = evaluate all layers.
+  SkipImageLayers skip_image_layers = 2; // @gotags: search:"Skip Image Layers" crYaml:"skipImageLayers,omitempty,stringer"
 }
 
 message Exclusion {
