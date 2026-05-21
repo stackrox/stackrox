@@ -95,12 +95,16 @@ func NewClient(endpoint string) (*Client, error) {
 		},
 		Timeout: requestTimeout,
 	}
-	if proxyHost := proxy.ProxyHostForURL(endpoint); proxyHost != "" {
+	proxyHost, err := proxy.ProxyHostForURL(endpoint)
+	if err != nil {
+		log.Warnf("Central connection proxy lookup failed for %q: %v", endpoint, err)
+		setProxyToCentralMetric("", true)
+	} else if proxyHost != "" {
 		log.Infof("Central connection uses egress proxy %q", proxyHost)
-		setProxyToCentralMetric(proxyHost)
+		setProxyToCentralMetric(proxyHost, false)
 	} else {
 		log.Infof("Central connection uses direct connection (no proxy)")
-		setProxyToCentralMetric("")
+		setProxyToCentralMetric("", false)
 	}
 
 	return &Client{

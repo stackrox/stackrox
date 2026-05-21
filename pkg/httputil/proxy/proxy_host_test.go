@@ -22,7 +22,8 @@ func TestProxyHostForURL(t *testing.T) {
 	tests := map[string]struct {
 		envCfg   environmentConfig
 		endpoint string
-		want     string
+		wantHost string
+		wantErr  string
 	}{
 		"should return proxy host when https proxy matches": {
 			envCfg: environmentConfig{
@@ -31,7 +32,7 @@ func TestProxyHostForURL(t *testing.T) {
 				},
 			},
 			endpoint: "https://central.example.com:443",
-			want:     "proxy.example.com:3128",
+			wantHost: "proxy.example.com:3128",
 		},
 		"should return empty string when host is excluded by no proxy": {
 			envCfg: environmentConfig{
@@ -41,33 +42,42 @@ func TestProxyHostForURL(t *testing.T) {
 				},
 			},
 			endpoint: "https://central.example.com:443",
-			want:     "",
+			wantHost: "",
 		},
 		"should return empty string when no proxy is configured": {
 			envCfg:   environmentConfig{},
 			endpoint: "https://central.example.com:443",
-			want:     "",
+			wantHost: "",
+		},
+		"should return error when request creation fails": {
+			endpoint: "://bad-url",
+			wantErr:  `parse "://bad-url": missing protocol scheme`,
+		},
+		"should return error when proxy resolution fails": {
+			endpoint: "https://central.example.com:443",
+			wantErr:  "proxy lookup failed",
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			globalProxyConfig.Store((&proxyConfig{OmitDefaultExcludes: true}).Compile(tc.envCfg))
-			assert.Equal(t, tc.want, ProxyHostForURL(tc.endpoint))
+			if tc.wantErr == "proxy lookup failed" {
+				globalProxyConfig.Store(&compiledConfig{
+					httpsFunc: func(*url.URL) (*url.URL, error) {
+						return nil, errors.New("proxy lookup failed")
+					},
+				})
+			} else {
+				globalProxyConfig.Store((&proxyConfig{OmitDefaultExcludes: true}).Compile(tc.envCfg))
+			}
+
+			gotHost, err := ProxyHostForURL(tc.endpoint)
+			if tc.wantErr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.wantErr)
+			}
+			assert.Equal(t, tc.wantHost, gotHost)
 		})
 	}
-
-	t.Run("should return empty string when request creation fails", func(t *testing.T) {
-		assert.Equal(t, "", ProxyHostForURL("://bad-url"))
-	})
-
-	t.Run("should return empty string when proxy resolution fails", func(t *testing.T) {
-		globalProxyConfig.Store(&compiledConfig{
-			httpsFunc: func(*url.URL) (*url.URL, error) {
-				return nil, errors.New("proxy lookup failed")
-			},
-		})
-
-		assert.Equal(t, "", ProxyHostForURL("https://central.example.com:443"))
-	})
 }

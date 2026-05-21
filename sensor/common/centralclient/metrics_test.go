@@ -10,6 +10,7 @@ import (
 func TestSetProxyToCentralMetric(t *testing.T) {
 	tests := map[string]struct {
 		inputProxyHost string
+		lookupFailed   bool
 		wantEnabled    float64
 		wantInfoLabel  string
 	}{
@@ -23,10 +24,11 @@ func TestSetProxyToCentralMetric(t *testing.T) {
 			wantEnabled:    0,
 			wantInfoLabel:  "direct",
 		},
-		"literal direct value is treated as a proxy label": {
-			inputProxyHost: "direct",
-			wantEnabled:    1,
-			wantInfoLabel:  "direct",
+		"lookup failure reports unknown connection": {
+			inputProxyHost: "",
+			lookupFailed:   true,
+			wantEnabled:    0,
+			wantInfoLabel:  "unknown",
 		},
 	}
 
@@ -39,7 +41,7 @@ func TestSetProxyToCentralMetric(t *testing.T) {
 				proxyToCentralInfo.Reset()
 			})
 
-			setProxyToCentralMetric(tc.inputProxyHost)
+			setProxyToCentralMetric(tc.inputProxyHost, tc.lookupFailed)
 
 			assert.Equal(t, tc.wantEnabled, testutil.ToFloat64(proxyToCentralEnabled))
 			assert.Equal(t, 1.0, testutil.ToFloat64(proxyToCentralInfo.WithLabelValues(tc.wantInfoLabel)))

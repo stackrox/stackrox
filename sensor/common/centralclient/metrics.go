@@ -23,8 +23,13 @@ func init() {
 	metrics.EmplaceCollector(proxyToCentralEnabled, proxyToCentralInfo)
 }
 
-func setProxyToCentralMetric(proxyHost string) {
+func setProxyToCentralMetric(proxyHost string, lookupFailed bool) {
 	proxyToCentralInfo.Reset()
+	if lookupFailed {
+		proxyToCentralEnabled.Set(0)
+		proxyToCentralInfo.WithLabelValues("unknown").Set(1)
+		return
+	}
 	if proxyHost != "" {
 		proxyToCentralEnabled.Set(1)
 		proxyToCentralInfo.WithLabelValues(proxyHost).Set(1)
