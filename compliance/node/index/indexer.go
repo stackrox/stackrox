@@ -57,6 +57,10 @@ func newDefaultClient(mappingURL string) (*http.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	// SensorSubject identifies the expected StackRox service for cert verification
+	// when the endpoint is Sensor (the default). ServerName is set to the actual
+	// hostname to avoid defaulting to sensor.stackrox, which would fail hostname
+	// verification for external endpoints.
 	tlsConf, err := clientconn.TLSConfig(mtls.SensorSubject, clientconn.TLSConfigOptions{
 		UseClientCert: clientconn.MustUseClientCert,
 		ServerName:    serverName,
