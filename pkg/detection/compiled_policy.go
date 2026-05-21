@@ -323,15 +323,12 @@ func (cp *compiledPolicy) applyFilters(ed booleanpolicy.EnhancedDeployment) (boo
 	}, true
 }
 
-func (cp *compiledPolicy) applyImageFilters(image *storage.Image) *storage.Image {
-	if len(cp.filters) == 0 {
-		return image
+func (cp *compiledPolicy) applyImageFilters(image *storage.Image) (*storage.Image, bool) {
+	ed, changed := cp.applyFilters(booleanpolicy.EnhancedDeployment{Images: []*storage.Image{image}})
+	if changed && len(ed.Images) > 0 {
+		return ed.Images[0], true
 	}
-	ed, _ := cp.applyFilters(booleanpolicy.EnhancedDeployment{Images: []*storage.Image{image}})
-	if len(ed.Images) > 0 {
-		return ed.Images[0]
-	}
-	return image
+	return image, false
 }
 
 func (cp *compiledPolicy) MatchAgainstAuditLogEvent(
@@ -359,7 +356,7 @@ func (cp *compiledPolicy) MatchAgainstKubeResourceAndEvent(
 	if cp.kubeEventsMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %s against kubernetes event", cp.Policy().GetName())
 	}
-	if filtered, ok := cp.applyFilters(enhancedDeployment); ok {
+	if filtered, changed := cp.applyFilters(enhancedDeployment); changed {
 		cache = nil
 		enhancedDeployment = filtered
 	}
@@ -378,7 +375,7 @@ func (cp *compiledPolicy) MatchAgainstDeploymentAndProcess(
 	if cp.deploymentWithProcessMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against deployments and processes", cp.Policy().GetName())
 	}
-	if filtered, ok := cp.applyFilters(enhancedDeployment); ok {
+	if filtered, changed := cp.applyFilters(enhancedDeployment); changed {
 		cache = nil
 		enhancedDeployment = filtered
 	}
@@ -396,7 +393,7 @@ func (cp *compiledPolicy) MatchAgainstDeploymentAndNetworkFlow(
 	if cp.deploymentWithNetworkFlowMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %s against network baseline", cp.Policy().GetName())
 	}
-	if filtered, ok := cp.applyFilters(enhancedDeployment); ok {
+	if filtered, changed := cp.applyFilters(enhancedDeployment); changed {
 		cache = nil
 		enhancedDeployment = filtered
 	}
@@ -407,7 +404,7 @@ func (cp *compiledPolicy) MatchAgainstDeployment(cache *booleanpolicy.CacheRecep
 	if cp.deploymentMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against deployments", cp.Policy().GetName())
 	}
-	if filtered, ok := cp.applyFilters(enhancedDeployment); ok {
+	if filtered, changed := cp.applyFilters(enhancedDeployment); changed {
 		cache = nil
 		enhancedDeployment = filtered
 	}
@@ -418,7 +415,10 @@ func (cp *compiledPolicy) MatchAgainstImage(cache *booleanpolicy.CacheReceptacle
 	if cp.imageMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against images", cp.Policy().GetName())
 	}
-	image = cp.applyImageFilters(image)
+	if filtered, changed := cp.applyImageFilters(image); changed {
+		cache = nil
+		image = filtered
+	}
 	return cp.imageMatcher.MatchImage(cache, image)
 }
 
@@ -436,7 +436,7 @@ func (cp *compiledPolicy) MatchAgainstDeploymentAndFileAccess(cache *booleanpoli
 	if cp.deploymentWithFileAccessMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against deployments and file accesses", cp.Policy().GetName())
 	}
-	if filtered, ok := cp.applyFilters(enhancedDeployment); ok {
+	if filtered, changed := cp.applyFilters(enhancedDeployment); changed {
 		cache = nil
 		enhancedDeployment = filtered
 	}
