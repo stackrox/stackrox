@@ -39,11 +39,8 @@ DEBUG_BUILD ?= no
 #    ARG CGO_ENABLED=1
 #    RUN make CGO_ENABLED=$CGO_ENABLED blah
 CGO_ENABLED = 0
-RACE_FLAG =
 ifeq ($(RACE),true)
-	# cgo is required for data race detection.
 	CGO_ENABLED = 1
-	RACE_FLAG = -race
 endif
 
 HOST_OS := linux
@@ -53,19 +50,7 @@ endif
 GOOS := $(HOST_OS)
 
 GO_BUILD_FLAGS = CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH)
-
-# Debug build flags: disable optimizations and inlining for better debugging.
-GO_DEBUG_FLAGS =
-ifeq ($(DEBUG_BUILD),yes)
-GO_DEBUG_FLAGS = -gcflags "all=-N -l"
-endif
-
-GO_BUILD_CMD   = $(GO_BUILD_FLAGS) go build \
-                   -trimpath \
-                   -ldflags="-X github.com/stackrox/rox/scanner/internal/version.Version=$(TAG) -X github.com/stackrox/rox/scanner/internal/version.VulnerabilityVersion=$(SCANNER_VULNERABILITY_VERSION)" \
-                   -tags=$(GOTAGS) \
-                   $(GO_DEBUG_FLAGS) \
-                   $(RACE_FLAG)
+GO_BUILD_CMD   = $(GO_BUILD_FLAGS) $(CURDIR)/../scripts/go-build-file.sh
 GO_TEST_CMD    = $(GO_BUILD_FLAGS) go test
 
 DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
@@ -133,7 +118,7 @@ clean-build:
 .PHONY: $(build-t)
 $(build-t): $(build-deps-t)
 	@echo "+ $@"
-	$(build-cmd) -o $@ ./cmd/$(@F)
+	$(build-cmd) ./cmd/$(@F) $@
 
 # Fetch and validate build dependencies unless NODEPS is defined.
 ifdef NODEPS
