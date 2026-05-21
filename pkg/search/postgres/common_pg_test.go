@@ -6,8 +6,9 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"sync"
 	"testing"
+
+	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/generated/storage"
@@ -76,9 +77,7 @@ func TestCursorNameContainsHint(t *testing.T) {
 	queryDone := make(chan struct{})
 
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		_ = store.Walk(ctx, func(_ *storage.TestStruct) error {
 			select {
 			case cursorReady <- struct{}{}:
@@ -87,7 +86,7 @@ func TestCursorNameContainsHint(t *testing.T) {
 			<-queryDone
 			return nil
 		})
-	}()
+	})
 
 	<-cursorReady
 
@@ -121,9 +120,7 @@ func TestCursorNameWithWalkByQuery(t *testing.T) {
 	queryDone := make(chan struct{})
 
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		q := search.NewQueryBuilder().AddExactMatches(search.TestKey, testStructs[0].GetKey1()).ProtoQuery()
 		_ = store.WalkByQuery(ctx, q, func(_ *storage.TestStruct) error {
 			select {
@@ -133,7 +130,7 @@ func TestCursorNameWithWalkByQuery(t *testing.T) {
 			<-queryDone
 			return nil
 		})
-	}()
+	})
 
 	<-cursorReady
 
