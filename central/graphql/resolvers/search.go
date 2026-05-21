@@ -5,6 +5,7 @@ import (
 	"math"
 
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	"github.com/stackrox/rox/central/graphql/resolvers/searchers"
 	"github.com/stackrox/rox/central/rbac/service"
@@ -188,7 +189,7 @@ type searchRequest struct {
 
 // SearchAutocomplete returns autocomplete responses for the given partial query.
 func (resolver *Resolver) SearchAutocomplete(ctx context.Context, args searchRequest) ([]string, error) {
-	return searchService.RunAutoComplete(ctx, args.Query, toSearchCategories(args.Categories), resolver.getAutoCompleteSearchers())
+	return searchService.RunAutoComplete(ctx, args.Query, toSearchCategories(args.Categories), resolver.getAutoCompleteSearchers(), globaldb.GetPostgres())
 }
 
 // SearchOptions gets all search options available for the listed categories

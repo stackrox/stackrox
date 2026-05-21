@@ -37,8 +37,11 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	pgMapping "github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -138,6 +141,7 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedSearchServiceServer
 
+	db                postgres.DB
 	alerts            alertDataStore.DataStore
 	deployments       deploymentDataStore.DataStore
 	images            imageDataStore.DataStore
@@ -208,19 +212,78 @@ func trimMatches(matches map[string][]string, fieldPaths []string) map[string][]
 }
 
 // RunAutoComplete runs an autocomplete request. It's a free function used by both regular search and by GraphQL.
-func RunAutoComplete(ctx context.Context, queryString string, categories []v1.SearchCategory, searchers map[v1.SearchCategory]search.Searcher) ([]string, error) {
+// When db is non-nil and the autocomplete field is a scalar type, a GROUP BY
+// query is used to return exactly maxAutocompleteResults unique values from
+// Postgres. For map/array fields or when db is nil, the existing search +
+// Go-side deduplication path is used.
+func RunAutoComplete(ctx context.Context, queryString string, categories []v1.SearchCategory, searchers map[v1.SearchCategory]search.Searcher, db postgres.DB) ([]string, error) {
 	query, autocompleteKey, err := search.ParseQueryForAutocomplete(queryString)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "unable to parse query %q: %v", queryString, err)
-	}
-	// Set the max return size for the query
-	query.Pagination = &v1.QueryPagination{
-		Limit: pagination,
 	}
 
 	if len(categories) == 0 {
 		categories = autocompleteCategories.AsSlice()
 	}
+
+	// Try the optimized GROUP BY path for scalar fields.
+	if db != nil {
+		remaining := maxAutocompleteResults
+		resultSet := set.NewStringSet()
+		var stringResults []string
+
+		for _, category := range categories {
+			if remaining <= 0 {
+				break
+			}
+			if category == v1.SearchCategory_ALERTS && !shouldProcessAlerts(query) {
+				continue
+			}
+
+			optMultiMap := categoryToOptionsMultimap[category]
+			if optMultiMap == nil {
+				continue
+			}
+			autocompleteFields := optMultiMap.GetAll(autocompleteKey)
+			if len(autocompleteFields) == 0 {
+				continue
+			}
+
+			// Only use GROUP BY for scalar fields (not maps).
+			isMap := false
+			for _, f := range autocompleteFields {
+				if f.GetType() == v1.SearchDataType_SEARCH_MAP {
+					isMap = true
+					break
+				}
+			}
+			if isMap {
+				continue
+			}
+
+			values, groupByErr := runGroupByAutocomplete(ctx, db, category, query, autocompleteKey, remaining)
+			if groupByErr != nil {
+				log.Warnf("GROUP BY autocomplete failed for category %s, falling back: %v", category, groupByErr)
+				continue
+			}
+			for _, v := range values {
+				v = handleMatch(autocompleteFields[0].GetFieldPath(), v)
+				if resultSet.Add(v) {
+					stringResults = append(stringResults, v)
+					remaining--
+				}
+			}
+		}
+		if len(stringResults) > 0 {
+			return stringResults, nil
+		}
+	}
+
+	// Fallback: search + Go-side deduplication.
+	query.Pagination = &v1.QueryPagination{
+		Limit: pagination,
+	}
+
 	var autocompleteResults []autocompleteResult
 	for _, category := range categories {
 		if category == v1.SearchCategory_ALERTS && !shouldProcessAlerts(query) {
@@ -241,11 +304,9 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 
 		autocompleteFields := optMultiMap.GetAll(autocompleteKey)
 		if len(autocompleteFields) == 0 {
-			// Category for field to be autocompleted not applicable.
 			continue
 		}
 
-		// All the field paths to consider for the autocomplete field.
 		fieldPaths := make([]string, 0, 3*len(autocompleteFields))
 		for _, field := range autocompleteFields {
 			fieldPaths = append(fieldPaths,
@@ -262,10 +323,6 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 		}
 		for _, r := range results {
 			matches := trimMatches(r.Matches, fieldPaths)
-			// In postgres, we do not need to combine map key and values matches as `k=v` because it is already done by postgres searcher.
-			// With postgres, the following condition will not pass anyway.
-			//
-			// This implies that the object is a map because it has multiple values
 			if isMapMatch(matches) {
 				autocompleteResults = append(autocompleteResults, handleMapResults(matches, r.Score)...)
 				continue
@@ -295,8 +352,47 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 	return stringResults, nil
 }
 
+type autocompleteValue struct {
+	Value string `db:"value"`
+}
+
+// runGroupByAutocomplete executes a GROUP BY query to get exactly `limit` unique
+// values for the autocomplete field. Returns nil if the field type is not
+// suitable for GROUP BY (maps, arrays) or the category has no schema.
+func runGroupByAutocomplete(ctx context.Context, db postgres.DB, category v1.SearchCategory, query *v1.Query, autocompleteKey string, limit int) ([]string, error) {
+	schema := pgMapping.GetTableFromCategory(category)
+	if schema == nil {
+		return nil, nil
+	}
+
+	fieldLabel := search.FieldLabel(autocompleteKey)
+
+	cloned := query.CloneVT()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(fieldLabel).Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{autocompleteKey},
+	}
+	cloned.Pagination = &v1.QueryPagination{
+		Limit: int32(limit),
+	}
+
+	var results []string
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, db, schema, cloned, func(r *autocompleteValue) error {
+		if r.Value != "" {
+			results = append(results, r.Value)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
 func (s *serviceImpl) autocomplete(ctx context.Context, queryString string, categories []v1.SearchCategory) ([]string, error) {
-	return RunAutoComplete(ctx, queryString, categories, s.getAutocompleteSearchers())
+	return RunAutoComplete(ctx, queryString, categories, s.getAutocompleteSearchers(), s.db)
 }
 
 func (s *serviceImpl) Autocomplete(ctx context.Context, req *v1.RawSearchRequest) (*v1.AutocompleteResponse, error) {

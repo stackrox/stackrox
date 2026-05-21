@@ -7,6 +7,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/globaldb"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
@@ -172,6 +173,7 @@ func (b *serviceBuilder) WithImageIntegrationStore(store imageIntegrationDataSto
 
 func (b *serviceBuilder) Build() Service {
 	s := serviceImpl{
+		db:                globaldb.GetPostgres(),
 		alerts:            b.alerts,
 		deployments:       b.deployments,
 		images:            b.images,
