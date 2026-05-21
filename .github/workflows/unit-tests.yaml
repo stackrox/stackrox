@@ -315,8 +315,16 @@ jobs:
       with:
         working-directory: ui/apps/platform
         install-command: npm ci --prefer-offline --fetch-timeout=60000 --no-audit --no-fund
-        command: npm run test-component
         component: true
+        command: cypress run --component --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.js
+      env:
+        TZ: UTC
+        CYPRESS_COMPONENT_TEST: 'true'
+        CYPRESS_INTERNAL_BROWSER_CONNECT_TIMEOUT: '180000'
+        CYPRESS_VIDEOS_FOLDER: cypress/test-results/artifacts/videos
+        CYPRESS_SCREENSHOTS_FOLDER: cypress/test-results/artifacts/screenshots
+        DEBUG: 'cypress*'
+        NO_COLOR: '1'
 
     - name: Upload Cypress test result artifacts
       uses: ./.github/actions/upload-artifact-with-retry
