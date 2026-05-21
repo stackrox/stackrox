@@ -1,13 +1,11 @@
 name: Create KinD cluster with images
 description: >
-  Creates a KinD cluster, pulls images via ctr, and renders helm charts.
+  Creates a KinD cluster and pre-pulls container images via ctr.
   Runs in the background — returns immediately. The cluster and images
   become available asynchronously. Callers can start dependent actions
   immediately; they should retry kubectl commands until the cluster is ready.
 
   File-based outputs:
-    /tmp/central-chart  — rendered central helm chart (available in ~1s)
-    /tmp/sensor-chart   — rendered sensor helm chart (available in ~1s)
     /tmp/kind-ready     — touched when KinD cluster + central-db image ready
 
 inputs:
@@ -41,12 +39,6 @@ runs:
         set -x
 
         SCANNER_TAG=$(cat SCANNER_VERSION)
-
-        # Render charts immediately (instant, <1s) — available before KinD is ready
-        .github/workflows/scripts/render-chart.sh central /tmp/central-chart \
-          "${{ inputs.tag }}" "$SCANNER_TAG" "${{ inputs.registry }}"
-        .github/workflows/scripts/render-chart.sh sensor /tmp/sensor-chart \
-          "${{ inputs.tag }}" "$SCANNER_TAG" "${{ inputs.registry }}"
 
         (
           NODE="${{ inputs.cluster-name }}-control-plane"
