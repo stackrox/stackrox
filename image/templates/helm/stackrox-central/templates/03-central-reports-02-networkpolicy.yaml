@@ -1,0 +1,40 @@
+{{- include "srox.init" . -}}
+
+{{ if and ._rox.network.enableNetworkPolicies ._rox.ha.enabled ._rox.ha.reports.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: central-reports
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "central-reports") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "central-reports") | nindent 4 }}
+spec:
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    {{- if ._rox.ha.pgbouncer.enabled }}
+    - podSelector:
+        matchLabels:
+          app: pgbouncer
+    {{- else }}
+    - podSelector:
+        matchLabels:
+          app: central-db
+    {{- end }}
+    ports:
+    - port: 5432
+      protocol: TCP
+  - to:
+    - podSelector:
+        matchLabels:
+          app: scanner-v4-matcher
+    ports:
+    - port: 8443
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: central-reports
+{{- end }}

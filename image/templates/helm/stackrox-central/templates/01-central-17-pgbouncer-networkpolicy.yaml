@@ -1,15 +1,15 @@
 {{- include "srox.init" . -}}
 
-{{ if and ._rox.network.enableNetworkPolicies (not ._rox.central.db.external) -}}
+{{ if and ._rox.network.enableNetworkPolicies ._rox.ha.pgbouncer.enabled -}}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: central-db
+  name: pgbouncer
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "networkpolicy" "central-db") | nindent 4 }}
+    {{- include "srox.labels" (list . "networkpolicy" "pgbouncer") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "networkpolicy" "central-db") | nindent 4 }}
+    {{- include "srox.annotations" (list . "networkpolicy" "pgbouncer") | nindent 4 }}
 spec:
   policyTypes:
   - Ingress
@@ -22,16 +22,22 @@ spec:
     ports:
     - port: 5432
       protocol: TCP
-  {{- if ._rox.ha.pgbouncer.enabled }}
   - from:
     - podSelector:
         matchLabels:
-          app: pgbouncer
+          app: central-reports
     ports:
     - port: 5432
       protocol: TCP
-  {{- end }}
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: central-db
+    ports:
+    - port: 5432
+      protocol: TCP
   podSelector:
     matchLabels:
-      app: central-db
+      app: pgbouncer
 {{- end }}

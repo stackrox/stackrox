@@ -39,5 +39,12 @@ scannerV4:
       cert: "scanner tls cert pem"
       key: "scanner tls key pem"
     password:
+ha:
+  enabled: true
+  replicas: 2
+  pgbouncer:
+    enabled: true
+  reports:
+    enabled: true
 system:
   enablePodSecurityPolicies: true

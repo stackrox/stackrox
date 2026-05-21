@@ -61,6 +61,13 @@ scannerV4:
       key: "scanner tls key pem"
     password:
       value: "db password"
+ha:
+  enabled: true
+  replicas: 2
+  pgbouncer:
+    enabled: true
+  reports:
+    enabled: true
 monitoring:
   openshift:
     enabled: true

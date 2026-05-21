@@ -1,5 +1,5 @@
 {{- include "srox.init" . -}}
-{{- if ._rox.ha.reports.enabled }}
+{{- if and ._rox.ha.enabled ._rox.ha.reports.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

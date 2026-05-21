@@ -415,8 +415,20 @@ func initializeHA() {
 }
 
 func startServices() {
+	centralMode := mode.Get()
+
+	// Start report schedulers in Full and Reports modes
+	if mode.IsReportsEnabled() {
+		log.Infof("Starting report schedulers (mode: %s)", centralMode)
+		vulnReportV2Scheduler.Singleton().Start()
+		if features.ComplianceReporting.Enabled() {
+			complianceReportManager.Singleton().Start()
+		}
+	}
+
+	// Heavy background workers only run in Full mode
 	if !mode.IsBackgroundWorkersEnabled() {
-		log.Infof("Background workers disabled (mode: %s)", mode.Get())
+		log.Infof("Background workers disabled (mode: %s)", centralMode)
 		return
 	}
 
