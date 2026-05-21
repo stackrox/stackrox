@@ -512,13 +512,18 @@ jobs:
             ;;
           *vulnerabilities*)
             echo "Waiting for image CVEs (v2 API)..."
-            for _ in $(seq 1 60); do
+            # Also trigger a scan of the deployed images to speed up enrichment
+            curl -sk -u "admin:${ADMIN_PASSWORD}" \
+              "https://${API_ENDPOINT}/v1/images/scan" \
+              -X POST -d '{"imageName":"docker.io/nginx:1.12","force":true}' || true
+            for _ in $(seq 1 120); do
               cves=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
                 "https://${API_ENDPOINT}/v2/image-cves?pagination.limit=1" \
                 | jq -r '.imageCVEs | length // 0')
               [ "${cves:-0}" -gt 0 ] && echo "Image CVEs: ${cves}" && break
               sleep 5
             done
+            [ "${cves:-0}" -eq 0 ] && echo "::warning::No v2 image CVEs after 10 minutes"
             ;;
           *vulnmanagement*)
             echo "Waiting for cluster (platform) CVE data..."
