@@ -459,11 +459,15 @@ LIMIT @limit
         body='{
             "blocks": (
                 [
-                    {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
-                    {"type": "section", "text": {"type": "mrkdwn", "text": "*Job Name* | *Branch* | *Failures* | *Duration*"}},
-                    {"type": "divider"}
+                    {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}}
                 ] +
-                [.[] | {"type": "section", "text": {"type": "mrkdwn", "text": (.name + " | `" + .branch_group + "` | " + (.consecutive_count|tostring) + " | " + (.duration_days|tostring) + " days")}}]
+                [.[] | {
+                    "type": "section",
+                    "fields": [
+                        {"type": "mrkdwn", "text": "*\(.name)*\n`\(.branch_group)`"},
+                        {"type": "mrkdwn", "text": "*\(.consecutive_count) failures*\n\(.duration_days) days"}
+                    ]
+                }]
             )
         }'
     else
