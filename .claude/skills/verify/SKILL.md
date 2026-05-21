@@ -45,7 +45,7 @@ command -v jq      || echo "MISSING: jq"
 
 Also check `oc` availability — if present, prefer it over `kubectl` throughout.
 Remember which command to use (`oc` or `kubectl`) and use it in all subsequent Bash calls.
-Do NOT use shell variables like `$ORCH_CMD` across separate Bash tool invocations — Claude Code
+Do NOT use shell variables like `oc` across separate Bash tool invocations — Claude Code
 does not share shell state between calls. Instead, hardcode the chosen command in each call.
 
 Test that `crane` can reach ttl.sh:
@@ -68,11 +68,6 @@ sandbox override prompts or may need `--insecure` flags due to the sandbox proxy
 
 ## Phase 1: Discover Cluster
 
-**Shell state reminder**: In all code examples below, `$ORCH_CMD` is used as shorthand
-for `oc` or `kubectl`. Since shell state does not persist between Bash tool calls, always
-substitute the literal command (`oc` or `kubectl`) in your actual commands. Same applies to
-`$API_ENDPOINT`, `$ROX_ADMIN_PASSWORD`, `$TAG`, etc. — use the literal values you discovered.
-
 Find a usable Kubernetes/OpenShift cluster. Try in order:
 
 1. `KUBECONFIG` environment variable — check with `echo $KUBECONFIG` in a Bash call
@@ -86,15 +81,18 @@ Bash tool calls. If `KUBECONFIG` is set to a non-default path, you must prepend
 `export KUBECONFIG=<path> &&` to every `oc`/`kubectl` command, or hardcode the
 `--kubeconfig=<path>` flag.
 
-Verify connectivity:
+Verify connectivity (`oc` if available, otherwise `kubectl` — use the chosen
+command literally in every Bash call throughout):
 ```bash
-$ORCH_CMD cluster-info
+oc cluster-info        # or: kubectl cluster-info
 ```
 
 Detect the cluster's architecture for cross-compilation later:
 ```bash
-$ORCH_CMD get nodes -o jsonpath='{.items[0].status.nodeInfo.architecture}'
+oc get nodes -o jsonpath='{.items[0].status.nodeInfo.architecture}'
 ```
+Remember the result (e.g., `amd64` or `arm64`) — you'll use it as the literal
+`GOARCH` value in Phase 4 and `--platform linux/<arch>` in Phase 5.
 If the result is `arm64`, use `GOARCH=arm64` instead of `GOARCH=amd64` in Phase 4.
 Default to `amd64` if detection fails.
 
@@ -108,11 +106,11 @@ Print the cluster name/context and API server URL. Unless in YOLO mode, ask the 
 Check the `stackrox` namespace first (used by deploy scripts), then `rhacs-operator`
 (used by the operator):
 ```bash
-$ORCH_CMD -n stackrox get deployment central --no-headers 2>/dev/null
+oc -n stackrox get deployment central --no-headers 2>/dev/null
 ```
 If not found, try `rhacs-operator`:
 ```bash
-$ORCH_CMD -n rhacs-operator get deployment central --no-headers 2>/dev/null
+oc -n rhacs-operator get deployment central --no-headers 2>/dev/null
 ```
 Use whichever namespace has Central throughout. If neither has it, go to
 **Phase 2c: Deploy StackRox**.
@@ -123,19 +121,19 @@ Determine the Central endpoint. Try in order:
 
 1. **OpenShift route** (preferred — survives pod restarts):
    ```bash
-   $ORCH_CMD -n <ns> get route central -o jsonpath='{.status.ingress[0].host}' 2>/dev/null
+   oc -n <ns> get route central -o jsonpath='{.status.ingress[0].host}' 2>/dev/null
    ```
-   If found, set `API_ENDPOINT="${ROUTE_HOST}:443"`
+   If found, the endpoint is `<route-host>:443`.
 
 2. **LoadBalancer service**:
    ```bash
-   $ORCH_CMD -n <ns> get svc central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null
+   oc -n <ns> get svc central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null
    ```
-   If found, set `API_ENDPOINT="${LB_IP}:443"`
+   If found, the endpoint is `<lb-ip>:443`.
 
 3. **Port-forward** (fallback — use `run_in_background` for the Bash tool call):
    ```bash
-   $ORCH_CMD -n <ns> port-forward svc/central 8000:443
+   oc -n <ns> port-forward svc/central 8000:443
    ```
    Set `API_ENDPOINT="localhost:8000"`
    Note: port-forward breaks on pod restart. Prefer routes/LB when available.
@@ -152,7 +150,7 @@ Now authenticate. Try credentials in this order:
 
 Test credentials:
 ```bash
-curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/ping"
+curl -sk -u "admin:<password>" "https://<endpoint>/v1/ping"
 ```
 
 If none work, ask the user for credentials. If in YOLO mode and no credentials work,
@@ -162,11 +160,8 @@ When credentials are successfully discovered, remember them:
 - If the password came from a non-obvious source (not env var, not well-known file),
   save a memory noting how auth works for this cluster so future sessions don't re-discover.
 
-Export for later use:
-```bash
-export ROX_ADMIN_PASSWORD="<password>"
-export API_ENDPOINT="<endpoint>"
-```
+Remember the password and endpoint values you discovered — substitute them literally
+into every subsequent command. Shell exports do not persist across Bash tool calls.
 
 ### 2c: Deploy StackRox (only if not found)
 
@@ -234,7 +229,7 @@ multiple binary layers to that single base image.
   You MUST rename it to `kubernetes-sensor` when creating the tar layer (see Phase 5 example).
 - **Compliance pods** are not a static Deployment — they run as a container in the `collector`
   DaemonSet. To patch compliance, use:
-  `$ORCH_CMD -n <ns> set image daemonset/collector compliance=$TAG`
+  `oc -n <ns> set image daemonset/collector compliance=<tag>`
   Note: new compliance pods launched by sensor will also use the updated DaemonSet image.
 - **Scanner uses a separate image** — you cannot append scanner binaries to the main image.
   To patch scanner, pull the current scanner image separately, append the scanner binary to
@@ -245,16 +240,17 @@ If no code changes are detected, inform the user and ask what they want to do.
 
 ## Phase 4: Build
 
-Cross-compile each affected binary for the target architecture (default: linux/amd64):
+Cross-compile each affected binary for the target architecture detected in Phase 1
+(default `amd64`). Use the literal architecture value — do not rely on env vars:
 
 ```bash
-GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o "$TMPDIR/<binary-name>" ./<package-path>
+GOOS=linux GOARCH=<arch> CGO_ENABLED=0 go build -ldflags="-s -w" -o "$TMPDIR/<binary-name>" ./<package-path>
 ```
 
 The `-ldflags="-s -w"` strips debug info and reduces binary size. For version info in
 `/v1/metadata`, add `-X` flags from `scripts/status.sh` if available, but this is optional.
 
-Example for central + migrator:
+Example for central + migrator (on an amd64 cluster):
 ```bash
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o "$TMPDIR/central" ./central
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o "$TMPDIR/migrator" ./migrator
@@ -275,21 +271,20 @@ First, record the current image for **each** deployment being modified. Differen
 may use different image references — always pull the base from the specific deployment:
 
 ```bash
-# For main-image components (central, sensor, admission-control, config-controller)
-CURRENT_CENTRAL_IMAGE=$($ORCH_CMD -n <ns> get deployment/central \
-  -o jsonpath='{.spec.template.spec.containers[0].image}')
-echo "Original central image: $CURRENT_CENTRAL_IMAGE"
+oc -n stackrox get deployment/central -o jsonpath='{.spec.template.spec.containers[0].image}'
+```
+Record this value — you'll use it as the base image for `crane mutate`.
 
-# For scanner (uses separate image)
-CURRENT_SCANNER_IMAGE=$($ORCH_CMD -n <ns> get deployment/scanner \
-  -o jsonpath='{.spec.template.spec.containers[0].image}')
-echo "Original scanner image: $CURRENT_SCANNER_IMAGE"
+For scanner (uses a separate image):
+```bash
+oc -n stackrox get deployment/scanner -o jsonpath='{.spec.template.spec.containers[0].image}'
 ```
 
 Generate a unique tag:
 ```bash
-TAG="ttl.sh/$(uuidgen | tr '[:upper:]' '[:lower:]'):2h"
+uuidgen | tr '[:upper:]' '[:lower:]'
 ```
+Prepend `ttl.sh/` and append `:2h` to form the full tag (e.g., `ttl.sh/<uuid>:2h`).
 
 ### Method A: crane (preferred)
 
@@ -313,27 +308,25 @@ mkdir -p stackrox/bin && cp kubernetes-sensor stackrox/bin/kubernetes-sensor && 
 tar cf sensor-layer.tar stackrox/bin/kubernetes-sensor && rm -rf stackrox
 ```
 
-Push by appending layers to the current image. Use `--platform linux/amd64` to ensure
-the correct manifest is selected from multi-arch images (important on Apple Silicon):
+Push by appending layers to the current image. Use `--platform linux/<arch>` matching
+the cluster architecture detected in Phase 1 (e.g., `linux/amd64` or `linux/arm64`):
 ```bash
-crane mutate "$CURRENT_CENTRAL_IMAGE" \
-  --platform linux/amd64 \
+crane mutate "<current-central-image>" \
+  --platform linux/<arch> \
   --append central-layer.tar \
   --append migrator-layer.tar \
-  --tag "$TAG"
+  --tag "<tag>"
 ```
 
 For scanner (separate image, different binary path):
 ```bash
-SCANNER_TAG="ttl.sh/$(uuidgen | tr '[:upper:]' '[:lower:]'):2h"
-
 mkdir -p usr/local/bin && cp scanner usr/local/bin/scanner && chmod +x usr/local/bin/scanner
 tar cf scanner-layer.tar usr/local/bin/scanner && rm -rf usr
 
-crane mutate "$CURRENT_SCANNER_IMAGE" \
-  --platform linux/amd64 \
+crane mutate "<current-scanner-image>" \
+  --platform linux/<arch> \
   --append scanner-layer.tar \
-  --tag "$SCANNER_TAG"
+  --tag "<scanner-tag>"
 ```
 
 The `--tag` flag pushes directly to ttl.sh. No separate `crane push` needed.
@@ -343,16 +336,15 @@ The `--tag` flag pushes directly to ttl.sh. No separate `crane push` needed.
 Use this ONLY if crane failed in Phase 0 (TLS/proxy issues). Create a Dockerfile:
 
 ```dockerfile
-FROM $CURRENT_CENTRAL_IMAGE
+FROM <current-central-image>
 COPY central /stackrox/central
 COPY migrator /stackrox/bin/migrator
 ```
 
-Build with explicit `--platform linux/amd64` (critical on Apple Silicon — without this,
-Docker defaults to arm64 and the image will crash on the cluster):
+Build with explicit `--platform` matching the cluster architecture:
 
 ```bash
-docker buildx build --platform linux/amd64 --push -t "$TAG" -f Dockerfile .
+docker buildx build --platform linux/<arch> --push -t "<tag>" -f Dockerfile .
 ```
 
 Print the image reference for the user.
@@ -364,7 +356,7 @@ you determined in Phase 0 and the namespace discovered in Phase 2a — do not us
 variables across Bash calls.
 
 ```bash
-$ORCH_CMD -n <ns> set image deployment/central central=$TAG
+oc -n <ns> set image deployment/central central=<tag>
 ```
 
 Deployment/DaemonSet to container name mapping:
@@ -377,7 +369,7 @@ Deployment/DaemonSet to container name mapping:
 
 Wait for rollout:
 ```bash
-$ORCH_CMD -n <ns> rollout status deployment/central --timeout=300s
+oc -n <ns> rollout status deployment/central --timeout=300s
 ```
 
 If using port-forward (not route/LB), restart it after deployment completes:
@@ -387,25 +379,24 @@ sleep 2
 ```
 Then start a new port-forward using `run_in_background` for the Bash tool call:
 ```bash
-$ORCH_CMD -n <ns> port-forward svc/central 8000:443
+oc -n <ns> port-forward svc/central 8000:443
 ```
 
 ### Post-deployment health check
 
 ```bash
 # Verify pod is running
-$ORCH_CMD -n <ns> get pods -l app=central
+oc -n <ns> get pods -l app=central
 
 # Verify API is responding and check version/build info
 curl -sk -u "admin:<password>" "https://<endpoint>/v1/metadata" | jq .
 ```
 
-Substitute the actual password and endpoint values you discovered in Phase 2 — do not
-rely on `$ROX_ADMIN_PASSWORD` or `$API_ENDPOINT` shell variables persisting.
+Substitute the actual password and endpoint values you discovered in Phase 2.
 
 If pods crash-loop after deployment, capture logs and report them:
 ```bash
-$ORCH_CMD -n <ns> logs deployment/central --previous --tail=50
+oc -n <ns> logs deployment/central --previous --tail=50
 ```
 Do NOT automatically roll back. Report the crash to the parent context — it may want to
 inspect the failure, fix the code, and re-run this skill.
@@ -416,7 +407,7 @@ Execute the test plan based on `$context`. Common patterns:
 
 ### Bug reproduction
 - Follow the reproduction steps described in `$context`
-- Use `curl` against the API, `$ORCH_CMD` commands, or roxctl as appropriate
+- Use `curl` against the API, `oc` commands, or roxctl as appropriate
 - Report whether the bug reproduces or not, with evidence (command output, API responses)
 
 ### Fix verification
@@ -427,7 +418,7 @@ Execute the test plan based on `$context`. Common patterns:
 ### API testing
 - Use curl with the authenticated endpoint:
   ```bash
-  curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/..." | jq .
+  curl -sk -u "admin:<password>" "https://<endpoint>/..." | jq .
   ```
 
 ### E2E test execution
@@ -455,7 +446,7 @@ Summarize results concisely:
 2. **Where it was pushed**: Image reference (ttl.sh URL)
 3. **What was deployed**: Which deployments were patched
 4. **Original image**: The image reference before patching (so the user can restore with
-   `$ORCH_CMD -n <ns> set image deployment/<name> <container>=<original-image>`)
+   `oc -n <ns> set image deployment/<name> <container>=<original-image>`)
 5. **Test results**: Pass/fail with evidence (command output, API responses)
 6. **Issues found**: Any problems encountered during the process
 
