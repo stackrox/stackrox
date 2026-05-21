@@ -335,19 +335,29 @@ jobs:
 
           mkdir -p "cypress/test-results/shard-$i"
           echo "Shard $i: $(echo "$shard_specs" | tr ',' '\n' | wc -l | tr -d ' ') specs"
-          npx cypress run --component \
+          ( npx cypress run --component \
             --browser chrome \
             --config "video=false,screenshotsFolder=cypress/test-results/shard-$i/screenshots" \
             --reporter mocha-multi-reporters \
             --reporter-options "configFile=cypress/mocha.config.js" \
             --spec "$shard_specs" \
-            2>&1 | tee "cypress/test-results/shard-$i/stdout.log" | sed "s/^/[shard-$i] /" &
+            > "cypress/test-results/shard-$i/stdout.log" 2>&1 ) &
           pids+=($!)
         done
 
-        failed=0
         for pid in "${pids[@]}"; do
-          if ! wait "$pid"; then
+          wait "$pid"
+        done
+
+        echo "=== Results ==="
+        failed=0
+        for (( i=0; i<shards; i++ )); do
+          log="cypress/test-results/shard-$i/stdout.log"
+          if grep -q 'All specs passed' "$log" 2>/dev/null; then
+            echo "Shard $i: PASSED"
+          else
+            echo "Shard $i: FAILED"
+            tail -20 "$log"
             failed=$((failed + 1))
           fi
         done
