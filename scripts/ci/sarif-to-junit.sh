@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-
 # sarif-to-junit.sh converts SARIF vulnerability scan results to JUnit XML format
 # for integration with junit2jira. This enables individual vulnerability tracking
 # in Jira rather than just job-level failure notifications.
 #
 # Usage: sarif-to-junit.sh <sarif-file> <image-name>
 
-source "$(dirname "$0")/lib.sh"
+SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../scripts/ci/lib.sh
+source "$SCRIPTS_ROOT/scripts/ci/lib.sh"
+
+set -euo pipefail
 
 if [[ "$#" -ne 2 ]]; then
     die "Usage: $0 <sarif-file> <image-name>"
