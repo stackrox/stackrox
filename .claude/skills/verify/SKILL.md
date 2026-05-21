@@ -414,24 +414,30 @@ Execute the test plan based on `$context`. Common patterns:
 ### Fix verification
 Verify the fix works AND prove the bug exists without it (regression proof).
 
-**Step 1 — Verify the fix works:**
+**Step 1 — Identify the fix:**
+Figure out what constitutes "the fix" from context: `$context`, branch name,
+git log, and the relationship between the current branch and the base branch.
+The fix could be uncommitted changes, a single commit, multiple commits on a
+feature branch, etc. Determine how to temporarily revert it (e.g., `git stash`,
+`git revert`, checking out the base branch). If you cannot determine this
+confidently, ask the user.
+
+**Step 2 — Verify the fix works:**
 - The fix should already be deployed from Phase 6
 - Follow the reproduction steps — the bug should NOT reproduce
 - Capture all output as **"with fix"** evidence
 
-**Step 2 — Prove the bug exists without the fix:**
-- Stash the fix: `git stash`
-- Rebuild the affected component(s) from the reverted state (Phase 4-5)
-- Redeploy the old build (Phase 6)
+**Step 3 — Prove the bug exists without the fix:**
+- Temporarily remove the fix using the approach from Step 1
+- Rebuild the affected component(s) and redeploy (Phase 4-6)
 - Follow the same reproduction steps — the bug SHOULD reproduce
 - Capture all output as **"without fix"** evidence
 
-**Step 3 — Restore the fix:**
-- Re-apply: `git stash pop`
+**Step 4 — Restore the fix:**
+- Undo the revert (e.g., `git stash pop`, `git checkout <branch>`)
 - Rebuild and redeploy the fixed version (Phase 4-6)
-- Optionally re-run reproduction steps to confirm the fix is back
 
-**Step 4 — Report:**
+**Step 5 — Report:**
 - Present before/after proof side by side:
   - **Without fix**: [output showing the bug]
   - **With fix**: [output showing the bug is gone]
