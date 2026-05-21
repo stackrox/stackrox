@@ -48,19 +48,16 @@ Remember which command to use (`oc` or `kubectl`) and use it in all subsequent B
 Do NOT use shell variables like `$ORCH_CMD` across separate Bash tool invocations — Claude Code
 does not share shell state between calls. Instead, hardcode the chosen command in each call.
 
-Test that `crane` can reach ttl.sh (corporate proxies/VPNs can block it).
-Note: the test image won't exist, so expect a MANIFEST_UNKNOWN error — that's fine, it proves
-connectivity. A TLS/x509 error means crane can't connect at all:
+Test that `crane` can reach ttl.sh (corporate proxies/VPNs can block it):
 ```bash
 crane manifest ttl.sh/test:1h 2>&1 || true
 ```
-If this fails with TLS/x509 errors (common on macOS with corporate proxies), retry with
+This should return a valid JSON manifest. If it fails with TLS/x509 errors, retry with
 `--insecure`:
 ```bash
 crane manifest --insecure ttl.sh/test:1h 2>&1 || true
 ```
-If `--insecure` works (i.e., you get MANIFEST_UNKNOWN instead of a TLS error), use `--insecure`
-on all subsequent `crane` commands throughout.
+If `--insecure` works, use `--insecure` on all subsequent `crane` commands throughout.
 
 If crane cannot connect even with `--insecure`, check whether `docker` is available as a
 fallback. If neither works, stop and inform the user.
@@ -105,16 +102,19 @@ Print the cluster name/context and API server URL. Unless in YOLO mode, ask the 
 
 ## Phase 2: Find StackRox and Authenticate
 
-### 2a: Discover the StackRox namespace
+### 2a: Check if StackRox is deployed
 
-Do NOT hardcode `-n stackrox`. Discover the actual namespace:
+Check the `stackrox` namespace first (used by deploy scripts), then `rhacs-operator`
+(used by the operator):
 ```bash
-$ORCH_CMD get deployment central --all-namespaces --no-headers 2>/dev/null
+$ORCH_CMD -n stackrox get deployment central --no-headers 2>/dev/null
 ```
-This returns the namespace where Central is deployed (commonly `stackrox`, but could be
-`rhacs-operator` or a custom namespace). Use the discovered namespace throughout.
-
-If Central is not found in any namespace, go to **Phase 2c: Deploy StackRox**.
+If not found, try `rhacs-operator`:
+```bash
+$ORCH_CMD -n rhacs-operator get deployment central --no-headers 2>/dev/null
+```
+Use whichever namespace has Central throughout. If neither has it, go to
+**Phase 2c: Deploy StackRox**.
 
 ### 2b: Authenticate to Central
 
