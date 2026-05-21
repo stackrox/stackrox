@@ -1341,12 +1341,11 @@ jobs:
 
           registry="$(./scripts/ci/lib.sh registry_from_branding "${{ matrix.name }}")"
           image_ref="${registry}/${{ matrix.image }}:${release_tag}"
+          echo "image_ref=${image_ref}" >> "$GITHUB_OUTPUT"
 
           roxctl image scan --retries=10 --retry-delay=15 --force --severity=CRITICAL,IMPORTANT --output=sarif \
             --image="${image_ref}" \
             | tee results.sarif
-
-          echo "image_ref=${image_ref}" >> "$GITHUB_OUTPUT"
 
       - name: Convert SARIF to JUnit
         if: always()
