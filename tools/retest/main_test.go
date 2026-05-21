@@ -44,6 +44,34 @@ func Test_retestNTimes(t *testing.T) {
 			},
 		},
 		{
+			name:        "extra whitespace before count",
+			allComments: []string{"/retest-times    3 job-name-1"},
+			want: []string{
+				"job-name-1",
+			},
+		},
+		{
+			name:        "extra whitespace in all positions",
+			allComments: []string{"/retest-times   10   job-name-1"},
+			want: []string{
+				"job-name-1",
+			},
+		},
+		{
+			name:        "tab between count and job name",
+			allComments: []string{"/retest-times 5\tjob-name-1"},
+			want: []string{
+				"job-name-1",
+			},
+		},
+		{
+			name:        "trailing whitespace in job name",
+			allComments: []string{"/retest-times 3 job-name-1   "},
+			want: []string{
+				"job-name-1",
+			},
+		},
+		{
 			name: "extra whitespace — bot /test comments also have extra space",
 			userComments: []string{
 				"/test  job-name-1",
@@ -333,6 +361,12 @@ func Test_commentsToCreate(t *testing.T) {
 			statuses:     map[string]string{"job-1": "pending"},
 			jobsToRetest: []string{"job-1"},
 			want:         nil,
+		},
+		{
+			name:         "multiple jobs — pending skipped, completed retested",
+			statuses:     map[string]string{"job-1": "pending", "job-2": "failure"},
+			jobsToRetest: []string{"job-1", "job-2"},
+			want:         []string{"/test job-2"},
 		},
 	}
 	for _, tt := range tests {
