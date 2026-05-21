@@ -1,4 +1,4 @@
-package keybundle
+package datastore
 
 import (
 	"crypto/sha256"
@@ -42,7 +42,7 @@ func TestWatcherFileAppears(t *testing.T) {
 	dir := t.TempDir()
 	filePath := filepath.Join(dir, "bundle.json")
 
-	w := NewWatcher(filePath, 24*time.Hour, mockStore)
+	w := newKeyBundleWatcher(filePath, 24*time.Hour, mockStore)
 
 	w.checkAndUpsert()
 
@@ -59,7 +59,7 @@ func TestWatcherInvalidFile(t *testing.T) {
 	filePath := filepath.Join(dir, "bundle.json")
 	require.NoError(t, os.WriteFile(filePath, []byte(`{"keys": []}`), 0600))
 
-	w := NewWatcher(filePath, 24*time.Hour, mockStore)
+	w := newKeyBundleWatcher(filePath, 24*time.Hour, mockStore)
 	w.checkAndUpsert()
 
 	assert.NotEqual(t, [sha256.Size]byte{}, w.lastHash)
@@ -72,7 +72,7 @@ func TestWatcherFileDoesNotExist(t *testing.T) {
 	dir := t.TempDir()
 	filePath := filepath.Join(dir, "nonexistent.json")
 
-	w := NewWatcher(filePath, 24*time.Hour, mockStore)
+	w := newKeyBundleWatcher(filePath, 24*time.Hour, mockStore)
 	w.checkAndUpsert()
 
 	assert.Equal(t, [sha256.Size]byte{}, w.lastHash)
@@ -86,7 +86,7 @@ func TestWatcherFileDeletedResetsHash(t *testing.T) {
 	dir := t.TempDir()
 	filePath := filepath.Join(dir, "bundle.json")
 
-	w := NewWatcher(filePath, 24*time.Hour, mockStore)
+	w := newKeyBundleWatcher(filePath, 24*time.Hour, mockStore)
 
 	require.NoError(t, os.WriteFile(filePath, []byte(validBundleJSON()), 0600))
 	w.checkAndUpsert()
@@ -108,7 +108,7 @@ func TestWatcherFileChanges(t *testing.T) {
 	dir := t.TempDir()
 	filePath := filepath.Join(dir, "bundle.json")
 
-	w := NewWatcher(filePath, 24*time.Hour, mockStore)
+	w := newKeyBundleWatcher(filePath, 24*time.Hour, mockStore)
 
 	require.NoError(t, os.WriteFile(filePath, []byte(validBundleJSON()), 0600))
 	w.checkAndUpsert()
@@ -128,7 +128,7 @@ func TestWatcherFileUnchanged(t *testing.T) {
 	filePath := filepath.Join(dir, "bundle.json")
 	require.NoError(t, os.WriteFile(filePath, []byte(validBundleJSON()), 0600))
 
-	w := NewWatcher(filePath, 24*time.Hour, mockStore)
+	w := newKeyBundleWatcher(filePath, 24*time.Hour, mockStore)
 	w.checkAndUpsert()
 	w.checkAndUpsert()
 }
@@ -152,7 +152,7 @@ func TestWatcherUpsertRetryOnFailure(t *testing.T) {
 		Times(1).
 		After(firstCall)
 
-	w := NewWatcher(filePath, 24*time.Hour, mockStore)
+	w := newKeyBundleWatcher(filePath, 24*time.Hour, mockStore)
 
 	assert.Equal(t, [sha256.Size]byte{}, w.lastHash)
 
@@ -167,14 +167,14 @@ func TestWatcherClampsInterval(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
 
-	w := NewWatcher("/nonexistent", time.Millisecond, mockStore)
+	w := newKeyBundleWatcher("/nonexistent", time.Millisecond, mockStore)
 	assert.GreaterOrEqual(t, w.interval, minWatchInterval)
 
-	w = NewWatcher("/nonexistent", minWatchInterval, mockStore)
+	w = newKeyBundleWatcher("/nonexistent", minWatchInterval, mockStore)
 	assert.Equal(t, minWatchInterval, w.interval)
 
 	longInterval := 2 * minWatchInterval
-	w = NewWatcher("/nonexistent", longInterval, mockStore)
+	w = newKeyBundleWatcher("/nonexistent", longInterval, mockStore)
 	assert.Equal(t, longInterval, w.interval)
 }
 
@@ -187,7 +187,7 @@ func TestWatcherOversizedFile(t *testing.T) {
 	oversizedContent := []byte(strings.Repeat("x", maxBundleFileSize+1))
 	require.NoError(t, os.WriteFile(filePath, oversizedContent, 0600))
 
-	w := NewWatcher(filePath, 24*time.Hour, mockStore)
+	w := newKeyBundleWatcher(filePath, 24*time.Hour, mockStore)
 	w.checkAndUpsert()
 
 	firstHash := w.lastHash

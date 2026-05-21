@@ -166,7 +166,6 @@ import (
 	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	signatureIntegrationDS "github.com/stackrox/rox/central/signatureintegration/datastore"
-	"github.com/stackrox/rox/central/signatureintegration/keybundle"
 	signatureIntegrationService "github.com/stackrox/rox/central/signatureintegration/service"
 	"github.com/stackrox/rox/central/splunk"
 	"github.com/stackrox/rox/central/systeminfo/listener"
@@ -1058,7 +1057,7 @@ func waitForTerminationSignal() {
 			stoppableWithName{backgroundmigrations.Singleton(), "background migrations"})
 	}
 
-	if w := keybundle.GetWatcher(); w != nil {
+	if w := signatureIntegrationDS.KeyBundleWatcher(); w != nil {
 		stoppables = append(stoppables, stoppableWithName{w, "Red Hat signing key bundle watcher"})
 	}
 

@@ -1,4 +1,4 @@
-package keybundle
+package datastore
 
 import (
 	"encoding/json"
