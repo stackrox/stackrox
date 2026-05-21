@@ -456,20 +456,28 @@ LIMIT @limit
     if [[ $(cat "${data_file}") != "[]" ]]; then
         jq < "${data_file}"
         # shellcheck disable=SC2016
-        body='{"blocks":[
-            {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
-            {"type": "section", "fields": [
-                {"type": "mrkdwn", "text": "*Job Name*"},
-                {"type": "mrkdwn", "text": "*Branch*"},
-                {"type": "mrkdwn", "text": "*Failures*"},
-                {"type": "mrkdwn", "text": "*Duration*"}
-            ]},
-            (.[] | {"type": "section", "fields": [
-                {"type": "mrkdwn", "text": .name},
-                {"type": "plain_text", "text": .branch_group},
-                {"type": "plain_text", "text": "\(.consecutive_count)"},
-                {"type": "plain_text", "text": "\(.duration_days) days"}
-            ]})]}'
+        body='{
+            "blocks": [
+                {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
+                {
+                    "type": "table",
+                    "cells": (
+                        [[
+                            {"text": "*Job Name*", "type": "mrkdwn"},
+                            {"text": "*Branch*", "type": "mrkdwn"},
+                            {"text": "*Failures*", "type": "mrkdwn"},
+                            {"text": "*Duration*", "type": "mrkdwn"}
+                        ]] +
+                        [.[] | [
+                            {"text": .name, "type": "plain_text"},
+                            {"text": .branch_group, "type": "plain_text"},
+                            {"text": "\(.consecutive_count)", "type": "plain_text"},
+                            {"text": "\(.duration_days) days", "type": "plain_text"}
+                        ]]
+                    )
+                }
+            ]
+        }'
     else
         body='{"blocks":[
             {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
