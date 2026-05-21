@@ -149,8 +149,22 @@ jobs:
 
     - name: Run Postgres
       run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
+        mkdir -p /dev/shm/pgdata
+        chown postgres:postgres /dev/shm/pgdata
+        su postgres -c 'initdb -D /dev/shm/pgdata'
+        cat >> /dev/shm/pgdata/postgresql.conf << 'PGCONF'
+        shared_buffers = 1GB
+        work_mem = 256MB
+        maintenance_work_mem = 512MB
+        effective_cache_size = 4GB
+        fsync = off
+        synchronous_commit = off
+        full_page_writes = off
+        max_wal_size = 2GB
+        checkpoint_completion_target = 0.9
+        random_page_cost = 1.1
+        PGCONF
+        su postgres -c 'pg_ctl -D /dev/shm/pgdata start'
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
@@ -212,8 +226,22 @@ jobs:
 
     - name: Run Postgres
       run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
+        mkdir -p /dev/shm/pgdata
+        chown postgres:postgres /dev/shm/pgdata
+        su postgres -c 'initdb -D /dev/shm/pgdata'
+        cat >> /dev/shm/pgdata/postgresql.conf << 'PGCONF'
+        shared_buffers = 1GB
+        work_mem = 256MB
+        maintenance_work_mem = 512MB
+        effective_cache_size = 4GB
+        fsync = off
+        synchronous_commit = off
+        full_page_writes = off
+        max_wal_size = 2GB
+        checkpoint_completion_target = 0.9
+        random_page_cost = 1.1
+        PGCONF
+        su postgres -c 'pg_ctl -D /dev/shm/pgdata start'
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
