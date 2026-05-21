@@ -162,7 +162,7 @@ jobs:
   kind-e2e:
     name: "${{ matrix.name }}"
     needs: setup-shards
-    if: "!contains(github.event.pull_request.labels.*.name, 'ui-e2e-gke')"
+    if: "!contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke')"
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -358,7 +358,7 @@ jobs:
   # ── GKE mode: shared cluster, scanner v2, all specs ──────────────────
   provision-gke:
     name: Provision GKE
-    if: contains(github.event.pull_request.labels.*.name, 'ui-e2e-gke')
+    if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -435,7 +435,7 @@ jobs:
   gke-e2e:
     name: "GKE ${{ matrix.name }}"
     needs: [setup-shards, provision-gke]
-    if: contains(github.event.pull_request.labels.*.name, 'ui-e2e-gke')
+    if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke')
     runs-on: ubuntu-latest
     timeout-minutes: 30
 

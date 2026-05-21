@@ -811,7 +811,7 @@ jobs:
   # Start GKE cluster in parallel with build — ready before images are pushed.
   # Spot VMs for cost savings. Only when ui-e2e-gke label is present.
   create-ui-e2e-gke-cluster:
-    if: contains(github.event.pull_request.labels.*.name, 'ui-e2e-gke')
+    if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
@@ -840,7 +840,7 @@ jobs:
     - create-ui-e2e-gke-cluster
     if: >-
       !cancelled() && needs.push-main-manifests.result == 'success' &&
-      contains(github.event.pull_request.labels.*.name, 'ui-e2e') &&
+      contains(github.event.pull_request.labels.*.name, 'e2e-ui') &&
       (needs.create-ui-e2e-gke-cluster.result == 'success' || needs.create-ui-e2e-gke-cluster.result == 'skipped')
     uses: ./.github/workflows/ui-e2e.yaml
     with:
