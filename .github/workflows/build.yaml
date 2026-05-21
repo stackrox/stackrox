@@ -806,6 +806,7 @@ jobs:
     needs:
       - define-job-matrix
       - pre-build-go-binaries
+      - pre-build-oss-notice
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
