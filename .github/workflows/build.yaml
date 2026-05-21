@@ -1301,6 +1301,8 @@ jobs:
       # Needed for stackrox/central-login to create the JWT token.
       id-token: write
       security-events: write
+    env:
+      ARTIFACT_DIR: junit-reports/
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).scan_images_with_roxctl }}
@@ -1348,6 +1350,15 @@ jobs:
       #   with:
       #     category: ${{ matrix.image }}
       #     sarif_file: results.sarif
+
+      - name: Report junit failures in jira
+        uses: ./.github/actions/junit2jira
+        if: always()
+        with:
+          jira-user: ${{ secrets.JIRA_USER }}
+          jira-token: ${{ secrets.JIRA_TOKEN }}
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+          directory: 'junit-reports'
 
   slack-on-build-failure:
     env:
