@@ -1328,6 +1328,7 @@ jobs:
           central-token: ${{ env.ROX_API_TOKEN }}
 
       - name: Scan images for vulnerabilities
+        id: scan
         env:
           BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
           SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
@@ -1339,10 +1340,18 @@ jobs:
           fi
 
           registry="$(./scripts/ci/lib.sh registry_from_branding "${{ matrix.name }}")"
+          image_ref="${registry}/${{ matrix.image }}:${release_tag}"
 
           roxctl image scan --retries=10 --retry-delay=15 --force --severity=CRITICAL,IMPORTANT --output=sarif \
-            --image="${registry}/${{ matrix.image }}:${release_tag}" \
+            --image="${image_ref}" \
             | tee results.sarif
+
+          echo "image_ref=${image_ref}" >> "$GITHUB_OUTPUT"
+
+      - name: Convert SARIF to JUnit
+        if: always()
+        run: |
+          ./scripts/ci/sarif-to-junit.sh results.sarif "${{ steps.scan.outputs.image_ref }}"
 
       # TODO: re-enable roxctl scan results upload once quota issue has been resolved
       # - name: Upload roxctl scan results to GitHub Security tab
