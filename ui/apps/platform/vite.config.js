@@ -55,7 +55,11 @@ function getSslOptions() {
 function getSrcAliases() {
     const aliases = {};
 
-    fs.readdirSync(path.resolve(__dirname, 'src'), { withFileTypes: true }).forEach(({ name }) => {
+    const entries = fs.readdirSync(path.resolve(__dirname, 'src'), { withFileTypes: true });
+    // Sort entries for deterministic ordering across different filesystems
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+
+    entries.forEach(({ name }) => {
         if (name.startsWith('.')) {
             // avoid hidden directories, like `.DS_Store`
             return;

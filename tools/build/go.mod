@@ -2,7 +2,7 @@ module github.com/stackrox/stackrox/tools/build
 
 go 1.25.0
 
-require github.com/stackrox/ossls v0.0.0-20240813203729-5ad46ced9610
+require github.com/stackrox/ossls v0.0.0-20260506160723-18d175f4d37d
 
 require (
 	github.com/BurntSushi/toml v1.4.0 // indirect

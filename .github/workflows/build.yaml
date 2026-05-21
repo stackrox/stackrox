@@ -24,6 +24,11 @@ defaults:
     # See https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#defaultsrunshell
     shell: bash
 
+env:
+  # SOURCE_DATE_EPOCH for reproducible builds - fixed timestamp for all builds
+  # Jan 1, 2001 00:00:00 UTC
+  SOURCE_DATE_EPOCH: "978307200"
+
 jobs:
   define-job-matrix:
     outputs:
@@ -279,7 +284,7 @@ jobs:
         run: make cli
 
       - name: Bundle build to preserve permissions
-        run: tar -cvzf cli-build.tgz bin
+        run: tar --sort=name --mtime='@978307200' --owner=0 --group=0 --numeric-owner -czf cli-build.tgz bin
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
@@ -361,7 +366,7 @@ jobs:
           fi
 
       - name: Bundle the build to preserve permissions
-        run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
+        run: tar --sort=name --mtime='@978307200' --owner=0 --group=0 --numeric-owner -czf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
