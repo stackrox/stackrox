@@ -293,6 +293,7 @@ jobs:
             --config "baseUrl=https://localhost:8443,specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false,retries=0"
         env:
           CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
+          CYPRESS_ROX_FLATTEN_IMAGE_DATA: "true"
           CYPRESS_ORCHESTRATOR_FLAVOR: k8s
 
       - name: Resource report
@@ -599,6 +600,7 @@ jobs:
           --config "baseUrl=https://${API_ENDPOINT},specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false,retries=0"
       env:
         CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
+        CYPRESS_ROX_FLATTEN_IMAGE_DATA: "true"
         CYPRESS_ORCHESTRATOR_FLAVOR: k8s
         NODE_TLS_REJECT_UNAUTHORIZED: "0"
 
