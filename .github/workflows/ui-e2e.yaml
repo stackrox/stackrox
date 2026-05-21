@@ -511,21 +511,13 @@ jobs:
             done
             ;;
           *vulnerabilities*)
-            echo "Waiting for scanner integration + image CVEs..."
-            # Wait for scanner to register with Central
-            for _ in $(seq 1 60); do
-              scanners=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/v1/imageintegrations" \
-                | jq -r '[.integrations[]? | select(.type == "clairify")] | length // 0')
-              [ "${scanners:-0}" -gt 0 ] && echo "Scanner integration found" && break
-              sleep 5
-            done
-            # Trigger scan once scanner is ready
-            if [ "${scanners:-0}" -gt 0 ]; then
-              curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/v1/images/scan" \
-                -X POST -d '{"imageName":"docker.io/nginx:1.12","force":true}' || true
-            fi
+            echo "Waiting for scanner pod + image CVEs..."
+            kubectl -n stackrox wait --for=condition=ready pod -l app=scanner --timeout=5m
+            echo "Scanner pod ready"
+            # Trigger scan now that scanner is available
+            curl -sk -u "admin:${ADMIN_PASSWORD}" \
+              "https://${API_ENDPOINT}/v1/images/scan" \
+              -X POST -d '{"imageName":"docker.io/nginx:1.12","force":true}' || true
             # Wait for v2 image CVEs
             for _ in $(seq 1 120); do
               cves=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
