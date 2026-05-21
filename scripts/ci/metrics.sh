@@ -433,9 +433,7 @@ SELECT
   IF(LENGTH(trimmed_name) > 60, CONCAT(RPAD(trimmed_name, 57), "..."), trimmed_name) AS name,
   branch_group,
   consecutive_count,
-  FORMAT_TIMESTAMP("%Y-%m-%d", first_failure_at) as first_failure_date,
-  FORMAT_TIMESTAMP("%Y-%m-%d", last_failure_at) as last_failure_date,
-  TIMESTAMP_DIFF(last_failure_at, first_failure_at, DAY) as streak_duration_days
+  TIMESTAMP_DIFF(last_failure_at, first_failure_at, DAY) as duration_days
 FROM trimmed_names
 ORDER BY consecutive_count DESC, last_failure_at DESC
 LIMIT @limit
@@ -463,14 +461,14 @@ LIMIT @limit
             {"type": "section", "fields": [
                 {"type": "mrkdwn", "text": "*Job Name*"},
                 {"type": "mrkdwn", "text": "*Branch*"},
-                {"type": "mrkdwn", "text": "*Streak*"},
-                {"type": "mrkdwn", "text": "*Date Range*"}
+                {"type": "mrkdwn", "text": "*Failures*"},
+                {"type": "mrkdwn", "text": "*Duration*"}
             ]},
             (.[] | {"type": "section", "fields": [
                 {"type": "mrkdwn", "text": .name},
                 {"type": "plain_text", "text": .branch_group},
-                {"type": "plain_text", "text": "\(.consecutive_count) failures"},
-                {"type": "plain_text", "text": "\(.first_failure_date) -> \(.last_failure_date) (\(.streak_duration_days) days)"}
+                {"type": "plain_text", "text": "\(.consecutive_count)"},
+                {"type": "plain_text", "text": "\(.duration_days) days"}
             ]})]}'
     else
         body='{"blocks":[
