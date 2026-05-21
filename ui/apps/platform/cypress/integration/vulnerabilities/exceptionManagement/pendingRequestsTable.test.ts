@@ -91,9 +91,10 @@ describe('Exception Management Pending Requests Page', () => {
                 const requestNameLink = 'table td[data-label="Request name"]';
 
                 cy.get(requestNameLink)
+                    .first()
                     .invoke('text')
                     .then((requestName) => {
-                        cy.get(requestNameLink).click();
+                        cy.get(requestNameLink).first().click();
                         cy.get(`h1:contains("${requestName}")`).should('exist');
                     });
             });
@@ -236,7 +237,7 @@ describe('Exception Management Pending Requests Page', () => {
 
             visitPendingRequestsTab();
 
-            cy.get('table td[data-label="Request name"] a').then((element) => {
+            cy.get('table td[data-label="Request name"] a').first().then((element) => {
                 const requestName = element.text().trim();
                 typeAndEnterCustomSearchFilterValue('Exception', 'Request Name', requestName);
                 cy.get('table td[data-label="Request name"] a').should('exist');
