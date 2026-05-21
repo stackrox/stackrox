@@ -315,7 +315,13 @@ jobs:
       with:
         working-directory: ui/apps/platform
         install-command: npm ci --prefer-offline --fetch-timeout=60000 --no-audit --no-fund
-        command: npx cypress run --component --browser chrome --config video=false --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.js
+        component: true
+        browser: chrome
+        config: video=false
+        command: >-
+          npx cypress run --component --browser chrome --config video=false
+          --reporter mocha-multi-reporters
+          --reporter-options configFile=cypress/mocha.config.js
       env:
         TZ: UTC
         CYPRESS_COMPONENT_TEST: 'true'
