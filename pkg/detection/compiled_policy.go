@@ -24,7 +24,7 @@ type CompiledPolicy interface {
 	MatchAgainstDeploymentAndProcess(cacheReceptacle *booleanpolicy.CacheReceptacle, enhanced booleanpolicy.EnhancedDeployment, pi *storage.ProcessIndicator, processNotInBaseline bool) (booleanpolicy.Violations, error)
 	MatchAgainstDeployment(cacheReceptacle *booleanpolicy.CacheReceptacle, enhanced booleanpolicy.EnhancedDeployment) (booleanpolicy.Violations, error)
 	MatchAgainstImage(cacheReceptacle *booleanpolicy.CacheReceptacle, image *storage.Image) (booleanpolicy.Violations, error)
-	MatchAgainstKubeResourceAndEvent(cacheReceptacle *booleanpolicy.CacheReceptacle, kubeEvent *storage.KubernetesEvent, kubeResource interface{}) (booleanpolicy.Violations, error)
+	MatchAgainstKubeResourceAndEvent(cacheReceptacle *booleanpolicy.CacheReceptacle, kubeEvent *storage.KubernetesEvent, enhancedDeployment booleanpolicy.EnhancedDeployment) (booleanpolicy.Violations, error)
 	MatchAgainstAuditLogEvent(cacheReceptacle *booleanpolicy.CacheReceptacle, kubeEvent *storage.KubernetesEvent) (booleanpolicy.Violations, error)
 	MatchAgainstDeploymentAndNetworkFlow(cacheReceptable *booleanpolicy.CacheReceptacle, enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) (booleanpolicy.Violations, error)
 	MatchAgainstNodeAndFileAccess(cacheReceptacle *booleanpolicy.CacheReceptacle, node *storage.Node, access *storage.FileAccess) (booleanpolicy.Violations, error)
@@ -321,7 +321,7 @@ func (cp *compiledPolicy) MatchAgainstAuditLogEvent(
 func (cp *compiledPolicy) MatchAgainstKubeResourceAndEvent(
 	cache *booleanpolicy.CacheReceptacle,
 	kubeEvent *storage.KubernetesEvent,
-	kubeResource interface{},
+	enhancedDeployment booleanpolicy.EnhancedDeployment,
 ) (booleanpolicy.Violations, error) {
 	if !cp.hasKubeEventsSection {
 		return booleanpolicy.Violations{}, nil
@@ -330,7 +330,7 @@ func (cp *compiledPolicy) MatchAgainstKubeResourceAndEvent(
 	if cp.kubeEventsMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %s against kubernetes event", cp.Policy().GetName())
 	}
-	return cp.kubeEventsMatcher.MatchKubeEvent(cache, kubeEvent, kubeResource)
+	return cp.kubeEventsMatcher.MatchKubeEvent(cache, kubeEvent, enhancedDeployment)
 }
 
 func (cp *compiledPolicy) MatchAgainstDeploymentAndProcess(

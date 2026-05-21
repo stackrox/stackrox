@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/rox/pkg/booleanpolicy/filter"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/logging"
@@ -45,6 +46,10 @@ func (p *processMatcherImpl) checkWhetherProcessMatches(cache *CacheReceptacle, 
 }
 
 func (p *processMatcherImpl) MatchDeploymentWithProcess(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, indicator *storage.ProcessIndicator, processNotInBaseline bool) (Violations, error) {
+	if hasActiveFilters(p.filters) {
+		cache = nil
+		enhancedDeployment = applyFilters(enhancedDeployment, p.filters)
+	}
 	if cache == nil || cache.augmentedObj == nil {
 		processMatched, err := p.checkWhetherProcessMatches(cache, indicator, processNotInBaseline)
 		if err != nil || !processMatched {
@@ -66,7 +71,11 @@ type kubeEventMatcherImpl struct {
 	matcherImpl
 }
 
-func (m *kubeEventMatcherImpl) MatchKubeEvent(cache *CacheReceptacle, event *storage.KubernetesEvent, kubeResource interface{}) (Violations, error) {
+func (m *kubeEventMatcherImpl) MatchKubeEvent(cache *CacheReceptacle, event *storage.KubernetesEvent, enhancedDeployment EnhancedDeployment) (Violations, error) {
+	if hasActiveFilters(m.filters) {
+		cache = nil
+		enhancedDeployment = applyFilters(enhancedDeployment, m.filters)
+	}
 	if cache == nil || cache.augmentedObj == nil {
 		if matched, err := m.checkWhetherKubeEventMatches(cache, event); err != nil || !matched {
 			return Violations{}, err
@@ -74,7 +83,11 @@ func (m *kubeEventMatcherImpl) MatchKubeEvent(cache *CacheReceptacle, event *sto
 	}
 
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructKubeResourceWithEvent(kubeResource, event)
+		augmentedDeploy, err := augmentedobjs.ConstructDeployment(enhancedDeployment.Deployment, enhancedDeployment.Images, enhancedDeployment.NetworkPoliciesApplied)
+		if err != nil {
+			return nil, err
+		}
+		return augmentedobjs.ConstructKubeResourceWithEvent(augmentedDeploy, event)
 	}, nil, event, nil, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
@@ -163,6 +176,10 @@ func (m *networkFlowMatcherImpl) MatchDeploymentWithNetworkFlowInfo(
 	enhancedDeployment EnhancedDeployment,
 	flow *augmentedobjs.NetworkFlowDetails,
 ) (Violations, error) {
+	if hasActiveFilters(m.filters) {
+		cache = nil
+		enhancedDeployment = applyFilters(enhancedDeployment, m.filters)
+	}
 	if cache == nil || cache.augmentedObj == nil {
 		processMatched, err := m.checkWhetherFlowMatches(cache, flow)
 		if err != nil || !processMatched {
@@ -223,6 +240,10 @@ func (m *fileAccessMatcherImpl) MatchDeploymentWithFileAccess(
 	enhancedDeployment EnhancedDeployment,
 	fileAccess *storage.FileAccess,
 ) (Violations, error) {
+	if hasActiveFilters(m.filters) {
+		cache = nil
+		enhancedDeployment = applyFilters(enhancedDeployment, m.filters)
+	}
 	if cache == nil || cache.augmentedObj == nil {
 		matched, err := m.checkFileAccessMatches(cache, fileAccess)
 		if err != nil || !matched {
@@ -242,6 +263,30 @@ func (m *fileAccessMatcherImpl) MatchDeploymentWithFileAccess(
 
 type matcherImpl struct {
 	evaluators []sectionAndEvaluator
+	filters    []filter.EvaluationFilter
+}
+
+func hasActiveFilters(filters []filter.EvaluationFilter) bool {
+	for _, f := range filters {
+		if f.IsNonDefault() {
+			return true
+		}
+	}
+	return false
+}
+
+func applyFilters(ed EnhancedDeployment, filters []filter.EvaluationFilter) EnhancedDeployment {
+	dep, imgs := ed.Deployment, ed.Images
+	for _, f := range filters {
+		if f.IsNonDefault() {
+			dep, imgs = f.Apply(dep, imgs)
+		}
+	}
+	return EnhancedDeployment{
+		Deployment:             dep,
+		Images:                 imgs,
+		NetworkPoliciesApplied: ed.NetworkPoliciesApplied,
+	}
 }
 
 func matchWithEvaluator(sectionAndEval sectionAndEvaluator, obj *pathutil.AugmentedObj) (*evaluator.Result, error) {
@@ -253,6 +298,13 @@ func matchWithEvaluator(sectionAndEval sectionAndEvaluator, obj *pathutil.Augmen
 }
 
 func (m *matcherImpl) MatchImage(cache *CacheReceptacle, image *storage.Image) (Violations, error) {
+	if hasActiveFilters(m.filters) {
+		cache = nil
+		ed := applyFilters(EnhancedDeployment{Images: []*storage.Image{image}}, m.filters)
+		if len(ed.Images) > 0 {
+			image = ed.Images[0]
+		}
+	}
 	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructImage(image, image.GetName().GetFullName())
 	}, nil, nil, nil, nil, nil)
@@ -351,6 +403,10 @@ func (m *matcherImpl) getViolations(
 
 // MatchDeployment runs detection against the deployment and images.
 func (m *matcherImpl) MatchDeployment(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment) (Violations, error) {
+	if hasActiveFilters(m.filters) {
+		cache = nil
+		enhancedDeployment = applyFilters(enhancedDeployment, m.filters)
+	}
 	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructDeployment(enhancedDeployment.Deployment, enhancedDeployment.Images, enhancedDeployment.NetworkPoliciesApplied)
 	}, nil, nil, nil, enhancedDeployment.NetworkPoliciesApplied, nil)
