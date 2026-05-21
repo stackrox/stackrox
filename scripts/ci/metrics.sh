@@ -345,13 +345,7 @@ LIMIT
     fi
 
     echo "Posting data to slack"
-    local webhook_url
-    if [[ "${is_test}" == "true" ]]; then
-        webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
-    else
-        webhook_url="${SLACK_ENG_DISCUSS_WEBHOOK}"
-    fi
-    jq "$body" "${data_file}" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+    _post_to_slack "$body" "${data_file}" "$(_get_slack_webhook_url "${is_test}")"
     rm -f "${data_file}"
     echo "::endgroup::"
 }
@@ -511,13 +505,7 @@ LIMIT @limit
     fi
 
     echo "Posting data to slack"
-    local webhook_url
-    if [[ "${is_test}" == "true" ]]; then
-        webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
-    else
-        webhook_url="${SLACK_ENG_DISCUSS_WEBHOOK}"
-    fi
-    jq "$body" "${data_file}" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+    _post_to_slack "$body" "${data_file}" "$(_get_slack_webhook_url "${is_test}")"
     rm -f "${data_file}"
     echo "::endgroup::"
 }
@@ -530,6 +518,24 @@ _TESTS_TABLE_NAME="acs-san-stackroxci:ci_metrics.stackrox_tests"
 _TESTS_STORAGE_DIR="test-metrics"
 
 _CENTRAL_TABLE_NAME="acs-san-stackroxci:ci_metrics.stackrox_central_metrics"
+
+# Helper to get the appropriate Slack webhook URL based on test mode
+_get_slack_webhook_url() {
+    local is_test="${1:-false}"
+    if [[ "${is_test}" == "true" ]]; then
+        echo "${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
+    else
+        echo "${SLACK_ENG_DISCUSS_WEBHOOK}"
+    fi
+}
+
+# Helper to post JSON data to Slack via webhook
+_post_to_slack() {
+    local body="$1"
+    local data_file="$2"
+    local webhook_url="$3"
+    jq "$body" "${data_file}" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+}
 _CENTRAL_STORAGE_DIR="central-metrics"
 
 _IMAGE_PREFETCHES_TABLE_NAME="acs-san-stackroxci:ci_metrics.stackrox_image_prefetches"
