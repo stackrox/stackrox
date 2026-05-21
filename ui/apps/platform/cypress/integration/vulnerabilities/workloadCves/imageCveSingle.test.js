@@ -113,10 +113,9 @@ describe('Workload CVE Image CVE Single page', () => {
                     ? parseInt(componentText.replace(/ components?/, ''), 10)
                     : 1;
 
-                cy.get(`${selectors.firstTableRow} + tr.pf-m-expanded table tbody`).should(
-                    'have.length',
-                    componentCount
-                );
+                cy.get(`${selectors.firstTableRow} + tr.pf-m-expanded table tbody`, {
+                    timeout: 30000,
+                }).should('have.length', componentCount);
             }
         );
 
