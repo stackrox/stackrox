@@ -3,9 +3,6 @@ on:
   pull_request:
     paths:
       - '.github/workflows/ci-failures-report.yml'
-      - 'scripts/ci/metrics.sh'
-      - 'scripts/ci/lib.sh'
-      - 'scripts/ci/gcp.sh'
   workflow_dispatch:
     inputs:
       test:
