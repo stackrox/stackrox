@@ -98,6 +98,8 @@ import (
 	groupService "github.com/stackrox/rox/central/group/service"
 	"github.com/stackrox/rox/central/grpc/metrics"
 	grpcPreferences "github.com/stackrox/rox/central/grpcpreference/service"
+	"github.com/stackrox/rox/central/ha/leases"
+	"github.com/stackrox/rox/central/ha/propagation"
 	"github.com/stackrox/rox/central/helmcharts"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
@@ -322,6 +324,11 @@ func main() {
 		}
 	}
 
+	// Initialize HA components when HA mode is enabled
+	if env.HAEnabled.BooleanSetting() {
+		initializeHA()
+	}
+
 	features.LogFeatureFlags()
 
 	go startGRPCServer()
@@ -373,6 +380,37 @@ func ensureDB(ctx context.Context) {
 	err := version.Ensure(versionStore)
 	if err != nil {
 		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
+	}
+}
+
+func initializeHA() {
+	haCtx := sac.WithAllAccess(context.Background())
+	db := globaldb.GetPostgres()
+
+	// Initialize lease store
+	leaseStore := leases.New(db)
+	if err := leaseStore.Initialize(haCtx); err != nil {
+		log.Errorf("Failed to initialize lease store: %v", err)
+	} else {
+		log.Info("HA: Sensor connection lease store initialized")
+	}
+
+	// Initialize version store and start poller
+	versionStore := propagation.NewVersionStore(db)
+	if err := versionStore.Initialize(haCtx); err != nil {
+		log.Errorf("Failed to initialize version store: %v", err)
+	} else {
+		poller := propagation.NewPoller(
+			func() (int64, error) {
+				return versionStore.GetVersion(sac.WithAllAccess(context.Background()))
+			},
+			func(old, newV int64) {
+				log.Infof("HA: Policy version changed: %d -> %d, invalidating caches", old, newV)
+			},
+			time.Duration(env.PolicyPollIntervalSecs.IntegerSetting())*time.Second,
+		)
+		poller.Start()
+		log.Infof("HA: Policy version poller started (interval: %ds)", env.PolicyPollIntervalSecs.IntegerSetting())
 	}
 }
 
