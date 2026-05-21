@@ -33,22 +33,26 @@ want to keep the modified deployment running for further inspection.
 
 ## Phase 0: Prerequisites Check
 
-Verify these tools are available. Stop early with clear install instructions if any are missing.
+Check which tools are available:
 
 ```bash
-command -v go      || echo "MISSING: go — install from https://go.dev/dl/"
-command -v crane   || echo "MISSING: crane — run: go install github.com/google/go-containerregistry/cmd/crane@latest"
-command -v kubectl || echo "MISSING: kubectl"
-command -v curl    || echo "MISSING: curl"
-command -v jq      || echo "MISSING: jq"
+command -v go      && echo "OK: go"      || echo "MISSING: go"
+command -v crane   && echo "OK: crane"   || echo "MISSING: crane"
+command -v docker  && echo "OK: docker"  || echo "MISSING: docker"
+command -v oc      && echo "OK: oc"      || echo "MISSING: oc"
+command -v kubectl && echo "OK: kubectl" || echo "MISSING: kubectl"
+command -v curl    && echo "OK: curl"    || echo "MISSING: curl"
+command -v jq      && echo "OK: jq"      || echo "MISSING: jq"
 ```
 
-Also check `oc` availability — if present, prefer it over `kubectl` throughout.
-Remember which command to use (`oc` or `kubectl`) and use it in all subsequent Bash calls.
-Do NOT use shell variables like `oc` across separate Bash tool invocations — Claude Code
-does not share shell state between calls. Instead, hardcode the chosen command in each call.
+**Required**: `go`, `curl`, `jq` — stop with install instructions if any are missing.
 
-Test that `crane` can reach ttl.sh:
+**Cluster access**: need at least one of `oc` or `kubectl`. If both are available, prefer
+`oc`. Stop if neither is available. Use the chosen command literally in every subsequent
+Bash call — do not use shell variables across calls (Claude Code does not share shell state).
+
+**Image push**: need at least one of `crane` or `docker`. Stop if neither is available.
+If `crane` is available, test connectivity to ttl.sh:
 ```bash
 crane manifest ttl.sh/test:1h 2>&1 || true
 ```
@@ -59,9 +63,7 @@ Go's `crypto/tls` cannot validate certificates through it. Retry with `--insecur
 crane manifest --insecure ttl.sh/test:1h 2>&1 || true
 ```
 If `--insecure` works, use `--insecure` on all subsequent `crane` commands throughout.
-
-If crane cannot connect even with `--insecure`, check whether `docker` is available as a
-fallback. If neither works, stop and inform the user.
+If crane cannot connect even with `--insecure`, fall back to `docker`.
 
 **Note on sandbox**: Both `crane` and Docker commands may require the user to approve
 sandbox override prompts or may need `--insecure` flags due to the sandbox proxy.
