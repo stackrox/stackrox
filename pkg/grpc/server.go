@@ -155,6 +155,9 @@ type Config struct {
 	// MaxConnectionAge is the maximum amount of time a connection may exist before it will be closed.
 	// Default is +infinity.
 	MaxConnectionAge time.Duration
+	// MaxConnectionAgeGrace is the grace period after MaxConnectionAge before forcibly closing connections.
+	// Default is +infinity.
+	MaxConnectionAgeGrace time.Duration
 	// Subsystem is used to enrich metrics with information about the component that runs this API.
 	Subsystem pkgMetrics.Subsystem
 }
@@ -459,8 +462,9 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 		grpc.ChainUnaryInterceptor(a.unaryInterceptors()...),
 		grpc.MaxRecvMsgSize(env.MaxMsgSizeSetting.IntegerSetting()),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
-			Time:             40 * time.Second,
-			MaxConnectionAge: a.config.MaxConnectionAge,
+			Time:                  40 * time.Second,
+			MaxConnectionAge:      a.config.MaxConnectionAge,
+			MaxConnectionAgeGrace: a.config.MaxConnectionAgeGrace,
 		}),
 		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
 			MinTime:             5 * time.Second,

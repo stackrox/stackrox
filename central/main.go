@@ -632,6 +632,12 @@ func startGRPCServer() {
 		Subsystem:          pkgMetrics.CentralSubsystem,
 	}
 
+	// In HA mode, enable connection age limit to rebalance sensor connections across Central replicas.
+	if env.HAEnabled.BooleanSetting() {
+		config.MaxConnectionAge = time.Duration(env.MaxConnectionAgeMins.IntegerSetting()) * time.Minute
+		config.MaxConnectionAgeGrace = 30 * time.Second
+	}
+
 	if devbuild.IsEnabled() {
 		config.UnaryInterceptors = append(config.UnaryInterceptors,
 			errors.LogInternalErrorInterceptor,
