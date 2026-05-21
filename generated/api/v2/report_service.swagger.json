@@ -1265,7 +1265,8 @@
           "$ref": "#/definitions/v2EntityScope",
           "title": "scope for deployment, namespace, cluster"
         }
-      }
+      },
+      "description": "Reports are transitioning to a modernized architecture in a future release.\nTo prepare for future updates, we recommend transitioning your collections-based reports to the “Entity Scope” method.\nWhen the “Collection scope” option is removed in a future release, existing reports will not automatically convert to the “Entity scope” method."
     },
     "v2RuleValue": {
       "type": "object",
