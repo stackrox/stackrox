@@ -190,6 +190,13 @@ allowUnsupportedHelmVersion: null # bool
 enableOpenShiftMonitoring: null # bool
 configAsCode:
   enabled: null # bool
+ha:
+  enabled: null # bool
+  replicas: null # int
+  pgbouncer:
+    enabled: null # bool
+  reports:
+    enabled: null # bool
 monitoring:
   openshift:
     enabled: null # bool

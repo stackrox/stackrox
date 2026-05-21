@@ -317,6 +317,14 @@ defaults:
   configAsCode:
     enabled: true
 
+  ha:
+    enabled: false
+    replicas: 1
+    pgbouncer:
+      enabled: false
+    reports:
+      enabled: true
+
   network:
     enableNetworkPolicies: true
 

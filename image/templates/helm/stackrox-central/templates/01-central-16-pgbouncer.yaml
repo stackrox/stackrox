@@ -1,0 +1,154 @@
+{{- include "srox.init" . -}}
+{{- if ._rox.ha.pgbouncer.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgbouncer-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: pgbouncer
+    {{- include "srox.labels" (list . "configmap" "pgbouncer-config") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "configmap" "pgbouncer-config") | nindent 4 }}
+data:
+  pgbouncer.ini: |
+    [databases]
+    * = host=central-db.{{ .Release.Namespace }}.svc port=5432
+
+    [pgbouncer]
+    listen_addr = 0.0.0.0
+    listen_port = 5432
+    auth_type = cert
+    auth_file = /etc/pgbouncer/userlist.txt
+    pool_mode = transaction
+    max_prepared_statements = 200
+    default_pool_size = 40
+    min_pool_size = 10
+    max_client_conn = 200
+    server_tls_sslmode = verify-ca
+    server_tls_ca_file = /etc/pgbouncer/tls/ca.pem
+    server_tls_cert_file = /etc/pgbouncer/tls/cert.pem
+    server_tls_key_file = /etc/pgbouncer/tls/key.pem
+    client_tls_sslmode = require
+    client_tls_ca_file = /etc/pgbouncer/tls/ca.pem
+    client_tls_cert_file = /etc/pgbouncer/tls/cert.pem
+    client_tls_key_file = /etc/pgbouncer/tls/key.pem
+    admin_users = postgres
+    stats_users = postgres
+    ignore_startup_parameters = extra_float_digits,options
+    log_connections = 0
+    log_disconnections = 0
+  userlist.txt: |
+    "postgres" ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: pgbouncer
+    {{- include "srox.labels" (list . "deployment" "pgbouncer") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "deployment" "pgbouncer") | nindent 4 }}
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pgbouncer
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: pgbouncer
+        {{- include "srox.podLabels" (list . "deployment" "pgbouncer") | nindent 8 }}
+      annotations:
+        {{- include "srox.podAnnotations" (list . "deployment" "pgbouncer") | nindent 8 }}
+    spec:
+      {{- if not (eq ._rox.env.openshift 4) }}
+      securityContext:
+        fsGroup: 4000
+        runAsUser: 4000
+      {{- end }}
+      containers:
+      - name: pgbouncer
+        image: "docker.io/bitnami/pgbouncer:1.25.1"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: pgbouncer
+          containerPort: 5432
+          protocol: TCP
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+        readinessProbe:
+          tcpSocket:
+            port: 5432
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 5432
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: pgbouncer-config
+          mountPath: /etc/pgbouncer/pgbouncer.ini
+          subPath: pgbouncer.ini
+          readOnly: true
+        - name: pgbouncer-config
+          mountPath: /etc/pgbouncer/userlist.txt
+          subPath: userlist.txt
+          readOnly: true
+        - name: central-db-tls
+          mountPath: /etc/pgbouncer/tls
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: pgbouncer-config
+        configMap:
+          name: pgbouncer-config
+      - name: central-db-tls
+        secret:
+          secretName: central-db-tls
+          defaultMode: 0440
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: pgbouncer
+    {{- include "srox.labels" (list . "service" "pgbouncer") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "service" "pgbouncer") | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+  - name: pgbouncer
+    port: 5432
+    targetPort: 5432
+    protocol: TCP
+  selector:
+    app: pgbouncer
+{{- end }}

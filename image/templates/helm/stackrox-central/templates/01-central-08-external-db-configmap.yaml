@@ -17,7 +17,11 @@ data:
       {{- else }}
       external: false
       source: >
+        {{- if ._rox.ha.pgbouncer.enabled }}
+        host=pgbouncer.{{ .Release.Namespace }}.svc
+        {{- else }}
         host=central-db.{{ .Release.Namespace }}.svc
+        {{- end }}
         port=5432
         user=postgres
         sslmode={{- if eq .Release.Namespace "stackrox" }}verify-full{{- else }}verify-ca{{- end }}
