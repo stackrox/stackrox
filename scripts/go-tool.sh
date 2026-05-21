@@ -84,11 +84,13 @@ function invoke_go() {
 
   args+=(-ldflags="${cgo_ldflags[*]}")
 
-  local env_vars=()
-  [[ "$cgo_enabled" != "${CGO_ENABLED:-0}" ]] && env_vars+=(CGO_ENABLED="$cgo_enabled")
-  [[ -n "$cc_compiler" ]] && env_vars+=(CC="$cc_compiler")
-
-  "${env_vars[@]}" go "$tool" "${args[@]}" "$@"
+  if [[ -n "$cc_compiler" ]]; then
+    CGO_ENABLED="$cgo_enabled" CC="$cc_compiler" go "$tool" "${args[@]}" "$@"
+  elif [[ "$cgo_enabled" != "${CGO_ENABLED:-0}" ]]; then
+    CGO_ENABLED="$cgo_enabled" go "$tool" "${args[@]}" "$@"
+  else
+    go "$tool" "${args[@]}" "$@"
+  fi
 }
 
 function go_build() (
