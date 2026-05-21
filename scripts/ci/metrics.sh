@@ -356,20 +356,20 @@ WITH ordered_jobs AS (
     name,
     started_at,
     CASE
-      WHEN resolved_branch LIKE "%.x-nightly-%" THEN REGEXP_EXTRACT(resolved_branch, r"^(.+\.x-nightly)-\d+$")
-      ELSE resolved_branch
+      WHEN branch LIKE "%.x-nightly-%" THEN REGEXP_EXTRACT(branch, r"^(.+\.x-nightly)-\d+$")
+      ELSE branch
     END as branch_group,
     CASE
-      WHEN is_success = FALSE THEN "FAILED"
-      WHEN is_success = TRUE THEN "SUCCESS"
+      WHEN outcome IN ("failed", "failure", "Failed") THEN "FAILED"
+      WHEN outcome IN ("passed", "success", "Succeeded") THEN "SUCCESS"
       ELSE "OTHER"
     END as normalized_outcome,
     ROW_NUMBER() OVER (PARTITION BY name ORDER BY started_at) as run_number
-  FROM `acs-san-stackroxci.ci_metrics.stackrox_jobs__correlated`
-  WHERE resolved_outcome IS NOT NULL
+  FROM `acs-san-stackroxci.ci_metrics.stackrox_jobs`
+  WHERE outcome IS NOT NULL
     AND stopped_at IS NOT NULL
     AND repo = "stackrox/stackrox"
-    AND is_significant_branch = TRUE
+    AND (branch LIKE "%.x-nightly-%" OR branch = "nightlies" OR branch = "master")
     AND started_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)
 ),
 jobs_with_prev AS (
