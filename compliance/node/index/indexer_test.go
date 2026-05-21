@@ -266,19 +266,39 @@ func (s *nodeIndexerSuite) TestExtractHostname() {
 
 func (s *nodeIndexerSuite) TestIndexerE2E() {
 	server := s.createTestServer(true)
-	cfg := DefaultNodeIndexerConfig()
-	cfg.HostPath = "testdata"
-	cfg.Repo2CPEMappingURL = server.URL
-	cfg.PackageDBFilter = rhcosPackageDB
-	indexer := NewNodeIndexer(cfg)
 
-	report, err := indexer.IndexNode(context.Background())
-	s.NoError(err)
+	s.Run("override Repo2CPEMappingURL", func() {
+		cfg := DefaultNodeIndexerConfig()
+		cfg.HostPath = "testdata"
+		cfg.Repo2CPEMappingURL = server.URL
+		cfg.PackageDBFilter = rhcosPackageDB
 
-	s.NotNil(report)
-	s.True(report.GetSuccess())
-	s.Len(report.GetContents().GetPackages(), 106, "Expected number of installed packages differs")
-	s.Len(report.GetContents().GetRepositories(), 2, "Expected number of discovered repositories differs")
+		report, err := NewNodeIndexer(cfg).IndexNode(context.Background())
+		s.NoError(err)
+		s.NotNil(report)
+		s.True(report.GetSuccess())
+		s.Len(report.GetContents().GetPackages(), 106)
+		s.Len(report.GetContents().GetRepositories(), 2)
+	})
+
+	s.Run("explicit ROX_NODE_INDEX_MAPPING_URL", func() {
+		mappingURL := server.URL + "/scanner/definitions?file=repo2cpe"
+		s.T().Setenv("ROX_NODE_INDEX_MAPPING_URL", mappingURL)
+		s.T().Setenv("ROX_ADVERTISED_ENDPOINT", "ignored.example.svc:9999")
+
+		cfg := DefaultNodeIndexerConfig()
+		s.Equal(buildMappingURL(), cfg.Repo2CPEMappingURL)
+		s.Nil(cfg.Client)
+		cfg.HostPath = "testdata"
+		cfg.PackageDBFilter = rhcosPackageDB
+
+		report, err := NewNodeIndexer(cfg).IndexNode(context.Background())
+		s.NoError(err)
+		s.NotNil(report)
+		s.True(report.GetSuccess())
+		s.Len(report.GetContents().GetPackages(), 106)
+		s.Len(report.GetContents().GetRepositories(), 2)
+	})
 }
 
 func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
