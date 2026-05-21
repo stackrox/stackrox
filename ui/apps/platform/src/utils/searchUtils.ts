@@ -159,7 +159,7 @@ export function getSearchFilterFromSearchString(searchString: string): SearchFil
         }
     });
 
-    return searchFilter;
+    return removeRegexSearchModifiers(searchFilter);
 }
 
 export function getUrlQueryStringForSearchFilter(
@@ -461,12 +461,10 @@ export function isQuotedString(value: string): boolean {
 }
 
 /**
- * Wraps a string in double quotes, escaping any internal double quotes with backslashes.
- * Used to indicate exact-match search values from autocomplete selections.
+ * Wraps a string in double quotes to indicate exact-match search values.
  */
 export function wrapInQuotes(value: string): string {
-    const escapedValue = value.replace(/"/g, '\\"');
-    return `"${escapedValue}"`;
+    return `"${value}"`;
 }
 
 /**
@@ -520,4 +518,70 @@ export function applyRegexSearchModifiers(searchFilter: SearchFilter): SearchFil
     });
 
     return regexSearchFilter;
+}
+
+function stripRegexPrefix(val: string): string {
+    if (isQuotedString(val)) {
+        return val;
+    }
+    return val.startsWith('r/') ? val.slice(2) : val;
+}
+
+// Strips formatting applied by formatPart in formatKeyValue: r/X→X, "X"→X, r/.*→''
+function unwrapLabelPart(part: string): string {
+    if (part === 'r/.*') {
+        return '';
+    }
+    return isQuotedString(part) ? part.slice(1, -1) : stripRegexPrefix(part);
+}
+
+// Inverts formatKeyValue: re-merges split label key=value pairs.
+// formatKeyValue produces X=r/.* + r/.*=X pairs for values without '=';
+// this collapses them back and unwraps the regex/exact formatting from each part.
+function reverseLabelValues(values: string[]): string[] {
+    const valueSet = new Set(values);
+
+    return values.flatMap((val) => {
+        const eqIdx = val.indexOf('=');
+        if (eqIdx === -1) {
+            return [stripRegexPrefix(val)];
+        }
+
+        const keyPart = val.slice(0, eqIdx);
+        const valPart = val.slice(eqIdx + 1);
+
+        // Drop complement (r/.*=X) when its primary (X=r/.*) exists
+        if (keyPart === 'r/.*' && valPart !== 'r/.*' && valueSet.has(`${valPart}=r/.*`)) {
+            return [];
+        }
+
+        // Collapse no-= pair primary (X=r/.*) back to just X
+        if (valPart === 'r/.*' && valueSet.has(`r/.*=${keyPart}`)) {
+            return [isQuotedString(keyPart) ? keyPart : stripRegexPrefix(keyPart)];
+        }
+
+        // Unwrap key=value: strip r/ or quotes from each side, rejoin
+        const isExact = isQuotedString(keyPart) || isQuotedString(valPart);
+        const joined = `${unwrapLabelPart(keyPart)}=${unwrapLabelPart(valPart)}`;
+        return [isExact ? wrapInQuotes(joined) : joined];
+    });
+}
+
+/**
+ * Reverses `applyRegexSearchModifiers`: strips `r/` prefixes and re-merges
+ * split label key=value pairs back into the SearchFilter format used by the UI.
+ */
+export function removeRegexSearchModifiers(searchFilter: SearchFilter): SearchFilter {
+    const cleanSearchFilter = cloneDeep(searchFilter);
+
+    Object.entries(cleanSearchFilter).forEach(([key, value]) => {
+        if (regexSearchOptions.some((option) => option.toLowerCase() === key.toLowerCase())) {
+            const values = searchValueAsArray(value);
+            cleanSearchFilter[key] = isKeyValueSearchTerm(key)
+                ? reverseLabelValues(values)
+                : values.map(stripRegexPrefix);
+        }
+    });
+
+    return cleanSearchFilter;
 }

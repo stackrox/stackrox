@@ -144,7 +144,7 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 	// Process scan request, config may be updated in the event of errors from sensor.
 	scanConfig, err := s.manager.ProcessScanRequest(ctx, scanConfig, clusterIDs)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process scan config. %v", err)
+		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
 	return convertStorageScanConfigToV2(ctx, scanConfig, s.scanConfigDS)
@@ -169,7 +169,7 @@ func (s *serviceImpl) UpdateComplianceScanConfiguration(ctx context.Context, req
 	// Update scan request, config may be updated in the event of errors from sensor.
 	_, err := s.manager.UpdateScanRequest(ctx, scanConfig, clusterIDs)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process scan config. %v", err)
+		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
 	return &v2.Empty{}, nil
@@ -212,7 +212,7 @@ func (s *serviceImpl) DeleteComplianceScanConfiguration(ctx context.Context, req
 
 	err = s.manager.DeleteScan(ctx, req.GetId())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to delete scan config: %v", err)
+		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
 	return &v2.Empty{}, nil
