@@ -71,20 +71,15 @@ function invoke_go() {
   if [[ "$RACE" == "true" ]]; then
     cgo_enabled=1
     args+=("-race")
-  fi
 
-  # Set up musl-gcc for static linking if CGO is enabled
-  # This avoids GLIBC version mismatches between builder and runtime
-  if [[ "${cgo_enabled}" != 0 ]]; then
-    echo >&2 "CGO_ENABLED is not 0. Compiling with -linkmode=external"
-
-    # Use musl-gcc if available (ubuntu-latest), fall back to default (apollo-ci)
+    # Set up musl-gcc for static linking with race detector
+    # This avoids GLIBC version mismatches between builder and runtime
     if command -v musl-gcc &> /dev/null; then
       echo >&2 "Using musl-gcc for static linking to avoid GLIBC dependencies"
       cc_compiler="musl-gcc"
       cgo_ldflags+=('-linkmode=external' '-extldflags=-static')
     else
-      echo >&2 "musl-gcc not found, using default linker (tests in container)"
+      echo >&2 "musl-gcc not found, using default linker"
       cgo_ldflags+=('-linkmode=external')
     fi
   fi
