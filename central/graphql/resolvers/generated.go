@@ -568,6 +568,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ContainerType(0)))
 	utils.Must(builder.AddType("CosignSignature", []string{
+		"certChainPem: String!",
+		"certPem: String!",
+		"rawSignature: String!",
+		"rekorBundle: String!",
+		"signaturePayload: String!",
 	}))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
@@ -661,6 +666,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 	}))
 	utils.Must(builder.AddType("FalsePositiveRequest", []string{
+		"unused: String!",
 	}))
 	utils.Must(builder.AddInput("FalsePositiveVulnRequest", []string{
 		"comment: String",
@@ -1568,6 +1574,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"VulnerabilityRequest_Scope_Global",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Global", []string{
+		"unused: String!",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Image", []string{
 		"registry: String!",
@@ -7014,29 +7021,29 @@ func (resolver *Resolver) wrapCosignSignaturesWithContext(ctx context.Context, v
 	return output, nil
 }
 
-func (resolver *cosignSignatureResolver) CertChainPem(ctx context.Context) []byte {
+func (resolver *cosignSignatureResolver) CertChainPem(ctx context.Context) string {
 	value := resolver.data.GetCertChainPem()
-	return value
+	return string(value)
 }
 
-func (resolver *cosignSignatureResolver) CertPem(ctx context.Context) []byte {
+func (resolver *cosignSignatureResolver) CertPem(ctx context.Context) string {
 	value := resolver.data.GetCertPem()
-	return value
+	return string(value)
 }
 
-func (resolver *cosignSignatureResolver) RawSignature(ctx context.Context) []byte {
+func (resolver *cosignSignatureResolver) RawSignature(ctx context.Context) string {
 	value := resolver.data.GetRawSignature()
-	return value
+	return string(value)
 }
 
-func (resolver *cosignSignatureResolver) RekorBundle(ctx context.Context) []byte {
+func (resolver *cosignSignatureResolver) RekorBundle(ctx context.Context) string {
 	value := resolver.data.GetRekorBundle()
-	return value
+	return string(value)
 }
 
-func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) []byte {
+func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) string {
 	value := resolver.data.GetSignaturePayload()
-	return value
+	return string(value)
 }
 
 type dataSourceResolver struct {
@@ -8011,6 +8018,10 @@ func (resolver *Resolver) wrapFalsePositiveRequestsWithContext(ctx context.Conte
 		output[i] = &falsePositiveRequestResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *falsePositiveRequestResolver) Unused(ctx context.Context) string {
+	return ""
 }
 
 type fileAccessResolver struct {
@@ -16803,6 +16814,10 @@ func (resolver *Resolver) wrapVulnerabilityRequest_Scope_GlobalsWithContext(ctx 
 		output[i] = &vulnerabilityRequest_Scope_GlobalResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *vulnerabilityRequest_Scope_GlobalResolver) Unused(ctx context.Context) string {
+	return ""
 }
 
 type vulnerabilityRequest_Scope_ImageResolver struct {
