@@ -48,12 +48,13 @@ Remember which command to use (`oc` or `kubectl`) and use it in all subsequent B
 Do NOT use shell variables like `$ORCH_CMD` across separate Bash tool invocations — Claude Code
 does not share shell state between calls. Instead, hardcode the chosen command in each call.
 
-Test that `crane` can reach ttl.sh (corporate proxies/VPNs can block it):
+Test that `crane` can reach ttl.sh:
 ```bash
 crane manifest ttl.sh/test:1h 2>&1 || true
 ```
-This should return a valid JSON manifest. If it fails with TLS/x509 errors, retry with
-`--insecure`:
+This should return a valid JSON manifest. If it fails with TLS/x509 errors (e.g.,
+`x509: OSStatus -26276`), this is caused by Claude Code's sandbox network proxy —
+Go's `crypto/tls` cannot validate certificates through it. Retry with `--insecure`:
 ```bash
 crane manifest --insecure ttl.sh/test:1h 2>&1 || true
 ```
@@ -62,8 +63,8 @@ If `--insecure` works, use `--insecure` on all subsequent `crane` commands throu
 If crane cannot connect even with `--insecure`, check whether `docker` is available as a
 fallback. If neither works, stop and inform the user.
 
-**Note on sandbox**: Docker commands (`docker pull`, `docker build`, `docker push`) may
-require the user to approve sandbox override prompts.
+**Note on sandbox**: Both `crane` and Docker commands may require the user to approve
+sandbox override prompts or may need `--insecure` flags due to the sandbox proxy.
 
 ## Phase 1: Discover Cluster
 
