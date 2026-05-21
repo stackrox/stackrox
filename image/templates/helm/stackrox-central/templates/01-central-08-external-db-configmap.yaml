@@ -19,13 +19,16 @@ data:
       source: >
         {{- if ._rox.ha.pgbouncer.enabled }}
         host=pgbouncer.{{ .Release.Namespace }}.svc
+        port=5432
+        user=postgres
+        sslmode=disable
         {{- else }}
         host=central-db.{{ .Release.Namespace }}.svc
-        {{- end }}
         port=5432
         user=postgres
         sslmode={{- if eq .Release.Namespace "stackrox" }}verify-full{{- else }}verify-ca{{- end }}
         sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
+        {{- end }}
         statement_timeout={{ ._rox.central.db.source.statementTimeoutMs }}
         pool_min_conns={{ ._rox.central.db.source.minConns }}
         pool_max_conns={{ ._rox.central.db.source.maxConns }}
