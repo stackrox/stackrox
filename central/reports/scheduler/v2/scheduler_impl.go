@@ -343,19 +343,30 @@ func (s *scheduler) queuePendingReports() {
 			continue
 		}
 
-		collection, found, err := s.collectionDatastore.Get(scheduledCtx, snap.GetCollection().GetId())
-		if err != nil {
-			log.Errorf("Error finding collection ID '%s': %s", snap.GetCollection().GetId(), err)
+		if !common.HasValidResourceScope(snap.GetResourceScope()) {
+			log.Errorf("Report configuration '%s' has an empty resource scope (no collection ID or entity scope)", snap.GetReportConfigurationId())
 			continue
 		}
-		if !found {
-			log.Errorf("Collection ID '%s' not found", snap.GetCollection().GetId())
+
+		repRequest := &reportGen.ReportRequest{
+			ReportSnapshot: snap,
 		}
 
-		_, err = s.SubmitReportRequest(scheduledCtx, &reportGen.ReportRequest{
-			ReportSnapshot: snap,
-			Collection:     collection,
-		}, true)
+		if snap.GetCollection() != nil {
+			collection, found, err := s.collectionDatastore.Get(scheduledCtx, snap.GetCollection().GetId())
+			if err != nil {
+				log.Errorf("Error finding collection ID '%s': %s", snap.GetCollection().GetId(), err)
+				continue
+			}
+			if !found {
+				log.Errorf("Collection ID '%s' not found", snap.GetCollection().GetId())
+			}
+
+			repRequest.Collection = collection
+
+		}
+
+		_, err = s.SubmitReportRequest(scheduledCtx, repRequest, true)
 		if err != nil {
 			log.Errorf("Error rescheduling pending report job for report config ID '%s': %s", snap.GetReportConfigurationId(), err)
 		}
@@ -373,6 +384,11 @@ func (s *scheduler) queueScheduledReports() {
 		return
 	}
 	for _, rc := range reportConfigs {
+		if !common.HasValidResourceScope(rc.GetResourceScope()) {
+			log.Errorf("Skipping scheduled report for config '%s' (ID: %s): resource scope is empty",
+				rc.GetName(), rc.GetId())
+			continue
+		}
 		if rc.GetSchedule() != nil {
 			if err := s.UpsertReportSchedule(rc); err != nil {
 				log.Errorf("Error queuing scheduled report for report configuration with ID %s: %v", rc.GetId(), err)

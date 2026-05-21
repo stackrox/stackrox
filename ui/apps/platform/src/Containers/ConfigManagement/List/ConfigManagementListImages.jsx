@@ -36,13 +36,9 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Image`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const url = getConfigMgmtPathForEntitiesAndId('IMAGE', original.id);
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {original.name.fullName}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{original.name.fullName}</TableCellLink>;
             },
             accessor: 'name.fullName',
             id: imageSortFields.NAME,
@@ -68,7 +64,7 @@ const buildTableColumns = (match, location, entityContext) => {
                   Header: `Deployments`,
                   headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
-                  Cell: ({ original, pdf }) => {
+                  Cell: ({ original }) => {
                       const { deployments, id } = original;
                       const num = deployments.length;
                       const text = `${num} ${pluralize('deployment', num)}`;
@@ -79,11 +75,7 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(id)
                           .push('DEPLOYMENT')
                           .url();
-                      return (
-                          <TableCellLink pdf={pdf} url={url}>
-                              {text}
-                          </TableCellLink>
-                      );
+                      return <TableCellLink url={url}>{text}</TableCellLink>;
                   },
                   accessor: 'deployments',
                   sortable: false,

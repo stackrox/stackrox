@@ -146,12 +146,8 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
-        - mountPath: /host/proc
-          name: proc-ro
-          readOnly: true
-          mountPropagation: HostToContainer
-        - mountPath: /host/etc
-          name: etc-ro
+        - mountPath: /host
+          name: host-root-ro
           readOnly: true
           mountPropagation: HostToContainer
         - mountPath: /etc/stackrox

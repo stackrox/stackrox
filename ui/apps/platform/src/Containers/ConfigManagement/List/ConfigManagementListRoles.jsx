@@ -37,13 +37,9 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Role`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const url = getConfigMgmtPathForEntitiesAndId('ROLE', original.id);
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {original.name}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{original.name}</TableCellLink>;
             },
             accessor: 'name',
             id: roleSortFields.ROLE,
@@ -88,17 +84,13 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'clusterName',
-                  Cell: ({ original, pdf }) => {
+                  Cell: ({ original }) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
                           .push('CLUSTER', clusterId)
                           .url();
-                      return (
-                          <TableCellLink pdf={pdf} url={url}>
-                              {clusterName}
-                          </TableCellLink>
-                      );
+                      return <TableCellLink url={url}>{clusterName}</TableCellLink>;
                   },
                   id: roleSortFields.CLUSTER,
                   sortField: roleSortFields.CLUSTER,
@@ -107,7 +99,7 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Namespace Scope`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { roleNamespace, id } = original;
                 if (!roleNamespace) {
                     return 'Cluster-wide';
@@ -119,11 +111,7 @@ const buildTableColumns = (match, location, entityContext) => {
                     .push(id)
                     .push('NAMESPACE', namespaceId)
                     .url();
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {name}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{name}</TableCellLink>;
             },
             accessor: 'roleNamespace.metadata.name',
             sortable: false,
@@ -132,14 +120,14 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Users & Groups`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { serviceAccounts, subjects } = original;
                 const { length: serviceAccountsLength } = serviceAccounts;
                 const { length: subjectsLength } = subjects;
                 if (!subjectsLength) {
                     return !serviceAccountsLength ||
                         (serviceAccountsLength === 1 && serviceAccounts[0].message) ? (
-                        <NoEntitiesIconText text="No Users & Groups" isTextOnly={pdf} />
+                        <NoEntitiesIconText text="No Users & Groups" />
                     ) : (
                         'No Users & Groups'
                     );
@@ -150,18 +138,10 @@ const buildTableColumns = (match, location, entityContext) => {
                     .url();
                 const text = `${subjectsLength} ${pluralize('Users & Groups', subjectsLength)}`;
                 if (subjectsLength > 1) {
-                    return (
-                        <TableCellLink pdf={pdf} url={url}>
-                            {text}
-                        </TableCellLink>
-                    );
+                    return <TableCellLink url={url}>{text}</TableCellLink>;
                 }
                 const subject = subjects[0];
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {subject.name}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{subject.name}</TableCellLink>;
             },
             id: 'subjects',
             accessor: (d) => d.subjects,
@@ -171,7 +151,7 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Service Accounts`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { serviceAccounts, subjects, id } = original;
                 const { length: serviceAccountsLength } = serviceAccounts;
                 const { length: subjectsLength } = subjects;
@@ -180,7 +160,7 @@ const buildTableColumns = (match, location, entityContext) => {
                         (serviceAccountsLength === 1 && serviceAccounts[0].message)) &&
                     !subjectsLength
                 ) {
-                    return <NoEntitiesIconText text="No Service Accounts" isTextOnly={pdf} />;
+                    return <NoEntitiesIconText text="No Service Accounts" />;
                 }
                 if (!serviceAccountsLength) {
                     return 'No Service Accounts';
@@ -194,18 +174,10 @@ const buildTableColumns = (match, location, entityContext) => {
                     serviceAccountsLength
                 )}`;
                 if (serviceAccountsLength > 1) {
-                    return (
-                        <TableCellLink pdf={pdf} url={url}>
-                            {text}
-                        </TableCellLink>
-                    );
+                    return <TableCellLink url={url}>{text}</TableCellLink>;
                 }
                 const serviceAccount = serviceAccounts[0];
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {serviceAccount.name}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{serviceAccount.name}</TableCellLink>;
             },
             accessor: 'serviceAccounts',
             sortable: false,

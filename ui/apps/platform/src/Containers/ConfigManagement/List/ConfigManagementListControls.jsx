@@ -33,13 +33,9 @@ const tableColumns = [
         Header: `Control`,
         headerClassName: `w-1/2 ${defaultHeaderClassName}`,
         className: `w-1/2 ${defaultColumnClassName}`,
-        Cell: ({ original, pdf }) => {
+        Cell: ({ original }) => {
             const url = getConfigMgmtPathForEntitiesAndId('CONTROL', original.id);
-            return (
-                <TableCellLink pdf={pdf} url={url}>
-                    {original.control}
-                </TableCellLink>
-            );
+            return <TableCellLink url={url}>{original.control}</TableCellLink>;
         },
         accessor: 'control',
         sortMethod: sortVersion,
@@ -48,11 +44,11 @@ const tableColumns = [
         Header: `Control Status`,
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName} capitalize`,
-        Cell: ({ original, pdf }) => {
+        Cell: ({ original }) => {
             if (original.status === COMPLIANCE_STATES['N/A']) {
-                return <NotApplicableIconText isTextOnly={pdf} />;
+                return <NotApplicableIconText />;
             }
-            return <PolicyStatusIconText isPass={original.status === 'Pass'} isTextOnly={pdf} />;
+            return <PolicyStatusIconText isPass={original.status === 'Pass'} />;
         },
         accessor: 'status',
         sortMethod: sortStatus,

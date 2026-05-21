@@ -84,7 +84,7 @@ spec:
         - name: name
           value: slack-webhook-notification
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:69945a30c11387a766e3d0ae33991b68e865a290c09da1fea44f193d358926ba
+          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:14766aebbf6f4739e1b7dde0406dcba2d1e300170d3b084f23df9fb074d87dc3
         - name: kind
           value: task
         resolver: bundles
@@ -118,7 +118,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6d3297c7b231c086c8221087e4b315e422da4207823444a00faf411002523af0
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a0984a2e876afb827f9ec5398cb208024520c9099710e078df2350141c1438f7
         - name: kind
           value: task
         resolver: bundles
@@ -211,7 +211,7 @@ spec:
         - name: name
           value: git-clone-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:ea64f5b99202621e78ed3d74b00df5750cbf572c391e6da1956396f5945e4e11
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:13d49df7dc9ae301627e45f95a236011422996152f1bea46cd60217b0f057407
         - name: kind
           value: task
         resolver: bundles
@@ -230,7 +230,7 @@ spec:
         - name: name
           value: determine-image-expiration
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6d3297c7b231c086c8221087e4b315e422da4207823444a00faf411002523af0
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a0984a2e876afb827f9ec5398cb208024520c9099710e078df2350141c1438f7
         - name: kind
           value: task
         resolver: bundles
@@ -246,7 +246,7 @@ spec:
         - name: name
           value: determine-image-tag
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6d3297c7b231c086c8221087e4b315e422da4207823444a00faf411002523af0
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a0984a2e876afb827f9ec5398cb208024520c9099710e078df2350141c1438f7
         - name: kind
           value: task
         resolver: bundles
@@ -265,7 +265,7 @@ spec:
           description: Full operator-index image tag with v prefix and -fast suffix to avoid collision with GHA builds
         steps:
         - name: compute-index-tag
-          image: registry.access.redhat.com/ubi9-minimal:latest@sha256:c0e70387664f30cd9cf2795b547e4a9a51002c44a4a86aa9335ab030134bf392
+          image: registry.access.redhat.com/ubi9-minimal:latest@sha256:12db9874bd753eb98b1ab3d840e75de5d6842ac0604fbd68c012adefe97140be
           script: |
             #!/bin/bash
             set -euo pipefail
@@ -291,7 +291,7 @@ spec:
         - name: name
           value: wait-for-image
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6d3297c7b231c086c8221087e4b315e422da4207823444a00faf411002523af0
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a0984a2e876afb827f9ec5398cb208024520c9099710e078df2350141c1438f7
         - name: kind
           value: task
         resolver: bundles
@@ -421,7 +421,7 @@ spec:
         - name: name
           value: buildah-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.9@sha256:ce89532f0ea6003febc663c8b68779d98eac76b26dee2380a75cb0d485f81428
+          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.9@sha256:681d9f65a7f50cb260ee576ccab551e11d63c549f1e1ef3d201da3c112855bd6
         - name: kind
           value: task
         resolver: bundles
@@ -430,19 +430,15 @@ spec:
       params:
       - name: IMAGE
         value: $(params.output-image-repo):$(tasks.determine-index-tag.results.INDEX_TAG)
-      - name: COMMIT_SHA
-        value: $(tasks.clone-repository.results.commit)
       - name: IMAGES
         value:
         - $(tasks.build-images.results.IMAGE_URL[*])
-      - name: IMAGE_EXPIRES_AFTER
-        value: $(tasks.determine-image-expiration.results.IMAGE_EXPIRES_AFTER)
       taskRef:
         params:
         - name: name
           value: build-image-index
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-build-image-index:0.2@sha256:c7b0f7e1f743040d99a3532abbdfddc9484f80fd559a75171c97499c3eb5d163
+          value: quay.io/konflux-ci/tekton-catalog/task-build-image-index:0.3@sha256:b33bfa8dc27dbf459f0779598ba45dcaa490bcc9f8efe1652bcf360ec8cb5582
         - name: kind
           value: task
         resolver: bundles
