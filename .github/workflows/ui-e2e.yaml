@@ -530,18 +530,18 @@ jobs:
             fi
 
             # Wait for the scanned nginx image to have CVE+component data
-            # Must query nginx specifically — global queries give false positives
-            # from pre-existing system image data
+            # Uses v1 REST API (Image:nginx query) since the image is stored
+            # as docker.io/library/nginx:1.12
             check_nginx_data() {
               local label="$1"
-              local resp=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/api/graphql" \
-                -X POST -H 'Content-Type: application/json' \
-                -d '{"query":"{ images(query:\"Image:nginx:1.12\") { id imageComponents { name } } }"}')
-              local images=$(echo "$resp" | jq '.data.images | length // 0' 2>/dev/null)
-              local components=$(echo "$resp" | jq '[.data.images[]?.imageComponents // [] | length] | add // 0' 2>/dev/null)
-              echo "${label}: nginx_images=${images:-0} components=${components:-0}"
-              [ "${images:-0}" -gt 0 ] && [ "${components:-0}" -gt 0 ] && return 0 || return 1
+              local images=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/images?query=Image:nginx" \
+                | jq '.images | length // 0' 2>/dev/null)
+              local cves=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/images?query=Image:nginx" \
+                | jq '[.images[]? | .cves // 0] | add // 0' 2>/dev/null)
+              echo "${label}: nginx_images=${images:-0} nginx_cves=${cves:-0}"
+              [ "${images:-0}" -gt 0 ] && [ "${cves:-0}" -gt 0 ] && return 0 || return 1
             }
 
             # Check at 0, 1, 3, 5, 7, 10, 15 min after scan trigger
