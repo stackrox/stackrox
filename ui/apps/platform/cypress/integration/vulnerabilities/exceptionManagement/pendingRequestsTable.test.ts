@@ -263,11 +263,16 @@ describe('Exception Management Pending Requests Page', () => {
 
             visitPendingRequestsTab();
 
-            typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'ui_tests');
-            cy.get('table td[data-label="Request name"] a').should('exist');
-            cy.get(vulnSelectors.clearFiltersButton).click();
-            typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'BLAH');
-            cy.get('table td[data-label="Request name"] a').should('not.exist');
+            cy.get('table tr:nth(1) td[data-label="Requester"]')
+                .invoke('text')
+                .then((requesterName) => {
+                    const name = requesterName.trim();
+                    typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', name);
+                    cy.get('table td[data-label="Request name"] a').should('exist');
+                    cy.get(vulnSelectors.clearFiltersButton).click();
+                    typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'BLAH');
+                    cy.get('table td[data-label="Request name"] a').should('not.exist');
+                });
         });
     });
 });
