@@ -97,6 +97,9 @@ message ReportSchedule {
   }
 }
 
+// Reports are transitioning to a modernized architecture in a future release.
+// To prepare for future updates, we recommend transitioning your collections-based reports to the “Entity Scope” method.
+// When the “Collection scope” option is removed in a future release, existing reports will not automatically convert to the “Entity scope” method.
 message ResourceScope {
   oneof scope_reference {
     CollectionReference collection_scope = 1;
