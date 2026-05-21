@@ -116,6 +116,7 @@ import (
 	customMetrics "github.com/stackrox/rox/central/metrics/custom"
 	"github.com/stackrox/rox/central/metrics/telemetry"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
+	"github.com/stackrox/rox/central/mode"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
 	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
 	networkBaselineService "github.com/stackrox/rox/central/networkbaseline/service"
@@ -376,6 +377,11 @@ func ensureDB(ctx context.Context) {
 }
 
 func startServices() {
+	if !mode.IsBackgroundWorkersEnabled() {
+		log.Infof("Background workers disabled (mode: %s)", mode.Get())
+		return
+	}
+
 	go cloudSourcesManager.Singleton().Start()
 
 	reprocessor.Singleton().Start()
@@ -508,19 +514,23 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, internalTokenAuthService.Singleton())
 	}
 
-	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
-	if err := connection.ManagerSingleton().Start(
-		clusterDataStore.Singleton(),
-		networkEntityDataStore.Singleton(),
-		policyDataStore.Singleton(),
-		processBaselineDataStore.Singleton(),
-		networkBaselineDataStore.Singleton(),
-		delegatedRegistryConfigDS.Singleton(),
-		iiDatastore.Singleton(),
-		v2ComplianceMgr.Singleton(),
-		autoTriggerUpgrades,
-	); err != nil {
-		log.Panicf("Couldn't start sensor connection manager: %v", err)
+	if mode.IsAPIEnabled() {
+		autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
+		if err := connection.ManagerSingleton().Start(
+			clusterDataStore.Singleton(),
+			networkEntityDataStore.Singleton(),
+			policyDataStore.Singleton(),
+			processBaselineDataStore.Singleton(),
+			networkBaselineDataStore.Singleton(),
+			delegatedRegistryConfigDS.Singleton(),
+			iiDatastore.Singleton(),
+			v2ComplianceMgr.Singleton(),
+			autoTriggerUpgrades,
+		); err != nil {
+			log.Panicf("Couldn't start sensor connection manager: %v", err)
+		}
+	} else {
+		log.Infof("Sensor connection manager disabled (mode: %s)", mode.Get())
 	}
 
 	// Start cluster-level (Kubernetes, OpenShift, Istio) vulnerability data fetcher.
