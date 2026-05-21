@@ -336,6 +336,137 @@ LIMIT
     rm -f "${data_file}"
 }
 
+slack_job_failure_streaks() {
+    local min_streak="${1:-5}"
+    local days="${2:-10}"
+    local limit="${3:-10}"
+    local subject="${4:-Jobs with 5+ consecutive failures in last 10 days}"
+    local is_test="${5:-false}"
+
+    local sql
+    # shellcheck disable=SC2016
+    sql='
+WITH ordered_jobs AS (
+  SELECT
+    name,
+    repo,
+    branch,
+    id,
+    started_at,
+    stopped_at,
+    CASE
+      WHEN branch LIKE "%.x-nightly-%" THEN REGEXP_EXTRACT(branch, r"^(.+\.x-nightly)-\d+$")
+      ELSE branch
+    END as branch_group,
+    CASE
+      WHEN outcome IN ("failed", "failure", "Failed") THEN "FAILED"
+      WHEN outcome IN ("passed", "success", "Succeeded") THEN "SUCCESS"
+      ELSE "OTHER"
+    END as normalized_outcome,
+    ROW_NUMBER() OVER (PARTITION BY name, repo ORDER BY started_at) as run_number
+  FROM `acs-san-stackroxci.ci_metrics.stackrox_jobs`
+  WHERE outcome IS NOT NULL
+    AND stopped_at IS NOT NULL
+    AND (branch LIKE "%.x-nightly-%" OR branch = "nightlies" OR branch = "master")
+    AND started_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)
+),
+jobs_with_prev AS (
+  SELECT *,
+    LAG(normalized_outcome) OVER (PARTITION BY name, repo ORDER BY started_at) AS prev_outcome,
+    LAG(run_number) OVER (PARTITION BY name, repo ORDER BY started_at) AS prev_run_number
+  FROM ordered_jobs
+),
+streak_starts AS (
+  SELECT *,
+    CASE
+      WHEN prev_outcome IS NULL THEN 1
+      WHEN normalized_outcome != prev_outcome THEN 1
+      WHEN run_number != prev_run_number + 1 THEN 1
+      ELSE 0
+    END as is_streak_start
+  FROM jobs_with_prev
+),
+streak_groups AS (
+  SELECT *,
+    SUM(is_streak_start) OVER (PARTITION BY name, repo ORDER BY started_at) as streak_id
+  FROM streak_starts
+),
+consecutive_failures AS (
+  SELECT
+    name,
+    repo,
+    branch_group,
+    streak_id,
+    normalized_outcome,
+    COUNT(*) as consecutive_count,
+    MIN(started_at) as first_failure_at,
+    MAX(started_at) as last_failure_at
+  FROM streak_groups
+  GROUP BY name, repo, branch_group, streak_id, normalized_outcome
+  HAVING normalized_outcome = "FAILED" AND COUNT(*) > @min_streak
+)
+SELECT
+  IF(LENGTH(name) > 60, CONCAT(RPAD(name, 57), "..."), name) AS name,
+  repo,
+  branch_group,
+  consecutive_count,
+  FORMAT_TIMESTAMP("%Y-%m-%d", first_failure_at) as first_failure_date,
+  FORMAT_TIMESTAMP("%Y-%m-%d", last_failure_at) as last_failure_date,
+  TIMESTAMP_DIFF(last_failure_at, first_failure_at, DAY) as streak_duration_days
+FROM consecutive_failures
+ORDER BY consecutive_count DESC, last_failure_at DESC
+LIMIT @limit
+'
+
+    local data_file
+    data_file="$(mktemp)"
+    echo "Running query for job failure streaks (min_streak=${min_streak}, days=${days})"
+    bq --quiet --format=json query \
+        --use_legacy_sql=false \
+        --parameter="min_streak:INTEGER:${min_streak}" \
+        --parameter="days:INTEGER:${days}" \
+        --parameter="limit:INTEGER:${limit}" \
+        "$sql" > "${data_file}" 2>/dev/null || {
+        echo >&2 -e "Cannot run query:\n${sql}\nresponse:\n$(jq < "${data_file}")"
+        exit 1
+    }
+
+    local body
+    if [[ $(cat "${data_file}") != "[]" ]]; then
+        jq < "${data_file}"
+        # shellcheck disable=SC2016
+        body='{"blocks":[
+            {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
+            {"type": "section", "fields": [
+                {"type": "mrkdwn", "text": "*Job Name*"},
+                {"type": "mrkdwn", "text": "*Branch*"},
+                {"type": "mrkdwn", "text": "*Streak*"},
+                {"type": "mrkdwn", "text": "*Date Range*"}
+            ]},
+            (.[] | {"type": "section", "fields": [
+                {"type": "mrkdwn", "text": .name},
+                {"type": "plain_text", "text": .branch_group},
+                {"type": "plain_text", "text": (.consecutive_count|tostring) + " failures"},
+                {"type": "plain_text", "text": .first_failure_date + " → " + .last_failure_date + " (" + (.streak_duration_days|tostring) + " days)"}
+            ]})]}'
+    else
+        body='{"blocks":[
+            {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
+            {"type": "section", "text": {"type": "plain_text", "text": "No long failure streaks! :success-kid:", "emoji": true}}]}'
+        echo "No failure streaks found!"
+    fi
+
+    echo "Posting data to slack"
+    local webhook_url
+    if [[ "${is_test}" == "true" ]]; then
+        webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
+    else
+        webhook_url="${SLACK_ENG_DISCUSS_WEBHOOK}"
+    fi
+    jq "$body" "${data_file}" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+    rm -f "${data_file}"
+}
+
 # Saving test metrics directly after tests complete results in GCP quota issues.
 # So instead they are saved to GCS and dealt with in batches as per the remedy
 # in https://cloud.google.com/bigquery/docs/troubleshoot-quotas#ts-table-import-quota-resolution
