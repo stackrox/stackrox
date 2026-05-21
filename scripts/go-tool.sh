@@ -62,6 +62,7 @@ function invoke_go() {
   local args=()
   local cgo_ldflags=("${ldflags[@]}")  # Copy base ldflags
   local cc_compiler=""
+  local cgo_cflags=""
   local cgo_enabled="${CGO_ENABLED:-0}"  # Copy from environment, default to 0 (disabled)
 
   args+=("-buildvcs=false")
@@ -83,6 +84,8 @@ function invoke_go() {
       echo >&2 "Using musl-gcc for static linking to avoid GLIBC dependencies"
       cc_compiler="musl-gcc"
       cgo_ldflags+=('-linkmode=external' '-extldflags=-static')
+      # musl-gcc needs explicit path to kernel headers from linux-libc-dev
+      cgo_cflags="-I/usr/include"
     else
       echo >&2 "musl-gcc not found, using default linker (tests in container)"
       cgo_ldflags+=('-linkmode=external')
@@ -91,10 +94,14 @@ function invoke_go() {
 
   args+=(-ldflags="${cgo_ldflags[*]}")
 
-  # Set CGO_ENABLED and CC only for this command
+  # Set CGO_ENABLED, CC, and CGO_CFLAGS only for this command
   if [[ -n "$cc_compiler" ]]; then
-    CGO_ENABLED="$cgo_enabled" CC="$cc_compiler" go "$tool" "${args[@]}" "$@"
-  elif [[ "$cgo_enabled" != "${CGO_ENABLED}" ]]; then
+    if [[ -n "$cgo_cflags" ]]; then
+      CGO_ENABLED="$cgo_enabled" CC="$cc_compiler" CGO_CFLAGS="$cgo_cflags" go "$tool" "${args[@]}" "$@"
+    else
+      CGO_ENABLED="$cgo_enabled" CC="$cc_compiler" go "$tool" "${args[@]}" "$@"
+    fi
+  elif [[ "$cgo_enabled" != "${CGO_ENABLED:-0}" ]]; then
     CGO_ENABLED="$cgo_enabled" go "$tool" "${args[@]}" "$@"
   else
     go "$tool" "${args[@]}" "$@"
