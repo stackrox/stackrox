@@ -267,20 +267,13 @@ type matcherImpl struct {
 }
 
 func hasActiveFilters(filters []filter.EvaluationFilter) bool {
-	for _, f := range filters {
-		if f.IsNonDefault() {
-			return true
-		}
-	}
-	return false
+	return len(filters) > 0
 }
 
 func applyFilters(ed EnhancedDeployment, filters []filter.EvaluationFilter) EnhancedDeployment {
 	dep, imgs := ed.Deployment, ed.Images
 	for _, f := range filters {
-		if f.IsNonDefault() {
-			dep, imgs = f.Apply(dep, imgs)
-		}
+		dep, imgs = f.Apply(dep, imgs)
 	}
 	return EnhancedDeployment{
 		Deployment:             dep,
