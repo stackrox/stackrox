@@ -191,44 +191,57 @@ func (s *nodeIndexerSuite) TestRunPackageScannerAnyPath() {
 
 func (s *nodeIndexerSuite) TestBuildMappingURL() {
 	tcs := map[string]struct {
+		sensorEndpointSetting     string
 		advertisedEndpointSetting string
+		useLegacyAdvertised       bool
 		mappingURLSetting         string
 		expectedURL               string
 	}{
 		"Empty": {
-			advertisedEndpointSetting: "",
-			mappingURLSetting:         "",
-			expectedURL:               "https://sensor.stackrox.svc:443/scanner/definitions?file=repo2cpe",
+			sensorEndpointSetting: "",
+			mappingURLSetting:     "",
+			expectedURL:           "https://sensor.stackrox.svc:443/scanner/definitions?file=repo2cpe",
 		},
 		"Host with port": {
-			advertisedEndpointSetting: "example.com:8080",
-			mappingURLSetting:         "",
-			expectedURL:               "https://example.com:8080/scanner/definitions?file=repo2cpe",
+			sensorEndpointSetting: "example.com:8080",
+			mappingURLSetting:     "",
+			expectedURL:           "https://example.com:8080/scanner/definitions?file=repo2cpe",
 		},
 		"Host without port": {
-			advertisedEndpointSetting: "sensor.rhacs.svc",
-			mappingURLSetting:         "",
-			expectedURL:               "https://sensor.rhacs.svc/scanner/definitions?file=repo2cpe",
+			sensorEndpointSetting: "sensor.rhacs.svc",
+			mappingURLSetting:     "",
+			expectedURL:           "https://sensor.rhacs.svc/scanner/definitions?file=repo2cpe",
 		},
 		"HTTP scheme": {
-			advertisedEndpointSetting: "http://example.com",
+			sensorEndpointSetting: "http://example.com",
+			mappingURLSetting:     "",
+			expectedURL:           "https://example.com/scanner/definitions?file=repo2cpe",
+		},
+		"Legacy advertised endpoint only": {
+			advertisedEndpointSetting: "sensor.legacy.svc:443",
+			useLegacyAdvertised:       true,
 			mappingURLSetting:         "",
-			expectedURL:               "https://example.com/scanner/definitions?file=repo2cpe",
+			expectedURL:               "https://sensor.legacy.svc:443/scanner/definitions?file=repo2cpe",
 		},
 		"Mapping setting provided": {
-			advertisedEndpointSetting: "sensor.namespace.svc:443",
-			mappingURLSetting:         "https://example.com/download",
-			expectedURL:               "https://example.com/download",
+			sensorEndpointSetting: "sensor.namespace.svc:443",
+			mappingURLSetting:     "https://example.com/download",
+			expectedURL:           "https://example.com/download",
 		},
 		"Mapping setting provided with no scheme and trailing slash": {
-			advertisedEndpointSetting: "sensor.namespace.svc:443",
-			mappingURLSetting:         "example.com/download/",
-			expectedURL:               "https://example.com/download",
+			sensorEndpointSetting: "sensor.namespace.svc:443",
+			mappingURLSetting:     "example.com/download/",
+			expectedURL:           "https://example.com/download",
 		},
 	}
 	for name, tc := range tcs {
 		s.T().Run(name, func(t *testing.T) {
-			s.T().Setenv("ROX_ADVERTISED_ENDPOINT", tc.advertisedEndpointSetting)
+			s.T().Setenv("ROX_SENSOR_ENDPOINT", tc.sensorEndpointSetting)
+			if tc.useLegacyAdvertised {
+				s.T().Setenv("ROX_ADVERTISED_ENDPOINT", tc.advertisedEndpointSetting)
+			} else {
+				s.T().Setenv("ROX_ADVERTISED_ENDPOINT", "")
+			}
 			s.T().Setenv("ROX_NODE_INDEX_MAPPING_URL", tc.mappingURLSetting)
 			s.Equal(tc.expectedURL, buildMappingURL())
 		})

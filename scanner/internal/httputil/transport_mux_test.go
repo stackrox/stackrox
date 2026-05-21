@@ -66,15 +66,13 @@ func TestTransportMux(t *testing.T) {
 			},
 		},
 		{
-			// ROX_SENSOR_ENDPOINT is not allowed to be empty, so we'll use the default value of
-			// sensor.stackrox.svc:443 for this test.
-			// This test will hopefully catch any changes and trigger the author of the change
-			// to notify us to ensure we are all on the same page.
+			// When ROX_SENSOR_ENDPOINT is unset, SensorEndpointSetting derives from POD_NAMESPACE.
 			name: "Sensor (default)",
 			msg:  "Sensor",
-			url:  "https://sensor.stackrox.svc/api/extensions/scannerdefinitions?file=repo2cpe",
+			url:  "https://sensor.something-else.svc/api/extensions/scannerdefinitions?file=repo2cpe",
 			envs: map[string]string{
-				env.SensorEndpoint.EnvVar(): "",
+				env.SensorEndpoint.EnvVar():     "",
+				env.AdvertisedEndpoint.EnvVar(): "",
 			},
 		},
 		{
@@ -124,6 +122,7 @@ func TestTransportMux_deny(t *testing.T) {
 	t.Setenv(env.Namespace.EnvVar(), "something-else")
 	t.Setenv(env.CentralEndpoint.EnvVar(), "")
 	t.Setenv(env.SensorEndpoint.EnvVar(), "")
+	t.Setenv(env.AdvertisedEndpoint.EnvVar(), "")
 
 	defaultTransport, _, _ := testTransports()
 
@@ -146,7 +145,7 @@ func TestTransportMux_deny(t *testing.T) {
 		},
 		{
 			name:      "Sensor",
-			url:       "https://sensor.stackrox.svc/api/extensions/scannerdefinitions?file=repo2cpe",
+			url:       "https://sensor.something-else.svc/api/extensions/scannerdefinitions?file=repo2cpe",
 			wantPanic: true,
 		},
 		{
