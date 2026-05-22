@@ -15,8 +15,7 @@ runs:
         path: |
           ~/.npm
           ~/.cache/Cypress
-          /usr/local/share/.cache
-        key: npm-v3-${{ hashFiles(inputs.lockFile) }}
+        key: npm-v4-${{ hashFiles(inputs.lockFile) }}
 
     - name: Restore UI Dependencies
       if: ${{ !(github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) }}
@@ -25,6 +24,5 @@ runs:
         path: |
           ~/.npm
           ~/.cache/Cypress
-          /usr/local/share/.cache
-        key: npm-v3-${{ hashFiles(inputs.lockFile) }}
-        restore-keys: npm-v3-
+        key: npm-v4-${{ hashFiles(inputs.lockFile) }}
+        restore-keys: npm-v4-

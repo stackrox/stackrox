@@ -16,6 +16,10 @@ inputs:
         error: Fail the action with an error message
         ignore: Do not output any warnings or errors, the action does not fail
     default: 'warn'
+  compression-level:
+    description: 'Compression level: 0 (none) to 9 (max). Default is 6 (zstd default)'
+    required: false
+    default: '6'
 runs:
   using: composite
   steps:
@@ -25,6 +29,7 @@ runs:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
         if-no-files-found: ${{ inputs.if-no-files-found }}
+        compression-level: ${{ inputs.compression-level }}
       continue-on-error: true
     - id: upload-artifact-try2
       if: steps.upload-artifact-try1.outcome == 'failure'
@@ -33,6 +38,7 @@ runs:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
         if-no-files-found: ${{ inputs.if-no-files-found }}
+        compression-level: ${{ inputs.compression-level }}
       continue-on-error: true
     - if: steps.upload-artifact-try2.outcome == 'failure'
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
@@ -40,3 +46,4 @@ runs:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
         if-no-files-found: ${{ inputs.if-no-files-found }}
+        compression-level: ${{ inputs.compression-level }}
