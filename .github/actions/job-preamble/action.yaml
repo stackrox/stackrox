@@ -151,6 +151,7 @@ runs:
         echo "disk_seq_write=${disk_write}"
 
         # Disk random 4K IOPS with fsync (2 seconds — models Postgres commit behavior)
+        sudo apt-get -qq install -y fio >/dev/null 2>&1 || true
         if command -v fio >/dev/null 2>&1; then
           fio_out=$(fio --name=rand4k --rw=randwrite --bs=4k --size=32M --runtime=2 --time_based \
             --fsync=1 --filename=/tmp/.bench_fio --output-format=json 2>/dev/null)
@@ -160,7 +161,7 @@ runs:
           echo "disk_rand4k_fsync_iops=${iops}"
           echo "disk_fsync_latency=${lat}"
         else
-          echo "disk_rand4k_fsync_iops=fio_not_installed"
+          echo "disk_rand4k_fsync_iops=fio_install_failed"
         fi
 
         # Memory bandwidth (dd through tmpfs, no disk involved)
@@ -180,13 +181,16 @@ runs:
       shell: bash
       run: |
         (
+          prev_iow=0
           while true; do
             ts=$(date -u +%H:%M:%S)
             cpu=$(top -bn1 2>/dev/null | awk '/^%Cpu/{printf "%.0f", 100-$8}' || echo 0)
             mem=$(free -m 2>/dev/null | awk '/^Mem:/{printf "%d/%dMB(%.0f%%)", $3, $2, $3/$2*100}' || echo "?")
             disk=$(df -BGB --output=avail / 2>/dev/null | tail -1 | tr -d ' ' || echo "?")
-            iow=$(awk '{printf "%.1f", $5}' /proc/stat 2>/dev/null | head -c6 || echo "?")
-            echo "${ts} cpu=${cpu}% mem=${mem} disk=${disk} iowait=${iow}"
+            cur_iow=$(awk '{print $5}' /proc/stat 2>/dev/null | head -1)
+            iow_delta=$((cur_iow - prev_iow))
+            prev_iow=$cur_iow
+            echo "${ts} cpu=${cpu}% mem=${mem} disk=${disk} iowait_delta=${iow_delta}"
             sleep 30
           done
         ) >> /dev/shm/runner-monitor.log 2>&1 &
