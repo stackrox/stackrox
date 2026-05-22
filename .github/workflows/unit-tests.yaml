@@ -270,6 +270,11 @@ jobs:
       working-directory: ui/apps/platform
       run: npm install
 
+    - name: Prune stale dependencies
+      if: github.event_name != 'pull_request'
+      working-directory: ui/apps/platform
+      run: npm prune
+
     - name: UI Unit Tests
       working-directory: ui/apps/platform
       run: npm run test
