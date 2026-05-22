@@ -107,7 +107,7 @@ runs:
 
           curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
             "https://${API_ENDPOINT}/v1/apitokens/generate" \
-            -X POST -d '{"name":"ci-test","role":"Admin"}' \
+            -X POST -d '{"name":"ui_tests","role":"Admin"}' \
             | jq -r '.token' > /tmp/rox-auth-token
 
         }
