@@ -268,7 +268,7 @@ jobs:
     - name: Install UI dependencies
       if: steps.cache-ui.outputs.cache-hit != 'true'
       working-directory: ui/apps/platform
-      run: npm install && npm prune
+      run: npm install
 
     - name: UI Unit Tests
       working-directory: ui/apps/platform
