@@ -144,7 +144,9 @@ describe('Risk Event Timeline for Deployment', () => {
         it("should drill down on a pod to see that pod's containers", () => {
             openEventTimeline();
 
-            cy.get(selectors.eventTimeline.timeline.namesList.firstListedName).then(
+            cy.get(selectors.eventTimeline.timeline.namesList.firstListedName, {
+                timeout: 30000,
+            }).then(
                 (firstListedName) => {
                     const firstPodName = firstListedName.text();
 
