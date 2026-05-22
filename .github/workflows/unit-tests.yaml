@@ -266,7 +266,7 @@ jobs:
       uses: ./.github/actions/cache-ui-dependencies
 
     - name: Install UI dependencies
-      if: steps.cache-ui.outputs.cache-hit != 'true'
+      if: steps.cache-ui.outputs.cache-hit != 'true' || github.event_name != 'pull_request'
       working-directory: ui/apps/platform
       run: npm install
 
@@ -323,7 +323,7 @@ jobs:
       uses: cypress-io/github-action@dace029018fcdf86e0df89a31bc3cfa5b32570d8 # ratchet:cypress-io/github-action@v7
       with:
         working-directory: ui/apps/platform
-        install: ${{ steps.cache-ui.outputs.cache-hit != 'true' }}
+        install: ${{ steps.cache-ui.outputs.cache-hit != 'true' || github.event_name != 'pull_request' }}
         command: >-
           npx cypress run --component --browser chrome --config video=false
           --reporter mocha-multi-reporters
