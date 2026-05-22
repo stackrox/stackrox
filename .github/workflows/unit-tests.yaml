@@ -258,12 +258,18 @@ jobs:
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
       with:
         node-version-file: ui/package.json
-        cache: 'npm'
-        cache-dependency-path: ui/apps/platform/package-lock.json
+
+    - name: Cache node_modules
+      id: cache-node-modules
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
+      with:
+        path: ui/apps/platform/node_modules
+        key: node-modules-${{ hashFiles('ui/apps/platform/package-lock.json') }}
 
     - name: Install UI dependencies
+      if: steps.cache-node-modules.outputs.cache-hit != 'true'
       working-directory: ui/apps/platform
-      run: npm ci --prefer-offline --fetch-timeout=60000 --no-audit --no-fund
+      run: npm ci
 
     - name: UI Unit Tests
       working-directory: ui/apps/platform
@@ -307,13 +313,19 @@ jobs:
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
       with:
         node-version-file: ui/package.json
-        cache: 'npm'
-        cache-dependency-path: ui/apps/platform/package-lock.json
+
+    - name: Cache node_modules
+      id: cache-node-modules
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
+      with:
+        path: ui/apps/platform/node_modules
+        key: node-modules-${{ hashFiles('ui/apps/platform/package-lock.json') }}
 
     - name: UI Component Tests
       uses: cypress-io/github-action@dace029018fcdf86e0df89a31bc3cfa5b32570d8 # ratchet:cypress-io/github-action@v7
       with:
         working-directory: ui/apps/platform
+        install: ${{ steps.cache-node-modules.outputs.cache-hit != 'true' }}
         command: >-
           npx cypress run --component --browser chrome --config video=false
           --reporter mocha-multi-reporters
