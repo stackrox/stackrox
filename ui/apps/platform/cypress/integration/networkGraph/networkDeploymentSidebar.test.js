@@ -3,7 +3,6 @@ import withAuth from '../../helpers/basicAuth';
 import {
     checkNetworkGraphEmptyState,
     selectCluster,
-    selectDeployment,
     selectNamespace,
     visitNetworkGraph,
 } from './networkGraph.helpers';

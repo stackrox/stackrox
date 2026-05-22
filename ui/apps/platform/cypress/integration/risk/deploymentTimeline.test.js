@@ -146,22 +146,17 @@ describe('Risk Event Timeline for Deployment', () => {
 
             cy.get(selectors.eventTimeline.timeline.namesList.firstListedName, {
                 timeout: 30000,
-            }).then(
-                (firstListedName) => {
-                    const firstPodName = firstListedName.text();
+            }).then((firstListedName) => {
+                const firstPodName = firstListedName.text();
 
-                    // click the button and drill down to see containers
-                    clickFirstDrillDownButtonInEventTimeline();
+                // click the button and drill down to see containers
+                clickFirstDrillDownButtonInEventTimeline();
 
-                    // the back button should be visible
-                    cy.get(selectors.eventTimeline.backButton);
-                    // the pod name should be shown in the panel header
-                    cy.get(selectors.eventTimeline.panelHeader.header).should(
-                        'contain',
-                        firstPodName
-                    );
-                }
-            );
+                // the back button should be visible
+                cy.get(selectors.eventTimeline.backButton);
+                // the pod name should be shown in the panel header
+                cy.get(selectors.eventTimeline.panelHeader.header).should('contain', firstPodName);
+            });
         });
     });
 

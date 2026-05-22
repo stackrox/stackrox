@@ -192,8 +192,8 @@ jobs:
           cluster-name: ${{ env.CLUSTER_NAME }}
           tag: ${{ inputs.tag }}
           memory-limit: ${{ env.KIND_MEMORY_LIMIT }}
-          quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
       - name: Deploy StackRox (background)
         uses: ./.github/actions/deploy-stackrox
@@ -201,8 +201,8 @@ jobs:
           tag: ${{ inputs.tag }}
           scanner: v2
           github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
-          quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
       - name: Start resource monitor
         run: |
@@ -304,7 +304,7 @@ jobs:
             echo ""
             echo "| Pod | CPU | Memory |"
             echo "|-----|-----|--------|"
-            kubectl -n stackrox top pods --no-headers 2>/dev/null | while read pod cpu mem; do
+            kubectl -n stackrox top pods --no-headers 2>/dev/null | while read -r pod cpu mem; do
               echo "| ${pod} | ${cpu} | ${mem} |"
             done || echo "| (not available) | | |"
             echo ""
@@ -548,7 +548,7 @@ jobs:
             check_scan_data() {
               local label="$1"
               # Try multiple query formats to find the nginx image
-              local count_sha count_name count_graphql
+              local count_sha count_graphql
               count_sha=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
                 "https://${API_ENDPOINT}/v1/imagescount" \
                 | jq '.count // 0' 2>/dev/null)
