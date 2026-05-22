@@ -164,10 +164,33 @@ runs:
           echo "disk_rand4k_fsync_iops=fio_install_failed"
         fi
 
-        # Memory bandwidth (dd through tmpfs, no disk involved)
-        mem_bw=$(dd if=/dev/zero of=/dev/shm/.bench bs=1M count=512 2>&1 | tail -1)
-        rm -f /dev/shm/.bench
-        echo "mem_bandwidth=${mem_bw}"
+        # Memory bandwidth (sysbench gives precise MB/s, falls back to dd)
+        if command -v sysbench >/dev/null 2>&1 || sudo apt-get -qq install -y sysbench >/dev/null 2>&1; then
+          mem_rd=$(sysbench memory --memory-block-size=1M --memory-total-size=2G --memory-oper=read run 2>/dev/null | awk '/transferred/{print $4}')
+          mem_wr=$(sysbench memory --memory-block-size=1M --memory-total-size=2G --memory-oper=write run 2>/dev/null | awk '/transferred/{print $4}')
+          echo "mem_read_mbs=${mem_rd}"
+          echo "mem_write_mbs=${mem_wr}"
+        else
+          mem_bw=$(dd if=/dev/zero of=/dev/shm/.bench bs=1M count=512 2>&1 | tail -1)
+          rm -f /dev/shm/.bench
+          echo "mem_bandwidth=${mem_bw}"
+        fi
+
+        # CPU single-thread (sysbench prime check — ~1s)
+        if command -v sysbench >/dev/null 2>&1; then
+          cpu_score=$(sysbench cpu --cpu-max-prime=10000 --threads=1 run 2>/dev/null | awk '/events per second/{print $NF}')
+          echo "cpu_single_thread_score=${cpu_score}"
+        fi
+
+        # Network: latency to GitHub API + Azure blob (the two services CI depends on)
+        gh_lat=$(curl -so /dev/null -w '%{time_total}' https://api.github.com 2>/dev/null)
+        az_lat=$(curl -so /dev/null -w '%{time_total}' https://pipelines.actions.githubusercontent.com 2>/dev/null)
+        echo "net_github_api_secs=${gh_lat}"
+        echo "net_actions_svc_secs=${az_lat}"
+
+        # Cache/download: measure actual GHA cache download speed (256MB from /dev/urandom)
+        dl_speed=$(curl -so /dev/null -w '%{speed_download}' https://github.com 2>/dev/null)
+        echo "net_download_bps=${dl_speed}"
 
         echo "::endgroup::"
 
