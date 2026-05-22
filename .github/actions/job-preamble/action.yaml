@@ -145,24 +145,35 @@ runs:
         echo "mem_total_mb=$(awk '/MemTotal/{printf "%d", $2/1024}' /proc/meminfo 2>/dev/null)"
         echo "mem_avail_mb=$(awk '/MemAvailable/{printf "%d", $2/1024}' /proc/meminfo 2>/dev/null)"
 
-        # Disk sequential write (256MB, direct I/O bypasses page cache)
-        disk_write=$(dd if=/dev/zero of=/tmp/.bench bs=1M count=256 oflag=direct 2>&1 | tail -1)
-        rm -f /tmp/.bench
-        echo "disk_seq_write=${disk_write}"
+        # Disk topology and per-disk IOPS
+        echo "--- disk_topology ---"
+        df -hT | grep -v tmpfs | grep -v devtmpfs | grep -v squashfs
+        echo "--- disk_devices ---"
+        lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,ROTA,MODEL 2>/dev/null || true
 
-        # Disk random 4K IOPS with fsync (2 seconds — models Postgres commit behavior)
         sudo apt-get -qq install -y fio >/dev/null 2>&1 || true
-        if command -v fio >/dev/null 2>&1; then
-          fio_out=$(fio --name=rand4k --rw=randwrite --bs=4k --size=32M --runtime=2 --time_based \
-            --fsync=1 --filename=/tmp/.bench_fio --output-format=json 2>/dev/null)
-          iops=$(echo "$fio_out" | python3 -c "import json,sys; print(int(json.load(sys.stdin)['jobs'][0]['write']['iops']))" 2>/dev/null || echo "parse_error")
-          lat=$(echo "$fio_out" | python3 -c "import json,sys; j=json.load(sys.stdin)['jobs'][0]['sync']; print(f'avg={j[\"lat_ns\"][\"mean\"]/1e6:.1f}ms p99={j[\"lat_ns\"][\"percentile\"][\"99.000000\"]/1e6:.1f}ms')" 2>/dev/null || echo "parse_error")
-          rm -f /tmp/.bench_fio
-          echo "disk_rand4k_fsync_iops=${iops}"
-          echo "disk_fsync_latency=${lat}"
-        else
-          echo "disk_rand4k_fsync_iops=fio_install_failed"
-        fi
+        for mp in / /mnt; do
+          if ! mountpoint -q "$mp" 2>/dev/null; then continue; fi
+          fs_type=$(df -T "$mp" 2>/dev/null | awk 'NR==2{print $2}')
+          if [[ "$fs_type" == tmpfs || "$fs_type" == devtmpfs ]]; then continue; fi
+          dev=$(df "$mp" 2>/dev/null | awk 'NR==2{print $1}')
+
+          # Sequential write
+          dw=$(dd if=/dev/zero of="$mp/.bench_dd" bs=1M count=256 oflag=direct 2>&1 | grep -oP '[\d.]+ [MGk]?B/s' || echo "?")
+          rm -f "$mp/.bench_dd"
+          echo "disk_${mp//\//_}_seq_write_mbs=${dw}"
+
+          # Random 4K fsync IOPS
+          if command -v fio >/dev/null 2>&1; then
+            fio_out=$(fio --name=rand4k --rw=randwrite --bs=4k --size=32M --runtime=2 --time_based \
+              --fsync=1 --filename="$mp/.bench_fio" --output-format=json 2>/dev/null)
+            iops=$(echo "$fio_out" | python3 -c "import json,sys; print(int(json.load(sys.stdin)['jobs'][0]['write']['iops']))" 2>/dev/null || echo "?")
+            lat=$(echo "$fio_out" | python3 -c "import json,sys; j=json.load(sys.stdin)['jobs'][0]['sync']; print(f'avg={j[\"lat_ns\"][\"mean\"]/1e6:.1f}ms p99={j[\"lat_ns\"][\"percentile\"][\"99.000000\"]/1e6:.1f}ms')" 2>/dev/null || echo "?")
+            rm -f "$mp/.bench_fio"
+            echo "disk_${mp//\//_}_fsync_iops=${iops}"
+            echo "disk_${mp//\//_}_fsync_latency=${lat}"
+          fi
+        done
 
         # Memory bandwidth (sysbench gives precise MB/s, falls back to dd)
         if command -v sysbench >/dev/null 2>&1 || sudo apt-get -qq install -y sysbench >/dev/null 2>&1; then
