@@ -133,11 +133,64 @@ runs:
           exit 1
         fi
 
+    - name: Runner performance snapshot
+      continue-on-error: true
+      shell: bash
+      run: |
+        echo "::group::Runner performance snapshot"
+        echo "runner_name=${RUNNER_NAME:-unknown}"
+        echo "runner_os=${RUNNER_OS:-unknown}"
+        echo "cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)"
+        echo "cpu_cores=$(nproc 2>/dev/null)"
+        echo "mem_total_mb=$(awk '/MemTotal/{printf "%d", $2/1024}' /proc/meminfo 2>/dev/null)"
+        echo "mem_avail_mb=$(awk '/MemAvailable/{printf "%d", $2/1024}' /proc/meminfo 2>/dev/null)"
+
+        # Disk sequential write (256MB, direct I/O bypasses page cache)
+        disk_write=$(dd if=/dev/zero of=/tmp/.bench bs=1M count=256 oflag=direct 2>&1 | tail -1)
+        rm -f /tmp/.bench
+        echo "disk_seq_write=${disk_write}"
+
+        # Disk random 4K IOPS with fsync (2 seconds — models Postgres commit behavior)
+        if command -v fio >/dev/null 2>&1; then
+          fio_out=$(fio --name=rand4k --rw=randwrite --bs=4k --size=32M --runtime=2 --time_based \
+            --fsync=1 --filename=/tmp/.bench_fio --output-format=json 2>/dev/null)
+          iops=$(echo "$fio_out" | python3 -c "import json,sys; print(int(json.load(sys.stdin)['jobs'][0]['write']['iops']))" 2>/dev/null || echo "parse_error")
+          lat=$(echo "$fio_out" | python3 -c "import json,sys; j=json.load(sys.stdin)['jobs'][0]['sync']; print(f'avg={j[\"lat_ns\"][\"mean\"]/1e6:.1f}ms p99={j[\"lat_ns\"][\"percentile\"][\"99.000000\"]/1e6:.1f}ms')" 2>/dev/null || echo "parse_error")
+          rm -f /tmp/.bench_fio
+          echo "disk_rand4k_fsync_iops=${iops}"
+          echo "disk_fsync_latency=${lat}"
+        else
+          echo "disk_rand4k_fsync_iops=fio_not_installed"
+        fi
+
+        # Memory bandwidth (dd through tmpfs, no disk involved)
+        mem_bw=$(dd if=/dev/zero of=/dev/shm/.bench bs=1M count=512 2>&1 | tail -1)
+        rm -f /dev/shm/.bench
+        echo "mem_bandwidth=${mem_bw}"
+
+        echo "::endgroup::"
+
     - name: Ignore dubious repository ownership
       run: |
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
         git config --global --add safe.directory "$(pwd)"
       shell: bash
+
+    - name: Monitor runner resources
+      shell: bash
+      run: |
+        (
+          while true; do
+            ts=$(date -u +%H:%M:%S)
+            cpu=$(top -bn1 2>/dev/null | awk '/^%Cpu/{printf "%.0f", 100-$8}' || echo 0)
+            mem=$(free -m 2>/dev/null | awk '/^Mem:/{printf "%d/%dMB(%.0f%%)", $3, $2, $3/$2*100}' || echo "?")
+            disk=$(df -BGB --output=avail / 2>/dev/null | tail -1 | tr -d ' ' || echo "?")
+            iow=$(awk '{printf "%.1f", $5}' /proc/stat 2>/dev/null | head -c6 || echo "?")
+            echo "${ts} cpu=${cpu}% mem=${mem} disk=${disk} iowait=${iow}"
+            sleep 30
+          done
+        ) >> /dev/shm/runner-monitor.log 2>&1 &
+        echo $! > /dev/shm/runner-monitor.pid
 
     - name: Record job info
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
@@ -152,6 +205,8 @@ runs:
         run: >
           echo "started_at=${EPOCHSECONDS:-$(date -u +%s)}" >> "$GITHUB_OUTPUT"
         post: >
+          kill "$(cat /dev/shm/runner-monitor.pid 2>/dev/null)" 2>/dev/null || true;
+          [ -f /dev/shm/runner-monitor.log ] && echo "::group::Runner resource monitor" && cat /dev/shm/runner-monitor.log && echo "::endgroup::" || true;
           source scripts/ci/lib.sh || true;
           save_job_record "${{ github.job }}" "gha" \
             outcome "${{ job.status }}" \
