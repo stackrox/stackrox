@@ -11,7 +11,7 @@ inputs:
     default: "ui/apps/platform"
 outputs:
   cache-hit:
-    description: Whether the cache was restored
+    description: Whether the cache was restored (exact match)
     value: ${{ steps.cache.outputs.cache-hit }}
 runs:
   using: composite
