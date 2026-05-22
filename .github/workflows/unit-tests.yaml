@@ -241,6 +241,22 @@ jobs:
     - name: Go Bench Tests (baseline)
       run: make go-postgres-bench-tests
 
+    - name: Run Postgres in container (master comparison)
+      run: |
+        sudo systemctl stop postgresql.service
+        docker run --rm -d --name pg-container \
+          -e POSTGRES_HOST_AUTH_METHOD=trust \
+          -p 5432:5432 \
+          docker.io/library/postgres:15
+        timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done'
+
+    - name: Go Bench Tests (container)
+      run: make go-postgres-bench-tests
+
+    - name: Stop container
+      if: always()
+      run: docker rm -f pg-container 2>/dev/null || true
+
     - name: Generate junit report
       if: always()
       run: make generate-junit-reports
