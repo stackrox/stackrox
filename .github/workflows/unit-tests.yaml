@@ -228,7 +228,17 @@ jobs:
         timeout 60 bash -c 'until pg_isready; do sleep 1; done' \
           || { sudo journalctl -u postgresql --no-pager -n 20; exit 1; }
 
-    - name: Go Bench Tests
+    - name: Go Bench Tests (tuned)
+      run: make go-postgres-bench-tests
+
+    - name: Restart Postgres with defaults (baseline comparison)
+      run: |
+        sudo systemctl stop postgresql.service
+        sudo sed -i '/shared_buffers\|work_mem\|maintenance_work_mem\|effective_cache_size\|fsync\|synchronous_commit\|full_page_writes\|max_wal_size\|checkpoint_completion_target\|random_page_cost/d' /etc/postgresql/*/main/postgresql.conf
+        sudo systemctl start postgresql.service
+        timeout 60 bash -c 'until pg_isready; do sleep 1; done'
+
+    - name: Go Bench Tests (baseline)
       run: make go-postgres-bench-tests
 
     - name: Generate junit report
