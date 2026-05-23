@@ -190,10 +190,12 @@ runs:
           echo "mem_bandwidth=${mem_bw}"
         fi
 
-        # CPU single-thread (sysbench prime check — ~1s)
+        # CPU: single-thread and all-core (sysbench prime check — ~1s each)
         if command -v sysbench >/dev/null 2>&1; then
-          cpu_score=$(sysbench cpu --cpu-max-prime=10000 --threads=1 run 2>/dev/null | awk '/events per second/{print $NF}')
-          echo "cpu_single_thread_score=${cpu_score}"
+          cpu_1t=$(sysbench cpu --cpu-max-prime=10000 --threads=1 run 2>/dev/null | awk '/events per second/{print $NF}')
+          cpu_mt=$(sysbench cpu --cpu-max-prime=10000 --threads=$(nproc) run 2>/dev/null | awk '/events per second/{print $NF}')
+          echo "cpu_single_thread_score=${cpu_1t}"
+          echo "cpu_multi_thread_score=${cpu_mt}"
         fi
 
         # Network latency
