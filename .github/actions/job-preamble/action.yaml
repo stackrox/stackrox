@@ -209,8 +209,8 @@ runs:
 
         # Memory bandwidth (sysbench gives precise MB/s, falls back to dd)
         if command -v sysbench >/dev/null 2>&1 || sudo apt-get -qq install -y sysbench >/dev/null 2>&1; then
-          mem_rd=$(sysbench memory --memory-block-size=1M --memory-total-size=2G --memory-oper=read run 2>/dev/null | awk '/transferred/{print $4}')
-          mem_wr=$(sysbench memory --memory-block-size=1M --memory-total-size=2G --memory-oper=write run 2>/dev/null | awk '/transferred/{print $4}')
+          mem_rd=$(sysbench memory --memory-block-size=1M --memory-total-size=2G --memory-oper=read run 2>/dev/null | awk '/transferred/{gsub(/[()]/,"",$4); print $4}')
+          mem_wr=$(sysbench memory --memory-block-size=1M --memory-total-size=2G --memory-oper=write run 2>/dev/null | awk '/transferred/{gsub(/[()]/,"",$4); print $4}')
           echo "mem_read_mbs=${mem_rd}"
           echo "mem_write_mbs=${mem_wr}"
         else
