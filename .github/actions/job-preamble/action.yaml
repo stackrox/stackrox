@@ -196,15 +196,23 @@ runs:
           echo "cpu_single_thread_score=${cpu_score}"
         fi
 
-        # Network: latency to GitHub API + Azure blob (the two services CI depends on)
+        # Network latency
         gh_lat=$(curl -so /dev/null -w '%{time_total}' https://api.github.com 2>/dev/null)
         az_lat=$(curl -so /dev/null -w '%{time_total}' https://pipelines.actions.githubusercontent.com 2>/dev/null)
         echo "net_github_api_secs=${gh_lat}"
         echo "net_actions_svc_secs=${az_lat}"
 
-        # Cache/download: measure actual GHA cache download speed (256MB from /dev/urandom)
-        dl_speed=$(curl -so /dev/null -w '%{speed_download}' https://github.com 2>/dev/null)
-        echo "net_download_bps=${dl_speed}"
+        # Network bandwidth: GHA-internal (Azure blob — same infra as cache service)
+        # and public internet, measured via 10MB download
+        gha_bw=$(curl -so /dev/null -w '%{speed_download}' \
+          "https://github.com/actions/runner/releases/download/v2.334.0/actions-runner-linux-x64-2.334.0.tar.gz" 2>/dev/null)
+        gha_bw_mbs=$(python3 -c "print(f'{${gha_bw:-0}/1048576:.1f}')" 2>/dev/null || echo "?")
+        echo "net_gha_download_mbs=${gha_bw_mbs}"
+
+        inet_bw=$(curl -so /dev/null -w '%{speed_download}' \
+          "https://speed.cloudflare.com/__down?bytes=10000000" 2>/dev/null)
+        inet_bw_mbs=$(python3 -c "print(f'{${inet_bw:-0}/1048576:.1f}')" 2>/dev/null || echo "?")
+        echo "net_internet_download_mbs=${inet_bw_mbs}"
 
         echo "::endgroup::"
 
