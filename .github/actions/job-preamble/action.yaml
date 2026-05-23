@@ -142,6 +142,8 @@ runs:
         echo "runner_os=${RUNNER_OS:-unknown}"
         echo "cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)"
         echo "cpu_cores=$(nproc 2>/dev/null)"
+        echo "cpu_l3_cache=$(lscpu 2>/dev/null | awk -F: '/L3 cache/{gsub(/^ +/,"",$2); print $2}')"
+        echo "numa_nodes=$(lscpu 2>/dev/null | awk -F: '/NUMA node\(s\)/{gsub(/^ +/,"",$2); print $2}')"
         echo "mem_total_mb=$(awk '/MemTotal/{printf "%d", $2/1024}' /proc/meminfo 2>/dev/null)"
         echo "mem_avail_mb=$(awk '/MemAvailable/{printf "%d", $2/1024}' /proc/meminfo 2>/dev/null)"
 
@@ -166,15 +168,29 @@ runs:
           rm -f "$test_dir/.bench_dd"
           echo "disk_${label}_seq_write=${dw}"
 
-          # Random 4K fsync IOPS
+          # Disk IOPS: random write with fsync, random read, sequential read (2s each)
           if command -v fio >/dev/null 2>&1; then
-            fio_out=$(fio --name=rand4k --rw=randwrite --bs=4k --size=32M --runtime=2 --time_based \
+            # Random 4K write with fsync (models Postgres commits)
+            fio_out=$(fio --name=randwr --rw=randwrite --bs=4k --size=32M --runtime=2 --time_based \
               --fsync=1 --filename="$test_dir/.bench_fio" --output-format=json 2>/dev/null) || true
             iops=$(echo "$fio_out" | python3 -c "import json,sys; print(int(json.load(sys.stdin)['jobs'][0]['write']['iops']))" 2>/dev/null || echo "?")
             lat=$(echo "$fio_out" | python3 -c "import json,sys; j=json.load(sys.stdin)['jobs'][0]['sync']; print(f'avg={j[\"lat_ns\"][\"mean\"]/1e6:.1f}ms p99={j[\"lat_ns\"][\"percentile\"][\"99.000000\"]/1e6:.1f}ms')" 2>/dev/null || echo "?")
+            echo "disk_${label}_fsync_write_iops=${iops}"
+            echo "disk_${label}_fsync_write_latency=${lat}"
+
+            # Random 4K read (models Go compiler reading .a files, source files)
+            fio_out=$(fio --name=randrd --rw=randread --bs=4k --size=32M --runtime=2 --time_based \
+              --filename="$test_dir/.bench_fio" --output-format=json 2>/dev/null) || true
+            iops=$(echo "$fio_out" | python3 -c "import json,sys; print(int(json.load(sys.stdin)['jobs'][0]['read']['iops']))" 2>/dev/null || echo "?")
+            echo "disk_${label}_rand_read_iops=${iops}"
+
+            # Sequential read (models cache restore, large file reads)
+            fio_out=$(fio --name=seqrd --rw=read --bs=1M --size=256M --runtime=2 --time_based \
+              --filename="$test_dir/.bench_fio" --output-format=json 2>/dev/null) || true
+            bw=$(echo "$fio_out" | python3 -c "import json,sys; print(int(json.load(sys.stdin)['jobs'][0]['read']['bw_bytes']/1048576))" 2>/dev/null || echo "?")
+            echo "disk_${label}_seq_read_mbs=${bw}"
+
             rm -f "$test_dir/.bench_fio"
-            echo "disk_${label}_fsync_iops=${iops}"
-            echo "disk_${label}_fsync_latency=${lat}"
           fi
         done
 
