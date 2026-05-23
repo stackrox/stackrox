@@ -140,6 +140,8 @@ runs:
         echo "::group::Runner performance snapshot"
         echo "runner_name=${RUNNER_NAME:-unknown}"
         echo "runner_os=${RUNNER_OS:-unknown}"
+        echo "runner_image=${ImageOS:-unknown}-${ImageVersion:-unknown}"
+        echo "kernel=$(uname -r 2>/dev/null)"
         echo "cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)"
         echo "cpu_cores=$(nproc 2>/dev/null)"
         echo "cpu_l3_cache=$(lscpu 2>/dev/null | awk -F: '/L3 cache/{gsub(/^ +/,"",$2); print $2}')"
