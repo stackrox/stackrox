@@ -54,14 +54,15 @@ runs:
           echo "::notice::Slow runner (${cpu_model}) but this is copy a — running as fallback."
         fi
 
-        # Check if sibling matrix job already completed successfully
+        # Check if sibling matrix job already completed with real work
+        # (not just a slow-runner skip, which completes in <60s)
         run_id="${{ github.run_id }}"
         my_job="${job_name} (${{ matrix.copy }})"
-        sibling_done=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
-          --jq "[.jobs[] | select(.name | startswith(\"${job_name}\")) | select(.name != \"${my_job}\") | select(.conclusion == \"success\")] | length" 2>/dev/null || echo 0)
+        sibling_real_done=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
+          --jq "[.jobs[] | select(.name | startswith(\"${job_name}\")) | select(.name != \"${my_job}\") | select(.conclusion == \"success\") | select((.completed_at | fromdateiso8601) - (.started_at | fromdateiso8601) > 120)] | length" 2>/dev/null || echo 0)
 
-        if [[ "$sibling_done" -gt 0 ]]; then
-          echo "Sibling job already completed successfully. Skipping this copy."
+        if [[ "$sibling_real_done" -gt 0 ]]; then
+          echo "Sibling job completed with real work (>2min). Skipping this copy."
           echo "run=false" >> "$GITHUB_OUTPUT"
           exit 0
         fi
@@ -83,12 +84,11 @@ runs:
         (
           while true; do
             sleep 30
+            # Check if sibling completed with real work (>2min, not a slow-runner skip)
             sibling_done=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
-              --jq "[.jobs[] | select(.name | startswith(\"${job_name}\")) | select(.name != \"${my_job}\") | select(.conclusion == \"success\")] | length" 2>/dev/null || echo 0)
+              --jq "[.jobs[] | select(.name | startswith(\"${job_name}\")) | select(.name != \"${my_job}\") | select(.conclusion == \"success\") | select((.completed_at | fromdateiso8601) - (.started_at | fromdateiso8601) > 120)] | length" 2>/dev/null || echo 0)
             if [[ "$sibling_done" -gt 0 ]]; then
-              echo "Sibling completed. Cancelling this copy."
-              # Cancel our own job by cancelling the run — but this cancels everything.
-              # Instead, just write a marker file that steps can check.
+              echo "Sibling completed real work. Stopping this copy."
               touch /dev/shm/sibling-completed
               break
             fi
