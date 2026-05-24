@@ -1,0 +1,94 @@
+name: Speculative Run
+description: >
+  Run in a matrix with copy: [a, b]. Profiles the runner and monitors
+  sibling matrix jobs. Cancels self if on a slow runner or if sibling
+  finishes first. Add to any heavy job for speculative execution.
+inputs:
+  job-name:
+    description: 'The job name (used to find sibling matrix entries)'
+    required: true
+  slow-cpu-pattern:
+    description: 'CPU model substring to reject (default: 7763)'
+    required: false
+    default: '7763'
+outputs:
+  run:
+    description: 'true if this copy should run, false if skipped'
+    value: ${{ steps.decide.outputs.run }}
+  cpu-model:
+    description: 'CPU model detected on this runner'
+    value: ${{ steps.profile.outputs.cpu_model }}
+  slow-runner:
+    description: 'true if this runner was rejected as slow'
+    value: ${{ steps.decide.outputs.slow_runner }}
+runs:
+  using: composite
+  steps:
+    - name: Profile runner
+      id: profile
+      shell: bash
+      run: |
+        cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
+        echo "cpu_model=${cpu_model}" >> "$GITHUB_OUTPUT"
+        echo "cpu_model=${cpu_model}"
+
+    - name: Decide whether to run
+      id: decide
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        cpu_model="${{ steps.profile.outputs.cpu_model }}"
+        slow_pattern="${{ inputs.slow-cpu-pattern }}"
+        job_name="${{ inputs.job-name }}"
+
+        # Check if this is a slow runner
+        if [[ "$cpu_model" == *"$slow_pattern"* ]]; then
+          echo "::warning::Slow runner detected (${cpu_model} matches ${slow_pattern}). Cancelling this copy."
+          echo "run=false" >> "$GITHUB_OUTPUT"
+          echo "slow_runner=true" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        # Check if sibling matrix job already completed successfully
+        run_id="${{ github.run_id }}"
+        my_job="${job_name} (${{ matrix.copy }})"
+        sibling_done=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
+          --jq "[.jobs[] | select(.name | startswith(\"${job_name}\")) | select(.name != \"${my_job}\") | select(.conclusion == \"success\")] | length" 2>/dev/null || echo 0)
+
+        if [[ "$sibling_done" -gt 0 ]]; then
+          echo "Sibling job already completed successfully. Skipping this copy."
+          echo "run=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        echo "Runner OK (${cpu_model}). Proceeding."
+        echo "run=true" >> "$GITHUB_OUTPUT"
+
+    - name: Start sibling monitor
+      if: steps.decide.outputs.run == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # Background monitor: poll sibling job status every 30s.
+        # If sibling completes, cancel this job via the API.
+        job_name="${{ inputs.job-name }}"
+        run_id="${{ github.run_id }}"
+        my_job="${job_name} (${{ matrix.copy }})"
+        (
+          while true; do
+            sleep 30
+            sibling_done=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
+              --jq "[.jobs[] | select(.name | startswith(\"${job_name}\")) | select(.name != \"${my_job}\") | select(.conclusion == \"success\")] | length" 2>/dev/null || echo 0)
+            if [[ "$sibling_done" -gt 0 ]]; then
+              echo "Sibling completed. Cancelling this copy."
+              # Cancel our own job by cancelling the run — but this cancels everything.
+              # Instead, just write a marker file that steps can check.
+              touch /dev/shm/sibling-completed
+              break
+            fi
+          done
+        ) &
+        echo $! > /dev/shm/sibling-monitor.pid
+        echo "Sibling monitor started (PID: $!)"

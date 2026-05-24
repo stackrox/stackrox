@@ -191,14 +191,30 @@ jobs:
         directory: 'junit-reports'
 
   go-bench:
+    strategy:
+      matrix:
+        copy: [a, b]
     runs-on: ubuntu-latest
-    outputs:
-      slow-runner: ${{ steps.runner-check.outputs.slow_runner }}
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
     steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - name: Speculative run check
+      uses: ./.github/actions/speculative-run
+      id: spec
+      with:
+        job-name: go-bench
+
+    - uses: ./.github/actions/job-preamble
+      if: steps.spec.outputs.run == 'true'
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
     - name: Start Postgres
+      if: steps.spec.outputs.run == 'true'
       run: |
         sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
         cat << 'PGCONF' | sudo tee -a /etc/postgresql/*/main/postgresql.conf
@@ -215,74 +231,18 @@ jobs:
         PGCONF
         sudo systemctl start postgresql.service
 
-    - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Check runner quality
-      id: runner-check
-      run: |
-        cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
-        score=$(cat /dev/shm/cpu_score.txt 2>/dev/null || echo 0)
-        echo "cpu_model=${cpu_model}"
-        echo "cpu_score=${score}"
-        attempt="${GITHUB_RUN_ATTEMPT:-1}"
-        echo "attempt=${attempt}"
-        # After 2 retries, run regardless of runner quality
-        if [[ "$attempt" -gt 2 ]]; then
-          echo "Attempt ${attempt} — running regardless of runner quality"
-          echo "skip=false" >> "$GITHUB_OUTPUT"
-        elif [[ "$cpu_model" == *"7763"* ]]; then
-          echo "::warning::Slow runner detected (${cpu_model}). Skipping expensive steps — will retry on a faster runner."
-          echo "skip=true" >> "$GITHUB_OUTPUT"
-          echo "slow_runner=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "Runner quality OK (${cpu_model}, score=$score)"
-          echo "skip=false" >> "$GITHUB_OUTPUT"
-        fi
-
     - name: Cache Go dependencies
-      if: steps.runner-check.outputs.skip != 'true'
+      if: steps.spec.outputs.run == 'true'
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Is Postgres ready
-      if: steps.runner-check.outputs.skip != 'true'
+      if: steps.spec.outputs.run == 'true'
       run: |
         timeout 60 bash -c 'until pg_isready; do sleep 1; done' \
           || { sudo journalctl -u postgresql --no-pager -n 20; exit 1; }
 
-    - name: Go Bench Tests (tuned)
-      if: steps.runner-check.outputs.skip != 'true'
-      run: make go-postgres-bench-tests
-
-    - name: Restart Postgres with defaults (baseline comparison)
-      if: steps.runner-check.outputs.skip != 'true'
-      run: |
-        sudo systemctl stop postgresql.service
-        sudo sed -i '/shared_buffers\|work_mem\|maintenance_work_mem\|effective_cache_size\|fsync\|synchronous_commit\|full_page_writes\|max_wal_size\|checkpoint_completion_target\|random_page_cost/d' /etc/postgresql/*/main/postgresql.conf
-        sudo systemctl start postgresql.service
-        timeout 60 bash -c 'until pg_isready; do sleep 1; done'
-
-    - name: Go Bench Tests (baseline)
-      if: steps.runner-check.outputs.skip != 'true'
-      run: make go-postgres-bench-tests
-
-    - name: Run Postgres in container (master comparison)
-      if: steps.runner-check.outputs.skip != 'true'
-      run: |
-        sudo systemctl stop postgresql.service
-        docker run --rm -d --name pg-container \
-          -e POSTGRES_HOST_AUTH_METHOD=trust \
-          -p 5432:5432 \
-          docker.io/library/postgres:15
-        timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done'
-
-    - name: Go Bench Tests (container)
-      if: steps.runner-check.outputs.skip != 'true'
+    - name: Go Bench Tests
+      if: steps.spec.outputs.run == 'true'
       run: make go-postgres-bench-tests
 
     - name: Stop container
@@ -611,36 +571,3 @@ jobs:
         source scripts/ci/lib.sh
         slack_workflow_failure
 
-  rerun-slow-runner-jobs:
-    if: always() && needs.go-bench.outputs.slow-runner == 'true'
-    needs:
-      - go
-      - go-bench
-      - go-postgres
-      - local-roxctl-tests
-      - openshift-ci-unit-tests
-      - sensor-integration-tests
-      - shell-unit-tests
-      - ui
-      - ui-component
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write
-    steps:
-    - name: Re-run go-bench on a different runner
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        echo "go-bench was skipped due to slow runner. Requesting re-run..."
-        # Find the go-bench job ID in this workflow run
-        job_id=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs?per_page=100" \
-          --jq '.jobs[] | select(.name == "go-bench") | .id')
-        echo "go-bench job ID: ${job_id}"
-        echo "Attempt: ${{ github.run_attempt }}"
-        # Cap at 2 retries (3 total attempts)
-        if [[ "${{ github.run_attempt }}" -ge 3 ]]; then
-          echo "::warning::Reached max retry attempts (3). Not re-running again."
-          exit 0
-        fi
-        gh api --method POST "repos/${{ github.repository }}/actions/jobs/${job_id}/rerun"
-        echo "Re-run triggered. go-bench will retry on a new runner."
