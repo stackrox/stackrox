@@ -627,9 +627,9 @@ jobs:
           --jq '.jobs[] | select(.name == "go-bench") | .id')
         echo "go-bench job ID: ${job_id}"
         echo "Attempt: ${{ github.run_attempt }}"
-        # Cap retries at 3 attempts
-        if [[ "${{ github.run_attempt }}" -ge 3 ]]; then
-          echo "::warning::Reached max retry attempts (3). Running on whatever runner is available."
+        # Only retry once — second attempt runs regardless of runner quality
+        if [[ "${{ github.run_attempt }}" -ge 2 ]]; then
+          echo "::warning::Already retried once. Not re-running again."
           exit 0
         fi
         gh api --method POST "repos/${{ github.repository }}/actions/jobs/${job_id}/rerun"
