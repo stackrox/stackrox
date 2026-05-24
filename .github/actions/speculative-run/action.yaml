@@ -42,12 +42,16 @@ runs:
         slow_pattern="${{ inputs.slow-cpu-pattern }}"
         job_name="${{ inputs.job-name }}"
 
-        # Check if this is a slow runner
-        if [[ "$cpu_model" == *"$slow_pattern"* ]]; then
-          echo "::warning::Slow runner detected (${cpu_model} matches ${slow_pattern}). Cancelling this copy."
+        # Check if this is a slow runner — only skip copy "b".
+        # Copy "a" always runs as fallback to guarantee at least one executes.
+        if [[ "$cpu_model" == *"$slow_pattern"* && "${{ matrix.copy }}" == "b" ]]; then
+          echo "::warning::Slow runner detected (${cpu_model}). Skipping copy b — copy a will run."
           echo "run=false" >> "$GITHUB_OUTPUT"
           echo "slow_runner=true" >> "$GITHUB_OUTPUT"
           exit 0
+        fi
+        if [[ "$cpu_model" == *"$slow_pattern"* ]]; then
+          echo "::notice::Slow runner (${cpu_model}) but this is copy a — running as fallback."
         fi
 
         # Check if sibling matrix job already completed successfully
