@@ -28,37 +28,39 @@ runs:
         echo "cpu_model=${cpu_model}"
         slow_pattern="${{ inputs.slow-cpu-pattern }}"
 
+        run_id="${{ github.run_id }}"
+        job_name="${{ inputs.job-name }}"
+
         if [[ "${{ matrix.copy }}" == "a" ]]; then
-          echo "Copy a (primary) — always runs."
+          # Copy A: quit if slow, run if fast. Does not check B.
+          if [[ "$cpu_model" == *"$slow_pattern"* ]]; then
+            echo "::warning::Slow runner (${cpu_model}). Primary copy skipping — backup will cover."
+            exit 1
+          fi
+          echo "Fast runner (${cpu_model}). Primary copy running."
           exit 0
         fi
 
-        # Copy b logic: only run if we're fast AND copy a is slow
-        if [[ "$cpu_model" == *"$slow_pattern"* ]]; then
-          echo "::warning::Slow runner (${cpu_model}). Backup copy not needed."
-          exit 1
-        fi
-
-        # B is fast — check if A failed the gate (meaning A is slow)
-        run_id="${{ github.run_id }}"
-        job_name="${{ inputs.job-name }}"
-        echo "Fast runner (${cpu_model}). Checking if primary copy needs rescue..."
-
-        # Wait briefly for A's gate step to complete
+        # Copy B: check A's gate result, then decide.
+        echo "Checking primary copy's runner gate..."
         for i in $(seq 1 6); do
-          a_status=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
-            --jq ".jobs[] | select(.name == \"${job_name} (a)\") | .steps[] | select(.name == \"Runner gate\") | .conclusion" 2>/dev/null || echo "pending")
-          if [[ "$a_status" != "null" && -n "$a_status" ]]; then break; fi
+          a_gate=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
+            --jq ".jobs[] | select(.name == \"${job_name} (a)\") | .steps[] | select(.name == \"Runner gate\") | .conclusion" 2>/dev/null || echo "")
+          if [[ -n "$a_gate" && "$a_gate" != "null" ]]; then break; fi
           sleep 5
         done
 
-        if [[ "$a_status" == "failure" ]]; then
-          echo "Primary copy failed gate (slow runner). Backup copy running as rescue."
-          exit 0
-        elif [[ "$a_status" == "success" ]]; then
-          echo "Primary copy passed gate (fast runner). Backup not needed."
+        if [[ "$a_gate" == "success" ]]; then
+          # A is fast — A has it covered, B quits regardless of own speed
+          echo "Primary copy is on a fast runner. Backup not needed."
           exit 1
-        else
-          echo "::notice::Could not determine primary status ($a_status). Running as precaution."
-          exit 0
         fi
+
+        # A failed gate (slow) or unknown — B is the rescue.
+        # B runs regardless of its own runner speed.
+        if [[ "$cpu_model" == *"$slow_pattern"* ]]; then
+          echo "::notice::Both copies on slow runners. Backup running as fallback."
+        else
+          echo "Primary copy is slow. Backup copy running as rescue (${cpu_model})."
+        fi
+        exit 0
