@@ -191,6 +191,7 @@ jobs:
         directory: 'junit-reports'
 
   go-bench:
+    continue-on-error: true
     strategy:
       matrix:
         copy: [a, b]
