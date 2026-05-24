@@ -2,9 +2,7 @@ name: Speculative Run
 description: >
   Speculative execution for CI jobs on heterogeneous runners.
   Use with a matrix (copy: [a, b, c, ...]) and continue-on-error: true.
-  Each copy profiles the runner CPU model. Fast copies check if any
-  earlier copy already passed — if so, they quit. The last copy in
-  the alphabet is the fallback and runs even on slow hardware.
+  All copies profile the runner, then make one API call to decide who runs.
 inputs:
   job-name:
     description: 'The job name (used to find sibling matrix entries in API)'
@@ -13,10 +11,6 @@ inputs:
     description: 'CPU model substring to reject (default: 7763)'
     required: false
     default: '7763'
-  copies:
-    description: 'Ordered list of copy labels, comma-separated (default: a,b)'
-    required: false
-    default: 'a,b'
 outputs:
   cpu-model:
     description: 'CPU model detected on this runner'
@@ -38,67 +32,58 @@ runs:
         my_copy="${{ matrix.copy }}"
         job_name="${{ inputs.job-name }}"
         run_id="${{ github.run_id }}"
-        IFS=',' read -ra copies <<< "${{ inputs.copies }}"
-        last_copy="${copies[-1]}"
         is_slow=$([[ "$cpu_model" == *"$slow_pattern"* ]] && echo true || echo false)
 
-        echo "copy=${my_copy} slow=${is_slow} last=${last_copy}"
-
-        # Build list of predecessors (copies before me alphabetically)
-        predecessors=()
-        for c in "${copies[@]}"; do
-          if [[ "$c" == "$my_copy" ]]; then break; fi
-          predecessors+=("$c")
-        done
-
-        # If I have no predecessors, I'm copy a (first).
-        # Quit if slow — later copies will cover.
-        if [[ ${#predecessors[@]} -eq 0 ]]; then
+        # Copy a: simple — run if fast, skip if slow.
+        if [[ "$my_copy" == "a" ]]; then
           if [[ "$is_slow" == "true" ]]; then
-            echo "::warning::Slow runner (${cpu_model}). First copy skipping."
+            echo "::warning::Slow runner (${cpu_model}). Skipping copy a."
             exit 1
           fi
-          echo "Fast runner. First copy running."
+          echo "Fast runner (${cpu_model}). Copy a running."
           exit 0
         fi
 
-        # I have predecessors — check if any passed the gate (fast runner).
-        echo "Checking ${#predecessors[@]} predecessor(s)..."
-        for i in $(seq 1 6); do
-          any_passed=false
-          for pred in "${predecessors[@]}"; do
-            gate_result=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
-              --jq ".jobs[] | select(.name == \"${job_name} (${pred})\") | .steps[] | select(.name == \"Runner gate\") | .conclusion" 2>/dev/null || echo "")
-            if [[ "$gate_result" == "success" ]]; then
-              echo "Copy ${pred} passed gate (fast runner). I'm not needed."
-              exit 1
-            fi
-          done
-          # Check if all predecessors have reported
-          all_reported=true
-          for pred in "${predecessors[@]}"; do
-            gate_result=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
-              --jq ".jobs[] | select(.name == \"${pred}\") | .steps[] | select(.name == \"Runner gate\") | .conclusion" 2>/dev/null || echo "")
-            if [[ -z "$gate_result" || "$gate_result" == "null" ]]; then
-              all_reported=false
-              break
-            fi
-          done
-          if [[ "$all_reported" == "true" ]]; then break; fi
+        # Copies b-f: wait for copy a's gate, then one API call decides.
+        echo "Waiting for copy a's gate result..."
+        for i in $(seq 1 12); do
+          a_gate=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
+            --jq ".jobs[] | select(.name == \"${job_name} (a)\") | .steps[] | select(.name == \"Runner gate\") | .conclusion" 2>/dev/null || echo "")
+          if [[ -n "$a_gate" && "$a_gate" != "null" ]]; then break; fi
           sleep 5
         done
 
-        # All predecessors failed gate (slow runners).
-        if [[ "$my_copy" == "$last_copy" ]]; then
-          echo "All predecessors slow. Last copy — running as fallback."
-          exit 0
-        fi
-
-        # Not the last copy — only run if I'm fast
-        if [[ "$is_slow" == "true" ]]; then
-          echo "::warning::Slow runner and predecessors also slow. Later copy will handle fallback."
+        if [[ "$a_gate" == "success" ]]; then
+          echo "Copy a is fast. Not needed."
           exit 1
         fi
 
-        echo "All predecessors slow. I'm fast — running as rescue."
-        exit 0
+        # Copy a is slow. I should run if I'm fast.
+        if [[ "$is_slow" == "true" ]]; then
+          # I'm also slow. Only run if I'm the last copy (fallback).
+          # Check: are there any later copies that might be fast?
+          # Rather than polling, use a simple rule: last copy alphabetically
+          # in the matrix is the fallback. All others quit.
+          all_copies=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
+            --jq "[.jobs[] | select(.name | startswith(\"${job_name} (\")) | .name | capture(\"\\\\((?<c>.)\\\\)\").c] | sort | last" 2>/dev/null || echo "f")
+          if [[ "$my_copy" == "$all_copies" ]]; then
+            echo "::notice::All predecessors slow, I'm slow too, but I'm the last copy — running as fallback."
+            exit 0
+          fi
+          echo "::warning::Slow runner. Not last copy. Skipping."
+          exit 1
+        fi
+
+        # I'm fast and copy a is slow. But am I the first fast copy?
+        # Wait briefly for other copies to report, then check.
+        sleep 3
+        first_fast=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
+          --jq "[.jobs[] | select(.name | startswith(\"${job_name} (\")) | select(.name != \"${job_name} (a)\") | select(.steps[] | select(.name == \"Runner gate\") | .conclusion == \"success\") | .name | capture(\"\\\\((?<c>.)\\\\)\").c] | sort | first" 2>/dev/null || echo "")
+
+        if [[ "$first_fast" == "$my_copy" || -z "$first_fast" ]]; then
+          echo "Copy a is slow. I'm the first fast copy — running as rescue."
+          exit 0
+        fi
+
+        echo "Copy a is slow, but copy ${first_fast} is fast and earlier. Not needed."
+        exit 1
