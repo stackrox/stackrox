@@ -614,7 +614,15 @@ jobs:
   rerun-slow-runner-jobs:
     if: always() && needs.go-bench.outputs.slow-runner == 'true'
     needs:
+      - go
       - go-bench
+      - go-postgres
+      - local-roxctl-tests
+      - openshift-ci-unit-tests
+      - sensor-integration-tests
+      - shell-unit-tests
+      - ui
+      - ui-component
     runs-on: ubuntu-latest
     permissions:
       actions: write
