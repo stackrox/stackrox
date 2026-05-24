@@ -230,9 +230,9 @@ jobs:
         echo "cpu_score=${score}"
         attempt="${GITHUB_RUN_ATTEMPT:-1}"
         echo "attempt=${attempt}"
-        # Only enforce on first attempt — retries always run
-        if [[ "$attempt" -gt 1 ]]; then
-          echo "Retry attempt ${attempt} — running regardless of runner quality"
+        # After 2 retries, run regardless of runner quality
+        if [[ "$attempt" -gt 2 ]]; then
+          echo "Attempt ${attempt} — running regardless of runner quality"
           echo "skip=false" >> "$GITHUB_OUTPUT"
         elif (( $(echo "$score < 3000" | bc -l 2>/dev/null || echo 0) )); then
           echo "::warning::Slow runner detected (score=$score < 3000). Skipping expensive steps — will retry on a faster runner."
@@ -627,9 +627,9 @@ jobs:
           --jq '.jobs[] | select(.name == "go-bench") | .id')
         echo "go-bench job ID: ${job_id}"
         echo "Attempt: ${{ github.run_attempt }}"
-        # Only retry once — second attempt runs regardless of runner quality
-        if [[ "${{ github.run_attempt }}" -ge 2 ]]; then
-          echo "::warning::Already retried once. Not re-running again."
+        # Cap at 2 retries (3 total attempts)
+        if [[ "${{ github.run_attempt }}" -ge 3 ]]; then
+          echo "::warning::Reached max retry attempts (3). Not re-running again."
           exit 0
         fi
         gh api --method POST "repos/${{ github.repository }}/actions/jobs/${job_id}/rerun"
