@@ -8,6 +8,10 @@ inputs:
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
+  github-token:
+    description: 'GitHub token for runner registration (fast-pool keep-alive)'
+    required: false
+    default: ''
 runs:
   using: composite
   steps:
@@ -273,6 +277,11 @@ runs:
         ) >> /dev/shm/runner-monitor.log 2>&1 &
         echo $! > /dev/shm/runner-monitor.pid
 
+    - name: Save token for post-step
+      if: inputs.github-token != ''
+      shell: bash
+      run: echo "${{ inputs.github-token }}" > /dev/shm/gh_token.txt
+
     - name: Record job info
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       id: record_job_info
@@ -305,24 +314,10 @@ runs:
           KEEP_ALIVE_THRESHOLD=3400;
           KEEP_ALIVE_MINUTES=15;
           if (( $(echo "$cpu_score > $KEEP_ALIVE_THRESHOLD" | bc -l 2>/dev/null || echo 0) )); then\
-            ka_start=$(date -u +%Y-%m-%dT%H:%M:%SZ);\
-            ka_start_epoch=${EPOCHSECONDS:-$(date +%s)};\
-            echo "::group::Fast runner keep-alive (score=$cpu_score, target=${KEEP_ALIVE_MINUTES}m)";\
-            echo "keep-alive-start: ${ka_start}";\
-            echo "keep-alive-target: ${KEEP_ALIVE_MINUTES}m";\
-            for i in $(seq 1 $KEEP_ALIVE_MINUTES); do\
-              sleep 60;\
-              elapsed=$(( ${EPOCHSECONDS:-$(date +%s)} - ka_start_epoch ));\
-              echo "keep-alive tick=$i/${KEEP_ALIVE_MINUTES} elapsed=${elapsed}s $(date -u +%H:%M:%SZ) mem=$(free -m | awk '/^Mem:/{printf \"%d/%dMB\", $3, $2}') disk=$(df -BGB --output=avail / | tail -1 | tr -d ' ')";\
-            done;\
-            ka_end=$(date -u +%Y-%m-%dT%H:%M:%SZ);\
-            ka_total=$(( ${EPOCHSECONDS:-$(date +%s)} - ka_start_epoch ));\
-            echo "keep-alive-end: ${ka_end}";\
-            echo "keep-alive-duration: ${ka_total}s (target was $((KEEP_ALIVE_MINUTES * 60))s)";\
-            if [[ $ka_total -ge $((KEEP_ALIVE_MINUTES * 60 - 5)) ]]; then\
-              echo "keep-alive-result: SUCCESS — runner stayed alive for full ${KEEP_ALIVE_MINUTES}m";\
+            export GH_TOKEN=$(cat /dev/shm/gh_token.txt 2>/dev/null || echo "");\
+            if [[ -n "$GH_TOKEN" ]]; then\
+              bash "$GITHUB_WORKSPACE/.github/actions/job-preamble/keep-alive.sh" "$cpu_score" "$KEEP_ALIVE_MINUTES" || true;\
             else\
-              echo "keep-alive-result: PARTIAL — runner only survived ${ka_total}s of $((KEEP_ALIVE_MINUTES * 60))s";\
+              echo "keep-alive: skipped — no GH_TOKEN available for runner registration";\
             fi;\
-            echo "::endgroup::";\
           fi;

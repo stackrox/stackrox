@@ -219,6 +219,7 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
