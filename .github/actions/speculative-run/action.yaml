@@ -1,17 +1,22 @@
 name: Speculative Run
 description: >
-  Run in a matrix with copy: [a, b]. Profiles the runner and fails
-  on slow hardware, causing GitHub Actions to skip remaining steps.
-  Copy "a" is the fallback and always runs. Use with
-  continue-on-error: true on the job.
+  Speculative execution for CI jobs on heterogeneous runners.
+  Use with a matrix (copy: [a, b, c, ...]) and continue-on-error: true.
+  Each copy profiles the runner CPU model. Fast copies check if any
+  earlier copy already passed — if so, they quit. The last copy in
+  the alphabet is the fallback and runs even on slow hardware.
 inputs:
   job-name:
-    description: 'The job name (used to find sibling matrix entry in API)'
+    description: 'The job name (used to find sibling matrix entries in API)'
     required: true
   slow-cpu-pattern:
     description: 'CPU model substring to reject (default: 7763)'
     required: false
     default: '7763'
+  copies:
+    description: 'Ordered list of copy labels, comma-separated (default: a,b)'
+    required: false
+    default: 'a,b'
 outputs:
   cpu-model:
     description: 'CPU model detected on this runner'
@@ -22,45 +27,78 @@ runs:
     - name: Runner gate
       id: gate
       shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
         cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
         echo "cpu_model=${cpu_model}" >> "$GITHUB_OUTPUT"
         echo "cpu_model=${cpu_model}"
+
         slow_pattern="${{ inputs.slow-cpu-pattern }}"
-
-        run_id="${{ github.run_id }}"
+        my_copy="${{ matrix.copy }}"
         job_name="${{ inputs.job-name }}"
+        run_id="${{ github.run_id }}"
+        IFS=',' read -ra copies <<< "${{ inputs.copies }}"
+        last_copy="${copies[-1]}"
+        is_slow=$([[ "$cpu_model" == *"$slow_pattern"* ]] && echo true || echo false)
 
-        if [[ "${{ matrix.copy }}" == "a" ]]; then
-          # Copy A: quit if slow, run if fast. Does not check B.
-          if [[ "$cpu_model" == *"$slow_pattern"* ]]; then
-            echo "::warning::Slow runner (${cpu_model}). Primary copy skipping — backup will cover."
+        echo "copy=${my_copy} slow=${is_slow} last=${last_copy}"
+
+        # Build list of predecessors (copies before me alphabetically)
+        predecessors=()
+        for c in "${copies[@]}"; do
+          if [[ "$c" == "$my_copy" ]]; then break; fi
+          predecessors+=("$c")
+        done
+
+        # If I have no predecessors, I'm copy a (first).
+        # Quit if slow — later copies will cover.
+        if [[ ${#predecessors[@]} -eq 0 ]]; then
+          if [[ "$is_slow" == "true" ]]; then
+            echo "::warning::Slow runner (${cpu_model}). First copy skipping."
             exit 1
           fi
-          echo "Fast runner (${cpu_model}). Primary copy running."
+          echo "Fast runner. First copy running."
           exit 0
         fi
 
-        # Copy B: check A's gate result, then decide.
-        echo "Checking primary copy's runner gate..."
+        # I have predecessors — check if any passed the gate (fast runner).
+        echo "Checking ${#predecessors[@]} predecessor(s)..."
         for i in $(seq 1 6); do
-          a_gate=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
-            --jq ".jobs[] | select(.name == \"${job_name} (a)\") | .steps[] | select(.name == \"Runner gate\") | .conclusion" 2>/dev/null || echo "")
-          if [[ -n "$a_gate" && "$a_gate" != "null" ]]; then break; fi
+          any_passed=false
+          for pred in "${predecessors[@]}"; do
+            gate_result=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
+              --jq ".jobs[] | select(.name == \"${job_name} (${pred})\") | .steps[] | select(.name == \"Runner gate\") | .conclusion" 2>/dev/null || echo "")
+            if [[ "$gate_result" == "success" ]]; then
+              echo "Copy ${pred} passed gate (fast runner). I'm not needed."
+              exit 1
+            fi
+          done
+          # Check if all predecessors have reported
+          all_reported=true
+          for pred in "${predecessors[@]}"; do
+            gate_result=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
+              --jq ".jobs[] | select(.name == \"${pred}\") | .steps[] | select(.name == \"Runner gate\") | .conclusion" 2>/dev/null || echo "")
+            if [[ -z "$gate_result" || "$gate_result" == "null" ]]; then
+              all_reported=false
+              break
+            fi
+          done
+          if [[ "$all_reported" == "true" ]]; then break; fi
           sleep 5
         done
 
-        if [[ "$a_gate" == "success" ]]; then
-          # A is fast — A has it covered, B quits regardless of own speed
-          echo "Primary copy is on a fast runner. Backup not needed."
+        # All predecessors failed gate (slow runners).
+        if [[ "$my_copy" == "$last_copy" ]]; then
+          echo "All predecessors slow. Last copy — running as fallback."
+          exit 0
+        fi
+
+        # Not the last copy — only run if I'm fast
+        if [[ "$is_slow" == "true" ]]; then
+          echo "::warning::Slow runner and predecessors also slow. Later copy will handle fallback."
           exit 1
         fi
 
-        # A failed gate (slow) or unknown — B is the rescue.
-        # B runs regardless of its own runner speed.
-        if [[ "$cpu_model" == *"$slow_pattern"* ]]; then
-          echo "::notice::Both copies on slow runners. Backup running as fallback."
-        else
-          echo "Primary copy is slow. Backup copy running as rescue (${cpu_model})."
-        fi
+        echo "All predecessors slow. I'm fast — running as rescue."
         exit 0
