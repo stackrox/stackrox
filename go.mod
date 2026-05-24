@@ -32,7 +32,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.22.18
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.57.2
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.101.0
-	github.com/aws/aws-sdk-go-v2/service/securityhub v1.70.0
+	github.com/aws/aws-sdk-go-v2/service/securityhub v1.71.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.42.1
 	github.com/aws/smithy-go v1.25.1
 	github.com/bmatcuk/doublestar/v4 v4.10.0
@@ -141,12 +141,12 @@ require (
 	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.27.1
 	go.yaml.in/yaml/v3 v3.0.4
-	golang.org/x/crypto v0.51.0
+	golang.org/x/crypto v0.52.0
 	golang.org/x/mod v0.36.0
-	golang.org/x/net v0.54.0
+	golang.org/x/net v0.55.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sync v0.20.0
-	golang.org/x/sys v0.44.0
+	golang.org/x/sys v0.45.0
 	golang.org/x/term v0.43.0
 	golang.org/x/text v0.37.0
 	golang.org/x/time v0.15.0
@@ -269,7 +269,7 @@ require (
 	github.com/cockroachdb/tokenbucket v0.0.0-20250429170803-42689b6311bb // indirect
 	github.com/coder/websocket v1.8.14 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
-	github.com/containerd/containerd v1.7.30 // indirect
+	github.com/containerd/containerd v1.7.32 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
