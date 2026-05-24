@@ -302,7 +302,7 @@ runs:
             printf "Low free disk space post-job: ${free}" | tee -a "$GITHUB_STEP_SUMMARY";\
           fi;
           cpu_score=$(cat /dev/shm/cpu_score.txt 2>/dev/null || echo 0);
-          KEEP_ALIVE_THRESHOLD=4500;
+          KEEP_ALIVE_THRESHOLD=3400;
           KEEP_ALIVE_MINUTES=15;
           if (( $(echo "$cpu_score > $KEEP_ALIVE_THRESHOLD" | bc -l 2>/dev/null || echo 0) )); then\
             ka_start=$(date -u +%Y-%m-%dT%H:%M:%SZ);\
