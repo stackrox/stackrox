@@ -305,11 +305,24 @@ runs:
           KEEP_ALIVE_THRESHOLD=4500;
           KEEP_ALIVE_MINUTES=15;
           if (( $(echo "$cpu_score > $KEEP_ALIVE_THRESHOLD" | bc -l 2>/dev/null || echo 0) )); then\
-            echo "::group::Fast runner detected (score=$cpu_score) — keeping alive for ${KEEP_ALIVE_MINUTES}m";\
-            echo "Runner will stay alive until $(date -u -d "+${KEEP_ALIVE_MINUTES} minutes" +%H:%M:%S 2>/dev/null || date -u +%H:%M:%S)Z";\
+            ka_start=$(date -u +%Y-%m-%dT%H:%M:%SZ);\
+            ka_start_epoch=${EPOCHSECONDS:-$(date +%s)};\
+            echo "::group::Fast runner keep-alive (score=$cpu_score, target=${KEEP_ALIVE_MINUTES}m)";\
+            echo "keep-alive-start: ${ka_start}";\
+            echo "keep-alive-target: ${KEEP_ALIVE_MINUTES}m";\
             for i in $(seq 1 $KEEP_ALIVE_MINUTES); do\
-              echo "keep-alive tick $i/${KEEP_ALIVE_MINUTES} — $(date -u +%H:%M:%S) — $(free -m | awk '/^Mem:/{printf \"%d/%dMB\", $3, $2}') — disk=$(df -BGB --output=avail / | tail -1 | tr -d ' ')";\
               sleep 60;\
+              elapsed=$(( ${EPOCHSECONDS:-$(date +%s)} - ka_start_epoch ));\
+              echo "keep-alive tick=$i/${KEEP_ALIVE_MINUTES} elapsed=${elapsed}s $(date -u +%H:%M:%SZ) mem=$(free -m | awk '/^Mem:/{printf \"%d/%dMB\", $3, $2}') disk=$(df -BGB --output=avail / | tail -1 | tr -d ' ')";\
             done;\
+            ka_end=$(date -u +%Y-%m-%dT%H:%M:%SZ);\
+            ka_total=$(( ${EPOCHSECONDS:-$(date +%s)} - ka_start_epoch ));\
+            echo "keep-alive-end: ${ka_end}";\
+            echo "keep-alive-duration: ${ka_total}s (target was $((KEEP_ALIVE_MINUTES * 60))s)";\
+            if [[ $ka_total -ge $((KEEP_ALIVE_MINUTES * 60 - 5)) ]]; then\
+              echo "keep-alive-result: SUCCESS — runner stayed alive for full ${KEEP_ALIVE_MINUTES}m";\
+            else\
+              echo "keep-alive-result: PARTIAL — runner only survived ${ka_total}s of $((KEEP_ALIVE_MINUTES * 60))s";\
+            fi;\
             echo "::endgroup::";\
           fi;
