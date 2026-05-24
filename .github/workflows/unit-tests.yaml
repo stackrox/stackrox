@@ -226,7 +226,9 @@ jobs:
     - name: Check runner quality
       id: runner-check
       run: |
+        cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
         score=$(cat /dev/shm/cpu_score.txt 2>/dev/null || echo 0)
+        echo "cpu_model=${cpu_model}"
         echo "cpu_score=${score}"
         attempt="${GITHUB_RUN_ATTEMPT:-1}"
         echo "attempt=${attempt}"
@@ -234,12 +236,12 @@ jobs:
         if [[ "$attempt" -gt 2 ]]; then
           echo "Attempt ${attempt} — running regardless of runner quality"
           echo "skip=false" >> "$GITHUB_OUTPUT"
-        elif (( $(echo "$score < 3000" | bc -l 2>/dev/null || echo 0) )); then
-          echo "::warning::Slow runner detected (score=$score < 3000). Skipping expensive steps — will retry on a faster runner."
+        elif [[ "$cpu_model" == *"7763"* ]]; then
+          echo "::warning::Slow runner detected (${cpu_model}). Skipping expensive steps — will retry on a faster runner."
           echo "skip=true" >> "$GITHUB_OUTPUT"
           echo "slow_runner=true" >> "$GITHUB_OUTPUT"
         else
-          echo "Runner quality OK (score=$score)"
+          echo "Runner quality OK (${cpu_model}, score=$score)"
           echo "skip=false" >> "$GITHUB_OUTPUT"
         fi
 
