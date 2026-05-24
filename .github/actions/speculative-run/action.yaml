@@ -1,13 +1,10 @@
 name: Speculative Run
 description: >
-  Run in a matrix with copy: [a, b]. Profiles the runner and monitors
-  sibling matrix jobs. Exits with failure on slow runners (skipping
-  remaining steps). Sibling checks for conclusion=success to detect
-  real completions. Use with continue-on-error on the matrix job.
+  Run in a matrix with copy: [a, b]. Profiles the runner and fails
+  on slow hardware, causing GitHub Actions to skip remaining steps.
+  Copy "a" is the fallback and always runs. Use with
+  continue-on-error: true on the job.
 inputs:
-  job-name:
-    description: 'The job name (used to find sibling matrix entries)'
-    required: true
   slow-cpu-pattern:
     description: 'CPU model substring to reject (default: 7763)'
     required: false
@@ -15,67 +12,24 @@ inputs:
 outputs:
   cpu-model:
     description: 'CPU model detected on this runner'
-    value: ${{ steps.profile.outputs.cpu_model }}
+    value: ${{ steps.gate.outputs.cpu_model }}
 runs:
   using: composite
   steps:
-    - name: Profile runner
-      id: profile
+    - name: Runner gate
+      id: gate
       shell: bash
       run: |
         cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
         echo "cpu_model=${cpu_model}" >> "$GITHUB_OUTPUT"
         echo "cpu_model=${cpu_model}"
-
-    - name: Runner gate
-      id: gate
-      shell: bash
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        cpu_model="${{ steps.profile.outputs.cpu_model }}"
         slow_pattern="${{ inputs.slow-cpu-pattern }}"
-        job_name="${{ inputs.job-name }}"
-        run_id="${{ github.run_id }}"
-        my_job="${job_name} (${{ matrix.copy }})"
-
-        # Check if sibling already succeeded
-        sibling_ok=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
-          --jq "[.jobs[] | select(.name | startswith(\"${job_name}\")) | select(.name != \"${my_job}\") | select(.conclusion == \"success\")] | length" 2>/dev/null || echo 0)
-        if [[ "$sibling_ok" -gt 0 ]]; then
-          echo "Sibling already succeeded. Exiting."
-          exit 1
-        fi
-
-        # Slow runner: fail this copy so remaining steps are skipped.
-        # Copy "a" is the fallback — always runs even on slow hardware.
         if [[ "$cpu_model" == *"$slow_pattern"* && "${{ matrix.copy }}" != "a" ]]; then
-          echo "::warning::Slow runner (${cpu_model}). Failing this copy to skip remaining steps."
+          echo "::warning::Slow runner (${cpu_model}). Skipping this copy."
           exit 1
         fi
         if [[ "$cpu_model" == *"$slow_pattern"* ]]; then
-          echo "::notice::Slow runner (${cpu_model}) but this is copy a — running as fallback."
+          echo "::notice::Slow runner (${cpu_model}) but copy a — running as fallback."
+        else
+          echo "Runner OK (${cpu_model})."
         fi
-        echo "Runner OK (${cpu_model}). Proceeding."
-
-    - name: Start sibling monitor
-      shell: bash
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        job_name="${{ inputs.job-name }}"
-        run_id="${{ github.run_id }}"
-        my_job="${job_name} (${{ matrix.copy }})"
-        (
-          while true; do
-            sleep 30
-            sibling_ok=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
-              --jq "[.jobs[] | select(.name | startswith(\"${job_name}\")) | select(.name != \"${my_job}\") | select(.conclusion == \"success\")] | length" 2>/dev/null || echo 0)
-            if [[ "$sibling_ok" -gt 0 ]]; then
-              echo "Sibling succeeded. Signalling stop."
-              touch /dev/shm/sibling-completed
-              break
-            fi
-          done
-        ) &
-        echo "Sibling monitor started (PID: $!)"
