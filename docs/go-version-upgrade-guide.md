@@ -1,95 +1,168 @@
 # Go Version Upgrade Guide
 
-This document describes the process for upgrading the Go version used in the StackRox project.
+This document describes the process for upgrading the Go version in the StackRox project.
 
-## Prerequisites
+## Overview
 
-- Update the apollo-ci container image (optional but recommended)
-- Ensure Konflux go-builder image supports the target Go version
-- Review Go release notes for breaking changes
+Upgrading Go involves updating version declarations across the codebase, addressing breaking changes in the standard library, and ensuring CI infrastructure supports the new version. The process typically takes several iterations as test failures reveal behavioral changes in Go's standard library.
 
-## Files to Update
+## Planning the Upgrade
 
-### 1. Core Go Version Declaration
+### Before You Start
+
+1. **Review Go Release Notes**
+   - Identify breaking changes in the standard library
+   - Check for deprecated features being removed
+   - Note new language features that may conflict with existing code
+   - Review security fixes (CVEs) driving the upgrade
+
+2. **Check Infrastructure Support**
+   - Verify the apollo-ci container supports the target version (or plan to use setup-go action)
+   - Confirm Konflux go-builder image supports the target version (critical blocker)
+   - Ensure local development environments can access the new version
+
+3. **Plan for Breaking Changes**
+   - Standard library behavioral changes (URL parsing, validation logic, etc.)
+   - Runtime changes (goroutine scheduling, timing assumptions)
+   - Compiler changes (stricter checks, new error messages)
+
+## Version Declaration Updates
+
+### 1. Primary Version Declaration
 
 **File:** `go.mod`
 ```go
-go 1.26.2
+go X.Y.Z
 ```
 
-### 2. CI Workflows
+This is the single source of truth for the Go version.
 
-**File:** `.github/workflows/golangci-lint.yaml`
+### 2. CI Workflow Configurations
 
-Update the `go-version` parameter:
+**Principle:** Use `go-version-file: go.mod` to avoid version duplication.
+
+**Workflows to update:**
+
+- `.github/workflows/golangci-lint.yaml` - Linter must use same version as codebase
+- `.github/workflows/unit-tests.yaml` - Test jobs (if not using go-version-file)
+
+**Recommended approach:**
+```yaml
+- name: Set up Go
+  uses: actions/setup-go@v5
+  with:
+    go-version-file: go.mod  # Single source of truth
+```
+
+**Alternative (hardcoded):**
 ```yaml
 - uses: actions/setup-go@v5
   with:
-    go-version: '1.26.2'
+    go-version: 'X.Y.Z'  # Must be updated manually
 ```
 
-**File:** `.github/workflows/unit-tests.yaml`
+### 3. Tool Module Versions
 
-The workflow uses `go-version-file: go.mod` to automatically read the version from go.mod, so no changes needed if already configured.
+Tool modules in `tools/` directories have their own `go.mod` files that should match the main version for consistency.
 
-If not using `go-version-file`, add setup-go action to jobs that run in containers:
-```yaml
-- name: Set up Go
-  uses: actions/setup-go@v5
-  with:
-    go-version-file: go.mod
-```
-
-### 3. Tool Modules
-
-Update all tool module `go.mod` files to match the main Go version:
-
+**Find and update:**
 ```bash
-find . -name go.mod -path '*/tools/*' -exec sed -i 's/^go .*/go 1.26.2/' {} \;
+find . -name go.mod -path '*/tools/*' -exec sed -i 's/^go .*/go X.Y.Z/' {} \;
 ```
 
-Tool modules to update:
+Common locations:
 - `tools/generate-helpers/go.mod`
 - `tools/roxvet/go.mod`
-- Other tool directories with go.mod files
+- Any other tool directories with go.mod files
 
-## Expected Test Failures and Fixes
+## Understanding Test Failures
 
-When upgrading Go versions, expect test failures due to standard library behavioral changes. Common patterns:
+Go upgrades commonly expose test failures. These fall into three categories:
 
-### 1. URL Parser Changes
+### 1. Standard Library Behavioral Changes
 
-**Location:** `pkg/clientconn/client_test.go`
+The Go standard library evolves between versions. Common areas of change:
 
-Go may change error message priority in URL parsing. Update test expectations to match new error messages.
+**URL Parsing (`net/url` package):**
+- Error message wording and priority changes
+- Stricter validation rules
+- IPv6 address handling
 
-### 2. IPv6 Validation Changes
+**Example pattern:**
+```go
+// Before: errString := `parse: invalid URL escape`
+// After:  errString := `parse: invalid port after host`
+```
 
-**Location:** `pkg/tlscheck/tlscheck.go`
+**When this occurs:**
+- Verify the new behavior is correct (often it's stricter/better)
+- Update test expectations to match new error messages
+- Consider if you should use project-specific utilities for consistency
+- Document why the change was made
 
-Go may change how `url.Parse()` validates IPv6 addresses. Consider using project-specific utilities like `netutil.ParseEndpoint()` for consistency.
+**Timing and Scheduling:**
+- Go runtime scheduler changes between versions
+- Tests with timing assumptions may become flaky
+- Exposed race conditions that were previously masked
 
-### 3. Timing/Scheduling Changes
+**When this occurs:**
+- Increase timeout buffers for legitimate timing tests
+- Add explicit synchronization instead of relying on timing
+- Consider if the test is actually revealing a real race condition
 
-**Location:** Test files with timing assumptions (e.g., `central/processindicator/datastore/datastore_impl_test.go`)
+### 2. Compiler and Type System Changes
 
-Go runtime changes can expose timing race conditions. Increase timeouts or add explicit synchronization as needed.
+**Stricter Type Checking:**
+- More rigorous nil checks
+- Improved escape analysis
+- Generics-related inference changes
 
-### 4. General Strategy
+**When this occurs:**
+- Fix the underlying issue rather than working around it
+- The compiler is usually catching a real problem
 
-For each test failure:
-1. Verify it's a Go behavioral change, not a real bug
-2. Check if the new behavior is more correct
-3. Update test expectations rather than working around the new behavior
-4. Add comments explaining why the behavior changed
+### 3. Deprecated Feature Removal
 
-## CI Infrastructure Considerations
+**Common deprecations:**
+- Old API methods removed
+- Package reorganizations
+- Build tag syntax changes
 
-### Container vs Native Runners
+**When this occurs:**
+- Migrate to the recommended replacement
+- Check the Go release notes for migration guidance
 
-The apollo-ci container may have an older Go version baked in. When upgrading Go:
+## General Test Failure Strategy
 
-**Option 1: Use setup-go action (recommended)**
+For each failure during upgrade:
+
+1. **Isolate:** Run the specific failing test locally
+2. **Investigate:** Determine if it's a Go change or real bug
+3. **Validate:** Check if the new behavior is more correct
+4. **Fix:** Update tests to match new behavior (don't work around it)
+5. **Document:** Add comments explaining the Go version dependency
+6. **Commit:** Commit each fix individually for easier review
+
+## CI Infrastructure Updates
+
+### Understanding the Container Environment
+
+**The Problem:**
+GitHub Actions jobs can run in containers with pre-installed Go versions. When upgrading, you may encounter:
+- Container has Go X.Y.Z baked in
+- `go.mod` declares Go A.B.C (newer)
+- `GOTOOLCHAIN=auto` downloads Go A.B.C
+- But the container's Go X.Y.Z is still used from PATH
+
+**The Symptom:**
+```
+compile: version "goA.B.C" does not match go tool version "goX.Y.Z"
+```
+
+**The Solution - Use setup-go Action:**
+
+The `setup-go` action installs the specified Go version at the front of PATH, ensuring it's used instead of the container's version.
+
 ```yaml
 - name: Set up Go
   uses: actions/setup-go@v5
@@ -97,67 +170,114 @@ The apollo-ci container may have an older Go version baked in. When upgrading Go
     go-version-file: go.mod
 ```
 
-This installs the correct Go version ahead of the container's Go in PATH.
+**Why this works:**
+- Downloads and installs the correct Go version
+- Prepends it to PATH ahead of the container's Go
+- Works even when container has older version
 
-**Option 2: Wait for apollo-ci update**
+**Alternative Approaches:**
 
-Wait for the apollo-ci container to be updated with the new Go version.
+1. **Wait for container update** - If apollo-ci container is updated with the new Go version
+2. **Remove containers** - Switch to native GitHub runners (ubuntu-latest) instead of containers
+3. **Use GOTOOLCHAIN alone** - Only works if container doesn't have Go pre-installed
 
-**Option 3: Remove container**
+**Recommendation:** Use setup-go action for fastest resolution and explicit version control.
 
-Switch to native ubuntu-latest runners (see `davdhacs/remove-container-unittests` branch for reference).
+### Build Cache Invalidation
 
-### Cache Invalidation
+**Why it's needed:**
+Go build caches include metadata tied to the Go version. Upgrading Go without invalidating the cache can cause:
+- Stale cached artifacts from old Go version
+- Incompatible object files
+- Mysterious compilation failures
 
-When upgrading Go versions, invalidate the build cache:
+**How to invalidate:**
 
-**File:** `.github/actions/cache-go-dependencies/action.yaml`
+Bump the cache key version in your cache action:
 
-Bump the cache version:
 ```yaml
-key: go-build-v4-${{ github.job }}...  # Increment version number
+# .github/actions/cache-go-dependencies/action.yaml
+key: go-build-vN-${{ github.job }}...  # Increment N
 ```
 
-## Konflux Integration
+**When to do it:**
+- Always when upgrading minor versions (1.25 → 1.26)
+- Usually when upgrading patch versions (1.26.1 → 1.26.2) to be safe
+- After seeing cache-related failures
 
-### Red Hat Konflux Builder
+## External Build System Dependencies
 
-**CRITICAL:** Konflux uses a separate Go builder image that must support the target Go version.
+### Red Hat Konflux
 
-**Issue:** The Konflux `checks` job will fail if the go-builder image doesn't support the new Go version.
+**Critical Constraint:** StackRox uses Red Hat Konflux for builds. Konflux has its own Go builder image that is updated independently.
 
-**Resolution:**
-1. Check if the Konflux go-builder supports the target version
-2. If not, file a request to update the Konflux go-builder image
-3. The PR cannot be merged until Konflux supports the new Go version
+**The Blocker:**
+- Your PR updates `go.mod` to Go X.Y.Z
+- Konflux go-builder only supports up to Go A.B.C
+- Result: Konflux builds fail
 
-**Error Example:**
+**How to identify:**
 ```
 Red Hat Konflux / checks: FAILURE
 ```
 
-This indicates the Konflux builder doesn't support the Go version in go.mod.
+This typically means the Konflux builder doesn't support the Go version declared in go.mod.
 
-## Upgrade Checklist
+**Resolution Path:**
+1. Check current Konflux go-builder version
+2. If it doesn't support your target version:
+   - File a request to update the Konflux go-builder
+   - Wait for the update (external dependency)
+   - Cannot merge PR until Konflux is updated
+3. If urgent (security CVEs), coordinate with Konflux team for expedited update
 
+**Planning Tip:**
+Check Konflux builder support BEFORE starting the upgrade to avoid delays.
+
+## Upgrade Process Checklist
+
+### Pre-Upgrade
+- [ ] Review Go release notes for breaking changes
+- [ ] Verify Konflux go-builder supports target version
+- [ ] Check if security CVEs are driving the upgrade (affects urgency)
+- [ ] Identify likely areas of breakage from release notes
+
+### Code Changes
 - [ ] Update `go.mod` with new Go version
-- [ ] Update `.github/workflows/golangci-lint.yaml` go-version
+- [ ] Update `.github/workflows/golangci-lint.yaml` (if not using go-version-file)
 - [ ] Update all tool module `go.mod` files
 - [ ] Bump cache version in `.github/actions/cache-go-dependencies/action.yaml`
-- [ ] Ensure `.github/workflows/unit-tests.yaml` uses setup-go action or wait for apollo-ci update
-- [ ] Run tests locally to identify behavioral changes
-- [ ] Fix test failures caused by Go stdlib changes
-- [ ] Verify Konflux go-builder supports the new version
-- [ ] Monitor CI for additional failures
-- [ ] Update this guide with new failure patterns discovered
+- [ ] Ensure workflows use setup-go action with go-version-file
 
-## Common Issues
+### Testing
+- [ ] Run `make go-unit-tests` locally to identify obvious failures
+- [ ] Push to branch and monitor all CI jobs
+- [ ] Fix test failures iteratively (one commit per logical fix)
+- [ ] Verify no behavioral regressions in passing tests
+- [ ] Ensure all CI jobs pass (including Konflux)
 
-### Issue: "compile: version go1.26.2 does not match go tool version go1.25.7"
+### Documentation
+- [ ] Update this guide with new patterns discovered
+- [ ] Document any significant test changes with comments
+- [ ] Note any workarounds in commit messages
 
-**Cause:** Container has older Go baked in, GOTOOLCHAIN=auto downloads new Go but container's Go is still in PATH.
+## Troubleshooting Common Issues
 
-**Solution:** Add setup-go action to install the correct Go version:
+### Version Mismatch Compilation Errors
+
+**Symptom:**
+```
+compile: version "goX.Y.Z" does not match go tool version "goA.B.C"
+```
+Thousands of these errors during compilation.
+
+**Root Cause:**
+- CI container has Go version A.B.C pre-installed
+- `go.mod` declares version X.Y.Z
+- `GOTOOLCHAIN=auto` downloads X.Y.Z but doesn't override PATH
+- Container's Go A.B.C is still used for compilation
+
+**Solution:**
 ```yaml
 - name: Set up Go
   uses: actions/setup-go@v5
@@ -165,28 +285,132 @@ This indicates the Konflux builder doesn't support the Go version in go.mod.
     go-version-file: go.mod
 ```
 
-### Issue: Tests pass but make returns Error 1
+This installs the correct version ahead of the container's Go in PATH.
 
-**Cause:** Version mismatch errors during compilation cause non-zero exit status.
+### Tests Pass Individually But Job Fails
 
-**Solution:** Same as above - install correct Go version with setup-go.
+**Symptom:**
+All test output shows `PASS`, but `make` returns non-zero exit code.
 
-### Issue: Konflux checks fail
+**Root Cause:**
+Version mismatch errors during compilation return non-zero status, failing the entire pipeline even though tests execute successfully.
 
-**Cause:** Konflux go-builder doesn't support the new Go version yet.
+**Solution:**
+Fix the version mismatch (see above).
 
-**Solution:** Wait for Konflux builder update or coordinate with Konflux team.
+### Konflux Build Failures
+
+**Symptom:**
+```
+Red Hat Konflux / checks: FAILURE
+```
+
+**Root Cause:**
+Konflux go-builder doesn't support the Go version in go.mod yet.
+
+**Solution:**
+1. Verify Konflux builder version
+2. Request update if needed
+3. Wait for Konflux team to update builder
+4. Cannot merge until resolved
+
+### Flaky Tests After Upgrade
+
+**Symptom:**
+Tests that previously passed now occasionally fail.
+
+**Root Cause:**
+- Go runtime scheduler changes exposed timing assumptions
+- Race conditions previously masked by timing
+
+**Solution:**
+- Add explicit synchronization instead of timing-based waits
+- Increase timeout buffers for legitimate timing-sensitive tests
+- Run with `-race` flag to detect actual race conditions
 
 ## Testing Strategy
 
-1. **Local testing:** Run `make go-unit-tests` locally to catch obvious failures
-2. **CI monitoring:** Push to a branch and monitor all CI jobs
-3. **Iterative fixes:** Fix test failures one at a time, committing after each fix
-4. **Verification:** Ensure all tests pass before requesting review
+### Local Testing First
+1. **Build:** `make main-build` to catch compilation issues
+2. **Unit tests:** `make go-unit-tests` to identify behavioral changes
+3. **Linting:** `make golangci-lint` to catch new warnings
+4. **Integration tests:** Run key integration tests if available
 
-## Additional Notes
+### CI-Driven Iteration
+1. **Push to branch:** Don't push directly to main
+2. **Monitor all jobs:** Check every CI job, not just unit tests
+3. **Fix iteratively:** One logical fix per commit
+4. **Document changes:** Commit messages should explain why tests changed
 
-- Always check Go release notes for breaking changes
-- Security-critical Go updates (CVE fixes) should be prioritized
-- Consider the impact on downstream consumers of StackRox
-- Update developer documentation if new Go features are adopted
+### Verification
+1. **All tests pass:** Including Konflux, linters, integration tests
+2. **No regressions:** Verify previously passing tests still pass
+3. **Performance check:** Large Go upgrades can affect performance
+4. **Local build works:** Ensure developers can build without CI
+
+## Best Practices
+
+### Single Source of Truth
+Always use `go-version-file: go.mod` in workflows rather than hardcoding versions. This prevents version drift between go.mod and CI configuration.
+
+### Atomic Commits
+Each test fix should be a separate commit with clear explanation:
+```
+Fix pkg/foo/bar_test.go for Go X.Y.Z URL parser changes
+
+Go X.Y.Z changed url.Parse() to validate ports before checking
+escape sequences. Updated error expectations to match new behavior.
+
+Ref: https://go.dev/doc/go1.XY#net/url
+```
+
+### Document Behavioral Changes
+When fixing tests, add comments explaining the Go version dependency:
+```go
+// Go 1.26+ validates port syntax before URL escapes
+errString := `parse: invalid port after host`
+```
+
+### Test Before Filing PR
+Don't create the PR until:
+- All CI jobs pass (or have documented known issues)
+- Konflux builder support is confirmed
+- Local builds work
+
+## Security Considerations
+
+### CVE-Driven Upgrades
+When upgrading due to security fixes:
+- Prioritize the upgrade
+- Coordinate with Konflux team for faster builder updates
+- Document which CVEs are being addressed
+- Consider backporting to supported release branches
+
+### Testing Security Fixes
+- Verify the CVE is actually fixed in your codebase
+- Check if the CVE affects your usage patterns
+- Test security-critical code paths explicitly
+
+## Impact on Downstream
+
+### API Stability
+Go upgrades can affect:
+- Binary compatibility (if distributing compiled binaries)
+- Generated code (protobuf, code generators)
+- Vendored dependencies behavior
+
+### Communication
+Coordinate with teams that:
+- Consume StackRox as a library
+- Build against StackRox codebase
+- Use StackRox-generated artifacts
+
+## Updating This Guide
+
+When you encounter new patterns during an upgrade:
+1. Document the failure mode
+2. Document the solution
+3. Add to troubleshooting section
+4. Include Go version where it occurred
+
+This guide improves with each upgrade cycle.
