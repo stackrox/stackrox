@@ -34,11 +34,17 @@ runs:
         run_id="${{ github.run_id }}"
         is_slow=$([[ "$cpu_model" == *"$slow_pattern"* ]] && echo true || echo false)
 
-        # Skip speculative execution on arm64 — different runner pool, no profiling data
+        # Skip speculative execution on arm64 — different runner pool, no profiling data.
+        # Only copy a runs; copy b quits to avoid doubling arm64 compute.
         arch=$(uname -m 2>/dev/null)
         if [[ "$arch" == "aarch64" || "$arch" == "arm64" ]]; then
-          echo "ARM64 runner — speculative execution disabled, running normally."
-          exit 0
+          if [[ "$my_copy" == "a" ]]; then
+            echo "ARM64 runner — copy a running (no speculative execution on ARM)."
+            exit 0
+          else
+            echo "ARM64 runner — copy b not needed."
+            exit 1
+          fi
         fi
 
         # Build the exact sibling name from matrix values.
