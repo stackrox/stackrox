@@ -84,13 +84,9 @@ function invoke_go() {
 
   args+=(-ldflags="${cgo_ldflags[*]}")
 
-  if [[ -n "$cc_compiler" ]]; then
-    CGO_ENABLED="$cgo_enabled" CC="$cc_compiler" go "$tool" "${args[@]}" "$@"
-  elif [[ "$cgo_enabled" != "${CGO_ENABLED:-0}" ]]; then
-    CGO_ENABLED="$cgo_enabled" go "$tool" "${args[@]}" "$@"
-  else
-    go "$tool" "${args[@]}" "$@"
-  fi
+  export CGO_ENABLED="$cgo_enabled"
+  [[ -n "$cc_compiler" ]] && export CC="$cc_compiler"
+  go "$tool" "${args[@]}" "$@"
 }
 
 function go_build() (
