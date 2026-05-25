@@ -176,10 +176,17 @@ jobs:
         with:
           node-version-file: ui/package.json
 
-      - uses: ./.github/actions/cache-ui-dependencies
+      - name: Cache UI dependencies
+        id: cache-ui
+        uses: ./.github/actions/cache-ui-dependencies
 
       - name: Fetch UI deps
+        if: steps.cache-ui.outputs.cache-hit != 'true'
         run: make -C ui deps
+
+      - name: Skip UI deps on cache hit
+        if: steps.cache-ui.outputs.cache-hit == 'true'
+        run: touch ui/deps
 
       - name: Build UI
         run: make -C ui build
@@ -403,10 +410,17 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
-    - uses: ./.github/actions/cache-ui-dependencies
+    - name: Cache UI dependencies
+      id: cache-ui
+      uses: ./.github/actions/cache-ui-dependencies
 
     - name: Fetch UI deps
+      if: steps.cache-ui.outputs.cache-hit != 'true'
       run: make -C ui deps
+
+    - name: Skip UI deps on cache hit
+      if: steps.cache-ui.outputs.cache-hit == 'true'
+      run: touch ui/deps
 
     - name: Generate OSS notice
       run: make ossls-notice
