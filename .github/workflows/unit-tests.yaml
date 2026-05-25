@@ -342,7 +342,7 @@ jobs:
       uses: ./.github/actions/upload-artifact-with-retry
       if: always()
       with:
-        name: Cypress test results (${{ matrix.shards }} shards)
+        name: Cypress test results
         path: ui/apps/platform/cypress/test-results/
 
     - name: Publish Test Report
