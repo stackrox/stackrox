@@ -147,9 +147,15 @@ jobs:
           # Speculative execution: add copy dimension to every sub-matrix.
           # Each job gets 2 copies (a, b). Copy a runs if the runner is fast,
           # copy b rescues if copy a lands on slow hardware (EPYC 7763).
+          # For jobs with arch dimension, exclude arm64+copy=b (native ARM runners
+          # are a separate pool — no need for speculative execution).
           # Remove this block to disable speculative execution.
           for key in $(jq -r 'keys[]' <<< "$matrix"); do
             matrix="$(jq --arg k "$key" '.[$k].copy = ["a", "b"]' <<< "$matrix")"
+            # Exclude arm64 copy b for jobs that have an arch dimension
+            if jq -e --arg k "$key" '.[$k] | has("arch")' <<< "$matrix" >/dev/null 2>&1; then
+              matrix="$(jq --arg k "$key" '.[$k].exclude += [{"arch": "arm64", "copy": "b"}]' <<< "$matrix")"
+            fi
           done
 
           echo "Job matrix after conditionals:"
@@ -593,6 +599,7 @@ jobs:
 
 
       - name: Speculative run check
+        if: matrix.arch != 'arm64'
         uses: ./.github/actions/speculative-run
         id: spec
         with:
@@ -898,6 +905,7 @@ jobs:
 
 
       - name: Speculative run check
+        if: matrix.arch != 'arm64'
         uses: ./.github/actions/speculative-run
         id: spec
         with:
