@@ -2,11 +2,9 @@ name: Speculative Run
 description: >
   Speculative execution for CI jobs on heterogeneous runners.
   Use with a matrix that includes copy: [a, b] and continue-on-error: true.
-  Works with any existing matrix dimensions — the copy letter is always
-  the last comma-separated element in the job name.
 inputs:
   job-name:
-    description: 'The base job name before matrix expansion (e.g. pre-build-go-binaries)'
+    description: 'The base job name before matrix expansion'
     required: true
   slow-cpu-pattern:
     description: 'CPU model substring to reject (default: 7763)'
@@ -24,6 +22,7 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
+        MATRIX_JSON: ${{ toJSON(matrix) }}
       run: |
         cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
         echo "cpu_model=${cpu_model}" >> "$GITHUB_OUTPUT"
@@ -35,17 +34,16 @@ runs:
         run_id="${{ github.run_id }}"
         is_slow=$([[ "$cpu_model" == *"$slow_pattern"* ]] && echo true || echo false)
 
-        # Build the sibling name pattern: same job + same matrix dims, but copy=a
-        # For "pre-build-go-binaries (default, amd64, b)" the sibling is
-        # "pre-build-go-binaries (default, amd64, a)"
-        my_full_name="${{ github.job }}"
-        # Replace the last matrix element (copy letter) with 'a' to find sibling
-        sibling_a=$(echo "$my_full_name" | sed "s/, ${my_copy})/, a)/")
-        if [[ "$sibling_a" == "$my_full_name" ]]; then
-          # Single-dimension matrix: "go-bench (b)" -> "go-bench (a)"
-          sibling_a=$(echo "$my_full_name" | sed "s/(${my_copy})/(a)/")
-        fi
-        echo "my_name=${my_full_name}"
+        # Build the exact sibling name from matrix values.
+        # GHA names jobs as: "{base} ({val1}, {val2}, ..., {copy})"
+        # Reconstruct with copy=a using the matrix JSON to get correct key order.
+        sibling_a=$(MATRIX_JSON="$MATRIX_JSON" python3 -c "
+        import json, os
+        m = json.loads(os.environ['MATRIX_JSON'])
+        vals = [str(v) for k, v in m.items() if k != 'copy']
+        vals.append('a')
+        print('$job_name (' + ', '.join(vals) + ')')
+        ")
         echo "sibling_a=${sibling_a}"
 
         # Copy a: run if fast, skip if slow.
@@ -58,8 +56,8 @@ runs:
           exit 0
         fi
 
-        # Copy b: wait for copy a's gate result, then decide.
-        echo "Waiting for sibling (${sibling_a}) gate result..."
+        # Copy b: wait for copy a's gate result.
+        echo "Waiting for copy a gate (${sibling_a})..."
         a_gate=""
         for i in $(seq 1 12); do
           a_gate=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
@@ -67,15 +65,13 @@ runs:
           if [[ -n "$a_gate" && "$a_gate" != "null" ]]; then break; fi
           sleep 5
         done
+        echo "copy_a_gate=${a_gate}"
 
         if [[ "$a_gate" == "success" ]]; then
-          # Copy a is fast — it will handle the work
           echo "Copy a passed gate (fast runner). Not needed."
           exit 1
         fi
 
-        # Copy a failed gate (slow) or hasn't reported yet.
-        # B runs regardless of own speed — it's the rescue/fallback.
         if [[ "$is_slow" == "true" ]]; then
           echo "::notice::Both copies on slow runners. Running as fallback."
         else
