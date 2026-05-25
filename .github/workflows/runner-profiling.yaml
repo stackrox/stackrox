@@ -1,0 +1,69 @@
+name: Runner Profiling
+on:
+  workflow_dispatch:
+
+jobs:
+  # Runs the same preamble as all other jobs, logging CPU model,
+  # disk IOPS, memory bandwidth, etc. Each job gets a random runner
+  # from the pool — over many runs we build a performance profile
+  # per runner type per job type.
+
+  profile-go-compile:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+      - name: Build Go Binaries (amd64)
+        run: make main-build
+
+  profile-go-compile-no-container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+      - name: Build Go Binaries (amd64, no container)
+        run: make main-build
+
+  profile-docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b0c600c0 # ratchet:docker/setup-buildx-action@v3
+      - name: Build main image (dry run)
+        run: |
+          # Just build, don't push — we only care about timing
+          make image STORAGE=pvc 2>&1 | tail -5 || true
+
+  profile-ui-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+        with:
+          node-version-file: ui/package.json
+      - uses: ./.github/actions/cache-ui-dependencies
+      - name: Build UI
+        run: make -C ui deps && make -C ui build
