@@ -36,14 +36,7 @@ runs:
 
         # Build the exact sibling name from matrix values.
         # GHA names jobs as: "{base} ({val1}, {val2}, ..., {copy})"
-        # Reconstruct with copy=a using the matrix JSON to get correct key order.
-        sibling_a=$(MATRIX_JSON="$MATRIX_JSON" python3 -c "
-        import json, os
-        m = json.loads(os.environ['MATRIX_JSON'])
-        vals = [str(v) for k, v in m.items() if k != 'copy']
-        vals.append('a')
-        print('$job_name (' + ', '.join(vals) + ')')
-        ")
+        sibling_a=$(SPEC_JOB="$job_name" python3 -c "import json,os; m=json.loads(os.environ['MATRIX_JSON']); v=[str(x) for k,x in m.items() if k!='copy']; v.append('a'); print(os.environ['SPEC_JOB']+' ('+', '.join(v)+')')")
         echo "sibling_a=${sibling_a}"
 
         # Copy a: run if fast, skip if slow.
