@@ -32,7 +32,14 @@ runs:
         my_copy="${{ matrix.copy }}"
         job_name="${{ inputs.job-name }}"
         run_id="${{ github.run_id }}"
+        event="${{ github.event_name }}"
         is_slow=$([[ "$cpu_model" == *"$slow_pattern"* ]] && echo true || echo false)
+
+        # On workflow_dispatch, disable gating — run both copies for profiling data
+        if [[ "$event" == "workflow_dispatch" ]]; then
+          echo "Profiling mode (workflow_dispatch) — running all copies."
+          exit 0
+        fi
 
         # Skip speculative execution on arm64 — different runner pool, no profiling data.
         # Only copy a runs; copy b quits to avoid doubling arm64 compute.
