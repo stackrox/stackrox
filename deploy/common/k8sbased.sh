@@ -961,6 +961,9 @@ function launch_sensor {
              "${extra_config[@]+"${extra_config[@]}"}"
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
 
+        # roxctl sensor generate does not support setting dynamicConfig fields
+        # (e.g. processIndicators.excludeNamespaceFilter), so we patch the
+        # cluster via the API after creation.
         if [[ -n "$extra_json_dynamic_config" ]]; then
           echo "Updating cluster dynamic config after roxctl sensor generate..."
           local cluster_json
