@@ -34,6 +34,13 @@ runs:
         run_id="${{ github.run_id }}"
         is_slow=$([[ "$cpu_model" == *"$slow_pattern"* ]] && echo true || echo false)
 
+        # Skip speculative execution on arm64 — different runner pool, no profiling data
+        arch=$(uname -m 2>/dev/null)
+        if [[ "$arch" == "aarch64" || "$arch" == "arm64" ]]; then
+          echo "ARM64 runner — speculative execution disabled, running normally."
+          exit 0
+        fi
+
         # Build the exact sibling name from matrix values.
         # GHA names jobs as: "{base} ({val1}, {val2}, ..., {copy})"
         sibling_a=$(SPEC_JOB="$job_name" python3 -c "import json,os; m=json.loads(os.environ['MATRIX_JSON']); v=[str(x) for k,x in m.items() if k!='copy']; v.append('a'); print(os.environ['SPEC_JOB']+' ('+', '.join(v)+')')")
@@ -54,7 +61,7 @@ runs:
         a_gate=""
         for i in $(seq 1 12); do
           a_gate=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
-            --jq ".jobs[] | select(.name == \"${sibling_a}\") | .steps[] | select(.name == \"Runner gate\") | .conclusion" 2>/dev/null || echo "")
+            --jq ".jobs[] | select(.name == \"${sibling_a}\") | .steps[] | select(.name == \"Speculative run check\") | .conclusion" 2>/dev/null || echo "")
           if [[ -n "$a_gate" && "$a_gate" != "null" ]]; then break; fi
           sleep 5
         done
