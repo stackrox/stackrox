@@ -416,7 +416,9 @@ Execute the test plan based on `$context`. Common patterns:
 - Report whether the bug reproduces or not, with evidence (command output, API responses)
 
 ### Fix verification
-Verify the fix works AND prove the bug exists without it (regression proof).
+When verifying changes to **existing logic** (bug fixes, behavior changes), produce
+a before/after comparison proving the change works. Both sides must be tested on the
+real cluster — not made up.
 
 **Step 1 — Identify the fix:**
 Figure out what constitutes "the fix" from context: `$context`, branch name,
@@ -426,26 +428,38 @@ feature branch, etc. Determine how to temporarily revert it (e.g., `git stash`,
 `git revert`, checking out the base branch). If you cannot determine this
 confidently, ask the user.
 
-**Step 2 — Verify the fix works:**
-- The fix should already be deployed from Phase 6
-- Follow the reproduction steps — the bug should NOT reproduce
-- Capture all output as **"with fix"** evidence
-
-**Step 3 — Prove the bug exists without the fix:**
+**Step 2 — Test BEFORE (without the fix):**
 - Temporarily remove the fix using the approach from Step 1
 - Rebuild the affected component(s) and redeploy (Phase 4-6)
-- Follow the same reproduction steps — the bug SHOULD reproduce
-- Capture all output as **"without fix"** evidence
+- Run the verification steps and capture output
+- Write results to `$TMPDIR/verify-before.log` — include only the verification
+  commands and their output, with a header like:
+  ```
+  # ── BEFORE: <title> (base branch / without fix) ──────
+  ```
 
-**Step 4 — Restore the fix:**
-- Undo the revert (e.g., `git stash pop`, `git checkout <branch>`)
+**Step 3 — Test AFTER (with the fix):**
+- Restore the fix (e.g., `git stash pop`, `git checkout <branch>`)
 - Rebuild and redeploy the fixed version (Phase 4-6)
+- Run the same verification steps and capture output
+- Write results to `$TMPDIR/verify-after.log` with a header like:
+  ```
+  # ── AFTER: <title> (with fix applied) ────────────────
+  ```
 
-**Step 5 — Report:**
-- Present before/after proof side by side:
-  - **Without fix**: [output showing the bug]
-  - **With fix**: [output showing the bug is gone]
-- This evidence is suitable for attaching to the PR description
+**Step 4 — Render proof:**
+If `freeze` is available, render both logs as images:
+```bash
+freeze --language bash --window --margin 16 \
+  --output "$TMPDIR/verify-before.png" < "$TMPDIR/verify-before.log"
+freeze --language bash --window --margin 16 \
+  --output "$TMPDIR/verify-after.png" < "$TMPDIR/verify-after.log"
+```
+
+Report paths to both images so the caller can attach them side by side to the PR.
+
+For **new features** (no previous behavior to compare against), skip the BEFORE step
+and only produce the AFTER proof.
 
 ### API testing
 - Use curl with the authenticated endpoint:
@@ -469,40 +483,14 @@ confidently, ask the user.
 
 Capture ALL test output as evidence.
 
-**Session log**: Throughout the verification, accumulate a session log file
-(`$TMPDIR/verify-session.log`) with the key commands and their outputs. Use bash
-comment headers to separate sections. Strip verbose/irrelevant output (e.g.,
-Go compilation lines, long pod listings) — keep only what tells the story.
-Example format:
+**Proof logs**: For each test pattern, accumulate proof in log files under `$TMPDIR/`.
+Include only verification commands and their output — not build, deploy, or cluster
+discovery steps. Use bash comment headers and strip verbose noise. Redact passwords
+with `***`. The fix verification pattern above produces `verify-before.log` and
+`verify-after.log`; other patterns produce a single `verify-session.log`.
 
-```
-# ── Verification: <title> ──────────────────────────────
-
-# 1. Build & Deploy
-$ GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o /tmp/central ./central
-Binary: 89MB
-$ oc -n stackrox rollout status deploy/central --timeout=120s
-deployment "central" successfully rolled out
-
-# 2. With fix — bug should NOT reproduce
-$ curl -sk ... | jq .
-3   # ✓ Keys present
-
-# 3. Without fix (reverted) — bug SHOULD reproduce
-$ curl -sk ... | jq .
-0   # ✗ Bug confirmed
-
-# ── Result: PASS ───────────────────────────────────────
-```
-
-If `freeze` is available, render the session log as an image at the end:
-
-```bash
-freeze --language bash --window --margin 16 \
-  --output "$TMPDIR/verify-session.png" < "$TMPDIR/verify-session.log"
-```
-
-When freeze is not available, the plain-text session log is the proof.
+If `freeze` is available, render each log as a PNG image at the end of Phase 7.
+When freeze is not available, the plain-text logs are the proof.
 
 ## Phase 8: Report
 
@@ -514,8 +502,8 @@ Summarize results concisely:
 4. **Original image**: The image reference before patching (so the user can restore with
    `oc -n <ns> set image deployment/<name> <container>=<original-image>`)
 5. **Test results**: Pass/fail with evidence (command output, API responses)
-6. **Session log**: Path to `$TMPDIR/verify-session.log` (plain text) and
-   `$TMPDIR/verify-session.png` (image, if freeze was available)
+6. **Proof**: Paths to proof files — for fix verification: `verify-before.{log,png}`
+   and `verify-after.{log,png}`; for other patterns: `verify-session.{log,png}`
 7. **Issues found**: Any problems encountered during the process
 
 This summary should be suitable for pasting into a PR description as proof of verification.
