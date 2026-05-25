@@ -20,12 +20,36 @@ const (
 )
 
 // addrValid validates the URL.
-// It returns an error if addr contains scheme prefix.
+// It returns an error if addr contains scheme prefix or illegal characters.
 func addrValid(addr string) error {
 	if strings.Contains(addr, "://") {
 		return fmt.Errorf("URL %q should not contain scheme prefix", addr)
 	}
-	// url.Parse requires scheme to trigger the correct variant of parsing (it has two)
+
+	// Check for illegal characters (spaces, tabs, newlines)
+	if strings.ContainsAny(addr, " \t\n\r") {
+		return fmt.Errorf("URL %q contains illegal whitespace characters", addr)
+	}
+
+	// Extract host part (before any path)
+	hostPart := strings.SplitN(addr, "/", 2)[0]
+
+	// For IPv6 addresses, wrap in brackets for url.Parse validation
+	// This handles cases like "1::" or "2001:...:8329" but NOT "IPv6:port" format
+	// The "IPv6:port" format (e.g., "2001:...:8329:61273") is ambiguous but accepted
+	// per RFC2732 interpretation - we skip bracketing for simplicity
+	if strings.Count(hostPart, ":") > 1 && !strings.HasPrefix(hostPart, "[") {
+		// Try to use netutil.ParseEndpoint to validate it's a legitimate address
+		// This accepts IPv6 and IPv6:port formats
+		_, _, _, err := netutil.ParseEndpoint(hostPart)
+		if err != nil {
+			return err
+		}
+		// Accept it without url.Parse validation (which would reject unbracketed IPv6)
+		return nil
+	}
+
+	// For non-IPv6 addresses, use url.Parse for validation
 	_, err := url.Parse("https://" + addr)
 	return err
 }
