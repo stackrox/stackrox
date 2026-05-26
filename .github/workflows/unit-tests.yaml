@@ -573,3 +573,41 @@ jobs:
         source scripts/ci/lib.sh
         slack_workflow_failure
 
+  # Warm-pool runner: builds Go to warm caches, then registers as
+  # self-hosted runner for 15 minutes. Only runs on workflow_dispatch.
+  seed-warm-runner:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: Build Go binaries to warm GOCACHE
+        run: |
+          echo "Building to warm GOCACHE..."
+          make main-build 2>&1 | tail -5 || true
+          echo "GOCACHE: $(du -sh $(go env GOCACHE) 2>/dev/null | cut -f1)"
+          echo "GOMODCACHE: $(du -sh $(go env GOMODCACHE) 2>/dev/null | cut -f1)"
+
+      - name: Register as warm self-hosted runner
+        env:
+          GH_TOKEN: ${{ secrets.RUNNER_ADMIN_TOKEN }}
+        run: |
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "::warning::RUNNER_ADMIN_TOKEN not set. Skipping registration."
+            exit 0
+          fi
+          bash .github/actions/job-preamble/keep-alive.sh \
+            "warm-go,ubuntu-latest" "15"
+
