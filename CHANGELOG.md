@@ -68,6 +68,9 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
   `/api/extensions/clusters/helm-config.yaml`, and `/api/extensions/helm-charts/`
   are also deprecated.
   They will be removed in a future release. Please use the operator for deployment management instead.
+- Plaintext (non-TLS) Central endpoints, configured via the `ROX_PLAINTEXT_ENDPOINTS` environment
+  variable, are deprecated and will be removed in a future release. Modern load balancers and
+  ingress controllers support TLS passthrough, making plaintext endpoints unnecessary.
 
 ### Technical Changes
 
