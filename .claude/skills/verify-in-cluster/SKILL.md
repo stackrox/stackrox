@@ -195,10 +195,69 @@ Use the repo's deployment scripts.
   `MONITORING_SUPPORT=false` to skip it.
 - The main image must be available at the specified registry/tag.
 
+**Finding a base image from CI (Quay):**
+Local `make tag` produces a tag that only exists if you've pushed to your own registry.
+For from-scratch deployments, use CI-built images from `quay.io/stackrox-io/`. Fetch the
+latest tag whose embedded commit is on `origin/master`:
+
+```bash
+git fetch origin master --quiet 2>/dev/null || true
+
+# Fetch recent multi-arch tags from Quay (exclude arch-specific suffixes)
+TAGS=$(curl -s "https://quay.io/api/v1/repository/stackrox-io/main/tag/?limit=100&onlyActiveTags=true" \
+  | jq -r '.tags[].name | select(test("^[0-9]+[.][0-9]+[.]x-")) | select(test("-(arm64|amd64|s390x|ppc64le)$") | not)' )
+
+# Find the first tag whose commit is an ancestor of origin/master
+for tag in $TAGS; do
+  hash="${tag##*-g}"
+  if git merge-base --is-ancestor "$hash" origin/master 2>/dev/null; then
+    echo "Found master-based tag: $tag"
+    MAIN_IMAGE_TAG="$tag"
+    break
+  fi
+done
+```
+
+If no master-based tag is found, fall back to the most recent tag:
+```bash
+MAIN_IMAGE_TAG=$(curl -s "https://quay.io/api/v1/repository/stackrox-io/main/tag/?limit=5&onlyActiveTags=true" \
+  | jq -r '.tags[].name | select(test("^[0-9]+[.][0-9]+[.]x-")) | select(test("-(arm64|amd64|s390x|ppc64le)$") | not)' \
+  | head -1)
+```
+
+Also fetch tags for the supporting images (these are built separately and have their own
+version cadence):
+```bash
+# Scanner V4 (separate build pipeline)
+SCANNERV4_TAG=$(curl -s "https://quay.io/api/v1/repository/stackrox-io/scanner-v4/tag/?limit=5&onlyActiveTags=true" \
+  | jq -r '.tags[].name | select(test("^[0-9]+[.][0-9]+[.]x-")) | select(test("-(arm64|amd64|s390x|ppc64le)$") | not)' \
+  | head -1)
+
+# Central DB
+DBS_TAG=$(curl -s "https://quay.io/api/v1/repository/stackrox-io/central-db/tag/?limit=5&onlyActiveTags=true" \
+  | jq -r '.tags[].name | select(test("^[0-9]+[.][0-9]+[.]x-")) | select(test("-(arm64|amd64|s390x|ppc64le)$") | not)' \
+  | head -1)
+
+# Collector
+COLLECTOR_TAG=$(curl -s "https://quay.io/api/v1/repository/stackrox-io/collector/tag/?limit=5&onlyActiveTags=true" \
+  | jq -r '.tags[].name | select(test("^[0-9]+[.][0-9]+[.]x-")) | select(test("-(arm64|amd64|s390x|ppc64le)$") | not)' \
+  | head -1)
+```
+
 The key env vars to set:
 
 ```bash
-export MAIN_IMAGE_TAG=$(make --quiet --no-print-directory tag)
+export MAIN_IMAGE_TAG="<tag-from-above>"    # CI tag from Quay, NOT make tag
+export MAIN_IMAGE_REPO=quay.io/stackrox-io/main
+export CENTRAL_DB_IMAGE_REPO=quay.io/stackrox-io/central-db
+export SCANNERV4_IMAGE_REPO=quay.io/stackrox-io/scanner-v4
+export SCANNERV4_DB_IMAGE_REPO=quay.io/stackrox-io/scanner-v4-db
+export COLLECTOR_IMAGE_REPO=quay.io/stackrox-io/collector
+export SCANNER_IMAGE_REPO=quay.io/stackrox-io/scanner
+export SCANNER_DB_IMAGE_REPO=quay.io/stackrox-io/scanner-db
+export DBS_TAG="<central-db-tag>"
+export SCANNERV4_TAG="<scanner-v4-tag>"
+export COLLECTOR_TAG="<collector-tag>"
 export ROX_HTPASSWD_AUTH=true
 export STORAGE=pvc
 export LOAD_BALANCER=route   # on OpenShift; omit on plain k8s
@@ -305,6 +364,15 @@ may use different image references — always pull the base from the specific de
 oc -n stackrox get deployment/central -o jsonpath='{.spec.template.spec.containers[0].image}'
 ```
 Record this value — you'll use it as the base image for `crane mutate`.
+
+**Choosing the right base image:** The base image you append layers to MUST have a DB
+migration sequence compatible with your source tree. If the deployed image is from a CI
+nightly and your branch has newer migrations, central will crash on startup (see Phase 6
+"DB migration version mismatch"). To avoid this, use a base image from the same commit
+range as your source. If Phase 2c deployed StackRox using a master-based Quay tag, the
+deployed image is already correct. If you're patching a pre-existing deployment whose
+image version differs significantly from your branch, consider redeploying with a
+compatible base first.
 
 For scanner (uses a separate image):
 ```bash
