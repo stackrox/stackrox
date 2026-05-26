@@ -7,7 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
-	_ "net/http/pprof"
+	_ "net/http/pprof" // #nosec G108 -- dev-only local-sensor; same as tools/local-sensor/main.go before run extraction
 	"os"
 	"path"
 	"strings"
@@ -328,7 +328,7 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 		})
 	}()
 
-	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) { //nolint:staticcheck // bufconn dialer; migrate when stackrox updates grpc helpers
+	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
 		return listener.Dial()
 	}), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {

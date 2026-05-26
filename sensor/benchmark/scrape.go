@@ -232,11 +232,11 @@ func formatMetricKey(name string, labels []*dto.LabelPair) string {
 
 func metricSampleValue(metric *dto.Metric) (float64, bool, error) {
 	switch {
-	case metric.Counter != nil:
+	case metric.GetCounter() != nil:
 		return metric.GetCounter().GetValue(), true, nil
-	case metric.Gauge != nil:
+	case metric.GetGauge() != nil:
 		return metric.GetGauge().GetValue(), true, nil
-	case metric.Untyped != nil:
+	case metric.GetUntyped() != nil:
 		return metric.GetUntyped().GetValue(), true, nil
 	default:
 		return 0, false, nil

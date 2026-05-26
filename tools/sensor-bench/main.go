@@ -20,6 +20,7 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
+	log.Printf("sensor-bench: scenario=%s out=%s", *scenarioDir, *outPath)
 	scorecard, err := benchmark.RunScenario(ctx, *scenarioDir, benchmark.Options{})
 	if scorecard != nil {
 		data, marshalErr := json.MarshalIndent(scorecard, "", "  ")

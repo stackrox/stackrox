@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"runtime"
 	"runtime/debug"
@@ -33,6 +34,7 @@ func RunScenario(ctx context.Context, scenarioDir string, _ Options) (*Scorecard
 	}
 
 	startedAt := time.Now()
+	logPhase(scenario.Metadata.Name, "startup", "starting in-process sensor (workload=%s)", scenario.ResolvedWorkloadPath())
 
 	fakeCollector, err := workloadNeedsFakeCollector(scenario.ResolvedWorkloadPath())
 	if err != nil {
@@ -56,6 +58,7 @@ func RunScenario(ctx context.Context, scenarioDir string, _ Options) (*Scorecard
 		return nil, errors.Wrap(err, "starting sensor")
 	}
 
+	logPhase(scenario.Metadata.Name, phaseWaitInitialSync, "waiting for ResourcesSynced (timeout=%s)", scenario.MaxSyncWait())
 	syncWaitStart := time.Now()
 	syncCtx, syncCancel := context.WithTimeout(ctx, scenario.MaxSyncWait())
 	syncErr := handle.WaitInitialSync(syncCtx)
@@ -63,10 +66,13 @@ func RunScenario(ctx context.Context, scenarioDir string, _ Options) (*Scorecard
 	syncWaitSec := time.Since(syncWaitStart).Seconds()
 
 	if syncErr != nil {
+		logPhase(scenario.Metadata.Name, phaseWaitInitialSync, "failed after %.1fs: %v", syncWaitSec, syncErr)
 		stopWithTimeout(handle.Stop, 30*time.Second)
 		sc := newScorecard(scenario, startedAt, time.Now(), syncWaitSec, 0, false)
 		return sc, errors.Wrap(syncErr, "waiting for initial sync")
 	}
+
+	logPhase(scenario.Metadata.Name, phaseWaitInitialSync, "complete (elapsed=%.1fs)", syncWaitSec)
 
 	before, err := FetchMetrics(handle.MetricsURL)
 	if err != nil {
@@ -80,12 +86,15 @@ func RunScenario(ctx context.Context, scenarioDir string, _ Options) (*Scorecard
 		return nil, errors.New("scenario steady phase duration must be positive")
 	}
 
+	logPhase(scenario.Metadata.Name, phaseSteady, "measuring counter deltas for %s (metrics=%s)", steadyDuration, handle.MetricsURL)
+	steadyStart := time.Now()
 	select {
 	case <-ctx.Done():
 		handle.Stop()
-		return nil, ctx.Err()
+		return nil, errors.Wrap(ctx.Err(), "steady phase canceled")
 	case <-time.After(steadyDuration):
 	}
+	logPhase(scenario.Metadata.Name, phaseSteady, "measurement window complete (elapsed=%.1fs)", time.Since(steadyStart).Seconds())
 
 	after, err := FetchMetrics(handle.MetricsURL)
 	if err != nil {
@@ -93,11 +102,19 @@ func RunScenario(ctx context.Context, scenarioDir string, _ Options) (*Scorecard
 		return nil, errors.Wrap(err, "scraping metrics after steady window")
 	}
 
+	logPhase(scenario.Metadata.Name, "shutdown", "stopping sensor (timeout=2m)")
 	stopWithTimeout(handle.Stop, 2*time.Minute)
+	logPhase(scenario.Metadata.Name, "shutdown", "complete")
 	finishedAt := time.Now()
 	measureSec := steadyDuration.Seconds()
 
-	return buildSteadyScorecard(scenario, before, after, startedAt, finishedAt, syncWaitSec, measureSec), nil
+	sc := buildSteadyScorecard(scenario, before, after, startedAt, finishedAt, syncWaitSec, measureSec)
+	logPhase(scenario.Metadata.Name, "done", "scorecard ready (success=%v, measure_sec=%.0f)", sc.Run.Success, measureSec)
+	return sc, nil
+}
+
+func logPhase(scenarioID, phase, format string, args ...any) {
+	log.Printf("sensor-bench [%s] phase=%s: "+format, append([]any{scenarioID, phase}, args...)...)
 }
 
 func stopWithTimeout(stop func(), timeout time.Duration) {
@@ -109,6 +126,7 @@ func stopWithTimeout(stop func(), timeout time.Duration) {
 	select {
 	case <-done:
 	case <-time.After(timeout):
+		log.Printf("sensor-bench: shutdown timed out after %s (sensor may still be stopping in background)", timeout)
 	}
 }
 

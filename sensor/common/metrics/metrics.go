@@ -137,7 +137,8 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "process_signals_received_total",
-		Help:      "Total number of process signals received at the process pipeline ingress",
+		Help: "Count of process signals accepted at processsignal pipeline ingress, before enrichment or detection. " +
+			"Includes Collector SignalService gRPC and in-process producers (e.g. fake workload); not a Collector-only metric.",
 	})
 
 	processPipelineModeGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{

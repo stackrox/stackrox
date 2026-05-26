@@ -35,6 +35,7 @@ var (
 		"scale",
 		"scanner",
 		"sensor/admission-control",
+		"sensor/benchmark",
 		"sensor/common",
 		"sensor/debugger",
 		"sensor/kubernetes",
@@ -342,11 +343,17 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/kubernetes/listener/resources", "sensor/kubernetes/client", "sensor/common/centralclient")
 	}
 
+	if validImportRoot == "sensor/benchmark" {
+		allowedPackages = appendPackageWithChildren(allowedPackages, "tools/local-sensor")
+	}
+
 	if validImportRoot == "tools" {
 		allowedPackages = appendPackageWithChildren(allowedPackages,
 			"central/globaldb", "central/metrics", "central/postgres", "pkg/sac/resources",
+			"sensor/benchmark",
 			"sensor/common/sensor", "sensor/common/centralclient", "sensor/kubernetes/client", "sensor/common/clusterid",
 			"sensor/kubernetes/fake", "sensor/kubernetes/sensor", "sensor/debugger", "sensor/testutils",
+			"tools/local-sensor",
 			"compliance", "compliance/utils", "compliance/node")
 	}
 
