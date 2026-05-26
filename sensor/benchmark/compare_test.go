@@ -17,7 +17,10 @@ func TestCompareScorecards(t *testing.T) {
 
 	md, err := CompareScorecards(cand, base)
 	require.NoError(t, err)
+	require.Contains(t, md, "**Ingress**")
+	require.Contains(t, md, "**Egress**")
 	require.Contains(t, md, "`k8s_events_ingress_per_sec`")
+	require.Contains(t, md, "`process_signals_ingress_per_sec`")
 	require.Contains(t, md, "+20.0%")
 	require.Contains(t, md, "-20.0%")
 }

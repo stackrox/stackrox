@@ -10,6 +10,20 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Steady-metric order matches sensor/benchmark/benchmark.go steadyMetrics.
+var (
+	steadyIngressMetricIDs = []string{
+		"k8s_events_ingress_per_sec",
+		"collector_msgs_ingress_per_sec",
+		"process_signals_ingress_per_sec",
+	}
+	steadyEgressMetricIDs = []string{
+		"k8s_sensor_events_egress_per_sec",
+		"network_flow_updates_egress_per_sec",
+		"process_indicator_events_egress_per_sec",
+	}
+)
+
 // LoadScorecard reads a scorecard JSON file produced by sensor-bench.
 func LoadScorecard(path string) (*Scorecard, error) {
 	data, err := os.ReadFile(path)
@@ -49,21 +63,19 @@ func CompareScorecards(candidate, baseline *Scorecard) (string, error) {
 	fmt.Fprintf(&b, "| Measure (s) | %.0f | %.0f |\n", baseline.Run.MeasureSec, candidate.Run.MeasureSec)
 	fmt.Fprintf(&b, "| Sync wait (s) | %.1f | %.1f |\n\n", baseline.Run.SyncWaitSec, candidate.Run.SyncWaitSec)
 
-	fmt.Fprint(&b, "### Steady metrics\n\n")
-	fmt.Fprint(&b, "| Metric | Baseline | Candidate | Δ% |\n")
-	fmt.Fprint(&b, "|--------|----------|-----------|-----|\n")
-
 	baseByID := metricsByID(baseline)
 	candByID := metricsByID(candidate)
-	for _, id := range sortedMetricIDs(baseByID, candByID) {
-		baseVal, baseOK := baseByID[id]
-		candVal, candOK := candByID[id]
-		fmt.Fprintf(&b, "| `%s` | %s | %s | %s |\n",
-			id,
-			formatMetricValue(baseVal, baseOK),
-			formatMetricValue(candVal, candOK),
-			formatPercentChange(baseVal, candVal, baseOK, candOK),
-		)
+
+	fmt.Fprint(&b, "### Steady metrics\n\n")
+	fmt.Fprint(&b, "**Ingress** — synthetic workload into Sensor (use to confirm same experiment).\n\n")
+	writeMetricComparisonTable(&b, baseByID, candByID, steadyIngressMetricIDs)
+
+	fmt.Fprint(&b, "\n**Egress** — traffic Sensor sends toward Central (version-specific shipping; not workload rate).\n\n")
+	writeMetricComparisonTable(&b, baseByID, candByID, steadyEgressMetricIDs)
+
+	if other := otherSteadyMetricIDs(baseByID, candByID); len(other) > 0 {
+		fmt.Fprint(&b, "\n**Other steady metrics**\n\n")
+		writeMetricComparisonTable(&b, baseByID, candByID, other)
 	}
 
 	fmt.Fprint(&b, "\nΔ% = (candidate − baseline) / baseline × 100. `n/a` when baseline is 0 or metric missing.\n")
@@ -94,12 +106,44 @@ func metricsByID(sc *Scorecard) map[string]float64 {
 	return out
 }
 
-func sortedMetricIDs(maps ...map[string]float64) []string {
+func writeMetricComparisonTable(b *strings.Builder, baseByID, candByID map[string]float64, ids []string) {
+	fmt.Fprint(b, "| Metric | Baseline | Candidate | Δ% |\n")
+	fmt.Fprint(b, "|--------|----------|-----------|-----|\n")
+	for _, id := range ids {
+		baseVal, baseOK := baseByID[id]
+		candVal, candOK := candByID[id]
+		if !baseOK && !candOK {
+			continue
+		}
+		fmt.Fprintf(b, "| `%s` | %s | %s | %s |\n",
+			id,
+			formatMetricValue(baseVal, baseOK),
+			formatMetricValue(candVal, candOK),
+			formatPercentChange(baseVal, candVal, baseOK, candOK),
+		)
+	}
+}
+
+func otherSteadyMetricIDs(baseByID, candByID map[string]float64) []string {
+	known := make(map[string]struct{}, len(steadyIngressMetricIDs)+len(steadyEgressMetricIDs))
+	for _, id := range steadyIngressMetricIDs {
+		known[id] = struct{}{}
+	}
+	for _, id := range steadyEgressMetricIDs {
+		known[id] = struct{}{}
+	}
+
 	ids := make(map[string]struct{})
-	for _, m := range maps {
+	for _, m := range []map[string]float64{baseByID, candByID} {
 		for id := range m {
+			if _, ok := known[id]; ok {
+				continue
+			}
 			ids[id] = struct{}{}
 		}
+	}
+	if len(ids) == 0 {
+		return nil
 	}
 	sorted := make([]string, 0, len(ids))
 	for id := range ids {
