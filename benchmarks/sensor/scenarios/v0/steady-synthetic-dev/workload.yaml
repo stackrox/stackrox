@@ -1,0 +1,29 @@
+# steady-synthetic-dev-v0 — reduced fake workload for harness development and CI.
+# Based on scale/workloads/small.yaml with slightly higher process/network rates for 60s steady window.
+# NOT comparable to benchmarks/sensor/scenarios/v1/steady-synthetic/workload.yaml (future v1 benchmark).
+deploymentWorkload:
+- deploymentType: Deployment
+  lifecycleDuration: 10m0s
+  numDeployments: 200
+  numLifecycles: 0
+  podWorkload:
+    containerWorkload:
+      numImages: 0
+    lifecycleDuration: 2m0s
+    numContainers: 3
+    numPods: 5
+    processWorkload:
+      alertRate: 0.001
+      processInterval: 10s
+  updateInterval: 60s
+networkWorkload:
+  batchSize: 50
+  flowInterval: 5s
+  generateUnclosedEndpoints: true
+  openPortReuseProbability: 0.05
+nodeWorkload:
+  numNodes: 100
+rbacWorkload:
+  numBindings: 100
+  numRoles: 100
+  numServiceAccounts: 100

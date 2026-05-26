@@ -1,0 +1,20 @@
+# steady-synthetic-dev-v0 — development / CI smoke scenario (NOT v1 benchmark).
+# Smaller workload for fast iteration. Do not compare scorecards to future steady-synthetic-v1.
+# See benchmarks/sensor/README.md
+apiVersion: sensor-bench.stackrox/v1
+kind: Scenario
+metadata:
+  name: steady-synthetic-dev-v0
+  version: "0"
+  labels:
+    maturity: dev
+spec:
+  workload: workload.yaml
+  policies: ../../../../../sensor/tests/data/policies.json
+  sensor:
+    metricsPort: ":9091"
+  phases:
+    - name: wait_initial_sync
+      maxWait: 10m
+    - name: steady
+      duration: 60s

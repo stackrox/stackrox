@@ -1,0 +1,20 @@
+# steady-synthetic-v1 — benchmark scenario control (not fake workload shape).
+# See docs/superpowers/specs/2026-05-21-sensor-benchmark-design.md
+apiVersion: sensor-bench.stackrox/v1
+kind: Scenario
+metadata:
+  name: steady-synthetic-v1
+  version: "1"
+  labels:
+    maturity: benchmark-planned
+spec:
+  workload: workload.yaml
+  policies: ../../../../../sensor/tests/data/policies.json
+  sensor:
+    metricsPort: ":9091"
+  phases:
+    # D4: no fixed warmup — benchmark waits for initial sync, then measures.
+    - name: wait_initial_sync
+      maxWait: 10m
+    - name: steady
+      duration: 60s
