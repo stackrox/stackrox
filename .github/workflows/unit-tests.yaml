@@ -602,6 +602,10 @@ jobs:
   seed-warm-runner:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        slot: [1, 2, 3, 4]
     outputs:
       registered: ${{ steps.register.outputs.registered }}
     steps:
@@ -658,56 +662,4 @@ jobs:
           echo "registered=true" >> "$GITHUB_OUTPUT"
           bash .github/actions/job-preamble/keep-alive.sh "warm-go" "30"
 
-  # Test job: runs on warm-go runner if one is available.
-  # Measures Go build time with warm vs cold cache.
-  # Does NOT depend on seed-warm-runner — it relies on a runner
-  # seeded by a PREVIOUS workflow_dispatch run. The seed job from
-  # this run will serve FUTURE test jobs.
-  test-warm-build:
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: [self-hosted, warm-go]
-    timeout-minutes: 30
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-
-      - name: Runner info
-        run: |
-          echo "runner_name=${RUNNER_NAME:-unknown}"
-          echo "cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)"
-          echo "GOCACHE=$(go env GOCACHE 2>/dev/null)"
-          echo "GOCACHE_size=$(du -sh $(go env GOCACHE) 2>/dev/null | cut -f1)"
-          echo "GOMODCACHE_size=$(du -sh $(go env GOMODCACHE) 2>/dev/null | cut -f1)"
-
-      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
-
-      - name: Cache state
-        run: |
-          echo "--- GOCACHE ---"
-          du -sh $(go env GOCACHE) 2>/dev/null || echo "empty"
-          find $(go env GOCACHE) -type f 2>/dev/null | wc -l | xargs -I{} echo "files: {}"
-          echo "--- GOMODCACHE ---"
-          du -sh $(go env GOMODCACHE) 2>/dev/null || echo "empty"
-
-      - name: Go unit tests (warm cache)
-        env:
-          BUILD_TAG: 0.0.0
-          SHORTCOMMIT: "0000000"
-        run: |
-          echo "Running Go unit tests with warm cache..."
-          start=$SECONDS
-          go test -count=1 -v ./pkg/concurrency/... ./pkg/utils/... ./pkg/set/... 2>&1 | tail -20
-          echo "--- Tests took $((SECONDS - start))s ---"
-
-      - name: Go build (warm cache)
-        run: |
-          echo "Building with warm cache..."
-          start=$SECONDS
-          go build ./pkg/... 2>&1 | tail -5
-          echo "--- Build took $((SECONDS - start))s ---"
 
