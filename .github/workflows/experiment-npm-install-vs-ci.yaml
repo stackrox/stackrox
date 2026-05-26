@@ -254,3 +254,75 @@ jobs:
           echo "npm install on stale node_modules produces DIFFERENT file listing from npm ci"
           echo "This means npm install may leave the tree in an inconsistent state"
         fi
+
+  desync-check-flow:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - name: Set up Node.js
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+      with:
+        node-version-file: ui/package.json
+
+    - name: "Simulate cache hit (npm ci first, then test flow)"
+      working-directory: ui/apps/platform
+      run: |
+        npm ci --no-audit --no-fund
+        echo "Installed $(find node_modules -type f | wc -l) files"
+
+    - name: "Test 1: Desync check on SYNC state (normal PR)"
+      working-directory: ui/apps/platform
+      run: |
+        echo "=== Checking lockfile sync ==="
+        cp package-lock.json /tmp/lockfile-before.json
+        time npm install --package-lock-only --no-audit --no-fund 2>&1 | tail -1
+        if diff -q /tmp/lockfile-before.json package-lock.json > /dev/null 2>&1; then
+          echo "RESULT: IN SYNC — would skip install (~0s)"
+        else
+          echo "RESULT: DESYNCED — would run npm ci (~30s)"
+          git checkout package-lock.json
+        fi
+
+    - name: "Simulate desync: bump vitest in package.json only"
+      working-directory: ui/apps/platform
+      run: |
+        sed -i 's/"vitest": "^4.1.0"/"vitest": "4.1.5"/' package.json
+        echo "package.json vitest: $(node -e "console.log(require('./package.json').devDependencies.vitest)")"
+        echo "lockfile vitest: $(grep '"vitest": "4\.' package-lock.json | head -1 | tr -d ' ')"
+
+    - name: "Test 2: Desync check on DESYNCED state"
+      working-directory: ui/apps/platform
+      run: |
+        echo "=== Checking lockfile sync ==="
+        cp package-lock.json /tmp/lockfile-before.json
+        time npm install --package-lock-only --no-audit --no-fund 2>&1 | tail -1
+        if diff -q /tmp/lockfile-before.json package-lock.json > /dev/null 2>&1; then
+          echo "RESULT: IN SYNC (WRONG — should have detected desync!)"
+        else
+          echo "RESULT: DESYNCED — correctly detected! Would run npm ci"
+          echo "Lockfile diff:"
+          diff /tmp/lockfile-before.json package-lock.json | grep vitest | head -5
+          git checkout package-lock.json
+        fi
+
+    - name: "Restore and run tests to verify node_modules integrity"
+      working-directory: ui/apps/platform
+      run: |
+        git checkout package.json
+        echo "=== Running vitest to verify node_modules is correct ==="
+        TZ=UTC npx vitest run --reporter=verbose 2>&1 | tail -5
+
+    - name: "Check: did tests modify node_modules?"
+      working-directory: ui/apps/platform
+      run: |
+        echo "=== Files in node_modules modified by tests ==="
+        find node_modules -newer package-lock.json -type f | grep -v '\.vite/' | head -10
+        MODIFIED=$(find node_modules -newer package-lock.json -type f | grep -v '\.vite/' | wc -l)
+        echo "Non-.vite modifications: $MODIFIED"
+        if [ "$MODIFIED" -eq 0 ]; then
+          echo "SAFE: tests only modified .vite/ cache (expected)"
+        else
+          echo "WARNING: tests modified package files!"
+        fi
