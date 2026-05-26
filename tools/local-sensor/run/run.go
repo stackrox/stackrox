@@ -146,7 +146,10 @@ func Run(ctx context.Context, cfg Config) (*Handle, error) {
 		waitInitialSync = func(context.Context) error { return nil }
 	}
 
-	var traceCloser io.Closer
+	var (
+		traceCloser   io.Closer
+		fakeCollector *collector.FakeCollector
+	)
 	sensorConfig := sensor.ConfigWithDefaults().
 		WithClusterIDHandler(clusterIDHandler).
 		WithK8sClient(k8sClient).
@@ -232,7 +235,7 @@ func Run(ctx context.Context, cfg Config) (*Handle, error) {
 	}
 
 	if cfg.FakeCollector {
-		fakeCollector := collector.NewFakeCollector(collector.WithDefaultConfig())
+		fakeCollector = collector.NewFakeCollector(collector.WithDefaultConfig())
 		if err := fakeCollector.Start(); err != nil {
 			cancelRun()
 			return nil, err
@@ -248,6 +251,9 @@ func Run(ctx context.Context, cfg Config) (*Handle, error) {
 
 		cancelRun()
 		stopSensorAndWorkload(workloadManager, s, processPipeline)
+		if fakeCollector != nil {
+			fakeCollector.Stop()
+		}
 		if spyCentral != nil {
 			log.Printf("Stopping spyCentral")
 			if !cfg.SkipCentralOutput {

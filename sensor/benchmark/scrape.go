@@ -57,19 +57,21 @@ func RatePerSec(delta, seconds float64) float64 {
 	return delta / seconds
 }
 
-func sumCounterDelta(metricName string, before, after map[string]float64, labels map[string]string) float64 {
-	keys := make(map[string]struct{})
-	for key := range before {
-		if seriesMatches(metricName, key, labels) {
-			keys[key] = struct{}{}
-		}
-	}
-	for key := range after {
-		if seriesMatches(metricName, key, labels) {
-			keys[key] = struct{}{}
-		}
-	}
+var k8sSensorEventEgressResources = map[string]struct{}{
+	"Deployment":     {},
+	"Pod":            {},
+	"Namespace":      {},
+	"Node":           {},
+	"ServiceAccount": {},
+	"Role":           {},
+	"RoleBinding":    {},
+	"NetworkPolicy":  {},
+	"Secret":         {},
+	"Image":          {},
+}
 
+func sumCounterDelta(metricName string, before, after map[string]float64, labels map[string]string) float64 {
+	keys := matchingSeriesKeys(metricName, before, after, labels, nil)
 	var sum float64
 	for key := range keys {
 		sum += after[key] - before[key]
@@ -77,20 +79,78 @@ func sumCounterDelta(metricName string, before, after map[string]float64, labels
 	return sum
 }
 
-func seriesMatches(metricName, key string, labels map[string]string) bool {
+// SumCounterDeltaFilteredResourceIn sums counter deltas for series matching metricName,
+// all labelFilters, and a resource label value in resources.
+func SumCounterDeltaFilteredResourceIn(metricName string, before, after map[string]float64, labelFilters map[string]string, resources map[string]struct{}) float64 {
+	keys := matchingSeriesKeys(metricName, before, after, labelFilters, resources)
+	var sum float64
+	for key := range keys {
+		sum += after[key] - before[key]
+	}
+	return sum
+}
+
+func matchingSeriesKeys(metricName string, before, after map[string]float64, labelFilters map[string]string, resources map[string]struct{}) map[string]struct{} {
+	keys := make(map[string]struct{})
+	for key := range before {
+		if seriesMatches(metricName, key, labelFilters, resources) {
+			keys[key] = struct{}{}
+		}
+	}
+	for key := range after {
+		if seriesMatches(metricName, key, labelFilters, resources) {
+			keys[key] = struct{}{}
+		}
+	}
+	return keys
+}
+
+func seriesMatches(metricName, key string, labels map[string]string, resources map[string]struct{}) bool {
 	name, seriesLabels := metricKeyLabels(key)
 	if name != metricName {
 		return false
 	}
-	if len(labels) == 0 {
-		return true
+	if len(labels) > 0 && !labelMatches(seriesLabels, labels) {
+		return false
 	}
-	for k, v := range labels {
-		if seriesLabels[k] != v {
+	if len(resources) > 0 {
+		resource := labelValue(seriesLabels, "resource", "ResourceType")
+		if _, ok := resources[resource]; !ok {
 			return false
 		}
 	}
 	return true
+}
+
+func labelMatches(seriesLabels map[string]string, filter map[string]string) bool {
+	for k, v := range filter {
+		if labelValue(seriesLabels, k, alternateLabelKey(k)) != v {
+			return false
+		}
+	}
+	return true
+}
+
+func labelValue(labels map[string]string, names ...string) string {
+	for _, name := range names {
+		if v, ok := labels[name]; ok {
+			return v
+		}
+	}
+	return ""
+}
+
+func alternateLabelKey(k string) string {
+	switch k {
+	case "type":
+		return "Type"
+	case "resource":
+		return "ResourceType"
+	case "action":
+		return "Action"
+	default:
+		return ""
+	}
 }
 
 func metricKeyLabels(key string) (string, map[string]string) {
