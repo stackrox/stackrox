@@ -4,6 +4,71 @@ on:
     types: [opened, reopened, synchronize]
 
 jobs:
+  corrupted-file-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - name: Set up Node.js
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+      with:
+        node-version-file: ui/package.json
+
+    - name: "Clean install baseline"
+      working-directory: ui/apps/platform
+      run: |
+        npm ci --no-audit --no-fund
+        VICTIM="node_modules/vitest/dist/index.js"
+        echo "Original size: $(wc -c < "$VICTIM")"
+        md5sum "$VICTIM" > /tmp/original.md5
+        cat /tmp/original.md5
+
+    - name: "Corrupt a file in node_modules"
+      working-directory: ui/apps/platform
+      run: |
+        VICTIM="node_modules/vitest/dist/index.js"
+        echo "// CORRUPTED BY CI EXPERIMENT" >> "$VICTIM"
+        echo "Corrupted size: $(wc -c < "$VICTIM")"
+        md5sum "$VICTIM"
+
+    - name: "Test: npm install on corrupted node_modules"
+      working-directory: ui/apps/platform
+      run: |
+        npm install --no-audit --no-fund
+        VICTIM="node_modules/vitest/dist/index.js"
+        md5sum "$VICTIM" > /tmp/after-install.md5
+        if grep -q 'CORRUPTED' "$VICTIM"; then
+          echo "FAIL: npm install did NOT repair the corrupted file"
+          echo "npm install does not check file integrity, only version metadata"
+        else
+          echo "PASS: npm install repaired the file"
+        fi
+
+    - name: "Test: npm ci repairs corruption"
+      working-directory: ui/apps/platform
+      run: |
+        echo "// CORRUPTED AGAIN" >> "node_modules/vitest/dist/index.js"
+        npm ci --no-audit --no-fund
+        VICTIM="node_modules/vitest/dist/index.js"
+        if grep -q 'CORRUPTED' "$VICTIM"; then
+          echo "FAIL: npm ci did NOT repair the corrupted file (unexpected)"
+        else
+          echo "PASS: npm ci repaired the file (deletes + reinstalls)"
+        fi
+
+    - name: "Summary"
+      run: |
+        echo "=== CORRUPTED FILE TEST ==="
+        echo "Original: $(cat /tmp/original.md5)"
+        echo "After npm install: $(cat /tmp/after-install.md5)"
+        if diff -q /tmp/original.md5 /tmp/after-install.md5 > /dev/null 2>&1; then
+          echo "npm install: REPAIRED corrupted file"
+        else
+          echo "npm install: LEFT corrupted file in place"
+          echo "This means cached node_modules with modified files will persist"
+        fi
+
   lockfile-desync-test:
     runs-on: ubuntu-latest
     steps:
