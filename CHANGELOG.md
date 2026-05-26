@@ -10,7 +10,7 @@ Put an entry in this file if your change is user-visible and you consider it _pa
 
 Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
-## [NEXT RELEASE]
+## [4.11.0]
 
 ### Added Features
 - The config-controller now periodically reconciles SecurityPolicy CRs (default: every 30 minutes), detecting drift if policies are modified or deleted directly in Central. The interval is configurable via the `ROX_CONFIG_CONTROLLER_RECONCILE_INTERVAL` environment variable.
