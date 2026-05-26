@@ -640,9 +640,11 @@ jobs:
 
   # Test job: runs on warm-go runner if one is available.
   # Measures Go build time with warm vs cold cache.
+  # Does NOT depend on seed-warm-runner — it relies on a runner
+  # seeded by a PREVIOUS workflow_dispatch run. The seed job from
+  # this run will serve FUTURE test jobs.
   test-warm-build:
     if: github.event_name == 'workflow_dispatch'
-    needs: seed-warm-runner
     runs-on: [self-hosted, warm-go]
     timeout-minutes: 30
     steps:
