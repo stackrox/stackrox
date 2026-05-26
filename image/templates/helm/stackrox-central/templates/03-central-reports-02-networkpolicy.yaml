@@ -14,6 +14,14 @@ spec:
   policyTypes:
   - Egress
   egress:
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+  - ports:
+    - port: 443
+      protocol: TCP
   - to:
     {{- if ._rox.ha.pgbouncer.enabled }}
     - podSelector:

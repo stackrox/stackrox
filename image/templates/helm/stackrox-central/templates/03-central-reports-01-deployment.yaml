@@ -96,6 +96,12 @@ spec:
         - name: central-certs-volume
           mountPath: /run/secrets/stackrox.io/certs/
           readOnly: true
+        - name: central-jwt-volume
+          mountPath: /run/secrets/stackrox.io/jwt/
+          readOnly: true
+        - name: central-htpasswd-volume
+          mountPath: /run/secrets/stackrox.io/htpasswd/
+          readOnly: true
         - name: central-config-volume
           mountPath: /etc/stackrox
         - name: central-db-password
@@ -114,6 +120,15 @@ spec:
       - name: central-certs-volume
         secret:
           secretName: central-tls
+      - name: central-jwt-volume
+        secret:
+          secretName: central-tls
+          items:
+          - key: jwt-key.pem
+            path: jwt-key.pem
+      - name: central-htpasswd-volume
+        secret:
+          secretName: central-htpasswd
       - name: central-config-volume
         configMap:
           name: central-config

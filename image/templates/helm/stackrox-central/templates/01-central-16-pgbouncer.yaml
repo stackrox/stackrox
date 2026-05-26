@@ -17,7 +17,7 @@ data:
   # PgBouncer starts.
   pgbouncer.ini.tmpl: |
     [databases]
-    * = host=central-db.{{ .Release.Namespace }}.svc port=5432 user=postgres password=__DB_PASSWORD__
+    * = host=central-db.{{ .Release.Namespace }}.svc.cluster.local port=5432 user=postgres password=__DB_PASSWORD__
 
     [pgbouncer]
     listen_addr = 0.0.0.0
@@ -42,7 +42,7 @@ data:
 
     admin_users = postgres
     stats_users = postgres
-    ignore_startup_parameters = extra_float_digits,options
+    ignore_startup_parameters = extra_float_digits,options,statement_timeout
     log_connections = 0
     log_disconnections = 0
   userlist.txt: |
@@ -95,6 +95,11 @@ spec:
             > /etc/pgbouncer/pgbouncer.ini
           cp /etc/pgbouncer-tmpl/userlist.txt /etc/pgbouncer/userlist.txt
           chmod 0400 /etc/pgbouncer/pgbouncer.ini
+          mkdir -p /etc/pgbouncer/tls
+          cp /run/secrets/stackrox.io/db-tls/ca.pem /etc/pgbouncer/tls/ca.pem
+          cp /run/secrets/stackrox.io/db-tls/cert.pem /etc/pgbouncer/tls/cert.pem
+          cp /run/secrets/stackrox.io/db-tls/key.pem /etc/pgbouncer/tls/key.pem
+          chmod 0400 /etc/pgbouncer/tls/*.pem
         volumeMounts:
         - name: pgbouncer-config-tmpl
           mountPath: /etc/pgbouncer-tmpl
@@ -103,6 +108,9 @@ spec:
           mountPath: /etc/pgbouncer
         - name: central-db-password
           mountPath: /run/secrets/stackrox.io/db-password
+          readOnly: true
+        - name: central-db-tls
+          mountPath: /run/secrets/stackrox.io/db-tls
           readOnly: true
         resources:
           requests:
@@ -151,9 +159,6 @@ spec:
         volumeMounts:
         - name: pgbouncer-runtime
           mountPath: /etc/pgbouncer
-          readOnly: true
-        - name: central-db-tls
-          mountPath: /etc/pgbouncer/tls
           readOnly: true
         - name: tmp
           mountPath: /tmp
