@@ -73,14 +73,16 @@ while [[ $(date +%s) -lt $ka_end ]]; do
       continue
     }
 
-  # Run the agent — blocks until it picks up and completes one job,
-  # or until the timeout expires
-  timeout $((ka_end - $(date +%s))) "$RUNNER_DIR/run.sh" 2>&1 || true
+  # Run the agent — blocks until it picks up and completes one job.
+  # No timeout: if a job is picked up, let it finish regardless of
+  # the keep-alive window. Never kill a running job.
+  "$RUNNER_DIR/run.sh" 2>&1 || true
 
-  echo "Job completed or timeout. Re-registering..."
+  echo "Job completed. Checking if keep-alive window still open..."
 done
 
-# Cleanup
+# Window expired — don't re-register, but any running job already finished
+# (the loop only checks the window between jobs, never mid-job).
 echo "Keep-alive window expired. Deregistering..."
 "$RUNNER_DIR/config.sh" remove --token "$REG_TOKEN" 2>&1 || true
 
