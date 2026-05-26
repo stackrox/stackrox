@@ -74,6 +74,7 @@ func RunScenario(ctx context.Context, scenarioDir string, _ Options) (*Scorecard
 
 	logPhase(scenario.Metadata.Name, phaseWaitInitialSync, "complete (elapsed=%.1fs)", syncWaitSec)
 
+	logPhase(scenario.Metadata.Name, phaseSteady, "baseline metrics scrape (T0) at %s", handle.MetricsURL)
 	before, err := FetchMetrics(handle.MetricsURL)
 	if err != nil {
 		handle.Stop()
@@ -86,7 +87,7 @@ func RunScenario(ctx context.Context, scenarioDir string, _ Options) (*Scorecard
 		return nil, errors.New("scenario steady phase duration must be positive")
 	}
 
-	logPhase(scenario.Metadata.Name, phaseSteady, "measuring counter deltas for %s (metrics=%s)", steadyDuration, handle.MetricsURL)
+	logPhase(scenario.Metadata.Name, phaseSteady, "start measurement window for %s (counter deltas T0→T1)", steadyDuration)
 	steadyStart := time.Now()
 	select {
 	case <-ctx.Done():
@@ -94,8 +95,9 @@ func RunScenario(ctx context.Context, scenarioDir string, _ Options) (*Scorecard
 		return nil, errors.Wrap(ctx.Err(), "steady phase canceled")
 	case <-time.After(steadyDuration):
 	}
-	logPhase(scenario.Metadata.Name, phaseSteady, "measurement window complete (elapsed=%.1fs)", time.Since(steadyStart).Seconds())
+	logPhase(scenario.Metadata.Name, phaseSteady, "end measurement window (elapsed=%.1fs)", time.Since(steadyStart).Seconds())
 
+	logPhase(scenario.Metadata.Name, phaseSteady, "post-window metrics scrape (T1) at %s", handle.MetricsURL)
 	after, err := FetchMetrics(handle.MetricsURL)
 	if err != nil {
 		handle.Stop()
