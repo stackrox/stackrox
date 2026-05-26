@@ -614,5 +614,5 @@ jobs:
             exit 0
           fi
           bash .github/actions/job-preamble/keep-alive.sh \
-            "warm-go,ubuntu-latest" "15"
+            "warm-go" "15"
 
