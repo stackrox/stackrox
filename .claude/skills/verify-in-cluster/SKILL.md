@@ -64,15 +64,16 @@ If `crane` is available, check for quay.io push credentials first:
 crane auth get quay.io 2>&1 | jq -r '{authenticated: (has("Username") and has("Secret")), username: .Username}'
 ```
 This prints only the username and whether auth is configured — never the secret/token.
-If `authenticated` is `true`, quay.io is ready. Determine the push repository:
-`quay.io/<username>/stackrox-verify` where `<username>` is the `username` from the
-output. Test push access:
+If `authenticated` is `true`, quay.io is ready. Determine the push repository using the
+convention `quay.io/<user>/stackrox/main` where `<user>` is the authenticated username
+from the crane output above. Verify the repo exists **and is public** (the cluster must
+pull without credentials):
 ```bash
-crane manifest quay.io/<username>/stackrox-verify:test 2>&1 || true
+curl -s "https://quay.io/api/v1/repository/<user>/stackrox/main" | jq '{is_public, name}'
 ```
-A `NAME_UNKNOWN` or `MANIFEST_UNKNOWN` error is fine — it means the repo doesn't exist
-yet but will be auto-created on first push. An `UNAUTHORIZED` or `DENIED` error means
-the user lacks push access — fall back to ttl.sh.
+If `is_public` is `true`, quay.io is ready. If the repo doesn't exist (`null` / 404) or
+`is_public` is `false`, fall back to ttl.sh — do NOT attempt to create or change visibility
+of repos via the Quay API (it requires OAuth tokens, not Docker credentials).
 
 If quay.io is not available, test connectivity to ttl.sh:
 ```bash
@@ -199,17 +200,26 @@ Use the repo's deployment scripts.
 - `oc` or `kubectl` — the script uses `oc` by default. If only `kubectl` is available,
   symlink it: `ln -s "$(which kubectl)" /usr/local/bin/oc`
 - `roxctl` must be in PATH (the deploy script calls `roxctl central generate` internally).
-  If missing, build it with **version ldflags** — roxctl panics on startup without them:
+  If missing, build it with **version ldflags** — roxctl panics on startup without them.
+  **Critical**: build for the **host platform** (not `GOOS=linux`) since roxctl runs locally
+  to generate deployment configs. Also, `ScannerVersion` is **required** — the embedded Helm
+  chart templates use `required ""  .ScannerImageTag` which is populated from this value.
+  Without it, `roxctl central generate` fails with a template error.
   ```bash
   MAIN_TAG=$(make --quiet --no-print-directory tag)
-  GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build \
-    -ldflags="-s -w -X github.com/stackrox/rox/pkg/version/internal.MainVersion=$MAIN_TAG" \
+  SCANNER_VERSION=$(cat SCANNER_VERSION)
+  COLLECTOR_VERSION=$(cat COLLECTOR_VERSION)
+  CGO_ENABLED=0 go build \
+    -ldflags="-s -w \
+      -X github.com/stackrox/rox/pkg/version/internal.MainVersion=$MAIN_TAG \
+      -X github.com/stackrox/rox/pkg/version/internal.ScannerVersion=$SCANNER_VERSION \
+      -X github.com/stackrox/rox/pkg/version/internal.CollectorVersion=$COLLECTOR_VERSION" \
     -o "$TMPDIR/roxctl" ./roxctl
   export PATH="$TMPDIR:$PATH"
   ```
-  The `MainVersion` ldflag is **required** — without it, roxctl hard-panics when parsing
-  the empty version string. Other version vars (`CollectorVersion`, `ScannerVersion`, etc.)
-  are optional and default gracefully.
+  The `MainVersion` and `ScannerVersion` ldflags are **required** — `MainVersion` prevents
+  a hard-panic, and `ScannerVersion` prevents the Helm chart template `required` error.
+  `CollectorVersion` is optional but recommended.
 - `helm` — needed for the monitoring stack sub-step. If missing, the deploy script may
   fail at that step but Central/Scanner YAML generation usually succeeds. You can set
   `MONITORING_SUPPORT=false` to skip it.
@@ -401,11 +411,11 @@ oc -n stackrox get deployment/scanner -o jsonpath='{.spec.template.spec.containe
 
 Generate a unique tag using the registry selected in Phase 0:
 
-- **quay.io**: `quay.io/<username>/stackrox-verify:verify-<uuid>`
+- **quay.io**: `quay.io/<user>/stackrox/main:verify-<short-uuid>`
 - **ttl.sh**: `ttl.sh/<uuid>:2h`
 
 ```bash
-UUID=$(uuidgen | tr '[:upper:]' '[:lower:]')
+UUID=$(uuidgen | tr '[:upper:]' '[:lower:]' | cut -c1-8)
 ```
 
 ### Method A: crane (preferred)
