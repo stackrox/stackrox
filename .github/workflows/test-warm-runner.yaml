@@ -1,0 +1,35 @@
+# Test workflow: register a GHA runner as self-hosted after a quick
+# Go build to verify the warm-pool registration mechanism works.
+name: Test Warm Runner
+on:
+  workflow_dispatch:
+    inputs:
+      keep-alive-minutes:
+        description: 'How long the runner stays registered (minutes)'
+        required: false
+        default: '15'
+
+jobs:
+  warm-and-register:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Quick Go build to warm cache
+        run: |
+          echo "Building a subset to warm GOCACHE..."
+          go build ./pkg/... 2>&1 | tail -3 || true
+          echo "GOCACHE: $(du -sh $(go env GOCACHE) 2>/dev/null | cut -f1)"
+
+      - name: Register as warm self-hosted runner
+        env:
+          GH_TOKEN: ${{ secrets.RUNNER_ADMIN_TOKEN }}
+        run: |
+          bash .github/actions/job-preamble/keep-alive.sh \
+            "warm-go,ubuntu-latest" \
+            "${{ inputs.keep-alive-minutes || '15' }}"
