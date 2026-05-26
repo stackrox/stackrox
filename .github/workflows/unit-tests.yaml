@@ -608,6 +608,11 @@ jobs:
             echo "::warning::RUNNER_ADMIN_TOKEN not set. Skipping registration."
             exit 0
           fi
+          # Don't try to register if we're already on a warm runner
+          if [[ "${RUNNER_NAME:-}" == warm-* ]]; then
+            echo "Already on a warm runner (${RUNNER_NAME}). Skipping re-registration."
+            exit 0
+          fi
           bash .github/actions/job-preamble/keep-alive.sh \
             "warm-go,ubuntu-latest" "15"
 
