@@ -1,15 +1,19 @@
 package format
 
 import (
+	"archive/zip"
 	"bytes"
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/format/mocks"
 	"github.com/stackrox/rox/pkg/csv"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -19,6 +23,24 @@ const (
 	clusterID1 = "cluster-1"
 	clusterID2 = "cluster-2"
 )
+
+func TestTimestampedZipWriter_SetsModifiedTimestamp(t *testing.T) {
+	var buf bytes.Buffer
+	before := time.Now().Add(-time.Minute)
+	zw := createNewZipWriter(&buf)
+
+	w, err := zw.Create("test.csv")
+	require.NoError(t, err)
+	_, err = w.Write([]byte("data"))
+	require.NoError(t, err)
+	require.NoError(t, zw.Close())
+
+	reader, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	require.NoError(t, err)
+	require.Len(t, reader.File, 1)
+	assert.False(t, reader.File[0].Modified.IsZero(), "ZIP entry Modified timestamp should not be zero")
+	assert.True(t, reader.File[0].Modified.After(before), "ZIP entry Modified timestamp should be recent")
+}
 
 func TestComplianceReportingFormatter(t *testing.T) {
 	suite.Run(t, new(ComplianceReportingFormatterSuite))
