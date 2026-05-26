@@ -16,15 +16,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v6
         with:
           go-version-file: go.mod
 
-      - name: Quick Go build to warm cache
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: Build Go binaries to warm GOCACHE
         run: |
-          echo "Building a subset to warm GOCACHE..."
-          go build ./pkg/... 2>&1 | tail -3 || true
+          echo "Building to warm GOCACHE..."
+          make main-build 2>&1 | tail -5 || true
           echo "GOCACHE: $(du -sh $(go env GOCACHE) 2>/dev/null | cut -f1)"
+          echo "GOMODCACHE: $(du -sh $(go env GOMODCACHE) 2>/dev/null | cut -f1)"
 
       - name: Register as warm self-hosted runner
         env:
