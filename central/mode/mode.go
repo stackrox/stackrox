@@ -45,3 +45,8 @@ func IsReportsEnabled() bool {
 	m := Get()
 	return m == Full || m == Reports
 }
+
+// IsCronJob returns true if Central is running in cronjob mode.
+func IsCronJob() bool {
+	return Get() == CronJob
+}

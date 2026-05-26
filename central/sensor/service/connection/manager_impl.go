@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/ha/leases"
 	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller"
@@ -79,16 +80,23 @@ type manager struct {
 	autoTriggerUpgrades        *concurrency.Flag
 	rateLimiter                *rate.Limiter
 	adminEventsStream          events.Stream
+
+	leaseStore    *leases.Store
+	podID         string
+	stopHeartbeat chan struct{}
 }
 
 // NewManager returns a new connection manager
-func NewManager(mgr hashManager.Manager) Manager {
+func NewManager(mgr hashManager.Manager, leaseStore *leases.Store) Manager {
 	return &manager{
 		connectionsByClusterID: make(map[string]connectionAndUpgradeController),
 		manager:                mgr,
 		initSyncMgr:            NewInitSyncManager(),
 		rateLimiter:            newVMIndexReportRateLimiter(),
 		adminEventsStream:      adminEventStream.Singleton(),
+		leaseStore:             leaseStore,
+		podID:                  env.PodName.Setting(),
+		stopHeartbeat:          make(chan struct{}),
 	}
 }
 
@@ -153,6 +161,12 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 	}
 
 	go m.updateClusterHealthForever()
+
+	if m.leaseStore != nil {
+		go m.heartbeatLeases()
+		go m.monitorStaleLeases()
+	}
+
 	return nil
 }
 
@@ -178,6 +192,48 @@ func (m *manager) updateClusterHealthForever() {
 			if !conn.HasCapability(centralsensor.HealthMonitoringCap) {
 				m.updateActiveClusterHealth(cluster)
 			}
+		}
+	}
+}
+
+func (m *manager) heartbeatLeases() {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			m.connectionsByClusterIDMutex.RLock()
+			for clusterID, connAndCtrl := range m.connectionsByClusterID {
+				if connAndCtrl.connection != nil {
+					if err := m.leaseStore.Heartbeat(managerCtx, clusterID, m.podID); err != nil {
+						log.Errorf("HA: Failed to heartbeat lease for cluster %s: %v", clusterID, err)
+					}
+				}
+			}
+			m.connectionsByClusterIDMutex.RUnlock()
+		case <-m.stopHeartbeat:
+			return
+		}
+	}
+}
+
+func (m *manager) monitorStaleLeases() {
+	ticker := time.NewTicker(60 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			staleLeases, err := m.leaseStore.GetStaleLeases(managerCtx, 2*time.Minute)
+			if err != nil {
+				log.Errorf("HA: Failed to check stale leases: %v", err)
+				continue
+			}
+			for _, lease := range staleLeases {
+				log.Warnf("HA: Stale lease detected - cluster %s held by pod %s (last heartbeat: %v)",
+					lease.ClusterID, lease.PodID, lease.LastHeartbeat)
+			}
+		case <-m.stopHeartbeat:
+			return
 		}
 	}
 }
@@ -278,6 +334,12 @@ func (m *manager) CloseConnection(clusterID string) {
 	}
 
 	m.rateLimiter.OnClientDisconnect(clusterID)
+
+	if m.leaseStore != nil {
+		if err := m.leaseStore.Release(managerCtx, clusterID, m.podID); err != nil {
+			log.Errorf("HA: Failed to release lease for deleted cluster %s: %v", clusterID, err)
+		}
+	}
 }
 
 func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.SensorHello, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
@@ -319,6 +381,14 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 		return errors.Wrap(err, "replacing old connection")
 	}
 
+	if m.leaseStore != nil {
+		if claimErr := m.leaseStore.Claim(ctx, clusterID, m.podID); claimErr != nil {
+			log.Errorf("HA: Failed to claim lease for cluster %s: %v", clusterID, claimErr)
+		} else {
+			log.Infof("HA: Claimed lease for cluster %s on pod %s", clusterID, m.podID)
+		}
+	}
+
 	if oldConnection != nil {
 		nodeName := sensorHello.GetDeploymentIdentification().GetK8SNodeName()
 		oldConnection.Terminate(errors.Errorf("a new connection for cluster %s was detected from node with name %s", clusterName, nodeName))
@@ -339,6 +409,14 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 			m.connectionsByClusterID[clusterID] = connAndUpgradeCtrl
 		}
 	})
+
+	if m.leaseStore != nil {
+		if releaseErr := m.leaseStore.Release(managerCtx, clusterID, m.podID); releaseErr != nil {
+			log.Errorf("HA: Failed to release lease for cluster %s: %v", clusterID, releaseErr)
+		} else {
+			log.Infof("HA: Released lease for cluster %s from pod %s", clusterID, m.podID)
+		}
+	}
 
 	return err
 }

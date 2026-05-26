@@ -8,6 +8,7 @@ import (
 
 	errorsPkg "github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/ha/propagation"
 	"github.com/stackrox/rox/central/metrics"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/store"
@@ -74,6 +75,24 @@ type datastoreImpl struct {
 	clusterDatastore    clusterDS.DataStore
 	notifierDatastore   notifierDS.DataStore
 	categoriesDatastore categoriesDataStore.DataStore
+
+	versionStore *propagation.VersionStore
+}
+
+func (ds *datastoreImpl) incrementPolicyVersion(ctx context.Context) {
+	if ds.versionStore == nil {
+		return
+	}
+	if err := ds.versionStore.IncrementVersion(ctx); err != nil {
+		log.Errorf("HA: Failed to increment policy version: %v", err)
+	}
+}
+
+// SetVersionStore sets the HA version store for cross-replica cache invalidation.
+func SetVersionStore(ds DataStore, vs *propagation.VersionStore) {
+	if impl, ok := ds.(*datastoreImpl); ok {
+		impl.versionStore = vs
+	}
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
@@ -299,6 +318,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 		metrics.IncrementTotalExternalPoliciesGauge()
 	}
 
+	ds.incrementPolicyVersion(ctx)
 	return clonedPolicy.GetId(), nil
 }
 
@@ -337,7 +357,11 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 	if err = ds.storage.Upsert(ctx, clonedPolicy); err != nil {
 		return ds.wrapWithRollback(ctx, tx, err)
 	}
-	return tx.Commit(ctx)
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	ds.incrementPolicyVersion(ctx)
+	return nil
 }
 
 // RemovePolicy removes a policy from the storage.
@@ -357,6 +381,9 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, policy *storage.Polic
 		metrics.DecrementTotalExternalPoliciesGauge()
 	}
 
+	if err == nil {
+		ds.incrementPolicyVersion(ctx)
+	}
 	return err
 }
 
@@ -411,6 +438,7 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 		responses[i] = response
 	}
 
+	ds.incrementPolicyVersion(ctx)
 	return responses, allSucceeded, nil
 }
 

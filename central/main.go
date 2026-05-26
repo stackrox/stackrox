@@ -329,6 +329,14 @@ func main() {
 		initializeHA()
 	}
 
+	if mode.IsCronJob() {
+		log.Info("Central starting in CronJob mode")
+		runCronJobTask()
+		globaldb.Close()
+		log.Info("CronJob completed, exiting")
+		return
+	}
+
 	features.LogFeatureFlags()
 
 	go startGRPCServer()
@@ -383,6 +391,18 @@ func ensureDB(ctx context.Context) {
 	}
 }
 
+func runCronJobTask() {
+	task := env.CronJobTask.Setting()
+	log.Infof("CronJob: Executing task: %s", task)
+
+	switch task {
+	case "pruning":
+		pruning.Singleton().RunOnce()
+	default:
+		log.Errorf("CronJob: Unknown task: %s", task)
+	}
+}
+
 func initializeHA() {
 	haCtx := sac.WithAllAccess(context.Background())
 	db := globaldb.GetPostgres()
@@ -392,6 +412,7 @@ func initializeHA() {
 	if err := leaseStore.Initialize(haCtx); err != nil {
 		log.Errorf("Failed to initialize lease store: %v", err)
 	} else {
+		connection.SetLeaseStore(leaseStore)
 		log.Info("HA: Sensor connection lease store initialized")
 	}
 
@@ -400,12 +421,27 @@ func initializeHA() {
 	if err := versionStore.Initialize(haCtx); err != nil {
 		log.Errorf("Failed to initialize version store: %v", err)
 	} else {
+		policyDataStore.SetVersionStore(policyDataStore.Singleton(), versionStore)
+
 		poller := propagation.NewPoller(
 			func() (int64, error) {
 				return versionStore.GetVersion(sac.WithAllAccess(context.Background()))
 			},
 			func(old, newV int64) {
-				log.Infof("HA: Policy version changed: %d -> %d, invalidating caches", old, newV)
+				log.Infof("HA: Policy version changed: %d -> %d, re-broadcasting policies", old, newV)
+
+				readCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+					sac.AllowFixedScopes(
+						sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+						sac.ResourceScopeKeys(resources.WorkflowAdministration)))
+				policies, err := policyDataStore.Singleton().GetAllPolicies(readCtx)
+				if err != nil {
+					log.Errorf("HA: Failed to read policies for broadcast: %v", err)
+					return
+				}
+
+				connection.ManagerSingleton().PreparePoliciesAndBroadcast(policies)
+				log.Infof("HA: Broadcasted %d policies to connected sensors", len(policies))
 			},
 			time.Duration(env.PolicyPollIntervalSecs.IntegerSetting())*time.Second,
 		)

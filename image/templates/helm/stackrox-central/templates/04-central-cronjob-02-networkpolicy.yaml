@@ -1,0 +1,38 @@
+{{- include "srox.init" . -}}
+
+{{ if and ._rox.network.enableNetworkPolicies ._rox.ha.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: central-pruning
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "central-pruning") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "central-pruning") | nindent 4 }}
+spec:
+  policyTypes:
+  - Egress
+  egress:
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+  - to:
+    {{- if ._rox.ha.pgbouncer.enabled }}
+    - podSelector:
+        matchLabels:
+          app: pgbouncer
+    {{- else }}
+    - podSelector:
+        matchLabels:
+          app: central-db
+    {{- end }}
+    ports:
+    - port: 5432
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: central-pruning
+{{- end }}

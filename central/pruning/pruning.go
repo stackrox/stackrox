@@ -102,6 +102,7 @@ func disableDynamicRBACPruningForTest(*testing.T) {
 type GarbageCollector interface {
 	Start()
 	Stop()
+	RunOnce()
 }
 
 func newGarbageCollector(alerts alertDatastore.DataStore,
@@ -185,6 +186,12 @@ type garbageCollectorImpl struct {
 
 func (g *garbageCollectorImpl) Start() {
 	go g.runGC()
+}
+
+func (g *garbageCollectorImpl) RunOnce() {
+	lastClusterPruneTime = time.Now().Add(-clusterGCFreq)
+	lastLogImbuePruneTime = time.Now().Add(-logImbueGCFreq)
+	g.pruneBasedOnConfig()
 }
 
 func (g *garbageCollectorImpl) pruneBasedOnConfig() {

@@ -12,4 +12,10 @@ var (
 
 	// HAEnabled enables high-availability mode for Central.
 	HAEnabled = RegisterBooleanSetting("ROX_HA_ENABLED", false)
+
+	// PodName identifies this Central pod for HA lease tracking.
+	PodName = RegisterSetting("POD_NAME", WithDefault("unknown"))
+
+	// CronJobTask specifies which periodic task to run in cronjob mode.
+	CronJobTask = RegisterSetting("ROX_CRONJOB_TASK", WithDefault("pruning"))
 )
