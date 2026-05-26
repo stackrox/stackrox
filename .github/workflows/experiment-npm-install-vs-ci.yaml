@@ -23,9 +23,9 @@ jobs:
         grep '"vitest"' package-lock.json | head -1
 
         echo ""
-        echo "=== Bump vitest range in package.json without updating lockfile ==="
-        # Change vitest from ^4.1.0 to ^4.2.0 (or similar minor bump)
-        sed -i 's/"vitest": "^4.1.0"/"vitest": "^4.2.0"/' package.json
+        echo "=== Pin vitest to 4.1.5 in package.json without updating lockfile ==="
+        # Lockfile has 4.1.0, package.json now requires exactly 4.1.5
+        sed -i 's/"vitest": "^4.1.0"/"vitest": "4.1.5"/' package.json
         echo "package.json now:"
         node -e "const p=require('./package.json'); console.log('vitest in package.json:', p.devDependencies['vitest'])"
         echo "package-lock.json unchanged:"
