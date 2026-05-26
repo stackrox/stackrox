@@ -45,7 +45,6 @@ type NodeCVELoader interface {
 	FromQuery(ctx context.Context, query *v1.Query) ([]*storage.NodeCVE, error)
 	GetIDs(ctx context.Context, query *v1.Query) ([]string, error)
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
-	CountAll(ctx context.Context) (int32, error)
 }
 
 // nodeCVELoaderImpl implements the NodeCVELoader interface.
@@ -97,11 +96,6 @@ func (idl *nodeCVELoaderImpl) CountFromQuery(ctx context.Context, query *v1.Quer
 		return 0, err
 	}
 	return int32(count), nil
-}
-
-func (idl *nodeCVELoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.ds.Count(ctx, search.EmptyQuery())
-	return int32(count), err
 }
 
 func (idl *nodeCVELoaderImpl) load(ctx context.Context, ids []string) ([]*storage.NodeCVE, error) {
