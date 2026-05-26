@@ -39,6 +39,11 @@ const (
 	// This ensures that token requests don't hang indefinitely when all callers have cancelled.
 	tokenRequestTimeout = 30 * time.Second
 
+	// maxRequestBodySize is the maximum size of a proxied request body that will
+	// be buffered for retry. 32 MiB is generous for the query/filter payloads
+	// this proxy handles while still guarding against memory exhaustion.
+	maxRequestBodySize = 32 << 20
+
 	// FullClusterAccessScope is the namespace scope value that indicates full cluster access.
 	FullClusterAccessScope = "*"
 )
@@ -123,10 +128,14 @@ func (t *scopedTokenTransport) RoundTrip(req *http.Request) (*http.Response, err
 	// Buffer the request body upfront so we can replay it on retry.
 	var bodyBytes []byte
 	if req.Body != nil && req.Body != http.NoBody {
+		defer utils.IgnoreError(req.Body.Close)
 		var err error
-		bodyBytes, err = io.ReadAll(req.Body)
+		bodyBytes, err = io.ReadAll(io.LimitReader(req.Body, maxRequestBodySize+1))
 		if err != nil {
 			return nil, errors.Wrap(err, "reading request body")
+		}
+		if len(bodyBytes) > maxRequestBodySize {
+			return nil, errors.Errorf("request body exceeds maximum allowed size of %d bytes", maxRequestBodySize)
 		}
 		req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 	}
