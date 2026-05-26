@@ -591,6 +591,10 @@ jobs:
         if: github.event_name != 'pull_request'
         run: make check-debugger
 
+      - name: Prepare roxctl build context
+        run: |
+          cp -r image/rhel/THIRD_PARTY_NOTICES image/roxctl/THIRD_PARTY_NOTICES
+
       - name: Build roxctl image
         run: |
           GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make docker-build-roxctl-image
@@ -775,7 +779,7 @@ jobs:
       # Skip for external contributions.
       if: |
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      uses: mshick/add-pr-comment@64b8e914979889d746c99dea15a76e77ef64580a # ratchet:mshick/add-pr-comment@v3
+      uses: mshick/add-pr-comment@8e4927817251f1ff60c001f04568532b38e0b4a0 # ratchet:mshick/add-pr-comment@v3
       with:
         message-id: build-images-ready
         message-path: build-comment.md
@@ -875,6 +879,7 @@ jobs:
     needs:
       - define-job-matrix
       - pre-build-go-binaries
+      - pre-build-oss-notice
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
@@ -906,6 +911,11 @@ jobs:
 
       - name: Extract prebuilt binaries
         run: tar xf go-binaries-build.tar
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: oss-notice
+          path: THIRD_PARTY_NOTICES
 
       - name: PR labels
         uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
@@ -1213,7 +1223,7 @@ jobs:
         ./scripts/ci/govulncheck.sh
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/**/*.xml'

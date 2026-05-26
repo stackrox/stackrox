@@ -19,6 +19,7 @@ RUN dnf install -y \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
 COPY ./roxctl-linux /out/usr/bin/roxctl
+COPY THIRD_PARTY_NOTICES /out/THIRD_PARTY_NOTICES/
 
 FROM ubi-micro-base
 COPY --from=package_installer /out/ /
