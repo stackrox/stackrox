@@ -3059,3 +3059,135 @@ func Test_dedupeAdvisories(t *testing.T) {
 		})
 	}
 }
+
+func TestDedupeVulns_AliasDedup(t *testing.T) {
+	tests := map[string]struct {
+		vulnIDs           []string
+		ccVulnerabilities map[string]*claircore.Vulnerability
+		expectedCount     int
+		expectSeverity    claircore.Severity
+	}{
+		"GHSA and Go vulndb entries for same CVE are deduplicated": {
+			vulnIDs: []string{"ghsa-1", "go-1"},
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"ghsa-1": {
+					ID:                 "ghsa-1",
+					Name:               "GHSA-p77j-4mvh-x3m3",
+					Updater:            "osv/Go",
+					Links:              "https://nvd.nist.gov/vuln/detail/CVE-2026-33186",
+					NormalizedSeverity: claircore.Critical,
+					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+					FixedInVersion:     "1.2.3",
+				},
+				"go-1": {
+					ID:                 "go-1",
+					Name:               "GO-2026-4762",
+					Updater:            "osv/Go",
+					Links:              "https://osv.dev/vulnerability/CVE-2026-33186",
+					NormalizedSeverity: claircore.Unknown,
+					FixedInVersion:     "1.2.3",
+				},
+			},
+			expectedCount:  1,
+			expectSeverity: claircore.Critical,
+		},
+		"same ClairCore name with identical fields is deduplicated": {
+			vulnIDs: []string{"v1", "v2"},
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"v1": {
+					ID:                 "v1",
+					Name:               "CVE-2019-12900",
+					NormalizedSeverity: claircore.High,
+					Severity:           "high",
+					FixedInVersion:     "1.0.8",
+				},
+				"v2": {
+					ID:                 "v2",
+					Name:               "CVE-2019-12900",
+					NormalizedSeverity: claircore.High,
+					Severity:           "high",
+					FixedInVersion:     "1.0.8",
+				},
+			},
+			expectedCount:  1,
+			expectSeverity: claircore.High,
+		},
+		"different CVEs are not deduplicated": {
+			vulnIDs: []string{"v1", "v2"},
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"v1": {
+					ID:                 "v1",
+					Name:               "GHSA-aaa",
+					Updater:            "osv/Go",
+					Links:              "https://nvd.nist.gov/vuln/detail/CVE-2026-0001",
+					NormalizedSeverity: claircore.High,
+				},
+				"v2": {
+					ID:                 "v2",
+					Name:               "GHSA-bbb",
+					Updater:            "osv/Go",
+					Links:              "https://nvd.nist.gov/vuln/detail/CVE-2026-0002",
+					NormalizedSeverity: claircore.Medium,
+				},
+			},
+			expectedCount: 2,
+		},
+		"same name different CVSS string same severity is deduplicated": {
+			vulnIDs: []string{"v1", "v2"},
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"v1": {
+					ID:                 "v1",
+					Name:               "CVE-2026-55555",
+					Description:        "Vuln from source A",
+					Links:              "https://nvd.nist.gov/vuln/detail/CVE-2026-55555",
+					NormalizedSeverity: claircore.High,
+					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+					FixedInVersion:     "1.5.0",
+				},
+				"v2": {
+					ID:                 "v2",
+					Name:               "CVE-2026-55555",
+					Description:        "Vuln from source B with different wording",
+					Links:              "https://osv.dev/vulnerability/CVE-2026-55555",
+					NormalizedSeverity: claircore.High,
+					Severity:           "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+					FixedInVersion:     "1.5.0",
+				},
+			},
+			expectedCount:  1,
+			expectSeverity: claircore.High,
+		},
+		"same CVE from different streams with different fixed versions kept": {
+			vulnIDs: []string{"v1", "v2"},
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"v1": {
+					ID:                 "v1",
+					Name:               "CVE-2026-99999",
+					NormalizedSeverity: claircore.High,
+					Severity:           "high",
+					FixedInVersion:     "1.0.0",
+				},
+				"v2": {
+					ID:                 "v2",
+					Name:               "CVE-2026-99999",
+					NormalizedSeverity: claircore.High,
+					Severity:           "high",
+					FixedInVersion:     "2.0.0",
+				},
+			},
+			expectedCount: 2,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := dedupeVulns(tt.vulnIDs, tt.ccVulnerabilities)
+			assert.Len(t, result, tt.expectedCount)
+			if tt.expectedCount == 1 && tt.expectSeverity != 0 {
+				vuln := tt.ccVulnerabilities[result[0]]
+				assert.Equal(t, tt.expectSeverity, vuln.NormalizedSeverity,
+					"should prefer entry with higher severity")
+			}
+		})
+	}
+}

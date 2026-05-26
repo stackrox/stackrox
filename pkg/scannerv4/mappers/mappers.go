@@ -1490,9 +1490,15 @@ func advisory(vuln *claircore.Vulnerability) *v4.VulnerabilityReport_Advisory {
 
 // dedupeVulns deduplicates repeat vulnerabilities out of vulnIDs and returns the result.
 // This function does not guarantee ordering is preserved.
+//
+// Vulnerabilities are grouped by their resolved CVE name (from vulnerabilityName),
+// not by the raw ClairCore advisory ID. This ensures that entries from different
+// OSV sub-databases (e.g., GHSA + Go vulndb) that resolve to the same CVE are
+// deduplicated. When duplicates are found, the entry with the highest severity
+// is preferred.
 func dedupeVulns(vulnIDs []string, ccVulnerabilities map[string]*claircore.Vulnerability) []string {
-	// Group each vulnerability by name.
-	// This maps each name to a slice of vulnerabilities to protect against the possibility
+	// Group each vulnerability by its resolved name (CVE ID).
+	// This maps each resolved name to a slice of vulnerabilities to protect against the possibility
 	// Claircore finds multiple vulnerabilities with the same name for this package from different vulnerability streams.
 	// In that situation, it is not clear which one may be the single, correct option to choose, so just allow for both.
 	vulnsByName := make(map[string][]*claircore.Vulnerability)
@@ -1503,17 +1509,24 @@ OUTER:
 			continue
 		}
 
-		// Find the currently tracked vulnerabilities with the same name.
-		// If this entry matches any of those, then ignore this one.
-		matching := vulnsByName[vuln.Name]
-		for _, match := range matching {
+		resolvedName := vulnerabilityName(vuln)
+
+		matching := vulnsByName[resolvedName]
+		for i, match := range matching {
 			if vulnsEqual(match, vuln) {
+				continue OUTER
+			}
+			// Same resolved CVE from different advisory sources (e.g., GHSA vs Go vulndb).
+			// Keep the entry with higher severity; replace if the new one is better.
+			if match.Name != vuln.Name && resolvedName != match.Name && resolvedName != vuln.Name {
+				if vuln.NormalizedSeverity > match.NormalizedSeverity {
+					vulnsByName[resolvedName][i] = vuln
+				}
 				continue OUTER
 			}
 		}
 
-		// Add the unique entry to the map.
-		vulnsByName[vuln.Name] = append(vulnsByName[vuln.Name], vuln)
+		vulnsByName[resolvedName] = append(vulnsByName[resolvedName], vuln)
 	}
 
 	filtered := make([]string, 0, len(vulnIDs))
@@ -1526,26 +1539,15 @@ OUTER:
 }
 
 // vulnsEqual determines if the vulnerabilities are essentially equal.
-// That is, this function does not check all fields of the vulnerability struct,
-// to prevent consumers from seeing two seemingly identical vulnerabilities
-// for the same package in the same image.
+// Two vulns are equal if they have the same normalized severity and fixed
+// version. Fields like Description, Links, Issued, and the raw Severity
+// string may differ between sources (e.g., NVD vs RHEL vs OSV) reporting
+// the same vulnerability — those differences are not meaningful to the user.
 //
-// For example: Claircore currently returns CVE-2019-12900 twice for the bzip2-libs package
-// in one particular image. The two versions of the CVE are exactly the same
-// except for the repository name (cpe:/a:redhat:enterprise_linux:8::appstream vs cpe:/o:redhat:enterprise_linux:8::baseos).
-// The entry for this vulnerability as it matched this package in this image may be found in
-// https://security.access.redhat.com/data/oval/v2/RHEL8/rhel-8-including-unpatched.oval.xml.bz2.
-// After reading the entry in this file, it is clear Claircore matched this vulnerability to this stream's
-// CVE-2019-12900 entry twice (once per matching repository).
-//
-// The goal of this function is to make it clear those two CVE-2019-12900 findings are exactly the same.
+// Entries with different FixedInVersion values are kept separate because they
+// represent genuinely different remediation paths from different streams.
 func vulnsEqual(a, b *claircore.Vulnerability) bool {
-	return a.Name == b.Name &&
-		a.Description == b.Description &&
-		a.Issued == b.Issued &&
-		a.Links == b.Links &&
-		a.Severity == b.Severity &&
-		a.NormalizedSeverity == b.NormalizedSeverity &&
+	return a.NormalizedSeverity == b.NormalizedSeverity &&
 		a.FixedInVersion == b.FixedInVersion
 }
 
