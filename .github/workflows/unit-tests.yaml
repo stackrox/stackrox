@@ -664,17 +664,31 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Build Go binaries (should be fast with warm cache)
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: Cache state
+        run: |
+          echo "--- GOCACHE ---"
+          du -sh $(go env GOCACHE) 2>/dev/null || echo "empty"
+          find $(go env GOCACHE) -type f 2>/dev/null | wc -l | xargs -I{} echo "files: {}"
+          echo "--- GOMODCACHE ---"
+          du -sh $(go env GOMODCACHE) 2>/dev/null || echo "empty"
+
+      - name: Go unit tests (warm cache)
+        env:
+          BUILD_TAG: 0.0.0
+          SHORTCOMMIT: "0000000"
+        run: |
+          echo "Running Go unit tests with warm cache..."
+          start=$SECONDS
+          go test -count=1 -v ./pkg/concurrency/... ./pkg/utils/... ./pkg/set/... 2>&1 | tail -20
+          echo "--- Tests took $((SECONDS - start))s ---"
+
+      - name: Go build (warm cache)
         run: |
           echo "Building with warm cache..."
-          echo "--- GOCACHE before build ---"
-          du -sh $(go env GOCACHE) 2>/dev/null || echo "GOCACHE empty"
-          find $(go env GOCACHE) -type f 2>/dev/null | wc -l | xargs -I{} echo "GOCACHE files: {}"
-          echo "--- Building ---"
           start=$SECONDS
-          go build -v ./pkg/... 2>&1 | tail -20
+          go build ./pkg/... 2>&1 | tail -5
           echo "--- Build took $((SECONDS - start))s ---"
-          echo "--- GOCACHE after build ---"
-          du -sh $(go env GOCACHE) 2>/dev/null || echo "GOCACHE empty"
-          find $(go env GOCACHE) -type f 2>/dev/null | wc -l | xargs -I{} echo "GOCACHE files: {}"
 
