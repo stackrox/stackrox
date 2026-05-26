@@ -15,6 +15,85 @@ import (
 
 const scannerVersion = "indexer=4.8.3"
 
+func TestVulnerabilitiesDedup(t *testing.T) {
+	tests := map[string]struct {
+		vulns    map[string]*v4.VulnerabilityReport_Vulnerability
+		ids      []string
+		expected int
+		wantSev  storage.VulnerabilitySeverity
+	}{
+		"alias duplicates are deduplicated by CVE name": {
+			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"ghsa-1": {
+					Name:               "CVE-2026-33186",
+					Description:        "from GHSA",
+					Link:               "https://nvd.nist.gov/vuln/detail/CVE-2026-33186",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
+				},
+				"go-1": {
+					Name:               "CVE-2026-33186",
+					Description:        "from Go vulndb",
+					Link:               "https://osv.dev/vulnerability/CVE-2026-33186",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED,
+				},
+			},
+			ids:      []string{"ghsa-1", "go-1"},
+			expected: 1,
+			wantSev:  storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+		},
+		"different CVEs are not deduplicated": {
+			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"v1": {
+					Name:               "CVE-2026-0001",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				},
+				"v2": {
+					Name:               "CVE-2026-0002",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				},
+			},
+			ids:      []string{"v1", "v2"},
+			expected: 2,
+		},
+		"same ClairCore ID is deduplicated": {
+			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"v1": {
+					Name:               "CVE-2026-99999",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				},
+			},
+			ids:      []string{"v1", "v1"},
+			expected: 1,
+		},
+		"keeps higher severity on duplicate": {
+			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"oval-1": {
+					Name:               "CVE-2025-14087",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				},
+				"csaf-1": {
+					Name:               "CVE-2025-14087",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				},
+			},
+			ids:      []string{"oval-1", "csaf-1"},
+			expected: 1,
+			wantSev:  storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := vulnerabilities(tt.vulns, tt.ids, "")
+			assert.Len(t, result, tt.expected)
+			if tt.expected == 1 && tt.wantSev != 0 {
+				assert.Equal(t, tt.wantSev, result[0].GetSeverity(),
+					"should keep the entry with higher severity")
+			}
+		})
+	}
+}
+
 func TestNoPanic(t *testing.T) {
 	assert.NotPanics(t, func() {
 		imageScan(nil, nil, "")

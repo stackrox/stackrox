@@ -178,11 +178,13 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 		return nil
 	}
 
-	vulns := make([]*storage.EmbeddedVulnerability, 0, len(ids))
-	uniqueVulns := set.NewStringSet()
+	// Deduplicate by CVE name, keeping the entry with the highest severity.
+	// Multiple advisory sources (e.g., GHSA + Go vulndb, OVAL + CSAF) can
+	// produce separate entries that resolve to the same CVE name.
+	vulnByCVE := make(map[string]*storage.EmbeddedVulnerability, len(ids))
+	seenIDs := set.NewStringSet()
 	for _, id := range ids {
-		if !uniqueVulns.Add(id) {
-			// Already saw this vulnerability, so ignore it.
+		if !seenIDs.Add(id) {
 			continue
 		}
 
@@ -218,9 +220,20 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			}
 		}
 
-		vulns = append(vulns, vuln)
+		if existing, ok := vulnByCVE[vuln.GetCve()]; ok {
+			if vuln.GetSeverity() > existing.GetSeverity() ||
+				(vuln.GetSeverity() == existing.GetSeverity() && vuln.GetCvss() > existing.GetCvss()) {
+				vulnByCVE[vuln.GetCve()] = vuln
+			}
+			continue
+		}
+		vulnByCVE[vuln.GetCve()] = vuln
 	}
 
+	vulns := make([]*storage.EmbeddedVulnerability, 0, len(vulnByCVE))
+	for _, vuln := range vulnByCVE {
+		vulns = append(vulns, vuln)
+	}
 	return vulns
 }
 
