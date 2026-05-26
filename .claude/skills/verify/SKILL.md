@@ -171,9 +171,26 @@ into every subsequent command. Shell exports do not persist across Bash tool cal
 
 ### 2c: Deploy StackRox (only if not found)
 
-Use the repo's deployment scripts. Prerequisites:
+Use the repo's deployment scripts.
+
+**Prerequisites for `deploy/deploy.sh`:**
+- `oc` or `kubectl` — the script uses `oc` by default. If only `kubectl` is available,
+  symlink it: `ln -s "$(which kubectl)" /usr/local/bin/oc`
 - `roxctl` must be in PATH (the deploy script calls `roxctl central generate` internally).
-  If missing, build it: `go build -o "$TMPDIR/roxctl" ./roxctl && export PATH="$TMPDIR:$PATH"`
+  If missing, build it with **version ldflags** — roxctl panics on startup without them:
+  ```bash
+  MAIN_TAG=$(make --quiet --no-print-directory tag)
+  GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build \
+    -ldflags="-s -w -X github.com/stackrox/rox/pkg/version/internal.MainVersion=$MAIN_TAG" \
+    -o "$TMPDIR/roxctl" ./roxctl
+  export PATH="$TMPDIR:$PATH"
+  ```
+  The `MainVersion` ldflag is **required** — without it, roxctl hard-panics when parsing
+  the empty version string. Other version vars (`CollectorVersion`, `ScannerVersion`, etc.)
+  are optional and default gracefully.
+- `helm` — needed for the monitoring stack sub-step. If missing, the deploy script may
+  fail at that step but Central/Scanner YAML generation usually succeeds. You can set
+  `MONITORING_SUPPORT=false` to skip it.
 - The main image must be available at the specified registry/tag.
 
 The key env vars to set:
@@ -183,6 +200,7 @@ export MAIN_IMAGE_TAG=$(make --quiet --no-print-directory tag)
 export ROX_HTPASSWD_AUTH=true
 export STORAGE=pvc
 export LOAD_BALANCER=route   # on OpenShift; omit on plain k8s
+export MONITORING_SUPPORT=false  # skip if helm is unavailable
 ```
 
 Then run:
@@ -240,8 +258,9 @@ multiple binary layers to that single base image.
   `/usr/local/bin/scanner`, push to ttl.sh, and patch deployment/scanner.
 - **Operator** changes are out of scope for this skill. Inform the user.
 
-If no code changes are detected, stop and ask the user what they want to do — even in
-YOLO mode. Building nothing is not a useful default.
+If no code changes are detected, inform the user that there is nothing to build or deploy.
+In YOLO mode, exit with a clear message: "No code changes detected. Nothing to verify."
+Do not proceed to Phase 4.
 
 ## Phase 4: Build
 
@@ -253,7 +272,12 @@ GOOS=linux GOARCH=<arch> CGO_ENABLED=0 go build -ldflags="-s -w" -o "$TMPDIR/<bi
 ```
 
 The `-ldflags="-s -w"` strips debug info and reduces binary size. For version info in
-`/v1/metadata`, add `-X` flags from `scripts/status.sh` if available, but this is optional.
+`/v1/metadata`, add `-X` flags from `scripts/go-build.sh` if available, but this is optional
+for central/migrator/sensor — they run fine without version ldflags.
+
+**Exception: roxctl** — if you need to build roxctl (e.g., for Phase 2c deployment), you
+**must** include at least `-X github.com/stackrox/rox/pkg/version/internal.MainVersion=<tag>`.
+Without it, roxctl hard-panics on startup. See Phase 2c for the full build command.
 
 Example for central + migrator (on an amd64 cluster):
 ```bash
