@@ -61,11 +61,12 @@ render command outputs as PNG images for PR attachment. Install: `brew install c
 
 If `crane` is available, check for quay.io push credentials first:
 ```bash
-crane auth get quay.io 2>&1
+crane auth get quay.io 2>&1 | jq -r '{authenticated: (has("Username") and has("Secret")), username: .Username}'
 ```
-If this returns a JSON object with `Username` and `Secret`, quay.io is authenticated.
-Determine the push repository: `quay.io/<username>/stackrox-verify` where `<username>`
-is the `Username` from the auth response. Test push access:
+This prints only the username and whether auth is configured — never the secret/token.
+If `authenticated` is `true`, quay.io is ready. Determine the push repository:
+`quay.io/<username>/stackrox-verify` where `<username>` is the `username` from the
+output. Test push access:
 ```bash
 crane manifest quay.io/<username>/stackrox-verify:test 2>&1 || true
 ```
