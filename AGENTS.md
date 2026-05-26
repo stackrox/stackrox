@@ -165,6 +165,7 @@ files in its package directory.
 When working on specific areas, refer to these detailed guides:
 
 **Operator Development:**
+- `operator/ARCHITECTURE.md` - Internal architecture, reconciliation pipeline, and package layout
 - `operator/EXTENDING_CRDS.md` - How to add new fields to CRDs (Central/SecuredCluster)
 - `operator/DEFAULTING.md` - Defaulting mechanisms and best practices for CRD fields
 
