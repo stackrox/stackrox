@@ -1,0 +1,114 @@
+name: "Experiment: npm install vs npm ci"
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  npm-install-experiment:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - name: Set up Node.js
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+      with:
+        node-version-file: ui/package.json
+
+    - name: "Test 1: Clean npm ci (baseline)"
+      working-directory: ui/apps/platform
+      run: |
+        echo "=== Clean npm ci ==="
+        rm -rf node_modules
+        time npm ci --no-audit --no-fund
+        find node_modules -type f | sort | md5sum > /tmp/npm-ci-clean.md5
+        find node_modules -maxdepth 2 -name 'package.json' | sort | xargs md5sum | sort > /tmp/npm-ci-pkgjsons.md5
+        echo "Files: $(find node_modules -type f | wc -l)"
+        echo "Dirs: $(find node_modules -type d | wc -l)"
+        echo "Checksum: $(cat /tmp/npm-ci-clean.md5)"
+
+    - name: "Simulate old cache (remove a dep, save node_modules)"
+      working-directory: ui/apps/platform
+      run: |
+        echo "=== Simulating prefix-hit: old node_modules with a missing package ==="
+        # Remove a package that exists in the lockfile to simulate stale cache
+        REMOVED_PKG=$(ls node_modules | grep -v '^\.' | tail -5 | head -1)
+        echo "Removing package: $REMOVED_PKG"
+        rm -rf "node_modules/$REMOVED_PKG"
+        # Also add a fake ghost package that shouldn't be there
+        mkdir -p node_modules/ghost-package-test
+        echo '{"name":"ghost-package-test","version":"0.0.0"}' > node_modules/ghost-package-test/package.json
+        echo "Ghost package added: ghost-package-test"
+        echo "Files after mutation: $(find node_modules -type f | wc -l)"
+
+    - name: "Test 2: npm install on stale node_modules"
+      working-directory: ui/apps/platform
+      run: |
+        echo "=== npm install on stale (prefix-hit) node_modules ==="
+        time npm install --no-audit --no-fund
+        find node_modules -type f | sort | md5sum > /tmp/npm-install-stale.md5
+        find node_modules -maxdepth 2 -name 'package.json' | sort | xargs md5sum | sort > /tmp/npm-install-pkgjsons.md5
+        echo "Files: $(find node_modules -type f | wc -l)"
+        echo "Checksum: $(cat /tmp/npm-install-stale.md5)"
+        echo ""
+        echo "=== Ghost package still present? ==="
+        if [ -d node_modules/ghost-package-test ]; then
+          echo "YES - ghost-package-test still in node_modules (npm install did NOT remove it)"
+        else
+          echo "NO - ghost-package-test was removed"
+        fi
+        echo ""
+        echo "=== Removed package restored? ==="
+        REMOVED_PKG=$(ls node_modules | grep -v '^\.' | tail -5 | head -1)
+        echo "Checking a sample package exists: $REMOVED_PKG"
+
+    - name: "Test 3: npm ci on same (clean slate)"
+      working-directory: ui/apps/platform
+      run: |
+        echo "=== npm ci (should delete and reinstall cleanly) ==="
+        time npm ci --no-audit --no-fund
+        find node_modules -type f | sort | md5sum > /tmp/npm-ci-after.md5
+        find node_modules -maxdepth 2 -name 'package.json' | sort | xargs md5sum | sort > /tmp/npm-ci-after-pkgjsons.md5
+        echo "Files: $(find node_modules -type f | wc -l)"
+        echo "Checksum: $(cat /tmp/npm-ci-after.md5)"
+        echo ""
+        echo "=== Ghost package still present? ==="
+        if [ -d node_modules/ghost-package-test ]; then
+          echo "YES - ghost-package-test still in node_modules (BAD)"
+        else
+          echo "NO - ghost-package-test was removed by npm ci (GOOD)"
+        fi
+
+    - name: "Compare results"
+      run: |
+        echo "============================="
+        echo "=== COMPARISON ==="
+        echo "============================="
+        echo ""
+        echo "File listing checksums:"
+        echo "  npm ci (clean):        $(cat /tmp/npm-ci-clean.md5)"
+        echo "  npm install (stale):   $(cat /tmp/npm-install-stale.md5)"
+        echo "  npm ci (after):        $(cat /tmp/npm-ci-after.md5)"
+        echo ""
+        if diff -q /tmp/npm-ci-pkgjsons.md5 /tmp/npm-install-pkgjsons.md5; then
+          echo "RESULT: npm install produced IDENTICAL package.json checksums to npm ci"
+        else
+          echo "RESULT: npm install produced DIFFERENT package.json checksums!"
+          echo "Differences:"
+          diff /tmp/npm-ci-pkgjsons.md5 /tmp/npm-install-pkgjsons.md5 | head -20
+        fi
+        echo ""
+        if diff -q /tmp/npm-ci-pkgjsons.md5 /tmp/npm-ci-after-pkgjsons.md5; then
+          echo "RESULT: npm ci before and after are IDENTICAL (expected)"
+        else
+          echo "RESULT: npm ci before and after DIFFER (unexpected!)"
+        fi
+        echo ""
+        echo "=== Conclusion ==="
+        if diff -q /tmp/npm-ci-clean.md5 /tmp/npm-install-stale.md5; then
+          echo "npm install on stale node_modules produces SAME file listing as npm ci"
+          echo "Ghost deps are the only difference (npm install does not remove them)"
+        else
+          echo "npm install on stale node_modules produces DIFFERENT file listing from npm ci"
+          echo "This means npm install may leave the tree in an inconsistent state"
+        fi
