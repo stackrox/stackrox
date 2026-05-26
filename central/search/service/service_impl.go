@@ -359,6 +359,9 @@ type autocompleteValue struct {
 // runGroupByAutocomplete executes a GROUP BY query to get exactly `limit` unique
 // values for the autocomplete field. Returns nil if the field type is not
 // suitable for GROUP BY (maps, arrays) or the category has no schema.
+//
+// When the schema has a Risk Score field, results are ordered by max(risk_score)
+// DESC so the most relevant values appear first. Otherwise, no ordering is applied.
 func runGroupByAutocomplete(ctx context.Context, db postgres.DB, category v1.SearchCategory, query *v1.Query, autocompleteKey string, limit int) ([]string, error) {
 	schema := pgMapping.GetTableFromCategory(category)
 	if schema == nil {
@@ -376,6 +379,16 @@ func runGroupByAutocomplete(ctx context.Context, db postgres.DB, category v1.Sea
 	}
 	cloned.Pagination = &v1.QueryPagination{
 		Limit: int32(limit),
+	}
+
+	if _, ok := schema.OptionsMap.Get(search.RiskScore.String()); ok {
+		cloned.Pagination.SortOptions = []*v1.QuerySortOption{{
+			Field:    search.RiskScore.String(),
+			Reversed: true,
+			AggregateBy: &v1.AggregateBy{
+				AggrFunc: v1.Aggregation_MAX,
+			},
+		}}
 	}
 
 	var results []string
