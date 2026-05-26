@@ -51,6 +51,14 @@ grep -i "module-name" go.mod | grep "=>"
 grep -i "module-name" go.mod | grep "// indirect"
 ```
 
+**Multi-module Workspace Note:**
+StackRox uses a single root `go.mod` (monorepo). This skill analyzes only the root `go.mod`.
+
+**Tool vs Production Dependencies:**
+- Dependencies used only by `/tools/`, `/scripts/`, build infrastructure: Lower CVE priority (not shipped)
+- Dependencies in `/central/`, `/sensor/`, `/scanner/`, `/roxctl/`, `/operator/`: Higher CVE priority (production code)
+- If dependency appears only in tool build files, include this in status classification
+
 **If NOT found:** Respond immediately that the dependency is not used - issue can be closed.
 
 **If replaced:** Note the fork/replacement in analysis (e.g., `go.uber.org/zap => github.com/stackrox/zap`).
@@ -88,8 +96,18 @@ goda graph "reach(./..., module-name/...)" | head -30
 
 2. **Check if we use the intermediate package:**
    ```bash
+   # Production usage (excludes test files)
    grep -r "intermediate-package" --include="*.go" --exclude-dir=vendor --exclude="*_test.go" | wc -l
+
+   # Test-only usage
+   grep -r "intermediate-package" --include="*_test.go" --exclude-dir=vendor | wc -l
    ```
+
+   **Test-Only Transitive Dependencies:**
+   - If intermediate package is only imported in `*_test.go` files, the transitive dependency is test-only
+   - Test-only transitive dependencies have lower CVE priority (not in shipped binaries)
+   - Include "TEST INFRASTRUCTURE ONLY" in status if applicable
+   - For CVE triage: Test-only transitive dependencies can usually be deferred unless critical
 
 3. **Report format for transitive:**
    ```
@@ -111,9 +129,18 @@ goda graph "reach(./..., module-name/...)" | head -30
    - Used by: [List our files using intermediate package]
 
    **Action:**
-   - No direct maintenance needed
+   - No direct maintenance needed under normal circumstances
    - Updated automatically when [intermediate package] updates
-   - Monitor for security issues but low priority (transitive)
+   - Monitor for security issues but typically lower priority (transitive)
+
+   **When to Proactively Bump Indirect Dependencies:**
+   - **Critical CVE** in transitive dependency AND intermediate package hasn't updated within reasonable timeframe (e.g., 30 days after CVE disclosure)
+   - **High severity** with known exploits and production impact through intermediate package
+   - **Workaround:** Can add explicit `require` in go.mod to force minimum version, but this:
+     - Creates maintenance burden (must track when intermediate updates)
+     - May conflict with intermediate's version constraints
+     - Should be temporary until intermediate package updates
+   - **Preferred approach:** File issue/PR with intermediate package maintainers for faster upstream fix
    ```
 
 **SKIP to Step 7 (Generate Report)** after transitive analysis.
@@ -135,6 +162,26 @@ goda graph "reach(./..., module-name/...)" | head -30
 # Check how many packages use it
 goda list "reach(./..., module-name/...)" | cut -d: -f1 | sort -u | wc -l
 ```
+
+**Why Both Tools Are Needed:**
+
+`go mod why -m module-name` (MANDATORY):
+- Shows ONE import path from our code to the dependency
+- Limitation: If multiple packages import the dependency, only shows first path found
+- Use for: Dependency justification, "why does this exist in go.mod"
+
+`goda graph "reach(./..., module-name/...)"` (COMPREHENSIVE):
+- Shows ALL import paths and the complete dependency tree
+- Identifies all packages that transitively depend on the module
+- Use for: Full impact analysis, finding all usage locations
+- Complements go mod why by revealing paths go mod why misses
+
+**Example scenario:**
+- go mod why shows: `central/auth → module-name`
+- goda reveals additional paths: `sensor/detector → module-name`, `roxctl/cli → module-name`
+- Without goda, you'd miss sensor and roxctl usage
+
+Both tools are required for complete analysis.
 
 **Analysis:**
 - **Direct dependency**: We explicitly import it
@@ -350,6 +397,112 @@ N/A - Test-only transitive dependency (not production-critical)
 | **pgx** | v5.9.2 | Direct | 155 | Central, Scanner, Migrator | CRITICAL |
 | **docker/distribution** | v2.8.3 | Direct | 3 | pkg/registries | Medium |
 | **zap** | v1.18.2 (fork) | Direct | 7 | pkg/logging, operator | CRITICAL |
+```
+
+### Example 4: Transitive dependency (test infrastructure)
+
+**User:** "Check CVE-2024-11111 in protoc-gen-validate"
+
+**Actions:**
+1. Search go.mod: `grep protoc-gen-validate go.mod` → Found: `github.com/envoyproxy/protoc-gen-validate v0.10.1 // indirect`
+2. Run `go mod why`: Shows dependency chain via `cloud.google.com/go/storage`
+3. Check intermediate usage: `grep -r "cloud.google.com/go/storage" --include="*.go" --exclude="*_test.go"` → 0 results
+4. Check test usage: `grep -r "cloud.google.com/go/storage" --include="*_test.go"` → 15 files in `central/externalbackups/`
+5. Run `go mod graph | grep protoc-gen-validate` to see full chain
+
+**Result:**
+```
+## CVE-2024-11111 Analysis: protoc-gen-validate (TRANSITIVE)
+
+**Dependency:** github.com/envoyproxy/protoc-gen-validate v0.10.1
+**Status:** TRANSITIVE ONLY - TEST INFRASTRUCTURE ONLY
+
+**Dependency Chain:**
+```
+StackRox test code
+    ↓ imports (test files only)
+cloud.google.com/go/storage v1.30.1
+    ↓ depends on
+github.com/envoyproxy/protoc-gen-validate v0.10.1
+```
+
+**Why It Exists:**
+GCS SDK (cloud.google.com/go/storage) uses protoc-gen-validate for protocol buffer validation.
+We import GCS SDK only in test code for external backup testing.
+
+**Our Usage of Intermediate Package:**
+- We import: cloud.google.com/go/storage
+- Used in: 0 production files, 15 test files
+- Components: central/externalbackups (test infrastructure only)
+- Files: central/externalbackups/gcs_test.go, central/externalbackups/s3_test.go
+
+**What Intermediate Uses It For:**
+- GCS SDK uses it for proto validation in API responses
+- CVE impact: Only affects test execution, not shipped binaries
+
+**Team Assignment:**
+N/A - Test-only transitive dependency (low priority)
+If fix needed: @stackrox/core-workflows (owns central/externalbackups tests)
+```
+
+### Example 5: Replace directive (StackRox fork)
+
+**User:** "Analyze github.com/hashicorp/consul/api dependency for CVE-2024-22222"
+
+**Actions:**
+1. Search go.mod: `grep consul go.mod` → Found with replace directive
+2. Check replace: `grep "consul.*=>" go.mod` → `github.com/hashicorp/consul/api => github.com/stackrox/consul v1.15.3-0.20240215`
+3. Check versions: Upstream at v1.18.0, fork at v1.15.3 (3 minor versions behind)
+4. Find usage: `grep -r "consul/api" --include="*.go" --exclude="*_test.go"` → 12 files in `sensor/kubernetes/`
+5. Run `go mod why -m github.com/hashicorp/consul/api`
+6. Check StackRox fork repo for reason: Security patches backported from v1.18.0
+
+**Result:**
+```
+## CVE-2024-22222 Analysis: Consul API
+
+**Dependency:** github.com/hashicorp/consul/api v1.18.0 (replaced)
+**Status:** USED IN PRODUCTION - FORK WITH SECURITY PATCHES
+
+**Usage Summary:**
+- Direct dependency: YES (with StackRox fork)
+- Production files: 12 files in sensor/kubernetes/
+- Test files: 8 files
+- Primary components: Sensor (service discovery)
+
+**Why Needed (go mod why):**
+```
+github.com/stackrox/rox/sensor/kubernetes/localscanner
+    imports github.com/hashicorp/consul/api
+```
+
+**Replace Directive:**
+- Original: github.com/hashicorp/consul/api v1.18.0
+- Fork/Replace: github.com/stackrox/consul v1.15.3-0.20240215134248
+- Version Gap: Fork at v1.15.3, upstream at v1.18.0 (3 minor versions behind)
+- Reason: CVE-2023-XXXXX security patches backported to v1.15.3 (check stackrox/consul repo commits)
+
+**CVE Analysis:**
+- CVE affects: v1.15.0-v1.17.2 in ConsulClient.Query()
+- StackRox fork status: Patch applied in fork commit abc123 (2024-02-15)
+- **ALREADY PATCHED** - StackRox fork includes fix despite version gap
+
+**Specific Functionality Used:**
+- sensor/kubernetes/localscanner/discovery.go:45 - ConsulClient.Health()
+- sensor/kubernetes/localscanner/watcher.go:89 - ConsulClient.Query()
+- CVE affects Query() - **WE USE THIS FUNCTION** but fork is patched
+
+**Locations:**
+- sensor/kubernetes/localscanner/discovery.go:45
+- sensor/kubernetes/localscanner/watcher.go:89
+- sensor/kubernetes/localscanner/config.go:23
+
+**Team Assignment:**
+@stackrox/sensor-team (from CODEOWNERS: `sensor/**/*`)
+
+**Recommendation:**
+No immediate action needed - fork already contains security patches.
+Consider syncing fork to v1.18.0+ to reduce version gap and maintenance burden.
 ```
 
 ### Example 6: Wrapper pattern (infrastructure library)
