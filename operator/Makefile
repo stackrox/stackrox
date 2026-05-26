@@ -366,6 +366,14 @@ smuggled-status-sh:
 		"$${smuggled_status_sh}" ;\
 	)
 
+.PHONY: ensure-third-party-notices
+ensure-third-party-notices:
+ifdef CI
+	$(SILENT)[ -d ../THIRD_PARTY_NOTICES ] || { echo "THIRD_PARTY_NOTICES dir not found! It is required for CI-built images."; exit 1; }
+else
+	$(SILENT)[ -d ../THIRD_PARTY_NOTICES ] || mkdir -p ../THIRD_PARTY_NOTICES
+endif
+
 # Force re-building the file to make sure the current environment is correctly reflected.
 .PHONY: build/Dockerfile.gen
 build/Dockerfile.gen: Dockerfile
@@ -373,7 +381,7 @@ build/Dockerfile.gen: Dockerfile
 	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,$${BUILD_IMAGE_VERSION},$(shell sed 's/\s*\#.*//' ../BUILD_IMAGE_VERSION),' < $< > $@
 
 .PHONY: docker-build
-docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator (build binary inside Docker).
+docker-build: build/Dockerfile.gen smuggled-status-sh ensure-third-party-notices ## Build docker image with the operator (build binary inside Docker).
 	BUILDKIT_PROGRESS=plain ../scripts/docker-build.sh \
 		-t ${IMG} \
 		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \
@@ -381,7 +389,7 @@ docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with
 		..
 
 .PHONY: docker-build-prebuilt
-docker-build-prebuilt: prebuilt.Dockerfile ## Build docker image with pre-built operator binary.
+docker-build-prebuilt: prebuilt.Dockerfile ensure-third-party-notices ## Build docker image with pre-built operator binary.
 	BUILDKIT_PROGRESS=plain ../scripts/docker-build.sh \
 		-t ${IMG} \
 		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \

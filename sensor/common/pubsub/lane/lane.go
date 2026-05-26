@@ -7,9 +7,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var rateLimitedLog = logging.GetRateLimitedLogger()
 
 type Config[T pubsub.Lane] struct {
 	id          pubsub.LaneID

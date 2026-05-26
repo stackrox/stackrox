@@ -12,6 +12,7 @@ ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
 
 ARG TARGET_ARCH
 COPY bin/linux_${TARGET_ARCH}/stackrox-operator /usr/local/bin/
+COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 
 # The following are numeric uid and gid of `nobody` user in UBI.
 # We can't use symbolic names because otherwise k8s will fail to start the pod with an error like this:
