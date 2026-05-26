@@ -12,10 +12,6 @@ inputs:
     description: 'GitHub token for runner registration (fast-pool keep-alive)'
     required: false
     default: ''
-  runner-admin-token:
-    description: 'PAT with admin scope for self-hosted runner registration'
-    required: false
-    default: ''
 runs:
   using: composite
   steps:
@@ -281,11 +277,10 @@ runs:
         ) >> /dev/shm/runner-monitor.log 2>&1 &
         echo $! > /dev/shm/runner-monitor.pid
 
-    - name: Save tokens for post-step
+    - name: Save token for post-step
+      if: inputs.github-token != ''
       shell: bash
-      run: |
-        [[ -n "${{ inputs.github-token }}" ]] && echo "${{ inputs.github-token }}" > /dev/shm/gh_token.txt || true
-        [[ -n "${{ inputs.runner-admin-token }}" ]] && echo "${{ inputs.runner-admin-token }}" > /dev/shm/runner_admin_token.txt || true
+      run: echo "${{ inputs.github-token }}" > /dev/shm/gh_token.txt
 
     - name: Record job info
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
@@ -314,10 +309,4 @@ runs:
             du -ks /* 2>/dev/null | sort -V || true;\
             du -k / 2>/dev/null | sort -V | tail -100 || true; \
             printf "Low free disk space post-job: ${free}" | tee -a "$GITHUB_STEP_SUMMARY";\
-          fi;
-          admin_token=$(cat /dev/shm/runner_admin_token.txt 2>/dev/null || echo "");
-          if [[ -n "$admin_token" ]]; then\
-            export GH_TOKEN="$admin_token";\
-            echo "Registering as warm-pool self-hosted runner...";\
-            bash "$GITHUB_WORKSPACE/.github/actions/job-preamble/keep-alive.sh" "warm-go,ubuntu-latest" "15" || true;\
           fi;
