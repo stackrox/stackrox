@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"path"
 	"strings"
@@ -75,13 +76,16 @@ func Run(ctx context.Context, cfg Config) (*Handle, error) {
 	if cfg.FakeWorkloadFile != "" {
 		if _, err := os.Stat(cfg.FakeWorkloadFile); err != nil {
 			if os.IsNotExist(err) {
+				cancelRun()
 				return nil, errors.Errorf("fake workload profile %q not found", cfg.FakeWorkloadFile)
 			}
+			cancelRun()
 			return nil, errors.Wrapf(err, "unable to access fake workload profile %q", cfg.FakeWorkloadFile)
 		}
 		workloadManager = fake.NewWorkloadManager(fake.ConfigDefaults().
 			WithWorkloadFile(cfg.FakeWorkloadFile))
 		if workloadManager == nil {
+			cancelRun()
 			return nil, errors.Errorf("failed to initialize fake workload manager from workload profile %q", cfg.FakeWorkloadFile)
 		}
 		k8sClient = workloadManager.Client()
