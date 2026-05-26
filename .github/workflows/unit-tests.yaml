@@ -204,6 +204,7 @@ jobs:
     steps:
     - name: Start Postgres
       run: |
+        # the unit tests expect a local postgres with passwordless access. Change  host to 'trust'
         sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
         sudo systemctl start postgresql.service
 
