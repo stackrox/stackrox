@@ -133,6 +133,19 @@ func Run(ctx context.Context, cfg Config) (*Handle, error) {
 		spyCentral.SetMessageRecording(!cfg.SkipCentralOutput)
 	}
 
+	var waitInitialSync func(context.Context) error
+	if spyCentral != nil {
+		var verboseLog func(*central.MsgFromSensor)
+		if cfg.Verbose {
+			verboseLog = func(msg *central.MsgFromSensor) {
+				log.Printf("MESSAGE RECEIVED: %s\n", msg.String())
+			}
+		}
+		waitInitialSync = registerSyncWait(spyCentral, verboseLog)
+	} else {
+		waitInitialSync = func(context.Context) error { return nil }
+	}
+
 	var traceCloser io.Closer
 	sensorConfig := sensor.ConfigWithDefaults().
 		WithClusterIDHandler(clusterIDHandler).
@@ -252,7 +265,7 @@ func Run(ctx context.Context, cfg Config) (*Handle, error) {
 		Stop:            stopFn,
 		MetricsURL:      metricsURL(cfg),
 		FakeCentral:     spyCentral,
-		WaitInitialSync: newWaitInitialSync(spyCentral),
+		WaitInitialSync: waitInitialSync,
 		Stopped:         s.Stopped(),
 	}, nil
 }
@@ -387,12 +400,6 @@ func setupCentralWithFakeConnection(cfg Config) (centralclient.CentralConnection
 	}
 
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(initialMessages...)
-
-	if cfg.Verbose {
-		fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
-			log.Printf("MESSAGE RECEIVED: %s\n", msg.String())
-		})
-	}
 
 	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(fakeCentral)
 	fakeCentral.OnShutdown(shutdownFakeServer)
