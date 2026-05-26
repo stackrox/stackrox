@@ -46,7 +46,6 @@ type DeploymentLoader interface {
 	FromQuery(ctx context.Context, query *v1.Query) ([]*storage.Deployment, error)
 
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
-	CountAll(ctx context.Context) (int32, error)
 }
 
 // deploymentLoaderImpl implements the DeploymentDataLoader interface.
@@ -92,12 +91,6 @@ func (idl *deploymentLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Q
 		return 0, err
 	}
 	return int32(count), nil
-}
-
-// CountFromQuery returns the total number of deployments.
-func (idl *deploymentLoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.ds.CountDeployments(ctx)
-	return int32(count), err
 }
 
 func (idl *deploymentLoaderImpl) load(ctx context.Context, ids []string) ([]*storage.Deployment, error) {
