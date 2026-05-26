@@ -615,8 +615,9 @@ jobs:
         if: steps.quality.outputs.fast == 'true'
         run: |
           echo "Building to warm GOCACHE..."
-          make main-build 2>&1 | tail -5 || true
+          go build -v ./pkg/... 2>&1 | tail -5
           echo "GOCACHE: $(du -sh $(go env GOCACHE) 2>/dev/null | cut -f1)"
+          echo "GOCACHE files: $(find $(go env GOCACHE) -type f 2>/dev/null | wc -l)"
           echo "GOMODCACHE: $(du -sh $(go env GOMODCACHE) 2>/dev/null | cut -f1)"
 
       - name: Register as warm self-hosted runner
@@ -666,5 +667,14 @@ jobs:
       - name: Build Go binaries (should be fast with warm cache)
         run: |
           echo "Building with warm cache..."
-          time make main-build 2>&1 | tail -10
+          echo "--- GOCACHE before build ---"
+          du -sh $(go env GOCACHE) 2>/dev/null || echo "GOCACHE empty"
+          find $(go env GOCACHE) -type f 2>/dev/null | wc -l | xargs -I{} echo "GOCACHE files: {}"
+          echo "--- Building ---"
+          start=$SECONDS
+          go build -v ./pkg/... 2>&1 | tail -20
+          echo "--- Build took $((SECONDS - start))s ---"
+          echo "--- GOCACHE after build ---"
+          du -sh $(go env GOCACHE) 2>/dev/null || echo "GOCACHE empty"
+          find $(go env GOCACHE) -type f 2>/dev/null | wc -l | xargs -I{} echo "GOCACHE files: {}"
 
