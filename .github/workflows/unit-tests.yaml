@@ -597,11 +597,6 @@ jobs:
             echo "fast=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: ./.github/actions/job-preamble
-        if: steps.quality.outputs.fast == 'true'
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v6
         if: steps.quality.outputs.fast == 'true'
         with:
