@@ -4,6 +4,83 @@ on:
     types: [opened, reopened, synchronize]
 
 jobs:
+  lockfile-desync-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - name: Set up Node.js
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+      with:
+        node-version-file: ui/package.json
+
+    - name: "Simulate lockfile desync (package.json changed, lockfile not updated)"
+      working-directory: ui/apps/platform
+      run: |
+        echo "=== Current state ==="
+        node -e "const p=require('./package.json'); console.log('vitest in package.json:', p.devDependencies['vitest'])"
+        grep '"vitest"' package-lock.json | head -1
+
+        echo ""
+        echo "=== Bump vitest range in package.json without updating lockfile ==="
+        # Change vitest from ^4.1.0 to ^4.2.0 (or similar minor bump)
+        sed -i 's/"vitest": "^4.1.0"/"vitest": "^4.2.0"/' package.json
+        echo "package.json now:"
+        node -e "const p=require('./package.json'); console.log('vitest in package.json:', p.devDependencies['vitest'])"
+        echo "package-lock.json unchanged:"
+        grep '"vitest"' package-lock.json | head -1
+
+    - name: "Test: npm ci on desynced state"
+      id: npm-ci-test
+      continue-on-error: true
+      working-directory: ui/apps/platform
+      run: |
+        echo "=== npm ci should FAIL on desync ==="
+        npm ci --no-audit --no-fund 2>&1
+        echo "EXIT CODE: $?"
+
+    - name: "Test: npm install on desynced state"
+      id: npm-install-test
+      continue-on-error: true
+      working-directory: ui/apps/platform
+      run: |
+        echo "=== npm install on desync ==="
+        rm -rf node_modules
+        npm install --no-audit --no-fund 2>&1
+        echo "EXIT CODE: $?"
+        echo ""
+        echo "=== Did npm install modify package-lock.json? ==="
+        if git diff --quiet package-lock.json; then
+          echo "NO - lockfile unchanged"
+        else
+          echo "YES - lockfile was modified!"
+          echo "Changes:"
+          git diff --stat package-lock.json
+          git diff package-lock.json | head -30
+        fi
+
+    - name: "Summary"
+      run: |
+        echo "================================="
+        echo "=== LOCKFILE DESYNC TEST ==="
+        echo "================================="
+        echo "npm ci result:      ${{ steps.npm-ci-test.outcome }}"
+        echo "npm install result: ${{ steps.npm-install-test.outcome }}"
+        echo ""
+        if [ "${{ steps.npm-ci-test.outcome }}" = "failure" ]; then
+          echo "npm ci CORRECTLY detected the desync and failed"
+        else
+          echo "npm ci did NOT detect the desync (unexpected)"
+        fi
+        echo ""
+        if [ "${{ steps.npm-install-test.outcome }}" = "success" ]; then
+          echo "npm install SILENTLY succeeded despite desync"
+          echo "This means desynced package.json/lockfile pairs would go undetected"
+        else
+          echo "npm install also failed on desync"
+        fi
+
   npm-install-experiment:
     runs-on: ubuntu-latest
     steps:
