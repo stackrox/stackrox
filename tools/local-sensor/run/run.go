@@ -61,8 +61,6 @@ func Run(ctx context.Context, cfg Config) (*Handle, error) {
 		metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())
 	}
 
-	runCtx, cancelRun := context.WithCancel(ctx)
-
 	var k8sClient client.Interface
 	if cfg.ReplayK8s {
 		k8sClient = k8s.MakeFakeClient()
@@ -76,16 +74,13 @@ func Run(ctx context.Context, cfg Config) (*Handle, error) {
 	if cfg.FakeWorkloadFile != "" {
 		if _, err := os.Stat(cfg.FakeWorkloadFile); err != nil {
 			if os.IsNotExist(err) {
-				cancelRun()
 				return nil, errors.Errorf("fake workload profile %q not found", cfg.FakeWorkloadFile)
 			}
-			cancelRun()
 			return nil, errors.Wrapf(err, "unable to access fake workload profile %q", cfg.FakeWorkloadFile)
 		}
 		workloadManager = fake.NewWorkloadManager(fake.ConfigDefaults().
 			WithWorkloadFile(cfg.FakeWorkloadFile))
 		if workloadManager == nil {
-			cancelRun()
 			return nil, errors.Errorf("failed to initialize fake workload manager from workload profile %q", cfg.FakeWorkloadFile)
 		}
 		k8sClient = workloadManager.Client()
@@ -95,10 +90,12 @@ func Run(ctx context.Context, cfg Config) (*Handle, error) {
 		var err error
 		k8sClient, err = k8s.MakeOutOfClusterClient()
 		if err != nil {
-			cancelRun()
 			return nil, err
 		}
 	}
+
+	// runCtx lives until Handle.Stop; cancelRun is only for error paths before return.
+	runCtx, cancelRun := context.WithCancel(ctx)
 
 	if cfg.PprofServer {
 		go func() {
@@ -331,7 +328,7 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 		})
 	}()
 
-	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) { //nolint:staticcheck // bufconn dialer; migrate when stackrox updates grpc helpers
 		return listener.Dial()
 	}), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/tools/local-sensor/run"
 )
 
@@ -243,7 +244,7 @@ func FetchMetrics(url string) (map[string]float64, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching metrics")
 	}
-	defer resp.Body.Close()
+	defer utils.IgnoreError(resp.Body.Close)
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("metrics fetch: unexpected status %s", resp.Status)
