@@ -12,6 +12,10 @@ inputs:
     description: 'GitHub token for runner registration (fast-pool keep-alive)'
     required: false
     default: ''
+  runner-admin-token:
+    description: 'PAT with admin scope for self-hosted runner registration'
+    required: false
+    default: ''
 runs:
   using: composite
   steps:
@@ -277,10 +281,11 @@ runs:
         ) >> /dev/shm/runner-monitor.log 2>&1 &
         echo $! > /dev/shm/runner-monitor.pid
 
-    - name: Save token for post-step
-      if: inputs.github-token != ''
+    - name: Save tokens for post-step
       shell: bash
-      run: echo "${{ inputs.github-token }}" > /dev/shm/gh_token.txt
+      run: |
+        [[ -n "${{ inputs.github-token }}" ]] && echo "${{ inputs.github-token }}" > /dev/shm/gh_token.txt || true
+        [[ -n "${{ inputs.runner-admin-token }}" ]] && echo "${{ inputs.runner-admin-token }}" > /dev/shm/runner_admin_token.txt || true
 
     - name: Record job info
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
@@ -310,14 +315,9 @@ runs:
             du -k / 2>/dev/null | sort -V | tail -100 || true; \
             printf "Low free disk space post-job: ${free}" | tee -a "$GITHUB_STEP_SUMMARY";\
           fi;
-          cpu_score=$(cat /dev/shm/cpu_score.txt 2>/dev/null || echo 0);
-          KEEP_ALIVE_THRESHOLD=3400;
-          KEEP_ALIVE_MINUTES=15;
-          if (( $(echo "$cpu_score > $KEEP_ALIVE_THRESHOLD" | bc -l 2>/dev/null || echo 0) )); then\
-            export GH_TOKEN=$(cat /dev/shm/gh_token.txt 2>/dev/null || echo "");\
-            if [[ -n "$GH_TOKEN" ]]; then\
-              bash "$GITHUB_WORKSPACE/.github/actions/job-preamble/keep-alive.sh" "$cpu_score" "$KEEP_ALIVE_MINUTES" || true;\
-            else\
-              echo "keep-alive: skipped — no GH_TOKEN available for runner registration";\
-            fi;\
+          admin_token=$(cat /dev/shm/runner_admin_token.txt 2>/dev/null || echo "");
+          if [[ -n "$admin_token" ]]; then\
+            export GH_TOKEN="$admin_token";\
+            echo "Registering as warm-pool self-hosted runner...";\
+            bash "$GITHUB_WORKSPACE/.github/actions/job-preamble/keep-alive.sh" "warm-go,ubuntu-latest" "15" || true;\
           fi;

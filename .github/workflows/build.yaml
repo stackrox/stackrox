@@ -336,6 +336,7 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+          runner-admin-token: ${{ secrets.RUNNER_ADMIN_TOKEN }}
 
       - name: Cache Go dependencies
         env:
