@@ -18,16 +18,27 @@ echo "::group::Warm runner pool: ${POOL_LABEL} (${KEEP_ALIVE_MINUTES}m)"
 ka_start=$(date +%s)
 ka_end=$((ka_start + KEEP_ALIVE_MINUTES * 60))
 
-# Get registration token
-echo "Requesting runner registration token..."
-REG_TOKEN=$(curl -s -X POST \
+# Get registration token — try org-level first (needs Self-hosted runners permission),
+# fall back to repo-level (needs Administration permission).
+ORG="${REPO%%/*}"
+echo "Requesting runner registration token (org: ${ORG})..."
+REG_RESPONSE=$(curl -s -X POST \
   -H "Authorization: token ${GH_TOKEN}" \
   -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/${REPO}/actions/runners/registration-token" | \
-  python3 -c "import json,sys; print(json.load(sys.stdin).get('token',''))" 2>/dev/null)
+  "https://api.github.com/orgs/${ORG}/actions/runners/registration-token" 2>/dev/null)
+REG_TOKEN=$(echo "$REG_RESPONSE" | python3 -c "import json,sys; print(json.load(sys.stdin).get('token',''))" 2>/dev/null)
 
-if [[ -z "$REG_TOKEN" ]]; then
-  echo "::error::Failed to get registration token. Check RUNNER_ADMIN_TOKEN secret."
+if [[ -z "$REG_TOKEN" || "$REG_TOKEN" == "None" ]]; then
+  echo "Org-level token failed, trying repo-level..."
+  REG_RESPONSE=$(curl -s -X POST \
+    -H "Authorization: token ${GH_TOKEN}" \
+    -H "Accept: application/vnd.github+json" \
+    "https://api.github.com/repos/${REPO}/actions/runners/registration-token" 2>/dev/null)
+  REG_TOKEN=$(echo "$REG_RESPONSE" | python3 -c "import json,sys; print(json.load(sys.stdin).get('token',''))" 2>/dev/null)
+fi
+
+if [[ -z "$REG_TOKEN" || "$REG_TOKEN" == "None" ]]; then
+  echo "::error::Failed to get registration token. Response: ${REG_RESPONSE}"
   echo "::endgroup::"
   exit 1
 fi
@@ -52,9 +63,9 @@ while [[ $(date +%s) -lt $ka_end ]]; do
   remaining=$(( (ka_end - $(date +%s)) / 60 ))
   echo "--- Iteration ${iteration} (${remaining}m remaining) ---"
 
-  # Register as ephemeral runner
+  # Register as ephemeral runner (org-level if org token worked, else repo-level)
   "$RUNNER_DIR/config.sh" \
-    --url "https://github.com/${REPO}" \
+    --url "https://github.com/${ORG}" \
     --token "$REG_TOKEN" \
     --name "$RUNNER_NAME" \
     --labels "${POOL_LABEL},self-hosted,linux,x64" \
@@ -68,7 +79,7 @@ while [[ $(date +%s) -lt $ka_end ]]; do
       REG_TOKEN=$(curl -s -X POST \
         -H "Authorization: token ${GH_TOKEN}" \
         -H "Accept: application/vnd.github+json" \
-        "https://api.github.com/repos/${REPO}/actions/runners/registration-token" | \
+        "https://api.github.com/orgs/${ORG}/actions/runners/registration-token" | \
         python3 -c "import json,sys; print(json.load(sys.stdin).get('token',''))" 2>/dev/null)
       continue
     }
