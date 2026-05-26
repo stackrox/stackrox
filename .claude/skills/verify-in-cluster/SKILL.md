@@ -3,7 +3,7 @@ name: verify-in-cluster
 description: >
   Build, deploy, and verify StackRox code changes against a live Kubernetes/OpenShift cluster.
   Handles cluster discovery, StackRox authentication, component building with crane, image pushing
-  to ttl.sh, deployment patching, and test execution.
+  to a container registry (quay.io preferred, ttl.sh fallback), deployment patching, and test execution.
 argument-hint: "<what-to-verify>"
 arguments: [context]
 allowed-tools:
@@ -56,18 +56,37 @@ Bash call — do not use shell variables across calls (Claude Code does not shar
 render command outputs as PNG images for PR attachment. Install: `brew install charmbracelet/tap/freeze`.
 
 **Image push**: need at least one of `crane` or `docker`. Stop if neither is available.
-If `crane` is available, test connectivity to ttl.sh:
+
+**Registry selection** (quay.io preferred, ttl.sh fallback):
+
+If `crane` is available, check for quay.io push credentials first:
+```bash
+crane auth get quay.io 2>&1
+```
+If this returns a JSON object with `Username` and `Secret`, quay.io is authenticated.
+Determine the push repository: `quay.io/<username>/stackrox-verify` where `<username>`
+is the `Username` from the auth response. Test push access:
+```bash
+crane manifest quay.io/<username>/stackrox-verify:test 2>&1 || true
+```
+A `NAME_UNKNOWN` or `MANIFEST_UNKNOWN` error is fine — it means the repo doesn't exist
+yet but will be auto-created on first push. An `UNAUTHORIZED` or `DENIED` error means
+the user lacks push access — fall back to ttl.sh.
+
+If quay.io is not available, test connectivity to ttl.sh:
 ```bash
 crane manifest ttl.sh/test:1h 2>&1 || true
 ```
-This should return a valid JSON manifest. If it fails with TLS/x509 errors (e.g.,
-`x509: OSStatus -26276`), this is caused by Claude Code's sandbox network proxy —
-Go's `crypto/tls` cannot validate certificates through it. Retry with `--insecure`:
+If it fails with TLS/x509 errors (e.g., `x509: OSStatus -26276`), this is caused by
+Claude Code's sandbox network proxy. Retry with `--insecure`:
 ```bash
 crane manifest --insecure ttl.sh/test:1h 2>&1 || true
 ```
 If `--insecure` works, use `--insecure` on all subsequent `crane` commands throughout.
 If crane cannot connect even with `--insecure`, fall back to `docker`.
+
+Remember which registry was selected (quay.io or ttl.sh) — you'll use it in Phase 5.
+When using quay.io, tags don't need a TTL suffix. When using ttl.sh, append `:2h`.
 
 **Note on sandbox**: Both `crane` and Docker commands may require the user to approve
 sandbox override prompts or may need `--insecure` flags due to the sandbox proxy.
@@ -316,7 +335,7 @@ multiple binary layers to that single base image.
   Deployment. To patch it: `oc -n <ns> set image daemonset/collector compliance=<tag>`
 - **Scanner uses a separate image** — you cannot append scanner binaries to the main image.
   To patch scanner, pull the current scanner image separately, append the scanner binary to
-  `/usr/local/bin/scanner`, push to ttl.sh, and patch deployment/scanner.
+  `/usr/local/bin/scanner`, push to the selected registry, and patch deployment/scanner.
 - **Operator** changes are out of scope for this skill. Inform the user.
 
 If no code changes are detected, inform the user that there is nothing to build or deploy.
@@ -355,7 +374,7 @@ Build binaries in parallel where possible (they're independent).
 
 If the build fails, report the error and stop. Do NOT proceed with a broken build.
 
-## Phase 5: Push Image to ttl.sh
+## Phase 5: Push Image
 
 First, record the current image for **each** deployment being modified. Different deployments
 may use different image references — always pull the base from the specific deployment:
@@ -379,11 +398,14 @@ For scanner (uses a separate image):
 oc -n stackrox get deployment/scanner -o jsonpath='{.spec.template.spec.containers[0].image}'
 ```
 
-Generate a unique tag:
+Generate a unique tag using the registry selected in Phase 0:
+
+- **quay.io**: `quay.io/<username>/stackrox-verify:verify-<uuid>`
+- **ttl.sh**: `ttl.sh/<uuid>:2h`
+
 ```bash
-uuidgen | tr '[:upper:]' '[:lower:]'
+UUID=$(uuidgen | tr '[:upper:]' '[:lower:]')
 ```
-Prepend `ttl.sh/` and append `:2h` to form the full tag (e.g., `ttl.sh/<uuid>:2h`).
 
 ### Method A: crane (preferred)
 
@@ -428,7 +450,10 @@ crane mutate "<current-scanner-image>" \
   --tag "<scanner-tag>"
 ```
 
-The `--tag` flag pushes directly to ttl.sh. No separate `crane push` needed.
+The `--tag` flag pushes directly to the registry. No separate `crane push` needed.
+
+If the push to quay.io fails with `UNAUTHORIZED` or `DENIED`, fall back to ttl.sh
+and retry with a `ttl.sh/<uuid>:2h` tag.
 
 ### Method B: docker (fallback if crane fails)
 
@@ -598,7 +623,7 @@ When freeze is not available, the plain-text logs are the proof.
 Summarize results concisely:
 
 1. **What was built**: List components and binary sizes
-2. **Where it was pushed**: Image reference (ttl.sh URL)
+2. **Where it was pushed**: Image reference (quay.io or ttl.sh URL)
 3. **What was deployed**: Which deployments were patched
 4. **Original image**: The image reference before patching (so the user can restore with
    `oc -n <ns> set image deployment/<name> <container>=<original-image>`)
