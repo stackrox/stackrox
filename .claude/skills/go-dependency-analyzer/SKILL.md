@@ -176,7 +176,7 @@ goda list "reach(./..., module-name)" | cut -d: -f1 | sort -u | wc -l
 - Limitation: If multiple packages import the dependency, only shows first path found
 - Use for: Dependency justification, "why does this exist in go.mod"
 
-`goda graph "reach(./..., module-name/...)"` (COMPREHENSIVE):
+`goda graph "reach(./..., module-name)"` (COMPREHENSIVE):
 - Shows ALL import paths and the complete dependency tree
 - Identifies all packages that transitively depend on the module
 - Use for: Full impact analysis, finding all usage locations
@@ -335,7 +335,7 @@ N/A - Transitive dependency managed via [intermediate-package] updates
 
 **Actions:**
 1. Search go.mod: `grep pgx go.mod` → Found: `github.com/jackc/pgx/v5 v5.4.0`
-2. Check usage: `grep -r "jackc/pgx" --include="*.go" --exclude-dir=vendor`
+2. Check usage: `grep -r "jackc/pgx" --include="*.go" --exclude-dir=vendor --exclude-dir=test`
 3. Use gopls: `mcp__gopls__go_search` with query "pgx"
 4. Analyze files: Found in `central/database/postgres/store.go`
 5. Check functions: `grep -r "QueryRow\|Query\|Exec" central/database/postgres/`
@@ -532,9 +532,9 @@ Consider syncing fork to v1.18.0+ to reduce version gap and maintenance burden.
 **Actions:**
 1. Check go.mod: `grep zap go.mod` → Found with replace directive
 2. Check indirect: `grep zap go.mod | grep indirect` → NO, it's direct
-3. Find direct imports: `grep -r '"go.uber.org/zap"' --include="*.go"` → Only 7 files
+3. Find direct imports: `grep -r '"go.uber.org/zap"' --include="*.go" --exclude-dir=vendor --exclude-dir=test` → Only 7 files
 4. **Detect wrapper:** All 7 files in `pkg/logging/`
-5. Count wrapper usage: `grep -r 'pkg/logging"' --include="*.go"` → 563 files!
+5. Count wrapper usage: `grep -r 'pkg/logging"' --include="*.go" --exclude-dir=vendor --exclude-dir=test` → 563 files!
 6. Run `go mod why -m go.uber.org/zap`
 
 **Result:**
@@ -598,7 +598,7 @@ go install github.com/loov/goda@latest
 **Problem:** Package imported as `pgx/v5` but searching for `pgx`
 
 **Solution:**
-- Search for base package name: `grep -i "pgx"`
+- Search for base package name: `grep "pgx"` (case-sensitive - Go module paths distinguish github.com/Foo vs github.com/foo)
 - Include version suffix: `grep "pgx/v[0-9]"`
 - Use go list: `go list -m all | grep pgx`
 
@@ -631,7 +631,7 @@ go.uber.org/zap => github.com/stackrox/zap v1.18.2
 **Solution:**
 - Use full import path: `grep "github.com/jackc/pgx/v5"`
 - Limit to specific directories: `grep -r "pgx" central/ sensor/`
-- Use goda with specific scope: `goda list "reach(./central/..., pgx/...)"`
+- Use goda with specific scope: `goda list "reach(./central/..., pgx)"`
 
 ### Uncertain about production vs test
 
