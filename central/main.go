@@ -284,20 +284,6 @@ func main() {
 
 	premain.StartMain()
 
-	// TEMPORARY: Deliberate race condition to validate race detector with musl-gcc
-	var raceTestCounter int
-	go func() {
-		for i := 0; i < 1000; i++ {
-			raceTestCounter++
-		}
-	}()
-	go func() {
-		for i := 0; i < 1000; i++ {
-			_ = raceTestCounter
-		}
-	}()
-	time.Sleep(10 * time.Millisecond)
-
 	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig(),
 		continuousprofiling.WithDefaultAppName("central")); err != nil {
 		log.Errorf("unable to start continuous profiling: %v", err)
