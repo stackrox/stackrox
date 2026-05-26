@@ -27,14 +27,38 @@ jobs:
         ^.github/workflows/unit-tests.yaml$
         ^.github/actions/job-preamble/
 
+  pick-runner:
+    runs-on: ubuntu-latest
+    outputs:
+      go-runner: ${{ steps.check.outputs.runner }}
+    steps:
+      - name: Check for warm runners
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.RUNNER_ADMIN_TOKEN }}
+        run: |
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "runner=ubuntu-latest" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          available=$(gh api "orgs/${{ github.repository_owner }}/actions/runners" \
+            --jq '[.runners[]? | select(.labels[]?.name == "warm-go") | select(.status == "online")] | length' 2>/dev/null || echo 0)
+          echo "Warm-go runners available: $available"
+          if [[ "$available" -gt 0 ]]; then
+            echo 'runner=["self-hosted","warm-go"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "runner=ubuntu-latest" >> "$GITHUB_OUTPUT"
+          fi
+
   go:
+    needs: pick-runner
     strategy:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         exclude:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(needs.pick-runner.outputs.go-runner) }}
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     # Stable version ldflags for test caching: Go's test cache keys include
