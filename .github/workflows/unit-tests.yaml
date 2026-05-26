@@ -249,8 +249,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      with:
-        fetch-depth: 1
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -308,8 +306,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      with:
-        fetch-depth: 1
 
     - uses: ./.github/actions/job-preamble
       with:
