@@ -78,6 +78,10 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         free-disk-space: 30
 
+    - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
       with:
