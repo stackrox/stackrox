@@ -7,6 +7,31 @@ description: Analyzes Go dependencies to determine usage in production code, wha
 
 Analyzes Go dependencies to determine production impact, used functionality, and code locations. Supports CVE triage, security issue assignment, dependency upgrade decisions, and understanding what would break if a dependency is removed or changed.
 
+## When to Use This Skill
+
+**ALWAYS use this skill when the user asks ANY question about Go dependencies:**
+
+- "Why do we need [dependency]?"
+- "What uses [package/module]?"
+- "Is [dependency] used in production?"
+- "Where is [dependency] imported?"
+- "Should we upgrade [dependency]?"
+- "What would break if we remove [dependency]?"
+- "Analyze [dependency]"
+- "Check [dependency] for CVE-XXXXX"
+- "Verify dependency usage for [security issue]"
+- "Which team owns [dependency]?"
+
+**Trigger on:**
+- Dependency names (e.g., "pgx", "zap", "docker/distribution")
+- Module paths (e.g., "github.com/jackc/pgx/v5")
+- CVE numbers (e.g., "CVE-2024-12345")
+- Security vulnerability discussions
+- Dependency upgrade/removal decisions
+- Questions about Go packages in go.mod
+
+If the user mentions a Go dependency name or asks about usage/impact of any package, **invoke this skill immediately** before attempting manual analysis.
+
 ## Key Features
 
 - **Branching Workflow:** Automatically detects direct vs transitive dependencies and uses appropriate analysis path
