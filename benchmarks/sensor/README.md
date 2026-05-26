@@ -20,13 +20,38 @@ go build -o bin/sensor-bench ./tools/sensor-bench
 
 This runs a real in-process Sensor. It is **not** invoked via `go test`.
 
+**Timing (v0, version 1):** ~1 min sync + **180s** steady measurement + shutdown → about **4–5 min** wall time per run. The steady window is 180s (not 60s) so metrics average over several deployment/network/process cycles and back-to-back same-version runs typically agree within ~1%.
+
+Do not compare scorecards with `scenario.version: "0"` (`measure_sec: 60`) to version `1`.
+
 ## Correctness tests only (`go test`)
 
 ```bash
 go test ./sensor/benchmark/... -count=1
 ```
 
-Unit tests for scrape math, scorecard schema, scenario parsing, and PR comment compare — no Sensor process.
+Unit tests for scrape math, scorecard schema, scenario parsing, and scorecard compare — no Sensor process.
+
+## Compare two scorecards
+
+Same `scenario.id`, `version`, and `maturity` required (e.g. two `steady-synthetic-dev-v0` **version 1** runs).
+
+```bash
+go build -o bin/sensor-bench ./tools/sensor-bench
+
+# candidate (newer) vs baseline (reference)
+./bin/sensor-bench \
+  -compare-base scorecard-base.json \
+  -compare-head scorecard-pr.json
+
+# or write markdown to a file
+./bin/sensor-bench \
+  -compare-base scorecard-base.json \
+  -compare-head scorecard-pr.json \
+  -compare-out bench-compare.md
+```
+
+`-compare-head` is the run under test (PR head); `-compare-base` is the reference (merge-base or previous run).
 
 ## Version bumps
 

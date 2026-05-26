@@ -5,7 +5,7 @@ apiVersion: sensor-bench.stackrox/v1
 kind: Scenario
 metadata:
   name: steady-synthetic-dev-v0
-  version: "0"
+  version: "1"
   labels:
     maturity: dev
 spec:
@@ -17,4 +17,4 @@ spec:
     - name: wait_initial_sync
       maxWait: 10m
     - name: steady
-      duration: 60s
+      duration: 180s

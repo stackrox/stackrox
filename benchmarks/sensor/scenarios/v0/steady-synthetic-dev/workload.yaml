@@ -1,5 +1,5 @@
 # steady-synthetic-dev-v0 — reduced fake workload for harness development and CI.
-# Based on scale/workloads/small.yaml with slightly higher process/network rates for 60s steady window.
+# Based on scale/workloads/small.yaml with slightly higher process/network rates for steady window.
 # NOT comparable to benchmarks/sensor/scenarios/v1/steady-synthetic/workload.yaml (future v1 benchmark).
 deploymentWorkload:
 - deploymentType: Deployment

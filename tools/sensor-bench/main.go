@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -13,9 +14,22 @@ import (
 )
 
 func main() {
-	scenarioDir := flag.String("scenario", "benchmarks/sensor/scenarios/v0/steady-synthetic-dev", "path to scenario directory")
-	outPath := flag.String("out", "scorecard.json", "output scorecard JSON path")
+	scenarioDir := flag.String("scenario", "benchmarks/sensor/scenarios/v0/steady-synthetic-dev", "path to scenario directory (run mode)")
+	outPath := flag.String("out", "scorecard.json", "output scorecard JSON path (run mode)")
+	compareBase := flag.String("compare-base", "", "baseline scorecard JSON (compare mode)")
+	compareHead := flag.String("compare-head", "", "candidate scorecard JSON, e.g. PR head (compare mode)")
+	compareOut := flag.String("compare-out", "", "write comparison markdown to this file; default stdout (compare mode)")
 	flag.Parse()
+
+	if *compareBase != "" || *compareHead != "" {
+		if *compareBase == "" || *compareHead == "" {
+			log.Fatal("compare mode requires both -compare-base and -compare-head")
+		}
+		if err := runCompare(*compareBase, *compareHead, *compareOut); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
@@ -34,4 +48,30 @@ func main() {
 	if err != nil {
 		log.Fatalf("run scenario: %v", err)
 	}
+}
+
+func runCompare(basePath, headPath, outPath string) error {
+	baseline, err := benchmark.LoadScorecard(basePath)
+	if err != nil {
+		return err
+	}
+	candidate, err := benchmark.LoadScorecard(headPath)
+	if err != nil {
+		return err
+	}
+
+	md, err := benchmark.CompareScorecards(candidate, baseline)
+	if err != nil {
+		return err
+	}
+
+	if outPath == "" {
+		fmt.Print(md)
+		return nil
+	}
+	if err := os.WriteFile(outPath, []byte(md), 0o644); err != nil {
+		return fmt.Errorf("write comparison: %w", err)
+	}
+	log.Printf("sensor-bench: wrote comparison to %s", outPath)
+	return nil
 }
