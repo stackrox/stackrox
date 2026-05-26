@@ -21,6 +21,7 @@ func init() {
 		totalNetworkFlowsReceivedCounter,
 		processSignalBufferGauge,
 		processSignalDroppedCount,
+		processSignalsReceivedTotal,
 		processPipelineModeGauge,
 		sensorEvents,
 		sensorMaxMessageSizeSent,

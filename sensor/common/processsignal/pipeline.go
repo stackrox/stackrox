@@ -321,6 +321,8 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 	default:
 	}
 
+	metrics.IncrementProcessSignalsReceivedTotal()
+
 	indicator := &storage.ProcessIndicator{
 		Id:     uuid.NewV4().String(),
 		Signal: signal,

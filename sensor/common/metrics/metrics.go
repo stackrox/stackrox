@@ -133,6 +133,13 @@ var (
 		Help:      "Count of process signals dropped due to shutdown or a full output buffer",
 	})
 
+	processSignalsReceivedTotal = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "process_signals_received_total",
+		Help:      "Total number of process signals received at the process pipeline ingress",
+	})
+
 	processPipelineModeGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -461,6 +468,11 @@ func SetProcessSignalBufferSizeGauge(number int) {
 // IncrementProcessSignalDroppedCount increments the number of times the process signal was dropped.
 func IncrementProcessSignalDroppedCount() {
 	processSignalDroppedCount.Inc()
+}
+
+// IncrementProcessSignalsReceivedTotal increments the number of process signals received at pipeline ingress.
+func IncrementProcessSignalsReceivedTotal() {
+	processSignalsReceivedTotal.Inc()
 }
 
 // IncrementProcessEnrichmentDrops increments the number of times we could not enrich.
