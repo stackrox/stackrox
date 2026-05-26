@@ -76,6 +76,7 @@ function invoke_go() {
   args+=(-tags "$(tr , ' ' <<<"$GOTAGS")")
 
   if [[ "$RACE" == "true" ]]; then
+    echo >&2 "RACE==true, forcing CGO_ENABLED=1. Compiling with -linkmode=external"
     cgo_enabled=1
     args+=("-race")
 
