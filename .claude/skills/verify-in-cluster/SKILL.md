@@ -143,6 +143,8 @@ Determine the Central endpoint. Try in order:
    ```
    Set `API_ENDPOINT="localhost:8000"`
    Note: port-forward breaks on pod restart. Prefer routes/LB when available.
+   If port 8000 is already in use (common in Ambient/cloud workspaces), use a different
+   local port, e.g., `18443:443`, and set `API_ENDPOINT="localhost:18443"`.
 
 Now authenticate. Try credentials in this order:
 
@@ -429,6 +431,13 @@ oc -n <ns> logs deployment/central --previous --tail=50
 ```
 Do NOT automatically roll back. Report the crash to the parent context — it may want to
 inspect the failure, fix the code, and re-run this skill.
+
+**DB migration version mismatch**: If central crashes with a message about database version
+or migration sequence numbers (e.g., "current DB version seq X but expected Y"), this means
+the source code has newer migrations than the base nightly image's database. The appended
+central binary expects a higher migration sequence than what the nightly's DB was initialized
+with. To fix: use a base image whose version matches the source tree, or temporarily adjust
+the `CurrentDBVersionSeqNum` constant in `pkg/migrations/seq.go` to match the deployed DB.
 
 ## Phase 7: Test
 
