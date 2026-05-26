@@ -13,7 +13,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
@@ -42,27 +41,14 @@ func TestInitContainers(t *testing.T) {
 }
 
 func (s *InitContainerSuite) SetupSuite() {
+	if os.Getenv("ROX_INIT_CONTAINER_SUPPORT") != "true" {
+		s.T().Skip("ROX_INIT_CONTAINER_SUPPORT not enabled")
+	}
+
 	conn := centralgrpc.GRPCConnectionToCentral(s.T())
 	s.deploymentService = v1.NewDeploymentServiceClient(conn)
 	s.policyService = v1.NewPolicyServiceClient(conn)
 	s.alertService = v1.NewAlertServiceClient(conn)
-
-	// Skip if init container support is not enabled on Central
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	ffService := v1.NewFeatureFlagServiceClient(conn)
-	flags, err := ffService.GetFeatureFlags(ctx, &v1.Empty{})
-	s.Require().NoError(err)
-
-	for _, f := range flags.GetFeatureFlags() {
-		if f.GetEnvVar() == features.InitContainerSupport.EnvVar() {
-			if !f.GetEnabled() {
-				s.T().Skip("ROX_INIT_CONTAINER_SUPPORT is not enabled, skipping init container tests")
-			}
-			return
-		}
-	}
-	s.T().Skip("ROX_INIT_CONTAINER_SUPPORT feature flag not found")
 }
 
 func (s *InitContainerSuite) createDeploymentWithInitContainers(name, namespace string, initImages []string, mainImage string) {

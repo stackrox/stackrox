@@ -5,13 +5,13 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
 import objects.Deployment
-import org.junit.Assume
 import services.ClusterService
 import services.FeatureFlagService
 import services.ImageService
 import services.PolicyService
 import util.Timer
 
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -392,11 +392,8 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    @IgnoreIf({ !FeatureFlagService.isFeatureFlagEnabled("ROX_INIT_CONTAINER_SUPPORT") })
     def "Verify AC allows deployment with init containers"() {
-        given:
-        "Feature flag for init container support is enabled"
-        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_INIT_CONTAINER_SUPPORT"))
-
         when:
         "Create a deployment with init containers"
         def deployment = new Deployment()
