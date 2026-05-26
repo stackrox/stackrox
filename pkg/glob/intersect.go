@@ -9,7 +9,7 @@ const maxStatePairs = 10_000
 
 // intersectionNonEmpty reports whether the intersection of two
 // epsilon-free NFAs accepts any string. Uses lazy product construction
-// with BFS — only explores reachable state pairs. Returns true
+// with breadth first search — only explores reachable state pairs. Returns true
 // (conservatively assumes overlap) if the state-pair limit is exceeded.
 func intersectionNonEmpty(n1, n2 *nfa) bool {
 	visited := make(map[statePair]bool)
@@ -40,8 +40,7 @@ func intersectionNonEmpty(n1, n2 *nfa) bool {
 
 		for _, t1 := range s1.trans {
 			for _, t2 := range s2.trans {
-				cs := t1.chars.Intersect(t2.chars)
-				if cs.IsEmpty() {
+				if t1.chars.Intersect(t2.chars).IsEmpty() {
 					continue
 				}
 

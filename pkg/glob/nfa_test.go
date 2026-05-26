@@ -6,6 +6,34 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// nfaAccepts reports whether the NFA accepts the given string.
+func nfaAccepts(n *nfa, s string) bool {
+	current := epsilonClosure(n.start)
+	for _, r := range s {
+		var next []*state
+		for _, st := range current {
+			for _, t := range st.trans {
+				if t.epsilon {
+					continue
+				}
+				if t.chars.contains(r) {
+					next = append(next, t.to)
+				}
+			}
+		}
+		if len(next) == 0 {
+			return false
+		}
+		current = epsilonClosure(next...)
+	}
+	for _, st := range current {
+		if st.accepting {
+			return true
+		}
+	}
+	return false
+}
+
 // buildLiteralNFA builds an NFA that matches the exact string s.
 func buildLiteralNFA(s string) *nfa {
 	alloc := &stateAllocator{}
@@ -30,27 +58,27 @@ func buildStarNFA() *nfa {
 	accept := alloc.newAcceptState()
 	start.trans = append(start.trans,
 		transition{epsilon: true, to: accept},
-		transition{chars: anyNonSlash(), to: start},
+		transition{chars: anyNonSlash, to: start},
 	)
 	return &nfa{start: start, accept: accept}
 }
 
 func TestNFAAcceptsLiteral(t *testing.T) {
 	n := buildLiteralNFA("abc")
-	assert.True(t, n.accepts("abc"))
-	assert.False(t, n.accepts("ab"))
-	assert.False(t, n.accepts("abcd"))
-	assert.False(t, n.accepts(""))
-	assert.False(t, n.accepts("xyz"))
+	assert.True(t, nfaAccepts(n, "abc"))
+	assert.False(t, nfaAccepts(n, "ab"))
+	assert.False(t, nfaAccepts(n, "abcd"))
+	assert.False(t, nfaAccepts(n, ""))
+	assert.False(t, nfaAccepts(n, "xyz"))
 }
 
 func TestNFAAcceptsStar(t *testing.T) {
 	n := buildStarNFA()
-	assert.True(t, n.accepts(""))
-	assert.True(t, n.accepts("a"))
-	assert.True(t, n.accepts("abc"))
-	assert.False(t, n.accepts("a/b"))
-	assert.False(t, n.accepts("/"))
+	assert.True(t, nfaAccepts(n, ""))
+	assert.True(t, nfaAccepts(n, "a"))
+	assert.True(t, nfaAccepts(n, "abc"))
+	assert.False(t, nfaAccepts(n, "a/b"))
+	assert.False(t, nfaAccepts(n, "/"))
 }
 
 func TestNFAAcceptsWithEpsilon(t *testing.T) {
@@ -66,9 +94,9 @@ func TestNFAAcceptsWithEpsilon(t *testing.T) {
 	s2.trans = append(s2.trans, transition{epsilon: true, to: s3})
 
 	n := &nfa{start: s0, accept: s3}
-	assert.True(t, n.accepts("a"))
-	assert.False(t, n.accepts("b"))
-	assert.False(t, n.accepts(""))
+	assert.True(t, nfaAccepts(n, "a"))
+	assert.False(t, nfaAccepts(n, "b"))
+	assert.False(t, nfaAccepts(n, ""))
 }
 
 func TestEliminateEpsilon(t *testing.T) {
@@ -93,10 +121,10 @@ func TestEliminateEpsilon(t *testing.T) {
 	original := &nfa{start: start, accept: accept}
 
 	// Verify original works
-	assert.True(t, original.accepts(""))
-	assert.True(t, original.accepts("a"))
-	assert.False(t, original.accepts("b"))
-	assert.False(t, original.accepts("aa"))
+	assert.True(t, nfaAccepts(original, ""))
+	assert.True(t, nfaAccepts(original, "a"))
+	assert.False(t, nfaAccepts(original, "b"))
+	assert.False(t, nfaAccepts(original, "aa"))
 
 	// Eliminate epsilons
 	eliminated := eliminateEpsilon(original)
@@ -109,10 +137,10 @@ func TestEliminateEpsilon(t *testing.T) {
 	}
 
 	// Verify same language
-	assert.True(t, eliminated.accepts(""))
-	assert.True(t, eliminated.accepts("a"))
-	assert.False(t, eliminated.accepts("b"))
-	assert.False(t, eliminated.accepts("aa"))
+	assert.True(t, nfaAccepts(eliminated, ""))
+	assert.True(t, nfaAccepts(eliminated, "a"))
+	assert.False(t, nfaAccepts(eliminated, "b"))
+	assert.False(t, nfaAccepts(eliminated, "aa"))
 }
 
 func TestEliminateEpsilonStar(t *testing.T) {
@@ -120,11 +148,11 @@ func TestEliminateEpsilonStar(t *testing.T) {
 	eliminated := eliminateEpsilon(star)
 
 	// Same language
-	assert.True(t, eliminated.accepts(""))
-	assert.True(t, eliminated.accepts("a"))
-	assert.True(t, eliminated.accepts("abc"))
-	assert.False(t, eliminated.accepts("a/b"))
-	assert.False(t, eliminated.accepts("/"))
+	assert.True(t, nfaAccepts(eliminated, ""))
+	assert.True(t, nfaAccepts(eliminated, "a"))
+	assert.True(t, nfaAccepts(eliminated, "abc"))
+	assert.False(t, nfaAccepts(eliminated, "a/b"))
+	assert.False(t, nfaAccepts(eliminated, "/"))
 }
 
 func TestCharSetContains(t *testing.T) {
@@ -140,24 +168,24 @@ func TestCharSetContains(t *testing.T) {
 			cs: singleChar('a'), r: 'b', expected: false,
 		},
 		"any matches slash": {
-			cs: anyChar(), r: '/', expected: true,
+			cs: anyChar, r: '/', expected: true,
 		},
 		"any matches letter": {
-			cs: anyChar(), r: 'x', expected: true,
+			cs: anyChar, r: 'x', expected: true,
 		},
 		"any non-slash matches letter": {
-			cs: anyNonSlash(), r: 'x', expected: true,
+			cs: anyNonSlash, r: 'x', expected: true,
 		},
 		"any non-slash rejects slash": {
-			cs: anyNonSlash(), r: '/', expected: false,
+			cs: anyNonSlash, r: '/', expected: false,
 		},
 		"range match": {
-			cs:       fromRanges(false, runeRange{Lo: 'a', Hi: 'z'}),
+			cs:       normalized(false, runeRange{Lo: 'a', Hi: 'z'}),
 			r:        'm',
 			expected: true,
 		},
 		"range no match": {
-			cs:       fromRanges(false, runeRange{Lo: 'a', Hi: 'z'}),
+			cs:       normalized(false, runeRange{Lo: 'a', Hi: 'z'}),
 			r:        'A',
 			expected: false,
 		},
@@ -165,7 +193,7 @@ func TestCharSetContains(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.expected, charSetContains(tc.cs, tc.r))
+			assert.Equal(t, tc.expected, tc.cs.contains(tc.r))
 		})
 	}
 }

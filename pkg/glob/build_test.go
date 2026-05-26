@@ -117,10 +117,10 @@ func TestBuildNFA(t *testing.T) {
 			require.NoError(t, err, "failed to build NFA for %q", tc.pattern)
 
 			for _, s := range tc.matches {
-				assert.True(t, n.accepts(s), "NFA for %q should accept %q", tc.pattern, s)
+				assert.True(t, nfaAccepts(n, s), "NFA for %q should accept %q", tc.pattern, s)
 			}
 			for _, s := range tc.rejects {
-				assert.False(t, n.accepts(s), "NFA for %q should reject %q", tc.pattern, s)
+				assert.False(t, nfaAccepts(n, s), "NFA for %q should reject %q", tc.pattern, s)
 			}
 		})
 	}
@@ -164,7 +164,7 @@ func TestBuildNFAMatchesDoublestar(t *testing.T) {
 			if dsErr != nil {
 				continue
 			}
-			nfaMatch := n.accepts(path)
+			nfaMatch := nfaAccepts(n, path)
 			assert.Equal(t, dsMatch, nfaMatch,
 				"mismatch for pattern %q, path %q: doublestar=%v, nfa=%v",
 				pattern, path, dsMatch, nfaMatch)

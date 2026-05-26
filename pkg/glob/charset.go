@@ -1,8 +1,22 @@
 package glob
 
-import "unicode"
+import (
+	"cmp"
+	"slices"
+	"unicode"
+)
 
-const maxRune = unicode.MaxRune
+const (
+	maxRune = unicode.MaxRune
+)
+
+var (
+	// anyChar matches any character.
+	anyChar = charSet{Negated: true}
+
+	// anyNonSlash matches any character except '/'.
+	anyNonSlash = charSet{Ranges: []runeRange{{Lo: '/', Hi: '/'}}, Negated: true}
+)
 
 // runeRange represents an inclusive range of runes [Lo, Hi].
 type runeRange struct {
@@ -16,26 +30,31 @@ type charSet struct {
 	Negated bool
 }
 
-// anyChar returns a charSet matching any character.
-func anyChar() charSet {
-	return charSet{Negated: true}
-}
-
-// anyNonSlash returns a charSet matching any character except '/'.
-func anyNonSlash() charSet {
-	return charSet{Ranges: []runeRange{{Lo: '/', Hi: '/'}}, Negated: true}
-}
-
 // singleChar returns a charSet matching a single character.
 func singleChar(r rune) charSet {
 	return charSet{Ranges: []runeRange{{Lo: r, Hi: r}}}
 }
 
-// fromRanges returns a normalised charSet from the given ranges.
-func fromRanges(negated bool, ranges ...runeRange) charSet {
+// normalized returns a charSet with sorted, merged ranges.
+func normalized(negated bool, ranges ...runeRange) charSet {
 	cs := charSet{Ranges: ranges, Negated: negated}
-	cs.normalise()
+	cs.normalize()
 	return cs
+}
+
+// contains reports whether the charSet contains the given rune.
+func (cs charSet) contains(r rune) bool {
+	found := false
+	for _, rr := range cs.Ranges {
+		if r >= rr.Lo && r <= rr.Hi {
+			found = true
+			break
+		}
+	}
+	if cs.Negated {
+		return !found
+	}
+	return found
 }
 
 // IsEmpty reports whether the charSet matches no characters.
@@ -52,33 +71,38 @@ func (cs charSet) IsEmpty() bool {
 func (cs charSet) Intersect(other charSet) charSet {
 	switch {
 	case !cs.Negated && !other.Negated:
-		// A ∩ B: intersection of two positive sets
+		// both positive: keep only characters in both sets
 		return charSet{Ranges: intersectRanges(cs.Ranges, other.Ranges)}
 
 	case cs.Negated && !other.Negated:
-		// ¬A ∩ B = B \ A: subtract cs.Ranges from other.Ranges
+		// !A and B: keep characters in B that are not excluded by A
 		return charSet{Ranges: subtractRanges(other.Ranges, cs.Ranges)}
 
 	case !cs.Negated && other.Negated:
-		// A ∩ ¬B = A \ B: subtract other.Ranges from cs.Ranges
+		// A and !B: keep characters in A that are not excluded by B
 		return charSet{Ranges: subtractRanges(cs.Ranges, other.Ranges)}
 
 	default:
-		// ¬A ∩ ¬B = ¬(A ∪ B)
-		return charSet{Ranges: unionRanges(cs.Ranges, other.Ranges), Negated: true}
+		// !A and !B: exclude everything excluded by either set (De Morgan's)
+		return union(true, cs, other)
 	}
 }
 
-// normalise sorts and merges overlapping/adjacent ranges.
-func (cs *charSet) normalise() {
+// normalize sorts and merges overlapping/adjacent ranges.
+func (cs *charSet) normalize() {
 	if len(cs.Ranges) <= 1 {
 		return
 	}
 
-	// Sort by Lo
-	sortRanges(cs.Ranges)
+	slices.SortFunc(cs.Ranges, func(a, b runeRange) int { return cmp.Compare(a.Lo, b.Lo) })
 
-	// Merge overlapping/adjacent ranges
+	// Now handle overlaps/adjacency.
+	// e.g. R1 and R2 overlap, R3 is a distinct range:
+	//     [<-lo R1 hi->]
+	//           [<-lo R2 hi->]
+	//                              [<-lo R3 hi->]
+	// After merge:
+	//     [<-lo    R1    hi->]     [<-lo R3 hi->]
 	merged := cs.Ranges[:1]
 	for _, r := range cs.Ranges[1:] {
 		last := &merged[len(merged)-1]
@@ -93,20 +117,12 @@ func (cs *charSet) normalise() {
 	cs.Ranges = merged
 }
 
-// sortRanges sorts ranges by Lo using insertion sort (ranges are typically small).
-func sortRanges(ranges []runeRange) {
-	for i := 1; i < len(ranges); i++ {
-		key := ranges[i]
-		j := i - 1
-		for j >= 0 && ranges[j].Lo > key.Lo {
-			ranges[j+1] = ranges[j]
-			j--
-		}
-		ranges[j+1] = key
-	}
-}
-
-// intersectRanges computes the intersection of two sorted, non-overlapping range slices.
+// intersectRanges computes the intersection of two range slices.
+// Ranges within each slice must be sorted and non-overlapping.
+//
+//	A:      [<-A1->]       [<-A2->]
+//	B:          [<-B1->]       [<-B2->]
+//	Result:     [==]           [==]
 func intersectRanges(a, b []runeRange) []runeRange {
 	var result []runeRange
 	i, j := 0, 0
@@ -125,8 +141,12 @@ func intersectRanges(a, b []runeRange) []runeRange {
 	return result
 }
 
-// subtractRanges computes a \ b (characters in a but not in b).
+// subtractRanges returns the characters in a that are not in b.
 // Both a and b must be sorted and non-overlapping.
+//
+//	A:      [<-----------A----------->]
+//	B:              [<---B--->]
+//	Result: [======]           [=====]
 func subtractRanges(a, b []runeRange) []runeRange {
 	var result []runeRange
 	j := 0
@@ -153,14 +173,13 @@ func subtractRanges(a, b []runeRange) []runeRange {
 	return result
 }
 
-// unionRanges computes the union of two sorted, non-overlapping range slices.
-func unionRanges(a, b []runeRange) []runeRange {
-	merged := make([]runeRange, 0, len(a)+len(b))
-	merged = append(merged, a...)
-	merged = append(merged, b...)
-	cs := &charSet{Ranges: merged}
-	cs.normalise()
-	return cs.Ranges
+// union returns a charSet matching characters in either a or b.
+//
+//	A:      [<---A--->]
+//	B:              [<---B--->]
+//	Result: [=================]
+func union(negated bool, a, b charSet) charSet {
+	return normalized(negated, slices.Concat(a.Ranges, b.Ranges)...)
 }
 
 // coversAll reports whether the ranges cover the entire Unicode range [0, maxRune].

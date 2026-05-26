@@ -45,7 +45,7 @@ func TestRuneRangeNormalise(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			cs := charSet{Ranges: tc.input, Negated: tc.negated}
-			cs.normalise()
+			cs.normalize()
 			assert.Equal(t, tc.expected, cs.Ranges)
 		})
 	}
@@ -65,7 +65,7 @@ func TestCharSetIsEmpty(t *testing.T) {
 			expected: false,
 		},
 		"negated empty ranges (matches everything)": {
-			cs:       anyChar(),
+			cs:       anyChar,
 			expected: false,
 		},
 		"negated full range (matches nothing)": {
@@ -86,49 +86,53 @@ func TestCharSetIntersect(t *testing.T) {
 		a, b     charSet
 		expected charSet
 	}{
+		// both positive
 		"two positive overlapping": {
-			a:        fromRanges(false, runeRange{Lo: 'a', Hi: 'm'}),
-			b:        fromRanges(false, runeRange{Lo: 'k', Hi: 'z'}),
+			a:        normalized(false, runeRange{Lo: 'a', Hi: 'm'}),
+			b:        normalized(false, runeRange{Lo: 'k', Hi: 'z'}),
 			expected: charSet{Ranges: []runeRange{{Lo: 'k', Hi: 'm'}}},
 		},
 		"two positive disjoint": {
-			a:        fromRanges(false, runeRange{Lo: 'a', Hi: 'c'}),
-			b:        fromRanges(false, runeRange{Lo: 'x', Hi: 'z'}),
+			a:        normalized(false, runeRange{Lo: 'a', Hi: 'c'}),
+			b:        normalized(false, runeRange{Lo: 'x', Hi: 'z'}),
 			expected: charSet{Ranges: nil},
 		},
+		// !A and B
+		"negated and positive": {
+			// !{/} and {a-z} = {a-z} (since / is not in a-z)
+			a:        anyNonSlash,
+			b:        normalized(false, runeRange{Lo: 'a', Hi: 'z'}),
+			expected: charSet{Ranges: []runeRange{{Lo: 'a', Hi: 'z'}}},
+		},
+		"negated slash and positive slash": {
+			// !{/} and {/} = empty
+			a:        anyNonSlash,
+			b:        singleChar('/'),
+			expected: charSet{Ranges: nil},
+		},
+		// A and !B
 		"positive and negated": {
-			// {a-z} ∩ ¬{m-p} = {a-l, q-z}
-			a: fromRanges(false, runeRange{Lo: 'a', Hi: 'z'}),
-			b: fromRanges(true, runeRange{Lo: 'm', Hi: 'p'}),
+			// {a-z} and !{m-p} = {a-l, q-z}
+			a: normalized(false, runeRange{Lo: 'a', Hi: 'z'}),
+			b: normalized(true, runeRange{Lo: 'm', Hi: 'p'}),
 			expected: charSet{Ranges: []runeRange{
 				{Lo: 'a', Hi: 'l'},
 				{Lo: 'q', Hi: 'z'},
 			}},
 		},
-		"negated and positive": {
-			// ¬{/} ∩ {a-z} = {a-z} (since / is not in a-z)
-			a:        anyNonSlash(),
-			b:        fromRanges(false, runeRange{Lo: 'a', Hi: 'z'}),
-			expected: charSet{Ranges: []runeRange{{Lo: 'a', Hi: 'z'}}},
-		},
-		"negated slash and positive slash": {
-			// ¬{/} ∩ {/} = empty
-			a:        anyNonSlash(),
-			b:        singleChar('/'),
-			expected: charSet{Ranges: nil},
-		},
+		// both negated
 		"two negated": {
-			// ¬{a} ∩ ¬{b} = ¬{a,b}
-			a: fromRanges(true, runeRange{Lo: 'a', Hi: 'a'}),
-			b: fromRanges(true, runeRange{Lo: 'b', Hi: 'b'}),
+			// !{a} and !{b} = !{a,b}
+			a: normalized(true, runeRange{Lo: 'a', Hi: 'a'}),
+			b: normalized(true, runeRange{Lo: 'b', Hi: 'b'}),
 			expected: charSet{
 				Ranges:  []runeRange{{Lo: 'a', Hi: 'b'}},
 				Negated: true,
 			},
 		},
 		"any intersect any non-slash": {
-			a: anyChar(),
-			b: anyNonSlash(),
+			a: anyChar,
+			b: anyNonSlash,
 			expected: charSet{
 				Ranges:  []runeRange{{Lo: '/', Hi: '/'}},
 				Negated: true,
@@ -154,15 +158,20 @@ func TestSubtractRanges(t *testing.T) {
 			b:        nil,
 			expected: []runeRange{{Lo: 'a', Hi: 'z'}},
 		},
-		"subtract middle": {
-			a:        []runeRange{{Lo: 'a', Hi: 'z'}},
-			b:        []runeRange{{Lo: 'm', Hi: 'p'}},
-			expected: []runeRange{{Lo: 'a', Hi: 'l'}, {Lo: 'q', Hi: 'z'}},
+		"subtract beyond range": {
+			a:        []runeRange{{Lo: 'a', Hi: 'c'}},
+			b:        []runeRange{{Lo: 'x', Hi: 'z'}},
+			expected: []runeRange{{Lo: 'a', Hi: 'c'}},
 		},
 		"subtract beginning": {
 			a:        []runeRange{{Lo: 'a', Hi: 'z'}},
 			b:        []runeRange{{Lo: 'a', Hi: 'c'}},
 			expected: []runeRange{{Lo: 'd', Hi: 'z'}},
+		},
+		"subtract middle": {
+			a:        []runeRange{{Lo: 'a', Hi: 'z'}},
+			b:        []runeRange{{Lo: 'm', Hi: 'p'}},
+			expected: []runeRange{{Lo: 'a', Hi: 'l'}, {Lo: 'q', Hi: 'z'}},
 		},
 		"subtract end": {
 			a:        []runeRange{{Lo: 'a', Hi: 'z'}},
@@ -173,11 +182,6 @@ func TestSubtractRanges(t *testing.T) {
 			a:        []runeRange{{Lo: 'a', Hi: 'z'}},
 			b:        []runeRange{{Lo: 'a', Hi: 'z'}},
 			expected: nil,
-		},
-		"subtract beyond range": {
-			a:        []runeRange{{Lo: 'a', Hi: 'c'}},
-			b:        []runeRange{{Lo: 'x', Hi: 'z'}},
-			expected: []runeRange{{Lo: 'a', Hi: 'c'}},
 		},
 	}
 
@@ -190,7 +194,7 @@ func TestSubtractRanges(t *testing.T) {
 }
 
 func TestAnyNonSlashExcludesSlash(t *testing.T) {
-	cs := anyNonSlash()
+	cs := anyNonSlash
 	// Intersect with just '/' should be empty
 	slashOnly := singleChar('/')
 	result := cs.Intersect(slashOnly)

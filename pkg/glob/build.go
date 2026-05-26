@@ -1,5 +1,27 @@
 package glob
 
+// Glob patterns are compiled to NFAs using Thompson's construction: each token
+// in the pattern becomes a small NFA fragment (a start and end state), and
+// fragments are concatenated left to right by merging the end of one into the
+// start of the next.
+//
+// Supported tokens and their NFA shapes:
+//
+//	literal 'a':  [s0] --'a'--> [s1]
+//	?:            [s0] --any non-slash--> [s1]
+//	*:            [s0] --ε--> [s1]              (matches empty)
+//	              [s0] <--any non-slash--        (loop)
+//	**:           same but any character including slash
+//	[a-z]:        [s0] --charSet--> [s1]
+//	{a,b}:        [s0] --ε--> [frag-a] --ε--> [s1]
+//	              [s0] --ε--> [frag-b] --ε--> [s1]
+//
+// The /** and /**/ variants of ** are handled specially to anchor the slash
+// separators correctly (see parseDoubleStar).
+//
+// Once all fragments are concatenated, the final end state is marked accepting
+// and the whole thing is wrapped in an nfa struct.
+
 import (
 	"fmt"
 	"unicode/utf8"
@@ -153,7 +175,7 @@ func buildLiteral(r rune, alloc *stateAllocator) fragment {
 func buildQuestion(alloc *stateAllocator) fragment {
 	start := alloc.newState()
 	end := alloc.newState()
-	start.trans = append(start.trans, transition{chars: anyNonSlash(), to: end})
+	start.trans = append(start.trans, transition{chars: anyNonSlash, to: end})
 	return fragment{start: start, end: end}
 }
 
@@ -163,7 +185,7 @@ func buildStar(alloc *stateAllocator) fragment {
 	end := alloc.newState()
 	start.trans = append(start.trans,
 		transition{epsilon: true, to: end},
-		transition{chars: anyNonSlash(), to: start},
+		transition{chars: anyNonSlash, to: start},
 	)
 	return fragment{start: start, end: end}
 }
@@ -174,7 +196,7 @@ func buildDoubleStar(alloc *stateAllocator) fragment {
 	end := alloc.newState()
 	start.trans = append(start.trans,
 		transition{epsilon: true, to: end},
-		transition{chars: anyChar(), to: start},
+		transition{chars: anyChar, to: start},
 	)
 	return fragment{start: start, end: end}
 }
@@ -191,7 +213,7 @@ func buildSlashDoubleStarSlash(alloc *stateAllocator) fragment {
 	// Option 2: / + any + /
 	start.trans = append(start.trans, transition{chars: singleChar('/'), to: loop})
 	loop.trans = append(loop.trans,
-		transition{chars: anyChar(), to: loop},
+		transition{chars: anyChar, to: loop},
 		transition{chars: singleChar('/'), to: end},
 	)
 
@@ -211,7 +233,7 @@ func buildSlashDoubleStarEnd(alloc *stateAllocator) fragment {
 	start.trans = append(start.trans, transition{chars: singleChar('/'), to: loop})
 	loop.trans = append(loop.trans,
 		transition{epsilon: true, to: end},
-		transition{chars: anyChar(), to: loop},
+		transition{chars: anyChar, to: loop},
 	)
 
 	return fragment{start: start, end: end}
@@ -226,7 +248,7 @@ func buildDoubleStarSlashStart(alloc *stateAllocator) fragment {
 	// Option 1: empty (zero segments, absorb the /)
 	start.trans = append(start.trans, transition{epsilon: true, to: end})
 	// Option 2: anything + /
-	start.trans = append(start.trans, transition{chars: anyChar(), to: start})
+	start.trans = append(start.trans, transition{chars: anyChar, to: start})
 	start.trans = append(start.trans, transition{chars: singleChar('/'), to: end})
 
 	return fragment{start: start, end: end}
@@ -287,7 +309,7 @@ func parseCharClass(s string, alloc *stateAllocator) (fragment, int, error) {
 	}
 	i++ // skip ']'
 
-	cs := fromRanges(negated, ranges...)
+	cs := normalized(negated, ranges...)
 
 	start := alloc.newState()
 	end := alloc.newState()

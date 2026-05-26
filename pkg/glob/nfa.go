@@ -1,5 +1,25 @@
 package glob
 
+// NFAs are graphs of states connected by transitions. A transition either
+// matches a character (charSet) or is an epsilon — a free move with no input
+// consumed. The pattern "ab" looks like:
+//
+//	[s0] --'a'--> [s1] --'b'--> [s2*]     (* = accepting)
+//
+// To check if a string matches, track the set of active states and advance
+// them one character at a time. Accept if any active state is accepting at
+// the end.
+//
+// Epsilons let the NFA branch without consuming input — e.g. the two branches
+// of {a,b} are each reached via an epsilon from the entry state (see build.go).
+// The epsilon closure of a state is all states reachable from it for free:
+//
+//	[s0] --ε--> [s1] --'a'--> [s3*]
+//	     --ε--> [s2*]
+//
+// Here the closure of s0 is {s0, s1, s2}, so this NFA accepts the empty string.
+// Epsilons are eliminated before intersection testing (see eliminateEpsilon).
+
 // state represents a state in an NFA.
 type state struct {
 	id        int
@@ -40,53 +60,9 @@ func (a *stateAllocator) newAcceptState() *state {
 	return s
 }
 
-// accepts reports whether the NFA accepts the given string.
-// Used for testing.
-func (n *nfa) accepts(s string) bool {
-	current := epsilonClosure([]*state{n.start})
-	for _, r := range s {
-		var next []*state
-		for _, st := range current {
-			for _, t := range st.trans {
-				if t.epsilon {
-					continue
-				}
-				if charSetContains(t.chars, r) {
-					next = append(next, t.to)
-				}
-			}
-		}
-		if len(next) == 0 {
-			return false
-		}
-		current = epsilonClosure(next)
-	}
-	for _, st := range current {
-		if st.accepting {
-			return true
-		}
-	}
-	return false
-}
-
-// charSetContains reports whether the charSet contains the given rune.
-func charSetContains(cs charSet, r rune) bool {
-	found := false
-	for _, rr := range cs.Ranges {
-		if r >= rr.Lo && r <= rr.Hi {
-			found = true
-			break
-		}
-	}
-	if cs.Negated {
-		return !found
-	}
-	return found
-}
-
 // epsilonClosure computes the set of states reachable from the given
 // states via epsilon transitions only.
-func epsilonClosure(states []*state) []*state {
+func epsilonClosure(states ...*state) []*state {
 	seen := make(map[int]bool)
 	var result []*state
 	stack := append([]*state(nil), states...)
@@ -116,7 +92,7 @@ func eliminateEpsilon(n *nfa) *nfa {
 	// Compute epsilon closures for each state.
 	closures := make(map[int][]*state)
 	for _, s := range allStates {
-		closures[s.id] = epsilonClosure([]*state{s})
+		closures[s.id] = epsilonClosure(s)
 	}
 
 	// Build new states, preserving original IDs.
@@ -159,17 +135,18 @@ func eliminateEpsilon(n *nfa) *nfa {
 func collectStates(n *nfa) []*state {
 	seen := make(map[int]bool)
 	var result []*state
-	var walk func(s *state)
-	walk = func(s *state) {
+	stack := []*state{n.start}
+	for len(stack) > 0 {
+		s := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
 		if seen[s.id] {
-			return
+			continue
 		}
 		seen[s.id] = true
 		result = append(result, s)
 		for _, t := range s.trans {
-			walk(t.to)
+			stack = append(stack, t.to)
 		}
 	}
-	walk(n.start)
 	return result
 }

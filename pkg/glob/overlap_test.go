@@ -13,67 +13,42 @@ func TestPatternsOverlap(t *testing.T) {
 		pattern2 string
 		overlap  bool
 	}{
-		// AIDE-style: negating /etc/passwd when monitoring /etc/**
+		// overlap: true
 		"negate passwd under etc glob": {
 			pattern1: "/etc/passwd",
 			pattern2: "/etc/**",
 			overlap:  true,
 		},
-		// AIDE-style: negating /var/** when only monitoring /etc/**
-		"negate var when monitoring etc": {
-			pattern1: "/var/**",
-			pattern2: "/etc/**",
-			overlap:  false,
-		},
-		// AIDE-style: negating specific files under monitored tree
 		"negate shadow under etc glob": {
 			pattern1: "/etc/shadow",
 			pattern2: "/etc/**",
 			overlap:  true,
 		},
-		// AIDE-style: brace expansion overlap
 		"negate passwd via brace": {
 			pattern1: "/etc/{passwd,shadow}",
 			pattern2: "/etc/**",
 			overlap:  true,
 		},
-		// Negating a subtree under a monitored tree
 		"negate subtree": {
 			pattern1: "/etc/systemd/**",
 			pattern2: "/etc/**",
 			overlap:  true,
 		},
-		// Completely disjoint trees
-		"disjoint trees": {
-			pattern1: "/home/**",
-			pattern2: "/var/**",
-			overlap:  false,
-		},
-		// Root glob overlaps with everything
 		"root glob vs specific": {
 			pattern1: "/**",
 			pattern2: "/tmp/foo/bar/baz",
 			overlap:  true,
 		},
-		// Identical patterns
 		"identical globs": {
 			pattern1: "/etc/**/*.conf",
 			pattern2: "/etc/**/*.conf",
 			overlap:  true,
 		},
-		// Wildcard extension overlap
-		"conf vs cfg no overlap": {
-			pattern1: "/etc/**/*.conf",
-			pattern2: "/etc/**/*.cfg",
-			overlap:  false,
-		},
-		// Deep path with double star
 		"deep path overlap": {
 			pattern1: "/a/**/z",
 			pattern2: "/a/b/c/d/z",
 			overlap:  true,
 		},
-		// Character class used in negation
 		"char class negate": {
 			pattern1: "/etc/[a-m]*",
 			pattern2: "/etc/**",
@@ -83,6 +58,22 @@ func TestPatternsOverlap(t *testing.T) {
 			pattern1: "/tmp/données/**",
 			pattern2: "/tmp/données/résumé",
 			overlap:  true,
+		},
+		// overlap: false
+		"negate var when monitoring etc": {
+			pattern1: "/var/**",
+			pattern2: "/etc/**",
+			overlap:  false,
+		},
+		"disjoint trees": {
+			pattern1: "/home/**",
+			pattern2: "/var/**",
+			overlap:  false,
+		},
+		"conf vs cfg no overlap": {
+			pattern1: "/etc/**/*.conf",
+			pattern2: "/etc/**/*.cfg",
+			overlap:  false,
 		},
 		"unicode paths disjoint": {
 			pattern1: "/tmp/données/**",
