@@ -38,17 +38,23 @@ When given a dependency name, CVE, or package:
 
 IMPORTANT: Work in current directory - do not change directories (respects git worktrees).
 
+**Pre-flight check:**
+```bash
+# Verify go.mod exists in current directory
+test -f go.mod || { echo "ERROR: go.mod not found. Run this skill from the Go module root directory."; exit 1; }
+```
+
 Run these commands in parallel:
 
 ```bash
 # Check if dependency is in go.mod (direct or indirect)
-grep -i "module-name" go.mod
+grep "module-name" go.mod
 
 # Check for replace directives (StackRox forks)
-grep -i "module-name" go.mod | grep "=>"
+grep "module-name" go.mod | grep "=>"
 
 # Check if indirect
-grep -i "module-name" go.mod | grep "// indirect"
+grep "module-name" go.mod | grep "// indirect"
 ```
 
 **Multi-module Workspace Note:**
@@ -85,7 +91,7 @@ go mod why -m module-name
 go mod graph | grep "module-name"
 
 # Visualize what pulls this dependency
-goda graph "reach(./..., module-name/...)" | head -30
+goda graph "reach(./..., module-name)" | head -30
 ```
 
 **Analysis for transitive dependencies:**
@@ -97,7 +103,7 @@ goda graph "reach(./..., module-name/...)" | head -30
 2. **Check if we use the intermediate package:**
    ```bash
    # Production usage (excludes test files)
-   grep -r "intermediate-package" --include="*.go" --exclude-dir=vendor --exclude="*_test.go" | wc -l
+   grep -r "intermediate-package" --include="*.go" --exclude-dir=vendor --exclude-dir=test --exclude="*_test.go" | wc -l
 
    # Test-only usage
    grep -r "intermediate-package" --include="*_test.go" --exclude-dir=vendor | wc -l
@@ -157,10 +163,10 @@ go list -m module-name
 go mod why -m module-name
 
 # Visualize dependency graph with goda
-goda graph "reach(./..., module-name/...)" | head -30
+goda graph "reach(./..., module-name)" | head -30
 
 # Check how many packages use it
-goda list "reach(./..., module-name/...)" | cut -d: -f1 | sort -u | wc -l
+goda list "reach(./..., module-name)" | cut -d: -f1 | sort -u | wc -l
 ```
 
 **Why Both Tools Are Needed:**
@@ -183,6 +189,14 @@ goda list "reach(./..., module-name/...)" | cut -d: -f1 | sort -u | wc -l
 
 Both tools are required for complete analysis.
 
+**Handling "does not need" Output:**
+
+If `go mod why` returns "(main module does not need module)" despite the dependency appearing in go.mod without `// indirect`:
+- This indicates stale go.mod (dependency removed from code but not tidied) OR build-tag-excluded imports
+- Document this in the report as: "Listed in go.mod but go mod why reports 'does not need' - likely stale entry or build-tag-excluded import"
+- Recommend running `go mod tidy` to clean up go.mod
+- Still analyze with goda to check for any actual usage
+
 **Analysis:**
 - **Direct dependency**: We explicitly import it
 - **go mod why output**: MANDATORY - include in final report
@@ -195,14 +209,14 @@ Both tools are required for complete analysis.
 ```bash
 # Find direct imports
 grep -r '"module-name' --include="*.go" --exclude-dir=vendor | cut -d: -f1 | sort -u | head -20
-goda list "reach(./..., module-name/...)" | head -30
+goda list "reach(./..., module-name)" | head -30
 
 # Separate production vs test
-grep -r '"module-name' --include="*.go" --exclude="*_test.go" --exclude-dir=vendor | wc -l
+grep -r '"module-name' --include="*.go" --exclude="*_test.go" --exclude-dir=vendor --exclude-dir=test | wc -l
 grep -r '"module-name' --include="*_test.go" --exclude-dir=vendor | wc -l
 
 # If wrapper detected in pkg/, count wrapper users too
-grep -r 'pkg/wrapper"' --include="*.go" --exclude="*_test.go" --exclude-dir=vendor | wc -l
+grep -r 'pkg/wrapper"' --include="*.go" --exclude="*_test.go" --exclude-dir=vendor --exclude-dir=test | wc -l
 ```
 
 ### Step 5: Analyze Used Functionality (Direct Dependencies Only)
@@ -356,7 +370,7 @@ N/A - Transitive dependency managed via [intermediate-package] updates
 
 **Actions:**
 1. `grep testify go.mod` → Found as indirect
-2. `grep -r "testify/assert" --include="*.go" --exclude="*_test.go"` → No results
+2. `grep -r "testify/assert" --include="*.go" --exclude="*_test.go" --exclude-dir=vendor --exclude-dir=test` → No results
 3. `grep -r "testify/assert" --include="*_test.go"` → 500+ files
 
 **Result:**
@@ -406,7 +420,7 @@ N/A - Test-only transitive dependency (not production-critical)
 **Actions:**
 1. Search go.mod: `grep protoc-gen-validate go.mod` → Found: `github.com/envoyproxy/protoc-gen-validate v0.10.1 // indirect`
 2. Run `go mod why`: Shows dependency chain via `cloud.google.com/go/storage`
-3. Check intermediate usage: `grep -r "cloud.google.com/go/storage" --include="*.go" --exclude="*_test.go"` → 0 results
+3. Check intermediate usage: `grep -r "cloud.google.com/go/storage" --include="*.go" --exclude="*_test.go" --exclude-dir=vendor --exclude-dir=test` → 0 results
 4. Check test usage: `grep -r "cloud.google.com/go/storage" --include="*_test.go"` → 15 files in `central/externalbackups/`
 5. Run `go mod graph | grep protoc-gen-validate` to see full chain
 
@@ -440,6 +454,12 @@ We import GCS SDK only in test code for external backup testing.
 - GCS SDK uses it for proto validation in API responses
 - CVE impact: Only affects test execution, not shipped binaries
 
+**Action:**
+- No direct maintenance needed under normal circumstances
+- Test-only transitive dependency - lower CVE priority
+- Updated automatically when cloud.google.com/go/storage updates
+- For critical CVEs: Consider fixing in upstream GCS SDK or upgrading GCS SDK version
+
 **Team Assignment:**
 N/A - Test-only transitive dependency (low priority)
 If fix needed: @stackrox/core-workflows (owns central/externalbackups tests)
@@ -453,7 +473,7 @@ If fix needed: @stackrox/core-workflows (owns central/externalbackups tests)
 1. Search go.mod: `grep consul go.mod` → Found with replace directive
 2. Check replace: `grep "consul.*=>" go.mod` → `github.com/hashicorp/consul/api => github.com/stackrox/consul v1.15.3-0.20240215`
 3. Check versions: Upstream at v1.18.0, fork at v1.15.3 (3 minor versions behind)
-4. Find usage: `grep -r "consul/api" --include="*.go" --exclude="*_test.go"` → 12 files in `sensor/kubernetes/`
+4. Find usage: `grep -r "consul/api" --include="*.go" --exclude="*_test.go" --exclude-dir=vendor --exclude-dir=test` → 12 files in `sensor/kubernetes/`
 5. Run `go mod why -m github.com/hashicorp/consul/api`
 6. Check StackRox fork repo for reason: Security patches backported from v1.18.0
 
