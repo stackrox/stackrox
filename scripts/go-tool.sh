@@ -56,24 +56,25 @@ if [[ "$DEBUG_BUILD" != "yes" ]]; then
   ldflags+=(-s -w)
 fi
 
-if [[ "${CGO_ENABLED}" != 0 ]]; then
-  echo >&2 "CGO_ENABLED is not 0. Compiling with -linkmode=external"
-  ldflags+=('-linkmode=external')
-fi
-
 function invoke_go() {
   local tool="${1:?"invoke_go tool argument required"}"
   shift
   local args=()
-  local CGO_ENABLED
+  local extra_ldflags=()
 
   args+=("-buildvcs=false")
-  args+=(-ldflags="${ldflags[*]}")
   args+=(-tags "$(tr , ' ' <<<"$GOTAGS")")
+
   if [[ "$RACE" == "true" ]]; then
     export CGO_ENABLED=1
     args+=("-race")
+    if command -v musl-gcc &>/dev/null; then
+      export CC=musl-gcc
+      extra_ldflags+=('-linkmode=external' '-extldflags=-static')
+    fi
   fi
+
+  args+=(-ldflags="${ldflags[*]} ${extra_ldflags[*]}")
   go "$tool" "${args[@]}" "$@"
 }
 
