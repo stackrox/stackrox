@@ -205,13 +205,20 @@ Use the repo's deployment scripts.
   to generate deployment configs. Also, `ScannerVersion` is **required** — the embedded Helm
   chart templates use `required ""  .ScannerImageTag` which is populated from this value.
   Without it, `roxctl central generate` fails with a template error.
+
+  **Important**: Use the **Quay `MAIN_IMAGE_TAG`** (fetched below) as `MainVersion`, NOT
+  `make tag`. The `MainVersion` baked into roxctl determines the image tag for ALL components
+  (central, sensor, scanner-v4, scanner-v4-db, etc.) via `roxctl central generate`. If you
+  use a local `make tag` (which produces a `-dirty` suffix), the deploy will try to pull
+  images that don't exist on Quay. Fetch the Quay tag first (see "Finding a base image"
+  below), then build roxctl:
   ```bash
-  MAIN_TAG=$(make --quiet --no-print-directory tag)
+  # MAIN_IMAGE_TAG must be set first — see "Finding a base image from CI" below
   SCANNER_VERSION=$(cat SCANNER_VERSION)
   COLLECTOR_VERSION=$(cat COLLECTOR_VERSION)
   CGO_ENABLED=0 go build \
     -ldflags="-s -w \
-      -X github.com/stackrox/rox/pkg/version/internal.MainVersion=$MAIN_TAG \
+      -X github.com/stackrox/rox/pkg/version/internal.MainVersion=$MAIN_IMAGE_TAG \
       -X github.com/stackrox/rox/pkg/version/internal.ScannerVersion=$SCANNER_VERSION \
       -X github.com/stackrox/rox/pkg/version/internal.CollectorVersion=$COLLECTOR_VERSION" \
     -o "$TMPDIR/roxctl" ./roxctl
@@ -297,6 +304,26 @@ export MONITORING_SUPPORT=false  # skip if helm is unavailable
 Then run:
 ```bash
 ./deploy/deploy.sh
+```
+
+**Post-deploy image fix for scanner-v4-db**: The deploy script uses `MAIN_IMAGE_TAG` for
+scanner-v4 and scanner-v4-db images. Since scanner-v4 is built on a separate pipeline with
+its own tags, the `MAIN_IMAGE_TAG` may not exist in the scanner-v4 repos. If scanner-v4-db
+pods show `ImagePullBackOff`, patch them with the correct scanner-v4 tag:
+```bash
+# Use the SCANNERV4_TAG fetched earlier from quay.io/stackrox-io/scanner-v4
+oc -n stackrox set image deployment/scanner-v4-db \
+  db="quay.io/stackrox-io/scanner-v4-db:$SCANNERV4_TAG" \
+  init-db="quay.io/stackrox-io/scanner-v4-db:$SCANNERV4_TAG"
+oc -n stackrox set image deployment/scanner-v4-indexer \
+  indexer="quay.io/stackrox-io/scanner-v4:$SCANNERV4_TAG"
+oc -n stackrox set image deployment/scanner-v4-matcher \
+  matcher="quay.io/stackrox-io/scanner-v4:$SCANNERV4_TAG"
+```
+Similarly, if central-db has a pull error, patch it:
+```bash
+oc -n stackrox set image deployment/central-db \
+  central-db="quay.io/stackrox-io/central-db:$DBS_TAG"
 ```
 
 The deploy script will generate credentials and store them in
