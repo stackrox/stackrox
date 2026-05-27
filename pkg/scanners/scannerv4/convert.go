@@ -456,11 +456,11 @@ func aliasKey(alias *v4.VulnerabilityReport_Alias) string {
 }
 
 func getPackageLayerSHA(report *v4.VulnerabilityReport, pkgID string) (string, bool) {
-	envList := report.GetContents().GetEnvironments()[pkgID]
-	if envList == nil || len(envList.GetEnvironments()) == 0 {
+	env := environment(report, pkgID)
+	if env == nil {
 		return "", false
 	}
-	return envList.GetEnvironments()[0].GetIntroducedIn(), true
+	return env.GetIntroducedIn(), true
 }
 
 // filterNotAffectedVulnerabilities removes vulnerabilities from PackageVulnerabilities
@@ -560,9 +560,9 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 		}
 
 		if len(filtered) == 0 {
-			delete(report.PackageVulnerabilities, pkgID) //nolint:protogetter // mutation requires direct field access
+			delete(report.PackageVulnerabilities, pkgID)
 		} else {
-			report.PackageVulnerabilities[pkgID] = &v4.StringList{Values: filtered} //nolint:protogetter // mutation requires direct field access
+			report.PackageVulnerabilities[pkgID] = &v4.StringList{Values: filtered}
 		}
 	}
 }
