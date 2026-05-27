@@ -1,6 +1,6 @@
 module github.com/stackrox/rox/operator/tools/envtest
 
-go 1.26.0
+go 1.25.8
 
 require sigs.k8s.io/controller-runtime/tools/setup-envtest v0.24.1
 
