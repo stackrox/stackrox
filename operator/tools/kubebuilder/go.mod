@@ -1,6 +1,6 @@
 module github.com/stackrox/rox/operator/tools/kubebuilder
 
-go 1.25.7
+go 1.25.8
 
 require sigs.k8s.io/kubebuilder/v4 v4.14.0
 

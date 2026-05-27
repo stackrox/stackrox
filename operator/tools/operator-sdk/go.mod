@@ -1,6 +1,6 @@
 module github.com/stackrox/rox/operator/tools/operator-sdk
 
-go 1.25.7
+go 1.25.8
 
 require github.com/operator-framework/operator-sdk v1.42.2
 
