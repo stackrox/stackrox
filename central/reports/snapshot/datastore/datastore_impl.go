@@ -188,7 +188,3 @@ func (c *ReportSnapshotSearchResultConverter) BuildLocation(result *pkgSearch.Re
 func (c *ReportSnapshotSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_REPORT_SNAPSHOT
 }
-
-func (c *ReportSnapshotSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
-	return result.Score
-}

@@ -651,7 +651,3 @@ func (c *AlertSearchResultConverter) BuildLocation(result *search.Result) string
 func (c *AlertSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_ALERTS
 }
-
-func (c *AlertSearchResultConverter) GetScore(result *search.Result) float64 {
-	return result.Score
-}
