@@ -2,7 +2,6 @@ package generate
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
@@ -195,9 +193,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().BoolVar(&generateCmd.createUpgraderSA, "create-upgrader-sa", true, "Whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades.")
 
 	c.PersistentFlags().StringVar(&generateCmd.istioVersion, "istio-support", "",
-		fmt.Sprintf(
-			"Generate deployment files supporting the given Istio version. Valid versions: %s.",
-			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
+		"Istio version when deploying into an Istio-enabled cluster (has no effect; ACS now automatically prevents Istio sidecar injection).")
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes.")
 	c.PersistentFlags().BoolVar(&generateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).")
