@@ -573,20 +573,21 @@ func (s *serviceImpl) getProfiles(ctx context.Context, query *v1.Query, countQue
 
 // getProfileNames returns profile names from all observed sources (managed and external).
 // When a scan config name filter is present, profiles come from SSBs with that name.
-// Otherwise, all synced profiles are returned.
+// Otherwise, all profile names are collected from every SSB visible to the caller.
 func (s *serviceImpl) getProfileNames(ctx context.Context, query *v1.Query) ([]string, error) {
 	scanConfigName := extractScanConfigNameFilter(query)
 	if scanConfigName != "" {
 		return s.getProfileNamesFromSSBs(ctx, scanConfigName)
 	}
-	return s.profileDS.GetProfilesNames(ctx, search.EmptyQuery(), nil)
+	return s.getProfileNamesFromSSBs(ctx, "")
 }
 
 func (s *serviceImpl) getProfileNamesFromSSBs(ctx context.Context, scanConfigName string) ([]string, error) {
-	bindings, err := s.complianceScanSettingBindingsDS.GetScanSettingBindings(ctx,
-		search.NewQueryBuilder().
-			AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfigName).
-			ProtoQuery())
+	qb := search.NewQueryBuilder()
+	if scanConfigName != "" {
+		qb.AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfigName)
+	}
+	bindings, err := s.complianceScanSettingBindingsDS.GetScanSettingBindings(ctx, qb.ProtoQuery())
 	if err != nil {
 		return nil, err
 	}

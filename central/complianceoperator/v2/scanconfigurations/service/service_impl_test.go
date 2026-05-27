@@ -1200,7 +1200,8 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.Complian
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestGetProfiles_NoMatch() {
-	s.profileDS.EXPECT().GetProfilesNames(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+	s.scanSettingBindingDatastore.EXPECT().GetScanSettingBindings(gomock.Any(), gomock.Any()).
+		Return(nil, nil).Times(1)
 
 	profiles, count, err := s.service.(*serviceImpl).getProfiles(s.ctx, search.EmptyQuery(), search.EmptyQuery())
 	s.Require().NoError(err)
