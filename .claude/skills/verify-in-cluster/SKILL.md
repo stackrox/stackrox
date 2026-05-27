@@ -342,6 +342,52 @@ git diff --name-only --cached HEAD     # staged changes
 git ls-files --others --exclude-standard  # untracked new files
 ```
 
+### Fast-path: Use CI-built image when no local changes exist
+
+If there are **no local changes** (all three commands above produce empty output), check
+whether a CI-built image already exists for the current HEAD commit. StackRox CI builds
+images for every PR push and posts the tag as a GitHub comment by `github-actions[bot]`.
+
+To check, find the PR number for the current branch and query its comments:
+```bash
+# Get current branch and find its PR
+BRANCH=$(git branch --show-current)
+PR_NUMBER=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number' 2>/dev/null)
+
+# Look for the CI bot comment with the image tag
+if [[ -n "$PR_NUMBER" ]]; then
+  CI_TAG=$(gh api "repos/stackrox/stackrox/issues/$PR_NUMBER/comments" \
+    --jq '[.[] | select(.user.login == "github-actions[bot]") | select(.body | test("Build Images Ready"))] | last | .body' 2>/dev/null \
+    | grep -oP 'MAIN_IMAGE_TAG=\K[^\s`]+' || true)
+fi
+```
+
+If a CI tag is found, verify it matches the current HEAD:
+```bash
+HEAD_SHORT=$(git rev-parse --short=12 HEAD)
+if [[ -n "$CI_TAG" && "$CI_TAG" == *"$HEAD_SHORT"* ]]; then
+  echo "CI image matches HEAD: $CI_TAG"
+fi
+```
+
+**When the CI tag matches HEAD and there are no local changes**, skip Phases 4-5 entirely.
+Instead, go directly to Phase 6 and patch the deployment with the CI image:
+```bash
+oc -n <ns> set image deployment/central central=quay.io/stackrox-io/main:$CI_TAG
+```
+This is significantly faster (no build, no crane push) and uses a properly built image
+with correct ldflags, UI assets, and matching DB migrations.
+
+**When to NOT use this fast-path:**
+- There are local uncommitted/staged changes — the CI image doesn't include them
+- The CI tag's commit doesn't match HEAD — the image is stale
+- No PR exists for the branch (e.g., working directly on a local branch)
+- The `gh` CLI is not available
+
+In all these cases, fall through to the normal build path (Phases 4-5).
+
+### Component mapping
+
 Map changed files to components using this table. Components sharing the **main image**
 (central, sensor, admission-control, migrator, compliance, config-controller, roxctl) are
 all built into the same container image. When using `crane mutate --append`, you can append
