@@ -669,6 +669,12 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Stabilize file mtimes for cache
+        if: steps.quality.outputs.fast == 'true'
+        run: |
+          git ls-files -z | xargs -0 touch -t 200101010000
+          git ls-files -z | sed -z 's|/[^/]*$||' | sort -uz | xargs -0 touch -t 200101010000
+
       - name: Cache Go dependencies
         if: steps.quality.outputs.fast == 'true'
         uses: ./.github/actions/cache-go-dependencies
