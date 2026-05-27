@@ -1374,3 +1374,127 @@ func (s *PolicyValidatorTestSuite) TestValidateScope() {
 		})
 	}
 }
+
+func (s *PolicyValidatorTestSuite) TestValidateFilePathNegation() {
+	testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
+	defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
+	booleanpolicy.ResetFieldMetadataSingleton(s.T())
+	defer booleanpolicy.ResetFieldMetadataSingleton(s.T())
+
+	tests := map[string]struct {
+		policy      *storage.Policy
+		errExpected bool
+	}{
+		"valid negation - overlaps with capturing pattern": {
+			policy: &storage.Policy{
+				PolicyVersion:   policyversion.CurrentVersion().String(),
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
+				PolicySections: []*storage.PolicySection{{
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.FilePath,
+							Values:    []*storage.PolicyValue{{Value: "/etc/**"}},
+							Negate:    false,
+						},
+						{
+							FieldName: fieldnames.FilePath,
+							Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
+							Negate:    true,
+						},
+					},
+				}},
+			},
+			errExpected: false,
+		},
+		"valid - multiple negations all overlap": {
+			policy: &storage.Policy{
+				PolicyVersion:   policyversion.CurrentVersion().String(),
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
+				PolicySections: []*storage.PolicySection{{
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.FilePath,
+							Values:    []*storage.PolicyValue{{Value: "/etc/**"}},
+							Negate:    false,
+						},
+						{
+							FieldName: fieldnames.FilePath,
+							Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}, {Value: "/etc/shadow"}},
+							Negate:    true,
+						},
+					},
+				}},
+			},
+			errExpected: false,
+		},
+		"valid - no negated paths": {
+			policy: &storage.Policy{
+				PolicyVersion:   policyversion.CurrentVersion().String(),
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
+				PolicySections: []*storage.PolicySection{{
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.FilePath,
+							Values:    []*storage.PolicyValue{{Value: "/etc/**"}},
+							Negate:    false,
+						},
+					},
+				}},
+			},
+			errExpected: false,
+		},
+		"invalid negation - no overlap with capturing pattern": {
+			policy: &storage.Policy{
+				PolicyVersion:   policyversion.CurrentVersion().String(),
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
+				PolicySections: []*storage.PolicySection{{
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.FilePath,
+							Values:    []*storage.PolicyValue{{Value: "/etc/**"}},
+							Negate:    false,
+						},
+						{
+							FieldName: fieldnames.FilePath,
+							Values:    []*storage.PolicyValue{{Value: "/tmp/foo"}},
+							Negate:    true,
+						},
+					},
+				}},
+			},
+			errExpected: true,
+		},
+		"invalid negation - no capturing pattern": {
+			policy: &storage.Policy{
+				PolicyVersion:   policyversion.CurrentVersion().String(),
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
+				PolicySections: []*storage.PolicySection{{
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.FilePath,
+							Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
+							Negate:    true,
+						},
+					},
+				}},
+			},
+			errExpected: true,
+		},
+	}
+
+	for name, tc := range tests {
+		s.T().Run(name, func(t *testing.T) {
+			err := s.validator.validateFilePathNegation(tc.policy)
+			if tc.errExpected {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}

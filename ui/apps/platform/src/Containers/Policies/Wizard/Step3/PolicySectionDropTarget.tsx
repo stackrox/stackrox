@@ -14,7 +14,7 @@ function getPolicyCriteriaFieldKeys(policyGroups, descriptors) {
     const fieldNameMap = keyBy(policyGroups, (field) => field.fieldName as string);
     const availableFieldKeys: string[] = [];
     descriptors.forEach((field) => {
-        if (!fieldNameMap[field.name]) {
+        if (!fieldNameMap[field.name] || field.allowMultipleGroups) {
             availableFieldKeys.push(field.name);
         }
     });

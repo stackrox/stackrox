@@ -348,6 +348,7 @@ type BaseDescriptor = {
     disabled?: boolean;
     featureFlagDependency?: FeatureFlagEnvVar[];
     lifecycleStages: LifecycleStage[];
+    allowMultipleGroups?: boolean;
 };
 
 type DescriptorCanBoolean = {
@@ -1574,13 +1575,16 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         label: 'File path',
         name: 'File Path',
         shortName: 'File path',
+        longName: 'File path matches',
+        negatedName: 'File path doesn\'t match',
         category: policyCriteriaCategories.FILE_ACTIVITY,
         type: 'text',
         placeholder: '/home/**/.ssh/id_*',
         helperText: 'Enter an absolute file path. Supports glob patterns.',
         validate: validateFilePath,
         warn: warnBroadFilePath,
-        canBooleanLogic: false,
+        canBooleanLogic: true,
+        allowMultipleGroups: true,
         lifecycleStages: ['RUNTIME'],
         featureFlagDependency: ['ROX_SENSITIVE_FILE_ACTIVITY'],
     },
