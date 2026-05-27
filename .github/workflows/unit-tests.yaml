@@ -260,10 +260,17 @@ jobs:
         node-version-file: ui/package.json
 
     - name: Cache UI dependencies
+      id: cache-ui
       uses: ./.github/actions/cache-ui-dependencies
 
+    - name: Install UI dependencies
+      if: steps.cache-ui.outputs.cache-hit != 'true'
+      working-directory: ui/apps/platform
+      run: npm ci
+
     - name: UI Unit Tests
-      run: make ui-test
+      working-directory: ui/apps/platform
+      run: npm run test
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
@@ -305,10 +312,15 @@ jobs:
         node-version-file: ui/package.json
 
     - name: Cache UI dependencies
+      id: cache-ui
       uses: ./.github/actions/cache-ui-dependencies
 
     - name: UI Component Tests
-      run: make ui-component-tests
+      uses: cypress-io/github-action@dace029018fcdf86e0df89a31bc3cfa5b32570d8 # ratchet:cypress-io/github-action@v7
+      with:
+        working-directory: ui/apps/platform
+        install: ${{ steps.cache-ui.outputs.cache-hit != 'true' }}
+        command: npm run test-component -- --browser chrome
 
     - name: Upload Cypress test result artifacts
       uses: ./.github/actions/upload-artifact-with-retry
