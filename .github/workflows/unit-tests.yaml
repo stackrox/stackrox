@@ -42,10 +42,10 @@ jobs:
             exit 0
           fi
           available=$(gh api "orgs/${{ github.repository_owner }}/actions/runners" \
-            --jq '[.runners[]? | select(.labels[]?.name == "warm-go") | select(.status == "online")] | length' 2>/dev/null || echo 0)
-          echo "Warm-go runners available: $available"
+            --jq '[.runners[]? | select(.labels[]?.name == "warm-go-norace") | select(.status == "online")] | length' 2>/dev/null || echo 0)
+          echo "Warm-go-norace runners available: $available"
           if [[ "$available" -gt 0 ]]; then
-            echo 'runner=["self-hosted","warm-go"]' >> "$GITHUB_OUTPUT"
+            echo 'runner=["self-hosted","warm-go-norace"]' >> "$GITHUB_OUTPUT"
           else
             echo "runner=ubuntu-latest" >> "$GITHUB_OUTPUT"
           fi
@@ -732,6 +732,6 @@ jobs:
             exit 0
           fi
           echo "registered=true" >> "$GITHUB_OUTPUT"
-          bash .github/actions/job-preamble/keep-alive.sh "warm-go" "30"
+          bash .github/actions/job-preamble/keep-alive.sh "warm-go-norace" "30"
 
 
