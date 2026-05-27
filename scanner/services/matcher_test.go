@@ -121,10 +121,10 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			HashId: hashID,
 			Contents: &v4.Contents{
 				Packages: map[string]*v4.Package{
-					"1": {Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
+					"1": {Id: "1", Name: "Foobar", Kind: "unknown", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
 				},
 				PackagesDEPRECATED: []*v4.Package{
-					{Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
+					{Id: "1", Name: "Foobar", Kind: "unknown", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
 				},
 			},
 			Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
@@ -163,10 +163,10 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			HashId: hashID,
 			Contents: &v4.Contents{
 				Packages: map[string]*v4.Package{
-					"1": {Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
+					"1": {Id: "1", Name: "Foobar", Kind: "unknown", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
 				},
 				PackagesDEPRECATED: []*v4.Package{
-					{Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
+					{Id: "1", Name: "Foobar", Kind: "unknown", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
 				},
 			},
 			Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
