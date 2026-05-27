@@ -14,6 +14,7 @@ allowed-tools:
   - Write
   - Edit
 effort: xhigh
+disable-model-invocation: true
 ---
 
 # Verify StackRox Changes Against a Real Cluster
