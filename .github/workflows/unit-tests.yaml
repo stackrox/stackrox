@@ -93,27 +93,37 @@ jobs:
         echo "runner_name=${RUNNER_NAME:-github-hosted}"
         echo "cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)"
         echo "go_version=$(go version)"
+        echo "go_env_GOROOT=$(go env GOROOT)"
+        echo "go_env_GOTOOLCHAIN=$(go env GOTOOLCHAIN)"
+        echo "go_env_CC=$(go env CC)"
+        echo "gcc_version=$(gcc --version 2>/dev/null | head -1)"
         echo "GOCACHE=$(go env GOCACHE)"
         echo "GOCACHE_size=$(du -sh $(go env GOCACHE) 2>/dev/null | cut -f1)"
         echo "GOCACHE_files=$(find $(go env GOCACHE) -type f 2>/dev/null | wc -l)"
         echo "disk_free=$(df -h / | tail -1 | awk '{print $4}')"
+        echo "disk_iops=$(cat /dev/shm/cpu_score.txt 2>/dev/null || echo '?')"
         echo "mem_avail=$(free -m | awk '/^Mem:/{print $7}')MB"
         echo "processes=$(ps aux | wc -l)"
-        echo "=== Quick compile benchmark ==="
-        start=$SECONDS
-        go build ./pkg/set/... 2>&1
-        echo "compile_pkg_set: $((SECONDS - start))s"
-        start=$SECONDS
-        go test -run XXXX -count=1 ./pkg/set/... 2>&1
-        echo "compile_test_pkg_set: $((SECONDS - start))s"
+        echo "load_avg=$(cat /proc/loadavg)"
+        echo "=== Compile benchmarks ==="
+        start=$SECONDS; go build ./pkg/set/... 2>&1; echo "compile_pkg_set: $((SECONDS - start))s"
+        start=$SECONDS; go build ./pkg/concurrency/... 2>&1; echo "compile_pkg_concurrency: $((SECONDS - start))s"
+        start=$SECONDS; go build ./central/... 2>&1 | tail -1; echo "compile_central: $((SECONDS - start))s"
+        echo "=== Test compile benchmarks (no execution) ==="
+        start=$SECONDS; go test -run XXXX -count=1 ./pkg/set/... 2>&1; echo "test_compile_pkg_set: $((SECONDS - start))s"
+        start=$SECONDS; go test -run XXXX -count=1 -race ./pkg/set/... 2>&1; echo "test_compile_race_pkg_set: $((SECONDS - start))s"
+        echo "=== Disk I/O benchmark ==="
+        dd if=/dev/zero of=/tmp/.bench bs=1M count=256 conv=fdatasync 2>&1 | tail -1
+        rm -f /tmp/.bench
         echo "=== Top CPU consumers ==="
-        ps aux --sort=-%cpu | head -8
+        ps aux --sort=-%cpu | head -10
+        echo "=== Runner agent processes ==="
+        ps aux | grep -E 'Runner\.|run\.sh|keep-alive' | grep -v grep
 
-    - name: Go Unit Tests (no race detector)
+    - name: Go Unit Tests
       run: |
-        echo "=== Running WITHOUT -race to isolate overhead ==="
         start=$SECONDS
-        ${{ matrix.gotags }} TESTFLAGS="-p 4" make go-unit-tests
+        ${{ matrix.gotags }} make go-unit-tests
         echo "=== Tests took $((SECONDS - start))s ==="
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
