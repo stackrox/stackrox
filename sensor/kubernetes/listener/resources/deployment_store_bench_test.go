@@ -19,6 +19,7 @@ var (
 )
 
 const charset = "abcdef0123456789"
+const benchmarkFixtureSeed int64 = 0x5eed1234
 
 type namespaceAndSelector struct {
 	namespace string
@@ -119,6 +120,14 @@ func randStringWithLength(n int) string {
 	return string(b)
 }
 
+func randStringWithRand(r *rand.Rand, n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = charset[r.Intn(len(charset))]
+	}
+	return string(b)
+}
+
 func createDeploymentWrap() *deploymentWrap {
 	labels := make(map[string]string)
 	for i := 0; i < rand.Intn(10); i++ {
@@ -141,16 +150,32 @@ func createDeploymentWrap() *deploymentWrap {
 	}
 }
 
+func createSeededDeploymentWrap(i int) *deploymentWrap {
+	r := rand.New(rand.NewSource(benchmarkFixtureSeed + int64(i)))
+	labels := make(map[string]string)
+	for range r.Intn(10) {
+		labels[randStringWithRand(r, 16)] = randStringWithRand(r, 16)
+	}
+	return &deploymentWrap{
+		portConfigs: map[service.PortRef]*storage.PortConfig{},
+		Deployment: &storage.Deployment{
+			Labels:    labels,
+			PodLabels: labels,
+			Namespace: randStringWithRand(r, 16),
+			Id:        fmt.Sprintf("deployment-%04d-%s", i, randStringWithRand(r, 8)),
+			Name:      fmt.Sprintf("deployment-%04d-%s", i, randStringWithRand(r, 8)),
+		},
+	}
+}
+
 func BenchmarkGetAll(b *testing.B) {
 	for _, numDeployments := range []int{1, 10, 50, 100, 500, 1000} {
-		b.Run(fmt.Sprintf("deployments_%d", numDeployments), func(b *testing.B) {
+		b.Run(fmt.Sprintf("deployments=%d", numDeployments), func(b *testing.B) {
 			b.ReportAllocs()
-			b.StopTimer()
 			ds := newDeploymentStore()
-			for i := 0; i < numDeployments; i++ {
-				ds.addOrUpdateDeployment(createDeploymentWrap())
+			for i := range numDeployments {
+				ds.addOrUpdateDeployment(createSeededDeploymentWrap(i))
 			}
-			b.StartTimer()
 			for b.Loop() {
 				_ = ds.GetAll()
 			}
