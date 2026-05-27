@@ -789,6 +789,56 @@ func TestScopedTokenTransport_RetryWithRequestBody(t *testing.T) {
 	})
 }
 
+func TestScopedTokenTransport_RequestBodySizeLimit(t *testing.T) {
+	tests := map[string]struct {
+		bodySize  int
+		wantError bool
+	}{
+		"body within limit is accepted":     {bodySize: 64, wantError: false},
+		"body exactly at limit is accepted": {bodySize: maxRequestBodySize, wantError: false},
+		"body exceeding limit is rejected":  {bodySize: maxRequestBodySize + 1, wantError: true},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			fakeClient := &fakeTokenServiceClient{
+				response: &centralv1.GenerateTokenForPermissionsAndScopeResponse{
+					Token: "test-token",
+				},
+			}
+
+			mockBase := roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+				if tt.wantError {
+					t.Fatal("base transport should not be called for oversized body")
+				}
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+					Header:     http.Header{"Content-Type": []string{"application/json"}},
+				}, nil
+			})
+
+			transport := &scopedTokenTransport{
+				base:          mockBase,
+				tokenProvider: newTestTokenProvider(fakeClient, "test-cluster-id"),
+			}
+
+			body := strings.NewReader(strings.Repeat("x", tt.bodySize))
+			req := httptest.NewRequest(http.MethodPost, "/v1/alerts", body)
+			resp, err := transport.RoundTrip(req)
+
+			if tt.wantError {
+				assert.Error(t, err)
+				assert.Nil(t, resp)
+				assert.Contains(t, err.Error(), "maximum allowed size")
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, http.StatusOK, resp.StatusCode)
+			}
+		})
+	}
+}
+
 // trackingReadCloser wraps an io.ReadCloser and tracks read/close operations.
 type trackingReadCloser struct {
 	io.ReadCloser
