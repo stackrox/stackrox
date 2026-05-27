@@ -115,7 +115,6 @@ function ScanConfigurationSelect({
                                                     key={config.scanConfigName}
                                                     value={config.scanConfigName}
                                                     isDisabled={isScanConfigDisabled(config)}
-                                                    description="External"
                                                 >
                                                     {config.scanConfigName}{' '}
                                                     <Label

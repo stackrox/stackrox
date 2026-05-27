@@ -1203,7 +1203,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetProfiles_NoMatch() {
 	s.scanSettingBindingDatastore.EXPECT().GetScanSettingBindings(gomock.Any(), gomock.Any()).
 		Return(nil, nil).Times(1)
 
-	profiles, count, err := s.service.(*serviceImpl).getProfiles(s.ctx, search.EmptyQuery(), search.EmptyQuery())
+	profiles, count, err := s.service.(*serviceImpl).getProfiles(s.ctx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Empty(profiles)
 	s.Zero(count)
@@ -1227,7 +1227,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetProfiles_WithScanConfigFil
 			{Name: "ocp4-moderate", ProfileVersion: "1.0", Title: "Moderate"},
 		}, nil).Times(1)
 
-	profiles, count, err := s.service.(*serviceImpl).getProfiles(s.ctx, scanConfigQuery, search.EmptyQuery())
+	profiles, count, err := s.service.(*serviceImpl).getProfiles(s.ctx, scanConfigQuery)
 	s.Require().NoError(err)
 	s.Equal(2, count)
 	s.Len(profiles, 2)
@@ -1240,7 +1240,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetProfiles_WithScanConfigFil
 	s.scanSettingBindingDatastore.EXPECT().GetScanSettingBindings(gomock.Any(), gomock.Any()).
 		Return(nil, nil).Times(1)
 
-	profiles, count, err := s.service.(*serviceImpl).getProfiles(s.ctx, scanConfigQuery, search.EmptyQuery())
+	profiles, count, err := s.service.(*serviceImpl).getProfiles(s.ctx, scanConfigQuery)
 	s.Require().NoError(err)
 	s.Empty(profiles)
 	s.Zero(count)
@@ -1329,6 +1329,41 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigOverv
 	s.Contains(overview.GetProfileNames(), "ocp4-moderate")
 }
 
+func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigOverviews_MergeDisjoint() {
+	managedConfig := &storage.ComplianceOperatorScanConfigurationV2{
+		Id:             "config-1",
+		ScanConfigName: "shared-scan",
+		Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
+			{ClusterId: fixtureconsts.Cluster1},
+		},
+		Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+			{ProfileName: "ocp4-cis"},
+		},
+	}
+	s.scanConfigDatastore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
+		Return([]*storage.ComplianceOperatorScanConfigurationV2{managedConfig}, nil).Times(1)
+	s.scanSettingBindingDatastore.EXPECT().GetDistinctScanConfigs(gomock.Any(), gomock.Any()).
+		Return([]*scanSettingBindingsDS.DiscoveredScanConfig{
+			{
+				Name:         "shared-scan",
+				ClusterIDs:   []string{fixtureconsts.Cluster2},
+				ProfileNames: []string{"ocp4-moderate"},
+			},
+		}, nil).Times(1)
+
+	resp, err := s.service.ListComplianceScanConfigOverviews(s.ctx, &v2.RawQuery{})
+	s.Require().NoError(err)
+	s.Require().Len(resp.GetConfigs(), 1)
+	overview := resp.GetConfigs()[0]
+	s.True(overview.GetIsManaged())
+	s.Len(overview.GetClusterIds(), 2)
+	s.Contains(overview.GetClusterIds(), fixtureconsts.Cluster1)
+	s.Contains(overview.GetClusterIds(), fixtureconsts.Cluster2)
+	s.Len(overview.GetProfileNames(), 2)
+	s.Contains(overview.GetProfileNames(), "ocp4-cis")
+	s.Contains(overview.GetProfileNames(), "ocp4-moderate")
+}
+
 func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigOverviews_SortedByName() {
 	s.scanConfigDatastore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
 		Return([]*storage.ComplianceOperatorScanConfigurationV2{
@@ -1348,35 +1383,59 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigOverv
 	s.Equal("zebra-scan", resp.GetConfigs()[2].GetScanConfigName())
 }
 
-func (s *ComplianceScanConfigServiceTestSuite) TestExtractScanConfigNameFilter() {
+func (s *ComplianceScanConfigServiceTestSuite) TestTranslateToSSBQuery() {
 	tests := map[string]struct {
-		query    *v1.Query
-		expected string
+		query            *v1.Query
+		expectScanConfig bool
+		expectCluster    bool
 	}{
 		"nil query": {
-			query:    nil,
-			expected: "",
+			query: nil,
 		},
 		"empty query": {
-			query:    search.EmptyQuery(),
-			expected: "",
+			query: search.EmptyQuery(),
 		},
-		"query with scan config name": {
+		"query with scan config name maps to SSB name": {
 			query: search.NewQueryBuilder().
 				AddExactMatches(search.ComplianceOperatorScanConfigName, "my-scan").
 				ProtoQuery(),
-			expected: "my-scan",
+			expectScanConfig: true,
 		},
-		"query with different field": {
+		"query with cluster ID is preserved": {
 			query: search.NewQueryBuilder().
 				AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).
 				ProtoQuery(),
-			expected: "",
+			expectCluster: true,
+		},
+		"query with both scan config and cluster": {
+			query: search.NewQueryBuilder().
+				AddExactMatches(search.ComplianceOperatorScanConfigName, "my-scan").
+				AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).
+				ProtoQuery(),
+			expectScanConfig: true,
+			expectCluster:    true,
 		},
 	}
 	for name, tc := range tests {
 		s.T().Run(name, func(t *testing.T) {
-			s.Equal(tc.expected, extractScanConfigNameFilter(tc.query))
+			result := translateToSSBQuery(tc.query)
+			s.NotNil(result)
+			hasSSBName := false
+			hasCluster := false
+			search.ApplyFnToAllBaseQueries(result, func(bq *v1.BaseQuery) {
+				mfq := bq.GetMatchFieldQuery()
+				if mfq == nil {
+					return
+				}
+				if mfq.GetField() == search.ComplianceOperatorScanSettingBindingName.String() {
+					hasSSBName = true
+				}
+				if mfq.GetField() == search.ClusterID.String() {
+					hasCluster = true
+				}
+			})
+			s.Equal(tc.expectScanConfig, hasSSBName, "SSB name filter")
+			s.Equal(tc.expectCluster, hasCluster, "cluster ID filter")
 		})
 	}
 }

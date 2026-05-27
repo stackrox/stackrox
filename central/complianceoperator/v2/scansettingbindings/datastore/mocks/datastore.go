@@ -71,6 +71,21 @@ func (mr *MockDataStoreMockRecorder) DeleteScanSettingByCluster(ctx, clusterID a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteScanSettingByCluster", reflect.TypeOf((*MockDataStore)(nil).DeleteScanSettingByCluster), ctx, clusterID)
 }
 
+// GetDistinctScanConfigs mocks base method.
+func (m *MockDataStore) GetDistinctScanConfigs(ctx context.Context, query *v1.Query) ([]*datastore.DiscoveredScanConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDistinctScanConfigs", ctx, query)
+	ret0, _ := ret[0].([]*datastore.DiscoveredScanConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDistinctScanConfigs indicates an expected call of GetDistinctScanConfigs.
+func (mr *MockDataStoreMockRecorder) GetDistinctScanConfigs(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDistinctScanConfigs", reflect.TypeOf((*MockDataStore)(nil).GetDistinctScanConfigs), ctx, query)
+}
+
 // GetScanSettingBinding mocks base method.
 func (m *MockDataStore) GetScanSettingBinding(ctx context.Context, id string) (*storage.ComplianceOperatorScanSettingBindingV2, bool, error) {
 	m.ctrl.T.Helper()
@@ -129,19 +144,4 @@ func (m *MockDataStore) UpsertScanSettingBinding(ctx context.Context, result *st
 func (mr *MockDataStoreMockRecorder) UpsertScanSettingBinding(ctx, result any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertScanSettingBinding", reflect.TypeOf((*MockDataStore)(nil).UpsertScanSettingBinding), ctx, result)
-}
-
-// GetDistinctScanConfigs mocks base method.
-func (m *MockDataStore) GetDistinctScanConfigs(ctx context.Context, query *v1.Query) ([]*datastore.DiscoveredScanConfig, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDistinctScanConfigs", ctx, query)
-	ret0, _ := ret[0].([]*datastore.DiscoveredScanConfig)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetDistinctScanConfigs indicates an expected call of GetDistinctScanConfigs.
-func (mr *MockDataStoreMockRecorder) GetDistinctScanConfigs(ctx, query any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDistinctScanConfigs", reflect.TypeOf((*MockDataStore)(nil).GetDistinctScanConfigs), ctx, query)
 }

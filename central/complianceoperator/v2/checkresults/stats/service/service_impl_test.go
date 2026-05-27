@@ -194,6 +194,11 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterScanSta
 				Query:     &apiV2.RawQuery{Query: ""},
 			},
 			expectedErr: nil,
+			expectedResp: func() []*apiV2.ComplianceClusterScanStats {
+				expected := convertUtils.GetComplianceClusterScanV2Count(s.T(), fixtureconsts.Cluster1)
+				expected.ScanStats.ScanConfigId = ""
+				return []*apiV2.ComplianceClusterScanStats{expected}
+			}(),
 			setMocks: func() {
 				expectedQ := search.ConjunctionQuery(
 					search.NewQueryBuilder().AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
