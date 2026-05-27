@@ -13,6 +13,18 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ## [NEXT RELEASE]
 
 ### Added Features
+
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+
+## [4.11.0]
+
+
+
+### Added Features
 - The config-controller now periodically reconciles SecurityPolicy CRs (default: every 30 minutes), detecting drift if policies are modified or deleted directly in Central. The interval is configurable via the `ROX_CONFIG_CONTROLLER_RECONCILE_INTERVAL` environment variable.
 - ROX-26769: Central API for generating CRSs now supports specifying an upper bound for cluster
   registrations using the new field "max_registrations".

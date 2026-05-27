@@ -47,7 +47,6 @@ type NodeLoader interface {
 	FullNodeWithID(ctx context.Context, id string) (*storage.Node, error)
 
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
-	CountAll(ctx context.Context) (int32, error)
 }
 
 // nodeLoaderImpl implements the NodeLoader interface.
@@ -114,12 +113,6 @@ func (ndl *nodeLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) 
 		return 0, err
 	}
 	return int32(numResults), nil
-}
-
-// CountAll returns the total number of nodes.
-func (ndl *nodeLoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := ndl.ds.CountNodes(ctx)
-	return int32(count), err
 }
 
 func (ndl *nodeLoaderImpl) load(ctx context.Context, ids []string, pullFullObject bool) ([]*storage.Node, error) {
