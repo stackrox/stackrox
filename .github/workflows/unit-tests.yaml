@@ -266,12 +266,7 @@ jobs:
     - name: Install UI dependencies
       if: steps.cache-ui.outputs.cache-hit != 'true'
       working-directory: ui/apps/platform
-      run: npm install
-
-    - name: Prune stale dependencies
-      if: github.event_name != 'pull_request'
-      working-directory: ui/apps/platform
-      run: npm prune
+      run: npm ci
 
     - name: UI Unit Tests
       working-directory: ui/apps/platform
@@ -325,14 +320,7 @@ jobs:
       with:
         working-directory: ui/apps/platform
         install: ${{ steps.cache-ui.outputs.cache-hit != 'true' }}
-        command: >-
-          npx cypress run --component --browser chrome --config video=false
-          --reporter mocha-multi-reporters
-          --reporter-options configFile=cypress/mocha.config.js
-      env:
-        TZ: UTC
-        CYPRESS_COMPONENT_TEST: 'true'
-        CYPRESS_VERIFY_TIMEOUT: '100'
+        command: npm run test-component -- --browser chrome
 
     - name: Upload Cypress test result artifacts
       uses: ./.github/actions/upload-artifact-with-retry
