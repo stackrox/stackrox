@@ -45,17 +45,19 @@ jobs:
       run: |
         make -C .crd-schema-checker
 
-    - name: Get previous released version
+    - name: Get previous release branch
       id: get_previous_released_version
       run: |
-        make -C operator bundle-post-process
-        released_version="$(make --no-print-directory -C operator replaced-version)"
+        current_branch="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+        released_version=$(git branch -r | grep -oE 'origin/release-[0-9]+\.[0-9]+$' | sed 's|origin/||' | grep -v "^${current_branch}$" | sort -V | tail -1)
+        echo "Current branch: $current_branch"
+        echo "Previous release branch: $released_version"
         echo "released_version=$released_version" >> "$GITHUB_OUTPUT"
 
-    - name: Checkout previous released version
+    - name: Checkout previous release branch
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
-        fetch-depth: 0
+        fetch-depth: 1
         ref: ${{ steps.get_previous_released_version.outputs.released_version }}
         path: .old-stackrox
 
