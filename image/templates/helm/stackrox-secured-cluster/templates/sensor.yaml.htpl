@@ -30,9 +30,9 @@ spec:
     metadata:
       labels:
         app: sensor
+        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "sensor") | nindent 8 }}
       annotations:
-        traffic.sidecar.istio.io/excludeInboundPorts: "8443,9443"
         {{- include "srox.podAnnotations" (list . "deployment" "sensor") | nindent 8 }}
         {{- if eq ._rox.env.openshift 4 }}
         openshift.io/required-scc: restricted-v2
@@ -445,28 +445,6 @@ spec:
 ---
 {{- end }}
 [<- end >]
-
-{{- if ._rox.env.istio }}
-apiVersion: networking.istio.io/v1alpha3
-kind: DestinationRule
-metadata:
-  name: sensor-internal-no-istio-mtls
-  namespace: {{ ._rox._namespace }}
-  labels:
-    {{- include "srox.labels" (list . "destinationrule" "sensor-internal-no-istio-mtls") | nindent 4 }}
-  annotations:
-    {{- include "srox.annotations" (list . "destinationrule" "sensor-internal-no-istio-mtls") | nindent 4 }}
-    stackrox.io/description: "Disable Istio mTLS for port 443, since StackRox services use built-in mTLS."
-spec:
-  host: sensor.{{ ._rox._namespace }}.svc.cluster.local
-  trafficPolicy:
-    portLevelSettings:
-    - port:
-        number: 443
-      tls:
-        mode: DISABLE
----
-{{- end }}
 
 apiVersion: v1
 kind: Service

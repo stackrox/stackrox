@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/containers"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
@@ -146,15 +145,14 @@ func k8s(cliEnvironment environment.Environment) *cobra.Command {
 	validFormats := []string{"kubectl", "helm", "helm-values"}
 	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", fmt.Sprintf("The deployment tool to use (%s).", strings.Join(validFormats, ", ")), "central")
 
-	flagWrap.Var(istioSupportWrapper{&k8sConfig.IstioVersion}, "istio-support",
-		fmt.Sprintf(
-			"Generate deployment files supporting the given Istio version (kubectl output format only). Valid versions: %s.",
-			strings.Join(istioutils.ListKnownIstioVersions(), ", ")),
+	var istioSupport string
+	flagWrap.StringVar(&istioSupport, "istio-support",
+		"",
+		"Istio version when deploying into an Istio-enabled cluster (has no effect; ACS now automatically prevents Istio sidecar injection).",
 		"central", "output-format=kubectl",
 	)
 	utils.Must(
 		flagWrap.SetAnnotation("istio-support", flags.OptionalKey, []string{"true"}),
-		flagWrap.SetAnnotation("istio-support", flags.InteractiveUsageKey, []string{"Istio version when deploying into an Istio-enabled cluster (leave empty when not running Istio)."}),
 	)
 
 	return c
@@ -185,15 +183,14 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 
 	flagWrap.IntVar(&openshiftVersion, "openshift-version", 0, "The OpenShift major version to deploy on (currently only 4 is supported).")
 	flagWrap.OptBoolVar(&k8sConfig.Monitoring.OpenShiftMonitoring, "openshift-monitoring", "", "Integration with OpenShift 4 monitoring.", "auto", "central")
-	flagWrap.Var(istioSupportWrapper{&k8sConfig.IstioVersion}, "istio-support",
-		fmt.Sprintf(
-			"Generate deployment files supporting the given Istio version. Valid versions: %s.",
-			strings.Join(istioutils.ListKnownIstioVersions(), ", ")),
+	var istioSupport string
+	flagWrap.StringVar(&istioSupport, "istio-support",
+		"",
+		"Istio version when deploying into an Istio-enabled cluster (has no effect; ACS now automatically prevents Istio sidecar injection).",
 		"central",
 	)
 	utils.Must(
 		flagWrap.SetAnnotation("istio-support", flags.OptionalKey, []string{"true"}),
-		flagWrap.SetAnnotation("istio-support", flags.InteractiveUsageKey, []string{"Istio version when deploying into an Istio-enabled cluster (leave empty when not running Istio)"}),
 	)
 
 	return c

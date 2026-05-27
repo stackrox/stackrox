@@ -19,7 +19,6 @@ import (
 // RenderOptions are options that control the rendering.
 type RenderOptions struct {
 	CreateUpgraderSA bool
-	IstioVersion     string
 
 	DisablePodSecurityPolicies bool
 }

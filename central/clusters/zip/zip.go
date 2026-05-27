@@ -17,7 +17,6 @@ import (
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/images/defaults"
-	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/zip"
@@ -60,14 +59,6 @@ func renderBaseFiles(cluster *storage.Cluster, renderOpts clusters.RenderOptions
 			IsInstall: true,
 		},
 	}
-	if renderOpts.IstioVersion != "" {
-		istioAPIResources, err := istioutils.GetAPIResourcesByVersion(renderOpts.IstioVersion)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to retrieve Istio API resources")
-		}
-		opts.APIVersions = helmUtil.VersionSetFromResources(istioAPIResources...)
-	}
-
 	baseFiles, err := renderer.RenderSensor(fields, &certs, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get required cluster information")
@@ -135,7 +126,6 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	renderOpts := clusters.RenderOptions{
 		CreateUpgraderSA: createUpgraderSA,
-		IstioVersion:     params.IstioVersion,
 
 		DisablePodSecurityPolicies: params.DisablePodSecurityPolicies,
 	}
