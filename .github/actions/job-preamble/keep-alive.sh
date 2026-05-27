@@ -56,11 +56,20 @@ echo "Runner: ${RUNNER_NAME}"
 echo "Labels: ${POOL_LABEL},self-hosted,linux,x64"
 echo "Keep-alive until: $(date -u -d @${ka_end} +%H:%M:%SZ 2>/dev/null || date -u +%H:%M:%SZ)"
 
+# GHA has a 6-hour job timeout. Stop accepting new jobs at 5h30m
+# to ensure any picked-up job has time to complete.
+GHA_HARD_LIMIT=$((ka_start + 330 * 60))  # 5h30m from job start
+
 # Serve jobs in a loop until the keep-alive window expires
 iteration=0
-while [[ $(date +%s) -lt $ka_end ]]; do
+while [[ $(date +%s) -lt $ka_end && $(date +%s) -lt $GHA_HARD_LIMIT ]]; do
   iteration=$((iteration + 1))
   remaining=$(( (ka_end - $(date +%s)) / 60 ))
+  gha_remaining=$(( (GHA_HARD_LIMIT - $(date +%s)) / 60 ))
+  if [[ $gha_remaining -lt $remaining ]]; then
+    remaining=$gha_remaining
+    echo "Note: GHA 6h limit approaching, ${gha_remaining}m left"
+  fi
 
   # Register as ephemeral runner (org-level if org token worked, else repo-level)
   # All output to file — avoid the original GHA Runner.Worker parsing overhead.

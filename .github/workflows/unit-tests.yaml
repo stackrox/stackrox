@@ -51,13 +51,14 @@ jobs:
           fi
 
   go:
+    needs: pick-runner
     strategy:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         exclude:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(needs.pick-runner.outputs.go-runner) }}
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     # Stable version ldflags for test caching: Go's test cache keys include
