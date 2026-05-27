@@ -112,6 +112,7 @@ jobs:
         pg: [ 'default', '15' ]
         exclude:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
+          - pg: ${{ github.event_name == 'pull_request' && 'default' }}
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -152,7 +153,7 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
       with:
-        key-suffix: ${{ matrix.gotags }}-${{ matrix.pg }}
+        key-suffix: ${{ matrix.gotags }}
 
     - name: Is Postgres ready
       run: |
