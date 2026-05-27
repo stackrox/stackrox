@@ -87,6 +87,28 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
+    - name: Runner diagnostic
+      run: |
+        echo "=== Runner info ==="
+        echo "runner_name=${RUNNER_NAME:-github-hosted}"
+        echo "cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)"
+        echo "go_version=$(go version)"
+        echo "GOCACHE=$(go env GOCACHE)"
+        echo "GOCACHE_size=$(du -sh $(go env GOCACHE) 2>/dev/null | cut -f1)"
+        echo "GOCACHE_files=$(find $(go env GOCACHE) -type f 2>/dev/null | wc -l)"
+        echo "disk_free=$(df -h / | tail -1 | awk '{print $4}')"
+        echo "mem_avail=$(free -m | awk '/^Mem:/{print $7}')MB"
+        echo "processes=$(ps aux | wc -l)"
+        echo "=== Quick compile benchmark ==="
+        start=$SECONDS
+        go build ./pkg/set/... 2>&1
+        echo "compile_pkg_set: $((SECONDS - start))s"
+        start=$SECONDS
+        go test -run XXXX -count=1 ./pkg/set/... 2>&1
+        echo "compile_test_pkg_set: $((SECONDS - start))s"
+        echo "=== Top CPU consumers ==="
+        ps aux --sort=-%cpu | head -8
+
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
