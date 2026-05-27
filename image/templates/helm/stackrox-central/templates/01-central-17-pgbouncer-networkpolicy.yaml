@@ -29,6 +29,13 @@ spec:
     ports:
     - port: 5432
       protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app: central-pruning
+    ports:
+    - port: 5432
+      protocol: TCP
   egress:
   - ports:
     - port: 53
