@@ -120,6 +120,8 @@ chat:
 knowledge_base:
   code_guidelines:
     enabled: true
+    filePatterns:
+      - ".claude/skills/use-modern-go/SKILL.md"
   learnings:
     scope: auto
   issues:
