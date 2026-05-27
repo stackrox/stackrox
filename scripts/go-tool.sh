@@ -57,7 +57,7 @@ if [[ "$DEBUG_BUILD" != "yes" ]]; then
 fi
 
 # Apply -linkmode=external to all CGO builds
-# This is required for proper CGO linking and is safe for all cases:
+# This is explicitly setting CGO linking and is safe for all cases:
 # - Konflux FIPS builds (CGO_ENABLED=1, no musl-gcc): allows dynamic OpenSSL linking
 # - Race builds (will add -extldflags=-static if musl-gcc available)
 if [[ "${CGO_ENABLED}" != 0 ]]; then
@@ -76,7 +76,7 @@ function invoke_go() {
   args+=(-tags "$(tr , ' ' <<<"$GOTAGS")")
 
   if [[ "$RACE" == "true" ]]; then
-    echo >&2 "RACE==true, forcing CGO_ENABLED=1. Compiling with -linkmode=external"
+    echo >&2 "RACE==true, forcing CGO_ENABLED=1"
     cgo_enabled=1
     args+=("-race")
 
@@ -88,7 +88,7 @@ function invoke_go() {
       cc_compiler="musl-gcc"
       cgo_ldflags+=('-extldflags=-static')
     else
-      echo >&2 "musl-gcc not found, using default linker with -linkmode=external"
+      echo >&2 "musl-gcc not found, using default cc and linker (auto)"
     fi
   fi
 
