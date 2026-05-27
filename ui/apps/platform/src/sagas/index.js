@@ -1,24 +1,11 @@
 import { all, fork } from 'redux-saga/effects';
 
-import apiTokens from './apiTokenSagas';
 import authProviders from './authSagas';
-import machineAccessConfigs from './machineAccessSagas';
-import integrations from './integrationSagas';
-import cloudSources from './cloudSourceSagas';
 import roles from './roleSagas';
 import searchAutoComplete from './searchAutocompleteSagas';
 
 import groups from './groupSagas';
 
 export default function* root() {
-    yield all([
-        fork(apiTokens),
-        fork(authProviders),
-        fork(machineAccessConfigs),
-        fork(integrations),
-        fork(cloudSources),
-        fork(roles),
-        fork(searchAutoComplete),
-        fork(groups),
-    ]);
+    yield all([fork(authProviders), fork(roles), fork(searchAutoComplete), fork(groups)]);
 }
