@@ -139,6 +139,13 @@ jobs:
         echo "=== Runner agent processes ==="
         ps aux | grep -E 'Runner\.|run\.sh|keep-alive' | grep -v grep
 
+    - name: Quick test subset (fast signal)
+      run: |
+        echo "=== Quick subset test (pkg/set, pkg/concurrency, pkg/utils) ==="
+        start=$SECONDS
+        go test -race -count=1 -v ./pkg/set/... ./pkg/concurrency/... ./pkg/utils/... 2>&1 | tail -10
+        echo "=== Quick subset took $((SECONDS - start))s ==="
+
     - name: Go Unit Tests
       run: |
         start=$SECONDS
