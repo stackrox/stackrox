@@ -141,6 +141,23 @@ func createDeploymentWrap() *deploymentWrap {
 	}
 }
 
+func BenchmarkGetAll(b *testing.B) {
+	for _, numDeployments := range []int{1, 10, 50, 100, 500, 1000} {
+		b.Run(fmt.Sprintf("deployments_%d", numDeployments), func(b *testing.B) {
+			b.ReportAllocs()
+			b.StopTimer()
+			ds := newDeploymentStore()
+			for i := 0; i < numDeployments; i++ {
+				ds.addOrUpdateDeployment(createDeploymentWrap())
+			}
+			b.StartTimer()
+			for b.Loop() {
+				_ = ds.GetAll()
+			}
+		})
+	}
+}
+
 func generateExposureInfos(numMaps, numExposureInfos int) []map[service.PortRef][]*storage.PortConfig_ExposureInfo {
 	result := make([]map[service.PortRef][]*storage.PortConfig_ExposureInfo, numMaps)
 
