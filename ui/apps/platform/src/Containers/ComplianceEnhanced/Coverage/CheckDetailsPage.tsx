@@ -50,7 +50,7 @@ export const TAB_NAV_QUERY = 'detailsTab';
 const TAB_NAV_VALUES = [RESULTS_TAB, DETAILS_TAB] as const;
 
 function CheckDetailsPage() {
-    const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
+    const { scanConfigOverviewsQuery, selectedScanConfigName, setSelectedScanConfigName } =
         useContext(ScanConfigurationsContext);
     const { checkName, profileName } = useParams() as { checkName: string; profileName: string };
     const { generatePathWithScanConfig } = useScanConfigRouter();
@@ -148,8 +148,8 @@ function CheckDetailsPage() {
             </PageSection>
             <PageSection>
                 <ScanConfigurationSelect
-                    isLoading={scanConfigurationsQuery.isLoading}
-                    scanConfigs={scanConfigurationsQuery.response.configurations}
+                    isLoading={scanConfigOverviewsQuery.isLoading}
+                    scanConfigs={scanConfigOverviewsQuery.response.configs}
                     selectedScanConfigName={selectedScanConfigName}
                     isScanConfigDisabled={(config) =>
                         isScanConfigurationDisabled(config, { profileName })

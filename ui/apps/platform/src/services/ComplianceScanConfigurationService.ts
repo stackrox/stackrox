@@ -76,6 +76,19 @@ export type ListComplianceScanConfigsProfileResponse = {
     totalCount: number;
 };
 
+export type ComplianceScanConfigOverview = {
+    scanConfigName: string;
+    isManaged: boolean;
+    managedConfigId: string;
+    clusterIds: string[];
+    profileNames: string[];
+};
+
+export type ListComplianceScanConfigOverviewsResponse = {
+    configs: ComplianceScanConfigOverview[];
+    totalCount: number;
+};
+
 export type ListComplianceScanConfigsClusterProfileResponse = {
     profiles: ComplianceProfileSummary[];
     totalCount: number;
@@ -100,6 +113,17 @@ export function listComplianceScanConfigurations(
         .then((response) => {
             return response?.data ?? { configurations: [], totalCount: 0 };
         });
+}
+
+/*
+ * Fetches a unified view of managed and discovered scan configurations.
+ */
+export function listComplianceScanConfigOverviews(): Promise<ListComplianceScanConfigOverviewsResponse> {
+    return axios
+        .get<ListComplianceScanConfigOverviewsResponse>(
+            `${complianceScanConfigBaseUrl}/overviews`
+        )
+        .then((response) => response?.data ?? { configs: [], totalCount: 0 });
 }
 
 /*
