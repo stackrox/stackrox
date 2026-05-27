@@ -701,14 +701,18 @@ jobs:
         if: steps.quality.outputs.fast == 'true'
         uses: ./.github/actions/cache-go-dependencies
 
-      - name: Build Go binaries to warm GOCACHE
+      - name: Warm GOCACHE with full test suite
         if: steps.quality.outputs.fast == 'true'
+        env:
+          BUILD_TAG: 0.0.0
+          SHORTCOMMIT: "0000000"
         run: |
-          echo "Building to warm GOCACHE..."
-          go build -v ./pkg/... 2>&1 | tail -5
+          echo "Running full test suite to warm both compilation and test cache..."
+          start=$SECONDS
+          make go-unit-tests 2>&1 | tail -5 || true
+          echo "=== Seed test run took $((SECONDS - start))s ==="
           echo "GOCACHE: $(du -sh $(go env GOCACHE) 2>/dev/null | cut -f1)"
           echo "GOCACHE files: $(find $(go env GOCACHE) -type f 2>/dev/null | wc -l)"
-          echo "GOMODCACHE: $(du -sh $(go env GOMODCACHE) 2>/dev/null | cut -f1)"
 
       - name: Register as warm self-hosted runner
         id: register
