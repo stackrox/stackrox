@@ -109,8 +109,12 @@ jobs:
         echo "=== Top CPU consumers ==="
         ps aux --sort=-%cpu | head -8
 
-    - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+    - name: Go Unit Tests (no race detector)
+      run: |
+        echo "=== Running WITHOUT -race to isolate overhead ==="
+        start=$SECONDS
+        ${{ matrix.gotags }} TESTFLAGS="-p 4" make go-unit-tests
+        echo "=== Tests took $((SECONDS - start))s ==="
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
       with:
