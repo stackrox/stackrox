@@ -262,8 +262,8 @@ func TestTransformAuthProvider(t *testing.T) {
 	assert.Equal(t, expectedAuthProviderID, authProviderProto.GetId())
 	assert.Equal(t, authProvider.Name, authProviderProto.GetName())
 
-	assert.Equal(t, authProvider.UIEndpoint, authProviderProto.GetUiEndpoint())
-	assert.ElementsMatch(t, authProvider.ExtraUIEndpoints, authProviderProto.GetExtraUiEndpoints())
+	assert.Equal(t, "localhost:8000", authProviderProto.GetUiEndpoint())
+	assert.ElementsMatch(t, []string{"localhost:8080", "127.0.0.1:8080"}, authProviderProto.GetExtraUiEndpoints())
 
 	assert.Empty(t, authProviderProto.GetLoginUrl())
 
@@ -401,8 +401,8 @@ func TestUniversalTransformAuthProvider(t *testing.T) {
 	assert.Equal(t, expectedAuthProviderID, authProviderProto.GetId())
 	assert.Equal(t, authProvider.Name, authProviderProto.GetName())
 
-	assert.Equal(t, authProvider.UIEndpoint, authProviderProto.GetUiEndpoint())
-	assert.ElementsMatch(t, authProvider.ExtraUIEndpoints, authProviderProto.GetExtraUiEndpoints())
+	assert.Equal(t, "localhost:8000", authProviderProto.GetUiEndpoint())
+	assert.ElementsMatch(t, []string{"localhost:8080", "127.0.0.1:8080"}, authProviderProto.GetExtraUiEndpoints())
 
 	assert.Empty(t, authProviderProto.GetLoginUrl())
 
@@ -443,6 +443,32 @@ func TestUniversalTransformAuthProvider(t *testing.T) {
 		assert.Equal(t, authProvider.Groups[id].AttributeKey, group.GetProps().GetKey())
 		assert.Equal(t, authProvider.Groups[id].AttributeValue, group.GetProps().GetValue())
 	}
+}
+
+func TestTransformAuthProvider_NormalizesUIEndpoints(t *testing.T) {
+	authProvider := &declarativeconfig.AuthProvider{
+		Name:             "test-auth-provider",
+		UIEndpoint:       "https://central.example.com",
+		ExtraUIEndpoints: []string{"http://localhost:8080", "central.example.com"},
+		OIDCConfig: &declarativeconfig.OIDCConfig{
+			Issuer:       "http://some-issuer",
+			CallbackMode: "auto",
+			ClientID:     "some-client-id",
+			ClientSecret: "some-client-secret",
+		},
+	}
+
+	transformer := newAuthProviderTransformer()
+	protos, err := transformer.Transform(authProvider)
+	require.NoError(t, err)
+
+	require.Contains(t, protos, authProviderType)
+	require.Len(t, protos[authProviderType], 1)
+	authProviderProto, ok := protos[authProviderType][0].(*storage.AuthProvider)
+	require.True(t, ok)
+
+	assert.Equal(t, "central.example.com:443", authProviderProto.GetUiEndpoint())
+	assert.Equal(t, []string{"localhost:8080", "central.example.com:443"}, authProviderProto.GetExtraUiEndpoints())
 }
 
 func TestTransformAuthProvider_NoMinimumRoleName(t *testing.T) {
