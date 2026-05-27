@@ -119,10 +119,7 @@ func TestIntersectionNonEmpty(t *testing.T) {
 			n2, err := buildNFA(tc.pattern2)
 			require.NoError(t, err)
 
-			e1 := eliminateEpsilon(n1)
-			e2 := eliminateEpsilon(n2)
-
-			result := intersectionNonEmpty(e1, e2)
+			result := n1.intersects(n2)
 			assert.Equal(t, tc.overlap, result,
 				"PatternsOverlap(%q, %q) = %v, want %v",
 				tc.pattern1, tc.pattern2, result, tc.overlap)

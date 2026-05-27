@@ -34,8 +34,19 @@ type fragment struct {
 	end   *state
 }
 
-// buildNFA constructs an NFA from a glob pattern string.
+// buildNFA constructs an epsilon-free NFA from a glob pattern string.
 func buildNFA(pattern string) (*nfa, error) {
+	n, err := buildNFAWithEpsilon(pattern)
+	if err != nil {
+		return nil, err
+	}
+	return eliminateEpsilon(n), nil
+}
+
+// buildNFAWithEpsilon constructs an NFA from a glob pattern string, preserving
+// epsilon transitions. This is used internally during construction and by tests
+// that need to verify epsilon elimination logic.
+func buildNFAWithEpsilon(pattern string) (*nfa, error) {
 	alloc := &stateAllocator{}
 	frag, err := parseGlob(pattern, alloc)
 	if err != nil {

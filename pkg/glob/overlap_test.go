@@ -157,3 +157,63 @@ func TestPatternsOverlapSymmetric(t *testing.T) {
 			pair[0], pair[1], ab, pair[1], pair[0], ba)
 	}
 }
+
+func TestGlobValidatorValidateExceptions(t *testing.T) {
+	tests := map[string]struct {
+		capturingPatterns []string
+		exceptions        []string
+		expectError       bool
+		errorContains     []string
+	}{
+		"all exceptions valid": {
+			capturingPatterns: []string{"/etc/**", "/var/**"},
+			exceptions:        []string{"/etc/passwd", "/var/log/syslog"},
+			expectError:       false,
+		},
+		"one invalid exception": {
+			capturingPatterns: []string{"/etc/**"},
+			exceptions:        []string{"/etc/passwd", "/tmp/foo"},
+			expectError:       true,
+			errorContains:     []string{"/tmp/foo"},
+		},
+		"multiple invalid exceptions": {
+			capturingPatterns: []string{"/etc/**"},
+			exceptions:        []string{"/tmp/foo", "/var/log", "/home/user"},
+			expectError:       true,
+			errorContains:     []string{"/tmp/foo", "/var/log", "/home/user"},
+		},
+		"all exceptions invalid": {
+			capturingPatterns: []string{"/etc/**"},
+			exceptions:        []string{"/tmp/a", "/tmp/b"},
+			expectError:       true,
+			errorContains:     []string{"/tmp/a", "/tmp/b"},
+		},
+		"no exceptions": {
+			capturingPatterns: []string{"/etc/**"},
+			exceptions:        []string{},
+			expectError:       false,
+		},
+		"overlapping capturing patterns": {
+			capturingPatterns: []string{"/etc/**", "/**"},
+			exceptions:        []string{"/tmp/foo"},
+			expectError:       false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			validator, err := NewGlobValidator(tc.capturingPatterns...)
+			require.NoError(t, err)
+
+			err = validator.ValidateExceptions(tc.exceptions...)
+			if tc.expectError {
+				assert.Error(t, err)
+				for _, s := range tc.errorContains {
+					assert.Contains(t, err.Error(), s)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}

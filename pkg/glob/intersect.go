@@ -7,11 +7,11 @@ type statePair struct {
 
 const maxStatePairs = 10_000
 
-// intersectionNonEmpty reports whether the intersection of two
-// epsilon-free NFAs accepts any string. Uses lazy product construction
-// with breadth first search — only explores reachable state pairs. Returns true
-// (conservatively assumes overlap) if the state-pair limit is exceeded.
-func intersectionNonEmpty(n1, n2 *nfa) bool {
+// intersects reports whether this NFA intersects with another — that is,
+// whether there exists any string accepted by both NFAs. Uses lazy product
+// construction with breadth first search — only explores reachable state pairs.
+// Returns true (conservatively assumes overlap) if the state-pair limit is exceeded.
+func (n1 *nfa) intersects(n2 *nfa) bool {
 	visited := make(map[statePair]bool)
 	queue := []statePair{{n1.start.id, n2.start.id}}
 
