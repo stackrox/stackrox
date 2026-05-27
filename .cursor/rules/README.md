@@ -6,5 +6,5 @@ This directory contains a set of [Cursor project rules](https://docs.cursor.com/
 
 The rules in [security/](security/) provide security guidelines for Cursor to generate secure code/suggestions
 
-- The [security/product-security](security/product-security/) directory is the only copy of [Product Security's Cursor rules](https://gitlab.cee.redhat.com/product-security/security-cursor-rules) in this repo (do not add a second tree under `.cursor/rules/product-security/`; it duplicates `alwaysApply` rules).
+- The [security/product-security](security/product-security/) directory is a copy of [Product Security's Cursor rules](https://gitlab.cee.redhat.com/product-security/security-cursor-rules) in this repo.
 - Rules directly in [security/](security/) are Stackrox-specific rules that aren't currently covered by ProdSec rules.
