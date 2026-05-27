@@ -13,9 +13,6 @@ env:
   openshift: 4
   {{- end }}
   offlineMode: {{ .K8sConfig.OfflineMode }}
-  {{- if ne .K8sConfig.IstioVersion "" }}
-  istio: true
-  {{- end }}
 
 imagePullSecrets:
   useExisting:

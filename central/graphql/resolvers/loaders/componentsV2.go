@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -47,7 +46,6 @@ type ComponentV2Loader interface {
 	FromQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageComponentV2, error)
 
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
-	CountAll(ctx context.Context) (int32, error)
 }
 
 // componentV2LoaderImpl implements the ComponentDataLoader interface.
@@ -87,11 +85,6 @@ func (idl *componentV2LoaderImpl) CountFromQuery(ctx context.Context, query *v1.
 		return 0, err
 	}
 	return int32(numResults), nil
-}
-
-func (idl *componentV2LoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.ds.Count(ctx, search.EmptyQuery())
-	return int32(count), err
 }
 
 func (idl *componentV2LoaderImpl) load(ctx context.Context, ids []string) ([]*storage.ImageComponentV2, error) {

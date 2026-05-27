@@ -355,7 +355,8 @@
           "type": "string"
         },
         "uiEndpoint": {
-          "type": "string"
+          "type": "string",
+          "description": "The UI endpoint of the Central instance, e.g. \"central.example.com:443\".\nURLs with scheme (e.g. \"https://central.example.com\") are accepted and\nnormalized to host:port format. If no port is given, 443 is assumed."
         },
         "enabled": {
           "type": "boolean"
@@ -379,7 +380,7 @@
           "items": {
             "type": "string"
           },
-          "description": "UI endpoints which to allow in addition to `ui_endpoint`. I.e., if a login request\nis coming from any of these, the auth request will use these for the callback URL,\nnot ui_endpoint."
+          "description": "UI endpoints which to allow in addition to `ui_endpoint`. I.e., if a login request\nis coming from any of these, the auth request will use these for the callback URL,\nnot ui_endpoint. Same format rules as `ui_endpoint` apply."
         },
         "active": {
           "type": "boolean"
