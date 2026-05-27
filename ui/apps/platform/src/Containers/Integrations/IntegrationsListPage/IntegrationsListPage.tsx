@@ -1,20 +1,38 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
-import { Breadcrumb, BreadcrumbItem, Flex, PageSection, Title } from '@patternfly/react-core';
-import { connect } from 'react-redux';
+import {
+    Alert,
+    AlertActionCloseButton,
+    AlertGroup,
+    Breadcrumb,
+    BreadcrumbItem,
+    Flex,
+    PageSection,
+    Title,
+    pluralize,
+} from '@patternfly/react-core';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
-import { actions as integrationsActions } from 'reducers/integrations';
-import { actions as apitokensActions } from 'reducers/apitokens';
-import { actions as machineAccessActions } from 'reducers/machineAccessConfigs';
-import { actions as cloudSourcesActions } from 'reducers/cloudSources';
+import useRestMutation from 'hooks/useRestMutation';
+import useToasts from 'hooks/patternfly/useToasts';
+import type { Toast } from 'hooks/patternfly/useToasts';
 import { getTableUIState } from 'utils/getTableUIState';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { integrationsPath } from 'routePaths';
+import {
+    deleteIntegrations as serviceDeleteIntegrations,
+    isServiceIntegrationSource,
+} from 'services/IntegrationsService';
+import { revokeAPITokens as serviceRevokeAPITokens } from 'services/APITokensService';
+import { deleteMachineAccessConfigs as serviceDeleteMachineAccessConfigs } from 'services/MachineAccessService';
+import { deleteCloudSources as serviceDeleteCloudSources } from 'services/CloudSourceService';
+import { triggerBackup as serviceTriggerBackup } from 'services/BackupIntegrationsService';
 
 import TechnologyPreviewLabel from 'Components/PatternFly/PreviewLabel/TechnologyPreviewLabel';
 import useIntegrations from '../hooks/useIntegrations';
+import useFetchIntegrations from '../hooks/useFetchIntegrations';
 import { getIntegrationLabel } from '../utils/integrationsList';
 import {
     getIsAPIToken,
@@ -34,26 +52,13 @@ import IntegrationsTable from './IntegrationsTable';
 export type IntegrationsListPageProps = {
     source: IntegrationSource;
     type: IntegrationType;
-    // TODO replace actions and connect with service functions.
-    deleteIntegrations: (source: IntegrationSource, type: IntegrationType, ids: string[]) => void;
-    triggerBackup: () => void;
-    revokeAPITokens: (ids: string[]) => void;
-    deleteMachineAccessConfigs: (ids: string[]) => void;
-    deleteCloudSources: (ids: string[]) => void;
 };
 
-function IntegrationsListPage({
-    source,
-    type,
-    // TODO replace actions and connect with service functions.
-    deleteIntegrations,
-    triggerBackup,
-    revokeAPITokens,
-    deleteMachineAccessConfigs,
-    deleteCloudSources,
-}: IntegrationsListPageProps): ReactElement {
+function IntegrationsListPage({ source, type }: IntegrationsListPageProps): ReactElement {
     const integrations = useIntegrations({ source, type });
-    const [deletingIntegrationIds, setDeletingIntegrationIds] = useState([]);
+    const fetchIntegrations = useFetchIntegrations(source);
+    const [deletingIntegrationIds, setDeletingIntegrationIds] = useState<string[]>([]);
+    const { toasts, addToast, removeToast } = useToasts();
 
     const tableState = getTableUIState({
         isLoading: false,
@@ -72,25 +77,55 @@ function IntegrationsListPage({
     // There is currently nothing relevant in Tech Preview.
     const isTechPreview = false;
 
-    function onDeleteIntegrations(ids) {
+    const deleteMutation = useRestMutation(
+        (ids: string[]) => {
+            if (isAPIToken) {
+                return serviceRevokeAPITokens(ids);
+            }
+            if (isMachineAccessConfig) {
+                return serviceDeleteMachineAccessConfigs(ids);
+            }
+            if (isCloudSource) {
+                return serviceDeleteCloudSources(ids);
+            }
+            if (isServiceIntegrationSource(source)) {
+                return serviceDeleteIntegrations(source, ids);
+            }
+            return Promise.reject(new Error('Invalid integration source'));
+        },
+        {
+            onSuccess: () => {
+                const count = deletingIntegrationIds.length;
+                addToast(
+                    `Successfully deleted ${count} ${pluralize(count, 'integration')}`,
+                    'success'
+                );
+                setDeletingIntegrationIds([]);
+                fetchIntegrations();
+            },
+        }
+    );
+
+    const backupMutation = useRestMutation(serviceTriggerBackup, {
+        onSuccess: () => addToast('Backup was successful', 'success'),
+        onError: (error) => addToast(`Backup failed: ${getAxiosErrorMessage(error)}`, 'danger'),
+    });
+
+    function onDeleteIntegrations(ids: string[]) {
         setDeletingIntegrationIds(ids);
     }
 
     function onConfirmDeletingIntegrationIds() {
-        if (isAPIToken) {
-            revokeAPITokens(deletingIntegrationIds);
-        } else if (isMachineAccessConfig) {
-            deleteMachineAccessConfigs(deletingIntegrationIds);
-        } else if (isCloudSource) {
-            deleteCloudSources(deletingIntegrationIds);
-        } else {
-            deleteIntegrations(source, type, deletingIntegrationIds);
-        }
-        setDeletingIntegrationIds([]);
+        deleteMutation.mutate(deletingIntegrationIds);
     }
 
     function onCancelDeleteIntegrationIds() {
+        deleteMutation.reset();
         setDeletingIntegrationIds([]);
+    }
+
+    function onTriggerBackup(id: string) {
+        backupMutation.mutate(id);
     }
 
     return (
@@ -123,7 +158,7 @@ function IntegrationsListPage({
                     tableState={tableState}
                     hasMultipleDelete
                     onDeleteIntegrations={onDeleteIntegrations}
-                    onTriggerBackup={triggerBackup}
+                    onTriggerBackup={onTriggerBackup}
                     isReadOnly={isScannerV4}
                     source={source}
                     type={type}
@@ -134,13 +169,24 @@ function IntegrationsListPage({
                     ariaLabel="Confirm delete"
                     confirmText="Delete"
                     isOpen={deletingIntegrationIds.length !== 0}
+                    isLoading={deleteMutation.isLoading}
                     onConfirm={onConfirmDeletingIntegrationIds}
                     onCancel={onCancelDeleteIntegrationIds}
                     title="Delete API token"
                 >
-                    <DeleteAPITokensConfirmationText
-                        numIntegrations={deletingIntegrationIds.length}
-                    />
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsMd' }}
+                    >
+                        {deleteMutation.isError && (
+                            <Alert variant="danger" isInline title="Failed to delete" component="p">
+                                {getAxiosErrorMessage(deleteMutation.error)}
+                            </Alert>
+                        )}
+                        <DeleteAPITokensConfirmationText
+                            numIntegrations={deletingIntegrationIds.length}
+                        />
+                    </Flex>
                 </ConfirmationModal>
             )}
             {!isAPIToken && (
@@ -148,24 +194,48 @@ function IntegrationsListPage({
                     ariaLabel="Confirm delete"
                     confirmText="Delete"
                     isOpen={deletingIntegrationIds.length !== 0}
+                    isLoading={deleteMutation.isLoading}
                     onConfirm={onConfirmDeletingIntegrationIds}
                     onCancel={onCancelDeleteIntegrationIds}
                 >
-                    <DeleteIntegrationsConfirmationText
-                        numIntegrations={deletingIntegrationIds.length}
-                    />
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsMd' }}
+                    >
+                        {deleteMutation.isError && (
+                            <Alert variant="danger" isInline title="Failed to delete" component="p">
+                                {getAxiosErrorMessage(deleteMutation.error)}
+                            </Alert>
+                        )}
+                        <DeleteIntegrationsConfirmationText
+                            numIntegrations={deletingIntegrationIds.length}
+                        />
+                    </Flex>
                 </ConfirmationModal>
             )}
+            <AlertGroup isToast isLiveRegion>
+                {toasts.map(({ key, variant, title, children }: Toast) => (
+                    <Alert
+                        variant={variant}
+                        title={title}
+                        component="p"
+                        timeout={4000}
+                        onTimeout={() => removeToast(key)}
+                        actionClose={
+                            <AlertActionCloseButton
+                                title={title}
+                                variantLabel={`${variant} alert`}
+                                onClose={() => removeToast(key)}
+                            />
+                        }
+                        key={key}
+                    >
+                        {children}
+                    </Alert>
+                ))}
+            </AlertGroup>
         </>
     );
 }
 
-const mapDispatchToProps = {
-    deleteIntegrations: integrationsActions.deleteIntegrations,
-    triggerBackup: integrationsActions.triggerBackup,
-    revokeAPITokens: apitokensActions.revokeAPITokens,
-    deleteMachineAccessConfigs: machineAccessActions.deleteMachineAccessConfigs,
-    deleteCloudSources: cloudSourcesActions.deleteCloudSources,
-};
-
-export default connect(null, mapDispatchToProps)(IntegrationsListPage);
+export default IntegrationsListPage;

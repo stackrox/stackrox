@@ -8,14 +8,12 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 export const types = {
     FETCH_NOTIFIERS: createFetchingActionTypes('notifiers/FETCH_NOTIFIERS'),
     FETCH_BACKUPS: createFetchingActionTypes('backups/FETCH_BACKUPS'),
-    TRIGGER_BACKUP: 'integrations/TRIGGER_BACKUP',
     FETCH_IMAGE_INTEGRATIONS: createFetchingActionTypes(
         'imageIntegrations/FETCH_IMAGE_INTEGRATIONS'
     ),
     FETCH_SIGNATURE_INTEGRATIONS: createFetchingActionTypes(
         'signatureIntegrations/FETCH_SIGNATURE_INTEGRATIONS'
     ),
-    DELETE_INTEGRATIONS: 'integrations/DELETE_INTEGRATIONS',
 };
 
 // Actions
@@ -25,16 +23,6 @@ export const actions = {
     fetchBackups: createFetchingActions(types.FETCH_BACKUPS),
     fetchImageIntegrations: createFetchingActions(types.FETCH_IMAGE_INTEGRATIONS),
     fetchSignatureIntegrations: createFetchingActions(types.FETCH_SIGNATURE_INTEGRATIONS),
-    deleteIntegrations: (source, sourceType, ids) => ({
-        type: types.DELETE_INTEGRATIONS,
-        source,
-        sourceType,
-        ids,
-    }),
-    triggerBackup: (id) => ({
-        type: types.TRIGGER_BACKUP,
-        id,
-    }),
 };
 
 // Reducers
