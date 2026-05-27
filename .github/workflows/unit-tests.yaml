@@ -86,6 +86,11 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
+    - name: Stabilize file mtimes for test cache
+      run: |
+        git ls-files -z | xargs -0 touch -t 200101010000
+        git ls-files -z | sed -z 's|/[^/]*$||' | sort -uz | xargs -0 touch -t 200101010000
+
     - name: Runner diagnostic
       run: |
         echo "=== Runner info ==="
