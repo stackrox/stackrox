@@ -38,7 +38,7 @@ jobs:
           GH_TOKEN: ${{ secrets.RUNNER_ADMIN_TOKEN }}
         run: |
           if [[ -z "$GH_TOKEN" ]]; then
-            echo "runner=ubuntu-latest" >> "$GITHUB_OUTPUT"
+            echo 'runner="ubuntu-latest"' >> "$GITHUB_OUTPUT"
             exit 0
           fi
           available=$(gh api "orgs/${{ github.repository_owner }}/actions/runners" \
@@ -47,7 +47,7 @@ jobs:
           if [[ "$available" -gt 0 ]]; then
             echo 'runner=["self-hosted","warm-go-norace"]' >> "$GITHUB_OUTPUT"
           else
-            echo "runner=ubuntu-latest" >> "$GITHUB_OUTPUT"
+            echo 'runner="ubuntu-latest"' >> "$GITHUB_OUTPUT"
           fi
 
   go:
