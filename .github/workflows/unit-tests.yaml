@@ -58,6 +58,12 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         free-disk-space: 30
 
+    - name: Set up Go
+      uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # ratchet:actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+        cache: false
+
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
       with:
@@ -147,6 +153,12 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - name: Set up Go
+      uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # ratchet:actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+        cache: false
+
     - name: Run Postgres
       run: |
         su postgres -c 'initdb -D /tmp/data'
@@ -209,6 +221,12 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Set up Go
+      uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # ratchet:actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+        cache: false
 
     - name: Run Postgres
       run: |
@@ -354,6 +372,12 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - name: Set up Go
+      uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # ratchet:actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+        cache: false
+
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
@@ -452,6 +476,12 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Set up Go
+      uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # ratchet:actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+        cache: false
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
