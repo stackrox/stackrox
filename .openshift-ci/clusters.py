@@ -147,15 +147,6 @@ class AutomationFlavorsCluster:
 
         print(f"Using kubeconfig from {kubeconfig}")
 
-        # For IBM Cloud Z (s390x), verify cluster access with wrapper
-        if os.environ.get("REMOTE_CLUSTER_ARCH") == "s390x":
-            print("IBM Cloud Z (s390x) detected - running provisioning verification")
-            subprocess.run(
-                [self.PROVISION_WRAPPER],
-                check=True,
-                timeout=10 * 60,  # 10 minutes for verification
-            )
-
         print("Nodes:")
         subprocess.run(
             ["kubectl", "get", "nodes", "-o", "wide"],
