@@ -79,11 +79,12 @@ type datastoreImpl struct {
 	versionStore *propagation.VersionStore
 }
 
-func (ds *datastoreImpl) incrementPolicyVersion(ctx context.Context) {
+func (ds *datastoreImpl) incrementPolicyVersion(_ context.Context) {
 	if ds.versionStore == nil {
 		return
 	}
-	if err := ds.versionStore.IncrementVersion(ctx); err != nil {
+	versionCtx := sac.WithAllAccess(context.Background())
+	if err := ds.versionStore.IncrementVersion(versionCtx); err != nil {
 		log.Errorf("HA: Failed to increment policy version: %v", err)
 	}
 }
