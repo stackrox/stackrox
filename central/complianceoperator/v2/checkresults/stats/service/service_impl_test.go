@@ -187,6 +187,29 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterScanSta
 				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorScanConfigName)
 			},
 		},
+		{
+			desc: "External SSB with no managed config does not panic",
+			query: &apiV2.ComplianceScanClusterRequest{
+				ClusterId: fixtureconsts.Cluster1,
+				Query:     &apiV2.RawQuery{Query: ""},
+			},
+			expectedErr: nil,
+			setMocks: func() {
+				expectedQ := search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
+					search.EmptyQuery(),
+				)
+				countQuery := expectedQ.CloneVT()
+				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+
+				results := []*datastore.ResourceResultCountByClusterScan{
+					convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster1),
+				}
+				s.resultDatastore.EXPECT().ComplianceCheckResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(nil, nil).Times(1)
+				s.resultDatastore.EXPECT().CountByField(gomock.Any(), countQuery, search.ComplianceOperatorScanConfigName)
+			},
+		},
 	}
 
 	for _, tc := range testCases {
