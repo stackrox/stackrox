@@ -114,52 +114,41 @@ func (s *deploymentStoreSuite) Test_GetAll() {
 	s.Assert().Empty(s.deploymentStore.GetAll())
 	s.namespaceStore.addNamespace(&storage.NamespaceMetadata{Name: "other-ns", Id: "2"})
 
-	wraps := []*deploymentWrap{
-		s.createDeploymentWrap(withLabels(makeDeploymentObject("d-1", "test-ns", "uuid-1"), map[string]string{
-			"app": "frontend",
-		})),
-		s.createDeploymentWrap(withLabels(makeDeploymentObject("d-2", "test-ns", "uuid-2"), map[string]string{
-			"app":  "backend",
-			"tier": "api",
-		})),
-		s.createDeploymentWrap(withLabels(makeDeploymentObject("d-3", "other-ns", "uuid-3"), map[string]string{
-			"app": "database",
-		})),
-	}
-
-	expectedByID := make(map[string]*storage.Deployment, len(wraps))
-	for _, wrap := range wraps {
+	expectedByID := make(map[string]*storage.Deployment)
+	addDeployment := func(name, namespace, id string, labels map[string]string) {
+		wrap := s.createDeploymentWrap(withLabels(makeDeploymentObject(name, namespace, types.UID(id)), labels))
 		s.deploymentStore.addOrUpdateDeployment(wrap)
-		expectedByID[wrap.GetId()] = wrap.GetDeployment().CloneVT()
+		expectedByID[id] = wrap.GetDeployment().CloneVT()
 	}
 
-	got := s.deploymentStore.GetAll()
+	addDeployment("d-1", "test-ns", "uuid-1", map[string]string{"app": "frontend"})
+	addDeployment("d-2", "test-ns", "uuid-2", map[string]string{"app": "backend", "tier": "api"})
+	addDeployment("d-3", "other-ns", "uuid-3", map[string]string{"app": "database"})
+
+	got := indexDeploymentsByID(s.deploymentStore.GetAll())
 	s.Require().Len(got, len(expectedByID))
 
-	gotByID := make(map[string]*storage.Deployment, len(got))
-	for _, deployment := range got {
-		gotByID[deployment.GetId()] = deployment
-	}
-
 	for id, expected := range expectedByID {
-		s.Require().Contains(gotByID, id)
-		protoassert.Equal(s.T(), expected, gotByID[id])
+		s.Require().Contains(got, id)
+		protoassert.Equal(s.T(), expected, got[id])
 	}
 
-	gotByID["uuid-1"].Name = "mutated-name"
-	gotByID["uuid-1"].PodLabels["mutated"] = "true"
+	// GetAll returns clones, so mutating the returned deployment must not affect store state.
+	got["uuid-1"].Name = "mutated-name"
+	got["uuid-1"].PodLabels["mutated"] = "true"
 
-	refetched := s.deploymentStore.GetAll()
-	refetchedByID := make(map[string]*storage.Deployment, len(refetched))
-	for _, deployment := range refetched {
-		refetchedByID[deployment.GetId()] = deployment
+	refetched := indexDeploymentsByID(s.deploymentStore.GetAll())
+	s.Require().Contains(refetched, "uuid-1")
+	s.Equal("d-1", refetched["uuid-1"].GetName())
+	s.NotContains(refetched["uuid-1"].GetPodLabels(), "mutated")
+}
+
+func indexDeploymentsByID(deployments []*storage.Deployment) map[string]*storage.Deployment {
+	indexed := make(map[string]*storage.Deployment, len(deployments))
+	for _, deployment := range deployments {
+		indexed[deployment.GetId()] = deployment
 	}
-
-	s.Require().Contains(refetchedByID, "uuid-1")
-	s.Equal("d-1", refetchedByID["uuid-1"].GetName())
-	s.NotContains(refetchedByID["uuid-1"].GetPodLabels(), "mutated")
-	s.Equal("d-1", wraps[0].GetName())
-	s.NotContains(wraps[0].GetPodLabels(), "mutated")
+	return indexed
 }
 
 func (s *deploymentStoreSuite) Test_BuildDeployments_CachedDependencies() {

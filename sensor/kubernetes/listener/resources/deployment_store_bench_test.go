@@ -150,6 +150,10 @@ func createDeploymentWrap() *deploymentWrap {
 	}
 }
 
+// createSeededDeploymentWrap keeps BenchmarkGetAll reproducible across runs and
+// branches while still exercising deployment-shaped data similar to the random
+// fixture above. Using createDeploymentWrap here would change the benchmark input
+// on every run and make benchstat results harder to trust.
 func createSeededDeploymentWrap(i int) *deploymentWrap {
 	r := rand.New(rand.NewSource(benchmarkFixtureSeed + int64(i)))
 	labels := make(map[string]string)
