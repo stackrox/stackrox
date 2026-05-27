@@ -82,7 +82,21 @@ jobs:
       with:
         go-version-file: go.mod
 
+    - name: Check local cache
+      id: local-cache
+      run: |
+        gocache_files=$(find $(go env GOCACHE) -type f 2>/dev/null | wc -l)
+        echo "GOCACHE files: $gocache_files"
+        if [[ "$gocache_files" -gt 1000 ]]; then
+          echo "Local GOCACHE is warm ($gocache_files files). Skipping GHA restore."
+          echo "warm=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "Local GOCACHE is cold ($gocache_files files). Restoring from GHA."
+          echo "warm=false" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Cache Go dependencies
+      if: steps.local-cache.outputs.warm != 'true'
       uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: ${{ matrix.gotags }}
