@@ -70,3 +70,43 @@ func (d *datastoreImpl) DeleteScanSettingByCluster(ctx context.Context, clusterI
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
 	return d.store.DeleteByQuery(ctx, query)
 }
+
+// GetDistinctScanConfigs groups all SSBs by name across clusters.
+func (d *datastoreImpl) GetDistinctScanConfigs(ctx context.Context, query *v1.Query) ([]*DiscoveredScanConfig, error) {
+	checker := complianceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS)
+
+	nameMap := make(map[string]*DiscoveredScanConfig)
+	err := d.store.GetByQueryFn(ctx, query, func(binding *storage.ComplianceOperatorScanSettingBindingV2) error {
+		if !checker.IsAllowed(sac.ClusterScopeKey(binding.GetClusterId())) {
+			return nil
+		}
+		dc, found := nameMap[binding.GetName()]
+		if !found {
+			dc = &DiscoveredScanConfig{Name: binding.GetName()}
+			nameMap[binding.GetName()] = dc
+		}
+		dc.ClusterIDs = appendUnique(dc.ClusterIDs, binding.GetClusterId())
+		for _, p := range binding.GetProfileNames() {
+			dc.ProfileNames = appendUnique(dc.ProfileNames, p)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*DiscoveredScanConfig, 0, len(nameMap))
+	for _, dc := range nameMap {
+		result = append(result, dc)
+	}
+	return result, nil
+}
+
+func appendUnique(slice []string, val string) []string {
+	for _, s := range slice {
+		if s == val {
+			return slice
+		}
+	}
+	return append(slice, val)
+}

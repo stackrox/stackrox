@@ -31,6 +31,10 @@ type DataStore interface {
 
 	// DeleteScanSettingByCluster deletes  scan setting with cluster id
 	DeleteScanSettingByCluster(ctx context.Context, clusterID string) error
+
+	// GetDistinctScanConfigs groups all SSBs by name across clusters, returning
+	// the union of cluster IDs and profile names for each distinct SSB name.
+	GetDistinctScanConfigs(ctx context.Context, query *v1.Query) ([]*DiscoveredScanConfig, error)
 }
 
 // New returns an instance of DataStore.

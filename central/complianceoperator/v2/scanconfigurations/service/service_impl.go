@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -52,6 +53,7 @@ var (
 			v2.ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_FullMethodName,
 			v2.ComplianceScanConfigurationService_GetReportHistory_FullMethodName,
 			v2.ComplianceScanConfigurationService_GetMyReportHistory_FullMethodName,
+			v2.ComplianceScanConfigurationService_ListComplianceScanConfigOverviews_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Compliance), permissions.View(resources.Cluster)): {
 			v2.ComplianceScanConfigurationService_CreateComplianceScanConfiguration_FullMethodName,
@@ -547,31 +549,154 @@ func (s *serviceImpl) getBenchmarks(ctx context.Context, profiles []*storage.Com
 }
 
 func (s *serviceImpl) getProfiles(ctx context.Context, query *v1.Query, countQuery *v1.Query) ([]*v2.ComplianceProfileSummary, int, error) {
-	profileNames, err := s.scanConfigDS.GetProfilesNames(ctx, query)
+	profileNames, err := s.getProfileNames(ctx, query)
 	if err != nil {
-		return nil, 0, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve scan configurations for query %v", query)
+		return nil, 0, err
 	}
 	if len(profileNames) == 0 {
 		return nil, 0, nil
 	}
 
-	// Build query to get the filtered list by profile names
 	profileQuery := search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ComplianceOperatorProfileName, profileNames...).ProtoQuery()
 	profiles, err := s.profileDS.SearchProfiles(ctx, profileQuery)
 	if err != nil {
 		return nil, 0, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for %v", profileQuery)
 	}
 
-	// Get the benchmarks
 	benchmarkMap, err := s.getBenchmarks(ctx, profiles)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	profileCounts, err := s.scanConfigDS.DistinctProfiles(ctx, countQuery)
+	return storagetov2.ComplianceProfileSummary(profiles, benchmarkMap), len(profiles), nil
+}
+
+// getProfileNames returns profile names from all observed sources (managed and external).
+// When a scan config name filter is present, profiles come from SSBs with that name.
+// Otherwise, all synced profiles are returned.
+func (s *serviceImpl) getProfileNames(ctx context.Context, query *v1.Query) ([]string, error) {
+	scanConfigName := extractScanConfigNameFilter(query)
+	if scanConfigName != "" {
+		return s.getProfileNamesFromSSBs(ctx, scanConfigName)
+	}
+	return s.profileDS.GetProfilesNames(ctx, search.EmptyQuery(), nil)
+}
+
+func (s *serviceImpl) getProfileNamesFromSSBs(ctx context.Context, scanConfigName string) ([]string, error) {
+	bindings, err := s.complianceScanSettingBindingsDS.GetScanSettingBindings(ctx,
+		search.NewQueryBuilder().
+			AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfigName).
+			ProtoQuery())
 	if err != nil {
-		return nil, 0, errors.Wrap(errox.NotFound, err.Error())
+		return nil, err
+	}
+	seen := make(map[string]struct{})
+	var names []string
+	for _, binding := range bindings {
+		for _, p := range binding.GetProfileNames() {
+			if _, ok := seen[p]; !ok {
+				seen[p] = struct{}{}
+				names = append(names, p)
+			}
+		}
+	}
+	return names, nil
+}
+
+func extractScanConfigNameFilter(query *v1.Query) string {
+	if query == nil {
+		return ""
+	}
+	var name string
+	search.ApplyFnToAllBaseQueries(query, func(bq *v1.BaseQuery) {
+		mfq := bq.GetMatchFieldQuery()
+		if mfq != nil && mfq.GetField() == search.ComplianceOperatorScanConfigName.String() {
+			name = strings.TrimPrefix(strings.TrimSuffix(mfq.GetValue(), `"`), `"`)
+		}
+	})
+	return name
+}
+
+func (s *serviceImpl) ListComplianceScanConfigOverviews(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanConfigOverviewsResponse, error) {
+	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
-	return storagetov2.ComplianceProfileSummary(profiles, benchmarkMap), len(profileCounts), nil
+	managedConfigs, err := s.scanConfigDS.GetScanConfigurations(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving managed scan configurations")
+	}
+
+	discoveredConfigs, err := s.complianceScanSettingBindingsDS.GetDistinctScanConfigs(ctx, search.EmptyQuery())
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving discovered scan configurations")
+	}
+
+	overviews := s.mergeScanConfigOverviews(managedConfigs, discoveredConfigs)
+	return &v2.ListComplianceScanConfigOverviewsResponse{
+		Configs:    overviews,
+		TotalCount: int32(len(overviews)),
+	}, nil
+}
+
+func (s *serviceImpl) mergeScanConfigOverviews(
+	managed []*storage.ComplianceOperatorScanConfigurationV2,
+	discovered []*scanSettingBindingsDS.DiscoveredScanConfig,
+) []*v2.ComplianceScanConfigOverview {
+	seen := make(map[string]*v2.ComplianceScanConfigOverview)
+	var overviews []*v2.ComplianceScanConfigOverview
+
+	for _, mc := range managed {
+		clusterIDs := make([]string, 0, len(mc.GetClusters()))
+		for _, c := range mc.GetClusters() {
+			clusterIDs = append(clusterIDs, c.GetClusterId())
+		}
+		profileNames := make([]string, 0, len(mc.GetProfiles()))
+		for _, p := range mc.GetProfiles() {
+			profileNames = append(profileNames, p.GetProfileName())
+		}
+		overview := &v2.ComplianceScanConfigOverview{
+			ScanConfigName:  mc.GetScanConfigName(),
+			IsManaged:       true,
+			ManagedConfigId: mc.GetId(),
+			ClusterIds:      clusterIDs,
+			ProfileNames:    profileNames,
+		}
+		seen[mc.GetScanConfigName()] = overview
+		overviews = append(overviews, overview)
+	}
+
+	for _, dc := range discovered {
+		if existing, ok := seen[dc.Name]; ok {
+			existing.ClusterIds = unionStrings(existing.ClusterIds, dc.ClusterIDs)
+			existing.ProfileNames = unionStrings(existing.ProfileNames, dc.ProfileNames)
+			continue
+		}
+		overview := &v2.ComplianceScanConfigOverview{
+			ScanConfigName: dc.Name,
+			IsManaged:      false,
+			ClusterIds:     dc.ClusterIDs,
+			ProfileNames:   dc.ProfileNames,
+		}
+		overviews = append(overviews, overview)
+	}
+
+	sort.Slice(overviews, func(i, j int) bool {
+		return overviews[i].ScanConfigName < overviews[j].ScanConfigName
+	})
+	return overviews
+}
+
+func unionStrings(a, b []string) []string {
+	seen := make(map[string]struct{}, len(a))
+	for _, s := range a {
+		seen[s] = struct{}{}
+	}
+	for _, s := range b {
+		if _, ok := seen[s]; !ok {
+			a = append(a, s)
+		}
+	}
+	return a
 }
