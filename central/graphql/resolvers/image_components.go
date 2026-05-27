@@ -6,7 +6,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -290,11 +289,6 @@ func (resolver *imageComponentV2Resolver) LastScanned(ctx context.Context) (*gra
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "LastScanned")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
-	}
-
-	// Short path. Full image is embedded when image scan resolver is called.
-	if scanTime := embeddedobjs.LastScannedFromContext(resolver.ctx); scanTime != nil {
-		return &graphql.Time{Time: *scanTime}, nil
 	}
 
 	if features.FlattenImageData.Enabled() {
