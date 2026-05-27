@@ -21,14 +21,11 @@ import type { Toast } from 'hooks/patternfly/useToasts';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { integrationsPath } from 'routePaths';
-import {
-    deleteIntegrations as serviceDeleteIntegrations,
-    isServiceIntegrationSource,
-} from 'services/IntegrationsService';
-import { revokeAPITokens as serviceRevokeAPITokens } from 'services/APITokensService';
-import { deleteMachineAccessConfigs as serviceDeleteMachineAccessConfigs } from 'services/MachineAccessService';
-import { deleteCloudSources as serviceDeleteCloudSources } from 'services/CloudSourceService';
-import { triggerBackup as serviceTriggerBackup } from 'services/BackupIntegrationsService';
+import { deleteIntegrations, isServiceIntegrationSource } from 'services/IntegrationsService';
+import { revokeAPITokens } from 'services/APITokensService';
+import { deleteMachineAccessConfigs } from 'services/MachineAccessService';
+import { deleteCloudSources } from 'services/CloudSourceService';
+import { triggerBackup } from 'services/BackupIntegrationsService';
 
 import TechnologyPreviewLabel from 'Components/PatternFly/PreviewLabel/TechnologyPreviewLabel';
 import useIntegrations from '../hooks/useIntegrations';
@@ -80,33 +77,30 @@ function IntegrationsListPage({ source, type }: IntegrationsListPageProps): Reac
     const deleteMutation = useRestMutation(
         (ids: string[]) => {
             if (isAPIToken) {
-                return serviceRevokeAPITokens(ids);
+                return revokeAPITokens(ids);
             }
             if (isMachineAccessConfig) {
-                return serviceDeleteMachineAccessConfigs(ids);
+                return deleteMachineAccessConfigs(ids);
             }
             if (isCloudSource) {
-                return serviceDeleteCloudSources(ids);
+                return deleteCloudSources(ids);
             }
             if (isServiceIntegrationSource(source)) {
-                return serviceDeleteIntegrations(source, ids);
+                return deleteIntegrations(source, ids).then(() => undefined);
             }
             return Promise.reject(new Error('Invalid integration source'));
         },
         {
             onSuccess: () => {
                 const count = deletingIntegrationIds.length;
-                addToast(
-                    `Successfully deleted ${pluralize(count, 'integration')}`,
-                    'success'
-                );
+                addToast(`Successfully deleted ${pluralize(count, 'integration')}`, 'success');
                 setDeletingIntegrationIds([]);
                 fetchIntegrations();
             },
         }
     );
 
-    const backupMutation = useRestMutation(serviceTriggerBackup, {
+    const backupMutation = useRestMutation(triggerBackup, {
         onSuccess: () => addToast('Backup was successful', 'success'),
         onError: (error) => addToast(`Backup failed: ${getAxiosErrorMessage(error)}`, 'danger'),
     });
