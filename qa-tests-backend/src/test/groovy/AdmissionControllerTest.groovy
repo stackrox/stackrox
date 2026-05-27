@@ -6,7 +6,6 @@ import io.stackrox.proto.storage.ScopeOuterClass
 
 import objects.Deployment
 import services.ClusterService
-import services.FeatureFlagService
 import services.ImageService
 import services.PolicyService
 import util.Timer
@@ -392,7 +391,7 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-    @IgnoreIf({ !FeatureFlagService.isFeatureFlagEnabled("ROX_INIT_CONTAINER_SUPPORT") })
+    @IgnoreIf({ System.getenv("ROX_INIT_CONTAINER_SUPPORT") != "true" })
     def "Verify AC allows deployment with init containers"() {
         when:
         "Create a deployment with init containers"
