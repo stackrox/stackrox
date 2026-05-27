@@ -426,6 +426,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	}
 
 	// Phase 2: fetch full alerts only for matched keys, then merge.
+	mergedAlertIDs := set.NewStringSet()
 	if len(mergeCandidates) > 0 {
 		// Collect unique old IDs and batch-fetch.
 		uniqueIDs := set.NewStringSet()
@@ -448,7 +449,6 @@ func (d *alertManagerImpl) mergeManyAlerts(
 		for _, mc := range mergeCandidates {
 			matchingOld := oldAlertsByID[mc.oldKeyID]
 			if matchingOld == nil {
-				// Alert was deleted between Phase 1 and Phase 2; treat as new.
 				mc.incoming.FirstOccurred = mc.incoming.GetTime()
 				newAlerts = append(newAlerts, mc.incoming)
 				continue
@@ -457,6 +457,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 			if !mergedAlert.EqualVT(matchingOld) {
 				updatedAlerts = append(updatedAlerts, mergedAlert)
 			}
+			mergedAlertIDs.Add(mc.oldKeyID)
 		}
 	}
 
@@ -480,6 +481,9 @@ func (d *alertManagerImpl) mergeManyAlerts(
 
 		if key.GetLifecycleStage() == storage.LifecycleStage_RUNTIME ||
 			key.GetState() == storage.ViolationState_ATTEMPTED {
+			if mergedAlertIDs.Contains(key.GetId()) {
+				continue
+			}
 			if key.HasDeployment() && !key.IsDeploymentInactive() {
 				depID := key.GetDeploymentId()
 				if deploymentsBeingRemoved.Contains(depID) || d.runtimeDetector.DeploymentInactive(depID) {

@@ -1238,6 +1238,37 @@ func (s *AlertDatastoreImplSuite) TestSearchAlertMatchKeysResource() {
 	s.Equal(res.GetNamespace(), key.GetNamespace())
 }
 
+func (s *AlertDatastoreImplSuite) TestSearchAlertMatchKeysNode() {
+	alert := fixtures.GetNodeAlert()
+	alert.State = storage.ViolationState_ACTIVE
+	alert.LifecycleStage = storage.LifecycleStage_RUNTIME
+	node := alert.GetNode()
+
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+	s.createAndTrackAlert(alert)
+
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddExactMatches(search.AlertID, alert.GetId()).
+		ProtoQuery()
+
+	keys, err := s.datastore.SearchAlertMatchKeys(ctx, q, false)
+	s.NoError(err)
+	s.Require().Len(keys, 1)
+
+	key := keys[0]
+	s.Equal(alert.GetId(), key.GetId())
+	s.Equal(alert.GetPolicy().GetId(), key.GetPolicyId())
+	s.Equal(alert.GetState(), key.GetState())
+	s.Equal(alert.GetLifecycleStage(), key.GetLifecycleStage())
+	s.False(key.HasDeployment())
+	s.False(key.HasResource())
+	s.True(key.HasNode())
+	s.Equal(node.GetId(), key.GetNodeId())
+	s.Equal(node.GetName(), key.GetNodeName())
+	s.Equal(node.GetClusterId(), key.GetClusterId())
+}
+
 func (s *AlertDatastoreImplSuite) TestSearchAlertMatchKeysExcludesResolved() {
 	active := fixtures.GetAlert()
 	active.Id = fixtureconsts.Alert1
