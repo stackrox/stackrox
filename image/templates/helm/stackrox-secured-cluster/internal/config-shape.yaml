@@ -72,7 +72,6 @@ image:
 env:
   grpcEnforceALPN: null # bool
   openshift: null # bool | int
-  istio: null # bool
   storageClasses:
     all: {} # dict
     default: null # string
