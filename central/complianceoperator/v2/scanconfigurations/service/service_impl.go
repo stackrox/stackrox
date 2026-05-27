@@ -585,7 +585,7 @@ func (s *serviceImpl) getProfileNames(ctx context.Context, query *v1.Query) ([]s
 func (s *serviceImpl) getProfileNamesFromSSBs(ctx context.Context, scanConfigName string) ([]string, error) {
 	qb := search.NewQueryBuilder()
 	if scanConfigName != "" {
-		qb.AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfigName)
+		qb.AddExactMatches(search.ComplianceOperatorScanSettingBindingName, scanConfigName)
 	}
 	bindings, err := s.complianceScanSettingBindingsDS.GetScanSettingBindings(ctx, qb.ProtoQuery())
 	if err != nil {
