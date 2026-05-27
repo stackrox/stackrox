@@ -560,7 +560,7 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 		}
 
 		if len(filtered) == 0 {
-			delete(report.PackageVulnerabilities, pkgID)
+			delete(report.PackageVulnerabilities, pkgID) //nolint:protogetter // mutation requires direct field access
 		} else {
 			report.PackageVulnerabilities[pkgID] = &v4.StringList{Values: filtered}
 		}
