@@ -138,11 +138,23 @@ class GKECluster:
 
 class AutomationFlavorsCluster:
     KUBECTL_TIMEOUT = 5 * 60
+    PROVISION_WRAPPER = "scripts/ci/ibmcloudz-provision-wrapper.sh"
+    OPERATOR_VERIFY = "scripts/ci/ibmcloudz-verify-operators.sh"
+    OPERATOR_TIMEOUT = 25 * 60  # 25 minutes
 
     def provision(self):
         kubeconfig = os.environ["KUBECONFIG"]
 
         print(f"Using kubeconfig from {kubeconfig}")
+
+        # For IBM Cloud Z (s390x), verify cluster access with wrapper
+        if os.environ.get("REMOTE_CLUSTER_ARCH") == "s390x":
+            print("IBM Cloud Z (s390x) detected - running provisioning verification")
+            subprocess.run(
+                [self.PROVISION_WRAPPER],
+                check=True,
+                timeout=10 * 60,  # 10 minutes for verification
+            )
 
         print("Nodes:")
         subprocess.run(
@@ -150,6 +162,16 @@ class AutomationFlavorsCluster:
             check=True,
             timeout=self.KUBECTL_TIMEOUT,
         )
+
+        # For IBM Cloud Z (s390x), verify critical operators are ready
+        # This addresses ROX-21457 - OPERATOR_DEGRADED failures
+        if os.environ.get("REMOTE_CLUSTER_ARCH") == "s390x":
+            print("IBM Cloud Z (s390x) - verifying critical operators")
+            subprocess.run(
+                [self.OPERATOR_VERIFY],
+                check=True,
+                timeout=self.OPERATOR_TIMEOUT,
+            )
 
         return self
 
