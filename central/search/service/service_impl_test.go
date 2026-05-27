@@ -362,6 +362,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 
 	service := builder.Build().(*serviceImpl)
+	service.db = s.pool
 
 	for _, testCase := range []struct {
 		query           string
@@ -466,6 +467,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 		WithPolicyCategoryDataStore(categoriesDS)
 
 	service := builder.Build().(*serviceImpl)
+	service.db = s.pool
 
 	results, err := service.autocomplete(ctx, fmt.Sprintf("%s:", search.Severity), []v1.SearchCategory{v1.SearchCategory_POLICIES})
 	s.NoError(err)
@@ -519,6 +521,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 
 	builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 	service := builder.Build().(*serviceImpl)
+	service.db = s.pool
 
 	deploymentQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, deployment.GetName()).Query()
 	alertQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, alert.GetDeployment().GetName()).Query()
@@ -592,6 +595,7 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 		WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 
 	service := builder.Build().(*serviceImpl)
+	service.db = s.pool
 
 	deploymentQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, deployment.GetName()).Query()
 	alertQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, alert.GetDeployment().GetName()).Query()

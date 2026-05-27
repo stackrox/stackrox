@@ -43,7 +43,6 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	pgMapping "github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 )
 
@@ -226,130 +225,131 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 		categories = autocompleteCategories.AsSlice()
 	}
 
-	// Try the optimized GROUP BY path for scalar fields.
-	if db != nil {
-		remaining := maxAutocompleteResults
-		resultSet := set.NewStringSet()
-		var stringResults []string
+	remaining := maxAutocompleteResults
+	resultSet := set.NewStringSet()
+	var stringResults []string
 
-		for _, category := range categories {
-			if remaining <= 0 {
-				break
-			}
-			if category == v1.SearchCategory_ALERTS && !shouldProcessAlerts(query) {
-				continue
-			}
-
-			optMultiMap := categoryToOptionsMultimap[category]
-			if optMultiMap == nil {
-				continue
-			}
-			autocompleteFields := optMultiMap.GetAll(autocompleteKey)
-			if len(autocompleteFields) == 0 {
-				continue
-			}
-
-			// Only use GROUP BY for scalar fields (not maps).
-			isMap := false
-			for _, f := range autocompleteFields {
-				if f.GetType() == v1.SearchDataType_SEARCH_MAP {
-					isMap = true
-					break
-				}
-			}
-			if isMap {
-				continue
-			}
-
-			values, groupByErr := runGroupByAutocomplete(ctx, db, category, query, autocompleteKey, remaining)
-			if groupByErr != nil {
-				log.Warnf("GROUP BY autocomplete failed for category %s, falling back: %v", category, groupByErr)
-				continue
-			}
-			for _, v := range values {
-				v = handleMatch(autocompleteFields[0].GetFieldPath(), v)
-				if resultSet.Add(v) {
-					stringResults = append(stringResults, v)
-					remaining--
-				}
-			}
-		}
-		if len(stringResults) > 0 {
-			return stringResults, nil
-		}
-	}
-
-	// Fallback: search + Go-side deduplication.
-	query.Pagination = &v1.QueryPagination{
-		Limit: pagination,
-	}
-
-	var autocompleteResults []autocompleteResult
 	for _, category := range categories {
+		if remaining <= 0 {
+			break
+		}
 		if category == v1.SearchCategory_ALERTS && !shouldProcessAlerts(query) {
 			continue
-		}
-		searcher, ok := searchers[category]
-		if searcher == nil {
-			if ok {
-				utils.Should(errors.Errorf("searchers map has an entry for category %v, but the returned searcher was nil", category))
-			}
-			return nil, errors.Wrapf(errox.InvalidArgs, "Search category %q is not implemented", category.String())
 		}
 
 		optMultiMap := categoryToOptionsMultimap[category]
 		if optMultiMap == nil {
-			return nil, errors.Wrapf(errox.InvalidArgs, "Search category %q is not implemented", category.String())
+			continue
 		}
-
 		autocompleteFields := optMultiMap.GetAll(autocompleteKey)
 		if len(autocompleteFields) == 0 {
 			continue
 		}
 
-		fieldPaths := make([]string, 0, 3*len(autocompleteFields))
-		for _, field := range autocompleteFields {
-			fieldPaths = append(fieldPaths,
-				field.GetFieldPath(),
-				search.ToMapKeyPath(field.GetFieldPath()),
-				search.ToMapValuePath(field.GetFieldPath()),
-			)
+		isMap := false
+		for _, f := range autocompleteFields {
+			if f.GetType() == v1.SearchDataType_SEARCH_MAP {
+				isMap = true
+				break
+			}
 		}
 
-		results, err := searcher.Search(ctx, query)
-		if err != nil {
-			log.Errorf("failed to search category %s: %s", category.String(), err)
-			return nil, err
+		if isMap {
+			// Map fields (labels, annotations) need the search path to
+			// produce key=value pairs via Go post-processing.
+			values, err := searchAutocomplete(ctx, searchers, category, query, autocompleteFields)
+			if err != nil {
+				return nil, err
+			}
+			for _, v := range values {
+				if resultSet.Add(v) {
+					stringResults = append(stringResults, v)
+					remaining--
+				}
+			}
+			continue
 		}
-		for _, r := range results {
-			matches := trimMatches(r.Matches, fieldPaths)
-			if isMapMatch(matches) {
-				autocompleteResults = append(autocompleteResults, handleMapResults(matches, r.Score)...)
+
+		// Scalar fields use GROUP BY for guaranteed unique results.
+		// Fall back to search if GROUP BY fails (e.g., framework query generation issues).
+		if db != nil {
+			values, groupByErr := runGroupByAutocomplete(ctx, db, category, query, autocompleteKey, remaining)
+			if groupByErr == nil {
+				for _, v := range values {
+					v = handleMatch(autocompleteFields[0].GetFieldPath(), v)
+					if resultSet.Add(v) {
+						stringResults = append(stringResults, v)
+						remaining--
+					}
+				}
 				continue
 			}
+			log.Warnf("GROUP BY autocomplete failed for category %s, using search: %v", category, groupByErr)
+		}
+		values, err := searchAutocomplete(ctx, searchers, category, query, autocompleteFields)
+		if err != nil {
+			return nil, err
+		}
+		for _, v := range values {
+			if resultSet.Add(v) {
+				stringResults = append(stringResults, v)
+				remaining--
+			}
+		}
+	}
 
-			for fieldPath, match := range matches {
-				for _, v := range match {
-					value := handleMatch(fieldPath, v)
-					autocompleteResults = append(autocompleteResults, autocompleteResult{value: value, score: r.Score})
+	return stringResults, nil
+}
+
+// searchAutocomplete uses the legacy search+deduplicate path for map fields
+// where GROUP BY cannot produce key=value pairs.
+func searchAutocomplete(ctx context.Context, searchers map[v1.SearchCategory]search.Searcher, category v1.SearchCategory, query *v1.Query, autocompleteFields []*search.Field) ([]string, error) {
+	searcher := searchers[category]
+	if searcher == nil {
+		return nil, nil
+	}
+
+	searchQuery := query.CloneVT()
+	searchQuery.Pagination = &v1.QueryPagination{
+		Limit: pagination,
+	}
+
+	fieldPaths := make([]string, 0, 3*len(autocompleteFields))
+	for _, field := range autocompleteFields {
+		fieldPaths = append(fieldPaths,
+			field.GetFieldPath(),
+			search.ToMapKeyPath(field.GetFieldPath()),
+			search.ToMapValuePath(field.GetFieldPath()),
+		)
+	}
+
+	results, err := searcher.Search(ctx, searchQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	seen := set.NewStringSet()
+	var values []string
+	for _, r := range results {
+		matches := trimMatches(r.Matches, fieldPaths)
+		if isMapMatch(matches) {
+			for _, ar := range handleMapResults(matches, 0) {
+				if seen.Add(ar.value) {
+					values = append(values, ar.value)
+				}
+			}
+			continue
+		}
+		for fieldPath, match := range matches {
+			for _, v := range match {
+				value := handleMatch(fieldPath, v)
+				if seen.Add(value) {
+					values = append(values, value)
 				}
 			}
 		}
 	}
-
-	sort.Slice(autocompleteResults, func(i, j int) bool { return autocompleteResults[i].score > autocompleteResults[j].score })
-	resultSet := set.NewStringSet()
-
-	var stringResults []string
-	for _, a := range autocompleteResults {
-		if added := resultSet.Add(a.value); added {
-			stringResults = append(stringResults, a.value)
-		}
-		if resultSet.Cardinality() == maxAutocompleteResults {
-			break
-		}
-	}
-	return stringResults, nil
+	return values, nil
 }
 
 type autocompleteValue struct {
