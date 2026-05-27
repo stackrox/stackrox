@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 )
@@ -25,7 +26,10 @@ var (
 	newSourceDir    = env.RegisterSetting("ROX_CERTS_NEW_DIR", env.WithDefault("/run/secrets/stackrox.io/certs-new/")).Setting()
 )
 
-const timeout = 5 * time.Minute
+const (
+	timeout       = 5 * time.Minute
+	watchInterval = 5 * time.Second
+)
 
 // Run sets up TLS certificates by copying them from new or legacy source directories
 // to mtls.CertsPrefix. New certificates (from the tls-cert-sensor secret) have precedence
@@ -63,7 +67,52 @@ func Run() error {
 		return errors.Wrap(err, "cannot copy files")
 	}
 
+	if newCertsExist {
+		startCertsNewWatcher(realDest)
+	}
 	return nil
+}
+
+// startCertsNewWatcher polls certs-new (tls-cert-sensor secret mount) and copies updates into the
+// working cert directory. Legacy certs are only used for initial registration; ongoing refresh
+// always updates certs-new.
+func startCertsNewWatcher(destDir string) {
+	handler := &certsNewSyncHandler{destDir: destDir}
+	watchOpts := k8scfgwatch.Options{
+		Interval: watchInterval,
+		Force:    true,
+	}
+	if err := k8scfgwatch.WatchConfigMountDir(context.Background(), newSourceDir, k8scfgwatch.DeduplicateWatchErrors(handler), watchOpts); err != nil {
+		log.Warnf("Failed to start TLS cert sync watcher on %q: %v", newSourceDir, err)
+	}
+}
+
+type certsNewSyncHandler struct {
+	destDir string
+}
+
+func (h *certsNewSyncHandler) OnChange(dir string) (interface{}, error) {
+	return findFiles(dir)
+}
+
+func (h *certsNewSyncHandler) OnStableUpdate(val interface{}, err error) {
+	if err != nil {
+		log.Errorf("Error reading TLS certificates from %q for sync to %q: %v", newSourceDir, h.destDir, err)
+		return
+	}
+	files, ok := val.([]string)
+	if !ok || len(files) == 0 {
+		return
+	}
+	if err := copyFiles(files, h.destDir); err != nil {
+		log.Errorf("Syncing TLS certificates from %q to %q: %v", newSourceDir, h.destDir, err)
+		return
+	}
+	log.Infof("Synced TLS certificates from %q to %q", newSourceDir, h.destDir)
+}
+
+func (h *certsNewSyncHandler) OnWatchError(err error) {
+	log.Warnf("TLS cert sync watcher error for %q: %v", newSourceDir, err)
 }
 
 func copyFiles(files []string, destDir string) error {

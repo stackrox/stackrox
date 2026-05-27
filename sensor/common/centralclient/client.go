@@ -78,14 +78,14 @@ func NewClient(endpoint string) (*Client, error) {
 	// Moreover, authentication requirements can be tightened in future and thus having an older version
 	// of Sensor authenticating itself will enable backward compatibility with newer Centrals. This has
 	// indeed happened in the past when `/v1/metadata` became authenticated.
-	clientCert, err := mtls.LeafCertificateFromFile()
-	if err != nil {
-		return nil, errors.Wrap(err, "obtaining client certificate")
-	}
 	tlsConf := &tls.Config{
 		InsecureSkipVerify: true,
-		Certificates: []tls.Certificate{
-			clientCert,
+		GetClientCertificate: func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
+			cert, err := mtls.LeafCertificateFromFile()
+			if err != nil {
+				return nil, errors.Wrap(err, "obtaining client certificate")
+			}
+			return &cert, nil
 		},
 	}
 	httpClient := &http.Client{

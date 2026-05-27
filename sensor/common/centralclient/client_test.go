@@ -3,9 +3,11 @@ package centralclient
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"embed"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -23,6 +25,8 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/cryptoutils/mocks"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -539,6 +543,40 @@ func (t *ClientTestSuite) TestExtractCentralCAsFromTrustInfo() {
 			}
 		})
 	}
+}
+
+func writeLeafCertToFiles(tb testing.TB, certDir string, cert tls.Certificate) {
+	tb.Helper()
+	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Certificate[0]})
+	keyBytes, err := x509.MarshalPKCS8PrivateKey(cert.PrivateKey)
+	require.NoError(tb, err)
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyBytes})
+	require.NoError(tb, os.WriteFile(filepath.Join(certDir, "cert.pem"), certPEM, 0600))
+	require.NoError(tb, os.WriteFile(filepath.Join(certDir, "key.pem"), keyPEM, 0600))
+}
+
+func (t *ClientTestSuite) TestNewClient_GetClientCertificateReloadsFromDisk() {
+	cert1 := testutils.IssueSelfSignedCert(t.T(), "first-sensor-cert")
+	writeLeafCertToFiles(t.T(), t.clientCertDir, cert1)
+
+	c, err := NewClient(endpoint)
+	t.Require().NoError(err)
+
+	transport, ok := c.httpClient.Transport.(*http.Transport)
+	t.Require().True(ok)
+	t.Require().NotNil(transport.TLSClientConfig.GetClientCertificate)
+
+	got1, err := transport.TLSClientConfig.GetClientCertificate(nil)
+	t.Require().NoError(err)
+	t.Equal(cert1.Certificate[0], got1.Certificate[0])
+
+	cert2 := testutils.IssueSelfSignedCert(t.T(), "second-sensor-cert")
+	writeLeafCertToFiles(t.T(), t.clientCertDir, cert2)
+
+	got2, err := transport.TLSClientConfig.GetClientCertificate(nil)
+	t.Require().NoError(err)
+	t.Equal(cert2.Certificate[0], got2.Certificate[0])
+	t.NotEqual(got1.Certificate[0], got2.Certificate[0])
 }
 
 func (t *ClientTestSuite) TestNewClientReplacesProtocols() {
