@@ -1,0 +1,174 @@
+syntax = "proto3";
+
+package v2;
+
+import "api/v2/search_query.proto";
+import "api/v2/vuln_state.proto";
+import "api/v2/vulnerability.proto";
+import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./api/v2;v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+// ImageExportLayer represents a single layer in an image's Dockerfile history.
+message ImageExportLayer {
+  string instruction = 1;
+  string value = 2;
+}
+
+// ImageExportComponent represents a software package or library found in an image.
+message ImageExportComponent {
+  string name = 1;
+  string version = 2;
+  string location = 3;
+  // source is the ecosystem that provides this component (e.g., OS, JAVA, PYTHON).
+  string source = 4;
+}
+
+// ImageInfo holds image properties that change infrequently: the image digest,
+// metadata, filesystem layers, and the list of installed software components.
+message ImageInfo {
+  string id = 1;
+  string digest = 2;
+  // names contains all known fully-qualified image names for this digest.
+  repeated string names = 3;
+  string operating_system = 4;
+  google.protobuf.Timestamp created = 5;
+  repeated ImageExportLayer layers = 6;
+  repeated ImageExportComponent components = 7;
+  google.protobuf.Timestamp last_updated = 8;
+}
+
+// VulnerabilityFinding represents a single vulnerability occurrence: one CVE affecting
+// one component in one image running in one deployment. Use the cve field to join
+// against the /v2/export/cves response for full CVE metadata.
+message VulnerabilityFinding {
+  string deployment_id = 1;
+  string image_id = 2;
+  // cve is the CVE identifier (e.g. "CVE-2024-12345").
+  string cve = 3;
+  string component_name = 4;
+  string component_version = 5;
+  bool is_fixable = 6;
+  string fixed_by = 7;
+  // state is image-specific: OBSERVED, DEFERRED, or FALSE_POSITIVE.
+  VulnerabilityState state = 8;
+  // severity is the component-specific severity, which may differ from the CVE base severity.
+  VulnerabilitySeverity severity = 9;
+  // cvss is the component-specific CVSS score.
+  float cvss = 10;
+  // repository_cpe is the CPE of the product stream this vulnerability was matched against.
+  string repository_cpe = 11;
+}
+
+// CVEDetail holds vulnerability metadata that is shared across all images and components
+// where the CVE appears. Consumers can build a local dictionary keyed by cve and join
+// it against the cve field in ImageCVEFinding to avoid re-fetching repeated data.
+message CVEDetail {
+  string cve = 1;
+  // severity is the highest severity across all affected components and sources.
+  VulnerabilitySeverity severity = 2;
+  // cvss is the highest CVSS score across all affected components and sources.
+  float cvss = 3;
+  string summary = 4;
+  string link = 5;
+  google.protobuf.Timestamp published_on = 6;
+  float epss_probability = 7;
+  // cvss_scores provides per-source CVSS breakdowns (e.g. Red Hat, NVD, OSV).
+  repeated CVSSScore cvss_scores = 8;
+  float epss_percentile = 9;
+  Advisory advisory = 10;
+  // component_overrides lists per-component/product entries where severity or CVSS
+  // differs from the base values above. This captures cases like Red Hat scoring
+  // a CVE differently for specific packages or product streams.
+  repeated CVEComponentOverride component_overrides = 11;
+}
+
+// CVEComponentOverride captures per-component CVSS/severity that differs from
+// the CVE base values. Keyed by (component_name, component_version, repository_cpe).
+message CVEComponentOverride {
+  string component_name = 1;
+  string component_version = 2;
+  // repository_cpe is the CPE of the product stream (e.g. "cpe:2.3:o:redhat:enterprise_linux:8:*:*:*:*:*:*:*").
+  string repository_cpe = 3;
+  VulnerabilitySeverity severity = 4;
+  float cvss = 5;
+  repeated CVSSScore cvss_scores = 6;
+}
+
+// ExportImagesRequest is used by both the paginated and streaming image endpoints.
+message ExportImagesRequest {
+  RawQuery query = 1;
+  // When set, only images with last_updated >= since are returned.
+  google.protobuf.Timestamp since = 2;
+}
+
+// ExportFindingsRequest is used by both the paginated and streaming findings endpoints.
+message ExportFindingsRequest {
+  RawQuery query = 1;
+  // When set, only findings from images with last_updated >= since are returned.
+  google.protobuf.Timestamp since = 2;
+}
+
+// ExportCVEsRequest is used by both the paginated and streaming CVE detail endpoints.
+message ExportCVEsRequest {
+  RawQuery query = 1;
+  // When set, only CVEs first seen in the system on or after since are returned.
+  google.protobuf.Timestamp since = 2;
+}
+
+// ListImagesResponse is the paginated response for ListImages.
+message ListImagesResponse {
+  repeated ImageInfo images = 1;
+  int32 total_count = 2;
+}
+
+// ListFindingsResponse is the paginated response for ListFindings.
+message ListFindingsResponse {
+  repeated VulnerabilityFinding findings = 1;
+  int32 total_count = 2;
+}
+
+// ListCVEsResponse is the paginated response for ListCVEs.
+// Each entry is unique by cve identifier.
+message ListCVEsResponse {
+  repeated CVEDetail cves = 1;
+  int32 total_count = 2;
+}
+
+// ImageExportService provides APIs for exporting image, scan, and CVE information.
+// Each resource surface exposes both a paginated unary RPC (suitable for normal API usage)
+// and a gRPC server-streaming RPC (preferred for bulk dataset exports).
+service ImageExportService {
+  // ListImages returns a paginated list of image data (metadata, layers, and installed
+  // components). Use ExportImages for large unbounded datasets.
+  rpc ListImages(ExportImagesRequest) returns (ListImagesResponse) {
+    option (google.api.http) = {get: "/v2/export/images"};
+  }
+
+  // ListFindings returns a paginated list of vulnerability findings. Each finding
+  // represents one CVE affecting one component in one image running in one deployment.
+  rpc ListFindings(ExportFindingsRequest) returns (ListFindingsResponse) {
+    option (google.api.http) = {get: "/v2/export/findings"};
+  }
+
+  // ListCVEs returns a paginated list of unique CVE details. The cve field in each
+  // record matches the cve field in ImageCVEFinding, allowing callers to build a
+  // lookup dictionary. Use ExportCVEs for large unbounded datasets.
+  rpc ListCVEs(ExportCVEsRequest) returns (ListCVEsResponse) {
+    option (google.api.http) = {get: "/v2/export/cves"};
+  }
+
+  // ExportImages streams image data for all images matching the query.
+  // Preferred over ListImages for large datasets that do not require pagination.
+  rpc ExportImages(ExportImagesRequest) returns (stream ImageInfo) {}
+
+  // ExportFindings streams vulnerability findings for all images matching the query.
+  // Each finding represents one CVE in one component in one image in one deployment.
+  rpc ExportFindings(ExportFindingsRequest) returns (stream VulnerabilityFinding) {}
+
+  // ExportCVEs streams unique CVE details for all CVEs matching the query.
+  // Preferred over ListCVEs for large datasets that do not require pagination.
+  rpc ExportCVEs(ExportCVEsRequest) returns (stream CVEDetail) {}
+}

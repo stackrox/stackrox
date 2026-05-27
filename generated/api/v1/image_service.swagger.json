@@ -1016,9 +1016,13 @@
         "datasource": {
           "type": "string",
           "title": "datasource is for internal use only"
+        },
+        "repositoryCpe": {
+          "type": "string",
+          "description": "repository_cpe is the CPE of the repository (product stream) this vulnerability was matched against."
         }
       },
-      "title": "Next Tag: 27"
+      "title": "Next Tag: 28"
     },
     "storageImage": {
       "type": "object",

@@ -107,6 +107,7 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, index
 		ImpactScore:           impactScore,
 		Advisory:              from.GetAdvisory(),
 		Datasource:            from.GetDatasource(),
+		RepositoryCpe:         from.GetRepositoryCpe(),
 	}
 	if !features.FlattenImageData.Enabled() {
 		ret.ImageId = imageID

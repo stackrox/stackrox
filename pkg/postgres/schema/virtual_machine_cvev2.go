@@ -65,9 +65,12 @@ type VirtualMachineCvev2 struct {
 	VmV2ID                         string                        `gorm:"column:vmv2id;type:uuid;index:virtualmachinecvev2_vmv2id,type:btree"`
 	VmComponentID                  string                        `gorm:"column:vmcomponentid;type:uuid;index:virtualmachinecvev2_vmcomponentid,type:btree"`
 	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:virtualmachinecvev2_cvebaseinfo_cve,type:btree"`
+	CveBaseInfoSummary             string                        `gorm:"column:cvebaseinfo_summary;type:varchar"`
+	CveBaseInfoLink                string                        `gorm:"column:cvebaseinfo_link;type:varchar"`
 	CveBaseInfoPublishedOn         *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
 	CveBaseInfoCreatedAt           *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
 	CveBaseInfoEpssEpssProbability float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`
+	CveBaseInfoEpssEpssPercentile  float32                       `gorm:"column:cvebaseinfo_epss_epsspercentile;type:numeric"`
 	PreferredCvss                  float32                       `gorm:"column:preferredcvss;type:numeric"`
 	Severity                       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer;index:virtualmachinecvev2_severity,type:btree"`
 	ImpactScore                    float32                       `gorm:"column:impactscore;type:numeric"`

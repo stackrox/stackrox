@@ -105,9 +105,12 @@ func insertIntoVirtualMachineCvev2(batch *pgx.Batch, obj *storage.VirtualMachine
 		pgutils.NilOrUUID(obj.GetVmV2Id()),
 		pgutils.NilOrUUID(obj.GetVmComponentId()),
 		obj.GetCveBaseInfo().GetCve(),
+		obj.GetCveBaseInfo().GetSummary(),
+		obj.GetCveBaseInfo().GetLink(),
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 		obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
+		obj.GetCveBaseInfo().GetEpss().GetEpssPercentile(),
 		obj.GetPreferredCvss(),
 		obj.GetSeverity(),
 		obj.GetImpactScore(),
@@ -120,7 +123,7 @@ func insertIntoVirtualMachineCvev2(batch *pgx.Batch, obj *storage.VirtualMachine
 		serialized,
 	}
 
-	finalStr := "INSERT INTO virtual_machine_cvev2 (Id, VmV2Id, VmComponentId, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, PreferredCvss, Severity, ImpactScore, Nvdcvss, IsFixable, FixedBy, EpssProbability, Advisory_Name, Advisory_Link, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, VmV2Id = EXCLUDED.VmV2Id, VmComponentId = EXCLUDED.VmComponentId, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, PreferredCvss = EXCLUDED.PreferredCvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, EpssProbability = EXCLUDED.EpssProbability, Advisory_Name = EXCLUDED.Advisory_Name, Advisory_Link = EXCLUDED.Advisory_Link, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO virtual_machine_cvev2 (Id, VmV2Id, VmComponentId, CveBaseInfo_Cve, CveBaseInfo_Summary, CveBaseInfo_Link, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, CveBaseInfo_Epss_EpssPercentile, PreferredCvss, Severity, ImpactScore, Nvdcvss, IsFixable, FixedBy, EpssProbability, Advisory_Name, Advisory_Link, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, VmV2Id = EXCLUDED.VmV2Id, VmComponentId = EXCLUDED.VmComponentId, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_Summary = EXCLUDED.CveBaseInfo_Summary, CveBaseInfo_Link = EXCLUDED.CveBaseInfo_Link, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, CveBaseInfo_Epss_EpssPercentile = EXCLUDED.CveBaseInfo_Epss_EpssPercentile, PreferredCvss = EXCLUDED.PreferredCvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, EpssProbability = EXCLUDED.EpssProbability, Advisory_Name = EXCLUDED.Advisory_Name, Advisory_Link = EXCLUDED.Advisory_Link, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -131,9 +134,12 @@ var copyColsVirtualMachineCvev2 = []string{
 	"vmv2id",
 	"vmcomponentid",
 	"cvebaseinfo_cve",
+	"cvebaseinfo_summary",
+	"cvebaseinfo_link",
 	"cvebaseinfo_publishedon",
 	"cvebaseinfo_createdat",
 	"cvebaseinfo_epss_epssprobability",
+	"cvebaseinfo_epss_epsspercentile",
 	"preferredcvss",
 	"severity",
 	"impactscore",
@@ -181,9 +187,12 @@ func copyFromVirtualMachineCvev2(ctx context.Context, s pgSearch.Deleter, tx *po
 			pgutils.NilOrUUID(obj.GetVmV2Id()),
 			pgutils.NilOrUUID(obj.GetVmComponentId()),
 			obj.GetCveBaseInfo().GetCve(),
+			obj.GetCveBaseInfo().GetSummary(),
+			obj.GetCveBaseInfo().GetLink(),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
+			obj.GetCveBaseInfo().GetEpss().GetEpssPercentile(),
 			obj.GetPreferredCvss(),
 			obj.GetSeverity(),
 			obj.GetImpactScore(),

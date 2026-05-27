@@ -1,0 +1,797 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v2/image_export_service.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "ImageExportService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v2/export/cves": {
+      "get": {
+        "summary": "ListCVEs returns a paginated list of unique CVE details. The cve field in each\nrecord matches the cve field in ImageCVEFinding, allowing callers to build a\nlookup dictionary. Use ExportCVEs for large unbounded datasets.",
+        "operationId": "ImageExportService_ListCVEs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListCVEsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "since",
+            "description": "When set, only CVEs first seen in the system on or after since are returned.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "tags": [
+          "ImageExportService"
+        ]
+      }
+    },
+    "/v2/export/findings": {
+      "get": {
+        "summary": "ListFindings returns a paginated list of vulnerability findings. Each finding\nrepresents one CVE affecting one component in one image running in one deployment.",
+        "operationId": "ImageExportService_ListFindings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListFindingsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "since",
+            "description": "When set, only findings from images with last_updated >= since are returned.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "tags": [
+          "ImageExportService"
+        ]
+      }
+    },
+    "/v2/export/images": {
+      "get": {
+        "summary": "ListImages returns a paginated list of image data (metadata, layers, and installed\ncomponents). Use ExportImages for large unbounded datasets.",
+        "operationId": "ImageExportService_ListImages",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListImagesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "since",
+            "description": "When set, only images with last_updated >= since are returned.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "tags": [
+          "ImageExportService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "CVSSV3AttackVector": {
+      "type": "string",
+      "enum": [
+        "ATTACK_LOCAL",
+        "ATTACK_ADJACENT",
+        "ATTACK_NETWORK",
+        "ATTACK_PHYSICAL"
+      ],
+      "default": "ATTACK_LOCAL"
+    },
+    "CVSSV3Complexity": {
+      "type": "string",
+      "enum": [
+        "COMPLEXITY_LOW",
+        "COMPLEXITY_HIGH"
+      ],
+      "default": "COMPLEXITY_LOW"
+    },
+    "CVSSV3Impact": {
+      "type": "string",
+      "enum": [
+        "IMPACT_NONE",
+        "IMPACT_LOW",
+        "IMPACT_HIGH"
+      ],
+      "default": "IMPACT_NONE"
+    },
+    "CVSSV3Privileges": {
+      "type": "string",
+      "enum": [
+        "PRIVILEGE_NONE",
+        "PRIVILEGE_LOW",
+        "PRIVILEGE_HIGH"
+      ],
+      "default": "PRIVILEGE_NONE"
+    },
+    "CVSSV3Severity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "NONE",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "default": "UNKNOWN"
+    },
+    "CVSSV3UserInteraction": {
+      "type": "string",
+      "enum": [
+        "UI_NONE",
+        "UI_REQUIRED"
+      ],
+      "default": "UI_NONE"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v2Advisory": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        }
+      }
+    },
+    "v2AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v2Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v2Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
+    },
+    "v2CVEComponentOverride": {
+      "type": "object",
+      "properties": {
+        "componentName": {
+          "type": "string"
+        },
+        "componentVersion": {
+          "type": "string"
+        },
+        "repositoryCpe": {
+          "type": "string",
+          "description": "repository_cpe is the CPE of the product stream (e.g. \"cpe:2.3:o:redhat:enterprise_linux:8:*:*:*:*:*:*:*\")."
+        },
+        "severity": {
+          "$ref": "#/definitions/v2VulnerabilitySeverity"
+        },
+        "cvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "cvssScores": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2CVSSScore"
+          }
+        }
+      },
+      "description": "CVEComponentOverride captures per-component CVSS/severity that differs from\nthe CVE base values. Keyed by (component_name, component_version, repository_cpe)."
+    },
+    "v2CVEDetail": {
+      "type": "object",
+      "properties": {
+        "cve": {
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/definitions/v2VulnerabilitySeverity",
+          "description": "severity is the highest severity across all affected components and sources."
+        },
+        "cvss": {
+          "type": "number",
+          "format": "float",
+          "description": "cvss is the highest CVSS score across all affected components and sources."
+        },
+        "summary": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        },
+        "publishedOn": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "epssProbability": {
+          "type": "number",
+          "format": "float"
+        },
+        "cvssScores": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2CVSSScore"
+          },
+          "description": "cvss_scores provides per-source CVSS breakdowns (e.g. Red Hat, NVD, OSV)."
+        },
+        "epssPercentile": {
+          "type": "number",
+          "format": "float"
+        },
+        "advisory": {
+          "$ref": "#/definitions/v2Advisory"
+        },
+        "componentOverrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2CVEComponentOverride"
+          },
+          "description": "component_overrides lists per-component/product entries where severity or CVSS\ndiffers from the base values above. This captures cases like Red Hat scoring\na CVE differently for specific packages or product streams."
+        }
+      },
+      "description": "CVEDetail holds vulnerability metadata that is shared across all images and components\nwhere the CVE appears. Consumers can build a local dictionary keyed by cve and join\nit against the cve field in ImageCVEFinding to avoid re-fetching repeated data."
+    },
+    "v2CVSSScore": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/v2Source"
+        },
+        "url": {
+          "type": "string"
+        },
+        "cvssv3": {
+          "$ref": "#/definitions/v2CVSSV3"
+        }
+      }
+    },
+    "v2CVSSV3": {
+      "type": "object",
+      "properties": {
+        "vector": {
+          "type": "string"
+        },
+        "exploitabilityScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "impactScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "attackVector": {
+          "$ref": "#/definitions/CVSSV3AttackVector"
+        },
+        "attackComplexity": {
+          "$ref": "#/definitions/CVSSV3Complexity"
+        },
+        "privilegesRequired": {
+          "$ref": "#/definitions/CVSSV3Privileges"
+        },
+        "userInteraction": {
+          "$ref": "#/definitions/CVSSV3UserInteraction"
+        },
+        "scope": {
+          "$ref": "#/definitions/v2CVSSV3Scope"
+        },
+        "confidentiality": {
+          "$ref": "#/definitions/CVSSV3Impact"
+        },
+        "integrity": {
+          "$ref": "#/definitions/CVSSV3Impact"
+        },
+        "availability": {
+          "$ref": "#/definitions/CVSSV3Impact"
+        },
+        "score": {
+          "type": "number",
+          "format": "float"
+        },
+        "severity": {
+          "$ref": "#/definitions/CVSSV3Severity"
+        }
+      }
+    },
+    "v2CVSSV3Scope": {
+      "type": "string",
+      "enum": [
+        "UNCHANGED",
+        "CHANGED"
+      ],
+      "default": "UNCHANGED"
+    },
+    "v2ImageExportComponent": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "description": "source is the ecosystem that provides this component (e.g., OS, JAVA, PYTHON)."
+        }
+      },
+      "description": "ImageExportComponent represents a software package or library found in an image."
+    },
+    "v2ImageExportLayer": {
+      "type": "object",
+      "properties": {
+        "instruction": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "description": "ImageExportLayer represents a single layer in an image's Dockerfile history."
+    },
+    "v2ImageInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "digest": {
+          "type": "string"
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "names contains all known fully-qualified image names for this digest."
+        },
+        "operatingSystem": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ImageExportLayer"
+          }
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ImageExportComponent"
+          }
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "ImageInfo holds image properties that change infrequently: the image digest,\nmetadata, filesystem layers, and the list of installed software components."
+    },
+    "v2ListCVEsResponse": {
+      "type": "object",
+      "properties": {
+        "cves": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2CVEDetail"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "ListCVEsResponse is the paginated response for ListCVEs.\nEach entry is unique by cve identifier."
+    },
+    "v2ListFindingsResponse": {
+      "type": "object",
+      "properties": {
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2VulnerabilityFinding"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "ListFindingsResponse is the paginated response for ListFindings."
+    },
+    "v2ListImagesResponse": {
+      "type": "object",
+      "properties": {
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ImageInfo"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "ListImagesResponse is the paginated response for ListImages."
+    },
+    "v2Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v2SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v2RawQuery": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "pagination": {
+          "$ref": "#/definitions/v2Pagination"
+        }
+      },
+      "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
+    },
+    "v2SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v2AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v2Source": {
+      "type": "string",
+      "enum": [
+        "SOURCE_UNKNOWN",
+        "SOURCE_RED_HAT",
+        "SOURCE_OSV",
+        "SOURCE_NVD"
+      ],
+      "default": "SOURCE_UNKNOWN"
+    },
+    "v2VulnerabilityFinding": {
+      "type": "object",
+      "properties": {
+        "deploymentId": {
+          "type": "string"
+        },
+        "imageId": {
+          "type": "string"
+        },
+        "cve": {
+          "type": "string",
+          "description": "cve is the CVE identifier (e.g. \"CVE-2024-12345\")."
+        },
+        "componentName": {
+          "type": "string"
+        },
+        "componentVersion": {
+          "type": "string"
+        },
+        "isFixable": {
+          "type": "boolean"
+        },
+        "fixedBy": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/definitions/v2VulnerabilityState",
+          "description": "state is image-specific: OBSERVED, DEFERRED, or FALSE_POSITIVE."
+        },
+        "severity": {
+          "$ref": "#/definitions/v2VulnerabilitySeverity",
+          "description": "severity is the component-specific severity, which may differ from the CVE base severity."
+        },
+        "cvss": {
+          "type": "number",
+          "format": "float",
+          "description": "cvss is the component-specific CVSS score."
+        },
+        "repositoryCpe": {
+          "type": "string",
+          "description": "repository_cpe is the CPE of the product stream this vulnerability was matched against."
+        }
+      },
+      "description": "VulnerabilityFinding represents a single vulnerability occurrence: one CVE affecting\none component in one image running in one deployment. Use the cve field to join\nagainst the /v2/export/cves response for full CVE metadata."
+    },
+    "v2VulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
+    },
+    "v2VulnerabilityState": {
+      "type": "string",
+      "enum": [
+        "OBSERVED",
+        "DEFERRED",
+        "FALSE_POSITIVE"
+      ],
+      "default": "OBSERVED",
+      "description": "VulnerabilityState are the possible applicable to CVE. By default all vulnerabilities are in observed state.\n\n - OBSERVED: This is the default state and indicates that the CVE is not excluded from policy evaluation and risk evaluation.\n\n[Default state]\n - DEFERRED: Indicates that the vulnerability is deferred. A deferred CVE is excluded from policy evaluation and risk evaluation.\n - FALSE_POSITIVE: Indicates that the vulnerability is a false-positive. A false-positive CVE is excluded from policy evaluation and risk evaluation."
+    }
+  }
+}
