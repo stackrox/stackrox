@@ -89,7 +89,7 @@ func (l *blockingLane) run() {
 				return
 			}
 			if err := l.handleEvent(event); err != nil {
-				log.Errorf("unable to handle event: %v", err)
+				rateLimitedLog.ErrorL(l.id.String(), "unable to handle event: %v", err)
 			}
 		}
 	}

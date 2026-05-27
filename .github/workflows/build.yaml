@@ -161,25 +161,6 @@ jobs:
           condensed="$(jq -c <<< "$matrix")"
           echo "matrix=$condensed" >> "$GITHUB_OUTPUT"
 
-  # Ensures go.mod doesn't require a Go version newer than what Konflux
-  # builders support. Remove once Konflux tracks upstream Go releases:
-  # https://github.com/stackrox/stackrox/pull/19737
-  go-version-ceiling:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-        with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
-        with:
-          go-version: '1.25.7'
-          cache: false
-
-      - name: Verify go.mod is compatible with Konflux builders
-        run: go mod tidy
-
   pre-build-ui:
     strategy:
       fail-fast: false
@@ -290,12 +271,13 @@ jobs:
         run: make cli
 
       - name: Bundle build to preserve permissions
-        run: tar -cvzf cli-build.tgz bin
+        run: tar -cvf cli-build.tar bin
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
           name: cli-build
-          path: cli-build.tgz
+          path: cli-build.tar
+          compression-level: 1
 
   pre-build-go-binaries:
     strategy:
@@ -372,12 +354,13 @@ jobs:
           fi
 
       - name: Bundle the build to preserve permissions
-        run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
+        run: tar -cvf go-binaries-build.tar bin/linux_${{ matrix.arch }}
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
-          path: go-binaries-build.tgz
+          path: go-binaries-build.tar
+          compression-level: 1
 
   pre-build-docs:
     runs-on: ubuntu-latest
@@ -688,7 +671,7 @@ jobs:
 
       - name: Unpack cli build
         run: |
-          tar xvzf cli-build.tgz
+          tar xvf cli-build.tar
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -696,7 +679,7 @@ jobs:
 
       - name: Unpack Go binaries build
         run: |
-          tar xvzf go-binaries-build.tgz
+          tar xvf go-binaries-build.tar
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -723,6 +706,10 @@ jobs:
       - name: Check debugger presence in the main image
         if: github.event_name != 'pull_request'
         run: make check-debugger
+
+      - name: Prepare roxctl build context
+        run: |
+          cp -r image/rhel/THIRD_PARTY_NOTICES image/roxctl/THIRD_PARTY_NOTICES
 
       - name: Build roxctl image
         run: |
@@ -908,7 +895,7 @@ jobs:
       # Skip for external contributions.
       if: |
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      uses: mshick/add-pr-comment@64b8e914979889d746c99dea15a76e77ef64580a # ratchet:mshick/add-pr-comment@v3
+      uses: mshick/add-pr-comment@8e4927817251f1ff60c001f04568532b38e0b4a0 # ratchet:mshick/add-pr-comment@v3
       with:
         message-id: build-images-ready
         message-path: build-comment.md
@@ -918,6 +905,7 @@ jobs:
     needs:
       - define-job-matrix
       - pre-build-go-binaries
+      - pre-build-oss-notice
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
@@ -946,10 +934,14 @@ jobs:
         uses: ./.github/actions/download-artifact-with-retry
         with:
           name: go-binaries-build-${{ matrix.arch }}-default
-          path: .
 
       - name: Extract prebuilt binaries
-        run: tar xzf go-binaries-build.tgz
+        run: tar xf go-binaries-build.tar
+
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: oss-notice
+          path: THIRD_PARTY_NOTICES
 
       - name: PR labels
         uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
@@ -1069,7 +1061,7 @@ jobs:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
 
       - name: Unpack Go binaries
-        run: tar xvzf go-binaries-build.tgz
+        run: tar xvf go-binaries-build.tar
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -1243,7 +1235,7 @@ jobs:
 
     - name: Unpack cli build
       run: |
-        tar xvzf cli-build.tgz
+        tar xvf cli-build.tar
 
     - uses: ./.github/actions/download-artifact-with-retry
       with:
@@ -1251,14 +1243,14 @@ jobs:
 
     - name: Unpack Go binaries build
       run: |
-        tar xvzf go-binaries-build.tgz
+        tar xvf go-binaries-build.tar
 
     - name: Scan
       run: |
         ./scripts/ci/govulncheck.sh
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/**/*.xml'
@@ -1356,7 +1348,6 @@ jobs:
       - build-and-push-operator
       - build-and-push-scanner
       - build-operator-bundle
-      - go-version-ceiling
       - pre-build-cli
       - pre-build-docs
       - pre-build-go-binaries

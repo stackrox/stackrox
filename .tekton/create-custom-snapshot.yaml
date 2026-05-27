@@ -75,7 +75,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:9cef793ca3602bee9fca9e5f55e8846bc9c727c63b7bd18554cd59d7de4fb570
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f62cd38699f3b203e51c99e2175701791cb5dea036065bc635cb1f2701bf9bac
         - name: kind
           value: task
         resolver: bundles
@@ -132,7 +132,7 @@ spec:
         - name: SHOULD_REALLY_WORK
         steps:
         - name: determine
-          image: registry.redhat.io/ubi9-minimal:latest@sha256:12db9874bd753eb98b1ab3d840e75de5d6842ac0604fbd68c012adefe97140be
+          image: registry.redhat.io/ubi9-minimal:latest@sha256:24650313873554b6ba16c1a1b6b9f9142604f6ab735113e1695faf2dd07fdede
           # The script expresses the same condition as pipelinesascode.tekton.dev/on-cel-expression in other pipelines
           # but in a more verbose way because, as it turns out, both syntax and fields of CEL expressions are slightly
           # different.
@@ -200,7 +200,7 @@ spec:
         - name: name
           value: git-clone-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:13d49df7dc9ae301627e45f95a236011422996152f1bea46cd60217b0f057407
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:d30f13dd15daf89dd6dc645243b3444d35570d13f7840c3fd65e366022515205
         - name: kind
           value: task
         resolver: bundles
@@ -223,7 +223,7 @@ spec:
         - name: name
           value: determine-image-tag
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:9cef793ca3602bee9fca9e5f55e8846bc9c727c63b7bd18554cd59d7de4fb570
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f62cd38699f3b203e51c99e2175701791cb5dea036065bc635cb1f2701bf9bac
         - name: kind
           value: task
         resolver: bundles
@@ -241,7 +241,7 @@ spec:
         - name: name
           value: wait-for-image
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:9cef793ca3602bee9fca9e5f55e8846bc9c727c63b7bd18554cd59d7de4fb570
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f62cd38699f3b203e51c99e2175701791cb5dea036065bc635cb1f2701bf9bac
         - name: kind
           value: task
         resolver: bundles
@@ -334,7 +334,7 @@ spec:
         - name: name
           value: create-snapshot-from-bundle
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:9cef793ca3602bee9fca9e5f55e8846bc9c727c63b7bd18554cd59d7de4fb570
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f62cd38699f3b203e51c99e2175701791cb5dea036065bc635cb1f2701bf9bac
         - name: kind
           value: task
         resolver: bundles

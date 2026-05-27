@@ -557,6 +557,7 @@ function getPolicy(errors: { id?: boolean; name?: boolean } = {}): ImportPolicie
                     mitreVectorsLocked: false,
                     eventSource: 'NOT_APPLICABLE',
                     source: 'IMPERATIVE',
+                    evaluationFilter: null,
                 },
                 errors: errorResponse,
             },

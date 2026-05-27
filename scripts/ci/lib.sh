@@ -1048,7 +1048,7 @@ check_rhacs_eng_image_exists() {
     local name="$1"
     local tag="$2"
 
-    local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$tag"
+    local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag/?onlyActiveTags=true&specificTag=$tag"
     info "Checking for $name using $url"
     local check
     local extra_args=()

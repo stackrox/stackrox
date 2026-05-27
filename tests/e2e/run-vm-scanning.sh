@@ -28,7 +28,7 @@ test_vm_scanning_e2e() {
 
     deploy_optional_e2e_components
 
-    if ! ( ensure_virtctl_binary ); then
+    if ! ensure_virtctl_binary; then
         if is_CI; then
             warn "Secure virtctl download failed. Falling back to insecure curl -k download path in CI."
             ensure_virtctl_binary_insecure
@@ -41,9 +41,13 @@ test_vm_scanning_e2e() {
 
     cd "$ROOT"
     rm -f FAIL
-    # Run VM scanning preflight tests.
+    # Run unit tests that cover the vmhelpers package.
+    make -C tests TESTFLAGS="-race -p 1 -timeout 90m" vm-scanning-unit-tests || touch FAIL
+    store_test_results "tests/vm-scanning-unit-tests-results" "$output_dir/vm-unit-tests"
+
+    # Run the full VM scanning e2e suite.
     make -C tests TESTFLAGS="-race -p 1 -timeout 90m" vm-scanning-tests || touch FAIL
-    store_test_results "tests/vm-scanning-tests-results" "$output_dir"
+    store_test_results "tests/vm-scanning-tests-results" "$output_dir/vm-e2e-tests"
     [[ ! -f FAIL ]] || die "VM scanning e2e tests failed"
 }
 
