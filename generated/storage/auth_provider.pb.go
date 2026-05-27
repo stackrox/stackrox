@@ -24,12 +24,15 @@ const (
 
 // Next Tag: 15.
 type AuthProvider struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
-	Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name       string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"AuthProvider Name,hidden"` // @gotags: sql:"unique" search:"AuthProvider Name,hidden"
-	Type       string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
-	UiEndpoint string                 `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint,proto3" json:"ui_endpoint,omitempty"`
-	Enabled    bool                   `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
+	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"AuthProvider Name,hidden"` // @gotags: sql:"unique" search:"AuthProvider Name,hidden"
+	Type  string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	// The UI endpoint of the Central instance, e.g. "central.example.com:443".
+	// URLs with scheme (e.g. "https://central.example.com") are accepted and
+	// normalized to host:port format. If no port is given, 443 is assumed.
+	UiEndpoint string `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint,proto3" json:"ui_endpoint,omitempty"`
+	Enabled    bool   `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	// Config holds auth provider specific configuration. Each configuration options
 	// are different based on the given auth provider type.
 	// OIDC:
@@ -65,7 +68,7 @@ type AuthProvider struct {
 	Validated bool `protobuf:"varint,8,opt,name=validated,proto3" json:"validated,omitempty"`
 	// UI endpoints which to allow in addition to `ui_endpoint`. I.e., if a login request
 	// is coming from any of these, the auth request will use these for the callback URL,
-	// not ui_endpoint.
+	// not ui_endpoint. Same format rules as `ui_endpoint` apply.
 	ExtraUiEndpoints   []string                          `protobuf:"bytes,9,rep,name=extra_ui_endpoints,json=extraUiEndpoints,proto3" json:"extra_ui_endpoints,omitempty"`
 	Active             bool                              `protobuf:"varint,10,opt,name=active,proto3" json:"active,omitempty"`
 	RequiredAttributes []*AuthProvider_RequiredAttribute `protobuf:"bytes,11,rep,name=required_attributes,json=requiredAttributes,proto3" json:"required_attributes,omitempty"`
