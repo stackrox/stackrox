@@ -97,7 +97,7 @@ function IntegrationsListPage({ source, type }: IntegrationsListPageProps): Reac
             onSuccess: () => {
                 const count = deletingIntegrationIds.length;
                 addToast(
-                    `Successfully deleted ${count} ${pluralize(count, 'integration')}`,
+                    `Successfully deleted ${pluralize(count, 'integration')}`,
                     'success'
                 );
                 setDeletingIntegrationIds([]);
