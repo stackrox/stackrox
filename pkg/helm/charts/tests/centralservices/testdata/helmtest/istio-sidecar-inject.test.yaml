@@ -1,0 +1,10 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+  scannerV4:
+    disable: false
+
+tests:
+- name: "all pod templates prevent Istio sidecar injection"
+  expect: |
+    .deployments[] | .spec.template.metadata.labels["sidecar.istio.io/inject"] | assertThat(. == "false")
