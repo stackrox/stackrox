@@ -143,6 +143,22 @@ message ListComplianceScanConfigsProfileResponse {
   int32 total_count = 2;
 }
 
+// ComplianceScanConfigOverview provides a unified view of managed and discovered scan configurations.
+// Managed configs are created via the ACS API; discovered configs are observed from
+// externally-created ScanSettingBindings in secured clusters.
+message ComplianceScanConfigOverview {
+  string scan_config_name = 1;
+  bool is_managed = 2;
+  string managed_config_id = 3;
+  repeated string cluster_ids = 4;
+  repeated string profile_names = 5;
+}
+
+message ListComplianceScanConfigOverviewsResponse {
+  repeated ComplianceScanConfigOverview configs = 1;
+  int32 total_count = 2;
+}
+
 message ListComplianceScanConfigsClusterProfileResponse {
   string cluster_id = 1;
   string cluster_name = 2;
@@ -220,5 +236,11 @@ service ComplianceScanConfigurationService {
   // GetComplianceScanConfiguration retrieves the specified compliance scan configurations
   rpc ListComplianceScanConfigClusterProfiles(ComplianceConfigClusterProfileRequest) returns (ListComplianceScanConfigsClusterProfileResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/configurations/clusters/{cluster_id}/profiles/collection"};
+  }
+
+  // ListComplianceScanConfigOverviews returns a unified view of managed (ACS-created) and
+  // discovered (externally-created) scan configurations across all secured clusters.
+  rpc ListComplianceScanConfigOverviews(RawQuery) returns (ListComplianceScanConfigOverviewsResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/configurations/overviews"};
   }
 }

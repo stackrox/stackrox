@@ -205,6 +205,82 @@
         ]
       }
     },
+    "/v2/compliance/scan/configurations/overviews": {
+      "get": {
+        "summary": "ListComplianceScanConfigOverviews returns a unified view of managed (ACS-created) and\ndiscovered (externally-created) scan configurations across all secured clusters.",
+        "operationId": "ComplianceScanConfigurationService_ListComplianceScanConfigOverviews",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceScanConfigOverviewsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
     "/v2/compliance/scan/configurations/profiles/collection": {
       "get": {
         "summary": "ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters",
@@ -969,6 +1045,33 @@
       ],
       "default": "SUBMITTED"
     },
+    "v2ComplianceScanConfigOverview": {
+      "type": "object",
+      "properties": {
+        "scanConfigName": {
+          "type": "string"
+        },
+        "isManaged": {
+          "type": "boolean"
+        },
+        "managedConfigId": {
+          "type": "string"
+        },
+        "clusterIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "profileNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "ComplianceScanConfigOverview provides a unified view of managed and discovered scan configurations.\nManaged configs are created via the ACS API; discovered configs are observed from\nexternally-created ScanSettingBindings in secured clusters."
+    },
     "v2ComplianceScanConfiguration": {
       "type": "object",
       "properties": {
@@ -1065,6 +1168,22 @@
         },
         "operatorVersion": {
           "type": "string"
+        }
+      }
+    },
+    "v2ListComplianceScanConfigOverviewsResponse": {
+      "type": "object",
+      "properties": {
+        "configs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceScanConfigOverview"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
