@@ -146,10 +146,11 @@ jobs:
         go test -race -count=1 -v ./pkg/set/... ./pkg/concurrency/... ./pkg/utils/... 2>&1 | tail -10
         echo "=== Quick subset took $((SECONDS - start))s ==="
 
-    - name: Go Unit Tests
+    - name: Go Unit Tests (no race, testing cache benefit)
       run: |
+        echo "=== Running without -race to isolate cache benefit ==="
         start=$SECONDS
-        ${{ matrix.gotags }} make go-unit-tests
+        ${{ matrix.gotags }} TESTFLAGS="-p 4" make go-unit-tests
         echo "=== Tests took $((SECONDS - start))s ==="
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
@@ -707,9 +708,9 @@ jobs:
           BUILD_TAG: 0.0.0
           SHORTCOMMIT: "0000000"
         run: |
-          echo "Running full test suite to warm both compilation and test cache..."
+          echo "Running full test suite WITHOUT -race to warm cache..."
           start=$SECONDS
-          make go-unit-tests 2>&1 | tail -5 || true
+          TESTFLAGS="-p 4" make go-unit-tests 2>&1 | tail -5 || true
           echo "=== Seed test run took $((SECONDS - start))s ==="
           echo "GOCACHE: $(du -sh $(go env GOCACHE) 2>/dev/null | cut -f1)"
           echo "GOCACHE files: $(find $(go env GOCACHE) -type f 2>/dev/null | wc -l)"
