@@ -15,7 +15,7 @@ type ScanConfigParametersViewProps = {
     headingLevel: 'h2' | 'h3';
     scanName: string;
     description?: string;
-    scanSchedule: Schedule;
+    scanSchedule: Schedule | null;
     children?: ReactNode;
 };
 
@@ -43,7 +43,9 @@ function ScanConfigParametersView({
                 <DescriptionListGroup>
                     <DescriptionListTerm>Schedule</DescriptionListTerm>
                     <DescriptionListDescription>
-                        {formatRecurringSchedule(scanSchedule)}
+                        {scanSchedule
+                            ? formatRecurringSchedule(scanSchedule)
+                            : 'Externally managed'}
                     </DescriptionListDescription>
                 </DescriptionListGroup>
                 {children}

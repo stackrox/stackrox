@@ -38,7 +38,7 @@ export type ClusterScanStatus = {
 type BaseComplianceScanConfigurationSettings = {
     oneTimeScan: boolean;
     profiles: string[];
-    scanSchedule: Schedule;
+    scanSchedule: Schedule | null;
     description?: string;
     notifiers: NotifierConfiguration[];
 };
