@@ -145,7 +145,30 @@ runs:
       shell: bash
       run: |
         set +e
+        echo "=== DEBUG: arm/x86 detection ==="
+        echo "uname_m=$(uname -m)"
+        echo "uname_a=$(uname -a)"
+        echo "=== /proc/cpuinfo (first 20 lines) ==="
+        head -20 /proc/cpuinfo 2>/dev/null || echo "/proc/cpuinfo not available"
+        echo "=== env vars ==="
+        echo "ImageOS=${ImageOS:-<unset>}"
+        echo "ImageVersion=${ImageVersion:-<unset>}"
+        echo "RUNNER_OS=${RUNNER_OS:-<unset>}"
+        echo "RUNNER_ARCH=${RUNNER_ARCH:-<unset>}"
+        echo "RUNNER_NAME=${RUNNER_NAME:-<unset>}"
+        echo "=== /etc/environment ==="
+        cat /etc/environment 2>/dev/null || echo "/etc/environment not available"
+        echo "=== lscpu ==="
+        lscpu 2>/dev/null | head -15 || echo "lscpu not available"
+        echo "=== END DEBUG ==="
+        # Actual fingerprint capture
         cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
+        if [[ -z "$cpu_model" ]]; then
+          cpu_model=$(lscpu 2>/dev/null | grep -i 'model name' | cut -d: -f2 | xargs)
+        fi
+        if [[ -z "$cpu_model" ]]; then
+          cpu_model=$(uname -m)
+        fi
         echo "cpu_model=${cpu_model:-unknown}" >> "$GITHUB_OUTPUT"
         echo "runner_image=${ImageOS:-unknown}-${ImageVersion:-}" >> "$GITHUB_OUTPUT"
         mem_gb=$(awk '/MemTotal/{printf "%.0f", $2/1048576}' /proc/meminfo 2>/dev/null)
