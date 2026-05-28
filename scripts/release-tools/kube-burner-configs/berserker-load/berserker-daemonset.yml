@@ -19,7 +19,7 @@ spec:
         app: {{ .namePrefix }}-{{.Replica}}
     spec:
       containers:
-      - image: quay.io/stackrox-io/berserker:{{ .imageTag }}
+      - image: "quay.io/stackrox-io/berserker:{{ .imageTag }}"
         {{- if .command }}
         command:
 {{ .command | indent 8 | trimSuffix "\n" }}
