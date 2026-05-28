@@ -173,8 +173,8 @@ runs:
           save_job_record "${{ github.job }}" "gha" \
             outcome "${{ job.status }}" \
             started_at "${{ steps.record_job_info.outputs.started_at }}" \
-            cut_os_image "${{ steps.runner-info.outputs.cpu_model }}" \
-            build "${{ steps.runner-info.outputs.runner_image }}" \
+            cut_os_image "${{ steps.runner-info.outputs.runner_image }}" \
+            build "${{ steps.runner-info.outputs.cpu_model }}" \
             test_target "${{ steps.runner-info.outputs.runner_resources }}" || true;
           free=$(df -BGB --output=avail / | tail -1);
           echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
