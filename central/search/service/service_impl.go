@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -66,7 +65,6 @@ var (
 
 type autocompleteResult struct {
 	value string
-	score float64
 }
 
 // SearchFunc represents a function that goes from a query to a proto search result.
@@ -170,7 +168,7 @@ func handleMatch(fieldPath, value string) string {
 	return value
 }
 
-func handleMapResults(matches map[string][]string, score float64) []autocompleteResult {
+func handleMapResults(matches map[string][]string) []autocompleteResult {
 	var keys []string
 	var values []string
 	for k, match := range matches {
@@ -182,7 +180,7 @@ func handleMapResults(matches map[string][]string, score float64) []autocomplete
 	}
 	results := make([]autocompleteResult, 0, len(keys))
 	for i := 0; i < len(keys); i++ {
-		results = append(results, autocompleteResult{value: fmt.Sprintf("%s=%s", keys[i], values[i]), score: score})
+		results = append(results, autocompleteResult{value: fmt.Sprintf("%s=%s", keys[i], values[i])})
 	}
 	return results
 }
@@ -267,20 +265,19 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 			//
 			// This implies that the object is a map because it has multiple values
 			if isMapMatch(matches) {
-				autocompleteResults = append(autocompleteResults, handleMapResults(matches, r.Score)...)
+				autocompleteResults = append(autocompleteResults, handleMapResults(matches)...)
 				continue
 			}
 
 			for fieldPath, match := range matches {
 				for _, v := range match {
 					value := handleMatch(fieldPath, v)
-					autocompleteResults = append(autocompleteResults, autocompleteResult{value: value, score: r.Score})
+					autocompleteResults = append(autocompleteResults, autocompleteResult{value: value})
 				}
 			}
 		}
 	}
 
-	sort.Slice(autocompleteResults, func(i, j int) bool { return autocompleteResults[i].score > autocompleteResults[j].score })
 	resultSet := set.NewStringSet()
 
 	var stringResults []string
@@ -382,8 +379,6 @@ func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCateg
 		counts = append(counts, &v1.SearchResponse_Count{Category: category, Count: int64(len(resultsFromCategory))})
 		results = append(results, resultsFromCategory...)
 	}
-	// Sort from highest score to lowest
-	sort.SliceStable(results, func(i, j int) bool { return results[i].GetScore() > results[j].GetScore() })
 	return
 }
 

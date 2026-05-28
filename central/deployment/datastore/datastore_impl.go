@@ -508,7 +508,3 @@ func (c *DeploymentSearchResultConverter) BuildLocation(result *pkgSearch.Result
 func (c *DeploymentSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_DEPLOYMENTS
 }
-
-func (c *DeploymentSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
-	return result.Score
-}

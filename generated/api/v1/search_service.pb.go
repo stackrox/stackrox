@@ -1471,7 +1471,8 @@ type SearchResult struct {
 	Name           string                           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Category       SearchCategory                   `protobuf:"varint,3,opt,name=category,proto3,enum=v1.SearchCategory" json:"category,omitempty"`
 	FieldToMatches map[string]*SearchResult_Matches `protobuf:"bytes,4,rep,name=field_to_matches,json=fieldToMatches,proto3" json:"field_to_matches,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Score          float64                          `protobuf:"fixed64,5,opt,name=score,proto3" json:"score,omitempty"`
+	// Deprecated: Always 0 since Postgres migration. Will be removed in a future release.
+	Score float64 `protobuf:"fixed64,5,opt,name=score,proto3" json:"score,omitempty"`
 	// Location is intended to be a unique, yet human readable,
 	// identifier for the result. For example, for a deployment,
 	// the location will be "$cluster_name/$namespace/$deployment_name.

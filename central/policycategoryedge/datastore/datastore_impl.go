@@ -162,7 +162,3 @@ func (c *PolicyCategoryEdgeSearchResultConverter) BuildLocation(result *searchPk
 func (c *PolicyCategoryEdgeSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_POLICY_CATEGORY_EDGE
 }
-
-func (c *PolicyCategoryEdgeSearchResultConverter) GetScore(result *searchPkg.Result) float64 {
-	return result.Score
-}

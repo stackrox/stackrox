@@ -583,7 +583,8 @@
         },
         "score": {
           "type": "number",
-          "format": "double"
+          "format": "double",
+          "description": "Deprecated: Always 0 since Postgres migration. Will be removed in a future release."
         },
         "location": {
           "type": "string",

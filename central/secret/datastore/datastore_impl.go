@@ -146,7 +146,3 @@ func (c *SecretSearchResultConverter) BuildLocation(result *pkgSearch.Result) st
 func (c *SecretSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_SECRETS
 }
-
-func (c *SecretSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
-	return result.Score
-}
