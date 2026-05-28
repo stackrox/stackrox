@@ -152,6 +152,9 @@ runs:
           if [[ -n "$img_os" ]]; then runner_image="${img_os}-${img_ver}"; fi
         fi
         echo "runner_image=${runner_image}" >> "$GITHUB_OUTPUT"
+        mem_mb=$(awk '/MemTotal/{printf "%d", $2/1024}' /proc/meminfo 2>/dev/null || echo "0")
+        disk_gb=$(df -BG --output=size / 2>/dev/null | tail -1 | tr -d ' G' || echo "0")
+        echo "runner_resources=${mem_mb}MB/${disk_gb}GB" >> "$GITHUB_OUTPUT"
 
     - name: Record job info
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
@@ -171,7 +174,8 @@ runs:
             outcome "${{ job.status }}" \
             started_at "${{ steps.record_job_info.outputs.started_at }}" \
             cut_os_image "${{ steps.runner-info.outputs.cpu_model }}" \
-            build "${{ steps.runner-info.outputs.runner_image }}" || true;
+            build "${{ steps.runner-info.outputs.runner_image }}" \
+            test_target "${{ steps.runner-info.outputs.runner_resources }}" || true;
           free=$(df -BGB --output=avail / | tail -1);
           echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\
