@@ -8,9 +8,6 @@ To enable automated CI triage capabilities, you need to configure the following 
 
 - [mcp-atlassian](https://github.com/sooperset/mcp-atlassian)
 - [Github MCP](https://github.com/github/github-mcp-server/blob/main/docs/installation-guides/install-claude.md)
-
-No dedicated Prow MCP server is needed — `curl` is sufficient for fetching Prow/CI build logs and artifacts.
-
 Example MCPs configuration template:
 
 - Install gopls https://go.dev/gopls/#installation
