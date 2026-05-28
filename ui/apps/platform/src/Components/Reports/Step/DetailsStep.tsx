@@ -19,7 +19,7 @@ function DetailsStep<T extends DetailsType = DetailsType>({
         <PageSection>
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
                 <Title headingLevel="h2">Details</Title>
-                <Form>
+                <Form isWidthLimited>
                     <FormLabelGroup
                         label="Name"
                         isRequired

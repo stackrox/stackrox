@@ -140,7 +140,7 @@ const SecretsMostUsedAcrossDeployments = () => {
                 }
                 return (
                     <Widget
-                        className="s-2 overflow-hidden pdf-page"
+                        className="s-2 overflow-hidden"
                         header="Secrets most used across deployments"
                         headerComponents={viewAllLink}
                     >

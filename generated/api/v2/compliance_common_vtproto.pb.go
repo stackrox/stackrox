@@ -58,6 +58,7 @@ func (m *ComplianceRule) CloneVT() *ComplianceRule {
 	r.ParentRule = m.ParentRule
 	r.Instructions = m.Instructions
 	r.Warning = m.Warning
+	r.OperatorKind = m.OperatorKind
 	if rhs := m.Fixes; rhs != nil {
 		tmpContainer := make([]*ComplianceRule_Fix, len(rhs))
 		for k, v := range rhs {
@@ -412,6 +413,9 @@ func (this *ComplianceRule) EqualVT(that *ComplianceRule) bool {
 		return false
 	}
 	if this.Warning != that.Warning {
+		return false
+	}
+	if this.OperatorKind != that.OperatorKind {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -880,6 +884,13 @@ func (m *ComplianceRule) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.OperatorKind != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.OperatorKind))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x80
 	}
 	if len(m.Warning) > 0 {
 		i -= len(m.Warning)
@@ -1729,6 +1740,9 @@ func (m *ComplianceRule) SizeVT() (n int) {
 	l = len(m.Warning)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.OperatorKind != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.OperatorKind))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2598,6 +2612,25 @@ func (m *ComplianceRule) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Warning = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 16:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OperatorKind", wireType)
+			}
+			m.OperatorKind = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.OperatorKind |= ComplianceRule_OperatorKind(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -5001,6 +5034,25 @@ func (m *ComplianceRule) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Warning = stringValue
 			iNdEx = postIndex
+		case 16:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OperatorKind", wireType)
+			}
+			m.OperatorKind = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.OperatorKind |= ComplianceRule_OperatorKind(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

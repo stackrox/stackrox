@@ -283,7 +283,7 @@ const PolicyViolationsBySeverity = () => {
                 }
                 return (
                     <Widget
-                        className="s-2 pdf-page"
+                        className="s-2"
                         header="Policy violations by severity"
                         headerComponents={viewAllLink}
                     >

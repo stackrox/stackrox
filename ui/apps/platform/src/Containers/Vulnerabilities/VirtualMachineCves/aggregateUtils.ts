@@ -4,7 +4,7 @@ import type { VulnerabilitySeverity } from 'types/cve.proto';
 import type { ScanComponent, SourceType } from 'types/scanComponent.proto';
 import type { SearchFilter } from 'types/search';
 import type { Advisory, EmbeddedVulnerability } from 'types/vulnerability.proto';
-import { searchValueAsArray } from 'utils/searchUtils';
+import { getValueByCaseInsensitiveKey, searchValueAsArray } from 'utils/searchUtils';
 
 import { severityToQuerySeverityKeys } from '../components/BySeveritySummaryCard';
 import type { ResourceCountByCveSeverityAndStatus } from '../components/CvesByStatusSummaryCard';
@@ -158,7 +158,9 @@ export function applyVirtualMachineCveTableFilters(
     const componentVersionFilters = searchValueAsArray(searchFilter['Component Version']).map(
         (version) => version.toLowerCase()
     );
-    const severityFilters = searchValueAsArray(searchFilter.SEVERITY)
+    const severityFilters = searchValueAsArray(
+        getValueByCaseInsensitiveKey(searchFilter, 'Severity')
+    )
         .filter(isVulnerabilitySeverityLabel)
         .map(severityLabelToSeverity);
 
@@ -173,7 +175,7 @@ export function applyVirtualMachineCveTableFilters(
             }
         }
 
-        // "SEVERITY" filter, exact
+        // "Severity" filter, exact
         if (severityFilters.length > 0) {
             if (!severityFilters.includes(cveTableRow.severity)) {
                 return false;

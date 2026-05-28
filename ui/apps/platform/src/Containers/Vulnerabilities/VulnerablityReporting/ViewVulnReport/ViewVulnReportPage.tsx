@@ -33,6 +33,7 @@ import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import usePermissions from 'hooks/usePermissions';
 import useToasts from 'hooks/patternfly/useToasts';
 import type { Toast } from 'hooks/patternfly/useToasts';
+import type { ReportConfiguration } from 'services/ReportsService.types';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
@@ -55,6 +56,12 @@ import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForRe
 import useDeleteModal, { isErrorDeleteResult } from '../hooks/useDeleteModal';
 import { vulnerabilityConfigurationReportDetailsPath } from '../pathsForVulnerabilityReporting';
 // import { getReportFormValuesFromConfiguration } from '../utils';
+
+// resourceScope: {} after roll back to previous version that does not support a newer resource scope.
+// Do not let user clone or edit report configuration which might cause worse problems after roll forward.
+function isResourceScopeAbsent({ resourceScope }: ReportConfiguration) {
+    return Object.keys(resourceScope).length === 0;
+}
 
 export type TabTitleProps = {
     icon?: ReactElement;
@@ -189,7 +196,11 @@ function ViewVulnReportPage() {
                                     onClick={() => {
                                         navigate(`${vulnReportPageURL}?action=edit`);
                                     }}
-                                    isDisabled={isReportStatusPending || isRunning}
+                                    isDisabled={
+                                        isReportStatusPending ||
+                                        isRunning ||
+                                        isResourceScopeAbsent(reportConfiguration)
+                                    }
                                 >
                                     Edit report
                                 </DropdownItem>
@@ -200,7 +211,8 @@ function ViewVulnReportPage() {
                                     isDisabled={
                                         isReportStatusPending ||
                                         isRunning ||
-                                        reportConfiguration.notifiers.length === 0
+                                        reportConfiguration.notifiers.length === 0 ||
+                                        isResourceScopeAbsent(reportConfiguration)
                                     }
                                     description={
                                         reportConfiguration.notifiers.length === 0
@@ -213,7 +225,11 @@ function ViewVulnReportPage() {
                                 <DropdownItem
                                     key="Generate download"
                                     onClick={() => runReport(reportId, 'DOWNLOAD')}
-                                    isDisabled={isReportStatusPending || isRunning}
+                                    isDisabled={
+                                        isReportStatusPending ||
+                                        isRunning ||
+                                        isResourceScopeAbsent(reportConfiguration)
+                                    }
                                 >
                                     Generate download
                                 </DropdownItem>
@@ -222,6 +238,7 @@ function ViewVulnReportPage() {
                                     onClick={() => {
                                         navigate(`${vulnReportPageURL}?action=clone`);
                                     }}
+                                    isDisabled={isResourceScopeAbsent(reportConfiguration)}
                                 >
                                     Clone report
                                 </DropdownItem>

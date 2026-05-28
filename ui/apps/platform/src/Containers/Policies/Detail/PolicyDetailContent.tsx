@@ -10,6 +10,7 @@ import PolicyOverview from './PolicyOverview';
 import BooleanPolicyLogicSection from '../Wizard/Step3/BooleanPolicyLogicSection';
 import PolicyScopeSection from './PolicyScopeSection';
 import PolicyBehaviorSection from './PolicyBehaviorSection';
+import PolicyFiltersSection from './PolicyFiltersSection';
 
 type PolicyDetailContentProps = {
     policy: Policy;
@@ -29,8 +30,14 @@ function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentPr
             });
     }, []);
 
-    const { enforcementActions, eventSource, exclusions, scope, lifecycleStages } = policy;
-
+    const {
+        enforcementActions,
+        evaluationFilter,
+        eventSource,
+        exclusions,
+        scope,
+        lifecycleStages,
+    } = policy;
     return (
         <div data-testid="policy-details">
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
@@ -59,6 +66,10 @@ function PolicyDetailContent({ policy, isReview = false }: PolicyDetailContentPr
                         )}
                     </Formik>
                 </Stack>
+                <PolicyFiltersSection
+                    evaluationFilter={evaluationFilter}
+                    lifecycleStages={lifecycleStages}
+                />
                 <Stack hasGutter>
                     <Title headingLevel="h2">Policy resources</Title>
                     <PolicyScopeSection scope={scope} exclusions={exclusions} />

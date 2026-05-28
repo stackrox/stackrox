@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import { Toolbar, ToolbarContent, ToolbarGroup } from '@patternfly/react-core';
 
@@ -20,17 +21,18 @@ import {
     attributeForSeverityInFrontendAndLocalStorage,
     attributeForSnoozed,
 } from '../searchFilterConfig';
+import { normalizeSearchFilterKeys } from '../utils/searchUtils';
 
 const emptyDefaultFilters = {
-    SEVERITY: [],
-    FIXABLE: [],
+    Severity: [],
+    Fixable: [],
 };
 
 type AdvancedFiltersToolbarProps = {
     searchFilterConfig: CompoundSearchFilterProps['config'];
     searchFilter: SearchFilter;
     onFilterChange: (searchFilter: SearchFilter, payload?: OnSearchPayload) => void;
-    cveStatusFilterField?: 'FIXABLE' | 'CLUSTER CVE FIXABLE';
+    cveStatusFilterField?: 'Fixable' | 'Cluster CVE Fixable';
     className?: string;
     defaultFilters?: DefaultFilters;
     includeCveSeverityFilters?: boolean;
@@ -44,7 +46,7 @@ function AdvancedFiltersToolbar({
     searchFilterConfig,
     searchFilter,
     onFilterChange,
-    cveStatusFilterField = 'FIXABLE',
+    cveStatusFilterField = 'Fixable',
     className = '',
     defaultFilters = emptyDefaultFilters,
     includeCveSeverityFilters = true,
@@ -53,6 +55,10 @@ function AdvancedFiltersToolbar({
     additionalContextFilter,
     children,
 }: AdvancedFiltersToolbarProps): ReactElement {
+    // Normalize legacy URL keys (e.g. SEVERITY → Severity) so that child
+    // components render correctly even for bookmarked URLs from before the rename.
+    const normalizedFilter = useMemo(() => normalizeSearchFilterKeys(searchFilter), [searchFilter]);
+
     const attributesSeparateFromConfig: CompoundSearchFilterAttribute[] = [attributeForSnoozed];
     if (includeCveSeverityFilters) {
         attributesSeparateFromConfig.push(attributeForSeverityInFrontendAndLocalStorage);
@@ -70,7 +76,7 @@ function AdvancedFiltersToolbar({
     }
 
     function onFilterApplied(payload: OnSearchPayload) {
-        onFilterChange(updateSearchFilter(searchFilter, payload), payload);
+        onFilterChange(updateSearchFilter(normalizedFilter, payload), payload);
     }
 
     return (
@@ -78,7 +84,7 @@ function AdvancedFiltersToolbar({
             <ToolbarContent>
                 <CompoundSearchFilter
                     config={searchFilterConfig}
-                    searchFilter={searchFilter}
+                    searchFilter={normalizedFilter}
                     additionalContextFilter={additionalContextFilter}
                     onSearch={onFilterApplied}
                     defaultEntity={defaultSearchFilterEntity}
@@ -90,32 +96,32 @@ function AdvancedFiltersToolbar({
                                 attribute={attributeForSeverityInFrontendAndLocalStorage}
                                 isSeparate
                                 onSearch={onFilterApplied}
-                                searchFilter={searchFilter}
+                                searchFilter={normalizedFilter}
                             />
                         )}
                         {includeCveStatusFilters && (
                             <SearchFilterSelectInclusive
                                 attribute={
-                                    cveStatusFilterField === 'FIXABLE'
+                                    cveStatusFilterField === 'Fixable'
                                         ? attributeForFixableInFrontendAndLocalStorage
                                         : attributeForClusterCveFixableInFrontend
                                 }
                                 isSeparate
                                 onSearch={onFilterApplied}
-                                searchFilter={searchFilter}
+                                searchFilter={normalizedFilter}
                             />
                         )}
                     </ToolbarGroup>
                 )}
                 {children}
-                {getHasSearchApplied(searchFilter) && (
+                {getHasSearchApplied(normalizedFilter) && (
                     <ToolbarGroup aria-label="applied search filters" className="pf-v6-u-w-100">
                         <CompoundSearchFilterLabels
                             attributesSeparateFromConfig={attributesSeparateFromConfig}
                             config={searchFilterConfig}
                             isGlobalPredicate={isGlobalPredicate}
                             onFilterChange={onFilterChange}
-                            searchFilter={searchFilter}
+                            searchFilter={normalizedFilter}
                         />
                     </ToolbarGroup>
                 )}

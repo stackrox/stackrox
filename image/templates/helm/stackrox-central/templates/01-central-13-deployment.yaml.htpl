@@ -23,9 +23,9 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: central
+        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "central") | nindent 8 }}
       annotations:
-        traffic.sidecar.istio.io/excludeInboundPorts: "8443"
         {{- include "srox.podAnnotations" (list . "deployment" "central") | nindent 8 }}
         {{- if eq ._rox.env.openshift 4 }}
         openshift.io/required-scc: nonroot-v2

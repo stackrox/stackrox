@@ -3,7 +3,6 @@ package manager
 import (
 	"strconv"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -36,7 +35,7 @@ func (m *networkFlowManager) executeEndpointAction(
 	case PostEnrichmentActionRetry:
 		// noop, retry happens through not removing from `hostConns.endpoints`
 	case PostEnrichmentActionCheckRemove:
-		if status.checkRemoveCondition(env.NetworkFlowUseLegacyUpdateComputer.BooleanSetting(), status.enrichmentConsumption.IsConsumed()) {
+		if status.checkRemoveCondition(status.enrichmentConsumption.IsConsumed()) {
 			delete(hostConns.endpoints, *ep)
 			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
 			flowMetrics.HostProcessesEvents.WithLabelValues("remove").Inc()
@@ -79,9 +78,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 		status.enrichmentConsumption.consumedNetworkGraph = true
 	}
 
-	// Use shared container resolution logic
-	activeChecker := &endpointActiveChecker{mutex: &m.activeEndpointsMutex, activeEndpoints: m.activeEndpoints}
-	containerResult := resolveContainerID(m, now, ep.containerID, status, activeChecker, *ep)
+	containerResult := resolveContainerID(m, now, ep.containerID, status, &m.endpointChecker, *ep)
 
 	if !containerResult.Found {
 		// There is an endpoint involving a container that Sensor does not recognize. In this case we may do two things:
@@ -260,27 +257,39 @@ func updateEndpointMetric(now timestamp.MicroTS,
 	result EnrichmentResult, resultPLOP EnrichmentResult,
 	reason EnrichmentReasonEp, reasonPLOP EnrichmentReasonEp,
 	status *connStatus) {
-	flowMetrics.FlowEnrichmentEventsEndpoint.With(prometheus.Labels{
-		"containerIDfound": strconv.FormatBool(status.containerIDFound),
-		"result":           string(result),
-		"action":           string(action),
-		"isHistorical":     strconv.FormatBool(status.historicalContainerID),
-		"reason":           string(reason),
-		"isClosed":         strconv.FormatBool(status.isClosed()),
-		"rotten":           strconv.FormatBool(status.rotten),
-		"mature":           strconv.FormatBool(status.pastContainerResolutionDeadline(now)),
-		"fresh":            strconv.FormatBool(status.isFresh(now))},
+	containerIDFound := strconv.FormatBool(status.containerIDFound)
+	isHistorical := strconv.FormatBool(status.historicalContainerID)
+	isClosed := strconv.FormatBool(status.isClosed())
+	rotten := strconv.FormatBool(status.rotten)
+	mature := strconv.FormatBool(status.pastContainerResolutionDeadline(now))
+	fresh := strconv.FormatBool(status.isFresh(now))
+
+	// Keep these hot-path metric updates on WithLabelValues and reuse the precomputed
+	// strings above. The old prometheus.Labels map literals allocated on every
+	// enrichment pass and showed up in ROX-34659 benchmarks as avoidable GC pressure
+	// while this code runs under the hostConns mutex. The argument order must stay in
+	// sync with the label registration in sensor/common/networkflow/metrics/metrics.go.
+	flowMetrics.FlowEnrichmentEventsEndpoint.WithLabelValues(
+		containerIDFound,
+		string(result),
+		string(action),
+		isHistorical,
+		string(reason),
+		isClosed,
+		rotten,
+		mature,
+		fresh,
 	).Inc()
 
-	flowMetrics.HostProcessesEnrichmentEvents.With(prometheus.Labels{
-		"containerIDfound": strconv.FormatBool(status.containerIDFound),
-		"result":           string(resultPLOP),
-		"action":           string(action),
-		"isHistorical":     strconv.FormatBool(status.historicalContainerID),
-		"reason":           string(reasonPLOP),
-		"isClosed":         strconv.FormatBool(status.isClosed()),
-		"rotten":           strconv.FormatBool(status.rotten),
-		"mature":           strconv.FormatBool(status.pastContainerResolutionDeadline(now)),
-		"fresh":            strconv.FormatBool(status.isFresh(now))},
+	flowMetrics.HostProcessesEnrichmentEvents.WithLabelValues(
+		containerIDFound,
+		string(resultPLOP),
+		string(action),
+		isHistorical,
+		string(reasonPLOP),
+		isClosed,
+		rotten,
+		mature,
+		fresh,
 	).Inc()
 }

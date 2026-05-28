@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
+	imagev2common "github.com/stackrox/rox/central/imagev2/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -15,6 +16,7 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
+	q = imagev2common.WithRowsFromImageV2Only(q)
 	return ds.storage.Search(ctx, q)
 }
 
@@ -22,6 +24,7 @@ func (ds *datastoreImpl) SearchImageCVEs(ctx context.Context, q *v1.Query) ([]*v
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
 	}
+	q = imagev2common.WithRowsFromImageV2Only(q)
 
 	// Clone the query and add select fields for SearchResult construction
 	clonedQuery := q.CloneVT()
@@ -47,6 +50,7 @@ func (ds *datastoreImpl) SearchImageCVEs(ctx context.Context, q *v1.Query) ([]*v
 }
 
 func (ds *datastoreImpl) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]*storage.ImageCVEV2, error) {
+	q = imagev2common.WithRowsFromImageV2Only(q)
 	var cves []*storage.ImageCVEV2
 	err := ds.storage.GetByQueryFn(ctx, q, func(cve *storage.ImageCVEV2) error {
 		cves = append(cves, cve)
@@ -60,6 +64,7 @@ func (ds *datastoreImpl) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([
 }
 
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	q = imagev2common.WithRowsFromImageV2Only(q)
 	return ds.storage.Count(ctx, q)
 }
 

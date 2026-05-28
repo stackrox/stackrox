@@ -1159,7 +1159,7 @@ func RunQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, 
 	return nil
 }
 
-func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (*cursorSession, error) {
+func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, hint string) (*cursorSession, error) {
 	preparedQuery, err := prepareQuery(ctx, schema, q)
 	if err != nil {
 		return nil, err
@@ -1192,8 +1192,8 @@ func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1
 		}
 	}
 
-	cursorSuffix := random.GenerateString(16, random.CaseInsensitiveAlpha)
-	cursorId := stringutils.JoinNonEmpty("_", preparedQuery.From, cursorSuffix)
+	cursorSuffix := random.GenerateString(4, random.CaseInsensitiveAlpha)
+	cursorId := stringutils.JoinNonEmpty("_", preparedQuery.From, hint, cursorSuffix)
 
 	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursorId, queryStr), preparedQuery.Data...)
 	if err != nil {
@@ -1210,12 +1210,12 @@ func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1
 	return &cursor, nil
 }
 
-func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, callback func(obj PT) error) error {
+func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, hint string, callback func(obj PT) error) error {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
 	defer cancel()
 
 	cursor, err := pgutils.Retry2(ctx, func() (*cursorSession, error) {
-		return retryableGetCursorSession(ctx, schema, q, db)
+		return retryableGetCursorSession(ctx, schema, q, db, hint)
 	})
 	if err != nil {
 		return errors.Wrap(err, "prepare cursor")

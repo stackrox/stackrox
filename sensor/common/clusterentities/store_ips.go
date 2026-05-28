@@ -122,21 +122,25 @@ func (e *podIPsStore) purgeDeploymentNoLock(deploymentID string) {
 func (e *podIPsStore) LookupByNetAddr(ip net.IPAddress, port uint16) (results, historical []LookupResult) {
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
-	for deploymentID := range e.ipMap[ip] {
-		result := LookupResult{
-			Entity:         networkgraph.EntityForDeployment(deploymentID),
-			ContainerPorts: []uint16{port},
+	if currentSet := e.ipMap[ip]; len(currentSet) > 0 {
+		results = make([]LookupResult, 0, len(currentSet))
+		for deploymentID := range currentSet {
+			results = append(results, LookupResult{
+				Entity:         networkgraph.EntityForDeployment(deploymentID),
+				ContainerPorts: []uint16{port},
+			})
 		}
-		results = append(results, result)
 	}
 	// if there is a match in the map, then there is no need to search in history,
 	// as it may contain data about different past deployment using this address
-	for histDeploymentID := range e.historicalIPs[ip] {
-		result := LookupResult{
-			Entity:         networkgraph.EntityForDeployment(histDeploymentID),
-			ContainerPorts: []uint16{port},
+	if histSet := e.historicalIPs[ip]; len(histSet) > 0 {
+		historical = make([]LookupResult, 0, len(histSet))
+		for histDeploymentID := range histSet {
+			historical = append(historical, LookupResult{
+				Entity:         networkgraph.EntityForDeployment(histDeploymentID),
+				ContainerPorts: []uint16{port},
+			})
 		}
-		historical = append(historical, result)
 	}
 	return results, historical
 }

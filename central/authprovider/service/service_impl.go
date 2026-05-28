@@ -192,6 +192,9 @@ func (s *serviceImpl) GetAuthProviders(_ context.Context, request *v1.GetAuthPro
 // PostAuthProvider inserts a new auth provider into the system.
 func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuthProviderRequest) (*storage.AuthProvider, error) {
 	providerReq := request.GetProvider()
+	if err := normalizeAuthProviderEndpoints(providerReq); err != nil {
+		return nil, err
+	}
 	if providerReq.GetName() == "" {
 		return nil, errox.InvalidArgs.CausedBy("no auth provider name specified")
 	}
@@ -216,6 +219,9 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 
 // PutAuthProvider upserts an auth provider into the system.
 func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.AuthProvider) (*storage.AuthProvider, error) {
+	if err := normalizeAuthProviderEndpoints(request); err != nil {
+		return nil, err
+	}
 	if request.GetId() == "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
@@ -354,4 +360,25 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 		}
 	}
 	return response, nil
+}
+
+func normalizeAuthProviderEndpoints(provider *storage.AuthProvider) error {
+	if provider == nil {
+		return nil
+	}
+	if ep := provider.GetUiEndpoint(); ep != "" {
+		normalized, err := authproviders.NormalizeUIEndpoint(ep)
+		if err != nil {
+			return err
+		}
+		provider.UiEndpoint = normalized
+	}
+	for i, ep := range provider.GetExtraUiEndpoints() {
+		normalized, err := authproviders.NormalizeUIEndpoint(ep)
+		if err != nil {
+			return err
+		}
+		provider.ExtraUiEndpoints[i] = normalized
+	}
+	return nil
 }

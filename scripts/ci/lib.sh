@@ -506,7 +506,7 @@ registry_ro_login() {
 }
 
 push_matching_collector_scanner_images() {
-    info "Pushing collector & scanner images tagged with main-version using buildx imagetools"
+    info "Pushing collector & scanner images tagged with main-version using skopeo"
 
     if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: push_matching_collector_scanner_images <brand>"
@@ -518,7 +518,7 @@ push_matching_collector_scanner_images() {
     registry="$(registry_from_branding "$brand")"
 
     _retag() {
-        retry 5 true docker buildx imagetools create -t "$2" "$1"
+        skopeo copy --retry-times 5 --all "docker://$1" "docker://$2"
     }
 
     local main_tag
@@ -619,13 +619,6 @@ _image_prefetcher_prebuilt_start() {
         ;;
     *nongroovy-e2e-tests)
         image_prefetcher_start_set qa-nongroovy-e2e
-        # Override the default image pull policy for containers with quay.io
-        # images to rely on prefetched images. This helps ensure that the static
-        # prefect list stays up to date with additions.
-        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
-        ;;
-    *sensor-integration-tests)
-        image_prefetcher_start_set sensor-integration
         # Override the default image pull policy for containers with quay.io
         # images to rely on prefetched images. This helps ensure that the static
         # prefect list stays up to date with additions.
@@ -785,9 +778,6 @@ _image_prefetcher_prebuilt_await() {
         ;;
     *nongroovy-e2e-tests)
         image_prefetcher_await_set qa-nongroovy-e2e
-        ;;
-    *sensor-integration-tests)
-        image_prefetcher_await_set sensor-integration
         ;;
     *compatibility-tests)
         image_prefetcher_await_set compatibility
@@ -949,9 +939,6 @@ populate_prefetcher_image_list() {
     qa-nongroovy-e2e)
         cp "$SCRIPTS_ROOT/tests/images-to-prefetch.txt" "$image_list"
         ;;
-    sensor-integration)
-        cp "$SCRIPTS_ROOT/sensor/tests/images-to-prefetch.txt" "$image_list"
-        ;;
     nongroovy-compatibility)
         cp "$SCRIPTS_ROOT/tests/images-to-prefetch.txt" "$image_list"
         ;;
@@ -990,10 +977,12 @@ scanner-v4-db ${tag}
 END
             ;;
         *-race-condition-qa-e2e-tests)
+            local base_tag="${tag%-rcd}"
+            local rcd_tag="${base_tag}-rcd"
             cat >> "${image_list}" << END
-central-db ${tag}
-main ${tag}-rcd
-roxctl ${tag}
+central-db ${base_tag}
+main ${rcd_tag}
+roxctl ${base_tag}
 END
             if is_in_PR_context && ! pr_has_label "ci-build-race-condition-debug"; then
                 echo "ERROR: Your PR is missing the \"ci-build-race-condition-debug\" label."
@@ -1046,7 +1035,7 @@ check_rhacs_eng_image_exists() {
     local name="$1"
     local tag="$2"
 
-    local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$tag"
+    local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag/?onlyActiveTags=true&specificTag=$tag"
     info "Checking for $name using $url"
     local check
     local extra_args=()
@@ -1073,12 +1062,6 @@ check_build_workflows() {
         info "GitHub Actions workflow status for build.yaml:"
         check-workflow-run \
             --workflow=build.yaml \
-            --head-SHA="${commit_sha}"
-
-        echo
-        info "GitHub Actions workflow status for scanner-build.yaml:"
-        check-workflow-run \
-            --workflow=scanner-build.yaml \
             --head-SHA="${commit_sha}"
     } | tee "${STATE_BUILD_RESULTS}" || true
 }

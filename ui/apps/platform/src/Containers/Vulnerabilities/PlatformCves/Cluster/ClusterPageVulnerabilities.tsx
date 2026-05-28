@@ -86,7 +86,7 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
                     className="pf-v6-u-pb-0 pf-v6-u-px-sm"
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
-                    cveStatusFilterField="CLUSTER CVE FIXABLE"
+                    cveStatusFilterField="Cluster CVE Fixable"
                     onFilterChange={(newFilter, searchPayload) => {
                         setSearchFilter(newFilter);
                         trackAppliedFilter(PLATFORM_CVE_FILTER_APPLIED, searchPayload);

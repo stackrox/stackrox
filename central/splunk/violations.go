@@ -37,6 +37,13 @@ const (
 	// detected but not yet seen in the database. Ten seconds were chosen based on our understanding how quickly
 	// violations are persisted.
 	eventualConsistencyMargin = 10 * time.Second
+
+	// maxProcessDetectionDelay is the maximum expected delay between when a process runs (signal time) and when
+	// the resulting alert is stored in Central's database. The full pipeline is: sensor detection -> transmission
+	// to central -> enrichment -> database storage. In CI environments this delay has been observed at 50+ seconds.
+	// This constant bounds the fallback recovery window for process violations whose signal time has already been
+	// passed by the checkpoint but whose alert was recently stored.
+	maxProcessDetectionDelay = 2 * time.Minute
 )
 
 var (
@@ -210,8 +217,11 @@ func extractViolations(alert *storage.Alert, fromTime time.Time, toTime time.Tim
 			seenViolations = true
 
 			violationTime := getProcessViolationTime(alert, procIndicator)
-			if violationTime == nil || violationTime.Compare(fromTime) <= 0 ||
-				violationTime.Compare(toTime) > 0 {
+			if violationTime == nil {
+				continue
+			}
+			if !isTimeInWindow(violationTime, fromTime, toTime) &&
+				!isProcessViolationRecoverableViaAlertTime(violationTime, alert, fromTime, toTime) {
 				continue
 			}
 
@@ -305,6 +315,25 @@ func generateViolationID(alertID string, v *storage.Alert_Violation) (string, er
 	// In the end we just need IDs with uniqueness so this should be good enough.
 	alertUUID = uuid.NewV5(alertUUID, alertID)
 	return uuid.NewV5(alertUUID, hex.Dump(data)).String(), nil
+}
+
+func isTimeInWindow(t *time.Time, fromTime, toTime time.Time) bool {
+	return t != nil && t.Compare(fromTime) > 0 && t.Compare(toTime) <= 0
+}
+
+// isProcessViolationRecoverableViaAlertTime returns true when a process violation's signal time has
+// fallen behind the checkpoint window but the alert was recently stored (alert.Time is within the
+// window). This handles the race where the pipeline delay between process execution and alert
+// storage exceeds the checkpoint advancement rate.
+func isProcessViolationRecoverableViaAlertTime(signalTime *time.Time, alert *storage.Alert, fromTime, toTime time.Time) bool {
+	alertTime := protocompat.ConvertTimestampToTimeOrNil(alert.GetTime())
+	if alertTime == nil {
+		return false
+	}
+	if !isTimeInWindow(alertTime, fromTime, toTime) {
+		return false
+	}
+	return signalTime.After(alertTime.Add(-maxProcessDetectionDelay))
 }
 
 func getProcessViolationTime(fromAlert *storage.Alert, fromProcIndicator *storage.ProcessIndicator) *time.Time {

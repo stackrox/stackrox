@@ -2,6 +2,8 @@ import { useCallback } from 'react';
 import Raven from 'raven-js';
 import mapValues from 'lodash/mapValues';
 
+import type { ReportPageAction } from 'Components/Reports/reports.types';
+import type { ImageType } from 'services/ReportsService.types';
 import type { Telemetry } from 'types/config.proto';
 import { ensureExhaustive, tupleTypeGuard } from 'utils/type.utils';
 import type { UnionFrom } from 'utils/type.utils';
@@ -54,6 +56,11 @@ export const NODE_CVE_FILTER_APPLIED = 'Node CVE Filter Applied';
 export const NODE_CVE_ENTITY_CONTEXT_VIEWED = 'Node CVE Entity Context View';
 export const PLATFORM_CVE_FILTER_APPLIED = 'Platform CVE Filter Applied';
 export const PLATFORM_CVE_ENTITY_CONTEXT_VIEWED = 'Platform CVE Entity Context View';
+
+// vulnerability reports
+
+export const IMAGE_VULNERABILITY_REPORTS_WIZARD_SAVE_CLICKED =
+    'Image Vulnerability Reports Wizard Save Clicked';
 
 // cluster-init-bundles
 export const CREATE_INIT_BUNDLE_CLICKED = 'Create Init Bundle Clicked';
@@ -115,13 +122,12 @@ type AnalyticsBoolean = 0 | 1;
 export const searchCategoriesWithFilter = [
     'Component Source',
     'Component Layer Type',
-    'SEVERITY',
-    'FIXABLE',
-    'CLUSTER CVE FIXABLE',
+    'Severity',
+    'Fixable',
+    'Cluster CVE Fixable',
     'CVSS',
     'Node Top CVSS',
     'Category',
-    'Severity',
     'Lifecycle Stage',
     'Resource Type',
     'Inactive Deployment',
@@ -358,6 +364,17 @@ export type AnalyticsEvent =
           properties: {
               type: 'CVE' | 'Cluster';
               page: 'Overview';
+          };
+      }
+    | {
+          event: typeof IMAGE_VULNERABILITY_REPORTS_WIZARD_SAVE_CLICKED;
+          properties: {
+              action: ReportPageAction;
+              cvesSince: 'allVuln' | 'sinceLastSentScheduledReport' | 'sinceStartDate';
+              imageTypes: ImageType[];
+              intervalType: 'DAILY' | 'MONTHLY' | 'WEEKLY' | 'UNSET';
+              notifiers: number;
+              resourceScope: string;
           };
       }
     /**

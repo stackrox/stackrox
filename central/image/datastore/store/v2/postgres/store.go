@@ -856,7 +856,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 		}
 		return nil
 	}
-	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesSchema, q, s.db, callback)
+	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesSchema, q, s.db, "WalkByQuery", callback)
 	if err != nil {
 		return errors.Wrap(err, "cursor by query")
 	}
@@ -868,7 +868,7 @@ func (s *storeImpl) WalkMetadataByQuery(ctx context.Context, q *v1.Query, fn fun
 
 	q = applyDefaultSort(q)
 
-	err := pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesSchema, q, s.db, fn)
+	err := pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesSchema, q, s.db, "WalkMetadataByQuery", fn)
 	if err != nil {
 		return errors.Wrap(err, "cursor by query")
 	}

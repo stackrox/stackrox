@@ -202,21 +202,20 @@ func cacheKey(containerID, processSignalID string) string {
 	return containerID + ":" + processSignalID
 }
 
-func (p *Pipeline) bufferActivity(fs *sensorAPI.FileActivity) {
-	process := fs.GetProcess()
-	if process == nil {
-		return
-	}
+type bufferResult int
 
-	key := cacheKey(process.GetContainerId(), process.GetId())
+const (
+	bufferOK bufferResult = iota
+	bufferFullGlobal
+	bufferFullPerProcess
+)
+
+func (p *Pipeline) bufferActivityLocked(key string, fs *sensorAPI.FileActivity) (bufferResult, int) {
 	p.activityMutex.Lock()
 	defer p.activityMutex.Unlock()
 
 	if p.totalBufferedActivity >= maxTotalBufferedActivities {
-		log.Warnf("File activity buffer is full (%d activities), dropping file activity for process %s",
-			maxTotalBufferedActivities, process.GetId())
-		metrics.IncrementFileActivityBufferDrops()
-		return
+		return bufferFullGlobal, 0
 	}
 
 	entry, exists := p.bufferedActivity[key]
@@ -229,15 +228,35 @@ func (p *Pipeline) bufferActivity(fs *sensorAPI.FileActivity) {
 	}
 
 	if len(entry.activities) >= maxBufferedActivitiesPerProcess {
-		log.Warnf("Too many buffered activities for process %s (limit: %d), dropping file activity",
-			process.GetId(), maxBufferedActivitiesPerProcess)
-		metrics.IncrementFileActivityBufferDrops()
-		return
+		return bufferFullPerProcess, 0
 	}
 
 	entry.activities = append(entry.activities, fs)
 	p.totalBufferedActivity++
-	metrics.SetFileActivityBufferSize(p.totalBufferedActivity)
+	return bufferOK, p.totalBufferedActivity
+}
+
+func (p *Pipeline) bufferActivity(fs *sensorAPI.FileActivity) {
+	process := fs.GetProcess()
+	if process == nil {
+		return
+	}
+
+	key := cacheKey(process.GetContainerId(), process.GetId())
+	result, bufferSize := p.bufferActivityLocked(key, fs)
+
+	switch result {
+	case bufferFullGlobal:
+		log.Warnf("File activity buffer is full (%d activities), dropping file activity for process %s",
+			maxTotalBufferedActivities, process.GetId())
+		metrics.IncrementFileActivityBufferDrops()
+	case bufferFullPerProcess:
+		log.Warnf("Too many buffered activities for process %s (limit: %d), dropping file activity",
+			process.GetId(), maxBufferedActivitiesPerProcess)
+		metrics.IncrementFileActivityBufferDrops()
+	default:
+		metrics.SetFileActivityBufferSize(bufferSize)
+	}
 }
 
 func (p *Pipeline) popBufferedActivity(key string) []*sensorAPI.FileActivity {
@@ -351,30 +370,37 @@ func (p *Pipeline) cleanupExpiredBuffers() {
 	}
 }
 
-func (p *Pipeline) pruneExpiredBuffers() {
+func (p *Pipeline) pruneExpiredBuffersLocked(now time.Time) (pruned, droppedActivities, bufferSize int) {
 	p.activityMutex.Lock()
 	defer p.activityMutex.Unlock()
-
-	now := time.Now()
-	pruned := 0
 
 	for key, entry := range p.bufferedActivity {
 		if now.Sub(entry.timestamp) > bufferedActivityTTL {
 			p.totalBufferedActivity -= len(entry.activities)
-			metrics.IncrementFileActivityBufferDropsBy(len(entry.activities))
+			droppedActivities += len(entry.activities)
 			delete(p.bufferedActivity, key)
 			pruned++
 		}
 	}
-
 	if p.totalBufferedActivity < 0 {
-		log.Warnf("totalBufferedActivity went negative (%d), resetting to 0 (possible accounting bug)", p.totalBufferedActivity)
+		bufferSize = p.totalBufferedActivity
 		p.totalBufferedActivity = 0
+	} else {
+		bufferSize = p.totalBufferedActivity
 	}
+	return pruned, droppedActivities, bufferSize
+}
 
+func (p *Pipeline) pruneExpiredBuffers() {
+	pruned, droppedActivities, bufferSize := p.pruneExpiredBuffersLocked(time.Now())
+
+	if bufferSize < 0 {
+		log.Warnf("totalBufferedActivity went negative (%d), resetting to 0 (possible accounting bug)", bufferSize)
+	}
 	if pruned > 0 {
+		metrics.IncrementFileActivityBufferDropsBy(droppedActivities)
+		metrics.SetFileActivityBufferSize(max(bufferSize, 0))
 		log.Debugf("Pruned %d expired file activity buffers (TTL: %v)", pruned, bufferedActivityTTL)
-		metrics.SetFileActivityBufferSize(p.totalBufferedActivity)
 	}
 }
 

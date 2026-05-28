@@ -15,7 +15,6 @@ import TablePagination from 'Components/TablePagination';
 import Query from 'Components/CacheFirstQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
-import createPDFTable from 'utils/pdfUtils';
 import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY, DEPLOYMENTS_QUERY } from 'queries/table';
 import { LIST_STANDARD, STANDARDS_QUERY } from 'queries/standard';
 import queryService from 'utils/queryService';
@@ -188,14 +187,7 @@ function canFilterByComplianceState(filterQuery, complianceStateKey) {
     );
 }
 
-const ListTable = ({
-    searchComponent,
-    entityType,
-    query,
-    selectedRowId,
-    updateSelectedRow,
-    pdfId,
-}) => {
+const ListTable = ({ searchComponent, entityType, query, selectedRowId, updateSelectedRow }) => {
     const [page, setPage] = useState(0);
     // This is a client-side implementation of filtering by the "Compliance State" Search Option
     function filterByComplianceState(data, filterQuery, isControlList) {
@@ -311,10 +303,6 @@ const ListTable = ({
                             : '';
                         headerText = `${entityCountNoun}${groupedByText}`;
 
-                        if (tableData && tableData.length) {
-                            createPDFTable(tableData, entityType, query, pdfId, tableColumns);
-                        }
-
                         const tableElement = isControlList ? (
                             <TableGroup
                                 groups={tableData}
@@ -388,13 +376,11 @@ ListTable.propTypes = {
     }),
     selectedRowId: PropTypes.string,
     updateSelectedRow: PropTypes.func.isRequired,
-    pdfId: PropTypes.string,
 };
 
 ListTable.defaultProps = {
     searchComponent: null,
     selectedRowId: null,
-    pdfId: null,
     entityType: null,
     query: null,
 };

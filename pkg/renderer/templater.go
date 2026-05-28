@@ -122,9 +122,6 @@ type K8sConfig struct {
 
 	OfflineMode bool
 
-	// IstioVersion is the version of Istio to render for (if any)
-	IstioVersion string
-
 	ImageOverrides map[string]interface{}
 
 	EnableCentralDB bool

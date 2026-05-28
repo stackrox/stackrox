@@ -6,14 +6,14 @@ import (
 	"testing"
 
 	"github.com/klauspost/compress/snappy"
-	"github.com/quay/claircore/rhel/vex"
 	"github.com/quay/claircore/test"
+	testvex "github.com/quay/claircore/test/vex"
 	"github.com/quay/claircore/toolkit/types/csaf"
 )
 
 func TestFetchEnrichment(t *testing.T) {
 	ctx := test.Logging(t)
-	root, c := vex.ServeSecDB(t, "testdata/server.txtar")
+	root, c := testvex.ServeSecDB(ctx, t, "testdata/server.txtar")
 	enricher := &Enricher{}
 	err := enricher.Configure(ctx, func(v interface{}) error {
 		cf := v.(*Config)

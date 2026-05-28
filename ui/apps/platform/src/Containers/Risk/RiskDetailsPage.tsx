@@ -15,13 +15,33 @@ import {
 import { useParams } from 'react-router-dom-v5-compat';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
+import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import LinkShim from 'Components/PatternFly/LinkShim/LinkShim';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
-import { getLinkToDeploymentInNetworkGraph, riskBasePath } from 'routePaths';
+import {
+    getLinkToDeploymentInNetworkGraph,
+    riskFullViewPath,
+    riskPlatformViewPath,
+    riskUserWorkloadsViewPath,
+} from 'routePaths';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 
 import RiskDetailTabs from './RiskDetailTabs';
 import useDeploymentWithRisk from './useDeploymentWithRisk';
+
+function getRiskBreadcrumb(filteredWorkflowView: FilteredWorkflowView) {
+    // Note: We cannot exhaustively check for all possible values of filteredWorkflowView because
+    // `FilteredWorkflowView` contains `Node view`, which is not a valid value for Risk.
+    // Therefore, we only check for the valid values for Risk.
+    if (filteredWorkflowView === 'Platform view') {
+        return { title: 'Platform risk', url: riskPlatformViewPath };
+    }
+    if (filteredWorkflowView === 'Full view') {
+        return { title: 'All deployment risk', url: riskFullViewPath };
+    }
+    return { title: 'User workload risk', url: riskUserWorkloadsViewPath };
+}
 
 function RiskDetailsPage(): ReactElement {
     const params = useParams();
@@ -30,14 +50,18 @@ function RiskDetailsPage(): ReactElement {
     const { data, isLoading, error } = useDeploymentWithRisk(deploymentId);
     const deploymentName = data?.deployment.name;
 
+    const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
+
     const isRouteEnabled = useIsRouteEnabled();
     const isRouteEnabledForNetworkGraph = isRouteEnabled('network-graph');
+
+    const { title: breadcrumbTitle, url: breadcrumbUrl } = getRiskBreadcrumb(filteredWorkflowView);
 
     return (
         <>
             <PageBreadcrumb>
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={riskBasePath}>Risk</BreadcrumbItemLink>
+                    <BreadcrumbItemLink to={breadcrumbUrl}>{breadcrumbTitle}</BreadcrumbItemLink>
                     <BreadcrumbItem>{deploymentName ?? <Skeleton width="200px" />}</BreadcrumbItem>
                 </Breadcrumb>
             </PageBreadcrumb>

@@ -69,13 +69,9 @@ const buildTableColumns = (match, location) => {
             Header: `Cluster`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const url = getConfigMgmtPathForEntitiesAndId('CLUSTER', original.id);
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {original.name}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{original.name}</TableCellLink>;
             },
             accessor: 'name',
             id: clusterSortFields.CLUSTER,
@@ -92,11 +88,11 @@ const buildTableColumns = (match, location) => {
             Header: `Policy Status`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const {
                     policyStatus: { status },
                 } = original;
-                return <PolicyStatusIconText isPass={status === 'pass'} isTextOnly={pdf} />;
+                return <PolicyStatusIconText isPass={status === 'pass'} />;
             },
             id: 'status',
             accessor: (d) => d.policyStatus.status,
@@ -107,23 +103,19 @@ const buildTableColumns = (match, location) => {
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'complianceControlCount',
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { complianceControlCount } = original;
                 const { passingCount, failingCount, unknownCount } = complianceControlCount;
                 const totalCount = passingCount + failingCount + unknownCount;
                 if (!totalCount) {
-                    return <NoEntitiesIconText text="No Controls" isTextOnly={pdf} />;
+                    return <NoEntitiesIconText text="No Controls" />;
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
                     .push('CONTROL')
                     .url();
                 const text = `${totalCount} ${pluralize('Controls', totalCount)}`;
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {text}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{text}</TableCellLink>;
             },
             sortable: false,
         },
@@ -131,21 +123,17 @@ const buildTableColumns = (match, location) => {
             Header: `Users & Groups`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { subjectCount } = original;
                 if (!subjectCount) {
-                    return <NoEntitiesIconText text="No Users & Groups" isTextOnly={pdf} />;
+                    return <NoEntitiesIconText text="No Users & Groups" />;
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
                     .push('SUBJECT')
                     .url();
                 const text = `${subjectCount} ${pluralize('Users & Groups', subjectCount)}`;
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {text}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{text}</TableCellLink>;
             },
             id: 'subjectCount',
             accessor: (d) => d.subjectCount,
@@ -155,10 +143,10 @@ const buildTableColumns = (match, location) => {
             Header: `Service Accounts`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { serviceAccountCount } = original;
                 if (!serviceAccountCount) {
-                    return <NoEntitiesIconText text="No Service Accounts" isTextOnly={pdf} />;
+                    return <NoEntitiesIconText text="No Service Accounts" />;
                 }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
@@ -168,11 +156,7 @@ const buildTableColumns = (match, location) => {
                     'Service Accounts',
                     serviceAccountCount
                 )}`;
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {text}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{text}</TableCellLink>;
             },
             id: 'serviceAccountCount',
             accessor: (d) => d.serviceAccountCount,
@@ -182,18 +166,14 @@ const buildTableColumns = (match, location) => {
             Header: `Roles`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { k8sRoleCount } = original;
                 if (!k8sRoleCount) {
-                    return <NoEntitiesIconText text="No Roles" isTextOnly={pdf} />;
+                    return <NoEntitiesIconText text="No Roles" />;
                 }
                 const url = URLService.getURL(match, location).push(original.id).push('ROLE').url();
                 const text = `${k8sRoleCount} ${pluralize('Roles', k8sRoleCount)}`;
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {text}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{text}</TableCellLink>;
             },
             id: 'k8sRoleCount',
             accessor: (d) => d.k8sRoleCount,

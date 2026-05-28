@@ -139,6 +139,7 @@ style: golangci-lint style-slim
 .PHONY: style-slim
 style-slim: \
 	blanks \
+	check-cert-watcher-sync \
 	check-service-protos \
 	github-actions-pin-check \
 	newlines \
@@ -263,6 +264,12 @@ migrator-build-nodeps:
 	@echo "+ $@"
 	$(GOBUILD) migrator
 
+.PHONY: check-cert-watcher-sync
+check-cert-watcher-sync:
+	@echo "+ $@"
+	@diff image/postgres/scripts/cert-watcher.sh scanner/image/db/scripts/cert-watcher.sh \
+		|| (echo "ERROR: cert-watcher.sh files are out of sync" && exit 1)
+
 .PHONY: check-service-protos
 check-service-protos:
 	@echo "+ $@"
@@ -361,11 +368,9 @@ deps: $(shell find $(BASE_DIR) -name "go.sum")
 	@echo "+ $@"
 	$(SILENT)$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
 	$(SILENT)test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
-ifdef CI
-	$(SILENT)GOTOOLCHAIN=local go mod tidy || { >&2 echo "Go toolchain does not match with installed Go version. This is a compatibility check that prevents breaking downstream builds. If you really need to update the toolchain version, ask in #forum-acs-golang" ; exit 1 ; }
-	$(SILENT)git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
-else
 	$(SILENT)go mod tidy
+ifdef CI
+	$(SILENT)git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
 endif
 	$(SILENT)touch $@
 
@@ -501,6 +506,7 @@ main-build-nodeps:
 		migrator \
 		operator/cmd \
 		roxctl \
+		scanner/cmd/scanner \
 		sensor/admission-control \
 		sensor/kubernetes \
 		sensor/upgrader \

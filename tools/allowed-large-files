@@ -1,5 +1,6 @@
 **/go.sum
 **/zz_generated.deepcopy.go
+.github/workflows/build.yaml
 CHANGELOG.md
 central/alert/datastore/internal/store/postgres/store.go
 central/baseimage/watcher/watcher_impl_test.go
@@ -49,6 +50,7 @@ pkg/mitre/files/mitre.json
 pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks/mocks.go
 pkg/sac/effectiveaccessscope/effective_access_scope_test.go
 pkg/scancomponent/testdata_ComponentIDV2Golden.txt
+pkg/scanners/scannerv4/convert_test.go
 pkg/scannerv4/mappers/mappers.go
 pkg/scannerv4/mappers/mappers_test.go
 pkg/search/postgres/common_test.go

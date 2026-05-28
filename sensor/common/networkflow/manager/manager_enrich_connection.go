@@ -3,10 +3,8 @@ package manager
 import (
 	"strconv"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -39,7 +37,7 @@ func (m *networkFlowManager) executeConnectionAction(
 	case PostEnrichmentActionRetry:
 		// noop, retry happens through not removing from `hostConns.connections`
 	case PostEnrichmentActionCheckRemove:
-		if status.checkRemoveCondition(env.NetworkFlowUseLegacyUpdateComputer.BooleanSetting(), status.enrichmentConsumption.consumedNetworkGraph) {
+		if status.checkRemoveCondition(status.enrichmentConsumption.consumedNetworkGraph) {
 			delete(hostConns.connections, *conn)
 			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Inc()
 		}
@@ -67,9 +65,7 @@ func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostCo
 func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *connection, status *connStatus, enrichedConnections map[indicator.NetworkConn]timestamp.MicroTS) (EnrichmentResult, EnrichmentReasonConn) {
 	isFresh := status.isFresh(now)
 
-	// Use shared container resolution logic
-	activeChecker := &connectionActiveChecker{mutex: &m.activeConnectionsMutex, activeConnections: m.activeConnections}
-	containerResult := resolveContainerID(m, now, conn.containerID, status, activeChecker, *conn)
+	containerResult := resolveContainerID(m, now, conn.containerID, status, &m.connectionChecker, *conn)
 
 	if !containerResult.Found {
 		// There is a connection involving a container that Sensor does not recognize. In this case we may do two things:
@@ -108,11 +104,9 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 		port = conn.remote.IPAndPort.Port
 	}
 
-	metricDirection := prometheus.Labels{
-		"direction": direction,
-		"namespace": container.Namespace,
-	}
-
+	// Keep the flow counter label values in metric registration order: direction,
+	// namespace. These WithLabelValues calls sit on the enrichment hot path and
+	// intentionally avoid map-based labels to stay allocation-free.
 	// Cannot find any entity when looking by endpoint and IP address.
 	if len(lookupResults) == 0 {
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
@@ -169,14 +163,14 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 			if !status.enrichmentConsumption.consumedNetworkGraph {
 				// Count internal metrics even if central lacks `NetworkGraphInternalEntitiesSupported` capability.
 				if isExternal {
-					flowMetrics.ExternalFlowCounter.With(metricDirection).Inc()
+					flowMetrics.ExternalFlowCounter.WithLabelValues(direction, container.Namespace).Inc()
 				} else {
-					flowMetrics.InternalFlowCounter.With(metricDirection).Inc()
+					flowMetrics.InternalFlowCounter.WithLabelValues(direction, container.Namespace).Inc()
 				}
 			}
 		} else {
 			if !status.enrichmentConsumption.consumedNetworkGraph {
-				flowMetrics.NetworkEntityFlowCounter.With(metricDirection).Inc()
+				flowMetrics.NetworkEntityFlowCounter.WithLabelValues(direction, container.Namespace).Inc()
 			}
 			lookupResults = []clusterentities.LookupResult{
 				{
@@ -187,7 +181,7 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 		}
 	} else {
 		if !status.enrichmentConsumption.consumedNetworkGraph {
-			flowMetrics.NetworkEntityFlowCounter.With(metricDirection).Inc()
+			flowMetrics.NetworkEntityFlowCounter.WithLabelValues(direction, container.Namespace).Inc()
 		}
 		status.enrichmentConsumption.consumedNetworkGraph = true
 		if conn.incoming {
@@ -279,8 +273,8 @@ func (m *networkFlowManager) handleConnectionEnrichmentResult(result EnrichmentR
 	case EnrichmentResultInvalidInput:
 		switch reason {
 		case EnrichmentReasonConnParsingIPFailed:
-			log.Debugf("Enrichment failed. Unable to parse IP address.")
-			return PostEnrichmentActionRetry
+			log.Debugf("Enrichment failed. Unable to parse IP address. Removing connection.")
+			return PostEnrichmentActionRemove
 		}
 	case EnrichmentResultSkipped:
 		switch reason {
@@ -324,16 +318,27 @@ func deactivateConnectionNoLock(conn *connection,
 }
 
 func updateConnectionMetric(now timestamp.MicroTS, action PostEnrichmentAction, result EnrichmentResult, reason EnrichmentReasonConn, status *connStatus) {
-	flowMetrics.FlowEnrichmentEventsConnection.With(prometheus.Labels{
-		"containerIDfound": strconv.FormatBool(status.containerIDFound),
-		"result":           string(result),
-		"action":           string(action),
-		"isHistorical":     strconv.FormatBool(status.historicalContainerID),
-		"reason":           string(reason),
-		"isClosed":         strconv.FormatBool(status.isClosed()),
-		"rotten":           strconv.FormatBool(status.rotten),
-		"mature":           strconv.FormatBool(status.pastContainerResolutionDeadline(now)),
-		"fresh":            strconv.FormatBool(status.isFresh(now)),
-		"isExternal":       strconv.FormatBool(status.isExternal),
-	}).Inc()
+	containerIDFound := strconv.FormatBool(status.containerIDFound)
+	isHistorical := strconv.FormatBool(status.historicalContainerID)
+	isClosed := strconv.FormatBool(status.isClosed())
+	rotten := strconv.FormatBool(status.rotten)
+	mature := strconv.FormatBool(status.pastContainerResolutionDeadline(now))
+	fresh := strconv.FormatBool(status.isFresh(now))
+	isExternal := strconv.FormatBool(status.isExternal)
+
+	// Keep this hot-path metric update on WithLabelValues and reuse the
+	// precomputed strings above. The argument order must stay in sync with the
+	// label registration in sensor/common/networkflow/metrics/metrics.go.
+	flowMetrics.FlowEnrichmentEventsConnection.WithLabelValues(
+		containerIDFound,
+		string(result),
+		string(action),
+		isHistorical,
+		string(reason),
+		isClosed,
+		rotten,
+		mature,
+		fresh,
+		isExternal,
+	).Inc()
 }

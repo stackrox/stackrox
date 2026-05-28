@@ -133,9 +133,9 @@ const ConfigManagementEntityNamespace = ({
                 ];
 
                 return (
-                    <div className="w-full" id="capture-dashboard-stretch">
+                    <div className="w-full">
                         <CollapsibleSection title="Namespace Summary">
-                            <div className="flex flex-wrap pdf-page">
+                            <div className="flex flex-wrap">
                                 <Metadata
                                     className="mx-4 bg-base-100 min-h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
@@ -183,7 +183,7 @@ const ConfigManagementEntityNamespace = ({
                             </div>
                         </CollapsibleSection>
                         <CollapsibleSection title="Namespace Findings">
-                            <div className="flex pdf-page pdf-stretch relative rounded mb-4 ml-4 mr-4">
+                            <div className="flex relative rounded mb-4 ml-4 mr-4">
                                 <DeploymentsWithFailedPolicies
                                     query={queryService.objectToWhereClause({
                                         Cluster: cluster.name,

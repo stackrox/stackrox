@@ -874,7 +874,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 		}
 		return nil
 	}
-	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesV2Schema, q, s.db, callback)
+	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesV2Schema, q, s.db, "WalkByQuery", callback)
 	if err != nil {
 		return errors.Wrap(err, "cursor by query")
 	}
@@ -886,7 +886,7 @@ func (s *storeImpl) WalkMetadataByQuery(ctx context.Context, q *v1.Query, fn fun
 
 	q = s.applyDefaultSort(q)
 
-	err := pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesV2Schema, q, s.db, fn)
+	err := pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesV2Schema, q, s.db, "WalkMetadataByQuery", fn)
 	if err != nil {
 		return errors.Wrap(err, "cursor by query")
 	}
@@ -942,24 +942,6 @@ func (s *storeImpl) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*view
 		log.Errorf("unable to initialize image ranking: %v", err)
 	}
 
-	return results, err
-}
-
-// GetImagesIdAndDigestView retrieves an image id and digest for pruning purposes
-func (s *storeImpl) GetImagesIdAndDigestView(ctx context.Context, q *v1.Query) ([]*views.ImageIDAndDigestView, error) {
-	selects := []*v1.QuerySelect{
-		search.NewQuerySelect(search.ImageID).Proto(),
-		search.NewQuerySelect(search.ImageSHA).Proto(),
-	}
-	q.Selects = selects
-	var results []*views.ImageIDAndDigestView
-	err := pgSearch.RunSelectRequestForSchemaFn[views.ImageIDAndDigestView](ctx, s.db, pkgSchema.ImagesV2Schema, q, func(row *views.ImageIDAndDigestView) error {
-		results = append(results, row)
-		return nil
-	})
-	if err != nil {
-		log.Errorf("unable to retrieve image id and digests: %v", err)
-	}
 	return results, err
 }
 

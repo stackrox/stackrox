@@ -73,6 +73,7 @@ var RetryAttempts = prometheus.NewCounter(
 	},
 )
 
+// SemaphoreHoldingSize is the current number of VM relay connections actively being handled after acquiring the connection semaphore.
 var SemaphoreHoldingSize = prometheus.NewGauge(
 	prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -81,6 +82,7 @@ var SemaphoreHoldingSize = prometheus.NewGauge(
 		Help:      "Number of connections being handled",
 	})
 
+// SemaphoreQueueSize is the number of VM relay connections waiting to acquire the connection semaphore.
 var SemaphoreQueueSize = prometheus.NewGauge(
 	prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -88,6 +90,64 @@ var SemaphoreQueueSize = prometheus.NewGauge(
 		Name:      "virtual_machine_relay_sem_queue_size",
 		Help:      "Number of connections waiting to be handled",
 	})
+
+// VMIndexReportSendAttempts counts send attempts to Sensor by result.
+var VMIndexReportSendAttempts = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_index_report_send_attempts_total",
+		Help:      "Send attempts of VM index reports to Sensor partitioned by result",
+	},
+	[]string{"result"}, // success|failure
+)
+
+// VMIndexReportSendDurationSeconds observes per-attempt latency to Sensor by result.
+var VMIndexReportSendDurationSeconds = prometheus.NewHistogramVec(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_index_report_send_duration_seconds",
+		Help:      "Duration of VM index report send attempts to Sensor",
+		Buckets:   prometheus.ExponentialBuckets(0.1, 2, 10),
+	},
+	[]string{"result"}, // success|failure
+)
+
+// ReportsRateLimited counts reports dropped by relay-side rate limiting.
+var ReportsRateLimited = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_reports_rate_limited_total",
+		Help:      "Reports dropped due to relay-side rate limiting",
+	},
+	[]string{"reason"}, // "normal", "stale_ack"
+)
+
+// AcksReceived counts ACK confirmations for VM index reports on the Relay VM index path.
+// It is incremented when ACK callback handling runs (not from the Sensor receive loop directly).
+// NACKs are tracked separately in the main compliance component where they're handled.
+var AcksReceived = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_relay_acks_received_total",
+		Help:      "ACK confirmations for VM index reports recorded by Relay ACK callback handling on the VM index path",
+	},
+)
+
+// VMIndexACKsFromSensor counts ACK/NACK responses received from Sensor for VM index reports.
+// This metric is recorded when compliance.go handles ComplianceACK messages.
+var VMIndexACKsFromSensor = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "virtual_machine_index_acks_from_sensor_total",
+		Help:      "ACK/NACK responses received from Sensor for VM index reports",
+	},
+	[]string{"action"}, // "ACK", "NACK"
+)
 
 func init() {
 	prometheus.MustRegister(
@@ -99,5 +159,10 @@ func init() {
 		SemaphoreHoldingSize,
 		SemaphoreQueueSize,
 		RetryAttempts,
+		VMIndexReportSendAttempts,
+		VMIndexReportSendDurationSeconds,
+		ReportsRateLimited,
+		AcksReceived,
+		VMIndexACKsFromSensor,
 	)
 }

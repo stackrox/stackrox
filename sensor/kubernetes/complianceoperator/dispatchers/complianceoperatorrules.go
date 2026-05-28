@@ -85,6 +85,7 @@ func (c *RulesDispatcher) ProcessEvent(obj, _ interface{}, action central.Resour
 					Fixes:        fixes,
 					Warning:      complianceRule.Warning,
 					Instructions: complianceRule.Instructions,
+					OperatorKind: central.ComplianceOperatorRuleV2_RULE,
 				},
 			},
 		})

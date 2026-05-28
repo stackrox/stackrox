@@ -125,9 +125,9 @@ function FailedPoliciesAcrossDeployment({ deploymentID }: FailedPoliciesAcrossDe
                         Header: `Severity`,
                         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                         className: `w-1/8 ${defaultColumnClassName}`,
-                        Cell: ({ original, pdf }) => {
+                        Cell: ({ original }) => {
                             const { severity } = original;
-                            return <PolicySeverityIconText severity={severity} isTextOnly={pdf} />;
+                            return <PolicySeverityIconText severity={severity} />;
                         },
                         accessor: 'severity',
                         sortMethod: sortSeverity,

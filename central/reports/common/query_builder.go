@@ -182,6 +182,17 @@ func (q *queryBuilder) buildEntityScopeQuery() (*v1.Query, error) {
 			for _, rv := range rule.GetValues() {
 				val := rv.GetValue()
 				key, value := splitLabelValue(val)
+				if rv.GetMatchType() == storage.MatchType_REGEX {
+					// For regex match, only apply the r/ prefix to parts that contain
+					// regex metacharacters. Literal parts stay quoted for exact matching.
+					rawParts := strings.SplitN(val, "=", 2)
+					rawValue := ""
+					if len(rawParts) == 2 {
+						rawValue = rawParts[1]
+					}
+					key = mapPartQueryString(rawParts[0])
+					value = mapPartQueryString(rawValue)
+				}
 				mapQueries = append(mapQueries,
 					search.NewQueryBuilder().AddMapQuery(fieldLabel, key, value).ProtoQuery())
 			}
@@ -252,4 +263,13 @@ func splitLabelValue(labelVal string) (string, string) {
 		return fmt.Sprintf("%q", parts[0]), fmt.Sprintf("%q", parts[1])
 	}
 	return fmt.Sprintf("%q", labelVal), fmt.Sprintf("%q", "")
+}
+
+// mapPartQueryString returns a regex query string (r/...) if the part dos not contain
+// a regex prefix; otherwise returns the part.
+func mapPartQueryString(part string) string {
+	if strings.HasPrefix(part, search.RegexPrefix) {
+		return part
+	}
+	return search.RegexQueryString(part)
 }

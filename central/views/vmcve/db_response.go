@@ -8,7 +8,6 @@ import (
 
 type vmCVECoreResponse struct {
 	CVE                        string     `db:"cve"`
-	CVEIDs                     []string   `db:"cve_id"`
 	VMsWithCriticalSeverity    int        `db:"critical_severity_count"`
 	FixableVMsWithCriticalSev  int        `db:"fixable_critical_severity_count"`
 	VMsWithImportantSeverity   int        `db:"important_severity_count"`
@@ -28,10 +27,6 @@ type vmCVECoreResponse struct {
 
 func (c *vmCVECoreResponse) GetCVE() string {
 	return c.CVE
-}
-
-func (c *vmCVECoreResponse) GetCVEIDs() []string {
-	return c.CVEIDs
 }
 
 func (c *vmCVECoreResponse) GetVMsBySeverity() common.ResourceCountByCVESeverity {
