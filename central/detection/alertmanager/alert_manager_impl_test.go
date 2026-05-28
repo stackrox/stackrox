@@ -1154,7 +1154,7 @@ func TestFindAlert(t *testing.T) {
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
-			found := findAlert(c.toFind, c.alerts)
+			found := findMatchingAlert(alertAdapter{c.toFind}, c.alerts)
 			protoassert.Equal(t, c.expected, found)
 		})
 	}
