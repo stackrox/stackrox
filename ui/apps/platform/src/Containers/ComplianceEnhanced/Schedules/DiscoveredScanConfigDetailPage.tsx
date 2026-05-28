@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import type { ReactElement } from 'react';
 import { useParams } from 'react-router-dom-v5-compat';
 
+import usePermissions from 'hooks/usePermissions';
 import useRestQuery from 'hooks/useRestQuery';
 import { getDiscoveredScanConfiguration } from 'services/ComplianceScanConfigurationService';
 
@@ -11,6 +12,9 @@ function DiscoveredScanConfigDetailPage(): ReactElement {
     const { scanConfigName } = useParams() as { scanConfigName: string };
     const decodedName = decodeURIComponent(scanConfigName);
 
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
+
     const scanConfigQuery = useCallback(
         () => getDiscoveredScanConfiguration(decodedName),
         [decodedName]
@@ -19,7 +23,7 @@ function DiscoveredScanConfigDetailPage(): ReactElement {
 
     return (
         <ViewScanConfigDetail
-            hasWriteAccessForCompliance={false}
+            hasWriteAccessForCompliance={hasWriteAccessForCompliance}
             scanConfig={scanConfig}
             isLoading={isLoading}
             error={error}

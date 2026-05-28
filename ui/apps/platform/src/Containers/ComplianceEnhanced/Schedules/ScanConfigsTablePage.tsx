@@ -80,9 +80,8 @@ function ScanConfigsTablePage({
     );
     const { data: listData, isLoading, error, refetch } = useRestQuery(listQuery);
 
-    const managedConfigs = listData?.configurations?.filter((c) => c.isManaged) ?? [];
     const { complianceReportSnapshots, isLoading: isLoadingSnapshots } =
-        useWatchLastSnapshotForComplianceReports(managedConfigs);
+        useWatchLastSnapshotForComplianceReports(listData?.configurations);
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
 
@@ -203,28 +202,22 @@ function ScanConfigsTablePage({
                         {displayOnlyItemOrItemCount(scanConfig.profiles, 'profiles')}
                     </Td>
                     <Td dataLabel="My last job status">
-                        {isManaged ? (
-                            <MyLastJobStatus
-                                snapshot={snapshot}
-                                isLoadingSnapshots={isLoadingSnapshots}
-                                currentUserId={currentUser.userId}
-                                baseDownloadURL={complianceReportDownloadURL}
-                            />
-                        ) : (
-                            '—'
-                        )}
+                        <MyLastJobStatus
+                            snapshot={snapshot}
+                            isLoadingSnapshots={isLoadingSnapshots}
+                            currentUserId={currentUser.userId}
+                            baseDownloadURL={complianceReportDownloadURL}
+                        />
                     </Td>
                     {hasWriteAccessForCompliance && (
                         <Td isActionCell>
-                            {isManaged && (
-                                <ScanConfigActionsColumn
-                                    handleRunScanConfig={handleRunScanConfig}
-                                    handleSendReport={handleSendReport}
-                                    handleGenerateDownload={handleGenerateDownload}
-                                    scanConfigResponse={scanSchedule}
-                                    isSnapshotStatusPending={isSnapshotStatusPending}
-                                />
-                            )}
+                            <ScanConfigActionsColumn
+                                handleRunScanConfig={handleRunScanConfig}
+                                handleSendReport={handleSendReport}
+                                handleGenerateDownload={handleGenerateDownload}
+                                scanConfigResponse={scanSchedule}
+                                isSnapshotStatusPending={isSnapshotStatusPending}
+                            />
                         </Td>
                     )}
                 </Tr>

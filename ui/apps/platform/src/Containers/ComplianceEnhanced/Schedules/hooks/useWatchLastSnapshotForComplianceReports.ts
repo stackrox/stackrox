@@ -53,9 +53,11 @@ function useWatchLastSnapshotForComplianceReports(
         }
 
         const promise: Promise<ComplianceReportSnapshotLookup> = new Promise((resolve, reject) => {
-            const configurations = Array.isArray(scanConfigurations)
-                ? scanConfigurations
-                : [scanConfigurations];
+            const configurations = (
+                Array.isArray(scanConfigurations)
+                    ? scanConfigurations
+                    : [scanConfigurations]
+            ).filter(({ id }) => id);
 
             Promise.allSettled(configurations.map(({ id }) => fetchLastJobForConfiguration(id)))
                 .then((snapshotResults) => {

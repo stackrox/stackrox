@@ -55,8 +55,6 @@ function ViewScanConfigDetail({
     const { scanConfigId } = useParams() as { scanConfigId?: string };
     const { analyticsTrack } = useAnalytics();
 
-    const isManaged = scanConfig?.isManaged ?? false;
-
     const [activeScanConfigTab, setActiveScanConfigTab] = useURLStringUnion(
         'scanConfigTab',
         jobContextTabs
@@ -64,9 +62,7 @@ function ViewScanConfigDetail({
     const [isTriggeringRescan, setIsTriggeringRescan] = useState(false);
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
-    const { complianceReportSnapshots } = useWatchLastSnapshotForComplianceReports(
-        isManaged ? scanConfig : undefined
-    );
+    const { complianceReportSnapshots } = useWatchLastSnapshotForComplianceReports(scanConfig);
     const lastSnapshot = scanConfigId ? complianceReportSnapshots[scanConfigId] : undefined;
 
     const isReportStatusPending =
@@ -160,7 +156,7 @@ function ViewScanConfigDetail({
                             <FlexItem flex={{ default: 'flex_1' }}>
                                 <Title headingLevel="h1">{scanConfig.scanName}</Title>
                             </FlexItem>
-                            {isManaged && hasWriteAccessForCompliance && (
+                            {hasWriteAccessForCompliance && (
                                 <FlexItem align={{ default: 'alignRight' }}>
                                     <ScanConfigActionDropdown
                                         handleRunScanConfig={handleRunScanConfig}
@@ -205,14 +201,12 @@ function ViewScanConfigDetail({
                         eventKey="CONFIGURATION_DETAILS"
                         title={<TabTitleText>Configuration details</TabTitleText>}
                     />
-                    {isManaged && (
-                        <Tab
-                            tabContentId={allReportJobsTabId}
-                            eventKey="ALL_REPORT_JOBS"
-                            title={<TabTitleText>All report jobs</TabTitleText>}
-                            actions={<ReportJobsHelpAction reportType="Scan schedule" />}
-                        />
-                    )}
+                    <Tab
+                        tabContentId={allReportJobsTabId}
+                        eventKey="ALL_REPORT_JOBS"
+                        title={<TabTitleText>All report jobs</TabTitleText>}
+                        actions={<ReportJobsHelpAction reportType="Scan schedule" />}
+                    />
                 </Tabs>
             </PageSection>
             {activeScanConfigTab === 'CONFIGURATION_DETAILS' && (
@@ -228,7 +222,7 @@ function ViewScanConfigDetail({
                     </Card>
                 </PageSection>
             )}
-            {isManaged && activeScanConfigTab === 'ALL_REPORT_JOBS' && scanConfig?.id && (
+            {activeScanConfigTab === 'ALL_REPORT_JOBS' && scanConfig?.id && (
                 <PageSection id={allReportJobsTabId}>
                     <ReportJobs scanConfigId={scanConfig.id} />
                 </PageSection>
