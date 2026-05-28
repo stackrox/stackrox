@@ -6,7 +6,7 @@ import { fetchCloudSources } from 'services/CloudSourceService';
 import type { CloudSourceIntegration } from 'services/CloudSourceService';
 
 function fetchCloudSourceList(): Promise<CloudSourceIntegration[]> {
-    return fetchCloudSources().then((r) => r.response.cloudSources ?? []);
+    return fetchCloudSources().then((r) => r.cloudSources);
 }
 
 function ocmDeprecatedCounter(integrations: CloudSourceIntegration[]) {

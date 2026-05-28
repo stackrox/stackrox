@@ -28,7 +28,7 @@ function extractIntegrations(
     type: IntegrationType,
     // TODO Clean up response types with generics here to avoid `any`
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    response: Record<string, any>
+    data: Record<string, any>
 ): Integration[] {
     const typeLowerMatches = (integration: Integration) =>
         integration.type.toLowerCase() === type.toLowerCase();
@@ -36,34 +36,34 @@ function extractIntegrations(
     switch (source) {
         case 'authProviders': {
             if (type === 'apitoken') {
-                return response.tokens ?? [];
+                return data.tokens ?? [];
             }
             if (type === 'machineAccess') {
-                return response.configs ?? [];
+                return data.configs ?? [];
             }
             return [];
         }
         case 'notifiers':
-            return (response.notifiers ?? []).filter(typeLowerMatches);
+            return (data.notifiers ?? []).filter(typeLowerMatches);
         case 'backups':
-            return (response.externalBackups ?? []).filter(typeLowerMatches);
+            return (data.externalBackups ?? []).filter(typeLowerMatches);
         case 'imageIntegrations':
-            return (response.integrations ?? []).filter(typeLowerMatches);
+            return (data.integrations ?? []).filter(typeLowerMatches);
         case 'signatureIntegrations':
-            return response.integrations ?? [];
+            return data.integrations ?? [];
         case 'cloudSources': {
-            const allSources = response.cloudSources ?? [];
+            const cloudSources = data.cloudSources ?? [];
             if (type === 'paladinCloud') {
-                return allSources.filter(
+                return cloudSources.filter(
                     (integration) => (integration as { type: string }).type === 'TYPE_PALADIN_CLOUD'
                 );
             }
             if (type === 'ocm') {
-                return allSources.filter(
+                return cloudSources.filter(
                     (integration) => (integration as { type: string }).type === 'TYPE_OCM'
                 );
             }
-            return allSources;
+            return cloudSources;
         }
         case 'apiClients':
             return [];
@@ -77,20 +77,20 @@ const useIntegrations = ({ source, type }: UseIntegrationsParams): UseIntegratio
     const fetchFn = useCallback(() => {
         if (source === 'authProviders') {
             if (type === 'apitoken') {
-                return fetchAPITokens().then((r) => r.response);
+                return fetchAPITokens();
             }
             if (type === 'machineAccess') {
-                return fetchMachineAccessConfigs().then((r) => r.response);
+                return fetchMachineAccessConfigs();
             }
         }
         if (source === 'cloudSources') {
-            return fetchCloudSources().then((r) => r.response);
+            return fetchCloudSources();
         }
         if (source === 'apiClients') {
             return Promise.resolve<Record<string, unknown>>({});
         }
         if (isServiceIntegrationSource(source)) {
-            return fetchIntegration(source).then((r) => r.response);
+            return fetchIntegration(source);
         }
         return ensureExhaustive(source);
     }, [source, type]);
