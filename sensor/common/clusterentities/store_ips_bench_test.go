@@ -25,10 +25,11 @@ func buildIPsStoreShared(numDeployments int, withHistory bool) (*podIPsStore, ne
 	}
 
 	if withHistory {
-		histIP := net.ParseIP("10.1.0.1")
-		store.historicalIPs[histIP] = make(map[string]*entityStatus)
-		for i := range numDeployments {
-			store.historicalIPs[histIP][fmt.Sprintf("hist-deploy-%d", i)] = newHistoricalEntity(memSize)
+		for _, ip := range []net.IPAddress{sharedIP, net.ParseIP("10.1.0.1")} {
+			store.historicalIPs[ip] = make(map[string]*entityStatus)
+			for i := range numDeployments {
+				store.historicalIPs[ip][fmt.Sprintf("hist-deploy-%d", i)] = newHistoricalEntity(memSize)
+			}
 		}
 	}
 
