@@ -630,14 +630,11 @@ func (m *ManagerTestSuite) setupExpectCallsFromFinishAllScans(sc *storage.Compli
 
 func (m *ManagerTestSuite) setupExpectCallsFromFailAllScans(sc *storage.ComplianceOperatorScanConfigurationV2, scans []*storage.ComplianceOperatorScanV2, timestamp *timestamppb.Timestamp, numSnapshots int) []any {
 	var expectedCalls []any
-	for _, scan := range scans {
+	for range scans {
 		calls := []any{
 			m.scanConfigDataStore.EXPECT().
 				GetScanConfigurationByName(gomock.Any(), gomock.Eq(sc.GetScanConfigName())).
 				Times(1).Return(sc, nil),
-			m.checkResultDataStore.EXPECT().
-				DeleteOldResults(gomock.Any(), gomock.Eq(scan.GetLastStartedTime()), gomock.Eq(scan.GetScanRefId()), gomock.Eq(true)).
-				Times(1).Return(nil),
 			m.snapshotDataStore.EXPECT().
 				UpsertSnapshot(gomock.Any(), gomock.Any()).
 				Times(numSnapshots).Return(nil),

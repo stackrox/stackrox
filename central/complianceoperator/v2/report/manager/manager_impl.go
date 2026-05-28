@@ -491,8 +491,10 @@ func (m *managerImpl) handleReadyScan() {
 				Observe(timeActive.Minutes())
 			delete(m.watchingScansStartTime, scanWatcherResult.WatcherID)
 		})
-		if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, m.checkResultDataStore); err != nil {
-			log.Errorf("unable to delete old CheckResults: %v", err)
+		if scanWatcherResult.Error == nil || errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
+			if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, m.checkResultDataStore); err != nil {
+				log.Errorf("unable to delete old CheckResults: %v", err)
+			}
 		}
 		if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
 			log.Debugf("Scan %s was removed", scanWatcherResult.Scan.GetScanName())
