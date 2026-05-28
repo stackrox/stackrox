@@ -24,7 +24,7 @@ metadata:
     # added to the PR. See the Slack tread linked from ROX-30580.
     pipelinesascode.tekton.dev/on-label: "[]"
   labels:
-    appstudio.openshift.io/application: acs
+    appstudio.openshift.io/application: acs-4.11
     pipelines.appstudio.openshift.io/type: build
   name: operator-index-on-push
   namespace: rh-acs-tenant
@@ -48,7 +48,7 @@ spec:
     value: quay.io/rhacs-eng/release-operator-bundle
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-operator-bundle
+    serviceAccountName: build-pipeline-operator-bundle-4-11
 
   # The operator-index build waits for the operator-bundle to be built and pushed.
   # The timeout must account for:
