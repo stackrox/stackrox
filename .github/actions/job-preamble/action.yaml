@@ -139,12 +139,19 @@ runs:
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
-    - name: Capture runner CPU model
+    - name: Capture runner fingerprint
       id: runner-info
       shell: bash
       run: |
         cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs || echo "unknown")
         echo "cpu_model=${cpu_model}" >> "$GITHUB_OUTPUT"
+        runner_image="unknown"
+        if [[ -f /etc/environment ]]; then
+          img_os=$(grep -oP 'ImageOS=\K\S+' /etc/environment 2>/dev/null || true)
+          img_ver=$(grep -oP 'ImageVersion=\K\S+' /etc/environment 2>/dev/null || true)
+          if [[ -n "$img_os" ]]; then runner_image="${img_os}-${img_ver}"; fi
+        fi
+        echo "runner_image=${runner_image}" >> "$GITHUB_OUTPUT"
 
     - name: Record job info
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
@@ -163,7 +170,8 @@ runs:
           save_job_record "${{ github.job }}" "gha" \
             outcome "${{ job.status }}" \
             started_at "${{ steps.record_job_info.outputs.started_at }}" \
-            cut_os_image "${{ steps.runner-info.outputs.cpu_model }}" || true;
+            cut_os_image "${{ steps.runner-info.outputs.cpu_model }}" \
+            build "${{ steps.runner-info.outputs.runner_image }}" || true;
           free=$(df -BGB --output=avail / | tail -1);
           echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\
