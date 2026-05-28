@@ -15,6 +15,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/jackc/pgx/v5/pgxpool"
 	ccpostgres "github.com/quay/claircore/datastore/postgres"
+	cctypes "github.com/quay/claircore/datastore/postgres/types"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/spf13/cobra"
@@ -83,6 +84,7 @@ func ccVulnReportCmd(ctx context.Context) *cobra.Command {
 			return fmt.Errorf("failed to parse database config: %w", err)
 		}
 		poolCfg.ConnConfig.Password = password
+		poolCfg.AfterConnect = cctypes.ConnectRegisterTypes
 
 		pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 		if err != nil {
