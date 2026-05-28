@@ -12,6 +12,7 @@ import (
 	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	authTokenMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -151,4 +152,55 @@ func (s *mockedAuthProviderServiceTestSuite) expectProviderAdditionToStore() {
 		AddAuthProvider(gomock.Any(), gomock.Any()).
 		Times(1).
 		Return(nil)
+}
+
+func TestNormalizeAuthProviderEndpoints(t *testing.T) {
+	cases := map[string]struct {
+		input            *storage.AuthProvider
+		expectedEndpoint string
+		expectedExtraEPs []string
+		wantErr          bool
+	}{
+		"nil provider": {
+			input: nil,
+		},
+		"strips scheme and infers port": {
+			input: &storage.AuthProvider{
+				UiEndpoint:       "https://central.example.com",
+				ExtraUiEndpoints: []string{"http://localhost:8080", "central.example.com"},
+			},
+			expectedEndpoint: "central.example.com:443",
+			expectedExtraEPs: []string{"localhost:8080", "central.example.com:443"},
+		},
+		"already canonical": {
+			input: &storage.AuthProvider{
+				UiEndpoint:       "central.example.com:443",
+				ExtraUiEndpoints: []string{"localhost:8080"},
+			},
+			expectedEndpoint: "central.example.com:443",
+			expectedExtraEPs: []string{"localhost:8080"},
+		},
+		"rejects empty extra endpoint": {
+			input: &storage.AuthProvider{
+				UiEndpoint:       "central.example.com:443",
+				ExtraUiEndpoints: []string{""},
+			},
+			wantErr: true,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			err := normalizeAuthProviderEndpoints(tc.input)
+			if tc.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			if tc.input != nil {
+				assert.Equal(t, tc.expectedEndpoint, tc.input.GetUiEndpoint())
+				assert.Equal(t, tc.expectedExtraEPs, tc.input.GetExtraUiEndpoints())
+			}
+		})
+	}
 }

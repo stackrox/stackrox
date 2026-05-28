@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 
+	imagev2common "github.com/stackrox/rox/central/imagev2/common"
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -31,6 +32,7 @@ func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 	if err := common.ValidateQuery(q); err != nil {
 		return 0, err
 	}
+	q = imagev2common.WithRowsFromImageV2Only(q)
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
@@ -49,6 +51,7 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
+	q = imagev2common.WithRowsFromImageV2Only(q)
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
@@ -83,6 +86,7 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
+	q = imagev2common.WithRowsFromImageV2Only(q)
 
 	// Avoid changing the passed query
 	cloned := q.CloneVT()

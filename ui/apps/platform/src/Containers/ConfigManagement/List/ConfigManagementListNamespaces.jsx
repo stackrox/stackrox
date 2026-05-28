@@ -40,13 +40,9 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Namespace`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const url = getConfigMgmtPathForEntitiesAndId('NAMESPACE', original.metadata.id);
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {original.metadata.name}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{original.metadata.name}</TableCellLink>;
             },
             accessor: 'metadata.name',
             id: namespaceSortFields.NAMESPACE,
@@ -59,7 +55,7 @@ const buildTableColumns = (match, location, entityContext) => {
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'metadata.clusterName',
-                  Cell: ({ original, pdf }) => {
+                  Cell: ({ original }) => {
                       const { metadata } = original;
                       if (!metadata) {
                           return '-';
@@ -69,11 +65,7 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(id)
                           .push('CLUSTER', clusterId)
                           .url();
-                      return (
-                          <TableCellLink pdf={pdf} url={url}>
-                              {clusterName}
-                          </TableCellLink>
-                      );
+                      return <TableCellLink url={url}>{clusterName}</TableCellLink>;
                   },
                   id: namespaceSortFields.CLUSTER,
                   sortField: namespaceSortFields.CLUSTER,
@@ -82,11 +74,11 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Policy Status`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const {
                     policyStatus: { status },
                 } = original;
-                return <PolicyStatusIconText isPass={status === 'pass'} isTextOnly={pdf} />;
+                return <PolicyStatusIconText isPass={status === 'pass'} />;
             },
             id: 'status',
             accessor: (d) => d.policyStatus.status,
@@ -96,7 +88,7 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Secrets`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { numSecrets, metadata } = original;
                 if (!metadata || numSecrets === 0) {
                     return 'No Secrets';
@@ -104,11 +96,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 const { id } = metadata;
                 const url = URLService.getURL(match, location).push(id).push('SECRET').url();
                 const text = `${numSecrets} ${pluralize('Secrets', numSecrets)}`;
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {text}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{text}</TableCellLink>;
             },
             id: 'numSecrets',
             accessor: (d) => d.numSecrets,
@@ -118,7 +106,7 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Users & Groups`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { subjectsCount, metadata } = original;
                 if (!subjectsCount || subjectsCount === 0) {
                     return 'No Users & Groups';
@@ -126,11 +114,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 const { id } = metadata;
                 const url = URLService.getURL(match, location).push(id).push('SUBJECT').url();
                 const text = `${subjectsCount} ${pluralize('Users & Groups', subjectsCount)}`;
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {text}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{text}</TableCellLink>;
             },
             accessor: 'subjectCount',
             sortable: false,
@@ -139,7 +123,7 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Service Accounts`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { serviceAccountCount, metadata } = original;
                 if (!serviceAccountCount || serviceAccountCount === 0) {
                     return 'No Service Accounts';
@@ -153,11 +137,7 @@ const buildTableColumns = (match, location, entityContext) => {
                     'Service Accounts',
                     serviceAccountCount
                 )}`;
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {text}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{text}</TableCellLink>;
             },
             accessor: 'serviceAccountCount',
             sortable: false,
@@ -166,7 +146,7 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Roles`,
             headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { k8sRoleCount, metadata } = original;
                 if (!k8sRoleCount || k8sRoleCount === 0) {
                     return 'No Roles';
@@ -174,11 +154,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 const { id } = metadata;
                 const url = URLService.getURL(match, location).push(id).push('ROLE').url();
                 const text = `${k8sRoleCount} ${pluralize('Roles', k8sRoleCount)}`;
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {text}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{text}</TableCellLink>;
             },
             accessor: 'k8sRoleCount',
             sortable: false,

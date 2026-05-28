@@ -76,7 +76,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -95,7 +95,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -173,7 +173,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -229,7 +229,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -246,8 +246,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -256,14 +254,26 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - name: Set up Node.js
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+      with:
+        node-version-file: ui/package.json
+
     - name: Cache UI dependencies
+      id: cache-ui
       uses: ./.github/actions/cache-ui-dependencies
 
+    - name: Install UI dependencies
+      if: steps.cache-ui.outputs.cache-hit != 'true'
+      working-directory: ui/apps/platform
+      run: npm ci
+
     - name: UI Unit Tests
-      run: make ui-test
+      working-directory: ui/apps/platform
+      run: npm run test
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'ui/apps/platform/test-results/reports/*.xml'
@@ -288,8 +298,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.11@sha256:996ca7bf256805e4003f711a3915d5f7a86d58c9263bfca4402f0a0f3b47c025 # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.11
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -298,11 +306,21 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - name: Set up Node.js
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+      with:
+        node-version-file: ui/package.json
+
     - name: Cache UI dependencies
+      id: cache-ui
       uses: ./.github/actions/cache-ui-dependencies
 
     - name: UI Component Tests
-      run: make ui-component-tests
+      uses: cypress-io/github-action@dace029018fcdf86e0df89a31bc3cfa5b32570d8 # ratchet:cypress-io/github-action@v7
+      with:
+        working-directory: ui/apps/platform
+        install: ${{ steps.cache-ui.outputs.cache-hit != 'true' }}
+        command: npm run test-component -- --browser chrome
 
     - name: Upload Cypress test result artifacts
       uses: ./.github/actions/upload-artifact-with-retry
@@ -312,7 +330,7 @@ jobs:
         path: ui/apps/platform/cypress/test-results/
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
@@ -357,7 +375,7 @@ jobs:
       run: ./scripts/ci/jobs/local-roxctl-tests.sh
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'roxctl-test-output/*.xml'
@@ -394,7 +412,7 @@ jobs:
       run: make shell-unit-tests
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'shell-test-output/*.xml'
@@ -488,7 +506,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'

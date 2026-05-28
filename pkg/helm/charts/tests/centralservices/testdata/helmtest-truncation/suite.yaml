@@ -1,0 +1,45 @@
+server:
+  visibleSchemas:
+    - kubernetes-1.20.2
+  objects:
+    - apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: some-sc
+        annotations:
+          storageclass.kubernetes.io/is-default-class: false
+
+values:
+  ca:
+    cert: "CA cert"
+    key: "CA key"
+  central:
+    adminPassword:
+      value: adminpw
+    serviceTLS:
+      cert: "Central cert"
+      key: "Central key"
+    db:
+      serviceTLS:
+        cert: "Central DB cert"
+        key: "Central DB key"
+  scanner:
+    serviceTLS:
+      cert: "Scanner cert"
+      key: "Scanner key"
+    dbServiceTLS:
+      cert: "ScannerDB cert"
+      key: "ScannerDB key"
+  scannerV4:
+    indexer:
+      serviceTLS:
+        cert: "Indexer cert"
+        key: "Indexer key"
+    matcher:
+      serviceTLS:
+        cert: "Matcher cert"
+        key: "Matcher key"
+    db:
+      serviceTLS:
+        cert: "ScannerDB cert"
+        key: "ScannerDB key"

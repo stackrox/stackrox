@@ -119,7 +119,7 @@ const VulnMgmtNodeOverview = ({ data, entityContext }) => {
                     <div className={entityGridContainerClassName}>
                         <div className="sx-2">
                             <Metadata
-                                className="h-full min-w-48 bg-base-100 pdf-page"
+                                className="h-full min-w-48 bg-base-100"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={nodeStats}
                                 title="Details and metadata"
@@ -133,7 +133,7 @@ const VulnMgmtNodeOverview = ({ data, entityContext }) => {
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Node Findings">
-                    <div className="flex pdf-page pdf-stretch pdf-new shadow relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                    <div className="flex shadow relative rounded bg-base-100 mb-4 ml-4 mr-4">
                         <TableWidgetFixableCves
                             workflowState={workflowState}
                             entityContext={entityContext}

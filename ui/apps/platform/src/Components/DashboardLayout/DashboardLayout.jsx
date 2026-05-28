@@ -10,10 +10,7 @@ const DashboardLayout = ({ headerText, headerComponents, children, banner }) => 
                 <div className="flex flex-1 justify-end h-10">{headerComponents}</div>
             </PageHeader>
 
-            <div
-                className="h-full overflow-auto relative p-4 xl:p-6 xxxl:p-8 bg-base-200"
-                id="capture-dashboard"
-            >
+            <div className="h-full overflow-auto relative p-4 xl:p-6 xxxl:p-8 bg-base-200">
                 <div
                     className="grid grid-gap-4 xl:grid-gap-6 xxxl:grid-gap-8 md:grid-auto-fit xxl:grid-auto-fit-wide md:grid-dense"
                     style={{ '--min-tile-height': '160px' }}

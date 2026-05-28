@@ -1049,6 +1049,9 @@ func (*ReportSchedule_DaysOfWeek_) isReportSchedule_Interval() {}
 
 func (*ReportSchedule_DaysOfMonth_) isReportSchedule_Interval() {}
 
+// Reports are transitioning to a modernized architecture in a future release.
+// To prepare for future updates, we recommend transitioning your collections-based reports to the “Entity Scope” method.
+// When the “Collection scope” option is removed in a future release, existing reports will not automatically convert to the “Entity scope” method.
 type ResourceScope struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to ScopeReference:

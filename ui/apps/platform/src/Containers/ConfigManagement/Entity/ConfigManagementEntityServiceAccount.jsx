@@ -165,9 +165,9 @@ const ConfigManagementEntityServiceAccount = ({
                 const scopedPermissionsByCluster = [{ clusterId, clusterName, scopedPermissions }];
 
                 return (
-                    <div className="w-full" id="capture-dashboard-stretch">
+                    <div className="w-full">
                         <CollapsibleSection title="Service Account Summary">
-                            <div className="flex mb-4 flex-wrap pdf-page">
+                            <div className="flex mb-4 flex-wrap">
                                 <Metadata
                                     className="mx-4 bg-base-100 min-h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
@@ -208,7 +208,7 @@ const ConfigManagementEntityServiceAccount = ({
                             </div>
                         </CollapsibleSection>
                         <CollapsibleSection title="Service Account Permissions">
-                            <div className="flex mb-4 pdf-page pdf-stretch">
+                            <div className="flex mb-4">
                                 <ClusterScopedPermissions
                                     scopedPermissionsByCluster={scopedPermissionsByCluster}
                                     className="mx-4 bg-base-100 w-full"

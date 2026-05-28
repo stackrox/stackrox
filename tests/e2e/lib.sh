@@ -10,8 +10,14 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$TEST_ROOT/scripts/lib.sh"
 # shellcheck source=../../scripts/ci/lib.sh
 source "$TEST_ROOT/scripts/ci/lib.sh"
+# shellcheck source=../../scripts/ci/sensor-wait.sh
+source "$TEST_ROOT/scripts/ci/sensor-wait.sh"
 # shellcheck source=../../scripts/ci/test_state.sh
 source "$TEST_ROOT/scripts/ci/test_state.sh"
+# shellcheck source=lib-yaml.sh
+source "$TEST_ROOT/tests/e2e/lib-yaml.sh"
+# shellcheck source=lib-compat.sh
+source "$TEST_ROOT/tests/e2e/lib-compat.sh"
 
 export SFA_AGENT="${SFA_AGENT:-false}"
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
@@ -83,6 +89,186 @@ deploy_stackrox() {
     fi
 
     touch "${STATE_DEPLOYED}"
+}
+
+# Deploy StackRox using roxie.
+#
+# This is the preferred way of deploying StackRox for tests as of 2026Q2.
+# This function expects the path to a roxie configuration.
+deploy_stackrox_with_roxie() {
+    info "╔═════════════════════════════════╗"
+    info "║                                 ║"
+    info "║  Deploying StackRox with roxie  ║"
+    info "║                                 ║"
+    info "╚═════════════════════════════════╝"
+
+    local config_file="${1:-}"
+
+    local central_namespace
+    central_namespace="$(yq eval ".central.namespace // \"\"" "$config_file")"
+    if [[ -n "$central_namespace" ]]; then
+        info "Deploying Central into namespace ${central_namespace}"
+    else
+        info "Deploying Central into standard namespace"
+    fi
+
+    local securedcluster_namespace
+    securedcluster_namespace="$(yq eval ".securedCluster.namespace // \"\"" "$config_file")"
+    if [[ -n "$securedcluster_namespace" ]]; then
+        info "Deploying SecuredCluster into namespace ${securedcluster_namespace}"
+    else
+        info "Deploying SecuredCluster into standard namespace"
+    fi
+
+    info "Creating admin password"
+    ROX_ADMIN_PASSWORD="$(gen_admin_password)"
+    export ROX_ADMIN_PASSWORD # Let roxie pick it up automatically.
+
+    prepare_for_konflux "$config_file"
+
+    workaround_label_length_limitation "$config_file"
+
+    # Print out the config file in use for transparency.
+    # This does not contain secrets.
+    info "roxie configuration:"
+    info "------------------------------------"
+    while IFS="" read -r line; do # IFS="" for preserving indentation in the output.
+        info "${line}"
+    done < <(yq eval --prettyPrint "$config_file")
+    info "------------------------------------"
+
+    # Replaces deploy_stackrox steps:
+    # - deploy_stackrox_operator (implicit)
+    # - deploy_central
+    # - pause_stackrox_operator_reconcile (--pause-reconciliation)
+    # - wait_for_api (implicit)
+    local roxie_envrc; roxie_envrc="$(mktemp)"
+
+    roxie deploy \
+        --envrc "$roxie_envrc" \
+        --config "$config_file"
+
+    # Persist and load (extended) roxie environment, mimicking the effect of ci_export in a more concise way.
+    extend_roxie_envrc "$roxie_envrc"
+    if [[ -n "${BASH_ENV:-}" ]]; then
+        cat "$roxie_envrc" >> "$BASH_ENV"
+    fi
+    # shellcheck source=/dev/null
+    source "$roxie_envrc"
+
+    record_build_info "${central_namespace}"
+
+    # This implements something between roxie's (upcoming) `--early-readiness=true` and `--early-readiness=false`.
+    # It just waits for sensor and collector workloads to be up and running.
+    # We use the same mechanism here instead of `--early-readiness=false`, because the latter
+    # would also wait for scanner (v2), which takes an enormous amount of time to be properly initialized
+    # and we don't want to slow down this deployment path using roxie.
+    sensor_wait "$securedcluster_namespace"
+    wait_for_collectors_to_be_operational "$securedcluster_namespace"
+    if retrying_kubectl </dev/null -n "$central_namespace" get deployment scanner-v4-indexer >/dev/null 2>&1; then
+        wait_for_scanner_V4 "$central_namespace"
+    fi
+
+    touch "${STATE_DEPLOYED}"
+    rm -f "$roxie_envrc"
+
+    info "╔═════════════════════╗"
+    info "║                     ║"
+    info "║  StackRox deployed  ║"
+    info "║                     ║"
+    info "╚═════════════════════╝"
+}
+
+prepare_for_konflux() {
+    local config_file="$1"
+    local use_konflux
+    use_konflux=$(yq eval ".roxie.konfluxImages" "$config_file")
+    local main_image_tag
+    main_image_tag=$(yq eval ".roxie.version" "$config_file")
+    if [[ "$use_konflux" == "true" ]]; then
+        # We need to be able to pull operator bundle images.
+        registry_ro_login "quay.io/rhacs-eng"
+
+        info "Checking if ACS main image tag needs to be patched for Konflux usage: current tag is ${main_image_tag}"
+        if is_CI; then
+            # get_branch_name() may only be called in CI context.
+            local branch_name
+            branch_name="$(get_branch_name)"
+            if [[ "$branch_name" =~ ^release- ]]; then
+                info "On release branch (${branch_name}), skipping main image tag patching for Konflux usage"
+                return
+            fi
+        fi
+        info "Patching main image tag for Konflux usage: using ${main_image_tag}"
+        if [[ "$main_image_tag" != *-fast ]]; then
+            main_image_tag="${main_image_tag}-fast"
+            patch_yaml "$config_file" ".roxie.version = \"${main_image_tag}\""
+            info "Main image tag patched for Konflux usage: ${main_image_tag}"
+        fi
+    fi
+}
+
+# When deploying Konflux-built images, we might get an additional "-fast" suffix on the main image version,
+# which can easily cause the Helm chart labels to exceed the 63 character limit. To work around this, we
+# use shorter labels for the the roxie-deployed resources.
+workaround_label_length_limitation() {
+    local config_file="$1"
+    local version
+    version="$(yq eval ".roxie.version" "$config_file")"
+    merge_yaml "$config_file" <<EOF
+central:
+  spec:
+    customize:
+      labels:
+        helm.sh/chart: "stackrox-central-${version}"
+securedCluster:
+  spec:
+    customize:
+      labels:
+        helm.sh/chart: "stackrox-secured-cluster-${version}"
+EOF
+}
+
+check_for_roxie() {
+    if ! command -v roxie >/dev/null 2>&1; then
+        die "ERROR: roxie command not found in PATH. Please install roxie or set USE_ROXIE_DEPLOY=false"
+    fi
+
+    info "roxie found, version: $(roxie version)"
+}
+
+extend_roxie_envrc() {
+    local roxie_envrc="$1"
+    local orchestrator_flavor="${ORCHESTRATOR_FLAVOR:-k8s}"
+
+    # shellcheck source=/dev/null
+    source "$roxie_envrc"
+
+    # roxie does not export these (yet?) via envrc, but they are needed by the tests.
+    ## First validation
+    if [[ "${API_ENDPOINT:-}" == "" ]]; then
+        die "API_ENDPOINT is missing from roxies envrc file."
+    fi
+    if [[ ! "$API_ENDPOINT" =~ ^[^:]+:[0-9]+$ ]]; then
+        die "API_ENDPOINT has unexpected format: $API_ENDPOINT (expected hostname:port)"
+    fi
+    ## CLUSTER
+    local CLUSTER; CLUSTER="$(echo "$orchestrator_flavor" | tr '[:lower:]' '[:upper:]')"
+    ## API_HOSTNAME, remove :port from end of API_ENDPOINT.
+    local API_HOSTNAME; API_HOSTNAME="${API_ENDPOINT%:*}"
+    ## API_PORT, remove hostname: from beginning of API_ENDPOINT.
+    local API_PORT; API_PORT="${API_ENDPOINT##*:}"
+
+    # Add these to roxie's envrc.
+    cat >> "$roxie_envrc" <<EOF
+export CLUSTER="${CLUSTER}"
+export API_HOSTNAME="${API_HOSTNAME}"
+export API_PORT="${API_PORT}"
+EOF
+}
+
+gen_admin_password() {
+    head -c 20 </dev/urandom | base64
 }
 
 # shellcheck disable=SC2120
@@ -513,6 +699,15 @@ deploy_sensor_via_operator() {
     if [[ -n "${ROX_NETFLOW_CACHE_LIMITING:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_NETFLOW_CACHE_LIMITING'
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_CACHE_LIMITING}"'"'
+    fi
+    # Feature flags set via ci_export (line ~200) reach Sensor in non-operator
+    # deployments (GKE) through the shell environment. Operator-deployed Sensor
+    # (OCP) only gets env vars injected via the SecuredCluster CR's
+    # customize.envVars, which is built separately here. Flags that Sensor needs
+    # must be added explicitly below until they are enabled by default.
+    if [[ -n "${ROX_INIT_CONTAINER_SUPPORT:-}" ]]; then
+        customize_envVars+=$'\n    - name: ROX_INIT_CONTAINER_SUPPORT'
+        customize_envVars+=$'\n      value: "'"${ROX_INIT_CONTAINER_SUPPORT}"'"'
     fi
 
     local scannerV4DbPersistenceYaml

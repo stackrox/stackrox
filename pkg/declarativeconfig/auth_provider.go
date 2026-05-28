@@ -79,9 +79,11 @@ type AuthProvider struct {
 	Name string `yaml:"name,omitempty"`
 	// TODO: ROX-14148 if left empty, no default group should be created
 	MinimumRoleName string `yaml:"minimumRole,omitempty"`
-	// The UIEndpoint should be given without scheme (http:// | https://) but including the port, e.g. localhost:443
+	// UIEndpoint is the endpoint of the Central UI, e.g. "central.example.com:443".
+	// Schemes (http:// or https://) are accepted and stripped automatically.
+	// If no port is given, 443 is assumed.
 	UIEndpoint string `yaml:"uiEndpoint,omitempty"`
-	// The ExtraUIEndpoints should be given without scheme (http:// | https://) but including the port, e.g. localhost:443
+	// ExtraUIEndpoints are additional allowed UI endpoints, with the same format rules as UIEndpoint.
 	ExtraUIEndpoints   []string            `yaml:"extraUIEndpoints,omitempty"`
 	Groups             []Group             `yaml:"groups,omitempty"`
 	RequiredAttributes []RequiredAttribute `yaml:"requiredAttributes,omitempty"`

@@ -117,7 +117,7 @@ func TestRunWithRetry(t *testing.T) {
 				return nil
 			}
 
-			err := RunWithRetry(ctx, nil,
+			err := RunWithRetry(ctx, nil, nil,
 				WithOperation(op),
 				WithBackoff(tc.backOffFactory),
 			)

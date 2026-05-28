@@ -17,10 +17,10 @@ ENV CI=1 GOFLAGS="" CGO_ENABLED=1
 RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go image/bin/operator
 
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:1ef916d40ff7f1a4882a31ad5ab37f9572baa7bd182c3519d5e0cb557ffc04f3 AS ubi-micro-base
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:dbee6ddfcf53e1786845b8f29219946e202d99c3afac69799c2dc4edec8b937d AS ubi-micro-base
 
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:8ca59004c1c505bdabadd5202bd3363986f5bf873fcfb36f60561d7362fe52a7 AS package_installer
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:8942b73866f8434571d6fc4c10cbebd48982995d2249c39302e4d71e7df3afd9 AS package_installer
 
 # Copy ubi-micro base to /out/ to preserve its rpmdb
 COPY --from=ubi-micro-base / /out/

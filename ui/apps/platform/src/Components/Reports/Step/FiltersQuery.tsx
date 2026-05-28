@@ -20,6 +20,7 @@ import type {
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import type { SearchFilter } from 'types/search';
 import {
+    applyRegexSearchModifiers,
     getRequestQueryStringForSearchFilter,
     getSearchFilterFromSearchString,
 } from 'utils/searchUtils';
@@ -46,7 +47,7 @@ function FiltersQuery<T extends FiltersQueryConfiguration = FiltersQueryConfigur
     function onFilterChange(searchFilterChanged: SearchFilter) {
         formik.setFieldValue(
             'vulnReportFilters.query',
-            getRequestQueryStringForSearchFilter(searchFilterChanged)
+            getRequestQueryStringForSearchFilter(applyRegexSearchModifiers(searchFilterChanged))
         );
     }
 

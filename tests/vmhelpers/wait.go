@@ -1,0 +1,64 @@
+package vmhelpers
+
+import (
+	"errors"
+	"fmt"
+	"strings"
+	"testing"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+)
+
+// Shared poll-loop logging constants used by both VM and guest SSH wait helpers.
+const (
+	waitLogEveryAttempts = 5
+	waitDetailMaxLen     = 300
+)
+
+// shouldLogWaitAttempt limits poll-loop log noise: first attempt plus every Nth.
+func shouldLogWaitAttempt(attempt int) bool {
+	return attempt <= 1 || attempt%waitLogEveryAttempts == 0
+}
+
+// truncateWaitDetail shortens per-attempt detail strings for log lines.
+func truncateWaitDetail(detail string) string {
+	detail = strings.TrimSpace(detail)
+	if len(detail) <= waitDetailMaxLen {
+		return detail
+	}
+	return detail[:waitDetailMaxLen] + fmt.Sprintf(" ... (truncated from %d bytes)", len(detail))
+}
+
+// logWaitAttempt emits one structured poll line when shouldLogWaitAttempt allows it.
+func logWaitAttempt(t testing.TB, desc string, attempt int, detail string) {
+	t.Helper()
+	if !shouldLogWaitAttempt(attempt) {
+		return
+	}
+	t.Logf("%s: attempt %d: %s", desc, attempt, detail)
+}
+
+// ErrAuthenticationExpired is returned when an API call fails with an
+// authentication/authorization error that typically indicates an expired
+// kubeconfig token or revoked credentials. Tests should stop immediately
+// when this is encountered rather than retrying.
+var ErrAuthenticationExpired = errors.New("authentication expired — kubeconfig token or API credentials may have expired; remaining operations will fail")
+
+// IsAuthenticationExpired reports whether err looks like an expired or revoked
+// credential. It checks for wrapped ErrAuthenticationExpired sentinels (so
+// callers that already tagged an error can re-check without false negatives),
+// gRPC Unauthenticated status codes, and Kubernetes API Unauthorized errors.
+func IsAuthenticationExpired(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, ErrAuthenticationExpired) {
+		return true
+	}
+	if s, ok := status.FromError(err); ok && s.Code() == codes.Unauthenticated {
+		return true
+	}
+	return apierrors.IsUnauthorized(err)
+}

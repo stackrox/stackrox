@@ -3,7 +3,6 @@ package index
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	"github.com/quay/claircore"
+	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stretchr/testify/suite"
 )
@@ -59,19 +59,29 @@ func (s *nodeIndexerSuite) createTestServer(tlsEnabled bool) *httptest.Server {
 	if !tlsEnabled {
 		server.Start()
 	} else {
-		serverCert, err := tls.LoadX509KeyPair(
-			filepath.Join("testdata", "certs", "server-cert.pem"),
-			filepath.Join("testdata", "certs", "server-key.pem"),
-		)
+		ca, err := certgen.GenerateCA()
 		s.Require().NoError(err)
-		caCert, err := os.ReadFile(filepath.Join("testdata", "certs", "ca-cert.pem"))
+
+		serverCertIssued, err := ca.IssueCertForSubject(mtls.SensorSubject)
 		s.Require().NoError(err)
-		caCertPool := x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(caCert)
+		serverCert, err := tls.X509KeyPair(serverCertIssued.CertPEM, serverCertIssued.KeyPEM)
+		s.Require().NoError(err)
+
+		clientCertIssued, err := ca.IssueCertForSubject(mtls.SensorSubject)
+		s.Require().NoError(err)
+
+		certDir := s.T().TempDir()
+		s.Require().NoError(os.WriteFile(filepath.Join(certDir, "ca.pem"), ca.CertPEM(), 0644))
+		s.Require().NoError(os.WriteFile(filepath.Join(certDir, "client-cert.pem"), clientCertIssued.CertPEM, 0600))
+		s.Require().NoError(os.WriteFile(filepath.Join(certDir, "client-key.pem"), clientCertIssued.KeyPEM, 0600))
+		s.T().Setenv(mtls.CAFileEnvName, filepath.Join(certDir, "ca.pem"))
+		s.T().Setenv(mtls.CertFilePathEnvName, filepath.Join(certDir, "client-cert.pem"))
+		s.T().Setenv(mtls.KeyFileEnvName, filepath.Join(certDir, "client-key.pem"))
+
 		server.TLS = &tls.Config{
 			Certificates: []tls.Certificate{serverCert},
 			ClientAuth:   tls.RequireAndVerifyClientCert,
-			ClientCAs:    caCertPool,
+			ClientCAs:    ca.CertPool(),
 		}
 		server.StartTLS()
 	}
@@ -225,23 +235,70 @@ func (s *nodeIndexerSuite) TestBuildMappingURL() {
 	}
 }
 
+func (s *nodeIndexerSuite) TestExtractHostname() {
+	tcs := map[string]struct {
+		input     string
+		expected  string
+		wantError bool
+	}{
+		"full URL":             {"https://sensor.stackrox.svc:443/scanner/definitions?file=repo2cpe", "sensor.stackrox.svc", false},
+		"URL without port":     {"https://sensor.stackrox.svc/scanner/definitions", "sensor.stackrox.svc", false},
+		"URL without path":     {"https://example.com", "example.com", false},
+		"URL with port":        {"https://example.com:8080", "example.com", false},
+		"IP address with port": {"https://10.96.0.1:443/path", "10.96.0.1", false},
+		"empty string":         {"", "", false},
+		"just hostname":        {"sensor.stackrox.svc", "sensor.stackrox.svc", false},
+		"hostname with port":   {"sensor.stackrox.svc:443", "sensor.stackrox.svc", false},
+		"invalid URL":          {"https://[invalid", "", true},
+	}
+	for name, tc := range tcs {
+		s.Run(name, func() {
+			got, err := extractHostname(tc.input)
+			if tc.wantError {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+				s.Equal(tc.expected, got)
+			}
+		})
+	}
+}
+
 func (s *nodeIndexerSuite) TestIndexerE2E() {
-	s.T().Setenv(mtls.CertFilePathEnvName, filepath.Join("testdata", "certs", "client-cert.pem"))
-	s.T().Setenv(mtls.KeyFileEnvName, filepath.Join("testdata", "certs", "client-key.pem"))
 	server := s.createTestServer(true)
-	cfg := DefaultNodeIndexerConfig()
-	cfg.HostPath = "testdata"
-	cfg.Repo2CPEMappingURL = server.URL
-	cfg.PackageDBFilter = rhcosPackageDB
-	indexer := NewNodeIndexer(cfg)
 
-	report, err := indexer.IndexNode(context.Background())
-	s.NoError(err)
+	s.Run("override Repo2CPEMappingURL", func() {
+		cfg := DefaultNodeIndexerConfig()
+		cfg.HostPath = "testdata"
+		cfg.Repo2CPEMappingURL = server.URL
+		cfg.PackageDBFilter = rhcosPackageDB
 
-	s.NotNil(report)
-	s.True(report.GetSuccess())
-	s.Len(report.GetContents().GetPackages(), 106, "Expected number of installed packages differs")
-	s.Len(report.GetContents().GetRepositories(), 2, "Expected number of discovered repositories differs")
+		report, err := NewNodeIndexer(cfg).IndexNode(context.Background())
+		s.NoError(err)
+		s.NotNil(report)
+		s.True(report.GetSuccess())
+		s.Len(report.GetContents().GetPackages(), 106)
+		s.Len(report.GetContents().GetRepositories(), 2)
+	})
+
+	s.Run("explicit ROX_NODE_INDEX_MAPPING_URL", func() {
+		mappingURL := server.URL + "/scanner/definitions?file=repo2cpe"
+		s.T().Setenv("ROX_NODE_INDEX_MAPPING_URL", mappingURL)
+		s.T().Setenv("ROX_ADVERTISED_ENDPOINT", "ignored.example.svc:9999")
+
+		cfg := DefaultNodeIndexerConfig()
+		s.Equal(buildMappingURL(), cfg.Repo2CPEMappingURL)
+		s.Nil(cfg.Client)
+		cfg.HostPath = "testdata"
+		cfg.PackageDBFilter = rhcosPackageDB
+
+		report, err := NewNodeIndexer(cfg).IndexNode(context.Background())
+		s.NoError(err)
+		s.NotNil(report)
+		s.True(report.GetSuccess())
+		s.Len(report.GetContents().GetPackages(), 106)
+		s.Len(report.GetContents().GetRepositories(), 2)
+	})
 }
 
 func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
