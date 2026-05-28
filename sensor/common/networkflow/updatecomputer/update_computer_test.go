@@ -168,7 +168,7 @@ func TestNewReturnsComputer(t *testing.T) {
 
 // Test_lookupPrevTimestamp tests the new closed connection tracking functionality
 func Test_lookupPrevTimestamp(t *testing.T) {
-	transitionBased := New()
+	computer := New()
 
 	nowTS := timestamp.Now()
 	past := nowTS - 1000
@@ -182,7 +182,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 		"Unknown connections should not be found and return 0": {
 			connKey: indicator.BinaryHash(0x1234567890ABCDEF),
 			setupStore: func(key indicator.BinaryHash) {
-				transitionBased.storeClosedConnectionTimestamp(indicator.BinaryHash(0xFEDCBA0987654321), past, closedConnRememberDuration)
+				computer.storeClosedConnectionTimestamp(indicator.BinaryHash(0xFEDCBA0987654321), past, closedConnRememberDuration)
 			},
 			expectedFound:  false,
 			expectedPrevTS: 0,
@@ -196,7 +196,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 		"Stored closed connection should be found with correct timestamp": {
 			connKey: indicator.BinaryHash(0x2222222222222222),
 			setupStore: func(key indicator.BinaryHash) {
-				transitionBased.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
+				computer.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
 			},
 			expectedFound:  true,
 			expectedPrevTS: past,
@@ -204,7 +204,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 		"Stored closed connection should be found regardless of current timestamp": {
 			connKey: indicator.BinaryHash(0x3333333333333333),
 			setupStore: func(key indicator.BinaryHash) {
-				transitionBased.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
+				computer.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
 			},
 			expectedFound:  true,
 			expectedPrevTS: past,
@@ -212,7 +212,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 		"Stored closed connection should be found even with same timestamp": {
 			connKey: indicator.BinaryHash(0x4444444444444444),
 			setupStore: func(key indicator.BinaryHash) {
-				transitionBased.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
+				computer.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
 			},
 			expectedFound:  true,
 			expectedPrevTS: past,
@@ -220,7 +220,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 		"Stored closed connection should still be found after cleanup": {
 			connKey: indicator.BinaryHash(0x5555555555555555),
 			setupStore: func(key indicator.BinaryHash) {
-				transitionBased.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
+				computer.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
 			},
 			expectedFound:  true,
 			expectedPrevTS: past,
@@ -235,7 +235,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 			}
 
 			// Test: lookup the connection
-			found, prevTS := transitionBased.lookupPrevTimestamp(tc.connKey)
+			found, prevTS := computer.lookupPrevTimestamp(tc.connKey)
 
 			// Assertions
 			assert.Equal(t, tc.expectedFound, found)
@@ -247,8 +247,8 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 	t.Run("should_not_panic_during_cleanup", func(t *testing.T) {
 		now := time.Now()
 		// Force cleanup by setting lastCleanup to a time in the past
-		transitionBased.lastCleanup = now.Add(-2 * time.Minute)
-		transitionBased.PeriodicCleanup(now, time.Minute)
+		computer.lastCleanup = now.Add(-2 * time.Minute)
+		computer.PeriodicCleanup(now, time.Minute)
 		// Should not panic and should update lastCleanup
 	})
 }
@@ -295,12 +295,12 @@ func Test_closedConnTimestamps(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			transitionBased := New()
-			transitionBased.closedConnRememberDuration = tc.rememberPeriod
+			computer := New()
+			computer.closedConnRememberDuration = tc.rememberPeriod
 
-			_ = transitionBased.ComputeUpdatedConns(tc.currentState)
-			transitionBased.PeriodicCleanup(tc.nowTS, 0)
-			assert.Equal(t, tc.expectedLength, len(transitionBased.closedConnTimestamps))
+			_ = computer.ComputeUpdatedConns(tc.currentState)
+			computer.PeriodicCleanup(tc.nowTS, 0)
+			assert.Equal(t, tc.expectedLength, len(computer.closedConnTimestamps))
 		})
 	}
 }
