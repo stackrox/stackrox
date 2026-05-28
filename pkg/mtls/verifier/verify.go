@@ -49,8 +49,8 @@ func loadAndWatchLeafCert() {
 }
 
 func loadLeafCertFromDirectory(dir string) (*tls.Certificate, error) {
-	certFile := filepath.Join(dir, mtls.ServiceCertFileName)
-	keyFile := filepath.Join(dir, mtls.ServiceKeyFileName)
+	certFile := filepath.Join(dir, filepath.Base(mtls.CertFilePath()))
+	keyFile := filepath.Join(dir, filepath.Base(mtls.KeyFilePath()))
 
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
