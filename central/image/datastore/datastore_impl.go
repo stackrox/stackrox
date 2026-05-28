@@ -386,7 +386,3 @@ func (c *ImageSearchResultConverter) BuildLocation(result *pkgSearch.Result) str
 func (c *ImageSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_IMAGES
 }
-
-func (c *ImageSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
-	return result.Score
-}

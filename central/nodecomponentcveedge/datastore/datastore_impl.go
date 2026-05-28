@@ -83,7 +83,3 @@ func (c *NodeComponentCVEEdgeSearchResultConverter) BuildLocation(result *search
 func (c *NodeComponentCVEEdgeSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_NODE_COMPONENT_CVE_EDGE
 }
-
-func (c *NodeComponentCVEEdgeSearchResultConverter) GetScore(result *searchPkg.Result) float64 {
-	return result.Score
-}
