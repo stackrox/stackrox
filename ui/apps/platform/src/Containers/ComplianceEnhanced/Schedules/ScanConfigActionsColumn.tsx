@@ -21,6 +21,9 @@ function ScanConfigActionsColumn({
     const { scanConfig } = scanConfigResponse;
     const { notifiers } = scanConfig;
 
+    const { isManaged } = scanConfigResponse;
+    const reportUnavailable = !isManaged;
+
     const items = [
         {
             title: 'Run scan',
@@ -35,21 +38,27 @@ function ScanConfigActionsColumn({
         },
         {
             title: 'Send report',
-            description:
-                notifiers.length === 0 ? 'Send is disabled if no delivery destinations' : '',
+            description: reportUnavailable
+                ? 'Reports are not available for externally managed configurations'
+                : notifiers.length === 0
+                  ? 'Send is disabled if no delivery destinations'
+                  : '',
             onClick: (event) => {
                 event.preventDefault();
                 handleSendReport(scanConfigResponse);
             },
-            isDisabled: notifiers.length === 0 || isSnapshotStatusPending,
+            isDisabled: reportUnavailable || notifiers.length === 0 || isSnapshotStatusPending,
         },
         {
             title: 'Generate download',
+            description: reportUnavailable
+                ? 'Reports are not available for externally managed configurations'
+                : '',
             onClick: (event) => {
                 event.preventDefault();
                 handleGenerateDownload(scanConfigResponse);
             },
-            isDisabled: isSnapshotStatusPending,
+            isDisabled: reportUnavailable || isSnapshotStatusPending,
         },
     ];
 

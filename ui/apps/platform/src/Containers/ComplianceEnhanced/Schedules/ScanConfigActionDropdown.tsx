@@ -21,9 +21,10 @@ function ScanConfigActionDropdown({
     isReportStatusPending,
     scanConfigResponse,
 }: ScanConfigActionDropdownProps): ReactElement {
-    const { scanConfig } = scanConfigResponse;
+    const { scanConfig, isManaged } = scanConfigResponse;
     const { notifiers } = scanConfig;
     const isProcessing = isScanning || isReportStatusPending;
+    const reportUnavailable = !isManaged;
 
     return (
         <MenuDropdown
@@ -46,11 +47,13 @@ function ScanConfigActionDropdown({
             <DropdownItem
                 key="Send report"
                 description={
-                    notifiers.length === 0
-                        ? 'Send is disabled if no delivery destinations'
-                        : ''
+                    reportUnavailable
+                        ? 'Reports are not available for externally managed configurations'
+                        : notifiers.length === 0
+                          ? 'Send is disabled if no delivery destinations'
+                          : ''
                 }
-                isDisabled={notifiers.length === 0 || isProcessing}
+                isDisabled={reportUnavailable || notifiers.length === 0 || isProcessing}
                 onClick={() => {
                     handleSendReport(scanConfigResponse);
                 }}
@@ -60,7 +63,12 @@ function ScanConfigActionDropdown({
             <DropdownItem
                 key="Generate download"
                 component="button"
-                isDisabled={isProcessing}
+                description={
+                    reportUnavailable
+                        ? 'Reports are not available for externally managed configurations'
+                        : ''
+                }
+                isDisabled={reportUnavailable || isProcessing}
                 onClick={() => {
                     handleGenerateDownload(scanConfigResponse);
                 }}
