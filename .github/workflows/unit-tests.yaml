@@ -58,7 +58,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         exclude:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
-    runs-on: ${{ fromJSON(needs.pick-runner.outputs.go-runner) }}
+    runs-on: ${{ fromJSON(github.event_name == 'workflow_dispatch' && '["self-hosted","warm-go"]' || needs.pick-runner.outputs.go-runner) }}
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     # Stable version ldflags for test caching: Go's test cache keys include
@@ -614,22 +614,6 @@ jobs:
           else
             echo "fast=true" >> "$GITHUB_OUTPUT"
           fi
-
-      - uses: ./.github/actions/job-preamble
-        if: steps.quality.outputs.fast == 'true'
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Cache Go dependencies
-        if: steps.quality.outputs.fast == 'true'
-        uses: ./.github/actions/cache-go-dependencies
-
-      - name: Warm GOCACHE with test suite
-        if: steps.quality.outputs.fast == 'true'
-        env:
-          BUILD_TAG: 0.0.0
-          SHORTCOMMIT: "0000000"
-        run: make go-unit-tests 2>&1 | tail -20 || true
 
       - name: Register as warm self-hosted runner
         if: steps.quality.outputs.fast == 'true'
