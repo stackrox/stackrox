@@ -43,3 +43,13 @@ if [[ "${JOB_NAME:-}" =~ -eks- ]]; then
     aws sts get-caller-identity | jq -r '.Arn'
     set_ci_shared_export USER_ARNS "$(aws sts get-caller-identity | jq -r '.Arn')"
 fi
+
+if [[ "${JOB_NAME:-}" =~ -ibmcloudz- ]]; then
+    info "Setting extended timeouts for IBM Cloud Z (s390x) infrastructure"
+    # IBM Cloud Z (s390x) has slower provisioning than x86_64
+    # Extended timeouts address K8S_API_TIMEOUT and BOOTSTRAP_TIMEOUT failures
+    # See ROX-21457 for analysis of failure patterns
+    set_ci_shared_export OPENSHIFT_INSTALL_BOOTSTRAP_TIMEOUT "90m"  # default is 40m
+    set_ci_shared_export OPENSHIFT_INSTALL_API_WAIT_TIMEOUT "45m"   # default is 30m
+    set_ci_shared_export OPERATOR_TIMEOUT "20m"  # Wait for operators to become available
+fi
