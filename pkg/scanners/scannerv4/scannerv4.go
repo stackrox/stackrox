@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -24,6 +25,10 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/version"
 	scannerv1 "github.com/stackrox/scanner/generated/scanner/api/v1"
+
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/scandata/datastore/postgres"
+	"github.com/stackrox/rox/central/scandata/ingestion"
 )
 
 // mockNodeDigest is the digest used for annotating any Node Index.
@@ -55,6 +60,10 @@ var (
 
 	scanTimeout     = env.ScanTimeout.DurationSetting()
 	metadataTimeout = 1 * time.Minute
+
+	// Singleton ingestor for prototype scan data tables
+	scanDataIngestor     *ingestion.Ingestor
+	scanDataIngestorOnce sync.Once
 )
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
@@ -235,6 +244,14 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		len(vr.GetPackageVulnerabilities()),
 		len(vr.GetVulnerabilities()),
 	)
+
+	// Ingest scan data into prototype tables (non-blocking)
+	if ingestor := getScanDataIngestor(); ingestor != nil {
+		if err := ingestor.IngestScan(ctx, image.GetId(), image.GetMetadata(), vr); err != nil {
+			log.Warnf("Failed to ingest scan data for image %q: %v", image.GetId(), err)
+			// Don't fail the scan - this is prototype code
+		}
+	}
 
 	return imageScan(image.GetMetadata(), vr, scannerVersionStr), nil
 }
@@ -479,4 +496,18 @@ func newVirtualMachineScanner(clientCreator func(string) (client.Scanner, error)
 
 func getMatcherOnlyScanner(matcherEndpoint string) (client.Scanner, error) {
 	return client.NewGRPCScanner(context.Background(), client.WithMatcherAddress(matcherEndpoint))
+}
+
+// getScanDataIngestor lazily initializes and returns the singleton ingestor
+func getScanDataIngestor() *ingestion.Ingestor {
+	scanDataIngestorOnce.Do(func() {
+		db := globaldb.GetPostgres()
+		if db == nil {
+			log.Warn("Global DB not available for scan data ingestion")
+			return
+		}
+		store := postgres.New(db)
+		scanDataIngestor = ingestion.NewIngestor(store)
+	})
+	return scanDataIngestor
 }
