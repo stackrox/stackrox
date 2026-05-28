@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+message ImageScanV2 {
+  string id = 1; // @gotags: sql:"pk,id"
+  string image_id = 2; // @gotags: sql:"fk(ImageV2:id),index=btree"
+  google.protobuf.Timestamp scan_time = 3;
+  string scanner_version = 4;
+  string bundle_version = 5;
+  repeated string data_sources = 6; // @gotags: sql:"type(text[])"
+  string notes = 7; // @gotags: sql:"type(jsonb)"
+}
