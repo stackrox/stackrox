@@ -24,8 +24,8 @@ metadata:
     # added to the PR. See the Slack tread linked from ROX-30580.
     pipelinesascode.tekton.dev/on-label: "[]"
   labels:
-    appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: main
+    appstudio.openshift.io/application: acs-4.11
+    appstudio.openshift.io/component: main-4.11
     pipelines.appstudio.openshift.io/type: build
   name: main-on-push
   namespace: rh-acs-tenant
@@ -65,7 +65,7 @@ spec:
   - name: extra-labels
     value:
     # X.Y in the cpe label must be adjusted for every version stream.
-    - "cpe=cpe:/a:redhat:advanced_cluster_security:X.Y::el9"
+    - "cpe=cpe:/a:redhat:advanced_cluster_security:4.11::el9"
 
   pipelineRef:
     name: main-pipeline
@@ -131,7 +131,7 @@ spec:
       computeResources: *ta-resources
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-main
+    serviceAccountName: build-pipeline-main-4.11
 
   # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
