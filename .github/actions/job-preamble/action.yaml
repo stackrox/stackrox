@@ -149,12 +149,7 @@ runs:
         mem_gb=$(awk '/MemTotal/{printf "%.0f", $2/1048576}' /proc/meminfo 2>/dev/null || echo "0")
         disk_gb=$(df -BG --output=size / 2>/dev/null | tail -1 | tr -d ' G' || echo "0")
         echo "runner_resources=${mem_gb}GB ram / ${disk_gb}GB disk" >> "$GITHUB_OUTPUT"
-        if [[ -f /.dockerenv ]] || grep -q '/docker\|/lxc\|/kubepods' /proc/1/cgroup 2>/dev/null; then
-          container_runtime=$(docker --version 2>/dev/null | head -1 || echo "container")
-        else
-          container_runtime="None"
-        fi
-        echo "container_runtime=${container_runtime}" >> "$GITHUB_OUTPUT"
+        echo "container_runtime=$([[ -f /.dockerenv ]] && echo container || echo None)" >> "$GITHUB_OUTPUT"
 
     - name: Record job info
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
