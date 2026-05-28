@@ -1,13 +1,8 @@
 package datastore
 
 import (
-	"crypto/sha256"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/pkg/errors"
 	storeMocks "github.com/stackrox/rox/central/signatureintegration/store/mocks"
@@ -25,122 +20,70 @@ func redHatIntegrationMatcher() gomock.Matcher {
 	})
 }
 
-func validBundleJSON() string {
-	return fmt.Sprintf(`{"keys": [{"name": "test-key-1", "pem": %q}]}`, testPublicKeyPEM)
+func validBundleJSON() []byte {
+	return []byte(fmt.Sprintf(`{"keys": [{"name": "test-key-1", "pem": %q}]}`, testPublicKeyPEM))
 }
 
-func validBundleJSON2Keys() string {
-	return fmt.Sprintf(`{"keys": [{"name": "test-key-1", "pem": %q}, {"name": "test-key-2", "pem": %q}]}`,
-		testPublicKeyPEM, testPublicKeyPEM2)
+func validBundleJSON2Keys() []byte {
+	return []byte(fmt.Sprintf(`{"keys": [{"name": "test-key-1", "pem": %q}, {"name": "test-key-2", "pem": %q}]}`,
+		testPublicKeyPEM, testPublicKeyPEM2))
 }
 
-func TestWatcherFileAppears(t *testing.T) {
+func TestHandlerValidBundle(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
 	mockStore.EXPECT().Upsert(gomock.Any(), redHatIntegrationMatcher()).Return(nil).Times(1)
 
-	dir := t.TempDir()
-	filePath := filepath.Join(dir, "bundle.json")
-
-	w := newKeyBundleWatcher(filePath, 24*time.Hour, mockStore)
-
-	w.checkAndUpsert()
-
-	require.NoError(t, os.WriteFile(filePath, []byte(validBundleJSON()), 0600))
-
-	w.checkAndUpsert()
+	handler := keyBundleHandler(mockStore)
+	err := handler(validBundleJSON())
+	assert.NoError(t, err)
 }
 
-func TestWatcherInvalidFile(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
-
-	dir := t.TempDir()
-	filePath := filepath.Join(dir, "bundle.json")
-	require.NoError(t, os.WriteFile(filePath, []byte(`{"keys": []}`), 0600))
-
-	w := newKeyBundleWatcher(filePath, 24*time.Hour, mockStore)
-	w.checkAndUpsert()
-
-	assert.NotEqual(t, [sha256.Size]byte{}, w.lastHash)
-}
-
-func TestWatcherFileDoesNotExist(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
-
-	dir := t.TempDir()
-	filePath := filepath.Join(dir, "nonexistent.json")
-
-	w := newKeyBundleWatcher(filePath, 24*time.Hour, mockStore)
-	w.checkAndUpsert()
-
-	assert.Equal(t, [sha256.Size]byte{}, w.lastHash)
-}
-
-func TestWatcherFileDeletedResetsHash(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
-	mockStore.EXPECT().Upsert(gomock.Any(), redHatIntegrationMatcher()).Return(nil).Times(2)
-
-	dir := t.TempDir()
-	filePath := filepath.Join(dir, "bundle.json")
-
-	w := newKeyBundleWatcher(filePath, 24*time.Hour, mockStore)
-
-	require.NoError(t, os.WriteFile(filePath, []byte(validBundleJSON()), 0600))
-	w.checkAndUpsert()
-	assert.NotEqual(t, [sha256.Size]byte{}, w.lastHash)
-
-	require.NoError(t, os.Remove(filePath))
-	w.checkAndUpsert()
-	assert.Equal(t, [sha256.Size]byte{}, w.lastHash)
-
-	require.NoError(t, os.WriteFile(filePath, []byte(validBundleJSON()), 0600))
-	w.checkAndUpsert()
-}
-
-func TestWatcherFileChanges(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
-	mockStore.EXPECT().Upsert(gomock.Any(), redHatIntegrationMatcher()).Return(nil).Times(2)
-
-	dir := t.TempDir()
-	filePath := filepath.Join(dir, "bundle.json")
-
-	w := newKeyBundleWatcher(filePath, 24*time.Hour, mockStore)
-
-	require.NoError(t, os.WriteFile(filePath, []byte(validBundleJSON()), 0600))
-	w.checkAndUpsert()
-	firstHash := w.lastHash
-
-	require.NoError(t, os.WriteFile(filePath, []byte(validBundleJSON2Keys()), 0600))
-	w.checkAndUpsert()
-	assert.NotEqual(t, firstHash, w.lastHash)
-}
-
-func TestWatcherFileUnchanged(t *testing.T) {
+func TestHandlerTwoKeys(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
 	mockStore.EXPECT().Upsert(gomock.Any(), redHatIntegrationMatcher()).Return(nil).Times(1)
 
-	dir := t.TempDir()
-	filePath := filepath.Join(dir, "bundle.json")
-	require.NoError(t, os.WriteFile(filePath, []byte(validBundleJSON()), 0600))
-
-	w := newKeyBundleWatcher(filePath, 24*time.Hour, mockStore)
-	w.checkAndUpsert()
-	w.checkAndUpsert()
+	handler := keyBundleHandler(mockStore)
+	err := handler(validBundleJSON2Keys())
+	assert.NoError(t, err)
 }
 
-func TestWatcherUpsertRetryOnFailure(t *testing.T) {
+func TestHandlerInvalidBundleReturnsNil(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
 
-	dir := t.TempDir()
-	filePath := filepath.Join(dir, "bundle.json")
-	content := []byte(validBundleJSON())
-	require.NoError(t, os.WriteFile(filePath, content, 0600))
+	handler := keyBundleHandler(mockStore)
+	err := handler([]byte(`{"keys": []}`))
+	assert.NoError(t, err, "parse errors must return nil to suppress retry")
+}
+
+func TestHandlerMalformedJSONReturnsNil(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
+
+	handler := keyBundleHandler(mockStore)
+	err := handler([]byte(`{not json`))
+	assert.NoError(t, err, "parse errors must return nil to suppress retry")
+}
+
+func TestHandlerUpsertErrorReturnsError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
+	mockStore.EXPECT().
+		Upsert(gomock.Any(), redHatIntegrationMatcher()).
+		Return(errors.New("transient DB error")).
+		Times(1)
+
+	handler := keyBundleHandler(mockStore)
+	err := handler(validBundleJSON())
+	require.Error(t, err, "upsert errors must be returned to enable retry")
+	assert.Contains(t, err.Error(), "transient DB error")
+}
+
+func TestHandlerUpsertRetryOnFailure(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
 
 	firstCall := mockStore.EXPECT().
 		Upsert(gomock.Any(), redHatIntegrationMatcher()).
@@ -152,47 +95,11 @@ func TestWatcherUpsertRetryOnFailure(t *testing.T) {
 		Times(1).
 		After(firstCall)
 
-	w := newKeyBundleWatcher(filePath, 24*time.Hour, mockStore)
+	handler := keyBundleHandler(mockStore)
 
-	assert.Equal(t, [sha256.Size]byte{}, w.lastHash)
+	err := handler(validBundleJSON())
+	assert.Error(t, err, "first call should fail")
 
-	w.checkAndUpsert()
-	assert.Equal(t, [sha256.Size]byte{}, w.lastHash)
-
-	w.checkAndUpsert()
-	assert.Equal(t, sha256.Sum256(content), w.lastHash)
-}
-
-func TestWatcherClampsInterval(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
-
-	w := newKeyBundleWatcher("/nonexistent", time.Millisecond, mockStore)
-	assert.GreaterOrEqual(t, w.interval, minWatchInterval)
-
-	w = newKeyBundleWatcher("/nonexistent", minWatchInterval, mockStore)
-	assert.Equal(t, minWatchInterval, w.interval)
-
-	longInterval := 2 * minWatchInterval
-	w = newKeyBundleWatcher("/nonexistent", longInterval, mockStore)
-	assert.Equal(t, longInterval, w.interval)
-}
-
-func TestWatcherOversizedFile(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
-
-	dir := t.TempDir()
-	filePath := filepath.Join(dir, "bundle.json")
-	oversizedContent := []byte(strings.Repeat("x", maxBundleFileSize+1))
-	require.NoError(t, os.WriteFile(filePath, oversizedContent, 0600))
-
-	w := newKeyBundleWatcher(filePath, 24*time.Hour, mockStore)
-	w.checkAndUpsert()
-
-	firstHash := w.lastHash
-	assert.NotEqual(t, [sha256.Size]byte{}, firstHash)
-
-	w.checkAndUpsert()
-	assert.Equal(t, firstHash, w.lastHash)
+	err = handler(validBundleJSON())
+	assert.NoError(t, err, "second call should succeed")
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
@@ -11,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	pgStore "github.com/stackrox/rox/central/signatureintegration/store/postgres"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/filewatcher"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
@@ -58,6 +60,37 @@ func seedRedHatDefaultSignatureIntegration(siStore store.SignatureIntegrationSto
 	utils.Should(errors.Wrap(err, "seeding default Red Hat signature integration"))
 }
 
+func keyBundleHandler(siStore store.SignatureIntegrationStore) filewatcher.Handler {
+	return func(data []byte) error {
+		bundle, err := parseKeyBundle(data)
+		if err != nil {
+			log.Warnf("Invalid key bundle file: %v", err)
+			watcherFileErrorTotal.Inc()
+			return nil
+		}
+
+		si := bundle.toDefaultSignatureIntegration()
+		ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+		if err := siStore.Upsert(ctx, si); err != nil {
+			log.Errorf("Failed to upsert Red Hat signature integration from key bundle: %v", err)
+			watcherUpsertTotal.WithLabelValues("error").Inc()
+			return err
+		}
+
+		watcherUpsertTotal.WithLabelValues("success").Inc()
+		watcherKeyCount.Set(float64(len(bundle.Keys)))
+		watcherLastSuccessTimestamp.SetToCurrentTime()
+
+		keyNames := make([]string, 0, len(bundle.Keys))
+		for _, k := range bundle.Keys {
+			keyNames = append(keyNames, k.Name)
+		}
+		log.Infof("Updated Red Hat signature integration with %d key(s) from bundle: [%s]",
+			len(bundle.Keys), strings.Join(keyNames, ", "))
+		return nil
+	}
+}
+
 func startKeyBundleWatcher(siStore store.SignatureIntegrationStore) {
 	interval := env.RedHatSigningKeyWatchInterval.DurationSetting()
 	if interval == 0 {
@@ -65,7 +98,11 @@ func startKeyBundleWatcher(siStore store.SignatureIntegrationStore) {
 		return
 	}
 
-	w := newKeyBundleWatcher(redHatKeyBundlePath, interval, siStore)
+	w := filewatcher.New(redHatKeyBundlePath, interval, keyBundleHandler(siStore),
+		filewatcher.WithOnError(func(_ error) {
+			watcherFileErrorTotal.Inc()
+		}),
+	)
 	w.Start()
 	bundleWatcher = w
 }
