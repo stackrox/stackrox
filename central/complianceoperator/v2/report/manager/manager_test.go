@@ -282,6 +282,108 @@ func (m *ManagerTestSuite) TestFailedReportWithWatcherRunningAndNoNotifiers() {
 	handleWaitGroup(m.T(), &wg, 500*time.Millisecond, "reports to be generated")
 }
 
+func (m *ManagerTestSuite) TestHandleReadyScanDeleteOldResultsGate() {
+	now := protocompat.TimestampNow()
+	scan := &storage.ComplianceOperatorScanV2{
+		Id:              "scan-1",
+		ClusterId:       "cluster-1",
+		ScanConfigName:  "test-scan",
+		ScanRefId:       "ref-1",
+		LastStartedTime: now,
+	}
+
+	tests := map[string]struct {
+		err error
+	}{
+		"success should call DeleteOldResults": {
+			err: nil,
+		},
+		"ErrScanRemoved should call DeleteOldResults with includeCurrentResults": {
+			err: watcher.ErrScanRemoved,
+		},
+		"ErrScanTimeout should NOT call DeleteOldResults": {
+			err: watcher.ErrScanTimeout,
+		},
+		"ErrScanContextCancelled should NOT call DeleteOldResults": {
+			err: watcher.ErrScanContextCancelled,
+		},
+	}
+
+	for name, tc := range tests {
+		m.Run(name, func() {
+			ctrl := gomock.NewController(m.T())
+			checkResultDS := checkResultsMocks.NewMockDataStore(ctrl)
+			scanConfigDS := scanConfigurationDS.NewMockDataStore(ctrl)
+			scanDS := scanMocks.NewMockDataStore(ctrl)
+			profileDS := profileMocks.NewMockDataStore(ctrl)
+			snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+			integrationDS := integrationMocks.NewMockDataStore(ctrl)
+			suiteStore := suiteDS.NewMockDataStore(ctrl)
+			bindingsStore := bindingsDS.NewMockDataStore(ctrl)
+			generator := reportGen.NewMockComplianceReportGenerator(ctrl)
+
+			manager := New(scanConfigDS, scanDS, profileDS, snapshotDS, integrationDS, suiteStore, bindingsStore, checkResultDS, generator)
+			manager.Start()
+			managerImp := manager.(*managerImpl)
+
+			result := &watcher.ScanWatcherResults{
+				WatcherID: "watcher-1",
+				Scan:      scan,
+				Error:     tc.err,
+			}
+
+			done := make(chan struct{})
+			if tc.err == nil {
+				checkResultDS.EXPECT().
+					DeleteOldResults(gomock.Any(), gomock.Eq(scan.GetLastStartedTime()), gomock.Eq(scan.GetScanRefId()), gomock.Eq(false)).
+					Times(1).Return(nil)
+				scanConfigDS.EXPECT().
+					GetScanConfigurationByName(gomock.Any(), gomock.Eq(scan.GetScanConfigName())).
+					Times(1).
+					DoAndReturn(func(_ any, _ any) (*storage.ComplianceOperatorScanConfigurationV2, error) {
+						close(done)
+						return nil, errors.New("stop here")
+					})
+			} else if errors.Is(tc.err, watcher.ErrScanRemoved) {
+				// ErrScanRemoved hits continue (skips getOrCreateScanConfigWatcher),
+				// so there's no mock call we can hook into. Use DeleteOldResults
+				// DoAndReturn to signal completion instead.
+				checkResultDS.EXPECT().
+					DeleteOldResults(gomock.Any(), gomock.Eq(scan.GetLastStartedTime()), gomock.Eq(scan.GetScanRefId()), gomock.Eq(true)).
+					Times(1).
+					DoAndReturn(func(_, _, _, _ any) error {
+						close(done)
+						return nil
+					})
+			} else {
+				scanConfigDS.EXPECT().
+					GetScanConfigurationByName(gomock.Any(), gomock.Eq(scan.GetScanConfigName())).
+					Times(1).
+					DoAndReturn(func(_ any, _ any) (*storage.ComplianceOperatorScanConfigurationV2, error) {
+						close(done)
+						return nil, errors.New("stop here")
+					})
+			}
+
+			// Seed a start time entry so the metrics code doesn't panic.
+			concurrency.WithLock(&managerImp.watchingScansLock, func() {
+				managerImp.watchingScansStartTime[result.WatcherID] = time.Now()
+			})
+
+			managerImp.readyQueue.Push(result)
+
+			select {
+			case <-done:
+			case <-time.After(2 * time.Second):
+				m.FailNow("timeout waiting for handleReadyScan to process the result")
+			}
+
+			manager.Stop()
+			ctrl.Finish()
+		})
+	}
+}
+
 func (m *ManagerTestSuite) TestHandleScan() {
 	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
 		Return(

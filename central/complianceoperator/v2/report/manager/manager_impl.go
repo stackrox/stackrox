@@ -495,6 +495,8 @@ func (m *managerImpl) handleReadyScan() {
 			if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, m.checkResultDataStore); err != nil {
 				log.Errorf("unable to delete old CheckResults: %v", err)
 			}
+		} else {
+			log.Debugf("Skipping DeleteOldResults for scan %s: %v", scanWatcherResult.Scan.GetScanName(), scanWatcherResult.Error)
 		}
 		if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
 			log.Debugf("Scan %s was removed", scanWatcherResult.Scan.GetScanName())
