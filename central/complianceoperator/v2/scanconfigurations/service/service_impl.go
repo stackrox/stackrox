@@ -708,8 +708,8 @@ func (s *serviceImpl) mergeScanConfigOverviews(
 
 	for _, dc := range discovered {
 		if existing, ok := seen[dc.Name]; ok {
-			existing.ClusterIds = unionStrings(existing.ClusterIds, dc.ClusterIDs)
-			existing.ProfileNames = unionStrings(existing.ProfileNames, dc.ProfileNames)
+			existing.ClusterIds = unionStrings(existing.GetClusterIds(), dc.ClusterIDs)
+			existing.ProfileNames = unionStrings(existing.GetProfileNames(), dc.ProfileNames)
 			continue
 		}
 		overview := &v2.ComplianceScanConfigOverview{
@@ -722,7 +722,7 @@ func (s *serviceImpl) mergeScanConfigOverviews(
 	}
 
 	sort.Slice(overviews, func(i, j int) bool {
-		return overviews[i].ScanConfigName < overviews[j].ScanConfigName
+		return overviews[i].GetScanConfigName() < overviews[j].GetScanConfigName()
 	})
 	return overviews
 }
