@@ -139,6 +139,13 @@ runs:
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
+    - name: Capture runner CPU model
+      id: runner-info
+      shell: bash
+      run: |
+        cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs || echo "unknown")
+        echo "cpu_model=${cpu_model}" >> "$GITHUB_OUTPUT"
+
     - name: Record job info
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       id: record_job_info
@@ -155,7 +162,8 @@ runs:
           source scripts/ci/lib.sh || true;
           save_job_record "${{ github.job }}" "gha" \
             outcome "${{ job.status }}" \
-            started_at "${{ steps.record_job_info.outputs.started_at }}" || true;
+            started_at "${{ steps.record_job_info.outputs.started_at }}" \
+            cut_os_image "${{ steps.runner-info.outputs.cpu_model }}" || true;
           free=$(df -BGB --output=avail / | tail -1);
           echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\
