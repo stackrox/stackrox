@@ -1989,6 +1989,109 @@ func TestFilterNotAffectedVulnerabilities(t *testing.T) {
 // If this test fails due to a datasource format change
 // a Central DB migration may be needed convert stored values to the
 // new format.
+func TestVulnerabilitiesUsesCveName(t *testing.T) {
+	testcases := []struct {
+		name            string
+		vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability
+		ids             []string
+		envOS           string
+		expected        []*storage.EmbeddedVulnerability
+	}{
+		{
+			name: "CveName is used when set",
+			vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"vuln-1": {
+					Id:                 "vuln-1",
+					Name:               "GHSA-abcd-1234-efgh",
+					CveName:            "CVE-2024-1234",
+					Description:        "Test vulnerability",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				},
+			},
+			ids:   []string{"vuln-1"},
+			envOS: "",
+			expected: []*storage.EmbeddedVulnerability{
+				{
+					Cve:               "CVE-2024-1234",
+					Summary:           "Test vulnerability",
+					VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					Severity:          storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+				},
+			},
+		},
+		{
+			name: "Name is used when CveName is empty (backward compat)",
+			vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"vuln-2": {
+					Id:                 "vuln-2",
+					Name:               "CVE-2024-5678",
+					CveName:            "",
+					Description:        "Another test",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+				},
+			},
+			ids:   []string{"vuln-2"},
+			envOS: "",
+			expected: []*storage.EmbeddedVulnerability{
+				{
+					Cve:               "CVE-2024-5678",
+					Summary:           "Another test",
+					VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					Severity:          storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+				},
+			},
+		},
+		{
+			name: "Multiple entries with same CveName are not deduplicated",
+			vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"vuln-ghsa": {
+					Id:                 "vuln-ghsa",
+					Name:               "GHSA-xxxx-yyyy-zzzz",
+					CveName:            "CVE-2024-9999",
+					Description:        "GHSA entry",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				},
+				"vuln-cve": {
+					Id:                 "vuln-cve",
+					Name:               "CVE-2024-9999",
+					CveName:            "CVE-2024-9999",
+					Description:        "CVE entry",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
+				},
+			},
+			ids:   []string{"vuln-ghsa", "vuln-cve"},
+			envOS: "",
+			expected: []*storage.EmbeddedVulnerability{
+				{
+					Cve:               "CVE-2024-9999",
+					Summary:           "GHSA entry",
+					VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					Severity:          storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+				},
+				{
+					Cve:               "CVE-2024-9999",
+					Summary:           "CVE entry",
+					VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					Severity:          storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+				},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := vulnerabilities(tc.vulnerabilities, tc.ids, tc.envOS)
+			require.Equal(t, len(tc.expected), len(result))
+			for i, expected := range tc.expected {
+				assert.Equal(t, expected.GetCve(), result[i].GetCve())
+				assert.Equal(t, expected.GetSummary(), result[i].GetSummary())
+				assert.Equal(t, expected.GetVulnerabilityType(), result[i].GetVulnerabilityType())
+				assert.Equal(t, expected.GetSeverity(), result[i].GetSeverity())
+			}
+		})
+	}
+}
+
 func TestVulnDataSource(t *testing.T) {
 	testcases := []struct {
 		expected string
