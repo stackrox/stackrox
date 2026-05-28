@@ -1,10 +1,10 @@
 package datastore
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
-	"github.com/pkg/errors"
 	storeMocks "github.com/stackrox/rox/central/signatureintegration/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/signatures"

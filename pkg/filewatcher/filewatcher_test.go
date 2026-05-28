@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -192,11 +193,11 @@ func TestStartStop(t *testing.T) {
 	filePath := filepath.Join(dir, "data.json")
 	require.NoError(t, os.WriteFile(filePath, []byte("content"), 0600))
 
-	var called int
-	w := New(filePath, 50*time.Millisecond, func(_ []byte) error { called++; return nil })
+	var called atomic.Int32
+	w := New(filePath, 50*time.Millisecond, func(_ []byte) error { called.Add(1); return nil })
 	w.Start()
 
-	require.Eventually(t, func() bool { return called >= 1 }, 2*time.Second, 50*time.Millisecond,
+	require.Eventually(t, func() bool { return called.Load() >= 1 }, 2*time.Second, 50*time.Millisecond,
 		"handler was not called")
 
 	done := make(chan struct{})
