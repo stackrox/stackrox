@@ -526,9 +526,11 @@ jobs:
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        continue-on-error: true
         # Skip for external contributions.
         if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+          matrix.arch != 'amd64' && matrix.arch != 'arm64' &&
+          (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
         with:
           username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
@@ -538,7 +540,7 @@ jobs:
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # ratchet:docker/setup-buildx-action@v4
 
       - name: Checkout submodules
         run: |
@@ -722,7 +724,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+      uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # ratchet:docker/setup-buildx-action@v4
 
     - name: Checkout submodules
       run: |
@@ -812,7 +814,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # ratchet:docker/setup-buildx-action@v4
 
       - name: Download prebuilt operator binaries
         uses: ./.github/actions/download-artifact-with-retry
@@ -860,9 +862,11 @@ jobs:
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        continue-on-error: true
         # Skip for external contributions.
         if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+          matrix.arch != 'amd64' && matrix.arch != 'arm64' &&
+          (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
         with:
           username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
@@ -899,7 +903,7 @@ jobs:
             echo "Operator image push completed successfully"
 
   build-and-push-scanner:
-    runs-on: ubuntu-latest
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:
       - define-job-matrix
       - pre-build-go-binaries
@@ -924,18 +928,20 @@ jobs:
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        continue-on-error: true
         if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+          matrix.arch != 'amd64' && matrix.arch != 'arm64' &&
+          (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
         with:
           username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
 
       - name: Set up QEMU
-        if: matrix.arch != 'amd64'
+        if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # ratchet:docker/setup-buildx-action@v4
 
       - uses: ./.github/actions/handle-tagged-build
 
@@ -1008,7 +1014,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+      uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # ratchet:docker/setup-buildx-action@v4
 
     - name: Set build tag for prerelease images
       if: matrix.name == 'prerelease'
@@ -1072,7 +1078,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+      uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # ratchet:docker/setup-buildx-action@v4
 
     - name: Push operator manifest lists
       # Skip for external contributions.

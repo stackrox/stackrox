@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTransitionBasedComputeUpdatedProcesses(t *testing.T) {
+func TestComputeUpdatedProcesses(t *testing.T) {
 	// Disable feature flags to test the original behavior
 	t.Setenv("ROX_NETFLOW_BATCHING", "false")
 	t.Setenv("ROX_NETFLOW_CACHE_LIMITING", "false")
@@ -94,7 +94,7 @@ func TestTransitionBasedComputeUpdatedProcesses(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewTransitionBased()
+			l := New()
 			// Exemplary endpoint used across this test
 			ep := indicator.ContainerEndpoint{
 				Entity:   networkgraph.EntityForDeployment("dummy-id"),
