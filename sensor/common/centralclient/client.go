@@ -81,11 +81,11 @@ func NewClient(endpoint string) (*Client, error) {
 	tlsConf := &tls.Config{
 		InsecureSkipVerify: true,
 		GetClientCertificate: func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
-			cert, err := mtls.LeafCertificateFromFile()
-			if err != nil {
-				return nil, errors.Wrap(err, "obtaining client certificate")
+			cert := verifier.WatchedLeafCert()
+			if cert == nil {
+				return nil, errors.New("no leaf certificate available")
 			}
-			return &cert, nil
+			return cert, nil
 		},
 	}
 	httpClient := &http.Client{

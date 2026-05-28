@@ -1,6 +1,7 @@
 package centralclient
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -15,6 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
@@ -573,10 +575,11 @@ func (t *ClientTestSuite) TestNewClient_GetClientCertificateReloadsFromDisk() {
 	cert2 := testutils.IssueSelfSignedCert(t.T(), "second-sensor-cert")
 	writeLeafCertToFiles(t.T(), t.clientCertDir, cert2)
 
-	got2, err := transport.TLSClientConfig.GetClientCertificate(nil)
-	t.Require().NoError(err)
-	t.Equal(cert2.Certificate[0], got2.Certificate[0])
-	t.NotEqual(got1.Certificate[0], got2.Certificate[0])
+	t.Require().Eventually(func() bool {
+		got, err := transport.TLSClientConfig.GetClientCertificate(nil)
+		return err == nil && len(got.Certificate) > 0 &&
+			bytes.Equal(got.Certificate[0], cert2.Certificate[0])
+	}, 30*time.Second, 200*time.Millisecond, "expected rotated cert to be picked up by certwatch")
 }
 
 func (t *ClientTestSuite) TestNewClientReplacesProtocols() {

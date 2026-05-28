@@ -104,6 +104,9 @@ func (h *certsNewSyncHandler) OnStableUpdate(val interface{}, err error) {
 	if !ok || len(files) == 0 {
 		return
 	}
+	// copyFiles is not atomic (files are written sequentially), but TLS consumers
+	// read from the certwatch in-memory cert (updated atomically after validation),
+	// not directly from these files. See verifier.WatchedLeafCert().
 	if err := copyFiles(files, h.destDir); err != nil {
 		log.Errorf("Syncing TLS certificates from %q to %q: %v", newSourceDir, h.destDir, err)
 		return
