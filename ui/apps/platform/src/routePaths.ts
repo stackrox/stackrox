@@ -96,6 +96,10 @@ export const vulnerabilitiesImagesWithoutCvesPath = `${vulnerabilitiesBasePath}/
 // user-workload template views path
 export const vulnerabilitiesViewPath = `${vulnerabilitiesBasePath}/results/:viewTemplate/:viewId`;
 
+export const vulnerabilitiesPrototypePath = `${vulnerabilitiesBasePath}/prototype`;
+export const vulnerabilitiesPrototypeCvePath = `${vulnerabilitiesPrototypePath}/cves`;
+export const vulnerabilitiesPrototypeCveDetailPath = `${vulnerabilitiesPrototypeCvePath}/:cveName`;
+
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 export const vulnerabilityConfigurationReportsPath = `${vulnerabilityReportsPath}/configuration`;
 export const vulnerabilityViewBasedReportsPath = `${vulnerabilityReportsPath}/view-based`;
