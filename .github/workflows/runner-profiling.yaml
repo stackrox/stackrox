@@ -1,69 +1,90 @@
 name: Runner Profiling
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '17 */2 * * *'
 
 jobs:
-  # Runs the same preamble as all other jobs, logging CPU model,
-  # disk IOPS, memory bandwidth, etc. Each job gets a random runner
-  # from the pool — over many runs we build a performance profile
-  # per runner type per job type.
-
-  profile-go-compile:
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+  profile:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-latest
+          - ubuntu-22.04
+          - ubuntu-slim
+          - ubuntu-24.04-arm
+          - ubuntu-22.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 14
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
-      - name: Build Go Binaries (amd64)
-        run: make main-build
-
-  profile-go-compile-no-container:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
-      - name: Build Go Binaries (amd64, no container)
-        run: make main-build
-
-  profile-docker-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b0c600c0 # ratchet:docker/setup-buildx-action@v3
-      - name: Build main image (dry run)
+      - name: Runner fingerprint
+        shell: bash
         run: |
-          # Just build, don't push — we only care about timing
-          make image STORAGE=pvc 2>&1 | tail -5 || true
+          set +e
+          echo "=== IDENTITY ==="
+          echo "runner_label=${{ matrix.runner }}"
+          echo "runner_name=${RUNNER_NAME:-unknown}"
+          echo "uname_m=$(uname -m)"
+          echo "kernel=$(uname -r)"
+          echo "nproc=$(nproc)"
+          echo "image=${ImageOS:-unknown}-${ImageVersion:-}"
 
-  profile-ui-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
-        with:
-          node-version-file: ui/package.json
-      - uses: ./.github/actions/cache-ui-dependencies
-      - name: Build UI
-        run: make -C ui deps && make -C ui build
+          echo "=== CPU ==="
+          cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
+          if [[ -z "$cpu_model" ]]; then
+            cpu_model=$(lscpu 2>/dev/null | awk -F: '/Model name/{gsub(/^ +/,"",$2); print $2}')
+          fi
+          echo "cpu_model=${cpu_model:-$(uname -m)}"
+          lscpu 2>/dev/null | head -20 || true
+
+          echo "=== MEMORY ==="
+          awk '/MemTotal|MemAvailable/' /proc/meminfo
+          echo "mem_total_mb=$(awk '/MemTotal/{printf "%d",$2/1024}' /proc/meminfo)"
+
+          echo "=== DISK ==="
+          df -hT / | tail -1
+          echo "disk_total_gb=$(df -BG --output=size / 2>/dev/null | tail -1 | tr -d ' G')"
+          echo "disk_avail_gb=$(df -BG --output=avail / 2>/dev/null | tail -1 | tr -d ' G')"
+
+          echo "=== CPU BENCHMARK ==="
+          python3 -c "
+          import time
+          s=time.time()
+          n=100000; sieve=[True]*(n+1)
+          for i in range(2,int(n**0.5)+1):
+            if sieve[i]:
+              for j in range(i*i,n+1,i): sieve[j]=False
+          primes=sum(sieve[2:])
+          print(f'cpu_prime_sieve_100k={time.time()-s:.3f}s primes={primes}')
+          "
+
+          echo "=== DISK I/O ==="
+          dw=$(dd if=/dev/zero of=/tmp/.bench_dd bs=1M count=128 conv=fdatasync 2>&1 | tail -1) || true
+          rm -f /tmp/.bench_dd
+          echo "disk_seq_write_128m=${dw}"
+
+          dd if=/dev/urandom of=/tmp/.bench_rd bs=1M count=64 2>/dev/null
+          dr=$(dd if=/tmp/.bench_rd of=/dev/null bs=1M 2>&1 | tail -1) || true
+          rm -f /tmp/.bench_rd
+          echo "disk_seq_read_64m=${dr}"
+
+          echo "=== NETWORK ==="
+          gh_lat=$(curl -so /dev/null -w '%{time_total}' https://api.github.com 2>/dev/null)
+          echo "net_github_api_secs=${gh_lat}"
+          dl_speed=$(curl -so /dev/null -w '%{speed_download}' \
+            "https://speed.cloudflare.com/__down?bytes=10000000" 2>/dev/null)
+          dl_mbs=$(python3 -c "print(f'{${dl_speed:-0}/1048576:.1f}')" 2>/dev/null || echo "?")
+          echo "net_download_mbs=${dl_mbs}"
+
+          echo "=== GO COMPILE BENCHMARK ==="
+          if command -v go >/dev/null 2>&1; then
+            echo "go_version=$(go version)"
+            start=$EPOCHSECONDS
+            go build std 2>/dev/null || true
+            echo "go_build_std=$((EPOCHSECONDS - start))s"
+          else
+            echo "go=not_installed"
+          fi
+
+          echo "=== DONE ==="
