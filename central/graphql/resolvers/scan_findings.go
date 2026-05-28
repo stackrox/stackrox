@@ -80,8 +80,8 @@ type protoAdvisoryResolver struct {
 	data *storage.ScanFinding
 }
 
-func (r *protoAdvisoryResolver) ID() graphql.ID {
-	return graphql.ID(r.data.GetId())
+func (r *protoAdvisoryResolver) ID() string {
+	return r.data.GetId()
 }
 
 func (r *protoAdvisoryResolver) AdvisoryId() string {
