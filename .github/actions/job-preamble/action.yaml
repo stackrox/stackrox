@@ -146,7 +146,9 @@ runs:
         cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs || echo "unknown")
         echo "cpu_model=${cpu_model}" >> "$GITHUB_OUTPUT"
         runner_image="unknown"
-        if [[ -f /etc/environment ]]; then
+        if [[ -n "${ImageOS:-}" ]]; then
+          runner_image="${ImageOS}-${ImageVersion:-}"
+        elif [[ -f /etc/environment ]]; then
           img_os=$(grep -oP 'ImageOS=\K\S+' /etc/environment 2>/dev/null || true)
           img_ver=$(grep -oP 'ImageVersion=\K\S+' /etc/environment 2>/dev/null || true)
           if [[ -n "$img_os" ]]; then runner_image="${img_os}-${img_ver}"; fi
