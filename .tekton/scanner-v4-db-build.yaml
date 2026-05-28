@@ -86,7 +86,7 @@ spec:
           memory: 512Mi
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-scanner-v4-db-4.11
+    serviceAccountName: build-pipeline-scanner-v4-db-4-11
 
   # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:

@@ -48,7 +48,7 @@ spec:
     value: quay.io/rhacs-eng/release-operator-bundle
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-operator-bundle-4.11
+    serviceAccountName: build-pipeline-operator-bundle-4-11
 
   # The operator-index build waits for the operator-bundle to be built and pushed.
   # The timeout must account for:

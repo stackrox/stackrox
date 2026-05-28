@@ -131,7 +131,7 @@ spec:
       computeResources: *ta-resources
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-main-4.11
+    serviceAccountName: build-pipeline-main-4-11
 
   # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:

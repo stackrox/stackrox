@@ -121,7 +121,7 @@ spec:
       computeResources: *ta-resources
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-operator-bundle-4.11
+    serviceAccountName: build-pipeline-operator-bundle-4-11
 
   # When building the operator-bundle, we must resolve image digests for all other ACS product images in order to inject
   # these digests in the bundle's ClusterServiceVersion file. For this, the bundle pipeline waits for each image to be
