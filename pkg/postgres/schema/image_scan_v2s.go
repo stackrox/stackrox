@@ -23,11 +23,11 @@ var (
 
 	// ImageScanV2sSchema is the go schema for table `image_scan_v2`.
 	ImageScanV2sSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("image_scan_v2")
+		schema := GetSchemaForTable("image_scan_v2s")
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ImageScanV2)(nil)), "image_scan_v2")
+		schema = walker.Walk(reflect.TypeOf((*storage.ImageScanV2)(nil)), "image_scan_v2s")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ImageV2": ImagesV2Schema,
 		}
@@ -50,7 +50,7 @@ var (
 
 const (
 	// ImageScanV2sTableName specifies the name of the table in postgres.
-	ImageScanV2sTableName = "image_scan_v2"
+	ImageScanV2sTableName = "image_scan_v2s"
 )
 
 // ImageScanV2s holds the Gorm model for Postgres table `image_scan_v2`.
