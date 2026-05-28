@@ -10,6 +10,10 @@ import "github.com/stackrox/rox/pkg/set"
 //   - Entries ending with "/" are treated as prefixes: any request path
 //     starting with that prefix is allowed.
 //   - Entries without a trailing "/" require an exact match.
+//
+// IMPORTANT: The proxy buffers request bodies in memory for retry support.
+// When adding new paths, ensure the endpoints do not expect request bodies
+// exceeding the buffer limit.
 var AllowedProxyPaths = set.NewFrozenStringSet(
 	"/api/graphql",
 	"/static/ocp-plugin/",

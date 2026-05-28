@@ -624,13 +624,6 @@ _image_prefetcher_prebuilt_start() {
         # prefect list stays up to date with additions.
         ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
         ;;
-    *sensor-integration-tests)
-        image_prefetcher_start_set sensor-integration
-        # Override the default image pull policy for containers with quay.io
-        # images to rely on prefetched images. This helps ensure that the static
-        # prefect list stays up to date with additions.
-        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
-        ;;
     *nongroovy-compatibility-tests)
         image_prefetcher_start_set nongroovy-compatibility
         # Override the default image pull policy for containers with quay.io
@@ -785,9 +778,6 @@ _image_prefetcher_prebuilt_await() {
         ;;
     *nongroovy-e2e-tests)
         image_prefetcher_await_set qa-nongroovy-e2e
-        ;;
-    *sensor-integration-tests)
-        image_prefetcher_await_set sensor-integration
         ;;
     *compatibility-tests)
         image_prefetcher_await_set compatibility
@@ -949,9 +939,6 @@ populate_prefetcher_image_list() {
     qa-nongroovy-e2e)
         cp "$SCRIPTS_ROOT/tests/images-to-prefetch.txt" "$image_list"
         ;;
-    sensor-integration)
-        cp "$SCRIPTS_ROOT/sensor/tests/images-to-prefetch.txt" "$image_list"
-        ;;
     nongroovy-compatibility)
         cp "$SCRIPTS_ROOT/tests/images-to-prefetch.txt" "$image_list"
         ;;
@@ -1048,7 +1035,7 @@ check_rhacs_eng_image_exists() {
     local name="$1"
     local tag="$2"
 
-    local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$tag"
+    local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag/?onlyActiveTags=true&specificTag=$tag"
     info "Checking for $name using $url"
     local check
     local extra_args=()

@@ -13,6 +13,18 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ## [NEXT RELEASE]
 
 ### Added Features
+
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+
+## [4.11.0]
+
+
+
+### Added Features
 - The config-controller now periodically reconciles SecurityPolicy CRs (default: every 30 minutes), detecting drift if policies are modified or deleted directly in Central. The interval is configurable via the `ROX_CONFIG_CONTROLLER_RECONCILE_INTERVAL` environment variable.
 - ROX-26769: Central API for generating CRSs now supports specifying an upper bound for cluster
   registrations using the new field "max_registrations".
@@ -27,6 +39,16 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-26033: Compliance now tracks tailored profiles and custom rules from the Compliance Operator. Tailored profiles can be included in scan configurations, and their check results are shown in the Coverage page and CSV reports.
 - ROX-34407: Deprecated fields to select optional columns NVD CVSS, EPSS Probability and Advisory from Vulnerability Reporting. These columns will be included by default next to similar columns. This change also affects column order in reports. 
 - ROX-33108: Added Component Version Column in Vulnerability Reporting.
+- ROX-32865: Images are now uniquely identified by the combination of name and digest, rather
+  than by digest alone. This new data model resolves several long-standing issues when multiple
+  images share the same digest but have different names (e.g., different registries or tags):
+  - Deployments now correctly distinguish images with the same digest but different names,
+    so each deployment shows its own image reference in VM dashboards and vice-versa.
+  - Vulnerability exceptions (deferrals, false positives) can now be correctly scoped to a
+    specific image name. Previously, a deferral/false-positive created for one image name
+    would leak to all images sharing the same digest.
+  - Policies now evaluate correctly per the deployed/checked image name and respect its
+    vulnerability exceptions, rather than being affected by shared-digest exception leakage.
 
 ### Removed Features
 
@@ -46,9 +68,15 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
   `/api/extensions/clusters/helm-config.yaml`, and `/api/extensions/helm-charts/`
   are also deprecated.
   They will be removed in a future release. Please use the operator for deployment management instead.
+- Plaintext (non-TLS) Central endpoints, configured via the `ROX_PLAINTEXT_ENDPOINTS` environment
+  variable, are deprecated and will be removed in a future release. Modern load balancers and
+  ingress controllers support TLS passthrough, making plaintext endpoints unnecessary.
 
 ### Technical Changes
 
+- ROX-34351: ACS components now always prevent Istio sidecar injection, removing the need for the
+  `env.istio` Helm value and `--istio-support` CLI flag. Existing Istio service mesh deployments
+  continue to work without configuration changes.
 - OpenShift 3 support removed from all installation methods.
 - ROX-34524: Fixed proxy bypass for non-HTTP schemes (e.g., TLS checks) when only `HTTPS_PROXY`/`HTTP_PROXY` are configured without `ALL_PROXY`. Previously, sensor's lazy TLS registry initialization would fail in proxy-only environments.
 

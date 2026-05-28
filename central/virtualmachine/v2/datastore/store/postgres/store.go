@@ -729,13 +729,13 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Virtu
 func (s *storeImpl) Walk(ctx context.Context, fn func(vm *storage.VirtualMachineV2) error) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Walk, "VirtualMachineV2")
 
-	return pgSearch.RunCursorQueryForSchemaFn[storage.VirtualMachineV2](ctx, schema, search.EmptyQuery(), s.db, fn)
+	return pgSearch.RunCursorQueryForSchemaFn[storage.VirtualMachineV2](ctx, schema, search.EmptyQuery(), s.db, "Walk", fn)
 }
 
 func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(vm *storage.VirtualMachineV2) error) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkByQuery, "VirtualMachineV2")
 
-	return pgSearch.RunCursorQueryForSchemaFn[storage.VirtualMachineV2](ctx, schema, q, s.db, fn)
+	return pgSearch.RunCursorQueryForSchemaFn[storage.VirtualMachineV2](ctx, schema, q, s.db, "WalkByQuery", fn)
 }
 
 // endregion Read operations

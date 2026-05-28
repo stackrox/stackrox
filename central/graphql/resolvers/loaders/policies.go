@@ -45,7 +45,6 @@ type PolicyLoader interface {
 	FromQuery(ctx context.Context, query *v1.Query) ([]*storage.Policy, error)
 
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
-	CountAll(ctx context.Context) (int32, error)
 }
 
 // policyLoaderImpl implements the PolicyDataLoader interface.
@@ -91,12 +90,6 @@ func (idl *policyLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query
 	}
 
 	return int32(numResults), nil
-}
-
-// CountAll returns the total number of policies.
-func (idl *policyLoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.CountFromQuery(ctx, search.EmptyQuery())
-	return count, err
 }
 
 func (idl *policyLoaderImpl) load(ctx context.Context, ids []string) ([]*storage.Policy, error) {

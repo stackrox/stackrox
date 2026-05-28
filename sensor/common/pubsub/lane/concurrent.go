@@ -112,7 +112,7 @@ func (l *concurrentLane) handleEvent(event pubsub.Event) {
 	defer metrics.SetQueueSize(l.id, l.ch.Len())
 	consumers, err := l.getConsumersByTopic(event.Topic())
 	if err != nil {
-		log.Errorf("unable to handle event: %v", err)
+		rateLimitedLog.ErrorL(l.id.String(), "unable to handle event: %v", err)
 		metrics.RecordConsumerOperation(l.id, event.Topic(), pubsub.NoConsumers, metrics.NoConsumers)
 		return
 	}
@@ -130,7 +130,7 @@ func (l *concurrentLane) handleConsumerError(errC <-chan error) {
 	case err := <-errC:
 		if err != nil {
 			// TODO: consider adding a callback to inform of the error
-			log.Errorf("unable to handle event: %v", err)
+			rateLimitedLog.ErrorL(l.id.String(), "unable to handle event: %v", err)
 		}
 	case <-l.stopper.Flow().StopRequested():
 	}

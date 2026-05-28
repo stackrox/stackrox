@@ -206,23 +206,23 @@ func (s *genericStore[T, PT]) Search(ctx context.Context, q *v1.Query) ([]search
 	return RunSearchRequestForSchema(ctx, s.schema, q, s.db)
 }
 
-func (s *genericStore[T, PT]) walkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
+func (s *genericStore[T, PT]) walkByQuery(ctx context.Context, query *v1.Query, hint string, fn func(obj PT) error) error {
 	query = s.applyQueryDefaults(query)
-	return RunCursorQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
+	return RunCursorQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, hint, fn)
 }
 
 // Walk iterates over all the objects in the store and applies the closure.
 func (s *genericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Walk)
 
-	return s.walkByQuery(ctx, search.EmptyQuery(), fn)
+	return s.walkByQuery(ctx, search.EmptyQuery(), "Walk", fn)
 }
 
 // WalkByQuery iterates over all the objects scoped by the query and applies the closure.
 func (s *genericStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.WalkByQuery)
 
-	return s.walkByQuery(ctx, query, fn)
+	return s.walkByQuery(ctx, query, "WalkByQuery", fn)
 }
 
 // Get returns the object, if it exists from the store.

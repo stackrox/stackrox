@@ -58,6 +58,13 @@ import useDeleteModal, {
     isSuccessDeleteResult,
 } from '../hooks/useDeleteModal';
 import { vulnerabilityConfigurationReportDetailsPath } from '../pathsForVulnerabilityReporting';
+import type { ReportConfiguration } from 'services/ReportsService.types';
+
+// resourceScope: {} after roll back to previous version that does not support a newer resource scope.
+// Do not let user clone or edit report configuration which might cause worse problems after roll forward.
+function isResourceScopeAbsent({ resourceScope }: ReportConfiguration) {
+    return Object.keys(resourceScope).length === 0;
+}
 
 const CreateReportsButton = () => {
     return (
@@ -398,7 +405,8 @@ function ConfigReportsTab() {
                                         event.preventDefault();
                                         navigate(`${vulnReportURL}?action=edit`);
                                     },
-                                    isDisabled: isReportStatusPending,
+                                    isDisabled:
+                                        isReportStatusPending || isResourceScopeAbsent(reportArg),
                                 },
                                 {
                                     isSeparator: true,
@@ -414,7 +422,9 @@ function ConfigReportsTab() {
                                         runReport(report.id, 'EMAIL');
                                     },
                                     isDisabled:
-                                        isReportStatusPending || report.notifiers.length === 0,
+                                        isReportStatusPending ||
+                                        report.notifiers.length === 0 ||
+                                        isResourceScopeAbsent(reportArg),
                                 },
                                 {
                                     title: 'Generate download',
@@ -422,7 +432,8 @@ function ConfigReportsTab() {
                                         event.preventDefault();
                                         runReport(report.id, 'DOWNLOAD');
                                     },
-                                    isDisabled: isReportStatusPending,
+                                    isDisabled:
+                                        isReportStatusPending || isResourceScopeAbsent(reportArg),
                                 },
                                 {
                                     title: 'Clone report',
@@ -430,6 +441,7 @@ function ConfigReportsTab() {
                                         event.preventDefault();
                                         navigate(`${vulnReportURL}?action=clone`);
                                     },
+                                    isDisabled: isResourceScopeAbsent(reportArg),
                                 },
                                 {
                                     isSeparator: true,

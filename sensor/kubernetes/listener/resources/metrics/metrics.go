@@ -19,7 +19,8 @@ var (
 
 // UpdateNumberPodsInStored update number of pods stored
 func UpdateNumberPodsInStored(ns string, num int) {
-	podsStored.With(prometheus.Labels{"k8sNamespace": ns}).Set(float64(num))
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	podsStored.WithLabelValues(ns).Set(float64(num))
 }
 
 func init() {

@@ -13,6 +13,8 @@ source "$ROOT/scripts/ci/sensor-wait.sh"
 source "$ROOT/scripts/ci/create-webhookserver.sh"
 # shellcheck source=../../tests/e2e/lib.sh
 source "$ROOT/tests/e2e/lib.sh"
+# shellcheck source=../../tests/e2e/lib-yaml.sh
+source "$ROOT/tests/e2e/lib-yaml.sh"
 # shellcheck source=../../tests/scripts/setup-certs.sh
 source "$ROOT/tests/scripts/setup-certs.sh"
 # shellcheck source=../../qa-tests-backend/scripts/lib.sh
@@ -37,27 +39,93 @@ config_part_1() {
 
     DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
 
+    local use_roxie_deploy="${USE_ROXIE_DEPLOY:-false}"
     export_test_environment
 
     setup_gcp
     setup_deployment_env false false
-    setup_podsecuritypolicies_config
-    remove_existing_stackrox_resources
+    if [[ "$use_roxie_deploy" == "true" ]]; then
+        info "Using roxie-based pre-test teardown"
+        roxie teardown all --single-namespace
+    else
+        info "Using traditional pre-test teardown"
+        remove_existing_stackrox_resources
+    fi
     setup_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
 
     image_prefetcher_system_await
 
-    deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+    if [[ "$use_roxie_deploy" == "true" ]]; then
+        info "Using roxie-based config_part_1 for qa-tests-backend"
+
+        local config_file
+        config_file="$(mktemp)"
+
+        merge_yaml "$config_file" <<EOF
+central:
+  pauseReconciliation: true
+  resourceProfile: ci
+securedCluster:
+  pauseReconciliation: true
+  resourceProfile: ci
+EOF
+
+        if pr_has_label test-konflux-images; then
+            info "PR label 'test-konflux-images' detected, will be using Konflux-built images for deploying StackRox"
+            patch_yaml "$config_file" ".roxie.konfluxImages = true"
+        fi
+        if [[ "$(yq eval ".roxie.konfluxImages" "$config_file")" == "true" ]]; then
+            # Due to https://access.redhat.com/solutions/6540591 we need to patch the global pull secrets
+            # to be able to pull images after applying image-rewriting rules for downstream images.
+            # See https://docs.redhat.com/en/documentation/openshift_container_platform/4.12/html/images/
+            #     managing-images#images-update-global-pull-secret_using-image-pull-secrets.
+            #
+            # Can be removed once https://github.com/stackrox/roxie/pull/186 lands.
+            patch_global_openshift_pull_secret "quay.io/rhacs-eng" "${QUAY_RHACS_ENG_RO_USERNAME}" "${QUAY_RHACS_ENG_RO_PASSWORD}"
+        fi
+        deploy_stackrox_with_roxie_compat "$config_file"
+        setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+        # Note: The traditional deployment path still references PodSecurityPolicies,
+        # even though they are not actually used anymore.
+        # The new roxie-based deployment path is cleaned up in this regard and doesn't
+        # bother with PSPs anymore at all.
+    else
+        info "Using traditional config_part_1 for qa-tests-backend"
+        setup_podsecuritypolicies_config
+        deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+        deploy_default_psp
+    fi
     deploy_optional_e2e_components
     setup_workload_identities
-
-    deploy_default_psp
     deploy_webhook_server "$ROOT/$DEPLOY_DIR/webhook_server_certs"
     get_ECR_docker_pull_password
     # TODO(ROX-14759): Re-enable once image pulling is fixed.
     #deploy_clair_v4
 
     image_prefetcher_prebuilt_await
+}
+
+patch_global_openshift_pull_secret() {
+    local registry="$1"
+    local username="$2"
+    local password="$3"
+
+    info "Patching global OpenShift pull-secret to include credentials for ${registry}"
+    local tmp_pull_secret; tmp_pull_secret=$(mktemp)
+
+    oc get secret/pull-secret \
+        -n openshift-config \
+        --template='{{index .data ".dockerconfigjson" | base64decode}}' \
+        > "$tmp_pull_secret"
+    oc registry login \
+        --registry="$registry" \
+        --auth-basic="${username}:${password}" \
+        --to="$tmp_pull_secret"
+    oc set data secret/pull-secret \
+        -n openshift-config \
+        --from-file=.dockerconfigjson="$tmp_pull_secret"
+
+    rm -f "$tmp_pull_secret"
 }
 
 reuse_config_part_1() {

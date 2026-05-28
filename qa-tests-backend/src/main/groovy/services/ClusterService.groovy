@@ -10,7 +10,6 @@ import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.ClusterOuterClass.Cluster
 import io.stackrox.proto.storage.ClusterOuterClass.ClusterMetadata.Type
-import io.stackrox.proto.storage.ClusterOuterClass.DynamicClusterConfig
 
 @CompileStatic
 @Slf4j
@@ -54,13 +53,13 @@ class ClusterService extends BaseService {
         if (currentCluster == null) {
             return false
         }
-        Cluster.Builder builder = currentCluster.toBuilder()
 
-        Cluster cluster = builder.setDynamicConfig(
-                DynamicClusterConfig.newBuilder()
-                        .setAdmissionControllerConfig(config)
-                        .build()
-        ).build()
+        Cluster cluster = currentCluster.toBuilder()
+                .setDynamicConfig(
+                        currentCluster.getDynamicConfig().toBuilder()
+                                .setAdmissionControllerConfig(config)
+                                .build()
+                ).build()
 
         return updateCluster(cluster)
     }
@@ -70,13 +69,13 @@ class ClusterService extends BaseService {
         if (currentCluster == null) {
             return false
         }
-        Cluster.Builder builder = currentCluster.toBuilder()
 
-        Cluster cluster = builder.setDynamicConfig(
-                DynamicClusterConfig.newBuilder()
-                        .setDisableAuditLogs(disableAuditLogs)
-                        .build()
-        ).build()
+        Cluster cluster = currentCluster.toBuilder()
+                .setDynamicConfig(
+                        currentCluster.getDynamicConfig().toBuilder()
+                                .setDisableAuditLogs(disableAuditLogs)
+                                .build()
+                ).build()
 
         return updateCluster(cluster)
     }
