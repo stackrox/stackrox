@@ -422,7 +422,8 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 		// First, deduplicate any vulnerabilities which Claircore may repeat.
 		// This may happen, for example, when we match the same vulnerability to multiple CPEs
 		// in Red Hat's OVAL or VEX data.
-		vulnIDs = dedupeVulns(vulnIDs, ccVulnerabilities)
+		// DISABLED for Scanner Output A: Keep all advisories, no CVE dedup.
+		// vulnIDs = dedupeVulns(vulnIDs, ccVulnerabilities)
 		// Only do the following if we want RH advisories to be top level.
 		if !features.ScannerV4RedHatCVEs.Enabled() {
 			// Next, sort by NVD CVSS score.
@@ -715,6 +716,11 @@ func toProtoV4VulnerabilitiesMap(
 				Percentile:   float32(vulnEPSS.Percentile),
 			}
 		}
+
+		// Set the new fields for Scanner Output A.
+		vulnerabilities[k].CveName = vulnerabilityName(v)
+		vulnerabilities[k].AdvisoryId = v.Name
+		vulnerabilities[k].SourceName = updaterDisplayName(v.Updater)
 	}
 	return vulnerabilities, nil
 }
@@ -1454,6 +1460,42 @@ func nvdCVSS(v *nvdschema.CVEAPIJSON20CVEItem) (*v4.VulnerabilityReport_Vulnerab
 
 	cvss := toCVSS(values)
 	return cvss, nil
+}
+
+// updaterDisplayName converts a ClairCore updater name to a human-readable source name.
+func updaterDisplayName(updater string) string {
+	switch {
+	case strings.HasPrefix(updater, "osv/"):
+		ecosystem := strings.TrimPrefix(updater, "osv/")
+		switch strings.ToLower(ecosystem) {
+		case "go":
+			return "Go Vulnerability DB"
+		case "pypi":
+			return "PyPI Advisory DB"
+		case "npm":
+			return "npm Advisory DB"
+		case "maven":
+			return "Maven Advisory DB"
+		case "rubygems":
+			return "RubyGems Advisory DB"
+		case "nuget":
+			return "NuGet Advisory DB"
+		default:
+			return ecosystem + " Advisory DB"
+		}
+	case strings.Contains(updater, "rhel-vex"):
+		return "Red Hat VEX"
+	case strings.Contains(updater, "debian"):
+		return "Debian Security Tracker"
+	case strings.Contains(updater, "ubuntu"):
+		return "Ubuntu Security Tracker"
+	case strings.Contains(updater, "alpine"):
+		return "Alpine SecDB"
+	case strings.Contains(updater, "aws"):
+		return "AWS Security Advisory"
+	default:
+		return updater
+	}
 }
 
 // vulnerabilityName searches the best known candidate for the vulnerability name
