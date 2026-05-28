@@ -667,14 +667,12 @@ func (m *mockUMH) HandleNACK(resourceID string) {
 }
 
 func (m *mockUMH) ObserveSending(resourceID string) {
-	var cb func(resourceID string)
 	concurrency.WithLock(&m.mu, func() {
 		m.sends = append(m.sends, resourceID)
-		cb = m.onObserveSendingCb
+		if m.onObserveSendingCb != nil {
+			m.onObserveSendingCb(resourceID)
+		}
 	})
-	if cb != nil {
-		cb(resourceID)
-	}
 }
 
 func (m *mockUMH) RetryCommand() <-chan string {
