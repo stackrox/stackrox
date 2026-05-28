@@ -2,13 +2,14 @@ package datastore
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	pgStore "github.com/stackrox/rox/central/signatureintegration/store/postgres"
-	"time"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/filedownloader"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/signatures"

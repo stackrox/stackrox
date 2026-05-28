@@ -123,8 +123,11 @@ func (d *Downloader) run() {
 func (d *Downloader) download(ctx context.Context) {
 	start := time.Now()
 	err := d.doDownload(ctx)
+	duration := time.Since(start)
 	if d.onComplete != nil {
-		d.onComplete(err, time.Since(start))
+		d.onComplete(err, duration)
+	} else if err != nil {
+		log.Warnf("Download of %q failed: %v", d.url, err)
 	}
 }
 
@@ -190,5 +193,8 @@ func atomicWriteFile(path string, data []byte) error {
 	if err := tmp.Close(); err != nil {
 		return fmt.Errorf("closing temp file: %w", err)
 	}
-	return os.Rename(tmpPath, path)
+	if err := os.Rename(tmpPath, path); err != nil {
+		return fmt.Errorf("renaming temp file: %w", err)
+	}
+	return nil
 }

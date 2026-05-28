@@ -109,7 +109,7 @@ func TestStopSignal(t *testing.T) {
 	dir := t.TempDir()
 	filePath := filepath.Join(dir, "data.json")
 
-	d := New(server.URL, filePath, 50*time.Millisecond, WithHTTPClient(server.Client()))
+	d := New(server.URL, filePath, minInterval, WithHTTPClient(server.Client()))
 	d.Start()
 
 	require.Eventually(t, func() bool {
