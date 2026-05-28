@@ -42,10 +42,10 @@ jobs:
             exit 0
           fi
           available=$(gh api "orgs/${{ github.repository_owner }}/actions/runners" \
-            --jq '[.runners[]? | select(.labels[]?.name == "warm-go-norace") | select(.status == "online")] | length' 2>/dev/null || echo 0)
-          echo "Warm-go-norace runners available: $available"
+            --jq '[.runners[]? | select(.labels[]?.name == "warm-go") | select(.status == "online")] | length' 2>/dev/null || echo 0)
+          echo "Warm runners available: $available"
           if [[ "$available" -gt 0 ]]; then
-            echo 'runner=["self-hosted","warm-go-norace"]' >> "$GITHUB_OUTPUT"
+            echo 'runner=["self-hosted","warm-go"]' >> "$GITHUB_OUTPUT"
           else
             echo 'runner="ubuntu-latest"' >> "$GITHUB_OUTPUT"
           fi
@@ -70,89 +70,19 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         free-disk-space: 30
 
-    - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v6
-      with:
-        go-version-file: go.mod
-        cache: false
-
-    - name: Check local cache
-      id: local-cache
-      run: |
-        gocache_files=$(find $(go env GOCACHE) -type f 2>/dev/null | wc -l)
-        echo "GOCACHE files: $gocache_files"
-        if [[ "$gocache_files" -gt 1000 ]]; then
-          echo "Local GOCACHE is warm ($gocache_files files). Skipping GHA restore."
-          echo "warm=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "Local GOCACHE is cold ($gocache_files files). Restoring from GHA."
-          echo "warm=false" >> "$GITHUB_OUTPUT"
-        fi
-
     - name: Cache Go dependencies
-      if: steps.local-cache.outputs.warm != 'true'
       uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: ${{ matrix.gotags }}
 
-    - name: Stabilize file mtimes for test cache
-      run: |
-        git ls-files -z | xargs -0 touch -t 200101010000
-        git ls-files -z | sed -z 's|/[^/]*$||' | sort -uz | xargs -0 touch -t 200101010000
-
-    - name: Runner diagnostic
-      run: |
-        echo "=== Runner info ==="
-        echo "runner_name=${RUNNER_NAME:-github-hosted}"
-        echo "cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)"
-        echo "go_version=$(go version)"
-        echo "go_env_GOROOT=$(go env GOROOT)"
-        echo "go_env_GOTOOLCHAIN=$(go env GOTOOLCHAIN)"
-        echo "go_env_CC=$(go env CC)"
-        echo "gcc_version=$(gcc --version 2>/dev/null | head -1)"
-        echo "GOCACHE=$(go env GOCACHE)"
-        echo "GOCACHE_size=$(du -sh $(go env GOCACHE) 2>/dev/null | cut -f1)"
-        echo "GOCACHE_files=$(find $(go env GOCACHE) -type f 2>/dev/null | wc -l)"
-        echo "disk_free=$(df -h / | tail -1 | awk '{print $4}')"
-        echo "disk_iops=$(cat /dev/shm/cpu_score.txt 2>/dev/null || echo '?')"
-        echo "mem_avail=$(free -m | awk '/^Mem:/{print $7}')MB"
-        echo "processes=$(ps aux | wc -l)"
-        echo "load_avg=$(cat /proc/loadavg)"
-        echo "=== Compile benchmarks ==="
-        start=$SECONDS; go build ./pkg/set/... 2>&1; echo "compile_pkg_set: $((SECONDS - start))s"
-        start=$SECONDS; go build ./pkg/concurrency/... 2>&1; echo "compile_pkg_concurrency: $((SECONDS - start))s"
-        start=$SECONDS; go build ./central/... 2>&1 | tail -1; echo "compile_central: $((SECONDS - start))s"
-        echo "=== Test compile benchmarks (no execution) ==="
-        start=$SECONDS; go test -run XXXX -count=1 ./pkg/set/... 2>&1; echo "test_compile_pkg_set: $((SECONDS - start))s"
-        start=$SECONDS; go test -run XXXX -count=1 -race ./pkg/set/... 2>&1; echo "test_compile_race_pkg_set: $((SECONDS - start))s"
-        echo "=== Disk I/O benchmark ==="
-        dd if=/dev/zero of=/tmp/.bench bs=1M count=256 conv=fdatasync 2>&1 | tail -1
-        rm -f /tmp/.bench
-        echo "=== Top CPU consumers ==="
-        ps aux --sort=-%cpu | head -10
-        echo "=== Runner agent processes ==="
-        ps aux | grep -E 'Runner\.|run\.sh|keep-alive' | grep -v grep
-
-    - name: Quick test subset (fast signal)
-      run: |
-        echo "=== Quick subset test (pkg/set, pkg/concurrency, pkg/utils) ==="
-        start=$SECONDS
-        go test -race -count=1 -v ./pkg/set/... ./pkg/concurrency/... ./pkg/utils/... 2>&1 | tail -10
-        echo "=== Quick subset took $((SECONDS - start))s ==="
-
-    - name: Go Unit Tests (no race, testing cache benefit)
-      run: |
-        echo "=== Running without -race to isolate cache benefit ==="
-        start=$SECONDS
-        ${{ matrix.gotags }} TESTFLAGS="-p 4" make go-unit-tests
-        echo "=== Tests took $((SECONDS - start))s ==="
+    - name: Go Unit Tests
+      run: ${{ matrix.gotags }} make go-unit-tests
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
       with:
@@ -669,8 +599,6 @@ jobs:
       fail-fast: false
       matrix:
         slot: [1, 2, 3, 4]
-    outputs:
-      registered: ${{ steps.register.outputs.registered }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -681,59 +609,37 @@ jobs:
           cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
           echo "cpu_model=${cpu_model}"
           if [[ "$cpu_model" == *"7763"* ]]; then
-            echo "::warning::Slow runner (${cpu_model}). Not worth seeding."
+            echo "::warning::Slow runner (${cpu_model}). Skipping."
             echo "fast=false" >> "$GITHUB_OUTPUT"
           else
-            echo "Fast runner (${cpu_model}). Proceeding with seed."
             echo "fast=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # ratchet:actions/setup-go@v6
+      - uses: ./.github/actions/job-preamble
         if: steps.quality.outputs.fast == 'true'
         with:
-          go-version-file: go.mod
-          cache: false
-
-      - name: Stabilize file mtimes for cache
-        if: steps.quality.outputs.fast == 'true'
-        run: |
-          git ls-files -z | xargs -0 touch -t 200101010000
-          git ls-files -z | sed -z 's|/[^/]*$||' | sort -uz | xargs -0 touch -t 200101010000
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Cache Go dependencies
         if: steps.quality.outputs.fast == 'true'
         uses: ./.github/actions/cache-go-dependencies
 
-      - name: Warm GOCACHE with full test suite
+      - name: Warm GOCACHE with test suite
         if: steps.quality.outputs.fast == 'true'
         env:
           BUILD_TAG: 0.0.0
           SHORTCOMMIT: "0000000"
-        run: |
-          echo "Running full test suite WITHOUT -race to warm cache..."
-          start=$SECONDS
-          TESTFLAGS="-p 4" make go-unit-tests 2>&1 | tail -5 || true
-          echo "=== Seed test run took $((SECONDS - start))s ==="
-          echo "GOCACHE: $(du -sh $(go env GOCACHE) 2>/dev/null | cut -f1)"
-          echo "GOCACHE files: $(find $(go env GOCACHE) -type f 2>/dev/null | wc -l)"
+        run: make go-unit-tests 2>&1 | tail -20 || true
 
       - name: Register as warm self-hosted runner
-        id: register
         if: steps.quality.outputs.fast == 'true'
         env:
           GH_TOKEN: ${{ secrets.RUNNER_ADMIN_TOKEN }}
         run: |
-          if [[ -z "$GH_TOKEN" ]]; then
-            echo "::warning::RUNNER_ADMIN_TOKEN not set. Skipping registration."
-            echo "registered=false" >> "$GITHUB_OUTPUT"
+          if [[ -z "$GH_TOKEN" ]] || [[ "${RUNNER_NAME:-}" == warm-* ]]; then
+            echo "Skipping registration."
             exit 0
           fi
-          if [[ "${RUNNER_NAME:-}" == warm-* ]]; then
-            echo "Already on a warm runner (${RUNNER_NAME}). Skipping."
-            echo "registered=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo "registered=true" >> "$GITHUB_OUTPUT"
-          bash .github/actions/job-preamble/keep-alive.sh "warm-go-norace" "30"
+          bash .github/actions/job-preamble/keep-alive.sh "warm-go" "30"
 
 

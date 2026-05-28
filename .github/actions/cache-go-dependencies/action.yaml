@@ -27,8 +27,24 @@ runs:
         echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"  # prepends dash if set
       shell: bash
 
+    - name: Check local cache
+      id: local-cache
+      run: |
+        gocache="${{ steps.cache-paths.outputs.GOCACHE }}"
+        key_prefix="go-build-v3-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}"
+        marker="$gocache/.cache-restored-$(echo "$key_prefix" | md5sum | cut -c1-12)"
+        if [[ -f "$marker" ]]; then
+          echo "Local GOCACHE already has key prefix: $key_prefix"
+          echo "skip=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "No local marker for: $key_prefix"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "marker=$marker" >> "$GITHUB_OUTPUT"
+        fi
+      shell: bash
+
     - name: Cache Go Build (save)
-      if: inputs.save == 'true'
+      if: steps.local-cache.outputs.skip != 'true' && inputs.save == 'true'
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
@@ -36,26 +52,28 @@ runs:
         restore-keys: go-build-v3-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
 
     - name: Cache Go Build (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
+      if: ${{ steps.local-cache.outputs.skip != 'true' && !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
       uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache/restore@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-v3-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
         restore-keys: go-build-v3-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
 
+    - name: Mark local cache as restored
+      if: steps.local-cache.outputs.skip != 'true'
+      run: |
+        mkdir -p "$(dirname "${{ steps.local-cache.outputs.marker }}")"
+        touch "${{ steps.local-cache.outputs.marker }}"
+      shell: bash
+
     - name: Mark GOCACHE entries for stale detection
+      if: steps.local-cache.outputs.skip != 'true' && inputs.save == 'true'
       run: |
         gocache="${{ steps.cache-paths.outputs.GOCACHE }}"
         if [[ -d "$gocache" ]]; then
-          # Backdate all cache entries to year 2000. During the build/test,
-          # Go's markUsed() updates mtimes of accessed entries to "now"
-          # (it always updates when mtime is >1 hour old). The post-step
-          # below trims entries still at year 2000 before cache save.
           timeout 120 find "$gocache" -type f -exec touch -t 200001010000 {} + || true
-          # Protect trim.txt: if backdated, Go's built-in Trim() sees
-          # "last trim was in year 2000" and deletes ALL backdated entries
-          # before the build starts. Setting it to now prevents this.
           echo "$(date +%s)" > "$gocache/trim.txt"
+          touch "$gocache/.do-trim"
           echo "Marked GOCACHE entries for stale detection"
         fi
       shell: bash
@@ -68,7 +86,8 @@ runs:
         post: >
           set +e;
           gocache="$(go env GOCACHE)";
-          [[ -d "$gocache" ]] && [[ -f "$gocache/trim.txt" ]] || { echo "Skipping GOCACHE trim"; exit 0; };
+          [[ -f "$gocache/.do-trim" ]] || { echo "Skipping GOCACHE trim (not saving)"; exit 0; };
+          rm -f "$gocache/.do-trim";
           before=$(du -sm "$gocache" 2>/dev/null | cut -f1);
           cutoff=$(mktemp); touch -t 200001020000 "$cutoff";
           find "$gocache" -type f ! -newer "$cutoff" -delete 2>/dev/null || true;
@@ -80,28 +99,12 @@ runs:
     - name: Clear test cache on non-PR runs
       if: github.event_name != 'pull_request'
       run: |
-        # Non-PR runs (master, release branches, nightlies) always run tests
-        # from scratch to catch real failures. go clean -testcache removes
-        # cached test results while preserving the compilation cache.
         go clean -testcache
         echo "Cleared test cache for fresh run"
       shell: bash
 
     - name: Stabilize file mtimes for Go test cache
       run: |
-        # Go's test cache validates inputs by (path, size, mtime) — NOT content.
-        # git checkout sets all mtimes to "now", which differs between CI runs,
-        # causing every test to miss the cache. Setting a fixed mtime makes the
-        # test cache hit across runs when file content hasn't changed.
-        #
-        # Go's module index also caches parsed imports by (filename, mtime, size).
-        # A fixed mtime can cause stale cached imports when a file changes content
-        # but keeps the same size. This is mitigated by including go.mod hash in
-        # the GOCACHE key — dependency changes invalidate the entire cache.
-        # See: https://github.com/golang/go/blob/go1.25.7/src/cmd/go/internal/modindex/read.go#L116
-
         git ls-files | xargs touch -t 200101010000
-        # Also stabilize directory mtimes — tests using os.ReadDir or
-        # filepath.Walk check directory mtimes too.
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
       shell: bash
