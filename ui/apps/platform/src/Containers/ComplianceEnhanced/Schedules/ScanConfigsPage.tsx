@@ -1,24 +1,13 @@
-import { Navigate, Route, Routes } from 'react-router-dom-v5-compat';
+import { Route, Routes } from 'react-router-dom-v5-compat';
 import { Banner } from '@patternfly/react-core';
 
-import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
-import { complianceEnhancedSchedulesPath } from 'routePaths';
-import type { PageActions } from './compliance.scanConfigs.utils';
-import CreateScanConfigPage from './CreateScanConfigPage';
 import ComplianceNotFoundPage from '../ComplianceNotFoundPage';
+import DiscoveredScanConfigDetailPage from './DiscoveredScanConfigDetailPage';
 import ScanConfigDetailPage from './ScanConfigDetailPage';
 import ScanConfigsTablePage from './ScanConfigsTablePage';
 
 function ScanConfigsPage() {
-    /*
-     * Examples of urls for ScanConfigPage:
-     * /main/compliance-enhanced/scan-configs
-     * /main/compliance-enhanced/scan-configs?action=create
-     * /main/compliance-enhanced/scan-configs/configId
-     */
-    const { pageAction } = usePageAction<PageActions>();
-
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
 
@@ -32,16 +21,14 @@ function ScanConfigsPage() {
                 <Route
                     index
                     element={
-                        pageAction === 'create' && hasWriteAccessForCompliance ? (
-                            <CreateScanConfigPage />
-                        ) : !pageAction ? (
-                            <ScanConfigsTablePage
-                                hasWriteAccessForCompliance={hasWriteAccessForCompliance}
-                            />
-                        ) : (
-                            <Navigate to={complianceEnhancedSchedulesPath} replace />
-                        )
+                        <ScanConfigsTablePage
+                            hasWriteAccessForCompliance={hasWriteAccessForCompliance}
+                        />
                     }
+                />
+                <Route
+                    path="discovered/:scanConfigName"
+                    element={<DiscoveredScanConfigDetailPage />}
                 />
                 <Route
                     path=":scanConfigId"

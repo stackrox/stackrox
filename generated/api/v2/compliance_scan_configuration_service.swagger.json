@@ -205,6 +205,37 @@
         ]
       }
     },
+    "/v2/compliance/scan/configurations/discovered/{name}": {
+      "get": {
+        "summary": "GetDiscoveredScanConfiguration retrieves a discovered (externally-created) scan\nconfiguration by its SSB name.",
+        "operationId": "ComplianceScanConfigurationService_GetDiscoveredScanConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceScanConfigurationStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
     "/v2/compliance/scan/configurations/overviews": {
       "get": {
         "summary": "ListComplianceScanConfigOverviews returns a unified view of managed (ACS-created) and\ndiscovered (externally-created) scan configurations across all secured clusters.",
@@ -1127,9 +1158,12 @@
         "lastExecutedTime": {
           "type": "string",
           "format": "date-time"
+        },
+        "isManaged": {
+          "type": "boolean"
         }
       },
-      "title": "Next available tag: 9"
+      "title": "Next available tag: 10"
     },
     "v2EmailNotifierConfiguration": {
       "type": "object",

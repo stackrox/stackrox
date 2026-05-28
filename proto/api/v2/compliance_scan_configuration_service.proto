@@ -49,7 +49,7 @@ message ComplianceScanConfiguration {
   repeated string clusters = 4;
 }
 
-// Next available tag: 9
+// Next available tag: 10
 message ComplianceScanConfigurationStatus {
   string id = 1;
   string scan_name = 2;
@@ -60,6 +60,7 @@ message ComplianceScanConfigurationStatus {
   // Most recent user to update the scan settings
   SlimUser modified_by = 7;
   google.protobuf.Timestamp last_executed_time = 8;
+  bool is_managed = 9;
 }
 
 message ComplianceConfigClusterProfileRequest {
@@ -159,6 +160,10 @@ message ListComplianceScanConfigOverviewsResponse {
   int32 total_count = 2;
 }
 
+message DiscoveredScanConfigurationRequest {
+  string name = 1;
+}
+
 message ListComplianceScanConfigsClusterProfileResponse {
   string cluster_id = 1;
   string cluster_name = 2;
@@ -242,5 +247,11 @@ service ComplianceScanConfigurationService {
   // discovered (externally-created) scan configurations across all secured clusters.
   rpc ListComplianceScanConfigOverviews(RawQuery) returns (ListComplianceScanConfigOverviewsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/configurations/overviews"};
+  }
+
+  // GetDiscoveredScanConfiguration retrieves a discovered (externally-created) scan
+  // configuration by its SSB name.
+  rpc GetDiscoveredScanConfiguration(DiscoveredScanConfigurationRequest) returns (ComplianceScanConfigurationStatus) {
+    option (google.api.http) = {get: "/v2/compliance/scan/configurations/discovered/{name}"};
   }
 }

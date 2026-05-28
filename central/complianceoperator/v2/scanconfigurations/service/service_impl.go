@@ -54,6 +54,7 @@ var (
 			v2.ComplianceScanConfigurationService_GetReportHistory_FullMethodName,
 			v2.ComplianceScanConfigurationService_GetMyReportHistory_FullMethodName,
 			v2.ComplianceScanConfigurationService_ListComplianceScanConfigOverviews_FullMethodName,
+			v2.ComplianceScanConfigurationService_GetDiscoveredScanConfiguration_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Compliance), permissions.View(resources.Cluster)): {
 			v2.ComplianceScanConfigurationService_CreateComplianceScanConfiguration_FullMethodName,
@@ -221,17 +222,10 @@ func (s *serviceImpl) DeleteComplianceScanConfiguration(ctx context.Context, req
 }
 
 func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanConfigurationsResponse, error) {
-	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
-
-	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.CloneVT()
-
-	// Fill in pagination.
-	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
 	scanConfigs, err := s.scanConfigDS.GetScanConfigurations(ctx, parsedQuery)
 	if err != nil {
@@ -243,15 +237,61 @@ func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, quer
 		return nil, errors.Wrap(errox.InvalidArgs, "failed to convert compliance scan configurations.")
 	}
 
-	scanConfigCount, err := s.scanConfigDS.CountScanConfigurations(ctx, countQuery)
+	discoveredConfigs, err := s.complianceScanSettingBindingsDS.GetDistinctScanConfigs(ctx, search.EmptyQuery())
 	if err != nil {
-		return nil, errors.Wrap(errox.NotFound, err.Error())
+		return nil, errors.Wrap(err, "retrieving discovered scan configurations")
 	}
 
+	merged := s.mergeDiscoveredIntoStatuses(ctx, scanStatuses, discoveredConfigs)
+	sort.Slice(merged, func(i, j int) bool {
+		return merged[i].GetScanName() < merged[j].GetScanName()
+	})
+
+	total := len(merged)
+	start, end := paginateSlice(total, query.GetPagination())
 	return &v2.ListComplianceScanConfigurationsResponse{
-		Configurations: scanStatuses,
-		TotalCount:     int32(scanConfigCount),
+		Configurations: merged[start:end],
+		TotalCount:     int32(total),
 	}, nil
+}
+
+func paginateSlice(total int, pagination *v2.Pagination) (int, int) {
+	if pagination == nil || pagination.GetLimit() == 0 {
+		return 0, total
+	}
+	start := int(pagination.GetOffset())
+	if start > total {
+		start = total
+	}
+	end := start + int(pagination.GetLimit())
+	if end > total {
+		end = total
+	}
+	return start, end
+}
+
+func (s *serviceImpl) mergeDiscoveredIntoStatuses(
+	ctx context.Context,
+	managed []*v2.ComplianceScanConfigurationStatus,
+	discovered []*scanSettingBindingsDS.DiscoveredScanConfig,
+) []*v2.ComplianceScanConfigurationStatus {
+	seen := make(map[string]struct{}, len(managed))
+	for _, m := range managed {
+		seen[m.GetScanName()] = struct{}{}
+	}
+
+	for _, dc := range discovered {
+		if _, exists := seen[dc.Name]; exists {
+			continue
+		}
+		status, err := convertDiscoveredToV2ScanStatus(ctx, dc, s.complianceScanSettingBindingsDS, s.suiteDS, s.clusterDS)
+		if err != nil {
+			log.Errorf("Failed to convert discovered scan config %q: %v", dc.Name, err)
+			continue
+		}
+		managed = append(managed, status)
+	}
+	return managed
 }
 
 func (s *serviceImpl) GetComplianceScanConfiguration(ctx context.Context, req *v2.ResourceByID) (*v2.ComplianceScanConfigurationStatus, error) {
@@ -698,4 +738,29 @@ func unionStrings(a, b []string) []string {
 		}
 	}
 	return a
+}
+
+func (s *serviceImpl) GetDiscoveredScanConfiguration(ctx context.Context, req *v2.DiscoveredScanConfigurationRequest) (*v2.ComplianceScanConfigurationStatus, error) {
+	if req.GetName() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
+	}
+
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanSettingBindingName, req.GetName()).
+		ProtoQuery()
+
+	discoveredConfigs, err := s.complianceScanSettingBindingsDS.GetDistinctScanConfigs(ctx, query)
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving discovered scan configuration")
+	}
+
+	if len(discoveredConfigs) == 0 {
+		return nil, errors.Wrapf(errox.NotFound, "discovered scan configuration %q not found", req.GetName())
+	}
+
+	status, err := convertDiscoveredToV2ScanStatus(ctx, discoveredConfigs[0], s.complianceScanSettingBindingsDS, s.suiteDS, s.clusterDS)
+	if err != nil {
+		return nil, errors.Wrap(err, "converting discovered scan configuration")
+	}
+	return status, nil
 }

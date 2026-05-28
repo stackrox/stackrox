@@ -53,6 +53,7 @@ export type ComplianceScanConfiguration = {
 export type ComplianceScanConfigurationStatus = {
     id: string;
     scanName: string;
+    isManaged: boolean;
     scanConfig: BaseComplianceScanConfigurationSettings;
     clusterStatus: ClusterScanStatus[];
     createdTime: string; // ISO 8601 date string
@@ -136,6 +137,24 @@ export function getComplianceScanConfiguration(
         axios
             .get<ComplianceScanConfigurationStatus>(
                 `${complianceScanConfigBaseUrl}/${scanConfigId}`,
+                {
+                    signal,
+                }
+            )
+            .then((response) => response.data)
+    );
+}
+
+/*
+ * Fetches a discovered (externally-created) scan configuration by SSB name.
+ */
+export function getDiscoveredScanConfiguration(
+    name: string
+): CancellableRequest<ComplianceScanConfigurationStatus> {
+    return makeCancellableAxiosRequest((signal) =>
+        axios
+            .get<ComplianceScanConfigurationStatus>(
+                `${complianceScanConfigBaseUrl}/discovered/${encodeURIComponent(name)}`,
                 {
                     signal,
                 }

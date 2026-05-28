@@ -52,8 +52,10 @@ function ViewScanConfigDetail({
     isLoading,
     error = null,
 }: ViewScanConfigDetailProps): ReactElement {
-    const { scanConfigId } = useParams() as { scanConfigId: string };
+    const { scanConfigId } = useParams() as { scanConfigId?: string };
     const { analyticsTrack } = useAnalytics();
+
+    const isManaged = scanConfig?.isManaged ?? false;
 
     const [activeScanConfigTab, setActiveScanConfigTab] = useURLStringUnion(
         'scanConfigTab',
@@ -62,8 +64,10 @@ function ViewScanConfigDetail({
     const [isTriggeringRescan, setIsTriggeringRescan] = useState(false);
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
-    const { complianceReportSnapshots } = useWatchLastSnapshotForComplianceReports(scanConfig);
-    const lastSnapshot = complianceReportSnapshots[scanConfigId];
+    const { complianceReportSnapshots } = useWatchLastSnapshotForComplianceReports(
+        isManaged ? scanConfig : undefined
+    );
+    const lastSnapshot = scanConfigId ? complianceReportSnapshots[scanConfigId] : undefined;
 
     const isReportStatusPending =
         lastSnapshot?.reportStatus.runState === 'PREPARING' ||
@@ -80,11 +84,11 @@ function ViewScanConfigDetail({
                     title: 'Successfully triggered a re-scan',
                 });
             })
-            .catch((error) => {
+            .catch((err) => {
                 setAlertObj({
                     type: 'danger',
                     title: 'Could not trigger a re-scan',
-                    children: getAxiosErrorMessage(error),
+                    children: getAxiosErrorMessage(err),
                 });
             })
             .finally(() => {
@@ -105,11 +109,11 @@ function ViewScanConfigDetail({
                     title: 'Successfully requested to send a report',
                 });
             })
-            .catch((error) => {
+            .catch((err) => {
                 setAlertObj({
                     type: 'danger',
                     title: 'Could not send a report',
-                    children: getAxiosErrorMessage(error),
+                    children: getAxiosErrorMessage(err),
                 });
             });
     }
@@ -127,11 +131,11 @@ function ViewScanConfigDetail({
                     title: 'The report generation has started and will be available for download once complete',
                 });
             })
-            .catch((error) => {
+            .catch((err) => {
                 setAlertObj({
                     type: 'danger',
                     title: 'Could not send a report',
-                    children: getAxiosErrorMessage(error),
+                    children: getAxiosErrorMessage(err),
                 });
             });
     }
@@ -156,7 +160,7 @@ function ViewScanConfigDetail({
                             <FlexItem flex={{ default: 'flex_1' }}>
                                 <Title headingLevel="h1">{scanConfig.scanName}</Title>
                             </FlexItem>
-                            {hasWriteAccessForCompliance && (
+                            {isManaged && hasWriteAccessForCompliance && (
                                 <FlexItem align={{ default: 'alignRight' }}>
                                     <ScanConfigActionDropdown
                                         handleRunScanConfig={handleRunScanConfig}
@@ -201,12 +205,14 @@ function ViewScanConfigDetail({
                         eventKey="CONFIGURATION_DETAILS"
                         title={<TabTitleText>Configuration details</TabTitleText>}
                     />
-                    <Tab
-                        tabContentId={allReportJobsTabId}
-                        eventKey="ALL_REPORT_JOBS"
-                        title={<TabTitleText>All report jobs</TabTitleText>}
-                        actions={<ReportJobsHelpAction reportType="Scan schedule" />}
-                    />
+                    {isManaged && (
+                        <Tab
+                            tabContentId={allReportJobsTabId}
+                            eventKey="ALL_REPORT_JOBS"
+                            title={<TabTitleText>All report jobs</TabTitleText>}
+                            actions={<ReportJobsHelpAction reportType="Scan schedule" />}
+                        />
+                    )}
                 </Tabs>
             </PageSection>
             {activeScanConfigTab === 'CONFIGURATION_DETAILS' && (
@@ -222,7 +228,7 @@ function ViewScanConfigDetail({
                     </Card>
                 </PageSection>
             )}
-            {activeScanConfigTab === 'ALL_REPORT_JOBS' && scanConfig?.id && (
+            {isManaged && activeScanConfigTab === 'ALL_REPORT_JOBS' && scanConfig?.id && (
                 <PageSection id={allReportJobsTabId}>
                     <ReportJobs scanConfigId={scanConfig.id} />
                 </PageSection>

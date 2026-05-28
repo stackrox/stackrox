@@ -1,16 +1,8 @@
 import type { ReactElement } from 'react';
 import { Divider, DropdownItem } from '@patternfly/react-core';
-import { generatePath, useNavigate } from 'react-router-dom-v5-compat';
 
 import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
-
-import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
-
-// Component for scan config details page corresponds to ScanConfigActionsColumn for scan configs table table page.
-// One difference: omit delete on details page.
-
-// Caller is responsible for conditional rendering only if READ_WRITE_ACCESS level for Compliance resource.
 
 export type ScanConfigActionDropdownProps = {
     handleRunScanConfig: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
@@ -29,13 +21,8 @@ function ScanConfigActionDropdown({
     isReportStatusPending,
     scanConfigResponse,
 }: ScanConfigActionDropdownProps): ReactElement {
-    const navigate = useNavigate();
-
-    const { id, scanConfig } = scanConfigResponse;
+    const { scanConfig } = scanConfigResponse;
     const { notifiers } = scanConfig;
-    const scanConfigUrl = generatePath(scanConfigDetailsPath, {
-        scanConfigId: id,
-    });
     const isProcessing = isScanning || isReportStatusPending;
 
     return (
@@ -46,17 +33,6 @@ function ScanConfigActionDropdown({
             }}
         >
             <DropdownItem
-                key="Edit scan schedule"
-                // description={isScanning ? 'Edit is disabled while scan is running' : ''}
-                isDisabled={isProcessing}
-                onClick={() => {
-                    navigate(`${scanConfigUrl}?action=edit`);
-                }}
-            >
-                Edit scan schedule
-            </DropdownItem>
-            <Divider component="li" key="separator" />
-            <DropdownItem
                 key="Run scan"
                 description={isScanning ? 'Run is disabled while scan is already running' : ''}
                 isDisabled={isProcessing}
@@ -66,14 +42,13 @@ function ScanConfigActionDropdown({
             >
                 Run scan
             </DropdownItem>
+            <Divider component="li" key="separator" />
             <DropdownItem
                 key="Send report"
                 description={
                     notifiers.length === 0
                         ? 'Send is disabled if no delivery destinations'
-                        : /* : isScanning
-                        ? 'Send is disabled while scan is running' */
-                          ''
+                        : ''
                 }
                 isDisabled={notifiers.length === 0 || isProcessing}
                 onClick={() => {
