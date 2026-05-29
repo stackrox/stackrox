@@ -227,6 +227,36 @@ EOF
     assert_output --partial '<testcase name="unknown" classname="no-underscore-format">'
 }
 
+@test "sanitizes XML-special characters" {
+    local sarif_file="${BATS_TEST_TMPDIR}/special-chars.sarif"
+    cat > "${sarif_file}" <<'EOF'
+{
+  "version": "2.1.0",
+  "runs": [{
+    "tool": {"driver": {"name": "roxctl"}},
+    "results": [
+      {
+        "ruleId": "CVE-2024-1234_lib<\"test\">&apos_1.0",
+        "level": "error",
+        "message": {"text": "vuln with <special> & \"chars\""}
+      }
+    ]
+  }]
+}
+EOF
+
+    run "${BATS_TEST_DIRNAME}/sarif-to-junit.sh" "${sarif_file}" "image&<>name"
+    assert_success
+
+    local junit_file="${ARTIFACT_DIR}/junit-misc/junit-image&<>name.xml"
+    assert [ -f "${junit_file}" ]
+
+    run cat "${junit_file}"
+    # XML-special chars in attributes are replaced with spaces
+    refute_output --partial 'name="image&<>name"'
+    assert_output --partial 'name="image   name"'
+}
+
 @test "fails on malformed sarif" {
     local sarif_file="${BATS_TEST_TMPDIR}/bad.sarif"
     echo "not json" > "${sarif_file}"
