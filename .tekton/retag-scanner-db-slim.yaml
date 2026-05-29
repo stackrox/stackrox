@@ -24,7 +24,7 @@ metadata:
     # added to the PR. See the Slack tread linked from ROX-30580.
     pipelinesascode.tekton.dev/on-label: "[]"
   labels:
-    appstudio.openshift.io/application: acs-4.11
+    appstudio.openshift.io/application: acs-4-11
   name: retag-scanner-db-slim
   namespace: rh-acs-tenant
 

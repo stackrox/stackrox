@@ -24,8 +24,8 @@ metadata:
     # added to the PR. See the Slack tread linked from ROX-30580.
     pipelinesascode.tekton.dev/on-label: "[]"
   labels:
-    appstudio.openshift.io/application: acs-4.11
-    appstudio.openshift.io/component: scanner-v4-4.11
+    appstudio.openshift.io/application: acs-4-11
+    appstudio.openshift.io/component: scanner-v4-4-11
     pipelines.appstudio.openshift.io/type: build
   name: scanner-v4-on-push
   namespace: rh-acs-tenant
