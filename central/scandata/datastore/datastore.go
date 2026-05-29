@@ -32,4 +32,13 @@ type DataStore interface {
 
 	// GetImageInfoByDigests returns image UUID and full name for the given SHA digests.
 	GetImageInfoByDigests(ctx context.Context, digests []string) (map[string]types.ImageBasicInfo, error)
+
+	// ListDeployments returns deployments with their CVE counts and severity
+	ListDeployments(ctx context.Context, limit, offset int) ([]*types.DeploymentListRow, int, error)
+
+	// GetDeploymentImages returns images for a deployment with CVE summary
+	GetDeploymentImages(ctx context.Context, deploymentID string) ([]*types.DeploymentImageRow, error)
+
+	// GetDeploymentByID returns basic deployment info
+	GetDeploymentByID(ctx context.Context, deploymentID string) (*types.DeploymentListRow, error)
 }

@@ -17,10 +17,13 @@ import (
 )
 
 const (
-	imageScanV2Table = pkgSchema.ImageScanV2TableName
-	componentsTable  = pkgSchema.ScanComponentsTableName
-	findingsTable    = pkgSchema.ScanFindingsTableName
-	batchSize        = 500
+	imageScanV2Table      = pkgSchema.ImageScanV2TableName
+	componentsTable       = pkgSchema.ScanComponentsTableName
+	findingsTable         = pkgSchema.ScanFindingsTableName
+	deploymentsTable      = pkgSchema.DeploymentsTableName
+	deploymentsContainers = pkgSchema.DeploymentsContainersTableName
+	clustersTable         = pkgSchema.ClustersTableName
+	batchSize             = 500
 )
 
 var (
@@ -475,5 +478,170 @@ func (s *storeImpl) GetImageInfoByDigests(ctx context.Context, digests []string)
 			result[digest] = types.ImageBasicInfo{UUID: uuid, FullName: fullName}
 		}
 		return result, rows.Err()
+	})
+}
+
+// ListDeployments returns deployments with their CVE counts and severity.
+func (s *storeImpl) ListDeployments(ctx context.Context, limit, offset int) ([]*types.DeploymentListRow, int, error) {
+	type result struct {
+		rows  []*types.DeploymentListRow
+		total int
+	}
+
+	res, err := pgutils.Retry2(ctx, func() (*result, error) {
+		// Get total count of deployments with at least one CVE
+		countQuery := fmt.Sprintf(`
+			SELECT COUNT(DISTINCT d.id)
+			FROM %s d
+			JOIN %s dc ON d.id = dc.deployments_id
+			JOIN %s f ON dc.image_id = f.imageid
+			WHERE f.state = 0
+		`, deploymentsTable, deploymentsContainers, findingsTable)
+		var total int
+		if err := s.db.QueryRow(ctx, countQuery).Scan(&total); err != nil {
+			return nil, errors.Wrap(err, "counting deployments")
+		}
+
+		// Get paginated results with cluster name
+		query := fmt.Sprintf(`
+			SELECT
+				d.id,
+				d.name,
+				d.clusterid,
+				COALESCE(c.name, d.clusterid) as cluster_name,
+				d.namespace,
+				COUNT(DISTINCT dc.image_id) as image_count,
+				COUNT(DISTINCT f.cvename) as cve_count,
+				MAX(f.severity)::int as top_severity,
+				BOOL_OR(f.isfixable) as fixable
+			FROM %s d
+			JOIN %s dc ON d.id = dc.deployments_id
+			JOIN %s f ON dc.image_id = f.imageid
+			LEFT JOIN %s c ON d.clusterid = c.id
+			WHERE f.state = 0
+			GROUP BY d.id, d.name, d.clusterid, c.name, d.namespace
+			ORDER BY MAX(f.severity) DESC, COUNT(DISTINCT f.cvename) DESC
+			LIMIT $1 OFFSET $2
+		`, deploymentsTable, deploymentsContainers, findingsTable, clustersTable)
+
+		rows, err := s.db.Query(ctx, query, limit, offset)
+		if err != nil {
+			return nil, errors.Wrap(err, "querying deployments")
+		}
+		defer rows.Close()
+
+		var results []*types.DeploymentListRow
+		for rows.Next() {
+			var row types.DeploymentListRow
+			if err := rows.Scan(
+				&row.ID,
+				&row.Name,
+				&row.ClusterID,
+				&row.ClusterName,
+				&row.Namespace,
+				&row.ImageCount,
+				&row.CVECount,
+				&row.TopSeverity,
+				&row.Fixable,
+			); err != nil {
+				return nil, errors.Wrap(err, "scanning deployment row")
+			}
+			results = append(results, &row)
+		}
+
+		if err := rows.Err(); err != nil {
+			return nil, errors.Wrap(err, "iterating deployment rows")
+		}
+
+		return &result{rows: results, total: total}, nil
+	})
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return res.rows, res.total, nil
+}
+
+// GetDeploymentImages returns images for a deployment with CVE summary.
+func (s *storeImpl) GetDeploymentImages(ctx context.Context, deploymentID string) ([]*types.DeploymentImageRow, error) {
+	return pgutils.Retry2(ctx, func() ([]*types.DeploymentImageRow, error) {
+		query := fmt.Sprintf(`
+			SELECT
+				dc.image_id,
+				COALESCE(i.id, '') as image_uuid,
+				COALESCE(i.name_fullname, '') as image_name,
+				COUNT(DISTINCT f.cvename) as cve_count,
+				MAX(f.severity)::int as top_severity,
+				BOOL_OR(f.isfixable) as fixable
+			FROM %s dc
+			JOIN %s f ON dc.image_id = f.imageid
+			LEFT JOIN images_v2 i ON dc.image_id = i.digest
+			WHERE dc.deployments_id = $1 AND f.state = 0
+			GROUP BY dc.image_id, i.id, i.name_fullname
+			ORDER BY MAX(f.severity) DESC, COUNT(DISTINCT f.cvename) DESC
+		`, deploymentsContainers, findingsTable)
+
+		rows, err := s.db.Query(ctx, query, deploymentID)
+		if err != nil {
+			return nil, errors.Wrap(err, "querying deployment images")
+		}
+		defer rows.Close()
+
+		var results []*types.DeploymentImageRow
+		for rows.Next() {
+			var row types.DeploymentImageRow
+			if err := rows.Scan(
+				&row.ImageID,
+				&row.ImageUUID,
+				&row.ImageName,
+				&row.CVECount,
+				&row.TopSeverity,
+				&row.Fixable,
+			); err != nil {
+				return nil, errors.Wrap(err, "scanning image row")
+			}
+			results = append(results, &row)
+		}
+
+		if err := rows.Err(); err != nil {
+			return nil, errors.Wrap(err, "iterating image rows")
+		}
+
+		return results, nil
+	})
+}
+
+// GetDeploymentByID returns basic deployment info.
+func (s *storeImpl) GetDeploymentByID(ctx context.Context, deploymentID string) (*types.DeploymentListRow, error) {
+	return pgutils.Retry2(ctx, func() (*types.DeploymentListRow, error) {
+		query := fmt.Sprintf(`
+			SELECT
+				d.id,
+				d.name,
+				d.clusterid,
+				COALESCE(c.name, d.clusterid) as cluster_name,
+				d.namespace
+			FROM %s d
+			LEFT JOIN %s c ON d.clusterid = c.id
+			WHERE d.id = $1
+		`, deploymentsTable, clustersTable)
+
+		var row types.DeploymentListRow
+		err := s.db.QueryRow(ctx, query, deploymentID).Scan(
+			&row.ID,
+			&row.Name,
+			&row.ClusterID,
+			&row.ClusterName,
+			&row.Namespace,
+		)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, nil
+			}
+			return nil, errors.Wrap(err, "querying deployment")
+		}
+
+		return &row, nil
 	})
 }
