@@ -46,6 +46,7 @@ export type MachineAccessConfig = {
         role: string;
     }[];
     issuer: string;
+    audience: string;
 };
 
 export const validationSchema = yup.object().shape({
@@ -66,6 +67,7 @@ export const validationSchema = yup.object().shape({
 
 export const defaultValues: MachineAccessConfig = {
     issuer: '',
+    audience: '',
     mappings: [],
     tokenExpirationDuration: '',
     type: 'GENERIC',
@@ -171,6 +173,28 @@ function MachineAccessIntegrationForm({
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable || values.type === 'GITHUB_ACTIONS'}
                             />
+                        </FormLabelGroup>
+                        <FormLabelGroup
+                            label="Audience"
+                            fieldId="audience"
+                            touched={touched}
+                            errors={errors}
+                        >
+                            <TextInput
+                                type="text"
+                                id="audience"
+                                value={values.audience}
+                                onChange={(event, value) => onChange(value, event)}
+                                onBlur={handleBlur}
+                                isDisabled={!isEditable}
+                            />
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem>
+                                        Expected audience (aud) claim of the identity token. Leave blank to accept any audience.
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
                         </FormLabelGroup>
                         <FormLabelGroup
                             isRequired

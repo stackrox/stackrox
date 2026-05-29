@@ -285,6 +285,10 @@
             },
             "traits": {
               "$ref": "#/definitions/v1Traits"
+            },
+            "audience": {
+              "type": "string",
+              "description": "The expected audience (aud claim) of the ID token.\nWhen set, the OIDC token verifier validates that the token's aud claim contains this value,\nrejecting tokens intended for other recipients (RFC 7519 Section 4.1.3).\nWhen empty, the audience check is skipped for backward compatibility."
             }
           },
           "description": "AuthMachineToMachineConfig determines rules for exchanging an identity token from a third party with\na Central access token. The M2M stands for machine to machine, as this is the intended use-case\nfor the config."
@@ -587,6 +591,10 @@
         },
         "traits": {
           "$ref": "#/definitions/v1Traits"
+        },
+        "audience": {
+          "type": "string",
+          "description": "The expected audience (aud claim) of the ID token.\nWhen set, the OIDC token verifier validates that the token's aud claim contains this value,\nrejecting tokens intended for other recipients (RFC 7519 Section 4.1.3).\nWhen empty, the audience check is skipped for backward compatibility."
         }
       },
       "description": "AuthMachineToMachineConfig determines rules for exchanging an identity token from a third party with\na Central access token. The M2M stands for machine to machine, as this is the intended use-case\nfor the config."
