@@ -111,42 +111,36 @@ func TestSecretInformer(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			var onAddCnt, onUpdateCnt, onDeleteCnt atomic.Int32
 
-			// Use Eventually to retry the entire operation with a configurable timeout.
-			// This handles the k8s fake client potentially losing events.
-			require.EventuallyWithT(t, func(ct *assert.CollectT) {
-				k8sClient := fake.NewClientset()
-				informer := NewSecretInformer(
-					namespace,
-					secretName,
-					k8sClient,
-					func(s *v1.Secret) {
-						assert.Equal(ct, c.expectedData, string(s.Data[secretKey]))
-						onAddCnt.Add(1)
-					},
-					func(s *v1.Secret) {
-						assert.Equal(ct, c.expectedData, string(s.Data[secretKey]))
-						onUpdateCnt.Add(1)
-					},
-					func() {
-						onDeleteCnt.Add(1)
-					},
-				)
-				err := informer.Start()
-				require.NoError(ct, err)
-				defer informer.Stop()
-				require.Eventually(ct, informer.HasSynced, 5*time.Second, 100*time.Millisecond)
+			k8sClient := fake.NewClientset()
+			informer := NewSecretInformer(
+				namespace,
+				secretName,
+				k8sClient,
+				func(s *v1.Secret) {
+					assert.Equal(t, c.expectedData, string(s.Data[secretKey]))
+					onAddCnt.Add(1)
+				},
+				func(s *v1.Secret) {
+					assert.Equal(t, c.expectedData, string(s.Data[secretKey]))
+					onUpdateCnt.Add(1)
+				},
+				func() {
+					onDeleteCnt.Add(1)
+				},
+			)
+			err := informer.Start()
+			require.NoError(t, err)
+			defer informer.Stop()
+			require.Eventually(t, informer.HasSynced, 30*time.Second, 100*time.Millisecond)
 
-				onAddCnt.Store(0)
-				onUpdateCnt.Store(0)
-				onDeleteCnt.Store(0)
-				require.NoError(ct, c.setupFn(k8sClient))
+			require.NoError(t, c.setupFn(k8sClient))
 
-				assert.Eventually(ct, func() bool {
-					return onAddCnt.Load() == int32(c.expectedOnAddCnt) &&
-						onUpdateCnt.Load() == int32(c.expectedOnUpdateCnt) &&
-						onDeleteCnt.Load() == int32(c.expectedOnDeleteCnt)
-				}, 200*time.Millisecond, 10*time.Millisecond)
-			}, 10*time.Second, 200*time.Millisecond, "callbacks not invoked as expected (add: %d/%d, update: %d/%d, delete: %d/%d)",
+			assert.Eventually(t, func() bool {
+				return onAddCnt.Load() == int32(c.expectedOnAddCnt) &&
+					onUpdateCnt.Load() == int32(c.expectedOnUpdateCnt) &&
+					onDeleteCnt.Load() == int32(c.expectedOnDeleteCnt)
+			}, 10*time.Second, 50*time.Millisecond,
+				"callbacks not invoked as expected (add: %d/%d, update: %d/%d, delete: %d/%d)",
 				onAddCnt.Load(), c.expectedOnAddCnt, onUpdateCnt.Load(), c.expectedOnUpdateCnt,
 				onDeleteCnt.Load(), c.expectedOnDeleteCnt)
 		})
