@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -38,6 +39,7 @@ func NewHandler(ds datastore.DataStore) http.Handler {
 	router.HandleFunc("/v1/scandata/cves", h.listCVEs).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/cves/{cveName}", h.getCVEDetail).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/images/{imageId}/findings", h.getImageFindings).Methods(http.MethodGet)
+	router.HandleFunc("/v1/scandata/advisories", h.listAdvisories).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/deployments", h.listDeployments).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/deployments/{deploymentId}", h.getDeploymentDetail).Methods(http.MethodGet)
 
@@ -62,12 +64,13 @@ type CVEListItem struct {
 
 // CVEDetailResponse is the response for GET /v1/scandata/cves/{cveName}
 type CVEDetailResponse struct {
-	CVEName    string          `json:"cveName"`
-	Severity   int32           `json:"severity"`
-	CVSS       float32         `json:"cvss"`
-	Advisories []AdvisoryInfo  `json:"advisories"`
-	Components []ComponentInfo `json:"components"`
-	Images     []ImageInfo     `json:"images"`
+	CVEName     string          `json:"cveName"`
+	Severity    int32           `json:"severity"`
+	CVSS        float32         `json:"cvss"`
+	Description string          `json:"description,omitempty"`
+	Advisories  []AdvisoryInfo  `json:"advisories"`
+	Components  []ComponentInfo `json:"components"`
+	Images      []ImageInfo     `json:"images"`
 }
 
 // AdvisoryInfo represents an advisory for a CVE
@@ -164,6 +167,25 @@ type DeploymentImageDetail struct {
 	CVECount    int    `json:"cveCount"`
 	TopSeverity int32  `json:"topSeverity"`
 	Fixable     bool   `json:"fixable"`
+}
+
+// AdvisoryListResponse is the response for GET /v1/scandata/advisories
+type AdvisoryListResponse struct {
+	Advisories []AdvisoryListItem `json:"advisories"`
+	TotalCount int                `json:"totalCount"`
+}
+
+// AdvisoryListItem represents one advisory in the list
+type AdvisoryListItem struct {
+	AdvisoryID  string  `json:"advisoryId"`
+	CVEName     string  `json:"cveName"`
+	Severity    int32   `json:"severity"`
+	CVSS        float32 `json:"cvss"`
+	SourceName  string  `json:"sourceName"`
+	Description string  `json:"description"`
+	FixedBy     string  `json:"fixedBy,omitempty"`
+	ImageCount  int     `json:"imageCount"`
+	Link        string  `json:"link"`
 }
 
 func (h *handler) listCVEs(w http.ResponseWriter, r *http.Request) {
@@ -367,6 +389,29 @@ func buildCVEDetailResponse(ctx context.Context, ds datastore.DataStore, cveName
 		advisories = append(advisories, *adv)
 	}
 
+	// Sort advisories by severity DESC, then CVSS DESC to pick the best description.
+	slices.SortFunc(advisories, func(a, b AdvisoryInfo) int {
+		if a.Severity != b.Severity {
+			return int(b.Severity) - int(a.Severity)
+		}
+		if a.CVSS != b.CVSS {
+			if b.CVSS > a.CVSS {
+				return 1
+			}
+			return -1
+		}
+		return 0
+	})
+
+	// Use the description from the highest-severity advisory.
+	var description string
+	for _, adv := range advisories {
+		if adv.Description != "" {
+			description = adv.Description
+			break
+		}
+	}
+
 	components := make([]ComponentInfo, 0, len(componentMap))
 	for _, comp := range componentMap {
 		components = append(components, *comp)
@@ -392,12 +437,13 @@ func buildCVEDetailResponse(ctx context.Context, ds datastore.DataStore, cveName
 	}
 
 	return &CVEDetailResponse{
-		CVEName:    cveName,
-		Severity:   maxSeverity,
-		CVSS:       maxCVSS,
-		Advisories: advisories,
-		Components: components,
-		Images:     images,
+		CVEName:     cveName,
+		Severity:    maxSeverity,
+		CVSS:        maxCVSS,
+		Description: description,
+		Advisories:  advisories,
+		Components:  components,
+		Images:      images,
 	}
 }
 
@@ -455,6 +501,60 @@ func (h *handler) getImageFindings(w http.ResponseWriter, r *http.Request) {
 	response := ImageFindingsResponse{
 		ImageID:  imageID,
 		Findings: findingsWithComp,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Errorf("failed to encode response: %v", err)
+	}
+}
+
+func (h *handler) listAdvisories(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse query parameters
+	limitStr := cmp.Or(r.URL.Query().Get("limit"), "50")
+	offsetStr := cmp.Or(r.URL.Query().Get("offset"), "0")
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.Wrap(err, "invalid limit"))
+		return
+	}
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.Wrap(err, "invalid offset"))
+		return
+	}
+
+	// Query data
+	rows, total, err := h.datastore.ListAdvisories(ctx, limit, offset)
+	if err != nil {
+		log.Errorf("failed to list advisories: %v", err)
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "listing advisories"))
+		return
+	}
+
+	// Convert to response
+	items := make([]AdvisoryListItem, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, AdvisoryListItem{
+			AdvisoryID:  row.AdvisoryID,
+			CVEName:     row.CVEName,
+			Severity:    row.Severity,
+			CVSS:        row.CVSS,
+			SourceName:  row.SourceName,
+			Description: row.Description,
+			FixedBy:     row.FixedBy,
+			ImageCount:  row.ImageCount,
+			Link:        advisoryLink(row.AdvisoryID),
+		})
+	}
+
+	response := AdvisoryListResponse{
+		Advisories: items,
+		TotalCount: total,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

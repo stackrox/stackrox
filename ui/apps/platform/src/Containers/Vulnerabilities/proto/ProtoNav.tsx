@@ -4,18 +4,20 @@ import { Link } from 'react-router-dom-v5-compat';
 
 import {
     vulnerabilitiesPrototypeCvePath,
+    vulnerabilitiesPrototypeAdvisoriesPath,
     vulnerabilitiesPrototypeDeploymentsPath,
 } from 'routePaths';
 
 /**
  * Horizontal navigation bar for the CVE prototype pages.
- * Renders tabs for CVEs and Deployments.
+ * Renders tabs for CVEs, Advisories, and Deployments.
  */
 function ProtoNav() {
     const location = useLocation();
     const isCves =
         location.pathname.includes('/cves') ||
         location.pathname.endsWith('/prototype');
+    const isAdvisories = location.pathname.includes('/advisories');
     const isDeployments = location.pathname.includes('/deployments');
 
     return (
@@ -23,6 +25,11 @@ function ProtoNav() {
             <NavList>
                 <NavItem isActive={isCves}>
                     <Link to={vulnerabilitiesPrototypeCvePath}>CVEs</Link>
+                </NavItem>
+                <NavItem isActive={isAdvisories}>
+                    <Link to={vulnerabilitiesPrototypeAdvisoriesPath}>
+                        Advisories
+                    </Link>
                 </NavItem>
                 <NavItem isActive={isDeployments}>
                     <Link to={vulnerabilitiesPrototypeDeploymentsPath}>

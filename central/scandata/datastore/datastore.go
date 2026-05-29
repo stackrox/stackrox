@@ -41,4 +41,7 @@ type DataStore interface {
 
 	// GetDeploymentByID returns basic deployment info
 	GetDeploymentByID(ctx context.Context, deploymentID string) (*types.DeploymentListRow, error)
+
+	// ListAdvisories returns distinct advisories with image counts
+	ListAdvisories(ctx context.Context, limit, offset int) ([]*types.AdvisoryListRow, int, error)
 }

@@ -612,6 +612,81 @@ func (s *storeImpl) GetDeploymentImages(ctx context.Context, deploymentID string
 	})
 }
 
+// ListAdvisories returns distinct advisories with image counts.
+func (s *storeImpl) ListAdvisories(ctx context.Context, limit, offset int) ([]*types.AdvisoryListRow, int, error) {
+	type result struct {
+		rows  []*types.AdvisoryListRow
+		total int
+	}
+
+	res, err := pgutils.Retry2(ctx, func() (*result, error) {
+		// Get total count of distinct advisories
+		countQuery := fmt.Sprintf(`
+			SELECT COUNT(DISTINCT advisoryid)
+			FROM %s
+			WHERE state = 0
+		`, findingsTable)
+		var total int
+		if err := s.db.QueryRow(ctx, countQuery).Scan(&total); err != nil {
+			return nil, errors.Wrap(err, "counting advisories")
+		}
+
+		// Get paginated results
+		query := fmt.Sprintf(`
+			SELECT
+				advisoryid,
+				MAX(cvename) as cvename,
+				MAX(severity)::int as severity,
+				MAX(cvss) as cvss,
+				MAX(sourcename) as sourcename,
+				MAX(description) as description,
+				MAX(fixedby) as fixedby,
+				COUNT(DISTINCT imageid) as image_count
+			FROM %s
+			WHERE state = 0
+			GROUP BY advisoryid
+			ORDER BY MAX(severity) DESC, MAX(cvss) DESC
+			LIMIT $1 OFFSET $2
+		`, findingsTable)
+
+		rows, err := s.db.Query(ctx, query, limit, offset)
+		if err != nil {
+			return nil, errors.Wrap(err, "querying advisories")
+		}
+		defer rows.Close()
+
+		var results []*types.AdvisoryListRow
+		for rows.Next() {
+			var row types.AdvisoryListRow
+			if err := rows.Scan(
+				&row.AdvisoryID,
+				&row.CVEName,
+				&row.Severity,
+				&row.CVSS,
+				&row.SourceName,
+				&row.Description,
+				&row.FixedBy,
+				&row.ImageCount,
+			); err != nil {
+				return nil, errors.Wrap(err, "scanning advisory row")
+			}
+			results = append(results, &row)
+		}
+
+		if err := rows.Err(); err != nil {
+			return nil, errors.Wrap(err, "iterating advisory rows")
+		}
+
+		return &result{rows: results, total: total}, nil
+	})
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return res.rows, res.total, nil
+}
+
 // GetDeploymentByID returns basic deployment info.
 func (s *storeImpl) GetDeploymentByID(ctx context.Context, deploymentID string) (*types.DeploymentListRow, error) {
 	return pgutils.Retry2(ctx, func() (*types.DeploymentListRow, error) {

@@ -3,6 +3,7 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
+    Content,
     Divider,
     Flex,
     FlexItem,
@@ -83,6 +84,12 @@ function CveDetailPage() {
                             )}
                         </Flex>
                     </StackItem>
+
+                    {data?.description && (
+                        <StackItem>
+                            <Content component="p">{data.description}</Content>
+                        </StackItem>
+                    )}
 
                     <StackItem>
                         <Flex>
