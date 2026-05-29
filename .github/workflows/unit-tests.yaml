@@ -624,7 +624,7 @@ jobs:
             echo "Skipping registration."
             exit 0
           fi
-          bash .github/actions/job-preamble/keep-alive.sh "warm-go" "30"
+          bash .github/actions/job-preamble/keep-alive.sh "warm-go" "120"
 
   runner-profiling:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
