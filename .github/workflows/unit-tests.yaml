@@ -39,7 +39,6 @@ jobs:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
     runs-on: ${{ matrix.runner }}
     outputs:
-      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     # Stable version ldflags for test caching: Go's test cache keys include
     # link ActionID which includes -X ldflags. Fixed BUILD_TAG/SHORTCOMMIT
     # prevent per-commit cache misses.
