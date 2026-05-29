@@ -131,6 +131,22 @@ func withKey(resource any, id string) Key {
 	}
 }
 
+func TestParseKeySliceSkipsMalformedEntries(t *testing.T) {
+	t.Parallel()
+
+	keys, err := ParseKeySlice([]string{
+		eventPkg.FormatKey("Deployment", fixtureconsts.Deployment1),
+		"definitely-not-a-deduper-key",
+		eventPkg.FormatKey("AlertResults", stubID),
+	})
+
+	require.Error(t, err)
+	assert.Equal(t, []Key{
+		withKey(&central.SensorEvent_Deployment{}, fixtureconsts.Deployment1),
+		withKey(&central.SensorEvent_AlertResults{}, stubID),
+	}, keys)
+}
+
 var allSensorEventTypes []string
 
 var whitelist = []string{
