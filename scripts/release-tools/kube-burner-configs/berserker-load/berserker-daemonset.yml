@@ -20,13 +20,13 @@ spec:
     spec:
       containers:
       - image: "quay.io/stackrox-io/berserker:{{ .imageTag }}"
-        {{- if .command }}
+        {{- if index . "command" }}
         command:
-{{ .command | indent 8 | trimSuffix "\n" }}
+{{ index . "command" | indent 8 | trimSuffix "\n" }}
         {{- end }}
-        {{- if .args }}
+        {{- if index . "args" }}
         args:
-{{ .args | indent 8 | trimSuffix "\n" }}
+{{ index . "args" | indent 8 | trimSuffix "\n" }}
         {{- end }}
         resources:
           requests:
@@ -40,24 +40,24 @@ spec:
           mountPath: "/etc/berserker"
           readOnly: true
         imagePullPolicy: IfNotPresent
-        {{- if .ports }}
+        {{- if index . "ports" }}
         ports:
-{{ .ports | indent 8 | trimSuffix "\n" }}
+{{ index . "ports" | indent 8 | trimSuffix "\n" }}
         {{- end }}
         name: berserker
         env:
         - name: RUST_LOG
           value: "error"
-        {{- if .generateIP }}
+        {{- if index . "generateIP" }}
         - name: IP_BASE
           value: "{{ $ip }}"
         - name: BERSERKER__WORKLOAD__ADDRESS
           value: "{{ $berserkerAddress }}"
         {{- end }}
-        {{- if .extraEnv }}
-{{ .extraEnv | indent 8 | trimSuffix "\n" }}
+        {{- if index . "extraEnv" }}
+{{ index . "extraEnv" | indent 8 | trimSuffix "\n" }}
         {{- end }}
-        {{- if .privileged }}
+        {{- if index . "privileged" }}
         securityContext:
           privileged: true
         {{- end }}
