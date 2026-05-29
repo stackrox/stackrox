@@ -289,9 +289,7 @@ jobs:
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
     needs: define-job-matrix
-    # Use native arm64 runner to test if native compilation is faster than cross-compilation
-    # and to collect CPU metrics for both architectures.
-    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     env:
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
