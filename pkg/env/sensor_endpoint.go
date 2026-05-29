@@ -32,7 +32,11 @@ func SensorEndpointSetting() string {
 
 func sensorEndpointFromEnv(envVar string) string {
 	val, ok := os.LookupEnv(envVar)
-	if !ok || val == "" {
+	if !ok {
+		return ""
+	}
+	val = strings.TrimSpace(val)
+	if val == "" {
 		return ""
 	}
 	return stripSchemePrefix(val)

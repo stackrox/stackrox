@@ -26,6 +26,11 @@ func TestSensorEndpointSetting(t *testing.T) {
 			setSensor:      true,
 			expected:       "sensor.custom.svc:8443",
 		},
+		"canonical trims surrounding whitespace before stripping prefix": {
+			sensorEndpoint: "  https://sensor.custom.svc:8443\t",
+			setSensor:      true,
+			expected:       "sensor.custom.svc:8443",
+		},
 		"legacy advertised endpoint only": {
 			advertisedEndpoint: "sensor.legacy.svc:443",
 			setAdvertised:      true,
@@ -45,6 +50,13 @@ func TestSensorEndpointSetting(t *testing.T) {
 		},
 		"empty canonical falls through to legacy": {
 			sensorEndpoint:     "",
+			advertisedEndpoint: "sensor.legacy.svc:443",
+			setSensor:          true,
+			setAdvertised:      true,
+			expected:           "sensor.legacy.svc:443",
+		},
+		"whitespace-only canonical falls through to legacy": {
+			sensorEndpoint:     " \t ",
 			advertisedEndpoint: "sensor.legacy.svc:443",
 			setSensor:          true,
 			setAdvertised:      true,
