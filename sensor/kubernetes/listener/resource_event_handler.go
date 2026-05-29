@@ -138,11 +138,17 @@ func (k *listenerImpl) handleAllEvents() {
 
 	// Create informer factories for needed orchestrators.
 	var osAppsFactory osAppsExtVersions.SharedInformerFactory
+	var deploymentConfigsAvailable bool
 	if k.client.OpenshiftApps() != nil {
-		osAppsFactory = osAppsExtVersions.NewSharedInformerFactory(k.client.OpenshiftApps(), noResyncPeriod)
-		concurrency.WithLock(&k.sifLock, func() {
-			k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, osAppsFactory)
-		})
+		if resourceList, err := listenerUtils.ServerResourcesForGroup(k.client, osAppsGroupVersion); err != nil {
+			log.Errorf("Checking API resources for group %q: %v", osAppsGroupVersion, err)
+		} else if listenerUtils.ResourceExists(resourceList, osDeploymentConfigsResourceName, osAppsGroupVersion) {
+			deploymentConfigsAvailable = true
+			osAppsFactory = osAppsExtVersions.NewSharedInformerFactory(k.client.OpenshiftApps(), noResyncPeriod)
+			concurrency.WithLock(&k.sifLock, func() {
+				k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, osAppsFactory)
+			})
+		}
 	}
 
 	var osRouteFactory osRouteExtVersions.SharedInformerFactory
@@ -458,7 +464,7 @@ func (k *listenerImpl) handleAllEvents() {
 	} else {
 		handle(k.context, informerCronJobs, sif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetesPkg.CronJob), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
 	}
-	if osAppsFactory != nil {
+	if deploymentConfigsAvailable {
 		handle(k.context, informerDeploymentConfigs, osAppsFactory.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetesPkg.DeploymentConfig), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
 	}
 
