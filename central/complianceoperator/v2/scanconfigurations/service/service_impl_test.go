@@ -14,7 +14,6 @@ import (
 	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
 	reportManagerMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
-	scanSettingBindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	scanSettingBindingMocks "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore/mocks"
 	suiteMocks "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore/mocks"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore/mocks"
@@ -300,123 +299,86 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 	createdTime := timestamp.Now().GoTime()
 	lastUpdatedTime := timestamp.Now().GoTime()
 
-	testCases := []struct {
-		desc           string
-		query          *apiV2.RawQuery
-		expectedQ      *v1.Query
-		expectedCountQ *v1.Query
-	}{
-		{
-			desc:           "Empty query",
-			query:          &apiV2.RawQuery{Query: ""},
-			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
-			expectedCountQ: search.EmptyQuery(),
+	expectedResp := &apiV2.ListComplianceScanConfigurationsResponse{
+		Configurations: []*apiV2.ComplianceScanConfigurationStatus{
+			getTestAPIStatusRec(createdTime, lastUpdatedTime),
 		},
-		{
-			desc:  "Query with search field",
-			query: &apiV2.RawQuery{Query: "Cluster ID:id"},
-			expectedQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
-				WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
-			expectedCountQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").ProtoQuery(),
-		},
-		{
-			desc: "Query with custom pagination",
-			query: &apiV2.RawQuery{
-				Query:      "",
-				Pagination: &apiV2.Pagination{Limit: 1},
-			},
-			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1)).ProtoQuery(),
-			expectedCountQ: search.EmptyQuery(),
-		},
+		TotalCount: 1,
 	}
 
-	for _, tc := range testCases {
-		s.T().Run(tc.desc, func(t *testing.T) {
-			expectedResp := &apiV2.ListComplianceScanConfigurationsResponse{
-				Configurations: []*apiV2.ComplianceScanConfigurationStatus{
-					getTestAPIStatusRec(createdTime, lastUpdatedTime),
-				},
-				TotalCount: 6,
-			}
-
-			s.scanConfigDatastore.EXPECT().GetScanConfigurations(allAccessContext, tc.expectedQ).
-				Return([]*storage.ComplianceOperatorScanConfigurationV2{
+	s.scanConfigDatastore.EXPECT().GetScanConfigurations(allAccessContext, gomock.Any()).
+		Return([]*storage.ComplianceOperatorScanConfigurationV2{
+			{
+				Id:                     uuid.NewDummy().String(),
+				ScanConfigName:         "test-scan",
+				AutoApplyRemediations:  false,
+				AutoUpdateRemediations: false,
+				OneTimeScan:            false,
+				Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
 					{
-						Id:                     uuid.NewDummy().String(),
-						ScanConfigName:         "test-scan",
-						AutoApplyRemediations:  false,
-						AutoUpdateRemediations: false,
-						OneTimeScan:            false,
-						Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
-							{
-								ProfileName: "ocp4-cis",
-							},
-						},
-						StrictNodeScan:  false,
-						Schedule:        defaultStorageSchedule,
-						CreatedTime:     protoconv.ConvertTimeToTimestamp(createdTime),
-						LastUpdatedTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
-						ModifiedBy:      storageRequester,
-						Description:     "test-description",
-						Notifiers:       []*storage.NotifierConfiguration{},
-					},
-				}, nil).Times(1)
-
-			s.scanConfigDatastore.EXPECT().GetScanConfigClusterStatus(allAccessContext, uuid.NewDummy().String()).Return([]*storage.ComplianceOperatorClusterScanConfigStatus{
-				{
-					ClusterId:    fixtureconsts.Cluster1,
-					ClusterName:  mockClusterName,
-					ScanConfigId: uuid.NewDummy().String(),
-					Errors:       []string{"Error 1", "Error 2", "Error 3"},
-				},
-			}, nil).Times(1)
-
-			s.scanSettingBindingDatastore.EXPECT().GetScanSettingBindings(allAccessContext, gomock.Any()).Return([]*storage.ComplianceOperatorScanSettingBindingV2{
-				{
-					ClusterId: fixtureconsts.Cluster1,
-					Status: &storage.ComplianceOperatorStatus{
-						Phase: "READY",
-						Conditions: []*storage.ComplianceOperatorCondition{
-							{
-								Type:    "READY",
-								Status:  "False",
-								Message: "This binding is not ready",
-							},
-						},
+						ProfileName: "ocp4-cis",
 					},
 				},
-			}, nil).Times(1)
-			s.suiteDataStore.EXPECT().GetSuites(allAccessContext, gomock.Any()).Return([]*storage.ComplianceOperatorSuiteV2{
-				{
-					Id:        uuid.NewDummy().String(),
-					ClusterId: fixtureconsts.Cluster1,
-					Status: &storage.ComplianceOperatorStatus{
-						Phase:  "DONE",
-						Result: "NON-COMPLIANT",
-						Conditions: []*storage.ComplianceOperatorCondition{
-							{
-								Type:               "Processing",
-								Status:             "False",
-								LastTransitionTime: protocompat.GetProtoTimestampFromSeconds(lastUpdatedTime.UTC().Unix() - 10),
-							},
-							{
-								Type:               "Ready",
-								Status:             "True",
-								LastTransitionTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
-							},
-						},
+				StrictNodeScan:  false,
+				Schedule:        defaultStorageSchedule,
+				CreatedTime:     protoconv.ConvertTimeToTimestamp(createdTime),
+				LastUpdatedTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
+				ModifiedBy:      storageRequester,
+				Description:     "test-description",
+				Notifiers:       []*storage.NotifierConfiguration{},
+			},
+		}, nil).Times(1)
+
+	s.scanConfigDatastore.EXPECT().GetScanConfigClusterStatus(allAccessContext, uuid.NewDummy().String()).Return([]*storage.ComplianceOperatorClusterScanConfigStatus{
+		{
+			ClusterId:    fixtureconsts.Cluster1,
+			ClusterName:  mockClusterName,
+			ScanConfigId: uuid.NewDummy().String(),
+			Errors:       []string{"Error 1", "Error 2", "Error 3"},
+		},
+	}, nil).Times(1)
+
+	s.scanSettingBindingDatastore.EXPECT().GetScanSettingBindings(allAccessContext, gomock.Any()).Return([]*storage.ComplianceOperatorScanSettingBindingV2{
+		{
+			ClusterId: fixtureconsts.Cluster1,
+			Status: &storage.ComplianceOperatorStatus{
+				Phase: "READY",
+				Conditions: []*storage.ComplianceOperatorCondition{
+					{
+						Type:    "READY",
+						Status:  "False",
+						Message: "This binding is not ready",
 					},
 				},
-			}, nil).Times(1)
+			},
+		},
+	}, nil).Times(1)
+	s.suiteDataStore.EXPECT().GetSuites(allAccessContext, gomock.Any()).Return([]*storage.ComplianceOperatorSuiteV2{
+		{
+			Id:        uuid.NewDummy().String(),
+			ClusterId: fixtureconsts.Cluster1,
+			Status: &storage.ComplianceOperatorStatus{
+				Phase:  "DONE",
+				Result: "NON-COMPLIANT",
+				Conditions: []*storage.ComplianceOperatorCondition{
+					{
+						Type:               "Processing",
+						Status:             "False",
+						LastTransitionTime: protocompat.GetProtoTimestampFromSeconds(lastUpdatedTime.UTC().Unix() - 10),
+					},
+					{
+						Type:               "Ready",
+						Status:             "True",
+						LastTransitionTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
+					},
+				},
+			},
+		},
+	}, nil).Times(1)
 
-			s.scanConfigDatastore.EXPECT().CountScanConfigurations(allAccessContext, tc.expectedCountQ).
-				Return(6, nil).Times(1)
-
-			configs, err := s.service.ListComplianceScanConfigurations(allAccessContext, tc.query)
-			s.Require().NoError(err)
-			protoassert.Equal(s.T(), expectedResp, configs)
-		})
-	}
+	configs, err := s.service.ListComplianceScanConfigurations(allAccessContext, &apiV2.RawQuery{Query: ""})
+	s.Require().NoError(err)
+	protoassert.Equal(s.T(), expectedResp, configs)
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguration() {
@@ -1246,10 +1208,10 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetProfiles_WithScanConfigFil
 	s.Zero(count)
 }
 
-func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigOverviews_ManagedOnly() {
-	managedConfig := &storage.ComplianceOperatorScanConfigurationV2{
+func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigOverviews_SingleConfig() {
+	config := &storage.ComplianceOperatorScanConfigurationV2{
 		Id:             "config-1",
-		ScanConfigName: "managed-scan",
+		ScanConfigName: "my-scan",
 		Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
 			{ClusterId: fixtureconsts.Cluster1},
 		},
@@ -1258,110 +1220,52 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigOverv
 		},
 	}
 	s.scanConfigDatastore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
-		Return([]*storage.ComplianceOperatorScanConfigurationV2{managedConfig}, nil).Times(1)
-	s.scanSettingBindingDatastore.EXPECT().GetDistinctScanConfigs(gomock.Any(), gomock.Any()).
-		Return(nil, nil).Times(1)
+		Return([]*storage.ComplianceOperatorScanConfigurationV2{config}, nil).Times(1)
 
 	resp, err := s.service.ListComplianceScanConfigOverviews(s.ctx, &v2.RawQuery{})
 	s.Require().NoError(err)
 	s.Require().Len(resp.GetConfigs(), 1)
-	s.Equal("managed-scan", resp.GetConfigs()[0].GetScanConfigName())
-	s.True(resp.GetConfigs()[0].GetIsManaged())
+	s.Equal("my-scan", resp.GetConfigs()[0].GetScanConfigName())
 	s.Equal("config-1", resp.GetConfigs()[0].GetManagedConfigId())
 	s.Equal([]string{fixtureconsts.Cluster1}, resp.GetConfigs()[0].GetClusterIds())
 	s.Equal([]string{"ocp4-cis"}, resp.GetConfigs()[0].GetProfileNames())
 	s.Equal(int32(1), resp.GetTotalCount())
 }
 
-func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigOverviews_DiscoveredOnly() {
-	s.scanConfigDatastore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
-		Return(nil, nil).Times(1)
-	s.scanSettingBindingDatastore.EXPECT().GetDistinctScanConfigs(gomock.Any(), gomock.Any()).
-		Return([]*scanSettingBindingsDS.DiscoveredScanConfig{
-			{
-				Name:         "external-scan",
-				ClusterIDs:   []string{fixtureconsts.Cluster1, fixtureconsts.Cluster2},
-				ProfileNames: []string{"rhcos4-moderate"},
+func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigOverviews_MultipleConfigs() {
+	configs := []*storage.ComplianceOperatorScanConfigurationV2{
+		{
+			Id:             "config-1",
+			ScanConfigName: "scan-a",
+			Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
+				{ClusterId: fixtureconsts.Cluster1},
 			},
-		}, nil).Times(1)
-
-	resp, err := s.service.ListComplianceScanConfigOverviews(s.ctx, &v2.RawQuery{})
-	s.Require().NoError(err)
-	s.Require().Len(resp.GetConfigs(), 1)
-	s.Equal("external-scan", resp.GetConfigs()[0].GetScanConfigName())
-	s.False(resp.GetConfigs()[0].GetIsManaged())
-	s.Empty(resp.GetConfigs()[0].GetManagedConfigId())
-	s.Equal(int32(1), resp.GetTotalCount())
-}
-
-func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigOverviews_MergeOverlapping() {
-	managedConfig := &storage.ComplianceOperatorScanConfigurationV2{
-		Id:             "config-1",
-		ScanConfigName: "shared-scan",
-		Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
-			{ClusterId: fixtureconsts.Cluster1},
+			Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+				{ProfileName: "ocp4-cis"},
+			},
 		},
-		Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
-			{ProfileName: "ocp4-cis"},
+		{
+			Id:             "config-2",
+			ScanConfigName: "scan-b",
+			Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
+				{ClusterId: fixtureconsts.Cluster1},
+				{ClusterId: fixtureconsts.Cluster2},
+			},
+			Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+				{ProfileName: "ocp4-moderate"},
+				{ProfileName: "ocp4-moderate-node"},
+			},
 		},
 	}
 	s.scanConfigDatastore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
-		Return([]*storage.ComplianceOperatorScanConfigurationV2{managedConfig}, nil).Times(1)
-	s.scanSettingBindingDatastore.EXPECT().GetDistinctScanConfigs(gomock.Any(), gomock.Any()).
-		Return([]*scanSettingBindingsDS.DiscoveredScanConfig{
-			{
-				Name:         "shared-scan",
-				ClusterIDs:   []string{fixtureconsts.Cluster1, fixtureconsts.Cluster2},
-				ProfileNames: []string{"ocp4-cis", "ocp4-moderate"},
-			},
-		}, nil).Times(1)
+		Return(configs, nil).Times(1)
 
 	resp, err := s.service.ListComplianceScanConfigOverviews(s.ctx, &v2.RawQuery{})
 	s.Require().NoError(err)
-	s.Require().Len(resp.GetConfigs(), 1)
-	overview := resp.GetConfigs()[0]
-	s.Equal("shared-scan", overview.GetScanConfigName())
-	s.True(overview.GetIsManaged())
-	s.Equal("config-1", overview.GetManagedConfigId())
-	s.Contains(overview.GetClusterIds(), fixtureconsts.Cluster1)
-	s.Contains(overview.GetClusterIds(), fixtureconsts.Cluster2)
-	s.Contains(overview.GetProfileNames(), "ocp4-cis")
-	s.Contains(overview.GetProfileNames(), "ocp4-moderate")
-}
-
-func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigOverviews_MergeDisjoint() {
-	managedConfig := &storage.ComplianceOperatorScanConfigurationV2{
-		Id:             "config-1",
-		ScanConfigName: "shared-scan",
-		Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
-			{ClusterId: fixtureconsts.Cluster1},
-		},
-		Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
-			{ProfileName: "ocp4-cis"},
-		},
-	}
-	s.scanConfigDatastore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).
-		Return([]*storage.ComplianceOperatorScanConfigurationV2{managedConfig}, nil).Times(1)
-	s.scanSettingBindingDatastore.EXPECT().GetDistinctScanConfigs(gomock.Any(), gomock.Any()).
-		Return([]*scanSettingBindingsDS.DiscoveredScanConfig{
-			{
-				Name:         "shared-scan",
-				ClusterIDs:   []string{fixtureconsts.Cluster2},
-				ProfileNames: []string{"ocp4-moderate"},
-			},
-		}, nil).Times(1)
-
-	resp, err := s.service.ListComplianceScanConfigOverviews(s.ctx, &v2.RawQuery{})
-	s.Require().NoError(err)
-	s.Require().Len(resp.GetConfigs(), 1)
-	overview := resp.GetConfigs()[0]
-	s.True(overview.GetIsManaged())
-	s.Len(overview.GetClusterIds(), 2)
-	s.Contains(overview.GetClusterIds(), fixtureconsts.Cluster1)
-	s.Contains(overview.GetClusterIds(), fixtureconsts.Cluster2)
-	s.Len(overview.GetProfileNames(), 2)
-	s.Contains(overview.GetProfileNames(), "ocp4-cis")
-	s.Contains(overview.GetProfileNames(), "ocp4-moderate")
+	s.Require().Len(resp.GetConfigs(), 2)
+	s.Equal(int32(2), resp.GetTotalCount())
+	s.Equal([]string{fixtureconsts.Cluster1, fixtureconsts.Cluster2}, resp.GetConfigs()[1].GetClusterIds())
+	s.Equal([]string{"ocp4-moderate", "ocp4-moderate-node"}, resp.GetConfigs()[1].GetProfileNames())
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigOverviews_SortedByName() {
@@ -1369,10 +1273,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigOverv
 		Return([]*storage.ComplianceOperatorScanConfigurationV2{
 			{Id: "2", ScanConfigName: "zebra-scan"},
 			{Id: "1", ScanConfigName: "alpha-scan"},
-		}, nil).Times(1)
-	s.scanSettingBindingDatastore.EXPECT().GetDistinctScanConfigs(gomock.Any(), gomock.Any()).
-		Return([]*scanSettingBindingsDS.DiscoveredScanConfig{
-			{Name: "mid-scan", ClusterIDs: []string{"c1"}, ProfileNames: []string{"p1"}},
+			{Id: "3", ScanConfigName: "mid-scan"},
 		}, nil).Times(1)
 
 	resp, err := s.service.ListComplianceScanConfigOverviews(s.ctx, &v2.RawQuery{})

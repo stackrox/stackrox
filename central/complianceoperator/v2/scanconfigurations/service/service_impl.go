@@ -649,7 +649,6 @@ func (s *serviceImpl) ListComplianceScanConfigOverviews(ctx context.Context, que
 		}
 		overviews = append(overviews, &v2.ComplianceScanConfigOverview{
 			ScanConfigName:  mc.GetScanConfigName(),
-			IsManaged:       mc.GetIsManaged(),
 			ManagedConfigId: mc.GetId(),
 			ClusterIds:      clusterIDs,
 			ProfileNames:    profileNames,

@@ -142,8 +142,6 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 
 	scanRequest.Id = uuid.NewV4().String()
 	scanRequest.CreatedTime = protocompat.TimestampNow()
-	scanRequest.IsManaged = true
-
 	validatedProfiles, err := m.validateScan(ctx, scanRequest, clusters)
 	if err != nil {
 		return nil, err
@@ -638,9 +636,6 @@ func (m *managerImpl) ReconcileDiscoveredConfig(_ context.Context, ssbName strin
 	if err != nil {
 		return errors.Wrapf(err, "looking up scan config %q", ssbName)
 	}
-	if existing != nil && existing.GetIsManaged() {
-		return nil
-	}
 
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanSettingBindingName, ssbName).
@@ -690,7 +685,6 @@ func (m *managerImpl) ReconcileDiscoveredConfig(_ context.Context, ssbName strin
 		scanConfig = &storage.ComplianceOperatorScanConfigurationV2{
 			Id:              uuid.NewV4().String(),
 			ScanConfigName:  ssbName,
-			IsManaged:       false,
 			Clusters:        clusters,
 			Profiles:        profiles,
 			CreatedTime:     protocompat.TimestampNow(),

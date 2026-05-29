@@ -30,33 +30,11 @@ func initialize() {
 	storage := pgStore.New(pool)
 	dataStore = New(storage, statusStore.New(pool), pool)
 
-	backfillIsManaged()
 	reconcileDiscoveredOnStartup()
 }
 
-// backfillIsManaged marks all pre-existing scan configs as managed. Before the
-// is_managed field existed, every config was user-created (managed). Discovered
-// configs set is_managed=false explicitly via the reconciler.
-func backfillIsManaged() {
-	ctx := sac.WithAllAccess(context.Background())
-	configs, err := dataStore.GetScanConfigurations(ctx, search.EmptyQuery())
-	if err != nil {
-		log.Errorf("backfill: listing scan configs: %v", err)
-		return
-	}
-	for _, cfg := range configs {
-		if cfg.GetIsManaged() {
-			continue
-		}
-		cfg.IsManaged = true
-		if err := dataStore.UpsertScanConfiguration(ctx, cfg); err != nil {
-			log.Errorf("backfill: updating scan config %q: %v", cfg.GetScanConfigName(), err)
-		}
-	}
-}
-
-// reconcileDiscoveredOnStartup creates scan config records for any unmanaged
-// SSBs that don't already have a corresponding scan config. Covers the case
+// reconcileDiscoveredOnStartup creates scan config records for any SSBs
+// that don't already have a corresponding scan config. Covers the case
 // where sensor synced SSBs before the reconciler was deployed.
 func reconcileDiscoveredOnStartup() {
 	ctx := sac.WithAllAccess(context.Background())
@@ -72,15 +50,6 @@ func reconcileDiscoveredOnStartup() {
 	}
 
 	for _, dc := range discovered {
-		existing, err := dataStore.GetScanConfigurationByName(ctx, dc.Name)
-		if err != nil {
-			log.Errorf("startup reconcile: looking up %q: %v", dc.Name, err)
-			continue
-		}
-		if existing != nil {
-			continue
-		}
-
 		clusters := make([]*storage.ComplianceOperatorScanConfigurationV2_Cluster, 0, len(dc.ClusterIDs))
 		for _, cid := range dc.ClusterIDs {
 			clusters = append(clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{ClusterId: cid})
@@ -90,19 +59,42 @@ func reconcileDiscoveredOnStartup() {
 			profiles = append(profiles, &storage.ComplianceOperatorScanConfigurationV2_ProfileName{ProfileName: p})
 		}
 
-		scanConfig := &storage.ComplianceOperatorScanConfigurationV2{
-			Id:              uuid.NewV4().String(),
-			ScanConfigName:  dc.Name,
-			IsManaged:       false,
-			Clusters:        clusters,
-			Profiles:        profiles,
-			CreatedTime:     protocompat.TimestampNow(),
-			LastUpdatedTime: protocompat.TimestampNow(),
+		existing, err := dataStore.GetScanConfigurationByName(ctx, dc.Name)
+		if err != nil {
+			log.Errorf("startup reconcile: looking up %q: %v", dc.Name, err)
+			continue
 		}
-		if err := dataStore.UpsertScanConfiguration(ctx, scanConfig); err != nil {
-			log.Errorf("startup reconcile: creating config for %q: %v", dc.Name, err)
+
+		var scanConfig *storage.ComplianceOperatorScanConfigurationV2
+		if existing != nil {
+			existing.Clusters = clusters
+			existing.Profiles = profiles
+			existing.LastUpdatedTime = protocompat.TimestampNow()
+			if err := dataStore.UpsertScanConfiguration(ctx, existing); err != nil {
+				log.Errorf("startup reconcile: updating config %q: %v", dc.Name, err)
+				continue
+			}
+			scanConfig = existing
 		} else {
+			scanConfig = &storage.ComplianceOperatorScanConfigurationV2{
+				Id:              uuid.NewV4().String(),
+				ScanConfigName:  dc.Name,
+				Clusters:        clusters,
+				Profiles:        profiles,
+				CreatedTime:     protocompat.TimestampNow(),
+				LastUpdatedTime: protocompat.TimestampNow(),
+			}
+			if err := dataStore.UpsertScanConfiguration(ctx, scanConfig); err != nil {
+				log.Errorf("startup reconcile: creating config for %q: %v", dc.Name, err)
+				continue
+			}
 			log.Infof("startup reconcile: created discovered config %q with ID %s", dc.Name, scanConfig.GetId())
+		}
+
+		for _, cid := range dc.ClusterIDs {
+			if err := dataStore.UpdateClusterStatus(ctx, scanConfig.GetId(), cid, "", cid); err != nil {
+				log.Errorf("startup reconcile: updating cluster status for %q cluster %s: %v", dc.Name, cid, err)
+			}
 		}
 	}
 }

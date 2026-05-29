@@ -283,7 +283,7 @@ func convertStorageReportDataToV2ScanStatus(ctx context.Context, reportData *sto
 	return &v2.ComplianceScanConfigurationStatus{
 		Id:        reportData.GetScanConfiguration().GetId(),
 		ScanName:  reportData.GetScanConfiguration().GetScanConfigName(),
-		IsManaged: reportData.GetScanConfiguration().GetIsManaged(),
+		IsManaged: false,
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: reportData.GetScanConfiguration().GetOneTimeScan(),
 			Profiles: func() []string {
@@ -389,19 +389,14 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 	}
 
 	return &v2.ComplianceScanConfigurationStatus{
-		Id:        scanConfig.GetId(),
-		ScanName:  scanConfig.GetScanConfigName(),
-		IsManaged: scanConfig.GetIsManaged(),
+		Id:       scanConfig.GetId(),
+		ScanName: scanConfig.GetScanConfigName(),
 		ClusterStatus: func() []*v2.ClusterScanStatus {
 			clusterStatuses := make([]*v2.ClusterScanStatus, 0, len(scanClusters))
 			for _, cluster := range scanClusters {
 				var errors []string
-				ssbSearchField := search.ComplianceOperatorScanConfigName
-				if !scanConfig.GetIsManaged() {
-					ssbSearchField = search.ComplianceOperatorScanSettingBindingName
-				}
 				bindings, err := bindingsDS.GetScanSettingBindings(ctx, search.NewQueryBuilder().
-					AddExactMatches(ssbSearchField, scanConfig.GetScanConfigName()).
+					AddExactMatches(search.ComplianceOperatorScanSettingBindingName, scanConfig.GetScanConfigName()).
 					AddExactMatches(search.ClusterID, cluster.GetClusterId()).ProtoQuery())
 				if err != nil {
 					continue

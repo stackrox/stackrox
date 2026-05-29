@@ -4,7 +4,6 @@ import {
     Button,
     Divider,
     Flex,
-    Label,
     MenuToggle,
     Select,
     SelectGroup,
@@ -35,9 +34,6 @@ function ScanConfigurationSelect({
     setSelectedScanConfigName,
 }: ScanConfigurationSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
-
-    const managedConfigs = scanConfigs.filter((c) => c.isManaged);
-    const discoveredConfigs = scanConfigs.filter((c) => !c.isManaged);
 
     const onToggleClick = () => {
         setIsOpen((prev) => !prev);
@@ -89,47 +85,19 @@ function ScanConfigurationSelect({
                             </SelectList>
                         </SelectGroup>
                     ) : (
-                        <>
-                            {managedConfigs.length > 0 && (
-                                <SelectGroup label="Managed scan schedules">
-                                    <SelectList>
-                                        {managedConfigs.map((config) => (
-                                            <SelectOption
-                                                key={config.scanConfigName}
-                                                value={config.scanConfigName}
-                                                isDisabled={isScanConfigDisabled(config)}
-                                            >
-                                                {config.scanConfigName}
-                                            </SelectOption>
-                                        ))}
-                                    </SelectList>
-                                </SelectGroup>
-                            )}
-                            {discoveredConfigs.length > 0 && (
-                                <>
-                                    {managedConfigs.length > 0 && <Divider />}
-                                    <SelectGroup label="Discovered scan schedules">
-                                        <SelectList>
-                                            {discoveredConfigs.map((config) => (
-                                                <SelectOption
-                                                    key={config.scanConfigName}
-                                                    value={config.scanConfigName}
-                                                    isDisabled={isScanConfigDisabled(config)}
-                                                >
-                                                    {config.scanConfigName}{' '}
-                                                    <Label
-                                                        isCompact
-                                                        color="blue"
-                                                    >
-                                                        External
-                                                    </Label>
-                                                </SelectOption>
-                                            ))}
-                                        </SelectList>
-                                    </SelectGroup>
-                                </>
-                            )}
-                        </>
+                        <SelectGroup label="Scan schedules">
+                            <SelectList>
+                                {scanConfigs.map((config) => (
+                                    <SelectOption
+                                        key={config.scanConfigName}
+                                        value={config.scanConfigName}
+                                        isDisabled={isScanConfigDisabled(config)}
+                                    >
+                                        {config.scanConfigName}
+                                    </SelectOption>
+                                ))}
+                            </SelectList>
+                        </SelectGroup>
                     )}
                 </>
             </Select>

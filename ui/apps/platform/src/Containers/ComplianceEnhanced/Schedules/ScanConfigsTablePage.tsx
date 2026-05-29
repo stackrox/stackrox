@@ -8,7 +8,6 @@ import {
     Bullseye,
     Content,
     Flex,
-    Label,
     PageSection,
     Pagination,
     Spinner,
@@ -152,17 +151,16 @@ function ScanConfigsTablePage({
 
     const renderTableContent = () => {
         return listData?.configurations?.map((scanSchedule) => {
-            const { id, scanName, isManaged, scanConfig, lastExecutedTime, clusterStatus } =
-                scanSchedule;
+            const { id, scanName, scanConfig, lastExecutedTime, clusterStatus } = scanSchedule;
 
-            const scanConfigUrl = isManaged
+            const scanConfigUrl = id
                 ? generatePath(scanConfigDetailsPath, { scanConfigId: id })
                 : generatePath(discoveredScanConfigDetailsPath, {
                       scanConfigName: encodeURIComponent(scanName),
                   });
 
-            const rowKey = isManaged ? id : `discovered-${scanName}`;
-            const snapshot = isManaged ? complianceReportSnapshots[id] : undefined;
+            const rowKey = id || `discovered-${scanName}`;
+            const snapshot = id ? complianceReportSnapshots[id] : undefined;
             const isSnapshotStatusPending =
                 snapshot?.reportStatus?.runState === 'PREPARING' ||
                 snapshot?.reportStatus?.runState === 'WAITING';
@@ -170,20 +168,10 @@ function ScanConfigsTablePage({
             return (
                 <Tr key={rowKey}>
                     <Td dataLabel="Name">
-                        <Flex
-                            spaceItems={{ default: 'spaceItemsSm' }}
-                            alignItems={{ default: 'alignItemsCenter' }}
-                        >
-                            <Link to={scanConfigUrl}>{scanName}</Link>
-                            {!isManaged && (
-                                <Label color="blue" isCompact>
-                                    External
-                                </Label>
-                            )}
-                        </Flex>
+                        <Link to={scanConfigUrl}>{scanName}</Link>
                     </Td>
                     <Td dataLabel="Schedule">
-                        {isManaged && scanConfig.scanSchedule
+                        {scanConfig.scanSchedule
                             ? formatRecurringSchedule(scanConfig.scanSchedule)
                             : '—'}
                     </Td>
