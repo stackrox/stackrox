@@ -12,6 +12,14 @@ source "$SCRIPTS_ROOT/scripts/ci/lib.sh"
 
 set -euo pipefail
 
+xml_sanitize() {
+    printf '%s' "$1" | tr '&<>"'"'" ' '
+}
+
+cdata_sanitize() {
+    printf '%s' "$1" | sed 's/]]>/]] >/g'
+}
+
 if [[ "$#" -ne 2 ]]; then
     die "Usage: $0 <sarif-file> <image-name>"
 fi
@@ -56,8 +64,8 @@ Image: ${image_name}
 
 ${message}"
 
-    testcases_xml+="    <testcase name=\"${component_version}\" classname=\"${cve_id}\">
-      <failure><![CDATA[${failure_details}]]></failure>
+    testcases_xml+="    <testcase name=\"$(xml_sanitize "$component_version")\" classname=\"$(xml_sanitize "$cve_id")\">
+      <failure><![CDATA[$(cdata_sanitize "$failure_details")]]></failure>
     </testcase>
 "
     ((failure_count++)) || true
@@ -72,7 +80,7 @@ junit_file="${junit_dir}/junit-${safe_filename}.xml"
 
 if [[ $vuln_count -eq 0 ]]; then
     cat > "${junit_file}" <<EOF
-<testsuite name="${suite_name}" tests="1" skipped="0" failures="0" errors="0">
+<testsuite name="$(xml_sanitize "$suite_name")" tests="1" skipped="0" failures="0" errors="0">
   <testcase name="vulnerability-scan" classname="vulnerability-scan">
   </testcase>
 </testsuite>
@@ -80,7 +88,7 @@ EOF
     echo "No vulnerabilities found in SARIF report"
 else
     cat > "${junit_file}" <<EOF
-<testsuite name="${suite_name}" tests="${vuln_count}" skipped="0" failures="${failure_count}" errors="0">
+<testsuite name="$(xml_sanitize "$suite_name")" tests="${vuln_count}" skipped="0" failures="${failure_count}" errors="0">
 ${testcases_xml}</testsuite>
 EOF
     echo "Converted ${vuln_count} vulnerabilities from SARIF to JUnit"
