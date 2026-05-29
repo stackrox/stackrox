@@ -293,11 +293,11 @@ func OptionsForEndpoint(endpoint string, extraConnOpts ...ConnectionOption) (Opt
 	}
 
 	if connOpts.useServiceCertToken {
-		leafCert, err := mtls.LeafCertificateFromFile()
-		if err != nil {
-			return Options{}, errors.Wrap(err, "loading client certificate")
+		cert := verifier.WatchedLeafCert()
+		if cert == nil {
+			return Options{}, errors.New("no leaf certificate available for service cert token")
 		}
-		clientConnOpts.PerRPCCreds = servicecerttoken.NewServiceCertClientCreds(&leafCert)
+		clientConnOpts.PerRPCCreds = servicecerttoken.NewServiceCertClientCreds(cert)
 	}
 
 	clientConnOpts.MaxMsgRecvSize = connOpts.maxMsgRecvSize
