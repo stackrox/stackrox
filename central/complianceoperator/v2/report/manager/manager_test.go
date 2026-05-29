@@ -293,19 +293,59 @@ func (m *ManagerTestSuite) TestHandleReadyScanDeleteOldResultsGate() {
 	}
 
 	tests := map[string]struct {
-		err error
+		err      error
+		expectFn func(done chan struct{}, checkResultDS *checkResultsMocks.MockDataStore, scanConfigDS *scanConfigurationDS.MockDataStore)
 	}{
 		"success should call DeleteOldResults": {
 			err: nil,
+			expectFn: func(done chan struct{}, checkResultDS *checkResultsMocks.MockDataStore, scanConfigDS *scanConfigurationDS.MockDataStore) {
+				checkResultDS.EXPECT().
+					DeleteOldResults(gomock.Any(), gomock.Eq(scan.GetLastStartedTime()), gomock.Eq(scan.GetScanRefId()), gomock.Eq(false)).
+					Times(1).Return(nil)
+				scanConfigDS.EXPECT().
+					GetScanConfigurationByName(gomock.Any(), gomock.Eq(scan.GetScanConfigName())).
+					Times(1).
+					DoAndReturn(func(_ any, _ any) (*storage.ComplianceOperatorScanConfigurationV2, error) {
+						close(done)
+						return nil, errors.New("stop here")
+					})
+			},
 		},
 		"ErrScanRemoved should call DeleteOldResults with includeCurrentResults": {
 			err: watcher.ErrScanRemoved,
+			expectFn: func(done chan struct{}, checkResultDS *checkResultsMocks.MockDataStore, scanConfigDS *scanConfigurationDS.MockDataStore) {
+				checkResultDS.EXPECT().
+					DeleteOldResults(gomock.Any(), gomock.Eq(scan.GetLastStartedTime()), gomock.Eq(scan.GetScanRefId()), gomock.Eq(true)).
+					Times(1).
+					DoAndReturn(func(_, _, _, _ any) error {
+						close(done)
+						return nil
+					})
+			},
 		},
 		"ErrScanTimeout should NOT call DeleteOldResults": {
 			err: watcher.ErrScanTimeout,
+			expectFn: func(done chan struct{}, checkResultDS *checkResultsMocks.MockDataStore, scanConfigDS *scanConfigurationDS.MockDataStore) {
+				scanConfigDS.EXPECT().
+					GetScanConfigurationByName(gomock.Any(), gomock.Eq(scan.GetScanConfigName())).
+					Times(1).
+					DoAndReturn(func(_ any, _ any) (*storage.ComplianceOperatorScanConfigurationV2, error) {
+						close(done)
+						return nil, errors.New("stop here")
+					})
+			},
 		},
 		"ErrScanContextCancelled should NOT call DeleteOldResults": {
 			err: watcher.ErrScanContextCancelled,
+			expectFn: func(done chan struct{}, checkResultDS *checkResultsMocks.MockDataStore, scanConfigDS *scanConfigurationDS.MockDataStore) {
+				scanConfigDS.EXPECT().
+					GetScanConfigurationByName(gomock.Any(), gomock.Eq(scan.GetScanConfigName())).
+					Times(1).
+					DoAndReturn(func(_ any, _ any) (*storage.ComplianceOperatorScanConfigurationV2, error) {
+						close(done)
+						return nil, errors.New("stop here")
+					})
+			},
 		},
 	}
 
@@ -333,37 +373,7 @@ func (m *ManagerTestSuite) TestHandleReadyScanDeleteOldResultsGate() {
 			}
 
 			done := make(chan struct{})
-			if tc.err == nil {
-				checkResultDS.EXPECT().
-					DeleteOldResults(gomock.Any(), gomock.Eq(scan.GetLastStartedTime()), gomock.Eq(scan.GetScanRefId()), gomock.Eq(false)).
-					Times(1).Return(nil)
-				scanConfigDS.EXPECT().
-					GetScanConfigurationByName(gomock.Any(), gomock.Eq(scan.GetScanConfigName())).
-					Times(1).
-					DoAndReturn(func(_ any, _ any) (*storage.ComplianceOperatorScanConfigurationV2, error) {
-						close(done)
-						return nil, errors.New("stop here")
-					})
-			} else if errors.Is(tc.err, watcher.ErrScanRemoved) {
-				// ErrScanRemoved hits continue (skips getOrCreateScanConfigWatcher),
-				// so there's no mock call we can hook into. Use DeleteOldResults
-				// DoAndReturn to signal completion instead.
-				checkResultDS.EXPECT().
-					DeleteOldResults(gomock.Any(), gomock.Eq(scan.GetLastStartedTime()), gomock.Eq(scan.GetScanRefId()), gomock.Eq(true)).
-					Times(1).
-					DoAndReturn(func(_, _, _, _ any) error {
-						close(done)
-						return nil
-					})
-			} else {
-				scanConfigDS.EXPECT().
-					GetScanConfigurationByName(gomock.Any(), gomock.Eq(scan.GetScanConfigName())).
-					Times(1).
-					DoAndReturn(func(_ any, _ any) (*storage.ComplianceOperatorScanConfigurationV2, error) {
-						close(done)
-						return nil, errors.New("stop here")
-					})
-			}
+			tc.expectFn(done, checkResultDS, scanConfigDS)
 
 			// Seed a start time entry so the metrics code doesn't panic.
 			concurrency.WithLock(&managerImp.watchingScansLock, func() {
