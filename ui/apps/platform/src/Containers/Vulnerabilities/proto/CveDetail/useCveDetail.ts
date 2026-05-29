@@ -25,10 +25,13 @@ export type ProtoImageComponent = {
     version: string;
     source: string;
     fixedBy?: string;
+    advisories?: string[];
 };
 
 export type ProtoImage = {
     imageId: string;
+    imageUuid?: string;
+    imageName?: string;
     componentCount: number;
     severity: number;
     fixable: boolean;

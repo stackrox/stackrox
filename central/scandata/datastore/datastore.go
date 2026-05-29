@@ -29,4 +29,7 @@ type DataStore interface {
 
 	// GetFindingsByImageID returns all findings for an image
 	GetFindingsByImageID(ctx context.Context, imageID string) ([]*storage.ScanFinding, error)
+
+	// GetImageInfoByDigests returns image UUID and full name for the given SHA digests.
+	GetImageInfoByDigests(ctx context.Context, digests []string) (map[string]types.ImageBasicInfo, error)
 }

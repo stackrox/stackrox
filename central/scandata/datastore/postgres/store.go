@@ -453,3 +453,27 @@ func (s *storeImpl) GetFindingsByImageID(ctx context.Context, imageID string) ([
 		return pgutils.ScanRows[storage.ScanFinding, *storage.ScanFinding](rows)
 	})
 }
+
+// GetImageInfoByDigests looks up image UUID and full name from images_v2 by SHA digest.
+func (s *storeImpl) GetImageInfoByDigests(ctx context.Context, digests []string) (map[string]types.ImageBasicInfo, error) {
+	if len(digests) == 0 {
+		return nil, nil
+	}
+	return pgutils.Retry2(ctx, func() (map[string]types.ImageBasicInfo, error) {
+		query := `SELECT id, digest, name_fullname FROM images_v2 WHERE digest = ANY($1)`
+		rows, err := s.db.Query(ctx, query, digests)
+		if err != nil {
+			return nil, errors.Wrap(err, "querying image info")
+		}
+		defer rows.Close()
+		result := make(map[string]types.ImageBasicInfo, len(digests))
+		for rows.Next() {
+			var uuid, digest, fullName string
+			if err := rows.Scan(&uuid, &digest, &fullName); err != nil {
+				return nil, errors.Wrap(err, "scanning image row")
+			}
+			result[digest] = types.ImageBasicInfo{UUID: uuid, FullName: fullName}
+		}
+		return result, rows.Err()
+	})
+}
