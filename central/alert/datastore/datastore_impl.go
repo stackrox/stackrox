@@ -253,6 +253,27 @@ func (ds *datastoreImpl) SearchAlertDeploymentIDs(ctx context.Context, q *v1.Que
 	return ids, nil
 }
 
+// SearchAlertMatchKeys returns lightweight alert match keys for the given query.
+// Projects only inline columns needed for alert matching, avoiding TOAST I/O.
+func (ds *datastoreImpl) SearchAlertMatchKeys(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*alertviews.AlertMatchKey, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlertMatchKeys")
+
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	matchKeyQuery := alertviews.WithAlertMatchKeyQuery(q)
+
+	var results []*alertviews.AlertMatchKey
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, matchKeyQuery, func(r *alertviews.AlertMatchKey) error {
+		results = append(results, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
 // SearchAlerts returns search results for the given request. This will exclude resolved alerts by default unless Violation State = Resolved is explicitly specified in the query
 func (ds *datastoreImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlerts")
