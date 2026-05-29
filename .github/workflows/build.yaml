@@ -531,7 +531,7 @@ jobs:
           make -C operator/ docker-push-index | cat
 
   build-and-push-components:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     strategy:
       fail-fast: false
       matrix:
