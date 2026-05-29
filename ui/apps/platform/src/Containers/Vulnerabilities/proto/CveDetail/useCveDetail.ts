@@ -42,6 +42,7 @@ export type CveDetailResponse = {
     cveName: string;
     severity: number;
     cvss: number;
+    description?: string;
     advisories: ProtoAdvisory[];
     components: ProtoComponent[];
     images: ProtoImage[];

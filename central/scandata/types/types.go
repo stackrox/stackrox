@@ -59,3 +59,15 @@ type DeploymentImageRow struct {
 	TopSeverity int32
 	Fixable     bool
 }
+
+// AdvisoryListRow represents one advisory in the advisory list page.
+type AdvisoryListRow struct {
+	AdvisoryID  string
+	CVEName     string
+	Severity    int32
+	CVSS        float32
+	SourceName  string
+	Description string
+	FixedBy     string
+	ImageCount  int
+}

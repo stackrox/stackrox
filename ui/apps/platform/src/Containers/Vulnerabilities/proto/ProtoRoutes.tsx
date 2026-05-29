@@ -5,6 +5,7 @@ import PageNotFound from 'Components/PageNotFound';
 
 import CveListPage from './CveList/CveListPage';
 import CveDetailPage from './CveDetail/CveDetailPage';
+import AdvisoryListPage from './Advisories/AdvisoryListPage';
 import DeploymentListPage from './Deployments/DeploymentListPage';
 import DeploymentDetailPage from './Deployments/DeploymentDetailPage';
 
@@ -18,6 +19,7 @@ function ProtoRoutes() {
         <Routes>
             <Route path="cves/:cveName" element={<CveDetailPage />} />
             <Route path="cves" element={<CveListPage />} />
+            <Route path="advisories" element={<AdvisoryListPage />} />
             <Route
                 path="deployments/:deploymentId"
                 element={<DeploymentDetailPage />}
