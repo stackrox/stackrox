@@ -1881,22 +1881,11 @@ setup_automation_flavor_e2e_cluster() {
         source "${SHARED_DIR}/dotenv"
         # OSD API server certificates may not be fully propagated right after
         # cluster creation, causing transient x509 errors (ROX-27600).
-        local max_login_attempts=5
-        local login_delay=30
-        for attempt in $(seq 1 "$max_login_attempts"); do
-            if oc login "$CLUSTER_API_ENDPOINT" \
-                    --username "$CLUSTER_USERNAME" \
-                    --password "$CLUSTER_PASSWORD" \
-                    --insecure-skip-tls-verify=true; then
-                info "OSD login succeeded on attempt ${attempt}"
-                break
-            fi
-            if [[ "$attempt" -eq "$max_login_attempts" ]]; then
-                die "Failed to log in to OSD cluster after ${max_login_attempts} attempts"
-            fi
-            warn "OSD login attempt ${attempt}/${max_login_attempts} failed, retrying in ${login_delay}s..."
-            sleep "$login_delay"
-        done
+        retry 5 true oc login "$CLUSTER_API_ENDPOINT" \
+                --username "$CLUSTER_USERNAME" \
+                --password "$CLUSTER_PASSWORD" \
+                --insecure-skip-tls-verify=true \
+            || die "Failed to log in to OSD cluster"
     fi
 
     # Export console credentials for OCP UI e2e tests (Cypress browser login)
