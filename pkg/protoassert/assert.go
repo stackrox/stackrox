@@ -17,7 +17,9 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type message[V any] interface {
+// Message represents the interface a type has to expose
+// to be a comparable protobuf type in the stackrox codebase.
+type Message[V any] interface {
 	*V
 	proto.Message
 	fmt.Stringer
@@ -34,7 +36,7 @@ var spewConfig = spew.ConfigState{
 }
 
 // Equal mimics [assert.Equal].
-func Equal[T message[V], V any](t testing.TB, expected, actual T, msgAndArgs ...any) bool {
+func Equal[T Message[V], V any](t testing.TB, expected, actual T, msgAndArgs ...any) bool {
 	t.Helper()
 	if actual.EqualVT(expected) {
 		return true
@@ -47,7 +49,7 @@ func Equal[T message[V], V any](t testing.TB, expected, actual T, msgAndArgs ...
 }
 
 // NotEqual mimics [assert.NotEqual].
-func NotEqual[T message[V], V any](t testing.TB, expected, actual T, msgAndArgs ...any) bool {
+func NotEqual[T Message[V], V any](t testing.TB, expected, actual T, msgAndArgs ...any) bool {
 	t.Helper()
 	if actual.EqualVT(expected) {
 		return assert.Fail(t, fmt.Sprintf("Should not be: %#v\n", actual), msgAndArgs...)
@@ -56,7 +58,7 @@ func NotEqual[T message[V], V any](t testing.TB, expected, actual T, msgAndArgs 
 }
 
 // SlicesEqual determines if the expected and actual slices are equal.
-func SlicesEqual[S ~[]T, T message[V], V any](t testing.TB, expected, actual S, msgAndArgs ...any) bool {
+func SlicesEqual[S ~[]T, T Message[V], V any](t testing.TB, expected, actual S, msgAndArgs ...any) bool {
 	t.Helper()
 	if !assert.Len(t, actual, len(expected), msgAndArgs...) {
 		return false
@@ -69,7 +71,7 @@ func SlicesEqual[S ~[]T, T message[V], V any](t testing.TB, expected, actual S, 
 }
 
 // SliceContains mimics [assert.Contains].
-func SliceContains[S ~[]T, T message[V], V any](t testing.TB, s S, contains T, msgAndArgs ...any) bool {
+func SliceContains[S ~[]T, T Message[V], V any](t testing.TB, s S, contains T, msgAndArgs ...any) bool {
 	t.Helper()
 	for _, e := range s {
 		// Do not use [Equal] here, as it will unnecessarily log unequal elements.
@@ -81,7 +83,7 @@ func SliceContains[S ~[]T, T message[V], V any](t testing.TB, s S, contains T, m
 }
 
 // SliceNotContains mimics [assert.NotContains].
-func SliceNotContains[S ~[]T, T message[V], V any](t testing.TB, s S, contains T, msgAndArgs ...any) bool {
+func SliceNotContains[S ~[]T, T Message[V], V any](t testing.TB, s S, contains T, msgAndArgs ...any) bool {
 	t.Helper()
 	for i, e := range s {
 		// Do not use [Equal] here, as it will unnecessarily log unequal elements.
@@ -93,7 +95,7 @@ func SliceNotContains[S ~[]T, T message[V], V any](t testing.TB, s S, contains T
 }
 
 // ElementsMatch mimics [assert.ElementsMatch].
-func ElementsMatch[S ~[]T, T message[V], V any](t testing.TB, expected, actual S, msgAndArgs ...any) bool {
+func ElementsMatch[S ~[]T, T Message[V], V any](t testing.TB, expected, actual S, msgAndArgs ...any) bool {
 	t.Helper()
 	if len(expected) == 0 && len(actual) == 0 {
 		return true
@@ -106,7 +108,7 @@ func ElementsMatch[S ~[]T, T message[V], V any](t testing.TB, expected, actual S
 }
 
 // MapSliceEqual determines if the expected and actual maps (from key to slice) are equal.
-func MapSliceEqual[M ~map[K][]T, K comparable, T message[V], V any](t testing.TB, expected, actual M, msgAndArgs ...any) bool {
+func MapSliceEqual[M ~map[K][]T, K comparable, T Message[V], V any](t testing.TB, expected, actual M, msgAndArgs ...any) bool {
 	t.Helper()
 	expectedKeys := slices.Collect(maps.Keys(expected))
 	actualKeys := slices.Collect(maps.Keys(actual))
@@ -122,7 +124,7 @@ func MapSliceEqual[M ~map[K][]T, K comparable, T message[V], V any](t testing.TB
 }
 
 // MapEqual determines if the expected and actual maps are equal.
-func MapEqual[M ~map[K]T, K comparable, T message[V], V any](t testing.TB, expected, actual M, msgAndArgs ...any) bool {
+func MapEqual[M ~map[K]T, K comparable, T Message[V], V any](t testing.TB, expected, actual M, msgAndArgs ...any) bool {
 	t.Helper()
 	expectedKeys := slices.Collect(maps.Keys(expected))
 	actualKeys := slices.Collect(maps.Keys(actual))
@@ -141,7 +143,7 @@ func MapEqual[M ~map[K]T, K comparable, T message[V], V any](t testing.TB, expec
 //
 // diff returns a diff of both values as long as both are of the same type and
 // are a struct, map, slice, array or string. Otherwise it returns an empty string.
-func diff[T message[V], V any](expected, actual T) string {
+func diff[T Message[V], V any](expected, actual T) string {
 	if expected == nil || actual == nil {
 		return ""
 	}
@@ -170,7 +172,7 @@ func diff[T message[V], V any](expected, actual T) string {
 // If the values are not of like type, the returned strings will be prefixed
 // with the type name, and the value will be enclosed in parentheses similar
 // to a type conversion in the Go grammar.
-func formatUnequalValues[T message[V], V any](expected, actual T) (string, string) {
+func formatUnequalValues[T Message[V], V any](expected, actual T) (string, string) {
 	return truncatingFormat(expected), truncatingFormat(actual)
 }
 
@@ -194,7 +196,7 @@ func truncatingFormat(data any) string {
 // diffLists diffs two arrays/slices and returns slices of elements that are only in A and only in B.
 // If some element is present multiple times, each instance is counted separately (e.g. if something is 2x in A and
 // 5x in B, it will be 0x in extraA and 3x in extraB). The order of items in both lists is ignored.
-func diffSlices[V any, T message[V]](a, b []T) (extraA, extraB []T) {
+func diffSlices[V any, T Message[V]](a, b []T) (extraA, extraB []T) {
 	aLen, bLen := len(a), len(b)
 
 	visited := make([]bool, bLen)
@@ -227,7 +229,7 @@ func diffSlices[V any, T message[V]](a, b []T) (extraA, extraB []T) {
 }
 
 // formatSliceDiff is based on [assert.formatListDiff].
-func formatSliceDiff[V any, T message[V]](sliceA, sliceB, extraA, extraB []T) string {
+func formatSliceDiff[V any, T Message[V]](sliceA, sliceB, extraA, extraB []T) string {
 	var msg bytes.Buffer
 
 	msg.WriteString("elements differ")
