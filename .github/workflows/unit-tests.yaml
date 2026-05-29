@@ -31,9 +31,13 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+        # Run on both runners to collect CPU metrics and compare performance.
+        runner: [ 'ubuntu-latest', 'ubuntu-24.04-arm' ]
+        # Run 10 iterations for statistical timing analysis.
+        iteration: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
         exclude:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     # Stable version ldflags for test caching: Go's test cache keys include
@@ -51,10 +55,11 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         free-disk-space: 30
 
-    - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
-      with:
-        key-suffix: ${{ matrix.gotags }}
+    # Cache disabled for POC: rebuild everything to measure true compile performance
+    # - name: Cache Go dependencies
+    #   uses: ./.github/actions/cache-go-dependencies
+    #   with:
+    #     key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests

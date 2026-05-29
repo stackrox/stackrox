@@ -289,7 +289,9 @@ jobs:
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
     needs: define-job-matrix
-    runs-on: ubuntu-latest
+    # Use native arm64 runner to test if native compilation is faster than cross-compilation
+    # and to collect CPU metrics for both architectures.
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     env:
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
@@ -304,14 +306,15 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Cache Go dependencies
-        env:
-          GOARCH: ${{ matrix.arch }}
-        uses: ./.github/actions/cache-go-dependencies
-        with:
-          # Only race needs a separate cache (-race/CGO_ENABLED=1 produces 39% unique entries).
-          # Default and prerelease share 93% of entries and should use the same cache.
-          key-suffix: ${{ (matrix.name == 'race-condition-debug' && 'race') || '' }}
+      # Cache disabled for POC: rebuild everything to measure true compile performance
+      # - name: Cache Go dependencies
+      #   env:
+      #     GOARCH: ${{ matrix.arch }}
+      #   uses: ./.github/actions/cache-go-dependencies
+      #   with:
+      #     # Only race needs a separate cache (-race/CGO_ENABLED=1 produces 39% unique entries).
+      #     # Default and prerelease share 93% of entries and should use the same cache.
+      #     key-suffix: ${{ (matrix.name == 'race-condition-debug' && 'race') || '' }}
 
       - name: PR labels
         uses: joerick/pr-labels-action@0543b277721e852d821c6738d449f2f4dea03d5f # ratchet:joerick/pr-labels-action@v1.0.9
