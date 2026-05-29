@@ -534,7 +534,7 @@ _post_to_slack() {
     local body="$1"
     local data_file="$2"
     local webhook_url="$3"
-    jq "$body" "${data_file}" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+    jq "$body" "${data_file}" | curl --fail -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 _CENTRAL_STORAGE_DIR="central-metrics"
 
