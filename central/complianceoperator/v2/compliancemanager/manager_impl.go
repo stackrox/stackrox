@@ -142,6 +142,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 
 	scanRequest.Id = uuid.NewV4().String()
 	scanRequest.CreatedTime = protocompat.TimestampNow()
+	scanRequest.IsManaged = true
 
 	validatedProfiles, err := m.validateScan(ctx, scanRequest, clusters)
 	if err != nil {
@@ -625,6 +626,87 @@ func (m *managerImpl) updateClusterStatus(ctx context.Context, scanConfigID stri
 	}
 
 	return m.scanSettingDS.UpdateClusterStatus(ctx, scanConfigID, clusterID, clusterStatus, clusterName)
+}
+
+func (m *managerImpl) ReconcileDiscoveredConfig(_ context.Context, ssbName string) error {
+	if !features.ComplianceEnhancements.Enabled() {
+		return nil
+	}
+
+	ctx := sac.WithAllAccess(context.Background())
+	existing, err := m.scanSettingDS.GetScanConfigurationByName(ctx, ssbName)
+	if err != nil {
+		return errors.Wrapf(err, "looking up scan config %q", ssbName)
+	}
+	if existing != nil && existing.GetIsManaged() {
+		return nil
+	}
+
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanSettingBindingName, ssbName).
+		ProtoQuery()
+	discovered, err := m.ssbDS.GetDistinctScanConfigs(ctx, query)
+	if err != nil {
+		return errors.Wrapf(err, "aggregating SSBs for %q", ssbName)
+	}
+
+	var dc *ssbDatastore.DiscoveredScanConfig
+	for _, d := range discovered {
+		if d.Name == ssbName {
+			dc = d
+			break
+		}
+	}
+
+	if dc == nil {
+		if existing != nil {
+			_, err = m.scanSettingDS.DeleteScanConfiguration(ctx, existing.GetId())
+			if err != nil {
+				log.Errorf("deleting orphaned discovered config %q: %v", ssbName, err)
+			}
+		}
+		return nil
+	}
+
+	clusters := make([]*storage.ComplianceOperatorScanConfigurationV2_Cluster, 0, len(dc.ClusterIDs))
+	for _, cid := range dc.ClusterIDs {
+		clusters = append(clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{ClusterId: cid})
+	}
+	profiles := make([]*storage.ComplianceOperatorScanConfigurationV2_ProfileName, 0, len(dc.ProfileNames))
+	for _, p := range dc.ProfileNames {
+		profiles = append(profiles, &storage.ComplianceOperatorScanConfigurationV2_ProfileName{ProfileName: p})
+	}
+
+	var scanConfig *storage.ComplianceOperatorScanConfigurationV2
+	if existing != nil {
+		existing.Clusters = clusters
+		existing.Profiles = profiles
+		existing.LastUpdatedTime = protocompat.TimestampNow()
+		if err := m.scanSettingDS.UpsertScanConfiguration(ctx, existing); err != nil {
+			return err
+		}
+		scanConfig = existing
+	} else {
+		scanConfig = &storage.ComplianceOperatorScanConfigurationV2{
+			Id:              uuid.NewV4().String(),
+			ScanConfigName:  ssbName,
+			IsManaged:       false,
+			Clusters:        clusters,
+			Profiles:        profiles,
+			CreatedTime:     protocompat.TimestampNow(),
+			LastUpdatedTime: protocompat.TimestampNow(),
+		}
+		if err := m.scanSettingDS.UpsertScanConfiguration(ctx, scanConfig); err != nil {
+			return err
+		}
+	}
+
+	for _, cid := range dc.ClusterIDs {
+		if err := m.updateClusterStatus(ctx, scanConfig.GetId(), cid, ""); err != nil {
+			log.Errorf("updating cluster status for discovered config %q cluster %s: %v", ssbName, cid, err)
+		}
+	}
+	return nil
 }
 
 func convertSchedule(scanRequest *storage.ComplianceOperatorScanConfigurationV2) (string, error) {

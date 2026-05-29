@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
-	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	bindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
@@ -283,7 +283,7 @@ func convertStorageReportDataToV2ScanStatus(ctx context.Context, reportData *sto
 	return &v2.ComplianceScanConfigurationStatus{
 		Id:        reportData.GetScanConfiguration().GetId(),
 		ScanName:  reportData.GetScanConfiguration().GetScanConfigName(),
-		IsManaged: true,
+		IsManaged: reportData.GetScanConfiguration().GetIsManaged(),
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: reportData.GetScanConfiguration().GetOneTimeScan(),
 			Profiles: func() []string {
@@ -391,13 +391,17 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 	return &v2.ComplianceScanConfigurationStatus{
 		Id:        scanConfig.GetId(),
 		ScanName:  scanConfig.GetScanConfigName(),
-		IsManaged: true,
+		IsManaged: scanConfig.GetIsManaged(),
 		ClusterStatus: func() []*v2.ClusterScanStatus {
 			clusterStatuses := make([]*v2.ClusterScanStatus, 0, len(scanClusters))
 			for _, cluster := range scanClusters {
 				var errors []string
+				ssbSearchField := search.ComplianceOperatorScanConfigName
+				if !scanConfig.GetIsManaged() {
+					ssbSearchField = search.ComplianceOperatorScanSettingBindingName
+				}
 				bindings, err := bindingsDS.GetScanSettingBindings(ctx, search.NewQueryBuilder().
-					AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfig.GetScanConfigName()).
+					AddExactMatches(ssbSearchField, scanConfig.GetScanConfigName()).
 					AddExactMatches(search.ClusterID, cluster.GetClusterId()).ProtoQuery())
 				if err != nil {
 					continue
@@ -565,77 +569,6 @@ func convertStorageSnapshotToV2Snapshot(ctx context.Context, snapshot *storage.C
 		IsDownloadAvailable: isDownloadReady,
 	}
 	return retSnapshot, nil
-}
-
-func convertDiscoveredToV2ScanStatus(ctx context.Context,
-	dc *bindingsDS.DiscoveredScanConfig,
-	ssbDS bindingsDS.DataStore, suiteDS suiteDS.DataStore,
-	clusterDS clusterDatastore.DataStore,
-) (*v2.ComplianceScanConfigurationStatus, error) {
-	if dc == nil {
-		return nil, nil
-	}
-
-	var lastScanTime *types.Timestamp
-	suiteClusters, err := suiteDS.GetSuites(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorSuiteName, dc.Name).ProtoQuery())
-	if err != nil {
-		return nil, err
-	}
-	clusterToSuiteMap := make(map[string]*v2.ClusterScanStatus_SuiteStatus, len(suiteClusters))
-	for _, suite := range suiteClusters {
-		suiteStatus := &v2.ClusterScanStatus_SuiteStatus{
-			Phase:        suite.GetStatus().GetPhase(),
-			Result:       suite.GetStatus().GetResult(),
-			ErrorMessage: suite.GetStatus().GetErrorMessage(),
-		}
-		conditions := suite.GetStatus().GetConditions()
-		for _, c := range conditions {
-			if suiteStatus.GetLastTransitionTime() == nil || protoutils.After(c.GetLastTransitionTime(), suiteStatus.GetLastTransitionTime()) {
-				suiteStatus.LastTransitionTime = c.GetLastTransitionTime()
-			}
-		}
-		if suite.GetStatus().GetPhase() == suiteComplete && (lastScanTime == nil || protoutils.After(suiteStatus.GetLastTransitionTime(), lastScanTime)) {
-			lastScanTime = suiteStatus.GetLastTransitionTime()
-		}
-		clusterToSuiteMap[suite.GetClusterId()] = suiteStatus
-	}
-
-	clusterStatuses := make([]*v2.ClusterScanStatus, 0, len(dc.ClusterIDs))
-	for _, clusterID := range dc.ClusterIDs {
-		clusterName, found, err := clusterDS.GetClusterName(ctx, clusterID)
-		if err != nil || !found {
-			clusterName = clusterID
-		}
-
-		var errs []string
-		bindings, err := ssbDS.GetScanSettingBindings(ctx, search.NewQueryBuilder().
-			AddExactMatches(search.ComplianceOperatorScanSettingBindingName, dc.Name).
-			AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
-		if err == nil && len(bindings) > 0 {
-			bindingError := getLatestBindingError(bindings[0].GetStatus())
-			if bindingError != "" {
-				errs = append(errs, bindingError)
-			}
-		}
-
-		clusterStatuses = append(clusterStatuses, &v2.ClusterScanStatus{
-			ClusterId:   clusterID,
-			ClusterName: clusterName,
-			Errors:      errs,
-			SuiteStatus: clusterToSuiteMap[clusterID],
-		})
-	}
-
-	return &v2.ComplianceScanConfigurationStatus{
-		ScanName:      dc.Name,
-		IsManaged:     false,
-		ClusterStatus: clusterStatuses,
-		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
-			Profiles: dc.ProfileNames,
-		},
-		LastExecutedTime: lastScanTime,
-	}, nil
 }
 
 func convertNotificationMethodToStorage(method v2.NotificationMethod) (storage.ComplianceOperatorReportStatus_NotificationMethod, error) {

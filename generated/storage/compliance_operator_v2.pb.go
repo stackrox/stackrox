@@ -989,6 +989,7 @@ type ComplianceOperatorScanConfigurationV2 struct {
 	Description   string                                           `protobuf:"bytes,15,opt,name=description,proto3" json:"description,omitempty"`
 	Clusters      []*ComplianceOperatorScanConfigurationV2_Cluster `protobuf:"bytes,16,rep,name=clusters,proto3" json:"clusters,omitempty"`
 	Notifiers     []*NotifierConfiguration                         `protobuf:"bytes,17,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	IsManaged     bool                                             `protobuf:"varint,19,opt,name=is_managed,json=isManaged,proto3" json:"is_managed,omitempty" search:"Compliance Scan Config Is Managed"` // @gotags: search:"Compliance Scan Config Is Managed"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1147,6 +1148,13 @@ func (x *ComplianceOperatorScanConfigurationV2) GetNotifiers() []*NotifierConfig
 		return x.Notifiers
 	}
 	return nil
+}
+
+func (x *ComplianceOperatorScanConfigurationV2) GetIsManaged() bool {
+	if x != nil {
+		return x.IsManaged
+	}
+	return false
 }
 
 // Next Tag: 7
@@ -3089,7 +3097,7 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\fRuleControls\x12\x1a\n" +
 	"\bstandard\x18\x01 \x01(\tR\bstandard\x12\x1e\n" +
 	"\bcontrols\x18\x02 \x03(\tB\x02\x18\x01R\bcontrols\x12\x18\n" +
-	"\acontrol\x18\x03 \x01(\tR\acontrol\"\xaa\v\n" +
+	"\acontrol\x18\x03 \x01(\tR\acontrol\"\xc9\v\n" +
 	"%ComplianceOperatorScanConfigurationV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12(\n" +
 	"\x10scan_config_name\x18\x02 \x01(\tR\x0escanConfigName\x126\n" +
@@ -3111,7 +3119,9 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"modifiedBy\x12 \n" +
 	"\vdescription\x18\x0f \x01(\tR\vdescription\x12R\n" +
 	"\bclusters\x18\x10 \x03(\v26.storage.ComplianceOperatorScanConfigurationV2.ClusterR\bclusters\x12<\n" +
-	"\tnotifiers\x18\x11 \x03(\v2\x1e.storage.NotifierConfigurationR\tnotifiers\x1a9\n" +
+	"\tnotifiers\x18\x11 \x03(\v2\x1e.storage.NotifierConfigurationR\tnotifiers\x12\x1d\n" +
+	"\n" +
+	"is_managed\x18\x13 \x01(\bR\tisManaged\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +

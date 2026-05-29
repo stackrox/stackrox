@@ -1440,40 +1440,6 @@ func (s *ComplianceScanConfigServiceTestSuite) TestTranslateToSSBQuery() {
 	}
 }
 
-func (s *ComplianceScanConfigServiceTestSuite) TestUnionStrings() {
-	tests := map[string]struct {
-		a, b     []string
-		expected []string
-	}{
-		"both empty": {
-			a: nil, b: nil,
-			expected: nil,
-		},
-		"first empty": {
-			a: nil, b: []string{"a", "b"},
-			expected: []string{"a", "b"},
-		},
-		"second empty": {
-			a: []string{"a"}, b: nil,
-			expected: []string{"a"},
-		},
-		"no overlap": {
-			a: []string{"a"}, b: []string{"b"},
-			expected: []string{"a", "b"},
-		},
-		"with overlap": {
-			a: []string{"a", "b"}, b: []string{"b", "c"},
-			expected: []string{"a", "b", "c"},
-		},
-	}
-	for name, tc := range tests {
-		s.T().Run(name, func(t *testing.T) {
-			result := unionStrings(tc.a, tc.b)
-			s.ElementsMatch(tc.expected, result)
-		})
-	}
-}
-
 func getTestAPIRec() *apiV2.ComplianceScanConfiguration {
 	return &apiV2.ComplianceScanConfiguration{
 		ScanName: "test-scan",

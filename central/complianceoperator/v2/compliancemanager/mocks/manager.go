@@ -112,6 +112,20 @@ func (mr *MockManagerMockRecorder) ProcessScanRequest(ctx, scanRequest, clusters
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessScanRequest", reflect.TypeOf((*MockManager)(nil).ProcessScanRequest), ctx, scanRequest, clusters)
 }
 
+// ReconcileDiscoveredConfig mocks base method.
+func (m *MockManager) ReconcileDiscoveredConfig(ctx context.Context, ssbName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReconcileDiscoveredConfig", ctx, ssbName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReconcileDiscoveredConfig indicates an expected call of ReconcileDiscoveredConfig.
+func (mr *MockManagerMockRecorder) ReconcileDiscoveredConfig(ctx, ssbName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReconcileDiscoveredConfig", reflect.TypeOf((*MockManager)(nil).ReconcileDiscoveredConfig), ctx, ssbName)
+}
+
 // Sync mocks base method.
 func (m *MockManager) Sync(ctx context.Context) {
 	m.ctrl.T.Helper()

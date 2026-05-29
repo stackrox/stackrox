@@ -79,6 +79,7 @@ type ComplianceOperatorScanConfigurationV2 struct {
 	ID             string `gorm:"column:id;type:uuid;primaryKey"`
 	ScanConfigName string `gorm:"column:scanconfigname;type:varchar;unique"`
 	ModifiedByName string `gorm:"column:modifiedby_name;type:varchar"`
+	IsManaged      bool   `gorm:"column:ismanaged;type:bool"`
 	Serialized     []byte `gorm:"column:serialized;type:bytea"`
 }
 
