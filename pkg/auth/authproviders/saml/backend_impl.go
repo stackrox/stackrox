@@ -8,12 +8,22 @@ import (
 
 	"github.com/pkg/errors"
 	saml2 "github.com/russellhaering/gosaml2"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	events "github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
+)
+
+var (
+	log = logging.LoggerForModule(events.EnableAdministrationEvents())
+
+	errAssertionExpired = errox.NotAuthorized.New("SAML assertion expired or not yet valid")
 )
 
 // All configuration keys the auth provider exposes within the auth provider config map.
@@ -31,11 +41,13 @@ type backendImpl struct {
 	acsURLPath string
 	sp         saml2.SAMLServiceProvider
 	id         string
+	provider   authproviders.Provider
 
 	config map[string]string
 }
 
-func (p *backendImpl) OnEnable(_ authproviders.Provider) {
+func (p *backendImpl) OnEnable(provider authproviders.Provider) {
+	p.provider = provider
 	p.factory.RegisterBackend(p)
 }
 
@@ -115,6 +127,14 @@ func (p *backendImpl) consumeSAMLResponse(samlResponse string) (*authproviders.A
 	ai, err := p.sp.RetrieveAssertionInfo(samlResponse)
 	if err != nil {
 		return nil, errors.Wrap(err, "error in saml response")
+	}
+
+	if ai.WarningInfo != nil && ai.WarningInfo.InvalidTime {
+		log.Warnw("SAML assertion expired or not yet valid, rejecting authentication.",
+			logging.ErrCode(codes.SAMLAssertionExpired),
+			logging.AuthProviderName(p.provider.Name()),
+		)
+		return nil, errAssertionExpired
 	}
 
 	var expiry time.Time
