@@ -32,7 +32,8 @@ runs:
       run: |
         gocache="${{ steps.cache-paths.outputs.GOCACHE }}"
         key_prefix="go-build-v3-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}"
-        marker="$gocache/.cache-restored-$(echo "$key_prefix" | md5sum | cut -c1-12)"
+        mkdir -p /tmp/warm-cache-markers
+        marker="/tmp/warm-cache-markers/$(echo "$key_prefix" | md5sum | cut -c1-12)"
         if [[ -f "$marker" ]]; then
           echo "Local GOCACHE already has key prefix: $key_prefix"
           echo "skip=true" >> "$GITHUB_OUTPUT"
