@@ -226,3 +226,12 @@ EOF
     # Third: no underscore, use full ruleId as classname, "unknown" as name
     assert_output --partial '<testcase name="unknown" classname="no-underscore-format">'
 }
+
+@test "fails on malformed sarif" {
+    local sarif_file="${BATS_TEST_TMPDIR}/bad.sarif"
+    echo "not json" > "${sarif_file}"
+
+    run "${BATS_TEST_DIRNAME}/sarif-to-junit.sh" "${sarif_file}" "test-image:latest"
+    assert_failure
+    assert_output --partial 'Failed to parse SARIF'
+}
