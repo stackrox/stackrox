@@ -146,11 +146,17 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 
 	var osRouteFactory osRouteExtVersions.SharedInformerFactory
+	var routesAvailable bool
 	if k.client.OpenshiftRoute() != nil {
-		osRouteFactory = osRouteExtVersions.NewSharedInformerFactory(k.client.OpenshiftRoute(), noResyncPeriod)
-		concurrency.WithLock(&k.sifLock, func() {
-			k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, osRouteFactory)
-		})
+		if resourceList, err := listenerUtils.ServerResourcesForGroup(k.client, osRouteGroupVersion); err != nil {
+			log.Errorf("Checking API resources for group %q: %v", osRouteGroupVersion, err)
+		} else if listenerUtils.ResourceExists(resourceList, osRoutesResourceName, osRouteGroupVersion) {
+			routesAvailable = true
+			osRouteFactory = osRouteExtVersions.NewSharedInformerFactory(k.client.OpenshiftRoute(), noResyncPeriod)
+			concurrency.WithLock(&k.sifLock, func() {
+				k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, osRouteFactory)
+			})
+		}
 	}
 
 	// We want creates to be treated as updates while existing objects are loaded.
@@ -415,7 +421,7 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(k.context, informerNodes, sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 	handle(k.context, informerServices, sif.Core().V1().Services().Informer(), dispatchers.ForServices(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 
-	if osRouteFactory != nil {
+	if routesAvailable {
 		handle(k.context, informerRoutes, osRouteFactory.Route().V1().Routes().Informer(), dispatchers.ForOpenshiftRoutes(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 

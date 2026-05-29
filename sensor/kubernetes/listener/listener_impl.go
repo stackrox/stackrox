@@ -26,6 +26,9 @@ const (
 	osImageDigestMirrorSetsResourceName = "imagedigestmirrorsets"
 	osImageTagMirrorSetsResourceName    = "imagetagmirrorsets"
 
+	osRouteGroupVersion  = "route.openshift.io/v1"
+	osRoutesResourceName = "routes"
+
 	osOperatorAlphaGroupVersion              = "operator.openshift.io/v1alpha1"
 	osImageContentSourcePoliciesResourceName = "imagecontentsourcepolicies"
 )
