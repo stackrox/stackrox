@@ -265,7 +265,7 @@ spec:
           description: Full operator-index image tag with v prefix and -fast suffix to avoid collision with GHA builds
         steps:
         - name: compute-index-tag
-          image: registry.access.redhat.com/ubi9-minimal:latest@sha256:12db9874bd753eb98b1ab3d840e75de5d6842ac0604fbd68c012adefe97140be
+          image: registry.access.redhat.com/ubi9-minimal:latest@sha256:5b74fce9d6e629942a0c6dc0f546c193e70d7f974d999a48c948c53dd3d36362
           script: |
             #!/bin/bash
             set -euo pipefail
@@ -349,7 +349,7 @@ spec:
           - $(params.SOURCE_ARTIFACT)=/var/workdir/source
         - name: build-index-content
           # Using the image with go and yq preinstalled
-          image: quay.io/stackrox-io/apollo-ci:stackrox-test-stable@sha256:4830f867bf50f9084d03d8ba32ea0eea098284b99e69d2039bb3a66763c7742b
+          image: quay.io/stackrox-io/apollo-ci:stackrox-test-stable@sha256:d8f6164e396534c9cfb7fd908f42278ea8063e14132009cbed7504006dd46bd6
           workingDir: /var/workdir/source/operator
           securityContext:
             runAsUser: 0
