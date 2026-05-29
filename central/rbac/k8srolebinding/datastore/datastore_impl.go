@@ -96,7 +96,3 @@ func (c *K8SRoleBindingSearchResultConverter) BuildLocation(result *searchPkg.Re
 func (c *K8SRoleBindingSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_ROLEBINDINGS
 }
-
-func (c *K8SRoleBindingSearchResultConverter) GetScore(result *searchPkg.Result) float64 {
-	return result.Score
-}

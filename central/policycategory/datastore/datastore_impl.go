@@ -335,7 +335,3 @@ func (c *PolicyCategorySearchResultConverter) BuildLocation(result *searchPkg.Re
 func (c *PolicyCategorySearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_POLICY_CATEGORIES
 }
-
-func (c *PolicyCategorySearchResultConverter) GetScore(result *searchPkg.Result) float64 {
-	return result.Score
-}

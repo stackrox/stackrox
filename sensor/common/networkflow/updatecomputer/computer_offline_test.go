@@ -10,10 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestTransitionBasedComputeUpdatedConnsOffline tests the offline behavior for the TransitionBased update computer.
-// This test doesn't apply to `Legacy` since its offline behavior relies on implementation details
-// within NetFlowManager.
-func TestTransitionBasedComputeUpdatedConnsOffline(t *testing.T) {
+// TestComputeUpdatedConnsOffline tests the offline behavior of the update computer.
+func TestComputeUpdatedConnsOffline(t *testing.T) {
 	// Disable feature flags to test the original behavior
 	t.Setenv("ROX_NETFLOW_BATCHING", "false")
 	t.Setenv("ROX_NETFLOW_CACHE_LIMITING", "false")
@@ -194,8 +192,8 @@ func TestTransitionBasedComputeUpdatedConnsOffline(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewTransitionBased()
-			// Initial online update - for TransitionBased, we must trigger a single computation and call `OnSuccessfulSend`
+			l := New()
+			// Initial online update requires a single computation followed by OnSuccessfulSend.
 			_ = l.ComputeUpdatedConns(tc.initialOnlineState)
 			l.OnSuccessfulSendConnections(tc.initialOnlineState)
 

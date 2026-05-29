@@ -191,11 +191,7 @@ func (c *connStatus) pastContainerResolutionDeadline(now timestamp.MicroTS) bool
 
 // checkRemoveCondition returns true when the given entity can be removed from the enrichment queue.
 // It returns false if the enrichment should be retried in the next tick.
-func (c *connStatus) checkRemoveCondition(useLegacy, isConsumed bool) bool {
-	// Legacy UpdateComputer requires keeping all open entities in the enrichment queue until they are closed.
-	if useLegacy {
-		return c.rotten || (c.isClosed() && isConsumed)
-	}
+func (c *connStatus) checkRemoveCondition(isConsumed bool) bool {
 	return c.rotten || isConsumed
 }
 

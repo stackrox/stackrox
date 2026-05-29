@@ -1,12 +1,8 @@
-import { all, call, fork, put, take, takeLatest } from 'redux-saga/effects';
+import { all, call, fork, put, take } from 'redux-saga/effects';
 
 import { integrationsPath } from 'routePaths';
-import {
-    fetchAPITokens as serviceFetchAPITokens,
-    revokeAPITokens as serviceRevokeAPITokens,
-} from 'services/APITokensService';
+import { fetchAPITokens as serviceFetchAPITokens } from 'services/APITokensService';
 import { actions, types } from 'reducers/apitokens';
-import { actions as notificationActions } from 'reducers/notifications';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 
 function* getAPITokens() {
@@ -15,24 +11,6 @@ function* getAPITokens() {
         yield put(actions.fetchAPITokens.success(result.response));
     } catch (error) {
         yield put(actions.fetchAPITokens.failure(error));
-    }
-}
-
-function* revokeAPITokens({ ids }) {
-    try {
-        yield call(serviceRevokeAPITokens, ids);
-        yield fork(getAPITokens);
-        yield put(
-            notificationActions.addNotification(
-                `Successfully revoked ${ids.length} token${ids.length > 1 ? 's' : ''}`
-            )
-        );
-        yield put(notificationActions.removeOldestNotification());
-    } catch (error) {
-        if (error.response) {
-            yield put(notificationActions.addNotification(error.response.data.error));
-            yield put(notificationActions.removeOldestNotification());
-        }
     }
 }
 
@@ -47,10 +25,6 @@ function* watchFetchRequest() {
     }
 }
 
-function* watchRevokeRequest() {
-    yield takeLatest(types.REVOKE_API_TOKENS, revokeAPITokens);
-}
-
 export default function* integrations() {
-    yield all([fork(watchLocation), fork(watchFetchRequest), fork(watchRevokeRequest)]);
+    yield all([fork(watchLocation), fork(watchFetchRequest)]);
 }

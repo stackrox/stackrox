@@ -5,13 +5,20 @@ import type { AuthMachineToMachineConfig } from './MachineAccessService';
 import { updateCloudSource } from './CloudSourceService';
 import type { UpdateCloudSourceRequest } from './CloudSourceService';
 
-export type IntegrationSource =
-    | 'authProviders'
-    | 'backups'
-    | 'imageIntegrations'
-    | 'notifiers'
-    | 'signatureIntegrations'
-    | 'cloudSources';
+export const serviceIntegrationSources = [
+    'authProviders',
+    'backups',
+    'imageIntegrations',
+    'notifiers',
+    'signatureIntegrations',
+    'cloudSources',
+] as const;
+
+export type IntegrationSource = (typeof serviceIntegrationSources)[number];
+
+export function isServiceIntegrationSource(source: string): source is IntegrationSource {
+    return serviceIntegrationSources.some((s) => s === source);
+}
 
 function getPath(source: IntegrationSource): string {
     switch (source) {
