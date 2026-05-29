@@ -598,15 +598,6 @@ jobs:
           fi
           echo "platforms=${PLATFORMS}" >> "$GITHUB_OUTPUT"
 
-      - name: Determine image expiration
-        id: expiration
-        run: |
-          if [[ "${GITHUB_REF}" =~ ^refs/tags/ ]]; then
-            echo "expiration=never" >> "$GITHUB_OUTPUT"
-          else
-            echo "expiration=13w" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Checkout submodules
         run: git submodule update --init
 
@@ -770,7 +761,7 @@ jobs:
           REGISTRY: ${{ matrix.registry }}
           ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
           ROX_IMAGE_FLAVOR: ${{ matrix.image_flavor }}
-          QUAY_TAG_EXPIRATION: ${{ steps.expiration.outputs.expiration }}
+          QUAY_TAG_EXPIRATION: ${{ needs.define-job-matrix.outputs.quay-tag-expiration }}
 
       - name: Add latest tags for master merges
         if: github.event_name == 'push' && github.ref_name == 'master'
