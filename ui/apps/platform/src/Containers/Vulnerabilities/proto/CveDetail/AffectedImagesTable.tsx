@@ -1,5 +1,15 @@
+import { useState } from 'react';
+
 import { Bullseye, Label } from '@patternfly/react-core';
-import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import {
+    ExpandableRowContent,
+    Table,
+    Tbody,
+    Td,
+    Th,
+    Thead,
+    Tr,
+} from '@patternfly/react-table';
 
 import type { ProtoImage } from './useCveDetail';
 
@@ -42,46 +52,134 @@ type AffectedImagesTableProps = {
 };
 
 /**
- * Displays a table of affected images for a given CVE.
+ * Displays a table of affected images for a given CVE, with expandable rows
+ * showing the components affected within each image.
  */
 function AffectedImagesTable({ images }: AffectedImagesTableProps) {
+    const [expandedImages, setExpandedImages] = useState<Set<string>>(
+        new Set()
+    );
+
+    function toggleExpand(imageId: string) {
+        setExpandedImages((prev) => {
+            const next = new Set(prev);
+            if (next.has(imageId)) {
+                next.delete(imageId);
+            } else {
+                next.add(imageId);
+            }
+            return next;
+        });
+    }
+
+    const columnCount = 5; // toggle + image ID + components + severity + fixable
+
     return (
         <Table aria-label="Affected images" variant="compact">
             <Thead>
                 <Tr>
+                    <Th screenReaderText="Row expansion" />
                     <Th>Image ID</Th>
                     <Th>Components</Th>
                     <Th>Severity</Th>
                     <Th>Fixable</Th>
                 </Tr>
             </Thead>
-            <Tbody>
-                {images.map((img) => (
-                    <Tr key={img.imageId}>
-                        <Td dataLabel="Image ID">
-                            <span title={img.imageId}>
-                                {truncateImageId(img.imageId)}
-                            </span>
-                        </Td>
-                        <Td dataLabel="Components">{img.componentCount}</Td>
-                        <Td dataLabel="Severity">
-                            <Label color={severityColor(img.severity)}>
-                                {severityNames[img.severity] ?? 'Unknown'}
-                            </Label>
-                        </Td>
-                        <Td dataLabel="Fixable">
-                            {img.fixable ? 'Yes' : 'No'}
-                        </Td>
-                    </Tr>
-                ))}
-                {images.length === 0 && (
+            {images.map((img, rowIndex) => {
+                const isExpanded = expandedImages.has(img.imageId);
+                const imageDetailUrl = `/main/vulnerabilities/workload-cves/images/${img.imageId}`;
+                return (
+                    <Tbody key={img.imageId} isExpanded={isExpanded}>
+                        <Tr>
+                            <Td
+                                expand={{
+                                    rowIndex,
+                                    isExpanded,
+                                    onToggle: () => toggleExpand(img.imageId),
+                                }}
+                            />
+                            <Td dataLabel="Image ID">
+                                <a
+                                    href={imageDetailUrl}
+                                    title={img.imageId}
+                                >
+                                    {truncateImageId(img.imageId)}
+                                </a>
+                            </Td>
+                            <Td dataLabel="Components">
+                                {img.componentCount}
+                            </Td>
+                            <Td dataLabel="Severity">
+                                <Label color={severityColor(img.severity)}>
+                                    {severityNames[img.severity] ?? 'Unknown'}
+                                </Label>
+                            </Td>
+                            <Td dataLabel="Fixable">
+                                {img.fixable ? 'Yes' : 'No'}
+                            </Td>
+                        </Tr>
+                        <Tr isExpanded={isExpanded}>
+                            <Td colSpan={columnCount}>
+                                <ExpandableRowContent>
+                                    {img.components &&
+                                    img.components.length > 0 ? (
+                                        <Table
+                                            aria-label={`Components for ${truncateImageId(img.imageId)}`}
+                                            variant="compact"
+                                            borders={false}
+                                        >
+                                            <Thead>
+                                                <Tr>
+                                                    <Th>Component</Th>
+                                                    <Th>Version</Th>
+                                                    <Th>Source</Th>
+                                                    <Th>Fixed By</Th>
+                                                </Tr>
+                                            </Thead>
+                                            <Tbody>
+                                                {img.components.map(
+                                                    (comp, compIdx) => (
+                                                        <Tr
+                                                            key={`${comp.name}-${comp.version}-${compIdx}`}
+                                                        >
+                                                            <Td dataLabel="Component">
+                                                                {comp.name}
+                                                            </Td>
+                                                            <Td dataLabel="Version">
+                                                                {comp.version}
+                                                            </Td>
+                                                            <Td dataLabel="Source">
+                                                                {comp.source}
+                                                            </Td>
+                                                            <Td dataLabel="Fixed By">
+                                                                {comp.fixedBy ||
+                                                                    '-'}
+                                                            </Td>
+                                                        </Tr>
+                                                    )
+                                                )}
+                                            </Tbody>
+                                        </Table>
+                                    ) : (
+                                        <Bullseye>
+                                            No component details available
+                                        </Bullseye>
+                                    )}
+                                </ExpandableRowContent>
+                            </Td>
+                        </Tr>
+                    </Tbody>
+                );
+            })}
+            {images.length === 0 && (
+                <Tbody>
                     <Tr>
-                        <Td colSpan={4}>
+                        <Td colSpan={columnCount}>
                             <Bullseye>No affected images found</Bullseye>
                         </Td>
                     </Tr>
-                )}
-            </Tbody>
+                </Tbody>
+            )}
         </Table>
     );
 }

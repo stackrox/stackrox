@@ -7,6 +7,9 @@ export type ProtoAdvisory = {
     severity: number;
     cvss: number;
     sourceName: string;
+    description?: string;
+    link?: string;
+    fixedBy?: string;
 };
 
 export type ProtoComponent = {
@@ -17,11 +20,19 @@ export type ProtoComponent = {
     imageCount: number;
 };
 
+export type ProtoImageComponent = {
+    name: string;
+    version: string;
+    source: string;
+    fixedBy?: string;
+};
+
 export type ProtoImage = {
     imageId: string;
     componentCount: number;
     severity: number;
     fixable: boolean;
+    components: ProtoImageComponent[];
 };
 
 export type CveDetailResponse = {

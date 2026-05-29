@@ -2,15 +2,17 @@ package api
 
 import (
 	"cmp"
-	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/scandata/datastore"
+	"github.com/stackrox/rox/central/scandata/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -57,20 +59,23 @@ type CVEListItem struct {
 
 // CVEDetailResponse is the response for GET /v1/scandata/cves/{cveName}
 type CVEDetailResponse struct {
-	CVEName    string              `json:"cveName"`
-	Severity   int32               `json:"severity"`
-	CVSS       float32             `json:"cvss"`
-	Advisories []AdvisoryInfo      `json:"advisories"`
-	Components []ComponentInfo     `json:"components"`
-	Images     []ImageInfo         `json:"images"`
+	CVEName    string          `json:"cveName"`
+	Severity   int32           `json:"severity"`
+	CVSS       float32         `json:"cvss"`
+	Advisories []AdvisoryInfo  `json:"advisories"`
+	Components []ComponentInfo `json:"components"`
+	Images     []ImageInfo     `json:"images"`
 }
 
 // AdvisoryInfo represents an advisory for a CVE
 type AdvisoryInfo struct {
-	ID         string  `json:"id"`
-	Severity   int32   `json:"severity"`
-	CVSS       float32 `json:"cvss"`
-	SourceName string  `json:"sourceName"`
+	ID          string  `json:"id"`
+	Severity    int32   `json:"severity"`
+	CVSS        float32 `json:"cvss"`
+	SourceName  string  `json:"sourceName"`
+	Description string  `json:"description,omitempty"`
+	Link        string  `json:"link,omitempty"`
+	FixedBy     string  `json:"fixedBy,omitempty"`
 }
 
 // ComponentInfo represents a component affected by a CVE
@@ -82,17 +87,26 @@ type ComponentInfo struct {
 	ImageCount int    `json:"imageCount"`
 }
 
+// ImageComponentInfo represents a component affected by a CVE within a specific image.
+type ImageComponentInfo struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	Source  string `json:"source"`
+	FixedBy string `json:"fixedBy,omitempty"`
+}
+
 // ImageInfo represents an image affected by a CVE
 type ImageInfo struct {
-	ImageID        string `json:"imageId"`
-	ComponentCount int    `json:"componentCount"`
-	Severity       int32  `json:"severity"`
-	Fixable        bool   `json:"fixable"`
+	ImageID        string               `json:"imageId"`
+	ComponentCount int                  `json:"componentCount"`
+	Severity       int32                `json:"severity"`
+	Fixable        bool                 `json:"fixable"`
+	Components     []ImageComponentInfo `json:"components"`
 }
 
 // ImageFindingsResponse is the response for GET /v1/scandata/images/{imageId}/findings
 type ImageFindingsResponse struct {
-	ImageID  string                `json:"imageId"`
+	ImageID  string                 `json:"imageId"`
 	Findings []FindingWithComponent `json:"findings"`
 }
 
@@ -170,21 +184,20 @@ func (h *handler) getCVEDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get all findings for this CVE
-	findings, err := h.datastore.GetFindingsByCVE(ctx, cveName)
+	// Get all findings with component data via a single JOIN query.
+	findingsWithComps, err := h.datastore.GetFindingsWithComponentsByCVE(ctx, cveName)
 	if err != nil {
 		log.Errorf("failed to get findings for CVE %s: %v", cveName, err)
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "getting CVE findings"))
 		return
 	}
 
-	if len(findings) == 0 {
+	if len(findingsWithComps) == 0 {
 		httputil.WriteGRPCStyleError(w, codes.NotFound, errors.Errorf("CVE %s not found", cveName))
 		return
 	}
 
-	// Build response by aggregating findings
-	response := buildCVEDetailResponse(ctx, h.datastore, cveName, findings)
+	response := buildCVEDetailResponse(cveName, findingsWithComps)
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -192,22 +205,36 @@ func (h *handler) getCVEDetail(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func buildCVEDetailResponse(ctx context.Context, ds datastore.DataStore, cveName string, findings []*storage.ScanFinding) *CVEDetailResponse {
-	// Track max severity and CVSS
+// advisoryLink constructs a URL for a known advisory ID prefix.
+func advisoryLink(id string) string {
+	switch {
+	case strings.HasPrefix(id, "GHSA-"):
+		return "https://github.com/advisories/" + id
+	case strings.HasPrefix(id, "GO-"):
+		return "https://pkg.go.dev/vuln/" + id
+	case strings.HasPrefix(id, "RHSA-"):
+		return "https://access.redhat.com/errata/" + id
+	default:
+		return ""
+	}
+}
+
+func buildCVEDetailResponse(cveName string, findings []*types.FindingWithComponent) *CVEDetailResponse {
 	var maxSeverity int32
 	var maxCVSS float32
 
-	// Track unique advisories
 	advisoryMap := make(map[string]*AdvisoryInfo)
 
-	// Track unique components by component ID
+	// Group components by name|version|source so the same component across images is one entry.
 	componentMap := make(map[string]*ComponentInfo)
 
-	// Track unique images
+	// Track per-image data including which components affect each image.
 	imageMap := make(map[string]*ImageInfo)
 
-	for _, f := range findings {
-		// Update max severity and CVSS
+	for _, fc := range findings {
+		f := fc.Finding
+
+		// Global max severity / CVSS
 		if f.GetSeverity() > storage.VulnerabilitySeverity(maxSeverity) {
 			maxSeverity = int32(f.GetSeverity())
 		}
@@ -215,31 +242,35 @@ func buildCVEDetailResponse(ctx context.Context, ds datastore.DataStore, cveName
 			maxCVSS = f.GetCvss()
 		}
 
-		// Track advisory
+		// Advisory (dedup by advisory ID)
 		advisoryID := f.GetAdvisoryId()
 		if advisoryID != "" && advisoryMap[advisoryID] == nil {
 			advisoryMap[advisoryID] = &AdvisoryInfo{
-				ID:         advisoryID,
-				Severity:   int32(f.GetSeverity()),
-				CVSS:       f.GetCvss(),
-				SourceName: f.GetSourceName(),
+				ID:          advisoryID,
+				Severity:    int32(f.GetSeverity()),
+				CVSS:        f.GetCvss(),
+				SourceName:  f.GetSourceName(),
+				Description: f.GetDescription(),
+				Link:        advisoryLink(advisoryID),
+				FixedBy:     f.GetFixedBy(),
 			}
 		}
 
-		// Track component (need to fetch component details)
-		compID := f.GetComponentId()
-		if componentMap[compID] == nil {
-			componentMap[compID] = &ComponentInfo{
-				Name:       "", // Will be populated below
-				Version:    "", // Will be populated below
-				Source:     "", // Will be populated below
+		// Component -- group by name|version|source, not by per-image component ID.
+		compSource := storage.SourceType(fc.ComponentSource).String()
+		compKey := fmt.Sprintf("%s|%s|%s", fc.ComponentName, fc.ComponentVersion, compSource)
+		if componentMap[compKey] == nil {
+			componentMap[compKey] = &ComponentInfo{
+				Name:       fc.ComponentName,
+				Version:    fc.ComponentVersion,
+				Source:     compSource,
 				FixedBy:    f.GetFixedBy(),
 				ImageCount: 0,
 			}
 		}
-		componentMap[compID].ImageCount++
+		componentMap[compKey].ImageCount++
 
-		// Track image
+		// Image -- track per-image components for expandable rows.
 		imageID := f.GetImageId()
 		if imageMap[imageID] == nil {
 			imageMap[imageID] = &ImageInfo{
@@ -247,51 +278,26 @@ func buildCVEDetailResponse(ctx context.Context, ds datastore.DataStore, cveName
 				ComponentCount: 0,
 				Severity:       int32(f.GetSeverity()),
 				Fixable:        f.GetIsFixable(),
+				Components:     nil,
 			}
 		} else {
-			// Update severity to max
 			if f.GetSeverity() > storage.VulnerabilitySeverity(imageMap[imageID].Severity) {
 				imageMap[imageID].Severity = int32(f.GetSeverity())
 			}
-			// Update fixable if any finding is fixable
 			if f.GetIsFixable() {
 				imageMap[imageID].Fixable = true
 			}
 		}
 		imageMap[imageID].ComponentCount++
+		imageMap[imageID].Components = append(imageMap[imageID].Components, ImageComponentInfo{
+			Name:    fc.ComponentName,
+			Version: fc.ComponentVersion,
+			Source:  compSource,
+			FixedBy: f.GetFixedBy(),
+		})
 	}
 
-	// Populate component names/versions (simple approach: query each image's scan data)
-	// For a prototype, we'll do this inefficiently. Production would use a JOIN query.
-	for compID, compInfo := range componentMap {
-		// Find any finding with this component ID
-		for _, f := range findings {
-			if f.GetComponentId() == compID {
-				// Get the scan data to find component details
-				scanData, err := ds.GetScanDataByImageID(ctx, f.GetImageId())
-				if err != nil {
-					log.Warnf("failed to get scan data for image %s: %v", f.GetImageId(), err)
-					continue
-				}
-
-				// Find the component
-				for _, comp := range scanData.Components {
-					if comp.GetId() == compID {
-						compInfo.Name = comp.GetName()
-						compInfo.Version = comp.GetVersion()
-						compInfo.Source = comp.GetSource().String()
-						break
-					}
-				}
-
-				if compInfo.Name != "" {
-					break
-				}
-			}
-		}
-	}
-
-	// Convert maps to slices
+	// Convert maps to slices.
 	advisories := make([]AdvisoryInfo, 0, len(advisoryMap))
 	for _, adv := range advisoryMap {
 		advisories = append(advisories, *adv)

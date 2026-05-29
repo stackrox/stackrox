@@ -396,6 +396,52 @@ func (s *storeImpl) GetFindingsByCVE(ctx context.Context, cveName string) ([]*st
 	})
 }
 
+// GetFindingsWithComponentsByCVE returns findings joined with their parent component's metadata.
+func (s *storeImpl) GetFindingsWithComponentsByCVE(ctx context.Context, cveName string) ([]*types.FindingWithComponent, error) {
+	return pgutils.Retry2(ctx, func() ([]*types.FindingWithComponent, error) {
+		query := fmt.Sprintf(`
+			SELECT f.serialized, c.name, c.version, c.source
+			FROM %s f
+			JOIN %s c ON f.componentid = c.id
+			WHERE f.cvename = $1
+		`, findingsTable, componentsTable)
+
+		rows, err := s.db.Query(ctx, query, cveName)
+		if err != nil {
+			return nil, errors.Wrap(err, "querying findings with components")
+		}
+		defer rows.Close()
+
+		var results []*types.FindingWithComponent
+		for rows.Next() {
+			var serialized []byte
+			var compName, compVersion string
+			var compSource int32
+			if err := rows.Scan(&serialized, &compName, &compVersion, &compSource); err != nil {
+				return nil, errors.Wrap(err, "scanning finding row")
+			}
+
+			finding := new(storage.ScanFinding)
+			if err := finding.UnmarshalVT(serialized); err != nil {
+				return nil, errors.Wrap(err, "unmarshaling finding")
+			}
+
+			results = append(results, &types.FindingWithComponent{
+				Finding:          finding,
+				ComponentName:    compName,
+				ComponentVersion: compVersion,
+				ComponentSource:  compSource,
+			})
+		}
+
+		if err := rows.Err(); err != nil {
+			return nil, errors.Wrap(err, "iterating finding rows")
+		}
+
+		return results, nil
+	})
+}
+
 // GetFindingsByImageID returns all findings for an image
 func (s *storeImpl) GetFindingsByImageID(ctx context.Context, imageID string) ([]*storage.ScanFinding, error) {
 	return pgutils.Retry2(ctx, func() ([]*storage.ScanFinding, error) {
