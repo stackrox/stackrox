@@ -154,6 +154,17 @@ func validateContents(contents *v4.Contents) error {
 	return nil
 }
 
+func validateCPEString(raw string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("cpe parser panicked: %v", r)
+		}
+	}()
+
+	_, err = cpe.Unbind(raw)
+	return err
+}
+
 func validateMap[T hasIDAndCPE](m map[string]T, fieldName string, validateF func(T) error) error {
 	for k, v := range m {
 		if reflect.ValueOf(v).IsZero() {
@@ -162,8 +173,7 @@ func validateMap[T hasIDAndCPE](m map[string]T, fieldName string, validateF func
 		if v.GetId() == "" {
 			return fmt.Errorf("%s element %q: ID is empty", fieldName, k)
 		}
-		_, err := cpe.Unbind(v.GetCpe())
-		if err != nil {
+		if err := validateCPEString(v.GetCpe()); err != nil {
 			return fmt.Errorf("%s element %q: invalid CPE: %w", fieldName, k, err)
 		}
 		if err := validateF(v); err != nil {
@@ -182,8 +192,7 @@ func validateList[T hasIDAndCPE](l []T, fieldName string, validateF func(T) erro
 		if o.GetId() == "" {
 			return fmt.Errorf("%s element #%d: Id is empty", fieldName, n)
 		}
-		_, err := cpe.Unbind(o.GetCpe())
-		if err != nil {
+		if err := validateCPEString(o.GetCpe()); err != nil {
 			return fmt.Errorf("%s element #%d (id: %q): invalid CPE: %w", fieldName, n, o.GetId(), err)
 		}
 		if err := validateF(o); err != nil {

@@ -260,6 +260,25 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 	}
 }
 
+func TestValidateGetVulnerabilitiesRequest_MalformedRepositoryCPEDoesNotPanic(t *testing.T) {
+	req := &v4.GetVulnerabilitiesRequest{
+		HashId: "/v4/containerimage/foobar",
+		Contents: &v4.Contents{
+			Repositories: map[string]*v4.Repository{
+				"repo": {
+					Id:  "repo",
+					Cpe: "cpe:2.3:0:000000:00:0:0:0:0:0:0:0:0:0",
+				},
+			},
+		},
+	}
+
+	assert.NotPanics(t, func() {
+		err := ValidateGetVulnerabilitiesRequest(req)
+		assert.ErrorContains(t, err, `Contents.Repositories element "repo": invalid CPE`)
+	})
+}
+
 func Test_validateScanSBOMRequest(t *testing.T) {
 	tests := map[string]struct {
 		req     *v4.ScanSBOMRequest
