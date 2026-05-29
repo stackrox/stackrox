@@ -9,7 +9,7 @@ option java_package = "io.stackrox.proto.storage";
 
 message ImageScanV2 {
   string id = 1; // @gotags: search:"Scan ID,hidden" sql:"pk,id"
-  string image_id = 2; // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),index=btree"
+  string image_id = 2; // @gotags: search:"Image ID,hidden" sql:"index=btree"
   google.protobuf.Timestamp scan_time = 3; // @gotags: search:"Scan Time"
   string scanner_version = 4; // @gotags: search:"Scanner Version"
   string bundle_version = 5; // @gotags: search:"Bundle Version"

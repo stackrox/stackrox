@@ -28,7 +28,6 @@ var (
 		schema = walker.Walk(reflect.TypeOf((*storage.ScanComponent)(nil)), "scan_components")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ImageScanV2": ImageScanV2Schema,
-			"storage.ImageV2":     ImagesV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -60,5 +59,4 @@ type ScanComponents struct {
 	OperatingSystem string             `gorm:"column:operatingsystem;type:varchar"`
 	Serialized      []byte             `gorm:"column:serialized;type:bytea"`
 	ImageScanV2Ref  ImageScanV2        `gorm:"foreignKey:scanid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-	ImagesV2Ref     ImagesV2           `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

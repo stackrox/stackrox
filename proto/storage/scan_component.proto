@@ -11,7 +11,7 @@ option java_package = "io.stackrox.proto.storage";
 message ScanComponent {
   string id = 1; // @gotags: search:"Component ID,hidden" sql:"pk,id"
   string scan_id = 2; // @gotags: search:"Scan ID,hidden" sql:"fk(ImageScanV2:id),index=btree"
-  string image_id = 3; // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),index=btree"
+  string image_id = 3; // @gotags: search:"Image ID,hidden" sql:"index=btree"
   string name = 4; // @gotags: search:"Component"
   string version = 5; // @gotags: search:"Component Version"
   SourceType source = 6; // @gotags: search:"Component Source"

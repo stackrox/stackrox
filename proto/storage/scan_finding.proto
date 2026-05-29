@@ -14,7 +14,7 @@ message ScanFinding {
   string cve_name = 3; // @gotags: search:"CVE" sql:"index=btree"
   string component_id = 4; // @gotags: search:"Component ID,hidden" sql:"fk(ScanComponent:id),index=btree"
   string scan_id = 5; // @gotags: search:"Scan ID,hidden" sql:"fk(ImageScanV2:id)"
-  string image_id = 6; // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),index=btree"
+  string image_id = 6; // @gotags: search:"Image ID,hidden" sql:"index=btree"
   VulnerabilitySeverity severity = 7; // @gotags: search:"Severity" sql:"index=btree"
   float cvss = 8; // @gotags: search:"CVSS"
   CvssScoreVersion cvss_version = 9; // @gotags: search:"CVSS Version,hidden"

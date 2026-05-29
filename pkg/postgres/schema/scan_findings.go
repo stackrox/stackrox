@@ -30,7 +30,6 @@ var (
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ScanComponent": ScanComponentsSchema,
 			"storage.ImageScanV2":   ImageScanV2Schema,
-			"storage.ImageV2":       ImagesV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -75,5 +74,4 @@ type ScanFindings struct {
 	Serialized            []byte                        `gorm:"column:serialized;type:bytea"`
 	ScanComponentsRef     ScanComponents                `gorm:"foreignKey:componentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImageScanV2Ref        ImageScanV2                   `gorm:"foreignKey:scanid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-	ImagesV2Ref           ImagesV2                      `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"fmt"
 	"reflect"
 	"time"
 
@@ -27,13 +26,6 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ImageScanV2)(nil)), "image_scan_v2")
-		referencedSchemas := map[string]*walker.Schema{
-			"storage.ImageV2": ImagesV2Schema,
-		}
-
-		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
-			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
-		})
 		schema.ScopingResource = resources.Image
 		RegisterTable(schema, CreateTableImageScanV2Stmt)
 		return schema
@@ -53,5 +45,4 @@ type ImageScanV2 struct {
 	ScannerVersion string     `gorm:"column:scannerversion;type:varchar"`
 	BundleVersion  string     `gorm:"column:bundleversion;type:varchar"`
 	Serialized     []byte     `gorm:"column:serialized;type:bytea"`
-	ImagesV2Ref    ImagesV2   `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
