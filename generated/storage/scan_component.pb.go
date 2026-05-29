@@ -25,7 +25,7 @@ type ScanComponent struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Id       string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,hidden" sql:"pk,id"`                                  // @gotags: search:"Component ID,hidden" sql:"pk,id"
 	ScanId   string                 `protobuf:"bytes,2,opt,name=scan_id,json=scanId,proto3" json:"scan_id,omitempty" search:"Scan ID,hidden" sql:"fk(ImageScanV2:id),index=btree"`            // @gotags: search:"Scan ID,hidden" sql:"fk(ImageScanV2:id),index=btree"
-	ImageId  string                 `protobuf:"bytes,3,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" search:"Image ID,hidden" sql:"fk(ImageV2:id),index=btree"`         // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),index=btree"
+	ImageId  string                 `protobuf:"bytes,3,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" search:"Image ID,hidden" sql:"index=btree"`         // @gotags: search:"Image ID,hidden" sql:"index=btree"
 	Name     string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty" search:"Component"`                              // @gotags: search:"Component"
 	Version  string                 `protobuf:"bytes,5,opt,name=version,proto3" json:"version,omitempty" search:"Component Version"`                        // @gotags: search:"Component Version"
 	Source   SourceType             `protobuf:"varint,6,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty" search:"Component Source"` // @gotags: search:"Component Source"
