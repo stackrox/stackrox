@@ -36,3 +36,26 @@ type FindingWithComponent struct {
 	ComponentVersion string
 	ComponentSource  int32
 }
+
+// DeploymentListRow represents one deployment in the list page.
+type DeploymentListRow struct {
+	ID          string
+	Name        string
+	ClusterID   string
+	ClusterName string
+	Namespace   string
+	ImageCount  int
+	CVECount    int
+	TopSeverity int32
+	Fixable     bool
+}
+
+// DeploymentImageRow represents one image in a deployment's detail view.
+type DeploymentImageRow struct {
+	ImageID     string
+	ImageUUID   string
+	ImageName   string
+	CVECount    int
+	TopSeverity int32
+	Fixable     bool
+}

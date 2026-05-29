@@ -38,6 +38,8 @@ func NewHandler(ds datastore.DataStore) http.Handler {
 	router.HandleFunc("/v1/scandata/cves", h.listCVEs).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/cves/{cveName}", h.getCVEDetail).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/images/{imageId}/findings", h.getImageFindings).Methods(http.MethodGet)
+	router.HandleFunc("/v1/scandata/deployments", h.listDeployments).Methods(http.MethodGet)
+	router.HandleFunc("/v1/scandata/deployments/{deploymentId}", h.getDeploymentDetail).Methods(http.MethodGet)
 
 	return router
 }
@@ -125,6 +127,43 @@ type FindingWithComponent struct {
 	ComponentVersion string  `json:"componentVersion"`
 	ComponentSource  string  `json:"componentSource"`
 	SourceName       string  `json:"sourceName"`
+}
+
+// DeploymentListResponse is the response for GET /v1/scandata/deployments
+type DeploymentListResponse struct {
+	Deployments []DeploymentListItem `json:"deployments"`
+	TotalCount  int                  `json:"totalCount"`
+}
+
+// DeploymentListItem represents one deployment in the list
+type DeploymentListItem struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Cluster     string `json:"cluster"`
+	Namespace   string `json:"namespace"`
+	ImageCount  int    `json:"imageCount"`
+	CVECount    int    `json:"cveCount"`
+	TopSeverity int32  `json:"topSeverity"`
+	Fixable     bool   `json:"fixable"`
+}
+
+// DeploymentDetailResponse is the response for GET /v1/scandata/deployments/{deploymentId}
+type DeploymentDetailResponse struct {
+	ID        string                  `json:"id"`
+	Name      string                  `json:"name"`
+	Cluster   string                  `json:"cluster"`
+	Namespace string                  `json:"namespace"`
+	Images    []DeploymentImageDetail `json:"images"`
+}
+
+// DeploymentImageDetail represents an image in a deployment with CVE data
+type DeploymentImageDetail struct {
+	ImageID     string `json:"imageId"`
+	ImageUUID   string `json:"imageUuid,omitempty"`
+	ImageName   string `json:"imageName,omitempty"`
+	CVECount    int    `json:"cveCount"`
+	TopSeverity int32  `json:"topSeverity"`
+	Fixable     bool   `json:"fixable"`
 }
 
 func (h *handler) listCVEs(w http.ResponseWriter, r *http.Request) {
@@ -416,6 +455,116 @@ func (h *handler) getImageFindings(w http.ResponseWriter, r *http.Request) {
 	response := ImageFindingsResponse{
 		ImageID:  imageID,
 		Findings: findingsWithComp,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Errorf("failed to encode response: %v", err)
+	}
+}
+
+func (h *handler) listDeployments(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse query parameters
+	limitStr := cmp.Or(r.URL.Query().Get("limit"), "50")
+	offsetStr := cmp.Or(r.URL.Query().Get("offset"), "0")
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.Wrap(err, "invalid limit"))
+		return
+	}
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.Wrap(err, "invalid offset"))
+		return
+	}
+
+	// Query data
+	rows, total, err := h.datastore.ListDeployments(ctx, limit, offset)
+	if err != nil {
+		log.Errorf("failed to list deployments: %v", err)
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "listing deployments"))
+		return
+	}
+
+	// Convert to response
+	items := make([]DeploymentListItem, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, DeploymentListItem{
+			ID:          row.ID,
+			Name:        row.Name,
+			Cluster:     row.ClusterName,
+			Namespace:   row.Namespace,
+			ImageCount:  row.ImageCount,
+			CVECount:    row.CVECount,
+			TopSeverity: row.TopSeverity,
+			Fixable:     row.Fixable,
+		})
+	}
+
+	response := DeploymentListResponse{
+		Deployments: items,
+		TotalCount:  total,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Errorf("failed to encode response: %v", err)
+	}
+}
+
+func (h *handler) getDeploymentDetail(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vars := mux.Vars(r)
+	deploymentID := vars["deploymentId"]
+	if deploymentID == "" {
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.New("deploymentId is required"))
+		return
+	}
+
+	// Get deployment basic info
+	deployment, err := h.datastore.GetDeploymentByID(ctx, deploymentID)
+	if err != nil {
+		log.Errorf("failed to get deployment %s: %v", deploymentID, err)
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "getting deployment"))
+		return
+	}
+	if deployment == nil {
+		httputil.WriteGRPCStyleError(w, codes.NotFound, errors.Errorf("deployment %s not found", deploymentID))
+		return
+	}
+
+	// Get images with CVE summary
+	images, err := h.datastore.GetDeploymentImages(ctx, deploymentID)
+	if err != nil {
+		log.Errorf("failed to get images for deployment %s: %v", deploymentID, err)
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "getting deployment images"))
+		return
+	}
+
+	// Convert to response
+	imageDetails := make([]DeploymentImageDetail, 0, len(images))
+	for _, img := range images {
+		imageDetails = append(imageDetails, DeploymentImageDetail{
+			ImageID:     img.ImageID,
+			ImageUUID:   img.ImageUUID,
+			ImageName:   img.ImageName,
+			CVECount:    img.CVECount,
+			TopSeverity: img.TopSeverity,
+			Fixable:     img.Fixable,
+		})
+	}
+
+	response := DeploymentDetailResponse{
+		ID:        deploymentID,
+		Name:      deployment.Name,
+		Cluster:   deployment.ClusterName,
+		Namespace: deployment.Namespace,
+		Images:    imageDetails,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

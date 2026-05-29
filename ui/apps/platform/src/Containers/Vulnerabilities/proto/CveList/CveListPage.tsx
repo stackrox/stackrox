@@ -13,6 +13,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { vulnerabilitiesPrototypeCvePath } from 'routePaths';
 
+import ProtoNav from '../ProtoNav';
 import { useCveList } from './useCveList';
 import type { ProtoCVEListItem } from './useCveList';
 
@@ -65,7 +66,10 @@ function CveListPage() {
     return (
         <>
             <PageSection hasBodyWrapper={false}>
-                <Title headingLevel="h1">CVE Prototype — List</Title>
+                <Title headingLevel="h1">CVE Prototype</Title>
+            </PageSection>
+            <PageSection hasBodyWrapper={false}>
+                <ProtoNav />
             </PageSection>
             <PageSection hasBodyWrapper={false}>
                 <Toolbar>
