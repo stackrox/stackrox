@@ -17,43 +17,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          {
-            echo "## Go tests skipped — UI-only PR"
-            echo ""
-            echo "This is a passthrough job. No Go tests were run because this PR only changes \`ui/\` files."
-            echo ""
-            echo "GitHub required checks must report pass/fail/skip and cannot be left pending"
-            echo "when a workflow is skipped by path filters. This job exists solely to satisfy"
-            echo "the required check."
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "## Go tests skipped — UI-only PR" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "This is a passthrough job. No Go tests were run because this PR only changes \`ui/\` files." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "GitHub required checks must report pass/fail/skip and cannot be left pending" >> "$GITHUB_STEP_SUMMARY"
+          echo "when a workflow is skipped by path filters. This job exists solely to satisfy" >> "$GITHUB_STEP_SUMMARY"
+          echo "the required check." >> "$GITHUB_STEP_SUMMARY"
 
   go-postgres:
     name: go-postgres (GOTAGS="", 15)
     runs-on: ubuntu-latest
     steps:
       - run: |
-          {
-            echo "## Go postgres tests skipped — UI-only PR"
-            echo ""
-            echo "This is a passthrough job. See \`go (GOTAGS=\"\")\` summary for details."
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "## Go postgres tests skipped — UI-only PR" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "This is a passthrough job. See \`go (GOTAGS=\"\")\` summary for details." >> "$GITHUB_STEP_SUMMARY"
 
   go-bench:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          {
-            echo "## Go bench tests skipped — UI-only PR"
-            echo ""
-            echo "This is a passthrough job. See \`go (GOTAGS=\"\")\` summary for details."
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "## Go bench tests skipped — UI-only PR" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "This is a passthrough job. See \`go (GOTAGS=\"\")\` summary for details." >> "$GITHUB_STEP_SUMMARY"
 
   local-roxctl-tests:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          {
-            echo "## roxctl tests skipped — UI-only PR"
-            echo ""
-            echo "This is a passthrough job. See \`go (GOTAGS=\"\")\` summary for details."
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "## roxctl tests skipped — UI-only PR" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "This is a passthrough job. See \`go (GOTAGS=\"\")\` summary for details." >> "$GITHUB_STEP_SUMMARY"
