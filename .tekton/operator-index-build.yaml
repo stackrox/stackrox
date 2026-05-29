@@ -429,11 +429,9 @@ spec:
         value: $(params.output-image-repo):$(tasks.determine-index-tag.results.INDEX_TAG)
       - name: IMAGES
         value:
-        - $(tasks.build-images.results.IMAGE_URL[*])
-      - name: COMMIT_SHA
-        value: $(tasks.clone-repository.results.commit)
-      - name: IMAGE_EXPIRES_AFTER
-        value: $(tasks.determine-image-expiration.results.IMAGE_EXPIRES_AFTER)
+        - $(tasks.build-images.results.IMAGE_REF[*])
+      - name: BUILDAH_FORMAT
+        value: oci
       taskRef:
         params:
         - name: name
