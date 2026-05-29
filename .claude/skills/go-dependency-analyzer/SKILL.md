@@ -426,7 +426,7 @@ N/A - Test-only transitive dependency (not production-critical)
 5. Create summary table
 
 **Result:**
-```
+```markdown
 ## Multi-Dependency Analysis
 
 ### Summary Table
