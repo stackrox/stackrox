@@ -88,10 +88,10 @@ function CveListPage() {
                     <Thead>
                         <Tr>
                             <Th>CVE</Th>
-                            <Th>Severity</Th>
-                            <Th>CVSS</Th>
-                            <Th>Images</Th>
-                            <Th>Fixable</Th>
+                            <Th info={{ tooltip: 'Highest severity reported by any advisory for this CVE' }}>Top Severity</Th>
+                            <Th info={{ tooltip: 'Highest CVSS score reported by any advisory for this CVE' }}>Top CVSS</Th>
+                            <Th info={{ tooltip: 'Number of distinct images affected by this CVE' }}>Images</Th>
+                            <Th info={{ tooltip: 'Whether a fix is available from any advisory source' }}>Fixable</Th>
                             <Th>First Seen</Th>
                         </Tr>
                     </Thead>
