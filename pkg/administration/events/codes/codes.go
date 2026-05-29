@@ -10,6 +10,7 @@ const (
 
 	// Auth Provider codes.
 	SAMLAssertionExpired = "saml-assertion-expired"
+	SAMLAudienceMismatch = "saml-audience-mismatch"
 
 	// Backup codes.
 	GCSGeneric          = "gcs-generic"
