@@ -27,23 +27,15 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ScanComponent)(nil)), "scan_components")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.ImageScanV2": ImageScanV2sSchema,
+			"storage.ImageScanV2": ImageScanV2Schema,
 			"storage.ImageV2":     ImagesV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		// TODO: Add SearchCategory_SCAN_COMPONENTS to search_service.proto
-		// schema.SetOptionsMap(search.Walk(v1.SearchCategory_SCAN_COMPONENTS, "scancomponent", (*storage.ScanComponent)(nil)))
-		// schema.SetSearchScope([]v1.SearchCategory{
-		// 	v1.SearchCategory_SCAN_COMPONENTS,
-		// 	v1.SearchCategory_IMAGE_SCANS_V2,
-		// 	v1.SearchCategory_IMAGES_V2,
-		// }...)
 		schema.ScopingResource = resources.Image
 		RegisterTable(schema, CreateTableScanComponentsStmt)
-		// mapping.RegisterCategoryToTable(v1.SearchCategory_SCAN_COMPONENTS, schema)
 		return schema
 	}()
 )
@@ -62,11 +54,11 @@ type ScanComponents struct {
 	Version         string             `gorm:"column:version;type:varchar"`
 	Source          storage.SourceType `gorm:"column:source;type:integer"`
 	Location        string             `gorm:"column:location;type:varchar"`
-	LayerIndex      *int32             `gorm:"column:layerindex;type:integer"`
+	LayerIndex      int32              `gorm:"column:layerindex;type:integer"`
 	LayerType       storage.LayerType  `gorm:"column:layertype;type:integer"`
 	FixedBy         string             `gorm:"column:fixedby;type:varchar"`
 	OperatingSystem string             `gorm:"column:operatingsystem;type:varchar"`
 	Serialized      []byte             `gorm:"column:serialized;type:bytea"`
-	ImageScanV2Ref  ImageScanV2s       `gorm:"foreignKey:scanid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	ImageScanV2Ref  ImageScanV2        `gorm:"foreignKey:scanid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImagesV2Ref     ImagesV2           `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

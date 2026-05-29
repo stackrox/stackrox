@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	imageScanV2Table = pkgSchema.ImageScanV2sTableName
+	imageScanV2Table = pkgSchema.ImageScanV2TableName
 	componentsTable  = pkgSchema.ScanComponentsTableName
 	findingsTable    = pkgSchema.ScanFindingsTableName
 	batchSize        = 500
@@ -53,7 +53,7 @@ func (s *storeImpl) UpsertScanData(ctx context.Context, data *types.ScanData) er
 		}
 
 		// Delete old data (cascades to components + findings via FK)
-		if _, err := tx.Exec(ctx, fmt.Sprintf("DELETE FROM %s WHERE image_id = $1", imageScanV2Table), imageID); err != nil {
+		if _, err := tx.Exec(ctx, fmt.Sprintf("DELETE FROM %s WHERE imageid = $1", imageScanV2Table), imageID); err != nil {
 			if errTx := tx.Rollback(ctx); errTx != nil {
 				return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 			}
@@ -99,8 +99,8 @@ func (s *storeImpl) insertScan(ctx context.Context, tx *postgres.Tx, scan *stora
 	}
 
 	query := fmt.Sprintf(`
-		INSERT INTO %s (id, image_id, scan_time, scanner_version, bundle_version, data_sources, notes, serialized)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO %s (id, imageid, scantime, scannerversion, bundleversion, serialized)
+		VALUES ($1, $2, $3, $4, $5, $6)
 	`, imageScanV2Table)
 
 	_, err = tx.Exec(ctx, query,
@@ -109,8 +109,6 @@ func (s *storeImpl) insertScan(ctx context.Context, tx *postgres.Tx, scan *stora
 		scan.GetScanTime().AsTime(),
 		scan.GetScannerVersion(),
 		scan.GetBundleVersion(),
-		scan.GetDataSources(),
-		scan.GetNotes(),
 		serialized,
 	)
 	return err
@@ -119,16 +117,16 @@ func (s *storeImpl) insertScan(ctx context.Context, tx *postgres.Tx, scan *stora
 func (s *storeImpl) bulkInsertComponents(ctx context.Context, tx *postgres.Tx, components []*storage.ScanComponent) error {
 	copyCols := []string{
 		"id",
-		"scan_id",
-		"image_id",
+		"scanid",
+		"imageid",
 		"name",
 		"version",
 		"source",
 		"location",
-		"layer_index",
-		"layer_type",
-		"fixed_by",
-		"operating_system",
+		"layerindex",
+		"layertype",
+		"fixedby",
+		"operatingsystem",
 		"serialized",
 	}
 
@@ -176,29 +174,28 @@ func (s *storeImpl) bulkInsertComponents(ctx context.Context, tx *postgres.Tx, c
 func (s *storeImpl) bulkInsertFindings(ctx context.Context, tx *postgres.Tx, findings []*storage.ScanFinding) error {
 	copyCols := []string{
 		"id",
-		"advisory_id",
-		"cve_name",
-		"component_id",
-		"scan_id",
-		"image_id",
+		"advisoryid",
+		"cvename",
+		"componentid",
+		"scanid",
+		"imageid",
 		"severity",
 		"cvss",
-		"cvss_version",
-		"nvd_cvss",
-		"nvd_cvss_version",
-		"epss_probability",
-		"epss_percentile",
-		"is_fixable",
-		"fixed_by",
-		"fixed_date",
+		"cvssversion",
+		"nvdcvss",
+		"nvdcvssversion",
+		"epssprobability",
+		"epsspercentile",
+		"isfixable",
+		"fixedby",
+		"fixeddate",
 		"description",
-		"published_date",
-		"data_source",
-		"source_name",
-		"links",
+		"publisheddate",
+		"datasource",
+		"sourcename",
 		"state",
-		"first_image_occurrence",
-		"first_system_occurrence",
+		"firstimageoccurrence",
+		"firstsystemoccurrence",
 		"serialized",
 	}
 
@@ -249,7 +246,6 @@ func (s *storeImpl) bulkInsertFindings(ctx context.Context, tx *postgres.Tx, fin
 				publishedDate,
 				finding.GetDataSource(),
 				finding.GetSourceName(),
-				finding.GetLinks(),
 				finding.GetState(),
 				firstImageOccurrence,
 				firstSystemOccurrence,
@@ -270,7 +266,7 @@ func (s *storeImpl) GetScanDataByImageID(ctx context.Context, imageID string) (*
 	return pgutils.Retry2(ctx, func() (*types.ScanData, error) {
 		// Get scan
 		var scanSerialized []byte
-		query := fmt.Sprintf("SELECT serialized FROM %s WHERE image_id = $1", imageScanV2Table)
+		query := fmt.Sprintf("SELECT serialized FROM %s WHERE imageid = $1", imageScanV2Table)
 		err := s.db.QueryRow(ctx, query, imageID).Scan(&scanSerialized)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
@@ -285,7 +281,7 @@ func (s *storeImpl) GetScanDataByImageID(ctx context.Context, imageID string) (*
 		}
 
 		// Get components
-		query = fmt.Sprintf("SELECT serialized FROM %s WHERE image_id = $1", componentsTable)
+		query = fmt.Sprintf("SELECT serialized FROM %s WHERE imageid = $1", componentsTable)
 		rows, err := s.db.Query(ctx, query, imageID)
 		if err != nil {
 			return nil, errors.Wrap(err, "fetching components")
@@ -296,7 +292,7 @@ func (s *storeImpl) GetScanDataByImageID(ctx context.Context, imageID string) (*
 		}
 
 		// Get findings
-		query = fmt.Sprintf("SELECT serialized FROM %s WHERE image_id = $1", findingsTable)
+		query = fmt.Sprintf("SELECT serialized FROM %s WHERE imageid = $1", findingsTable)
 		rows, err = s.db.Query(ctx, query, imageID)
 		if err != nil {
 			return nil, errors.Wrap(err, "fetching findings")
@@ -317,7 +313,7 @@ func (s *storeImpl) GetScanDataByImageID(ctx context.Context, imageID string) (*
 // DeleteByImageID removes all scan data for an image
 func (s *storeImpl) DeleteByImageID(ctx context.Context, imageID string) error {
 	return pgutils.Retry(ctx, func() error {
-		query := fmt.Sprintf("DELETE FROM %s WHERE image_id = $1", imageScanV2Table)
+		query := fmt.Sprintf("DELETE FROM %s WHERE imageid = $1", imageScanV2Table)
 		_, err := s.db.Exec(ctx, query, imageID)
 		return err
 	})
@@ -333,7 +329,7 @@ func (s *storeImpl) ListCVEs(ctx context.Context, limit, offset int) ([]*types.C
 	res, err := pgutils.Retry2(ctx, func() (*result, error) {
 		// Get total count
 		countQuery := fmt.Sprintf(`
-			SELECT COUNT(DISTINCT cve_name)
+			SELECT COUNT(DISTINCT cvename)
 			FROM %s
 			WHERE state = 0
 		`, findingsTable)
@@ -344,15 +340,15 @@ func (s *storeImpl) ListCVEs(ctx context.Context, limit, offset int) ([]*types.C
 
 		// Get paginated results
 		query := fmt.Sprintf(`
-			SELECT cve_name,
+			SELECT cvename,
 			       MAX(severity)::int as severity,
 			       MAX(cvss) as cvss,
-			       COUNT(DISTINCT image_id) as image_count,
-			       BOOL_OR(is_fixable) as fixable,
-			       MIN(first_system_occurrence) as first_seen
+			       COUNT(DISTINCT imageid) as image_count,
+			       BOOL_OR(isfixable) as fixable,
+			       MIN(firstsystemoccurrence) as first_seen
 			FROM %s
 			WHERE state = 0
-			GROUP BY cve_name
+			GROUP BY cvename
 			ORDER BY MAX(severity) DESC, MAX(cvss) DESC
 			LIMIT $1 OFFSET $2
 		`, findingsTable)
@@ -391,7 +387,7 @@ func (s *storeImpl) ListCVEs(ctx context.Context, limit, offset int) ([]*types.C
 // GetFindingsByCVE returns all findings for a specific CVE name
 func (s *storeImpl) GetFindingsByCVE(ctx context.Context, cveName string) ([]*storage.ScanFinding, error) {
 	return pgutils.Retry2(ctx, func() ([]*storage.ScanFinding, error) {
-		query := fmt.Sprintf("SELECT serialized FROM %s WHERE cve_name = $1", findingsTable)
+		query := fmt.Sprintf("SELECT serialized FROM %s WHERE cvename = $1", findingsTable)
 		rows, err := s.db.Query(ctx, query, cveName)
 		if err != nil {
 			return nil, errors.Wrap(err, "querying findings")
@@ -403,7 +399,7 @@ func (s *storeImpl) GetFindingsByCVE(ctx context.Context, cveName string) ([]*st
 // GetFindingsByImageID returns all findings for an image
 func (s *storeImpl) GetFindingsByImageID(ctx context.Context, imageID string) ([]*storage.ScanFinding, error) {
 	return pgutils.Retry2(ctx, func() ([]*storage.ScanFinding, error) {
-		query := fmt.Sprintf("SELECT serialized FROM %s WHERE image_id = $1", findingsTable)
+		query := fmt.Sprintf("SELECT serialized FROM %s WHERE imageid = $1", findingsTable)
 		rows, err := s.db.Query(ctx, query, imageID)
 		if err != nil {
 			return nil, errors.Wrap(err, "querying findings")
