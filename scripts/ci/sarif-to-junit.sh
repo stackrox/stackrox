@@ -38,6 +38,9 @@ fi
 # SARIF structure: .runs[].results[] contains vulnerability findings
 # Each result has ruleId (CVE_component_version), message, and level (severity)
 
+jq_output="$(jq -r '.runs[].results[] | [.ruleId, .level, (.message.text // ""), (.locations[0].physicalLocation.artifactLocation.uri // "")] | @tsv' "$sarif_file")" \
+    || die "Failed to parse SARIF file: $sarif_file"
+
 testcases_xml=""
 vuln_count=0
 failure_count=0
@@ -69,7 +72,7 @@ ${message}"
     </testcase>
 "
     ((failure_count++)) || true
-done < <(jq -r '.runs[].results[] | [.ruleId, .level, (.message.text // ""), (.locations[0].physicalLocation.artifactLocation.uri // "")] | @tsv' "$sarif_file")
+done <<< "$jq_output"
 
 junit_dir="$(get_junit_misc_dir)"
 mkdir -p "${junit_dir}"
