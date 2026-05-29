@@ -104,13 +104,11 @@ func TransportFunc(req *http.Request) (*url.URL, error) {
 func ProxyHostForURL(endpoint string) (string, error) {
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
-		log.Warnf("Failed to build request for proxy lookup: %v", err)
 		return "", err
 	}
 
 	proxyURL, err := TransportFunc(req)
 	if err != nil {
-		log.Warnf("Failed to resolve proxy for %s: %v", endpoint, err)
 		return "", err
 	}
 	if proxyURL == nil {
