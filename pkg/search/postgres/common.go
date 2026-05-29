@@ -600,9 +600,10 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 	// to avoid the 65535 parameter limit. For small sets, use IN ($1, $2, ...)
 	// for better plan quality since the planner can inspect individual values.
 	if len(values) >= env.PostgresParameterThreshold.IntegerSetting() {
-		// Detect column type from the first value to pick the right array cast.
+		// Detect column type from the original entry value (before string conversion)
+		// to pick the right array cast.
 		cast := "::text[]"
-		if _, isUUID := values[0].(pkgUUID.UUID); isUUID {
+		if _, isUUID := entries[0].Where.Values[0].(pkgUUID.UUID); isUUID {
 			cast = "::uuid[]"
 		}
 		stringValues := make([]string, len(values))
