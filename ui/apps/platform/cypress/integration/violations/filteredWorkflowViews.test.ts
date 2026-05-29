@@ -1,53 +1,62 @@
 import withAuth from '../../helpers/basicAuth';
+import { interceptAndWatchRequests } from '../../helpers/request';
 import { selectFilteredWorkflowView, visitViolations } from './Violations.helpers';
 
 describe('Violations - Filtered Workflow Views', () => {
     withAuth();
 
+    const getAlertsRouteMatcher = {
+        getAlerts: {
+            method: 'GET',
+            url: '/v1/alerts?query=*',
+        },
+    };
+
     it('should filter the violations table when the "Applications view" is selected', () => {
-        visitViolations();
+        interceptAndWatchRequests(getAlertsRouteMatcher).then(({ waitForRequests }) => {
+            visitViolations();
 
-        cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
+            waitForRequests().then((interception) => {
+                const queryString = interception.request.query.query as string;
 
-        // should filter using the correct values for the "Applications view"
-        cy.wait('@getViolations').then((interception) => {
-            const queryString = interception.request.query.query;
-
-            expect(queryString).to.contain('Entity Type:DEPLOYMENT');
-            expect(queryString).to.contain('Platform Component:false');
+                expect(queryString).to.contain('Entity Type:DEPLOYMENT');
+                expect(queryString).to.contain('Platform Component:false');
+            });
         });
     });
 
     it('should filter the violations table when the "Platform view" is selected', () => {
-        visitViolations();
+        interceptAndWatchRequests(getAlertsRouteMatcher).then(({ waitForRequests }) => {
+            visitViolations();
 
-        selectFilteredWorkflowView('Platform');
+            waitForRequests();
 
-        cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
+            selectFilteredWorkflowView('Platform');
 
-        // should filter using the correct values for the "Platform view"
-        cy.wait('@getViolations').then((interception) => {
-            const queryString = interception.request.query.query;
+            waitForRequests().then((interception) => {
+                const queryString = interception.request.query.query as string;
 
-            expect(queryString).to.contain('Entity Type:DEPLOYMENT');
-            expect(queryString).to.contain('Platform Component:true');
+                expect(queryString).to.contain('Entity Type:DEPLOYMENT');
+                expect(queryString).to.contain('Platform Component:true');
+            });
         });
     });
 
     it('should filter the violations table when the "Full view" is selected', () => {
-        visitViolations();
+        interceptAndWatchRequests(getAlertsRouteMatcher).then(({ waitForRequests }) => {
+            visitViolations();
 
-        selectFilteredWorkflowView('All Violations');
+            waitForRequests();
 
-        cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
+            selectFilteredWorkflowView('All Violations');
 
-        // should filter using the correct values for the "Full view"
-        cy.wait('@getViolations').then((interception) => {
-            const queryString = interception.request.query.query;
+            waitForRequests().then((interception) => {
+                const queryString = interception.request.query.query as string;
 
-            expect(queryString).to.not.contain('Entity Type:DEPLOYMENT');
-            expect(queryString).to.not.contain('Platform Component:true');
-            expect(queryString).to.not.contain('Platform Component:false');
+                expect(queryString).to.not.contain('Entity Type:DEPLOYMENT');
+                expect(queryString).to.not.contain('Platform Component:true');
+                expect(queryString).to.not.contain('Platform Component:false');
+            });
         });
     });
 });
