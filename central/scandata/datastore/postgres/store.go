@@ -508,7 +508,7 @@ func (s *storeImpl) ListDeployments(ctx context.Context, limit, offset int) ([]*
 				d.id,
 				d.name,
 				d.clusterid,
-				COALESCE(c.name, d.clusterid) as cluster_name,
+				COALESCE(c.name, d.clusterid::text) as cluster_name,
 				d.namespace,
 				COUNT(DISTINCT dc.image_id) as image_count,
 				COUNT(DISTINCT f.cvename) as cve_count,
@@ -695,7 +695,7 @@ func (s *storeImpl) GetDeploymentByID(ctx context.Context, deploymentID string) 
 				d.id,
 				d.name,
 				d.clusterid,
-				COALESCE(c.name, d.clusterid) as cluster_name,
+				COALESCE(c.name, d.clusterid::text) as cluster_name,
 				d.namespace
 			FROM %s d
 			LEFT JOIN %s c ON d.clusterid = c.id
