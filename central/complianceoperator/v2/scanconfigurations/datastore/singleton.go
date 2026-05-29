@@ -50,6 +50,17 @@ func reconcileDiscoveredOnStartup() {
 	}
 
 	for _, dc := range discovered {
+		existing, err := dataStore.GetScanConfigurationByName(ctx, dc.Name)
+		if err != nil {
+			log.Errorf("startup reconcile: looking up %q: %v", dc.Name, err)
+			continue
+		}
+		// Skip configs created by users via the managed path (ProcessScanRequest).
+		// Those SSBs carry the stackrox label; the pipeline reconciler handles them.
+		if existing != nil && existing.GetModifiedBy().GetId() != "" {
+			continue
+		}
+
 		clusters := make([]*storage.ComplianceOperatorScanConfigurationV2_Cluster, 0, len(dc.ClusterIDs))
 		for _, cid := range dc.ClusterIDs {
 			clusters = append(clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{ClusterId: cid})
@@ -57,12 +68,6 @@ func reconcileDiscoveredOnStartup() {
 		profiles := make([]*storage.ComplianceOperatorScanConfigurationV2_ProfileName, 0, len(dc.ProfileNames))
 		for _, p := range dc.ProfileNames {
 			profiles = append(profiles, &storage.ComplianceOperatorScanConfigurationV2_ProfileName{ProfileName: p})
-		}
-
-		existing, err := dataStore.GetScanConfigurationByName(ctx, dc.Name)
-		if err != nil {
-			log.Errorf("startup reconcile: looking up %q: %v", dc.Name, err)
-			continue
 		}
 
 		var scanConfig *storage.ComplianceOperatorScanConfigurationV2

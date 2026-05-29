@@ -281,9 +281,8 @@ func convertStorageReportDataToV2ScanStatus(ctx context.Context, reportData *sto
 	}
 
 	return &v2.ComplianceScanConfigurationStatus{
-		Id:        reportData.GetScanConfiguration().GetId(),
-		ScanName:  reportData.GetScanConfiguration().GetScanConfigName(),
-		IsManaged: false,
+		Id:       reportData.GetScanConfiguration().GetId(),
+		ScanName: reportData.GetScanConfiguration().GetScanConfigName(),
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: reportData.GetScanConfiguration().GetOneTimeScan(),
 			Profiles: func() []string {
