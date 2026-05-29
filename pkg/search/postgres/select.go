@@ -118,7 +118,20 @@ func RunSelectOneForSchema[T any](ctx context.Context, db postgres.DB, schema *w
 // RunDistinctCountForSchema executes a SELECT COUNT(DISTINCT field) query and
 // returns the count as an int. This eliminates the need for callers to define
 // single-field count structs and handle nil checks.
-func RunDistinctCountForSchema(ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query, field searchPkg.FieldLabel) (int, error) {
+func RunDistinctCountForSchema(ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query, field searchPkg.FieldLabel) (retCount int, retErr error) {
+	var query *query
+	defer func() {
+		if r := recover(); r != nil {
+			if query != nil {
+				log.Errorf("Query issue: %s: %v", query.AsSQL(), r)
+			} else {
+				log.Errorf("Unexpected error running search request: %v", r)
+			}
+			debug.PrintStack()
+			retErr = fmt.Errorf("unexpected error running search request: %v", r)
+		}
+	}()
+
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		searchPkg.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
@@ -128,7 +141,8 @@ func RunDistinctCountForSchema(ctx context.Context, db postgres.DB, schema *walk
 		Count int `db:"count"`
 	}
 
-	query, err := standardizeSelectQueryAndPopulatePath(ctx, cloned, schema, SELECT, nil)
+	var err error
+	query, err = standardizeSelectQueryAndPopulatePath(ctx, cloned, schema, SELECT, nil)
 	if err != nil {
 		return 0, err
 	}
