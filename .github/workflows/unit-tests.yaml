@@ -55,29 +55,8 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         free-disk-space: 30
 
-    # Cache disabled for POC: rebuild everything to measure true compile performance
-    # - name: Cache Go dependencies
-    #   uses: ./.github/actions/cache-go-dependencies
-    #   with:
-    #     key-suffix: ${{ matrix.gotags }}
-
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
-
-    - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        flags: go-unit-tests
-
-    - name: Generate junit report
-      if: always()
-      run: make generate-junit-reports
-
-    - name: Publish Test Report
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
-      with:
-        paths: 'junit-reports/report.xml'
 
     - name: Go Integration Unit Tests
       run: ${{ matrix.gotags }} make integration-unit-tests
@@ -87,27 +66,6 @@ jobs:
 
     - name: Go Operator Helm Tests
       run: ${{ matrix.gotags }} make -C operator/ test-helm
-
-    - name: Generate junit report
-      if: always()
-      run: make generate-junit-reports
-
-    - name: Publish Test Report
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
-      with:
-        paths: 'junit-reports/report.xml'
-
-    - name: Report test failures to Jira
-      if: (!cancelled())
-      id: junit2jira
-      uses: ./.github/actions/junit2jira
-      with:
-        create-jiras: ${{ github.event_name == 'push' }}
-        jira-user: ${{ secrets.JIRA_USER }}
-        jira-token: ${{ secrets.JIRA_TOKEN }}
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        directory: 'junit-reports'
 
   go-postgres:
     strategy:
