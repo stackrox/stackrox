@@ -34,9 +34,13 @@ func shouldNotForwardMessage(t *testing.T, ch <-chan *message.ExpiringMessage) {
 }
 
 func Test_OutputQueue_ExpiringMessages(t *testing.T) {
+	// This test exercises the legacy channel-based output queue path.
+	// Disable the feature flag so New does not require a pubsub dispatcher.
+	t.Setenv("ROX_SENSOR_PUBSUB", "false")
 	ctrl := gomock.NewController(t)
 	detector := mocks.NewMockDetector(ctrl)
-	q := New(detector, 10)
+	q, err := New(detector, 10, nil)
+	assert.NoError(t, err)
 
 	assert.NoError(t, q.Start())
 	defer q.Stop()

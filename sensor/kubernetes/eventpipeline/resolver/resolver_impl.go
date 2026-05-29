@@ -60,6 +60,8 @@ type resolverImpl struct {
 	pullAndResolveStopped concurrency.Signal
 
 	deploymentRefQueue *dedupingqueue.DedupingQueue[string]
+
+	pubsubDispatcher pubSubDispatcher
 }
 
 // Start the resolverImpl component
@@ -198,6 +200,13 @@ func (r *resolverImpl) resolveAndSend(ref *deploymentRef) {
 	msg.DeploymentTiming = ref.deploymentTiming
 	resolved := r.resolveDeployment(msg, ref)
 	if resolved || len(msg.ReprocessDeployments) > 0 {
+		if features.SensorInternalPubSub.Enabled() {
+			msg.SetTopicAndLane(pubsub.ResolvedResourceEventTopic, pubsub.ResolvedResourceEventLane)
+			if err := r.pubsubDispatcher.Publish(msg); err != nil {
+				log.Errorf("failed to publish resolved resource event to output queue: %v", err)
+			}
+			return
+		}
 		r.outputQueue.Send(msg)
 	}
 }
@@ -257,6 +266,13 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 
 	}
 
+	if features.SensorInternalPubSub.Enabled() {
+		msg.SetTopicAndLane(pubsub.ResolvedResourceEventTopic, pubsub.ResolvedResourceEventLane)
+		if err := r.pubsubDispatcher.Publish(msg); err != nil {
+			log.Errorf("failed to publish resolved resource event to output queue: %v", err)
+		}
+		return
+	}
 	r.outputQueue.Send(msg)
 }
 
