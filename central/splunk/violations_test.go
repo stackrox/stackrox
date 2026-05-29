@@ -1343,6 +1343,57 @@ func (s *violationsTestSuite) TestCheckpointTimestampFiltering() {
 	}
 }
 
+func (s *violationsTestSuite) makeDelayedProcessAlert(signalTime, alertTime string) *storage.Alert {
+	alert := s.processAlert.CloneVT()
+	alert.ProcessViolation.Processes = alert.GetProcessViolation().GetProcesses()[:1]
+	alert.ProcessViolation.Processes[0].Signal.Time = makeTimestamp(signalTime)
+	alert.Time = makeTimestamp(alertTime)
+	return alert
+}
+
+func (s *violationsTestSuite) TestProcessViolationDelayedStorage() {
+	// Signal time is 50 seconds before alert time, simulating the pipeline delay
+	// from sensor -> central -> enrichment -> storage.
+	alert := s.makeDelayedProcessAlert("2021-02-01T17:15:00Z", "2021-02-01T17:15:50Z")
+
+	// Checkpoint window: 17:15:30 to 17:16:00
+	// Signal time (17:15:00) is before fromTime (17:15:30) — would normally be excluded.
+	// Alert time (17:15:50) is within [fromTime, toTime] — fallback should include it.
+	vs := s.getViolations(s.prepare().
+		setCheckpoint("2021-02-01T17:15:30Z__2021-02-01T17:16:00Z").
+		setAlerts(alert).runRequestAndGetBody())
+	s.Len(vs, 1)
+	// The reported violation time should still be the signal time, not alert time.
+	s.Equal("2021-02-01T17:15:00Z", s.extr(vs[0], ".violationInfo.violationTime"))
+}
+
+func (s *violationsTestSuite) TestProcessViolationTooOldSignalNotRecovered() {
+	// Signal time is more than maxProcessDetectionDelay (2 min) before alert time.
+	alert := s.makeDelayedProcessAlert("2021-02-01T17:12:00Z", "2021-02-01T17:15:50Z")
+
+	// Checkpoint window includes alert time but signal time is >2 min before alert time.
+	vs := s.getViolations(s.prepare().
+		setCheckpoint("2021-02-01T17:15:30Z__2021-02-01T17:16:00Z").
+		setAlerts(alert).runRequestAndGetBody())
+	s.Len(vs, 0)
+}
+
+func (s *violationsTestSuite) TestProcessViolationDelayedStorageNoDuplicates() {
+	alert := s.makeDelayedProcessAlert("2021-02-01T17:15:00Z", "2021-02-01T17:15:50Z")
+
+	// First window: should include the violation via fallback.
+	vs1 := s.getViolations(s.prepare().
+		setCheckpoint("2021-02-01T17:15:30Z__2021-02-01T17:16:00Z").
+		setAlerts(alert).runRequestAndGetBody())
+	s.Len(vs1, 1)
+
+	// Second window: checkpoint advances, should NOT include again.
+	vs2 := s.getViolations(s.prepare().
+		setCheckpoint("2021-02-01T17:16:00Z__2021-02-01T17:16:30Z").
+		setAlerts(alert).runRequestAndGetBody())
+	s.Len(vs2, 0)
+}
+
 func (s *violationsTestSuite) TestCheckpointFromAlertIDFiltering() {
 	smallerID, biggerID := s.processAlert.GetId(), s.k8sAlert.GetId()
 	if smallerID > biggerID {

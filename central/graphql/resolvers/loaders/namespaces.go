@@ -45,7 +45,6 @@ type NamespaceLoader interface {
 	FromQuery(ctx context.Context, query *v1.Query) ([]*storage.NamespaceMetadata, error)
 
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
-	CountAll(ctx context.Context) (int32, error)
 }
 
 // namespaceLoaderImpl implements the NamespaceLoader interface.
@@ -90,12 +89,6 @@ func (nsldr *namespaceLoaderImpl) CountFromQuery(ctx context.Context, query *v1.
 		return 0, err
 	}
 	return int32(numResults), nil
-}
-
-// CountAll returns number of all namespaces
-func (nsldr *namespaceLoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := nsldr.ds.Count(ctx, search.EmptyQuery())
-	return int32(count), err
 }
 
 func (nsldr *namespaceLoaderImpl) load(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {

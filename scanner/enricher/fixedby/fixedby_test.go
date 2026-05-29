@@ -226,7 +226,7 @@ func TestEnrich_AWS(t *testing.T) {
 					"1": {"1", "2", "3", "4"},
 				},
 			},
-			expected: "3.40.1",
+			expected: "3.40.0-2.amzn2023.0.4",
 		},
 	}
 

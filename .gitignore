@@ -51,6 +51,8 @@ combined_coverage.dat
 /stackrox-central-services-chart/
 /stackrox-secured-cluster-services-chart/
 .vscode
+.kilo/
+.opencode/
 
 # Used for mounting into the qa e2e-test docker container.
 .gitconfig

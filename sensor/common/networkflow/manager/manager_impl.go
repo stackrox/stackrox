@@ -142,7 +142,7 @@ func NewManager(
 	externalSrcs externalsrcs.Store,
 	policyDetector detector.Detector,
 	pubSub *internalmessage.MessageSubscriber,
-	updateComputer updatecomputer.UpdateComputer,
+	updateComputer *updatecomputer.Computer,
 	opts ...Option,
 ) Manager {
 	enricherTicker := time.NewTicker(enricherCycle)
@@ -213,8 +213,8 @@ type networkFlowManager struct {
 	clusterEntities EntityStore
 	externalSrcs    externalsrcs.Store
 
-	// UpdateComputer implementation for computing flow updates that are sent to Central on each tick.
-	updateComputer updatecomputer.UpdateComputer
+	// updateComputer computes flow updates that are sent to Central on each tick.
+	updateComputer *updatecomputer.Computer
 
 	activeConnectionsMutex sync.RWMutex
 	// activeConnections tracks all connections reported by Collector that are believed to be active.

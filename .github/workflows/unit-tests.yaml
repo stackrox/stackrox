@@ -63,7 +63,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -82,7 +82,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -106,6 +106,7 @@ jobs:
         pg: [ 'default', '15' ]
         exclude:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
+          - pg: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-postgres-tests') && 'default' }}
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -171,7 +172,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -198,6 +199,7 @@ jobs:
     steps:
     - name: Start Postgres
       run: |
+        # the unit tests expect a local postgres with passwordless access. Change  host to 'trust'
         sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
         sudo systemctl start postgresql.service
 
@@ -224,7 +226,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -261,7 +263,7 @@ jobs:
       run: ./scripts/ci/jobs/local-roxctl-tests.sh
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'roxctl-test-output/*.xml'
@@ -298,7 +300,7 @@ jobs:
       run: make shell-unit-tests
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'shell-test-output/*.xml'
@@ -392,7 +394,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'

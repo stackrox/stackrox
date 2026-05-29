@@ -56,11 +56,6 @@
 #   # Possible values: null, false, true, 3, 4
 #   openshift: false
 #
-#   # Whether the target cluster is an Istio-enabled cluster. If you deploy via `helm install`,
-#   # this can typically be determined automatically, so we recommend to not set a value here.
-#   # Set to true or false explicitly to override the auto-sensing logic only.
-#   istio: false
-#
 #   # The "platform" of the target cluster into which StackRox is being deployed. This can
 #   # be the name of an infrastructure provider or product, and will tailor the StackRox
 #   # deployment to the respective target environment. Currently, the only supported platforms

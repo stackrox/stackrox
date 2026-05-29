@@ -10,12 +10,11 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
-	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 )
 
 var h = xxhash.New()
 
-func (b *sendNetflowsSuite) TestUpdateComputer_ProcessListening() {
+func (b *sendNetflowsSuite) TestComputer_ProcessListening() {
 	now := timestamp.Now()
 	open := timestamp.InfiniteFuture
 	closed := now.Add(-time.Second)
@@ -187,23 +186,15 @@ func (b *sendNetflowsSuite) assertNoMoreUpdatesToCentral() {
 }
 
 func (b *sendNetflowsSuite) assertDeduperState(expected map[indicator.BinaryHash]indicator.BinaryHash) {
-	if testable, ok := b.uc.(updatecomputer.TestableUpdateComputer); ok {
-		testable.WithEndpointDeduperAccess(func(epDeduper map[indicator.BinaryHash]indicator.BinaryHash) {
-			b.EqualValuesf(expected, epDeduper, "deduper state should match expected")
-		})
-	} else {
-		b.T().Skip("Update computer doesn't support deduper state access")
-	}
+	b.uc.WithEndpointDeduperAccess(func(epDeduper map[indicator.BinaryHash]indicator.BinaryHash) {
+		b.EqualValuesf(expected, epDeduper, "deduper state should match expected")
+	})
 }
 
 func (b *sendNetflowsSuite) printDedupers() {
-	if testable, ok := b.uc.(updatecomputer.TestableUpdateComputer); ok {
-		testable.WithEndpointDeduperAccess(func(deduper map[indicator.BinaryHash]indicator.BinaryHash) {
-			b.T().Logf("endpoint->process deduper: (%v)", deduper)
-		})
-	} else {
-		b.T().Log("Update computer doesn't support deduper state access")
-	}
+	b.uc.WithEndpointDeduperAccess(func(deduper map[indicator.BinaryHash]indicator.BinaryHash) {
+		b.T().Logf("endpoint->process deduper: (%v)", deduper)
+	})
 }
 
 func (b *sendNetflowsSuite) getUpdates(num int) ([]*storage.ProcessListeningOnPortFromSensor, []*storage.NetworkEndpoint) {

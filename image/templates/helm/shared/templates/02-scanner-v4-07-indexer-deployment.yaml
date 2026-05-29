@@ -25,9 +25,10 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: scanner-v4-indexer
+        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "scanner-v4-indexer") | nindent 8 }}
       annotations:
-        {{- $annotations := dict "traffic.sidecar.istio.io/excludeInboundPorts" "8443" -}}
+        {{- $annotations := dict -}}
         {{- if eq ._rox.env.openshift 4 }}
           {{- $_ := set $annotations "openshift.io/required-scc" "restricted-v2" -}}
         {{- end }}

@@ -512,7 +512,16 @@ func getCentralDBData(ctx context.Context, zipWriter *zipWriter) error {
 	if activities.Error != "" {
 		log.Errorw("error retrieving pg_stat_activity", logging.Err(errors.New(activities.Error)))
 	}
-	return addJSONToZip(zipWriter, "central-db-pg-activity.json", activities)
+	if err := addJSONToZip(zipWriter, "central-db-pg-activity.json", activities); err != nil {
+		return err
+	}
+
+	// Get the index health stats
+	indexStats := stats.GetPGIndexStats(ctx, db, pgStatStatementsMax)
+	if indexStats.Error != "" {
+		log.Errorw("error retrieving pg_stat_user_indexes", logging.Err(errors.New(indexStats.Error)))
+	}
+	return addJSONToZip(zipWriter, "central-db-pg-index-stats.json", indexStats)
 }
 
 func (s *serviceImpl) getLogImbue(ctx context.Context, zipWriter *zipWriter) error {

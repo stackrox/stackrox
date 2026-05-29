@@ -2,7 +2,6 @@ package vmcve
 
 import (
 	"context"
-	"sort"
 
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -68,28 +67,28 @@ func (v *vmCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCore, er
 
 	cloned := q.CloneVT()
 	cloned = common.UpdateSortAggs(cloned)
-
-	var cveIDsToFilter []string
-	var err error
-	if cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0 {
-		cveIDsToFilter, err = v.getFilteredCVEs(ctx, cloned)
-		if err != nil {
-			return nil, err
-		}
-
-		if cloned.GetPagination() != nil && cloned.GetPagination().GetSortOptions() != nil {
-			cloned.Pagination = &v1.QueryPagination{SortOptions: cloned.GetPagination().GetSortOptions()}
-		}
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.CVE).Proto(),
+	}
+	cloned.Selects = append(cloned.Selects,
+		common.WithCountBySeverityAndFixabilityQuery(q, search.VirtualMachineID).GetSelects()...,
+	)
+	cloned.Selects = append(cloned.Selects,
+		search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto(),
+		search.NewQuerySelect(search.VirtualMachineID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+		search.NewQuerySelect(search.CVECreatedTime).AggrFunc(aggregatefunc.Min).Proto(),
+		search.NewQuerySelect(search.CVEPublishedOn).AggrFunc(aggregatefunc.Min).Proto(),
+		search.NewQuerySelect(search.EPSSProbablity).AggrFunc(aggregatefunc.Max).Proto(),
+	)
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{search.CVE.String()},
 	}
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
 	ret := make([]CveCore, 0, paginated.GetLimit(q.GetPagination().GetLimit(), 100))
-	err = pgSearch.RunSelectRequestForSchemaFn[vmCVECoreResponse](queryCtx, v.db, v.schema, withSelectCVECoreResponseQuery(cloned, cveIDsToFilter), func(r *vmCVECoreResponse) error {
-		sort.SliceStable(r.CVEIDs, func(i, j int) bool {
-			return r.CVEIDs[i] < r.CVEIDs[j]
-		})
+	err := pgSearch.RunSelectRequestForSchemaFn[vmCVECoreResponse](queryCtx, v.db, v.schema, cloned, func(r *vmCVECoreResponse) error {
 		ret = append(ret, r)
 		return nil
 	})
@@ -207,52 +206,6 @@ func (v *vmCVECoreViewImpl) GetAffectedVMs(ctx context.Context, q *v1.Query) ([]
 	return ret, nil
 }
 
-func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
-	cloned := q.CloneVT()
-	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
-	}
-	cloned.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{search.CVE.String()},
-	}
-
-	if common.IsSortBySeverityCounts(cloned) {
-		cloned.Selects = append(cloned.Selects,
-			common.WithCountBySeverityAndFixabilityQuery(q, search.VirtualMachineID).GetSelects()...,
-		)
-	}
-
-	return cloned
-}
-
-func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string) *v1.Query {
-	cloned := q.CloneVT()
-	if len(cveIDsToFilter) > 0 {
-		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
-		cloned.Pagination = q.GetPagination()
-	}
-
-	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.CVE).Proto(),
-		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
-	}
-	cloned.Selects = append(cloned.Selects,
-		common.WithCountBySeverityAndFixabilityQuery(q, search.VirtualMachineID).GetSelects()...,
-	)
-	cloned.Selects = append(cloned.Selects,
-		search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto(),
-		search.NewQuerySelect(search.VirtualMachineID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
-		search.NewQuerySelect(search.CVECreatedTime).AggrFunc(aggregatefunc.Min).Proto(),
-		search.NewQuerySelect(search.CVEPublishedOn).AggrFunc(aggregatefunc.Min).Proto(),
-		search.NewQuerySelect(search.EPSSProbablity).AggrFunc(aggregatefunc.Max).Proto(),
-	)
-	cloned.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{search.CVE.String()},
-	}
-
-	return cloned
-}
-
 func (v *vmCVECoreViewImpl) GetCVEComponents(ctx context.Context, q *v1.Query) ([]CVEComponentCore, error) {
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
@@ -276,21 +229,4 @@ func (v *vmCVECoreViewImpl) GetCVEComponents(ctx context.Context, q *v1.Query) (
 		return nil, err
 	}
 	return ret, nil
-}
-
-func (v *vmCVECoreViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query) ([]string, error) {
-	var cveIDsToFilter []string
-
-	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
-	defer cancel()
-
-	err := pgSearch.RunSelectRequestForSchemaFn[vmCVECoreResponse](queryCtx, v.db, v.schema, withSelectCVEIdentifiersQuery(q), func(r *vmCVECoreResponse) error {
-		cveIDsToFilter = append(cveIDsToFilter, r.CVEIDs...)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return cveIDsToFilter, nil
 }

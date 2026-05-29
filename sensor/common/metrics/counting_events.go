@@ -2,19 +2,18 @@ package metrics
 
 import (
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/sensor/common/messagestream"
 )
 
 func incrementSensorEvents(event *central.SensorEvent, typ string) {
-	labels := prometheus.Labels{
-		"Action":       event.GetAction().String(),
-		"ResourceType": metrics.GetResourceString(event),
-		"Type":         typ,
-	}
-	sensorEvents.With(labels).Inc()
+	// Using `WithLabelValues` instead of `With` to avoid extra memory allocations.
+	sensorEvents.WithLabelValues(
+		event.GetAction().String(),
+		metrics.GetResourceString(event),
+		typ,
+	).Inc()
 }
 
 type countingMessageStream struct {

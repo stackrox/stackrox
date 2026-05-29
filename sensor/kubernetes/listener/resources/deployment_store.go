@@ -144,7 +144,7 @@ func (ds *DeploymentStore) GetAll() []*storage.Deployment {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
-	var ret []*storage.Deployment
+	ret := make([]*storage.Deployment, 0, len(ds.deployments))
 	for _, wrap := range ds.deployments {
 		if wrap != nil {
 			ret = append(ret, wrap.GetDeployment().CloneVT())

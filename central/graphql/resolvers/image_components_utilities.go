@@ -22,42 +22,6 @@ type imageComponentV2Resolver struct {
 	flatData imagecomponentflat.ComponentFlat
 }
 
-func (resolver *Resolver) wrapImageComponentV2(value *storage.ImageComponentV2, ok bool, err error) (*imageComponentV2Resolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &imageComponentV2Resolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapImageComponentV2s(values []*storage.ImageComponentV2, err error) ([]*imageComponentV2Resolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*imageComponentV2Resolver, len(values))
-	for i, v := range values {
-		output[i] = &imageComponentV2Resolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapImageComponentV2WithContext(ctx context.Context, value *storage.ImageComponentV2, ok bool, err error) (*imageComponentV2Resolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &imageComponentV2Resolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapImageComponentV2sWithContext(ctx context.Context, values []*storage.ImageComponentV2, err error) ([]*imageComponentV2Resolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*imageComponentV2Resolver, len(values))
-	for i, v := range values {
-		output[i] = &imageComponentV2Resolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
 func (resolver *Resolver) wrapImageComponentV2FlatWithContext(ctx context.Context, value *storage.ImageComponentV2, flatData imagecomponentflat.ComponentFlat, ok bool, err error) (*imageComponentV2Resolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err

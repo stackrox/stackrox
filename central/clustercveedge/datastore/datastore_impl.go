@@ -90,7 +90,3 @@ func (c *ClusterCVEEdgeSearchResultConverter) BuildLocation(result *searchPkg.Re
 func (c *ClusterCVEEdgeSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_CLUSTER_VULN_EDGE
 }
-
-func (c *ClusterCVEEdgeSearchResultConverter) GetScore(result *searchPkg.Result) float64 {
-	return result.Score
-}

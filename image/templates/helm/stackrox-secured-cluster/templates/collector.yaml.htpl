@@ -22,6 +22,7 @@ spec:
       labels:
         service: collector
         app: collector
+        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "daemonset" "collector") | nindent 8 }}
       annotations:
         {{- $annotations := dict -}}
@@ -146,12 +147,8 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
-        - mountPath: /host/proc
-          name: proc-ro
-          readOnly: true
-          mountPropagation: HostToContainer
-        - mountPath: /host/etc
-          name: etc-ro
+        - mountPath: /host
+          name: host-root-ro
           readOnly: true
           mountPropagation: HostToContainer
         - mountPath: /etc/stackrox

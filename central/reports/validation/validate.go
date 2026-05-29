@@ -246,8 +246,10 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 					return errors.Wrapf(errox.InvalidArgs, "%v values must be in 'key=value' format", rule.GetField())
 				}
 				// Check the key for a Kubernetes qualified name.
-				if errs := k8sValidation.IsLabelKey(mapKey); len(errs) > 0 {
-					return errors.Wrapf(errox.InvalidArgs, "invalid %v key %q: %s", rule.GetField(), mapKey, strings.Join(errs, "; "))
+				if rv.GetMatchType() == apiV2.MatchType_EXACT {
+					if errs := k8sValidation.IsLabelKey(mapKey); len(errs) > 0 {
+						return errors.Wrapf(errox.InvalidArgs, "invalid %v key %q: %s", rule.GetField(), mapKey, strings.Join(errs, "; "))
+					}
 				}
 				valOfValue = mapValue
 			}
@@ -302,6 +304,12 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 	}
 	if !common.IsV2ReportConfig(config) {
 		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 2.0")
+	}
+	// Verify ResourceScope is non-nil
+	if !common.HasValidResourceScope(config.GetResourceScope()) {
+		return nil, errors.Wrapf(errox.InvalidArgs,
+			"Report configuration '%s' has an empty resource scope (no collection ID or entity scope)",
+			configID)
 	}
 
 	if notificationMethod == storage.ReportStatus_EMAIL && len(config.GetNotifiers()) == 0 {

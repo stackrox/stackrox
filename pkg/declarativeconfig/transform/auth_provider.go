@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/iap"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/auth/authproviders/openshift"
@@ -47,14 +48,19 @@ func (a *authProviderTransform) Transform(configuration declarativeconfig.Config
 		return nil, errors.Wrap(err, "transforming auth provider configuration")
 	}
 
+	uiEndpoint, extraUIEndpoints, err := normalizeUIEndpoints(authProviderConfig.UIEndpoint, authProviderConfig.ExtraUIEndpoints)
+	if err != nil {
+		return nil, errors.Wrap(err, "normalizing auth provider UI endpoints")
+	}
+
 	// The assumption is that, when the auth provider will be stored later on, the DefaultLoginURL option is used,
 	// thus we do not set the login URL explicitly, even though we could.
 	authProviderProto := &storage.AuthProvider{
 		Id:                 declarativeconfig.NewDeclarativeAuthProviderUUID(authProviderConfig.Name).String(),
 		Name:               authProviderConfig.Name,
 		Type:               providerType,
-		UiEndpoint:         authProviderConfig.UIEndpoint,
-		ExtraUiEndpoints:   authProviderConfig.ExtraUIEndpoints,
+		UiEndpoint:         uiEndpoint,
+		ExtraUiEndpoints:   extraUIEndpoints,
 		Enabled:            true, // Enabled is required to be set to ensure the auth provider listed as ready for login.
 		Active:             true, // Active signals at least one user has logged in with the auth provider and disables modification in the UI.
 		Config:             providerConfig,
@@ -125,6 +131,21 @@ func getConfig(authProviderConfig *declarativeconfig.AuthProvider) (map[string]s
 	default:
 		return nil, errox.InvalidArgs.Newf("unsupported auth provider type %q given", authProviderType)
 	}
+}
+
+func normalizeUIEndpoints(primary string, extra []string) (string, []string, error) {
+	normalizedPrimary, err := authproviders.NormalizeUIEndpoint(primary)
+	if err != nil {
+		return "", nil, err
+	}
+	normalizedExtra := make([]string, len(extra))
+	for i, ep := range extra {
+		normalizedExtra[i], err = authproviders.NormalizeUIEndpoint(ep)
+		if err != nil {
+			return "", nil, err
+		}
+	}
+	return normalizedPrimary, normalizedExtra, nil
 }
 
 func getRequiredAttributes(requiredAttributesConfig []declarativeconfig.RequiredAttribute) []*storage.AuthProvider_RequiredAttribute {

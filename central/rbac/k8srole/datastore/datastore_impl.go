@@ -90,7 +90,3 @@ func (c *K8SRoleSearchResultConverter) BuildLocation(result *searchPkg.Result) s
 func (c *K8SRoleSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_ROLES
 }
-
-func (c *K8SRoleSearchResultConverter) GetScore(result *searchPkg.Result) float64 {
-	return result.Score
-}
