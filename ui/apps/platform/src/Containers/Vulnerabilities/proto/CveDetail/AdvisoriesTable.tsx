@@ -1,32 +1,31 @@
-import { Label } from '@patternfly/react-core';
+import { Bullseye, Label } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import type { ProtoAdvisory } from './useCveDetail';
 
-function severityColor(severity: string): 'red' | 'orange' | 'blue' | 'grey' {
-    switch (severity.toUpperCase()) {
-        case 'CRITICAL_VULNERABILITY_SEVERITY':
-        case 'CRITICAL':
+const severityNames: Record<number, string> = {
+    0: 'Unknown',
+    1: 'Low',
+    2: 'Moderate',
+    3: 'Important',
+    4: 'Critical',
+};
+
+function severityColor(severity: number): 'red' | 'orange' | 'blue' | 'grey' {
+    switch (severity) {
+        case 4:
             return 'red';
-        case 'IMPORTANT_VULNERABILITY_SEVERITY':
-        case 'IMPORTANT':
-        case 'HIGH':
+        case 3:
             return 'orange';
-        case 'MODERATE_VULNERABILITY_SEVERITY':
-        case 'MODERATE':
-        case 'MEDIUM':
+        case 2:
             return 'blue';
         default:
             return 'grey';
     }
 }
 
-function severityLabel(severity: string): string {
-    return severity
-        .replace('_VULNERABILITY_SEVERITY', '')
-        .replace(/_/g, ' ')
-        .toLowerCase()
-        .replace(/^\w/, (c) => c.toUpperCase());
+function severityLabel(severity: number): string {
+    return severityNames[severity] ?? 'Unknown';
 }
 
 type AdvisoriesTableProps = {
@@ -45,34 +44,28 @@ function AdvisoriesTable({ advisories }: AdvisoriesTableProps) {
                     <Th>Severity</Th>
                     <Th>CVSS</Th>
                     <Th>Source</Th>
-                    <Th>Fixable</Th>
-                    <Th>Fixed By</Th>
-                    <Th>Published</Th>
                 </Tr>
             </Thead>
             <Tbody>
                 {advisories.map((adv) => (
                     <Tr key={adv.id}>
-                        <Td dataLabel="Advisory ID">{adv.advisoryId}</Td>
+                        <Td dataLabel="Advisory ID">{adv.id}</Td>
                         <Td dataLabel="Severity">
                             <Label color={severityColor(adv.severity)}>
                                 {severityLabel(adv.severity)}
                             </Label>
                         </Td>
-                        <Td dataLabel="CVSS">{adv.cvss.toFixed(1)}</Td>
-                        <Td dataLabel="Source">{adv.source}</Td>
-                        <Td dataLabel="Fixable">{adv.fixable ? 'Yes' : 'No'}</Td>
-                        <Td dataLabel="Fixed By">{adv.fixedBy || '-'}</Td>
-                        <Td dataLabel="Published">
-                            {adv.publishedDate
-                                ? new Date(adv.publishedDate).toLocaleDateString()
-                                : '-'}
+                        <Td dataLabel="CVSS">
+                            {adv.cvss ? adv.cvss.toFixed(1) : '-'}
                         </Td>
+                        <Td dataLabel="Source">{adv.sourceName}</Td>
                     </Tr>
                 ))}
                 {advisories.length === 0 && (
                     <Tr>
-                        <Td colSpan={7}>No advisories found</Td>
+                        <Td colSpan={4}>
+                            <Bullseye>No advisories found</Bullseye>
+                        </Td>
                     </Tr>
                 )}
             </Tbody>

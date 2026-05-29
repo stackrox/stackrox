@@ -23,24 +23,38 @@ import FlowLayout from './FlowLayout';
 import TabLayout from './TabLayout';
 import CollapsibleLayout from './CollapsibleLayout';
 
+const severityNames: Record<number, string> = {
+    0: 'Unknown',
+    1: 'Low',
+    2: 'Moderate',
+    3: 'Important',
+    4: 'Critical',
+};
+
 /**
- * CVE detail page wrapper. Fetches advisory data for the CVE specified in the
- * URL parameter and renders the selected layout variant.
+ * CVE detail page wrapper. Fetches CVE data from the REST API and renders
+ * the selected layout variant.
  */
 function CveDetailPage() {
     const { cveName } = useParams<{ cveName: string }>();
     const { data, loading, error } = useCveDetail(cveName ?? '');
     const [layoutMode, setLayoutMode] = useLayoutMode();
 
-    const advisories = data?.protoCVEDetail ?? [];
-    const topAdvisory = advisories[0];
+    const advisories = data?.advisories ?? [];
+    const components = data?.components ?? [];
+    const images = data?.images ?? [];
+
+    const cvssDisplay = data?.cvss ? data.cvss.toFixed(1) : '-';
+    const severityDisplay = severityNames[data?.severity ?? 0] ?? 'Unknown';
 
     return (
         <>
             <PageSection hasBodyWrapper={false}>
                 <Breadcrumb>
                     <BreadcrumbItem>
-                        <Link to={vulnerabilitiesPrototypeCvePath}>CVE Prototype</Link>
+                        <Link to={vulnerabilitiesPrototypeCvePath}>
+                            CVE Prototype
+                        </Link>
                     </BreadcrumbItem>
                     <BreadcrumbItem isActive>{cveName}</BreadcrumbItem>
                 </Breadcrumb>
@@ -53,19 +67,30 @@ function CveDetailPage() {
                             <FlexItem>
                                 <Title headingLevel="h1">{cveName}</Title>
                             </FlexItem>
-                            {topAdvisory && (
-                                <FlexItem>
-                                    <Label color="blue">CVSS {topAdvisory.cvss.toFixed(1)}</Label>
-                                </FlexItem>
+                            {data && (
+                                <>
+                                    <FlexItem>
+                                        <Label color="blue">
+                                            CVSS {cvssDisplay}
+                                        </Label>
+                                    </FlexItem>
+                                    <FlexItem>
+                                        <Label color="grey">
+                                            {severityDisplay}
+                                        </Label>
+                                    </FlexItem>
+                                </>
                             )}
                         </Flex>
-                        {topAdvisory?.description && <p>{topAdvisory.description}</p>}
                     </StackItem>
 
                     <StackItem>
                         <Flex>
                             <FlexItem>
-                                <LayoutToggle mode={layoutMode} onSelect={setLayoutMode} />
+                                <LayoutToggle
+                                    mode={layoutMode}
+                                    onSelect={setLayoutMode}
+                                />
                             </FlexItem>
                         </Flex>
                     </StackItem>
@@ -84,13 +109,25 @@ function CveDetailPage() {
                 {error && <p>Error loading CVE detail: {error.message}</p>}
 
                 {!loading && !error && layoutMode === 'flow' && (
-                    <FlowLayout advisories={advisories} />
+                    <FlowLayout
+                        advisories={advisories}
+                        components={components}
+                        images={images}
+                    />
                 )}
                 {!loading && !error && layoutMode === 'tabs' && (
-                    <TabLayout advisories={advisories} />
+                    <TabLayout
+                        advisories={advisories}
+                        components={components}
+                        images={images}
+                    />
                 )}
                 {!loading && !error && layoutMode === 'collapsible' && (
-                    <CollapsibleLayout advisories={advisories} />
+                    <CollapsibleLayout
+                        advisories={advisories}
+                        components={components}
+                        images={images}
+                    />
                 )}
             </PageSection>
         </>

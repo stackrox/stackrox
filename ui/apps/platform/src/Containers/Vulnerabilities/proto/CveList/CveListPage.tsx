@@ -16,33 +16,36 @@ import { vulnerabilitiesPrototypeCvePath } from 'routePaths';
 import { useCveList } from './useCveList';
 import type { ProtoCVEListItem } from './useCveList';
 
-function severityColor(severity: string): 'red' | 'orange' | 'blue' | 'grey' {
-    switch (severity.toUpperCase()) {
-        case 'CRITICAL_VULNERABILITY_SEVERITY':
-        case 'CRITICAL':
+const severityNames: Record<number, string> = {
+    0: 'Unknown',
+    1: 'Low',
+    2: 'Moderate',
+    3: 'Important',
+    4: 'Critical',
+};
+
+function severityColor(severity: number): 'red' | 'orange' | 'blue' | 'grey' {
+    switch (severity) {
+        case 4:
             return 'red';
-        case 'IMPORTANT_VULNERABILITY_SEVERITY':
-        case 'IMPORTANT':
-        case 'HIGH':
+        case 3:
             return 'orange';
-        case 'MODERATE_VULNERABILITY_SEVERITY':
-        case 'MODERATE':
-        case 'MEDIUM':
+        case 2:
             return 'blue';
         default:
             return 'grey';
     }
 }
 
-function severityLabel(severity: string): string {
-    return severity
-        .replace('_VULNERABILITY_SEVERITY', '')
-        .replace(/_/g, ' ')
-        .toLowerCase()
-        .replace(/^\w/, (c) => c.toUpperCase());
+function severityLabel(severity: number): string {
+    return severityNames[severity] ?? 'Unknown';
 }
 
-function formatDate(dateStr: string): string {
+function formatCvss(cvss: number): string {
+    return cvss ? cvss.toFixed(1) : '-';
+}
+
+function formatDate(dateStr: string | null): string {
     if (!dateStr) {
         return '-';
     }
@@ -56,7 +59,8 @@ function formatDate(dateStr: string): string {
 function CveListPage() {
     const { data, loading, error } = useCveList(100, 0);
 
-    const cves: ProtoCVEListItem[] = data?.protoCVEList ?? [];
+    const cves: ProtoCVEListItem[] = data?.cves ?? [];
+    const totalCount = data?.totalCount ?? 0;
 
     return (
         <>
@@ -68,7 +72,8 @@ function CveListPage() {
                     <ToolbarContent>
                         <ToolbarItem>
                             {loading && <Spinner size="md" />}
-                            {!loading && `${cves.length} CVEs`}
+                            {!loading &&
+                                `${cves.length} of ${totalCount} CVEs`}
                         </ToolbarItem>
                     </ToolbarContent>
                 </Toolbar>
@@ -105,10 +110,16 @@ function CveListPage() {
                                         {severityLabel(cve.severity)}
                                     </Label>
                                 </Td>
-                                <Td dataLabel="CVSS">{cve.cvss.toFixed(1)}</Td>
+                                <Td dataLabel="CVSS">
+                                    {formatCvss(cve.cvss)}
+                                </Td>
                                 <Td dataLabel="Images">{cve.imageCount}</Td>
-                                <Td dataLabel="Fixable">{cve.fixable ? 'Yes' : 'No'}</Td>
-                                <Td dataLabel="First Seen">{formatDate(cve.firstSeen)}</Td>
+                                <Td dataLabel="Fixable">
+                                    {cve.fixable ? 'Yes' : 'No'}
+                                </Td>
+                                <Td dataLabel="First Seen">
+                                    {formatDate(cve.firstSeen)}
+                                </Td>
                             </Tr>
                         ))}
                         {!loading && cves.length === 0 && (

@@ -1,42 +1,42 @@
-import { gql, useQuery } from '@apollo/client';
+import { useEffect, useState } from 'react';
+
+import axios from 'services/instance';
 
 export type ProtoCVEListItem = {
     cveName: string;
-    severity: string;
+    severity: number;
     cvss: number;
     imageCount: number;
     fixable: boolean;
-    firstSeen: string;
+    firstSeen: string | null;
 };
 
-export const PROTO_CVE_LIST = gql`
-    query protoCVEList($limit: Int, $offset: Int) {
-        protoCVEList(limit: $limit, offset: $offset) {
-            cveName
-            severity
-            cvss
-            imageCount
-            fixable
-            firstSeen
-        }
-    }
-`;
-
-type ProtoCVEListData = {
-    protoCVEList: ProtoCVEListItem[];
-};
-
-type ProtoCVEListVars = {
-    limit?: number;
-    offset?: number;
+type CveListResponse = {
+    cves: ProtoCVEListItem[];
+    totalCount: number;
 };
 
 /**
- * Fetches the prototype CVE list from the GraphQL API.
+ * Fetches the prototype CVE list from the REST API.
  */
 export function useCveList(limit = 50, offset = 0) {
-    return useQuery<ProtoCVEListData, ProtoCVEListVars>(PROTO_CVE_LIST, {
-        variables: { limit, offset },
-        fetchPolicy: 'cache-and-network',
-    });
+    const [data, setData] = useState<CveListResponse | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    useEffect(() => {
+        setLoading(true);
+        axios
+            .get<CveListResponse>(
+                `/v1/scandata/cves?limit=${limit}&offset=${offset}`
+            )
+            .then((res) => {
+                setData(res.data);
+                setError(null);
+            })
+            .catch((err: Error) => setError(err))
+            .finally(() => setLoading(false));
+    }, [limit, offset]);
+
+    return { data, loading, error };
 }

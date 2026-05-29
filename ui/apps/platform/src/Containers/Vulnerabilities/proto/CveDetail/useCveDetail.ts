@@ -1,50 +1,62 @@
-import { gql, useQuery } from '@apollo/client';
+import { useEffect, useState } from 'react';
+
+import axios from 'services/instance';
 
 export type ProtoAdvisory = {
     id: string;
-    advisoryId: string;
-    cveName: string;
-    severity: string;
+    severity: number;
     cvss: number;
+    sourceName: string;
+};
+
+export type ProtoComponent = {
+    name: string;
+    version: string;
     source: string;
-    fixable: boolean;
     fixedBy: string;
-    description: string;
-    publishedDate: string;
+    imageCount: number;
 };
 
-export const PROTO_CVE_DETAIL = gql`
-    query protoCVEDetail($cveName: String!) {
-        protoCVEDetail(cveName: $cveName) {
-            id
-            advisoryId
-            cveName
-            severity
-            cvss
-            source
-            fixable
-            fixedBy
-            description
-            publishedDate
-        }
-    }
-`;
-
-type ProtoCVEDetailData = {
-    protoCVEDetail: ProtoAdvisory[];
+export type ProtoImage = {
+    imageId: string;
+    componentCount: number;
+    severity: number;
+    fixable: boolean;
 };
 
-type ProtoCVEDetailVars = {
+export type CveDetailResponse = {
     cveName: string;
+    severity: number;
+    cvss: number;
+    advisories: ProtoAdvisory[];
+    components: ProtoComponent[];
+    images: ProtoImage[];
 };
 
 /**
- * Fetches prototype CVE detail (advisories) from the GraphQL API.
+ * Fetches prototype CVE detail from the REST API.
  */
 export function useCveDetail(cveName: string) {
-    return useQuery<ProtoCVEDetailData, ProtoCVEDetailVars>(PROTO_CVE_DETAIL, {
-        variables: { cveName },
-        skip: !cveName,
-        fetchPolicy: 'cache-and-network',
-    });
+    const [data, setData] = useState<CveDetailResponse | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    useEffect(() => {
+        if (!cveName) {
+            return;
+        }
+        setLoading(true);
+        axios
+            .get<CveDetailResponse>(
+                `/v1/scandata/cves/${encodeURIComponent(cveName)}`
+            )
+            .then((res) => {
+                setData(res.data);
+                setError(null);
+            })
+            .catch((err: Error) => setError(err))
+            .finally(() => setLoading(false));
+    }, [cveName]);
+
+    return { data, loading, error };
 }
