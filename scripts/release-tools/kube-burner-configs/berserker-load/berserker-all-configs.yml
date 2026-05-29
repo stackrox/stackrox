@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{.JobName}}-berserker-config
+data:
+  processes.toml: |
+    restart_interval = 10
+    workers = 1
+
+    [workload]
+    type = "processes"
+    arrival_rate = 1.0
+    departure_rate = 200.0
+    random_process = true
+  endpoints.toml: |
+    restart_interval = 10
+    workers = 9
+
+    [workload]
+    type = "endpoints"
+    distribution = "zipf"
+    n_ports = 2000
+    exponent = 1.4
+  network-server.toml: |
+    restart_interval = 10
+    workers = 1
+    per_core = false
+
+    [workload]
+    type = "network"
+    server = true
+    address = "223.42.0.1"
+    target_port = 1337
+    arrival_rate = 10
+    departure_rate = 10
+    conns_per_addr = 2
+    nconnections = 4000
+  network-client.toml: |
+    restart_interval = 10
+    workers = 1
+    per_core = false
+
+    [workload]
+    type = "network"
+    server = false
+    address = "223.42.0.1"
+    target_port = 1337
+    arrival_rate = 10
+    departure_rate = 10
+    conns_per_addr = 2
+    nconnections = 4000
+  file-activity.ber: |
+    machine {
+      path("/tmp/data");
+    }
+
+    main (workers = 2, duration = 0) {
+      open(random_path("/tmp/data"));
+    } : exp {
+      rate = 100.0;
+    }

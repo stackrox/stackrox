@@ -1,0 +1,136 @@
+{{- $ip1 := randInt 1 223 -}}
+{{- $ip2 := randInt 0 255 -}}
+{{- $ip3 := randInt 0 255 -}}
+{{- $ip4 := randInt 0 255 -}}
+{{- $ip := printf "%d.%d.%d.%d/16" $ip1 $ip2 $ip3 $ip4 -}}
+{{- $berserkerAddress := printf "%d.%d.%d.%d" $ip1 $ip2 $ip3 $ip4 }}
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: berserker-{{.Replica}}
+spec:
+  selector:
+    matchLabels:
+      app: berserker-{{.Replica}}
+  template:
+    metadata:
+      labels:
+        app: berserker-{{.Replica}}
+    spec:
+      containers:
+      - name: process-load
+        image: "quay.io/stackrox-io/berserker:1.0-86-g3464e60064"
+        args:
+        - sleep
+        - infinity
+        resources:
+          requests:
+            memory: "10Mi"
+            cpu: "15m"
+          limits:
+            memory: "10Mi"
+            cpu: "15m"
+        volumeMounts:
+        - name: config
+          mountPath: "/etc/berserker/workload.toml"
+          subPath: processes.toml
+          readOnly: true
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: RUST_LOG
+          value: "error"
+        - name: BERSERKER__WORKLOAD__ARRIVAL_RATE
+          value: "1"
+      - name: endpoint-load
+        image: "quay.io/stackrox-io/berserker:1.0-86-g3464e60064"
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "25m"
+          limits:
+            memory: "180Mi"
+            cpu: "25m"
+        volumeMounts:
+        - name: config
+          mountPath: "/etc/berserker/workload.toml"
+          subPath: endpoints.toml
+          readOnly: true
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 8443
+          protocol: TCP
+        env:
+        - name: RUST_LOG
+          value: "error"
+      - name: connection-load
+        image: "quay.io/stackrox-io/berserker:network-1.0-85-g1b7ab034aa"
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "25m"
+          limits:
+            memory: "180Mi"
+            cpu: "25m"
+        volumeMounts:
+        - name: config
+          mountPath: "/etc/berserker/network-server.toml"
+          subPath: network-server.toml
+          readOnly: true
+        - name: config
+          mountPath: "/etc/berserker/network-client.toml"
+          subPath: network-client.toml
+          readOnly: true
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 8443
+          protocol: TCP
+        env:
+        - name: RUST_LOG
+          value: "error"
+        - name: IP_BASE
+          value: "{{ $ip }}"
+        - name: BERSERKER__WORKLOAD__ADDRESS
+          value: "{{ $berserkerAddress }}"
+        securityContext:
+          privileged: true
+      - name: file-activity
+        image: "quay.io/stackrox-io/berserker:1.0-96-gc213cfd0c7"
+        command:
+        - berserker
+        args:
+        - -f
+        - /etc/berserker/file-activity.ber
+        resources:
+          requests:
+            memory: "200Mi"
+            cpu: "15m"
+          limits:
+            memory: "200Mi"
+            cpu: "15m"
+        volumeMounts:
+        - name: config
+          mountPath: "/etc/berserker/file-activity.ber"
+          subPath: file-activity.ber
+          readOnly: true
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: RUST_LOG
+          value: "error"
+      volumes:
+      - name: config
+        configMap:
+          name: {{.JobName}}-berserker-config
+      tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 900
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 900
