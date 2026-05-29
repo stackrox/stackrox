@@ -45,6 +45,7 @@ import {
     vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesViewPath,
     vulnerabilitiesVirtualMachineCvesPath,
+    vulnerabilitiesPrototypePath,
     vulnerabilityReportsPath,
 } from 'routePaths';
 
@@ -99,6 +100,16 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
             content: 'Reports',
             path: vulnerabilityReportsPath,
             routeKey: 'vulnerabilities/reports',
+        },
+        {
+            type: 'separator',
+            key: 'before-prototype',
+        },
+        {
+            type: 'link',
+            content: 'CVE Prototype',
+            path: `${vulnerabilitiesPrototypePath}/cves`,
+            routeKey: 'vulnerabilities/prototype',
         },
         {
             type: 'separator',
