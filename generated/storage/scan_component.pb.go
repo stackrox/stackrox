@@ -23,20 +23,20 @@ const (
 
 type ScanComponent struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
-	Id       string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                          // @gotags: sql:"pk,id"
-	ScanId   string                 `protobuf:"bytes,2,opt,name=scan_id,json=scanId,proto3" json:"scan_id,omitempty" sql:"fk(ImageScanV2:id),index=btree"`    // @gotags: sql:"fk(ImageScanV2:id),index=btree"
-	ImageId  string                 `protobuf:"bytes,3,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(ImageV2:id),index=btree"` // @gotags: sql:"fk(ImageV2:id),index=btree"
-	Name     string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
-	Version  string                 `protobuf:"bytes,5,opt,name=version,proto3" json:"version,omitempty"`
-	Source   SourceType             `protobuf:"varint,6,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty"`
-	Location string                 `protobuf:"bytes,7,opt,name=location,proto3" json:"location,omitempty"`
+	Id       string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,hidden" sql:"pk,id"`                                  // @gotags: search:"Component ID,hidden" sql:"pk,id"
+	ScanId   string                 `protobuf:"bytes,2,opt,name=scan_id,json=scanId,proto3" json:"scan_id,omitempty" search:"Scan ID,hidden" sql:"fk(ImageScanV2:id),index=btree"`            // @gotags: search:"Scan ID,hidden" sql:"fk(ImageScanV2:id),index=btree"
+	ImageId  string                 `protobuf:"bytes,3,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" search:"Image ID,hidden" sql:"fk(ImageV2:id),index=btree"`         // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),index=btree"
+	Name     string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty" search:"Component"`                              // @gotags: search:"Component"
+	Version  string                 `protobuf:"bytes,5,opt,name=version,proto3" json:"version,omitempty" search:"Component Version"`                        // @gotags: search:"Component Version"
+	Source   SourceType             `protobuf:"varint,6,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty" search:"Component Source"` // @gotags: search:"Component Source"
+	Location string                 `protobuf:"bytes,7,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,hidden"`                      // @gotags: search:"Component Location,hidden"
 	// Types that are valid to be assigned to HasLayerIndex:
 	//
 	//	*ScanComponent_LayerIndex
 	HasLayerIndex   isScanComponent_HasLayerIndex `protobuf_oneof:"has_layer_index"`
-	LayerType       LayerType                     `protobuf:"varint,9,opt,name=layer_type,json=layerType,proto3,enum=storage.LayerType" json:"layer_type,omitempty"`
-	FixedBy         string                        `protobuf:"bytes,10,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
-	OperatingSystem string                        `protobuf:"bytes,11,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
+	LayerType       LayerType                     `protobuf:"varint,9,opt,name=layer_type,json=layerType,proto3,enum=storage.LayerType" json:"layer_type,omitempty" search:"Layer Type,hidden"` // @gotags: search:"Layer Type,hidden"
+	FixedBy         string                        `protobuf:"bytes,10,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty" search:"Fixed By,hidden"`                              // @gotags: search:"Fixed By,hidden"
+	OperatingSystem string                        `protobuf:"bytes,11,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"`      // @gotags: search:"Operating System"
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -162,7 +162,7 @@ type isScanComponent_HasLayerIndex interface {
 }
 
 type ScanComponent_LayerIndex struct {
-	LayerIndex int32 `protobuf:"varint,8,opt,name=layer_index,json=layerIndex,proto3,oneof"`
+	LayerIndex int32 `protobuf:"varint,8,opt,name=layer_index,json=layerIndex,proto3,oneof" search:"Layer Index,hidden"` // @gotags: search:"Layer Index,hidden"
 }
 
 func (*ScanComponent_LayerIndex) isScanComponent_HasLayerIndex() {}

@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -30,24 +29,15 @@ var (
 		schema = walker.Walk(reflect.TypeOf((*storage.ScanFinding)(nil)), "scan_findings")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ScanComponent": ScanComponentsSchema,
-			"storage.ImageScanV2":   ImageScanV2sSchema,
+			"storage.ImageScanV2":   ImageScanV2Schema,
 			"storage.ImageV2":       ImagesV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		// TODO: Add SearchCategory_SCAN_FINDINGS to search_service.proto
-		// schema.SetOptionsMap(search.Walk(v1.SearchCategory_SCAN_FINDINGS, "scanfinding", (*storage.ScanFinding)(nil)))
-		// schema.SetSearchScope([]v1.SearchCategory{
-		// 	v1.SearchCategory_SCAN_FINDINGS,
-		// 	v1.SearchCategory_SCAN_COMPONENTS,
-		// 	v1.SearchCategory_IMAGE_SCANS_V2,
-		// 	v1.SearchCategory_IMAGES_V2,
-		// }...)
 		schema.ScopingResource = resources.Image
 		RegisterTable(schema, CreateTableScanFindingsStmt)
-		// mapping.RegisterCategoryToTable(v1.SearchCategory_SCAN_FINDINGS, schema)
 		return schema
 	}()
 )
@@ -79,12 +69,11 @@ type ScanFindings struct {
 	PublishedDate         *time.Time                    `gorm:"column:publisheddate;type:timestamp"`
 	DataSource            string                        `gorm:"column:datasource;type:varchar"`
 	SourceName            string                        `gorm:"column:sourcename;type:varchar"`
-	Links                 *pq.StringArray               `gorm:"column:links;type:text[]"`
 	State                 storage.VulnerabilityState    `gorm:"column:state;type:integer;index:scanfindings_state,type:btree"`
 	FirstImageOccurrence  *time.Time                    `gorm:"column:firstimageoccurrence;type:timestamp"`
 	FirstSystemOccurrence *time.Time                    `gorm:"column:firstsystemoccurrence;type:timestamp"`
 	Serialized            []byte                        `gorm:"column:serialized;type:bytea"`
-	ScanComponentRef      ScanComponents                `gorm:"foreignKey:componentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-	ImageScanV2Ref        ImageScanV2s                  `gorm:"foreignKey:scanid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	ScanComponentsRef     ScanComponents                `gorm:"foreignKey:componentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	ImageScanV2Ref        ImageScanV2                   `gorm:"foreignKey:scanid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImagesV2Ref           ImagesV2                      `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

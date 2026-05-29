@@ -24,30 +24,30 @@ const (
 
 type ScanFinding struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
-	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"` // @gotags: sql:"pk,id"
-	AdvisoryId            string                 `protobuf:"bytes,2,opt,name=advisory_id,json=advisoryId,proto3" json:"advisory_id,omitempty"`
-	CveName               string                 `protobuf:"bytes,3,opt,name=cve_name,json=cveName,proto3" json:"cve_name,omitempty" sql:"index=btree"`                        // @gotags: sql:"index=btree"
-	ComponentId           string                 `protobuf:"bytes,4,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" sql:"fk(ScanComponent:id),index=btree"`            // @gotags: sql:"fk(ScanComponent:id),index=btree"
-	ScanId                string                 `protobuf:"bytes,5,opt,name=scan_id,json=scanId,proto3" json:"scan_id,omitempty" sql:"fk(ImageScanV2:id)"`                           // @gotags: sql:"fk(ImageScanV2:id)"
-	ImageId               string                 `protobuf:"bytes,6,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(ImageV2:id),index=btree"`                        // @gotags: sql:"fk(ImageV2:id),index=btree"
-	Severity              VulnerabilitySeverity  `protobuf:"varint,7,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" sql:"index=btree"` // @gotags: sql:"index=btree"
-	Cvss                  float32                `protobuf:"fixed32,8,opt,name=cvss,proto3" json:"cvss,omitempty"`
-	CvssVersion           CvssScoreVersion       `protobuf:"varint,9,opt,name=cvss_version,json=cvssVersion,proto3,enum=storage.CvssScoreVersion" json:"cvss_version,omitempty"`
-	NvdCvss               float32                `protobuf:"fixed32,10,opt,name=nvd_cvss,json=nvdCvss,proto3" json:"nvd_cvss,omitempty"`
-	NvdCvssVersion        CvssScoreVersion       `protobuf:"varint,11,opt,name=nvd_cvss_version,json=nvdCvssVersion,proto3,enum=storage.CvssScoreVersion" json:"nvd_cvss_version,omitempty"`
-	EpssProbability       float32                `protobuf:"fixed32,12,opt,name=epss_probability,json=epssProbability,proto3" json:"epss_probability,omitempty"`
-	EpssPercentile        float32                `protobuf:"fixed32,13,opt,name=epss_percentile,json=epssPercentile,proto3" json:"epss_percentile,omitempty"`
-	IsFixable             bool                   `protobuf:"varint,14,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty"`
-	FixedBy               string                 `protobuf:"bytes,15,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
-	FixedDate             *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=fixed_date,json=fixedDate,proto3" json:"fixed_date,omitempty"`
-	Description           string                 `protobuf:"bytes,17,opt,name=description,proto3" json:"description,omitempty"`
-	PublishedDate         *timestamppb.Timestamp `protobuf:"bytes,18,opt,name=published_date,json=publishedDate,proto3" json:"published_date,omitempty"`
-	DataSource            string                 `protobuf:"bytes,19,opt,name=data_source,json=dataSource,proto3" json:"data_source,omitempty"`
-	SourceName            string                 `protobuf:"bytes,20,opt,name=source_name,json=sourceName,proto3" json:"source_name,omitempty"`
-	Links                 []string               `protobuf:"bytes,21,rep,name=links,proto3" json:"links,omitempty" sql:"type(text[])"` // @gotags: sql:"type(text[])"
-	State                 VulnerabilityState     `protobuf:"varint,22,opt,name=state,proto3,enum=storage.VulnerabilityState" json:"state,omitempty"`
-	FirstImageOccurrence  *timestamppb.Timestamp `protobuf:"bytes,23,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty"`
-	FirstSystemOccurrence *timestamppb.Timestamp `protobuf:"bytes,24,opt,name=first_system_occurrence,json=firstSystemOccurrence,proto3" json:"first_system_occurrence,omitempty"`
+	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Finding ID,hidden" sql:"pk,id"`                                                                                 // @gotags: search:"Finding ID,hidden" sql:"pk,id"
+	AdvisoryId            string                 `protobuf:"bytes,2,opt,name=advisory_id,json=advisoryId,proto3" json:"advisory_id,omitempty" search:"Advisory ID" sql:"index=btree"`                                               // @gotags: search:"Advisory ID" sql:"index=btree"
+	CveName               string                 `protobuf:"bytes,3,opt,name=cve_name,json=cveName,proto3" json:"cve_name,omitempty" search:"CVE" sql:"index=btree"`                                                        // @gotags: search:"CVE" sql:"index=btree"
+	ComponentId           string                 `protobuf:"bytes,4,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" search:"Component ID,hidden" sql:"fk(ScanComponent:id),index=btree"`                                            // @gotags: search:"Component ID,hidden" sql:"fk(ScanComponent:id),index=btree"
+	ScanId                string                 `protobuf:"bytes,5,opt,name=scan_id,json=scanId,proto3" json:"scan_id,omitempty" search:"Scan ID,hidden" sql:"fk(ImageScanV2:id)"`                                                           // @gotags: search:"Scan ID,hidden" sql:"fk(ImageScanV2:id)"
+	ImageId               string                 `protobuf:"bytes,6,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" search:"Image ID,hidden" sql:"fk(ImageV2:id),index=btree"`                                                        // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),index=btree"
+	Severity              VulnerabilitySeverity  `protobuf:"varint,7,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity" sql:"index=btree"`                                 // @gotags: search:"Severity" sql:"index=btree"
+	Cvss                  float32                `protobuf:"fixed32,8,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS"`                                                                           // @gotags: search:"CVSS"
+	CvssVersion           CvssScoreVersion       `protobuf:"varint,9,opt,name=cvss_version,json=cvssVersion,proto3,enum=storage.CvssScoreVersion" json:"cvss_version,omitempty" search:"CVSS Version,hidden"`             // @gotags: search:"CVSS Version,hidden"
+	NvdCvss               float32                `protobuf:"fixed32,10,opt,name=nvd_cvss,json=nvdCvss,proto3" json:"nvd_cvss,omitempty" search:"NVD CVSS"`                                                     // @gotags: search:"NVD CVSS"
+	NvdCvssVersion        CvssScoreVersion       `protobuf:"varint,11,opt,name=nvd_cvss_version,json=nvdCvssVersion,proto3,enum=storage.CvssScoreVersion" json:"nvd_cvss_version,omitempty" search:"NVD CVSS Version,hidden"` // @gotags: search:"NVD CVSS Version,hidden"
+	EpssProbability       float32                `protobuf:"fixed32,12,opt,name=epss_probability,json=epssProbability,proto3" json:"epss_probability,omitempty" search:"EPSS Probability"`                             // @gotags: search:"EPSS Probability"
+	EpssPercentile        float32                `protobuf:"fixed32,13,opt,name=epss_percentile,json=epssPercentile,proto3" json:"epss_percentile,omitempty" search:"EPSS Percentile"`                                // @gotags: search:"EPSS Percentile"
+	IsFixable             bool                   `protobuf:"varint,14,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable"`                                                // @gotags: search:"Fixable"
+	FixedBy               string                 `protobuf:"bytes,15,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty" search:"Fixed By,hidden"`                                                       // @gotags: search:"Fixed By,hidden"
+	FixedDate             *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=fixed_date,json=fixedDate,proto3" json:"fixed_date,omitempty" search:"Fixed Date,hidden"`                                                 // @gotags: search:"Fixed Date,hidden"
+	Description           string                 `protobuf:"bytes,17,opt,name=description,proto3" json:"description,omitempty" search:"Description,hidden"`                                                              // @gotags: search:"Description,hidden"
+	PublishedDate         *timestamppb.Timestamp `protobuf:"bytes,18,opt,name=published_date,json=publishedDate,proto3" json:"published_date,omitempty" search:"Published Date,hidden"`                                     // @gotags: search:"Published Date,hidden"
+	DataSource            string                 `protobuf:"bytes,19,opt,name=data_source,json=dataSource,proto3" json:"data_source,omitempty" search:"Data Source,hidden"`                                              // @gotags: search:"Data Source,hidden"
+	SourceName            string                 `protobuf:"bytes,20,opt,name=source_name,json=sourceName,proto3" json:"source_name,omitempty" search:"Source Name"`                                              // @gotags: search:"Source Name"
+	Links                 []string               `protobuf:"bytes,21,rep,name=links,proto3" json:"links,omitempty" sql:"type(text[])"`                                                                          // @gotags: sql:"type(text[])"
+	State                 VulnerabilityState     `protobuf:"varint,22,opt,name=state,proto3,enum=storage.VulnerabilityState" json:"state,omitempty" search:"Vulnerability State" sql:"index=btree"`                                         // @gotags: search:"Vulnerability State" sql:"index=btree"
+	FirstImageOccurrence  *timestamppb.Timestamp `protobuf:"bytes,23,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty" search:"First Image Occurrence,hidden"`              // @gotags: search:"First Image Occurrence,hidden"
+	FirstSystemOccurrence *timestamppb.Timestamp `protobuf:"bytes,24,opt,name=first_system_occurrence,json=firstSystemOccurrence,proto3" json:"first_system_occurrence,omitempty" search:"First System Occurrence,hidden"`           // @gotags: search:"First System Occurrence,hidden"
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }

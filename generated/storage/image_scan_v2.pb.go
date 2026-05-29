@@ -24,13 +24,13 @@ const (
 
 type ImageScanV2 struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                          // @gotags: sql:"pk,id"
-	ImageId        string                 `protobuf:"bytes,2,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(ImageV2:id),index=btree"` // @gotags: sql:"fk(ImageV2:id),index=btree"
-	ScanTime       *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`
-	ScannerVersion string                 `protobuf:"bytes,4,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty"`
-	BundleVersion  string                 `protobuf:"bytes,5,opt,name=bundle_version,json=bundleVersion,proto3" json:"bundle_version,omitempty"`
-	DataSources    []string               `protobuf:"bytes,6,rep,name=data_sources,json=dataSources,proto3" json:"data_sources,omitempty" sql:"type(text[])"` // @gotags: sql:"type(text[])"
-	Notes          string                 `protobuf:"bytes,7,opt,name=notes,proto3" json:"notes,omitempty" sql:"type(jsonb)"`                                // @gotags: sql:"type(jsonb)"
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Scan ID,hidden" sql:"pk,id"`                                               // @gotags: search:"Scan ID,hidden" sql:"pk,id"
+	ImageId        string                 `protobuf:"bytes,2,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" search:"Image ID,hidden" sql:"fk(ImageV2:id),index=btree"`                      // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),index=btree"
+	ScanTime       *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Scan Time"`                   // @gotags: search:"Scan Time"
+	ScannerVersion string                 `protobuf:"bytes,4,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty" search:"Scanner Version"` // @gotags: search:"Scanner Version"
+	BundleVersion  string                 `protobuf:"bytes,5,opt,name=bundle_version,json=bundleVersion,proto3" json:"bundle_version,omitempty" search:"Bundle Version"`    // @gotags: search:"Bundle Version"
+	DataSources    []string               `protobuf:"bytes,6,rep,name=data_sources,json=dataSources,proto3" json:"data_sources,omitempty" sql:"type(text[])"`          // @gotags: sql:"type(text[])"
+	Notes          string                 `protobuf:"bytes,7,opt,name=notes,proto3" json:"notes,omitempty" sql:"type(jsonb)"`                                         // @gotags: sql:"type(jsonb)"
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
