@@ -92,6 +92,10 @@ type raceTestCase struct {
 }
 
 func TestResolverRaceScenarios(t *testing.T) {
+	// This test directly constructs resolverImpl without a pubsubDispatcher and exercises
+	// the legacy channel-based path. Disable the feature flag so processMessage does not
+	// attempt to publish via a nil dispatcher.
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "false")
 	defer goleak.AssertNoGoroutineLeaks(t)
 
 	cases := map[string]raceTestCase{
