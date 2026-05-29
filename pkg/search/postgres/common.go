@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
+	pkgUUID "github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -595,17 +596,22 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 	where := seenQueries.GetArbitraryElem()
 	where = strings.TrimSuffix(where, exactQuerySuffix)
 
-	// For large value sets, use = ANY($1::text[]) with a single array parameter
+	// For large value sets, use = ANY($1::type[]) with a single array parameter
 	// to avoid the 65535 parameter limit. For small sets, use IN ($1, $2, ...)
 	// for better plan quality since the planner can inspect individual values.
 	if len(values) >= env.PostgresParameterThreshold.IntegerSetting() {
+		// Detect column type from the first value to pick the right array cast.
+		cast := "::text[]"
+		if _, isUUID := values[0].(pkgUUID.UUID); isUUID {
+			cast = "::uuid[]"
+		}
 		stringValues := make([]string, len(values))
 		for i, v := range values {
 			stringValues[i] = fmt.Sprintf("%s", v)
 		}
 		return &pgsearch.QueryEntry{
 			Where: pgsearch.WhereClause{
-				Query:  fmt.Sprintf("%s = ANY($$::text[])", where),
+				Query:  fmt.Sprintf("%s = ANY($$%s)", where, cast),
 				Values: []interface{}{stringValues},
 			},
 			SelectedFields: entries[0].SelectedFields,
