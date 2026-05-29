@@ -10,6 +10,7 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
+import { Link } from 'react-router-dom-v5-compat';
 
 import type { ProtoImage } from './useCveDetail';
 
@@ -34,27 +35,20 @@ function severityColor(severity: number): 'red' | 'orange' | 'blue' | 'grey' {
     }
 }
 
-/**
- * Truncates a sha256 image ID for display (e.g. "sha256:abc123..." -> "sha256:abc123..").
- */
-function truncateImageId(imageId: string): string {
-    if (imageId.startsWith('sha256:') && imageId.length > 19) {
-        return `${imageId.slice(0, 19)}...`;
+function displayImageName(img: ProtoImage): string {
+    if (img.imageName) {
+        return img.imageName;
     }
-    if (imageId.length > 12) {
-        return `${imageId.slice(0, 12)}...`;
+    if (img.imageId.startsWith('sha256:') && img.imageId.length > 19) {
+        return `${img.imageId.slice(0, 19)}...`;
     }
-    return imageId;
+    return img.imageId;
 }
 
 type AffectedImagesTableProps = {
     images: ProtoImage[];
 };
 
-/**
- * Displays a table of affected images for a given CVE, with expandable rows
- * showing the components affected within each image.
- */
 function AffectedImagesTable({ images }: AffectedImagesTableProps) {
     const [expandedImages, setExpandedImages] = useState<Set<string>>(
         new Set()
@@ -72,14 +66,14 @@ function AffectedImagesTable({ images }: AffectedImagesTableProps) {
         });
     }
 
-    const columnCount = 5; // toggle + image ID + components + severity + fixable
+    const columnCount = 5;
 
     return (
         <Table aria-label="Affected images" variant="compact">
             <Thead>
                 <Tr>
                     <Th screenReaderText="Row expansion" />
-                    <Th>Image ID</Th>
+                    <Th>Image</Th>
                     <Th>Components</Th>
                     <Th>Severity</Th>
                     <Th>Fixable</Th>
@@ -87,7 +81,9 @@ function AffectedImagesTable({ images }: AffectedImagesTableProps) {
             </Thead>
             {images.map((img, rowIndex) => {
                 const isExpanded = expandedImages.has(img.imageId);
-                const imageDetailUrl = `/main/vulnerabilities/workload-cves/images/${img.imageId}`;
+                const imageLink = img.imageUuid
+                    ? `/main/vulnerabilities/workload-cves/images/${img.imageUuid}`
+                    : null;
                 return (
                     <Tbody key={img.imageId} isExpanded={isExpanded}>
                         <Tr>
@@ -98,13 +94,16 @@ function AffectedImagesTable({ images }: AffectedImagesTableProps) {
                                     onToggle: () => toggleExpand(img.imageId),
                                 }}
                             />
-                            <Td dataLabel="Image ID">
-                                <a
-                                    href={imageDetailUrl}
-                                    title={img.imageId}
-                                >
-                                    {truncateImageId(img.imageId)}
-                                </a>
+                            <Td dataLabel="Image">
+                                {imageLink ? (
+                                    <Link to={imageLink} title={img.imageId}>
+                                        {displayImageName(img)}
+                                    </Link>
+                                ) : (
+                                    <span title={img.imageId}>
+                                        {displayImageName(img)}
+                                    </span>
+                                )}
                             </Td>
                             <Td dataLabel="Components">
                                 {img.componentCount}
@@ -124,7 +123,7 @@ function AffectedImagesTable({ images }: AffectedImagesTableProps) {
                                     {img.components &&
                                     img.components.length > 0 ? (
                                         <Table
-                                            aria-label={`Components for ${truncateImageId(img.imageId)}`}
+                                            aria-label={`Components for ${displayImageName(img)}`}
                                             variant="compact"
                                             borders={false}
                                         >
@@ -134,6 +133,7 @@ function AffectedImagesTable({ images }: AffectedImagesTableProps) {
                                                     <Th>Version</Th>
                                                     <Th>Source</Th>
                                                     <Th>Fixed By</Th>
+                                                    <Th>Advisories</Th>
                                                 </Tr>
                                             </Thead>
                                             <Tbody>
@@ -154,6 +154,11 @@ function AffectedImagesTable({ images }: AffectedImagesTableProps) {
                                                             <Td dataLabel="Fixed By">
                                                                 {comp.fixedBy ||
                                                                     '-'}
+                                                            </Td>
+                                                            <Td dataLabel="Advisories">
+                                                                {comp.advisories?.join(
+                                                                    ', '
+                                                                ) || '-'}
                                                             </Td>
                                                         </Tr>
                                                     )

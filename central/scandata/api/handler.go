@@ -2,6 +2,7 @@ package api
 
 import (
 	"cmp"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -89,15 +90,18 @@ type ComponentInfo struct {
 
 // ImageComponentInfo represents a component affected by a CVE within a specific image.
 type ImageComponentInfo struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
-	Source  string `json:"source"`
-	FixedBy string `json:"fixedBy,omitempty"`
+	Name       string   `json:"name"`
+	Version    string   `json:"version"`
+	Source     string   `json:"source"`
+	Advisories []string `json:"advisories"`
+	FixedBy    string   `json:"fixedBy,omitempty"`
 }
 
 // ImageInfo represents an image affected by a CVE
 type ImageInfo struct {
 	ImageID        string               `json:"imageId"`
+	ImageUUID      string               `json:"imageUuid,omitempty"`
+	ImageName      string               `json:"imageName,omitempty"`
 	ComponentCount int                  `json:"componentCount"`
 	Severity       int32                `json:"severity"`
 	Fixable        bool                 `json:"fixable"`
@@ -197,7 +201,7 @@ func (h *handler) getCVEDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := buildCVEDetailResponse(cveName, findingsWithComps)
+	response := buildCVEDetailResponse(ctx, h.datastore, cveName, findingsWithComps)
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -219,7 +223,7 @@ func advisoryLink(id string) string {
 	}
 }
 
-func buildCVEDetailResponse(cveName string, findings []*types.FindingWithComponent) *CVEDetailResponse {
+func buildCVEDetailResponse(ctx context.Context, ds datastore.DataStore, cveName string, findings []*types.FindingWithComponent) *CVEDetailResponse {
 	var maxSeverity int32
 	var maxCVSS float32
 
@@ -227,9 +231,13 @@ func buildCVEDetailResponse(cveName string, findings []*types.FindingWithCompone
 
 	// Group components by name|version|source so the same component across images is one entry.
 	componentMap := make(map[string]*ComponentInfo)
+	// Track which images we've already counted for each component.
+	compImageSeen := make(map[string]map[string]bool)
 
 	// Track per-image data including which components affect each image.
 	imageMap := make(map[string]*ImageInfo)
+	// Track per-image component indices so we can append advisories to existing entries.
+	imageCompIdx := make(map[string]map[string]int)
 
 	for _, fc := range findings {
 		f := fc.Finding
@@ -267,8 +275,13 @@ func buildCVEDetailResponse(cveName string, findings []*types.FindingWithCompone
 				FixedBy:    f.GetFixedBy(),
 				ImageCount: 0,
 			}
+			compImageSeen[compKey] = make(map[string]bool)
 		}
-		componentMap[compKey].ImageCount++
+		// Count each image only once per component (multiple advisories inflate the count otherwise).
+		if !compImageSeen[compKey][f.GetImageId()] {
+			compImageSeen[compKey][f.GetImageId()] = true
+			componentMap[compKey].ImageCount++
+		}
 
 		// Image -- track per-image components for expandable rows.
 		imageID := f.GetImageId()
@@ -280,6 +293,7 @@ func buildCVEDetailResponse(cveName string, findings []*types.FindingWithCompone
 				Fixable:        f.GetIsFixable(),
 				Components:     nil,
 			}
+			imageCompIdx[imageID] = make(map[string]int)
 		} else {
 			if f.GetSeverity() > storage.VulnerabilitySeverity(imageMap[imageID].Severity) {
 				imageMap[imageID].Severity = int32(f.GetSeverity())
@@ -288,13 +302,24 @@ func buildCVEDetailResponse(cveName string, findings []*types.FindingWithCompone
 				imageMap[imageID].Fixable = true
 			}
 		}
-		imageMap[imageID].ComponentCount++
-		imageMap[imageID].Components = append(imageMap[imageID].Components, ImageComponentInfo{
-			Name:    fc.ComponentName,
-			Version: fc.ComponentVersion,
-			Source:  compSource,
-			FixedBy: f.GetFixedBy(),
-		})
+		// Per-image components: dedup by name+version, collect advisory IDs.
+		imgCompKey := fmt.Sprintf("%s|%s", fc.ComponentName, fc.ComponentVersion)
+		if idx, seen := imageCompIdx[imageID][imgCompKey]; seen {
+			// Component already tracked — just append advisory ID.
+			imageMap[imageID].Components[idx].Advisories = append(
+				imageMap[imageID].Components[idx].Advisories, f.GetAdvisoryId())
+		} else {
+			// New component for this image.
+			imageCompIdx[imageID][imgCompKey] = len(imageMap[imageID].Components)
+			imageMap[imageID].ComponentCount++
+			imageMap[imageID].Components = append(imageMap[imageID].Components, ImageComponentInfo{
+				Name:       fc.ComponentName,
+				Version:    fc.ComponentVersion,
+				Source:     compSource,
+				FixedBy:    f.GetFixedBy(),
+				Advisories: []string{f.GetAdvisoryId()},
+			})
+		}
 	}
 
 	// Convert maps to slices.
@@ -308,8 +333,22 @@ func buildCVEDetailResponse(cveName string, findings []*types.FindingWithCompone
 		components = append(components, *comp)
 	}
 
+	// Enrich images with name and UUID from images_v2.
+	digests := make([]string, 0, len(imageMap))
+	for digest := range imageMap {
+		digests = append(digests, digest)
+	}
+	imageInfoMap, err := ds.GetImageInfoByDigests(ctx, digests)
+	if err != nil {
+		log.Warnf("failed to enrich image info: %v", err)
+	}
+
 	images := make([]ImageInfo, 0, len(imageMap))
 	for _, img := range imageMap {
+		if info, ok := imageInfoMap[img.ImageID]; ok {
+			img.ImageUUID = info.UUID
+			img.ImageName = info.FullName
+		}
 		images = append(images, *img)
 	}
 

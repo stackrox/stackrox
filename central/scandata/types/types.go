@@ -23,6 +23,12 @@ type CVEListRow struct {
 	FirstSeen  *time.Time
 }
 
+// ImageBasicInfo holds the UUID and display name for an image looked up by digest.
+type ImageBasicInfo struct {
+	UUID     string
+	FullName string
+}
+
 // FindingWithComponent is a finding joined with its parent component's metadata.
 type FindingWithComponent struct {
 	Finding          *storage.ScanFinding
