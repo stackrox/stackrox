@@ -155,8 +155,8 @@ spec:
       description: Additional labels to put on the built containers.
       default: []
     - default:
-      - linux-d160-m2xlarge/amd64
-      - linux-d160-m2xlarge/arm64
+      - linux/x86_64
+      - linux/arm64
       - linux/ppc64le
       - linux/s390x
       description: >
@@ -169,6 +169,10 @@ spec:
       description: Repository where the operator bundle image is pushed by operator-bundle-build.yaml.
       type: string
       default: "quay.io/rhacs-eng/release-operator-bundle"
+    - name: buildah-format
+      default: docker
+      type: string
+      description: The format for the resulting image's mediaType. Valid values are oci or docker.
 
     results:
     - description: ""
@@ -364,6 +368,9 @@ spec:
             echo "Building operator index for bundle: ${BUNDLE_IMAGE}"
             echo "Target index image: ${INDEX_IMAGE}"
 
+            make yq
+            export YQ=$(pwd)/.gotools/bin/yq
+
             # Use the existing build script to generate index content
             ./hack/build-index-image.sh \
               --index-tag "${INDEX_IMAGE}" \
@@ -399,7 +406,7 @@ spec:
       - name: IMAGE
         value: $(params.output-image-repo):$(tasks.determine-index-tag.results.INDEX_TAG)
       - name: DOCKERFILE
-        # The Dockerfile si generated in the build-index-image.sh script (via OPM generate dockerfile)
+        # The Dockerfile is generated in the build-index-image.sh script (via OPM generate dockerfile)
         value: rhacs-operator-index.Dockerfile
       - name: CONTEXT
         value: .
@@ -431,7 +438,7 @@ spec:
         value:
         - $(tasks.build-images.results.IMAGE_REF[*])
       - name: BUILDAH_FORMAT
-        value: oci
+        value: $(params.buildah-format)
       taskRef:
         params:
         - name: name
