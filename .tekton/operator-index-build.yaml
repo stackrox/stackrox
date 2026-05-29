@@ -422,6 +422,8 @@ spec:
         value: "$(tasks.clone-repository.results.commit-timestamp)"
       - name: LABELS
         value: ["$(params.extra-labels[*])"]
+      - name: BUILDAH_FORMAT
+        value: $(params.buildah-format)
       taskRef:
         params:
         - name: name
