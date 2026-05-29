@@ -157,6 +157,12 @@ func TestRunDistinctCountForSchema(t *testing.T) {
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(t)
 
+	store := postgres.New(testDB.DB)
+	testStructs := getTestStructs()
+	for _, s := range testStructs {
+		require.NoError(t, store.Upsert(ctx, s))
+	}
+
 	// 4 structs with unique keys
 	count, err := pgSearch.RunDistinctCountForSchema(ctx, testDB.DB, schema.TestStructsSchema, search.EmptyQuery(), search.TestKey)
 	require.NoError(t, err)
