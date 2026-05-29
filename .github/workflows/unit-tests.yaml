@@ -16,6 +16,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+env:
+  # Stable version ldflags for test caching: Go's test cache keys include
+  # link ActionID which includes -X ldflags. Fixed BUILD_TAG/SHORTCOMMIT
+  # prevent per-commit cache misses.
+  BUILD_TAG: 0.0.0
+  SHORTCOMMIT: "0000000"
+
 jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
@@ -36,12 +43,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    # Stable version ldflags for test caching: Go's test cache keys include
-    # link ActionID which includes -X ldflags. Fixed BUILD_TAG/SHORTCOMMIT
-    # prevent per-commit cache misses.
-    env:
-      BUILD_TAG: 0.0.0
-      SHORTCOMMIT: "0000000"
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -116,12 +117,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    # Stable version ldflags for test caching: Go's test cache keys include
-    # link ActionID which includes -X ldflags. Fixed BUILD_TAG/SHORTCOMMIT
-    # prevent per-commit cache misses.
     env:
-      BUILD_TAG: 0.0.0
-      SHORTCOMMIT: "0000000"
       POSTGRES_PASSWORD: testpassword
     steps:
     # Runner's postgres is initialized with C.UTF-8 locale (GHA default).
@@ -372,7 +368,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -414,7 +409,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -462,17 +456,12 @@ jobs:
   sensor-integration-tests:
     env:
       KUBECONFIG: "/tmp/kubeconfig"
-      # Stable version ldflags for test caching (see go job comment).
-      BUILD_TAG: 0.0.0
-      SHORTCOMMIT: "0000000"
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
