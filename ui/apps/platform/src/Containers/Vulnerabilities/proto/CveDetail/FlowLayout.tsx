@@ -1,18 +1,20 @@
 import { Stack, StackItem, Title } from '@patternfly/react-core';
 
-import type { ProtoAdvisory } from './useCveDetail';
+import type { ProtoAdvisory, ProtoComponent, ProtoImage } from './useCveDetail';
 import AdvisoriesTable from './AdvisoriesTable';
 import AffectedComponentsTable from './AffectedComponentsTable';
 import AffectedImagesTable from './AffectedImagesTable';
 
 type FlowLayoutProps = {
     advisories: ProtoAdvisory[];
+    components: ProtoComponent[];
+    images: ProtoImage[];
 };
 
 /**
  * Renders all sections flowing vertically: advisories, components, images.
  */
-function FlowLayout({ advisories }: FlowLayoutProps) {
+function FlowLayout({ advisories, components, images }: FlowLayoutProps) {
     return (
         <Stack hasGutter>
             <StackItem>
@@ -21,11 +23,11 @@ function FlowLayout({ advisories }: FlowLayoutProps) {
             </StackItem>
             <StackItem>
                 <Title headingLevel="h3">Affected Components</Title>
-                <AffectedComponentsTable />
+                <AffectedComponentsTable components={components} />
             </StackItem>
             <StackItem>
                 <Title headingLevel="h3">Affected Images</Title>
-                <AffectedImagesTable />
+                <AffectedImagesTable images={images} />
             </StackItem>
         </Stack>
     );

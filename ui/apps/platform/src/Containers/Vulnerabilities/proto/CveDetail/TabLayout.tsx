@@ -1,19 +1,21 @@
 import { useState } from 'react';
 import { Stack, StackItem, Tab, Tabs, Title } from '@patternfly/react-core';
 
-import type { ProtoAdvisory } from './useCveDetail';
+import type { ProtoAdvisory, ProtoComponent, ProtoImage } from './useCveDetail';
 import AdvisoriesTable from './AdvisoriesTable';
 import AffectedComponentsTable from './AffectedComponentsTable';
 import AffectedImagesTable from './AffectedImagesTable';
 
 type TabLayoutProps = {
     advisories: ProtoAdvisory[];
+    components: ProtoComponent[];
+    images: ProtoImage[];
 };
 
 /**
  * Advisories always visible at the top; Components and Images in tabs below.
  */
-function TabLayout({ advisories }: TabLayoutProps) {
+function TabLayout({ advisories, components, images }: TabLayoutProps) {
     const [activeTab, setActiveTab] = useState<string | number>('components');
 
     return (
@@ -29,10 +31,10 @@ function TabLayout({ advisories }: TabLayoutProps) {
                     aria-label="Detail sections"
                 >
                     <Tab eventKey="components" title="Affected Components">
-                        <AffectedComponentsTable />
+                        <AffectedComponentsTable components={components} />
                     </Tab>
                     <Tab eventKey="images" title="Affected Images">
-                        <AffectedImagesTable />
+                        <AffectedImagesTable images={images} />
                     </Tab>
                 </Tabs>
             </StackItem>

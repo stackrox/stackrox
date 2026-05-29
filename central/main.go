@@ -153,6 +153,7 @@ import (
 	"github.com/stackrox/rox/central/role/sachelper"
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
+	scandataAPI "github.com/stackrox/rox/central/scandata/api"
 	"github.com/stackrox/rox/central/scanner"
 	scannerDefinitionsHandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
 	searchService "github.com/stackrox/rox/central/search/service"
@@ -773,6 +774,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: scanner.Handler(),
 			Compression:   false,
+		},
+		{
+			Route:         "/v1/scandata/",
+			Authorizer:    user.Authenticated(),
+			ServerHandler: scandataAPI.Singleton(),
+			Compression:   true,
 		},
 		{
 			Route:         "/api/cli/download/",
