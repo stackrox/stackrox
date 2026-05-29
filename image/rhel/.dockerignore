@@ -1,0 +1,24 @@
+# More info: https://docs.docker.com/engine/reference/builder/#dockerignore-file
+
+# Build metadata
+Dockerfile
+.dockerignore
+konflux.Dockerfile
+
+# Documentation and development files
+README.md
+*/.gitignore
+*/Makefile
+
+# Test output
+*.log
+*/cover.out
+*/testbin
+
+# Cache files
+.dccache
+**/.cache/
+
+# Defense-in-depth: Exclude non-Linux binaries (already excluded in staging, but safety net)
+bin/*darwin*
+bin/*windows*

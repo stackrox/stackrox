@@ -3,10 +3,12 @@ FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS ubi-micro-base
 FROM registry.access.redhat.com/ubi9/ubi:latest AS package_installer
 
 # Copy ubi-micro base to /out/ to preserve its rpmdb
-COPY --from=ubi-micro-base / /out/
+COPY --link --from=ubi-micro-base / /out/
 
 # Install packages directly to /out/ using --installroot
-RUN dnf install -y \
+RUN --mount=type=cache,target=/var/cache/dnf,sharing=shared \
+    --mount=type=cache,target=/var/cache/yum,sharing=shared \
+    dnf install -y \
     --installroot=/out/ \
     --releasever=9 \
     --setopt=install_weak_deps=False \
@@ -15,14 +17,13 @@ RUN dnf install -y \
     gzip \
     less \
     tar && \
-    dnf clean all --installroot=/out/ && \
-    rm -rf /out/var/cache/dnf /out/var/cache/yum
+    dnf clean all --installroot=/out/
 
-COPY ./roxctl-linux /out/usr/bin/roxctl
-COPY THIRD_PARTY_NOTICES /out/THIRD_PARTY_NOTICES/
+ARG TARGETARCH
+COPY --link bin/roxctl-${TARGETARCH} /out/usr/bin/roxctl
 
 FROM ubi-micro-base
-COPY --from=package_installer /out/ /
+COPY --link --from=package_installer /out/ /
 ENV ROX_ROXCTL_IN_MAIN_IMAGE="true"
 
 USER 65534:65534
