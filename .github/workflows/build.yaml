@@ -646,7 +646,7 @@ jobs:
           path: .
 
       - name: Extract arm64 binaries
-        run: tar -xzf go-binaries-build.tgz
+        run: tar xvf go-binaries-build.tar
 
       - name: Download go-binaries (ppc64le)
         if: contains(steps.platforms.outputs.platforms, 'ppc64le')
@@ -657,7 +657,7 @@ jobs:
 
       - name: Extract ppc64le binaries
         if: contains(steps.platforms.outputs.platforms, 'ppc64le')
-        run: tar -xzf go-binaries-build.tgz
+        run: tar xvf go-binaries-build.tar
 
       - name: Download go-binaries (s390x)
         if: contains(steps.platforms.outputs.platforms, 's390x')
@@ -668,7 +668,7 @@ jobs:
 
       - name: Extract s390x binaries
         if: contains(steps.platforms.outputs.platforms, 's390x')
-        run: tar -xzf go-binaries-build.tgz
+        run: tar xvf go-binaries-build.tar
 
       - name: Download docs
         uses: ./.github/actions/download-artifact-with-retry
