@@ -1,4 +1,5 @@
-import { Bullseye, Label } from '@patternfly/react-core';
+import { Bullseye, Label, Truncate } from '@patternfly/react-core';
+import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import type { ProtoAdvisory } from './useCveDetail';
@@ -44,6 +45,9 @@ function AdvisoriesTable({ advisories }: AdvisoriesTableProps) {
                     <Th>Severity</Th>
                     <Th>CVSS</Th>
                     <Th>Source</Th>
+                    <Th>Fixed By</Th>
+                    <Th>Description</Th>
+                    <Th>Link</Th>
                 </Tr>
             </Thead>
             <Tbody>
@@ -59,11 +63,35 @@ function AdvisoriesTable({ advisories }: AdvisoriesTableProps) {
                             {adv.cvss ? adv.cvss.toFixed(1) : '-'}
                         </Td>
                         <Td dataLabel="Source">{adv.sourceName}</Td>
+                        <Td dataLabel="Fixed By">{adv.fixedBy || '-'}</Td>
+                        <Td dataLabel="Description" modifier="truncate">
+                            {adv.description ? (
+                                <Truncate
+                                    content={adv.description}
+                                    tooltipPosition="top"
+                                />
+                            ) : (
+                                '-'
+                            )}
+                        </Td>
+                        <Td dataLabel="Link">
+                            {adv.link ? (
+                                <a
+                                    href={adv.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    View <ExternalLinkAltIcon />
+                                </a>
+                            ) : (
+                                '-'
+                            )}
+                        </Td>
                     </Tr>
                 ))}
                 {advisories.length === 0 && (
                     <Tr>
-                        <Td colSpan={4}>
+                        <Td colSpan={7}>
                             <Bullseye>No advisories found</Bullseye>
                         </Td>
                     </Tr>
