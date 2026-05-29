@@ -156,6 +156,7 @@ func (p *backendImpl) consumeSAMLResponse(samlResponse string) (*authproviders.A
 	}
 
 	if err := validateAssertionWarnings(ai.WarningInfo); err != nil {
+		// Assertion expirations get special handling (warn + reject).
 		if errors.Is(err, errAssertionExpired) {
 			log.Warnw("SAML assertion expired or not yet valid, rejecting authentication.",
 				logging.ErrCode(codes.SAMLAssertionExpired),
@@ -163,11 +164,16 @@ func (p *backendImpl) consumeSAMLResponse(samlResponse string) (*authproviders.A
 			)
 			return nil, err
 		}
+		// Propagate other non-audience errors.
 		if !errors.Is(err, errAssertionAudienceMismatch) {
 			return nil, err
 		}
+		// Audience mismatches get special handling (warn or reject based on config).
 		receivedAudiences := assertionAudiences(ai)
-		msg := "SAML assertion audience does not match SP issuer. " +
+		// If the expected audience is not, accept any audience - but emit a warning
+		// if the audience set by the identity provider does not match the service provider
+		// issuer (as per the usual SAML convention).
+		msg := "SAML assertion audience does not match service provider issuer. " +
 			"Configure sp_audience to enforce audience validation."
 		expected := p.sp.ServiceProviderIssuer
 		if p.audienceConfigured {
