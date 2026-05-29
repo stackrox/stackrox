@@ -1881,7 +1881,8 @@ setup_automation_flavor_e2e_cluster() {
         source "${SHARED_DIR}/dotenv"
         # OSD API server certificates may not be fully propagated right after
         # cluster creation, causing transient x509 errors (ROX-27600).
-        retry 5 true oc login "$CLUSTER_API_ENDPOINT" \
+        retry 5 true \
+            oc login "$CLUSTER_API_ENDPOINT" \
                 --username "$CLUSTER_USERNAME" \
                 --password "$CLUSTER_PASSWORD" \
                 --insecure-skip-tls-verify=true \
