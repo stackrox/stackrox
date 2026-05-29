@@ -155,7 +155,7 @@ spec:
       description: Additional labels to put on the built containers.
       default: []
     - default:
-      - linux/x86_64
+      - linux/amd64
       - linux/arm64
       - linux/ppc64le
       - linux/s390x
@@ -368,8 +368,10 @@ spec:
             echo "Building operator index for bundle: ${BUNDLE_IMAGE}"
             echo "Target index image: ${INDEX_IMAGE}"
 
+            echo "Building yq..."
+            export GOFLAGS="-mod=mod"
             make yq
-            export YQ=$(pwd)/.gotools/bin/yq
+            export YQ="${PWD}/.gotools/bin/yq"
 
             # Use the existing build script to generate index content
             ./hack/build-index-image.sh \
