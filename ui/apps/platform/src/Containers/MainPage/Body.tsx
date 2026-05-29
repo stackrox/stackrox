@@ -50,6 +50,7 @@ import {
     vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesVirtualMachineCvesPath,
     vulnerabilitiesWorkloadCvesPath,
+    vulnerabilitiesPrototypePath,
     vulnerabilityReportsPath,
 } from 'routePaths';
 import type { RouteKey } from 'routePaths';
@@ -285,6 +286,12 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
             () => import('Containers/Vulnerabilities/VulnerablityReporting/VulnReportingPage')
         ),
         path: vulnerabilityReportsPath,
+    },
+    'vulnerabilities/prototype': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/proto/ProtoRoutes')
+        ),
+        path: vulnerabilitiesPrototypePath,
     },
     'vulnerability-management': {
         component: asyncComponent(() => import('Containers/VulnMgmt/WorkflowLayout')),
