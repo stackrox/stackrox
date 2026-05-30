@@ -67,6 +67,10 @@ jobs:
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
+      # Pin to system Go so warm runners don't auto-download a newer toolchain
+      # via GOTOOLCHAIN=auto — that changes the Go version and invalidates the
+      # GHA cache (Go version is part of every ActionID).
+      GOTOOLCHAIN: local
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6

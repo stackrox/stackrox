@@ -77,6 +77,7 @@ while [[ $(date +%s) -lt $ka_end && $(date +%s) -lt $GHA_HARD_LIMIT ]]; do
     --token "$REG_TOKEN" \
     --name "$RUNNER_NAME" \
     --labels "${POOL_LABEL},self-hosted,linux,x64" \
+    --work /home/runner/work \
     --ephemeral \
     --unattended \
     --disableupdate \
