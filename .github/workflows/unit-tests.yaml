@@ -607,9 +607,14 @@ jobs:
         id: quality
         run: |
           cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
-          echo "cpu_model=${cpu_model}"
+          disk_gb=$(df -BG --output=size / 2>/dev/null | tail -1 | tr -d ' G')
+          mem_mb=$(awk '/MemTotal/{printf "%d",$2/1024}' /proc/meminfo 2>/dev/null)
+          echo "cpu_model=${cpu_model} disk=${disk_gb}GB mem=${mem_mb}MB"
           if [[ "$cpu_model" == *"7763"* ]]; then
             echo "::warning::Slow runner (${cpu_model}). Skipping."
+            echo "fast=false" >> "$GITHUB_OUTPUT"
+          elif [[ "${disk_gb:-0}" -lt 100 ]]; then
+            echo "::warning::Small disk (${disk_gb}GB < 100GB). Skipping."
             echo "fast=false" >> "$GITHUB_OUTPUT"
           else
             echo "fast=true" >> "$GITHUB_OUTPUT"
