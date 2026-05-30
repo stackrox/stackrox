@@ -42,16 +42,9 @@ jobs:
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -76,7 +69,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -95,7 +88,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -116,9 +109,10 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
-        pg: [ '15' ]
+        pg: [ 'default', '15' ]
         exclude:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
+          - pg: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-postgres-tests') && 'default' }}
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -128,29 +122,33 @@ jobs:
     env:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+      POSTGRES_PASSWORD: testpassword
     steps:
-    - name: Set Postgres version
+    # Runner's postgres is initialized with C.UTF-8 locale (GHA default).
+    # Tests (e.g. central/splunk) require byte-order collation.
+    - name: Start Postgres (pre-installed)
+      if: matrix.pg == 'default'
       run: |
-        echo "/usr/pgsql-${{ matrix.pg }}/bin" >> "${GITHUB_PATH}"
+        # the unit tests expect a local postgres with passwordless access.
+        sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
+        sudo systemctl start postgresql.service
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      with:
-        fetch-depth: 0
+
+    # Image pinned in .github/test-images/postgres.dockerfile (Dependabot auto-bumps).
+    - name: Start Postgres (${{ matrix.pg }})
+      if: matrix.pg != 'default'
+      run: |
+        docker build -t postgres-test -f .github/test-images/postgres.dockerfile .
+        docker run --rm -d --name postgres --network=host \
+          -e POSTGRESQL_ADMIN_PASSWORD="$POSTGRES_PASSWORD" \
+          -e LANG=C.UTF-8 \
+          postgres-test
 
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Run Postgres
-      run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
@@ -158,7 +156,14 @@ jobs:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Is Postgres ready
-      run: pg_isready -h 127.0.0.1
+      run: |
+        if [ "${{ matrix.pg }}" = "default" ]; then
+          timeout 60 bash -c 'until pg_isready; do sleep 1; done' \
+            || { sudo journalctl -u postgresql --no-pager -n 20; exit 1; }
+        else
+          timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' \
+            || { docker logs postgres; exit 1; }
+        fi
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
@@ -173,7 +178,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -189,37 +194,35 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
+  # Benchmarks run each bench function once (-benchtime=1x -count=1) to verify
+  # they compile and execute without errors. A single postgres version is
+  # sufficient since go-postgres already tests against multiple versions.
   go-bench:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+    env:
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
     steps:
-    - name: Set Postgres version
+    - name: Start Postgres
       run: |
-        echo "/usr/pgsql-15/bin" >> "${GITHUB_PATH}"
+        # the unit tests expect a local postgres with passwordless access. Change  host to 'trust'
+        sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
+        sudo systemctl start postgresql.service
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Run Postgres
-      run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
-
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Is Postgres ready
-      run: pg_isready -h 127.0.0.1
+      run: |
+        timeout 60 bash -c 'until pg_isready; do sleep 1; done' \
+          || { sudo journalctl -u postgresql --no-pager -n 20; exit 1; }
 
     - name: Go Bench Tests
       run: make go-postgres-bench-tests
@@ -229,7 +232,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
@@ -246,8 +249,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -256,6 +257,11 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - name: Set up Node.js
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+      with:
+        node-version-file: ui/package.json
+
     - name: Cache UI dependencies
       uses: ./.github/actions/cache-ui-dependencies
 
@@ -263,7 +269,7 @@ jobs:
       run: make ui-test
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'ui/apps/platform/test-results/reports/*.xml'
@@ -288,8 +294,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.11@sha256:996ca7bf256805e4003f711a3915d5f7a86d58c9263bfca4402f0a0f3b47c025 # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.11
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -297,6 +301,11 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Set up Node.js
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+      with:
+        node-version-file: ui/package.json
 
     - name: Cache UI dependencies
       uses: ./.github/actions/cache-ui-dependencies
@@ -312,7 +321,7 @@ jobs:
         path: ui/apps/platform/cypress/test-results/
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
@@ -357,7 +366,7 @@ jobs:
       run: ./scripts/ci/jobs/local-roxctl-tests.sh
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'roxctl-test-output/*.xml'
@@ -394,7 +403,7 @@ jobs:
       run: make shell-unit-tests
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'shell-test-output/*.xml'
@@ -488,7 +497,7 @@ jobs:
       run: make generate-junit-reports
 
     - name: Publish Test Report
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
