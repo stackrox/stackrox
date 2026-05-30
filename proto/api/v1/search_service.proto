@@ -233,6 +233,7 @@ message SearchResult {
     repeated string values = 1;
   }
   map<string, Matches> field_to_matches = 4;
+  // Deprecated: Always 0 since Postgres migration. Will be removed in a future release.
   double score = 5;
   // Location is intended to be a unique, yet human readable,
   // identifier for the result. For example, for a deployment,

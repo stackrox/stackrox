@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	alertviews "github.com/stackrox/rox/central/alert/views"
 	"github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/generated/storage"
 	pkgAlert "github.com/stackrox/rox/pkg/alert"
@@ -26,6 +27,11 @@ const maxRunTimeViolationsPerAlert = 40
 var (
 	log = logging.LoggerForModule()
 )
+
+type mergeCandidate struct {
+	incoming *storage.Alert
+	oldKeyID string
+}
 
 type alertManagerImpl struct {
 	notifier        notifierProcessor.Processor
@@ -52,13 +58,14 @@ func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*
 	alertAndNotifyIncomingCount.Observe(float64(len(currentAlerts)))
 
 	// Merge the old and the new alerts.
-	newAlerts, updatedAlerts, toBeResolvedAlerts, err := d.mergeManyAlerts(ctx, currentAlerts, oldAlertFilters...)
+	newAlerts, updatedAlerts, toBeResolvedIDs, resolvedDeploymentIDs, err := d.mergeManyAlerts(ctx, currentAlerts, oldAlertFilters...)
 	if err != nil {
 		return nil, err
 	}
 
 	// If any of the alerts are for a deployment, detect if the deployment itself is modified
-	modifiedDeployments := getDeploymentIDsFromAlerts(newAlerts, updatedAlerts, toBeResolvedAlerts)
+	modifiedDeployments := getDeploymentIDsFromAlerts(newAlerts, updatedAlerts)
+	modifiedDeployments = modifiedDeployments.Union(resolvedDeploymentIDs)
 
 	// Mark any old alerts no longer generated as resolved, and insert new alerts.
 	err = d.notifyAndUpdateBatch(ctx, newAlerts)
@@ -69,7 +76,7 @@ func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*
 	if err != nil {
 		return nil, err
 	}
-	err = d.markAlertsResolved(ctx, toBeResolvedAlerts)
+	err = d.markAlertsResolvedByIDs(ctx, toBeResolvedIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -104,16 +111,12 @@ func (d *alertManagerImpl) updateBatch(ctx context.Context, alertsToMark []*stor
 	return errList.ToError()
 }
 
-// markAlertsResolved marks all input alerts resolved in the input datastore.
-func (d *alertManagerImpl) markAlertsResolved(ctx context.Context, alertsToMark []*storage.Alert) error {
-	if len(alertsToMark) == 0 {
+// markAlertsResolvedByIDs marks alerts with the given IDs as resolved.
+func (d *alertManagerImpl) markAlertsResolvedByIDs(ctx context.Context, ids []string) error {
+	if len(ids) == 0 {
 		return nil
 	}
 
-	ids := make([]string, 0, len(alertsToMark))
-	for _, alert := range alertsToMark {
-		ids = append(ids, alert.GetId())
-	}
 	resolvedAlerts, err := d.alerts.MarkAlertsResolvedBatch(ctx, ids...)
 	if err != nil {
 		return err
@@ -374,13 +377,17 @@ func mergeAlerts(old, newAlert *storage.Alert) *storage.Alert {
 	return newAlert
 }
 
-// mergeManyAlerts merges two alerts.
+// mergeManyAlerts uses a two-phase fetch to match incoming alerts against
+// previous alerts. Phase 1 fetches lightweight AlertMatchKey structs (inline
+// columns only, no TOAST I/O). Phase 2 fetches full alert blobs only for
+// the small fraction that actually matched and need merging.
 func (d *alertManagerImpl) mergeManyAlerts(
 	ctx context.Context,
 	incomingAlerts []*storage.Alert,
 	oldAlertFilters ...AlertFilterOption,
-) (newAlerts, updatedAlerts, toBeResolvedAlerts []*storage.Alert, err error) {
+) (newAlerts, updatedAlerts []*storage.Alert, toBeResolvedIDs []string, resolvedDeploymentIDs set.StringSet, err error) {
 	defer observeDurationMs(mergeManyAlertsDuration)()
+	resolvedDeploymentIDs = set.NewStringSet()
 
 	qb := search.NewQueryBuilder().AddExactMatches(
 		search.ViolationState,
@@ -389,14 +396,18 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	for _, filter := range oldAlertFilters {
 		filter.apply(qb)
 	}
-	previousAlerts, err := d.alerts.SearchRawAlerts(ctx, qb.ProtoQuery(), true)
+
+	// Phase 1: fetch lightweight match keys instead of full alert blobs.
+	previousKeys, err := d.alerts.SearchAlertMatchKeys(ctx, qb.ProtoQuery(), true)
 	if err != nil {
-		err = errors.Wrapf(err, "couldn't load previous alerts (query was %s)", qb.Query())
+		err = errors.Wrapf(err, "couldn't load previous alert keys (query was %s)", qb.Query())
 		return
 	}
-	mergeManyAlertsPreviousCount.Observe(float64(len(previousAlerts)))
+	mergeManyAlertsPreviousCount.Observe(float64(len(previousKeys)))
 
-	// Merge any alerts that have new and old alerts.
+	// Match incoming alerts against previous keys, collecting merge candidates.
+	var mergeCandidates []mergeCandidate
+
 	for _, alert := range incomingAlerts {
 		if pkgAlert.IsDeployTimeAttemptedAlert(alert) {
 			// `alert.time` is the latest violation time.
@@ -405,11 +416,8 @@ func (d *alertManagerImpl) mergeManyAlerts(
 			continue
 		}
 
-		if matchingOld := findAlert(alert, previousAlerts); matchingOld != nil {
-			mergedAlert := mergeAlerts(matchingOld, alert)
-			if mergedAlert != matchingOld && !mergedAlert.EqualVT(matchingOld) {
-				updatedAlerts = append(updatedAlerts, mergedAlert)
-			}
+		if matchingKey := findMatchingKey(alert, previousKeys); matchingKey != nil {
+			mergeCandidates = append(mergeCandidates, mergeCandidate{incoming: alert, oldKeyID: matchingKey.GetId()})
 			continue
 		}
 
@@ -418,7 +426,16 @@ func (d *alertManagerImpl) mergeManyAlerts(
 		newAlerts = append(newAlerts, alert)
 	}
 
-	// Get the deployments that are currently being removed as part of this alert update.
+	// Phase 2: fetch full alerts for matched keys and merge.
+	mergedAlertIDs, mergedNew, mergedUpdated, mergeErr := d.fetchAndMergeCandidates(ctx, mergeCandidates)
+	if mergeErr != nil {
+		err = mergeErr
+		return
+	}
+	newAlerts = append(newAlerts, mergedNew...)
+	updatedAlerts = append(updatedAlerts, mergedUpdated...)
+
+	// Find old alerts no longer being produced, and identify inactive deployments.
 	deploymentsBeingRemoved := set.NewStringSet()
 	for _, f := range oldAlertFilters {
 		if depID := f.removedDeploymentID(); depID != "" {
@@ -426,55 +443,132 @@ func (d *alertManagerImpl) mergeManyAlerts(
 		}
 	}
 
-	// Find any old alerts no longer being produced.
-	for _, previousAlert := range previousAlerts {
-		if d.shouldMarkAlertResolved(previousAlert, incomingAlerts, oldAlertFilters...) {
-			toBeResolvedAlerts = append(toBeResolvedAlerts, previousAlert)
+	var needInactiveIDs []string
+	for _, key := range previousKeys {
+		if d.shouldMarkAlertResolved(key, incomingAlerts, oldAlertFilters...) {
+			toBeResolvedIDs = append(toBeResolvedIDs, key.GetId())
+			if key.HasDeployment() {
+				resolvedDeploymentIDs.Add(key.GetDeploymentId())
+			}
 		}
 
-		if previousAlert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME ||
-			previousAlert.GetState() == storage.ViolationState_ATTEMPTED {
-			// If we are in the context of a deployment removal, then mark the deployment as inactive without going to the
-			// store -- this is because the alert processing related to the deployment removal (ie, this code) runs
-			// _before_ the deployment is actually deleted, which means we will incorrectly mark the deployment as active
-			// if we check the store.
-			// If we're not in the context of a deployment removal, then just check whether the deployment is inactive
-			// in the store and use that.
-			if deployment := previousAlert.GetDeployment(); deployment != nil {
-				depID := deployment.GetId()
+		if key.GetLifecycleStage() == storage.LifecycleStage_RUNTIME ||
+			key.GetState() == storage.ViolationState_ATTEMPTED {
+			if mergedAlertIDs.Contains(key.GetId()) {
+				continue
+			}
+			if key.HasDeployment() && !key.IsDeploymentInactive() {
+				depID := key.GetDeploymentId()
 				if deploymentsBeingRemoved.Contains(depID) || d.runtimeDetector.DeploymentInactive(depID) {
-					if deployment := previousAlert.GetDeployment(); deployment != nil && !deployment.GetInactive() {
-						deployment.Inactive = true
-						updatedAlerts = append(updatedAlerts, previousAlert)
-					}
+					needInactiveIDs = append(needInactiveIDs, key.GetId())
 				}
 			}
 		}
 	}
-	recordAlertOutcomes(len(newAlerts), len(updatedAlerts), len(toBeResolvedAlerts))
+
+	// Mark deployments inactive for alerts not already handled by the merge phase.
+	inactiveUpdates, inactiveErr := d.markDeploymentsInactive(ctx, needInactiveIDs)
+	if inactiveErr != nil {
+		err = inactiveErr
+		return
+	}
+	updatedAlerts = append(updatedAlerts, inactiveUpdates...)
+
+	recordAlertOutcomes(len(newAlerts), len(updatedAlerts), len(toBeResolvedIDs))
 	return
 }
 
-func (d *alertManagerImpl) shouldMarkAlertResolved(oldAlert *storage.Alert, incomingAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) bool {
-	oldAndNew := []*storage.Alert{oldAlert}
-	oldAndNew = append(oldAndNew, incomingAlerts...)
+// fetchAndMergeCandidates fetches full alerts for merge candidates and merges
+// them with incoming alerts. Returns the set of merged alert IDs (to skip in
+// inactive marking), any alerts treated as new (deleted between phases), and
+// any updated alerts from merging.
+func (d *alertManagerImpl) fetchAndMergeCandidates(ctx context.Context, candidates []mergeCandidate) (mergedIDs set.StringSet, newAlerts, updatedAlerts []*storage.Alert, err error) {
+	mergedIDs = set.NewStringSet()
+	if len(candidates) == 0 {
+		return
+	}
+
+	uniqueIDs := set.NewStringSet()
+	for _, mc := range candidates {
+		uniqueIDs.Add(mc.oldKeyID)
+	}
+	mergeQuery := search.NewQueryBuilder().
+		AddExactMatches(search.AlertID, uniqueIDs.AsSlice()...).
+		ProtoQuery()
+	fetched, fetchErr := d.alerts.SearchRawAlerts(ctx, mergeQuery, false)
+	if fetchErr != nil {
+		err = errors.Wrap(fetchErr, "failed to fetch alerts for merge")
+		return
+	}
+	oldAlertsByID := make(map[string]*storage.Alert, len(fetched))
+	for _, a := range fetched {
+		oldAlertsByID[a.GetId()] = a
+	}
+
+	for _, mc := range candidates {
+		matchingOld := oldAlertsByID[mc.oldKeyID]
+		if matchingOld == nil {
+			mc.incoming.FirstOccurred = mc.incoming.GetTime()
+			newAlerts = append(newAlerts, mc.incoming)
+			continue
+		}
+		mergedAlert := mergeAlerts(matchingOld, mc.incoming)
+		if !mergedAlert.EqualVT(matchingOld) {
+			updatedAlerts = append(updatedAlerts, mergedAlert)
+		}
+		mergedIDs.Add(mc.oldKeyID)
+	}
+	return
+}
+
+// markDeploymentsInactive fetches alerts by ID and sets deployment.Inactive = true
+// for any that have an active deployment.
+func (d *alertManagerImpl) markDeploymentsInactive(ctx context.Context, alertIDs []string) ([]*storage.Alert, error) {
+	if len(alertIDs) == 0 {
+		return nil, nil
+	}
+
+	inactiveQuery := search.NewQueryBuilder().
+		AddExactMatches(search.AlertID, alertIDs...).
+		ProtoQuery()
+	inactiveAlerts, err := d.alerts.SearchRawAlerts(ctx, inactiveQuery, false)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to fetch alerts for inactive marking")
+	}
+
+	var updated []*storage.Alert
+	for _, fullAlert := range inactiveAlerts {
+		if deployment := fullAlert.GetDeployment(); deployment != nil && !deployment.GetInactive() {
+			deployment.Inactive = true
+			updated = append(updated, fullAlert)
+		}
+	}
+	return updated, nil
+}
+
+func (d *alertManagerImpl) shouldMarkAlertResolved(old alertviews.AlertMatcher, incomingAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) bool {
 	// Do not mark any attempted alerts as stale. All attempted alerts must be resolved by users.
-	if pkgAlert.AnyAttemptedAlert(oldAndNew...) {
+	if old.GetState() == storage.ViolationState_ATTEMPTED {
 		return false
+	}
+	for _, incoming := range incomingAlerts {
+		if incoming.GetState() == storage.ViolationState_ATTEMPTED {
+			return false
+		}
 	}
 
 	// If the alert is still being produced, don't mark it stale.
-	if matchingNew := findAlert(oldAlert, incomingAlerts); matchingNew != nil {
+	if matchingNew := findMatchingAlert(old, incomingAlerts); matchingNew != nil {
 		return false
 	}
 
 	// Only runtime alerts should not be marked stale when they are no longer produced.
 	// (Deploy time alerts should disappear along with deployments, for example.)
-	if oldAlert.GetLifecycleStage() != storage.LifecycleStage_RUNTIME {
+	if old.GetLifecycleStage() != storage.LifecycleStage_RUNTIME {
 		return true
 	}
 
-	if !d.runtimeDetector.PolicySet().Exists(oldAlert.GetPolicy().GetId()) {
+	if !d.runtimeDetector.PolicySet().Exists(old.GetPolicyId()) {
 		return true
 	}
 
@@ -491,47 +585,91 @@ func (d *alertManagerImpl) shouldMarkAlertResolved(oldAlert *storage.Alert, inco
 	}
 
 	// Some other policies were updated, we don't want to mark this alert stale in response.
-	if !specifiedPolicyIDs.Contains(oldAlert.GetPolicy().GetId()) {
+	if !specifiedPolicyIDs.Contains(old.GetPolicyId()) {
 		return false
 	}
 
 	// If the deployment is excluded from the scope of the policy now, we should mark the alert stale, otherwise we will keep it around.
-	return d.runtimeDetector.DeploymentWhitelistedForPolicy(oldAlert.GetDeployment().GetId(), oldAlert.GetPolicy().GetId())
+	return d.runtimeDetector.DeploymentWhitelistedForPolicy(old.GetDeploymentId(), old.GetPolicyId())
 }
 
-func findAlert(toFind *storage.Alert, alerts []*storage.Alert) *storage.Alert {
+// alertAdapter wraps *storage.Alert to satisfy the AlertMatcher interface.
+type alertAdapter struct{ a *storage.Alert }
+
+func (w alertAdapter) GetId() string                             { return w.a.GetId() }
+func (w alertAdapter) GetPolicyId() string                       { return w.a.GetPolicy().GetId() }
+func (w alertAdapter) GetState() storage.ViolationState          { return w.a.GetState() }
+func (w alertAdapter) GetLifecycleStage() storage.LifecycleStage { return w.a.GetLifecycleStage() }
+func (w alertAdapter) HasDeployment() bool                       { return w.a.GetDeployment() != nil }
+func (w alertAdapter) GetDeploymentId() string                   { return w.a.GetDeployment().GetId() }
+func (w alertAdapter) IsDeploymentInactive() bool                { return w.a.GetDeployment().GetInactive() }
+func (w alertAdapter) HasResource() bool                         { return w.a.GetResource() != nil }
+func (w alertAdapter) GetResourceType() storage.Alert_Resource_ResourceType {
+	return w.a.GetResource().GetResourceType()
+}
+func (w alertAdapter) GetResourceName() string { return w.a.GetResource().GetName() }
+func (w alertAdapter) HasNode() bool           { return w.a.GetNode() != nil }
+func (w alertAdapter) GetNodeId() string       { return w.a.GetNode().GetId() }
+func (w alertAdapter) GetNodeName() string     { return w.a.GetNode().GetName() }
+
+// GetClusterId returns the entity-specific cluster ID to match the original
+// comparison behavior. Resource and node alerts store the cluster ID on their
+// sub-objects; the top-level Alert.ClusterId is a denormalized copy that may
+// not be set in unit test fixtures.
+func (w alertAdapter) GetClusterId() string {
+	if r := w.a.GetResource(); r != nil {
+		return r.GetClusterId()
+	}
+	if n := w.a.GetNode(); n != nil {
+		return n.GetClusterId()
+	}
+	return w.a.GetClusterId()
+}
+
+// GetNamespace returns the entity-specific namespace. Resource alerts store the
+// namespace on Alert_Resource; deployment alerts use the top-level field.
+func (w alertAdapter) GetNamespace() string {
+	if r := w.a.GetResource(); r != nil {
+		return r.GetNamespace()
+	}
+	return w.a.GetNamespace()
+}
+
+func findMatchingAlert(toFind alertviews.AlertMatcher, alerts []*storage.Alert) *storage.Alert {
 	for _, alert := range alerts {
-		if alertsAreForSamePolicyAndEntity(alert, toFind) {
+		if alertsAreForSamePolicyAndEntity(toFind, alertAdapter{alert}) {
 			return alert
 		}
 	}
 	return nil
 }
 
-func alertsAreForSamePolicyAndEntity(a1, a2 *storage.Alert) bool {
-	if a1.GetPolicy().GetId() != a2.GetPolicy().GetId() || a1.GetState() != a2.GetState() {
+func findMatchingKey(toFind *storage.Alert, keys []*alertviews.AlertMatchKey) *alertviews.AlertMatchKey {
+	wrapper := alertAdapter{toFind}
+	for _, key := range keys {
+		if alertsAreForSamePolicyAndEntity(wrapper, key) {
+			return key
+		}
+	}
+	return nil
+}
+
+func alertsAreForSamePolicyAndEntity(a1, a2 alertviews.AlertMatcher) bool {
+	if a1.GetPolicyId() != a2.GetPolicyId() || a1.GetState() != a2.GetState() {
 		return false
 	}
 
-	if a1.GetDeployment() != nil && a2.GetDeployment() != nil {
-		return a1.GetDeployment().GetId() == a2.GetDeployment().GetId()
-	} else if a1.GetResource() != nil && a2.GetResource() != nil {
-		return alertsAreForSameResource(a1.GetResource(), a2.GetResource())
-	} else if a1.GetNode() != nil && a2.GetNode() != nil {
-		return alertsAreForSameNode(a1.GetNode(), a2.GetNode())
+	if a1.HasDeployment() && a2.HasDeployment() {
+		return a1.GetDeploymentId() == a2.GetDeploymentId()
+	} else if a1.HasResource() && a2.HasResource() {
+		return a1.GetResourceType() == a2.GetResourceType() &&
+			a1.GetResourceName() == a2.GetResourceName() &&
+			a1.GetClusterId() == a2.GetClusterId() &&
+			a1.GetNamespace() == a2.GetNamespace()
+	} else if a1.HasNode() && a2.HasNode() {
+		return a1.GetNodeId() == a2.GetNodeId() &&
+			a1.GetNodeName() == a2.GetNodeName() &&
+			a1.GetClusterId() == a2.GetClusterId()
 	}
 	return false
-}
-
-func alertsAreForSameResource(a1, a2 *storage.Alert_Resource) bool {
-	return a1.GetResourceType() == a2.GetResourceType() &&
-		a1.GetName() == a2.GetName() &&
-		a1.GetClusterId() == a2.GetClusterId() &&
-		a1.GetNamespace() == a2.GetNamespace()
-}
-
-func alertsAreForSameNode(a1, a2 *storage.Alert_Node) bool {
-	return a1.GetId() == a2.GetId() &&
-		a1.GetName() == a2.GetName() &&
-		a1.GetClusterId() == a2.GetClusterId()
 }

@@ -164,7 +164,3 @@ func (c *ImageComponentSearchResultConverter) BuildLocation(result *pkgSearch.Re
 func (c *ImageComponentSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_IMAGE_COMPONENTS_V2
 }
-
-func (c *ImageComponentSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
-	return result.Score
-}

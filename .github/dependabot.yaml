@@ -381,6 +381,19 @@ updates:
       include: scope
       prefix: chore
 
+  - package-ecosystem: 'docker'
+    directory: '.github/test-images'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    labels:
+    - "dependencies"
+    - "auto-retest"
+    commit-message:
+      include: scope
+      prefix: chore
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
