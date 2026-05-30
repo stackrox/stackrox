@@ -80,3 +80,4 @@ export const resourceRemovalReleaseVersions = new Map<ResourceName, string>([]);
 export const replacedResourceMapping = new Map<ResourceName, string>([]);
 
 export const deprecatedResourceRowStyle = { backgroundColor: 'rgb(255,250,205)' };
+// UI-only change to test Go test skipping

@@ -11,4 +11,11 @@ jobs:
   ui:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Skipped — no UI changes"
+      - run: |
+          echo "## UI tests skipped — no UI changes" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "This is a passthrough job. No UI tests were run because this PR does not change \`ui/\` files." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "GitHub required checks must report pass/fail/skip and cannot be left pending" >> "$GITHUB_STEP_SUMMARY"
+          echo "when a workflow is skipped by path filters. This job exists solely to satisfy" >> "$GITHUB_STEP_SUMMARY"
+          echo "the required check." >> "$GITHUB_STEP_SUMMARY"
