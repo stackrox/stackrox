@@ -71,8 +71,7 @@ while [[ $(date +%s) -lt $ka_end && $(date +%s) -lt $GHA_HARD_LIMIT ]]; do
     echo "Note: GHA 6h limit approaching, ${gha_remaining}m left"
   fi
 
-  # Register as ephemeral runner (org-level if org token worked, else repo-level)
-  # All output to file — avoid the original GHA Runner.Worker parsing overhead.
+  # Register as ephemeral runner
   "$RUNNER_DIR/config.sh" \
     --url "https://github.com/${ORG}" \
     --token "$REG_TOKEN" \
@@ -81,8 +80,8 @@ while [[ $(date +%s) -lt $ka_end && $(date +%s) -lt $GHA_HARD_LIMIT ]]; do
     --ephemeral \
     --unattended \
     --disableupdate \
-    --replace >> /dev/shm/warm-runner.log 2>&1 || {
-      echo "config.sh failed on iteration ${iteration}" >> /dev/shm/warm-runner.log
+    --replace > /dev/null 2>&1 || {
+      echo "config.sh failed on iteration ${iteration}"
       sleep 30
       # Refresh registration token (they expire after 1 hour)
       REG_TOKEN=$(curl -s -X POST \
@@ -94,11 +93,8 @@ while [[ $(date +%s) -lt $ka_end && $(date +%s) -lt $GHA_HARD_LIMIT ]]; do
     }
 
   # Run the agent — blocks until it picks up and completes one job.
-  # No timeout: if a job is picked up, let it finish regardless of
-  # the keep-alive window. Never kill a running job.
-  # Redirect to file to avoid the original GHA Runner.Worker parsing
-  # all the warm job output through its pipe (causes CPU overhead).
-  "$RUNNER_DIR/run.sh" >> /dev/shm/warm-runner.log 2>&1 || true
+  # No timeout: let picked-up jobs finish regardless of keep-alive window.
+  "$RUNNER_DIR/run.sh" > /dev/null 2>&1 || true
 
   echo "Job completed. Checking if keep-alive window still open..."
 done

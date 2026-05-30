@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
@@ -150,8 +151,25 @@ func getFileName(format string, clusterName string, timestamp *timestamppb.Times
 	return fmt.Sprintf(format, fmt.Sprintf("%s_%d-%d-%d", clusterName, year, month, day))
 }
 
+type timestampedZipWriter struct {
+	w *zip.Writer
+}
+
+func (t *timestampedZipWriter) Create(name string) (io.Writer, error) {
+	header := &zip.FileHeader{
+		Name:     name,
+		Method:   zip.Deflate,
+		Modified: time.Now(),
+	}
+	return t.w.CreateHeader(header)
+}
+
+func (t *timestampedZipWriter) Close() error {
+	return t.w.Close()
+}
+
 func createNewZipWriter(buf *bytes.Buffer) ZipWriter {
-	return zip.NewWriter(buf)
+	return &timestampedZipWriter{w: zip.NewWriter(buf)}
 }
 
 func createNewCSVWriter(header csv.Header, sort bool) CSVWriter {

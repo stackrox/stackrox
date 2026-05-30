@@ -5,7 +5,8 @@ type ClusterZip struct {
 	ID               string `json:"id"`
 	CreateUpgraderSA *bool  `json:"createUpgraderSA"`
 	SlimCollector    *bool  `json:"slimCollector"`
-	IstioVersion     string `json:"istioVersion"`
+	// Deprecated: IstioVersion is ignored. ACS now automatically prevents Istio sidecar injection.
+	IstioVersion string `json:"istioVersion"`
 
 	DisablePodSecurityPolicies bool `json:"disablePodSecurityPolicies"`
 }

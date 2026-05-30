@@ -661,7 +661,3 @@ func (c *ResourceCollectionSearchResultConverter) BuildLocation(result *pkgSearc
 func (c *ResourceCollectionSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_COLLECTIONS
 }
-
-func (c *ResourceCollectionSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
-	return result.Score
-}

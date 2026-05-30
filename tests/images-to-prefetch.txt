@@ -24,6 +24,9 @@ quay.io/rhacs-eng/qa:nginx-1-14-alpine
 # Used by tests/tls_challenge_test.go
 quay.io/rhacs-eng/qa-multi-arch:nginx-1-17-1
 
+# Used by tests/init_container_test.go
+quay.io/rhacs-eng/qa-multi-arch-busybox:latest
+
 # Used by tests/active_vuln_test.go
 quay.io/rhacs-eng/qa-multi-arch:nginx-1.14.0
 quay.io/rhacs-eng/qa-multi-arch:nginx-1.18.0

@@ -118,7 +118,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a0984a2e876afb827f9ec5398cb208024520c9099710e078df2350141c1438f7
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f62cd38699f3b203e51c99e2175701791cb5dea036065bc635cb1f2701bf9bac
         - name: kind
           value: task
         resolver: bundles
@@ -211,7 +211,7 @@ spec:
         - name: name
           value: git-clone-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:13d49df7dc9ae301627e45f95a236011422996152f1bea46cd60217b0f057407
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:d30f13dd15daf89dd6dc645243b3444d35570d13f7840c3fd65e366022515205
         - name: kind
           value: task
         resolver: bundles
@@ -230,7 +230,7 @@ spec:
         - name: name
           value: determine-image-expiration
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a0984a2e876afb827f9ec5398cb208024520c9099710e078df2350141c1438f7
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f62cd38699f3b203e51c99e2175701791cb5dea036065bc635cb1f2701bf9bac
         - name: kind
           value: task
         resolver: bundles
@@ -246,7 +246,7 @@ spec:
         - name: name
           value: determine-image-tag
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a0984a2e876afb827f9ec5398cb208024520c9099710e078df2350141c1438f7
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f62cd38699f3b203e51c99e2175701791cb5dea036065bc635cb1f2701bf9bac
         - name: kind
           value: task
         resolver: bundles
@@ -265,7 +265,7 @@ spec:
           description: Full operator-index image tag with v prefix and -fast suffix to avoid collision with GHA builds
         steps:
         - name: compute-index-tag
-          image: registry.access.redhat.com/ubi9-minimal:latest@sha256:12db9874bd753eb98b1ab3d840e75de5d6842ac0604fbd68c012adefe97140be
+          image: registry.access.redhat.com/ubi9-minimal:latest@sha256:5b74fce9d6e629942a0c6dc0f546c193e70d7f974d999a48c948c53dd3d36362
           script: |
             #!/bin/bash
             set -euo pipefail
@@ -291,7 +291,7 @@ spec:
         - name: name
           value: wait-for-image
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a0984a2e876afb827f9ec5398cb208024520c9099710e078df2350141c1438f7
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f62cd38699f3b203e51c99e2175701791cb5dea036065bc635cb1f2701bf9bac
         - name: kind
           value: task
         resolver: bundles
@@ -349,7 +349,7 @@ spec:
           - $(params.SOURCE_ARTIFACT)=/var/workdir/source
         - name: build-index-content
           # Using the image with go and yq preinstalled
-          image: quay.io/stackrox-io/apollo-ci:stackrox-test-stable@sha256:4830f867bf50f9084d03d8ba32ea0eea098284b99e69d2039bb3a66763c7742b
+          image: quay.io/stackrox-io/apollo-ci:stackrox-test-stable@sha256:d8f6164e396534c9cfb7fd908f42278ea8063e14132009cbed7504006dd46bd6
           workingDir: /var/workdir/source/operator
           securityContext:
             runAsUser: 0
@@ -421,7 +421,7 @@ spec:
         - name: name
           value: buildah-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.9@sha256:681d9f65a7f50cb260ee576ccab551e11d63c549f1e1ef3d201da3c112855bd6
+          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.9@sha256:75ecb662f343f6f34e553c5b37734d28d9b53ce218c2321a19b96c39bf769357
         - name: kind
           value: task
         resolver: bundles

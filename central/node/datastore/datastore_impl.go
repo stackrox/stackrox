@@ -331,7 +331,3 @@ func (c *NodeSearchResultConverter) BuildLocation(result *pkgSearch.Result) stri
 func (c *NodeSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_NODES
 }
-
-func (c *NodeSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
-	return result.Score
-}

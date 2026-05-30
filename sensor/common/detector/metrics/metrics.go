@@ -6,7 +6,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -143,8 +142,6 @@ var (
 			// Number of selector terms on the network policy that triggered the metric update
 			"numSelectors",
 		})
-	// processedNodeScan is a metric meant to replace and provide extra context on
-	// receivedNodeInventory and receivedNodeIndex
 	processedNodeScan = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -156,26 +153,6 @@ var (
 			"node_name",
 			"type",
 			"operation",
-		})
-	receivedNodeInventory = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "node_inventories_received_total",
-		Help:      "Total number of Node Inventories received by this Sensor",
-	},
-		[]string{
-			// Name of the node sending an inventory
-			"node_name",
-		})
-	receivedNodeIndex = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "node_indexes_received_total",
-		Help:      "Total number of Node Indexes received by this Sensor",
-	},
-		[]string{
-			// Name of the node sending an inventory
-			"node_name",
 		})
 	processedNodeScanningAck = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -390,20 +367,6 @@ func ObserveNodeScan(nodeName string, typ NodeScanType, op NodeScanOperation) {
 	}).Inc()
 }
 
-// ObserveReceivedNodeInventory observes the metric.
-func ObserveReceivedNodeInventory(inventory *storage.NodeInventory) {
-	receivedNodeInventory.With(prometheus.Labels{
-		"node_name": inventory.GetNodeName(),
-	}).Inc()
-}
-
-// ObserveReceivedNodeIndex observes the metric.
-func ObserveReceivedNodeIndex(nodeName string) {
-	receivedNodeIndex.With(prometheus.Labels{
-		"node_name": nodeName,
-	}).Inc()
-}
-
 // ObserveNodeScanningAck records (in Sensor) the instance of Central sending (N)Ack to Sensor
 func ObserveNodeScanningAck(nodeName, ackType, messageType string, op AckOperation, reason AckReason, origin AckOrigin) {
 	processedNodeScanningAck.With(prometheus.Labels{
@@ -592,8 +555,6 @@ func init() {
 		networkPoliciesStored,
 		networkPoliciesStoreEvents,
 		processedNodeScan,
-		receivedNodeInventory,
-		receivedNodeIndex,
 		processedNodeScanningAck,
 		DetectorNetworkFlowQueueOperations,
 		DetectorProcessIndicatorQueueOperations,

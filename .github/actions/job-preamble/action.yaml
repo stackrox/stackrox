@@ -8,10 +8,6 @@ inputs:
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
-  github-token:
-    description: 'GitHub token for runner registration (fast-pool keep-alive)'
-    required: false
-    default: ''
 runs:
   using: composite
   steps:
@@ -137,150 +133,28 @@ runs:
           exit 1
         fi
 
-    - name: Runner performance snapshot
-      continue-on-error: true
-      shell: bash
-      run: |
-        echo "::group::Runner performance snapshot"
-        echo "runner_name=${RUNNER_NAME:-unknown}"
-        echo "runner_os=${RUNNER_OS:-unknown}"
-        echo "kernel=$(uname -r 2>/dev/null)"
-        # ImageOS/ImageVersion are in /etc/environment on GHA runners
-        runner_image="unknown"
-        if [[ -f /etc/environment ]]; then
-          img_os=$(grep -oP 'ImageOS=\K\S+' /etc/environment 2>/dev/null)
-          img_ver=$(grep -oP 'ImageVersion=\K\S+' /etc/environment 2>/dev/null)
-          if [[ -n "$img_os" ]]; then runner_image="${img_os}-${img_ver}"; fi
-        fi
-        # Fallback: check /imagegeneration/imagedata.json (newer runners)
-        if [[ "$runner_image" == "unknown" && -f /imagegeneration/imagedata.json ]]; then
-          runner_image=$(python3 -c "import json; d=json.load(open('/imagegeneration/imagedata.json')); print(d.get('image_name','unknown'))" 2>/dev/null || echo "unknown")
-        fi
-        echo "runner_image=${runner_image}"
-        echo "cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)"
-        echo "cpu_cores=$(nproc 2>/dev/null)"
-        echo "cpu_l3_cache=$(lscpu 2>/dev/null | awk -F: '/L3 cache/{gsub(/^ +/,"",$2); print $2}')"
-        echo "numa_nodes=$(lscpu 2>/dev/null | awk -F: '/NUMA node\(s\)/{gsub(/^ +/,"",$2); print $2}')"
-        echo "mem_total_mb=$(awk '/MemTotal/{printf "%d", $2/1024}' /proc/meminfo 2>/dev/null)"
-        echo "mem_avail_mb=$(awk '/MemAvailable/{printf "%d", $2/1024}' /proc/meminfo 2>/dev/null)"
-
-        # Disk topology and per-disk IOPS
-        echo "--- disk_topology ---"
-        df -hT | grep -v tmpfs | grep -v devtmpfs | grep -v squashfs
-        echo "--- disk_devices ---"
-        lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,ROTA,MODEL 2>/dev/null || true
-
-        sudo apt-get -qq install -y fio >/dev/null 2>&1 || true
-        for test_dir in /tmp /mnt; do
-          if [[ ! -d "$test_dir" ]] || ! touch "$test_dir/.bench_test" 2>/dev/null; then continue; fi
-          rm -f "$test_dir/.bench_test"
-          fs_type=$(df -T "$test_dir" 2>/dev/null | awk 'NR==2{print $2}')
-          if [[ "$fs_type" == tmpfs || "$fs_type" == devtmpfs ]]; then continue; fi
-          dev=$(df "$test_dir" 2>/dev/null | awk 'NR==2{print $1}')
-          label="${test_dir##*/}"
-          if [[ -z "$label" ]]; then label="root"; fi
-
-          # Sequential write (drop oflag=direct — not supported on all fs)
-          dw=$(dd if=/dev/zero of="$test_dir/.bench_dd" bs=1M count=256 conv=fdatasync 2>&1 | tail -1) || true
-          rm -f "$test_dir/.bench_dd"
-          echo "disk_${label}_seq_write=${dw}"
-
-          # Disk IOPS: random write with fsync, random read, sequential read (2s each)
-          if command -v fio >/dev/null 2>&1; then
-            # Random 4K write with fsync (models Postgres commits)
-            fio_out=$(fio --name=randwr --rw=randwrite --bs=4k --size=32M --runtime=2 --time_based \
-              --fsync=1 --filename="$test_dir/.bench_fio" --output-format=json 2>/dev/null) || true
-            iops=$(echo "$fio_out" | python3 -c "import json,sys; print(int(json.load(sys.stdin)['jobs'][0]['write']['iops']))" 2>/dev/null || echo "?")
-            lat=$(echo "$fio_out" | python3 -c "import json,sys; j=json.load(sys.stdin)['jobs'][0]['sync']; print(f'avg={j[\"lat_ns\"][\"mean\"]/1e6:.1f}ms p99={j[\"lat_ns\"][\"percentile\"][\"99.000000\"]/1e6:.1f}ms')" 2>/dev/null || echo "?")
-            echo "disk_${label}_fsync_write_iops=${iops}"
-            echo "disk_${label}_fsync_write_latency=${lat}"
-
-            # Random 4K read (models Go compiler reading .a files, source files)
-            fio_out=$(fio --name=randrd --rw=randread --bs=4k --size=32M --runtime=2 --time_based \
-              --filename="$test_dir/.bench_fio" --output-format=json 2>/dev/null) || true
-            iops=$(echo "$fio_out" | python3 -c "import json,sys; print(int(json.load(sys.stdin)['jobs'][0]['read']['iops']))" 2>/dev/null || echo "?")
-            echo "disk_${label}_rand_read_iops=${iops}"
-
-            # Sequential read (models cache restore, large file reads)
-            fio_out=$(fio --name=seqrd --rw=read --bs=1M --size=256M --runtime=2 --time_based \
-              --filename="$test_dir/.bench_fio" --output-format=json 2>/dev/null) || true
-            bw=$(echo "$fio_out" | python3 -c "import json,sys; print(int(json.load(sys.stdin)['jobs'][0]['read']['bw_bytes']/1048576))" 2>/dev/null || echo "?")
-            echo "disk_${label}_seq_read_mbs=${bw}"
-
-            rm -f "$test_dir/.bench_fio"
-          fi
-        done
-
-        # Memory bandwidth (sysbench gives precise MB/s, falls back to dd)
-        if command -v sysbench >/dev/null 2>&1 || sudo apt-get -qq install -y sysbench >/dev/null 2>&1; then
-          mem_rd=$(sysbench memory --memory-block-size=1M --memory-total-size=2G --memory-oper=read run 2>/dev/null | awk '/transferred/{gsub(/[()]/,"",$4); print $4}')
-          mem_wr=$(sysbench memory --memory-block-size=1M --memory-total-size=2G --memory-oper=write run 2>/dev/null | awk '/transferred/{gsub(/[()]/,"",$4); print $4}')
-          echo "mem_read_mbs=${mem_rd}"
-          echo "mem_write_mbs=${mem_wr}"
-        else
-          mem_bw=$(dd if=/dev/zero of=/dev/shm/.bench bs=1M count=512 2>&1 | tail -1)
-          rm -f /dev/shm/.bench
-          echo "mem_bandwidth=${mem_bw}"
-        fi
-
-        # CPU: single-thread and all-core (sysbench prime check — ~1s each)
-        if command -v sysbench >/dev/null 2>&1; then
-          cpu_1t=$(sysbench cpu --cpu-max-prime=10000 --threads=1 run 2>/dev/null | awk '/events per second/{print $NF}')
-          cpu_mt=$(sysbench cpu --cpu-max-prime=10000 --threads=$(nproc) run 2>/dev/null | awk '/events per second/{print $NF}')
-          echo "cpu_single_thread_score=${cpu_1t}"
-          echo "cpu_multi_thread_score=${cpu_mt}"
-          echo "${cpu_1t}" > /dev/shm/cpu_score.txt
-        fi
-
-        # Network latency
-        gh_lat=$(curl -so /dev/null -w '%{time_total}' https://api.github.com 2>/dev/null)
-        az_lat=$(curl -so /dev/null -w '%{time_total}' https://pipelines.actions.githubusercontent.com 2>/dev/null)
-        echo "net_github_api_secs=${gh_lat}"
-        echo "net_actions_svc_secs=${az_lat}"
-
-        # Network bandwidth: GHA-internal (Azure blob — same infra as cache service)
-        # and public internet, measured via 10MB download
-        gha_bw=$(curl -so /dev/null -w '%{speed_download}' \
-          "https://github.com/actions/runner/releases/download/v2.334.0/actions-runner-linux-x64-2.334.0.tar.gz" 2>/dev/null)
-        gha_bw_mbs=$(python3 -c "print(f'{${gha_bw:-0}/1048576:.1f}')" 2>/dev/null || echo "?")
-        echo "net_gha_download_mbs=${gha_bw_mbs}"
-
-        inet_bw=$(curl -so /dev/null -w '%{speed_download}' \
-          "https://speed.cloudflare.com/__down?bytes=10000000" 2>/dev/null)
-        inet_bw_mbs=$(python3 -c "print(f'{${inet_bw:-0}/1048576:.1f}')" 2>/dev/null || echo "?")
-        echo "net_internet_download_mbs=${inet_bw_mbs}"
-
-        echo "::endgroup::"
-
     - name: Ignore dubious repository ownership
       run: |
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
-    - name: Monitor runner resources
+    - name: Capture runner fingerprint
+      id: runner-info
+      continue-on-error: true
       shell: bash
       run: |
-        (
-          prev_iow=0
-          while true; do
-            ts=$(date -u +%H:%M:%S)
-            cpu=$(top -bn1 2>/dev/null | awk '/^%Cpu/{printf "%.0f", 100-$8}' || echo 0)
-            mem=$(free -m 2>/dev/null | awk '/^Mem:/{printf "%d/%dMB(%.0f%%)", $3, $2, $3/$2*100}' || echo "?")
-            disk=$(df -BGB --output=avail / 2>/dev/null | tail -1 | tr -d ' ' || echo "?")
-            cur_iow=$(awk '{print $5}' /proc/stat 2>/dev/null | head -1)
-            iow_delta=$((cur_iow - prev_iow))
-            prev_iow=$cur_iow
-            echo "${ts} cpu=${cpu}% mem=${mem} disk=${disk} iowait_delta=${iow_delta}"
-            sleep 30
-          done
-        ) >> /dev/shm/runner-monitor.log 2>&1 &
-        echo $! > /dev/shm/runner-monitor.pid
-
-    - name: Save token for post-step
-      if: inputs.github-token != ''
-      shell: bash
-      run: echo "${{ inputs.github-token }}" > /dev/shm/gh_token.txt
+        set +e
+        cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
+        if [[ -z "$cpu_model" ]]; then
+          cpu_model=$(lscpu 2>/dev/null | awk -F: '/Model name/{gsub(/^ +/,"",$2); print $2}')
+        fi
+        echo "cpu_model=${cpu_model:-$(uname -m)}" >> "$GITHUB_OUTPUT"
+        echo "runner_image=${ImageOS:+${ImageOS}-${ImageVersion:-}}" >> "$GITHUB_OUTPUT"
+        mem_gb=$(awk '/MemTotal/{printf "%.0f", $2/1048576}' /proc/meminfo 2>/dev/null)
+        disk_gb=$(df -BG --output=size / 2>/dev/null | tail -1 | tr -d ' G')
+        echo "runner_resources=${mem_gb:-0}GB ram / ${disk_gb:-0}GB disk" >> "$GITHUB_OUTPUT"
+        echo "container_runtime=$([[ -f /.dockerenv ]] && echo container || echo None)" >> "$GITHUB_OUTPUT"
 
     - name: Record job info
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
@@ -295,12 +169,14 @@ runs:
         run: >
           echo "started_at=${EPOCHSECONDS:-$(date -u +%s)}" >> "$GITHUB_OUTPUT"
         post: >
-          kill "$(cat /dev/shm/runner-monitor.pid 2>/dev/null)" 2>/dev/null || true;
-          [ -f /dev/shm/runner-monitor.log ] && echo "::group::Runner resource monitor" && cat /dev/shm/runner-monitor.log && echo "::endgroup::" || true;
           source scripts/ci/lib.sh || true;
           save_job_record "${{ github.job }}" "gha" \
             outcome "${{ job.status }}" \
-            started_at "${{ steps.record_job_info.outputs.started_at }}" || true;
+            started_at "${{ steps.record_job_info.outputs.started_at }}" \
+            cut_os_image "${{ steps.runner-info.outputs.runner_image }}" \
+            build "${{ steps.runner-info.outputs.cpu_model }}" \
+            test_target "${{ steps.runner-info.outputs.runner_resources }}" \
+            cut_container_runtime_version "${{ steps.runner-info.outputs.container_runtime }}" || true;
           free=$(df -BGB --output=avail / | tail -1);
           echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\

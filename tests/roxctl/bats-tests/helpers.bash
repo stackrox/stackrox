@@ -55,9 +55,10 @@ delete-outdated-binaries() {
 roxctl-development-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-dev" ]]; then
     _uname="$(luname)"
+    _goarch="$(go env GOARCH)"
     mkdir -p "$tmp_roxctl"
-    make -s "roxctl-${_uname}" GOTAGS='' 2>&3
-    mv "bin/${_uname}_amd64/roxctl" "${tmp_roxctl}/roxctl-dev"
+    make -s "roxctl_${_uname}-${_goarch}" GOTAGS='' 2>&3
+    mv "bin/${_uname}_${_goarch}/roxctl" "${tmp_roxctl}/roxctl-dev"
   fi
   echo "${tmp_roxctl}/roxctl-dev"
 }
@@ -71,9 +72,10 @@ roxctl-development() {
 roxctl-release-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-release" ]]; then
     _uname="$(luname)"
+    _goarch="$(go env GOARCH)"
     mkdir -p "$tmp_roxctl"
-    make -s "roxctl-${_uname}" GOTAGS='release' 2>&3
-    mv "bin/${_uname}_amd64/roxctl" "${tmp_roxctl}/roxctl-release"
+    make -s "roxctl_${_uname}-${_goarch}" GOTAGS='release' 2>&3
+    mv "bin/${_uname}_${_goarch}/roxctl" "${tmp_roxctl}/roxctl-release"
   fi
   echo "${tmp_roxctl}/roxctl-release"
 }

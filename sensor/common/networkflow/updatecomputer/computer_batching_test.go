@@ -183,14 +183,14 @@ var (
 	closed = timestamp.Now()
 )
 
-// TestTransitionBasedConnectionBatching tests the connection batching behavior.
-func TestTransitionBasedConnectionBatching(t *testing.T) {
+// TestConnectionBatching tests the connection batching behavior.
+func TestConnectionBatching(t *testing.T) {
 	t.Setenv("ROX_NETFLOW_BATCHING", "true")
 	t.Setenv("ROX_NETFLOW_MAX_UPDATE_SIZE", "3")
 	t.Setenv("ROX_NETFLOW_MAX_CACHE_SIZE", "5")
 
 	t.Run("batching returns at most maxUpdateSize flows from cache", func(t *testing.T) {
-		uc := NewTransitionBased()
+		uc := New()
 
 		// Add 4 new connections (all will be cached after compute)
 		update1 := map[indicator.NetworkConn]timestamp.MicroTS{
@@ -220,7 +220,7 @@ func TestTransitionBasedConnectionBatching(t *testing.T) {
 	})
 
 	t.Run("batching allows cache to grow when less than maxUpdateSize", func(t *testing.T) {
-		uc := NewTransitionBased()
+		uc := New()
 
 		// Add 2 new connections (less than max batch size of 3)
 		update1 := map[indicator.NetworkConn]timestamp.MicroTS{
@@ -239,14 +239,14 @@ func TestTransitionBasedConnectionBatching(t *testing.T) {
 	})
 }
 
-// TestTransitionBasedConnectionFailureHandling tests the OnSendConnectionsFailure behavior.
-func TestTransitionBasedConnectionFailureHandling(t *testing.T) {
+// TestConnectionFailureHandling tests the OnSendConnectionsFailure behavior.
+func TestConnectionFailureHandling(t *testing.T) {
 	t.Setenv("ROX_NETFLOW_BATCHING", "true")
 	t.Setenv("ROX_NETFLOW_MAX_UPDATE_SIZE", "3")
 	t.Setenv("ROX_NETFLOW_MAX_CACHE_SIZE", "5")
 
 	t.Run("failure handler re-adds unsent flows to front of cache", func(t *testing.T) {
-		uc := NewTransitionBased()
+		uc := New()
 
 		// Add 3 new connections
 		update1 := map[indicator.NetworkConn]timestamp.MicroTS{
@@ -270,7 +270,7 @@ func TestTransitionBasedConnectionFailureHandling(t *testing.T) {
 	})
 
 	t.Run("failure handler preserves cache ordering", func(t *testing.T) {
-		uc := NewTransitionBased()
+		uc := New()
 
 		// Add connections one by one with failures
 		update1 := map[indicator.NetworkConn]timestamp.MicroTS{
@@ -306,15 +306,15 @@ func TestTransitionBasedConnectionFailureHandling(t *testing.T) {
 	})
 }
 
-// TestTransitionBasedCacheLimiting tests the cache limiting behavior.
-func TestTransitionBasedCacheLimiting(t *testing.T) {
+// TestCacheLimiting tests the cache limiting behavior.
+func TestCacheLimiting(t *testing.T) {
 	t.Setenv("ROX_NETFLOW_BATCHING", "false")
 	t.Setenv("ROX_NETFLOW_CACHE_LIMITING", "true")
 	t.Setenv("ROX_NETFLOW_MAX_UPDATE_SIZE", "3")
 	t.Setenv("ROX_NETFLOW_MAX_CACHE_SIZE", "5")
 
 	t.Run("cache limiting discards open flows when exceeding maxCacheSize", func(t *testing.T) {
-		uc := NewTransitionBased()
+		uc := New()
 
 		// Add 6 open connections (exceeds cache size of 5)
 		update1 := map[indicator.NetworkConn]timestamp.MicroTS{
@@ -338,7 +338,7 @@ func TestTransitionBasedCacheLimiting(t *testing.T) {
 	})
 
 	t.Run("cache limiting prioritizes closed flows over open flows", func(t *testing.T) {
-		uc := NewTransitionBased()
+		uc := New()
 
 		// First, establish some open connections
 		initialUpdate := map[indicator.NetworkConn]timestamp.MicroTS{
@@ -379,14 +379,14 @@ func TestTransitionBasedCacheLimiting(t *testing.T) {
 	})
 }
 
-// TestTransitionBasedEndpointBatching tests the endpoint batching behavior.
-func TestTransitionBasedEndpointBatching(t *testing.T) {
+// TestEndpointBatching tests the endpoint batching behavior.
+func TestEndpointBatching(t *testing.T) {
 	t.Setenv("ROX_NETFLOW_BATCHING", "true")
 	t.Setenv("ROX_NETFLOW_MAX_UPDATE_SIZE", "3")
 	t.Setenv("ROX_NETFLOW_MAX_CACHE_SIZE", "5")
 
 	t.Run("batching returns at most maxUpdateSize endpoints from cache", func(t *testing.T) {
-		uc := NewTransitionBased()
+		uc := New()
 
 		// Add 4 new endpoints (all will be cached after compute)
 		update1 := map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -416,7 +416,7 @@ func TestTransitionBasedEndpointBatching(t *testing.T) {
 	})
 
 	t.Run("endpoint failure handler re-adds unsent endpoints to front of cache", func(t *testing.T) {
-		uc := NewTransitionBased()
+		uc := New()
 
 		// Add 3 new endpoints
 		update1 := map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -440,15 +440,15 @@ func TestTransitionBasedEndpointBatching(t *testing.T) {
 	})
 }
 
-// TestTransitionBasedEndpointCacheLimiting tests the endpoint cache limiting behavior.
-func TestTransitionBasedEndpointCacheLimiting(t *testing.T) {
+// TestEndpointCacheLimiting tests the endpoint cache limiting behavior.
+func TestEndpointCacheLimiting(t *testing.T) {
 	t.Setenv("ROX_NETFLOW_BATCHING", "false")
 	t.Setenv("ROX_NETFLOW_CACHE_LIMITING", "true")
 	t.Setenv("ROX_NETFLOW_MAX_UPDATE_SIZE", "3")
 	t.Setenv("ROX_NETFLOW_MAX_CACHE_SIZE", "5")
 
 	t.Run("cache limiting discards open endpoints when exceeding maxCacheSize", func(t *testing.T) {
-		uc := NewTransitionBased()
+		uc := New()
 
 		// Add 6 open endpoints (exceeds cache size of 5)
 		update1 := map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -472,7 +472,7 @@ func TestTransitionBasedEndpointCacheLimiting(t *testing.T) {
 	})
 
 	t.Run("cache limiting prioritizes closed endpoints over open endpoints", func(t *testing.T) {
-		uc := NewTransitionBased()
+		uc := New()
 
 		// First, establish some open endpoints
 		initialUpdate := map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -647,15 +647,15 @@ func TestIsProcClosed(t *testing.T) {
 	})
 }
 
-// TestTransitionBasedProcessBatching tests the process batching behavior.
-func TestTransitionBasedProcessBatching(t *testing.T) {
+// TestProcessBatching tests the process batching behavior.
+func TestProcessBatching(t *testing.T) {
 	t.Setenv("ROX_NETFLOW_BATCHING", "true")
 	t.Setenv("ROX_NETFLOW_MAX_UPDATE_SIZE", "3")
 	t.Setenv("ROX_NETFLOW_MAX_CACHE_SIZE", "5")
 	t.Setenv("ROX_PROCESSES_LISTENING_ON_PORT", "true")
 
 	t.Run("batching returns at most maxUpdateSize processes from cache", func(t *testing.T) {
-		uc := NewTransitionBased()
+		uc := New()
 
 		// Add 4 new processes (all will be cached after compute)
 		update1 := map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -685,7 +685,7 @@ func TestTransitionBasedProcessBatching(t *testing.T) {
 	})
 
 	t.Run("batching allows cache to grow when less than maxUpdateSize", func(t *testing.T) {
-		uc := NewTransitionBased()
+		uc := New()
 
 		// Add 2 new processes (less than max batch size of 3)
 		update1 := map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -704,7 +704,7 @@ func TestTransitionBasedProcessBatching(t *testing.T) {
 	})
 
 	t.Run("process failure handler re-adds unsent processes to front of cache", func(t *testing.T) {
-		uc := NewTransitionBased()
+		uc := New()
 
 		// Add 3 new processes
 		update1 := map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -728,7 +728,7 @@ func TestTransitionBasedProcessBatching(t *testing.T) {
 	})
 
 	t.Run("process failure handler preserves cache ordering", func(t *testing.T) {
-		uc := NewTransitionBased()
+		uc := New()
 
 		// Add processes one by one with failures
 		update1 := map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -764,8 +764,8 @@ func TestTransitionBasedProcessBatching(t *testing.T) {
 	})
 }
 
-// TestTransitionBasedProcessCacheLimiting tests the process cache limiting behavior when PLOP is enabled.
-func TestTransitionBasedProcessCacheLimiting(t *testing.T) {
+// TestProcessCacheLimiting tests the process cache limiting behavior when PLOP is enabled.
+func TestProcessCacheLimiting(t *testing.T) {
 	t.Setenv("ROX_NETFLOW_BATCHING", "false")
 	t.Setenv("ROX_NETFLOW_CACHE_LIMITING", "true")
 	t.Setenv("ROX_NETFLOW_MAX_UPDATE_SIZE", "3")
@@ -773,7 +773,7 @@ func TestTransitionBasedProcessCacheLimiting(t *testing.T) {
 	t.Setenv("ROX_PROCESSES_LISTENING_ON_PORT", "true")
 
 	t.Run("cache limiting discards open processes when exceeding maxCacheSize", func(t *testing.T) {
-		uc := NewTransitionBased()
+		uc := New()
 
 		// Add 6 open processes (exceeds cache size of 5)
 		update1 := map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -797,7 +797,7 @@ func TestTransitionBasedProcessCacheLimiting(t *testing.T) {
 	})
 
 	t.Run("cache limiting prioritizes closed processes over open processes", func(t *testing.T) {
-		uc := NewTransitionBased()
+		uc := New()
 
 		// First, establish some open processes
 		initialUpdate := map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -847,7 +847,7 @@ func TestOnSuccessfulSendProcesses(t *testing.T) {
 
 	t.Run("with batching disabled, OnSuccessfulSendProcesses clears process cache", func(t *testing.T) {
 		t.Setenv("ROX_NETFLOW_BATCHING", "false")
-		uc := NewTransitionBased()
+		uc := New()
 
 		// Add 4 processes
 		update1 := map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
@@ -871,7 +871,7 @@ func TestOnSuccessfulSendProcesses(t *testing.T) {
 
 	t.Run("with batching enabled, OnSuccessfulSendProcesses does NOT clear process cache", func(t *testing.T) {
 		t.Setenv("ROX_NETFLOW_BATCHING", "true")
-		uc := NewTransitionBased()
+		uc := New()
 
 		// Add 4 processes (more than max batch size of 3)
 		update1 := map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{

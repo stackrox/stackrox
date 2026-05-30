@@ -6,12 +6,10 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 
 export const types = {
     FETCH_CLOUD_SOURCES: createFetchingActionTypes('cloudSources/FETCH_CLOUD_SOURCES'),
-    DELETE_CLOUD_SOURCES: 'cloudSources/DELETE_CLOUD_SOURCES',
 };
 
 export const actions = {
     fetchCloudSources: createFetchingActions(types.FETCH_CLOUD_SOURCES),
-    deleteCloudSources: (ids) => ({ type: types.DELETE_CLOUD_SOURCES, ids }),
 };
 
 const cloudSources = (state = [], action) => {

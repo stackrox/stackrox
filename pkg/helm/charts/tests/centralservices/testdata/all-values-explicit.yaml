@@ -2,7 +2,6 @@ licenseKey: "my license key"
 env:
   platform: gke
   openshift: 4
-  istio: true
   proxyConfig: "proxy config"
 imagePullSecrets:
   username: myuser
