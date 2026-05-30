@@ -645,6 +645,13 @@ jobs:
             echo "Skipping registration."
             exit 0
           fi
+          # Cap pool at 1: skip if a warm runner is already online
+          existing=$(gh api "orgs/${{ github.repository_owner }}/actions/runners" \
+            --jq '[.runners[]? | select(.labels[]?.name == "warm-go") | select(.status == "online")] | length' 2>/dev/null || echo 0)
+          if [[ "$existing" -ge 1 ]]; then
+            echo "Pool already has $existing runner(s). Skipping registration."
+            exit 0
+          fi
           bash .github/actions/job-preamble/keep-alive.sh "warm-go" "330"
 
   runner-profiling:
