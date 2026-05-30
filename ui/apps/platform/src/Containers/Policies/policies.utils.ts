@@ -75,6 +75,10 @@ export const initialPolicy: ClientPolicy = {
     criteriaLocked: false,
     mitreVectorsLocked: false,
     source: 'IMPERATIVE',
+    evaluationFilter: {
+        skipContainerTypes: [],
+        skipImageLayers: 'SKIP_NONE',
+    },
 };
 
 export type PoliciesSearch = {

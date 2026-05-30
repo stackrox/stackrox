@@ -37,6 +37,71 @@ func Test_retestNTimes(t *testing.T) {
 			},
 		},
 		{
+			name:        "extra whitespace between count and job name",
+			allComments: []string{"/retest-times 10  job-name-1"},
+			want: []string{
+				"job-name-1",
+			},
+		},
+		{
+			name:        "extra whitespace before count",
+			allComments: []string{"/retest-times    3 job-name-1"},
+			want: []string{
+				"job-name-1",
+			},
+		},
+		{
+			name:        "extra whitespace in all positions",
+			allComments: []string{"/retest-times   10   job-name-1"},
+			want: []string{
+				"job-name-1",
+			},
+		},
+		{
+			name:        "tab between count and job name",
+			allComments: []string{"/retest-times 5\tjob-name-1"},
+			want: []string{
+				"job-name-1",
+			},
+		},
+		{
+			name:        "trailing whitespace in job name",
+			allComments: []string{"/retest-times 3 job-name-1   "},
+			want: []string{
+				"job-name-1",
+			},
+		},
+		{
+			name: "extra whitespace — bot /test comments also have extra space",
+			userComments: []string{
+				"/test  job-name-1",
+				"/test  job-name-1",
+			},
+			allComments: []string{
+				"/retest-times 10  job-name-1",
+				"/test  job-name-1",
+				"/test  job-name-1",
+			},
+			want: []string{
+				"job-name-1",
+			},
+		},
+		{
+			name: "mixed whitespace — single and double space refer to same job",
+			userComments: []string{
+				"/test job-name-1",
+				"/test  job-name-1",
+			},
+			allComments: []string{
+				"/retest-times 3 job-name-1",
+				"/test job-name-1",
+				"/test  job-name-1",
+			},
+			want: []string{
+				"job-name-1",
+			},
+		},
+		{
 			name:        "too many",
 			allComments: []string{"/retest-times 101 job-name-1"},
 			error:       `invalid retest number requested: "/retest-times 101 job-name-1"`,
@@ -290,6 +355,18 @@ func Test_commentsToCreate(t *testing.T) {
 			jobsToRetest: []string{"job-1"},
 			shouldRetest: true,
 			want:         []string{"/test job-1"},
+		},
+		{
+			name:         "pending job is skipped even with trimmed name",
+			statuses:     map[string]string{"job-1": "pending"},
+			jobsToRetest: []string{"job-1"},
+			want:         nil,
+		},
+		{
+			name:         "multiple jobs — pending skipped, completed retested",
+			statuses:     map[string]string{"job-1": "pending", "job-2": "failure"},
+			jobsToRetest: []string{"job-1", "job-2"},
+			want:         []string{"/test job-2"},
 		},
 	}
 	for _, tt := range tests {

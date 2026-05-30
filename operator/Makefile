@@ -12,10 +12,6 @@ CSV_VERSION ?= v$(VERSION)
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
-# Python binary to use for bundle helpers. Can be overridden to use a specific version (e.g., python3.12).
-# The Konflux build uses Python 3.12, so using python3.12 locally ensures compatibility.
-PYTHON ?= python3
-
 # This can be adjusted if deploying into non-standard namespaces. For example, as in
 #
 #   NAMESPACE=... make -C operator stackrox-image-pull-secret
@@ -296,16 +292,6 @@ test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 	NEW_PRODUCT_VERSION=$$(make --quiet --no-print-directory -C .. tag) \
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(KUTTL) test --config kuttl-test.yaml --artifacts-dir build/kuttl-test-artifacts-upgrade $(KUTTL_TEST_RUN_ARGS) tests/upgrade
 
-.PHONY: test-bundle-helpers
-test-bundle-helpers: ## Run Python unit tests against helper scripts.
-	set -euo pipefail ;\
-	if [ "$${USE_GO_BUNDLE_HELPER:-true}" != "true" ]; then \
-		$(ACTIVATE_PYTHON) ;\
-		pytest -v bundle_helpers ;\
-	else \
-		echo "Skipping Python tests (USE_GO_BUNDLE_HELPER=true)" ;\
-	fi
-
 .PHONY: stackrox-image-pull-secret
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on Quay.io. Used by Helm chart.
 # Create stackrox namespace if not exists.
@@ -380,6 +366,14 @@ smuggled-status-sh:
 		"$${smuggled_status_sh}" ;\
 	)
 
+.PHONY: ensure-third-party-notices
+ensure-third-party-notices:
+ifdef CI
+	$(SILENT)[ -d ../THIRD_PARTY_NOTICES ] || { echo "THIRD_PARTY_NOTICES dir not found! It is required for CI-built images."; exit 1; }
+else
+	$(SILENT)[ -d ../THIRD_PARTY_NOTICES ] || mkdir -p ../THIRD_PARTY_NOTICES
+endif
+
 # Force re-building the file to make sure the current environment is correctly reflected.
 .PHONY: build/Dockerfile.gen
 build/Dockerfile.gen: Dockerfile
@@ -387,7 +381,7 @@ build/Dockerfile.gen: Dockerfile
 	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,$${BUILD_IMAGE_VERSION},$(shell sed 's/\s*\#.*//' ../BUILD_IMAGE_VERSION),' < $< > $@
 
 .PHONY: docker-build
-docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator (build binary inside Docker).
+docker-build: build/Dockerfile.gen smuggled-status-sh ensure-third-party-notices ## Build docker image with the operator (build binary inside Docker).
 	BUILDKIT_PROGRESS=plain ../scripts/docker-build.sh \
 		-t ${IMG} \
 		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \
@@ -395,7 +389,7 @@ docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with
 		..
 
 .PHONY: docker-build-prebuilt
-docker-build-prebuilt: prebuilt.Dockerfile ## Build docker image with pre-built operator binary.
+docker-build-prebuilt: prebuilt.Dockerfile ensure-third-party-notices ## Build docker image with pre-built operator binary.
 	BUILDKIT_PROGRESS=plain ../scripts/docker-build.sh \
 		-t ${IMG} \
 		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \
@@ -484,16 +478,6 @@ upgrade-via-chart:
 
 ##@ Bundle and Index build
 
-# Commands to enter local Python virtual environment and get needed dependencies there.
-# We rely on the venv's default pip and setuptools, which are automatically compatible
-# with the Python version used to create the venv:
-# - Python 3.12 venvs come with pip/setuptools that handle Python 3.12 correctly
-# - Older Python venvs come with pip/setuptools appropriate for those versions
-# This avoids compatibility issues when trying to upgrade to specific pip versions.
-ACTIVATE_PYTHON = $(PYTHON) -m venv bundle_helpers/.venv ;\
-	. bundle_helpers/.venv/bin/activate ;\
-	pip3 install -r bundle_helpers/requirements.txt
-
 .PHONY: bundle
 bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
 	rm -rf bundle
@@ -521,10 +505,8 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 # Therefore we append ".extra" file to the end of bundle's dockerfile.
 	cat bundle.Dockerfile.extra >> bundle.Dockerfile
 # Fix the orders in the specDescriptors (children must not appear before their parents).
-# Note: Python venv is always needed because the Go implementation uses yaml-normalizer.py
 	set -euo pipefail ;\
-	$(ACTIVATE_PYTHON) ;\
-	./bundle_helpers/dispatch.sh fix-spec-descriptor-order \
+	go run ./bundle_helpers/main.go fix-spec-descriptor-order \
 	  <bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
 	  >bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed
 	mv bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed \
@@ -532,12 +514,10 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 	$(OPERATOR_SDK) bundle validate ./bundle --select-optional suite=operatorframework
 
 .PHONY: bundle-post-process
-bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
-# Note: Python venv is always needed because dispatch.sh may use yaml-normalizer.py
+bundle-post-process: operator-sdk ## Post-process CSV file to include correct operator versions, etc.
 	set -euo pipefail ;\
-	$(ACTIVATE_PYTHON) ;\
 	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
-	candidate_version=$$(./bundle_helpers/dispatch.sh patch-csv \
+	candidate_version=$$(go run ./bundle_helpers/main.go patch-csv \
 		--use-version $(VERSION) \
 		--first-version $${first_version} \
 		--operator-image $(IMG) \

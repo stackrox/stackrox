@@ -67,7 +67,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
     const newEntityContext = { ...entityContext, ...currentEntity };
 
     const deploymentFindingsContent = (
-        <div className="flex pdf-page pdf-stretch pdf-new relative rounded mb-4 ml-4 mr-4">
+        <div className="flex relative rounded mb-4 ml-4 mr-4">
             <TableWidgetFixableCves
                 workflowState={workflowState}
                 entityContext={entityContext}
@@ -86,7 +86,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
-                                className="h-full min-w-48 bg-base-100 pdf-page"
+                                className="h-full min-w-48 bg-base-100"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={deploymentStats}
                                 title="Details and metadata"

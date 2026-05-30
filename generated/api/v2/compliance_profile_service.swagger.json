@@ -451,8 +451,21 @@
         },
         "warning": {
           "type": "string"
+        },
+        "operatorKind": {
+          "$ref": "#/definitions/v2ComplianceRuleOperatorKind"
         }
       }
+    },
+    "v2ComplianceRuleOperatorKind": {
+      "type": "string",
+      "enum": [
+        "OPERATOR_KIND_UNSPECIFIED",
+        "RULE",
+        "CUSTOM_RULE"
+      ],
+      "default": "OPERATOR_KIND_UNSPECIFIED",
+      "description": "OperatorKind is the kind of the Compliance Operator resource that this\n`ComplianceRule` was sourced from. ACS represents both Compliance Operator\n`Rules` and `CustomRules` as compliance rules.\n\n - OPERATOR_KIND_UNSPECIFIED: The kind is unspecified.\n - RULE: The kind is `Rule`.\n - CUSTOM_RULE: The kind is `CustomRule`."
     },
     "v2ListComplianceProfileSummaryResponse": {
       "type": "object",

@@ -89,7 +89,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
-                                className="h-full min-w-48 bg-base-100 pdf-page"
+                                className="h-full min-w-48 bg-base-100"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={componentStats}
                                 title="Details and metadata"
@@ -104,7 +104,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Component Findings">
-                    <div className="flex pdf-page pdf-stretch shadow rounded relative bg-base-100 mb-4 ml-4 mr-4">
+                    <div className="flex shadow rounded relative bg-base-100 mb-4 ml-4 mr-4">
                         <TableWidgetFixableCves
                             workflowState={workflowState}
                             entityContext={entityContext}

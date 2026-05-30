@@ -194,6 +194,7 @@ func (s *ComplianceProfilesServiceTestSuite) TestListProfileSummaries() {
 						ShortName: "CIS-OCP",
 						Version:   "1-5",
 					}},
+					OperatorKind: apiV2.ComplianceProfileSummary_PROFILE,
 				},
 			},
 			found: true,
@@ -220,6 +221,7 @@ func (s *ComplianceProfilesServiceTestSuite) TestListProfileSummaries() {
 						Description:    "this is a test",
 						Title:          "A Title",
 						ProfileVersion: "1-5",
+						OperatorKind:   storage.ComplianceOperatorProfileV2_PROFILE,
 						Rules: []*storage.ComplianceOperatorProfileV2_Rule{
 							{
 								RuleName: "test 1",

@@ -207,7 +207,7 @@ jobs:
 
       - name: Post to Slack about picked cherries
         if: failure() && steps.cherry-pick.outputs.bad-cherries != ''
-        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # ratchet:slackapi/slack-github-action@v3.0.1
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # ratchet:slackapi/slack-github-action@v3.0.3
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -287,7 +287,7 @@ jobs:
             "true"
 
       - name: Post to Slack
-        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # ratchet:slackapi/slack-github-action@v3.0.1
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # ratchet:slackapi/slack-github-action@v3.0.3
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}

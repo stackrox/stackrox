@@ -45,7 +45,6 @@ type ClusterCVELoader interface {
 	FromQuery(ctx context.Context, query *v1.Query) ([]*storage.ClusterCVE, error)
 
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
-	CountAll(ctx context.Context) (int32, error)
 }
 
 // clusterCveLoaderImpl implements the ClusterCVELoader interface.
@@ -89,11 +88,6 @@ func (idl *clusterCveLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Q
 		return 0, err
 	}
 	return int32(count), nil
-}
-
-func (idl *clusterCveLoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.ds.Count(ctx, search.EmptyQuery())
-	return int32(count), err
 }
 
 func (idl *clusterCveLoaderImpl) load(ctx context.Context, ids []string) ([]*storage.ClusterCVE, error) {

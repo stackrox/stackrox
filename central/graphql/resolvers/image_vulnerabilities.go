@@ -8,7 +8,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/generator"
-	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/views"
@@ -412,11 +411,6 @@ func (resolver *imageCVEV2Resolver) FixedByVersion(ctx context.Context) (string,
 		resolver.ctx = ctx
 	}
 
-	// Short path. Full image is embedded when image scan resolver is called.
-	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
-		return embeddedVuln.GetFixedBy(), nil
-	}
-
 	scope, hasScope := scoped.GetScope(resolver.ctx)
 	if !hasScope {
 		return "", nil
@@ -441,11 +435,6 @@ func (resolver *imageCVEV2Resolver) IsFixable(ctx context.Context, _ RawQuery) (
 		resolver.ctx = ctx
 	}
 
-	// Short path. Full image is embedded when image scan resolver is called.
-	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
-		return embeddedVuln.GetFixedBy() != "", nil
-	}
-
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.CVEID, resolver.flatData.GetCVEIDs()...).
 		AddBools(search.Fixable, true).
@@ -459,11 +448,6 @@ func (resolver *imageCVEV2Resolver) IsFixable(ctx context.Context, _ RawQuery) (
 
 func (resolver *imageCVEV2Resolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "LastScanned")
-
-	// Short path. Full image is embedded when image scan resolver is called.
-	if scanTime := embeddedobjs.LastScannedFromContext(resolver.ctx); scanTime != nil {
-		return &graphql.Time{Time: *scanTime}, nil
-	}
 
 	if features.FlattenImageData.Enabled() {
 		imageLoader, err := loaders.GetImageV2Loader(resolver.ctx)
@@ -672,11 +656,6 @@ func (resolver *imageCVEV2Resolver) Advisory(ctx context.Context) (*advisoryReso
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "Advisory")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
-	}
-
-	// Short path. Full image is embedded when image scan resolver is called.
-	if embeddedVuln := embeddedobjs.VulnFromContext(resolver.ctx); embeddedVuln != nil {
-		return resolver.root.wrapAdvisory(embeddedVuln.GetAdvisory(), true, nil)
 	}
 
 	scope, hasScope := scoped.GetScope(resolver.ctx)

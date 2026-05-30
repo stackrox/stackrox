@@ -79,7 +79,6 @@ tests:
     .networkpolicys["scanner"] | assertThat(. == null)
     .networkpolicys["scanner-db"] | assertThat(. == null)
 
-#TODO: Add istio tests
 - name: "configured scanner"
   values:
     scanner:

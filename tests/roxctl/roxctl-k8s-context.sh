@@ -10,6 +10,24 @@ eecho() {
   echo "$@" >&2
 }
 
+wait_for_rbac() {
+  local verb="$1" resource="$2" sa="$3" namespace="$4"
+  local max_attempts=30
+
+  echo "Waiting for RBAC to propagate..."
+  for _i in $(seq 1 "$max_attempts"); do
+    if kubectl auth can-i "$verb" "$resource" \
+        --as="system:serviceaccount:${namespace}:${sa}" \
+        -n "$namespace" 2>/dev/null; then
+      return 0
+    fi
+    sleep 1
+  done
+
+  echo "RBAC propagation timed out waiting for ${sa} to ${verb} ${resource}" >&2
+  return 1
+}
+
 test_roxctl_cmd() {
   echo "Testing command: roxctl central whoami"
 
@@ -55,6 +73,7 @@ test_roxctl_cmd() {
   echo "Creating a service account with an insufficient role..."
   kubectl apply -f "tests/testdata/port-forward-role-bad.yaml"
   kubectl apply -f "tests/testdata/port-forward-sa.yaml"
+  wait_for_rbac "get" "services" "port-forward-sa" "stackrox"
   echo "Switching the context to use the service account token..."
   TOKEN=$(kubectl create token port-forward-sa)
   kubectl config set-credentials port-forward-user --token="$TOKEN"
@@ -78,6 +97,7 @@ test_roxctl_cmd() {
 
   echo "Updating the role with sufficient permissions..."
   kubectl apply -f "tests/testdata/port-forward-role-minimal.yaml"
+  wait_for_rbac "list" "pods" "port-forward-sa" "stackrox"
 
   echo "Switching back to the limited context..."
   kubectl config use-context port-forward-context

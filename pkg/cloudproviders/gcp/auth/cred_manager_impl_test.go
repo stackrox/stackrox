@@ -120,27 +120,23 @@ func TestCredentialManager(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			var changeCount atomic.Int32
 
-			// Use Eventually to retry the entire operation with a configurable timeout.
-			// This handles the k8s fake client potentially losing events.
-			require.EventuallyWithT(t, func(ct *assert.CollectT) {
-				k8sClient := fake.NewClientset()
-				manager := newCredentialsManagerImpl(k8sClient, namespace, secretName, func() {
-					changeCount.Add(1)
-				})
-				manager.Start()
-				defer manager.Stop()
-				require.Eventually(ct, manager.informer.HasSynced, 5*time.Second, 100*time.Millisecond)
+			k8sClient := fake.NewClientset()
+			manager := newCredentialsManagerImpl(k8sClient, namespace, secretName, func() {
+				changeCount.Add(1)
+			})
+			manager.Start()
+			defer manager.Stop()
+			require.Eventually(t, manager.informer.HasSynced, 30*time.Second, 100*time.Millisecond)
 
-				changeCount.Store(0)
-				require.NoError(ct, c.setupFn(k8sClient))
+			require.NoError(t, c.setupFn(k8sClient))
 
-				assert.Eventually(ct, func() bool {
-					manager.mutex.RLock()
-					defer manager.mutex.RUnlock()
-					return changeCount.Load() == int32(c.changes) &&
-						string(manager.stsConfig) == c.expected
-				}, 200*time.Millisecond, 10*time.Millisecond)
-			}, 10*time.Second, 200*time.Millisecond, "callbacks not invoked as expected or state incorrect (changes: %d/%d)",
+			assert.Eventually(t, func() bool {
+				manager.mutex.RLock()
+				defer manager.mutex.RUnlock()
+				return changeCount.Load() == int32(c.changes) &&
+					string(manager.stsConfig) == c.expected
+			}, 10*time.Second, 50*time.Millisecond,
+				"callbacks not invoked as expected or state incorrect (changes: %d/%d)",
 				changeCount.Load(), c.changes)
 		})
 	}

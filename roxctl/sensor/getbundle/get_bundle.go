@@ -1,14 +1,11 @@
 package getbundle
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -59,9 +56,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "Output directory for bundle contents (default: auto-generated directory name inside the current directory).")
 	c.PersistentFlags().BoolVar(&createUpgraderSA, "create-upgrader-sa", true, "Whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades.")
 	c.PersistentFlags().StringVar(&istioVersion, "istio-support", "",
-		fmt.Sprintf(
-			"Generate deployment files supporting the given Istio version. Valid versions: %s.",
-			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
+		"Istio version when deploying into an Istio-enabled cluster (has no effect; ACS now automatically prevents Istio sidecar injection).")
 
 	flags.AddTimeoutWithDefault(c, 5*time.Minute)
 

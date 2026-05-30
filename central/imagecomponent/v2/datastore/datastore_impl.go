@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/imagecomponent/v2/views"
+	imagev2common "github.com/stackrox/rox/central/imagev2/common"
 	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -32,11 +33,13 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
+	q = imagev2common.WithRowsFromImageV2Only(q)
 	return ds.storage.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	q = imagev2common.WithRowsFromImageV2Only(q)
 	return ds.storage.Count(ctx, q)
 }
 
@@ -68,6 +71,7 @@ func (ds *datastoreImpl) SearchImageComponents(ctx context.Context, q *v1.Query)
 }
 
 func (ds *datastoreImpl) SearchRawImageComponents(ctx context.Context, q *v1.Query) ([]*storage.ImageComponentV2, error) {
+	q = imagev2common.WithRowsFromImageV2Only(q)
 	var components []*storage.ImageComponentV2
 	err := ds.storage.GetByQueryFn(ctx, q, func(component *storage.ImageComponentV2) error {
 		components = append(components, component)
@@ -159,8 +163,4 @@ func (c *ImageComponentSearchResultConverter) BuildLocation(result *pkgSearch.Re
 
 func (c *ImageComponentSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_IMAGE_COMPONENTS_V2
-}
-
-func (c *ImageComponentSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
-	return result.Score
 }

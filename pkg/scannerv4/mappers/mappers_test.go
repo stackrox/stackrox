@@ -10,6 +10,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/features"
@@ -414,7 +415,8 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Cpe: emptyCPE,
+							Kind: "unknown",
+							Cpe:  emptyCPE,
 						},
 					},
 					Packages: map[string]*v4.Package{
@@ -425,7 +427,8 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Cpe: emptyCPE,
+							Kind: "unknown",
+							Cpe:  emptyCPE,
 						},
 					},
 					EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
@@ -614,7 +617,8 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Cpe: emptyCPE,
+							Kind: "unknown",
+							Cpe:  emptyCPE,
 						},
 						"1": {
 							Id:      "1",
@@ -623,7 +627,8 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Cpe: emptyCPE,
+							Kind: "unknown",
+							Cpe:  emptyCPE,
 						},
 						"2": {
 							Id:      "2",
@@ -632,7 +637,8 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Cpe: emptyCPE,
+							Kind: "unknown",
+							Cpe:  emptyCPE,
 						},
 						"3": {
 							Id:      "3",
@@ -641,7 +647,8 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Cpe: emptyCPE,
+							Kind: "unknown",
+							Cpe:  emptyCPE,
 						},
 					},
 					PackagesDEPRECATED: []*v4.Package{
@@ -652,7 +659,8 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Cpe: emptyCPE,
+							Kind: "unknown",
+							Cpe:  emptyCPE,
 						},
 						{
 							Id:      "1",
@@ -661,7 +669,8 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Cpe: emptyCPE,
+							Kind: "unknown",
+							Cpe:  emptyCPE,
 						},
 						{
 							Id:      "2",
@@ -670,7 +679,8 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Cpe: emptyCPE,
+							Kind: "unknown",
+							Cpe:  emptyCPE,
 						},
 						{
 							Id:      "3",
@@ -679,7 +689,8 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 							NormalizedVersion: &v4.NormalizedVersion{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 							},
-							Cpe: emptyCPE,
+							Kind: "unknown",
+							Cpe:  emptyCPE,
 						},
 					},
 					Repositories: map[string]*v4.Repository{
@@ -884,7 +895,7 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 							Kind: "test",
 							V:    []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
 						},
-						Kind: "sample pkg kind",
+						Kind: "binary",
 						Source: &v4.Package{
 							Id:   "sample source id",
 							Name: "sample source name",
@@ -906,7 +917,7 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 							Kind: "test",
 							V:    []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
 						},
-						Kind: "sample pkg kind",
+						Kind: "binary",
 						Source: &v4.Package{
 							Id:   "sample source id",
 							Name: "sample source name",
@@ -984,7 +995,7 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 						ID:      "sample pkg id",
 						Name:    "sample pkg name",
 						Version: "sample pkg version",
-						Kind:    "sample pkg kind",
+						Kind:    types.BinaryPackage,
 						Source: &claircore.Package{
 							ID:   "sample source id",
 							Name: "sample source name",
@@ -1065,7 +1076,7 @@ func Test_toProtoV4Package(t *testing.T) {
 				ID:             "sample id",
 				Name:           "sample name",
 				Version:        "sample version",
-				Kind:           "sample kind",
+				Kind:           types.BinaryPackage,
 				Source:         nil,
 				PackageDB:      "sample package db",
 				Filepath:       "sample file path",
@@ -1086,7 +1097,7 @@ func Test_toProtoV4Package(t *testing.T) {
 					Kind: "test",
 					V:    []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
 				},
-				Kind:           "sample kind",
+				Kind:           "binary",
 				Source:         nil,
 				PackageDb:      "sample package db",
 				RepositoryHint: "sample hint",
@@ -1289,7 +1300,8 @@ func Test_toProtoV4Contents(t *testing.T) {
 			want: &v4.Contents{
 				Packages: map[string]*v4.Package{
 					"sample pkg": {
-						Cpe: emptyCPE,
+						Kind: "unknown",
+						Cpe:  emptyCPE,
 						NormalizedVersion: &v4.NormalizedVersion{
 							Kind: "",
 							V:    make([]int32, 10),
@@ -1297,7 +1309,8 @@ func Test_toProtoV4Contents(t *testing.T) {
 					},
 				},
 				PackagesDEPRECATED: []*v4.Package{{
-					Cpe: emptyCPE,
+					Kind: "unknown",
+					Cpe:  emptyCPE,
 					NormalizedVersion: &v4.NormalizedVersion{
 						Kind: "",
 						V:    make([]int32, 10),
@@ -2634,6 +2647,31 @@ func Test_versionID(t *testing.T) {
 	}
 }
 
+func TestIsVersionAgnostic(t *testing.T) {
+	tests := map[string]struct {
+		did  string
+		want bool
+	}{
+		"hummingbird is version-agnostic": {
+			did:  "hummingbird",
+			want: true,
+		},
+		"rhel is not version-agnostic": {
+			did:  "rhel",
+			want: false,
+		},
+		"empty DID is not version-agnostic": {
+			did:  "",
+			want: false,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tt.want, IsVersionAgnostic(tt.did))
+		})
+	}
+}
+
 func Test_sortByNVDCVSS(t *testing.T) {
 	type args struct {
 		ids             []string
@@ -3031,6 +3069,61 @@ func Test_dedupeAdvisories(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := dedupeAdvisories(tt.vulnIDs, tt.vulns)
 			assert.ElementsMatch(t, tt.expected, got)
+		})
+	}
+}
+
+func Test_PackageKindRoundTrip(t *testing.T) {
+	// This test documents backward compatibility for Package.Kind conversion.
+	// Old ClairCore used string Kind with values "binary" and "source".
+	// New ClairCore uses types.PackageKind (uint enum).
+	// The proto uses string, so we need to ensure round-trip conversion works.
+	testCases := []struct {
+		name         string
+		protoKind    string
+		expectedKind types.PackageKind
+		roundTrip    string
+	}{
+		{
+			name:         "binary round-trips (old ClairCore value)",
+			protoKind:    "binary",
+			expectedKind: types.BinaryPackage,
+			roundTrip:    "binary",
+		},
+		{
+			name:         "source round-trips (old ClairCore value)",
+			protoKind:    "source",
+			expectedKind: types.SourcePackage,
+			roundTrip:    "source",
+		},
+		{
+			name:         "empty normalizes to unknown",
+			protoKind:    "",
+			expectedKind: types.UnknownPackage,
+			roundTrip:    "unknown",
+		},
+		{
+			name:         "ancestry works (new value for VEX)",
+			protoKind:    "ancestry",
+			expectedKind: types.AncestryPackage,
+			roundTrip:    "ancestry",
+		},
+		{
+			name:         "unknown round-trips",
+			protoKind:    "unknown",
+			expectedKind: types.UnknownPackage,
+			roundTrip:    "unknown",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Proto → ClairCore
+			got := toPackageKind(tc.protoKind)
+			assert.Equal(t, tc.expectedKind, got)
+
+			// ClairCore → Proto (round-trip)
+			assert.Equal(t, tc.roundTrip, got.String())
 		})
 	}
 }

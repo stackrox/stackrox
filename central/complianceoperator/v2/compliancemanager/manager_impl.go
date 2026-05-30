@@ -13,10 +13,12 @@ import (
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scansDatastore "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
+	ssbDatastore "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -45,6 +47,7 @@ type managerImpl struct {
 	sensorConnMgr connection.Manager
 	integrationDS compIntegration.DataStore
 	scanSettingDS compScanSetting.DataStore
+	ssbDS         ssbDatastore.DataStore
 	clusterDS     clusterDatastore.DataStore
 	profileDS     profileDatastore.DataStore
 	scansDS       scansDatastore.DataStore
@@ -57,11 +60,12 @@ type managerImpl struct {
 }
 
 // New returns on instance of Manager interface that provides functionality to process compliance requests and forward them to Sensor.
-func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, clusterDS clusterDatastore.DataStore, profileDS profileDatastore.DataStore, scansDS scansDatastore.DataStore, resultsDS resultsDatastore.DataStore) Manager {
+func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, ssbDS ssbDatastore.DataStore, clusterDS clusterDatastore.DataStore, profileDS profileDatastore.DataStore, scansDS scansDatastore.DataStore, resultsDS resultsDatastore.DataStore) Manager {
 	return &managerImpl{
 		sensorConnMgr:   sensorConnMgr,
 		integrationDS:   integrationDS,
 		scanSettingDS:   scanSettingDS,
+		ssbDS:           ssbDS,
 		runningRequests: make(map[string]clusterScan),
 		clusterDS:       clusterDS,
 		profileDS:       profileDS,
@@ -128,7 +132,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 	// Check if scan configuration already exists by name.
 	scanConfig, err := m.scanSettingDS.GetScanConfigurationByName(ctx, scanRequest.GetScanConfigName())
 	if err != nil {
-		err = errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+		err = errors.Wrapf(err, "Unable to create scan configuration named %q", scanRequest.GetScanConfigName())
 		log.Error(err)
 		return nil, err
 	}
@@ -139,7 +143,12 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 	scanRequest.Id = uuid.NewV4().String()
 	scanRequest.CreatedTime = protocompat.TimestampNow()
 
-	return m.processRequestToSensor(ctx, scanRequest, cron, clusters, true)
+	validatedProfiles, err := m.validateScan(ctx, scanRequest, clusters)
+	if err != nil {
+		return nil, err
+	}
+
+	return m.processRequestToSensor(ctx, scanRequest, cron, clusters, true, validatedProfiles)
 }
 
 // UpdateScanRequest processes a request to apply a compliance scan configuration to one or more Sensors.
@@ -165,7 +174,7 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 	// Verify the scan configuration ID is valid
 	oldScanConfig, found, err := m.scanSettingDS.GetScanConfiguration(ctx, scanRequest.GetId())
 	if err != nil {
-		err = errors.Wrapf(err, "Unable to find scan configuration with ID %q.", scanRequest.GetId())
+		err = errors.Wrapf(err, "Unable to find scan configuration with ID %q", scanRequest.GetId())
 		log.Error(err)
 		return nil, err
 	}
@@ -178,13 +187,18 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 		return nil, errors.New("Changing the scan schedule name is not allowed.")
 	}
 
+	validatedProfiles, err := m.validateScan(ctx, scanRequest, clusters)
+	if err != nil {
+		return nil, err
+	}
+
 	// TODO(ROX-22398): if we restrict cluster deletion, this is where we would do it before any updates are done.
 	m.removeObsoleteResultsByClusters(ctx, oldScanConfig, scanRequest)
 	m.removeObsoleteResultsByProfiles(ctx, oldScanConfig, scanRequest)
 
 	// Use the created time from the DB
 	scanRequest.CreatedTime = oldScanConfig.GetCreatedTime()
-	scanRequest, err = m.processRequestToSensor(ctx, scanRequest, cron, clusters, false)
+	scanRequest, err = m.processRequestToSensor(ctx, scanRequest, cron, clusters, false, validatedProfiles)
 	if err != nil {
 		return nil, err
 	}
@@ -258,36 +272,40 @@ func (m *managerImpl) removeObsoleteResultsByProfiles(ctx context.Context, oldSc
 	}
 }
 
-func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, cron string, clusters []string, createScanRequest bool) (*storage.ComplianceOperatorScanConfigurationV2, error) {
+func (m *managerImpl) validateScan(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) ([]*storage.ComplianceOperatorProfileV2, error) {
 	var profiles []string
 	for _, profile := range scanRequest.GetProfiles() {
 		profiles = append(profiles, profile.GetProfileName())
 	}
 
-	// Check if there are any existing clusters that have a scan configuration with any of profiles being referenced by the scan request.
-	// If so, then we cannot create the scan configuration.
+	// Check if there are any existing clusters that have a scan configuration with any of profiles
+	// being referenced by the scan request. If so, then we cannot create the scan configuration.
 	err := m.scanSettingDS.ScanConfigurationProfileExists(ctx, scanRequest.GetId(), profiles, clusters)
 	if err != nil {
 		log.Error(err)
-		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+		return nil, err
 	}
 
-	// Get all profiles from the database to validate that they exist and are compatible
+	// Check if any non-ACS-managed ScanSettingBindings already reference the requested profiles.
+	if err := m.checkForExternalSSBConflicts(ctx, profiles, clusters); err != nil {
+		return nil, err
+	}
+
+	// Validate that all profiles exist in the database and have compatible kinds.
 	returnedProfiles, err := m.profileDS.SearchProfiles(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusters[0]).
 		AddExactMatches(search.ComplianceOperatorProfileName, profiles...).ProtoQuery())
-
 	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to retrieve profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
+		return nil, errors.Wrapf(err, "Unable to retrieve profiles for scan configuration named %q", scanRequest.GetScanConfigName())
 	}
 
 	if len(returnedProfiles) != len(profiles) {
 		return nil, errors.Errorf("Unable to find all profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
-	// Validate profile kinds. UNSPECIFIED should not appear here because centralToStorageProfileKind
-	// normalizes it to PROFILE at ingestion time, but we allow it through defensively —
-	// StorageToCentralProfileKind will map it to PROFILE. Truly unknown kinds are rejected.
+	// UNSPECIFIED should not appear here because centralToStorageProfileKind normalizes it to
+	// PROFILE at ingestion time, but we allow it through defensively — StorageToCentralProfileKind
+	// will map it to PROFILE. Truly unknown kinds are rejected.
 	for _, p := range returnedProfiles {
 		switch p.GetOperatorKind() {
 		case storage.ComplianceOperatorProfileV2_PROFILE, storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
@@ -299,17 +317,25 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		}
 	}
 
-	// Build profile refs (name + kind) - needed to support tailored profiles, a different resource kind in CO.
-	// Persist profile_refs so the startup sync path can forward correct kinds to Sensor on reconnect.
-	scanRequest.ProfileRefs = internaltov2storage.ProfileV2ToScanConfigRefs(returnedProfiles)
+	return returnedProfiles, nil
+}
 
-	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
+func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, cron string, clusters []string, createScanRequest bool, validatedProfiles []*storage.ComplianceOperatorProfileV2) (*storage.ComplianceOperatorScanConfigurationV2, error) {
+	profiles := make([]string, 0, len(validatedProfiles))
+	for _, p := range validatedProfiles {
+		profiles = append(profiles, p.GetName())
+	}
+
+	scanRequest.ProfileRefs = internaltov2storage.ProfileV2ToScanConfigRefs(validatedProfiles)
+
+	err := m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
 	if err != nil {
 		log.Error(err)
 		return nil, errors.Errorf("Unable to save scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
 	profileRefs := internaltov2storage.ScanConfigRefsToCentral(scanRequest.GetProfileRefs())
+
 	for _, clusterID := range clusters {
 		// id for the request message to sensor
 		sensorRequestID := uuid.NewV4().String()
@@ -434,6 +460,58 @@ func (m *managerImpl) HandleScanRequestResponse(ctx context.Context, requestID s
 	return nil
 }
 
+// checkForExternalSSBConflicts checks if any non-ACS-managed ScanSettingBindings in the target
+// clusters already reference any of the requested profiles. ACS-managed SSBs are skipped because
+// conflicts with those are already enforced by ScanConfigurationProfileExists.
+func (m *managerImpl) checkForExternalSSBConflicts(ctx context.Context, profiles []string, clusters []string) error {
+	requestedProfiles := set.NewStringSet(profiles...)
+	if requestedProfiles.Cardinality() == 0 {
+		return nil
+	}
+
+	var errList errorhelpers.ErrorList
+	for _, clusterID := range clusters {
+		ssbs, err := m.ssbDS.GetScanSettingBindingsByCluster(ctx, clusterID)
+		if err != nil {
+			return errors.Wrapf(err, "getting scan setting bindings for cluster %q", clusterID)
+		}
+
+		clusterRef := ""
+		for _, ssb := range ssbs {
+			if ssb.GetLabels()["app.kubernetes.io/name"] == "stackrox" {
+				continue
+			}
+
+			var conflicting []string
+			for _, profileName := range ssb.GetProfileNames() {
+				if requestedProfiles.Contains(profileName) {
+					conflicting = append(conflicting, profileName)
+				}
+			}
+			if len(conflicting) > 0 {
+				if clusterRef == "" {
+					clusterRef = clusterID
+					if name, exists, err := m.clusterDS.GetClusterName(ctx, clusterID); err == nil && exists {
+						clusterRef = name
+					}
+				}
+				quoted := make([]string, 0, len(conflicting))
+				for _, p := range conflicting {
+					quoted = append(quoted, fmt.Sprintf("%q", p))
+				}
+				errList.AddStringf(
+					"profiles [%s] conflict with external ScanSettingBinding %q in cluster %q",
+					strings.Join(quoted, ", "), ssb.GetName(), clusterRef)
+			}
+		}
+	}
+
+	if err := errList.ToError(); err != nil {
+		return fmt.Errorf("%w, remove the external ScanSettingBindings or choose different profiles", err)
+	}
+	return nil
+}
+
 func (m *managerImpl) ProcessRescanRequest(ctx context.Context, scanID string) error {
 	if !features.ComplianceEnhancements.Enabled() {
 		return errors.Errorf("Compliance is disabled. Cannot run compliance scan for configuration with ID %s", scanID)
@@ -495,7 +573,7 @@ func (m *managerImpl) DeleteScan(ctx context.Context, scanID string) error {
 	// Remove the scan configuration from the database
 	scanConfigName, err := m.scanSettingDS.DeleteScanConfiguration(ctx, scanID)
 	if err != nil {
-		return errors.Wrapf(err, "Unable to delete scan configuration ID %q.", scanID)
+		return errors.Wrapf(err, "Unable to delete scan configuration ID %q", scanID)
 	}
 
 	if scanConfigName == "" {
@@ -555,7 +633,7 @@ func convertSchedule(scanRequest *storage.ComplianceOperatorScanConfigurationV2)
 	if scanRequest.GetSchedule() != nil {
 		cron, err = schedule.ConvertToCronTab(scanRequest.GetSchedule())
 		if err != nil {
-			err = errors.Wrapf(err, "Unable to convert schedule for scan configuration named %q to cron.", scanRequest.GetScanConfigName())
+			err = errors.Wrapf(err, "Unable to convert schedule for scan configuration named %q to cron", scanRequest.GetScanConfigName())
 			log.Error(err)
 			return "", err
 		}

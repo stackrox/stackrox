@@ -1,28 +1,10 @@
-import { all, call, fork, put, take, takeLatest } from 'redux-saga/effects';
-import Raven from 'raven-js';
+import { all, call, fork, put, take } from 'redux-saga/effects';
 
 import { integrationsPath } from 'routePaths';
-import {
-    deleteIntegrations as serviceDeleteIntegrations,
-    fetchIntegration as serviceFetchIntegration,
-} from 'services/IntegrationsService';
-import { deleteAuthProviders } from 'services/AuthService';
-import { triggerBackup as serviceTriggerBackup } from 'services/BackupIntegrationsService';
+import { fetchIntegration as serviceFetchIntegration } from 'services/IntegrationsService';
 import { actions, types } from 'reducers/integrations';
-import { actions as notificationActions } from 'reducers/notifications';
-import { actions as apiTokenActions } from 'reducers/apitokens';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 
-const fetchIntegrationsActionMap = {
-    backups: actions.fetchBackups.request(),
-    imageIntegrations: actions.fetchImageIntegrations.request(),
-    signatureIntegrations: actions.fetchSignatureIntegrations.request(),
-    notifiers: actions.fetchNotifiers.request(),
-    apitoken: apiTokenActions.fetchAPITokens.request(),
-};
-
-// Call fetchIntegration with the given source, and pass the response/failure
-// with the given action type.
 function* fetchIntegrationWrapper(source, action) {
     try {
         const result = yield call(serviceFetchIntegration, source);
@@ -88,58 +70,6 @@ function* watchFetchRequest() {
     }
 }
 
-function* deleteIntegrations({ source, sourceType, ids }) {
-    try {
-        if (source === 'authProviders') {
-            yield call(deleteAuthProviders, ids);
-            if (sourceType === 'apitoken') {
-                yield put(fetchIntegrationsActionMap[sourceType]);
-            } else {
-                yield put(fetchIntegrationsActionMap[source]);
-            }
-        } else {
-            yield call(serviceDeleteIntegrations, source, ids);
-            yield put(fetchIntegrationsActionMap[source]);
-        }
-        const toastMessage = `Successfully deleted ${ids.length} integration${
-            ids.length === 1 ? '' : 's'
-        }`;
-        yield put(notificationActions.addNotification(toastMessage));
-        yield put(notificationActions.removeOldestNotification());
-    } catch (error) {
-        Raven.captureException(error);
-    }
-}
-
-function* triggerBackup(action) {
-    const { id } = action;
-    try {
-        yield call(serviceTriggerBackup, id);
-        yield put(notificationActions.addNotification('Backup was successful'));
-        yield put(notificationActions.removeOldestNotification());
-    } catch (error) {
-        if (error.response) {
-            yield put(notificationActions.addNotification(error.response.data.error));
-            yield put(notificationActions.removeOldestNotification());
-        } else {
-            Raven.captureException(error);
-        }
-    }
-}
-
-function* watchDeleteRequest() {
-    yield takeLatest(types.DELETE_INTEGRATIONS, deleteIntegrations);
-}
-
-function* watchBackupRequest() {
-    yield takeLatest(types.TRIGGER_BACKUP, triggerBackup);
-}
-
 export default function* integrations() {
-    yield all([
-        fork(watchLocation),
-        fork(watchFetchRequest),
-        fork(watchDeleteRequest),
-        fork(watchBackupRequest),
-    ]);
+    yield all([fork(watchLocation), fork(watchFetchRequest)]);
 }
