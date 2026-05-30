@@ -71,17 +71,12 @@ runs:
         touch "${{ steps.local-cache.outputs.marker }}"
       shell: bash
 
-    - name: Mark GOCACHE entries for stale detection
-      if: steps.local-cache.outputs.skip != 'true' && inputs.save == 'true'
-      run: |
-        gocache="${{ steps.cache-paths.outputs.GOCACHE }}"
-        if [[ -d "$gocache" ]]; then
-          timeout 120 find "$gocache" -type f -exec touch -t 200001010000 {} + || true
-          echo "$(date +%s)" > "$gocache/trim.txt"
-          touch "$gocache/.do-trim"
-          echo "Marked GOCACHE entries for stale detection"
-        fi
-      shell: bash
+    # TODO: backdate+trim is currently disabled for warm-runner testing.
+    # It destroys GOCACHE entries on warm runners, preventing the local
+    # cache from being reused across sequential jobs. Re-enable once we
+    # have a solution that skips backdate on warm-runner runs.
+    # - name: Mark GOCACHE entries for stale detection
+    #   if: steps.local-cache.outputs.skip != 'true' && inputs.save == 'true'
 
     # Registered AFTER cache steps so the post-step runs BEFORE cache save
     # (GHA runs post-steps in reverse registration order).
