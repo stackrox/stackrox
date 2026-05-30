@@ -610,6 +610,19 @@ jobs:
           disk_gb=$(df -BG --output=size / 2>/dev/null | tail -1 | tr -d ' G')
           mem_mb=$(awk '/MemTotal/{printf "%d",$2/1024}' /proc/meminfo 2>/dev/null)
           echo "cpu_model=${cpu_model} disk=${disk_gb}GB mem=${mem_mb}MB"
+
+          # Azure IMDS — reveals VM SKU, region, zone, and whether runner number predicts hardware
+          imds=$(curl -s -m 3 -H "Metadata: true" \
+            "http://169.254.169.254/metadata/instance?api-version=2021-02-01" 2>/dev/null || echo "{}")
+          vm_size=$(echo "$imds" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('compute',{}).get('vmSize','unknown'))" 2>/dev/null || echo "unknown")
+          vm_id=$(echo "$imds" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('compute',{}).get('vmId','unknown'))" 2>/dev/null || echo "unknown")
+          zone=$(echo "$imds" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('compute',{}).get('zone','unknown'))" 2>/dev/null || echo "unknown")
+          location=$(echo "$imds" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('compute',{}).get('location','unknown'))" 2>/dev/null || echo "unknown")
+          echo "azure_vm_size=${vm_size}"
+          echo "azure_vm_id=${vm_id}"
+          echo "azure_zone=${zone}"
+          echo "azure_location=${location}"
+          echo "runner_name=${RUNNER_NAME:-unknown}"
           if [[ "$cpu_model" == *"7763"* ]]; then
             echo "::warning::Slow runner (${cpu_model}). Skipping."
             echo "fast=false" >> "$GITHUB_OUTPUT"
