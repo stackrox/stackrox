@@ -12,11 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	implLegacy          = "Legacy"
-	implTransitionBased = "TransitionBased"
-)
-
 var (
 	closedConnRememberDuration = 5 * time.Minute
 	h                          = xxhash.New()
@@ -53,7 +48,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 	tests := map[string]struct {
 		initialState     map[indicator.NetworkConn]timestamp.MicroTS
 		currentState     map[indicator.NetworkConn]timestamp.MicroTS
-		expectNumUpdates map[string]int
+		expectNumUpdates int
 	}{
 		// Test cases for scenarios most frequently observed in production
 		// (i.e., a connection is being closed, or continues to be open).
@@ -64,7 +59,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedInThePast,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectNumUpdates: 1,
 		},
 		"closing connection in the future should be treated as any other update about connection closing": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
@@ -73,7 +68,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedInTheFuture,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectNumUpdates: 1,
 		},
 		"should not send duplicate open connections": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
@@ -82,33 +77,29 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: open,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectNumUpdates: 0,
 		},
 		// Test cases for disappearance: when a connection that was open in the last state is gone without seeing a close message from Collector.
 		// Correctly handling disappearance is crucial for allowing
 		// Sensor to delete a connection from its state without notifying Central.
-		"disappearance of open connection: legacy should send an update": {
+		"disappearance of open connection should not send an update": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: open,
 			},
-			currentState: map[indicator.NetworkConn]timestamp.MicroTS{},
-			// Legacy tracks deletions and still produces a message (undesired behavior).
-			// TransitionBased does not trigger an update (desired behavior).
-			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 0},
+			currentState:     map[indicator.NetworkConn]timestamp.MicroTS{},
+			expectNumUpdates: 0,
 		},
-		"disappearance of closed connection: legacy should send an update": {
+		"disappearance of closed connection should not send an update": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedInThePast,
 			},
-			currentState: map[indicator.NetworkConn]timestamp.MicroTS{},
-			// Legacy tracks deletions and still produces a message (undesired behavior).
-			// TransitionBased does not trigger an update (desired behavior).
-			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 0},
+			currentState:     map[indicator.NetworkConn]timestamp.MicroTS{},
+			expectNumUpdates: 0,
 		},
 		"handling nils": {
 			initialState:     nil,
 			currentState:     nil,
-			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectNumUpdates: 0,
 		},
 		// Test cases for empty initial state - behavior when a connection is seen for the first time.
 		"new closed connection should always be sent as required update": {
@@ -116,14 +107,14 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedRecently,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectNumUpdates: 1,
 		},
 		"new open connections should be sent as required update": {
 			initialState: nil,
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: open,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectNumUpdates: 1,
 		},
 		// Test cases for handling multiple messages about closing the same connection
 		"duplicate updates for closed connection with same timestamp should be skipped": {
@@ -133,7 +124,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedRecently,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectNumUpdates: 0,
 		},
 		"recent updates for closed connection with newer close timestamps should be sent": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
@@ -142,7 +133,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedRecently,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectNumUpdates: 1,
 		},
 		"recent updates for closed connection with older close timestamps should be ignored": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
@@ -151,41 +142,33 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedLongAgo,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectNumUpdates: 0,
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Run(implLegacy, func(t *testing.T) {
-				computer := NewLegacy()
-				if tc.initialState != nil {
-					computer.OnSuccessfulSendConnections(tc.initialState)
-				}
-				// Call to OnSuccessfulSendConnections with nils should not change anything in the state
-				computer.OnSuccessfulSendConnections(nil)
-				updates := computer.ComputeUpdatedConns(tc.currentState)
-				assert.Len(t, updates, tc.expectNumUpdates[implLegacy])
-			})
-			t.Run(implTransitionBased, func(t *testing.T) {
-				computer := NewTransitionBased()
-				if tc.initialState != nil {
-					// Trigger a computation + successful send to bring the update computer to the initial state.
-					computer.ComputeUpdatedConns(tc.initialState)
-					computer.OnSuccessfulSendConnections(tc.initialState)
-				}
-				// Call to OnSuccessfulSendConnections with nils should not change anything in the state
-				computer.OnSuccessfulSendConnections(nil)
-				updates := computer.ComputeUpdatedConns(tc.currentState)
-				assert.Len(t, updates, tc.expectNumUpdates[implTransitionBased])
-			})
+			computer := New()
+			if tc.initialState != nil {
+				// Trigger a computation + successful send to bring the update computer to the initial state.
+				computer.ComputeUpdatedConns(tc.initialState)
+				computer.OnSuccessfulSendConnections(tc.initialState)
+			}
+			// Call to OnSuccessfulSendConnections with nils should not change anything in the state
+			computer.OnSuccessfulSendConnections(nil)
+			updates := computer.ComputeUpdatedConns(tc.currentState)
+			assert.Len(t, updates, tc.expectNumUpdates)
 		})
 	}
 }
 
+func TestNewReturnsComputer(t *testing.T) {
+	assert.IsType(t, &Computer{}, New())
+}
+
 // Test_lookupPrevTimestamp tests the new closed connection tracking functionality
 func Test_lookupPrevTimestamp(t *testing.T) {
-	transitionBased := NewTransitionBased()
+	computer := New()
 
 	nowTS := timestamp.Now()
 	past := nowTS - 1000
@@ -199,7 +182,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 		"Unknown connections should not be found and return 0": {
 			connKey: indicator.BinaryHash(0x1234567890ABCDEF),
 			setupStore: func(key indicator.BinaryHash) {
-				transitionBased.storeClosedConnectionTimestamp(indicator.BinaryHash(0xFEDCBA0987654321), past, closedConnRememberDuration)
+				computer.storeClosedConnectionTimestamp(indicator.BinaryHash(0xFEDCBA0987654321), past, closedConnRememberDuration)
 			},
 			expectedFound:  false,
 			expectedPrevTS: 0,
@@ -213,7 +196,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 		"Stored closed connection should be found with correct timestamp": {
 			connKey: indicator.BinaryHash(0x2222222222222222),
 			setupStore: func(key indicator.BinaryHash) {
-				transitionBased.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
+				computer.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
 			},
 			expectedFound:  true,
 			expectedPrevTS: past,
@@ -221,7 +204,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 		"Stored closed connection should be found regardless of current timestamp": {
 			connKey: indicator.BinaryHash(0x3333333333333333),
 			setupStore: func(key indicator.BinaryHash) {
-				transitionBased.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
+				computer.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
 			},
 			expectedFound:  true,
 			expectedPrevTS: past,
@@ -229,7 +212,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 		"Stored closed connection should be found even with same timestamp": {
 			connKey: indicator.BinaryHash(0x4444444444444444),
 			setupStore: func(key indicator.BinaryHash) {
-				transitionBased.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
+				computer.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
 			},
 			expectedFound:  true,
 			expectedPrevTS: past,
@@ -237,7 +220,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 		"Stored closed connection should still be found after cleanup": {
 			connKey: indicator.BinaryHash(0x5555555555555555),
 			setupStore: func(key indicator.BinaryHash) {
-				transitionBased.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
+				computer.storeClosedConnectionTimestamp(key, past, closedConnRememberDuration)
 			},
 			expectedFound:  true,
 			expectedPrevTS: past,
@@ -252,7 +235,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 			}
 
 			// Test: lookup the connection
-			found, prevTS := transitionBased.lookupPrevTimestamp(tc.connKey)
+			found, prevTS := computer.lookupPrevTimestamp(tc.connKey)
 
 			// Assertions
 			assert.Equal(t, tc.expectedFound, found)
@@ -264,8 +247,8 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 	t.Run("should_not_panic_during_cleanup", func(t *testing.T) {
 		now := time.Now()
 		// Force cleanup by setting lastCleanup to a time in the past
-		transitionBased.lastCleanup = now.Add(-2 * time.Minute)
-		transitionBased.PeriodicCleanup(now, time.Minute)
+		computer.lastCleanup = now.Add(-2 * time.Minute)
+		computer.PeriodicCleanup(now, time.Minute)
 		// Should not panic and should update lastCleanup
 	})
 }
@@ -312,12 +295,12 @@ func Test_closedConnTimestamps(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			transitionBased := NewTransitionBased()
-			transitionBased.closedConnRememberDuration = tc.rememberPeriod
+			computer := New()
+			computer.closedConnRememberDuration = tc.rememberPeriod
 
-			_ = transitionBased.ComputeUpdatedConns(tc.currentState)
-			transitionBased.PeriodicCleanup(tc.nowTS, 0)
-			assert.Equal(t, tc.expectedLength, len(transitionBased.closedConnTimestamps))
+			_ = computer.ComputeUpdatedConns(tc.currentState)
+			computer.PeriodicCleanup(tc.nowTS, 0)
+			assert.Equal(t, tc.expectedLength, len(computer.closedConnTimestamps))
 		})
 	}
 }
@@ -372,9 +355,9 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 	testCases := map[string]struct {
 		initialMapping       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp
 		currentMapping       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp
-		expectNumUpdatesEp   map[string]int
-		expectNumUpdatesProc map[string]int
-		expectedDeduperState map[indicator.BinaryHash]indicator.BinaryHash // evaluated only for implTransitionBased!
+		expectNumUpdatesEp   int
+		expectNumUpdatesProc int
+		expectedDeduperState map[indicator.BinaryHash]indicator.BinaryHash
 	}{
 		"Should send new closed endpoints": {
 			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
@@ -384,8 +367,8 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 					LastSeen:         closedNow,
 				},
 			},
-			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 1},
-			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectNumUpdatesEp:   1,
+			expectNumUpdatesProc: 1,
 			expectedDeduperState: emptyDeduper,
 		},
 		"Should send update when open endpoints are closed": {
@@ -401,8 +384,8 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 					LastSeen:         closedInThePast,
 				},
 			},
-			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 1},
-			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectNumUpdatesEp:   1,
+			expectNumUpdatesProc: 1,
 			expectedDeduperState: emptyDeduper,
 		},
 		"Should not send an update when open endpoints remain open": {
@@ -418,8 +401,8 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 					LastSeen:         open,
 				},
 			},
-			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 0},
-			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectNumUpdatesEp:   0,
+			expectNumUpdatesProc: 0,
 			expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{ep1hash: p1hash},
 		},
 		"Should not send update when closed TS is updated to a past value": {
@@ -439,8 +422,8 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 			// This results in always sending updates on closed->closed transitions.
 			// This is intentional, as we estimate lower overhead in sending duplicates compared to
 			// tracking all closed endpoints in memory for a limited time (as done for connections).
-			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 1},
-			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 1},
+			expectNumUpdatesEp:   1,
+			expectNumUpdatesProc: 1,
 			expectedDeduperState: emptyDeduper,
 		},
 		"Should send update when closed TS is updated to a younger value": {
@@ -456,18 +439,18 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 					LastSeen:         closedNow,
 				},
 			},
-			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 1},
-			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 1},
+			expectNumUpdatesEp:   1,
+			expectNumUpdatesProc: 1,
 			expectedDeduperState: emptyDeduper,
 		},
 		"Should produce no updates on empty input": {
 			initialMapping:       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
 			currentMapping:       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
-			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 0},
-			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectNumUpdatesEp:   0,
+			expectNumUpdatesProc: 0,
 			expectedDeduperState: emptyDeduper,
 		},
-		"Should send an update on deletion for legacy but not for TransitionBased": {
+		"Should not send an update on deletion": {
 			initialMapping: map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{
 				ep1: {
 					ProcessListening: &p1,
@@ -475,15 +458,15 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 				},
 			},
 			currentMapping:       map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp{},
-			expectNumUpdatesEp:   map[string]int{implLegacy: 1, implTransitionBased: 0},
-			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 0},
+			expectNumUpdatesEp:   0,
+			expectNumUpdatesProc: 0,
 			expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{ep1hash: p1hash},
 		},
 		"handling nils": {
 			initialMapping:       nil,
 			currentMapping:       nil,
-			expectNumUpdatesEp:   map[string]int{implLegacy: 0, implTransitionBased: 0},
-			expectNumUpdatesProc: map[string]int{implLegacy: 0, implTransitionBased: 0},
+			expectNumUpdatesEp:   0,
+			expectNumUpdatesProc: 0,
 			expectedDeduperState: emptyDeduper,
 		},
 		// Process-specific cases
@@ -500,9 +483,8 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 					LastSeen:         open,
 				},
 			},
-			expectNumUpdatesEp: map[string]int{implLegacy: 0, implTransitionBased: 0},
-			// Legacy sends 2 updates, because first is for p1 to disappear, and second is for p2 to appear.
-			expectNumUpdatesProc: map[string]int{implLegacy: 2, implTransitionBased: 1},
+			expectNumUpdatesEp:   0,
+			expectNumUpdatesProc: 1,
 			expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{ep1hash: p2hash},
 		},
 		"A replacement triggered with a close message should close the correct process": {
@@ -518,9 +500,8 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 					LastSeen:         closedNow,
 				},
 			},
-			expectNumUpdatesEp: map[string]int{implLegacy: 1, implTransitionBased: 1}, // for closing ep1
-			// Legacy sends 2 updates, because first is for p1 to disappear, and second is for p2 to appear (as closed).
-			expectNumUpdatesProc: map[string]int{implLegacy: 2, implTransitionBased: 1},
+			expectNumUpdatesEp:   1, // for closing ep1
+			expectNumUpdatesProc: 1,
 			expectedDeduperState: emptyDeduper,
 		},
 		"A replacement process is nil but the endpoint stays open": {
@@ -536,9 +517,8 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 					LastSeen:         open,
 				},
 			},
-			expectNumUpdatesEp: map[string]int{implLegacy: 0, implTransitionBased: 0}, // ep1 remains open
-			// Legacy sends 1 update for p1 disappearing.
-			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 0},
+			expectNumUpdatesEp:   0, // ep1 remains open
+			expectNumUpdatesProc: 0,
 			expectedDeduperState: map[indicator.BinaryHash]indicator.BinaryHash{ep1hash: emptyHash}, // Note that deduper gets updated with empty process
 		},
 		"A replacement process is nil and the endpoint is closed": {
@@ -554,14 +534,13 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 					LastSeen:         closedNow,
 				},
 			},
-			expectNumUpdatesEp: map[string]int{implLegacy: 1, implTransitionBased: 1}, // for closing ep1
-			// Legacy sends 1 update for p1 disappearing.
-			expectNumUpdatesProc: map[string]int{implLegacy: 1, implTransitionBased: 0},
+			expectNumUpdatesEp:   1, // for closing ep1
+			expectNumUpdatesProc: 0,
 			expectedDeduperState: emptyDeduper,
 		},
 	}
 
-	executeAssertions := func(t *testing.T, l UpdateComputer,
+	executeAssertions := func(t *testing.T, l *Computer,
 		expectedNumUpdatesEp, expectedNumUpdatesProc int,
 		initialMapping, currentMapping map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
 		t.Helper()
@@ -588,24 +567,17 @@ func TestComputeUpdatedEndpointsAndProcesses(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			t.Run(implLegacy, func(t *testing.T) {
-				executeAssertions(t, NewLegacy(),
-					tc.expectNumUpdatesEp[implLegacy], tc.expectNumUpdatesProc[implLegacy],
-					tc.initialMapping, tc.currentMapping)
-			})
-			t.Run(implTransitionBased, func(t *testing.T) {
-				uc := NewTransitionBased()
-				executeAssertions(t, uc,
-					tc.expectNumUpdatesEp[implTransitionBased], tc.expectNumUpdatesProc[implTransitionBased],
-					tc.initialMapping, tc.currentMapping)
+			uc := New()
+			executeAssertions(t, uc,
+				tc.expectNumUpdatesEp, tc.expectNumUpdatesProc,
+				tc.initialMapping, tc.currentMapping)
 
-				assert.Len(t, uc.endpointsDeduper, len(tc.expectedDeduperState))
-				for k, v := range tc.expectedDeduperState {
-					got, found := uc.endpointsDeduper[k]
-					assert.Truef(t, found, "expected to find %x in deduper", k)
-					assert.Equal(t, v, got, "expected to find %x=%x in deduper, but found %x=%x", k, v, k, got)
-				}
-			})
+			assert.Len(t, uc.endpointsDeduper, len(tc.expectedDeduperState))
+			for k, v := range tc.expectedDeduperState {
+				got, found := uc.endpointsDeduper[k]
+				assert.Truef(t, found, "expected to find %x in deduper", k)
+				assert.Equal(t, v, got, "expected to find %x=%x in deduper, but found %x=%x", k, v, k, got)
+			}
 		})
 	}
 }

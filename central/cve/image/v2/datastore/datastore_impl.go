@@ -105,7 +105,3 @@ func (c *ImageCVESearchResultConverter) BuildLocation(result *pkgSearch.Result) 
 func (c *ImageCVESearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_IMAGE_VULNERABILITIES_V2
 }
-
-func (c *ImageCVESearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
-	return result.Score
-}

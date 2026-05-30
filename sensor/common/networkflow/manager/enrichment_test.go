@@ -368,80 +368,36 @@ func Test_connStatus_checkRemoveCondition(t *testing.T) {
 	tests := map[string]struct {
 		rotten     bool
 		closed     bool
-		useLegacy  bool
 		isConsumed bool
 		want       bool
 	}{
-		// Legacy
-		"Legacy shall remove closed, consumed EEs": {
+		"should remove closed, consumed EEs": {
 			rotten:     false,
 			closed:     true,
-			useLegacy:  true,
 			isConsumed: true,
 			want:       true,
 		},
-		"Legacy shall keep closed, unconsumed EEs": {
+		"should keep closed, unconsumed EEs": {
 			rotten:     false,
 			closed:     true,
-			useLegacy:  true,
 			isConsumed: false,
 			want:       false,
 		},
-		"Legacy shall keep open, consumed EEs": {
+		"should remove open, consumed EEs": {
 			rotten:     false,
 			closed:     false,
-			useLegacy:  true,
-			isConsumed: true,
-			want:       false,
-		},
-		"Legacy shall keep open, unconsumed EEs": {
-			rotten:     false,
-			closed:     false,
-			useLegacy:  true,
-			isConsumed: false,
-			want:       false,
-		},
-		// TransitionBased (current impl),
-		"Current impl shall remove closed, consumed EEs": {
-			rotten:     false,
-			closed:     true,
-			useLegacy:  false,
 			isConsumed: true,
 			want:       true,
 		},
-		"Current impl shall keep closed, unconsumed EEs": {
+		"should keep open, unconsumed EEs": {
 			rotten:     false,
-			closed:     true,
-			useLegacy:  false,
+			closed:     false,
 			isConsumed: false,
 			want:       false,
 		},
-		"Current impl shall remove open, consumed EEs": { // difference to legacy
-			rotten:     false,
-			closed:     false,
-			useLegacy:  false,
-			isConsumed: true,
-			want:       true,
-		},
-		"Current impl shall keep open, unconsumed EEs": {
-			rotten:     false,
-			closed:     false,
-			useLegacy:  false,
-			isConsumed: false,
-			want:       false,
-		},
-		// Rotten
-		"Legacy shall remove rotten": {
+		"should remove rotten": {
 			rotten:     true,
 			closed:     false,
-			useLegacy:  true,
-			isConsumed: false,
-			want:       true,
-		},
-		"Current impl shall remove rotten": {
-			rotten:     true,
-			closed:     false,
-			useLegacy:  false,
 			isConsumed: false,
 			want:       true,
 		},
@@ -457,8 +413,8 @@ func Test_connStatus_checkRemoveCondition(t *testing.T) {
 				lastSeen: ts,
 			}
 			assert.Equalf(t, tt.want,
-				c.checkRemoveCondition(tt.useLegacy, tt.isConsumed),
-				"checkRemoveCondition(%v, %v)", tt.useLegacy, tt.isConsumed)
+				c.checkRemoveCondition(tt.isConsumed),
+				"checkRemoveCondition(%v)", tt.isConsumed)
 		})
 	}
 }

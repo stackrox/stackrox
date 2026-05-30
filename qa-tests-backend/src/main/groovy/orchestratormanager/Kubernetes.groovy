@@ -2447,7 +2447,21 @@ class Kubernetes {
             )
         }
 
+        List<Container> k8sInitContainers = deployment.initContainers.collect { Map<String, Object> init ->
+            String initImage = init.get("image") as String
+            Container initContainer = new Container(
+                    name: init.get("name") as String,
+                    image: initImage,
+                    command: init.get("command") as List<String>,
+            )
+            if (Env.IMAGE_PULL_POLICY_FOR_QUAY_IO && initImage =~ /^quay.io/) {
+                initContainer.setImagePullPolicy(Env.IMAGE_PULL_POLICY_FOR_QUAY_IO)
+            }
+            return initContainer
+        }
+
         PodSpec podSpec = new PodSpec(
+                initContainers: k8sInitContainers,
                 containers: [container],
                 volumes: volumes,
                 imagePullSecrets: imagePullSecrets,

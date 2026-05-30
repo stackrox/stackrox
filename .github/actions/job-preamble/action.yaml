@@ -139,6 +139,23 @@ runs:
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
+    - name: Capture runner fingerprint
+      id: runner-info
+      continue-on-error: true
+      shell: bash
+      run: |
+        set +e
+        cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
+        if [[ -z "$cpu_model" ]]; then
+          cpu_model=$(lscpu 2>/dev/null | awk -F: '/Model name/{gsub(/^ +/,"",$2); print $2}')
+        fi
+        echo "cpu_model=${cpu_model:-$(uname -m)}" >> "$GITHUB_OUTPUT"
+        echo "runner_image=${ImageOS:+${ImageOS}-${ImageVersion:-}}" >> "$GITHUB_OUTPUT"
+        mem_gb=$(awk '/MemTotal/{printf "%.0f", $2/1048576}' /proc/meminfo 2>/dev/null)
+        disk_gb=$(df -BG --output=size / 2>/dev/null | tail -1 | tr -d ' G')
+        echo "runner_resources=${mem_gb:-0}GB ram / ${disk_gb:-0}GB disk" >> "$GITHUB_OUTPUT"
+        echo "container_runtime=$([[ -f /.dockerenv ]] && echo container || echo None)" >> "$GITHUB_OUTPUT"
+
     - name: Record job info
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       id: record_job_info
@@ -155,7 +172,11 @@ runs:
           source scripts/ci/lib.sh || true;
           save_job_record "${{ github.job }}" "gha" \
             outcome "${{ job.status }}" \
-            started_at "${{ steps.record_job_info.outputs.started_at }}" || true;
+            started_at "${{ steps.record_job_info.outputs.started_at }}" \
+            cut_os_image "${{ steps.runner-info.outputs.runner_image }}" \
+            build "${{ steps.runner-info.outputs.cpu_model }}" \
+            test_target "${{ steps.runner-info.outputs.runner_resources }}" \
+            cut_container_runtime_version "${{ steps.runner-info.outputs.container_runtime }}" || true;
           free=$(df -BGB --output=avail / | tail -1);
           echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\

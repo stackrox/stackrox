@@ -10,6 +10,7 @@ central/compliance/checks/fixtures/scraped.go
 central/compliance/standards/metadata/pci_dss_3_2.go
 central/cve/converter/utils/testdata/*
 central/cve/fetcher/testdata/cve-list.json
+central/detection/alertmanager/alert_manager_impl_test.go
 central/graphql/resolvers/generated.go
 central/image/service/service_impl.go
 central/networkgraph/service/service_impl_test.go

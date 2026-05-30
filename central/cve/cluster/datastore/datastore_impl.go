@@ -260,7 +260,3 @@ func (c *ClusterCVESearchResultConverter) BuildLocation(result *pkgSearch.Result
 func (c *ClusterCVESearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_CLUSTER_VULNERABILITIES
 }
-
-func (c *ClusterCVESearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
-	return result.Score
-}

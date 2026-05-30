@@ -88,7 +88,3 @@ func (c *NodeComponentEdgeSearchResultConverter) BuildLocation(result *searchPkg
 func (c *NodeComponentEdgeSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_NODE_COMPONENT_EDGE
 }
-
-func (c *NodeComponentEdgeSearchResultConverter) GetScore(result *searchPkg.Result) float64 {
-	return result.Score
-}
