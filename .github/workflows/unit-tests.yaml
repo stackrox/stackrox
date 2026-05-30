@@ -84,22 +84,6 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
-    - name: Diagnose GOCACHE key components
-      run: |
-        echo "=== GOCACHE state before tests ==="
-        echo "GOCACHE=$(go env GOCACHE)"
-        echo "GOCACHE_files=$(find $(go env GOCACHE) -type f 2>/dev/null | wc -l)"
-        echo "GOCACHE_size=$(du -sh $(go env GOCACHE) 2>/dev/null | cut -f1)"
-        echo "trim_txt_age=$(stat -c %Y $(go env GOCACHE)/trim.txt 2>/dev/null || echo 'missing')"
-        echo "BUILD_TAG=${BUILD_TAG}"
-        echo "SHORTCOMMIT=${SHORTCOMMIT}"
-        echo "GOTOOLCHAIN=$(go env GOTOOLCHAIN)"
-        echo "GOROOT=$(go env GOROOT)"
-        echo "=== Test one package with GOCACHE hash debug ==="
-        GODEBUG=gocachehash=1 go test -count=1 ./pkg/set/... 2>&1 | head -60 || true
-        echo "=== Check if test was cached ==="
-        go test -count=1 ./pkg/set/... 2>&1 | head -5 || true
-
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
@@ -661,7 +645,7 @@ jobs:
             echo "Skipping registration."
             exit 0
           fi
-          bash .github/actions/job-preamble/keep-alive.sh "warm-go" "120"
+          bash .github/actions/job-preamble/keep-alive.sh "warm-go" "330"
 
   runner-profiling:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
