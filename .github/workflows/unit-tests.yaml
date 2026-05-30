@@ -72,6 +72,7 @@ jobs:
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         clean: false
+        persist-credentials: false
 
     - uses: ./.github/actions/job-preamble
       with:
