@@ -1,3 +1,4 @@
+// Package set provides generic set implementations.
 package set
 
 import (
