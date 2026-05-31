@@ -50,6 +50,32 @@ jobs:
             echo 'runner="ubuntu-latest"' >> "$GITHUB_OUTPUT"
           fi
 
+  go-build:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ${{ fromJSON('["self-hosted","warm-go"]') }}
+    env:
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      with:
+        clean: false
+        persist-credentials: false
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Build Go binaries
+      run: |
+        start=$SECONDS
+        make main-build 2>&1 | tail -5
+        echo "=== Build took $((SECONDS - start))s ==="
+
   go:
     needs: pick-runner
     strategy:
