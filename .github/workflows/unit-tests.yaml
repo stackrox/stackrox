@@ -663,7 +663,7 @@ jobs:
   # Seed a warm-cache runner: build Go to warm caches, check runner
   # quality, register as self-hosted if fast. Only on workflow_dispatch.
   seed-warm-runner:
-    if: github.event_name == 'workflow_dispatch'
+    if: false
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
