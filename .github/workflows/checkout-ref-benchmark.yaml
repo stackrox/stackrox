@@ -1,0 +1,209 @@
+name: Benchmark - checkout ref advertisement strategies
+
+on:
+  push:
+    branches:
+      - worktree-checkout-ref-benchmark
+
+# Compares different git fetch strategies to measure the cost of
+# GitHub's ref advertisement (24k refs including ~19k PR refs).
+# Each job uses a different strategy and reports:
+#   - refs advertised by GitHub
+#   - local refs after checkout
+#   - checkout step wall-clock time
+#   - git ls-remote wall-clock time (pure ref advertisement cost)
+
+jobs:
+
+  # ── Baseline ──────────────────────────────────────────────────────────────
+  baseline:
+    name: A - baseline (default actions/checkout)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Record start
+        run: echo "START=$(date +%s%N)" >> "$GITHUB_ENV"
+
+      - uses: de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Measure
+        run: |
+          elapsed=$(( ($(date +%s%N) - START) / 1000000 ))
+          echo "### A - Baseline (default actions/checkout)" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Checkout time (ms) | $elapsed |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Local refs after checkout | $(git for-each-ref | wc -l | tr -d ' ') |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Local remote-tracking refs | $(git for-each-ref refs/remotes/ | wc -l | tr -d ' ') |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Tags fetched | $(git for-each-ref refs/tags/ | wc -l | tr -d ' ') |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Time a git ls-remote (pure ref advertisement cost)
+        run: |
+          echo "#### git ls-remote timing (3 runs)" >> "$GITHUB_STEP_SUMMARY"
+          for i in 1 2 3; do
+            t0=$(date +%s%N)
+            count=$(git ls-remote origin | wc -l)
+            elapsed=$(( ($(date +%s%N) - t0) / 1000000 ))
+            echo "| Run $i | ${elapsed}ms | $count refs |" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+  # ── fetch-tags: false ─────────────────────────────────────────────────────
+  no-tags:
+    name: B - fetch-tags false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Record start
+        run: echo "START=$(date +%s%N)" >> "$GITHUB_ENV"
+
+      - uses: de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 1
+          fetch-tags: false
+
+      - name: Measure
+        run: |
+          elapsed=$(( ($(date +%s%N) - START) / 1000000 ))
+          echo "### B - fetch-tags: false" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Checkout time (ms) | $elapsed |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Local refs after checkout | $(git for-each-ref | wc -l | tr -d ' ') |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Local remote-tracking refs | $(git for-each-ref refs/remotes/ | wc -l | tr -d ' ') |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Tags fetched | $(git for-each-ref refs/tags/ | wc -l | tr -d ' ') |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Time a git ls-remote (3 runs)
+        run: |
+          echo "#### git ls-remote timing (3 runs)" >> "$GITHUB_STEP_SUMMARY"
+          for i in 1 2 3; do
+            t0=$(date +%s%N)
+            count=$(git ls-remote origin | wc -l)
+            elapsed=$(( ($(date +%s%N) - t0) / 1000000 ))
+            echo "| Run $i | ${elapsed}ms | $count refs |" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+  # ── Manual fetch with explicit refspec (no pull refs, no tags) ───────────
+  explicit-refspec:
+    name: C - manual fetch explicit refspec
+    runs-on: ubuntu-latest
+    steps:
+      - name: Record start
+        run: echo "START=$(date +%s%N)" >> "$GITHUB_ENV"
+
+      # Minimal checkout: init + fetch only what we need, no tags, no PR refs
+      - name: git init and minimal fetch
+        run: |
+          git init
+          git remote add origin https://github.com/${{ github.repository }}.git
+          # Fetch ONLY the specific branch we need — protocol v2 with this explicit
+          # refspec will not advertise refs/pull/* or refs/tags/* from the server
+          git -c protocol.version=2 fetch \
+            --no-tags \
+            --depth=1 \
+            --no-recurse-submodules \
+            origin "+refs/heads/${{ github.ref_name }}:refs/remotes/origin/${{ github.ref_name }}"
+          git checkout -b "${{ github.ref_name }}" --track "origin/${{ github.ref_name }}"
+
+      - name: Measure
+        run: |
+          elapsed=$(( ($(date +%s%N) - START) / 1000000 ))
+          echo "### C - Manual fetch with explicit refspec" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Checkout time (ms) | $elapsed |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Local refs after checkout | $(git for-each-ref | wc -l | tr -d ' ') |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Local remote-tracking refs | $(git for-each-ref refs/remotes/ | wc -l | tr -d ' ') |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Tags fetched | $(git for-each-ref refs/tags/ | wc -l | tr -d ' ') |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Time a targeted ls-refs (protocol v2, heads only)
+        run: |
+          echo "#### git ls-remote timing — heads only vs all (3 runs each)" >> "$GITHUB_STEP_SUMMARY"
+          echo "| | heads only | all refs |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          for i in 1 2 3; do
+            t0=$(date +%s%N)
+            heads=$(git -c protocol.version=2 ls-remote --heads origin | wc -l)
+            t_heads=$(( ($(date +%s%N) - t0) / 1000000 ))
+            t0=$(date +%s%N)
+            all=$(git ls-remote origin | wc -l)
+            t_all=$(( ($(date +%s%N) - t0) / 1000000 ))
+            echo "| Run $i | ${t_heads}ms ($heads refs) | ${t_all}ms ($all refs) |" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+  # ── actions/checkout + post-checkout prune of PR refs ────────────────────
+  prune-pr-refs:
+    name: D - checkout then prune PR refs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Record start
+        run: echo "START=$(date +%s%N)" >> "$GITHUB_ENV"
+
+      - uses: de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 1
+          fetch-tags: false
+
+      - name: Prune any PR refs that were fetched
+        run: |
+          pr_refs=$(git for-each-ref --format='%(refname)' 'refs/pull/')
+          if [ -n "$pr_refs" ]; then
+            echo "$pr_refs" | xargs git update-ref -d
+            echo "Pruned $(echo "$pr_refs" | wc -l) PR refs"
+          else
+            echo "No PR refs found (as expected with fetch-tags:false + depth:1)"
+          fi
+
+      - name: Measure
+        run: |
+          elapsed=$(( ($(date +%s%N) - START) / 1000000 ))
+          echo "### D - checkout + prune PR refs" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Checkout time (ms) | $elapsed |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Local refs after checkout + prune | $(git for-each-ref | wc -l | tr -d ' ') |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Local remote-tracking refs | $(git for-each-ref refs/remotes/ | wc -l | tr -d ' ') |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Time git ls-remote (3 runs)
+        run: |
+          echo "#### git ls-remote timing (3 runs)" >> "$GITHUB_STEP_SUMMARY"
+          for i in 1 2 3; do
+            t0=$(date +%s%N)
+            count=$(git ls-remote origin | wc -l)
+            elapsed=$(( ($(date +%s%N) - t0) / 1000000 ))
+            echo "| Run $i | ${elapsed}ms | $count refs |" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+  # ── Summary ───────────────────────────────────────────────────────────────
+  summarize:
+    name: Summary
+    needs: [baseline, no-tags, explicit-refspec, prune-pr-refs]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Results guide
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" << 'EOF'
+          ## What we are measuring
+
+          **Local refs after checkout** — how many refs git stored locally.
+          A shallow `fetch-depth: 1` checkout targeting one branch should store
+          very few refs. If this number is large, extra refs are being fetched.
+
+          **git ls-remote timing** — the cost of asking GitHub to list ALL its refs.
+          This is what every `git fetch` pays before negotiating objects.
+          ~24,000 refs on `stackrox/stackrox` (including ~19k closed PR refs).
+
+          **heads-only vs all refs (job C)** — the key test: does `--heads` +
+          protocol v2 skip the 19k PR refs and return faster?
+
+          **Expected hypothesis:**
+          - Job A (baseline): fetches tags → slightly more local refs, same ls-remote time
+          - Job B (no-tags): fewer local tag refs, same ls-remote time (ls-remote fetches everything)
+          - Job C (explicit refspec): FEWER refs advertised by GitHub (protocol v2 ls-refs with prefix)
+          - Job D (prune after): same as B but confirms no PR refs leaked in
+
+          If Job C's "heads only" ls-remote is significantly faster than "all refs",
+          that confirms protocol v2 ref filtering works and we should switch all
+          jobs that don't need tags to use explicit refspec fetches.
+          EOF
