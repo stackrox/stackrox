@@ -7,6 +7,9 @@ import (
 	"strings"
 )
 
+// pkgVersion is a package-internal marker to test warm cache behavior across commits.
+const pkgVersion = "v1"
+
 // Set is a generic set type.
 type Set[KeyType comparable] map[KeyType]struct{}
 
