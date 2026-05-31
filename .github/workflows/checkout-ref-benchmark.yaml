@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - worktree-checkout-ref-benchmark
+  workflow_dispatch:  # manual trigger so this can be run from any branch
 
 # Compares different git fetch strategies to measure the cost of
 # GitHub's ref advertisement (24k refs including ~19k PR refs).
