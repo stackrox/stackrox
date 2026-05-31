@@ -70,11 +70,49 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
+    - name: Disk and GOCACHE state before build
+      run: |
+        echo "disk_free=$(df -BGB --output=avail / | tail -1 | tr -d ' G')GB"
+        echo "gocache_size=$(du -sh $(go env GOCACHE) 2>/dev/null | cut -f1)"
+        echo "gocache_files=$(find $(go env GOCACHE) -type f 2>/dev/null | wc -l)"
+
     - name: Build Go binaries
       run: |
         start=$SECONDS
         make main-build 2>&1 | tail -5
         echo "=== Build took $((SECONDS - start))s ==="
+
+    - name: Disk and GOCACHE state after build
+      run: |
+        echo "disk_free=$(df -BGB --output=avail / | tail -1 | tr -d ' G')GB"
+        echo "gocache_size=$(du -sh $(go env GOCACHE) 2>/dev/null | cut -f1)"
+        echo "gocache_files=$(find $(go env GOCACHE) -type f 2>/dev/null | wc -l)"
+
+  go-style:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ${{ fromJSON('["self-hosted","warm-go"]') }}
+    env:
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      with:
+        clean: false
+        persist-credentials: false
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Go style (golangci-lint)
+      run: |
+        start=$SECONDS
+        make golangci-lint 2>&1 | tail -10
+        echo "=== golangci-lint took $((SECONDS - start))s ==="
 
   go:
     needs: pick-runner
@@ -94,6 +132,9 @@ jobs:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
     steps:
+    - name: Job start lag
+      run: echo "job_started_at=$(date -u +%s) runner=${RUNNER_NAME:-unknown} runner_type=warm-go"
+
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
