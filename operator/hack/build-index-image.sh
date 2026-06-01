@@ -100,7 +100,7 @@ function fetch_opm() {
 function fetch_yq() {
   local -r os_name=$(uname | tr '[:upper:]' '[:lower:]') || true
   local -r arch=$(go env GOARCH) || true
-  local -r yq_version=$(cd "${SCRIPT_DIR}/../tools/" && go list -m github.com/mikefarah/yq/v4 | awk '{print substr($2,2)}')
+  local -r yq_version=$(cd "${SCRIPT_DIR}/../tools/yq/" && go list -m github.com/mikefarah/yq/v4 | awk '{print substr($2,2)}')
 
   YQ="${BASE_DIR}/bin/yq-${yq_version}"
   "${SCRIPT_DIR}/get-github-release.sh" --to "${YQ}" --from "https://github.com/mikefarah/yq/releases/download/v${yq_version}/yq_${os_name}_${arch}"
