@@ -39,6 +39,7 @@ func NewHandler(ds datastore.DataStore) http.Handler {
 	router.HandleFunc("/v1/scandata/cves", h.listCVEs).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/cves/{cveName}", h.getCVEDetail).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/images/{imageId}/findings", h.getImageFindings).Methods(http.MethodGet)
+	router.HandleFunc("/v1/scandata/images/{imageId}", h.getImageDetail).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/advisories", h.listAdvisories).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/deployments", h.listDeployments).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/deployments/{deploymentId}", h.getDeploymentDetail).Methods(http.MethodGet)
@@ -167,6 +168,45 @@ type DeploymentImageDetail struct {
 	CVECount    int    `json:"cveCount"`
 	TopSeverity int32  `json:"topSeverity"`
 	Fixable     bool   `json:"fixable"`
+}
+
+// ImageDetailResponse is the response for GET /v1/scandata/images/{imageId}
+type ImageDetailResponse struct {
+	ImageID        string                 `json:"imageId"`
+	ImageName      string                 `json:"imageName,omitempty"`
+	ScanTime       string                 `json:"scanTime,omitempty"`
+	ScannerVersion string                 `json:"scannerVersion,omitempty"`
+	BundleVersion  string                 `json:"bundleVersion,omitempty"`
+	DataSources    []string               `json:"dataSources"`
+	Components     []ImageDetailComponent `json:"components"`
+	CVESummary     ImageDetailCVESummary  `json:"cveSummary"`
+}
+
+// ImageDetailComponent represents a component with its CVEs in the image detail view.
+type ImageDetailComponent struct {
+	Name     string           `json:"name"`
+	Version  string           `json:"version"`
+	Source   string           `json:"source"`
+	Location string           `json:"location,omitempty"`
+	CVEs     []ImageDetailCVE `json:"cves"`
+}
+
+// ImageDetailCVE represents a CVE within a component in the image detail view.
+type ImageDetailCVE struct {
+	CVEName    string   `json:"cveName"`
+	Severity   int32    `json:"severity"`
+	CVSS       float32  `json:"cvss"`
+	FixedBy    string   `json:"fixedBy,omitempty"`
+	Advisories []string `json:"advisories"`
+}
+
+// ImageDetailCVESummary is the severity breakdown for an image.
+type ImageDetailCVESummary struct {
+	Total     int `json:"total"`
+	Critical  int `json:"critical"`
+	Important int `json:"important"`
+	Moderate  int `json:"moderate"`
+	Low       int `json:"low"`
 }
 
 // AdvisoryListResponse is the response for GET /v1/scandata/advisories
@@ -444,6 +484,213 @@ func buildCVEDetailResponse(ctx context.Context, ds datastore.DataStore, cveName
 		Advisories:  advisories,
 		Components:  components,
 		Images:      images,
+	}
+}
+
+func (h *handler) getImageDetail(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vars := mux.Vars(r)
+	imageID := vars["imageId"]
+	if imageID == "" {
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.New("imageId is required"))
+		return
+	}
+
+	// Get scan metadata.
+	scanData, err := h.datastore.GetScanDataByImageID(ctx, imageID)
+	if err != nil {
+		log.Errorf("failed to get scan data for image %s: %v", imageID, err)
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "getting image scan data"))
+		return
+	}
+	if scanData == nil || scanData.Scan == nil {
+		httputil.WriteGRPCStyleError(w, codes.NotFound, errors.Errorf("image %s not found", imageID))
+		return
+	}
+
+	// Get findings joined with component data.
+	findingsWithComps, err := h.datastore.GetFindingsWithComponentsByImageID(ctx, imageID)
+	if err != nil {
+		log.Errorf("failed to get findings for image %s: %v", imageID, err)
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "getting image findings"))
+		return
+	}
+
+	// Look up image name.
+	var imageName string
+	imageInfoMap, err := h.datastore.GetImageInfoByDigests(ctx, []string{imageID})
+	if err != nil {
+		log.Warnf("failed to enrich image info for %s: %v", imageID, err)
+	} else if info, ok := imageInfoMap[imageID]; ok {
+		imageName = info.FullName
+	}
+
+	response := buildImageDetailResponse(imageID, imageName, scanData, findingsWithComps)
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Errorf("failed to encode response: %v", err)
+	}
+}
+
+// buildImageDetailResponse groups findings by component, then by CVE within each component.
+func buildImageDetailResponse(imageID, imageName string, scanData *types.ScanData, findings []*types.FindingWithComponent) *ImageDetailResponse {
+	scan := scanData.Scan
+
+	// Collect data sources.
+	dataSourceSet := make(map[string]struct{})
+	for _, fc := range findings {
+		src := fc.Finding.GetSourceName()
+		if src != "" {
+			dataSourceSet[src] = struct{}{}
+		}
+	}
+	dataSources := make([]string, 0, len(dataSourceSet))
+	for ds := range dataSourceSet {
+		dataSources = append(dataSources, ds)
+	}
+	slices.Sort(dataSources)
+
+	// Group findings by component (name+version+source), then by CVE within each component.
+	type cveKey struct {
+		cveName string
+	}
+	type compKey struct {
+		name    string
+		version string
+		source  string
+	}
+
+	type cveAccum struct {
+		severity   int32
+		cvss       float32
+		fixedBy    string
+		advisories []string
+	}
+
+	compOrder := make([]compKey, 0)
+	compLocation := make(map[compKey]string)
+	compCVEs := make(map[compKey]map[string]*cveAccum)
+
+	// Track unique CVE names across all components for the summary.
+	allCVEs := make(map[string]int32) // cveName -> maxSeverity
+
+	for _, fc := range findings {
+		f := fc.Finding
+		compSource := storage.SourceType(fc.ComponentSource).String()
+		ck := compKey{name: fc.ComponentName, version: fc.ComponentVersion, source: compSource}
+
+		if _, exists := compCVEs[ck]; !exists {
+			compOrder = append(compOrder, ck)
+			compCVEs[ck] = make(map[string]*cveAccum)
+			compLocation[ck] = fc.ComponentLocation
+		}
+
+		cveName := f.GetCveName()
+		if cveName == "" {
+			continue
+		}
+
+		// Track max severity for summary.
+		if int32(f.GetSeverity()) > allCVEs[cveName] {
+			allCVEs[cveName] = int32(f.GetSeverity())
+		}
+
+		if existing, ok := compCVEs[ck][cveName]; ok {
+			// Same CVE, different advisory — append advisory ID.
+			if aid := f.GetAdvisoryId(); aid != "" {
+				existing.advisories = append(existing.advisories, aid)
+			}
+			if f.GetCvss() > existing.cvss {
+				existing.cvss = f.GetCvss()
+			}
+			if int32(f.GetSeverity()) > existing.severity {
+				existing.severity = int32(f.GetSeverity())
+			}
+			if existing.fixedBy == "" && f.GetFixedBy() != "" {
+				existing.fixedBy = f.GetFixedBy()
+			}
+		} else {
+			var advisories []string
+			if aid := f.GetAdvisoryId(); aid != "" {
+				advisories = []string{aid}
+			}
+			compCVEs[ck][cveName] = &cveAccum{
+				severity:   int32(f.GetSeverity()),
+				cvss:       f.GetCvss(),
+				fixedBy:    f.GetFixedBy(),
+				advisories: advisories,
+			}
+		}
+	}
+
+	// Build component list.
+	components := make([]ImageDetailComponent, 0, len(compOrder))
+	for _, ck := range compOrder {
+		cves := compCVEs[ck]
+		cveList := make([]ImageDetailCVE, 0, len(cves))
+		for cveName, acc := range cves {
+			cveList = append(cveList, ImageDetailCVE{
+				CVEName:    cveName,
+				Severity:   acc.severity,
+				CVSS:       acc.cvss,
+				FixedBy:    acc.fixedBy,
+				Advisories: acc.advisories,
+			})
+		}
+		// Sort CVEs by severity DESC, then CVSS DESC.
+		slices.SortFunc(cveList, func(a, b ImageDetailCVE) int {
+			if a.Severity != b.Severity {
+				return int(b.Severity) - int(a.Severity)
+			}
+			if a.CVSS != b.CVSS {
+				if b.CVSS > a.CVSS {
+					return 1
+				}
+				return -1
+			}
+			return strings.Compare(a.CVEName, b.CVEName)
+		})
+
+		components = append(components, ImageDetailComponent{
+			Name:     ck.name,
+			Version:  ck.version,
+			Source:   ck.source,
+			Location: compLocation[ck],
+			CVEs:     cveList,
+		})
+	}
+
+	// Build CVE summary.
+	summary := ImageDetailCVESummary{Total: len(allCVEs)}
+	for _, sev := range allCVEs {
+		switch sev {
+		case 4:
+			summary.Critical++
+		case 3:
+			summary.Important++
+		case 2:
+			summary.Moderate++
+		case 1:
+			summary.Low++
+		}
+	}
+
+	var scanTime string
+	if scan.GetScanTime() != nil {
+		scanTime = scan.GetScanTime().AsTime().Format(time.RFC3339)
+	}
+
+	return &ImageDetailResponse{
+		ImageID:        imageID,
+		ImageName:      imageName,
+		ScanTime:       scanTime,
+		ScannerVersion: scan.GetScannerVersion(),
+		BundleVersion:  scan.GetBundleVersion(),
+		DataSources:    dataSources,
+		Components:     components,
+		CVESummary:     summary,
 	}
 }
 

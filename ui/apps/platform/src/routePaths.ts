@@ -101,6 +101,7 @@ export const vulnerabilitiesPrototypeCvePath = `${vulnerabilitiesPrototypePath}/
 export const vulnerabilitiesPrototypeCveDetailPath = `${vulnerabilitiesPrototypeCvePath}/:cveName`;
 export const vulnerabilitiesPrototypeDeploymentsPath = `${vulnerabilitiesPrototypePath}/deployments`;
 export const vulnerabilitiesPrototypeAdvisoriesPath = `${vulnerabilitiesPrototypePath}/advisories`;
+export const vulnerabilitiesPrototypeImageDetailPath = `${vulnerabilitiesPrototypePath}/images/:imageId`;
 
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 export const vulnerabilityConfigurationReportsPath = `${vulnerabilityReportsPath}/configuration`;

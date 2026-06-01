@@ -8,6 +8,7 @@ import CveDetailPage from './CveDetail/CveDetailPage';
 import AdvisoryListPage from './Advisories/AdvisoryListPage';
 import DeploymentListPage from './Deployments/DeploymentListPage';
 import DeploymentDetailPage from './Deployments/DeploymentDetailPage';
+import ImageDetailPage from './ImageDetail/ImageDetailPage';
 
 /**
  * React Router routes for the CVE prototype pages.
@@ -17,6 +18,7 @@ import DeploymentDetailPage from './Deployments/DeploymentDetailPage';
 function ProtoRoutes() {
     return (
         <Routes>
+            <Route path="images/:imageId" element={<ImageDetailPage />} />
             <Route path="cves/:cveName" element={<CveDetailPage />} />
             <Route path="cves" element={<CveListPage />} />
             <Route path="advisories" element={<AdvisoryListPage />} />
