@@ -332,9 +332,13 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 }
 
 func validateWorkload(workload *Workload) error {
+	const minOfflineModeInterval = 10 * time.Second
 	if workload.OfflineModeInterval < 0 {
 		workload.OfflineModeInterval = 0
 		log.Warn("negative offlineModeInterval in workload; clamped to 0")
+	} else if workload.OfflineModeInterval > 0 && workload.OfflineModeInterval < minOfflineModeInterval {
+		workload.OfflineModeInterval = minOfflineModeInterval
+		log.Warnf("offlineModeInterval too small; clamped to %s", minOfflineModeInterval)
 	}
 	if workload.NetworkWorkload.OpenPortReuseProbability < 0.0 || workload.NetworkWorkload.OpenPortReuseProbability > 1.0 {
 		corrected := math.Min(1.0, math.Max(0.0, workload.NetworkWorkload.OpenPortReuseProbability))
