@@ -67,9 +67,10 @@ function isLocked(baseline: ProcessBaseline): boolean {
 function ProcessBaselinesPage() {
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_PAGE_SIZE);
 
+    const [hasSearched, setHasSearched] = useState(false);
     const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
-    const [clusterInput, setClusterInput] = useState('');
-    const [namespaceInput, setNamespaceInput] = useState('');
+    const [clusterInput, setClusterInput] = useState('*');
+    const [namespaceInput, setNamespaceInput] = useState('default');
     const [deploymentNameInput, setDeploymentNameInput] = useState('');
     const [containerNameInput, setContainerNameInput] = useState('');
 
@@ -82,9 +83,14 @@ function ProcessBaselinesPage() {
     const query = buildQuery(searchTerms);
 
     const requestFn = useCallback(
-        () => fetchProcessBaselinesBulk(query, page, perPage),
+        () => {
+            if (!hasSearched) {
+                return Promise.resolve({ baselines: [], totalCount: 0 });
+            }
+            return fetchProcessBaselinesBulk(query, page, perPage);
+        },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [JSON.stringify(query), page, perPage]
+        [hasSearched, JSON.stringify(query), page, perPage]
     );
 
     const { data, isLoading, error, refetch } = useRestQuery(requestFn);
@@ -124,16 +130,18 @@ function ProcessBaselinesPage() {
             terms.containerName = containerNameInput.trim();
         }
         setSearchTerms(terms);
+        setHasSearched(true);
         setPage(1);
         setSelectedIds(new Set());
     }
 
     function handleClearSearch() {
-        setClusterInput('');
-        setNamespaceInput('');
+        setClusterInput('*');
+        setNamespaceInput('default');
         setDeploymentNameInput('');
         setContainerNameInput('');
         setSearchTerms({});
+        setHasSearched(false);
         setPage(1);
         setSelectedIds(new Set());
     }
