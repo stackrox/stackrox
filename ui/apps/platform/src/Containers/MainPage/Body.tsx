@@ -236,6 +236,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Violations/ViolationsPage')),
         path: violationsBasePath,
     },
+    'violations-cc': {
+        component: asyncComponent(() => import('Containers/Violations/ViolationsPageCC')),
+        path: '/main/violations-cc',
+    },
     'vulnerabilities/exception-management': {
         component: asyncComponent(
             () => import('Containers/Vulnerabilities/ExceptionManagement/ExceptionManagementPage')

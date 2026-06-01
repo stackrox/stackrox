@@ -186,6 +186,7 @@ export type RouteKey =
     | 'systemconfig'
     | 'user'
     | 'violations'
+    | 'violations-cc'
     | 'vulnerabilities/exception-management'
     | 'vulnerabilities/node-cves'
     | 'vulnerabilities/reports'
@@ -344,6 +345,9 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource([]),
     },
     violations: {
+        resourceAccessRequirements: everyResource(['Alert']),
+    },
+    'violations-cc': {
         resourceAccessRequirements: everyResource(['Alert']),
     },
     'vulnerabilities/exception-management': {
