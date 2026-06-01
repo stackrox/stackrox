@@ -12,6 +12,7 @@ import (
 	"time"
 
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,6 +34,9 @@ type ReportEntityScopeSuite struct {
 }
 
 func (s *ReportEntityScopeSuite) SetupSuite() {
+	if !features.VulnerabilityReportsEnhancedFiltering.Enabled() {
+		s.T().Skipf("Skipping because %s is not enabled", features.VulnerabilityReportsEnhancedFiltering.EnvVar())
+	}
 	s.ctx, s.cancel = context.WithTimeout(context.Background(), 10*time.Minute)
 	conn := centralgrpc.GRPCConnectionToCentral(s.T())
 	s.service = apiV2.NewReportServiceClient(conn)
