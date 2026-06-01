@@ -184,6 +184,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Dashboard/DashboardPage')),
         path: dashboardPath,
     },
+    'dashboard-cc': {
+        component: asyncComponent(() => import('Containers/Dashboard/DashboardPageCC')),
+        path: '/main/dashboard-cc',
+    },
     'exception-configuration': {
         component: asyncComponent(
             () => import('Containers/ExceptionConfiguration/ExceptionConfigurationPage')

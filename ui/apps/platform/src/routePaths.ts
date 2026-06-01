@@ -174,6 +174,7 @@ export type RouteKey =
     | 'compliance-schedules'
     | 'configmanagement'
     | 'dashboard'
+    | 'dashboard-cc'
     | 'exception-configuration'
     | 'integrations'
     | 'listening-endpoints'
@@ -287,6 +288,9 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         ]),
     },
     dashboard: {
+        resourceAccessRequirements: everyResource([]),
+    },
+    'dashboard-cc': {
         resourceAccessRequirements: everyResource([]),
     },
     'exception-configuration': {
