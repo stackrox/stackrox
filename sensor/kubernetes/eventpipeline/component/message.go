@@ -99,13 +99,6 @@ func (e *ResourceEvent) Lane() pubsub.LaneID {
 	return *e.lane
 }
 
-// SetTopicAndLane overwrites the topic and lane on the event, used by the resolver
-// before re-publishing a resolved event to the output queue via PubSub.
-func (e *ResourceEvent) SetTopicAndLane(topic pubsub.Topic, lane pubsub.LaneID) {
-	e.topic = &topic
-	e.lane = &lane
-}
-
 // AddSensorEvent appends central sensor events to be bundled with this resource event.
 func (e *ResourceEvent) AddSensorEvent(event ...*central.SensorEvent) *ResourceEvent {
 	e.ForwardMessages = append(e.ForwardMessages, event...)
