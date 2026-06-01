@@ -87,10 +87,10 @@ spec:
       computeResources: &ta-resources
         limits:
           cpu: 2
-          memory: 5Gi
+          memory: 7Gi
         requests:
           cpu: 2
-          memory: 5Gi
+          memory: 7Gi
   - pipelineTaskName: build-images
     podTemplate: *go-memlimit
     stepSpecs:
