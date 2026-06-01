@@ -15,12 +15,15 @@ import { actions } from 'reducers/feedback';
 import { getClustersForPermissions } from 'services/RolesService';
 import { clustersBasePath } from 'routePaths';
 
+import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
+
 import Banners from './Banners/Banners';
 import Header from './Header/Header';
 import PublicConfigHeader from './PublicConfig/PublicConfigHeader';
 import PublicConfigFooter from './PublicConfig/PublicConfigFooter';
 import NavigationSidebar from './Navigation/NavigationSidebar';
 import HorizontalSubnav from './Navigation/HorizontalSubnav';
+import { CommandCenterShell } from './CommandCenterShell';
 
 import Body from './Body';
 import AcsFeedbackModal from './AcsFeedbackModal';
@@ -72,6 +75,17 @@ function MainPage(): ReactElement {
         isLoadingClustersCount
     ) {
         return <LoadingSection message="Loading..." />;
+    }
+
+    const [useCommandCenter] = useBooleanLocalStorage('useCommandCenterLayout', false);
+
+    if (useCommandCenter) {
+        return (
+            <CommandCenterShell
+                hasReadAccess={hasReadAccess}
+                isFeatureFlagEnabled={isFeatureFlagEnabled}
+            />
+        );
     }
 
     return (
