@@ -208,6 +208,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Integrations/IntegrationsPage')),
         path: integrationsPath,
     },
+    'integrations-cc': {
+        component: asyncComponent(() => import('Containers/Integrations/IntegrationsPageCC')),
+        path: '/main/integrations-cc',
+    },
     'listening-endpoints': {
         component: asyncComponent(
             () => import('Containers/Audit/ListeningEndpoints/ListeningEndpointsPage')

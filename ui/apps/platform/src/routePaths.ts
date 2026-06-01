@@ -179,6 +179,7 @@ export type RouteKey =
     | 'dashboard-cc'
     | 'exception-configuration'
     | 'integrations'
+    | 'integrations-cc'
     | 'listening-endpoints'
     | 'network-graph'
     | 'policy-management'
@@ -308,6 +309,9 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Administration']),
     },
     integrations: {
+        resourceAccessRequirements: everyResource(['Integration']),
+    },
+    'integrations-cc': {
         resourceAccessRequirements: everyResource(['Integration']),
     },
     'listening-endpoints': {
