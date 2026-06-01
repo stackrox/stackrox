@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
@@ -348,7 +347,9 @@ func (s *storeImpl) ListCVEs(ctx context.Context, limit, offset int) ([]*types.C
 			       MAX(cvss) as cvss,
 			       COUNT(DISTINCT imageid) as image_count,
 			       BOOL_OR(isfixable) as fixable,
-			       MIN(firstsystemoccurrence) as first_seen
+			       MIN(firstsystemoccurrence) as first_seen,
+			       MIN(publisheddate) as published_date,
+			       MAX(epssprobability) as epss_probability
 			FROM %s
 			WHERE state = 0
 			GROUP BY cvename
@@ -365,11 +366,9 @@ func (s *storeImpl) ListCVEs(ctx context.Context, limit, offset int) ([]*types.C
 		var results []*types.CVEListRow
 		for rows.Next() {
 			var row types.CVEListRow
-			var firstSeen *time.Time
-			if err := rows.Scan(&row.CVEName, &row.Severity, &row.CVSS, &row.ImageCount, &row.Fixable, &firstSeen); err != nil {
+			if err := rows.Scan(&row.CVEName, &row.Severity, &row.CVSS, &row.ImageCount, &row.Fixable, &row.FirstSeen, &row.PublishedDate, &row.EPSSProbability); err != nil {
 				return nil, errors.Wrap(err, "scanning row")
 			}
-			row.FirstSeen = firstSeen
 			results = append(results, &row)
 		}
 
@@ -765,5 +764,163 @@ func (s *storeImpl) GetDeploymentByID(ctx context.Context, deploymentID string) 
 		}
 
 		return &row, nil
+	})
+}
+
+// ListComponents returns distinct components with CVE severity breakdown.
+func (s *storeImpl) ListComponents(ctx context.Context, limit, offset int) ([]*types.ComponentListRow, int, error) {
+	type result struct {
+		rows  []*types.ComponentListRow
+		total int
+	}
+
+	res, err := pgutils.Retry2(ctx, func() (*result, error) {
+		// Get total count of distinct components
+		countQuery := fmt.Sprintf(`
+			SELECT COUNT(DISTINCT c.name)
+			FROM %s c
+			JOIN %s f ON c.id = f.componentid
+			WHERE f.state = 0
+		`, componentsTable, findingsTable)
+		var total int
+		if err := s.db.QueryRow(ctx, countQuery).Scan(&total); err != nil {
+			return nil, errors.Wrap(err, "counting components")
+		}
+
+		// Get paginated results
+		query := fmt.Sprintf(`
+			SELECT
+				c.name,
+				COUNT(DISTINCT c.version) as version_count,
+				COUNT(DISTINCT f.cvename) as cve_count,
+				COUNT(DISTINCT f.imageid) as image_count,
+				MAX(f.severity)::int as top_severity,
+				MAX(f.cvss) as top_cvss,
+				SUM(CASE WHEN f.severity = 4 THEN 1 ELSE 0 END) as critical_count,
+				SUM(CASE WHEN f.severity = 3 THEN 1 ELSE 0 END) as important_count,
+				SUM(CASE WHEN f.severity = 2 THEN 1 ELSE 0 END) as moderate_count,
+				SUM(CASE WHEN f.severity = 1 THEN 1 ELSE 0 END) as low_count
+			FROM %s c
+			JOIN %s f ON c.id = f.componentid
+			WHERE f.state = 0
+			GROUP BY c.name
+			ORDER BY MAX(f.severity) DESC, COUNT(DISTINCT f.cvename) DESC
+			LIMIT $1 OFFSET $2
+		`, componentsTable, findingsTable)
+
+		rows, err := s.db.Query(ctx, query, limit, offset)
+		if err != nil {
+			return nil, errors.Wrap(err, "querying components")
+		}
+		defer rows.Close()
+
+		var results []*types.ComponentListRow
+		for rows.Next() {
+			var row types.ComponentListRow
+			if err := rows.Scan(
+				&row.Name,
+				&row.VersionCount,
+				&row.CVECount,
+				&row.ImageCount,
+				&row.TopSeverity,
+				&row.TopCVSS,
+				&row.CriticalCount,
+				&row.ImportantCount,
+				&row.ModerateCount,
+				&row.LowCount,
+			); err != nil {
+				return nil, errors.Wrap(err, "scanning component row")
+			}
+			results = append(results, &row)
+		}
+
+		if err := rows.Err(); err != nil {
+			return nil, errors.Wrap(err, "iterating component rows")
+		}
+
+		return &result{rows: results, total: total}, nil
+	})
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return res.rows, res.total, nil
+}
+
+// GetComponentVersions returns all versions of a component with CVE data.
+func (s *storeImpl) GetComponentVersions(ctx context.Context, componentName string) ([]*types.ComponentVersionInfo, error) {
+	return pgutils.Retry2(ctx, func() ([]*types.ComponentVersionInfo, error) {
+		query := fmt.Sprintf(`
+			SELECT
+				c.version,
+				c.source,
+				COUNT(DISTINCT f.cvename) as cve_count,
+				COUNT(DISTINCT f.imageid) as image_count,
+				MAX(f.severity)::int as top_severity,
+				MAX(f.cvss) as top_cvss,
+				BOOL_OR(f.isfixable) as fixable,
+				MAX(f.fixedby) as fixed_by
+			FROM %s c
+			JOIN %s f ON c.id = f.componentid
+			WHERE f.state = 0 AND c.name = $1
+			GROUP BY c.version, c.source
+			ORDER BY c.version
+		`, componentsTable, findingsTable)
+
+		rows, err := s.db.Query(ctx, query, componentName)
+		if err != nil {
+			return nil, errors.Wrap(err, "querying component versions")
+		}
+		defer rows.Close()
+
+		var results []*types.ComponentVersionInfo
+		for rows.Next() {
+			var row types.ComponentVersionInfo
+			var source int32
+			if err := rows.Scan(
+				&row.Version,
+				&source,
+				&row.CVECount,
+				&row.ImageCount,
+				&row.TopSeverity,
+				&row.TopCVSS,
+				&row.Fixable,
+				&row.FixedBy,
+			); err != nil {
+				return nil, errors.Wrap(err, "scanning version row")
+			}
+			row.Source = storage.SourceType(source).String()
+			results = append(results, &row)
+		}
+
+		if err := rows.Err(); err != nil {
+			return nil, errors.Wrap(err, "iterating version rows")
+		}
+
+		return results, nil
+	})
+}
+
+// GetImageOS returns the operating system for an image.
+func (s *storeImpl) GetImageOS(ctx context.Context, imageID string) (string, error) {
+	return pgutils.Retry2(ctx, func() (string, error) {
+		query := fmt.Sprintf(`
+			SELECT DISTINCT operatingsystem
+			FROM %s
+			WHERE imageid = $1 AND operatingsystem != ''
+			LIMIT 1
+		`, componentsTable)
+
+		var os string
+		err := s.db.QueryRow(ctx, query, imageID).Scan(&os)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return "", nil
+			}
+			return "", errors.Wrap(err, "querying image OS")
+		}
+
+		return os, nil
 	})
 }

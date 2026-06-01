@@ -15,12 +15,14 @@ type ScanData struct {
 
 // CVEListRow represents one row in the CVE list page
 type CVEListRow struct {
-	CVEName    string
-	Severity   int32
-	CVSS       float32
-	ImageCount int
-	Fixable    bool
-	FirstSeen  *time.Time
+	CVEName         string
+	Severity        int32
+	CVSS            float32
+	ImageCount      int
+	Fixable         bool
+	FirstSeen       *time.Time
+	PublishedDate   *time.Time
+	EPSSProbability float32
 }
 
 // ImageBasicInfo holds the UUID and display name for an image looked up by digest.
@@ -71,4 +73,30 @@ type AdvisoryListRow struct {
 	Description string
 	FixedBy     string
 	ImageCount  int
+}
+
+// ComponentListRow represents one row in the component list page.
+type ComponentListRow struct {
+	Name           string
+	VersionCount   int
+	CVECount       int
+	ImageCount     int
+	TopSeverity    int32
+	TopCVSS        float32
+	CriticalCount  int
+	ImportantCount int
+	ModerateCount  int
+	LowCount       int
+}
+
+// ComponentVersionInfo represents one version of a component with CVE data.
+type ComponentVersionInfo struct {
+	Version     string
+	Source      string
+	CVECount    int
+	ImageCount  int
+	TopSeverity int32
+	TopCVSS     float32
+	Fixable     bool
+	FixedBy     string
 }

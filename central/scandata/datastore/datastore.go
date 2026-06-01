@@ -47,4 +47,13 @@ type DataStore interface {
 
 	// ListAdvisories returns distinct advisories with image counts
 	ListAdvisories(ctx context.Context, limit, offset int) ([]*types.AdvisoryListRow, int, error)
+
+	// ListComponents returns distinct components with CVE severity breakdown
+	ListComponents(ctx context.Context, limit, offset int) ([]*types.ComponentListRow, int, error)
+
+	// GetComponentVersions returns all versions of a component with CVE data
+	GetComponentVersions(ctx context.Context, componentName string) ([]*types.ComponentVersionInfo, error)
+
+	// GetImageOS returns the operating system for an image
+	GetImageOS(ctx context.Context, imageID string) (string, error)
 }

@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom-v5-compat';
 import {
     vulnerabilitiesPrototypeCvePath,
     vulnerabilitiesPrototypeAdvisoriesPath,
+    vulnerabilitiesPrototypeComponentsPath,
     vulnerabilitiesPrototypeDeploymentsPath,
 } from 'routePaths';
 
@@ -18,6 +19,7 @@ function ProtoNav() {
         location.pathname.includes('/cves') ||
         location.pathname.endsWith('/prototype');
     const isAdvisories = location.pathname.includes('/advisories');
+    const isComponents = location.pathname.includes('/components');
     const isDeployments = location.pathname.includes('/deployments');
 
     return (
@@ -29,6 +31,11 @@ function ProtoNav() {
                 <NavItem isActive={isAdvisories}>
                     <Link to={vulnerabilitiesPrototypeAdvisoriesPath}>
                         Advisories
+                    </Link>
+                </NavItem>
+                <NavItem isActive={isComponents}>
+                    <Link to={vulnerabilitiesPrototypeComponentsPath}>
+                        Components
                     </Link>
                 </NavItem>
                 <NavItem isActive={isDeployments}>

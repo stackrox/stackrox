@@ -97,6 +97,8 @@ function CveListPage() {
                             <Th info={{ tooltip: 'Number of distinct images affected by this CVE' }}>Images</Th>
                             <Th info={{ tooltip: 'Whether a fix is available from any advisory source' }}>Fixable</Th>
                             <Th>First Seen</Th>
+                            <Th>Published</Th>
+                            <Th info={{ tooltip: 'EPSS: Exploit Prediction Scoring System probability' }}>EPSS</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
@@ -124,11 +126,19 @@ function CveListPage() {
                                 <Td dataLabel="First Seen">
                                     {formatDate(cve.firstSeen)}
                                 </Td>
+                                <Td dataLabel="Published">
+                                    {formatDate(cve.publishedDate ?? null)}
+                                </Td>
+                                <Td dataLabel="EPSS">
+                                    {cve.epssProbability != null
+                                        ? `${(cve.epssProbability * 100).toFixed(1)}%`
+                                        : '-'}
+                                </Td>
                             </Tr>
                         ))}
                         {!loading && cves.length === 0 && (
                             <Tr>
-                                <Td colSpan={6}>
+                                <Td colSpan={8}>
                                     <Bullseye>No CVEs found</Bullseye>
                                 </Td>
                             </Tr>

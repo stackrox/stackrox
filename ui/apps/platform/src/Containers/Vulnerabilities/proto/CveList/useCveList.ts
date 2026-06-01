@@ -9,6 +9,8 @@ export type ProtoCVEListItem = {
     imageCount: number;
     fixable: boolean;
     firstSeen: string | null;
+    publishedDate?: string;
+    epssProbability?: number;
 };
 
 type CveListResponse = {

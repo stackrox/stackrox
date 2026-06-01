@@ -43,6 +43,8 @@ func NewHandler(ds datastore.DataStore) http.Handler {
 	router.HandleFunc("/v1/scandata/advisories", h.listAdvisories).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/deployments", h.listDeployments).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/deployments/{deploymentId}", h.getDeploymentDetail).Methods(http.MethodGet)
+	router.HandleFunc("/v1/scandata/components", h.listComponents).Methods(http.MethodGet)
+	router.HandleFunc("/v1/scandata/components/{componentName}", h.getComponentDetail).Methods(http.MethodGet)
 
 	return router
 }
@@ -55,12 +57,14 @@ type CVEListResponse struct {
 
 // CVEListItem represents one CVE in the list
 type CVEListItem struct {
-	CVEName    string     `json:"cveName"`
-	Severity   int32      `json:"severity"`
-	CVSS       float32    `json:"cvss"`
-	ImageCount int        `json:"imageCount"`
-	Fixable    bool       `json:"fixable"`
-	FirstSeen  *time.Time `json:"firstSeen,omitzero"`
+	CVEName         string     `json:"cveName"`
+	Severity        int32      `json:"severity"`
+	CVSS            float32    `json:"cvss"`
+	ImageCount      int        `json:"imageCount"`
+	Fixable         bool       `json:"fixable"`
+	FirstSeen       *time.Time `json:"firstSeen,omitzero"`
+	PublishedDate   *time.Time `json:"publishedDate,omitzero"`
+	EPSSProbability float32    `json:"epssProbability,omitzero"`
 }
 
 // CVEDetailResponse is the response for GET /v1/scandata/cves/{cveName}
@@ -174,6 +178,7 @@ type DeploymentImageDetail struct {
 type ImageDetailResponse struct {
 	ImageID        string                 `json:"imageId"`
 	ImageName      string                 `json:"imageName,omitempty"`
+	ImageOS        string                 `json:"imageOS,omitempty"`
 	ScanTime       string                 `json:"scanTime,omitempty"`
 	ScannerVersion string                 `json:"scannerVersion,omitempty"`
 	BundleVersion  string                 `json:"bundleVersion,omitempty"`
@@ -228,6 +233,44 @@ type AdvisoryListItem struct {
 	Link        string  `json:"link"`
 }
 
+// ComponentListResponse is the response for GET /v1/scandata/components
+type ComponentListResponse struct {
+	Components []ComponentListItem `json:"components"`
+	TotalCount int                 `json:"totalCount"`
+}
+
+// ComponentListItem represents one component in the list
+type ComponentListItem struct {
+	Name           string  `json:"name"`
+	VersionCount   int     `json:"versionCount"`
+	CVECount       int     `json:"cveCount"`
+	ImageCount     int     `json:"imageCount"`
+	TopSeverity    int32   `json:"topSeverity"`
+	TopCVSS        float32 `json:"topCvss"`
+	CriticalCount  int     `json:"criticalCount"`
+	ImportantCount int     `json:"importantCount"`
+	ModerateCount  int     `json:"moderateCount"`
+	LowCount       int     `json:"lowCount"`
+}
+
+// ComponentDetailResponse is the response for GET /v1/scandata/components/{componentName}
+type ComponentDetailResponse struct {
+	Name     string                 `json:"name"`
+	Versions []ComponentVersionInfo `json:"versions"`
+}
+
+// ComponentVersionInfo represents one version of a component with CVE data
+type ComponentVersionInfo struct {
+	Version     string  `json:"version"`
+	Source      string  `json:"source"`
+	CVECount    int     `json:"cveCount"`
+	ImageCount  int     `json:"imageCount"`
+	TopSeverity int32   `json:"topSeverity"`
+	TopCVSS     float32 `json:"topCvss"`
+	Fixable     bool    `json:"fixable"`
+	FixedBy     string  `json:"fixedBy,omitempty"`
+}
+
 func (h *handler) listCVEs(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -259,12 +302,14 @@ func (h *handler) listCVEs(w http.ResponseWriter, r *http.Request) {
 	items := make([]CVEListItem, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, CVEListItem{
-			CVEName:    row.CVEName,
-			Severity:   row.Severity,
-			CVSS:       row.CVSS,
-			ImageCount: row.ImageCount,
-			Fixable:    row.Fixable,
-			FirstSeen:  row.FirstSeen,
+			CVEName:         row.CVEName,
+			Severity:        row.Severity,
+			CVSS:            row.CVSS,
+			ImageCount:      row.ImageCount,
+			Fixable:         row.Fixable,
+			FirstSeen:       row.FirstSeen,
+			PublishedDate:   row.PublishedDate,
+			EPSSProbability: row.EPSSProbability,
 		})
 	}
 
@@ -526,7 +571,13 @@ func (h *handler) getImageDetail(w http.ResponseWriter, r *http.Request) {
 		imageName = info.FullName
 	}
 
-	response := buildImageDetailResponse(imageID, imageName, scanData, findingsWithComps)
+	// Look up image OS.
+	imageOS, err := h.datastore.GetImageOS(ctx, imageID)
+	if err != nil {
+		log.Warnf("failed to get image OS for %s: %v", imageID, err)
+	}
+
+	response := buildImageDetailResponse(imageID, imageName, imageOS, scanData, findingsWithComps)
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -535,7 +586,7 @@ func (h *handler) getImageDetail(w http.ResponseWriter, r *http.Request) {
 }
 
 // buildImageDetailResponse groups findings by component, then by CVE within each component.
-func buildImageDetailResponse(imageID, imageName string, scanData *types.ScanData, findings []*types.FindingWithComponent) *ImageDetailResponse {
+func buildImageDetailResponse(imageID, imageName, imageOS string, scanData *types.ScanData, findings []*types.FindingWithComponent) *ImageDetailResponse {
 	scan := scanData.Scan
 
 	// Collect data sources.
@@ -685,6 +736,7 @@ func buildImageDetailResponse(imageID, imageName string, scanData *types.ScanDat
 	return &ImageDetailResponse{
 		ImageID:        imageID,
 		ImageName:      imageName,
+		ImageOS:        imageOS,
 		ScanTime:       scanTime,
 		ScannerVersion: scan.GetScannerVersion(),
 		BundleVersion:  scan.GetBundleVersion(),
@@ -912,6 +964,110 @@ func (h *handler) getDeploymentDetail(w http.ResponseWriter, r *http.Request) {
 		Cluster:   deployment.ClusterName,
 		Namespace: deployment.Namespace,
 		Images:    imageDetails,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Errorf("failed to encode response: %v", err)
+	}
+}
+
+func (h *handler) listComponents(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse query parameters
+	limitStr := cmp.Or(r.URL.Query().Get("limit"), "50")
+	offsetStr := cmp.Or(r.URL.Query().Get("offset"), "0")
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.Wrap(err, "invalid limit"))
+		return
+	}
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.Wrap(err, "invalid offset"))
+		return
+	}
+
+	// Query data
+	rows, total, err := h.datastore.ListComponents(ctx, limit, offset)
+	if err != nil {
+		log.Errorf("failed to list components: %v", err)
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "listing components"))
+		return
+	}
+
+	// Convert to response
+	items := make([]ComponentListItem, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, ComponentListItem{
+			Name:           row.Name,
+			VersionCount:   row.VersionCount,
+			CVECount:       row.CVECount,
+			ImageCount:     row.ImageCount,
+			TopSeverity:    row.TopSeverity,
+			TopCVSS:        row.TopCVSS,
+			CriticalCount:  row.CriticalCount,
+			ImportantCount: row.ImportantCount,
+			ModerateCount:  row.ModerateCount,
+			LowCount:       row.LowCount,
+		})
+	}
+
+	response := ComponentListResponse{
+		Components: items,
+		TotalCount: total,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Errorf("failed to encode response: %v", err)
+	}
+}
+
+func (h *handler) getComponentDetail(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vars := mux.Vars(r)
+	componentName := vars["componentName"]
+	if componentName == "" {
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.New("componentName is required"))
+		return
+	}
+
+	// Get component versions
+	versions, err := h.datastore.GetComponentVersions(ctx, componentName)
+	if err != nil {
+		log.Errorf("failed to get versions for component %s: %v", componentName, err)
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "getting component versions"))
+		return
+	}
+
+	if len(versions) == 0 {
+		httputil.WriteGRPCStyleError(w, codes.NotFound, errors.Errorf("component %s not found", componentName))
+		return
+	}
+
+	// Convert to response
+	versionInfos := make([]ComponentVersionInfo, 0, len(versions))
+	for _, v := range versions {
+		versionInfos = append(versionInfos, ComponentVersionInfo{
+			Version:     v.Version,
+			Source:      v.Source,
+			CVECount:    v.CVECount,
+			ImageCount:  v.ImageCount,
+			TopSeverity: v.TopSeverity,
+			TopCVSS:     v.TopCVSS,
+			Fixable:     v.Fixable,
+			FixedBy:     v.FixedBy,
+		})
+	}
+
+	response := ComponentDetailResponse{
+		Name:     componentName,
+		Versions: versionInfos,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
