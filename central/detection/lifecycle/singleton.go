@@ -45,7 +45,7 @@ func initialize() {
 	log.Infof("Injecting %d policies into detectors.", len(policies))
 	for _, policy := range policies {
 		err = manager.UpsertPolicy(policy)
-		utils.Should(errors.Wrap(err, "could not inject policy"))
+		log.Error(errors.Wrap(err, "could not inject policy"))
 	}
 	log.Info("Done injecting policies.")
 
