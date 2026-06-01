@@ -32,6 +32,11 @@ on:
         description: "Image tag to test"
         required: true
         type: string
+      gke:
+        description: "Use GKE instead of KinD"
+        required: false
+        type: boolean
+        default: false
 
 defaults:
   run:
@@ -162,7 +167,7 @@ jobs:
   kind-e2e:
     name: "${{ matrix.name }}"
     needs: setup-shards
-    if: "!contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke')"
+    if: "!contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke') && !inputs.gke"
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -358,7 +363,7 @@ jobs:
   # ── GKE mode: shared cluster, scanner v2, all specs ──────────────────
   provision-gke:
     name: Provision GKE
-    if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke')
+    if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke') || inputs.gke
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
