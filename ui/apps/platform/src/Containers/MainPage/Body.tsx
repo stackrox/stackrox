@@ -260,6 +260,12 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: makeVulnMgmtUserWorkloadView('user-workloads'),
         path: vulnerabilitiesUserWorkloadsPath,
     },
+    'vulnerabilities/workload-cves-cc': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPageCC')
+        ),
+        path: '/main/vulnerabilities/workload-cves-cc',
+    },
     'vulnerabilities/virtual-machine-cves': {
         component: asyncComponent(
             () => import('Containers/Vulnerabilities/VirtualMachineCves/VirtualMachineCvesPage')
