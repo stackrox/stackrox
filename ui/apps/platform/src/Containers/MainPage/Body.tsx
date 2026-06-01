@@ -95,6 +95,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/AccessControl/AccessControl')),
         path: accessControlBasePath,
     },
+    'access-control-cc': {
+        component: asyncComponent(() => import('Containers/AccessControl/AccessControlPageCC')),
+        path: '/main/access-control-cc',
+    },
     'administration-events': {
         component: asyncComponent(
             () => import('Containers/Administration/Events/AdministrationEventsRoute')
@@ -241,6 +245,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'system-health': {
         component: asyncComponent(() => import('Containers/SystemHealth/SystemHealthPage')),
         path: systemHealthPath,
+    },
+    'system-health-cc': {
+        component: asyncComponent(() => import('Containers/SystemHealth/SystemHealthPageCC')),
+        path: '/main/system-health-cc',
     },
     systemconfig: {
         component: asyncComponent(() => import('Containers/SystemConfig/SystemConfigPage')),

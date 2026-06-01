@@ -152,6 +152,7 @@ type RouteRequirements = {
 // prettier-ignore
 export type RouteKey =
     | 'access-control'
+    | 'access-control-cc'
     | 'administration-events'
     | 'apidocs'
     | 'apidocs-v2'
@@ -187,6 +188,7 @@ export type RouteKey =
     | 'risk'
     | 'search'
     | 'system-health'
+    | 'system-health-cc'
     | 'systemconfig'
     | 'user'
     | 'violations'
@@ -209,6 +211,9 @@ export type RouteKey =
 // Add properties in same order as type to minimize merge conflicts when multiple people add strings.
 const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'access-control': {
+        resourceAccessRequirements: everyResource(['Access']),
+    },
+    'access-control-cc': {
         resourceAccessRequirements: everyResource(['Access']),
     },
     'administration-events': {
@@ -353,6 +358,9 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         ]),
     },
     'system-health': {
+        resourceAccessRequirements: someResource(['Administration', 'Cluster', 'Integration']),
+    },
+    'system-health-cc': {
         resourceAccessRequirements: someResource(['Administration', 'Cluster', 'Integration']),
     },
     systemconfig: {
