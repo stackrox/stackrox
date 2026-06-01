@@ -968,14 +968,126 @@ jobs:
         quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
+  # Detect whether this PR only changes UI files. When true, the quick
+  # workflow can skip Go builds and overlay just the UI onto a base image.
+  detect-ui-only-changes:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      ui-only: ${{ steps.check.outputs.ui-only }}
+      base-tag: ${{ steps.check.outputs.base-tag }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Check for UI-only changes
+        id: check
+        run: |
+          MERGE_BASE=$(git merge-base HEAD origin/${{ github.event.pull_request.base.ref }})
+          CHANGED=$(git diff --name-only "${MERGE_BASE}...HEAD")
+
+          # UI-only if all changed files are under ui/ or are UI-related config
+          UI_ONLY=true
+          while IFS= read -r file; do
+            case "$file" in
+              ui/*) ;;
+              .github/workflows/ui-e2e*.yaml) ;;
+              *)
+                UI_ONLY=false
+                break
+                ;;
+            esac
+          done <<< "$CHANGED"
+
+          echo "ui-only=${UI_ONLY}" >> "$GITHUB_OUTPUT"
+          echo "UI-only changes: ${UI_ONLY}"
+
+          if [ "$UI_ONLY" = "true" ]; then
+            BASE_TAG=$(git describe --tags --abbrev=10 --long --exclude '*-nightly-*' "${MERGE_BASE}")
+            echo "base-tag=${BASE_TAG}" >> "$GITHUB_OUTPUT"
+            echo "Base tag for overlay: ${BASE_TAG}"
+          fi
+
+  # Build a thin overlay image with only the UI replaced (skip Go builds)
+  build-ui-overlay:
+    needs: [define-job-matrix, detect-ui-only-changes]
+    if: >-
+      needs.detect-ui-only-changes.outputs.ui-only == 'true' &&
+      contains(github.event.pull_request.labels.*.name, 'e2e-ui')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      overlay-tag: ${{ steps.build.outputs.overlay-tag }}
+    env:
+      MAIN_IMAGE: quay.io/rhacs-eng/main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+
+      - name: Login to Quay
+        if: "!github.event.pull_request.head.repo.fork"
+        env:
+          QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        run: echo "${QUAY_RHACS_ENG_RW_PASSWORD}" | docker login -u "${QUAY_RHACS_ENG_RW_USERNAME}" --password-stdin quay.io
+
+      - name: Pull base image
+        run: |
+          if ! docker pull --quiet "${{ env.MAIN_IMAGE }}:${{ needs.detect-ui-only-changes.outputs.base-tag }}"; then
+            echo "::error::Base image not found at tag '${{ needs.detect-ui-only-changes.outputs.base-tag }}'. The base branch may not have a successful build yet. Re-run this job after the base branch build completes."
+            exit 1
+          fi
+
+      - uses: ./.github/actions/cache-ui-dependencies
+
+      - name: Build UI
+        working-directory: ui/apps/platform
+        env:
+          ROX_PRODUCT_BRANDING: RHACS_BRANDING
+        run: npm ci --prefer-offline --no-audit --no-fund && npm run build
+
+      - name: Build and push overlay image
+        id: build
+        run: |
+          OVERLAY_TAG="${{ needs.define-job-matrix.outputs.build-tag }}-ui"
+          cp -r ui/apps/platform/build image/rhel/ui/
+          docker build \
+            --build-arg "BASE_IMAGE=${{ env.MAIN_IMAGE }}:${{ needs.detect-ui-only-changes.outputs.base-tag }}" \
+            -t "${{ env.MAIN_IMAGE }}:${OVERLAY_TAG}" \
+            -f image/rhel/Dockerfile.ui-overlay \
+            image/rhel/
+          docker push "${{ env.MAIN_IMAGE }}:${OVERLAY_TAG}"
+          echo "overlay-tag=${OVERLAY_TAG}" >> "$GITHUB_OUTPUT"
+
+  # Quick path: UI-only changes use overlay image + base-tag deploy
+  ui-e2e-quick:
+    needs: [build-ui-overlay, detect-ui-only-changes, create-ui-e2e-gke-cluster]
+    if: >-
+      !cancelled() &&
+      needs.build-ui-overlay.result == 'success' &&
+      (needs.create-ui-e2e-gke-cluster.result == 'success' || needs.create-ui-e2e-gke-cluster.result == 'skipped')
+    uses: ./.github/workflows/ui-e2e.yaml
+    with:
+      tag: ${{ needs.build-ui-overlay.outputs.overlay-tag }}
+      base-tag: ${{ needs.detect-ui-only-changes.outputs.base-tag }}
+      gke-cluster-name: ${{ needs.create-ui-e2e-gke-cluster.outputs.cluster-name || '' }}
+      gke-zone: ${{ needs.create-ui-e2e-gke-cluster.outputs.zone || '' }}
+    secrets: inherit
+
+  # Full path: non-UI changes require full image rebuild
   ui-e2e:
     needs:
     - define-job-matrix
     - push-main-manifests
+    - detect-ui-only-changes
     - create-ui-e2e-gke-cluster
     if: >-
       !cancelled() && needs.push-main-manifests.result == 'success' &&
       contains(github.event.pull_request.labels.*.name, 'e2e-ui') &&
+      needs.detect-ui-only-changes.outputs.ui-only != 'true' &&
       (needs.create-ui-e2e-gke-cluster.result == 'success' || needs.create-ui-e2e-gke-cluster.result == 'skipped')
     uses: ./.github/workflows/ui-e2e.yaml
     with:
@@ -987,7 +1099,7 @@ jobs:
   # Cleanup the pre-provisioned GKE cluster after UI E2E tests complete
   cleanup-ui-e2e-gke:
     if: always() && needs.create-ui-e2e-gke-cluster.result == 'success'
-    needs: [create-ui-e2e-gke-cluster, ui-e2e]
+    needs: [create-ui-e2e-gke-cluster, ui-e2e, ui-e2e-quick]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
