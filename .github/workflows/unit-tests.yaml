@@ -154,14 +154,27 @@ jobs:
     - name: Test cache debug
       run: |
         gocache=$(go env GOCACHE)
-        echo "=== GOCACHE state before tests ==="
+        echo "=== GOCACHE state ==="
         echo "gocache_files=$(find "$gocache" -type f 2>/dev/null | wc -l)"
         echo "gocache_size=$(du -sh "$gocache" 2>/dev/null | cut -f1)"
-        echo "=== Sample: does pkg/set test result exist? ==="
-        # Run pkg/set with hash debug to see exactly what key is computed
-        GODEBUG=gocachehash=1 go test -count=1 -race ./pkg/set/... 2>&1 | grep -E "^HASH|^ok|^FAIL|\(cached\)" | head -20
-        echo "=== After sample run ==="
-        echo "gocache_files=$(find "$gocache" -type f 2>/dev/null | wc -l)"
+
+        # Page cache check: vmtouch shows what fraction of GOCACHE is in RAM
+        if command -v vmtouch >/dev/null 2>&1 || sudo apt-get -qq install -y vmtouch >/dev/null 2>&1; then
+          vmtouch "$gocache" 2>/dev/null | grep -E "Resident|Files" | head -3
+        else
+          echo "vmtouch not available"
+        fi
+
+        # Pure cache lookup overhead: no tests run (-run=^$), just binary build + cache check
+        echo "=== Cache lookup overhead (no tests, just checking) ==="
+        start=$SECONDS
+        ${{ matrix.gotags }} go test -race -run=^$ \
+          $(git ls-files -- '*_test.go' | xargs -I{} dirname {} | sort -u | head -200 | xargs go list 2>/dev/null | head -200) \
+          2>/dev/null | tail -3
+        echo "cache_lookup_only=$((SECONDS - start))s"
+
+        echo "=== pkg/set hash debug ==="
+        GODEBUG=gocachehash=1 go test -count=1 -race ./pkg/set/... 2>&1 | grep -E "^ok|^FAIL|\(cached\)" | head -5
 
     - name: Go Unit Tests
       run: |
