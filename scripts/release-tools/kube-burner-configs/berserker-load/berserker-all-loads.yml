@@ -84,11 +84,6 @@ spec:
           subPath: network-client.toml
           readOnly: true
         imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8080
-          protocol: TCP
-        - containerPort: 8443
-          protocol: TCP
         env:
         - name: RUST_LOG
           value: "error"
