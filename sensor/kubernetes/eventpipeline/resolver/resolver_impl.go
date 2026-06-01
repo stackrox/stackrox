@@ -195,13 +195,12 @@ func (r *resolverImpl) resolveDeployment(msg *component.ResourceEvent, ref *depl
 // resolveAndSend resolves a single deployment ref and sends the resulting event
 // to the output queue if the deployment was resolved or if reprocess data was added.
 func (r *resolverImpl) resolveAndSend(ref *deploymentRef) {
-	msg := component.NewEvent()
+	msg := component.NewEventWithTopicAndLane(pubsub.ResolvedResourceEventTopic, pubsub.ResolvedResourceEventLane)
 	msg.Context = ref.context
 	msg.DeploymentTiming = ref.deploymentTiming
 	resolved := r.resolveDeployment(msg, ref)
 	if resolved || len(msg.ReprocessDeployments) > 0 {
 		if features.SensorInternalPubSub.Enabled() {
-			msg.SetTopicAndLane(pubsub.ResolvedResourceEventTopic, pubsub.ResolvedResourceEventLane)
 			if err := r.pubsubDispatcher.Publish(msg); err != nil {
 				log.Errorf("failed to publish resolved resource event to output queue: %v", err)
 			}
@@ -267,8 +266,10 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 	}
 
 	if features.SensorInternalPubSub.Enabled() {
-		msg.SetTopicAndLane(pubsub.ResolvedResourceEventTopic, pubsub.ResolvedResourceEventLane)
-		if err := r.pubsubDispatcher.Publish(msg); err != nil {
+		forwardMsg := component.NewEventWithTopicAndLane(pubsub.ResolvedResourceEventTopic, pubsub.ResolvedResourceEventLane)
+		forwardMsg.Context = msg.Context
+		forwardMsg.MergeResourceEvent(msg)
+		if err := r.pubsubDispatcher.Publish(forwardMsg); err != nil {
 			log.Errorf("failed to publish resolved resource event to output queue: %v", err)
 		}
 		return
