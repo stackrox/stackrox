@@ -19,6 +19,8 @@ import { createBrowserHistory as createHistory } from 'history';
 import type { AnyAction } from 'redux';
 import type { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { ApolloProvider } from '@apollo/client';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 import 'css.imports';
 
@@ -29,6 +31,7 @@ import AppPage from 'Containers/AppPage';
 import configureStore from 'init/configureStore';
 import installRaven from 'init/installRaven';
 import configureApollo from 'init/configureApolloClient';
+import configureQueryClient from 'init/configureQueryClient';
 import { setAnalyticsSource } from 'init/initializeAnalytics';
 import { FeatureFlagsProvider } from 'providers/FeatureFlagProvider';
 import { PublicConfigProvider } from 'providers/PublicConfigProvider';
@@ -52,6 +55,7 @@ const root = createRoot(rootNode);
 const history = createHistory();
 const store = configureStore(undefined, history);
 const apolloClient = configureApollo();
+const queryClient = configureQueryClient();
 
 const dispatch = (action) =>
     (store.dispatch as ThunkDispatch<unknown, unknown, AnyAction>)(
@@ -66,6 +70,7 @@ root.render(
             <ConnectedRouter history={history}>
                 <CompatRouter>
                     <ErrorBoundary>
+                        <QueryClientProvider client={queryClient}>
                         <FeatureFlagsProvider>
                             <ReduxUserPermissionProvider>
                                 <PublicConfigProvider>
@@ -77,6 +82,8 @@ root.render(
                                 </PublicConfigProvider>
                             </ReduxUserPermissionProvider>
                         </FeatureFlagsProvider>
+                        <ReactQueryDevtools initialIsOpen={false} />
+                        </QueryClientProvider>
                     </ErrorBoundary>
                 </CompatRouter>
             </ConnectedRouter>
