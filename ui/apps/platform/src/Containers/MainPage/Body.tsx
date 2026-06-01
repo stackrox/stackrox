@@ -154,6 +154,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Clusters/ClustersPage')),
         path: clustersPathWithParam,
     },
+    'clusters-cc': {
+        component: asyncComponent(() => import('Containers/Clusters/ClustersPageCC')),
+        path: '/main/clusters-cc',
+    },
     collections: {
         component: asyncComponent(() => import('Containers/Collections/CollectionsPage')),
         path: collectionsPath,

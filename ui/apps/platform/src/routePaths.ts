@@ -168,6 +168,7 @@ export type RouteKey =
     // Cluster secure-a-cluster-crs must precede generic Clusters in Body and so here for consistency.
     | 'clusters/secure-a-cluster-crs'
     | 'clusters'
+    | 'clusters-cc'
     | 'collections'
     | 'compliance'
     | 'compliance-coverage'
@@ -242,6 +243,9 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource([]),
     },
     clusters: {
+        resourceAccessRequirements: everyResource(['Cluster']),
+    },
+    'clusters-cc': {
         resourceAccessRequirements: everyResource(['Cluster']),
     },
     collections: {
