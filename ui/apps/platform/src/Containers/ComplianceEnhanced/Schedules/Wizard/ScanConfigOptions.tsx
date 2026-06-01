@@ -2,6 +2,7 @@ import type { FormEvent, ReactElement } from 'react';
 import { useFormikContext } from 'formik';
 import type { FormikContextType } from 'formik';
 import {
+    Alert,
     Divider,
     Flex,
     FlexItem,
@@ -26,10 +27,15 @@ import { helperTextForName, helperTextForNameEdit, helperTextForTime } from './u
 
 import './ScanConfigOptions.css';
 
-function ScanConfigOptions(): ReactElement {
+type ScanConfigOptionsProps = {
+    isReadOnly?: boolean;
+};
+
+function ScanConfigOptions({ isReadOnly = false }: ScanConfigOptionsProps): ReactElement {
     const formik: FormikContextType<ScanConfigFormValues> = useFormikContext();
     const { pageAction } = usePageAction<PageActions>();
     const isEditAction = pageAction === 'edit';
+    const isDisabled = isEditAction || isReadOnly;
 
     function handleSelectChange(id: string, value: string): void {
         formik.setFieldValue('parameters.daysOfWeek', []);
@@ -57,6 +63,14 @@ function ScanConfigOptions(): ReactElement {
             </PageSection>
             <Divider component="div" />
             <Form className="pf-v6-u-py-lg pf-v6-u-px-lg" id="scan-schedules-parameters">
+                {isReadOnly && (
+                    <Alert
+                        variant="info"
+                        title="This scan schedule is externally managed. Parameters cannot be modified here."
+                        component="p"
+                        isInline
+                    />
+                )}
                 <Stack hasGutter>
                     <StackItem>
                         <Stack hasGutter>
@@ -77,7 +91,7 @@ function ScanConfigOptions(): ReactElement {
                                         id="parameters.name"
                                         name="parameters.name"
                                         value={formik.values.parameters.name}
-                                        isDisabled={isEditAction}
+                                        isDisabled={isDisabled}
                                         validated={
                                             formik.errors?.parameters?.name &&
                                             formik.touched?.parameters?.name
@@ -101,6 +115,7 @@ function ScanConfigOptions(): ReactElement {
                                         id="parameters.description"
                                         name="parameters.description"
                                         value={formik.values.parameters.description}
+                                        isDisabled={isReadOnly}
                                         onChange={(event) => formik.handleChange(event)}
                                         onBlur={formik.handleBlur}
                                     />
@@ -134,6 +149,7 @@ function ScanConfigOptions(): ReactElement {
                                                     }
                                                     handleSelect={handleSelectChange}
                                                     includeDailyOption
+                                                    isEditable={!isReadOnly}
                                                     onBlur={formik.handleBlur}
                                                 />
                                             </FormLabelGroup>
@@ -175,10 +191,11 @@ function ScanConfigOptions(): ReactElement {
                                                         formik.values.parameters.intervalType
                                                     }
                                                     isEditable={
-                                                        formik.values.parameters.intervalType ===
+                                                        !isReadOnly &&
+                                                        (formik.values.parameters.intervalType ===
                                                             'MONTHLY' ||
                                                         formik.values.parameters.intervalType ===
-                                                            'WEEKLY'
+                                                            'WEEKLY')
                                                     }
                                                     toggleId={
                                                         formik.values.parameters.intervalType ===
@@ -210,6 +227,7 @@ function ScanConfigOptions(): ReactElement {
                                             <TimePicker
                                                 time={formik.values.parameters.time}
                                                 is24Hour
+                                                isDisabled={isReadOnly}
                                                 onChange={handleTimeChange}
                                                 inputProps={{
                                                     onBlur: formik.handleBlur,

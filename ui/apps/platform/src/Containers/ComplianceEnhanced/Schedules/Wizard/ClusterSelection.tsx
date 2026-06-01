@@ -31,6 +31,7 @@ export type ClusterSelectionProps = {
     alertRef: RefObject<HTMLDivElement>;
     clusters: ComplianceIntegration[];
     isFetchingClusters: boolean;
+    isReadOnly?: boolean;
 };
 
 function InstallClustersButton() {
@@ -45,6 +46,7 @@ function ClusterSelection({
     alertRef,
     clusters,
     isFetchingClusters,
+    isReadOnly = false,
 }: ClusterSelectionProps): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
     const isRouteEnabledForClusters = isRouteEnabled('clusters');
@@ -97,6 +99,7 @@ function ClusterSelection({
                         rowIndex,
                         onSelect: (event, isSelected) => handleSelect(event, isSelected, rowIndex),
                         isSelected: selected[rowIndex],
+                        isDisabled: isReadOnly,
                     }}
                 />
                 <Td dataLabel="Name">{clusterName}</Td>
@@ -162,6 +165,14 @@ function ClusterSelection({
             </PageSection>
             <Divider component="div" />
             <Form className="pf-v6-u-py-lg pf-v6-u-px-lg" ref={alertRef}>
+                {isReadOnly && (
+                    <Alert
+                        variant="info"
+                        title="Cluster selection is externally managed and cannot be modified here."
+                        component="p"
+                        isInline
+                    />
+                )}
                 <Alert
                     title="At least one cluster must be in a Healthy state to proceed with the schedule."
                     variant="info"
@@ -188,6 +199,7 @@ function ClusterSelection({
                                 select={{
                                     onSelect: handleSelectAll,
                                     isSelected: allRowsSelected,
+                                    isDisabled: isReadOnly,
                                 }}
                             />
                             <Th>Name</Th>

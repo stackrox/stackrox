@@ -38,9 +38,10 @@ const searchFilterConfig = [profileSearchFilterConfig];
 export type ProfileSelectionProps = {
     alertRef: RefObject<HTMLDivElement>;
     clusterIds: string[];
+    isReadOnly?: boolean;
 };
 
-function ProfileSelection({ alertRef, clusterIds }: ProfileSelectionProps): ReactElement {
+function ProfileSelection({ alertRef, clusterIds, isReadOnly = false }: ProfileSelectionProps): ReactElement {
     const {
         setFieldValue,
         values: formikValues,
@@ -124,6 +125,14 @@ function ProfileSelection({ alertRef, clusterIds }: ProfileSelectionProps): Reac
             </PageSection>
             <Divider component="div" />
             <Form className="pf-v6-u-py-lg pf-v6-u-px-lg" ref={alertRef}>
+                {isReadOnly && (
+                    <Alert
+                        variant="info"
+                        title="Profile selection is externally managed and cannot be modified here."
+                        component="p"
+                        isInline
+                    />
+                )}
                 {formikTouched.profiles && formikValues.profiles.length === 0 && (
                     <Alert
                         title="At least one profile is required to proceed"
@@ -187,6 +196,7 @@ function ProfileSelection({ alertRef, clusterIds }: ProfileSelectionProps): Reac
                                                     onSelect: (event, isSelected) =>
                                                         handleSelect(event, isSelected, rowIndex),
                                                     isSelected: selected[rowIndex],
+                                                    isDisabled: isReadOnly,
                                                 }}
                                             />
                                             <Td
