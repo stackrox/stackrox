@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/process/normalize"
@@ -30,6 +31,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 )
 
@@ -142,6 +144,7 @@ func NewManager(
 	externalSrcs externalsrcs.Store,
 	policyDetector detector.Detector,
 	pubSub *internalmessage.MessageSubscriber,
+	pubSubDispatcher common.PubSubDispatcher,
 	updateComputer *updatecomputer.Computer,
 	opts ...Option,
 ) Manager {
@@ -183,13 +186,31 @@ func NewManager(
 	enricherTicker.Stop()
 	mgr.sensorUpdates = make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.NetworkFlowBufferSize))
 
-	if err := mgr.pubSub.Subscribe(internalmessage.SensorMessageResourceSyncFinished, func(msg *internalmessage.SensorInternalMessage) {
-		if msg.IsExpired() {
-			return
+	if features.SensorInternalPubSub.Enabled() {
+		if err := pubSubDispatcher.RegisterConsumer(
+			pubsub.NetworkFlowManagerConsumer,
+			pubsub.ResourceSyncFinishedTopic,
+			func(e pubsub.Event) error {
+				select {
+				case <-mgr.stopper.Flow().StopRequested():
+					return nil
+				default:
+				}
+				mgr.Notify(common.SensorComponentEventResourceSyncFinished)
+				return nil
+			},
+		); err != nil {
+			log.Errorf("unable to register consumer for ResourceSyncFinished: %v", err)
 		}
-		mgr.Notify(common.SensorComponentEventResourceSyncFinished)
-	}); err != nil {
-		log.Errorf("unable to subscribe to %s: %+v", internalmessage.SensorMessageResourceSyncFinished, err)
+	} else {
+		if err := mgr.pubSub.Subscribe(internalmessage.SensorMessageResourceSyncFinished, func(msg *internalmessage.SensorInternalMessage) {
+			if msg.IsExpired() {
+				return
+			}
+			mgr.Notify(common.SensorComponentEventResourceSyncFinished)
+		}); err != nil {
+			log.Errorf("unable to subscribe to %s: %+v", internalmessage.SensorMessageResourceSyncFinished, err)
+		}
 	}
 	for _, o := range opts {
 		o(mgr)
