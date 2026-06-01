@@ -377,8 +377,7 @@ func (s *scheduler) queueScheduledReports() {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).
 		ProtoQuery()
-	filteredQ := common.WithoutV1ReportConfigs(query)
-	reportConfigs, err := s.reportConfigDatastore.GetReportConfigurations(scheduledCtx, filteredQ)
+	reportConfigs, err := s.reportConfigDatastore.GetReportConfigurations(scheduledCtx, query)
 	if err != nil {
 		log.Errorf("Error finding scheduled reports: %s", err)
 		return
@@ -405,8 +404,7 @@ func (s *scheduler) recoverMissedSchedules() {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).
 		ProtoQuery()
-	filteredQ := common.WithoutV1ReportConfigs(query)
-	reportConfigs, err := s.reportConfigDatastore.GetReportConfigurations(scheduledCtx, filteredQ)
+	reportConfigs, err := s.reportConfigDatastore.GetReportConfigurations(scheduledCtx, query)
 	if err != nil {
 		log.Errorf("Error finding report configs for missed schedule recovery: %s", err)
 		return
