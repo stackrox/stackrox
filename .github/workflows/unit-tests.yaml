@@ -173,8 +173,8 @@ jobs:
           2>/dev/null | tail -3
         echo "cache_lookup_only=$((SECONDS - start))s"
 
-        echo "=== pkg/set hash debug ==="
-        GODEBUG=gocachehash=1 go test -count=1 -race ./pkg/set/... 2>&1 | grep -E "^ok|^FAIL|\(cached\)" | head -5
+        echo "=== pkg/set hash debug (no test execution, -run=^$) ==="
+        GODEBUG=gocachehash=1 go test -race -run=^$ ./pkg/set/... 2>&1 | grep -E "^HASH\[|^ok|^FAIL|\(cached\)" | head -10
 
     - name: Go Unit Tests
       run: |
