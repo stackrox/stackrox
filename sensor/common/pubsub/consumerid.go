@@ -17,6 +17,8 @@ const (
 	DetectorScanResultConsumer
 	DetectorDeployAlertOutputConsumer
 	OutputQueueConsumer
+	NetworkFlowManagerConsumer
+	CoreSensorConsumer
 )
 
 var (
@@ -35,6 +37,8 @@ var (
 		DetectorScanResultConsumer:          "DetectorScanResult",
 		DetectorDeployAlertOutputConsumer:   "DetectorDeployAlertOutput",
 		OutputQueueConsumer:                 "OutputQueue",
+		NetworkFlowManagerConsumer:          "NetworkFlowManager",
+		CoreSensorConsumer:                  "CoreSensor",
 	}
 )
 
