@@ -400,9 +400,16 @@ jobs:
     - name: Get kubeconfig (pre-provisioned)
       if: inputs.gke-cluster-name
       run: |
+        zone="${{ inputs.gke-zone }}"
+        if [ -z "$zone" ]; then
+          zone=$(gcloud container clusters list \
+            --filter="name=${{ inputs.gke-cluster-name }}" \
+            --format="value(location)" \
+            --project acs-team-temp-dev)
+        fi
         gcloud container clusters get-credentials \
           "${{ inputs.gke-cluster-name }}" \
-          --zone "${{ inputs.gke-zone }}" \
+          --zone "$zone" \
           --project acs-team-temp-dev
 
     - name: Create GKE cluster
