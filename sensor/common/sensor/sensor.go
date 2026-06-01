@@ -407,6 +407,12 @@ func (s *Sensor) Stop() {
 // Only triggers when the sensor is not already in OfflineMode (i.e. Central
 // is reachable). The lock is held for the entire sequence so the real
 // connection retry loop cannot interleave between transitions.
+//
+// The state-persistence model mirrors the real reconnect path:
+// OfflineMode and CentralReachableHTTP are persisted to currentState (via
+// changeStateNoLock), while CentralReachable and SyncFinished are delivered
+// as notifications only (via notifyAllComponents) — exactly as
+// communicationWithCentral + notifySyncDone do in production.
 func (s *Sensor) TriggerOfflineMode(reason string) {
 	s.currentStateMtx.Lock()
 	defer s.currentStateMtx.Unlock()
@@ -419,8 +425,7 @@ func (s *Sensor) TriggerOfflineMode(reason string) {
 	log.Infof("Synthetic offline mode triggered: %s", reason)
 	s.changeStateNoLock(common.SensorComponentEventOfflineMode)
 	s.changeStateNoLock(common.SensorComponentEventCentralReachableHTTP)
-	s.changeStateNoLock(common.SensorComponentEventCentralReachable)
-	s.changeStateNoLock(common.SensorComponentEventSyncFinished)
+	s.notifyAllComponents(common.SensorComponentEventCentralReachable, common.SensorComponentEventSyncFinished)
 }
 
 func (s *Sensor) changeState(state common.SensorComponentEvent) {
