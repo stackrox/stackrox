@@ -171,7 +171,13 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
-	zipFile, err := zipWriter.Create(makeFileName(configName, time.Now()))
+	now := time.Now()
+	header := &zip.FileHeader{
+		Name:     makeFileName(configName, now),
+		Method:   zip.Deflate,
+		Modified: now,
+	}
+	zipFile, err := zipWriter.CreateHeader(header)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
 	}

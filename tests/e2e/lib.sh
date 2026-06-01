@@ -698,6 +698,15 @@ deploy_sensor_via_operator() {
         customize_envVars+=$'\n    - name: ROX_NETFLOW_CACHE_LIMITING'
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_CACHE_LIMITING}"'"'
     fi
+    # Feature flags set via ci_export (line ~200) reach Sensor in non-operator
+    # deployments (GKE) through the shell environment. Operator-deployed Sensor
+    # (OCP) only gets env vars injected via the SecuredCluster CR's
+    # customize.envVars, which is built separately here. Flags that Sensor needs
+    # must be added explicitly below until they are enabled by default.
+    if [[ -n "${ROX_INIT_CONTAINER_SUPPORT:-}" ]]; then
+        customize_envVars+=$'\n    - name: ROX_INIT_CONTAINER_SUPPORT'
+        customize_envVars+=$'\n      value: "'"${ROX_INIT_CONTAINER_SUPPORT}"'"'
+    fi
 
     local scannerV4DbPersistenceYaml
     scannerV4DbPersistenceYaml="$(_scanner_v4_db_persistence_yaml)"
@@ -1870,10 +1879,14 @@ setup_automation_flavor_e2e_cluster() {
     if [[ "$ci_job" =~ ^osd ]]; then
         info "Logging in to an OSD cluster"
         source "${SHARED_DIR}/dotenv"
-        oc login "$CLUSTER_API_ENDPOINT" \
+        # OSD API server certificates may not be fully propagated right after
+        # cluster creation, causing transient x509 errors (ROX-27600).
+        retry 5 true \
+            oc login "$CLUSTER_API_ENDPOINT" \
                 --username "$CLUSTER_USERNAME" \
                 --password "$CLUSTER_PASSWORD" \
-                --insecure-skip-tls-verify=true
+                --insecure-skip-tls-verify=true \
+            || die "Failed to log in to OSD cluster"
     fi
 
     # Export console credentials for OCP UI e2e tests (Cypress browser login)

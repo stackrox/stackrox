@@ -23,6 +23,7 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: config-controller
+        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "config-controller") | nindent 8 }}
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "config-controller") | nindent 8 }}

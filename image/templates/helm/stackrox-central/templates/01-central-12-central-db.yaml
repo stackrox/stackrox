@@ -24,6 +24,7 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: central-db
+        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "central-db") | nindent 8 }}
       annotations:
         {{- $annotations := dict -}}

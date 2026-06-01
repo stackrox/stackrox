@@ -322,10 +322,9 @@ func (s *relayTestSuite) TestRelay_RateLimiting() {
 // TestRelay_UMHInteraction verifies the relay observes UMH signals and marks ACKs.
 func (s *relayTestSuite) TestRelay_UMHInteraction() {
 	done := concurrency.NewSignal()
+
 	mockIndexReportSender := &mockIndexReportSender{
-		failOnIndex:   -1,
-		done:          &done,
-		expectedCount: 1,
+		failOnIndex: -1,
 	}
 
 	mockIndexReportStream := &mockIndexReportStream{
@@ -336,6 +335,9 @@ func (s *relayTestSuite) TestRelay_UMHInteraction() {
 
 	umh := &mockUMH{
 		retryCh: make(chan string, 1),
+		onObserveSendingCb: func(_ string) {
+			done.Signal()
+		},
 	}
 
 	relay := New(mockIndexReportStream, mockIndexReportSender, umh, noThrottlingReportsPerMinute, testStaleAckThreshold)
@@ -348,14 +350,12 @@ func (s *relayTestSuite) TestRelay_UMHInteraction() {
 		errChan <- relay.Run(ctx)
 	}()
 
-	// Wait for the report to be sent.
 	select {
 	case <-done.Done():
 	case <-time.After(time.Second):
-		s.Fail("timeout waiting for report send")
+		s.Fail("timeout waiting for ObserveSending")
 	}
 
-	// Verify ObserveSending recorded the VSOCK ID.
 	var sends []string
 	concurrency.WithLock(&umh.mu, func() {
 		sends = append(sends, umh.sends...)
@@ -640,12 +640,13 @@ func (m *mockIndexReportSender) Send(_ context.Context, vmReport *v1.VMReport) e
 
 // mockUMH is a mock UnconfirmedMessageHandler for testing
 type mockUMH struct {
-	mu      sync.Mutex
-	acks    []string
-	nacks   []string
-	sends   []string
-	retryCh chan string
-	onACKCb func(resourceID string)
+	mu                 sync.Mutex
+	acks               []string
+	nacks              []string
+	sends              []string
+	retryCh            chan string
+	onACKCb            func(resourceID string)
+	onObserveSendingCb func(resourceID string)
 }
 
 func (m *mockUMH) HandleACK(resourceID string) {
@@ -666,9 +667,12 @@ func (m *mockUMH) HandleNACK(resourceID string) {
 }
 
 func (m *mockUMH) ObserveSending(resourceID string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.sends = append(m.sends, resourceID)
+	concurrency.WithLock(&m.mu, func() {
+		m.sends = append(m.sends, resourceID)
+		if m.onObserveSendingCb != nil {
+			m.onObserveSendingCb(resourceID)
+		}
+	})
 }
 
 func (m *mockUMH) RetryCommand() <-chan string {

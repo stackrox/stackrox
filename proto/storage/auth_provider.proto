@@ -13,6 +13,9 @@ message AuthProvider {
   string id = 1; // @gotags: sql:"pk"
   string name = 2; // @gotags: sql:"unique" search:"AuthProvider Name,hidden"
   string type = 3;
+  // The UI endpoint of the Central instance, e.g. "central.example.com:443".
+  // URLs with scheme (e.g. "https://central.example.com") are accepted and
+  // normalized to host:port format. If no port is given, 443 is assumed.
   string ui_endpoint = 4;
   bool enabled = 5;
   // Config holds auth provider specific configuration. Each configuration options
@@ -50,7 +53,7 @@ message AuthProvider {
 
   // UI endpoints which to allow in addition to `ui_endpoint`. I.e., if a login request
   // is coming from any of these, the auth request will use these for the callback URL,
-  // not ui_endpoint.
+  // not ui_endpoint. Same format rules as `ui_endpoint` apply.
   repeated string extra_ui_endpoints = 9;
   bool active = 10;
 

@@ -156,7 +156,7 @@ image-db-init-d       := image/db/init-bundles
 image-db-init-t       := $(image-db-init-d)/db-init.dump.zst
 
 .PHONY: images
-images: image-scanner image-db
+images: image-scanner
 
 image/scanner/bin/scanner: GOOS=$(DEFAULT_GOOS)
 image/scanner/bin/scanner: bin/scanner

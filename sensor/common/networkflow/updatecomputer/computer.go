@@ -85,19 +85,19 @@ func (tt *TransitionType) String() string {
 	return "unknown"
 }
 
-// TransitionBased is an update computer that calculates updates based on the type of state transition for each enriched entity.
+// Computer calculates updates based on the type of state transition for each enriched entity.
 // It categorizes state transitions to perform the most basic checks first, saving computational resources.
 // For example: handle connections being closed (transitions ANY->Closed) first, since there's no need to check whether
 // a connection was previously seen (closing a connection almost always requires sending an update).
 //
-// The main advantage of TransitionBased is that it doesn't need to remember the updates sent to Central
+// The main advantage of Computer is that it doesn't need to remember the updates sent to Central
 // in the previous tick. Instead, it must remember all open connections that haven't been closed yet (a disadvantage),
 // but this can be done in a memory-efficient way by storing only a fingerprint of each connection in a deduper.
 //
 // It remembers recently closed connections (but not endpoints and processes) for a duration bound to the afterglow period
 // to avoid sending duplicate close updates to Central. In the future, after careful investigation,
 // this behavior may be made optional and hidden behind an environment variable.
-type TransitionBased struct {
+type Computer struct {
 
 	// State tracking for conditional updates - moved from networkFlowManager
 	connectionsDeduperMutex sync.RWMutex
@@ -127,9 +127,9 @@ func newBinaryHashSetPtr() *set.Set[indicator.BinaryHash] {
 	return &s
 }
 
-// NewTransitionBased creates a new instance of the transition-based update computer.
-func NewTransitionBased() *TransitionBased {
-	return &TransitionBased{
+// New creates a new network flow update computer.
+func New() *Computer {
+	return &Computer{
 		connectionsDeduper:         newBinaryHashSetPtr(),
 		endpointsDeduper:           make(map[indicator.BinaryHash]indicator.BinaryHash),
 		cachedUpdatesConn:          make([]*storage.NetworkFlow, 0),
@@ -142,7 +142,7 @@ func NewTransitionBased() *TransitionBased {
 }
 
 // ComputeUpdatedConns returns a list of network flow updates to be sent to Central.
-func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
+func (c *Computer) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
 	var updates []*storage.NetworkFlow
 	ee := ConnectionEnrichedEntity
 	if len(current) > 0 {
@@ -345,7 +345,7 @@ func updateMetrics(update bool, tt TransitionType, ee EnrichedEntity) {
 }
 
 // ComputeUpdatedEndpointsAndProcesses computes updates to Central for endpoints and their processes
-func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
+func (c *Computer) ComputeUpdatedEndpointsAndProcesses(
 	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
 ) ([]*storage.NetworkEndpoint, []*storage.ProcessListeningOnPortFromSensor) {
 	plopEnabled := env.ProcessesListeningOnPort.BooleanSetting()
@@ -472,7 +472,7 @@ func categorizeEndpointUpdate(currTS timestamp.MicroTS, epKey, procKey indicator
 	return false, true, TransitionTypeReplaceProcess, deduperActionUpdateProcess
 }
 
-func (c *TransitionBased) deduperHasEndpointAndProcess(epKey, procKey indicator.BinaryHash) (bool, bool) {
+func (c *Computer) deduperHasEndpointAndProcess(epKey, procKey indicator.BinaryHash) (bool, bool) {
 	return concurrency.WithRLock2(&c.endpointsDeduperMutex, func() (bool, bool) {
 		storedProcKey, ok := c.endpointsDeduper[epKey]
 		if !ok {
@@ -482,7 +482,7 @@ func (c *TransitionBased) deduperHasEndpointAndProcess(epKey, procKey indicator.
 	})
 }
 
-func (c *TransitionBased) OnSuccessfulSendConnections(conns map[indicator.NetworkConn]timestamp.MicroTS) {
+func (c *Computer) OnSuccessfulSendConnections(conns map[indicator.NetworkConn]timestamp.MicroTS) {
 	if !env.NetworkFlowBatching.BooleanSetting() && conns != nil {
 		c.cachedUpdatesConn = make([]*storage.NetworkFlow, 0)
 	}
@@ -491,45 +491,45 @@ func (c *TransitionBased) OnSuccessfulSendConnections(conns map[indicator.Networ
 // OnSuccessfulSendEndpoints updates the internal enrichedConnsLastSentState map with the currentState state.
 // Providing nil will skip updates for respective map.
 // Providing empty map will reset the state for given state.
-func (c *TransitionBased) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+func (c *Computer) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
 	if !env.NetworkFlowBatching.BooleanSetting() && enrichedEndpointsProcesses != nil {
 		c.cachedUpdatesEp = make([]*storage.NetworkEndpoint, 0)
 	}
 }
 
 // OnSuccessfulSendProcesses contains actions that should be executed after successful sending of processesListening updates to Central.
-func (c *TransitionBased) OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
+func (c *Computer) OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
 	if !env.NetworkFlowBatching.BooleanSetting() && enrichedEndpointsProcesses != nil {
 		c.cachedUpdatesProc = make([]*storage.ProcessListeningOnPortFromSensor, 0)
 	}
 }
 
-func (c *TransitionBased) OnSendConnectionsFailure(unsentConns []*storage.NetworkFlow) {
+func (c *Computer) OnSendConnectionsFailure(unsentConns []*storage.NetworkFlow) {
 	if env.NetworkFlowBatching.BooleanSetting() {
 		c.cachedUpdatesConn = append(unsentConns, c.cachedUpdatesConn...)
 	}
 }
 
-func (c *TransitionBased) OnSendEndpointsFailure(unsentEps []*storage.NetworkEndpoint) {
+func (c *Computer) OnSendEndpointsFailure(unsentEps []*storage.NetworkEndpoint) {
 	if env.NetworkFlowBatching.BooleanSetting() {
 		c.cachedUpdatesEp = append(unsentEps, c.cachedUpdatesEp...)
 	}
 }
 
-func (c *TransitionBased) OnSendProcessesFailure(unsentProcs []*storage.ProcessListeningOnPortFromSensor) {
+func (c *Computer) OnSendProcessesFailure(unsentProcs []*storage.ProcessListeningOnPortFromSensor) {
 	if env.NetworkFlowBatching.BooleanSetting() {
 		c.cachedUpdatesProc = append(unsentProcs, c.cachedUpdatesProc...)
 	}
 }
 
-func (c *TransitionBased) updateLastCleanup(now time.Time) {
+func (c *Computer) updateLastCleanup(now time.Time) {
 	c.lastCleanupMutex.Lock()
 	defer c.lastCleanupMutex.Unlock()
 	c.lastCleanup = now
 }
 
-// ResetState clears the transition-based computer's firstTimeSeen tracking
-func (c *TransitionBased) ResetState() {
+// ResetState clears the update computer's firstTimeSeen tracking.
+func (c *Computer) ResetState() {
 	concurrency.WithLock(&c.connectionsDeduperMutex, func() {
 		c.connectionsDeduper = newBinaryHashSetPtr()
 	})
@@ -544,7 +544,7 @@ func (c *TransitionBased) ResetState() {
 	})
 }
 
-func (c *TransitionBased) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeVec) {
+func (c *Computer) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeVec) {
 	valueConns := concurrency.WithRLock1(&c.connectionsDeduperMutex, func() int {
 		return c.connectionsDeduper.Cardinality()
 	})
@@ -573,7 +573,7 @@ func (c *TransitionBased) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeV
 // lookupPrevTimestamp retrieves the previous close-timestamp for a connection.
 // For open connections, returns found==false.
 // For recently closed connections, returns the stored timestamp and found==true.
-func (c *TransitionBased) lookupPrevTimestamp(connKey indicator.BinaryHash) (found bool, prevTS timestamp.MicroTS) {
+func (c *Computer) lookupPrevTimestamp(connKey indicator.BinaryHash) (found bool, prevTS timestamp.MicroTS) {
 	// For closed connections, check if we have stored previous timestamp
 	c.closedConnMutex.RLock()
 	defer c.closedConnMutex.RUnlock()
@@ -582,7 +582,7 @@ func (c *TransitionBased) lookupPrevTimestamp(connKey indicator.BinaryHash) (fou
 }
 
 // storeClosedConnectionTimestamp stores the timestamp of a closed connection for future reference
-func (c *TransitionBased) storeClosedConnectionTimestamp(
+func (c *Computer) storeClosedConnectionTimestamp(
 	connKey indicator.BinaryHash, closedTS timestamp.MicroTS, closedConnRememberDuration time.Duration) {
 	// Do not store open connections.
 	if closedTS == timestamp.InfiniteFuture {
@@ -600,7 +600,7 @@ func (c *TransitionBased) storeClosedConnectionTimestamp(
 
 // calculateConnectionsDeduperByteSize calculates the memory usage of the connections deduper.
 // The calculation includes: map reference (8 bytes) + BinaryHash entries (8 bytes per uint64 entry).
-func (c *TransitionBased) calculateConnectionsDeduperByteSize() uintptr {
+func (c *Computer) calculateConnectionsDeduperByteSize() uintptr {
 	baseSize := concurrency.WithRLock1(&c.connectionsDeduperMutex, func() uintptr {
 		return uintptr(8) + // map reference
 			uintptr(c.connectionsDeduper.Cardinality())*8 // 8 bytes per BinaryHash (uint64) entry
@@ -611,7 +611,7 @@ func (c *TransitionBased) calculateConnectionsDeduperByteSize() uintptr {
 }
 
 // calculateEndpointsDeduperByteSize calculates the memory usage of the endpoints deduper.
-func (c *TransitionBased) calculateEndpointsDeduperByteSize() uintptr {
+func (c *Computer) calculateEndpointsDeduperByteSize() uintptr {
 	baseSize := concurrency.WithRLock1(&c.endpointsDeduperMutex, func() uintptr {
 		return uintptr(8) + // map reference
 			uintptr(len(c.endpointsDeduper))*16 // 8 bytes key + 8 bytes value per entry
@@ -622,7 +622,7 @@ func (c *TransitionBased) calculateEndpointsDeduperByteSize() uintptr {
 }
 
 // PeriodicCleanup removes expired items from `closedConnTimestamps`.
-func (c *TransitionBased) PeriodicCleanup(now time.Time, cleanupInterval time.Duration) {
+func (c *Computer) PeriodicCleanup(now time.Time, cleanupInterval time.Duration) {
 	timer := prometheus.NewTimer(periodicCleanupDurationSeconds)
 	defer timer.ObserveDuration()
 

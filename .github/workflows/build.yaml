@@ -31,6 +31,7 @@ jobs:
       build-tag: ${{ steps.build-tag.outputs.tag }}
       short-commit: ${{ steps.short-commit.outputs.shortcommit }}
       gotags: ${{ steps.gotags.outputs.gotags }}
+      quay-tag-expiration: ${{ steps.quay-tag-expiration.outputs.expiration }}
     runs-on: ubuntu-slim
     steps:
       - name: Checkout
@@ -62,6 +63,16 @@ jobs:
             GOTAGS="release"
           fi
           echo "gotags=${GOTAGS}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute Quay tag expiration
+        id: quay-tag-expiration
+        run: |
+          EXPIRATION="13w"
+          if [[ "${GITHUB_REF}" =~ ^refs/tags/ ]]; then
+            # Tag builds (release or nightly) never expire
+            EXPIRATION="never"
+          fi
+          echo "expiration=${EXPIRATION}" >> "$GITHUB_OUTPUT"
 
       - name: Define the matrix for build jobs
         id: define-job-matrix
@@ -176,10 +187,17 @@ jobs:
         with:
           node-version-file: ui/package.json
 
-      - uses: ./.github/actions/cache-ui-dependencies
+      - name: Cache UI dependencies
+        id: cache-ui
+        uses: ./.github/actions/cache-ui-dependencies
 
       - name: Fetch UI deps
+        if: steps.cache-ui.outputs.cache-hit != 'true'
         run: make -C ui deps
+
+      - name: Skip UI deps on cache hit
+        if: steps.cache-ui.outputs.cache-hit == 'true'
+        run: touch ui/deps
 
       - name: Build UI
         run: make -C ui build
@@ -194,11 +212,6 @@ jobs:
   pre-build-cli:
     needs: define-job-matrix
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     env:
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
@@ -277,11 +290,6 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
     needs: define-job-matrix
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     env:
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
@@ -332,15 +340,24 @@ jobs:
           )
         run: echo "RACE=true" >> "$GITHUB_ENV"
 
-      - name: Build Go Binaries
+      - name: Install musl-tools for race builds
+        if: |
+          matrix.arch == 'amd64'
+            &&
+          (
+            contains(github.event.pull_request.labels.*.name, 'ci-race-tests')
+              ||
+            matrix.name == 'race-condition-debug'
+          )
         run: |
-          if [[ "${{ matrix.arch }}" != "amd64" ]]; then
-            echo "Building non-amd binary"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
-          else
-            echo "Building amd binary"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
-          fi
+          sudo apt-get update -qq && sudo apt-get install -y -qq musl-tools musl-dev linux-libc-dev
+          # musl-gcc searches /usr/include/x86_64-linux-musl by default
+          sudo ln -sf /usr/include/linux /usr/include/x86_64-linux-musl/linux
+          sudo ln -sf /usr/include/asm-generic /usr/include/x86_64-linux-musl/asm-generic
+          sudo ln -sf /usr/include/asm /usr/include/x86_64-linux-musl/asm
+
+      - name: Build Go Binaries
+        run: GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
 
       - name: Bundle the build to preserve permissions
         run: tar -cvf go-binaries-build.tar bin/linux_${{ matrix.arch }}
@@ -403,10 +420,17 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
-    - uses: ./.github/actions/cache-ui-dependencies
+    - name: Cache UI dependencies
+      id: cache-ui
+      uses: ./.github/actions/cache-ui-dependencies
 
     - name: Fetch UI deps
+      if: steps.cache-ui.outputs.cache-hit != 'true'
       run: make -C ui deps
+
+    - name: Skip UI deps on cache hit
+      if: steps.cache-ui.outputs.cache-hit == 'true'
+      run: touch ui/deps
 
     - name: Generate OSS notice
       run: make ossls-notice
@@ -415,6 +439,111 @@ jobs:
       with:
         name: oss-notice
         path: image/rhel/THIRD_PARTY_NOTICES
+
+  build-and-push-db:
+    runs-on: ubuntu-latest
+    needs:
+      - define-job-matrix
+    if: ${{ !cancelled() }}
+    env:
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Login to docker.io to mitigate rate limiting on downloading images
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        with:
+          username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+
+      - name: Determine platforms
+        id: platforms
+        run: |
+          PLATFORMS="linux/amd64,linux/arm64"
+          if [[ "${{ github.event_name }}" != "pull_request" ]] || \
+             [[ "${{ contains(github.event.pull_request.labels.*.name, 'ci-build-all-arch') }}" == "true" ]]; then
+            PLATFORMS="linux/amd64,linux/arm64,linux/ppc64le,linux/s390x"
+          fi
+          echo "platforms=${PLATFORMS}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to quay.io/stackrox-io
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      # scanner/image/db/Dockerfile does COPY init-bundles/db-init.dump.zst.
+      # This file is not in git - the Makefile creates it as empty by default
+      # (or populated if SCANNER_DB_INIT_BUNDLE_ENABLED=force, which is not used).
+      # Since we bypass make and build directly with buildx, we create the empty
+      # file here to match the default make behavior. The init script ignores it.
+      - name: Create empty init bundle for scanner-v4-db
+        run: |
+          mkdir -p scanner/image/db/init-bundles
+          touch scanner/image/db/init-bundles/db-init.dump.zst
+
+      - name: Build and push DB images in parallel with bake
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        uses: docker/bake-action@5be5f02ff8819ecd3092ea6b2e6261c31774f2b4 # ratchet:docker/bake-action@v6
+        with:
+          source: .
+          files: .github/docker/images.hcl
+          targets: databases
+          push: true
+        env:
+          TAG: ${{ env.BUILD_TAG }}
+          PLATFORMS: ${{ steps.platforms.outputs.platforms }}
+          REGISTRY: quay.io/stackrox-io
+          QUAY_TAG_EXPIRATION: ${{ needs.define-job-matrix.outputs.quay-tag-expiration }}
+
+      # We can't push to both quay.io/stackrox-io and quay.io/rhacs-eng in a single
+      # build because they require different credentials (different organizations).
+      # Instead, we build once and push to stackrox-io, then use skopeo to copy the
+      # multi-arch manifest list to rhacs-eng. This is more efficient than building
+      # twice and matches the pattern used for collector retag.
+      - name: Login to quay.io/rhacs-eng
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
+      - name: Copy central-db to rhacs-eng registry
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        run: |
+          skopeo copy --retry-times 5 --all \
+            "docker://quay.io/stackrox-io/central-db:${{ env.BUILD_TAG }}" \
+            "docker://quay.io/rhacs-eng/central-db:${{ env.BUILD_TAG }}"
+
+      - name: Copy scanner-v4-db to rhacs-eng registry
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        run: |
+          skopeo copy --retry-times 5 --all \
+            "docker://quay.io/stackrox-io/scanner-v4-db:${{ env.BUILD_TAG }}" \
+            "docker://quay.io/rhacs-eng/scanner-v4-db:${{ env.BUILD_TAG }}"
 
   build-operator-bundle:
     runs-on: ubuntu-latest
@@ -526,9 +655,11 @@ jobs:
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        continue-on-error: true
         # Skip for external contributions.
         if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+          matrix.arch != 'amd64' && matrix.arch != 'arm64' &&
+          (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
         with:
           username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
@@ -538,7 +669,7 @@ jobs:
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # ratchet:docker/setup-buildx-action@v4
 
       - name: Checkout submodules
         run: |
@@ -722,7 +853,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+      uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # ratchet:docker/setup-buildx-action@v4
 
     - name: Checkout submodules
       run: |
@@ -902,7 +1033,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # ratchet:docker/setup-buildx-action@v4
 
       - name: Download prebuilt operator binaries
         uses: ./.github/actions/download-artifact-with-retry
@@ -950,9 +1081,11 @@ jobs:
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        continue-on-error: true
         # Skip for external contributions.
         if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+          matrix.arch != 'amd64' && matrix.arch != 'arm64' &&
+          (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
         with:
           username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
@@ -989,9 +1122,10 @@ jobs:
             echo "Operator image push completed successfully"
 
   build-and-push-scanner:
-    runs-on: ubuntu-latest
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:
       - define-job-matrix
+      - build-and-push-db
       - pre-build-go-binaries
       - pre-build-oss-notice
     if: ${{ !cancelled() }}
@@ -1014,18 +1148,20 @@ jobs:
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        continue-on-error: true
         if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+          matrix.arch != 'amd64' && matrix.arch != 'arm64' &&
+          (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
         with:
           username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
 
       - name: Set up QEMU
-        if: matrix.arch != 'amd64'
+        if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # ratchet:docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # ratchet:docker/setup-buildx-action@v4
 
       - uses: ./.github/actions/handle-tagged-build
 
@@ -1098,7 +1234,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+      uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # ratchet:docker/setup-buildx-action@v4
 
     - name: Set build tag for prerelease images
       if: matrix.name == 'prerelease'
@@ -1162,7 +1298,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # ratchet:docker/setup-buildx-action@v4
+      uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # ratchet:docker/setup-buildx-action@v4
 
     - name: Push operator manifest lists
       # Skip for external contributions.
@@ -1241,6 +1377,7 @@ jobs:
     if: github.event_name == 'push' ||
       contains(github.event.pull_request.labels.*.name, 'scan-images-with-roxctl')
     needs:
+      - build-and-push-db
       - build-and-push-main
       - build-and-push-operator
       - build-and-push-scanner
@@ -1315,6 +1452,7 @@ jobs:
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
+      - build-and-push-db
       - build-and-push-main
       - build-and-push-operator
       - build-and-push-scanner

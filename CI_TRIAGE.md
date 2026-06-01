@@ -8,7 +8,6 @@ To enable automated CI triage capabilities, you need to configure the following 
 
 - [mcp-atlassian](https://github.com/sooperset/mcp-atlassian)
 - [Github MCP](https://github.com/github/github-mcp-server/blob/main/docs/installation-guides/install-claude.md)
-- [Prow MCP](https://github.com/redhat-community-ai-tools/prowject)
 Example MCPs configuration template:
 
 - Install gopls https://go.dev/gopls/#installation
