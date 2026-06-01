@@ -94,6 +94,16 @@ func addSecondaryCACertIfExists(certPool *x509.CertPool) {
 	}
 }
 
+// WatchedLeafCert returns the current in-memory leaf certificate maintained by
+// certwatch. The certificate is loaded from disk on startup and updated
+// atomically whenever the cert files change, with validation on each reload
+// (invalid certificates are rejected, preserving the previous valid cert).
+// Returns nil if no certificate has been loaded yet.
+func WatchedLeafCert() *tls.Certificate {
+	loadAndWatchLeafCert()
+	return leafCert.Load()
+}
+
 // TLSConfig initializes a server configuration that requires client TLS
 // authentication based on a single certificate in the filesystem.
 // The returned config uses GetConfigForClient to serve the latest cert
