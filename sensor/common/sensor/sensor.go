@@ -37,6 +37,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
 )
@@ -309,22 +310,41 @@ func (s *Sensor) Start() {
 	}
 	log.Info("All components have started")
 
-	err = s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(message *internalmessage.SensorInternalMessage) {
-		if message.IsExpired() {
-			return
+	if features.SensorInternalPubSub.Enabled() {
+		if err := s.pubSubDispatcher.RegisterConsumer(
+			pubsub.CoreSensorConsumer,
+			pubsub.SoftRestartTopic,
+			func(e pubsub.Event) error {
+				s.centralCommunicationLock.Lock()
+				defer s.centralCommunicationLock.Unlock()
+				if s.centralCommunication == nil {
+					log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
+					return nil
+				}
+				log.Infof("Connection restart requested")
+				s.centralCommunication.Stop()
+				return nil
+			},
+		); err != nil {
+			log.Warnf("Failed to register consumer for SoftRestart: %q", err)
 		}
-
-		s.centralCommunicationLock.Lock()
-		defer s.centralCommunicationLock.Unlock()
-		if s.centralCommunication == nil {
-			log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
-			return
+	} else {
+		err = s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(message *internalmessage.SensorInternalMessage) {
+			if message.IsExpired() {
+				return
+			}
+			s.centralCommunicationLock.Lock()
+			defer s.centralCommunicationLock.Unlock()
+			if s.centralCommunication == nil {
+				log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
+				return
+			}
+			log.Infof("Connection restart requested: %s", message.Text)
+			s.centralCommunication.Stop()
+		})
+		if err != nil {
+			log.Warnf("Failed to register subscription to sensor internal message: %q", err)
 		}
-		log.Infof("Connection restart requested: %s", message.Text)
-		s.centralCommunication.Stop()
-	})
-	if err != nil {
-		log.Warnf("Failed to register subscription to sensor internal message: %q", err)
 	}
 
 	log.Info("Running Sensor with connection retry: preventing sensor restart on disconnect")
