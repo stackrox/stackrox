@@ -151,20 +151,25 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
-    - name: Count test cache entries before tests
+    - name: Test cache debug
       run: |
         gocache=$(go env GOCACHE)
-        total=$(find "$gocache" -type f 2>/dev/null | wc -l)
-        # Test result entries are in testcache/ subdirectory
-        testcache=$(find "$gocache/testresults" -type f 2>/dev/null | wc -l || find "$gocache" -name "*.testresult" 2>/dev/null | wc -l || echo "?")
-        echo "gocache_total_files=$total testcache_entries=$testcache"
+        echo "=== GOCACHE state before tests ==="
+        echo "gocache_files=$(find "$gocache" -type f 2>/dev/null | wc -l)"
+        echo "gocache_size=$(du -sh "$gocache" 2>/dev/null | cut -f1)"
+        echo "=== Sample: does pkg/set test result exist? ==="
+        # Run pkg/set with hash debug to see exactly what key is computed
+        GODEBUG=gocachehash=1 go test -count=1 -race ./pkg/set/... 2>&1 | grep -E "^HASH|^ok|^FAIL|\(cached\)" | head -20
+        echo "=== After sample run ==="
+        echo "gocache_files=$(find "$gocache" -type f 2>/dev/null | wc -l)"
 
     - name: Go Unit Tests
       run: |
-        ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/test-output.log | tail -5
-        echo "=== Test cache stats ==="
-        grep -c "(cached)" /tmp/test-output.log || echo "cached=0"
-        wc -l /tmp/test-output.log | awk '{print "total_lines=" $1}'
+        ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/test-output.log | tail -3
+        echo "=== Test cache summary ==="
+        cached=$(grep -c " (cached)$" /tmp/test-output.log 2>/dev/null || echo 0)
+        total=$(grep -c "^ok\b\|^FAIL\b" /tmp/test-output.log 2>/dev/null || echo 0)
+        echo "cached_packages=$cached total_packages=$total"
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
       with:
