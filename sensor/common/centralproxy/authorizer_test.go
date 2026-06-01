@@ -14,13 +14,16 @@ import (
 	"github.com/stretchr/testify/require"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/kubernetes/fake"
 	k8sTesting "k8s.io/client-go/testing"
 )
 
 func TestK8sAuthorizer_MissingToken(t *testing.T) {
 	fakeClient := fake.NewClientset()
+	registerAllResources(fakeClient)
 	authorizer := newK8sAuthorizer(fakeClient)
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
@@ -34,6 +37,7 @@ func TestK8sAuthorizer_MissingToken(t *testing.T) {
 
 func TestK8sAuthorizer_InvalidToken(t *testing.T) {
 	fakeClient := fake.NewClientset()
+	registerAllResources(fakeClient)
 	authorizer := newK8sAuthorizer(fakeClient)
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
@@ -57,6 +61,7 @@ func TestK8sAuthorizer_TokenAuthenticationFailed(t *testing.T) {
 		}, nil
 	})
 
+	registerAllResources(fakeClient)
 	authorizer := newK8sAuthorizer(fakeClient)
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
@@ -76,6 +81,7 @@ func TestK8sAuthorizer_TokenReviewAPIError(t *testing.T) {
 		return true, nil, errors.New("API server unavailable")
 	})
 
+	registerAllResources(fakeClient)
 	authorizer := newK8sAuthorizer(fakeClient)
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
@@ -101,6 +107,7 @@ func TestK8sAuthorizer_TokenReviewStatusError(t *testing.T) {
 		}, nil
 	})
 
+	registerAllResources(fakeClient)
 	authorizer := newK8sAuthorizer(fakeClient)
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
@@ -125,6 +132,7 @@ func TestK8sAuthorizer_AllPermissionsGranted_Namespace(t *testing.T) {
 		}, nil
 	})
 
+	registerAllResources(fakeClient)
 	authorizer := newK8sAuthorizer(fakeClient)
 
 	userInfo := &authenticationv1.UserInfo{
@@ -152,6 +160,7 @@ func TestK8sAuthorizer_AllPermissionsGranted_ClusterWide(t *testing.T) {
 		}, nil
 	})
 
+	registerAllResources(fakeClient)
 	authorizer := newK8sAuthorizer(fakeClient)
 
 	userInfo := &authenticationv1.UserInfo{
@@ -186,6 +195,7 @@ func TestK8sAuthorizer_MissingPermission_Namespace(t *testing.T) {
 		}, nil
 	})
 
+	registerAllResources(fakeClient)
 	authorizer := newK8sAuthorizer(fakeClient)
 
 	userInfo := &authenticationv1.UserInfo{
@@ -221,6 +231,7 @@ func TestK8sAuthorizer_MissingPermission_ClusterWide(t *testing.T) {
 		}, nil
 	})
 
+	registerAllResources(fakeClient)
 	authorizer := newK8sAuthorizer(fakeClient)
 
 	userInfo := &authenticationv1.UserInfo{
@@ -247,6 +258,7 @@ func TestK8sAuthorizer_SubjectAccessReviewError(t *testing.T) {
 		return true, nil, errors.New("API server unavailable")
 	})
 
+	registerAllResources(fakeClient)
 	authorizer := newK8sAuthorizer(fakeClient)
 
 	userInfo := &authenticationv1.UserInfo{
@@ -276,6 +288,7 @@ func TestK8sAuthorizer_SubjectAccessReviewEvaluationError(t *testing.T) {
 		}, nil
 	})
 
+	registerAllResources(fakeClient)
 	authorizer := newK8sAuthorizer(fakeClient)
 
 	userInfo := &authenticationv1.UserInfo{
@@ -301,12 +314,12 @@ func TestK8sAuthorizer_SubjectAccessReviewEvaluationError(t *testing.T) {
 func TestK8sAuthorizer_CachingBehavior(t *testing.T) {
 	fakeClient := fake.NewClientset()
 
-	sarCallCount := 0
-	tokenReviewCallCount := 0
+	var sarCallCount atomic.Int32
+	var tokenReviewCallCount atomic.Int32
 
 	// Mock TokenReview
 	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
-		tokenReviewCallCount++
+		tokenReviewCallCount.Add(1)
 		return true, &authenticationv1.TokenReview{
 			Status: authenticationv1.TokenReviewStatus{
 				Authenticated: true,
@@ -321,7 +334,7 @@ func TestK8sAuthorizer_CachingBehavior(t *testing.T) {
 
 	// Mock SubjectAccessReview - allow all and count calls
 	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
-		sarCallCount++
+		sarCallCount.Add(1)
 		return true, &authv1.SubjectAccessReview{
 			Status: authv1.SubjectAccessReviewStatus{
 				Allowed: true,
@@ -329,6 +342,7 @@ func TestK8sAuthorizer_CachingBehavior(t *testing.T) {
 		}, nil
 	})
 
+	registerAllResources(fakeClient)
 	authorizer := newK8sAuthorizer(fakeClient)
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
@@ -341,11 +355,11 @@ func TestK8sAuthorizer_CachingBehavior(t *testing.T) {
 	err = authorizer.authorize(context.Background(), userInfo, req)
 	assert.NoError(t, err)
 
-	firstSARCallCount := sarCallCount
-	firstTokenReviewCallCount := tokenReviewCallCount
+	firstSARCallCount := sarCallCount.Load()
+	firstTokenReviewCallCount := tokenReviewCallCount.Load()
 
 	// Verify we made at least one SAR call on first authorization
-	assert.Greater(t, firstSARCallCount, 0, "First authorization should perform at least one SAR call")
+	assert.Greater(t, firstSARCallCount, int32(0), "First authorization should perform at least one SAR call")
 
 	// Second request with same token and namespace - should use cache
 	userInfo, err = authorizer.authenticate(context.Background(), req)
@@ -354,19 +368,19 @@ func TestK8sAuthorizer_CachingBehavior(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Both SAR and TokenReview calls should NOT increase (all cached)
-	assert.Equal(t, firstSARCallCount, sarCallCount, "Second authorization should use cached SAR results")
-	assert.Equal(t, firstTokenReviewCallCount, tokenReviewCallCount, "TokenReview should use cached results")
+	assert.Equal(t, firstSARCallCount, sarCallCount.Load(), "Second authorization should use cached SAR results")
+	assert.Equal(t, firstTokenReviewCallCount, tokenReviewCallCount.Load(), "TokenReview should use cached results")
 }
 
 func TestK8sAuthorizer_CachingBehavior_Denied(t *testing.T) {
 	fakeClient := fake.NewClientset()
 
-	sarCallCount := 0
-	tokenReviewCallCount := 0
+	var sarCallCount atomic.Int32
+	var tokenReviewCallCount atomic.Int32
 
 	// Mock TokenReview
 	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
-		tokenReviewCallCount++
+		tokenReviewCallCount.Add(1)
 		return true, &authenticationv1.TokenReview{
 			Status: authenticationv1.TokenReviewStatus{
 				Authenticated: true,
@@ -381,7 +395,7 @@ func TestK8sAuthorizer_CachingBehavior_Denied(t *testing.T) {
 
 	// Mock SubjectAccessReview - deny all
 	fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
-		sarCallCount++
+		sarCallCount.Add(1)
 		return true, &authv1.SubjectAccessReview{
 			Status: authv1.SubjectAccessReviewStatus{
 				Allowed: false,
@@ -389,6 +403,7 @@ func TestK8sAuthorizer_CachingBehavior_Denied(t *testing.T) {
 		}, nil
 	})
 
+	registerAllResources(fakeClient)
 	authorizer := newK8sAuthorizer(fakeClient)
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
@@ -402,11 +417,11 @@ func TestK8sAuthorizer_CachingBehavior_Denied(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "lacks")
 
-	firstSARCallCount := sarCallCount
-	firstTokenReviewCallCount := tokenReviewCallCount
+	firstSARCallCount := sarCallCount.Load()
+	firstTokenReviewCallCount := tokenReviewCallCount.Load()
 
 	// Verify we made at least one SAR call on first authorization
-	assert.Greater(t, firstSARCallCount, 0, "First authorization should perform at least one SAR call")
+	assert.Greater(t, firstSARCallCount, int32(0), "First authorization should perform at least one SAR call")
 
 	// Second request with same token and namespace - should use cached denial
 	userInfo, err = authorizer.authenticate(context.Background(), req)
@@ -416,8 +431,8 @@ func TestK8sAuthorizer_CachingBehavior_Denied(t *testing.T) {
 	assert.Contains(t, err.Error(), "lacks")
 
 	// Both SAR and TokenReview calls should NOT increase (all cached)
-	assert.Equal(t, firstSARCallCount, sarCallCount, "Second authorization should use cached SAR denial results")
-	assert.Equal(t, firstTokenReviewCallCount, tokenReviewCallCount, "TokenReview should use cached results")
+	assert.Equal(t, firstSARCallCount, sarCallCount.Load(), "Second authorization should use cached SAR denial results")
+	assert.Equal(t, firstTokenReviewCallCount, tokenReviewCallCount.Load(), "TokenReview should use cached results")
 }
 
 func TestK8sAuthorizer_TokenReviewCaching(t *testing.T) {
@@ -439,6 +454,7 @@ func TestK8sAuthorizer_TokenReviewCaching(t *testing.T) {
 			}, nil
 		})
 
+		registerAllResources(fakeClient)
 		authorizer := newK8sAuthorizer(fakeClient)
 
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
@@ -469,6 +485,7 @@ func TestK8sAuthorizer_TokenReviewCaching(t *testing.T) {
 			}, nil
 		})
 
+		registerAllResources(fakeClient)
 		authorizer := newK8sAuthorizer(fakeClient)
 
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
@@ -514,6 +531,7 @@ func TestK8sAuthorizer_TokenReviewCoalescing(t *testing.T) {
 			}, nil
 		})
 
+		registerAllResources(fakeClient)
 		authorizer := newK8sAuthorizer(fakeClient)
 
 		const numGoroutines = 10
@@ -575,6 +593,7 @@ func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
 		})
 
 		// Create authorizer with only one resource to check for simpler test
+		registerAllResources(fakeClient)
 		authorizer := newK8sAuthorizer(fakeClient)
 		authorizer.verbsToCheck = []string{"get"}
 		authorizer.resourcesToCheck = []k8sResource{
@@ -644,6 +663,7 @@ func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
 		})
 
 		// Create authorizer with only one resource to check for simpler test
+		registerAllResources(fakeClient)
 		authorizer := newK8sAuthorizer(fakeClient)
 		authorizer.verbsToCheck = []string{"get"}
 		authorizer.resourcesToCheck = []k8sResource{
@@ -714,6 +734,7 @@ func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
 		})
 
 		// Create authorizer with only one resource to check for simpler test
+		registerAllResources(fakeClient)
 		authorizer := newK8sAuthorizer(fakeClient)
 		authorizer.verbsToCheck = []string{"get"}
 		authorizer.resourcesToCheck = []k8sResource{
@@ -747,5 +768,196 @@ func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
 
 		// We should have observed at least one more SAR call, proving errors were not cached
 		assert.Greater(t, sarCallCount.Load(), firstCallCount, "transient errors must not be cached")
+	})
+}
+
+func TestFilterAvailableResources(t *testing.T) {
+	t.Run("missing API group is filtered out", func(t *testing.T) {
+		fakeClient := fake.NewClientset()
+		fd := fakeClient.Discovery().(*fakediscovery.FakeDiscovery)
+		fd.Resources = []*metav1.APIResourceList{
+			{
+				GroupVersion: "v1",
+				APIResources: []metav1.APIResource{
+					{Name: "pods"},
+					{Name: "replicationcontrollers"},
+				},
+			},
+			{
+				GroupVersion: "apps/v1",
+				APIResources: []metav1.APIResource{
+					{Name: "daemonsets"},
+					{Name: "deployments"},
+					{Name: "replicasets"},
+					{Name: "statefulsets"},
+				},
+			},
+			{
+				GroupVersion: "batch/v1",
+				APIResources: []metav1.APIResource{
+					{Name: "cronjobs"},
+					{Name: "jobs"},
+				},
+			},
+			// apps.openshift.io/v1 is intentionally missing.
+		}
+
+		result := filterAvailableResources(fakeClient, allResourcesToCheck)
+
+		assert.Len(t, result, 8, "expected 8 resources (all except deploymentconfigs)")
+		for _, r := range result {
+			assert.NotEqual(t, "deploymentconfigs", r.Resource,
+				"deploymentconfigs should be filtered out when apps.openshift.io is missing")
+		}
+	})
+
+	t.Run("all groups present retains all resources", func(t *testing.T) {
+		fakeClient := fake.NewClientset()
+		registerAllResources(fakeClient)
+
+		result := filterAvailableResources(fakeClient, allResourcesToCheck)
+
+		assert.Len(t, result, len(allResourcesToCheck),
+			"all resources should be retained when all API groups are available")
+	})
+
+	t.Run("missing individual resource within existing group is filtered out", func(t *testing.T) {
+		fakeClient := fake.NewClientset()
+		fd := fakeClient.Discovery().(*fakediscovery.FakeDiscovery)
+		fd.Resources = []*metav1.APIResourceList{
+			{
+				GroupVersion: "v1",
+				APIResources: []metav1.APIResource{
+					{Name: "pods"},
+					// replicationcontrollers intentionally missing.
+				},
+			},
+			{
+				GroupVersion: "apps/v1",
+				APIResources: []metav1.APIResource{
+					{Name: "daemonsets"},
+					{Name: "deployments"},
+					{Name: "replicasets"},
+					{Name: "statefulsets"},
+				},
+			},
+			{
+				GroupVersion: "batch/v1",
+				APIResources: []metav1.APIResource{
+					{Name: "cronjobs"},
+					{Name: "jobs"},
+				},
+			},
+			{
+				GroupVersion: "apps.openshift.io/v1",
+				APIResources: []metav1.APIResource{
+					{Name: "deploymentconfigs"},
+				},
+			},
+		}
+
+		result := filterAvailableResources(fakeClient, allResourcesToCheck)
+
+		assert.Len(t, result, 8, "expected 8 resources (all except replicationcontrollers)")
+		for _, r := range result {
+			assert.NotEqual(t, "replicationcontrollers", r.Resource,
+				"replicationcontrollers should be filtered out when not in discovery response")
+		}
+	})
+
+	t.Run("transient discovery error keeps resources (fail-open)", func(t *testing.T) {
+		fakeClient := fake.NewClientset()
+		fd := fakeClient.Discovery().(*fakediscovery.FakeDiscovery)
+		fd.Resources = []*metav1.APIResourceList{
+			{
+				GroupVersion: "v1",
+				APIResources: []metav1.APIResource{
+					{Name: "pods"},
+					{Name: "replicationcontrollers"},
+				},
+			},
+		}
+
+		client := &transientDiscoveryClient{
+			Interface: fakeClient,
+			disc: &transientDiscovery{
+				FakeDiscovery:   fd,
+				transientGroups: map[string]bool{"apps/v1": true},
+			},
+		}
+
+		resources := []k8sResource{
+			{Resource: "pods", Group: ""},
+			{Resource: "deployments", Group: "apps"},
+		}
+
+		result := filterAvailableResources(client, resources)
+
+		assert.Len(t, result, 2, "both resources should be retained when discovery error is transient (fail-open)")
+		assert.Equal(t, "pods", result[0].Resource)
+		assert.Equal(t, "deployments", result[1].Resource)
+	})
+
+	t.Run("authorizer with missing group skips SAR for those resources", func(t *testing.T) {
+		fakeClient := fake.NewClientset()
+		fd := fakeClient.Discovery().(*fakediscovery.FakeDiscovery)
+		fd.Resources = []*metav1.APIResourceList{
+			{
+				GroupVersion: "v1",
+				APIResources: []metav1.APIResource{
+					{Name: "pods"},
+					{Name: "replicationcontrollers"},
+				},
+			},
+			{
+				GroupVersion: "apps/v1",
+				APIResources: []metav1.APIResource{
+					{Name: "daemonsets"},
+					{Name: "deployments"},
+					{Name: "replicasets"},
+					{Name: "statefulsets"},
+				},
+			},
+			{
+				GroupVersion: "batch/v1",
+				APIResources: []metav1.APIResource{
+					{Name: "cronjobs"},
+					{Name: "jobs"},
+				},
+			},
+			// No apps.openshift.io/v1: DeploymentConfig not available.
+		}
+
+		var sarResources []string
+		var sarMu sync.Mutex
+		fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+			createAction := action.(k8sTesting.CreateAction)
+			sar := createAction.GetObject().(*authv1.SubjectAccessReview)
+			sarMu.Lock()
+			sarResources = append(sarResources, sar.Spec.ResourceAttributes.Resource)
+			sarMu.Unlock()
+			return true, &authv1.SubjectAccessReview{
+				Status: authv1.SubjectAccessReviewStatus{Allowed: true},
+			}, nil
+		})
+
+		authorizer := newK8sAuthorizer(fakeClient)
+
+		userInfo := &authenticationv1.UserInfo{
+			Username: "test-user",
+			UID:      "test-uid",
+			Groups:   []string{"test-group"},
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+
+		err := authorizer.authorize(context.Background(), userInfo, req)
+		assert.NoError(t, err)
+
+		assert.NotContains(t, sarResources, "deploymentconfigs",
+			"SAR should not be checked for deploymentconfigs when the API group is unavailable")
+		assert.Contains(t, sarResources, "pods", "SAR should still check core resources")
+		assert.Contains(t, sarResources, "deployments", "SAR should still check apps resources")
 	})
 }
