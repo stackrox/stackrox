@@ -218,6 +218,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/NetworkGraph/NetworkGraphPage')),
         path: networkPath,
     },
+    'policies-cc': {
+        component: asyncComponent(() => import('Containers/Policies/PoliciesPageCC')),
+        path: '/main/policies-cc',
+    },
     'policy-management': {
         component: asyncComponent(() => import('Containers/PolicyManagement/PolicyManagementPage')),
         path: policyManagementBasePath,

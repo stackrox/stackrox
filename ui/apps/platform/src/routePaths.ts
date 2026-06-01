@@ -182,6 +182,7 @@ export type RouteKey =
     | 'listening-endpoints'
     | 'network-graph'
     | 'policy-management'
+    | 'policies-cc'
     | 'risk'
     | 'search'
     | 'system-health'
@@ -314,6 +315,9 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     'network-graph': {
         resourceAccessRequirements: everyResource(nonGlobalResourceNamesForNetworkGraph),
+    },
+    'policies-cc': {
+        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
     'policy-management': {
         // The resources that are optional to view policies might become required to clone/create/edit a policy.
