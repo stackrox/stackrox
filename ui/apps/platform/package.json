@@ -104,10 +104,8 @@
         "redux-thunk": "^2.4.1",
         "reselect": "^4.1.2",
         "store": "^2.0.12",
-        "styled-components": "^5.3.1",
         "tailwind-merge": "^3.6.0",
         "use-deep-compare-effect": "^1.8.1",
-        "victory": "^37.3.6",
         "yaml": "^2.7.1",
         "yup": "^1.6.1"
     },
@@ -185,7 +183,6 @@
         "node-fetch": "^2.6.1",
         "postcss": "^8.4.47",
         "prettier": "^3.8.1",
-        "redux-immutable-state-invariant": "^2.1.0",
         "redux-saga-test-plan": "^3.7.0",
         "style-loader": "^4.0.0",
         "tailwindcss": "^4.3.0",
