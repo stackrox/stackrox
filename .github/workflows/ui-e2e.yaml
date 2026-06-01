@@ -440,7 +440,7 @@ jobs:
   gke-e2e:
     name: "GKE ${{ matrix.name }}"
     needs: [setup-shards, provision-gke]
-    if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke')
+    if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke') || inputs.gke
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
