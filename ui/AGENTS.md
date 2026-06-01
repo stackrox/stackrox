@@ -186,7 +186,11 @@ export function fetchMyResource(id: string): Promise<MyResource> {
 - For new features, ask the developer if they want tests written
 - When writing tests, focus on happy path and critical user flows — avoid over-engineering
 
-**For detailed testing guidance:** See [apps/platform/README.md#testing](./apps/platform/README.md#testing)
+**For detailed testing guidance:**
+
+- [apps/platform/TESTING.md](./apps/platform/TESTING.md) — Shared testing principles and anti-patterns
+- [apps/platform/TESTING_UNIT.md](./apps/platform/TESTING_UNIT.md) — Vitest unit/component test patterns, mocking, examples
+- [apps/platform/TESTING_E2E.md](./apps/platform/TESTING_E2E.md) — Cypress e2e patterns, helpers, selectors, examples
 
 ---
 
