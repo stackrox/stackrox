@@ -49,7 +49,7 @@ function formatCvss(cvss: number): string {
 type SeverityBadgeProps = {
     label: string;
     count: number;
-    color: 'red' | 'orange' | 'blue' | 'gold' | 'grey';
+    color: 'red' | 'orange' | 'blue' | 'yellow' | 'grey';
 };
 
 /**
@@ -74,7 +74,7 @@ function SeverityBreakdown({ component }: { component: ProtoComponentListItem })
         { label: 'C', count: component.criticalCount, color: 'red' },
         { label: 'I', count: component.importantCount, color: 'orange' },
         { label: 'M', count: component.moderateCount, color: 'blue' },
-        { label: 'L', count: component.lowCount, color: 'gold' },
+        { label: 'L', count: component.lowCount, color: 'yellow' },
     ];
 
     const hasBadges = badges.some((b) => b.count > 0);
