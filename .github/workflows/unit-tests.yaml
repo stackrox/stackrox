@@ -151,8 +151,20 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
+    - name: Count test cache entries before tests
+      run: |
+        gocache=$(go env GOCACHE)
+        total=$(find "$gocache" -type f 2>/dev/null | wc -l)
+        # Test result entries are in testcache/ subdirectory
+        testcache=$(find "$gocache/testresults" -type f 2>/dev/null | wc -l || find "$gocache" -name "*.testresult" 2>/dev/null | wc -l || echo "?")
+        echo "gocache_total_files=$total testcache_entries=$testcache"
+
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: |
+        ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/test-output.log | tail -5
+        echo "=== Test cache stats ==="
+        grep -c "(cached)" /tmp/test-output.log || echo "cached=0"
+        wc -l /tmp/test-output.log | awk '{print "total_lines=" $1}'
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
       with:
