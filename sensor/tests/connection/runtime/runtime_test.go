@@ -52,8 +52,10 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 
 	var fakeCollector *collector.FakeCollector
 	if !helper.UseRealCollector.BooleanSetting() {
-		fakeCollector = collector.NewFakeCollector(collector.WithDefaultConfig().WithCertsPath(config.CertFilePath))
-		require.NoError(t, fakeCollector.Start())
+		require.Eventually(t, func() bool {
+			fakeCollector = collector.NewFakeCollector(collector.WithDefaultConfig().WithCertsPath(config.CertFilePath))
+			return fakeCollector.Start() == nil
+		}, 30*time.Second, time.Second, "fake collector failed to connect to sensor gRPC server")
 	}
 
 	c.RunTest(t, helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
