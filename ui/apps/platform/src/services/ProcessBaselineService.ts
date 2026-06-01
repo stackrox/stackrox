@@ -8,6 +8,39 @@ import axios from './instance';
 
 const baseUrl = '/v1/processbaselines'; // RBAC resource: DeploymentExtension
 
+export type ProcessBaselineQuery = {
+    clusterIds?: string[];
+    namespaces?: string[];
+    deploymentIds?: string[];
+    deploymentNames?: string[];
+    images?: string[];
+    containerNames?: string[];
+};
+
+export type GetProcessBaselinesBulkResponse = {
+    baselines: ProcessBaseline[];
+    totalCount: number;
+};
+
+export function fetchProcessBaselinesBulk(
+    query: ProcessBaselineQuery,
+    page: number,
+    perPage: number
+): Promise<GetProcessBaselinesBulkResponse> {
+    return axios
+        .post<GetProcessBaselinesBulkResponse>(`${baseUrl}/bulk/get`, {
+            query,
+            pagination: {
+                offset: (page - 1) * perPage,
+                limit: perPage,
+            },
+        })
+        .then((response) => ({
+            baselines: response.data.baselines ?? [],
+            totalCount: response.data.totalCount ?? 0,
+        }));
+}
+
 /**
  * Fetches container specific excluded scopes by deployment id and container id.
  * GetProcessBaseline
