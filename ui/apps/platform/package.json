@@ -106,6 +106,8 @@
         "store": "^2.0.12",
         "tailwind-merge": "^3.6.0",
         "use-deep-compare-effect": "^1.8.1",
+        "victory": "^37.3.6",
+        "victory-core": "^37.3.6",
         "yaml": "^2.7.1",
         "yup": "^1.6.1"
     },
