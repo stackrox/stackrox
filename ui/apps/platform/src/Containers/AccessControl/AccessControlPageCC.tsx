@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { fetchRolesAsArray } from 'services/RolesService';
+import { fetchPermissionSets, fetchRolesAsArray } from 'services/RolesService';
 import { fetchAuthProviders } from 'services/AuthService/AuthService';
-import { fetchPermissionSets } from 'services/RolesService';
 import { fetchAccessScopes } from 'services/AccessScopesService';
 
 import { CommandCenterLayout } from 'design-system/layout/command-center-layout';
@@ -10,7 +9,15 @@ import { Card, CardHeader, CardTitle, CardContent } from 'design-system/ui/card'
 import { Badge } from 'design-system/ui/badge';
 import { Skeleton } from 'design-system/ui/skeleton';
 
-function StatCard({ title, count, isLoading }: { title: string; count?: number; isLoading: boolean }) {
+function StatCard({
+    title,
+    count,
+    isLoading,
+}: {
+    title: string;
+    count?: number;
+    isLoading: boolean;
+}) {
     return (
         <Card>
             <CardContent className="pt-4">

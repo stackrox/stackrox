@@ -120,7 +120,7 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
             <Chart
                 ariaDesc="Aging images grouped by date of last update"
                 ariaTitle="Aging images"
-                containerComponent={<ChartContainer role="figure" />}
+                containerComponent={<ChartContainer />}
                 domainPadding={{ x: [50, 50] }}
                 height={defaultChartHeight}
                 width={widgetContainerResizeEntry?.contentRect.width} // Victory defaults to 450

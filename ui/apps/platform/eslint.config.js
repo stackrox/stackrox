@@ -936,6 +936,18 @@ module.exports = [
         },
     },
     {
+        // Command-center redesign uses Tailwind + Lucide icons by design
+        files: [
+            'src/design-system/**/*.{ts,tsx}',
+            'src/Containers/**/*CC.tsx',
+            'src/Containers/MainPage/CommandCenterShell.tsx',
+        ],
+        rules: {
+            'limited/no-Tailwind': 'off',
+            'limited/no-feather-icons': 'off',
+        },
+    },
+    {
         files: ['src/**/*.{js,jsx,ts,tsx}'],
         ignores: [
             'src/Components/CheckboxTable.jsx', // deprecated

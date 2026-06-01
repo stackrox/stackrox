@@ -11,7 +11,8 @@ export const solidBlueChartColor = 'var(--pf-t--color--blue--40)';
 export const severityColorScale = Object.values(policySeverityColorMap);
 
 // Clone default PatternFly chart themes
-const defaultTheme = getTheme(ChartThemeColor.multi);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const defaultTheme: any = getTheme(ChartThemeColor.multi);
 
 export const defaultChartHeight = 260;
 

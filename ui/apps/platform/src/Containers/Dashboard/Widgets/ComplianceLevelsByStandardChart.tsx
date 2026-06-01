@@ -45,7 +45,7 @@ function ComplianceLevelsByStandardChart({
             <Chart
                 ariaDesc="Compliance coverage percentages by standard across the selected resource scope"
                 ariaTitle="Compliance coverage by standard"
-                containerComponent={<ChartContainer role="figure" />}
+                containerComponent={<ChartContainer />}
                 domainPadding={{ x: [20, 20] }}
                 height={defaultChartHeight}
                 width={widgetContainerResizeEntry?.contentRect.width}

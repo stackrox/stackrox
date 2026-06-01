@@ -261,7 +261,7 @@ function ViolationsByPolicyCategoryChart({
                     isHidden: (index) => hiddenSeverities.has(severitiesLowToCritical[index]),
                     legendName: 'legend',
                 })}
-                containerComponent={<ChartContainer role="figure" />}
+                containerComponent={<ChartContainer />}
                 legendComponent={
                     <ChartLegend name="legend" data={getLegendData()} events={legendClickEvents} />
                 }
