@@ -45,7 +45,7 @@ function ScanConfigParametersView({
                     <DescriptionListDescription>
                         {scanSchedule
                             ? formatRecurringSchedule(scanSchedule)
-                            : 'Externally managed'}
+                            : 'No schedule'}
                     </DescriptionListDescription>
                 </DescriptionListGroup>
                 {children}
