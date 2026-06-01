@@ -2,9 +2,12 @@ import { useCallback } from 'react';
 import type { ReactElement } from 'react';
 import { useParams } from 'react-router-dom-v5-compat';
 
+import usePageAction from 'hooks/usePageAction';
 import useRestQuery from 'hooks/useRestQuery';
 import { getComplianceScanConfiguration } from 'services/ComplianceScanConfigurationService';
+import EditScanConfigDetail from './EditScanConfigDetail';
 import ViewScanConfigDetail from './ViewScanConfigDetail';
+import type { PageActions } from './compliance.scanConfigs.utils';
 
 type ScanConfigDetailPageProps = {
     hasWriteAccessForCompliance: boolean;
@@ -14,6 +17,7 @@ function ScanConfigDetailPage({
     hasWriteAccessForCompliance,
 }: ScanConfigDetailPageProps): ReactElement {
     const { scanConfigId } = useParams() as { scanConfigId: string };
+    const { pageAction } = usePageAction<PageActions>();
 
     const scanConfigFetcher = useCallback(() => {
         const { request, cancel } = getComplianceScanConfiguration(scanConfigId);
@@ -21,6 +25,10 @@ function ScanConfigDetailPage({
     }, [scanConfigId]);
 
     const { data, isLoading, error } = useRestQuery(scanConfigFetcher);
+
+    if (pageAction === 'edit' && hasWriteAccessForCompliance) {
+        return <EditScanConfigDetail scanConfig={data} isLoading={isLoading} error={error} />;
+    }
 
     return (
         <ViewScanConfigDetail

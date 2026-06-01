@@ -1,9 +1,13 @@
 import type { ReactElement } from 'react';
+import { generatePath, useNavigate } from 'react-router-dom-v5-compat';
 import { ActionsColumn } from '@patternfly/react-table';
 
 import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 
+import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
+
 export type ScanConfigActionsColumnProps = {
+    handleDeleteScanConfig: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     handleRunScanConfig: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     handleSendReport: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     handleGenerateDownload: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
@@ -12,16 +16,47 @@ export type ScanConfigActionsColumnProps = {
 };
 
 function ScanConfigActionsColumn({
+    handleDeleteScanConfig,
     handleRunScanConfig,
     handleSendReport,
     handleGenerateDownload,
     scanConfigResponse,
     isSnapshotStatusPending,
 }: ScanConfigActionsColumnProps): ReactElement {
-    const { scanConfig } = scanConfigResponse;
+    const navigate = useNavigate();
+
+    const { id, scanConfig, modifiedBy } = scanConfigResponse;
     const { notifiers } = scanConfig;
+    const isDiscovered = !modifiedBy?.id;
+    const scanConfigUrl = generatePath(scanConfigDetailsPath, {
+        scanConfigId: id,
+    });
 
     const items = [
+        ...(isDiscovered
+            ? [
+                  {
+                      title: 'Edit notifications',
+                      onClick: (event) => {
+                          event.preventDefault();
+                          navigate(`${scanConfigUrl}?action=edit`);
+                      },
+                      isDisabled: isSnapshotStatusPending,
+                  },
+              ]
+            : [
+                  {
+                      title: 'Edit scan schedule',
+                      onClick: (event) => {
+                          event.preventDefault();
+                          navigate(`${scanConfigUrl}?action=edit`);
+                      },
+                      isDisabled: isSnapshotStatusPending,
+                  },
+              ]),
+        {
+            isSeparator: true,
+        },
         {
             title: 'Run scan',
             onClick: (event) => {
@@ -29,9 +64,6 @@ function ScanConfigActionsColumn({
                 handleRunScanConfig(scanConfigResponse);
             },
             isDisabled: isSnapshotStatusPending,
-        },
-        {
-            isSeparator: true,
         },
         {
             title: 'Send report',
@@ -51,6 +83,25 @@ function ScanConfigActionsColumn({
             },
             isDisabled: isSnapshotStatusPending,
         },
+        ...(!isDiscovered
+            ? [
+                  {
+                      isSeparator: true,
+                  },
+                  {
+                      title: (
+                          <span className="pf-v6-u-text-color-status-danger">
+                              Delete scan schedule
+                          </span>
+                      ),
+                      onClick: (event) => {
+                          event.preventDefault();
+                          handleDeleteScanConfig(scanConfigResponse);
+                      },
+                      isDisabled: isSnapshotStatusPending,
+                  },
+              ]
+            : []),
     ];
 
     return <ActionsColumn items={items} />;

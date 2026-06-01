@@ -1,8 +1,11 @@
 import type { ReactElement } from 'react';
 import { Divider, DropdownItem } from '@patternfly/react-core';
+import { generatePath, useNavigate } from 'react-router-dom-v5-compat';
 
 import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
+
+import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 
 export type ScanConfigActionDropdownProps = {
     handleRunScanConfig: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
@@ -21,8 +24,14 @@ function ScanConfigActionDropdown({
     isReportStatusPending,
     scanConfigResponse,
 }: ScanConfigActionDropdownProps): ReactElement {
-    const { scanConfig } = scanConfigResponse;
+    const navigate = useNavigate();
+
+    const { id, scanConfig, modifiedBy } = scanConfigResponse;
     const { notifiers } = scanConfig;
+    const isDiscovered = !modifiedBy?.id;
+    const scanConfigUrl = generatePath(scanConfigDetailsPath, {
+        scanConfigId: id,
+    });
     const isProcessing = isScanning || isReportStatusPending;
 
     return (
@@ -33,6 +42,16 @@ function ScanConfigActionDropdown({
             }}
         >
             <DropdownItem
+                key="Edit scan schedule"
+                isDisabled={isProcessing}
+                onClick={() => {
+                    navigate(`${scanConfigUrl}?action=edit`);
+                }}
+            >
+                {isDiscovered ? 'Edit notifications' : 'Edit scan schedule'}
+            </DropdownItem>
+            <Divider component="li" key="separator" />
+            <DropdownItem
                 key="Run scan"
                 description={isScanning ? 'Run is disabled while scan is already running' : ''}
                 isDisabled={isProcessing}
@@ -42,7 +61,6 @@ function ScanConfigActionDropdown({
             >
                 Run scan
             </DropdownItem>
-            <Divider component="li" key="separator" />
             <DropdownItem
                 key="Send report"
                 description={

@@ -1,13 +1,19 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Link, generatePath } from 'react-router-dom-v5-compat';
+import pluralize from 'pluralize';
 
 import {
     Alert,
     AlertActionCloseButton,
+    AlertGroup,
     Bullseye,
+    Button,
     Content,
     Flex,
+    FlexItem,
+    List,
+    ListItem,
     PageSection,
     Pagination,
     Spinner,
@@ -19,6 +25,8 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { OutlinedClockIcon } from '@patternfly/react-icons';
 
+import { complianceEnhancedSchedulesPath } from 'routePaths';
+import DeleteModal from 'Components/PatternFly/DeleteModal';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import PageTitle from 'Components/PageTitle';
 import useAlert from 'hooks/useAlert';
@@ -27,6 +35,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import {
     complianceReportDownloadURL,
+    deleteComplianceScanConfiguration,
     listComplianceScanConfigurations,
     runComplianceReport,
     runComplianceScanConfiguration,
@@ -43,16 +52,21 @@ import MyLastJobStatus from 'Components/ReportJob/MyLastJobStatus';
 import useAuthStatus from 'hooks/useAuthStatus';
 import useAnalytics from 'hooks/useAnalytics';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE, SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
-import {
-    scanConfigDetailsPath,
-    discoveredScanConfigDetailsPath,
-} from './compliance.scanConfigs.routes';
+import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import { getTimeWithHourMinuteFromISO8601 } from './compliance.scanConfigs.utils';
 import ScanConfigActionsColumn from './ScanConfigActionsColumn';
 import useWatchLastSnapshotForComplianceReports from './hooks/useWatchLastSnapshotForComplianceReports';
 
 type ScanConfigsTablePageProps = {
     hasWriteAccessForCompliance: boolean;
+};
+
+const CreateScanConfigButton = () => {
+    return (
+        <Link to={`${complianceEnhancedSchedulesPath}?action=create`}>
+            <Button variant="primary">Create scan schedule</Button>
+        </Link>
+    );
 };
 
 const sortFields = [SCAN_CONFIG_NAME_QUERY];
@@ -66,6 +80,12 @@ function ScanConfigsTablePage({
 }: ScanConfigsTablePageProps): ReactElement {
     const { currentUser } = useAuthStatus();
     const { analyticsTrack } = useAnalytics();
+
+    const [scanConfigsToDelete, setScanConfigsToDelete] = useState<
+        ComplianceScanConfigurationStatus[]
+    >([]);
+    const [scanConfigDeletionErrors, setScanConfigDeletionErrors] = useState<Error[]>([]);
+    const [isDeletingScanConfigs, setIsDeletingScanConfigs] = useState(false);
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
@@ -84,7 +104,49 @@ function ScanConfigsTablePage({
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
 
-    const colSpan = hasWriteAccessForCompliance ? 7 : 6;
+    let colSpan = 6;
+    if (hasWriteAccessForCompliance) {
+        colSpan += 1;
+    }
+
+    function openDeleteModal(scanConfigs) {
+        setScanConfigsToDelete(scanConfigs);
+    }
+
+    function closeDeleteScanConfigModal() {
+        setScanConfigDeletionErrors([]);
+        setScanConfigsToDelete([]);
+    }
+
+    function onDeleteScanConfig() {
+        const deletePromises = scanConfigsToDelete.map((scanConfig) =>
+            deleteComplianceScanConfiguration(scanConfig.id)
+        );
+
+        setScanConfigDeletionErrors([]);
+        setIsDeletingScanConfigs(true);
+        Promise.all(deletePromises)
+            .then(() => {
+                setScanConfigsToDelete([]);
+                refetch();
+            })
+            .catch((errorResult) => {
+                if (Array.isArray(errorResult)) {
+                    errorResult.forEach((error) => {
+                        setScanConfigDeletionErrors((prev) => [...prev, error as Error]);
+                    });
+                } else {
+                    setScanConfigDeletionErrors([errorResult]);
+                }
+            })
+            .finally(() => {
+                setIsDeletingScanConfigs(false);
+            });
+    }
+
+    function handleDeleteScanConfig(scanConfigResponse: ComplianceScanConfigurationStatus) {
+        openDeleteModal([scanConfigResponse]);
+    }
 
     function handleRunScanConfig(scanConfigResponse: ComplianceScanConfigurationStatus) {
         clearAlertObj();
@@ -152,21 +214,16 @@ function ScanConfigsTablePage({
     const renderTableContent = () => {
         return listData?.configurations?.map((scanSchedule) => {
             const { id, scanName, scanConfig, lastExecutedTime, clusterStatus } = scanSchedule;
-
-            const scanConfigUrl = id
-                ? generatePath(scanConfigDetailsPath, { scanConfigId: id })
-                : generatePath(discoveredScanConfigDetailsPath, {
-                      scanConfigName: encodeURIComponent(scanName),
-                  });
-
-            const rowKey = id || `discovered-${scanName}`;
-            const snapshot = id ? complianceReportSnapshots[id] : undefined;
+            const scanConfigUrl = generatePath(scanConfigDetailsPath, {
+                scanConfigId: id,
+            });
+            const snapshot = complianceReportSnapshots[id];
             const isSnapshotStatusPending =
                 snapshot?.reportStatus?.runState === 'PREPARING' ||
                 snapshot?.reportStatus?.runState === 'WAITING';
 
             return (
-                <Tr key={rowKey}>
+                <Tr key={id}>
                     <Td dataLabel="Name">
                         <Link to={scanConfigUrl}>{scanName}</Link>
                     </Td>
@@ -200,6 +257,7 @@ function ScanConfigsTablePage({
                     {hasWriteAccessForCompliance && (
                         <Td isActionCell>
                             <ScanConfigActionsColumn
+                                handleDeleteScanConfig={handleDeleteScanConfig}
                                 handleRunScanConfig={handleRunScanConfig}
                                 handleSendReport={handleSendReport}
                                 handleGenerateDownload={handleGenerateDownload}
@@ -231,7 +289,18 @@ function ScanConfigsTablePage({
                         title="No scan schedules"
                         headingLevel="h2"
                         icon={OutlinedClockIcon}
-                    />
+                    >
+                        {hasWriteAccessForCompliance && (
+                            <Flex direction={{ default: 'column' }}>
+                                <FlexItem>
+                                    <Content component="p">Create one to get started</Content>
+                                </FlexItem>
+                                <FlexItem>
+                                    <CreateScanConfigButton />
+                                </FlexItem>
+                            </Flex>
+                        )}
+                    </EmptyStateTemplate>
                 </Bullseye>
             </Td>
         </Tr>
@@ -251,11 +320,19 @@ function ScanConfigsTablePage({
         <>
             <PageTitle title="Compliance - Schedules" />
             <PageSection>
-                <Flex direction={{ default: 'column' }}>
-                    <Title headingLevel="h1">Schedules</Title>
-                    <Content component="p">
-                        View scan schedules running profile compliance checks on secured clusters
-                    </Content>
+                <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsCenter' }}>
+                    <Flex direction={{ default: 'column' }}>
+                        <Title headingLevel="h1">Schedules</Title>
+                        <Content component="p">
+                            Configure scan schedules to run profile compliance checks on selected
+                            clusters
+                        </Content>
+                    </Flex>
+                    {hasWriteAccessForCompliance && (
+                        <FlexItem align={{ default: 'alignRight' }}>
+                            <CreateScanConfigButton />
+                        </FlexItem>
+                    )}
                 </Flex>
             </PageSection>
             {error ? (
@@ -325,6 +402,48 @@ function ScanConfigsTablePage({
                         </Thead>
                         <Tbody>{renderTableBodyContent()}</Tbody>
                     </Table>
+                    <DeleteModal
+                        title={`Permanently delete scan (${scanConfigsToDelete.length}) ${pluralize(
+                            'schedule',
+                            scanConfigsToDelete.length
+                        )}?`}
+                        isOpen={scanConfigsToDelete.length > 0}
+                        onClose={closeDeleteScanConfigModal}
+                        isDeleting={isDeletingScanConfigs}
+                        onDelete={onDeleteScanConfig}
+                    >
+                        {scanConfigDeletionErrors.length > 0 ? (
+                            <AlertGroup>
+                                {scanConfigDeletionErrors.map((deleteError) => {
+                                    return (
+                                        <Alert
+                                            isInline
+                                            variant="danger"
+                                            title="Failed to delete"
+                                            component="p"
+                                            className="pf-v6-u-mb-sm"
+                                        >
+                                            {deleteError.toString()}
+                                        </Alert>
+                                    );
+                                })}
+                            </AlertGroup>
+                        ) : (
+                            <></>
+                        )}
+                        <Content>
+                            <Content component="p">
+                                The following scan{' '}
+                                {`${pluralize('schedule', scanConfigsToDelete.length)}`} will be
+                                deleted.
+                            </Content>
+                            <List>
+                                {scanConfigsToDelete.map((scanConfig) => (
+                                    <ListItem key={scanConfig.id}>{scanConfig.scanName}</ListItem>
+                                ))}
+                            </List>
+                        </Content>
+                    </DeleteModal>
                 </PageSection>
             )}
         </>
