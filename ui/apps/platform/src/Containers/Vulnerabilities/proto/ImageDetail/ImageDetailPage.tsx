@@ -230,7 +230,7 @@ function ImageDetailPage() {
                 <Breadcrumb>
                     <BreadcrumbItem>
                         <Link to={vulnerabilitiesPrototypePath}>
-                            CVE Prototype
+                            Vuln Management V5
                         </Link>
                     </BreadcrumbItem>
                     <BreadcrumbItem isActive>{headerName}</BreadcrumbItem>
