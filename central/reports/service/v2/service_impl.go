@@ -185,7 +185,7 @@ func (s *serviceImpl) ListReportConfigurations(ctx context.Context, query *apiV2
 	// This scenario can happen after downgrade from a future release(4.11 and above) with more resource scope to 4.10.
 	filteredQ = search.ConjunctionQuery(
 		filteredQ,
-		search.NewQueryBuilder().AddExactMatches(search.CollectionID, "").ProtoQuery())
+		search.NewQueryBuilder().AddStrings(search.CollectionID, search.NegateQueryString(search.ExactMatchString(""))).ProtoQuery())
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(filteredQ, query.GetPagination(), maxPaginationLimit)
