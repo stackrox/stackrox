@@ -271,7 +271,8 @@ func (s *scanWatcherImpl) run() {
 		select {
 		case <-s.ctx.Done():
 			concurrency.WithLock(&s.resultsLock, func() {
-				log.Infof("Stopping scan watcher for scan %s", s.scanResults.Scan.GetScanName())
+				log.Infof("Stopping scan watcher for scan %s. Received %d/%d check results (watcher id: %s, error: %v)",
+					s.scanResults.Scan.GetScanName(), len(s.scanResults.CheckResults), s.totalChecks, s.scanResults.WatcherID, s.scanResults.Error)
 				if s.scanResults.Error == nil {
 					s.scanResults.Error = ErrScanContextCancelled
 				}
@@ -281,7 +282,8 @@ func (s *scanWatcherImpl) run() {
 			return
 		case <-s.timeout.C():
 			concurrency.WithLock(&s.resultsLock, func() {
-				log.Warnf("Timeout waiting for the scan %s to finish", s.scanResults.Scan.GetScanName())
+				log.Warnf("Timeout waiting for the scan %s to finish. Received %d/%d check results (watcher id: %s)",
+					s.scanResults.Scan.GetScanName(), len(s.scanResults.CheckResults), s.totalChecks, s.scanResults.WatcherID)
 				s.scanResults.Error = ErrScanTimeout
 			})
 			watcherFinishType.WithLabelValues(s.scanResults.Scan.GetScanName(), "timeout").Inc()

@@ -42,6 +42,11 @@ func DeleteOldResultsFromMissingScans(ctx context.Context, results *ScanConfigWa
 	for _, scanResults := range results.ScanResults {
 		scans.Remove(fmt.Sprintf("%s:%s", scanResults.Scan.GetClusterId(), scanResults.Scan.GetId()))
 	}
+	if scans.Cardinality() == 0 {
+		return nil
+	}
+	log.Infof("Deleting old check results from %d scans that did not report results for scan config %s (missing: %v)",
+		scans.Cardinality(), results.ScanConfig.GetScanConfigName(), scans.AsSlice())
 	errList := errorhelpers.NewErrorList("delete old CheckResults from missing scans")
 	for scanWatcherID := range scans {
 		parts := strings.Split(scanWatcherID, ":")
@@ -58,6 +63,8 @@ func DeleteOldResultsFromMissingScans(ctx context.Context, results *ScanConfigWa
 			errList.AddError(errors.Errorf("unable to find Scan with ID %q", parts[1]))
 			continue
 		}
+		log.Infof("Deleting all check results for missing scan %s (scanRefId: %s, cluster: %s)",
+			scan.GetScanName(), scan.GetScanRefId(), parts[0])
 		if err := resultsDataStore.DeleteOldResults(ctx, scan.GetLastStartedTime(), scan.GetScanRefId(), true); err != nil {
 			errList.AddError(err)
 		}
@@ -189,15 +196,17 @@ func (w *scanConfigWatcherImpl) run(timer Timer) {
 	for {
 		select {
 		case <-w.ctx.Done():
-			log.Infof("Stopping scan config watcher")
 			concurrency.WithLock(&w.resultsLock, func() {
+				log.Infof("Stopping scan config watcher for %s. Received %d/%d scan results (watcher id: %s)",
+					w.scanConfigResults.ScanConfig.GetScanConfigName(), len(w.scanConfigResults.ScanResults), w.totalResults, w.scanConfigResults.WatcherID)
 				w.scanConfigResults.Error = ErrScanConfigContextCancelled
 				w.readyQueue.Push(w.scanConfigResults)
 			})
 			return
 		case <-timer.C():
 			concurrency.WithLock(&w.resultsLock, func() {
-				log.Warnf("Timeout waiting for the ScanConfiguration %s's scans to finish", w.scanConfigResults.ScanConfig.GetScanConfigName())
+				log.Warnf("Timeout waiting for the ScanConfiguration %s's scans to finish. Received %d/%d scan results (watcher id: %s, pending: %v)",
+					w.scanConfigResults.ScanConfig.GetScanConfigName(), len(w.scanConfigResults.ScanResults), w.totalResults, w.scanConfigResults.WatcherID, w.scansToWait.AsSlice())
 				w.scanConfigResults.Error = ErrScanConfigTimeout
 				w.readyQueue.Push(w.scanConfigResults)
 			})
