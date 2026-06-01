@@ -351,17 +351,19 @@ func buildCVEDetailResponse(ctx context.Context, ds datastore.DataStore, cveName
 			maxCVSS = f.GetCvss()
 		}
 
-		// Advisory (dedup by advisory ID)
-		advisoryID := f.GetAdvisoryId()
-		if advisoryID != "" && advisoryMap[advisoryID] == nil {
-			advisoryMap[advisoryID] = &AdvisoryInfo{
-				ID:          advisoryID,
-				Severity:    int32(f.GetSeverity()),
-				CVSS:        f.GetCvss(),
-				SourceName:  f.GetSourceName(),
-				Description: f.GetDescription(),
-				Link:        advisoryLink(advisoryID),
-				FixedBy:     f.GetFixedBy(),
+		// Advisory (dedup by advisory ID) - parse from JSONB
+		advisories := types.ParseAdvisories(f.GetAdvisories())
+		for _, adv := range advisories {
+			if adv.ID != "" && advisoryMap[adv.ID] == nil {
+				advisoryMap[adv.ID] = &AdvisoryInfo{
+					ID:          adv.ID,
+					Severity:    int32(f.GetSeverity()),
+					CVSS:        f.GetCvss(),
+					SourceName:  adv.Source,
+					Description: f.GetDescription(),
+					Link:        advisoryLink(adv.ID),
+					FixedBy:     f.GetFixedBy(),
+				}
 			}
 		}
 
@@ -405,10 +407,12 @@ func buildCVEDetailResponse(ctx context.Context, ds datastore.DataStore, cveName
 		}
 		// Per-image components: dedup by name+version, collect advisory IDs.
 		imgCompKey := fmt.Sprintf("%s|%s", fc.ComponentName, fc.ComponentVersion)
+		advisoryIDs := types.GetAllAdvisoryIDs(f.GetAdvisories())
+
 		if idx, seen := imageCompIdx[imageID][imgCompKey]; seen {
-			// Component already tracked — just append advisory ID.
+			// Component already tracked — append advisory IDs.
 			imageMap[imageID].Components[idx].Advisories = append(
-				imageMap[imageID].Components[idx].Advisories, f.GetAdvisoryId())
+				imageMap[imageID].Components[idx].Advisories, advisoryIDs...)
 		} else {
 			// New component for this image.
 			imageCompIdx[imageID][imgCompKey] = len(imageMap[imageID].Components)
@@ -418,7 +422,7 @@ func buildCVEDetailResponse(ctx context.Context, ds datastore.DataStore, cveName
 				Version:    fc.ComponentVersion,
 				Source:     compSource,
 				FixedBy:    f.GetFixedBy(),
-				Advisories: []string{f.GetAdvisoryId()},
+				Advisories: advisoryIDs,
 			})
 		}
 	}
@@ -538,12 +542,14 @@ func (h *handler) getImageDetail(w http.ResponseWriter, r *http.Request) {
 func buildImageDetailResponse(imageID, imageName string, scanData *types.ScanData, findings []*types.FindingWithComponent) *ImageDetailResponse {
 	scan := scanData.Scan
 
-	// Collect data sources.
+	// Collect data sources from advisories JSONB.
 	dataSourceSet := make(map[string]struct{})
 	for _, fc := range findings {
-		src := fc.Finding.GetSourceName()
-		if src != "" {
-			dataSourceSet[src] = struct{}{}
+		advisories := types.ParseAdvisories(fc.Finding.GetAdvisories())
+		for _, adv := range advisories {
+			if adv.Source != "" {
+				dataSourceSet[adv.Source] = struct{}{}
+			}
 		}
 	}
 	dataSources := make([]string, 0, len(dataSourceSet))
@@ -597,11 +603,11 @@ func buildImageDetailResponse(imageID, imageName string, scanData *types.ScanDat
 			allCVEs[cveName] = int32(f.GetSeverity())
 		}
 
+		advisoryIDs := types.GetAllAdvisoryIDs(f.GetAdvisories())
+
 		if existing, ok := compCVEs[ck][cveName]; ok {
-			// Same CVE, different advisory — append advisory ID.
-			if aid := f.GetAdvisoryId(); aid != "" {
-				existing.advisories = append(existing.advisories, aid)
-			}
+			// Same CVE, different advisory — append advisory IDs.
+			existing.advisories = append(existing.advisories, advisoryIDs...)
 			if f.GetCvss() > existing.cvss {
 				existing.cvss = f.GetCvss()
 			}
@@ -612,15 +618,11 @@ func buildImageDetailResponse(imageID, imageName string, scanData *types.ScanDat
 				existing.fixedBy = f.GetFixedBy()
 			}
 		} else {
-			var advisories []string
-			if aid := f.GetAdvisoryId(); aid != "" {
-				advisories = []string{aid}
-			}
 			compCVEs[ck][cveName] = &cveAccum{
 				severity:   int32(f.GetSeverity()),
 				cvss:       f.GetCvss(),
 				fixedBy:    f.GetFixedBy(),
-				advisories: advisories,
+				advisories: advisoryIDs,
 			}
 		}
 	}
@@ -741,7 +743,7 @@ func (h *handler) getImageFindings(w http.ResponseWriter, r *http.Request) {
 			ComponentName:    comp.GetName(),
 			ComponentVersion: comp.GetVersion(),
 			ComponentSource:  comp.GetSource().String(),
-			SourceName:       f.GetSourceName(),
+			SourceName:       types.GetPrimarySourceName(f.GetAdvisories()),
 		})
 	}
 

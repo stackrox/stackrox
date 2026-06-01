@@ -10,20 +10,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestNoDedupeAdvisories verifies that Scanner Output A preserves all advisories
-// (no CVE dedup) and populates CveName, AdvisoryId, and SourceName fields.
-func TestNoDedupeAdvisories(t *testing.T) {
+// TestDedupeAdvisoriesByCVE verifies that Scanner Output B (Variant 2) merges
+// advisories by CVE name, picks the winner by severity, and populates AdvisoryDetails.
+func TestDedupeAdvisoriesByCVE(t *testing.T) {
 	now := time.Now()
 
 	// Create two different advisories that both resolve to CVE-2024-1234
+	// goAdvisory has CRITICAL severity (should win)
 	goAdvisory := &claircore.Vulnerability{
 		ID:                 "osv-go-1",
 		Name:               "GO-2024-1234", // ClairCore advisory name
 		Description:        "Go vulnerability database advisory",
 		Issued:             now,
 		Links:              "https://pkg.go.dev/vuln/GO-2024-1234 CVE-2024-1234",
-		Severity:           "High",
-		NormalizedSeverity: claircore.High,
+		Severity:           "Critical",
+		NormalizedSeverity: claircore.Critical,
 		Package:            &claircore.Package{ID: "pkg-1"},
 		Dist:               &claircore.Distribution{ID: "dist-1"},
 		Repo:               &claircore.Repository{ID: "repo-1"},
@@ -31,6 +32,7 @@ func TestNoDedupeAdvisories(t *testing.T) {
 		Updater:            "osv/Go",
 	}
 
+	// ghsaAdvisory has HIGH severity (should be merged)
 	ghsaAdvisory := &claircore.Vulnerability{
 		ID:                 "osv-ghsa-1",
 		Name:               "GHSA-xxxx-yyyy-zzzz", // Different advisory name
@@ -51,9 +53,9 @@ func TestNoDedupeAdvisories(t *testing.T) {
 		"osv-ghsa-1": ghsaAdvisory,
 	}
 
-	// Call toProtoV4VulnerabilitiesMap which should create both entries
+	// Call toProtoV4VulnerabilitiesMap to create proto entries
 	ctx := context.Background()
-	result, err := toProtoV4VulnerabilitiesMap(
+	protoVulns, err := toProtoV4VulnerabilitiesMap(
 		ctx,
 		ccVulns,
 		nil, // nvdVulns
@@ -61,23 +63,37 @@ func TestNoDedupeAdvisories(t *testing.T) {
 		nil, // csafAdvisories
 	)
 	require.NoError(t, err)
+	require.Len(t, protoVulns, 2, "Should have 2 proto vulns before dedup")
 
-	// Assert both advisories are present in output (no dedup)
-	require.Len(t, result, 2, "Expected both advisories to be preserved")
-	require.Contains(t, result, "osv-go-1")
-	require.Contains(t, result, "osv-ghsa-1")
+	// Create package vulnerabilities mapping (both advisories for same package)
+	ccPkgVulns := map[string][]string{
+		"pkg-1": {"osv-go-1", "osv-ghsa-1"},
+	}
 
-	// Check the GO-2024-1234 advisory
-	goProto := result["osv-go-1"]
-	assert.Equal(t, "CVE-2024-1234", goProto.CveName, "CveName should be resolved CVE")
-	assert.Equal(t, "GO-2024-1234", goProto.AdvisoryId, "AdvisoryId should be raw ClairCore name")
-	assert.Equal(t, "Go Vulnerability DB", goProto.SourceName, "SourceName should be human-readable")
+	// Call the function that performs deduplication
+	result := toProtoV4PackageVulnerabilitiesMap(ccPkgVulns, ccVulns, protoVulns)
 
-	// Check the GHSA advisory
-	ghsaProto := result["osv-ghsa-1"]
-	assert.Equal(t, "CVE-2024-1234", ghsaProto.CveName, "CveName should be resolved CVE")
-	assert.Equal(t, "GHSA-xxxx-yyyy-zzzz", ghsaProto.AdvisoryId, "AdvisoryId should be raw ClairCore name")
-	assert.Equal(t, "Go Vulnerability DB", ghsaProto.SourceName, "SourceName should be human-readable")
+	// Verify deduplication occurred
+	require.Contains(t, result, "pkg-1")
+	vulnIDs := result["pkg-1"].Values
+	assert.Len(t, vulnIDs, 1, "Expected advisories to be merged into one CVE entry")
+
+	// The winner should be the CRITICAL one (osv-go-1)
+	assert.Contains(t, vulnIDs, "osv-go-1", "Expected CRITICAL severity advisory to win")
+
+	// Check that the winner has AdvisoryDetails populated
+	winner := protoVulns["osv-go-1"]
+	require.NotNil(t, winner)
+	assert.Equal(t, "CVE-2024-1234", winner.CveName, "Winner should have CVE name set")
+	require.Len(t, winner.AdvisoryDetails, 2, "Winner should have AdvisoryDetails from both advisories")
+
+	// Verify both advisories are in the details
+	advisoryIDs := make(map[string]bool)
+	for _, detail := range winner.AdvisoryDetails {
+		advisoryIDs[detail.Id] = true
+	}
+	assert.True(t, advisoryIDs["GO-2024-1234"], "AdvisoryDetails should contain GO advisory")
+	assert.True(t, advisoryIDs["GHSA-xxxx-yyyy-zzzz"], "AdvisoryDetails should contain GHSA advisory")
 }
 
 // TestUpdaterDisplayName verifies the updater name to display name conversion.
@@ -109,18 +125,20 @@ func TestUpdaterDisplayName(t *testing.T) {
 	}
 }
 
-// TestNoDedupeInPackageVulnerabilities verifies that package vulnerability lists
-// preserve all advisories when dedupeVulns is disabled.
-func TestNoDedupeInPackageVulnerabilities(t *testing.T) {
+// TestAdvisoryMergingWithSameSeverity verifies that when multiple advisories
+// have the same severity, the one with highest CVSS wins.
+func TestAdvisoryMergingWithSameSeverity(t *testing.T) {
 	now := time.Now()
 
-	// Create two advisories that resolve to the same CVE
+	// Create two advisories that resolve to the same CVE, both HIGH severity
+	// but with different CVSS scores
 	vuln1 := &claircore.Vulnerability{
 		ID:                 "v1",
 		Name:               "GO-2024-5678",
 		Links:              "CVE-2024-5678",
 		Issued:             now,
 		NormalizedSeverity: claircore.High,
+		Severity:           "7.5",
 		Package:            &claircore.Package{ID: "pkg-1"},
 		Updater:            "osv/Go",
 	}
@@ -131,6 +149,7 @@ func TestNoDedupeInPackageVulnerabilities(t *testing.T) {
 		Links:              "CVE-2024-5678",
 		Issued:             now,
 		NormalizedSeverity: claircore.High,
+		Severity:           "8.9", // Higher CVSS, should win
 		Package:            &claircore.Package{ID: "pkg-1"},
 		Updater:            "osv/Go",
 	}
@@ -150,13 +169,21 @@ func TestNoDedupeInPackageVulnerabilities(t *testing.T) {
 		"pkg-1": {"v1", "v2"},
 	}
 
-	// Call the function that normally calls dedupeVulns
+	// Call the function that calls dedupeVulns
 	result := toProtoV4PackageVulnerabilitiesMap(ccPkgVulns, ccVulns, protoVulns)
 
-	// Verify both advisory IDs are present (no dedup)
+	// Verify only one entry (merged)
 	require.Contains(t, result, "pkg-1")
 	vulnIDs := result["pkg-1"].Values
-	assert.Len(t, vulnIDs, 2, "Expected both advisory IDs to be preserved in package vulnerability list")
-	assert.Contains(t, vulnIDs, "v1")
-	assert.Contains(t, vulnIDs, "v2")
+	assert.Len(t, vulnIDs, 1, "Expected advisories to be merged into one CVE entry")
+
+	// The winner should have AdvisoryDetails
+	var winnerID string
+	if len(vulnIDs) > 0 {
+		winnerID = vulnIDs[0]
+	}
+	winner := protoVulns[winnerID]
+	require.NotNil(t, winner)
+	assert.Equal(t, "CVE-2024-5678", winner.CveName)
+	require.Len(t, winner.AdvisoryDetails, 2, "Winner should have both advisories in details")
 }

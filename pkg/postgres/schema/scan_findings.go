@@ -49,7 +49,6 @@ const (
 // ScanFindings holds the Gorm model for Postgres table `scan_findings`.
 type ScanFindings struct {
 	ID                    string                        `gorm:"column:id;type:varchar;primaryKey"`
-	AdvisoryID            string                        `gorm:"column:advisoryid;type:varchar;index:scanfindings_advisoryid,type:btree"`
 	CveName               string                        `gorm:"column:cvename;type:varchar;index:scanfindings_cvename,type:btree"`
 	ComponentID           string                        `gorm:"column:componentid;type:varchar;index:scanfindings_componentid,type:btree"`
 	ScanID                string                        `gorm:"column:scanid;type:varchar"`
@@ -67,10 +66,10 @@ type ScanFindings struct {
 	Description           string                        `gorm:"column:description;type:varchar"`
 	PublishedDate         *time.Time                    `gorm:"column:publisheddate;type:timestamp"`
 	DataSource            string                        `gorm:"column:datasource;type:varchar"`
-	SourceName            string                        `gorm:"column:sourcename;type:varchar"`
 	State                 storage.VulnerabilityState    `gorm:"column:state;type:integer;index:scanfindings_state,type:btree"`
 	FirstImageOccurrence  *time.Time                    `gorm:"column:firstimageoccurrence;type:timestamp"`
 	FirstSystemOccurrence *time.Time                    `gorm:"column:firstsystemoccurrence;type:timestamp"`
+	Advisories            string                        `gorm:"column:advisories;type:jsonb"`
 	Serialized            []byte                        `gorm:"column:serialized;type:bytea"`
 	ScanComponentsRef     ScanComponents                `gorm:"foreignKey:componentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImageScanV2Ref        ImageScanV2                   `gorm:"foreignKey:scanid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

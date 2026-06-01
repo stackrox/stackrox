@@ -2,6 +2,7 @@ package ingestion
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -157,9 +158,16 @@ func convertVulnerabilities(scanID, imageID, componentID string, allVulns map[st
 			cveName = ccVuln.GetName()
 		}
 
+		// Build advisories JSON from advisory_details on v4 proto
+		advisoriesJSON := buildAdvisoriesJSON(ccVuln)
+
+		// Use first advisory ID as the finding ID key (for deduplication)
 		advisoryID := ccVuln.GetAdvisoryId()
+		if advisoryID == "" && len(ccVuln.GetAdvisoryDetails()) > 0 {
+			advisoryID = ccVuln.GetAdvisoryDetails()[0].GetId()
+		}
 		if advisoryID == "" {
-			// Fallback: use vuln ID if no advisory ID
+			// Final fallback: use vuln ID
 			advisoryID = vulnID
 		}
 
@@ -167,7 +175,6 @@ func convertVulnerabilities(scanID, imageID, componentID string, allVulns map[st
 
 		finding := &storage.ScanFinding{
 			Id:            findingID,
-			AdvisoryId:    advisoryID,
 			CveName:       cveName,
 			ComponentId:   componentID,
 			ScanId:        scanID,
@@ -177,7 +184,7 @@ func convertVulnerabilities(scanID, imageID, componentID string, allVulns map[st
 			PublishedDate: ccVuln.GetIssued(),
 			FixedDate:     ccVuln.GetFixedDate(),
 			DataSource:    vulnDataSource(ccVuln, envOS),
-			SourceName:    ccVuln.GetSourceName(),
+			Advisories:    advisoriesJSON,
 			State:         storage.VulnerabilityState_OBSERVED,
 		}
 
@@ -430,6 +437,64 @@ func cvssv3SeverityFromScore(score float32) storage.VulnerabilitySeverity {
 	default:
 		return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
 	}
+}
+
+func buildAdvisoriesJSON(ccVuln *v4.VulnerabilityReport_Vulnerability) string {
+	advisoryDetails := ccVuln.GetAdvisoryDetails()
+
+	// If no advisory_details, create a single entry from legacy fields
+	if len(advisoryDetails) == 0 {
+		advisoryID := ccVuln.GetAdvisoryId()
+		sourceName := ccVuln.GetSourceName()
+		if advisoryID == "" && sourceName == "" {
+			return "[]"
+		}
+
+		// Get max CVSS from metrics
+		var maxCVSS float32
+		for _, metric := range ccVuln.GetCvssMetrics() {
+			if v3 := metric.GetV3(); v3 != nil && v3.GetBaseScore() > maxCVSS {
+				maxCVSS = v3.GetBaseScore()
+			}
+			if v2 := metric.GetV2(); v2 != nil && v2.GetBaseScore() > maxCVSS {
+				maxCVSS = v2.GetBaseScore()
+			}
+		}
+
+		adv := types.AdvisoryJSON{
+			ID:       advisoryID,
+			Severity: ccVuln.GetNormalizedSeverity().String(),
+			CVSS:     maxCVSS,
+			Source:   sourceName,
+		}
+		b, _ := json.Marshal([]types.AdvisoryJSON{adv})
+		return string(b)
+	}
+
+	// Convert advisory_details to JSON
+	advisories := make([]types.AdvisoryJSON, len(advisoryDetails))
+	for i, detail := range advisoryDetails {
+		// Get max CVSS from detail's metrics
+		var maxCVSS float32
+		for _, metric := range detail.GetCvssMetrics() {
+			if v3 := metric.GetV3(); v3 != nil && v3.GetBaseScore() > maxCVSS {
+				maxCVSS = v3.GetBaseScore()
+			}
+			if v2 := metric.GetV2(); v2 != nil && v2.GetBaseScore() > maxCVSS {
+				maxCVSS = v2.GetBaseScore()
+			}
+		}
+
+		advisories[i] = types.AdvisoryJSON{
+			ID:       detail.GetId(),
+			Severity: detail.GetSeverity(),
+			CVSS:     maxCVSS,
+			Source:   detail.GetSource(),
+		}
+	}
+
+	b, _ := json.Marshal(advisories)
+	return string(b)
 }
 
 func notesToJSON(notes []v4.VulnerabilityReport_Note) string {

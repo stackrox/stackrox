@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/scandata/types"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -122,9 +123,11 @@ func exportGrouped(writer *csv.Writer, findings []*storage.ScanFinding) error {
 			g.firstSeen = ts
 		}
 
-		// Collect advisory IDs
-		if advisoryID := f.GetAdvisoryId(); advisoryID != "" && !slices.Contains(g.advisoryIDs, advisoryID) {
-			g.advisoryIDs = append(g.advisoryIDs, advisoryID)
+		// Collect advisory IDs from JSONB
+		for _, advisoryID := range types.GetAllAdvisoryIDs(f.GetAdvisories()) {
+			if !slices.Contains(g.advisoryIDs, advisoryID) {
+				g.advisoryIDs = append(g.advisoryIDs, advisoryID)
+			}
 		}
 	}
 
@@ -179,8 +182,8 @@ func exportRaw(writer *csv.Writer, findings []*storage.ScanFinding) error {
 	for _, f := range findings {
 		row := []string{
 			f.GetCveName(),
-			f.GetAdvisoryId(),
-			f.GetSourceName(),
+			types.GetPrimaryAdvisoryID(f.GetAdvisories()),
+			types.GetPrimarySourceName(f.GetAdvisories()),
 			f.GetSeverity().String(),
 			formatFloat(f.GetCvss()),
 			formatFloat(f.GetNvdCvss()),

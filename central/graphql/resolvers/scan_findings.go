@@ -85,7 +85,7 @@ func (r *protoAdvisoryResolver) ID() string {
 }
 
 func (r *protoAdvisoryResolver) AdvisoryId() string {
-	return r.data.GetAdvisoryId()
+	return types.GetPrimaryAdvisoryID(r.data.GetAdvisories())
 }
 
 func (r *protoAdvisoryResolver) CveName() string {
@@ -105,7 +105,7 @@ func (r *protoAdvisoryResolver) Cvss() *float64 {
 }
 
 func (r *protoAdvisoryResolver) Source() string {
-	return r.data.GetSourceName()
+	return types.GetPrimarySourceName(r.data.GetAdvisories())
 }
 
 func (r *protoAdvisoryResolver) Fixable() bool {

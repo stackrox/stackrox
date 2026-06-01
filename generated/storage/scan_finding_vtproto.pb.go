@@ -30,7 +30,6 @@ func (m *ScanFinding) CloneVT() *ScanFinding {
 	}
 	r := new(ScanFinding)
 	r.Id = m.Id
-	r.AdvisoryId = m.AdvisoryId
 	r.CveName = m.CveName
 	r.ComponentId = m.ComponentId
 	r.ScanId = m.ScanId
@@ -48,10 +47,10 @@ func (m *ScanFinding) CloneVT() *ScanFinding {
 	r.Description = m.Description
 	r.PublishedDate = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.PublishedDate).CloneVT())
 	r.DataSource = m.DataSource
-	r.SourceName = m.SourceName
 	r.State = m.State
 	r.FirstImageOccurrence = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.FirstImageOccurrence).CloneVT())
 	r.FirstSystemOccurrence = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.FirstSystemOccurrence).CloneVT())
+	r.Advisories = m.Advisories
 	if rhs := m.Links; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)
@@ -75,9 +74,6 @@ func (this *ScanFinding) EqualVT(that *ScanFinding) bool {
 		return false
 	}
 	if this.Id != that.Id {
-		return false
-	}
-	if this.AdvisoryId != that.AdvisoryId {
 		return false
 	}
 	if this.CveName != that.CveName {
@@ -131,9 +127,6 @@ func (this *ScanFinding) EqualVT(that *ScanFinding) bool {
 	if this.DataSource != that.DataSource {
 		return false
 	}
-	if this.SourceName != that.SourceName {
-		return false
-	}
 	if len(this.Links) != len(that.Links) {
 		return false
 	}
@@ -150,6 +143,9 @@ func (this *ScanFinding) EqualVT(that *ScanFinding) bool {
 		return false
 	}
 	if !(*timestamppb1.Timestamp)(this.FirstSystemOccurrence).EqualVT((*timestamppb1.Timestamp)(that.FirstSystemOccurrence)) {
+		return false
+	}
+	if this.Advisories != that.Advisories {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -192,6 +188,15 @@ func (m *ScanFinding) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.Advisories) > 0 {
+		i -= len(m.Advisories)
+		copy(dAtA[i:], m.Advisories)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Advisories)))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xca
+	}
 	if m.FirstSystemOccurrence != nil {
 		size, err := (*timestamppb1.Timestamp)(m.FirstSystemOccurrence).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -233,15 +238,6 @@ func (m *ScanFinding) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			i--
 			dAtA[i] = 0xaa
 		}
-	}
-	if len(m.SourceName) > 0 {
-		i -= len(m.SourceName)
-		copy(dAtA[i:], m.SourceName)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.SourceName)))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xa2
 	}
 	if len(m.DataSource) > 0 {
 		i -= len(m.DataSource)
@@ -369,13 +365,6 @@ func (m *ScanFinding) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.AdvisoryId) > 0 {
-		i -= len(m.AdvisoryId)
-		copy(dAtA[i:], m.AdvisoryId)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.AdvisoryId)))
-		i--
-		dAtA[i] = 0x12
-	}
 	if len(m.Id) > 0 {
 		i -= len(m.Id)
 		copy(dAtA[i:], m.Id)
@@ -393,10 +382,6 @@ func (m *ScanFinding) SizeVT() (n int) {
 	var l int
 	_ = l
 	l = len(m.Id)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	l = len(m.AdvisoryId)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -460,10 +445,6 @@ func (m *ScanFinding) SizeVT() (n int) {
 	if l > 0 {
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	l = len(m.SourceName)
-	if l > 0 {
-		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
 	if len(m.Links) > 0 {
 		for _, s := range m.Links {
 			l = len(s)
@@ -479,6 +460,10 @@ func (m *ScanFinding) SizeVT() (n int) {
 	}
 	if m.FirstSystemOccurrence != nil {
 		l = (*timestamppb1.Timestamp)(m.FirstSystemOccurrence).SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.Advisories)
+	if l > 0 {
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -545,38 +530,6 @@ func (m *ScanFinding) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Id = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AdvisoryId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.AdvisoryId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -995,38 +948,6 @@ func (m *ScanFinding) UnmarshalVT(dAtA []byte) error {
 			}
 			m.DataSource = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 20:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SourceName", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.SourceName = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 21:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Links", wireType)
@@ -1150,6 +1071,38 @@ func (m *ScanFinding) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 25:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Advisories", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Advisories = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -1236,42 +1189,6 @@ func (m *ScanFinding) UnmarshalVTUnsafe(dAtA []byte) error {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.Id = stringValue
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AdvisoryId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.AdvisoryId = stringValue
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -1718,42 +1635,6 @@ func (m *ScanFinding) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.DataSource = stringValue
 			iNdEx = postIndex
-		case 20:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SourceName", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.SourceName = stringValue
-			iNdEx = postIndex
 		case 21:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Links", wireType)
@@ -1880,6 +1761,42 @@ func (m *ScanFinding) UnmarshalVTUnsafe(dAtA []byte) error {
 			if err := (*timestamppb1.Timestamp)(m.FirstSystemOccurrence).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 25:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Advisories", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Advisories = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

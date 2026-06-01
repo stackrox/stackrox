@@ -22,10 +22,10 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// PK: cve_name#component_id
 type ScanFinding struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
 	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Finding ID,hidden" sql:"pk,id"`                                                                                 // @gotags: search:"Finding ID,hidden" sql:"pk,id"
-	AdvisoryId            string                 `protobuf:"bytes,2,opt,name=advisory_id,json=advisoryId,proto3" json:"advisory_id,omitempty" search:"Advisory ID" sql:"index=btree"`                                               // @gotags: search:"Advisory ID" sql:"index=btree"
 	CveName               string                 `protobuf:"bytes,3,opt,name=cve_name,json=cveName,proto3" json:"cve_name,omitempty" search:"CVE" sql:"index=btree"`                                                        // @gotags: search:"CVE" sql:"index=btree"
 	ComponentId           string                 `protobuf:"bytes,4,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" search:"Component ID,hidden" sql:"fk(ScanComponent:id),index=btree"`                                            // @gotags: search:"Component ID,hidden" sql:"fk(ScanComponent:id),index=btree"
 	ScanId                string                 `protobuf:"bytes,5,opt,name=scan_id,json=scanId,proto3" json:"scan_id,omitempty" search:"Scan ID,hidden" sql:"fk(ImageScanV2:id)"`                                                           // @gotags: search:"Scan ID,hidden" sql:"fk(ImageScanV2:id)"
@@ -43,11 +43,11 @@ type ScanFinding struct {
 	Description           string                 `protobuf:"bytes,17,opt,name=description,proto3" json:"description,omitempty" search:"Description,hidden"`                                                              // @gotags: search:"Description,hidden"
 	PublishedDate         *timestamppb.Timestamp `protobuf:"bytes,18,opt,name=published_date,json=publishedDate,proto3" json:"published_date,omitempty" search:"Published Date,hidden"`                                     // @gotags: search:"Published Date,hidden"
 	DataSource            string                 `protobuf:"bytes,19,opt,name=data_source,json=dataSource,proto3" json:"data_source,omitempty" search:"Data Source,hidden"`                                              // @gotags: search:"Data Source,hidden"
-	SourceName            string                 `protobuf:"bytes,20,opt,name=source_name,json=sourceName,proto3" json:"source_name,omitempty" search:"Source Name"`                                              // @gotags: search:"Source Name"
 	Links                 []string               `protobuf:"bytes,21,rep,name=links,proto3" json:"links,omitempty" sql:"type(text[])"`                                                                          // @gotags: sql:"type(text[])"
 	State                 VulnerabilityState     `protobuf:"varint,22,opt,name=state,proto3,enum=storage.VulnerabilityState" json:"state,omitempty" search:"Vulnerability State" sql:"index=btree"`                                         // @gotags: search:"Vulnerability State" sql:"index=btree"
 	FirstImageOccurrence  *timestamppb.Timestamp `protobuf:"bytes,23,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty" search:"First Image Occurrence,hidden"`              // @gotags: search:"First Image Occurrence,hidden"
 	FirstSystemOccurrence *timestamppb.Timestamp `protobuf:"bytes,24,opt,name=first_system_occurrence,json=firstSystemOccurrence,proto3" json:"first_system_occurrence,omitempty" search:"First System Occurrence,hidden"`           // @gotags: search:"First System Occurrence,hidden"
+	Advisories            string                 `protobuf:"bytes,25,opt,name=advisories,proto3" json:"advisories,omitempty" search:"Advisories,hidden" sql:"type(jsonb)"`                                                                // @gotags: search:"Advisories,hidden" sql:"type(jsonb)"
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -85,13 +85,6 @@ func (*ScanFinding) Descriptor() ([]byte, []int) {
 func (x *ScanFinding) GetId() string {
 	if x != nil {
 		return x.Id
-	}
-	return ""
-}
-
-func (x *ScanFinding) GetAdvisoryId() string {
-	if x != nil {
-		return x.AdvisoryId
 	}
 	return ""
 }
@@ -215,13 +208,6 @@ func (x *ScanFinding) GetDataSource() string {
 	return ""
 }
 
-func (x *ScanFinding) GetSourceName() string {
-	if x != nil {
-		return x.SourceName
-	}
-	return ""
-}
-
 func (x *ScanFinding) GetLinks() []string {
 	if x != nil {
 		return x.Links
@@ -250,15 +236,20 @@ func (x *ScanFinding) GetFirstSystemOccurrence() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *ScanFinding) GetAdvisories() string {
+	if x != nil {
+		return x.Advisories
+	}
+	return ""
+}
+
 var File_storage_scan_finding_proto protoreflect.FileDescriptor
 
 const file_storage_scan_finding_proto_rawDesc = "" +
 	"\n" +
-	"\x1astorage/scan_finding.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11storage/cve.proto\"\xfd\a\n" +
+	"\x1astorage/scan_finding.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11storage/cve.proto\"\x81\b\n" +
 	"\vScanFinding\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
-	"\vadvisory_id\x18\x02 \x01(\tR\n" +
-	"advisoryId\x12\x19\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\bcve_name\x18\x03 \x01(\tR\acveName\x12!\n" +
 	"\fcomponent_id\x18\x04 \x01(\tR\vcomponentId\x12\x17\n" +
 	"\ascan_id\x18\x05 \x01(\tR\x06scanId\x12\x19\n" +
@@ -279,13 +270,14 @@ const file_storage_scan_finding_proto_rawDesc = "" +
 	"\vdescription\x18\x11 \x01(\tR\vdescription\x12A\n" +
 	"\x0epublished_date\x18\x12 \x01(\v2\x1a.google.protobuf.TimestampR\rpublishedDate\x12\x1f\n" +
 	"\vdata_source\x18\x13 \x01(\tR\n" +
-	"dataSource\x12\x1f\n" +
-	"\vsource_name\x18\x14 \x01(\tR\n" +
-	"sourceName\x12\x14\n" +
+	"dataSource\x12\x14\n" +
 	"\x05links\x18\x15 \x03(\tR\x05links\x121\n" +
 	"\x05state\x18\x16 \x01(\x0e2\x1b.storage.VulnerabilityStateR\x05state\x12P\n" +
 	"\x16first_image_occurrence\x18\x17 \x01(\v2\x1a.google.protobuf.TimestampR\x14firstImageOccurrence\x12R\n" +
-	"\x17first_system_occurrence\x18\x18 \x01(\v2\x1a.google.protobuf.TimestampR\x15firstSystemOccurrenceB.\n" +
+	"\x17first_system_occurrence\x18\x18 \x01(\v2\x1a.google.protobuf.TimestampR\x15firstSystemOccurrence\x12\x1e\n" +
+	"\n" +
+	"advisories\x18\x19 \x01(\tR\n" +
+	"advisoriesJ\x04\b\x02\x10\x03J\x04\b\x14\x10\x15R\vadvisory_idR\vsource_nameB.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -71,4 +72,56 @@ type AdvisoryListRow struct {
 	Description string
 	FixedBy     string
 	ImageCount  int
+}
+
+// AdvisoryJSON represents the JSON structure stored in the advisories JSONB column.
+type AdvisoryJSON struct {
+	ID       string  `json:"id"`
+	Severity string  `json:"severity"`
+	CVSS     float32 `json:"cvss"`
+	Source   string  `json:"source"`
+}
+
+// ParseAdvisories parses the advisories JSONB string into structured data.
+// Returns nil if the JSON is empty or invalid.
+func ParseAdvisories(jsonStr string) []AdvisoryJSON {
+	if jsonStr == "" || jsonStr == "[]" {
+		return nil
+	}
+	var advisories []AdvisoryJSON
+	if err := json.Unmarshal([]byte(jsonStr), &advisories); err != nil {
+		return nil
+	}
+	return advisories
+}
+
+// GetPrimaryAdvisoryID returns the first advisory ID from the JSONB, or empty string.
+func GetPrimaryAdvisoryID(jsonStr string) string {
+	advisories := ParseAdvisories(jsonStr)
+	if len(advisories) == 0 {
+		return ""
+	}
+	return advisories[0].ID
+}
+
+// GetPrimarySourceName returns the first source name from the JSONB, or empty string.
+func GetPrimarySourceName(jsonStr string) string {
+	advisories := ParseAdvisories(jsonStr)
+	if len(advisories) == 0 {
+		return ""
+	}
+	return advisories[0].Source
+}
+
+// GetAllAdvisoryIDs extracts all advisory IDs from the JSONB.
+func GetAllAdvisoryIDs(jsonStr string) []string {
+	advisories := ParseAdvisories(jsonStr)
+	if len(advisories) == 0 {
+		return nil
+	}
+	ids := make([]string, len(advisories))
+	for i, adv := range advisories {
+		ids[i] = adv.ID
+	}
+	return ids
 }

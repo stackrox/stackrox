@@ -422,8 +422,8 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 		// First, deduplicate any vulnerabilities which Claircore may repeat.
 		// This may happen, for example, when we match the same vulnerability to multiple CPEs
 		// in Red Hat's OVAL or VEX data.
-		// DISABLED for Scanner Output A: Keep all advisories, no CVE dedup.
-		// vulnIDs = dedupeVulns(vulnIDs, ccVulnerabilities)
+		// For Variant 2: Group by CVE name and merge advisories.
+		vulnIDs = dedupeVulns(vulnIDs, ccVulnerabilities, vulnerabilities)
 		// Only do the following if we want RH advisories to be top level.
 		if !features.ScannerV4RedHatCVEs.Enabled() {
 			// Next, sort by NVD CVSS score.
@@ -1570,40 +1570,101 @@ func advisory(vuln *claircore.Vulnerability) *v4.VulnerabilityReport_Advisory {
 }
 
 // dedupeVulns deduplicates repeat vulnerabilities out of vulnIDs and returns the result.
+// For Variant 2 (finding-as-cve), this groups advisories by resolved CVE name,
+// picks a winner based on severity, and populates AdvisoryDetails.
 // This function does not guarantee ordering is preserved.
-func dedupeVulns(vulnIDs []string, ccVulnerabilities map[string]*claircore.Vulnerability) []string {
-	// Group each vulnerability by name.
-	// This maps each name to a slice of vulnerabilities to protect against the possibility
-	// Claircore finds multiple vulnerabilities with the same name for this package from different vulnerability streams.
-	// In that situation, it is not clear which one may be the single, correct option to choose, so just allow for both.
-	vulnsByName := make(map[string][]*claircore.Vulnerability)
-OUTER:
+func dedupeVulns(vulnIDs []string, ccVulnerabilities map[string]*claircore.Vulnerability, protoVulns map[string]*v4.VulnerabilityReport_Vulnerability) []string {
+	// Group vulnerabilities by resolved CVE name.
+	type vulnEntry struct {
+		id     string
+		ccVuln *claircore.Vulnerability
+		protoV *v4.VulnerabilityReport_Vulnerability
+	}
+	vulnsByCVE := make(map[string][]vulnEntry)
+
 	for _, vulnID := range vulnIDs {
-		vuln := ccVulnerabilities[vulnID]
-		if vuln == nil {
+		ccVuln := ccVulnerabilities[vulnID]
+		protoV := protoVulns[vulnID]
+		if ccVuln == nil || protoV == nil {
 			continue
 		}
 
-		// Find the currently tracked vulnerabilities with the same name.
-		// If this entry matches any of those, then ignore this one.
-		matching := vulnsByName[vuln.Name]
-		for _, match := range matching {
-			if vulnsEqual(match, vuln) {
-				continue OUTER
+		// Resolve CVE name using vulnerabilityName (which extracts CVE from links/name)
+		cveName := vulnerabilityName(ccVuln)
+
+		vulnsByCVE[cveName] = append(vulnsByCVE[cveName], vulnEntry{
+			id:     vulnID,
+			ccVuln: ccVuln,
+			protoV: protoV,
+		})
+	}
+
+	// For each CVE group, pick winner and build AdvisoryDetails
+	filtered := make([]string, 0, len(vulnsByCVE))
+	for cveName, entries := range vulnsByCVE {
+		if len(entries) == 1 {
+			// Single advisory for this CVE, no merging needed
+			filtered = append(filtered, entries[0].id)
+			continue
+		}
+
+		// Multiple advisories for this CVE - need to merge
+		// Pick winner: highest NormalizedSeverity, then highest CVSS
+		winnerIdx := 0
+		for i := 1; i < len(entries); i++ {
+			winner := entries[winnerIdx].protoV
+			candidate := entries[i].protoV
+
+			if candidate.NormalizedSeverity > winner.NormalizedSeverity {
+				winnerIdx = i
+			} else if candidate.NormalizedSeverity == winner.NormalizedSeverity {
+				// Same severity, compare CVSS
+				winnerCVSS := getMaxCVSS(winner.CvssMetrics)
+				candidateCVSS := getMaxCVSS(candidate.CvssMetrics)
+				if candidateCVSS > winnerCVSS {
+					winnerIdx = i
+				}
 			}
 		}
 
-		// Add the unique entry to the map.
-		vulnsByName[vuln.Name] = append(vulnsByName[vuln.Name], vuln)
+		// Build AdvisoryDetails from all entries
+		advisoryDetails := make([]*v4.VulnerabilityReport_AdvisoryDetail, 0, len(entries))
+		for _, entry := range entries {
+			pv := entry.protoV
+			advisoryDetails = append(advisoryDetails, &v4.VulnerabilityReport_AdvisoryDetail{
+				Id:                 pv.AdvisoryId,
+				Severity:           pv.Severity,
+				NormalizedSeverity: pv.NormalizedSeverity,
+				CvssMetrics:        pv.CvssMetrics,
+				Source:             pv.SourceName,
+				Link:               pv.Link,
+				Description:        pv.Description,
+			})
+		}
+
+		// Update winner with advisory details and ensure CveName is set
+		winner := entries[winnerIdx].protoV
+		winner.AdvisoryDetails = advisoryDetails
+		winner.CveName = cveName
+
+		filtered = append(filtered, entries[winnerIdx].id)
 	}
 
-	filtered := make([]string, 0, len(vulnIDs))
-	for _, vulns := range vulnsByName {
-		for _, vuln := range vulns {
-			filtered = append(filtered, vuln.ID)
+	return filtered
+}
+
+// getMaxCVSS returns the maximum CVSS base score from a list of CVSS metrics
+func getMaxCVSS(metrics []*v4.VulnerabilityReport_Vulnerability_CVSS) float32 {
+	var maxScore float32
+	for _, m := range metrics {
+		if m.GetV3() != nil && m.GetV3().BaseScore > maxScore {
+			maxScore = m.GetV3().BaseScore
+		}
+		if m.GetV2() != nil && m.GetV2().BaseScore > maxScore {
+			maxScore = m.GetV2().BaseScore
 		}
 	}
-	return filtered
+	return maxScore
 }
 
 // vulnsEqual determines if the vulnerabilities are essentially equal.

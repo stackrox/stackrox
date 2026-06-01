@@ -177,7 +177,6 @@ func (s *storeImpl) bulkInsertComponents(ctx context.Context, tx *postgres.Tx, c
 func (s *storeImpl) bulkInsertFindings(ctx context.Context, tx *postgres.Tx, findings []*storage.ScanFinding) error {
 	copyCols := []string{
 		"id",
-		"advisoryid",
 		"cvename",
 		"componentid",
 		"scanid",
@@ -195,10 +194,10 @@ func (s *storeImpl) bulkInsertFindings(ctx context.Context, tx *postgres.Tx, fin
 		"description",
 		"publisheddate",
 		"datasource",
-		"sourcename",
 		"state",
 		"firstimageoccurrence",
 		"firstsystemoccurrence",
+		"advisories",
 		"serialized",
 	}
 
@@ -230,7 +229,6 @@ func (s *storeImpl) bulkInsertFindings(ctx context.Context, tx *postgres.Tx, fin
 
 			inputRows = append(inputRows, []any{
 				finding.GetId(),
-				finding.GetAdvisoryId(),
 				finding.GetCveName(),
 				finding.GetComponentId(),
 				finding.GetScanId(),
@@ -248,10 +246,10 @@ func (s *storeImpl) bulkInsertFindings(ctx context.Context, tx *postgres.Tx, fin
 				finding.GetDescription(),
 				publishedDate,
 				finding.GetDataSource(),
-				finding.GetSourceName(),
 				finding.GetState(),
 				firstImageOccurrence,
 				firstSystemOccurrence,
+				finding.GetAdvisories(),
 				serialized,
 			})
 		}
@@ -660,6 +658,9 @@ func (s *storeImpl) GetDeploymentImages(ctx context.Context, deploymentID string
 }
 
 // ListAdvisories returns distinct advisories with image counts.
+// TODO(Variant 2): Update to extract advisory data from JSONB advisories column.
+// For now, this method is not compatible with the Variant 2 schema where
+// advisories are stored as JSONB instead of separate advisoryid/sourcename columns.
 func (s *storeImpl) ListAdvisories(ctx context.Context, limit, offset int) ([]*types.AdvisoryListRow, int, error) {
 	type result struct {
 		rows  []*types.AdvisoryListRow
@@ -667,64 +668,74 @@ func (s *storeImpl) ListAdvisories(ctx context.Context, limit, offset int) ([]*t
 	}
 
 	res, err := pgutils.Retry2(ctx, func() (*result, error) {
-		// Get total count of distinct advisories
-		countQuery := fmt.Sprintf(`
-			SELECT COUNT(DISTINCT advisoryid)
-			FROM %s
-			WHERE state = 0
-		`, findingsTable)
-		var total int
-		if err := s.db.QueryRow(ctx, countQuery).Scan(&total); err != nil {
-			return nil, errors.Wrap(err, "counting advisories")
-		}
+		// TODO(Variant 2): This query needs to use JSONB operators to extract
+		// advisory information from the advisories column. Example:
+		// SELECT jsonb_array_elements(advisories) ->> 'id' as advisory_id
+		// For now, returning empty results.
+		log.Warn("ListAdvisories not implemented for Variant 2 JSONB schema")
+		return &result{rows: []*types.AdvisoryListRow{}, total: 0}, nil
 
-		// Get paginated results
-		query := fmt.Sprintf(`
-			SELECT
-				advisoryid,
-				MAX(cvename) as cvename,
-				MAX(severity)::int as severity,
-				MAX(cvss) as cvss,
-				MAX(sourcename) as sourcename,
-				MAX(description) as description,
-				MAX(fixedby) as fixedby,
-				COUNT(DISTINCT imageid) as image_count
-			FROM %s
-			WHERE state = 0
-			GROUP BY advisoryid
-			ORDER BY MAX(severity) DESC, MAX(cvss) DESC
-			LIMIT $1 OFFSET $2
-		`, findingsTable)
-
-		rows, err := s.db.Query(ctx, query, limit, offset)
-		if err != nil {
-			return nil, errors.Wrap(err, "querying advisories")
-		}
-		defer rows.Close()
-
-		var results []*types.AdvisoryListRow
-		for rows.Next() {
-			var row types.AdvisoryListRow
-			if err := rows.Scan(
-				&row.AdvisoryID,
-				&row.CVEName,
-				&row.Severity,
-				&row.CVSS,
-				&row.SourceName,
-				&row.Description,
-				&row.FixedBy,
-				&row.ImageCount,
-			); err != nil {
-				return nil, errors.Wrap(err, "scanning advisory row")
+		// Original query (for reference, non-functional with Variant 2 schema):
+		/*
+			// Get total count of distinct advisories
+			countQuery := fmt.Sprintf(`
+				SELECT COUNT(DISTINCT advisoryid)
+				FROM %s
+				WHERE state = 0
+			`, findingsTable)
+			var total int
+			if err := s.db.QueryRow(ctx, countQuery).Scan(&total); err != nil {
+				return nil, errors.Wrap(err, "counting advisories")
 			}
-			results = append(results, &row)
-		}
 
-		if err := rows.Err(); err != nil {
-			return nil, errors.Wrap(err, "iterating advisory rows")
-		}
+			// Get paginated results
+			query := fmt.Sprintf(`
+				SELECT
+					advisoryid,
+					MAX(cvename) as cvename,
+					MAX(severity)::int as severity,
+					MAX(cvss) as cvss,
+					MAX(sourcename) as sourcename,
+					MAX(description) as description,
+					MAX(fixedby) as fixedby,
+					COUNT(DISTINCT imageid) as image_count
+				FROM %s
+				WHERE state = 0
+				GROUP BY advisoryid
+				ORDER BY MAX(severity) DESC, MAX(cvss) DESC
+				LIMIT $1 OFFSET $2
+			`, findingsTable)
 
-		return &result{rows: results, total: total}, nil
+			rows, err := s.db.Query(ctx, query, limit, offset)
+			if err != nil {
+				return nil, errors.Wrap(err, "querying advisories")
+			}
+			defer rows.Close()
+
+			var results []*types.AdvisoryListRow
+			for rows.Next() {
+				var row types.AdvisoryListRow
+				if err := rows.Scan(
+					&row.AdvisoryID,
+					&row.CVEName,
+					&row.Severity,
+					&row.CVSS,
+					&row.SourceName,
+					&row.Description,
+					&row.FixedBy,
+					&row.ImageCount,
+				); err != nil {
+					return nil, errors.Wrap(err, "scanning advisory row")
+				}
+				results = append(results, &row)
+			}
+
+			if err := rows.Err(); err != nil {
+				return nil, errors.Wrap(err, "iterating advisory rows")
+			}
+
+			return &result{rows: results, total: total}, nil
+		*/
 	})
 
 	if err != nil {
