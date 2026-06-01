@@ -29,7 +29,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
-	pkgUUID "github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -596,24 +595,20 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 	where := seenQueries.GetArbitraryElem()
 	where = strings.TrimSuffix(where, exactQuerySuffix)
 
-	// For large value sets, use = ANY($1::type[]) with a single array parameter
+	// For large value sets, use = ANY($$) with a single array parameter
 	// to avoid the 65535 parameter limit. For small sets, use IN ($1, $2, ...)
 	// for better plan quality since the planner can inspect individual values.
+	// pgx infers the array type from the element type ([]uuid.UUID → uuid[],
+	// []string → text[], etc.) so no explicit cast is needed.
 	if len(values) >= env.PostgresParameterThreshold.IntegerSetting() {
-		// Detect column type from the original entry value (before string conversion)
-		// to pick the right array cast.
-		cast := "::text[]"
-		if _, isUUID := entries[0].Where.Values[0].(pkgUUID.UUID); isUUID {
-			cast = "::uuid[]"
-		}
-		stringValues := make([]string, len(values))
-		for i, v := range values {
-			stringValues[i] = fmt.Sprintf("%s", v)
+		originalValues := make([]interface{}, len(entries))
+		for i, entry := range entries {
+			originalValues[i] = entry.Where.Values[0]
 		}
 		return &pgsearch.QueryEntry{
 			Where: pgsearch.WhereClause{
-				Query:  fmt.Sprintf("%s = ANY($$%s)", where, cast),
-				Values: []interface{}{stringValues},
+				Query:  fmt.Sprintf("%s = ANY($$)", where),
+				Values: []interface{}{originalValues},
 			},
 			SelectedFields: entries[0].SelectedFields,
 			GroupBy:        nil,
