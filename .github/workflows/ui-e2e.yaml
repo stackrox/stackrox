@@ -424,7 +424,20 @@ jobs:
         quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
+    - name: Check for existing StackRox deployment
+      id: check-deploy
+      if: inputs.gke-cluster-name
+      run: |
+        if kubectl get namespace stackrox &>/dev/null; then
+          echo "StackRox already deployed — skipping deploy"
+          echo "exists=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "No existing StackRox deployment — will deploy"
+          echo "exists=false" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Deploy StackRox (foreground, scanner v2)
+      if: steps.check-deploy.outputs.exists != 'true'
       uses: ./.github/actions/deploy-stackrox
       with:
         tag: ${{ inputs.tag }}
@@ -436,9 +449,21 @@ jobs:
         registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
     - name: Seed test workloads
+      if: steps.check-deploy.outputs.exists != 'true'
       run: |
         kubectl create namespace qa-test 2>/dev/null || true
         kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null || true
+
+    - name: Extract credentials from existing deployment
+      if: steps.check-deploy.outputs.exists == 'true'
+      run: |
+        kubectl -n stackrox get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}' > /tmp/rox-admin-password
+        ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+        API_ENDPOINT="$(kubectl -n stackrox get svc central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):443"
+        echo "$API_ENDPOINT" > /tmp/rox-api-endpoint
+        curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/apitokens/generate" \
+          -d '{"name":"ui-e2e-'$RANDOM'","roles":["Admin"]}' \
+          | jq -r '.token' > /tmp/rox-auth-token
 
     - name: Upload credentials
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
