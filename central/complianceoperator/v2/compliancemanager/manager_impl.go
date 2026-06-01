@@ -197,6 +197,10 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 
 	// Use the created time from the DB
 	scanRequest.CreatedTime = oldScanConfig.GetCreatedTime()
+	// Preserve empty ModifiedBy for discovered configs so they remain detected as externally managed.
+	if oldScanConfig.GetModifiedBy().GetId() == "" {
+		scanRequest.ModifiedBy = oldScanConfig.GetModifiedBy()
+	}
 	scanRequest, err = m.processRequestToSensor(ctx, scanRequest, cron, clusters, false, validatedProfiles)
 	if err != nil {
 		return nil, err
@@ -286,7 +290,8 @@ func (m *managerImpl) validateScan(ctx context.Context, scanRequest *storage.Com
 	}
 
 	// Check if any non-ACS-managed ScanSettingBindings already reference the requested profiles.
-	if err := m.checkForExternalSSBConflicts(ctx, profiles, clusters); err != nil {
+	// Pass the scan config name so that discovered configs skip the SSB they were created from.
+	if err := m.checkForExternalSSBConflicts(ctx, scanRequest.GetScanConfigName(), profiles, clusters); err != nil {
 		return nil, err
 	}
 
@@ -461,8 +466,10 @@ func (m *managerImpl) HandleScanRequestResponse(ctx context.Context, requestID s
 
 // checkForExternalSSBConflicts checks if any non-ACS-managed ScanSettingBindings in the target
 // clusters already reference any of the requested profiles. ACS-managed SSBs are skipped because
-// conflicts with those are already enforced by ScanConfigurationProfileExists.
-func (m *managerImpl) checkForExternalSSBConflicts(ctx context.Context, profiles []string, clusters []string) error {
+// conflicts with those are already enforced by ScanConfigurationProfileExists. SSBs whose name
+// matches scanConfigName are also skipped because discovered configs are created from those SSBs
+// and updating them (e.g. to edit notifiers) should not trigger a self-conflict.
+func (m *managerImpl) checkForExternalSSBConflicts(ctx context.Context, scanConfigName string, profiles []string, clusters []string) error {
 	requestedProfiles := set.NewStringSet(profiles...)
 	if requestedProfiles.Cardinality() == 0 {
 		return nil
@@ -478,6 +485,9 @@ func (m *managerImpl) checkForExternalSSBConflicts(ctx context.Context, profiles
 		clusterRef := ""
 		for _, ssb := range ssbs {
 			if ssb.GetLabels()["app.kubernetes.io/name"] == "stackrox" {
+				continue
+			}
+			if ssb.GetName() == scanConfigName {
 				continue
 			}
 
