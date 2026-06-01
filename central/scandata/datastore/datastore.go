@@ -27,6 +27,9 @@ type DataStore interface {
 	// GetFindingsWithComponentsByCVE returns findings joined with component metadata for a CVE.
 	GetFindingsWithComponentsByCVE(ctx context.Context, cveName string) ([]*types.FindingWithComponent, error)
 
+	// GetFindingsWithComponentsByImageID returns findings joined with component metadata for an image.
+	GetFindingsWithComponentsByImageID(ctx context.Context, imageID string) ([]*types.FindingWithComponent, error)
+
 	// GetFindingsByImageID returns all findings for an image
 	GetFindingsByImageID(ctx context.Context, imageID string) ([]*storage.ScanFinding, error)
 

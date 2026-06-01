@@ -81,9 +81,7 @@ function AffectedImagesTable({ images }: AffectedImagesTableProps) {
             </Thead>
             {images.map((img, rowIndex) => {
                 const isExpanded = expandedImages.has(img.imageId);
-                const imageLink = img.imageUuid
-                    ? `/main/vulnerabilities/workload-cves/images/${img.imageUuid}`
-                    : null;
+                const imageLink = `/main/vulnerabilities/prototype/images/${encodeURIComponent(img.imageId)}`;
                 return (
                     <Tbody key={img.imageId} isExpanded={isExpanded}>
                         <Tr>
@@ -95,15 +93,9 @@ function AffectedImagesTable({ images }: AffectedImagesTableProps) {
                                 }}
                             />
                             <Td dataLabel="Image">
-                                {imageLink ? (
-                                    <Link to={imageLink} title={img.imageId}>
-                                        {displayImageName(img)}
-                                    </Link>
-                                ) : (
-                                    <span title={img.imageId}>
-                                        {displayImageName(img)}
-                                    </span>
-                                )}
+                                <Link to={imageLink} title={img.imageId}>
+                                    {displayImageName(img)}
+                                </Link>
                             </Td>
                             <Td dataLabel="Components">
                                 {img.componentCount}

@@ -13,10 +13,7 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Link } from 'react-router-dom-v5-compat';
 
-import {
-    vulnerabilitiesPrototypeCvePath,
-    vulnerabilitiesPrototypeDeploymentsPath,
-} from 'routePaths';
+import { vulnerabilitiesPrototypeDeploymentsPath } from 'routePaths';
 
 import { useDeploymentDetail } from './useDeploymentDetail';
 import type { ProtoDeploymentImage } from './useDeploymentDetail';
@@ -111,7 +108,7 @@ function DeploymentDetailPage() {
                             <Tr key={img.imageId}>
                                 <Td dataLabel="Image">
                                     <Link
-                                        to={`${vulnerabilitiesPrototypeCvePath}?image=${encodeURIComponent(img.imageId)}`}
+                                        to={`/main/vulnerabilities/prototype/images/${encodeURIComponent(img.imageId)}`}
                                     >
                                         {img.imageName || img.imageId}
                                     </Link>

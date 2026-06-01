@@ -31,10 +31,11 @@ type ImageBasicInfo struct {
 
 // FindingWithComponent is a finding joined with its parent component's metadata.
 type FindingWithComponent struct {
-	Finding          *storage.ScanFinding
-	ComponentName    string
-	ComponentVersion string
-	ComponentSource  int32
+	Finding           *storage.ScanFinding
+	ComponentName     string
+	ComponentVersion  string
+	ComponentSource   int32
+	ComponentLocation string
 }
 
 // DeploymentListRow represents one deployment in the list page.
