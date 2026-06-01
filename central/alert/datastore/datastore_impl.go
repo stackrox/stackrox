@@ -521,7 +521,7 @@ func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*stora
 		// from the column without deserializing the full alert blob.
 		alert.EnforcementCount = convert.EnforcementCount(alert)
 
-		if features.PlatformComponents.Enabled() {
+		if features.CustomizablePlatformComponents.Enabled() {
 			alert.EntityType = alertutils.GetEntityType(alert)
 			match, err := ds.platformMatcher.MatchAlert(alert)
 			if err != nil {

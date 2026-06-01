@@ -391,7 +391,7 @@ func startServices() {
 	gcp.Singleton().Start()
 	administrationEventHandler.Singleton().Start()
 
-	if features.PlatformComponents.Enabled() {
+	if features.CustomizablePlatformComponents.Enabled() {
 		platformReprocessor.Singleton().Start()
 	}
 
@@ -1047,7 +1047,7 @@ func waitForTerminationSignal() {
 			stoppableWithName{complianceReportManager.Singleton(), "compliance reports manager"})
 	}
 
-	if features.PlatformComponents.Enabled() {
+	if features.CustomizablePlatformComponents.Enabled() {
 		stoppables = append(stoppables,
 			stoppableWithName{platformReprocessor.Singleton(), "platform components reprocessor"})
 	}

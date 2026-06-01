@@ -198,9 +198,9 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 }
 
 func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignment() {
-	suite.T().Setenv(features.PlatformComponents.EnvVar(), "true")
-	if !features.PlatformComponents.Enabled() {
-		suite.T().Skip("Skip test when ROX_PLATFORM_COMPONENTS disabled")
+	suite.T().Setenv(features.CustomizablePlatformComponents.EnvVar(), "true")
+	if !features.CustomizablePlatformComponents.Enabled() {
+		suite.T().Skip("Skip test when ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS disabled")
 		suite.T().SkipNow()
 	}
 	ds := newDatastoreImpl(suite.storage, nil, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, ranking.NewRanker(), suite.matcher)

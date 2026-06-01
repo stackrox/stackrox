@@ -337,7 +337,7 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 		return errors.Wrapf(err, "error merging deployment %s", deployment.GetId())
 	}
 
-	if features.PlatformComponents.Enabled() {
+	if features.CustomizablePlatformComponents.Enabled() {
 		match, err := ds.platformMatcher.MatchDeployment(deployment)
 		if err != nil {
 			return err

@@ -546,7 +546,7 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 			},
 		},
 		"Configure administration event management when missing": {
-			enabledFlags: []string{features.PlatformComponents.EnvVar()},
+			enabledFlags: []string{features.CustomizablePlatformComponents.EnvVar()},
 			initialConfig: &storage.Config{
 				PublicConfig: samplePublicConfig,
 				PrivateConfig: &storage.PrivateConfig{

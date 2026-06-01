@@ -1060,9 +1060,9 @@ func (s *AlertDatastoreImplSuite) TestSearchAlertDeploymentIDsResourceAlerts() {
 // TestUpsert_PlatformComponentAndEntityTypeAssignment tests platform component assignment logic
 // Moved from datastore_test.go and converted to use real data instead of mocks
 func (s *AlertDatastoreImplSuite) TestUpsert_PlatformComponentAndEntityTypeAssignment() {
-	s.T().Setenv(features.PlatformComponents.EnvVar(), "true")
-	if !features.PlatformComponents.Enabled() {
-		s.T().Skip("Skip test when ROX_PLATFORM_COMPONENTS disabled")
+	s.T().Setenv(features.CustomizablePlatformComponents.EnvVar(), "true")
+	if !features.CustomizablePlatformComponents.Enabled() {
+		s.T().Skip("Skip test when ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS disabled")
 		s.T().SkipNow()
 	}
 
