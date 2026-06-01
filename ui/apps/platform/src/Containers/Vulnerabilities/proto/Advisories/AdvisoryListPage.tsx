@@ -57,7 +57,7 @@ function AdvisoryListPage() {
     return (
         <>
             <PageSection hasBodyWrapper={false}>
-                <Title headingLevel="h1">CVE Prototype</Title>
+                <Title headingLevel="h1">Vuln Management V5</Title>
             </PageSection>
             <PageSection hasBodyWrapper={false}>
                 <ProtoNav />
@@ -79,7 +79,7 @@ function AdvisoryListPage() {
                     </Bullseye>
                 )}
 
-                <Table aria-label="Prototype advisory list" variant="compact">
+                <Table aria-label="Vuln Management V5 advisory list" variant="compact">
                     <Thead>
                         <Tr>
                             <Th>Advisory ID</Th>

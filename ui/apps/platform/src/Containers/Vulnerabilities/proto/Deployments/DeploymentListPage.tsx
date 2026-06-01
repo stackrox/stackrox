@@ -51,7 +51,7 @@ function DeploymentListPage() {
     return (
         <>
             <PageSection hasBodyWrapper={false}>
-                <Title headingLevel="h1">CVE Prototype</Title>
+                <Title headingLevel="h1">Vuln Management V5</Title>
             </PageSection>
             <PageSection hasBodyWrapper={false}>
                 <ProtoNav />
@@ -73,7 +73,7 @@ function DeploymentListPage() {
                     </Bullseye>
                 )}
 
-                <Table aria-label="Prototype deployment list" variant="compact">
+                <Table aria-label="Vuln Management V5 deployment list" variant="compact">
                     <Thead>
                         <Tr>
                             <Th>Deployment</Th>

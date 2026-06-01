@@ -66,7 +66,7 @@ function CveListPage() {
     return (
         <>
             <PageSection hasBodyWrapper={false}>
-                <Title headingLevel="h1">CVE Prototype</Title>
+                <Title headingLevel="h1">Vuln Management V5</Title>
             </PageSection>
             <PageSection hasBodyWrapper={false}>
                 <ProtoNav />
@@ -88,7 +88,7 @@ function CveListPage() {
                     </Bullseye>
                 )}
 
-                <Table aria-label="Prototype CVE list" variant="compact">
+                <Table aria-label="Vuln Management V5 CVE list" variant="compact">
                     <Thead>
                         <Tr>
                             <Th>CVE</Th>

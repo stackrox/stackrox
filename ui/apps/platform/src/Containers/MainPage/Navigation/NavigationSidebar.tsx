@@ -107,7 +107,7 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
         },
         {
             type: 'link',
-            content: 'CVE Prototype',
+            content: 'Vuln Management V5',
             path: `${vulnerabilitiesPrototypePath}/cves`,
             routeKey: 'vulnerabilities/prototype',
         },

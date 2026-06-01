@@ -54,7 +54,7 @@ function CveDetailPage() {
                 <Breadcrumb>
                     <BreadcrumbItem>
                         <Link to={vulnerabilitiesPrototypeCvePath}>
-                            CVE Prototype
+                            Vuln Management V5
                         </Link>
                     </BreadcrumbItem>
                     <BreadcrumbItem isActive>{cveName}</BreadcrumbItem>
