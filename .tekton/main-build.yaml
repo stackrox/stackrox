@@ -81,9 +81,9 @@ spec:
     - name: prefetch-dependencies
       computeResources:
         limits:
-          memory: 5Gi
+          memory: 6Gi
         requests:
-          memory: 5Gi
+          memory: 6Gi
     - name: create-trusted-artifact
       computeResources: &ta-resources
         limits:
