@@ -506,10 +506,11 @@ jobs:
 
     - name: Connect to shared GKE cluster
       run: |
+        project="${{ inputs.gke-cluster-name && 'acs-team-temp-dev' || 'acs-san-stackroxci' }}"
         gcloud container clusters get-credentials \
           "${{ needs.provision-gke.outputs.cluster-name }}" \
           --zone "${{ needs.provision-gke.outputs.gke-zone }}" \
-          --project acs-san-stackroxci
+          --project "$project"
         kubectl cluster-info
 
     - name: Download credentials
