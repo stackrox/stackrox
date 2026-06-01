@@ -29,6 +29,17 @@ var (
 	emptyCPE = "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"
 )
 
+// clearPrototypeFields zeroes out fields added by the CVE prototype
+// so existing test assertions continue to work. These fields are tested
+// separately in TestNoDedupeAdvisories and TestUpdaterDisplayName.
+func clearPrototypeFields(vulns map[string]*v4.VulnerabilityReport_Vulnerability) {
+	for _, v := range vulns {
+		v.CveName = ""
+		v.AdvisoryId = ""
+		v.SourceName = ""
+	}
+}
+
 func Test_ToProtoV4IndexReport(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -213,7 +224,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 				},
 				PackageVulnerabilities: map[string]*v4.StringList{
 					"sample pkg id": {
-						Values: []string{"0"},
+						Values: []string{"0", "1"},
 					},
 				},
 				Contents: &v4.Contents{},
@@ -309,6 +320,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 			} else {
 				assert.ErrorContains(t, err, tt.wantErr)
 			}
+			clearPrototypeFields(got.GetVulnerabilities())
 			protoassert.Equal(t, tt.want, got)
 		})
 	}
@@ -463,6 +475,7 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 			} else {
 				assert.ErrorContains(t, err, tt.wantErr)
 			}
+			clearPrototypeFields(got.GetVulnerabilities())
 			protoassert.Equal(t, tt.want, got)
 		})
 	}
@@ -818,6 +831,7 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 				return strings.Compare(a.GetId(), b.GetId())
 			})
 
+			clearPrototypeFields(got.GetVulnerabilities())
 			protoassert.Equal(t, tt.want, got)
 		})
 	}
@@ -1585,6 +1599,7 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
 			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, tt.epssItems, nil)
 			assert.NoError(t, err)
+			clearPrototypeFields(got)
 			protoassert.MapEqual(t, tt.want, got)
 		})
 	}
@@ -2398,6 +2413,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			// EPSS scores are intentionally not covered here
 			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, nil, tt.advisories)
 			assert.NoError(t, err)
+			clearPrototypeFields(got)
 			protoassert.MapEqual(t, tt.want, got)
 		})
 	}
