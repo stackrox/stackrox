@@ -89,6 +89,26 @@
     --alert-700: hsla(4, 81%, 90%, 1);
     --alert-800: hsla(4, 100%, 96%, 1);
     --alert-900: hsla(4, 45%, 98%, 1);
+
+    /* Command Center design tokens */
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #111118;
+    --bg-tertiary: #16161f;
+    --bg-elevated: #1a1a25;
+    --bg-hover: #1e1e2a;
+    --bg-selected: #1a1a30;
+    --border: #2a2a3a;
+    --border-subtle: #1e1e2e;
+    --text-primary: #e8e8f0;
+    --text-secondary: #8888a0;
+    --text-muted: #555570;
+    --accent-blue: #4d9eff;
+    --accent-purple: #8b5cf6;
+    --severity-critical: #ef4444;
+    --severity-high: #f97316;
+    --severity-medium: #eab308;
+    --severity-low: #6b7280;
+    --success: #22c55e;
 }
 
 /* SVG logo color overrides for dark theme */

@@ -106,11 +106,31 @@
     --color-alert-800: var(--alert-800);
     --color-alert-900: var(--alert-900);
 
+    /* Command Center semantic colors */
+    --color-bg-primary: var(--bg-primary);
+    --color-bg-secondary: var(--bg-secondary);
+    --color-bg-tertiary: var(--bg-tertiary);
+    --color-bg-elevated: var(--bg-elevated);
+    --color-bg-hover: var(--bg-hover);
+    --color-bg-selected: var(--bg-selected);
+    --color-border: var(--border);
+    --color-border-subtle: var(--border-subtle);
+    --color-text-primary: var(--text-primary);
+    --color-text-secondary: var(--text-secondary);
+    --color-text-muted: var(--text-muted);
+    --color-accent-blue: var(--accent-blue);
+    --color-accent-purple: var(--accent-purple);
+    --color-severity-critical: var(--severity-critical);
+    --color-severity-high: var(--severity-high);
+    --color-severity-medium: var(--severity-medium);
+    --color-severity-low: var(--severity-low);
+    --color-success: var(--success);
+
     /* Font families */
     --font-condensed: 'Open Sans Condensed', sans-serif;
-    --font-sans: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    --font-sans: 'Inter', 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     --font-serif: Constantia, 'Lucida Bright', Lucidabright, 'Lucida Serif', Lucida, 'DejaVu Serif', 'Bitstream Vera Serif', 'Liberation Serif', Georgia, serif;
-    --font-mono: Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --font-mono: 'JetBrains Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 
     /* Font sizes */
     --text-2xs: 0.625rem;

@@ -88,4 +88,24 @@
     --alert-700: hsla(4, 50%, 52%, 1);
     --alert-800: hsla(4, 37%, 36%, 1);
     --alert-900: hsla(4, 28%, 21%, 1);
+
+    /* Command Center design tokens (light mode) */
+    --bg-primary: #fafafa;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f4f4f5;
+    --bg-elevated: #ffffff;
+    --bg-hover: #f0f0f5;
+    --bg-selected: #eff6ff;
+    --border: #d4d4d8;
+    --border-subtle: #e4e4e7;
+    --text-primary: #18181b;
+    --text-secondary: #52525b;
+    --text-muted: #a1a1aa;
+    --accent-blue: #2563eb;
+    --accent-purple: #7c3aed;
+    --severity-critical: #dc2626;
+    --severity-high: #ea580c;
+    --severity-medium: #ca8a04;
+    --severity-low: #6b7280;
+    --success: #16a34a;
 }
