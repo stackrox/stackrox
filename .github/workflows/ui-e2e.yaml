@@ -45,6 +45,10 @@ on:
         description: "GKE zone of pre-provisioned cluster"
         required: false
         type: string
+      gcp-project:
+        description: "GCP project of pre-provisioned cluster (default: acs-san-stackroxci)"
+        required: false
+        type: string
 
 defaults:
   run:
@@ -404,7 +408,7 @@ jobs:
         gcloud container clusters get-credentials \
           "${{ inputs.gke-cluster-name }}" \
           --zone "${{ inputs.gke-zone }}" \
-          --project acs-san-stackroxci
+          --project "${{ inputs.gcp-project || 'acs-san-stackroxci' }}"
 
     - name: Create GKE cluster
       if: "!inputs.gke-cluster-name"
