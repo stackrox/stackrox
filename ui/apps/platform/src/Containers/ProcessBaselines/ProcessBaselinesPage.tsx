@@ -20,7 +20,10 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { LockIcon, LockOpenIcon } from '@patternfly/react-icons';
 
+import { Link } from 'react-router-dom-v5-compat';
+
 import PageTitle from 'Components/PageTitle';
+import { riskBasePath } from 'routePaths';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useURLPagination from 'hooks/useURLPagination';
 import useRestQuery from 'hooks/useRestQuery';
@@ -392,7 +395,11 @@ function ProcessBaselinesPage() {
                                                         onSelect: () => toggleSelect(baseline.id),
                                                     }}
                                                 />
-                                                <Td dataLabel="Deployment">{baseline.key.deploymentId}</Td>
+                                                <Td dataLabel="Deployment">
+                                                    <Link to={`${riskBasePath}/${baseline.key.deploymentId}?contentTab=Process+discovery`}>
+                                                        {baseline.key.deploymentId}
+                                                    </Link>
+                                                </Td>
                                                 <Td dataLabel="Container">{baseline.key.containerName}</Td>
                                                 <Td dataLabel="Cluster">{baseline.key.clusterId}</Td>
                                                 <Td dataLabel="Namespace">{baseline.key.namespace}</Td>
