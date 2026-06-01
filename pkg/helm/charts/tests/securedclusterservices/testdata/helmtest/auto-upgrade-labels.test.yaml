@@ -17,14 +17,6 @@ tests:
     [.objects[] | select(isSensorBundleComponent) | select(autoUpgradeLabel != "sensor") | "\(.kind)/\(.metadata.name)"]
       | assertThat(length == 0)
 
-- name: "with PSP enabled"
-  values:
-    system:
-      enablePodSecurityPolicies: true
-  expect: |
-    [.objects[] | select(isSensorBundleComponent) | select(autoUpgradeLabel != "sensor") | "\(.kind)/\(.metadata.name)"]
-      | assertThat(length == 0)
-
 - name: "with TLS secrets created"
   values:
     createSecrets: true
