@@ -261,6 +261,13 @@ func (s *scanWatcherImpl) Stop(err error) {
 	s.cancel()
 }
 
+func (s *scanWatcherImpl) scanName() string {
+	if s.scanResults.Scan != nil {
+		return s.scanResults.Scan.GetScanName()
+	}
+	return s.scanResults.WatcherID
+}
+
 func (s *scanWatcherImpl) run() {
 	defer func() {
 		s.stopped.Signal()
@@ -272,21 +279,21 @@ func (s *scanWatcherImpl) run() {
 		case <-s.ctx.Done():
 			concurrency.WithLock(&s.resultsLock, func() {
 				log.Infof("Stopping scan watcher for scan %s. Received %d/%d check results (watcher id: %s, error: %v)",
-					s.scanResults.Scan.GetScanName(), len(s.scanResults.CheckResults), s.totalChecks, s.scanResults.WatcherID, s.scanResults.Error)
+					s.scanName(), len(s.scanResults.CheckResults), s.totalChecks, s.scanResults.WatcherID, s.scanResults.Error)
 				if s.scanResults.Error == nil {
 					s.scanResults.Error = ErrScanContextCancelled
 				}
 			})
 			s.readyQueue.Push(s.scanResults)
-			watcherFinishType.WithLabelValues(s.scanResults.Scan.GetScanName(), "stop requested").Inc()
+			watcherFinishType.WithLabelValues(s.scanName(), "stop requested").Inc()
 			return
 		case <-s.timeout.C():
 			concurrency.WithLock(&s.resultsLock, func() {
 				log.Warnf("Timeout waiting for the scan %s to finish. Received %d/%d check results (watcher id: %s)",
-					s.scanResults.Scan.GetScanName(), len(s.scanResults.CheckResults), s.totalChecks, s.scanResults.WatcherID)
+					s.scanName(), len(s.scanResults.CheckResults), s.totalChecks, s.scanResults.WatcherID)
 				s.scanResults.Error = ErrScanTimeout
 			})
-			watcherFinishType.WithLabelValues(s.scanResults.Scan.GetScanName(), "timeout").Inc()
+			watcherFinishType.WithLabelValues(s.scanName(), "timeout").Inc()
 			s.readyQueue.Push(s.scanResults)
 			return
 		case scan := <-s.scanC:
@@ -303,10 +310,10 @@ func (s *scanWatcherImpl) run() {
 			numCheckResults = len(s.scanResults.CheckResults)
 		})
 		log.Debugf("Checking whether %s is finished. TotalChecks=%d, numCheckResults=%d (watcher id: %s)",
-			s.scanResults.Scan.GetScanName(), s.totalChecks, numCheckResults, s.scanResults.WatcherID)
+			s.scanName(), s.totalChecks, numCheckResults, s.scanResults.WatcherID)
 		if s.totalChecks != 0 && s.totalChecks == numCheckResults {
 			s.readyQueue.Push(s.scanResults)
-			watcherFinishType.WithLabelValues(s.scanResults.Scan.GetScanName(), "done").Inc()
+			watcherFinishType.WithLabelValues(s.scanName(), "done").Inc()
 			return
 		}
 	}
