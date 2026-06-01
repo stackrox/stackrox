@@ -463,7 +463,7 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			log.Infof("Running test %s", tc.name)
 			reportSnap := testViewBasedReportSnapshot(tc.query, nil)
 			// Test get data using view-based approach
-			reportData, err := s.reportGenerator.getReportDataViewBased(reportSnap)
+			reportData, err := s.reportGenerator.getReportDataViewBased(s.ctx, reportSnap)
 			s.NoError(err)
 			collected := s.collectViewBasedReportData(reportData.CVEResponses)
 			s.ElementsMatch(tc.expected.deploymentNames, collected.deploymentNames)
@@ -511,7 +511,7 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBasedWithInvalidQuery
 	for _, tc := range testCases {
 		s.T().Run(tc.name, func(t *testing.T) {
 			reportSnap := testViewBasedReportSnapshot(tc.query, nil)
-			reportData, err := s.reportGenerator.getReportDataViewBased(reportSnap)
+			reportData, err := s.reportGenerator.getReportDataViewBased(s.ctx, reportSnap)
 			if tc.expectErr {
 				s.Error(err)
 			} else {
@@ -582,7 +582,7 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBasedAccessScope() {
 		s.T().Run(tc.name, func(t *testing.T) {
 			reportSnap := testViewBasedReportSnapshot(tc.query, tc.scopeRules)
 			// Test get data using view-based approach
-			reportData, err := s.reportGenerator.getReportDataViewBased(reportSnap)
+			reportData, err := s.reportGenerator.getReportDataViewBased(s.ctx, reportSnap)
 			s.NoError(err)
 			collected := s.collectViewBasedReportData(reportData.CVEResponses)
 			s.ElementsMatch(tc.expected.deploymentNames, collected.deploymentNames)
@@ -594,6 +594,30 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBasedAccessScope() {
 		})
 	}
 
+}
+
+func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBasedWithCancelledContext() {
+	clusters := []*storage.Cluster{
+		{Id: uuid.NewV4().String(), Name: "c1"},
+	}
+	namespaces := testNamespaces(clusters, 1)
+	deployments, images := testDeploymentsWithImages(namespaces, 1)
+	s.upsertManyImages(images)
+	s.upsertManyDeployments(deployments)
+
+	s.clusterDatastore.EXPECT().GetClusters(gomock.Any()).
+		Return(clusters, nil).AnyTimes()
+	s.namespaceDatastore.EXPECT().GetAllNamespaces(gomock.Any()).
+		Return(namespaces, nil).AnyTimes()
+
+	reportSnap := testViewBasedReportSnapshot("", nil)
+
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	_, err := s.reportGenerator.getReportDataViewBased(ctx, reportSnap)
+	s.Error(err, "Expected error when context is cancelled before DB query")
+	s.ErrorIs(err, context.Canceled)
 }
 
 // Helper functions

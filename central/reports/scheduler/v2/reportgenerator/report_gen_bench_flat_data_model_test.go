@@ -81,7 +81,7 @@ func BenchmarkFlatDataModelReportGenerator(b *testing.B) {
 
 	b.Run("GetReportDataSQF", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			reportData, err := bts.reportGenerator.getReportDataSQF(reportSnap, collection, time.Time{})
+			reportData, err := bts.reportGenerator.getReportDataSQF(bts.ctx, reportSnap, collection, time.Time{})
 			require.NoError(b, err)
 			require.Equal(b, expectedRowCount, len(reportData.CVEResponses))
 		}
@@ -260,7 +260,7 @@ func BenchmarkEntityScopeReportGenerator(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			reportData, err := reportGenerator.getReportDataSQF(reportSnap, nil, sinceStartDate)
+			reportData, err := reportGenerator.getReportDataSQF(ctx, reportSnap, nil, sinceStartDate)
 			require.NoError(b, err)
 			require.Equal(b, expectedRowCount, len(reportData.CVEResponses))
 		}
@@ -289,7 +289,7 @@ func BenchmarkEntityScopeReportGenerator(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			reportData, err := reportGenerator.getReportDataSQF(reportSnap, nil, sinceStartDate)
+			reportData, err := reportGenerator.getReportDataSQF(ctx, reportSnap, nil, sinceStartDate)
 			require.NoError(b, err)
 			require.Equal(b, expectedRowCount, len(reportData.CVEResponses))
 		}
@@ -318,7 +318,7 @@ func BenchmarkEntityScopeReportGenerator(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			reportData, err := reportGenerator.getReportDataSQF(reportSnap, nil, sinceStartDate)
+			reportData, err := reportGenerator.getReportDataSQF(ctx, reportSnap, nil, sinceStartDate)
 			require.NoError(b, err)
 			require.Equal(b, expectedRowCount, len(reportData.CVEResponses))
 		}

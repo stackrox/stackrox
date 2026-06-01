@@ -1,10 +1,13 @@
 package v2
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stackrox/rox/central/reports/config/datastore/mocks"
+	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
+	reportGenMocks "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -158,4 +161,106 @@ func TestQueueScheduledReportsSkipsEmptyResourceScope(t *testing.T) {
 	assert.Contains(t, s.reportConfigToEntryIDs, "config-with-entity-scope")
 	assert.NotContains(t, s.reportConfigToEntryIDs, "config-empty-scope")
 	assert.NotContains(t, s.reportConfigToEntryIDs, "config-nil-scope")
+}
+
+func TestCancelRunningReportCancelsContext(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockReportGen := reportGenMocks.NewMockReportGenerator(ctrl)
+
+	cronScheduler := cron.New()
+	cronScheduler.Start()
+	defer cronScheduler.Stop()
+
+	s := newSchedulerImpl(nil, nil, nil, nil, mockReportGen, nil, cronScheduler, nil)
+
+	started := make(chan struct{})
+	done := make(chan struct{})
+	var capturedCtx context.Context
+
+	mockReportGen.EXPECT().ProcessReportRequest(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(ctx context.Context, req *reportGen.ReportRequest) {
+			capturedCtx = ctx
+			close(started)
+			<-done
+		},
+	)
+
+	req := &reportGen.ReportRequest{
+		ReportSnapshot: &storage.ReportSnapshot{
+			ReportId:              "test-report-id",
+			ReportConfigurationId: "test-config-id",
+			ReportStatus: &storage.ReportStatus{
+				RunState: storage.ReportStatus_WAITING,
+			},
+		},
+	}
+
+	go s.runSingleReport(req)
+	<-started
+
+	cancelled := s.tryCancelRunningReport("test-report-id")
+	assert.True(t, cancelled)
+
+	assert.Error(t, capturedCtx.Err())
+	assert.ErrorIs(t, context.Cause(capturedCtx), reportGen.ErrUserCancelled)
+
+	close(done)
+}
+
+func TestCancelReportRequestCancelsRunningReport(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockReportGen := reportGenMocks.NewMockReportGenerator(ctrl)
+
+	cronScheduler := cron.New()
+	cronScheduler.Start()
+	defer cronScheduler.Stop()
+
+	s := newSchedulerImpl(nil, nil, nil, nil, mockReportGen, nil, cronScheduler, nil)
+
+	started := make(chan struct{})
+	done := make(chan struct{})
+	var capturedCtx context.Context
+
+	mockReportGen.EXPECT().ProcessReportRequest(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(ctx context.Context, req *reportGen.ReportRequest) {
+			capturedCtx = ctx
+			close(started)
+			<-done
+		},
+	)
+
+	req := &reportGen.ReportRequest{
+		ReportSnapshot: &storage.ReportSnapshot{
+			ReportId:              "running-report-id",
+			ReportConfigurationId: "test-config-id",
+			ReportStatus: &storage.ReportStatus{
+				RunState: storage.ReportStatus_WAITING,
+			},
+		},
+	}
+
+	go s.runSingleReport(req)
+	<-started
+
+	// Report is not in queue (it's running), so CancelReportRequest should cancel the running context
+	cancelled, err := s.CancelReportRequest(context.Background(), "running-report-id")
+	assert.NoError(t, err)
+	assert.True(t, cancelled)
+
+	assert.Error(t, capturedCtx.Err())
+	assert.ErrorIs(t, context.Cause(capturedCtx), reportGen.ErrUserCancelled)
+
+	close(done)
+}
+
+func TestCancelReportRequestReturnsFalseForUnknownReport(t *testing.T) {
+	cronScheduler := cron.New()
+	cronScheduler.Start()
+	defer cronScheduler.Stop()
+
+	s := newSchedulerImpl(nil, nil, nil, nil, nil, nil, cronScheduler, nil)
+
+	cancelled, err := s.CancelReportRequest(context.Background(), "nonexistent-id")
+	assert.NoError(t, err)
+	assert.False(t, cancelled)
 }

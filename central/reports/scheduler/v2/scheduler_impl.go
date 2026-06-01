@@ -56,6 +56,9 @@ type scheduler struct {
 	readyForReports concurrency.Signal
 	// Stores config IDs for which a report is currently running. Used to make sure only one report per config runs at a time.
 	runningReportConfigs set.StringSet
+	// Stores cancel functions for running reports, keyed by report ID.
+	// Used to cancel in-flight database queries and blob store writes when a user cancels a PREPARING report.
+	runningReportCancels map[string]context.CancelCauseFunc
 	Schema               *graphql.Schema
 
 	/* Concurrency and synchronization related fields */
@@ -69,7 +72,7 @@ type scheduler struct {
 
 	// Use to synchronize access to reportConfigToEntryIDs map
 	cronJobsLock sync.Mutex
-	// Use to synchronize access to reportsQueue and runningReportConfigs
+	// Use to synchronize access to reportsQueue, runningReportConfigs, and runningReportCancels
 	schedulerLock sync.Mutex
 	// Use to lock any database tables if needed to prevent race conditions
 	dbLock sync.Mutex
@@ -110,6 +113,7 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnap
 		reportRequestsQueue:    list.New(),
 		readyForReports:        concurrency.NewSignal(),
 		runningReportConfigs:   set.NewStringSet(),
+		runningReportCancels:   make(map[string]context.CancelCauseFunc),
 		Schema:                 schema,
 		stopper:                concurrency.NewStopper(),
 		cron:                   cronScheduler,
@@ -202,13 +206,42 @@ func (s *scheduler) runSingleReport(req *reportGen.ReportRequest) {
 	defer s.concurrencySema.Release(1)
 	defer s.removeFromRunningReportConfigs(req.ReportSnapshot.GetReportConfigurationId())
 
-	s.reportGenerator.ProcessReportRequest(req)
+	reportID := req.ReportSnapshot.GetReportId()
+	ctx, cancel := context.WithCancelCause(context.Background())
+	s.addRunningReportCancel(reportID, cancel)
+	defer cancel(nil)
+	defer s.removeRunningReportCancel(reportID)
+
+	s.reportGenerator.ProcessReportRequest(ctx, req)
 }
 
 func (s *scheduler) removeFromRunningReportConfigs(configID string) {
 	s.schedulerLock.Lock()
 	defer s.schedulerLock.Unlock()
 	s.runningReportConfigs.Remove(configID)
+}
+
+func (s *scheduler) addRunningReportCancel(reportID string, cancel context.CancelCauseFunc) {
+	s.schedulerLock.Lock()
+	defer s.schedulerLock.Unlock()
+	s.runningReportCancels[reportID] = cancel
+}
+
+func (s *scheduler) removeRunningReportCancel(reportID string) {
+	s.schedulerLock.Lock()
+	defer s.schedulerLock.Unlock()
+	delete(s.runningReportCancels, reportID)
+}
+
+func (s *scheduler) tryCancelRunningReport(reportID string) bool {
+	s.schedulerLock.Lock()
+	cancel, exists := s.runningReportCancels[reportID]
+	s.schedulerLock.Unlock()
+	if !exists {
+		return false
+	}
+	cancel(reportGen.ErrUserCancelled)
+	return true
 }
 
 // UpsertReportSchedule adds/updates the schedule at which reports for the given report config are executed.
@@ -248,18 +281,19 @@ func (s *scheduler) RemoveReportSchedule(reportConfigID string) {
 
 /* Functions to add/remove report jobs from queue */
 
-// CancelReportRequest cancels a report request that is still waiting in queue. A user can only cancel a report requested by them.
-// If the report is already being prepared or has completed execution, it cannot be cancelled.
+// CancelReportRequest cancels a report request. If the report is waiting in queue, it is removed
+// and its snapshot is deleted. If the report is already being prepared, its context is cancelled,
+// which propagates cancellation to in-flight database queries and blob store writes.
 func (s *scheduler) CancelReportRequest(ctx context.Context, reportID string) (bool, error) {
 	removed := s.tryRemoveFromRequestQueue(reportID)
-	if !removed {
-		return false, nil
+	if removed {
+		err := s.reportSnapshotStore.DeleteReportSnapshot(ctx, reportID)
+		if err != nil {
+			return false, errors.Wrapf(err, "Error deleting report ID '%s' from storage", reportID)
+		}
+		return true, nil
 	}
-	err := s.reportSnapshotStore.DeleteReportSnapshot(ctx, reportID)
-	if err != nil {
-		return false, errors.Wrapf(err, "Error deleting report ID '%s' from storage", reportID)
-	}
-	return true, nil
+	return s.tryCancelRunningReport(reportID), nil
 }
 
 // Returns true if the request was successfully removed from the ReportRequests queue
