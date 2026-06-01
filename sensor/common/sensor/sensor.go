@@ -405,23 +405,22 @@ func (s *Sensor) Stop() {
 // DO NOT CALL IT IN PRODUCTION CODE.
 //
 // Only triggers when the sensor is not already in OfflineMode (i.e. Central
-// is reachable). The state transitions are not atomic: the real connection
-// retry loop could interleave between individual changeState calls.
+// is reachable). The lock is held for the entire sequence so the real
+// connection retry loop cannot interleave between transitions.
 func (s *Sensor) TriggerOfflineMode(reason string) {
-	var currentState common.SensorComponentEvent
-	concurrency.WithLock(s.currentStateMtx, func() {
-		currentState = s.currentState
-	})
-	if currentState == common.SensorComponentEventOfflineMode {
-		log.Errorf("Cannot trigger synthetic offline mode: sensor is already offline. Reason: %s", reason)
+	s.currentStateMtx.Lock()
+	defer s.currentStateMtx.Unlock()
+
+	if s.currentState == common.SensorComponentEventOfflineMode {
+		log.Warnf("Skipping synthetic offline mode cycle: sensor is already offline. Reason: %s", reason)
 		return
 	}
 
 	log.Infof("Synthetic offline mode triggered: %s", reason)
-	s.changeState(common.SensorComponentEventOfflineMode)
-	s.changeState(common.SensorComponentEventCentralReachableHTTP)
-	s.changeState(common.SensorComponentEventCentralReachable)
-	s.changeState(common.SensorComponentEventSyncFinished)
+	s.changeStateNoLock(common.SensorComponentEventOfflineMode)
+	s.changeStateNoLock(common.SensorComponentEventCentralReachableHTTP)
+	s.changeStateNoLock(common.SensorComponentEventCentralReachable)
+	s.changeStateNoLock(common.SensorComponentEventSyncFinished)
 }
 
 func (s *Sensor) changeState(state common.SensorComponentEvent) {
