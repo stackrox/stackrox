@@ -1145,7 +1145,7 @@ module.exports = [
                         path.join(__dirname, 'postcss.config.js'),
                         path.join(__dirname, 'tailwind.config.js'), // only for @tailwindcss/forms
                         path.join(__dirname, 'webpack.ocp-plugin.config.js'),
-                        path.join(__dirname, 'vite.config.js'),
+                        path.join(__dirname, 'vite.config.mjs'),
                         path.join(__dirname, 'cypress.config.js'),
                     ],
                 },

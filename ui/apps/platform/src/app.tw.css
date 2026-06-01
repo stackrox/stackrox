@@ -1,28 +1,179 @@
-/* IMPORTANT:
-   Tailwind's PostCSS processing (including the purge step) is triggered
-   by matching this specific filename.
-   If this file is renamed or moved, update the condition in postcss.config.js.
-   When tailwind is removed entirely, delete the related PostCSS plugin there. */
+/* Tailwind CSS v4 entry point.
+   PostCSS processing is no longer needed — Tailwind runs as a Vite plugin.
+   Theme configuration is CSS-based via @theme directives. */
 
-@import 'css/style.css';
+@import './css/style.css';
+@import './css/light.theme.css';
+@import './css/dark.theme.css';
 
-@import 'css/light.theme.css';
-@import 'css/dark.theme.css';
+@import "tailwindcss";
 
-/* React Table overrides. Delete this file once all react Table properties are ported over properly to avoid the use of !important*/
-@import 'react-table-6/react-table.css';
+/* =============================================
+   Theme: colors, fonts, spacing, breakpoints
+   ============================================= */
 
-/* React-vis */
-@import 'react-vis/dist/style.css';
+@theme inline {
+    --color-transparent: transparent;
 
+    --color-base-0: var(--base-0);
+    --color-base-100: var(--base-100);
+    --color-base-200: var(--base-200);
+    --color-base-300: var(--base-300);
+    --color-base-400: var(--base-400);
+    --color-base-500: var(--base-500);
+    --color-base-600: var(--base-600);
+    --color-base-700: var(--base-700);
+    --color-base-800: var(--base-800);
+    --color-base-900: var(--base-900);
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+    --color-primary-100: var(--primary-100);
+    --color-primary-200: var(--primary-200);
+    --color-primary-300: var(--primary-300);
+    --color-primary-400: var(--primary-400);
+    --color-primary-500: var(--primary-500);
+    --color-primary-600: var(--primary-600);
+    --color-primary-700: var(--primary-700);
+    --color-primary-800: var(--primary-800);
+    --color-primary-900: var(--primary-900);
 
-/* reset the unthinking hardcoded resets of Tailwind Forms in v2 plugin,
-   https://github.com/tailwindlabs/tailwindcss-forms/blob/master/src/index.js
-*/
+    --color-secondary-100: var(--secondary-100);
+    --color-secondary-200: var(--secondary-200);
+    --color-secondary-300: var(--secondary-300);
+    --color-secondary-400: var(--secondary-400);
+    --color-secondary-500: var(--secondary-500);
+    --color-secondary-600: var(--secondary-600);
+    --color-secondary-700: var(--secondary-700);
+    --color-secondary-800: var(--secondary-800);
+    --color-secondary-900: var(--secondary-900);
+
+    --color-tertiary-100: var(--tertiary-100);
+    --color-tertiary-200: var(--tertiary-200);
+    --color-tertiary-300: var(--tertiary-300);
+    --color-tertiary-400: var(--tertiary-400);
+    --color-tertiary-500: var(--tertiary-500);
+    --color-tertiary-600: var(--tertiary-600);
+    --color-tertiary-700: var(--tertiary-700);
+    --color-tertiary-800: var(--tertiary-800);
+    --color-tertiary-900: var(--tertiary-900);
+
+    --color-accent-100: var(--accent-100);
+    --color-accent-200: var(--accent-200);
+    --color-accent-300: var(--accent-300);
+    --color-accent-400: var(--accent-400);
+    --color-accent-500: var(--accent-500);
+    --color-accent-600: var(--accent-600);
+    --color-accent-700: var(--accent-700);
+    --color-accent-800: var(--accent-800);
+    --color-accent-900: var(--accent-900);
+
+    --color-success-100: var(--success-100);
+    --color-success-200: var(--success-200);
+    --color-success-300: var(--success-300);
+    --color-success-400: var(--success-400);
+    --color-success-500: var(--success-500);
+    --color-success-600: var(--success-600);
+    --color-success-700: var(--success-700);
+    --color-success-800: var(--success-800);
+    --color-success-900: var(--success-900);
+
+    --color-warning-100: var(--warning-100);
+    --color-warning-200: var(--warning-200);
+    --color-warning-300: var(--warning-300);
+    --color-warning-400: var(--warning-400);
+    --color-warning-500: var(--warning-500);
+    --color-warning-600: var(--warning-600);
+    --color-warning-700: var(--warning-700);
+    --color-warning-800: var(--warning-800);
+    --color-warning-900: var(--warning-900);
+
+    --color-caution-100: var(--caution-100);
+    --color-caution-200: var(--caution-200);
+    --color-caution-300: var(--caution-300);
+    --color-caution-400: var(--caution-400);
+    --color-caution-500: var(--caution-500);
+    --color-caution-600: var(--caution-600);
+    --color-caution-700: var(--caution-700);
+    --color-caution-800: var(--caution-800);
+    --color-caution-900: var(--caution-900);
+
+    --color-alert-100: var(--alert-100);
+    --color-alert-200: var(--alert-200);
+    --color-alert-300: var(--alert-300);
+    --color-alert-400: var(--alert-400);
+    --color-alert-500: var(--alert-500);
+    --color-alert-600: var(--alert-600);
+    --color-alert-700: var(--alert-700);
+    --color-alert-800: var(--alert-800);
+    --color-alert-900: var(--alert-900);
+
+    /* Font families */
+    --font-condensed: 'Open Sans Condensed', sans-serif;
+    --font-sans: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    --font-serif: Constantia, 'Lucida Bright', Lucidabright, 'Lucida Serif', Lucida, 'DejaVu Serif', 'Bitstream Vera Serif', 'Liberation Serif', Georgia, serif;
+    --font-mono: Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+    /* Font sizes */
+    --text-2xs: 0.625rem;
+    --text-2xs--line-height: 1.5;
+    --text-xs: 0.6875rem;
+    --text-xs--line-height: 1.5;
+    --text-sm: 0.75rem;
+    --text-sm--line-height: 1.5;
+    --text-base: 0.875rem;
+    --text-base--line-height: 1.5;
+    --text-lg: 1rem;
+    --text-lg--line-height: 1.5;
+    --text-xl: 1.125rem;
+    --text-xl--line-height: 1.5;
+    --text-2xl: 1.25rem;
+    --text-2xl--line-height: 1.5;
+    --text-3xl: 1.5rem;
+    --text-3xl--line-height: 1.25;
+    --text-4xl: 1.75rem;
+    --text-4xl--line-height: 1.25;
+    --text-5xl: 1.875rem;
+    --text-5xl--line-height: 1.25;
+    --text-6xl: 2.5rem;
+    --text-6xl--line-height: 1.25;
+
+    /* Breakpoints */
+    --breakpoint-sm: 36rem;
+    --breakpoint-md: 62rem;
+    --breakpoint-lg: 78.125rem;
+    --breakpoint-xl: 90rem;
+    --breakpoint-2xl: 113.25rem;
+    --breakpoint-3xl: 132.8125rem;
+
+    /* Font weights (numeric, matching v2 config) */
+    --font-weight-100: 100;
+    --font-weight-200: 200;
+    --font-weight-300: 300;
+    --font-weight-400: 400;
+    --font-weight-500: 500;
+    --font-weight-600: 600;
+    --font-weight-700: 700;
+    --font-weight-800: 800;
+    --font-weight-900: 900;
+
+    /* Border radius */
+    --radius-sm: 0.125rem;
+    --radius-DEFAULT: 0.25rem;
+    --radius-lg: 0.5rem;
+    --radius-full: 9999px;
+
+    /* Shadows */
+    --shadow-DEFAULT: 0 2px 8px 0 hsla(0, 0%, 0%, 0.14);
+    --shadow-md: 0 8px 8px 0 hsla(0, 0%, 0%, 0.04), 0 2px 4px 0 hsla(0, 0%, 0%, 0.17);
+    --shadow-lg: 0 8px 8px 0 hsla(0, 0%, 0%, 0.04), 0 2px 4px 0 hsla(0, 0%, 0%, 0.17);
+    --shadow-inner: inset 0 0px 8px 0 hsla(0, 0%, 0%, .25);
+    --shadow-none: none;
+}
+
+/* =============================================
+   Legacy custom utilities preserved from v2
+   ============================================= */
+
+/* Tailwind Forms v2 reset overrides */
 [type='text'],
 [type='email'],
 [type='url'],
@@ -41,7 +192,6 @@ select {
     font-size: 100%;
 }
 
-[type='checkbox'],
 [type='checkbox'] {
     @apply w-3 h-3 rounded-sm;
 }
@@ -49,8 +199,6 @@ select {
 .react-select__input input[type='text']:focus {
     box-shadow: none !important;
 }
-
-/* end reset of the Tailwind forms reset */
 
 .sticky {
     position: sticky !important;
@@ -61,12 +209,12 @@ select {
 }
 
 .pills {
-    @apply flex flex-col flex-auto rounded-sm border border-base-300 overflow-hidden !important;
+    @apply flex flex-col flex-auto rounded-sm border border-base-300 overflow-hidden;
 }
 
-@screen md {
+@media (min-width: 62rem) {
     .pills {
-        @apply flex-row !important;
+        @apply flex-row;
     }
 }
 
@@ -79,7 +227,7 @@ select {
 }
 
 .disabled {
-    @apply opacity-50 cursor-not-allowed pointer-events-none !important;
+    @apply opacity-50 cursor-not-allowed pointer-events-none;
 }
 
 .border-collapse {
@@ -87,9 +235,7 @@ select {
 }
 
 [class~='flex-1'] {
-    @apply min-h-0 !important;
-    /* Firefox needs this property to properly scroll panels with flex/overflow. Tailwind throws an exception error when using
-their built-in classes, so this is a workaround to `bundle` the Firefox fix with every `flex-1` class by default*/
+    min-height: 0;
 }
 
 .word-break {
@@ -100,29 +246,17 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
     word-break: break-all;
 }
 
-ul,
-ol,
-li,
-p,
-span,
-div,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    @apply break-words !important;
+ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
+    overflow-wrap: break-word;
 }
 
 .react-modal-overlay {
-    @apply fixed top-0 left-0 w-full h-full text-base !important;
+    @apply fixed top-0 left-0 w-full h-full text-base;
     background-color: hsla(225, 41%, 32%, 0.82);
     z-index: 9000;
 }
 
-/* Specify PatternFly light-on-dark colors explicitly for toast because variables have light-on-dark colors in Masthead. */
-
+/* Toast styling — PatternFly light-on-dark colors */
 .toast-selector {
     background-color: #ffffff;
     color: #151515;
@@ -136,17 +270,26 @@ h6 {
 }
 
 .Toastify__progress-bar {
-    display: none; /* Prevent axe DevTools issue: ARIA progressbar node must have an accessible name */
+    display: none;
 }
 
 .pill {
-    @apply select-none bg-base-200 cursor-pointer p-2 m-2 rounded-sm whitespace-nowrap flex-1 text-center text-xs text-base-500 font-600 !important;
+    @apply select-none bg-base-200 cursor-pointer p-2 m-2 rounded-sm whitespace-nowrap flex-1 text-center text-xs text-base-500 font-600;
 }
 
 .pill-active {
-    @apply select-none cursor-pointer p-2 m-2 bg-base-300 rounded-sm whitespace-nowrap flex-1 text-center text-xs text-base-700 font-600 !important;
+    @apply select-none cursor-pointer p-2 m-2 bg-base-300 rounded-sm whitespace-nowrap flex-1 text-center text-xs text-base-700 font-600;
 }
 
+.pill:hover {
+    @apply text-primary-500;
+}
+
+.pill-active {
+    @apply text-primary-500;
+}
+
+/* Animations */
 .transition {
     animation: fadein 0.25s ease-in;
 }
@@ -156,52 +299,34 @@ h6 {
 }
 
 @keyframes fadein {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 @keyframes fadeout {
-    from {
-        opacity: 1;
-    }
-
-    to {
-        opacity: 0;
-    }
+    from { opacity: 1; }
+    to { opacity: 0; }
 }
 
+/* Tab styling */
 .tab-row {
-    box-shadow: inset 0 -1px 0 0 theme('colors.base-400'), 0 15px 30px 0 theme('colors.base-200');
+    box-shadow: inset 0 -1px 0 0 var(--base-400), 0 15px 30px 0 var(--base-200);
 }
 
 .tab {
-    box-shadow: inset -1px 0px 0px 0px theme('colors.base-400'),
-        inset 0px -1px 0px 0px theme('colors.base-400');
+    box-shadow: inset -1px 0px 0px 0px var(--base-400),
+        inset 0px -1px 0px 0px var(--base-400);
 }
 
 .tab-active {
-    box-shadow: inset 0px 2px 0px 0px theme('colors.primary-400'),
-        inset -1px 0px 0px 0px theme('colors.base-400');
-}
-
-.pill:hover {
-    @apply text-primary-500 !important;
-}
-
-.pill-active {
-    @apply text-primary-500 !important;
+    box-shadow: inset 0px 2px 0px 0px var(--primary-400),
+        inset -1px 0px 0px 0px var(--base-400);
 }
 
 .transform-rotate-half-turn {
     transform: rotate(0.5turn);
 }
 
-/* will clean this up at some point... */
 .panel-actions:not(:empty) + div:before {
     @apply bg-base-300 absolute rounded-full;
     content: '';
@@ -237,41 +362,39 @@ h6 {
     width: 270px;
 }
 
-/* Collapsible CSS */
-
+/* Collapsible overrides */
 .Collapsible__trigger.is-open + .Collapsible__contentOuter {
     overflow: visible !important;
 }
 
-/* React Select CSS */
-
+/* React Select overrides */
 .react-select__single-value {
     color: inherit !important;
 }
 
 .react-select__option {
-    @apply px-2 cursor-pointer !important;
+    @apply px-2 cursor-pointer;
 }
 
 .react-select__menu {
-    @apply m-0 !important;
+    @apply m-0;
 }
 
 .react-select__menu-notice--no-options {
-    @apply text-left !important;
+    @apply text-left;
 }
 
 .react-select__control--is-focused,
 .react-select__control--is-focused:hover {
-    @apply border-base-400 !important;
+    @apply border-base-400;
 }
 
 .react-select__value-container--is-multi {
-    @apply pb-0 pl-1 !important;
+    @apply pb-0 pl-1;
 }
 
 .react-select__input input {
-    @apply text-base-600 font-600 !important;
+    @apply text-base-600 font-600;
     margin-left: -2px !important;
 }
 
@@ -280,7 +403,7 @@ h6 {
 }
 
 .react-select__multi-value__label {
-    @apply px-2 !important;
+    @apply px-2;
 }
 
 .react-select__multi-value__remove {
@@ -292,7 +415,7 @@ h6 {
 }
 
 .react-select__menu-list {
-    @apply p-0 !important;
+    @apply p-0;
 }
 
 .react-select__placeholder {
@@ -311,95 +434,84 @@ h6 {
     border-top-color: inherit !important;
 }
 
+/* Button utilities */
 .btn-class {
-    @apply inline-flex px-2 rounded-sm text-center items-center min-w-16 justify-center border-2 !important;
-    line-height: 14px; /* required because we were relying on the Chrome browser default of 14px earlier */
+    @apply inline-flex px-2 rounded-sm text-center items-center min-w-16 justify-center border-2;
+    line-height: 14px;
 }
 
 .btn-sm {
-    @apply btn-class py-1 text-sm !important;
+    @apply inline-flex px-2 rounded-sm text-center items-center min-w-16 justify-center border-2 py-1 text-sm;
+    line-height: 14px;
 }
 
 .btn {
-    @apply btn-class py-2 !important;
+    @apply inline-flex px-2 rounded-sm text-center items-center min-w-16 justify-center border-2 py-2;
+    line-height: 14px;
 }
 
 .btn-icon {
-    @apply flex py-2 px-2 rounded-sm text-center items-center justify-center bg-base-200 border !important;
+    @apply flex py-2 px-2 rounded-sm text-center items-center justify-center bg-base-200 border;
 }
 
 .btn-success {
-    @apply text-success-700 border-success-500 bg-success-200 !important;
+    @apply text-success-700 border-success-500 bg-success-200;
 }
 
 .btn-success:hover {
-    @apply border-success-500 bg-success-300 text-success-800 !important;
+    @apply border-success-500 bg-success-300 text-success-800;
 }
 
 .btn-alert {
-    @apply text-alert-100 border-alert-600 bg-alert-600 !important;
+    @apply text-alert-100 border-alert-600 bg-alert-600;
 }
 
 .btn-alert:hover {
-    @apply text-alert-100 border-alert-700 bg-alert-700 !important;
+    @apply text-alert-100 border-alert-700 bg-alert-700;
 }
 
 .btn-primary {
-    @apply border-primary-300 text-primary-600 !important;
+    @apply border-primary-300 text-primary-600;
 }
 
 .btn-primary:hover {
-    @apply text-primary-600 bg-primary-100 border-primary-400 !important;
+    @apply text-primary-600 bg-primary-100 border-primary-400;
 }
 
 .btn-tertiary {
-    @apply border-tertiary-700 text-tertiary-700 !important;
+    @apply border-tertiary-700 text-tertiary-700;
 }
 
 .btn-tertiary:hover {
-    @apply text-tertiary-700 bg-base-300 border-tertiary-600 !important;
+    @apply text-tertiary-700 bg-base-300 border-tertiary-600;
 }
 
 .btn-base {
-    @apply text-base-600 border-base-400 bg-base-100 !important;
+    @apply text-base-600 border-base-400 bg-base-100;
 }
 
 .btn-base:hover {
-    @apply border-base-400 bg-base-200 text-base-700 !important;
+    @apply border-base-400 bg-base-200 text-base-700;
 }
 
-/* React Select override */
+/* React Select dropdown hide */
 .hide-dropdown > div:last-child {
     @apply hidden;
 }
 
+/* React Table v6 overrides */
 .ReactTable .rt-table {
     overflow: overlay !important;
 }
 
 .ReactTable .rt-noData {
-    @apply bg-base-100 text-base-600 !important;
+    @apply bg-base-100 text-base-600;
     transition: none !important;
 }
 
-/* .rt-table:before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0px;
-  width: 100%;
-  height: 100%;
-  z-index: 3;
-  pointer-events: none;
-  background-image: linear-gradient(90deg, rgba(255,255,255,0.16) 1%, #FFFFFF 20px), linear-gradient(180deg, rgba(255,255,255,0.16) 1%, #FFFFFF 20px);
-  background-size: 20px 100%, 100% 20px;
-  background-repeat: no-repeat, no-repeat;
-  width: 100%;
-  background-position: right, bottom;
-} */
-
 .ReactTable .-pagination {
-    @apply shadow-none border-t shadow-underline pt-2 pb-2 pl-0 pr-0 !important;
+    @apply shadow-none border-t pt-2 pb-2 pl-0 pr-0;
+    box-shadow: inset 0 -1px 0px 0 hsla(0, 0%, 0%, 0.1);
 }
 
 .ReactTable input[type='checkbox'] {
@@ -414,7 +526,7 @@ h6 {
 
 .ReactTable .rt-thead {
     position: sticky;
-    @apply top-0 !important;
+    @apply top-0;
     z-index: 5 !important;
 }
 
@@ -423,27 +535,26 @@ h6 {
 }
 
 .ReactTable .rt-thead .rt-th:focus {
-    @apply outline-none !important;
+    @apply outline-none;
 }
 
 .ReactTable .rt-thead.-header {
-    @apply shadow-none !important;
+    @apply shadow-none;
 }
 
 .ReactTable .rt-thead.-header .rt-tr {
     box-shadow: -10px 0 0 var(--base-100), 10px 0 0 var(--base-100),
         0 2px 8px 0 hsla(230, 50%, 70%, 0.25) !important;
-
-    @apply bg-base-100 !important;
+    @apply bg-base-100;
 }
 
 .ReactTable .rt-th {
-    @apply bg-base-100 !important; /* th also needs background for horizontal scrolling beyond tr width */
+    @apply bg-base-100;
 }
 
 .ReactTable .rt-thead .rt-th.-sort-desc,
 .ReactTable .rt-thead .rt-th.-sort-asc {
-    @apply shadow-none !important;
+    @apply shadow-none;
 }
 
 .ReactTable .rt-thead .rt-th.-sort-desc div:after {
@@ -459,7 +570,7 @@ h6 {
 }
 
 .ReactTable .rt-tbody .rt-tr {
-    @apply min-h-12 bg-transparent !important;
+    @apply min-h-12 bg-transparent;
 }
 
 .ReactTable .rt-expandable {
@@ -467,42 +578,42 @@ h6 {
 }
 
 .ReactTable .rt-tbody .rt-tr .rt-td {
-    box-shadow: 0px -1px 0 0 theme('colors.base-300'), inset 0px -1px 0 0 theme('colors.base-300');
-    @apply whitespace-normal !important;
+    box-shadow: 0px -1px 0 0 var(--base-300), inset 0px -1px 0 0 var(--base-300);
+    @apply whitespace-normal;
 }
 
 .ReactTable.expanded .rt-tbody .rt-tr .rt-td {
-    box-shadow: 0px -1px 0 0 theme('colors.base-300'),
-        inset 0px -1px 0 -1px theme('colors.base-300');
-    @apply whitespace-normal !important;
+    box-shadow: 0px -1px 0 0 var(--base-300),
+        inset 0px -1px 0 -1px var(--base-300);
+    @apply whitespace-normal;
 }
 
 .ReactTable .rt-tbody .rt-tr-group:hover {
-    @apply bg-base-200 !important;
+    @apply bg-base-200;
     z-index: 3 !important;
-    box-shadow: 0px -2px 0 0 theme('colors.base-400'),
-        inset 0px -3px 0 -1px theme('colors.base-400');
+    box-shadow: 0px -2px 0 0 var(--base-400),
+        inset 0px -3px 0 -1px var(--base-400);
 }
 
 .ReactTable .rt-tbody .rt-tr.row-active .rt-td,
 .ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td {
-    @apply bg-tertiary-200 !important;
-    box-shadow: 0px -1px 0 0 theme('colors.tertiary-400'),
-        inset 0px -1px 0 0 theme('colors.tertiary-400');
+    @apply bg-tertiary-200;
+    box-shadow: 0px -1px 0 0 var(--tertiary-400),
+        inset 0px -1px 0 0 var(--tertiary-400);
     z-index: 4 !important;
 }
 
 .ReactTable.expanded .rt-tbody .rt-tr {
-    @apply pb-12 !important;
+    @apply pb-12;
 }
 
 .ReactTable .rt-tbody .rt-tr-group {
-    @apply flex-grow-0 cursor-pointer relative !important;
+    @apply flex-grow-0 cursor-pointer relative;
     border: none !important;
 }
 
 .ReactTable .rt-tr {
-    @apply relative !important;
+    @apply relative;
 }
 
 .ReactTable .rt-tbody .rt-td.rt-tr-actions {
@@ -513,24 +624,22 @@ h6 {
     width: 0 !important;
     overflow: inherit !important;
     flex: 0 !important;
-    @apply flex-row-reverse left-0 min-w-0 m-0 !important;
+    @apply flex-row-reverse left-0 min-w-0 m-0;
 }
 
 .ReactTable .rt-tr:hover .rt-tr-actions {
-    @apply flex !important;
+    @apply flex;
 }
 
 .ReactTable .-previous .-btn,
 .ReactTable .-next .-btn {
-    @apply bg-primary-100 rounded-none text-primary-600 !important;
+    @apply bg-primary-100 rounded-none text-primary-600;
 }
 
 .ReactTable .-previous .-btn:hover,
 .ReactTable .-next .-btn:hover {
-    @apply bg-primary-300 text-base-100 rounded-none !important;
+    @apply bg-primary-300 text-base-100 rounded-none;
 }
-
-/* will clean up and refactor all selectors at some point */
 
 .ReactTable .rt-thead .rt-tr {
     min-width: min-content !important;
@@ -541,8 +650,8 @@ h6 {
     position: sticky !important;
     left: 0;
     z-index: 1;
-    box-shadow: 0px -1px 0 0 theme('colors.base-300'), inset 0px -1px 0 0 theme('colors.base-300'),
-        11px 0 8px -4px theme('colors.base-100');
+    box-shadow: 0px -1px 0 0 var(--base-300), inset 0px -1px 0 0 var(--base-300),
+        11px 0 8px -4px var(--base-100);
 }
 
 .ReactTable .rt-thead .rt-th.sticky-column {
@@ -550,19 +659,19 @@ h6 {
     position: sticky !important;
     left: 0;
     z-index: 1 !important;
-    box-shadow: 11px 0 8px -4px theme('colors.base-100');
+    box-shadow: 11px 0 8px -4px var(--base-100);
 }
 
 .ReactTable .rt-thead .rt-th.sticky-column:hover {
-    @apply bg-primary-200 !important;
+    @apply bg-primary-200;
 }
 
 .ReactTable .rt-tbody .rt-tr.row-active .rt-td.sticky-column,
 .ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td.sticky-column,
 .ReactTable .rt-tbody .rt-tr.row-active .rt-td:first-child {
-    box-shadow: 0px -1px 0 0 theme('colors.tertiary-400'),
-        inset 0px -1px 0 0 theme('colors.tertiary-400'),
-        11px 0 8px -4px theme('colors.tertiary-200');
+    box-shadow: 0px -1px 0 0 var(--tertiary-400),
+        inset 0px -1px 0 0 var(--tertiary-400),
+        11px 0 8px -4px var(--tertiary-200);
     z-index: 4 !important;
 }
 
@@ -575,36 +684,31 @@ h6 {
 .cve-table .rt-table .rt-thead,
 .dockerfile-table .rt-table .rt-tbody,
 .dockerfile-table .rt-table .rt-thead {
-    @apply p-0 !important;
+    @apply p-0;
 }
 
 .cve-table .rt-tbody .rt-tr,
 .cve-table .rt-thead .rt-tr,
 .dockerfile-table .cve-table .rt-tbody .rt-tr,
 .dockerfile-table .cve-table .rt-thead .rt-tr {
-    @apply min-h-0 !important;
+    @apply min-h-0;
 }
 
 .cve-table .rt-thead .rt-th:first-child,
 .dockerfile-table .cve-table .rt-thead .rt-th:first-child {
-    @apply shadow-none !important;
+    @apply shadow-none;
 }
 
 .table-reset-padding .ReactTable .rt-tbody {
-    @apply p-0 !important;
+    @apply p-0;
 }
 
 .overflow-overlay {
     overflow: overlay;
 }
 
+/* Redoc API docs overrides */
 .redoc-wrap {
-    /* TODO: discover a way to export CSS vars from our tailwind-config package
-       for now, repeating light theme colors here,
-       because Redoc components unreadable with classic dark theme,
-       their styles need to be tuned
-    */
-
     --base-100: hsla(225, 0%, 100%, 1);
     --base-200: hsla(225, 45%, 98%, 1);
     --base-300: hsla(225, 43%, 94%, 1);
@@ -614,7 +718,6 @@ h6 {
     --base-700: hsla(225, 18%, 32%, 1);
     --base-800: hsla(225, 24%, 22%, 1);
     --base-900: hsla(225, 27%, 16%, 1);
-
     --primary-100: hsla(225, 100%, 99%, 1);
     --primary-200: hsla(225, 100%, 96%, 1);
     --primary-300: hsla(225, 80%, 92%, 1);
@@ -624,7 +727,6 @@ h6 {
     --primary-700: hsla(225, 51%, 52%, 1);
     --primary-800: hsla(225, 37%, 36%, 1);
     --primary-900: hsla(225, 28%, 21%, 1);
-
     --secondary-100: hsla(257, 45%, 98%, 1);
     --secondary-200: hsla(257, 100%, 96%, 1);
     --secondary-300: hsla(257, 81%, 90%, 1);
@@ -634,7 +736,6 @@ h6 {
     --secondary-700: hsla(257, 50%, 52%, 1);
     --secondary-800: hsla(257, 37%, 36%, 1);
     --secondary-900: hsla(257, 28%, 21%, 1);
-
     --tertiary-100: hsla(210, 45%, 98%, 1);
     --tertiary-200: hsla(210, 100%, 96%, 1);
     --tertiary-300: hsla(210, 81%, 90%, 1);
@@ -644,7 +745,6 @@ h6 {
     --tertiary-700: hsla(210, 47%, 48%, 1);
     --tertiary-800: hsla(210, 37%, 36%, 1);
     --tertiary-900: hsla(210, 28%, 21%, 1);
-
     --accent-100: hsla(293, 45%, 98%, 1);
     --accent-200: hsla(293, 100%, 96%, 1);
     --accent-300: hsla(293, 80%, 90%, 1);
@@ -654,7 +754,6 @@ h6 {
     --accent-700: hsla(293, 34%, 50%, 1);
     --accent-800: hsla(293, 34%, 37%, 1);
     --accent-900: hsla(293, 28%, 21%, 1);
-
     --success-100: hsla(155, 45%, 98%, 1);
     --success-200: hsla(155, 100%, 96%, 1);
     --success-300: hsla(155, 81%, 90%, 1);
@@ -664,7 +763,6 @@ h6 {
     --success-700: hsla(155, 62%, 33%, 1);
     --success-800: hsla(155, 37%, 31%, 1);
     --success-900: hsla(155, 28%, 21%, 1);
-
     --warning-100: hsla(39, 45%, 98%, 1);
     --warning-200: hsla(39, 100%, 96%, 1);
     --warning-300: hsla(39, 80%, 90%, 1);
@@ -674,7 +772,6 @@ h6 {
     --warning-700: hsla(39, 38%, 52%, 1);
     --warning-800: hsla(39, 34%, 37%, 1);
     --warning-900: hsla(39, 28%, 21%, 1);
-
     --caution-100: hsla(16, 45%, 98%, 1);
     --caution-200: hsla(16, 100%, 96%, 1);
     --caution-300: hsla(16, 81%, 90%, 1);
@@ -684,7 +781,6 @@ h6 {
     --caution-700: hsla(16, 47%, 48%, 1);
     --caution-800: hsla(16, 37%, 36%, 1);
     --caution-900: hsla(16, 28%, 21%, 1);
-
     --alert-100: hsla(341, 45%, 98%, 1);
     --alert-200: hsla(341, 100%, 96%, 1);
     --alert-300: hsla(341, 81%, 90%, 1);
@@ -694,12 +790,12 @@ h6 {
     --alert-700: hsla(341, 50%, 52%, 1);
     --alert-800: hsla(341, 37%, 36%, 1);
     --alert-900: hsla(341, 28%, 21%, 1);
-    @apply bg-base-100 !important;
+    @apply bg-base-100;
 }
 
 .redoc-wrap,
 .redoc-wrap .menu-content {
-    @apply h-full !important;
+    @apply h-full;
 }
 
 .redoc-wrap div:has(a[href*="redocly.com"]) {
@@ -707,10 +803,10 @@ h6 {
 }
 
 .redoc-wrap .api-content {
-    @apply overflow-auto !important;
+    @apply overflow-auto;
 }
 
-/* CHECKBOX TOGGLE SWITCH */
+/* Toggle switch */
 .form-switch,
 .form-switch-reverse {
     @apply relative select-none w-12 mr-2 leading-normal;
@@ -739,7 +835,6 @@ h6 {
 
 .form-switch-label:before {
     @apply absolute block bg-base-100 inset-y-0 w-6 border rounded -ml-1;
-
     right: 50%;
     content: '';
 }
@@ -758,10 +853,7 @@ h6 {
     @apply right-0;
 }
 
-/* TOGGLE SWITCH */
-/* rounded */
-/* for the difference between this switch, and the form-switch above,
-   see: https://uxplanet.org/checkbox-vs-toggle-switch-7fc6e83f10b8 */
+/* Toggle switch (rounded) */
 .toggle-switch {
     @apply relative select-none w-12 leading-normal;
 }
@@ -769,13 +861,11 @@ h6 {
     @apply w-8;
 }
 .toggle-switch-checkbox {
-    /* we cannot hide with @apply, or toggle switch will not be keyboard-focusable */
     left: -9999px;
     position: absolute;
 }
 .toggle-switch-label {
     @apply block overflow-hidden cursor-pointer bg-transparent border rounded-full h-6 shadow-inner;
-
     transition: background-color 0.2s ease-in;
 }
 .toggle-switch-small .toggle-switch-label {
@@ -783,17 +873,12 @@ h6 {
 }
 .toggle-switch-label:before {
     @apply absolute block bg-base-100 inset-y-0 w-6 border rounded-full -ml-1;
-
     content: '';
     right: 50%;
     transition: all 0.2s ease-in;
 }
 .toggle-switch-small .toggle-switch-label:before {
     @apply w-4;
-}
-
-.toggle-switch-checkbox:checked + .toggle-switch-label,
-.toggle-switch-checkbox:checked + .toggle-switch-label:before {
 }
 .toggle-switch-checkbox:checked + .toggle-switch-label {
     @apply bg-success-500;
@@ -804,24 +889,18 @@ h6 {
 .toggle-switch-checkbox:checked + .toggle-switch-label:before {
     @apply right-0;
 }
-
 .toggle-switch-checkbox:disabled + .toggle-switch-label {
     @apply opacity-50;
 }
-
 .toggle-switch-checkbox:disabled + .toggle-switch-label:before {
     @apply bg-base-200;
 }
 
-/*
- * Override overflow-y: auto which causes axe DevTools to report:
- * Scrollable region must have keyboard access
- */
+/* React-vis overrides */
 .rv-discrete-color-legend {
     overflow-y: hidden;
 }
 
-/* Legend */
 .horizontal-bar-legend .rv-discrete-color-legend-item {
     padding: 3px 4px;
 }
@@ -830,12 +909,12 @@ h6 {
     border-top: 1px solid var(--base-300);
     padding: 2px 0;
 }
-/* Legend color swatch */
+
 .horizontal-bar-legend .rv-discrete-color-legend-item__color__path {
     stroke-width: 3px;
     stroke-linecap: round;
 }
-/* Legend item text */
+
 .horizontal-bar-legend
     .rv-discrete-color-legend-item.horizontal
     .rv-discrete-color-legend-item__title {
@@ -844,7 +923,6 @@ h6 {
     padding-left: 5px;
 }
 
-/* widget detail */
 .widget-detail-bullet {
     position: relative;
     @apply py-2 px-1;
@@ -868,37 +946,30 @@ h6 {
     content: ' ';
 }
 
-/** Widget arrows */
+/* Widget arrows */
 .arrow-up {
-    width: 0;
-    height: 0;
+    width: 0; height: 0;
     border-left: 8px solid transparent;
     border-right: 8px solid transparent;
-
     border-bottom: 8px solid var(--primary-800);
 }
 
 .arrow-down {
-    width: 0;
-    height: 0;
+    width: 0; height: 0;
     border-left: 8px solid transparent;
     border-right: 8px solid transparent;
-
     border-top: 8px solid var(--primary-800);
 }
 
 .arrow-right {
-    width: 0;
-    height: 0;
+    width: 0; height: 0;
     border-top: 8px solid transparent;
     border-bottom: 8px solid transparent;
-
     border-left: 8px solid var(--primary-800);
 }
 
 .arrow-left {
-    width: 0;
-    height: 0;
+    width: 0; height: 0;
     border-top: 8px solid transparent;
     border-bottom: 8px solid transparent;
     border-right: 8px solid var(--base-400);
@@ -917,11 +988,11 @@ h6 {
 }
 
 .horizontal-bar-responsive .rv-xy-plot {
-    @apply w-full h-full !important;
+    @apply w-full h-full;
 }
 
 .horizontal-bar-responsive .rv-xy-plot__inner {
-    @apply max-w-full !important;
+    @apply max-w-full;
     max-height: 272px !important;
 }
 
@@ -957,16 +1028,12 @@ h6 {
     left: 50%;
 }
 
-/* multi-line truncation:
-   (not available in Tailwind)
-   see https://css-tricks.com/almanac/properties/l/line-clamp/
-*/
 .line-clamp {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    padding-bottom: 1px; /* necessary to fix bug where descenders are cut off */
+    padding-bottom: 1px;
 }
 
 .drag-grip {

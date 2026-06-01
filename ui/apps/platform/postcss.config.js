@@ -1,29 +1,5 @@
-const tailwindcss = require('tailwindcss');
-
+// Tailwind CSS v4 runs as a Vite plugin, not through PostCSS.
+// This config is kept minimal for any remaining PostCSS needs.
 module.exports = {
-    plugins: [
-        {
-            // If Tailwind is entirely removed, this plugin should be removed as well.
-            postcssPlugin: 'conditional-tailwindcss',
-            async Once(root, { result }) {
-                const filePath = result?.opts?.from ?? '';
-                const isTailwind = filePath.includes('app.tw.css');
-
-                // Only apply tailwind postcss plugin to our single tailwind entry file.
-                // Running tailwind plugin (particularly purge) on every css file
-                // causes large memory spikes and slow build times.
-                if (!isTailwind) {
-                    return;
-                }
-
-                const tailwindPlugin = tailwindcss('./tailwind.config.js');
-
-                // Run all tailwind internal plugins sequentially
-                await tailwindPlugin.plugins.reduce(
-                    (chain, plugin) => chain.then(() => plugin(root, result)),
-                    Promise.resolve()
-                );
-            },
-        },
-    ],
+    plugins: [],
 };

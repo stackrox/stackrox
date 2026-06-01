@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto';
 import react from '@vitejs/plugin-react';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import svgr from 'vite-plugin-svgr';
+import tailwindcss from '@tailwindcss/vite';
 
 import { viteProxy } from './src/setupProxy';
 
@@ -123,7 +124,12 @@ export default defineConfig(async () => {
             // scope with `global` instead of `window`
             global: 'window',
         },
-        plugins: [react(), svgr(), ...(sslOptions?.basicSsl ? [sslOptions.basicSsl()] : [])],
+        plugins: [
+            tailwindcss(),
+            react(),
+            svgr(),
+            ...(sslOptions?.basicSsl ? [sslOptions.basicSsl()] : []),
+        ],
         preview: {
             ...serverConfig,
             port: 3000,
