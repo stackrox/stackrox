@@ -184,6 +184,12 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Dashboard/DashboardPage')),
         path: dashboardPath,
     },
+    'compliance-cc': {
+        component: asyncComponent(
+            () => import('Containers/ComplianceEnhanced/CompliancePageCC')
+        ),
+        path: '/main/compliance-cc',
+    },
     'dashboard-cc': {
         component: asyncComponent(() => import('Containers/Dashboard/DashboardPageCC')),
         path: '/main/dashboard-cc',
