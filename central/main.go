@@ -154,6 +154,8 @@ import (
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
 	scandataAPI "github.com/stackrox/rox/central/scandata/api"
+	scandataDS "github.com/stackrox/rox/central/scandata/datastore/singleton"
+	scandataIngestion "github.com/stackrox/rox/central/scandata/ingestion"
 	"github.com/stackrox/rox/central/scanner"
 	scannerDefinitionsHandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
 	searchService "github.com/stackrox/rox/central/search/service"
@@ -229,6 +231,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	pkgScannerV4 "github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
@@ -308,6 +311,10 @@ func main() {
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
 	ensureDB(ctx)
+
+	// Register prototype scan data ingestor callback
+	ingestor := scandataIngestion.NewIngestor(scandataDS.Singleton())
+	pkgScannerV4.ScanIngestFunc = ingestor.IngestScan
 
 	if !pgconfig.IsExternalDatabase() {
 		// Need to remove the backup clone and set the current version

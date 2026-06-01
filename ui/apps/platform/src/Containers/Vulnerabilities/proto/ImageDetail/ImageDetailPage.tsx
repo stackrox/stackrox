@@ -64,7 +64,7 @@ function displayImageName(imageId: string, imageName?: string): string {
 type SummaryBadgeProps = {
     label: string;
     count: number;
-    color: 'red' | 'orange' | 'blue' | 'grey' | 'gold';
+    color: 'red' | 'orange' | 'blue' | 'grey' | 'yellow';
 };
 
 function SummaryBadge({ label, count, color }: SummaryBadgeProps) {
@@ -299,7 +299,7 @@ function ImageDetailPage() {
                                 <SummaryBadge
                                     label="Low"
                                     count={data.cveSummary.low}
-                                    color="gold"
+                                    color="yellow"
                                 />
                                 <FlexItem>
                                     <Label color="grey">
