@@ -64,7 +64,7 @@ function buildQuery(searchTerms: Record<string, string>): ProcessBaselineQuery {
 }
 
 function isLocked(baseline: ProcessBaseline): boolean {
-    return Boolean(baseline.userLockedTimestamp || baseline.stackRoxLockedTimestamp);
+    return Boolean(baseline.userLockedTimestamp);
 }
 
 function ProcessBaselinesPage() {
