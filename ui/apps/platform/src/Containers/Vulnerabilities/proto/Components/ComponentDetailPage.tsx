@@ -1,17 +1,12 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom-v5-compat';
 import {
-    Breadcrumb,
-    BreadcrumbItem,
     Bullseye,
-    Flex,
-    FlexItem,
     Label,
     PageSection,
     Spinner,
     Tab,
     Tabs,
-    Title,
 } from '@patternfly/react-core';
 import {
     ExpandableRowContent,
@@ -25,6 +20,7 @@ import {
 import { Link } from 'react-router-dom-v5-compat';
 
 import {
+    vulnerabilitiesPrototypePath,
     vulnerabilitiesPrototypeComponentsPath,
     vulnerabilitiesPrototypeImageDetailPath,
 } from 'routePaths';
@@ -35,6 +31,8 @@ import { useComponentCVEs } from './useComponentCVEs';
 import type { ProtoComponentVersion } from './useComponentDetail';
 import type { ProtoComponentImage } from './useComponentImages';
 import type { ComponentCVE } from './useComponentCVEs';
+import { DetailPageLayout } from '../components/DetailPageLayout';
+import { TABLE_HEADER_STYLE, TABLE_CELL_STYLE } from '../utils/tableDefaults';
 
 const severityNames: Record<number, string> = {
     0: 'Unknown',
@@ -106,33 +104,33 @@ function CveSubTable({
         <Table aria-label="Version CVEs" variant="compact" borders={false}>
             <Thead>
                 <Tr>
-                    <Th>CVE</Th>
-                    <Th>Severity</Th>
-                    <Th>CVSS</Th>
-                    <Th>Fixable</Th>
-                    <Th>Fixed By</Th>
-                    <Th>Images</Th>
+                    <Th style={TABLE_HEADER_STYLE}>CVE</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Severity</Th>
+                    <Th style={TABLE_HEADER_STYLE}>CVSS</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Fixable</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Fixed By</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Images</Th>
                 </Tr>
             </Thead>
             <Tbody>
                 {cves.map((cve: ComponentCVE) => (
                     <Tr key={cve.cveName}>
-                        <Td dataLabel="CVE">
+                        <Td dataLabel="CVE" style={TABLE_CELL_STYLE}>
                             <Link
                                 to={`/main/vulnerabilities/prototype/cves/${encodeURIComponent(cve.cveName)}`}
                             >
                                 {cve.cveName}
                             </Link>
                         </Td>
-                        <Td dataLabel="Severity">
+                        <Td dataLabel="Severity" style={TABLE_CELL_STYLE}>
                             <Label color={severityColor(cve.severity)}>
                                 {severityLabel(cve.severity)}
                             </Label>
                         </Td>
-                        <Td dataLabel="CVSS">{formatCvss(cve.cvss)}</Td>
-                        <Td dataLabel="Fixable">{cve.fixable ? 'Yes' : 'No'}</Td>
-                        <Td dataLabel="Fixed By">{cve.fixedBy || '-'}</Td>
-                        <Td dataLabel="Images">{cve.imageCount}</Td>
+                        <Td dataLabel="CVSS" style={TABLE_CELL_STYLE}>{formatCvss(cve.cvss)}</Td>
+                        <Td dataLabel="Fixable" style={TABLE_CELL_STYLE}>{cve.fixable ? 'Yes' : 'No'}</Td>
+                        <Td dataLabel="Fixed By" style={TABLE_CELL_STYLE}>{cve.fixedBy || '-'}</Td>
+                        <Td dataLabel="Images" style={TABLE_CELL_STYLE}>{cve.imageCount}</Td>
                     </Tr>
                 ))}
             </Tbody>
@@ -167,17 +165,17 @@ function VersionsTable({
 
     return (
         <Table aria-label="Component versions" variant="compact">
-            <Thead>
+            <Thead style={{ borderBottom: '2px solid var(--pf-global--BorderColor--100)' }}>
                 <Tr>
-                    <Th screenReaderText="Row expansion" />
-                    <Th>Version</Th>
-                    <Th>Source</Th>
-                    <Th>CVEs</Th>
-                    <Th>Images</Th>
-                    <Th>Top Severity</Th>
-                    <Th>Top CVSS</Th>
-                    <Th>Fixable</Th>
-                    <Th>Fixed By</Th>
+                    <Th screenReaderText="Row expansion" style={TABLE_HEADER_STYLE} />
+                    <Th style={TABLE_HEADER_STYLE}>Version</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Source</Th>
+                    <Th style={TABLE_HEADER_STYLE}>CVEs</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Images</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Top Severity</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Top CVSS</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Fixable</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Fixed By</Th>
                 </Tr>
             </Thead>
             {versions.map((ver, rowIndex) => {
@@ -196,23 +194,24 @@ function VersionsTable({
                                           }
                                         : undefined
                                 }
+                                style={TABLE_CELL_STYLE}
                             />
-                            <Td dataLabel="Version">{ver.version}</Td>
-                            <Td dataLabel="Source">{ver.source}</Td>
-                            <Td dataLabel="CVEs">{ver.cveCount}</Td>
-                            <Td dataLabel="Images">{ver.imageCount}</Td>
-                            <Td dataLabel="Top Severity">
+                            <Td dataLabel="Version" style={TABLE_CELL_STYLE}>{ver.version}</Td>
+                            <Td dataLabel="Source" style={TABLE_CELL_STYLE}>{ver.source}</Td>
+                            <Td dataLabel="CVEs" style={TABLE_CELL_STYLE}>{ver.cveCount}</Td>
+                            <Td dataLabel="Images" style={TABLE_CELL_STYLE}>{ver.imageCount}</Td>
+                            <Td dataLabel="Top Severity" style={TABLE_CELL_STYLE}>
                                 <Label color={severityColor(ver.topSeverity)}>
                                     {severityLabel(ver.topSeverity)}
                                 </Label>
                             </Td>
-                            <Td dataLabel="Top CVSS">{formatCvss(ver.topCvss)}</Td>
-                            <Td dataLabel="Fixable">{ver.fixable ? 'Yes' : 'No'}</Td>
-                            <Td dataLabel="Fixed By">{ver.fixedBy || '-'}</Td>
+                            <Td dataLabel="Top CVSS" style={TABLE_CELL_STYLE}>{formatCvss(ver.topCvss)}</Td>
+                            <Td dataLabel="Fixable" style={TABLE_CELL_STYLE}>{ver.fixable ? 'Yes' : 'No'}</Td>
+                            <Td dataLabel="Fixed By" style={TABLE_CELL_STYLE}>{ver.fixedBy || '-'}</Td>
                         </Tr>
                         {ver.cveCount > 0 && (
                             <Tr isExpanded={isExpanded}>
-                                <Td colSpan={columnCount}>
+                                <Td colSpan={columnCount} style={TABLE_CELL_STYLE}>
                                     <ExpandableRowContent>
                                         {isExpanded && (
                                             <CveSubTable
@@ -230,7 +229,7 @@ function VersionsTable({
             {!loading && versions.length === 0 && (
                 <Tbody>
                     <Tr>
-                        <Td colSpan={columnCount}>
+                        <Td colSpan={columnCount} style={TABLE_CELL_STYLE}>
                             <Bullseye>No versions found for this component</Bullseye>
                         </Td>
                     </Tr>
@@ -249,14 +248,14 @@ function ImagesTable({
 }) {
     return (
         <Table aria-label="Component images" variant="compact">
-            <Thead>
+            <Thead style={{ borderBottom: '2px solid var(--pf-global--BorderColor--100)' }}>
                 <Tr>
-                    <Th>Image</Th>
-                    <Th>Version</Th>
-                    <Th>Arch</Th>
-                    <Th>CVEs</Th>
-                    <Th>Top Severity</Th>
-                    <Th>Fixable</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Image</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Version</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Arch</Th>
+                    <Th style={TABLE_HEADER_STYLE}>CVEs</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Top Severity</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Fixable</Th>
                 </Tr>
             </Thead>
             <Tbody>
@@ -264,24 +263,24 @@ function ImagesTable({
                     const displayName = img.imageName || img.imageId;
                     return (
                         <Tr key={`${img.imageId}-${img.version}`}>
-                            <Td dataLabel="Image">
+                            <Td dataLabel="Image" style={TABLE_CELL_STYLE}>
                                 <Link to={imageDetailPath(img.imageId)}>{displayName}</Link>
                             </Td>
-                            <Td dataLabel="Version">{img.version}</Td>
-                            <Td dataLabel="Arch">{img.arch || '-'}</Td>
-                            <Td dataLabel="CVEs">{img.cveCount}</Td>
-                            <Td dataLabel="Top Severity">
+                            <Td dataLabel="Version" style={TABLE_CELL_STYLE}>{img.version}</Td>
+                            <Td dataLabel="Arch" style={TABLE_CELL_STYLE}>{img.arch || '-'}</Td>
+                            <Td dataLabel="CVEs" style={TABLE_CELL_STYLE}>{img.cveCount}</Td>
+                            <Td dataLabel="Top Severity" style={TABLE_CELL_STYLE}>
                                 <Label color={severityColor(img.topSeverity)}>
                                     {severityLabel(img.topSeverity)}
                                 </Label>
                             </Td>
-                            <Td dataLabel="Fixable">{img.fixable ? 'Yes' : 'No'}</Td>
+                            <Td dataLabel="Fixable" style={TABLE_CELL_STYLE}>{img.fixable ? 'Yes' : 'No'}</Td>
                         </Tr>
                     );
                 })}
                 {!loading && images.length === 0 && (
                     <Tr>
-                        <Td colSpan={6}>
+                        <Td colSpan={6} style={TABLE_CELL_STYLE}>
                             <Bullseye>No images found for this component</Bullseye>
                         </Td>
                     </Tr>
@@ -307,49 +306,43 @@ function ComponentDetailPage() {
     const totalCveCount = versions.reduce((sum, v) => sum + v.cveCount, 0);
     const totalImageCount = versions.reduce((sum, v) => sum + v.imageCount, 0);
 
+    const breadcrumbs = [
+        { label: 'Vulnerability Management V5', path: vulnerabilitiesPrototypePath },
+        { label: 'Components', path: vulnerabilitiesPrototypeComponentsPath },
+        { label: data?.name ?? decodedName },
+    ];
+
+    const subtitle = `${versions.length} versions • ${totalCveCount} CVEs`;
+
+    if (loading) {
+        return (
+            <PageSection hasBodyWrapper={false}>
+                <Bullseye>
+                    <Spinner />
+                </Bullseye>
+            </PageSection>
+        );
+    }
+
+    if (error) {
+        return (
+            <PageSection hasBodyWrapper={false}>
+                <p>Error loading component: {error.message}</p>
+            </PageSection>
+        );
+    }
+
+    if (!data) {
+        return null;
+    }
+
     return (
-        <>
-            <PageSection hasBodyWrapper={false}>
-                <Breadcrumb>
-                    <BreadcrumbItem>
-                        <Link to={vulnerabilitiesPrototypeComponentsPath}>Components</Link>
-                    </BreadcrumbItem>
-                    <BreadcrumbItem isActive>{data?.name ?? decodedName}</BreadcrumbItem>
-                </Breadcrumb>
-            </PageSection>
-
-            <PageSection hasBodyWrapper={false}>
-                {loading && (
-                    <Bullseye>
-                        <Spinner />
-                    </Bullseye>
-                )}
-
-                {error && <p>Error loading component: {error.message}</p>}
-
-                {!loading && !error && data && (
-                    <>
-                        <Flex>
-                            <FlexItem>
-                                <Title headingLevel="h1">{data.name}</Title>
-                            </FlexItem>
-                        </Flex>
-                        <Flex spaceItems={{ default: 'spaceItemsMd' }}>
-                            <FlexItem>
-                                <Label color="blue">CVEs: {totalCveCount}</Label>
-                            </FlexItem>
-                            <FlexItem>
-                                <Label color="grey">Images: {totalImageCount}</Label>
-                            </FlexItem>
-                            <FlexItem>
-                                <Label color="grey">Versions: {versions.length}</Label>
-                            </FlexItem>
-                        </Flex>
-                    </>
-                )}
-            </PageSection>
-
-            <PageSection hasBodyWrapper={false}>
+        <PageSection hasBodyWrapper={false}>
+            <DetailPageLayout
+                breadcrumbs={breadcrumbs}
+                title={data.name}
+                subtitle={subtitle}
+            >
                 <Tabs
                     activeKey={activeTab}
                     onSelect={(_event, tabKey) => setActiveTab(tabKey)}
@@ -370,8 +363,8 @@ function ComponentDetailPage() {
                         )}
                     </Tab>
                 </Tabs>
-            </PageSection>
-        </>
+            </DetailPageLayout>
+        </PageSection>
     );
 }
 
