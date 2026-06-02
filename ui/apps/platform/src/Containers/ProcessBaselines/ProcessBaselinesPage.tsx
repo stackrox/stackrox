@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     Alert,
     Button,
@@ -38,6 +38,8 @@ import {
     removeProcessesFromBaseline,
 } from 'services/ProcessBaselineService';
 import type { ProcessBaselineQuery } from 'services/ProcessBaselineService';
+import { fetchClusters } from 'services/ClustersService';
+import { fetchDeployment } from 'services/DeploymentsService';
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -107,6 +109,43 @@ function ProcessBaselinesPage() {
         );
     });
     const totalCount = data?.totalCount ?? 0;
+
+    const [clusterNames, setClusterNames] = useState<Record<string, string>>({});
+    const [deploymentNames, setDeploymentNames] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        fetchClusters().then((clusters) => {
+            const map: Record<string, string> = {};
+            for (const c of clusters) {
+                map[c.id] = c.name;
+            }
+            setClusterNames(map);
+        });
+    }, []);
+
+    const uniqueDeploymentIds = useMemo(
+        () => [...new Set(baselines.map((b) => b.key.deploymentId))],
+        [baselines]
+    );
+
+    useEffect(() => {
+        const idsToFetch = uniqueDeploymentIds.filter((id) => !deploymentNames[id]);
+        if (idsToFetch.length === 0) {
+            return;
+        }
+        Promise.allSettled(idsToFetch.map((id) => fetchDeployment(id))).then((results) => {
+            const newNames: Record<string, string> = {};
+            results.forEach((result, i) => {
+                if (result.status === 'fulfilled') {
+                    newNames[idsToFetch[i]] = result.value.name;
+                }
+            });
+            if (Object.keys(newNames).length > 0) {
+                setDeploymentNames((prev) => ({ ...prev, ...newNames }));
+            }
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [uniqueDeploymentIds]);
 
     const lockMutation = useRestMutation(lockUnlockProcessBaselines);
     const addMutation = useRestMutation(addProcessesToBaseline);
@@ -405,11 +444,11 @@ function ProcessBaselinesPage() {
                                                 />
                                                 <Td dataLabel="Deployment">
                                                     <Link to={`${riskBasePath}/${baseline.key.deploymentId}?contentTab=Process+discovery`}>
-                                                        {baseline.key.deploymentId}
+                                                        {deploymentNames[baseline.key.deploymentId] || baseline.key.deploymentId}
                                                     </Link>
                                                 </Td>
                                                 <Td dataLabel="Container">{baseline.key.containerName}</Td>
-                                                <Td dataLabel="Cluster">{baseline.key.clusterId}</Td>
+                                                <Td dataLabel="Cluster">{clusterNames[baseline.key.clusterId] || baseline.key.clusterId}</Td>
                                                 <Td dataLabel="Namespace">{baseline.key.namespace}</Td>
                                                 <Td dataLabel="Status">
                                                     {locked ? (
