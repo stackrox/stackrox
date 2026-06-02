@@ -613,7 +613,7 @@ jobs:
       # RHACS_BRANDING
       # prerelease
       # race-condition-debug
-      fail-fast: true
+      fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_main }}
     env:
       GO_BINARIES_BUILD_ARTIFACT: ""
@@ -768,7 +768,7 @@ jobs:
             fi
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
-      - name: Declare win (post required check + cancel losers via fail-fast)
+      - name: Declare win: post synthetic required check
         if: success()
         env:
           GH_TOKEN: ${{ github.token }}
@@ -783,7 +783,7 @@ jobs:
             -f "output[title]=Speculative run complete" \
             -f "output[summary]=Copy ${{ matrix.copy }} won the race." \
             2>&1 || echo "::warning::Failed to post synthetic check (non-fatal)"
-          exit 1  # trigger fail-fast to cancel the losing copy
+          exit 1  # intentional: marks this job as "failed" in the UI; loser copy continues independently
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
@@ -1067,7 +1067,7 @@ jobs:
       - pre-build-oss-notice
     if: ${{ !cancelled() }}
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_scanner }}
     env:
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
@@ -1142,7 +1142,7 @@ jobs:
           source ./scripts/ci/lib.sh
           push_scanner_image_set "${{ matrix.registry }}" "${{ matrix.arch }}"
 
-      - name: Declare win (post required check + cancel losers via fail-fast)
+      - name: Declare win: post synthetic required check
         if: success()
         env:
           GH_TOKEN: ${{ github.token }}
@@ -1157,7 +1157,7 @@ jobs:
             -f "output[title]=Speculative run complete" \
             -f "output[summary]=Copy ${{ matrix.copy }} won the race." \
             2>&1 || echo "::warning::Failed to post synthetic check (non-fatal)"
-          exit 1  # trigger fail-fast to cancel the losing copy
+          exit 1  # intentional: marks this job as "failed" in the UI; loser copy continues independently
 
   push-scanner-manifests:
     runs-on: ubuntu-latest
