@@ -45,6 +45,7 @@ func NewHandler(ds datastore.DataStore) http.Handler {
 	router.HandleFunc("/v1/scandata/deployments", h.listDeployments).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/deployments/{deploymentId}", h.getDeploymentDetail).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/components", h.listComponents).Methods(http.MethodGet)
+	router.HandleFunc("/v1/scandata/components/cves", h.getComponentCVEs).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/components/images", h.getComponentImages).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/components/detail", h.getComponentDetail).Methods(http.MethodGet)
 
@@ -278,6 +279,24 @@ type ComponentListItem struct {
 	ImportantCount int     `json:"importantCount"`
 	ModerateCount  int     `json:"moderateCount"`
 	LowCount       int     `json:"lowCount"`
+}
+
+// ComponentCVEsResponse is the response for GET /v1/scandata/components/cves
+type ComponentCVEsResponse struct {
+	ComponentName    string         `json:"componentName"`
+	ComponentVersion string         `json:"componentVersion"`
+	CVEs             []ComponentCVE `json:"cves"`
+}
+
+// ComponentCVE represents a CVE affecting a specific component version
+type ComponentCVE struct {
+	CVEName     string  `json:"cveName"`
+	Severity    int32   `json:"severity"`
+	CVSS        float32 `json:"cvss"`
+	Fixable     bool    `json:"fixable"`
+	FixedBy     string  `json:"fixedBy,omitempty"`
+	Description string  `json:"description,omitempty"`
+	ImageCount  int     `json:"imageCount"`
 }
 
 // ComponentImageInfo represents an image containing a component
@@ -1197,6 +1216,53 @@ func (h *handler) getComponentImages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := ComponentImagesResponse{Images: items}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Errorf("failed to encode response: %v", err)
+	}
+}
+
+func (h *handler) getComponentCVEs(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	componentName := r.URL.Query().Get("name")
+	if componentName == "" {
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.New("name query parameter is required"))
+		return
+	}
+
+	componentVersion := r.URL.Query().Get("version")
+	if componentVersion == "" {
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.New("version query parameter is required"))
+		return
+	}
+
+	rows, err := h.datastore.GetComponentCVEs(ctx, componentName, componentVersion)
+	if err != nil {
+		log.Errorf("failed to get CVEs for component %s@%s: %v", componentName, componentVersion, err)
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "getting component CVEs"))
+		return
+	}
+
+	cves := make([]ComponentCVE, 0, len(rows))
+	for _, row := range rows {
+		cves = append(cves, ComponentCVE{
+			CVEName:     row.CVEName,
+			Severity:    row.Severity,
+			CVSS:        row.CVSS,
+			Fixable:     row.Fixable,
+			FixedBy:     row.FixedBy,
+			Description: row.Description,
+			ImageCount:  row.ImageCount,
+		})
+	}
+
+	response := ComponentCVEsResponse{
+		ComponentName:    componentName,
+		ComponentVersion: componentVersion,
+		CVEs:             cves,
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {

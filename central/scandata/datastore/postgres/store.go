@@ -1053,6 +1053,56 @@ func (s *storeImpl) ListImages(ctx context.Context, limit, offset int) ([]*types
 	return res.rows, res.total, nil
 }
 
+// GetComponentCVEs returns CVEs affecting a specific component name+version.
+func (s *storeImpl) GetComponentCVEs(ctx context.Context, componentName, componentVersion string) ([]*types.ComponentCVERow, error) {
+	return pgutils.Retry2(ctx, func() ([]*types.ComponentCVERow, error) {
+		query := fmt.Sprintf(`
+			SELECT DISTINCT
+				f.cvename,
+				MAX(f.severity)::int as severity,
+				MAX(f.cvss) as cvss,
+				BOOL_OR(f.isfixable) as fixable,
+				MAX(f.fixedby) as fixed_by,
+				MAX(f.description) as description,
+				COUNT(DISTINCT f.imageid) as image_count
+			FROM %s f
+			JOIN %s c ON f.componentid = c.id
+			WHERE c.name = $1 AND c.version = $2 AND f.state = 0
+			GROUP BY f.cvename
+			ORDER BY MAX(f.severity) DESC, MAX(f.cvss) DESC
+		`, findingsTable, componentsTable)
+
+		rows, err := s.db.Query(ctx, query, componentName, componentVersion)
+		if err != nil {
+			return nil, errors.Wrap(err, "querying component CVEs")
+		}
+		defer rows.Close()
+
+		var results []*types.ComponentCVERow
+		for rows.Next() {
+			var row types.ComponentCVERow
+			if err := rows.Scan(
+				&row.CVEName,
+				&row.Severity,
+				&row.CVSS,
+				&row.Fixable,
+				&row.FixedBy,
+				&row.Description,
+				&row.ImageCount,
+			); err != nil {
+				return nil, errors.Wrap(err, "scanning component CVE row")
+			}
+			results = append(results, &row)
+		}
+
+		if err := rows.Err(); err != nil {
+			return nil, errors.Wrap(err, "iterating component CVE rows")
+		}
+
+		return results, nil
+	})
+}
+
 // GetImageOS returns the operating system for an image.
 func (s *storeImpl) GetImageOS(ctx context.Context, imageID string) (string, error) {
 	return pgutils.Retry2(ctx, func() (string, error) {

@@ -62,4 +62,7 @@ type DataStore interface {
 
 	// ListImages returns images with CVE summary data
 	ListImages(ctx context.Context, limit, offset int) ([]*types.ImageListRow, int, error)
+
+	// GetComponentCVEs returns CVEs affecting a specific component name+version
+	GetComponentCVEs(ctx context.Context, componentName, componentVersion string) ([]*types.ComponentCVERow, error)
 }

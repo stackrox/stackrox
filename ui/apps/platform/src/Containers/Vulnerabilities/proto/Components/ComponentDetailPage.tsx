@@ -13,7 +13,15 @@ import {
     Tabs,
     Title,
 } from '@patternfly/react-core';
-import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import {
+    ExpandableRowContent,
+    Table,
+    Tbody,
+    Td,
+    Th,
+    Thead,
+    Tr,
+} from '@patternfly/react-table';
 import { Link } from 'react-router-dom-v5-compat';
 
 import {
@@ -23,8 +31,10 @@ import {
 
 import { useComponentDetail } from './useComponentDetail';
 import { useComponentImages } from './useComponentImages';
+import { useComponentCVEs } from './useComponentCVEs';
 import type { ProtoComponentVersion } from './useComponentDetail';
 import type { ProtoComponentImage } from './useComponentImages';
+import type { ComponentCVE } from './useComponentCVEs';
 
 const severityNames: Record<number, string> = {
     0: 'Unknown',
@@ -63,17 +73,103 @@ function imageDetailPath(imageId: string): string {
     return vulnerabilitiesPrototypeImageDetailPath.replace(':imageId', encodeURIComponent(imageId));
 }
 
+/**
+ * Sub-table rendered inside an expanded version row, showing CVEs
+ * for that component version.
+ */
+function CveSubTable({
+    componentName,
+    componentVersion,
+}: {
+    componentName: string;
+    componentVersion: string;
+}) {
+    const { data: cves, loading, error } = useComponentCVEs(componentName, componentVersion, true);
+
+    if (loading) {
+        return (
+            <Bullseye>
+                <Spinner size="md" />
+            </Bullseye>
+        );
+    }
+
+    if (error) {
+        return <p>Error loading CVEs: {error.message}</p>;
+    }
+
+    if (cves.length === 0) {
+        return <Bullseye>No CVEs for this version</Bullseye>;
+    }
+
+    return (
+        <Table aria-label="Version CVEs" variant="compact" borders={false}>
+            <Thead>
+                <Tr>
+                    <Th>CVE</Th>
+                    <Th>Severity</Th>
+                    <Th>CVSS</Th>
+                    <Th>Fixable</Th>
+                    <Th>Fixed By</Th>
+                    <Th>Images</Th>
+                </Tr>
+            </Thead>
+            <Tbody>
+                {cves.map((cve: ComponentCVE) => (
+                    <Tr key={cve.cveName}>
+                        <Td dataLabel="CVE">
+                            <Link
+                                to={`/main/vulnerabilities/prototype/cves/${encodeURIComponent(cve.cveName)}`}
+                            >
+                                {cve.cveName}
+                            </Link>
+                        </Td>
+                        <Td dataLabel="Severity">
+                            <Label color={severityColor(cve.severity)}>
+                                {severityLabel(cve.severity)}
+                            </Label>
+                        </Td>
+                        <Td dataLabel="CVSS">{formatCvss(cve.cvss)}</Td>
+                        <Td dataLabel="Fixable">{cve.fixable ? 'Yes' : 'No'}</Td>
+                        <Td dataLabel="Fixed By">{cve.fixedBy || '-'}</Td>
+                        <Td dataLabel="Images">{cve.imageCount}</Td>
+                    </Tr>
+                ))}
+            </Tbody>
+        </Table>
+    );
+}
+
 function VersionsTable({
     versions,
     loading,
+    componentName,
 }: {
     versions: ProtoComponentVersion[];
     loading: boolean;
+    componentName: string;
 }) {
+    const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+    function toggleExpand(key: string) {
+        setExpandedRows((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) {
+                next.delete(key);
+            } else {
+                next.add(key);
+            }
+            return next;
+        });
+    }
+
+    const columnCount = 9;
+
     return (
         <Table aria-label="Component versions" variant="compact">
             <Thead>
                 <Tr>
+                    <Th screenReaderText="Row expansion" />
                     <Th>Version</Th>
                     <Th>Source</Th>
                     <Th>CVEs</Th>
@@ -84,31 +180,62 @@ function VersionsTable({
                     <Th>Fixed By</Th>
                 </Tr>
             </Thead>
-            <Tbody>
-                {versions.map((ver) => (
-                    <Tr key={ver.version}>
-                        <Td dataLabel="Version">{ver.version}</Td>
-                        <Td dataLabel="Source">{ver.source}</Td>
-                        <Td dataLabel="CVEs">{ver.cveCount}</Td>
-                        <Td dataLabel="Images">{ver.imageCount}</Td>
-                        <Td dataLabel="Top Severity">
-                            <Label color={severityColor(ver.topSeverity)}>
-                                {severityLabel(ver.topSeverity)}
-                            </Label>
-                        </Td>
-                        <Td dataLabel="Top CVSS">{formatCvss(ver.topCvss)}</Td>
-                        <Td dataLabel="Fixable">{ver.fixable ? 'Yes' : 'No'}</Td>
-                        <Td dataLabel="Fixed By">{ver.fixedBy || '-'}</Td>
-                    </Tr>
-                ))}
-                {!loading && versions.length === 0 && (
+            {versions.map((ver, rowIndex) => {
+                const rowKey = ver.version;
+                const isExpanded = expandedRows.has(rowKey);
+                return (
+                    <Tbody key={rowKey} isExpanded={isExpanded}>
+                        <Tr>
+                            <Td
+                                expand={
+                                    ver.cveCount > 0
+                                        ? {
+                                              rowIndex,
+                                              isExpanded,
+                                              onToggle: () => toggleExpand(rowKey),
+                                          }
+                                        : undefined
+                                }
+                            />
+                            <Td dataLabel="Version">{ver.version}</Td>
+                            <Td dataLabel="Source">{ver.source}</Td>
+                            <Td dataLabel="CVEs">{ver.cveCount}</Td>
+                            <Td dataLabel="Images">{ver.imageCount}</Td>
+                            <Td dataLabel="Top Severity">
+                                <Label color={severityColor(ver.topSeverity)}>
+                                    {severityLabel(ver.topSeverity)}
+                                </Label>
+                            </Td>
+                            <Td dataLabel="Top CVSS">{formatCvss(ver.topCvss)}</Td>
+                            <Td dataLabel="Fixable">{ver.fixable ? 'Yes' : 'No'}</Td>
+                            <Td dataLabel="Fixed By">{ver.fixedBy || '-'}</Td>
+                        </Tr>
+                        {ver.cveCount > 0 && (
+                            <Tr isExpanded={isExpanded}>
+                                <Td colSpan={columnCount}>
+                                    <ExpandableRowContent>
+                                        {isExpanded && (
+                                            <CveSubTable
+                                                componentName={componentName}
+                                                componentVersion={ver.version}
+                                            />
+                                        )}
+                                    </ExpandableRowContent>
+                                </Td>
+                            </Tr>
+                        )}
+                    </Tbody>
+                );
+            })}
+            {!loading && versions.length === 0 && (
+                <Tbody>
                     <Tr>
-                        <Td colSpan={8}>
+                        <Td colSpan={columnCount}>
                             <Bullseye>No versions found for this component</Bullseye>
                         </Td>
                     </Tr>
-                )}
-            </Tbody>
+                </Tbody>
+            )}
         </Table>
     );
 }
@@ -229,7 +356,7 @@ function ComponentDetailPage() {
                     aria-label="Component detail sections"
                 >
                     <Tab eventKey="versions" title={`Versions (${versions.length})`}>
-                        <VersionsTable versions={versions} loading={loading} />
+                        <VersionsTable versions={versions} loading={loading} componentName={decodedName} />
                     </Tab>
                     <Tab eventKey="images" title={`Images (${images.length})`}>
                         {imagesLoading && (

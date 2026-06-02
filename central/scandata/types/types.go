@@ -130,3 +130,14 @@ type ComponentVersionInfo struct {
 	Fixable     bool
 	FixedBy     string
 }
+
+// ComponentCVERow represents one CVE affecting a specific component name+version.
+type ComponentCVERow struct {
+	CVEName     string
+	Severity    int32
+	CVSS        float32
+	Fixable     bool
+	FixedBy     string
+	Description string
+	ImageCount  int
+}
