@@ -1,48 +1,96 @@
-name: Speculative Run — Declare Win
+name: Speculative Run Gate
 description: >
-  Called by the winner of a speculative-execution matrix race.
-  Posts a synthetic required-check-name as succeeded via the GitHub
-  Checks API, then exits 1 to trigger fail-fast and cancel remaining
-  copies still running.
+  Hierarchical gate for speculative-execution matrix jobs.
 
-  Usage:
-    strategy:
-      fail-fast: true
-      matrix:
-        copy: [a, b]
-    continue-on-error: ${{ matrix.copy == 'b' }}
-    steps:
-      - ... do the real work ...
-      - uses: ./.github/actions/speculative-run
-        if: success()
-        with:
-          required-check-name: "build-and-push-main (RHACS_BRANDING, amd64)"
+  Each copy follows this logic:
+  - Check if any EARLIER copy's gate already succeeded → they are handling it → skip
+  - Otherwise: check own CPU. If slow and not the last-copy → exit 1 (gate failure,
+    signals next copy to run). If fast or last-copy → exit 0 (gate success, proceed).
+
+  Call this as the FIRST step with continue-on-error: true. Gate all subsequent
+  build/push steps on: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
+
+  After a successful push, inline the "Declare win" step:
+    - name: Declare win
+      if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true' && success()
+      run: |
+        gh api repos/$REPO/check-runs -f name="..." -f conclusion=success
+        exit 1
 
 inputs:
-  required-check-name:
-    description: >
-      The exact required-check name to post as succeeded.
-      Must match the branch-protection required status check exactly.
+  copy:
+    description: 'This copy letter (a, b, or c)'
     required: true
+  last-copy:
+    description: 'Unconditional fallback copy letter (default b for 2-copy, c for 3-copy)'
+    required: false
+    default: 'b'
+  slow-cpu-pattern:
+    description: 'CPU substring marking a slow runner'
+    required: false
+    default: '7763'
+
+outputs:
+  skip:
+    description: '"true" if a fast sibling is already handling this work'
+    value: ${{ steps.gate.outputs.skip }}
 
 runs:
   using: composite
   steps:
-    - name: Post synthetic required check and cancel losers
+    - name: Gate
+      id: gate
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        check_name="${{ inputs.required-check-name }}"
-        echo "Winner: posting '${check_name}' as success"
+        set +e
+        MY_COPY="${{ inputs.copy }}"
+        LAST_COPY="${{ inputs.last-copy }}"
+        SLOW_PATTERN="${{ inputs.slow-cpu-pattern }}"
+        RUN_ID="${{ github.run_id }}"
+        REPO="${{ github.repository }}"
 
-        gh api repos/${{ github.repository }}/check-runs \
-          -f name="${check_name}" \
-          -f head_sha="${{ github.sha }}" \
-          -f status=completed \
-          -f conclusion=success \
-          -f "output[title]=Speculative run complete" \
-          -f "output[summary]=This copy won the race. Other copies will be cancelled by fail-fast."
+        declare -A ORDER=([a]=1 [b]=2 [c]=3)
+        my_order=${ORDER[$MY_COPY]}
 
-        echo "Exiting 1 to trigger fail-fast → cancel remaining copies"
-        exit 1
+        # Check if any earlier copy's gate already succeeded (they are fast and running)
+        for sibling in a b c; do
+          sib_order=${ORDER[$sibling]}
+          [[ $sib_order -ge $my_order ]] && break
+
+          sib_gate=""
+          for i in $(seq 1 12); do
+            sib_gate=$(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" \
+              --jq ".jobs[] | select(.name | test(\", ${sibling}[)]\$\")) | .steps[] | select(.name == \"Gate\") | .conclusion" \
+              2>/dev/null | head -1)
+            [[ -n "$sib_gate" ]] && break
+            sleep 5
+          done
+
+          echo "Sibling ${sibling} gate: '${sib_gate}'"
+          if [[ "$sib_gate" == "success" ]]; then
+            echo "Sibling ${sibling} is fast and handling it — skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+        done
+
+        echo "skip=false" >> "$GITHUB_OUTPUT"
+
+        # Last copy = unconditional fallback, always runs
+        if [[ "$MY_COPY" == "$LAST_COPY" ]]; then
+          echo "Unconditional fallback (copy ${MY_COPY}) — running."
+          exit 0
+        fi
+
+        # Check own CPU
+        cpu=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
+        echo "cpu=${cpu}"
+        if [[ "$cpu" == *"${SLOW_PATTERN}"* ]]; then
+          echo "::warning::Slow runner — delegating to next copy."
+          exit 1  # gate failure: signals next copy to run
+        fi
+
+        echo "Fast runner — proceeding."
+        exit 0

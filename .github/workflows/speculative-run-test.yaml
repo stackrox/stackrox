@@ -4,116 +4,173 @@ on:
     branches: [davdhacs/speed-racer-build]
   workflow_dispatch:
 
-# Tests for the synthetic check + fail-fast design:
-# - Winner posts synthetic required check via Checks API, then exits 1
-# - fail-fast cancels the loser immediately
-# - Required check name never belongs to an actual job
+# Tests for 3-copy hierarchical speculative execution:
+# - Copy a: fast → handles it; slow → delegates to b
+# - Copy b: fast (if a slow) → handles it; slow → delegates to c
+# - Copy c: unconditional fallback, always runs
+# Winner posts synthetic required check, exits 0 (shows as success)
 
 jobs:
-  # Test 1: copy b finishes first (fast).
-  # Expected:
-  #   - copy b posts synthetic check "test-fast-b-wins" as success
-  #   - copy b exits 1 → fail-fast → copy a cancelled
-  #   - PR check "test-fast-b-wins" = green ✓ (synthetic)
-  #   - Job "test-fast-b-wins (a)" = cancelled ⚫
-  #   - Job "test-fast-b-wins (b)" = failed ❌ (intentional exit 1)
-  test-fast-b-wins:
+  # Test 1: a=fast, b=slow, c=slow
+  # Expected: copy a wins, b and c see gate=success and skip
+  test-a-wins:
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
-        copy: [a, b]
-    continue-on-error: ${{ matrix.copy == 'b' }}
+        copy: [a, b, c]
+    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
-      - name: Simulate build
+      - name: Simulate slow CPU for b and c
         run: |
-          if [[ "${{ matrix.copy }}" == "a" ]]; then
-            echo "Copy a: slow build..."
-            sleep 90
-          else
-            echo "Copy b: fast build..."
-            sleep 5
+          if [[ "${{ matrix.copy }}" != "a" ]]; then
+            echo "Injecting fake slow CPU for copy ${{ matrix.copy }}"
+            # Override /proc/cpuinfo for testing by setting env var
+            echo "FAKE_SLOW=true" >> "$GITHUB_ENV"
           fi
 
-      - name: Declare win (post synthetic check + trigger fail-fast)
-        if: success()
+      - uses: ./.github/actions/speculative-run
+        id: gate
+        continue-on-error: true
+        with:
+          copy: ${{ matrix.copy }}
+          last-copy: c
+          slow-cpu-pattern: ${{ env.FAKE_SLOW == 'true' && 'EPYC' || 'NEVER_MATCH_XXXX' }}
+
+      - name: Simulate work
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
+        run: |
+          echo "Copy ${{ matrix.copy }} doing work..."
+          sleep 3
+
+      - name: Declare win
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true' && success()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "Copy ${{ matrix.copy }} won — posting synthetic required check"
           gh api repos/${{ github.repository }}/check-runs \
-            -f name="test-fast-b-wins" \
+            -f name="test-a-wins" \
             -f head_sha="${{ github.sha }}" \
             -f status=completed \
             -f conclusion=success \
-            -f "output[title]=Speculative run: copy ${{ matrix.copy }} won" \
-            -f "output[summary]=Winner: copy ${{ matrix.copy }}"
-          echo "Exiting 1 to trigger fail-fast and cancel loser"
-          exit 1
+            -f "output[title]=Copy ${{ matrix.copy }} won" \
+            2>&1 || echo "::warning::check post failed"
 
-  # Test 2: copy a finishes first (fast).
-  # Expected:
-  #   - copy a posts synthetic check "test-fast-a-wins" as success
-  #   - copy a exits 1 → fail-fast → copy b cancelled
-  test-fast-a-wins:
+  # Test 2: a=slow, b=fast, c=slow
+  # Expected: copy a exits (slow), copy b handles it, copy c sees b's gate and skips
+  test-b-wins:
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
-        copy: [a, b]
-    continue-on-error: ${{ matrix.copy == 'b' }}
+        copy: [a, b, c]
+    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
-      - name: Simulate build
+      - name: Set fake CPU for a and c only
         run: |
-          if [[ "${{ matrix.copy }}" == "a" ]]; then
-            echo "Copy a: fast build..."
-            sleep 5
-          else
-            echo "Copy b: slow build..."
-            sleep 90
+          if [[ "${{ matrix.copy }}" == "a" || "${{ matrix.copy }}" == "c" ]]; then
+            echo "FAKE_SLOW=true" >> "$GITHUB_ENV"
           fi
 
-      - name: Declare win (post synthetic check + trigger fail-fast)
-        if: success()
+      - uses: ./.github/actions/speculative-run
+        id: gate
+        continue-on-error: true
+        with:
+          copy: ${{ matrix.copy }}
+          last-copy: c
+          slow-cpu-pattern: ${{ env.FAKE_SLOW == 'true' && 'EPYC' || 'NEVER_MATCH_XXXX' }}
+
+      - name: Simulate work
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
+        run: echo "Copy ${{ matrix.copy }} doing work..." && sleep 3
+
+      - name: Declare win
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true' && success()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "Copy ${{ matrix.copy }} won — posting synthetic required check"
           gh api repos/${{ github.repository }}/check-runs \
-            -f name="test-fast-a-wins" \
+            -f name="test-b-wins" \
             -f head_sha="${{ github.sha }}" \
             -f status=completed \
             -f conclusion=success \
-            -f "output[title]=Speculative run: copy ${{ matrix.copy }} won" \
-            -f "output[summary]=Winner: copy ${{ matrix.copy }}"
-          exit 1
+            -f "output[title]=Copy ${{ matrix.copy }} won" \
+            2>&1 || echo "::warning::check post failed"
 
-  # Test 3: real failure — both copies fail.
-  # Expected:
-  #   - neither copy posts a synthetic success check
-  #   - "test-real-failure" check never appears as success → PR blocked
+  # Test 3: a=slow, b=slow, c=fallback
+  # Expected: copy a exits (slow), copy b exits (slow), copy c runs unconditionally
+  test-c-fallback:
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b, c]
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+      - name: Set fake slow CPU for a and b
+        run: |
+          if [[ "${{ matrix.copy }}" != "c" ]]; then
+            echo "FAKE_SLOW=true" >> "$GITHUB_ENV"
+          fi
+
+      - uses: ./.github/actions/speculative-run
+        id: gate
+        continue-on-error: true
+        with:
+          copy: ${{ matrix.copy }}
+          last-copy: c
+          slow-cpu-pattern: ${{ env.FAKE_SLOW == 'true' && 'EPYC' || 'NEVER_MATCH_XXXX' }}
+
+      - name: Simulate work
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
+        run: echo "Copy ${{ matrix.copy }} doing work..." && sleep 3
+
+      - name: Declare win
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true' && success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/${{ github.repository }}/check-runs \
+            -f name="test-c-fallback" \
+            -f head_sha="${{ github.sha }}" \
+            -f status=completed \
+            -f conclusion=success \
+            -f "output[title]=Copy ${{ matrix.copy }} won (fallback)" \
+            2>&1 || echo "::warning::check post failed"
+
+  # Test 4: real failure — build fails on all copies
+  # Expected: no synthetic check posted, "test-real-failure" stays absent → PR blocked
   test-real-failure:
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
-        copy: [a, b]
-    continue-on-error: ${{ matrix.copy == 'b' }}
+        copy: [a, b, c]
+    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
-      - name: Simulate real build failure
+      - uses: ./.github/actions/speculative-run
+        id: gate
+        continue-on-error: true
+        with:
+          copy: ${{ matrix.copy }}
+          last-copy: c
+
+      - name: Simulate build failure
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
         run: |
-          echo "Copy ${{ matrix.copy }}: build failing (real error)..."
-          sleep 3
+          echo "Copy ${{ matrix.copy }}: build failing..."
           exit 1
 
       - name: Declare win (never reached on failure)
-        if: success()
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true' && success()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -121,5 +178,5 @@ jobs:
             -f name="test-real-failure" \
             -f head_sha="${{ github.sha }}" \
             -f status=completed \
-            -f conclusion=success
-          exit 1
+            -f conclusion=success \
+            2>&1 || true
