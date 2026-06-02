@@ -1,10 +1,6 @@
 import { useParams } from 'react-router-dom-v5-compat';
 import {
-    Breadcrumb,
-    BreadcrumbItem,
     Bullseye,
-    Flex,
-    FlexItem,
     Label,
     PageSection,
     Spinner,
@@ -13,10 +9,12 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Link } from 'react-router-dom-v5-compat';
 
-import { vulnerabilitiesPrototypeDeploymentsPath } from 'routePaths';
+import { vulnerabilitiesPrototypePath, vulnerabilitiesPrototypeDeploymentsPath } from 'routePaths';
 
 import { useDeploymentDetail } from './useDeploymentDetail';
 import type { ProtoDeploymentImage } from './useDeploymentDetail';
+import { DetailPageLayout } from '../components/DetailPageLayout';
+import { TABLE_HEADER_STYLE, TABLE_CELL_STYLE } from '../utils/tableDefaults';
 
 const severityNames: Record<number, string> = {
     0: 'Unknown',
@@ -49,86 +47,79 @@ function DeploymentDetailPage() {
 
     const images: ProtoDeploymentImage[] = data?.images ?? [];
 
+    const breadcrumbs = [
+        { label: 'Vulnerability Management V5', path: vulnerabilitiesPrototypePath },
+        { label: 'Deployments', path: vulnerabilitiesPrototypeDeploymentsPath },
+        { label: data?.name ?? deploymentId ?? '' },
+    ];
+
+    const subtitle = data ? `${data.cluster} / ${data.namespace}` : '';
+
+    if (loading) {
+        return (
+            <PageSection hasBodyWrapper={false}>
+                <Bullseye>
+                    <Spinner />
+                </Bullseye>
+            </PageSection>
+        );
+    }
+
+    if (error) {
+        return (
+            <PageSection hasBodyWrapper={false}>
+                <p>Error loading deployment: {error.message}</p>
+            </PageSection>
+        );
+    }
+
+    if (!data) {
+        return null;
+    }
+
     return (
-        <>
-            <PageSection hasBodyWrapper={false}>
-                <Breadcrumb>
-                    <BreadcrumbItem>
-                        <Link to={vulnerabilitiesPrototypeDeploymentsPath}>
-                            Deployments
-                        </Link>
-                    </BreadcrumbItem>
-                    <BreadcrumbItem isActive>
-                        {data?.name ?? deploymentId}
-                    </BreadcrumbItem>
-                </Breadcrumb>
-            </PageSection>
-
-            <PageSection hasBodyWrapper={false}>
-                {loading && (
-                    <Bullseye>
-                        <Spinner />
-                    </Bullseye>
-                )}
-
-                {error && <p>Error loading deployment: {error.message}</p>}
-
-                {!loading && !error && data && (
-                    <>
-                        <Flex>
-                            <FlexItem>
-                                <Title headingLevel="h1">{data.name}</Title>
-                            </FlexItem>
-                        </Flex>
-                        <Flex spaceItems={{ default: 'spaceItemsMd' }}>
-                            <FlexItem>
-                                <Label color="blue">{data.cluster}</Label>
-                            </FlexItem>
-                            <FlexItem>
-                                <Label color="grey">{data.namespace}</Label>
-                            </FlexItem>
-                        </Flex>
-                    </>
-                )}
-            </PageSection>
-
-            <PageSection hasBodyWrapper={false}>
+        <PageSection hasBodyWrapper={false}>
+            <DetailPageLayout
+                breadcrumbs={breadcrumbs}
+                title={data.name}
+                subtitle={subtitle}
+            >
                 <Title headingLevel="h2">Images</Title>
                 <Table aria-label="Deployment images" variant="compact">
-                    <Thead>
+                    <Thead style={{ borderBottom: '2px solid var(--pf-global--BorderColor--100)' }}>
                         <Tr>
-                            <Th>Image</Th>
-                            <Th>CVEs</Th>
-                            <Th>Top Severity</Th>
-                            <Th>Fixable</Th>
+                            <Th style={TABLE_HEADER_STYLE}>Image</Th>
+                            <Th style={TABLE_HEADER_STYLE}>CVEs</Th>
+                            <Th style={TABLE_HEADER_STYLE}>Top Severity</Th>
+                            <Th style={TABLE_HEADER_STYLE}>Fixable</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
                         {images.map((img) => (
                             <Tr key={img.imageId}>
-                                <Td dataLabel="Image">
+                                <Td dataLabel="Image" style={TABLE_CELL_STYLE}>
                                     <Link
                                         to={`/main/vulnerabilities/prototype/images/${encodeURIComponent(img.imageId)}`}
                                     >
                                         {img.imageName || img.imageId}
                                     </Link>
                                 </Td>
-                                <Td dataLabel="CVEs">{img.cveCount}</Td>
-                                <Td dataLabel="Top Severity">
+                                <Td dataLabel="CVEs" style={TABLE_CELL_STYLE}>{img.cveCount}</Td>
+                                <Td dataLabel="Top Severity" style={TABLE_CELL_STYLE}>
                                     <Label
                                         color={severityColor(img.topSeverity)}
                                     >
                                         {severityLabel(img.topSeverity)}
                                     </Label>
                                 </Td>
-                                <Td dataLabel="Fixable">
+                                <Td dataLabel="Fixable" style={TABLE_CELL_STYLE}>
                                     {img.fixable ? 'Yes' : 'No'}
                                 </Td>
                             </Tr>
                         ))}
-                        {!loading && images.length === 0 && (
+                        {images.length === 0 && (
                             <Tr>
-                                <Td colSpan={4}>
+                                <Td colSpan={4} style={TABLE_CELL_STYLE}>
                                     <Bullseye>
                                         No images found for this deployment
                                     </Bullseye>
@@ -137,8 +128,8 @@ function DeploymentDetailPage() {
                         )}
                     </Tbody>
                 </Table>
-            </PageSection>
-        </>
+            </DetailPageLayout>
+        </PageSection>
     );
 }
 
