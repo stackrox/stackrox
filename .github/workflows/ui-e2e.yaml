@@ -469,7 +469,7 @@ jobs:
     - name: Extract credentials from existing deployment
       if: steps.check-deploy.outputs.exists == 'true'
       run: |
-        kubectl -n stackrox get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}' > /tmp/rox-admin-password
+        kubectl -n stackrox get secret central-htpasswd -o jsonpath='{.data.password}' | base64 -d > /tmp/rox-admin-password
         ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
         API_ENDPOINT="$(kubectl -n stackrox get svc central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):443"
         echo "$API_ENDPOINT" > /tmp/rox-api-endpoint
