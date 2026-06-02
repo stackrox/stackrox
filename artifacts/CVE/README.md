@@ -85,6 +85,8 @@ After initial prototype implementation, several UX and data quality issues were 
 | No images tab | Added images list page with OS, cluster, namespace columns | 2b1a18aa7c |
 | Missing drill-down links | Link component names in CVE detail to component detail page | ddb3304bd6, b127d9ef2c |
 | No sorting or pagination | Added to all list endpoints and UI tables | 302abb676b |
+| Breadcrumb navigation added | Added breadcrumb component to all 5 detail pages for easy navigation back to list views | (this commit) |
+| Table styling standardized | Applied consistent column widths, header styling, cell padding, and date formatting across all 5 list pages | (this commit) |
 
 ### Architecture Decisions Made During Implementation
 
