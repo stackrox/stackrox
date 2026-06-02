@@ -1,0 +1,656 @@
+# StackRox UI E2E Tests
+#
+# Two modes, selected by PR label:
+#   ui-e2e       → KinD (default): per-shard clusters, scanner v2, free
+#   ui-e2e-gke   → GKE: shared cluster, scanner v4, all specs including exceptionManagement
+#
+# Architecture:
+#   setup-shards: discovers spec files, groups by directory, outputs matrix
+#   kind-e2e: per-shard KinD cluster + deploy (label: ui-e2e, no ui-e2e-gke)
+#   provision-gke → gke-e2e → cleanup-gke: shared GKE cluster (label: ui-e2e-gke)
+
+name: UI E2E
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Image tag to test (e.g., 4.11.x-831-g8f262d83ee)"
+        required: true
+        type: string
+      gke-cluster-name:
+        description: "Pre-provisioned GKE cluster name (skips provision if set)"
+        required: false
+        type: string
+      gke-zone:
+        description: "GKE zone of pre-provisioned cluster"
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag to test"
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # Discover spec files and group into named shards via waterline bin-packing.
+  setup-shards:
+    name: Setup shards
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.shards.outputs.matrix }}
+      matrix-all: ${{ steps.shards.outputs.matrix-all }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          sparse-checkout: ui/apps/platform/cypress/integration
+
+      - name: Compute shards
+        id: shards
+        working-directory: ui/apps/platform
+        run: |
+          WATERLINE=15
+
+          # Exclude exceptionManagement — requires scanner v4 CVE data
+          find cypress/integration -path '*/exceptionManagement/*' -prune -o \( -name "*.test.js" -o -name "*.test.ts" \) -print \
+            | while read -r f; do
+                rel="${f#cypress/integration/}"
+                if [[ "$rel" == */* ]]; then
+                  echo "${rel%%/*}"
+                else
+                  echo "root"
+                fi
+              done \
+            | sort | uniq -c | sort -rn > /tmp/dir-counts.txt
+
+          echo "Spec counts per directory:"
+          cat /tmp/dir-counts.txt
+
+          python3 -c "
+          import json, sys
+
+          waterline = ${WATERLINE}
+          dirs = []
+          with open('/tmp/dir-counts.txt') as f:
+              for line in f:
+                  parts = line.strip().split(None, 1)
+                  if len(parts) == 2:
+                      dirs.append((int(parts[0]), parts[1]))
+
+          shards = []
+          current_names = []
+          current_count = 0
+
+          for count, name in dirs:
+              if current_count > 0 and current_count + count > waterline:
+                  shard_name = '+'.join(current_names)
+                  specs = ','.join(
+                      'cypress/integration/*.test.js,cypress/integration/*.test.ts' if n == 'root'
+                      else f'cypress/integration/{n}/**'
+                      for n in current_names
+                  )
+                  shards.append({'name': shard_name, 'specs': specs})
+                  current_names = []
+                  current_count = 0
+              current_names.append(name)
+              current_count += count
+
+          if current_names:
+              shard_name = '+'.join(current_names)
+              specs = ','.join(
+                  'cypress/integration/*.test.js,cypress/integration/*.test.ts' if n == 'root'
+                  else f'cypress/integration/{n}/**'
+                  for n in current_names
+              )
+              shards.append({'name': shard_name, 'specs': specs})
+
+          matrix = {'include': shards}
+          print(f'Generated {len(shards)} shards:')
+          for s in shards:
+              print(f\"  {s['name']}\")
+          with open('/tmp/matrix.json', 'w') as f:
+              json.dump(matrix, f)
+          "
+
+          echo "matrix=$(cat /tmp/matrix.json)" >> "$GITHUB_OUTPUT"
+
+          # Full matrix including exceptionManagement (for GKE with scanner v4)
+          find cypress/integration -name "*.test.js" -o -name "*.test.ts" \
+            | while read -r f; do
+                rel="${f#cypress/integration/}"
+                if [[ "$rel" == */* ]]; then
+                  echo "${rel%%/*}"
+                else
+                  echo "root"
+                fi
+              done \
+            | sort | uniq -c | sort -rn > /tmp/dir-counts-all.txt
+
+          python3 -c "
+          import json
+          waterline = ${WATERLINE}
+          dirs = []
+          with open('/tmp/dir-counts-all.txt') as f:
+              for line in f:
+                  parts = line.strip().split(None, 1)
+                  if len(parts) == 2:
+                      dirs.append((int(parts[0]), parts[1]))
+          shards = []
+          current_names, current_count = [], 0
+          for count, name in dirs:
+              if current_count > 0 and current_count + count > waterline:
+                  specs = ','.join('cypress/integration/*.test.js,cypress/integration/*.test.ts' if n == 'root' else f'cypress/integration/{n}/**' for n in current_names)
+                  shards.append({'name': '+'.join(current_names), 'specs': specs})
+                  current_names, current_count = [], 0
+              current_names.append(name)
+              current_count += count
+          if current_names:
+              specs = ','.join('cypress/integration/*.test.js,cypress/integration/*.test.ts' if n == 'root' else f'cypress/integration/{n}/**' for n in current_names)
+              shards.append({'name': '+'.join(current_names), 'specs': specs})
+          with open('/tmp/matrix-all.json', 'w') as f:
+              json.dump({'include': shards}, f)
+          "
+          echo "matrix-all=$(cat /tmp/matrix-all.json)" >> "$GITHUB_OUTPUT"
+
+  kind-e2e:
+    name: "${{ matrix.name }}"
+    needs: setup-shards
+    if: "!contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.setup-shards.outputs.matrix) }}
+
+    env:
+      CLUSTER_NAME: kind-e2e-${{ github.run_id }}-${{ strategy.job-index }}
+      KIND_MEMORY_LIMIT: 6g
+      ARTIFACT_DIR: ./test-artifacts
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+
+      # Both actions background their work and return immediately.
+      # create-kind-cluster: KinD create + image pulls (~45s in background)
+      # deploy-stackrox: retries kubectl until cluster is ready, then deploys
+      # npm ci runs next, overlapping with everything.
+      - name: Create KinD cluster (background)
+        uses: ./.github/actions/create-kind-cluster
+        with:
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          tag: ${{ inputs.tag }}
+          memory-limit: ${{ env.KIND_MEMORY_LIMIT }}
+          quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Deploy StackRox (background)
+        uses: ./.github/actions/deploy-stackrox
+        with:
+          tag: ${{ inputs.tag }}
+          scanner: v2
+          github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+          registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Start resource monitor
+        run: |
+          NODE="${CLUSTER_NAME}-control-plane"
+          (
+            PEAK_MB=0
+            PEAK_CPU=0
+            while true; do
+              stats=$(docker stats --no-stream --format "{{.MemUsage}}|{{.CPUPerc}}" "$NODE" 2>/dev/null || echo "0MiB|0.00%")
+              mem_raw="${stats%%|*}"
+              cpu_raw="${stats##*|}"
+              mem_val=$(echo "$mem_raw" | grep -oE '^[0-9.]+' || echo 0)
+              mem_unit=$(echo "$mem_raw" | grep -oE '(MiB|GiB)' | head -1)
+              [ "$mem_unit" = "GiB" ] && mem_mb=$(awk "BEGIN{printf \"%d\", $mem_val * 1024}") || mem_mb="${mem_val%.*}"
+              cpu_val=$(echo "$cpu_raw" | grep -oE '[0-9.]+' || echo 0)
+              cpu_int="${cpu_val%.*}"
+              ts="$(date +%H:%M:%S)"
+              changed=""
+              if [ "${mem_mb:-0}" -gt "$PEAK_MB" ] 2>/dev/null; then
+                PEAK_MB="$mem_mb"
+                changed="${changed} mem=${PEAK_MB}MB"
+              fi
+              if [ "${cpu_int:-0}" -gt "$PEAK_CPU" ] 2>/dev/null; then
+                PEAK_CPU="$cpu_int"
+                changed="${changed} cpu=${PEAK_CPU}%"
+              fi
+              [ -n "$changed" ] && echo "${ts} | NEW PEAK:${changed}"
+              sleep 15
+            done
+          ) > /tmp/resource-monitor.log 2>&1 &
+          echo "MONITOR_PID=$!" >> "$GITHUB_ENV"
+
+      - uses: ./.github/actions/cache-ui-dependencies
+
+      - name: Install Cypress dependencies
+        working-directory: ui/apps/platform
+        run: npm ci
+
+      - name: Wait for auth token
+        run: |
+          for _ in $(seq 1 300); do
+            [ -s /tmp/rox-auth-token ] && break
+            sleep 2
+          done
+          if [ ! -s /tmp/rox-auth-token ]; then
+            echo "::error::Auth token not generated after 10 minutes"
+            echo "--- deploy.log (last 80 lines) ---"
+            tail -80 /tmp/deploy-stackrox.log 2>/dev/null || echo "(no log)"
+            echo "--- pods ---"
+            kubectl -n stackrox get pods --no-headers 2>/dev/null || true
+            exit 1
+          fi
+          set +x
+          ROX_AUTH_TOKEN=$(cat /tmp/rox-auth-token)
+          echo "ROX_AUTH_TOKEN=${ROX_AUTH_TOKEN}" >> "$GITHUB_ENV"
+          echo "::add-mask::${ROX_AUTH_TOKEN}"
+          set -x
+
+      - name: Seed test data
+        run: |
+          set +x
+          ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+
+          # Deploy a test workload so sensor reports deployments
+          kubectl create namespace qa-test 2>/dev/null || true
+          kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null || true
+
+          # Wait for platform image CVEs — scanner v2 automatically scans
+          # StackRox images (central, scanner-db, etc.) after deployment.
+          # The exception management tests need these CVEs to exist.
+          for _ in $(seq 1 90); do
+            cve_count=$(curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://localhost:8443/v2/image-cves?pagination.limit=1" 2>/dev/null \
+              | jq -r '.imageCVEs | length // 0' 2>/dev/null)
+            [ "${cve_count:-0}" -gt 0 ] && echo "Image CVEs found: ${cve_count}" && break
+            sleep 5
+          done
+          [ "${cve_count:-0}" -eq 0 ] && echo "::warning::No image CVEs found after 7.5 minutes"
+          set -x
+
+      - name: Run Cypress
+        working-directory: ui/apps/platform
+        run: |
+          echo "${{ matrix.name }}: ${{ matrix.specs }}"
+          npx cypress run \
+            --browser chrome \
+            --spec "${{ matrix.specs }}" \
+            --config "baseUrl=https://localhost:8443,specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false,retries=0"
+        env:
+          CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
+          CYPRESS_ROX_FLATTEN_IMAGE_DATA: "true"
+          CYPRESS_ORCHESTRATOR_FLAVOR: k8s
+
+      - name: Resource report
+        if: always()
+        run: |
+          {
+            echo "## Shard ${{ matrix.name }} Resource Report"
+            echo ""
+            echo "| Pod | CPU | Memory |"
+            echo "|-----|-----|--------|"
+            kubectl -n stackrox top pods --no-headers 2>/dev/null | while read -r pod cpu mem; do
+              echo "| ${pod} | ${cpu} | ${mem} |"
+            done || echo "| (not available) | | |"
+            echo ""
+            mem=$(docker stats --no-stream --format "{{.MemUsage}}" "${CLUSTER_NAME}-control-plane" 2>/dev/null)
+            echo "**Docker total: ${mem}**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check resource thresholds
+        if: always()
+        run: |
+          LIMIT_MB=$(echo "${KIND_MEMORY_LIMIT}" | sed 's/g$//' | awk '{print $1 * 1024}')
+          THRESHOLD_MB=$(awk "BEGIN{printf \"%d\", $LIMIT_MB * 0.8}")
+          PEAK_MB=$(grep "NEW PEAK" /tmp/resource-monitor.log 2>/dev/null | tail -1 | grep -oE '[0-9]+' | head -1 || echo 0)
+          echo "Memory limit: ${LIMIT_MB}MB, threshold (80%): ${THRESHOLD_MB}MB, peak: ${PEAK_MB}MB"
+          if [ "${PEAK_MB:-0}" -gt "$THRESHOLD_MB" ] 2>/dev/null; then
+            echo "::error::Peak memory ${PEAK_MB}MB exceeded 80% threshold (${THRESHOLD_MB}MB of ${LIMIT_MB}MB limit)"
+            exit 1
+          fi
+          echo "Memory OK: peak ${PEAK_MB}MB is within 80% of ${LIMIT_MB}MB limit"
+
+      - name: Collect logs
+        if: always()
+        run: |
+          mkdir -p "$ARTIFACT_DIR"
+          # Pod logs — scrub potential secrets before saving
+          for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null); do
+            pod_name=$(basename "$pod")
+            kubectl -n stackrox logs "$pod" --all-containers 2>&1 \
+              | sed -E 's/(password|token|secret|credential|bearer)[=: ]*[^ "]+/\1=REDACTED/gi' \
+              > "${ARTIFACT_DIR}/${pod_name}.log" || true
+          done
+          cp -r ui/apps/platform/cypress/screenshots/ "${ARTIFACT_DIR}/cypress-screenshots/" 2>/dev/null || true
+          cp /tmp/resource-monitor.log "${ARTIFACT_DIR}/resource-monitor.log" 2>/dev/null || true
+          # Never upload: /tmp/rox-admin-password, /tmp/rox-auth-token,
+          # /tmp/sensor-init-bundle.yaml, /tmp/deploy.log
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+        if: always()
+        with:
+          name: kind-e2e-shard-${{ matrix.name }}-${{ github.run_id }}
+          path: ${{ env.ARTIFACT_DIR }}
+          retention-days: 7
+
+      - name: Cleanup
+        if: always()
+        run: |
+          kill "$MONITOR_PID" 2>/dev/null || true
+          kind delete cluster --name "$CLUSTER_NAME" 2>/dev/null || true
+
+  # ── GKE mode: shared cluster, scanner v2, all specs ──────────────────
+  provision-gke:
+    name: Provision GKE
+    if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      cluster-name: ${{ inputs.gke-cluster-name || steps.cluster.outputs.cluster-name }}
+      gke-zone: ${{ inputs.gke-zone || steps.cluster.outputs.zone }}
+    env:
+      CLUSTER_NAME: ui-e2e-gke-${{ github.run_id }}
+
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 1
+
+    - name: Connect to pre-provisioned cluster
+      if: inputs.gke-cluster-name
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Setup gcloud (pre-provisioned)
+      if: inputs.gke-cluster-name
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+      with:
+        install_components: "gke-gcloud-auth-plugin"
+
+    - name: Get kubeconfig (pre-provisioned)
+      if: inputs.gke-cluster-name
+      run: |
+        gcloud container clusters get-credentials \
+          "${{ inputs.gke-cluster-name }}" \
+          --zone "${{ inputs.gke-zone }}" \
+          --project acs-san-stackroxci
+
+    - name: Create GKE cluster
+      if: "!inputs.gke-cluster-name"
+      id: cluster
+      uses: ./.github/actions/create-gke-cluster
+      with:
+        cluster-name: ${{ env.CLUSTER_NAME }}
+        tag: ${{ inputs.tag }}
+        spot: "true"
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+    - name: Deploy StackRox (foreground, scanner v2)
+      uses: ./.github/actions/deploy-stackrox
+      with:
+        tag: ${{ inputs.tag }}
+        scanner: v2
+        background: "false"
+        exposure: loadbalancer
+        github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+        registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+    - name: Seed test workloads
+      run: |
+        kubectl create namespace qa-test 2>/dev/null || true
+        kubectl -n qa-test create deployment nginx --image=nginx:1.12 --replicas=1 2>/dev/null || true
+
+    - name: Upload credentials
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
+      with:
+        name: gke-ui-credentials
+        path: |
+          /tmp/rox-admin-password
+          /tmp/rox-auth-token
+          /tmp/rox-api-endpoint
+        retention-days: 1
+        if-no-files-found: error
+
+  gke-e2e:
+    name: "GKE ${{ matrix.name }}"
+    needs: [setup-shards, provision-gke]
+    if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.setup-shards.outputs.matrix-all) }}
+
+    env:
+      ARTIFACT_DIR: ./test-artifacts
+
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 1
+
+    - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+      with:
+        install_components: "gke-gcloud-auth-plugin"
+
+    - name: Connect to shared GKE cluster
+      run: |
+        gcloud container clusters get-credentials \
+          "${{ needs.provision-gke.outputs.cluster-name }}" \
+          --zone "${{ needs.provision-gke.outputs.gke-zone }}" \
+          --project acs-san-stackroxci
+        kubectl cluster-info
+
+    - name: Download credentials
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # ratchet:actions/download-artifact@v4
+      with:
+        name: gke-ui-credentials
+        path: /tmp
+
+    - name: Set credentials
+      run: |
+        set +x
+        AUTH_TOKEN="$(cat /tmp/rox-auth-token)"
+        ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+        ENDPOINT="$(cat /tmp/rox-api-endpoint)"
+        echo "::add-mask::${AUTH_TOKEN}"
+        echo "::add-mask::${ADMIN_PASSWORD}"
+        echo "ROX_AUTH_TOKEN=${AUTH_TOKEN}" >> "$GITHUB_ENV"
+        echo "API_ENDPOINT=${ENDPOINT}" >> "$GITHUB_ENV"
+        set -x
+
+    - uses: ./.github/actions/cache-ui-dependencies
+
+    - name: Install Cypress dependencies
+      working-directory: ui/apps/platform
+      run: npm ci
+
+    - name: Wait for shard-specific data
+      run: |
+        set +x
+        ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+        SHARD="${{ matrix.name }}"
+
+        case "$SHARD" in
+          *networkGraph*)
+            echo "Waiting for collector→sensor network flow..."
+            cluster_id=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+              "https://${API_ENDPOINT}/v1/clusters" | jq -r '.clusters[0].id')
+            for i in $(seq 1 120); do
+              graph=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/networkgraph/cluster/${cluster_id}?query=Namespace:stackrox")
+              edges=$(echo "$graph" | jq -r '[.nodes[]? | .outEdges // {} | keys[]] | length // 0')
+              # Check if collector node has outgoing edges (connects to sensor)
+              collector_edges=$(echo "$graph" | jq -r '
+                [.nodes[] | select(.entity.deployment.name == "collector") | .outEdges // {} | keys[]] | length // 0')
+              if [ "${collector_edges:-0}" -gt 0 ]; then
+                echo "Collector has ${collector_edges} outgoing edges (total: ${edges})"
+                break
+              fi
+              [ $((i % 12)) -eq 0 ] && echo "+$((i*5/60))m: edges=${edges:-0} collector_edges=${collector_edges:-0}"
+              sleep 5
+            done
+            [ "${collector_edges:-0}" -eq 0 ] && echo "::warning::No collector outgoing edges after 10 minutes"
+            ;;
+          *vulnerabilities*)
+            echo "Waiting for scanner registration..."
+            kubectl -n stackrox wait --for=condition=ready pod -l app=scanner --timeout=5m
+            echo "Scanner pod ready, waiting for Central registration..."
+            for _ in $(seq 1 60); do
+              registered=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/imageintegrations" \
+                | jq '[.integrations[]? | select(.type == "clairify" or .type == "scanner")] | length')
+              [ "${registered:-0}" -gt 0 ] && echo "Scanner registered with Central" && break
+              sleep 5
+            done
+            if [ "${registered:-0}" -gt 0 ]; then
+              echo "Triggering image scan..."
+              curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/images/scan" \
+                -X POST -d '{"imageName":"docker.io/nginx:1.12","force":true}' 2>&1 | jq -r '.name // .error // .message' || true
+            fi
+
+            # Log the full scan response for diagnostics
+            echo "Scan response:"
+            curl -sk -u "admin:${ADMIN_PASSWORD}" \
+              "https://${API_ENDPOINT}/v1/images/scan" \
+              -X POST -d '{"imageName":"docker.io/nginx:1.12","force":true}' 2>&1 \
+              | jq '{id: .id, name: .name, components: (.scan.components | length), cves: .cves, notes: .notes}' || true
+
+            # Poll until the scanned image appears in search results
+            check_scan_data() {
+              local label="$1"
+              # Try multiple query formats to find the nginx image
+              local count_sha count_graphql
+              count_sha=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/imagescount" \
+                | jq '.count // 0' 2>/dev/null)
+              count_graphql=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/api/graphql" \
+                -X POST -H 'Content-Type: application/json' \
+                -d '{"query":"{ imageCount imageCVECount }"}' \
+                | jq '.data | "\(.imageCount // 0) images, \(.imageCVECount // 0) cves"' 2>/dev/null)
+              echo "${label}: v1_total=${count_sha:-0} graphql=${count_graphql}"
+              [ "${count_sha:-0}" -gt 5 ] && return 0 || return 1
+            }
+
+            # Check at 0, 1, 3, 5, 7, 10, 15, 20, 25, 30 min
+            total=0
+            data_ready=false
+            check_scan_data "+0s" && data_ready=true
+            if [ "$data_ready" != "true" ]; then
+              for wait in 60 120 120 120 180 300 300 300 300; do
+                sleep "$wait"
+                total=$((total + wait))
+                check_scan_data "+$((total/60))m" && data_ready=true && break
+              done
+            fi
+            if [ "$data_ready" != "true" ]; then
+              echo "::warning::Limited image data after 30 minutes — some vulnerability tests may fail"
+            fi
+            ;;
+          *vulnmanagement*)
+            echo "Waiting for cluster (platform) CVE data..."
+            cluster_id=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+              "https://${API_ENDPOINT}/v1/clusters" | jq -r '.clusters[0].id')
+            for _ in $(seq 1 90); do
+              cves=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/cves/cluster?query=" | jq -r '.items | length // 0')
+              [ "${cves:-0}" -gt 0 ] && echo "Cluster CVEs: ${cves}" && break
+              sleep 5
+            done
+            [ "${cves:-0}" -eq 0 ] && echo "::warning::No cluster CVEs after 7.5 minutes"
+            ;;
+          *policies*|*risk*)
+            echo "Waiting for deployment events..."
+            for _ in $(seq 1 30); do
+              deps=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/deploymentscount?query=" | jq -r '.count // 0')
+              [ "${deps:-0}" -gt 5 ] && echo "Deployments: ${deps}" && break
+              sleep 5
+            done
+            ;;
+          *)
+            echo "No extra data wait needed for $SHARD"
+            ;;
+        esac
+        set -x
+
+    - name: Run Cypress
+      working-directory: ui/apps/platform
+      run: |
+        echo "${{ matrix.name }}: ${{ matrix.specs }}"
+        npx cypress run \
+          --browser chrome \
+          --spec "${{ matrix.specs }}" \
+          --config "baseUrl=https://${API_ENDPOINT},specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false,retries=0"
+      env:
+        CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
+        CYPRESS_ROX_FLATTEN_IMAGE_DATA: "true"
+        CYPRESS_ORCHESTRATOR_FLAVOR: k8s
+        NODE_TLS_REJECT_UNAUTHORIZED: "0"
+
+    - name: Collect logs
+      if: always()
+      run: |
+        mkdir -p "$ARTIFACT_DIR"
+        cp -r ui/apps/platform/cypress/screenshots/ "${ARTIFACT_DIR}/cypress-screenshots/" 2>/dev/null || true
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+      if: always()
+      with:
+        name: gke-e2e-shard-${{ matrix.name }}-${{ github.run_id }}
+        path: ${{ env.ARTIFACT_DIR }}
+        retention-days: 7
+
+  cleanup-gke:
+    name: Cleanup GKE
+    if: always() && needs.provision-gke.result != 'skipped' && !inputs.gke-cluster-name
+    needs: [provision-gke, gke-e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+      with:
+        install_components: "gke-gcloud-auth-plugin"
+
+    - name: Delete GKE cluster
+      run: |
+        gcloud container clusters delete \
+          "${{ needs.provision-gke.outputs.cluster-name }}" \
+          --zone "${{ needs.provision-gke.outputs.gke-zone }}" \
+          --project acs-san-stackroxci \
+          --async --quiet || true
+        echo "Cluster deletion initiated (async)"

@@ -1,0 +1,120 @@
+name: Deploy StackRox
+description: >
+  Deploys StackRox using roxie. Foreground (default): blocks until
+  ready, exports env vars. Background: returns immediately. Wait
+  with: wait $(cat /tmp/deploy-stackrox.pid) && source /tmp/roxie-env.sh
+  Log: /tmp/deploy-stackrox.log.
+
+inputs:
+  tag:
+    description: Image tag to deploy
+    required: true
+  cluster-name:
+    description: Cluster name as seen by Sensor
+    default: remote
+  resources:
+    description: Resource sizing preset
+    default: small
+  roxie-version:
+    description: roxie release version
+    default: v0.4.0
+  github-token:
+    description: GitHub token with access to stackrox/roxie
+    required: true
+  scanner:
+    description: "Scanner config: v4 (default), v2, or both"
+    default: v4
+  registry-username:
+    description: Registry username — sets REGISTRY_USERNAME for roxie
+    default: ""
+  registry-password:
+    description: Registry password — sets REGISTRY_PASSWORD for roxie
+    default: ""
+  exposure:
+    description: "Service exposure: auto (default), none, loadbalancer, route"
+    default: ""
+  background:
+    description: Run deploy in background
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Install roxctl + roxie
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        set -x
+        if ! command -v roxctl >/dev/null 2>&1; then
+          docker pull -q --platform linux/amd64 "quay.io/stackrox-io/roxctl:${{ inputs.tag }}"
+          cid=$(docker create --platform linux/amd64 "quay.io/stackrox-io/roxctl:${{ inputs.tag }}" true)
+          docker cp "$cid:/usr/bin/roxctl" /usr/local/bin/roxctl
+          docker rm "$cid" >/dev/null
+        fi
+
+        arch=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
+        os=$(uname -s | tr '[:upper:]' '[:lower:]')
+        gh release download "${{ inputs.roxie-version }}" \
+          --repo stackrox/roxie --pattern "roxie-${os}-${arch}" --dir /tmp --clobber
+        sudo install "/tmp/roxie-${os}-${arch}" /usr/local/bin/roxie
+        roxie version || echo "roxie install failed"
+
+    - name: Deploy StackRox
+      shell: bash
+      env:
+        INPUT_REGISTRY_USERNAME: ${{ inputs.registry-username }}
+        INPUT_REGISTRY_PASSWORD: ${{ inputs.registry-password }}
+      run: |
+        set +x
+        if [ -n "$INPUT_REGISTRY_USERNAME" ]; then
+          export REGISTRY_USERNAME="$INPUT_REGISTRY_USERNAME"
+          export REGISTRY_PASSWORD="$INPUT_REGISTRY_PASSWORD"
+        fi
+        export ROX_ADMIN_PASSWORD="$(openssl rand -base64 20)"
+        echo "::add-mask::${ROX_ADMIN_PASSWORD}"
+        echo "${ROX_ADMIN_PASSWORD}" > /tmp/rox-admin-password
+        export MAIN_IMAGE_TAG="${{ inputs.tag }}"
+
+        deploy() {
+          for _ in $(seq 1 120); do
+            kubectl cluster-info && break
+            sleep 2
+          done
+
+          yq -n ".securedCluster.spec.clusterName = \"${{ inputs.cluster-name }}\"" > /tmp/roxie-override.yaml
+          case "${{ inputs.scanner }}" in
+            v2)   yq -i '.central.spec.scanner.scannerComponent = "Enabled" | .central.spec.scannerV4.scannerComponent = "Disabled"' /tmp/roxie-override.yaml ;;
+            both) yq -i '.central.spec.scanner.scannerComponent = "Enabled"' /tmp/roxie-override.yaml ;;
+          esac
+
+          exposure_flag=""
+          if [ -n "${{ inputs.exposure }}" ]; then
+            exposure_flag="--exposure=${{ inputs.exposure }}"
+          fi
+
+          roxie deploy both \
+            --resources=${{ inputs.resources }} \
+            --single-namespace \
+            --envrc /tmp/roxie-env.sh \
+            --override /tmp/roxie-override.yaml \
+            --tag ${{ inputs.tag }} \
+            $exposure_flag
+
+          sed "s/^export //; s/['\"]//g" /tmp/roxie-env.sh >> "$GITHUB_ENV"
+          source /tmp/roxie-env.sh
+          echo "$API_ENDPOINT" > /tmp/rox-api-endpoint
+
+          curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+            "https://${API_ENDPOINT}/v1/apitokens/generate" \
+            -X POST -d '{"name":"ui_tests","role":"Admin"}' \
+            | jq -r '.token' > /tmp/rox-auth-token
+
+        }
+
+        if [ "${{ inputs.background }}" = "true" ]; then
+          deploy > /tmp/deploy-stackrox.log 2>&1 &
+          echo $! > /tmp/deploy-stackrox.pid
+        else
+          deploy 2>&1 | tee /tmp/deploy-stackrox.log
+        fi
