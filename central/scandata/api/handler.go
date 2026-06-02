@@ -192,6 +192,7 @@ type ImageDetailComponent struct {
 	Name     string           `json:"name"`
 	Version  string           `json:"version"`
 	Source   string           `json:"source"`
+	Arch     string           `json:"arch,omitzero"`
 	Location string           `json:"location,omitempty"`
 	CVEs     []ImageDetailCVE `json:"cves"`
 }
@@ -263,6 +264,8 @@ type ComponentDetailResponse struct {
 type ComponentVersionInfo struct {
 	Version     string  `json:"version"`
 	Source      string  `json:"source"`
+	Arch        string  `json:"arch,omitzero"`
+	Module      string  `json:"module,omitzero"`
 	CVECount    int     `json:"cveCount"`
 	ImageCount  int     `json:"imageCount"`
 	TopSeverity int32   `json:"topSeverity"`
@@ -622,6 +625,7 @@ func buildImageDetailResponse(imageID, imageName, imageOS string, scanData *type
 
 	compOrder := make([]compKey, 0)
 	compLocation := make(map[compKey]string)
+	compArch := make(map[compKey]string)
 	compCVEs := make(map[compKey]map[string]*cveAccum)
 
 	// Track unique CVE names across all components for the summary.
@@ -636,6 +640,7 @@ func buildImageDetailResponse(imageID, imageName, imageOS string, scanData *type
 			compOrder = append(compOrder, ck)
 			compCVEs[ck] = make(map[string]*cveAccum)
 			compLocation[ck] = fc.ComponentLocation
+			compArch[ck] = fc.ComponentArch
 		}
 
 		cveName := f.GetCveName()
@@ -708,6 +713,7 @@ func buildImageDetailResponse(imageID, imageName, imageOS string, scanData *type
 			Name:     ck.name,
 			Version:  ck.version,
 			Source:   ck.source,
+			Arch:     compArch[ck],
 			Location: compLocation[ck],
 			CVEs:     cveList,
 		})
@@ -1056,6 +1062,8 @@ func (h *handler) getComponentDetail(w http.ResponseWriter, r *http.Request) {
 		versionInfos = append(versionInfos, ComponentVersionInfo{
 			Version:     v.Version,
 			Source:      v.Source,
+			Arch:        v.Arch,
+			Module:      v.Module,
 			CVECount:    v.CVECount,
 			ImageCount:  v.ImageCount,
 			TopSeverity: v.TopSeverity,

@@ -46,17 +46,24 @@ const (
 
 // ScanComponents holds the Gorm model for Postgres table `scan_components`.
 type ScanComponents struct {
-	ID              string             `gorm:"column:id;type:varchar;primaryKey"`
-	ScanID          string             `gorm:"column:scanid;type:varchar;index:scancomponents_scanid,type:btree"`
-	ImageID         string             `gorm:"column:imageid;type:varchar;index:scancomponents_imageid,type:btree"`
-	Name            string             `gorm:"column:name;type:varchar"`
-	Version         string             `gorm:"column:version;type:varchar"`
-	Source          storage.SourceType `gorm:"column:source;type:integer"`
-	Location        string             `gorm:"column:location;type:varchar"`
-	LayerIndex      int32              `gorm:"column:layerindex;type:integer"`
-	LayerType       storage.LayerType  `gorm:"column:layertype;type:integer"`
-	FixedBy         string             `gorm:"column:fixedby;type:varchar"`
-	OperatingSystem string             `gorm:"column:operatingsystem;type:varchar"`
-	Serialized      []byte             `gorm:"column:serialized;type:bytea"`
-	ImageScanV2Ref  ImageScanV2        `gorm:"foreignKey:scanid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	ID                   string             `gorm:"column:id;type:varchar;primaryKey"`
+	ScanID               string             `gorm:"column:scanid;type:varchar;index:scancomponents_scanid,type:btree"`
+	ImageID              string             `gorm:"column:imageid;type:varchar;index:scancomponents_imageid,type:btree"`
+	Name                 string             `gorm:"column:name;type:varchar"`
+	Version              string             `gorm:"column:version;type:varchar"`
+	Source               storage.SourceType `gorm:"column:source;type:integer"`
+	Location             string             `gorm:"column:location;type:varchar"`
+	LayerIndex           int32              `gorm:"column:layerindex;type:integer"`
+	LayerType            storage.LayerType  `gorm:"column:layertype;type:integer"`
+	FixedBy              string             `gorm:"column:fixedby;type:varchar"`
+	OperatingSystem      string             `gorm:"column:operatingsystem;type:varchar"`
+	Arch                 string             `gorm:"column:arch;type:varchar"`
+	Module               string             `gorm:"column:module;type:varchar"`
+	SourcePackageName    string             `gorm:"column:sourcepackagename;type:varchar"`
+	SourcePackageVersion string             `gorm:"column:sourcepackageversion;type:varchar"`
+	Cpe                  string             `gorm:"column:cpe;type:varchar"`
+	Kind                 string             `gorm:"column:kind;type:varchar"`
+	RepositoryHint       string             `gorm:"column:repositoryhint;type:varchar"`
+	Serialized           []byte             `gorm:"column:serialized;type:bytea"`
+	ImageScanV2Ref       ImageScanV2        `gorm:"foreignKey:scanid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

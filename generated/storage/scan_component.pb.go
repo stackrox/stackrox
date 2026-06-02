@@ -33,12 +33,19 @@ type ScanComponent struct {
 	// Types that are valid to be assigned to HasLayerIndex:
 	//
 	//	*ScanComponent_LayerIndex
-	HasLayerIndex   isScanComponent_HasLayerIndex `protobuf_oneof:"has_layer_index"`
-	LayerType       LayerType                     `protobuf:"varint,9,opt,name=layer_type,json=layerType,proto3,enum=storage.LayerType" json:"layer_type,omitempty" search:"Layer Type,hidden"` // @gotags: search:"Layer Type,hidden"
-	FixedBy         string                        `protobuf:"bytes,10,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty" search:"Fixed By,hidden"`                              // @gotags: search:"Fixed By,hidden"
-	OperatingSystem string                        `protobuf:"bytes,11,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"`      // @gotags: search:"Operating System"
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	HasLayerIndex        isScanComponent_HasLayerIndex `protobuf_oneof:"has_layer_index"`
+	LayerType            LayerType                     `protobuf:"varint,9,opt,name=layer_type,json=layerType,proto3,enum=storage.LayerType" json:"layer_type,omitempty" search:"Layer Type,hidden"`             // @gotags: search:"Layer Type,hidden"
+	FixedBy              string                        `protobuf:"bytes,10,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty" search:"Fixed By,hidden"`                                          // @gotags: search:"Fixed By,hidden"
+	OperatingSystem      string                        `protobuf:"bytes,11,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"`                  // @gotags: search:"Operating System"
+	Arch                 string                        `protobuf:"bytes,12,opt,name=arch,proto3" json:"arch,omitempty" search:"Architecture"`                                                               // @gotags: search:"Architecture"
+	Module               string                        `protobuf:"bytes,13,opt,name=module,proto3" json:"module,omitempty" search:"Module,hidden"`                                                           // @gotags: search:"Module,hidden"
+	SourcePackageName    string                        `protobuf:"bytes,14,opt,name=source_package_name,json=sourcePackageName,proto3" json:"source_package_name,omitempty" search:"Source Package"`          // @gotags: search:"Source Package"
+	SourcePackageVersion string                        `protobuf:"bytes,15,opt,name=source_package_version,json=sourcePackageVersion,proto3" json:"source_package_version,omitempty" search:"Source Package Version,hidden"` // @gotags: search:"Source Package Version,hidden"
+	Cpe                  string                        `protobuf:"bytes,16,opt,name=cpe,proto3" json:"cpe,omitempty" search:"CPE,hidden"`                                                                 // @gotags: search:"CPE,hidden"
+	Kind                 string                        `protobuf:"bytes,17,opt,name=kind,proto3" json:"kind,omitempty" search:"Package Kind,hidden"`                                                               // @gotags: search:"Package Kind,hidden"
+	RepositoryHint       string                        `protobuf:"bytes,18,opt,name=repository_hint,json=repositoryHint,proto3" json:"repository_hint,omitempty" search:"Repository Hint,hidden"`                     // @gotags: search:"Repository Hint,hidden"
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ScanComponent) Reset() {
@@ -157,6 +164,55 @@ func (x *ScanComponent) GetOperatingSystem() string {
 	return ""
 }
 
+func (x *ScanComponent) GetArch() string {
+	if x != nil {
+		return x.Arch
+	}
+	return ""
+}
+
+func (x *ScanComponent) GetModule() string {
+	if x != nil {
+		return x.Module
+	}
+	return ""
+}
+
+func (x *ScanComponent) GetSourcePackageName() string {
+	if x != nil {
+		return x.SourcePackageName
+	}
+	return ""
+}
+
+func (x *ScanComponent) GetSourcePackageVersion() string {
+	if x != nil {
+		return x.SourcePackageVersion
+	}
+	return ""
+}
+
+func (x *ScanComponent) GetCpe() string {
+	if x != nil {
+		return x.Cpe
+	}
+	return ""
+}
+
+func (x *ScanComponent) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *ScanComponent) GetRepositoryHint() string {
+	if x != nil {
+		return x.RepositoryHint
+	}
+	return ""
+}
+
 type isScanComponent_HasLayerIndex interface {
 	isScanComponent_HasLayerIndex()
 }
@@ -171,7 +227,7 @@ var File_storage_scan_component_proto protoreflect.FileDescriptor
 
 const file_storage_scan_component_proto_rawDesc = "" +
 	"\n" +
-	"\x1cstorage/scan_component.proto\x12\astorage\x1a\x13storage/image.proto\x1a\x1dstorage/image_component.proto\"\xf9\x02\n" +
+	"\x1cstorage/scan_component.proto\x12\astorage\x1a\x13storage/image.proto\x1a\x1dstorage/image_component.proto\"\xda\x04\n" +
 	"\rScanComponent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\ascan_id\x18\x02 \x01(\tR\x06scanId\x12\x19\n" +
@@ -186,7 +242,14 @@ const file_storage_scan_component_proto_rawDesc = "" +
 	"layer_type\x18\t \x01(\x0e2\x12.storage.LayerTypeR\tlayerType\x12\x19\n" +
 	"\bfixed_by\x18\n" +
 	" \x01(\tR\afixedBy\x12)\n" +
-	"\x10operating_system\x18\v \x01(\tR\x0foperatingSystemB\x11\n" +
+	"\x10operating_system\x18\v \x01(\tR\x0foperatingSystem\x12\x12\n" +
+	"\x04arch\x18\f \x01(\tR\x04arch\x12\x16\n" +
+	"\x06module\x18\r \x01(\tR\x06module\x12.\n" +
+	"\x13source_package_name\x18\x0e \x01(\tR\x11sourcePackageName\x124\n" +
+	"\x16source_package_version\x18\x0f \x01(\tR\x14sourcePackageVersion\x12\x10\n" +
+	"\x03cpe\x18\x10 \x01(\tR\x03cpe\x12\x12\n" +
+	"\x04kind\x18\x11 \x01(\tR\x04kind\x12'\n" +
+	"\x0frepository_hint\x18\x12 \x01(\tR\x0erepositoryHintB\x11\n" +
 	"\x0fhas_layer_indexB.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 

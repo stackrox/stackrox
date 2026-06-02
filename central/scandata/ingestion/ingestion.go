@@ -94,6 +94,17 @@ func convertPackagesAndVulns(scanID, imageID string, metadata *storage.ImageMeta
 			Version:         pkg.GetVersion(),
 			FixedBy:         pkg.GetFixedInVersion(),
 			OperatingSystem: osForPackage(report, pkgID),
+			Arch:            pkg.GetArch(),
+			Module:          pkg.GetModule(),
+			Cpe:             pkg.GetCpe(),
+			Kind:            pkg.GetKind(),
+			RepositoryHint:  pkg.GetRepositoryHint(),
+		}
+
+		// Extract source package info from nested Package
+		if source := pkg.GetSource(); source != nil {
+			component.SourcePackageName = source.GetName()
+			component.SourcePackageVersion = source.GetVersion()
 		}
 
 		// Get environment info for this package

@@ -129,6 +129,13 @@ func (s *storeImpl) bulkInsertComponents(ctx context.Context, tx *postgres.Tx, c
 		"layertype",
 		"fixedby",
 		"operatingsystem",
+		"arch",
+		"module",
+		"sourcepackagename",
+		"sourcepackageversion",
+		"cpe",
+		"kind",
+		"repositoryhint",
 		"serialized",
 	}
 
@@ -161,6 +168,13 @@ func (s *storeImpl) bulkInsertComponents(ctx context.Context, tx *postgres.Tx, c
 				comp.GetLayerType(),
 				comp.GetFixedBy(),
 				comp.GetOperatingSystem(),
+				comp.GetArch(),
+				comp.GetModule(),
+				comp.GetSourcePackageName(),
+				comp.GetSourcePackageVersion(),
+				comp.GetCpe(),
+				comp.GetKind(),
+				comp.GetRepositoryHint(),
 				serialized,
 			})
 		}
@@ -448,7 +462,7 @@ func (s *storeImpl) GetFindingsWithComponentsByCVE(ctx context.Context, cveName 
 func (s *storeImpl) GetFindingsWithComponentsByImageID(ctx context.Context, imageID string) ([]*types.FindingWithComponent, error) {
 	return pgutils.Retry2(ctx, func() ([]*types.FindingWithComponent, error) {
 		query := fmt.Sprintf(`
-			SELECT f.serialized, c.name, c.version, c.source, c.location
+			SELECT f.serialized, c.name, c.version, c.source, c.location, c.arch
 			FROM %s f
 			JOIN %s c ON f.componentid = c.id
 			WHERE f.imageid = $1
@@ -463,9 +477,9 @@ func (s *storeImpl) GetFindingsWithComponentsByImageID(ctx context.Context, imag
 		var results []*types.FindingWithComponent
 		for rows.Next() {
 			var serialized []byte
-			var compName, compVersion, compLocation string
+			var compName, compVersion, compLocation, compArch string
 			var compSource int32
-			if err := rows.Scan(&serialized, &compName, &compVersion, &compSource, &compLocation); err != nil {
+			if err := rows.Scan(&serialized, &compName, &compVersion, &compSource, &compLocation, &compArch); err != nil {
 				return nil, errors.Wrap(err, "scanning finding row")
 			}
 
@@ -480,6 +494,7 @@ func (s *storeImpl) GetFindingsWithComponentsByImageID(ctx context.Context, imag
 				ComponentVersion:  compVersion,
 				ComponentSource:   compSource,
 				ComponentLocation: compLocation,
+				ComponentArch:     compArch,
 			})
 		}
 
@@ -855,6 +870,8 @@ func (s *storeImpl) GetComponentVersions(ctx context.Context, componentName stri
 			SELECT
 				c.version,
 				c.source,
+				c.arch,
+				c.module,
 				COUNT(DISTINCT f.cvename) as cve_count,
 				COUNT(DISTINCT f.imageid) as image_count,
 				MAX(f.severity)::int as top_severity,
@@ -864,7 +881,7 @@ func (s *storeImpl) GetComponentVersions(ctx context.Context, componentName stri
 			FROM %s c
 			JOIN %s f ON c.id = f.componentid
 			WHERE f.state = 0 AND c.name = $1
-			GROUP BY c.version, c.source
+			GROUP BY c.version, c.source, c.arch, c.module
 			ORDER BY c.version
 		`, componentsTable, findingsTable)
 
@@ -881,6 +898,8 @@ func (s *storeImpl) GetComponentVersions(ctx context.Context, componentName stri
 			if err := rows.Scan(
 				&row.Version,
 				&source,
+				&row.Arch,
+				&row.Module,
 				&row.CVECount,
 				&row.ImageCount,
 				&row.TopSeverity,

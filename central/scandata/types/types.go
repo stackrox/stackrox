@@ -38,6 +38,7 @@ type FindingWithComponent struct {
 	ComponentVersion  string
 	ComponentSource   int32
 	ComponentLocation string
+	ComponentArch     string
 }
 
 // DeploymentListRow represents one deployment in the list page.
@@ -93,6 +94,8 @@ type ComponentListRow struct {
 type ComponentVersionInfo struct {
 	Version     string
 	Source      string
+	Arch        string
+	Module      string
 	CVECount    int
 	ImageCount  int
 	TopSeverity int32

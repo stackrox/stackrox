@@ -22,4 +22,11 @@ message ScanComponent {
   LayerType layer_type = 9; // @gotags: search:"Layer Type,hidden"
   string fixed_by = 10; // @gotags: search:"Fixed By,hidden"
   string operating_system = 11; // @gotags: search:"Operating System"
+  string arch = 12; // @gotags: search:"Architecture"
+  string module = 13; // @gotags: search:"Module,hidden"
+  string source_package_name = 14; // @gotags: search:"Source Package"
+  string source_package_version = 15; // @gotags: search:"Source Package Version,hidden"
+  string cpe = 16; // @gotags: search:"CPE,hidden"
+  string kind = 17; // @gotags: search:"Package Kind,hidden"
+  string repository_hint = 18; // @gotags: search:"Repository Hint,hidden"
 }
