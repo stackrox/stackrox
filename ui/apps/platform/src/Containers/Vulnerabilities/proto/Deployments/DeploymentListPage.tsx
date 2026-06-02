@@ -17,6 +17,12 @@ import { vulnerabilitiesPrototypeDeploymentsPath } from 'routePaths';
 import ProtoNav from '../ProtoNav';
 import { usePagination } from '../usePagination';
 import { useSort } from '../useSort';
+import {
+    SEVERITY_WIDTH,
+    COUNT_WIDTH,
+    TABLE_HEADER_STYLE,
+    TABLE_CELL_STYLE,
+} from '../utils/tableDefaults';
 import { useDeploymentList } from './useDeploymentList';
 import type { ProtoDeploymentListItem } from './useDeploymentList';
 
@@ -83,37 +89,37 @@ function DeploymentListPage() {
                 )}
 
                 <Table aria-label="Vuln Management V5 deployment list" variant="compact">
-                    <Thead>
+                    <Thead isStickyHeader style={{ borderBottom: '2px solid var(--pf-v5-global--BorderColor--100)' }}>
                         <Tr>
-                            <Th {...getThSortProps(0)}>Deployment</Th>
-                            <Th>Cluster</Th>
-                            <Th>Namespace</Th>
-                            <Th>Images</Th>
-                            <Th {...getThSortProps(4)}>CVEs</Th>
-                            <Th {...getThSortProps(5)}>Top Severity</Th>
-                            <Th>Fixable</Th>
+                            <Th {...getThSortProps(0)} style={TABLE_HEADER_STYLE}>Deployment</Th>
+                            <Th style={TABLE_HEADER_STYLE}>Cluster</Th>
+                            <Th style={TABLE_HEADER_STYLE}>Namespace</Th>
+                            <Th style={{ ...TABLE_HEADER_STYLE, width: `${COUNT_WIDTH}px` }}>Images</Th>
+                            <Th {...getThSortProps(4)} style={{ ...TABLE_HEADER_STYLE, width: `${COUNT_WIDTH}px` }}>CVEs</Th>
+                            <Th {...getThSortProps(5)} style={{ ...TABLE_HEADER_STYLE, width: `${SEVERITY_WIDTH}px` }}>Top Severity</Th>
+                            <Th style={TABLE_HEADER_STYLE}>Fixable</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
                         {deployments.map((dep) => (
                             <Tr key={dep.id}>
-                                <Td dataLabel="Deployment">
+                                <Td dataLabel="Deployment" style={TABLE_CELL_STYLE}>
                                     <Link
                                         to={`${vulnerabilitiesPrototypeDeploymentsPath}/${encodeURIComponent(dep.id)}`}
                                     >
                                         {dep.name}
                                     </Link>
                                 </Td>
-                                <Td dataLabel="Cluster">{dep.cluster}</Td>
-                                <Td dataLabel="Namespace">{dep.namespace}</Td>
-                                <Td dataLabel="Images">{dep.imageCount}</Td>
-                                <Td dataLabel="CVEs">{dep.cveCount}</Td>
-                                <Td dataLabel="Top Severity">
+                                <Td dataLabel="Cluster" style={TABLE_CELL_STYLE}>{dep.cluster}</Td>
+                                <Td dataLabel="Namespace" style={TABLE_CELL_STYLE}>{dep.namespace}</Td>
+                                <Td dataLabel="Images" style={TABLE_CELL_STYLE}>{dep.imageCount}</Td>
+                                <Td dataLabel="CVEs" style={TABLE_CELL_STYLE}>{dep.cveCount}</Td>
+                                <Td dataLabel="Top Severity" style={TABLE_CELL_STYLE}>
                                     <Label color={severityColor(dep.topSeverity)}>
                                         {severityLabel(dep.topSeverity)}
                                     </Label>
                                 </Td>
-                                <Td dataLabel="Fixable">
+                                <Td dataLabel="Fixable" style={TABLE_CELL_STYLE}>
                                     {dep.fixable ? 'Yes' : 'No'}
                                 </Td>
                             </Tr>
