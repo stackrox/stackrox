@@ -1,5 +1,8 @@
 import { Bullseye } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Link } from 'react-router-dom-v5-compat';
+
+import { vulnerabilitiesPrototypeComponentsPath } from 'routePaths';
 
 import type { ProtoComponent } from './useCveDetail';
 
@@ -25,7 +28,11 @@ function AffectedComponentsTable({ components }: AffectedComponentsTableProps) {
             <Tbody>
                 {components.map((comp) => (
                     <Tr key={`${comp.name}-${comp.version}-${comp.source}`}>
-                        <Td dataLabel="Component">{comp.name}</Td>
+                        <Td dataLabel="Component">
+                            <Link to={`${vulnerabilitiesPrototypeComponentsPath}/${encodeURIComponent(comp.name)}`}>
+                                {comp.name}
+                            </Link>
+                        </Td>
                         <Td dataLabel="Version">{comp.version}</Td>
                         <Td dataLabel="Source">{comp.source}</Td>
                         <Td dataLabel="Fixed By">{comp.fixedBy || '-'}</Td>
