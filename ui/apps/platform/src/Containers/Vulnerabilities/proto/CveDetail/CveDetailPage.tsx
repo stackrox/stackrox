@@ -16,7 +16,7 @@ import {
 } from '@patternfly/react-core';
 import { Link } from 'react-router-dom-v5-compat';
 
-import { vulnerabilitiesPrototypeCvePath } from 'routePaths';
+import { vulnerabilitiesPrototypePath } from 'routePaths';
 
 import { useCveDetail } from './useCveDetail';
 import LayoutToggle, { useLayoutMode } from './LayoutToggle';
@@ -53,8 +53,13 @@ function CveDetailPage() {
             <PageSection hasBodyWrapper={false}>
                 <Breadcrumb>
                     <BreadcrumbItem>
-                        <Link to={vulnerabilitiesPrototypeCvePath}>
-                            Vuln Management V5
+                        <Link to={vulnerabilitiesPrototypePath}>
+                            Vulnerability Management V5
+                        </Link>
+                    </BreadcrumbItem>
+                    <BreadcrumbItem>
+                        <Link to={vulnerabilitiesPrototypePath + '/cves'}>
+                            CVEs
                         </Link>
                     </BreadcrumbItem>
                     <BreadcrumbItem isActive>{cveName}</BreadcrumbItem>

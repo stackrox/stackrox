@@ -13,6 +13,7 @@ import {
 import { Link } from 'react-router-dom-v5-compat';
 
 import type { ProtoImage } from './useCveDetail';
+import { TABLE_HEADER_STYLE, TABLE_CELL_STYLE } from '../utils/tableDefaults';
 
 const severityNames: Record<number, string> = {
     0: 'Unknown',
@@ -70,13 +71,13 @@ function AffectedImagesTable({ images }: AffectedImagesTableProps) {
 
     return (
         <Table aria-label="Affected images" variant="compact">
-            <Thead>
+            <Thead style={{ borderBottom: '2px solid var(--pf-global--BorderColor--100)' }}>
                 <Tr>
-                    <Th screenReaderText="Row expansion" />
-                    <Th>Image</Th>
-                    <Th>Components</Th>
-                    <Th>Severity</Th>
-                    <Th>Fixable</Th>
+                    <Th screenReaderText="Row expansion" style={TABLE_HEADER_STYLE} />
+                    <Th style={TABLE_HEADER_STYLE}>Image</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Components</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Severity</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Fixable</Th>
                 </Tr>
             </Thead>
             {images.map((img, rowIndex) => {
@@ -91,26 +92,27 @@ function AffectedImagesTable({ images }: AffectedImagesTableProps) {
                                     isExpanded,
                                     onToggle: () => toggleExpand(img.imageId),
                                 }}
+                                style={TABLE_CELL_STYLE}
                             />
-                            <Td dataLabel="Image">
+                            <Td dataLabel="Image" style={TABLE_CELL_STYLE}>
                                 <Link to={imageLink} title={img.imageId}>
                                     {displayImageName(img)}
                                 </Link>
                             </Td>
-                            <Td dataLabel="Components">
+                            <Td dataLabel="Components" style={TABLE_CELL_STYLE}>
                                 {img.componentCount}
                             </Td>
-                            <Td dataLabel="Severity">
+                            <Td dataLabel="Severity" style={TABLE_CELL_STYLE}>
                                 <Label color={severityColor(img.severity)}>
                                     {severityNames[img.severity] ?? 'Unknown'}
                                 </Label>
                             </Td>
-                            <Td dataLabel="Fixable">
+                            <Td dataLabel="Fixable" style={TABLE_CELL_STYLE}>
                                 {img.fixable ? 'Yes' : 'No'}
                             </Td>
                         </Tr>
                         <Tr isExpanded={isExpanded}>
-                            <Td colSpan={columnCount}>
+                            <Td colSpan={columnCount} style={TABLE_CELL_STYLE}>
                                 <ExpandableRowContent>
                                     {img.components &&
                                     img.components.length > 0 ? (
@@ -121,11 +123,11 @@ function AffectedImagesTable({ images }: AffectedImagesTableProps) {
                                         >
                                             <Thead>
                                                 <Tr>
-                                                    <Th>Component</Th>
-                                                    <Th>Version</Th>
-                                                    <Th>Source</Th>
-                                                    <Th>Fixed By</Th>
-                                                    <Th>Advisories</Th>
+                                                    <Th style={TABLE_HEADER_STYLE}>Component</Th>
+                                                    <Th style={TABLE_HEADER_STYLE}>Version</Th>
+                                                    <Th style={TABLE_HEADER_STYLE}>Source</Th>
+                                                    <Th style={TABLE_HEADER_STYLE}>Fixed By</Th>
+                                                    <Th style={TABLE_HEADER_STYLE}>Advisories</Th>
                                                 </Tr>
                                             </Thead>
                                             <Tbody>
@@ -134,20 +136,20 @@ function AffectedImagesTable({ images }: AffectedImagesTableProps) {
                                                         <Tr
                                                             key={`${comp.name}-${comp.version}-${compIdx}`}
                                                         >
-                                                            <Td dataLabel="Component">
+                                                            <Td dataLabel="Component" style={TABLE_CELL_STYLE}>
                                                                 {comp.name}
                                                             </Td>
-                                                            <Td dataLabel="Version">
+                                                            <Td dataLabel="Version" style={TABLE_CELL_STYLE}>
                                                                 {comp.version}
                                                             </Td>
-                                                            <Td dataLabel="Source">
+                                                            <Td dataLabel="Source" style={TABLE_CELL_STYLE}>
                                                                 {comp.source}
                                                             </Td>
-                                                            <Td dataLabel="Fixed By">
+                                                            <Td dataLabel="Fixed By" style={TABLE_CELL_STYLE}>
                                                                 {comp.fixedBy ||
                                                                     '-'}
                                                             </Td>
-                                                            <Td dataLabel="Advisories">
+                                                            <Td dataLabel="Advisories" style={TABLE_CELL_STYLE}>
                                                                 {comp.advisories?.join(
                                                                     ', '
                                                                 ) || '-'}
@@ -171,7 +173,7 @@ function AffectedImagesTable({ images }: AffectedImagesTableProps) {
             {images.length === 0 && (
                 <Tbody>
                     <Tr>
-                        <Td colSpan={columnCount}>
+                        <Td colSpan={columnCount} style={TABLE_CELL_STYLE}>
                             <Bullseye>No affected images found</Bullseye>
                         </Td>
                     </Tr>
