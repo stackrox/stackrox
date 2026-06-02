@@ -1122,6 +1122,15 @@ module.exports = [
         },
     },
     {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-hardcoded-route-paths': 'error',
+        },
+    },
+    {
         files: ['*.js', 'tailwind-plugins/*.js'], // non-product files
 
         languageOptions: {

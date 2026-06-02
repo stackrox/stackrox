@@ -11,6 +11,7 @@ import { AUTH_STATUS } from 'reducers/auth';
 import { selectors } from 'reducers';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import LoadingSection from 'Components/PatternFly/LoadingSection';
+import { dashboardPath } from 'routePaths';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
 import ReduxPasswordField from 'Components/forms/ReduxPasswordField';
@@ -246,7 +247,7 @@ class LoginPage extends Component {
                 <div className="p-8 w-full text-center">
                     <Link
                         className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 text-center no-underline"
-                        to="/main/dashboard"
+                        to={dashboardPath}
                     >
                         Go to Dashboard
                     </Link>
