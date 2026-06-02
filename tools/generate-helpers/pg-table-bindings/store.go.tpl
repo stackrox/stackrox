@@ -53,6 +53,10 @@ type (
     callback  = func(obj *storeType) error
 )
 
+{{- if .NoSerialized }}
+// Store is the interface to interact with the storage for {{ .Type }}
+type Store = pgSearch.NoSerializedStore[storeType]
+{{- else }}
 // Store is the interface to interact with the storage for {{ .Type }}
 type Store interface {
 {{- if not .JoinTable }}
@@ -86,6 +90,7 @@ type Store interface {
     GetAllFromCacheForSAC() []*storeType
 {{- end }}
 }
+{{- end }}
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
@@ -103,6 +108,33 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
+{{- if .NoSerialized }}
+    return pgSearch.NewNoSerializedStore[storeType](
+            db,
+            schema,
+            pkGetter,
+            {{- if not .JoinTable }}
+            {{ template "insertFunctionName" .Schema }},
+            nil,
+            {{- else }}
+            nil,
+            nil,
+            {{- end }}
+            scanRow,
+            scanRows,
+            metricsSetAcquireDBConnDuration,
+            metricsSetPostgresOperationDurationTime,
+            {{- if .Obj.IsDirectlyScoped }}
+            isUpsertAllowed,
+            {{- else }}
+            nil,
+            {{- end }}
+            targetResource,
+            pgSearch.NoSerializedStoreOpts[storeType]{
+                BulkInsert: bulkInsertInto{{ .Schema.Table|upperCamelCase }},
+            },
+    )
+{{- else }}
     {{ if .CachedStore -}}
     // Use of {{ template "storeCreator" . }} can be dangerous with high cardinality stores,
     // and be the source of memory pressure. Think twice about the need for in-memory caching
@@ -143,6 +175,7 @@ func New(db postgres.DB) Store {
             nil,
             {{- end }}
     )
+{{- end }}
 }
 
 // region Helper functions
@@ -203,6 +236,8 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
         pgutils.NilOrCIDR({{$field.Getter "obj"}}),
     {{- else if eq $field.DataType "map" }}
         pgutils.EmptyOrMap({{$field.Getter "obj"}}),
+    {{- else if eq $field.DataType "messagebytes" }}
+        pgutils.MustMarshalRepeatedMessages({{$field.Getter "obj"}}),
     {{- else if and (eq $field.DataType "string") ($field.Options.Reference) ($field.Options.Reference.Nullable) }}
         pgutils.NilOrString({{$field.Getter "obj"}}),
     {{- else }}
@@ -213,7 +248,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 {{- define "insertObject"}}
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
-    {{if not $schema.Parent }}
+    {{if and (not $schema.Parent) (not $schema.NoSerialized) }}
     serialized, marshalErr := obj.MarshalVT()
     if marshalErr != nil {
         return marshalErr
@@ -290,7 +325,7 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         obj := objs[idx]
         idx++
 
-        {{if not $schema.Parent }}
+        {{if and (not $schema.Parent) (not $schema.NoSerialized) }}
         serialized, marshalErr := obj.MarshalVT()
         if marshalErr != nil {
             return nil, marshalErr
@@ -324,6 +359,109 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
 {{- if not .NoCopyFrom }}
 {{ template "copyObject" dict "schema" .Schema }}
 {{- end }}
+{{- end }}
+
+{{- if .NoSerialized }}
+func scanRow(row pgx.Row) (*storeType, error) {
+    obj := &storeType{}
+    {{- range $sub := .Schema.InlinedSubMessages }}
+    obj.{{ $sub.FieldName }} = &{{ $sub.TypeName | stripPointer }}{}
+    {{- end }}
+
+    {{- range $field := .Schema.DBColumnFields }}
+    {{- if needsTypeConversion $field }}
+    var {{ scanVarName $field }} {{ scanVarType $field }}
+    {{- end }}
+    {{- end }}
+
+    if err := row.Scan(
+        {{- range $field := .Schema.DBColumnFields }}
+        {{- if canScanDirect $field }}
+        &{{ fieldSetterExpr $field }},
+        {{- else }}
+        &{{ scanVarName $field }},
+        {{- end }}
+        {{- end }}
+    ); err != nil {
+        return nil, err
+    }
+
+    {{- range $field := .Schema.DBColumnFields }}
+    {{- if needsTypeConversion $field }}
+    {{ fieldSetterExpr $field }} = {{ typeConversionExpr $field (scanVarName $field) }}
+    {{- end }}
+    {{- end }}
+
+    return obj, nil
+}
+
+func scanRows(rows pgx.Rows) (*storeType, error) {
+    obj := &storeType{}
+    {{- range $sub := .Schema.InlinedSubMessages }}
+    obj.{{ $sub.FieldName }} = &{{ $sub.TypeName | stripPointer }}{}
+    {{- end }}
+
+    {{- range $field := .Schema.DBColumnFields }}
+    {{- if needsTypeConversion $field }}
+    var {{ scanVarName $field }} {{ scanVarType $field }}
+    {{- end }}
+    {{- end }}
+
+    if err := rows.Scan(
+        {{- range $field := .Schema.DBColumnFields }}
+        {{- if canScanDirect $field }}
+        &{{ fieldSetterExpr $field }},
+        {{- else }}
+        &{{ scanVarName $field }},
+        {{- end }}
+        {{- end }}
+    ); err != nil {
+        return nil, err
+    }
+
+    {{- range $field := .Schema.DBColumnFields }}
+    {{- if needsTypeConversion $field }}
+    {{ fieldSetterExpr $field }} = {{ typeConversionExpr $field (scanVarName $field) }}
+    {{- end }}
+    {{- end }}
+
+    return obj, nil
+}
+
+func bulkInsertInto{{ .Schema.Table|upperCamelCase }}(batch *pgx.Batch, objs []*storeType) error {
+    {{- $schema := .Schema }}
+    {{- $unnestable := unnestableFields $schema.DBColumnFields }}
+    {{- $nonUnnestable := nonUnnestableFields $schema.DBColumnFields }}
+
+    {{- range $field := $unnestable }}
+    arr_{{ scanVarName $field }} := make({{ unnestArrayGoType $field }}, 0, len(objs))
+    {{- end }}
+
+    for _, obj := range objs {
+        {{- range $field := $unnestable }}
+        arr_{{ scanVarName $field }} = append(arr_{{ scanVarName $field }}, {{ unnestAppendExpr $field }})
+        {{- end }}
+    }
+
+    batch.Queue(`INSERT INTO {{ $schema.Table }} ({{- range $i, $f := $unnestable }}{{if $i}}, {{end}}{{ $f.ColumnName }}{{- end }}) SELECT * FROM unnest({{- range $i, $f := $unnestable }}{{if $i}}, {{end}}${{ add $i 1 }}::{{ pgArrayCast $f }}{{- end }}) ON CONFLICT({{template "commaSeparatedColumns" $schema.PrimaryKeys}}) DO UPDATE SET {{- range $i, $f := $unnestable }}{{if $i}},{{end}} {{ $f.ColumnName }} = EXCLUDED.{{ $f.ColumnName }}{{- end }}`,
+        {{- range $field := $unnestable }}
+        arr_{{ scanVarName $field }},
+        {{- end }}
+    )
+
+    {{- if $nonUnnestable }}
+    for _, obj := range objs {
+        batch.Queue(`UPDATE {{ $schema.Table }} SET {{- range $i, $f := $nonUnnestable }}{{if $i}},{{end}} {{ $f.ColumnName }} = ${{ add $i 2 }}{{- end }} WHERE {{ (index $schema.PrimaryKeys 0).ColumnName }} = $1`,
+            {{ (index $schema.PrimaryKeys 0).Getter "obj" }},
+            {{- range $f := $nonUnnestable }}
+            {{ unnestAppendExpr $f }},
+            {{- end }}
+        )
+    }
+    {{- end }}
+
+    return nil
+}
 {{- end }}
 
 // endregion Helper functions
