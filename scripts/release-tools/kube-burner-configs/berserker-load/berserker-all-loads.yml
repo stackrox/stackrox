@@ -18,6 +18,7 @@ spec:
       labels:
         app: berserker-{{.Replica}}
     spec:
+      terminationGracePeriodSeconds: 0
       containers:
       - name: process-load
         image: "quay.io/stackrox-io/berserker:1.0-86-g3464e60064"

@@ -12,12 +12,12 @@ jobs:
     namespace: berserker
     jobIterations: 5
     jobPause: 1000h
-    qps: 20
-    burst: 20
+    qps: 5
+    burst: 5
     namespacedIterations: true
     podWait: false
     waitWhenFinished: true
-    preLoadImages: true
+    preLoadImages: false
     preLoadPeriod: 30s
     churn: true
     churnDuration: 1000h
@@ -35,7 +35,7 @@ jobs:
         replicas: 1
 
       - objectTemplate: {{ env "BERSERKER_DAEMONSET_TEMPLATE" }}
-        replicas: 6
+        replicas: 1
 
       - objectTemplate: {{ env "BERSERKER_SERVICE_TEMPLATE" }}
         replicas: 10
