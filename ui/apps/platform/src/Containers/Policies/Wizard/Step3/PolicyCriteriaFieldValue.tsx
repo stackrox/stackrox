@@ -1,4 +1,4 @@
-import { Button, Flex, FlexItem } from '@patternfly/react-core';
+import { Button, Flex } from '@patternfly/react-core';
 import { TimesIcon } from '@patternfly/react-icons';
 
 import type { Descriptor } from './policyCriteriaDescriptors';
@@ -29,14 +29,12 @@ function PolicyCriteriaFieldValue({
                 <PolicyCriteriaFieldInput descriptor={descriptor} name={name} readOnly={readOnly} />
                 {/* only show remove button if there is more than one value */}
                 {!readOnly && length > 1 && (
-                    <FlexItem>
-                        <Button
-                            icon={<TimesIcon />}
-                            onClick={handleRemoveValue}
-                            variant="tertiary"
-                            title="Delete value of policy field"
-                        />
-                    </FlexItem>
+                    <Button
+                        icon={<TimesIcon />}
+                        onClick={handleRemoveValue}
+                        variant="tertiary"
+                        title="Delete value of policy field"
+                    />
                 )}
             </Flex>
         </div>
