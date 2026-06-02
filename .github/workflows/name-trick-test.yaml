@@ -1,0 +1,33 @@
+name: Name Trick Test
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - worktree-name-trick-test
+
+jobs:
+  # Test 1: plain matrix - shows how names look WITHOUT trick
+  plain-matrix:
+    strategy:
+      fail-fast: false
+      matrix:
+        branding: [RHACS_BRANDING, STACKROX_BRANDING]
+        copy: [a, b]
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.copy == 'b' }}
+    steps:
+      - run: echo "plain matrix copy=${{ matrix.copy }} branding=${{ matrix.branding }}"
+
+  # Test 2: name trick - copy (a) gets exact original name, copy (b) gets backup name
+  build-and-push-main:
+    strategy:
+      fail-fast: false
+      matrix:
+        branding: [RHACS_BRANDING, STACKROX_BRANDING]
+        copy: [a, b]
+    name: >-
+      build-and-push-main (${{ matrix.branding }}${{ matrix.copy == 'b' && ', backup' || '' }})
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.copy == 'b' }}
+    steps:
+      - run: echo "name-trick copy=${{ matrix.copy }} branding=${{ matrix.branding }}"
