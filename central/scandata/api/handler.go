@@ -433,6 +433,8 @@ func advisoryLink(id string) string {
 		return "https://pkg.go.dev/vuln/" + id
 	case strings.HasPrefix(id, "RHSA-"):
 		return "https://access.redhat.com/errata/" + id
+	case strings.HasPrefix(id, "CVE-"):
+		return "https://nvd.nist.gov/vuln/detail/" + id
 	default:
 		return ""
 	}

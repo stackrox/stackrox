@@ -192,6 +192,13 @@ func convertVulnerabilities(scanID, imageID, componentID string, allVulns map[st
 			State:         storage.VulnerabilityState_OBSERVED,
 		}
 
+		// Set first-seen timestamps to current scan time.
+		// This is an approximation; the true value should be the earliest time
+		// this CVE was ever observed, but the prototype ingestion path does not
+		// call the enricher that maintains that state.
+		finding.FirstImageOccurrence = timestamppb.Now()
+		finding.FirstSystemOccurrence = timestamppb.Now()
+
 		// Set CVSS scores
 		if err := setScoresFromMetrics(finding, ccVuln.GetCvssMetrics(), cveName); err != nil {
 			// Log error but continue
