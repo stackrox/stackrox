@@ -473,7 +473,6 @@ func (pc *PolicyAsCodeSuite) createCRAndObserveInCentral(policyCR *v1alpha1.Secu
 }
 
 func (pc *PolicyAsCodeSuite) TearDownSuite() {
-	// TODO: Don't double delete
 	for _, policy := range pc.policies {
 		pc.T().Logf("Deleting policy with name \"%s\"", policy.GetName())
 		if policy.GetSource() == storage.PolicySource_DECLARATIVE {
