@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom-v5-compat';
 import {
-    Breadcrumb,
-    BreadcrumbItem,
     Bullseye,
     Flex,
     FlexItem,
@@ -29,6 +27,8 @@ import { vulnerabilitiesPrototypePath } from 'routePaths';
 import ScanInfo from './ScanInfo';
 import { useImageDetail } from './useImageDetail';
 import type { ImageComponent, ImageCVE } from './useImageDetail';
+import { DetailPageLayout } from '../components/DetailPageLayout';
+import { TABLE_HEADER_STYLE, TABLE_CELL_STYLE, formatDate } from '../utils/tableDefaults';
 
 const severityNames: Record<number, string> = {
     0: 'Unknown',
@@ -90,31 +90,31 @@ function CveSubTable({ cves }: { cves: ImageCVE[] }) {
         >
             <Thead>
                 <Tr>
-                    <Th>CVE</Th>
-                    <Th>Severity</Th>
-                    <Th>CVSS</Th>
-                    <Th>Fixed By</Th>
-                    <Th>Advisories</Th>
+                    <Th style={TABLE_HEADER_STYLE}>CVE</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Severity</Th>
+                    <Th style={TABLE_HEADER_STYLE}>CVSS</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Fixed By</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Advisories</Th>
                 </Tr>
             </Thead>
             <Tbody>
                 {cves.map((cve) => (
                     <Tr key={cve.cveName}>
-                        <Td dataLabel="CVE">
+                        <Td dataLabel="CVE" style={TABLE_CELL_STYLE}>
                             <Link
                                 to={`/main/vulnerabilities/prototype/cves/${encodeURIComponent(cve.cveName)}`}
                             >
                                 {cve.cveName}
                             </Link>
                         </Td>
-                        <Td dataLabel="Severity">
+                        <Td dataLabel="Severity" style={TABLE_CELL_STYLE}>
                             <Label color={severityColor(cve.severity)}>
                                 {severityNames[cve.severity] ?? 'Unknown'}
                             </Label>
                         </Td>
-                        <Td dataLabel="CVSS">{cve.cvss.toFixed(1)}</Td>
-                        <Td dataLabel="Fixed By">{cve.fixedBy || '-'}</Td>
-                        <Td dataLabel="Advisories">
+                        <Td dataLabel="CVSS" style={TABLE_CELL_STYLE}>{cve.cvss.toFixed(1)}</Td>
+                        <Td dataLabel="Fixed By" style={TABLE_CELL_STYLE}>{cve.fixedBy || '-'}</Td>
+                        <Td dataLabel="Advisories" style={TABLE_CELL_STYLE}>
                             {cve.advisories?.join(', ') || '-'}
                         </Td>
                     </Tr>
@@ -147,14 +147,14 @@ function ComponentsTable({ components }: { components: ImageComponent[] }) {
 
     return (
         <Table aria-label="Image components" variant="compact">
-            <Thead>
+            <Thead style={{ borderBottom: '2px solid var(--pf-global--BorderColor--100)' }}>
                 <Tr>
-                    <Th screenReaderText="Row expansion" />
-                    <Th>Component</Th>
-                    <Th>Version</Th>
-                    <Th>Source</Th>
-                    <Th>Location</Th>
-                    <Th>CVEs</Th>
+                    <Th screenReaderText="Row expansion" style={TABLE_HEADER_STYLE} />
+                    <Th style={TABLE_HEADER_STYLE}>Component</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Version</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Source</Th>
+                    <Th style={TABLE_HEADER_STYLE}>Location</Th>
+                    <Th style={TABLE_HEADER_STYLE}>CVEs</Th>
                 </Tr>
             </Thead>
             {components.map((comp, rowIndex) => {
@@ -169,17 +169,18 @@ function ComponentsTable({ components }: { components: ImageComponent[] }) {
                                     isExpanded,
                                     onToggle: () => toggleExpand(rowKey),
                                 }}
+                                style={TABLE_CELL_STYLE}
                             />
-                            <Td dataLabel="Component">{comp.name}</Td>
-                            <Td dataLabel="Version">{comp.version}</Td>
-                            <Td dataLabel="Source">{comp.source}</Td>
-                            <Td dataLabel="Location">
+                            <Td dataLabel="Component" style={TABLE_CELL_STYLE}>{comp.name}</Td>
+                            <Td dataLabel="Version" style={TABLE_CELL_STYLE}>{comp.version}</Td>
+                            <Td dataLabel="Source" style={TABLE_CELL_STYLE}>{comp.source}</Td>
+                            <Td dataLabel="Location" style={TABLE_CELL_STYLE}>
                                 {comp.location || '-'}
                             </Td>
-                            <Td dataLabel="CVEs">{comp.cves.length}</Td>
+                            <Td dataLabel="CVEs" style={TABLE_CELL_STYLE}>{comp.cves.length}</Td>
                         </Tr>
                         <Tr isExpanded={isExpanded}>
-                            <Td colSpan={columnCount}>
+                            <Td colSpan={columnCount} style={TABLE_CELL_STYLE}>
                                 <ExpandableRowContent>
                                     {comp.cves.length > 0 ? (
                                         <CveSubTable cves={comp.cves} />
@@ -197,7 +198,7 @@ function ComponentsTable({ components }: { components: ImageComponent[] }) {
             {components.length === 0 && (
                 <Tbody>
                     <Tr>
-                        <Td colSpan={columnCount}>
+                        <Td colSpan={columnCount} style={TABLE_CELL_STYLE}>
                             <Bullseye>No components found</Bullseye>
                         </Td>
                     </Tr>
@@ -220,105 +221,101 @@ function ImageDetailPage() {
         data?.imageName
     );
 
-    const scanTime = data?.scanTime
-        ? new Date(data.scanTime).toLocaleString()
-        : undefined;
+    const breadcrumbs = [
+        { label: 'Vulnerability Management V5', path: vulnerabilitiesPrototypePath },
+        { label: 'Images', path: vulnerabilitiesPrototypePath + '/images' },
+        { label: headerName },
+    ];
+
+    const componentCount = data?.components?.length ?? 0;
+    const cveCount = data?.cveSummary?.total ?? 0;
+    const subtitle = data?.scanTime
+        ? `Scanned: ${formatDate(data.scanTime)} • ${componentCount} components • ${cveCount} CVEs`
+        : `${componentCount} components • ${cveCount} CVEs`;
+
+    if (loading) {
+        return (
+            <PageSection hasBodyWrapper={false}>
+                <Bullseye>
+                    <Spinner />
+                </Bullseye>
+            </PageSection>
+        );
+    }
+
+    if (error) {
+        return (
+            <PageSection hasBodyWrapper={false}>
+                <p>Error loading image detail: {error.message}</p>
+            </PageSection>
+        );
+    }
+
+    if (!data) {
+        return null;
+    }
 
     return (
-        <>
-            <PageSection hasBodyWrapper={false}>
-                <Breadcrumb>
-                    <BreadcrumbItem>
-                        <Link to={vulnerabilitiesPrototypePath}>
-                            Vuln Management V5
-                        </Link>
-                    </BreadcrumbItem>
-                    <BreadcrumbItem isActive>{headerName}</BreadcrumbItem>
-                </Breadcrumb>
-            </PageSection>
+        <PageSection hasBodyWrapper={false}>
+            <DetailPageLayout
+                breadcrumbs={breadcrumbs}
+                title={headerName}
+                subtitle={subtitle}
+            >
+                <Stack hasGutter>
+                    <StackItem>
+                        <ScanInfo
+                            scannerVersion={data.scannerVersion}
+                            bundleVersion={data.bundleVersion}
+                            dataSources={data.dataSources}
+                            scanTime={data.scanTime}
+                        />
+                    </StackItem>
 
-            <PageSection hasBodyWrapper={false}>
-                {loading && (
-                    <Bullseye>
-                        <Spinner />
-                    </Bullseye>
-                )}
-
-                {error && <p>Error loading image detail: {error.message}</p>}
-
-                {!loading && !error && data && (
-                    <Stack hasGutter>
-                        <StackItem>
-                            <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                                <FlexItem>
-                                    <Title headingLevel="h1">
-                                        {headerName}
-                                    </Title>
-                                </FlexItem>
-                                {scanTime && (
-                                    <FlexItem>
-                                        <Label color="blue">
-                                            Scanned: {scanTime}
-                                        </Label>
-                                    </FlexItem>
-                                )}
-                            </Flex>
-                        </StackItem>
-
-                        <StackItem>
-                            <ScanInfo
-                                scannerVersion={data.scannerVersion}
-                                bundleVersion={data.bundleVersion}
-                                dataSources={data.dataSources}
-                                scanTime={data.scanTime}
+                    <StackItem>
+                        <Title headingLevel="h2">CVE Summary</Title>
+                        <Flex
+                            spaceItems={{
+                                default: 'spaceItemsMd',
+                            }}
+                        >
+                            <SummaryBadge
+                                label="Critical"
+                                count={data.cveSummary.critical}
+                                color="red"
                             />
-                        </StackItem>
-
-                        <StackItem>
-                            <Title headingLevel="h2">CVE Summary</Title>
-                            <Flex
-                                spaceItems={{
-                                    default: 'spaceItemsMd',
-                                }}
-                            >
-                                <SummaryBadge
-                                    label="Critical"
-                                    count={data.cveSummary.critical}
-                                    color="red"
-                                />
-                                <SummaryBadge
-                                    label="Important"
-                                    count={data.cveSummary.important}
-                                    color="orange"
-                                />
-                                <SummaryBadge
-                                    label="Moderate"
-                                    count={data.cveSummary.moderate}
-                                    color="blue"
-                                />
-                                <SummaryBadge
-                                    label="Low"
-                                    count={data.cveSummary.low}
-                                    color="yellow"
-                                />
-                                <FlexItem>
-                                    <Label color="grey">
-                                        Total: {data.cveSummary.total}
-                                    </Label>
-                                </FlexItem>
-                            </Flex>
-                        </StackItem>
-
-                        <StackItem>
-                            <Title headingLevel="h2">Components</Title>
-                            <ComponentsTable
-                                components={data.components}
+                            <SummaryBadge
+                                label="Important"
+                                count={data.cveSummary.important}
+                                color="orange"
                             />
-                        </StackItem>
-                    </Stack>
-                )}
-            </PageSection>
-        </>
+                            <SummaryBadge
+                                label="Moderate"
+                                count={data.cveSummary.moderate}
+                                color="blue"
+                            />
+                            <SummaryBadge
+                                label="Low"
+                                count={data.cveSummary.low}
+                                color="yellow"
+                            />
+                            <FlexItem>
+                                <Label color="grey">
+                                    Total: {data.cveSummary.total}
+                                </Label>
+                            </FlexItem>
+                        </Flex>
+                    </StackItem>
+
+                    <StackItem>
+                        <Title headingLevel="h2">Components</Title>
+                        <ComponentsTable
+                            components={data.components}
+                        />
+                    </StackItem>
+                </Stack>
+            </DetailPageLayout>
+        </PageSection>
     );
 }
 
