@@ -96,6 +96,8 @@ jobs:
           # The base matrix
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.pre_build_go_binaries.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.copy += ["a", "b"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.exclude += [{"copy": "b", "arch": "arm64"}]' <<< "$matrix")"
 
           matrix="$(jq '.build_and_push_main.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64"]' <<< "$matrix")"
@@ -107,6 +109,8 @@ jobs:
 
           matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_operator.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_operator.copy += ["a", "b"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_operator.exclude += [{"copy": "b", "arch": "arm64"}]' <<< "$matrix")"
 
           matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.push_operator_multiarch_manifests.archs = [.build_and_push_operator.arch | join(",")]' <<< "$matrix")"
@@ -295,7 +299,9 @@ jobs:
       # default - built with environment defaults (see env.mk)
       # prerelease - built with GOTAGS=release
       # race-condition-debug - built with -race
+      fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
+    continue-on-error: ${{ matrix.copy == 'b' }}
     needs: define-job-matrix
     runs-on: ubuntu-latest
     env:
@@ -308,11 +314,21 @@ jobs:
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
+      - uses: ./.github/actions/speculative-run
+        id: gate
+        if: matrix.copy != ''
+        continue-on-error: true
+        with:
+          copy: ${{ matrix.copy || 'a' }}
+          last-copy: b
+
       - uses: ./.github/actions/job-preamble
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Cache Go dependencies
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
@@ -365,16 +381,33 @@ jobs:
           sudo ln -sf /usr/include/asm /usr/include/x86_64-linux-musl/asm
 
       - name: Build Go Binaries
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
         run: GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
 
       - name: Bundle the build to preserve permissions
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
         run: tar -cvf go-binaries-build.tar bin/linux_${{ matrix.arch }}
 
       - uses: ./.github/actions/upload-artifact-with-retry
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
         with:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
           path: go-binaries-build.tar
           compression-level: 1
+
+      - name: Declare win — post synthetic required check
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true' && success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/${{ github.repository }}/check-runs \
+            -f name="pre-build-go-binaries (${{ matrix.name }}, ${{ matrix.arch }})" \
+            -f head_sha="${{ github.sha }}" \
+            -f status=completed \
+            -f conclusion=success \
+            -f "output[title]=Speculative run complete" \
+            -f "output[summary]=Copy ${{ matrix.copy }} won." \
+            2>&1 || echo "::warning::Failed to post synthetic check"
 
   pre-build-docs:
     runs-on: ubuntu-latest
@@ -942,6 +975,7 @@ jobs:
 
   build-and-push-operator:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
+    continue-on-error: ${{ matrix.copy == 'b' }}
     needs:
       - define-job-matrix
       - pre-build-go-binaries
@@ -962,7 +996,16 @@ jobs:
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
+      - uses: ./.github/actions/speculative-run
+        id: gate
+        if: matrix.copy != ''
+        continue-on-error: true
+        with:
+          copy: ${{ matrix.copy || 'a' }}
+          last-copy: b
+
       - uses: ./.github/actions/job-preamble
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
         with:
           free-disk-space: 40
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -1055,6 +1098,20 @@ jobs:
               exit 1
             fi
             echo "Operator image push completed successfully"
+
+      - name: Declare win — post synthetic required check
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true' && success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/${{ github.repository }}/check-runs \
+            -f name="build-and-push-operator (${{ matrix.name }}, ${{ matrix.arch }})" \
+            -f head_sha="${{ github.sha }}" \
+            -f status=completed \
+            -f conclusion=success \
+            -f "output[title]=Speculative run complete" \
+            -f "output[summary]=Copy ${{ matrix.copy }} won." \
+            2>&1 || echo "::warning::Failed to post synthetic check"
 
   build-and-push-scanner:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
