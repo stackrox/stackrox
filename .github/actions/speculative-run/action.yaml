@@ -1,0 +1,93 @@
+name: Speculative Run
+description: >
+  Speculative execution for CI jobs on heterogeneous runners.
+  Use with a matrix that includes copy: [a, b] and continue-on-error: true.
+inputs:
+  job-name:
+    description: 'The base job name before matrix expansion'
+    required: true
+  slow-cpu-pattern:
+    description: 'CPU model substring to reject (default: 7763)'
+    required: false
+    default: '7763'
+outputs:
+  cpu-model:
+    description: 'CPU model detected on this runner'
+    value: ${{ steps.gate.outputs.cpu_model }}
+runs:
+  using: composite
+  steps:
+    - name: Runner gate
+      id: gate
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        MATRIX_JSON: ${{ toJSON(matrix) }}
+      run: |
+        cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
+        echo "cpu_model=${cpu_model}" >> "$GITHUB_OUTPUT"
+        echo "cpu_model=${cpu_model}"
+
+        slow_pattern="${{ inputs.slow-cpu-pattern }}"
+        my_copy="${{ matrix.copy }}"
+        job_name="${{ inputs.job-name }}"
+        run_id="${{ github.run_id }}"
+        event="${{ github.event_name }}"
+        is_slow=$([[ "$cpu_model" == *"$slow_pattern"* ]] && echo true || echo false)
+
+        # On workflow_dispatch, disable gating — run both copies for profiling data
+        if [[ "$event" == "workflow_dispatch" ]]; then
+          echo "Profiling mode (workflow_dispatch) — running all copies."
+          exit 0
+        fi
+
+        # Skip speculative execution on arm64 — different runner pool, no profiling data.
+        # Only copy a runs; copy b quits to avoid doubling arm64 compute.
+        arch=$(uname -m 2>/dev/null)
+        if [[ "$arch" == "aarch64" || "$arch" == "arm64" ]]; then
+          if [[ "$my_copy" == "a" ]]; then
+            echo "ARM64 runner — copy a running (no speculative execution on ARM)."
+            exit 0
+          else
+            echo "ARM64 runner — copy b not needed."
+            exit 1
+          fi
+        fi
+
+        # Build the exact sibling name from matrix values.
+        # GHA names jobs as: "{base} ({val1}, {val2}, ..., {copy})"
+        sibling_a=$(SPEC_JOB="$job_name" python3 -c "import json,os; m=json.loads(os.environ['MATRIX_JSON']); v=[str(x) for k,x in m.items() if k!='copy']; v.append('a'); print(os.environ['SPEC_JOB']+' ('+', '.join(v)+')')")
+        echo "sibling_a=${sibling_a}"
+
+        # Copy a: run if fast, skip if slow.
+        if [[ "$my_copy" == "a" ]]; then
+          if [[ "$is_slow" == "true" ]]; then
+            echo "::warning::Slow runner (${cpu_model}). Skipping copy a."
+            exit 1
+          fi
+          echo "Fast runner (${cpu_model}). Copy a running."
+          exit 0
+        fi
+
+        # Copy b: wait for copy a's gate result.
+        echo "Waiting for copy a gate (${sibling_a})..."
+        a_gate=""
+        for i in $(seq 1 12); do
+          a_gate=$(gh api "repos/${{ github.repository }}/actions/runs/${run_id}/jobs?per_page=100" \
+            --jq ".jobs[] | select(.name == \"${sibling_a}\") | .steps[] | select(.name == \"Speculative run check\") | .conclusion" 2>/dev/null || echo "")
+          if [[ -n "$a_gate" && "$a_gate" != "null" ]]; then break; fi
+          sleep 5
+        done
+        echo "copy_a_gate=${a_gate}"
+
+        if [[ "$a_gate" == "success" ]]; then
+          echo "Copy a passed gate (fast runner). Not needed."
+          exit 1
+        fi
+
+        if [[ "$is_slow" == "true" ]]; then
+          echo "::notice::Both copies on slow runners. Running as fallback."
+        else
+          echo "Copy a is slow. Running as rescue (${cpu_model})."
+        fi
+        exit 0

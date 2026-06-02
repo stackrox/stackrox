@@ -96,6 +96,9 @@ jobs:
 
           matrix="$(jq '.build_and_push_main.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_main.copy += ["a", "b"]' <<< "$matrix")"
+          # Only run copy b on amd64 — arm64 runners are consistent hardware, backup not needed
+          matrix="$(jq '.build_and_push_main.exclude += [{"copy": "b", "arch": "arm64"}]' <<< "$matrix")"
 
           matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
 
@@ -109,6 +112,8 @@ jobs:
           matrix="$(jq '.build_and_push_scanner.goos += ["linux"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_scanner.arch += ["amd64", "arm64"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_scanner.registry += ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_scanner.copy += ["a", "b"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_scanner.exclude += [{"copy": "b", "arch": "arm64"}]' <<< "$matrix")"
 
           matrix="$(jq '.push_scanner_manifests.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.push_scanner_manifests.registry += ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
@@ -585,6 +590,11 @@ jobs:
   build-and-push-main:
     # Use native arm64 runner to avoid QEMU emulation overhead (~2x slower).
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
+    # copy: b is the backup speculative copy — non-blocking if it fails or is slow.
+    continue-on-error: ${{ matrix.copy == 'b' }}
+    # Preserve required check names: copy a gets the original name, copy b gets "(backup)".
+    name: >-
+      build-and-push-main (${{ matrix.name }}, ${{ matrix.arch }}${{ matrix.copy == 'b' && ', backup' || '' }})
     needs:
       - define-job-matrix
       - pre-build-cli
@@ -612,6 +622,9 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
+      - uses: ./.github/actions/speculative-run
+        with:
+          job-name: build-and-push-main (${{ matrix.name }}, ${{ matrix.arch }})
       - name: Setup build env
         run: |
           case "${{ matrix.name }}" in
@@ -1033,6 +1046,9 @@ jobs:
 
   build-and-push-scanner:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
+    continue-on-error: ${{ matrix.copy == 'b' }}
+    name: >-
+      build-and-push-scanner (${{ matrix.name }}, ${{ matrix.goos }}, ${{ matrix.arch }}, ${{ matrix.registry }}${{ matrix.copy == 'b' && ', backup' || '' }})
     needs:
       - define-job-matrix
       - build-and-push-db
@@ -1047,6 +1063,9 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
+      - uses: ./.github/actions/speculative-run
+        with:
+          job-name: build-and-push-scanner (${{ matrix.name }}, ${{ matrix.goos }}, ${{ matrix.arch }}, ${{ matrix.registry }})
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
