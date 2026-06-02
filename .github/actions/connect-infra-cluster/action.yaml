@@ -21,11 +21,10 @@ runs:
 
     - name: Wait for cluster and get artifacts
       shell: bash
-      timeout-minutes: ${{ fromJSON(inputs.wait-timeout) }}
       env:
         INFRA_TOKEN: ${{ inputs.infra-token }}
       run: |
-        infractl wait "${{ inputs.cluster-name }}"
+        timeout "${{ inputs.wait-timeout }}m" infractl wait "${{ inputs.cluster-name }}"
         mkdir -p artifacts
         infractl artifacts "${{ inputs.cluster-name }}" --download-dir artifacts > /dev/null
         echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
