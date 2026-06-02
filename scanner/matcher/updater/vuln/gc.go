@@ -30,6 +30,7 @@ func (u *Updater) runGCFullPeriodic() {
 
 // runGCFull runs garbage collection until completion.
 func (u *Updater) runGCFull(ctx context.Context) {
+	start := time.Now()
 	// Use Lock instead of TryLock to ensure we get the lock
 	// and run a full GC.
 	ctx, done := u.locker.Lock(ctx, gcName)
@@ -55,10 +56,12 @@ func (u *Updater) runGCFull(ctx context.Context) {
 			}
 		}
 	}
+	slog.InfoContext(ctx, "full GC cycle completed", "duration", time.Since(start))
 }
 
 // runGC runs a garbage collection cycle, once.
 func (u *Updater) runGC(ctx context.Context) {
+	start := time.Now()
 	// Use TryLock instead of Lock because a GC cycle is already happening.
 	ctx, done := u.locker.TryLock(ctx, gcName)
 	defer done()
@@ -71,6 +74,7 @@ func (u *Updater) runGC(ctx context.Context) {
 	if err != nil {
 		slog.ErrorContext(ctx, "performing GC", "reason", err)
 	}
+	slog.InfoContext(ctx, "GC cycle completed", "duration", time.Since(start))
 }
 
 // runGCNoLock runs the actual garbage collection cycle.

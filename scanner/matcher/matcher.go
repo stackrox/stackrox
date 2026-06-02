@@ -104,20 +104,24 @@ type matcherImpl struct {
 func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider indexer.ReportProvider) (Matcher, error) {
 	var success bool
 
+	start := time.Now()
 	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libvuln")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for matcher: %w", err)
 	}
+	slog.InfoContext(ctx, "matcher postgres connected", "duration", time.Since(start))
 	defer func() {
 		if !success {
 			pool.Close()
 		}
 	}()
 
+	start = time.Now()
 	store, err := postgres.InitPostgresMatcherStore(ctx, pool, true)
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres matcher store: %w", err)
 	}
+	slog.InfoContext(ctx, "matcher store initialized", "duration", time.Since(start))
 
 	locker, err := ctxlock.New(ctx, pool)
 	if err != nil {
@@ -151,6 +155,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 		enrichers = append(enrichers, &csaf.Enricher{})
 	}
 	slog.InfoContext(ctx, "CSAF enrichment", "enabled", csafEnabled)
+	start = time.Now()
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:                    store,
 		Locker:                   locker,
@@ -163,6 +168,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 	if err != nil {
 		return nil, fmt.Errorf("creating libvuln: %w", err)
 	}
+	slog.InfoContext(ctx, "libvuln created", "duration", time.Since(start))
 	defer func() {
 		if !success {
 			_ = libVuln.Close(ctx)

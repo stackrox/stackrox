@@ -113,13 +113,14 @@ func main() {
 	metrics.GatherThrottleMetricsForever(metrics.ScannerSubsystem.String())
 
 	// Create backends.
+	backendsStart := time.Now()
 	backends, err := createBackends(ctx, cfg)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to create backends", "reason", err)
 		os.Exit(1)
 	}
 	defer backends.Close(ctx)
-	slog.InfoContext(ctx, "backends created")
+	slog.InfoContext(ctx, "backends created", "duration", time.Since(backendsStart))
 
 	// Initialize gRPC API service.
 	grpcSrv, err := createGRPCService(backends, cfg)
@@ -218,17 +219,19 @@ func createBackends(ctx context.Context, cfg *config.Config) (*Backends, error) 
 	var err error
 	if cfg.Indexer.Enable {
 		slog.InfoContext(ctx, "indexer is enabled")
+		start := time.Now()
 		b.Indexer, err = indexer.NewIndexer(ctx, cfg.Indexer)
 		if err != nil {
 			return nil, fmt.Errorf("indexer: %w", err)
 		}
+		slog.InfoContext(ctx, "indexer created", "duration", time.Since(start))
 	} else {
 		slog.InfoContext(ctx, "indexer is disabled")
 	}
 	if cfg.Matcher.Enable {
 		slog.InfoContext(ctx, "matcher is enabled")
+		start := time.Now()
 		if cfg.Matcher.RemoteIndexerEnabled {
-			// Create a remote indexer only if the matcher was configured to use one.
 			slog.InfoContext(ctx, "remote indexer is enabled")
 			b.RemoteIndexer, err = indexer.NewRemoteIndexer(ctx, cfg.Matcher.IndexerAddr)
 			if err != nil {
@@ -239,6 +242,7 @@ func createBackends(ctx context.Context, cfg *config.Config) (*Backends, error) 
 		if err != nil {
 			return nil, fmt.Errorf("matcher: %w", err)
 		}
+		slog.InfoContext(ctx, "matcher created", "duration", time.Since(start))
 	} else {
 		slog.InfoContext(ctx, "matcher is disabled")
 	}
