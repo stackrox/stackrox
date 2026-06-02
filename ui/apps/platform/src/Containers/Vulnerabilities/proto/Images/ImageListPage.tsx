@@ -17,6 +17,14 @@ import { vulnerabilitiesPrototypePath } from 'routePaths';
 import ProtoNav from '../ProtoNav';
 import { usePagination } from '../usePagination';
 import { useSort } from '../useSort';
+import {
+    IMAGE_DIGEST_WIDTH,
+    COUNT_WIDTH,
+    DATE_WIDTH,
+    TABLE_HEADER_STYLE,
+    TABLE_CELL_STYLE,
+    formatDate,
+} from '../utils/tableDefaults';
 import { useImageList } from './useImageList';
 import type { ProtoImageListItem } from './useImageList';
 
@@ -103,19 +111,6 @@ function imageDisplayName(image: ProtoImageListItem): string {
     return image.imageId;
 }
 
-/**
- * Formats a scan time string for display.
- */
-function formatScanTime(scanTime: string | null): string {
-    if (!scanTime) {
-        return '-';
-    }
-    try {
-        return new Date(scanTime).toLocaleString();
-    } catch {
-        return scanTime;
-    }
-}
 
 // Column keys: non-sortable columns use empty string.
 const imageSortColumns = ['', '', 'cveCount', 'componentCount', 'severity', '', ''];
@@ -154,42 +149,50 @@ function ImageListPage() {
                 )}
 
                 <Table aria-label="Vuln Management V5 image list" variant="compact">
-                    <Thead>
+                    <Thead isStickyHeader style={{ borderBottom: '2px solid var(--pf-v5-global--BorderColor--100)' }}>
                         <Tr>
-                            <Th>Image</Th>
-                            <Th>OS</Th>
-                            <Th {...getThSortProps(2)} info={{ tooltip: 'CVE counts by severity: Critical, Important, Moderate, Low' }}>CVEs</Th>
-                            <Th {...getThSortProps(3)}>Components</Th>
-                            <Th {...getThSortProps(4)}>Top Severity</Th>
-                            <Th>Fixable</Th>
-                            <Th>Scan Time</Th>
+                            <Th style={TABLE_HEADER_STYLE}>Image</Th>
+                            <Th style={TABLE_HEADER_STYLE}>OS</Th>
+                            <Th {...getThSortProps(2)} style={{ ...TABLE_HEADER_STYLE, width: `${COUNT_WIDTH}px` }} info={{ tooltip: 'CVE counts by severity: Critical, Important, Moderate, Low' }}>CVEs</Th>
+                            <Th {...getThSortProps(3)} style={TABLE_HEADER_STYLE}>Components</Th>
+                            <Th {...getThSortProps(4)} style={TABLE_HEADER_STYLE}>Top Severity</Th>
+                            <Th style={TABLE_HEADER_STYLE}>Fixable</Th>
+                            <Th style={{ ...TABLE_HEADER_STYLE, width: `${DATE_WIDTH}px` }}>Scan Time</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
                         {images.map((image) => (
                             <Tr key={image.imageId}>
-                                <Td dataLabel="Image">
+                                <Td dataLabel="Image" style={TABLE_CELL_STYLE}>
                                     <Link
                                         to={`${vulnerabilitiesPrototypePath}/images/${encodeURIComponent(image.imageId)}`}
+                                        style={{
+                                            maxWidth: `${IMAGE_DIGEST_WIDTH}px`,
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                            display: 'inline-block',
+                                        }}
+                                        title={imageDisplayName(image)}
                                     >
                                         {imageDisplayName(image)}
                                     </Link>
                                 </Td>
-                                <Td dataLabel="OS">{image.imageOS || '-'}</Td>
-                                <Td dataLabel="CVEs">
+                                <Td dataLabel="OS" style={TABLE_CELL_STYLE}>{image.imageOS || '-'}</Td>
+                                <Td dataLabel="CVEs" style={TABLE_CELL_STYLE}>
                                     <SeverityBreakdown image={image} />
                                 </Td>
-                                <Td dataLabel="Components">{image.componentCount}</Td>
-                                <Td dataLabel="Top Severity">
+                                <Td dataLabel="Components" style={TABLE_CELL_STYLE}>{image.componentCount}</Td>
+                                <Td dataLabel="Top Severity" style={TABLE_CELL_STYLE}>
                                     <Label color={severityColor(image.topSeverity)}>
                                         {severityLabel(image.topSeverity)}
                                     </Label>
                                 </Td>
-                                <Td dataLabel="Fixable">
+                                <Td dataLabel="Fixable" style={TABLE_CELL_STYLE}>
                                     {image.fixable ? 'Yes' : 'No'}
                                 </Td>
-                                <Td dataLabel="Scan Time">
-                                    {formatScanTime(image.scanTime)}
+                                <Td dataLabel="Scan Time" style={TABLE_CELL_STYLE}>
+                                    {formatDate(image.scanTime)}
                                 </Td>
                             </Tr>
                         ))}
