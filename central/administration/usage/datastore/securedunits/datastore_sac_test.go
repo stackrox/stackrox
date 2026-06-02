@@ -29,6 +29,7 @@ type securedUnitsDatastoreSACSuite struct {
 	suite.Suite
 
 	datastore DataStore
+	store     postgres.Store
 
 	pgTestBase *pgtest.TestPostgres
 
@@ -64,12 +65,13 @@ func (s *securedUnitsDatastoreSACSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.mockClusterDS = mocks.NewMockclusterDataStore(s.mockCtrl)
 
-	// Configure mock to return empty cluster list by default
-	s.mockClusterDS.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{}, nil).AnyTimes()
+	// Configure mock to return test-cluster-1 (used by TestAggregateAndReset and TestUpdateUsage)
+	testCluster := &storage.Cluster{Id: "test-cluster-1", Name: "Test Cluster 1"}
+	s.mockClusterDS.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{testCluster}, nil).AnyTimes()
 
 	// Create new datastore instance
-	store := postgres.New(s.pgTestBase.DB)
-	s.datastore = New(store, s.mockClusterDS)
+	s.store = postgres.New(s.pgTestBase.DB)
+	s.datastore = New(s.store, s.mockClusterDS)
 }
 
 func (s *securedUnitsDatastoreSACSuite) TearDownTest() {
@@ -99,7 +101,9 @@ func (s *securedUnitsDatastoreSACSuite) TestAdd() {
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := s.testContexts[c.ScopeKey]
-			testUnits := getTestSecuredUnits()
+			// Use a time in the past to avoid race conditions with time.Now() in Walk
+			pastTime := time.Now().Add(-1 * time.Hour)
+			testUnits := getTestSecuredUnitsWithTime(pastTime)
 			err := s.datastore.Add(ctx, testUnits)
 
 			if c.ExpectError {
@@ -119,6 +123,10 @@ func (s *securedUnitsDatastoreSACSuite) TestAdd() {
 				s.NoError(walkErr)
 				s.NotNil(found)
 				protoassert.Equal(s.T(), testUnits, found)
+
+				// Cleanup: Remove the added record
+				deleteErr := s.store.Delete(unrestrictedCtx, testUnits.GetId())
+				s.NoError(deleteErr)
 			}
 		})
 	}
@@ -128,8 +136,10 @@ func (s *securedUnitsDatastoreSACSuite) TestAdd() {
 
 func (s *securedUnitsDatastoreSACSuite) TestWalk() {
 	// Setup: Add test data with unrestricted access
+	// Use a time in the past to avoid race conditions with time.Now() in Walk
 	unrestrictedCtx := sac.WithAllAccess(context.Background())
-	testUnits := getTestSecuredUnits()
+	pastTime := time.Now().Add(-1 * time.Hour)
+	testUnits := getTestSecuredUnitsWithTime(pastTime)
 	err := s.datastore.Add(unrestrictedCtx, testUnits)
 	s.Require().NoError(err)
 
@@ -238,7 +248,7 @@ func (s *securedUnitsDatastoreSACSuite) TestGetCurrentUsage() {
 	// Note: GetCurrentUsage reads from the in-memory cache, not persistent storage
 	// The cache is populated via UpdateUsage calls
 
-	cases := testutils.GenericGlobalSACReadTestCasesNoAccessNoError("get current usage")
+	cases := testutils.GenericGlobalSACReadTestCases("get current usage")
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -247,6 +257,7 @@ func (s *securedUnitsDatastoreSACSuite) TestGetCurrentUsage() {
 
 			if c.ExpectError {
 				s.ErrorIs(err, c.ExpectedError)
+				s.Nil(result)
 			} else {
 				s.NoError(err)
 				// The cache is empty initially, so result will be a zero-valued SecuredUnits
@@ -280,9 +291,11 @@ func (s *securedUnitsDatastoreSACSuite) TestAggregateAndReset() {
 			} else {
 				s.NoError(err)
 				s.NotNil(result)
-				// After a successful aggregate, the cache should be reset
-				// and the next call should return zero values
-				result2, err2 := s.datastore.GetCurrentUsage(unrestrictedCtx)
+				// Verify the aggregated values are correct
+				s.Equal(testUnits.GetNumNodes(), result.GetNumNodes())
+				s.Equal(testUnits.GetNumCpuUnits(), result.GetNumCpuUnits())
+				// After a successful aggregate, a second call should return zero values
+				result2, err2 := s.datastore.AggregateAndReset(unrestrictedCtx)
 				s.NoError(err2)
 				s.NotNil(result2)
 				s.Equal(int64(0), result2.GetNumNodes())
