@@ -21,6 +21,12 @@ import { usePagination } from '../usePagination';
 import { useSort } from '../useSort';
 import { useAdvisoryList } from './useAdvisoryList';
 import type { ProtoAdvisoryListItem } from './useAdvisoryList';
+import {
+    SEVERITY_WIDTH,
+    COUNT_WIDTH,
+    TABLE_HEADER_STYLE,
+    TABLE_CELL_STYLE,
+} from '../utils/tableDefaults';
 
 const severityNames: Record<number, string> = {
     0: 'Unknown',
@@ -89,23 +95,23 @@ function AdvisoryListPage() {
                 )}
 
                 <Table aria-label="Vuln Management V5 advisory list" variant="compact">
-                    <Thead>
+                    <Thead style={{ borderBottom: '2px solid var(--pf-global--BorderColor--100)' }}>
                         <Tr>
-                            <Th {...getThSortProps(0)}>Advisory ID</Th>
-                            <Th>CVE</Th>
-                            <Th {...getThSortProps(2)}>Severity</Th>
-                            <Th {...getThSortProps(3)}>CVSS</Th>
-                            <Th>Source</Th>
-                            <Th width={20}>Description</Th>
-                            <Th>Fix Available</Th>
-                            <Th>Components</Th>
-                            <Th {...getThSortProps(8)}>Images</Th>
+                            <Th style={TABLE_HEADER_STYLE} {...getThSortProps(0)}>Advisory ID</Th>
+                            <Th style={TABLE_HEADER_STYLE}>CVE</Th>
+                            <Th width={SEVERITY_WIDTH} style={TABLE_HEADER_STYLE} {...getThSortProps(2)}>Severity</Th>
+                            <Th style={TABLE_HEADER_STYLE} {...getThSortProps(3)}>CVSS</Th>
+                            <Th style={TABLE_HEADER_STYLE}>Source</Th>
+                            <Th width={20} style={TABLE_HEADER_STYLE}>Description</Th>
+                            <Th style={TABLE_HEADER_STYLE}>Fix Available</Th>
+                            <Th width={COUNT_WIDTH} style={TABLE_HEADER_STYLE}>Components</Th>
+                            <Th width={COUNT_WIDTH} style={TABLE_HEADER_STYLE} {...getThSortProps(8)}>Images</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
                         {advisories.map((adv) => (
                             <Tr key={adv.advisoryId}>
-                                <Td dataLabel="Advisory ID">
+                                <Td style={TABLE_CELL_STYLE} dataLabel="Advisory ID">
                                     {adv.link ? (
                                         <a
                                             href={adv.link}
@@ -119,35 +125,35 @@ function AdvisoryListPage() {
                                         adv.advisoryId
                                     )}
                                 </Td>
-                                <Td dataLabel="CVE">
+                                <Td style={TABLE_CELL_STYLE} dataLabel="CVE">
                                     <Link
                                         to={`${vulnerabilitiesPrototypeCvePath}/${encodeURIComponent(adv.cveName)}`}
                                     >
                                         {adv.cveName}
                                     </Link>
                                 </Td>
-                                <Td dataLabel="Severity">
+                                <Td style={TABLE_CELL_STYLE} dataLabel="Severity">
                                     <Label color={severityColor(adv.severity)}>
                                         {severityLabel(adv.severity)}
                                     </Label>
                                 </Td>
-                                <Td dataLabel="CVSS">
+                                <Td style={TABLE_CELL_STYLE} dataLabel="CVSS">
                                     {formatCvss(adv.cvss)}
                                 </Td>
-                                <Td dataLabel="Source">{adv.sourceName}</Td>
-                                <Td dataLabel="Description">
+                                <Td style={TABLE_CELL_STYLE} dataLabel="Source">{adv.sourceName}</Td>
+                                <Td style={TABLE_CELL_STYLE} dataLabel="Description">
                                     <Truncate
                                         content={adv.description || '-'}
                                         trailingNumChars={0}
                                     />
                                 </Td>
-                                <Td dataLabel="Fix Available">
+                                <Td style={TABLE_CELL_STYLE} dataLabel="Fix Available">
                                     {adv.fixedBy ? 'Yes' : 'No'}
                                 </Td>
-                                <Td dataLabel="Components">
+                                <Td style={TABLE_CELL_STYLE} dataLabel="Components">
                                     {adv.componentCount}
                                 </Td>
-                                <Td dataLabel="Images">{adv.imageCount}</Td>
+                                <Td style={TABLE_CELL_STYLE} dataLabel="Images">{adv.imageCount}</Td>
                             </Tr>
                         ))}
                         {!loading && advisories.length === 0 && (
