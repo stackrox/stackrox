@@ -195,6 +195,10 @@ func TestCancelRunningReportCancelsContext(t *testing.T) {
 		},
 	}
 
+	// Acquire the semaphore since runSingleReport releases it
+	err := s.concurrencySema.Acquire(context.Background(), 1)
+	assert.NoError(t, err)
+
 	go s.runSingleReport(req)
 	<-started
 
@@ -239,12 +243,16 @@ func TestCancelReportRequestCancelsRunningReport(t *testing.T) {
 		},
 	}
 
+	// Acquire the semaphore since runSingleReport releases it
+	err := s.concurrencySema.Acquire(context.Background(), 1)
+	assert.NoError(t, err)
+
 	go s.runSingleReport(req)
 	<-started
 
 	// Report is not in queue (it's running), so CancelReportRequest should cancel the running context
-	cancelled, err := s.CancelReportRequest(context.Background(), "running-report-id")
-	assert.NoError(t, err)
+	cancelled, cancelErr := s.CancelReportRequest(context.Background(), "running-report-id")
+	assert.NoError(t, cancelErr)
 	assert.True(t, cancelled)
 
 	assert.Error(t, capturedCtx.Err())
