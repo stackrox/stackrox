@@ -61,6 +61,8 @@ function MainPage(): ReactElement {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [hasWriteAccessForCluster]);
 
+    const [useCommandCenter] = useBooleanLocalStorage('useCommandCenterLayout', false);
+
     // Prerequisites from initial requests for conditional rendering that affects all authenticated routes:
     // feature flags: for NavigationSidebar and Body
     // permissions: for NavigationSidebar and Body
@@ -76,8 +78,6 @@ function MainPage(): ReactElement {
     ) {
         return <LoadingSection message="Loading..." />;
     }
-
-    const [useCommandCenter] = useBooleanLocalStorage('useCommandCenterLayout', false);
 
     if (useCommandCenter) {
         return (
