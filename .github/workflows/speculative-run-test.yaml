@@ -1,0 +1,65 @@
+name: Speculative Run Test
+on:
+  push:
+    branches: [davdhacs/speed-racer-build]
+  workflow_dispatch:
+
+jobs:
+  # Test: copy b is fast, copy a is slow.
+  # Expected: copy b pushes, copy a skips push and exits success.
+  slow-a-fast-b:
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b]
+    name: >-
+      slow-a-fast-b (${{ matrix.copy == 'b' && 'backup' || 'primary' }})
+    continue-on-error: ${{ matrix.copy == 'b' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+      - name: Simulate build (a is slow, b is fast)
+        run: |
+          if [[ "${{ matrix.copy }}" == "a" ]]; then
+            echo "Copy a: slow build (sleeping 60s)..."
+            sleep 60
+          else
+            echo "Copy b: fast build (sleeping 5s)..."
+            sleep 5
+          fi
+          echo "Build done."
+
+      - name: Check if sibling copy succeeded
+        id: speculative
+        uses: ./.github/actions/speculative-run
+        with:
+          sibling-job-name: >-
+            slow-a-fast-b (${{ matrix.copy == 'a' && 'backup' || 'primary' }})
+
+      - name: Push (skip if sibling already pushed)
+        if: steps.speculative.outputs.sibling-succeeded != 'true'
+        run: echo "Pushing..."
+
+      - name: Done
+        run: echo "Copy ${{ matrix.copy }} finished. sibling-succeeded=${{ steps.speculative.outputs.sibling-succeeded }}"
+
+  # Test: both copies fail (real failure).
+  # Expected: both fail, primary job fails (check_required would fail).
+  both-fail:
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b]
+    name: >-
+      both-fail (${{ matrix.copy == 'b' && 'backup' || 'primary' }})
+    continue-on-error: ${{ matrix.copy == 'b' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+      - name: Simulate build failure
+        run: |
+          echo "Copy ${{ matrix.copy }}: build failing..."
+          sleep 3
+          exit 1
