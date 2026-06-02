@@ -18,6 +18,9 @@ on:
     - reopened
     - synchronize
 
+permissions:
+  checks: write   # Required for speculative-run to post synthetic required check results
+
 defaults:
   run:
     # This enables `-o pipefail` for all jobs as compared to when shell isn't set.
@@ -778,8 +781,9 @@ jobs:
             -f status=completed \
             -f conclusion=success \
             -f "output[title]=Speculative run complete" \
-            -f "output[summary]=Copy ${{ matrix.copy }} won the race."
-          exit 1
+            -f "output[summary]=Copy ${{ matrix.copy }} won the race." \
+            2>&1 || echo "::warning::Failed to post synthetic check (non-fatal)"
+          exit 1  # trigger fail-fast to cancel the losing copy
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
@@ -1151,8 +1155,9 @@ jobs:
             -f status=completed \
             -f conclusion=success \
             -f "output[title]=Speculative run complete" \
-            -f "output[summary]=Copy ${{ matrix.copy }} won the race."
-          exit 1
+            -f "output[summary]=Copy ${{ matrix.copy }} won the race." \
+            2>&1 || echo "::warning::Failed to post synthetic check (non-fatal)"
+          exit 1  # trigger fail-fast to cancel the losing copy
 
   push-scanner-manifests:
     runs-on: ubuntu-latest
