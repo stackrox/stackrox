@@ -613,7 +613,7 @@ jobs:
       # RHACS_BRANDING
       # prerelease
       # race-condition-debug
-      fail-fast: false
+      fail-fast: true
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_main }}
     env:
       GO_BINARIES_BUILD_ARTIFACT: ""
@@ -751,18 +751,9 @@ jobs:
         run: |
           ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
 
-      - name: Check if sibling copy succeeded
-        id: speculative
-        uses: ./.github/actions/speculative-run
-        with:
-          sibling-job-name: >-
-            build-and-push-main (${{ matrix.name }}, ${{ matrix.arch }}${{ matrix.copy == 'a' && ', backup' || '' }})
-
       - name: Push images
-        # Skip if sibling already succeeded (speculative execution) or for external contributions.
         if: |
-          steps.speculative.outputs.sibling-succeeded != 'true' &&
-          (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         env:
           QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -776,6 +767,12 @@ jobs:
               push_context="merge-to-master"
             fi
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
+
+      - name: Declare win (post required check + cancel losers via fail-fast)
+        if: success()
+        uses: ./.github/actions/speculative-run
+        with:
+          required-check-name: build-and-push-main (${{ matrix.name }}, ${{ matrix.arch }})
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
@@ -1061,7 +1058,7 @@ jobs:
       - pre-build-oss-notice
     if: ${{ !cancelled() }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_scanner }}
     env:
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
@@ -1143,6 +1140,12 @@ jobs:
         run: |
           source ./scripts/ci/lib.sh
           push_scanner_image_set "${{ matrix.registry }}" "${{ matrix.arch }}"
+
+      - name: Declare win (post required check + cancel losers via fail-fast)
+        if: success()
+        uses: ./.github/actions/speculative-run
+        with:
+          required-check-name: build-and-push-scanner (${{ matrix.name }}, ${{ matrix.goos }}, ${{ matrix.arch }}, ${{ matrix.registry }})
 
   push-scanner-manifests:
     runs-on: ubuntu-latest

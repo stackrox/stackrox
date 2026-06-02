@@ -1,54 +1,48 @@
-name: Speculative Run
+name: Speculative Run — Declare Win
 description: >
-  Checks if the sibling copy of this job already succeeded.
-  If so, exits early with success — the sibling's result stands.
-  Use at a natural checkpoint (e.g. before the push step) with
-  matrix: copy: [a, b] and continue-on-error: true on copy b.
+  Called by the winner of a speculative-execution matrix race.
+  Posts a synthetic required-check-name as succeeded via the GitHub
+  Checks API, then exits 1 to trigger fail-fast and cancel remaining
+  copies still running.
+
+  Usage:
+    strategy:
+      fail-fast: true
+      matrix:
+        copy: [a, b]
+    continue-on-error: ${{ matrix.copy == 'b' }}
+    steps:
+      - ... do the real work ...
+      - uses: ./.github/actions/speculative-run
+        if: success()
+        with:
+          required-check-name: "build-and-push-main (RHACS_BRANDING, amd64)"
 
 inputs:
-  sibling-job-name:
+  required-check-name:
     description: >
-      The exact display name of the sibling copy's job.
-      e.g. "build-and-push-main (RHACS_BRANDING, amd64, backup)"
-      for copy a, or "build-and-push-main (RHACS_BRANDING, amd64)"
-      for copy b.
+      The exact required-check name to post as succeeded.
+      Must match the branch-protection required status check exactly.
     required: true
-
-outputs:
-  sibling-succeeded:
-    description: '"true" if sibling already succeeded, "" otherwise'
-    value: ${{ steps.check.outputs.sibling_succeeded }}
 
 runs:
   using: composite
   steps:
-    - name: Check sibling
-      id: check
+    - name: Post synthetic required check and cancel losers
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        sibling="${{ inputs.sibling-job-name }}"
-        run_id="${{ github.run_id }}"
-        repo="${{ github.repository }}"
+        check_name="${{ inputs.required-check-name }}"
+        echo "Winner: posting '${check_name}' as success"
 
-        echo "Checking sibling: ${sibling}"
+        gh api repos/${{ github.repository }}/check-runs \
+          -f name="${check_name}" \
+          -f head_sha="${{ github.sha }}" \
+          -f status=completed \
+          -f conclusion=success \
+          -f "output[title]=Speculative run complete" \
+          -f "output[summary]=This copy won the race. Other copies will be cancelled by fail-fast."
 
-        # Poll up to 60s for sibling job to appear in the API
-        result=""
-        for i in $(seq 1 6); do
-          result=$(gh api "repos/${repo}/actions/runs/${run_id}/jobs?per_page=100" \
-            --jq ".jobs[] | select(.name == \"${sibling}\") | .conclusion" 2>/dev/null || echo "")
-          [[ -n "$result" ]] && break
-          sleep 10
-        done
-
-        echo "Sibling conclusion: '${result}'"
-
-        if [[ "$result" == "success" ]]; then
-          echo "Sibling succeeded — exiting early with success."
-          echo "sibling_succeeded=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "Sibling not yet done or did not succeed — continuing."
-          echo "sibling_succeeded=" >> "$GITHUB_OUTPUT"
-        fi
+        echo "Exiting 1 to trigger fail-fast → cancel remaining copies"
+        exit 1
