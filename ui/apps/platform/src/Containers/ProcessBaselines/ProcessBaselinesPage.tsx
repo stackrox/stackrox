@@ -98,7 +98,14 @@ function ProcessBaselinesPage() {
 
     const { data, isLoading, error, refetch } = useRestQuery(requestFn);
 
-    const baselines = data?.baselines ?? [];
+    const baselines = (data?.baselines ?? []).slice().sort((a, b) => {
+        return (
+            a.key.containerName.localeCompare(b.key.containerName) ||
+            a.key.namespace.localeCompare(b.key.namespace) ||
+            a.key.clusterId.localeCompare(b.key.clusterId) ||
+            a.key.deploymentId.localeCompare(b.key.deploymentId)
+        );
+    });
     const totalCount = data?.totalCount ?? 0;
 
     const lockMutation = useRestMutation(lockUnlockProcessBaselines);
@@ -383,6 +390,7 @@ function ProcessBaselinesPage() {
                                     const processNames = baseline.elements
                                         .map((el) => el.element.processName)
                                         .filter(Boolean)
+                                        .sort()
                                         .join(', ');
 
                                     return (
