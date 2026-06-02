@@ -146,7 +146,7 @@ func (resolver *Resolver) ProtoCVEList(ctx context.Context, args struct {
 		offset = int(*args.Offset)
 	}
 
-	rows, _, err := resolver.ScanDataStore.ListCVEs(ctx, limit, offset)
+	rows, _, err := resolver.ScanDataStore.ListCVEs(ctx, limit, offset, "severity", "desc")
 	if err != nil {
 		return nil, err
 	}

@@ -393,7 +393,7 @@ func (s *ScanDataStoreTestSuite) TestListCVEs() {
 	}
 
 	// List CVEs
-	rows, total, err := s.store.ListCVEs(ctx, 100, 0)
+	rows, total, err := s.store.ListCVEs(ctx, 100, 0, "severity", "desc")
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), 3, total) // 3 distinct CVEs
 
