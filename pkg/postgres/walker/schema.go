@@ -89,6 +89,22 @@ type SchemaRelationship struct {
 	CycleReference bool
 }
 
+// InlinedSubMessage records a sub-message field that was flattened into the parent schema's columns.
+// Only populated when NoSerialized is true. Used by store template code generation.
+type InlinedSubMessage struct {
+	FieldName    string
+	TypeName     string
+	GetterPrefix string
+}
+
+// InlinedRepeatedMessage records a repeated message field stored as a bytea column
+// instead of a child table. Only populated when NoSerialized is true.
+type InlinedRepeatedMessage struct {
+	ColumnName  string
+	ElementType string
+	SetterPath  string
+}
+
 // ThisSchemaColumnNames generates the sequence of column names for this schema
 func (s *SchemaRelationship) ThisSchemaColumnNames() []string {
 	var seq []string
@@ -141,6 +157,27 @@ type Schema struct {
 	SearchScope map[v1.SearchCategory]struct{}
 
 	ScopingResource permissions.ResourceMetadata
+
+	// NoSerialized indicates that this schema should not have a serialized
+	// bytea column. All proto fields become DB columns, and reads reconstruct
+	// the proto from columns instead of unmarshaling a blob.
+	NoSerialized bool
+
+	// InlinedSubMessages tracks sub-message fields that were flattened into
+	// this schema's columns. Only populated when NoSerialized is true.
+	InlinedSubMessages []InlinedSubMessage
+
+	// InlinedRepeatedMessages tracks repeated message fields stored as bytea
+	// columns instead of child tables. Only populated when NoSerialized is true.
+	InlinedRepeatedMessages []InlinedRepeatedMessage
+}
+
+// Root returns the root schema by walking up the Parent chain.
+func (s *Schema) Root() *Schema {
+	for s.Parent != nil {
+		s = s.Parent
+	}
+	return s
 }
 
 // TableFieldsGroup is the group of table fields. A slice of this struct can be used where the table order is essential,
@@ -505,6 +542,12 @@ type ObjectGetter struct {
 	value    string
 }
 
+// IsVariable returns whether this ObjectGetter refers to a local variable.
+func (o ObjectGetter) IsVariable() bool { return o.variable }
+
+// Value returns the raw getter path value.
+func (o ObjectGetter) Value() string { return o.value }
+
 // Field is the representation of a struct field in Postgres
 type Field struct {
 	Schema *Schema
@@ -527,6 +570,10 @@ type Field struct {
 	DerivedSearchFields []DerivedSearchField
 	// Derived indicates whether the search field (if valid search field) is derived from other search field.
 	Derived bool
+
+	// MessageBytesElemType is set for MessageBytes fields: the Go type of the
+	// repeated message element (e.g., "storage.ProcessSignal_LineageInfo").
+	MessageBytesElemType string
 }
 
 // DerivedSearchField represents a search field that's derived.
@@ -548,5 +595,8 @@ func (f Field) Getter(prefix string) string {
 
 // Include returns if the field should be included in the schema
 func (f Field) Include() bool {
+	if f.Schema != nil && f.Schema.Root().NoSerialized {
+		return true
+	}
 	return f.Options.PrimaryKey || f.Options.Unique || f.Search.Enabled || f.ColumnName == "serialized" || f.Options.Reference != nil
 }

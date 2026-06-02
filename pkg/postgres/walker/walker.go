@@ -54,6 +54,9 @@ func (c walkerContext) childContext(name string, searchDisabled bool, opts Postg
 }
 
 func removeTablesWithNoSearchableFields(schema *Schema) (shouldInclude bool) {
+	if schema.Root().NoSerialized {
+		return true
+	}
 	includedChildren := schema.Children[:0]
 	for _, child := range schema.Children {
 		if shouldIncludeChild := removeTablesWithNoSearchableFields(child); shouldIncludeChild {
@@ -76,7 +79,9 @@ func removeTablesWithNoSearchableFields(schema *Schema) (shouldInclude bool) {
 
 func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
 	if len(parentPrimaryKeys) == 0 {
-		s.Fields = append(s.Fields, getSerializedField(s))
+		if !s.NoSerialized {
+			s.Fields = append(s.Fields, getSerializedField(s))
+		}
 	} else {
 		// Collect additional fields separately so we can put them in front of the field list
 		// (since these are primary keys, that is cleaner).
@@ -136,12 +141,24 @@ func postProcessSchema(s *Schema) {
 	addCommonFields(s)
 }
 
+// WalkOption is a functional option for Walk.
+type WalkOption func(*Schema)
+
+// WithNoSerialized returns a WalkOption that sets NoSerialized on the schema,
+// causing all proto fields to become DB columns with no serialized bytea blob.
+func WithNoSerialized() WalkOption {
+	return func(s *Schema) { s.NoSerialized = true }
+}
+
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
-func Walk(obj reflect.Type, table string) *Schema {
+func Walk(obj reflect.Type, table string, opts ...WalkOption) *Schema {
 	schema := &Schema{
 		Table:    table,
 		Type:     obj.String(),
 		TypeName: obj.Elem().Name(),
+	}
+	for _, opt := range opts {
+		opt(schema)
 	}
 	handleStruct(walkerContext{}, schema, obj.Elem())
 
@@ -395,6 +412,13 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 				schema.AddFieldWithType(field, dt, opts)
 				continue
 			}
+			if schema.Root().NoSerialized {
+				schema.InlinedSubMessages = append(schema.InlinedSubMessages, InlinedSubMessage{
+					FieldName:    structField.Name,
+					TypeName:     structField.Type.Elem().String(),
+					GetterPrefix: ctx.Getter(structField.Name),
+				})
+			}
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts), schema, structField.Type.Elem())
 		case reflect.Slice:
 			elemType := structField.Type.Elem()
@@ -412,6 +436,21 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 				} else {
 					schema.AddFieldWithType(field, postgres.IntArray, opts)
 				}
+				continue
+			}
+
+			// NoSerialized: inline repeated messages without searchable fields as MessageBytes bytea
+			if schema.Root().NoSerialized && !hasSearchableFields(elemType.Elem()) {
+				field.DataType = postgres.MessageBytes
+				field.SQLType = postgres.DataTypeToSQLType(postgres.MessageBytes)
+				field.ModelType = "[]byte"
+				field.MessageBytesElemType = elemType.Elem().String()
+				schema.AddFieldWithType(field, postgres.MessageBytes, opts)
+				schema.InlinedRepeatedMessages = append(schema.InlinedRepeatedMessages, InlinedRepeatedMessage{
+					ColumnName:  field.ColumnName,
+					ElementType: elemType.Elem().String(),
+					SetterPath:  getterToSetterPath(ctx.Getter(field.Name)),
+				})
 				continue
 			}
 
@@ -468,4 +507,30 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 			panic(fmt.Sprintf("Type %s for field %s is not currently handled", original.Kind(), field.Name))
 		}
 	}
+}
+
+func hasSearchableFields(t reflect.Type) bool {
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		if protoreflect.IsInternalGeneratorField(f) {
+			continue
+		}
+		if tag := f.Tag.Get("search"); tag != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func getterToSetterPath(getter string) string {
+	parts := strings.Split(getter, ".")
+	var result []string
+	for _, p := range parts {
+		p = strings.TrimPrefix(p, "Get")
+		p = strings.TrimSuffix(p, "()")
+		if p != "" {
+			result = append(result, p)
+		}
+	}
+	return strings.Join(result, ".")
 }
