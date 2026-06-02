@@ -12,20 +12,29 @@ type SeverityVariant = 'critical' | 'high' | 'medium' | 'low';
 
 function getSeverityVariant(severity: string): SeverityVariant {
     switch (severity) {
-        case 'CRITICAL_SEVERITY': return 'critical';
-        case 'HIGH_SEVERITY': return 'high';
-        case 'MEDIUM_SEVERITY': return 'medium';
-        default: return 'low';
+        case 'CRITICAL_SEVERITY':
+            return 'critical';
+        case 'HIGH_SEVERITY':
+            return 'high';
+        case 'MEDIUM_SEVERITY':
+            return 'medium';
+        default:
+            return 'low';
     }
 }
 
 function getSeverityLabel(severity: string): string {
     switch (severity) {
-        case 'CRITICAL_SEVERITY': return 'Critical';
-        case 'HIGH_SEVERITY': return 'High';
-        case 'MEDIUM_SEVERITY': return 'Medium';
-        case 'LOW_SEVERITY': return 'Low';
-        default: return severity;
+        case 'CRITICAL_SEVERITY':
+            return 'Critical';
+        case 'HIGH_SEVERITY':
+            return 'High';
+        case 'MEDIUM_SEVERITY':
+            return 'Medium';
+        case 'LOW_SEVERITY':
+            return 'Low';
+        default:
+            return severity;
     }
 }
 
@@ -61,18 +70,28 @@ export default function PoliciesPageCC() {
                     {isLoading ? (
                         <div className="space-y-2 p-5">
                             {Array.from({ length: 10 }).map((_, i) => (
-                                <Skeleton key={i} className="h-10 w-full" />
+                                <Skeleton key={`skeleton-${i}`} className="h-10 w-full" />
                             ))}
                         </div>
                     ) : (
                         <table className="w-full border-collapse">
                             <thead className="sticky top-0 z-10 bg-bg-secondary">
                                 <tr>
-                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Policy</th>
-                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Severity</th>
-                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Lifecycle</th>
-                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Source</th>
-                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Status</th>
+                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Policy
+                                    </th>
+                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Severity
+                                    </th>
+                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Lifecycle
+                                    </th>
+                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Source
+                                    </th>
+                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Status
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -85,9 +104,13 @@ export default function PoliciesPageCC() {
                                         )}
                                     >
                                         <td className="px-4 py-2.5">
-                                            <div className="text-xs text-text-primary">{policy.name}</div>
+                                            <div className="text-xs text-text-primary">
+                                                {policy.name}
+                                            </div>
                                             {policy.description && (
-                                                <div className="mt-0.5 max-w-lg truncate text-2xs text-text-muted">{policy.description}</div>
+                                                <div className="mt-0.5 max-w-lg truncate text-2xs text-text-muted">
+                                                    {policy.description}
+                                                </div>
                                             )}
                                         </td>
                                         <td className="px-4 py-2.5">
@@ -99,22 +122,34 @@ export default function PoliciesPageCC() {
                                             {formatLifecycle(policy.lifecycleStages)}
                                         </td>
                                         <td className="px-4 py-2.5">
-                                            <span className={cn(
-                                                'text-2xs',
-                                                policy.isDefault ? 'text-text-muted' : 'text-accent-blue'
-                                            )}>
+                                            <span
+                                                className={cn(
+                                                    'text-2xs',
+                                                    policy.isDefault
+                                                        ? 'text-text-muted'
+                                                        : 'text-accent-blue'
+                                                )}
+                                            >
                                                 {policy.isDefault ? 'System' : 'Custom'}
                                             </span>
                                         </td>
                                         <td className="px-4 py-2.5">
-                                            <span className={cn(
-                                                'inline-flex items-center gap-1.5 text-2xs',
-                                                policy.disabled ? 'text-text-muted' : 'text-success'
-                                            )}>
-                                                <span className={cn(
-                                                    'inline-block h-1.5 w-1.5 rounded-full',
-                                                    policy.disabled ? 'bg-severity-low' : 'bg-success'
-                                                )} />
+                                            <span
+                                                className={cn(
+                                                    'inline-flex items-center gap-1.5 text-2xs',
+                                                    policy.disabled
+                                                        ? 'text-text-muted'
+                                                        : 'text-success'
+                                                )}
+                                            >
+                                                <span
+                                                    className={cn(
+                                                        'inline-block h-1.5 w-1.5 rounded-full',
+                                                        policy.disabled
+                                                            ? 'bg-severity-low'
+                                                            : 'bg-success'
+                                                    )}
+                                                />
                                                 {policy.disabled ? 'Disabled' : 'Enabled'}
                                             </span>
                                         </td>

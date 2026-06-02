@@ -27,10 +27,7 @@ import {
     policyManagementBasePath,
 } from 'routePaths';
 
-import {
-    Dialog,
-    DialogContent,
-} from 'design-system/ui/dialog';
+import { Dialog, DialogContent } from 'design-system/ui/dialog';
 
 const pages = [
     { icon: LayoutDashboard, label: 'Dashboard', path: dashboardPath },

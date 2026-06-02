@@ -45,10 +45,16 @@ function getClusterNamespace(alert: ListAlert): string {
 function getTimeAgo(isoTime: string): string {
     const diff = Date.now() - new Date(isoTime).getTime();
     const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return 'just now';
-    if (minutes < 60) return `${minutes}m ago`;
+    if (minutes < 1) {
+        return 'just now';
+    }
+    if (minutes < 60) {
+        return `${minutes}m ago`;
+    }
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
+    if (hours < 24) {
+        return `${hours}h ago`;
+    }
     const days = Math.floor(hours / 24);
     return `${days}d ago`;
 }
@@ -112,7 +118,12 @@ export default function ViolationsPageCC() {
     const { data: alerts, isLoading: alertsLoading } = useQuery({
         queryKey: [...alertKeys.list(alertSearchFilter), page, perPage, sortOption],
         queryFn: () => {
-            const { request, cancel } = fetchAlerts({ alertSearchFilter, sortOption, page, perPage });
+            const { request, cancel } = fetchAlerts({
+                alertSearchFilter,
+                sortOption,
+                page,
+                perPage,
+            });
             return request;
         },
         refetchInterval: 5000,
@@ -167,12 +178,14 @@ export default function ViolationsPageCC() {
                         >
                             {tab.label}
                             {alertCount !== undefined && tab.key === selectedTab && (
-                                <span className={cn(
-                                    'ml-1.5 rounded-full px-1.5 py-0.5 font-mono text-2xs',
-                                    selectedTab === tab.key
-                                        ? 'bg-accent-blue/15 text-accent-blue'
-                                        : 'bg-bg-tertiary text-text-muted'
-                                )}>
+                                <span
+                                    className={cn(
+                                        'ml-1.5 rounded-full px-1.5 py-0.5 font-mono text-2xs',
+                                        selectedTab === tab.key
+                                            ? 'bg-accent-blue/15 text-accent-blue'
+                                            : 'bg-bg-tertiary text-text-muted'
+                                    )}
+                                >
                                     {alertCount}
                                 </span>
                             )}
@@ -187,7 +200,7 @@ export default function ViolationsPageCC() {
                         {alertsLoading && !alerts ? (
                             <div className="p-5 space-y-2">
                                 {Array.from({ length: 8 }).map((_, i) => (
-                                    <Skeleton key={i} className="h-10 w-full" />
+                                    <Skeleton key={`skeleton-${i}`} className="h-10 w-full" />
                                 ))}
                             </div>
                         ) : (
@@ -195,12 +208,24 @@ export default function ViolationsPageCC() {
                                 <thead className="sticky top-0 z-10 bg-bg-secondary">
                                     <tr>
                                         <th className="w-8 px-3 py-2" />
-                                        <th className="px-3 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Policy</th>
-                                        <th className="px-3 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Severity</th>
-                                        <th className="px-3 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Entity</th>
-                                        <th className="px-3 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Cluster / Namespace</th>
-                                        <th className="px-3 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Lifecycle</th>
-                                        <th className="px-3 py-2 text-right text-2xs font-500 uppercase tracking-wide text-text-muted">Time</th>
+                                        <th className="px-3 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                            Policy
+                                        </th>
+                                        <th className="px-3 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                            Severity
+                                        </th>
+                                        <th className="px-3 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                            Entity
+                                        </th>
+                                        <th className="px-3 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                            Cluster / Namespace
+                                        </th>
+                                        <th className="px-3 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                            Lifecycle
+                                        </th>
+                                        <th className="px-3 py-2 text-right text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                            Time
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -210,35 +235,55 @@ export default function ViolationsPageCC() {
                                         return (
                                             <tr
                                                 key={alert.id}
-                                                onClick={() => setSelectedAlertId(isSelected ? null : alert.id)}
+                                                onClick={() =>
+                                                    setSelectedAlertId(isSelected ? null : alert.id)
+                                                }
                                                 className={cn(
                                                     'cursor-pointer border-b border-border-subtle transition-colors',
-                                                    isSelected ? 'bg-bg-selected' : 'hover:bg-bg-hover'
+                                                    isSelected
+                                                        ? 'bg-bg-selected'
+                                                        : 'hover:bg-bg-hover'
                                                 )}
                                             >
                                                 <td className="px-3 py-2.5">
-                                                    <div className={cn('h-2 w-2 rounded-full', getSeverityDotClass(severity))} />
+                                                    <div
+                                                        className={cn(
+                                                            'h-2 w-2 rounded-full',
+                                                            getSeverityDotClass(severity)
+                                                        )}
+                                                    />
                                                 </td>
-                                                <td className="px-3 py-2.5 text-xs text-text-primary">{alert.policy.name}</td>
+                                                <td className="px-3 py-2.5 text-xs text-text-primary">
+                                                    {alert.policy.name}
+                                                </td>
                                                 <td className="px-3 py-2.5">
                                                     <Badge variant={getSeverityVariant(severity)}>
                                                         {severityLabels[severity] ?? severity}
                                                     </Badge>
                                                 </td>
-                                                <td className="px-3 py-2.5 font-mono text-2xs text-text-secondary">{getEntityName(alert)}</td>
-                                                <td className="px-3 py-2.5 font-mono text-2xs text-text-muted">{getClusterNamespace(alert)}</td>
+                                                <td className="px-3 py-2.5 font-mono text-2xs text-text-secondary">
+                                                    {getEntityName(alert)}
+                                                </td>
+                                                <td className="px-3 py-2.5 font-mono text-2xs text-text-muted">
+                                                    {getClusterNamespace(alert)}
+                                                </td>
                                                 <td className="px-3 py-2.5">
                                                     <span className="inline-flex items-center gap-1 rounded border border-border-subtle bg-bg-tertiary px-1.5 py-0.5 text-2xs text-text-muted">
                                                         {getLifecycleLabel(alert.lifecycleStage)}
                                                     </span>
                                                 </td>
-                                                <td className="px-3 py-2.5 text-right font-mono text-2xs text-text-muted">{getTimeAgo(alert.time)}</td>
+                                                <td className="px-3 py-2.5 text-right font-mono text-2xs text-text-muted">
+                                                    {getTimeAgo(alert.time)}
+                                                </td>
                                             </tr>
                                         );
                                     })}
                                     {alerts?.length === 0 && (
                                         <tr>
-                                            <td colSpan={7} className="px-3 py-12 text-center text-sm text-text-muted">
+                                            <td
+                                                colSpan={7}
+                                                className="px-3 py-12 text-center text-sm text-text-muted"
+                                            >
                                                 No violations found
                                             </td>
                                         </tr>
@@ -251,7 +296,8 @@ export default function ViolationsPageCC() {
                         {alertCount !== undefined && alertCount > perPage && (
                             <div className="flex items-center justify-between border-t border-border-subtle bg-bg-secondary px-5 py-2 text-xs text-text-muted">
                                 <span>
-                                    Showing {(page - 1) * perPage + 1}-{Math.min(page * perPage, alertCount)} of {alertCount}
+                                    Showing {(page - 1) * perPage + 1}-
+                                    {Math.min(page * perPage, alertCount)} of {alertCount}
                                 </span>
                                 <div className="flex gap-1">
                                     <button
@@ -280,15 +326,21 @@ export default function ViolationsPageCC() {
                         <div className="w-96 shrink-0 overflow-y-auto border-l border-border-subtle bg-bg-secondary">
                             <div className="border-b border-border-subtle p-4">
                                 <div className="mb-2 flex items-center gap-2">
-                                    <Badge variant={getSeverityVariant(selectedAlert.policy.severity)}>
+                                    <Badge
+                                        variant={getSeverityVariant(selectedAlert.policy.severity)}
+                                    >
                                         {severityLabels[selectedAlert.policy.severity]}
                                     </Badge>
                                     <span className="inline-flex items-center gap-1 rounded border border-border-subtle bg-bg-tertiary px-1.5 py-0.5 text-2xs text-text-muted">
                                         {getLifecycleLabel(selectedAlert.lifecycleStage)}
                                     </span>
                                 </div>
-                                <h2 className="text-base font-600 text-text-primary leading-snug">{selectedAlert.policy.name}</h2>
-                                <p className="mt-1 text-xs text-text-muted">Triggered {getTimeAgo(selectedAlert.time)}</p>
+                                <h2 className="text-base font-600 text-text-primary leading-snug">
+                                    {selectedAlert.policy.name}
+                                </h2>
+                                <p className="mt-1 text-xs text-text-muted">
+                                    Triggered {getTimeAgo(selectedAlert.time)}
+                                </p>
                             </div>
 
                             <div className="border-b border-border-subtle p-4">
@@ -303,22 +355,48 @@ export default function ViolationsPageCC() {
                             </div>
 
                             <div className="border-b border-border-subtle p-4">
-                                <h3 className="mb-2 text-2xs font-500 uppercase tracking-wide text-text-muted">Entity</h3>
+                                <h3 className="mb-2 text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                    Entity
+                                </h3>
                                 <DetailRow label="Name" value={getEntityName(selectedAlert)} mono />
-                                <DetailRow label="Cluster" value={selectedAlert.commonEntityInfo.clusterName} mono />
-                                <DetailRow label="Namespace" value={selectedAlert.commonEntityInfo.namespace} mono />
+                                <DetailRow
+                                    label="Cluster"
+                                    value={selectedAlert.commonEntityInfo.clusterName}
+                                    mono
+                                />
+                                <DetailRow
+                                    label="Namespace"
+                                    value={selectedAlert.commonEntityInfo.namespace}
+                                    mono
+                                />
                             </div>
 
                             <div className="border-b border-border-subtle p-4">
-                                <h3 className="mb-2 text-2xs font-500 uppercase tracking-wide text-text-muted">Policy</h3>
+                                <h3 className="mb-2 text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                    Policy
+                                </h3>
                                 <DetailRow label="Name" value={selectedAlert.policy.name} />
-                                <DetailRow label="Categories" value={selectedAlert.policy.categories?.join(', ') ?? '—'} />
+                                <DetailRow
+                                    label="Categories"
+                                    value={selectedAlert.policy.categories?.join(', ') ?? '—'}
+                                />
                             </div>
 
                             <div className="p-4">
-                                <h3 className="mb-2 text-2xs font-500 uppercase tracking-wide text-text-muted">Keyboard Shortcuts</h3>
+                                <h3 className="mb-2 text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                    Keyboard Shortcuts
+                                </h3>
                                 <div className="flex flex-wrap gap-2 text-2xs text-text-muted">
-                                    <span><kbd className="rounded border border-border bg-bg-tertiary px-1 py-0.5 font-mono text-2xs">j</kbd> / <kbd className="rounded border border-border bg-bg-tertiary px-1 py-0.5 font-mono text-2xs">k</kbd> navigate</span>
+                                    <span>
+                                        <kbd className="rounded border border-border bg-bg-tertiary px-1 py-0.5 font-mono text-2xs">
+                                            j
+                                        </kbd>{' '}
+                                        /{' '}
+                                        <kbd className="rounded border border-border bg-bg-tertiary px-1 py-0.5 font-mono text-2xs">
+                                            k
+                                        </kbd>{' '}
+                                        navigate
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -333,7 +411,22 @@ export default function ViolationsPageCC() {
                             : 'Loading...'}
                     </span>
                     <span className="ml-auto">
-                        <kbd className="rounded border border-border bg-bg-tertiary px-1 font-mono text-2xs">j</kbd>/<kbd className="rounded border border-border bg-bg-tertiary px-1 font-mono text-2xs">k</kbd> navigate · <kbd className="rounded border border-border bg-bg-tertiary px-1 font-mono text-2xs">Enter</kbd> select · <kbd className="rounded border border-border bg-bg-tertiary px-1 font-mono text-2xs">/</kbd> filter
+                        <kbd className="rounded border border-border bg-bg-tertiary px-1 font-mono text-2xs">
+                            j
+                        </kbd>
+                        /
+                        <kbd className="rounded border border-border bg-bg-tertiary px-1 font-mono text-2xs">
+                            k
+                        </kbd>{' '}
+                        navigate ·{' '}
+                        <kbd className="rounded border border-border bg-bg-tertiary px-1 font-mono text-2xs">
+                            Enter
+                        </kbd>{' '}
+                        select ·{' '}
+                        <kbd className="rounded border border-border bg-bg-tertiary px-1 font-mono text-2xs">
+                            /
+                        </kbd>{' '}
+                        filter
                     </span>
                 </div>
             </div>
@@ -345,7 +438,9 @@ function DetailRow({ label, value, mono }: { label: string; value: string; mono?
     return (
         <div className="flex items-center justify-between py-1">
             <span className="text-xs text-text-muted">{label}</span>
-            <span className={cn('text-xs text-text-secondary', mono && 'font-mono text-2xs')}>{value || '—'}</span>
+            <span className={cn('text-xs text-text-secondary', mono && 'font-mono text-2xs')}>
+                {value || '—'}
+            </span>
         </div>
     );
 }

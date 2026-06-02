@@ -13,7 +13,9 @@ export function CommandCenterTopbar({ title, onCommandPaletteOpen }: CommandCent
 
     useEffect(() => {
         const interval = setInterval(() => {
-            setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+            setLastUpdated(
+                new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            );
         }, 60000);
         return () => clearInterval(interval);
     }, []);

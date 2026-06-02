@@ -13,7 +13,9 @@ import { cn } from 'design-system/lib/utils';
 
 function getPassPercentage(checkStats: ComplianceCheckStatusCount[]): number {
     const total = checkStats.reduce((sum, s) => sum + s.count, 0);
-    if (total === 0) return 0;
+    if (total === 0) {
+        return 0;
+    }
     const pass = checkStats.find((s) => s.status === 'PASS')?.count ?? 0;
     return Math.round((pass / total) * 100);
 }
@@ -27,14 +29,22 @@ function getStatusCounts(checkStats: ComplianceCheckStatusCount[]) {
 }
 
 function getGaugeColor(pct: number): string {
-    if (pct >= 80) return 'bg-success';
-    if (pct >= 50) return 'bg-severity-medium';
+    if (pct >= 80) {
+        return 'bg-success';
+    }
+    if (pct >= 50) {
+        return 'bg-severity-medium';
+    }
     return 'bg-severity-critical';
 }
 
 function getGaugeTextColor(pct: number): string {
-    if (pct >= 80) return 'text-success';
-    if (pct >= 50) return 'text-severity-medium';
+    if (pct >= 80) {
+        return 'text-success';
+    }
+    if (pct >= 50) {
+        return 'text-severity-medium';
+    }
     return 'text-severity-critical';
 }
 
@@ -66,20 +76,28 @@ function ProfileCard({ profile }: { profile: ComplianceProfileScanStats }) {
                 {/* Status breakdown */}
                 <div className="grid grid-cols-4 gap-2">
                     <div className="rounded-lg bg-bg-primary p-2.5 text-center">
-                        <div className="font-mono text-lg font-600 text-success">{counts.PASS ?? 0}</div>
+                        <div className="font-mono text-lg font-600 text-success">
+                            {counts.PASS ?? 0}
+                        </div>
                         <div className="text-2xs text-text-muted">Pass</div>
                     </div>
                     <div className="rounded-lg bg-bg-primary p-2.5 text-center">
-                        <div className="font-mono text-lg font-600 text-severity-critical">{counts.FAIL ?? 0}</div>
+                        <div className="font-mono text-lg font-600 text-severity-critical">
+                            {counts.FAIL ?? 0}
+                        </div>
                         <div className="text-2xs text-text-muted">Fail</div>
                     </div>
                     <div className="rounded-lg bg-bg-primary p-2.5 text-center">
-                        <div className="font-mono text-lg font-600 text-severity-medium">{counts.MANUAL ?? 0}</div>
+                        <div className="font-mono text-lg font-600 text-severity-medium">
+                            {counts.MANUAL ?? 0}
+                        </div>
                         <div className="text-2xs text-text-muted">Manual</div>
                     </div>
                     <div className="rounded-lg bg-bg-primary p-2.5 text-center">
                         <div className="font-mono text-lg font-600 text-text-muted">
-                            {(counts.ERROR ?? 0) + (counts.INFO ?? 0) + (counts.NOT_APPLICABLE ?? 0)}
+                            {(counts.ERROR ?? 0) +
+                                (counts.INFO ?? 0) +
+                                (counts.NOT_APPLICABLE ?? 0)}
                         </div>
                         <div className="text-2xs text-text-muted">Other</div>
                     </div>
@@ -114,7 +132,7 @@ export default function CompliancePageCC() {
                 {isLoading ? (
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {Array.from({ length: 3 }).map((_, i) => (
-                            <Skeleton key={i} className="h-48 w-full rounded-lg" />
+                            <Skeleton key={`skeleton-${i}`} className="h-48 w-full rounded-lg" />
                         ))}
                     </div>
                 ) : error ? (
@@ -123,7 +141,8 @@ export default function CompliancePageCC() {
                     </div>
                 ) : profiles.length === 0 ? (
                     <div className="rounded-lg border border-border-subtle bg-bg-secondary p-8 text-center text-sm text-text-muted">
-                        No compliance scan configurations found. Create a scan configuration to start monitoring compliance.
+                        No compliance scan configurations found. Create a scan configuration to
+                        start monitoring compliance.
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

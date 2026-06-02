@@ -25,7 +25,9 @@ function StatCard({
                     <Skeleton className="h-10 w-full" />
                 ) : (
                     <div className="text-center">
-                        <div className="font-mono text-3xl font-700 text-text-primary">{count ?? 0}</div>
+                        <div className="font-mono text-3xl font-700 text-text-primary">
+                            {count ?? 0}
+                        </div>
                         <div className="mt-1 text-xs text-text-muted">{title}</div>
                     </div>
                 )}
@@ -69,10 +71,22 @@ export default function AccessControlPageCC() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                    <StatCard title="Auth Providers" count={authProviders?.length} isLoading={authLoading} />
+                    <StatCard
+                        title="Auth Providers"
+                        count={authProviders?.length}
+                        isLoading={authLoading}
+                    />
                     <StatCard title="Roles" count={roles?.length} isLoading={rolesLoading} />
-                    <StatCard title="Permission Sets" count={permSets?.length} isLoading={permLoading} />
-                    <StatCard title="Access Scopes" count={scopes?.length} isLoading={scopesLoading} />
+                    <StatCard
+                        title="Permission Sets"
+                        count={permSets?.length}
+                        isLoading={permLoading}
+                    />
+                    <StatCard
+                        title="Access Scopes"
+                        count={scopes?.length}
+                        isLoading={scopesLoading}
+                    />
                 </div>
 
                 {/* Roles table */}
@@ -87,17 +101,32 @@ export default function AccessControlPageCC() {
                                 <table className="w-full border-collapse">
                                     <thead>
                                         <tr>
-                                            <th className="pb-1.5 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Name</th>
-                                            <th className="pb-1.5 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Permission Set</th>
-                                            <th className="pb-1.5 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Access Scope</th>
+                                            <th className="pb-1.5 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                                Name
+                                            </th>
+                                            <th className="pb-1.5 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                                Permission Set
+                                            </th>
+                                            <th className="pb-1.5 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                                Access Scope
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {roles.map((role) => (
-                                            <tr key={role.name} className="border-b border-border-subtle last:border-b-0 hover:bg-bg-hover">
-                                                <td className="py-2 text-xs text-text-primary">{role.name}</td>
-                                                <td className="py-2 font-mono text-2xs text-text-secondary">{role.permissionSetId || '—'}</td>
-                                                <td className="py-2 font-mono text-2xs text-text-secondary">{role.accessScopeId || '—'}</td>
+                                            <tr
+                                                key={role.name}
+                                                className="border-b border-border-subtle last:border-b-0 hover:bg-bg-hover"
+                                            >
+                                                <td className="py-2 text-xs text-text-primary">
+                                                    {role.name}
+                                                </td>
+                                                <td className="py-2 font-mono text-2xs text-text-secondary">
+                                                    {role.permissionSetId || '—'}
+                                                </td>
+                                                <td className="py-2 font-mono text-2xs text-text-secondary">
+                                                    {role.accessScopeId || '—'}
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>

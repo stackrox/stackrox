@@ -3,14 +3,22 @@ import { cn } from 'design-system/lib/utils';
 
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
     ({ className, ...props }, ref) => (
-        <div ref={ref} className={cn('rounded-lg border border-border-subtle bg-bg-secondary', className)} {...props} />
+        <div
+            ref={ref}
+            className={cn('rounded-lg border border-border-subtle bg-bg-secondary', className)}
+            {...props}
+        />
     )
 );
 Card.displayName = 'Card';
 
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
     ({ className, ...props }, ref) => (
-        <div ref={ref} className={cn('flex items-center justify-between px-4 pt-3.5 pb-2.5', className)} {...props} />
+        <div
+            ref={ref}
+            className={cn('flex items-center justify-between px-4 pt-3.5 pb-2.5', className)}
+            {...props}
+        />
     )
 );
 CardHeader.displayName = 'CardHeader';

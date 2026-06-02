@@ -16,13 +16,8 @@ export function CommandCenterLayout({ title, children }: CommandCenterLayoutProp
         <div className="flex h-screen bg-bg-primary text-text-primary font-sans text-sm">
             <CommandCenterSidebar />
             <div className="flex flex-1 flex-col overflow-hidden">
-                <CommandCenterTopbar
-                    title={title}
-                    onCommandPaletteOpen={() => setOpen(true)}
-                />
-                <main className="flex-1 overflow-y-auto">
-                    {children}
-                </main>
+                <CommandCenterTopbar title={title} onCommandPaletteOpen={() => setOpen(true)} />
+                <main className="flex-1 overflow-y-auto">{children}</main>
             </div>
             <CommandPalette open={open} onOpenChange={setOpen} />
         </div>

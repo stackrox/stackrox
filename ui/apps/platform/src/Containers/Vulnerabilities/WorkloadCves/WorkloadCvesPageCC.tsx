@@ -63,22 +63,40 @@ type ImageCVE = {
 };
 
 function getCvssVariant(cvss: number): 'critical' | 'high' | 'medium' | 'low' {
-    if (cvss >= 9.0) return 'critical';
-    if (cvss >= 7.0) return 'high';
-    if (cvss >= 4.0) return 'medium';
+    if (cvss >= 9.0) {
+        return 'critical';
+    }
+    if (cvss >= 7.0) {
+        return 'high';
+    }
+    if (cvss >= 4.0) {
+        return 'medium';
+    }
     return 'low';
 }
 
 function formatDate(isoDate: string | null): string {
-    if (!isoDate) return '—';
-    return new Date(isoDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    if (!isoDate) {
+        return '—';
+    }
+    return new Date(isoDate).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    });
 }
 
 function getDaysAgo(isoDate: string | null): string {
-    if (!isoDate) return '';
+    if (!isoDate) {
+        return '';
+    }
     const days = Math.floor((Date.now() - new Date(isoDate).getTime()) / 86400000);
-    if (days === 0) return 'today';
-    if (days === 1) return '1 day ago';
+    if (days === 0) {
+        return 'today';
+    }
+    if (days === 1) {
+        return '1 day ago';
+    }
     return `${days} days ago`;
 }
 
@@ -129,22 +147,40 @@ export default function WorkloadCvesPageCC() {
                     {isLoading ? (
                         <div className="space-y-2 p-5">
                             {Array.from({ length: 10 }).map((_, i) => (
-                                <Skeleton key={i} className="h-10 w-full" />
+                                <Skeleton key={`skeleton-${i}`} className="h-10 w-full" />
                             ))}
                         </div>
                     ) : (
                         <table className="w-full border-collapse">
                             <thead className="sticky top-0 z-10 bg-bg-secondary">
                                 <tr>
-                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">CVE</th>
-                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Top CVSS</th>
-                                    <th className="px-4 py-2 text-center text-2xs font-500 uppercase tracking-wide text-text-muted">Critical</th>
-                                    <th className="px-4 py-2 text-center text-2xs font-500 uppercase tracking-wide text-text-muted">Important</th>
-                                    <th className="px-4 py-2 text-center text-2xs font-500 uppercase tracking-wide text-text-muted">Moderate</th>
-                                    <th className="px-4 py-2 text-center text-2xs font-500 uppercase tracking-wide text-text-muted">Low</th>
-                                    <th className="px-4 py-2 text-right text-2xs font-500 uppercase tracking-wide text-text-muted">Images</th>
-                                    <th className="px-4 py-2 text-right text-2xs font-500 uppercase tracking-wide text-text-muted">First Seen</th>
-                                    <th className="px-4 py-2 text-right text-2xs font-500 uppercase tracking-wide text-text-muted">Published</th>
+                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        CVE
+                                    </th>
+                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Top CVSS
+                                    </th>
+                                    <th className="px-4 py-2 text-center text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Critical
+                                    </th>
+                                    <th className="px-4 py-2 text-center text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Important
+                                    </th>
+                                    <th className="px-4 py-2 text-center text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Moderate
+                                    </th>
+                                    <th className="px-4 py-2 text-center text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Low
+                                    </th>
+                                    <th className="px-4 py-2 text-right text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Images
+                                    </th>
+                                    <th className="px-4 py-2 text-right text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        First Seen
+                                    </th>
+                                    <th className="px-4 py-2 text-right text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Published
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -154,7 +190,9 @@ export default function WorkloadCvesPageCC() {
                                         className="border-b border-border-subtle transition-colors hover:bg-bg-hover"
                                     >
                                         <td className="px-4 py-2.5">
-                                            <span className="font-mono text-xs font-500 text-accent-blue">{cve.cve}</span>
+                                            <span className="font-mono text-xs font-500 text-accent-blue">
+                                                {cve.cve}
+                                            </span>
                                         </td>
                                         <td className="px-4 py-2.5">
                                             <Badge variant={getCvssVariant(cve.topCVSS)}>
@@ -162,30 +200,53 @@ export default function WorkloadCvesPageCC() {
                                             </Badge>
                                         </td>
                                         <td className="px-4 py-2.5 text-center">
-                                            {cve.affectedImageCountBySeverity.critical.total > 0 && (
-                                                <Badge variant="critical">{cve.affectedImageCountBySeverity.critical.total}</Badge>
+                                            {cve.affectedImageCountBySeverity.critical.total >
+                                                0 && (
+                                                <Badge variant="critical">
+                                                    {
+                                                        cve.affectedImageCountBySeverity.critical
+                                                            .total
+                                                    }
+                                                </Badge>
                                             )}
                                         </td>
                                         <td className="px-4 py-2.5 text-center">
-                                            {cve.affectedImageCountBySeverity.important.total > 0 && (
-                                                <Badge variant="high">{cve.affectedImageCountBySeverity.important.total}</Badge>
+                                            {cve.affectedImageCountBySeverity.important.total >
+                                                0 && (
+                                                <Badge variant="high">
+                                                    {
+                                                        cve.affectedImageCountBySeverity.important
+                                                            .total
+                                                    }
+                                                </Badge>
                                             )}
                                         </td>
                                         <td className="px-4 py-2.5 text-center">
-                                            {cve.affectedImageCountBySeverity.moderate.total > 0 && (
-                                                <Badge variant="medium">{cve.affectedImageCountBySeverity.moderate.total}</Badge>
+                                            {cve.affectedImageCountBySeverity.moderate.total >
+                                                0 && (
+                                                <Badge variant="medium">
+                                                    {
+                                                        cve.affectedImageCountBySeverity.moderate
+                                                            .total
+                                                    }
+                                                </Badge>
                                             )}
                                         </td>
                                         <td className="px-4 py-2.5 text-center">
                                             {cve.affectedImageCountBySeverity.low.total > 0 && (
-                                                <Badge variant="low">{cve.affectedImageCountBySeverity.low.total}</Badge>
+                                                <Badge variant="low">
+                                                    {cve.affectedImageCountBySeverity.low.total}
+                                                </Badge>
                                             )}
                                         </td>
                                         <td className="px-4 py-2.5 text-right font-mono text-xs text-text-secondary">
                                             {cve.affectedImageCount}
                                         </td>
                                         <td className="px-4 py-2.5 text-right">
-                                            <span className="font-mono text-2xs text-text-muted" title={formatDate(cve.firstDiscoveredInSystem)}>
+                                            <span
+                                                className="font-mono text-2xs text-text-muted"
+                                                title={formatDate(cve.firstDiscoveredInSystem)}
+                                            >
                                                 {getDaysAgo(cve.firstDiscoveredInSystem)}
                                             </span>
                                         </td>
@@ -196,7 +257,10 @@ export default function WorkloadCvesPageCC() {
                                 ))}
                                 {cves.length === 0 && (
                                     <tr>
-                                        <td colSpan={9} className="px-4 py-12 text-center text-sm text-text-muted">
+                                        <td
+                                            colSpan={9}
+                                            className="px-4 py-12 text-center text-sm text-text-muted"
+                                        >
                                             No CVEs found
                                         </td>
                                     </tr>

@@ -21,12 +21,7 @@ import {
 } from 'routePaths';
 
 import { cn } from 'design-system/lib/utils';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from 'design-system/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from 'design-system/ui/tooltip';
 
 interface NavItem {
     icon: LucideIcon;

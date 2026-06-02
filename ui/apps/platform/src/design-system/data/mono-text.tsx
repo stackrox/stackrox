@@ -5,5 +5,9 @@ interface MonoTextProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 export function MonoText({ className, children, ...props }: MonoTextProps) {
-    return <span className={cn('font-mono text-xs', className)} {...props}>{children}</span>;
+    return (
+        <span className={cn('font-mono text-xs', className)} {...props}>
+            {children}
+        </span>
+    );
 }

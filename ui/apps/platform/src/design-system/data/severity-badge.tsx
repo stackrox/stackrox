@@ -22,5 +22,9 @@ interface SeverityBadgeProps {
 }
 
 export function SeverityBadge({ severity, className }: SeverityBadgeProps) {
-    return <Badge variant={severityToVariant[severity]} className={className}>{severityLabel[severity]}</Badge>;
+    return (
+        <Badge variant={severityToVariant[severity]} className={className}>
+            {severityLabel[severity]}
+        </Badge>
+    );
 }

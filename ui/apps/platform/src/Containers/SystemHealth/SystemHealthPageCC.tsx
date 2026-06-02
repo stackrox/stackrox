@@ -4,7 +4,7 @@ import axios from 'services/instance';
 import { fetchClusters } from 'services/ClustersService';
 
 import { CommandCenterLayout } from 'design-system/layout/command-center-layout';
-import { Card, CardHeader, CardTitle, CardContent } from 'design-system/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from 'design-system/ui/card';
 import { Badge } from 'design-system/ui/badge';
 import { Skeleton } from 'design-system/ui/skeleton';
 import { cn } from 'design-system/lib/utils';
@@ -20,13 +20,18 @@ type IntegrationHealth = {
 
 function HealthStatusDot({ status }: { status: string }) {
     return (
-        <span className={cn(
-            'inline-block h-2 w-2 rounded-full',
-            status === 'HEALTHY' ? 'bg-success' :
-            status === 'UNHEALTHY' ? 'bg-severity-critical' :
-            status === 'UNINITIALIZED' ? 'bg-severity-low' :
-            'bg-severity-medium'
-        )} />
+        <span
+            className={cn(
+                'inline-block h-2 w-2 rounded-full',
+                status === 'HEALTHY'
+                    ? 'bg-success'
+                    : status === 'UNHEALTHY'
+                      ? 'bg-severity-critical'
+                      : status === 'UNINITIALIZED'
+                        ? 'bg-severity-low'
+                        : 'bg-severity-medium'
+            )}
+        />
     );
 }
 
@@ -60,9 +65,14 @@ function IntegrationHealthCard({ title, endpoint }: { title: string; endpoint: s
                 ) : data && data.length > 0 ? (
                     <div className="space-y-1.5">
                         {data.map((item) => (
-                            <div key={item.id} className="flex items-center gap-2 rounded bg-bg-primary px-2.5 py-1.5">
+                            <div
+                                key={item.id}
+                                className="flex items-center gap-2 rounded bg-bg-primary px-2.5 py-1.5"
+                            >
                                 <HealthStatusDot status={item.status} />
-                                <span className="flex-1 text-xs text-text-primary">{item.name}</span>
+                                <span className="flex-1 text-xs text-text-primary">
+                                    {item.name}
+                                </span>
                                 <span className="text-2xs text-text-muted">{item.type}</span>
                             </div>
                         ))}
@@ -100,7 +110,9 @@ export default function SystemHealthPageCC() {
                                 <Skeleton className="h-10 w-full" />
                             ) : (
                                 <div className="text-center">
-                                    <div className="font-mono text-3xl font-700 text-text-primary">{clusters?.length ?? 0}</div>
+                                    <div className="font-mono text-3xl font-700 text-text-primary">
+                                        {clusters?.length ?? 0}
+                                    </div>
                                     <div className="mt-1 text-xs text-text-muted">Clusters</div>
                                 </div>
                             )}

@@ -5,22 +5,8 @@ import { clusterKeys } from 'hooks/query/keys';
 import type { Cluster } from 'types/cluster.proto';
 
 import { CommandCenterLayout } from 'design-system/layout/command-center-layout';
-import { Badge } from 'design-system/ui/badge';
 import { Skeleton } from 'design-system/ui/skeleton';
 import { cn } from 'design-system/lib/utils';
-
-function getHealthStatusVariant(status?: string): 'success' | 'critical' | 'medium' | 'low' {
-    switch (status) {
-        case 'HEALTHY':
-            return 'success';
-        case 'DEGRADED':
-            return 'medium';
-        case 'UNHEALTHY':
-            return 'critical';
-        default:
-            return 'low';
-    }
-}
 
 function getHealthLabel(status?: string): string {
     switch (status) {
@@ -51,12 +37,18 @@ function getStatusDotClass(status?: string): string {
 }
 
 function getTimeAgo(isoTime?: string): string {
-    if (!isoTime) return '—';
+    if (!isoTime) {
+        return '—';
+    }
     const diff = Date.now() - new Date(isoTime).getTime();
     const seconds = Math.floor(diff / 1000);
-    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 60) {
+        return `${seconds}s ago`;
+    }
     const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
+    if (minutes < 60) {
+        return `${minutes}m ago`;
+    }
     const hours = Math.floor(minutes / 60);
     return `${hours}h ago`;
 }
@@ -87,18 +79,28 @@ export default function ClustersPageCC() {
                     {isLoading ? (
                         <div className="space-y-2 p-5">
                             {Array.from({ length: 5 }).map((_, i) => (
-                                <Skeleton key={i} className="h-12 w-full" />
+                                <Skeleton key={`skeleton-${i}`} className="h-12 w-full" />
                             ))}
                         </div>
                     ) : (
                         <table className="w-full border-collapse">
                             <thead className="sticky top-0 z-10 bg-bg-secondary">
                                 <tr>
-                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Cluster</th>
-                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Status</th>
-                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Type</th>
-                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">Sensor Version</th>
-                                    <th className="px-4 py-2 text-right text-2xs font-500 uppercase tracking-wide text-text-muted">Last Contact</th>
+                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Cluster
+                                    </th>
+                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Status
+                                    </th>
+                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Type
+                                    </th>
+                                    <th className="px-4 py-2 text-left text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Sensor Version
+                                    </th>
+                                    <th className="px-4 py-2 text-right text-2xs font-500 uppercase tracking-wide text-text-muted">
+                                        Last Contact
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -109,19 +111,32 @@ export default function ClustersPageCC() {
                                             key={cluster.id}
                                             className="border-b border-border-subtle transition-colors hover:bg-bg-hover"
                                         >
-                                            <td className="px-4 py-2.5 text-xs font-500 text-text-primary">{cluster.name}</td>
+                                            <td className="px-4 py-2.5 text-xs font-500 text-text-primary">
+                                                {cluster.name}
+                                            </td>
                                             <td className="px-4 py-2.5">
                                                 <span className="inline-flex items-center gap-1.5 text-xs text-text-secondary">
-                                                    <span className={cn('inline-block h-1.5 w-1.5 rounded-full', getStatusDotClass(overallStatus))} />
+                                                    <span
+                                                        className={cn(
+                                                            'inline-block h-1.5 w-1.5 rounded-full',
+                                                            getStatusDotClass(overallStatus)
+                                                        )}
+                                                    />
                                                     {getHealthLabel(overallStatus)}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-2.5 font-mono text-2xs text-text-muted">{cluster.type}</td>
+                                            <td className="px-4 py-2.5 font-mono text-2xs text-text-muted">
+                                                {cluster.type}
+                                            </td>
                                             <td className="px-4 py-2.5">
-                                                <span className={cn(
-                                                    'font-mono text-2xs',
-                                                    cluster.status?.sensorVersion ? 'text-success' : 'text-text-muted'
-                                                )}>
+                                                <span
+                                                    className={cn(
+                                                        'font-mono text-2xs',
+                                                        cluster.status?.sensorVersion
+                                                            ? 'text-success'
+                                                            : 'text-text-muted'
+                                                    )}
+                                                >
                                                     {cluster.status?.sensorVersion || '—'}
                                                 </span>
                                             </td>
@@ -133,7 +148,10 @@ export default function ClustersPageCC() {
                                 })}
                                 {clusters?.length === 0 && (
                                     <tr>
-                                        <td colSpan={5} className="px-4 py-12 text-center text-sm text-text-muted">
+                                        <td
+                                            colSpan={5}
+                                            className="px-4 py-12 text-center text-sm text-text-muted"
+                                        >
                                             No clusters found
                                         </td>
                                     </tr>
@@ -145,7 +163,8 @@ export default function ClustersPageCC() {
 
                 {/* Bottom bar */}
                 <div className="flex h-8 shrink-0 items-center border-t border-border-subtle bg-bg-secondary px-5 text-2xs text-text-muted">
-                    {clusters && `${clusters.length} ${clusters.length === 1 ? 'cluster' : 'clusters'}`}
+                    {clusters &&
+                        `${clusters.length} ${clusters.length === 1 ? 'cluster' : 'clusters'}`}
                 </div>
             </div>
         </CommandCenterLayout>

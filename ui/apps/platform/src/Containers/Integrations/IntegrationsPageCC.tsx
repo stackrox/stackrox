@@ -1,12 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom-v5-compat';
-import {
-    Image,
-    Bell,
-    Database,
-    KeyRound,
-    type LucideIcon,
-} from 'lucide-react';
+import { Image, Bell, Database, KeyRound, type LucideIcon } from 'lucide-react';
 
 import { fetchIntegration } from 'services/IntegrationsService';
 import axios from 'services/instance';
@@ -78,9 +72,7 @@ function IntegrationCategoryCard({ category }: { category: IntegrationCategory }
                     <CardTitle>{category.label}</CardTitle>
                 </div>
                 {!isLoading && data !== undefined && (
-                    <Badge variant={data > 0 ? 'info' : 'default'}>
-                        {data} configured
-                    </Badge>
+                    <Badge variant={data > 0 ? 'info' : 'default'}>{data} configured</Badge>
                 )}
             </CardHeader>
             <CardContent>
@@ -98,7 +90,8 @@ export default function IntegrationsPageCC() {
                 <div className="mb-4">
                     <h2 className="text-sm font-600 text-text-primary">Platform Integrations</h2>
                     <p className="mt-1 text-xs text-text-muted">
-                        Configure connections to external services for scanning, notifications, and backups.
+                        Configure connections to external services for scanning, notifications, and
+                        backups.
                     </p>
                 </div>
 

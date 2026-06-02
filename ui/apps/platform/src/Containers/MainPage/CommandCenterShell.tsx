@@ -25,10 +25,7 @@ export function CommandCenterShell({
         <div className="flex h-screen bg-bg-primary text-text-primary font-sans text-sm">
             <CommandCenterSidebar />
             <div className="flex flex-1 flex-col overflow-hidden">
-                <CommandCenterTopbar
-                    title="StackRox"
-                    onCommandPaletteOpen={() => setOpen(true)}
-                />
+                <CommandCenterTopbar title="StackRox" onCommandPaletteOpen={() => setOpen(true)} />
                 <main className="flex-1 overflow-y-auto">
                     <ErrorBoundary>
                         <Body
