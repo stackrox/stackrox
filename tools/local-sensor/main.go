@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/clusterid"
@@ -92,6 +93,7 @@ type localSensorConfig struct {
 	PoliciesFile       string
 	FakeWorkloadFile   string
 	WithMetrics        bool
+	MetricsSnapshotOut string
 	NoCPUProfile       bool
 	NoMemProfile       bool
 	PprofServer        bool
@@ -117,6 +119,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 		PoliciesFile:       "",
 		FakeWorkloadFile:   "",
 		WithMetrics:        false,
+		MetricsSnapshotOut: "",
 		NoCPUProfile:       false,
 		NoMemProfile:       false,
 		PprofServer:        false,
@@ -141,6 +144,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.StringVar(&sensorConfig.PoliciesFile, "with-policies", sensorConfig.PoliciesFile, " a file containing a list of policies")
 	flag.StringVar(&sensorConfig.FakeWorkloadFile, "with-fakeworkload", sensorConfig.FakeWorkloadFile, " a file containing a FakeWorkload definition")
 	flag.BoolVar(&sensorConfig.WithMetrics, "with-metrics", sensorConfig.WithMetrics, "enables the metric server")
+	flag.StringVar(&sensorConfig.MetricsSnapshotOut, "metrics-snapshot-out", sensorConfig.MetricsSnapshotOut, "file to store a pre-shutdown Prometheus metrics snapshot when metrics are enabled")
 	flag.BoolVar(&sensorConfig.PprofServer, "with-pprof-server", sensorConfig.PprofServer, "enables the pprof server on port :6060")
 	flag.StringVar(&sensorConfig.CentralEndpoint, "connect-central", sensorConfig.CentralEndpoint, "connects to a Central instance rather than a fake Central")
 	flag.StringVar(&sensorConfig.Namespace, "namespace", sensorConfig.Namespace, "namespace where sensor is deployed (used for certificate generation when connecting to real Central)")
@@ -149,6 +153,9 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.Parse()
 
 	sensorConfig.CentralOutput = path.Clean(sensorConfig.CentralOutput)
+	if sensorConfig.MetricsSnapshotOut != "" {
+		sensorConfig.MetricsSnapshotOut = path.Clean(sensorConfig.MetricsSnapshotOut)
+	}
 
 	if sensorConfig.ReplayK8sEnabled && sensorConfig.RecordK8sEnabled {
 		log.Fatalf("cannot record and replay a trace at the same time. Use either -record or -replay flag")
@@ -192,6 +199,21 @@ func writeMemoryProfile() {
 		log.Fatal("could not write memory profile: ", err)
 	}
 	log.Printf("Wrote memory profile")
+}
+
+func writeMetricsSnapshot(filePath string) error {
+	f, err := os.Create(filePath)
+	if err != nil {
+		return errors.Wrapf(err, "could not create metrics snapshot %q", filePath)
+	}
+	defer utils.IgnoreError(f.Close)
+
+	if err := prometheusutil.ExportText(context.Background(), f); err != nil {
+		return errors.Wrapf(err, "could not write metrics snapshot %q", filePath)
+	}
+
+	log.Printf("Wrote metrics snapshot to %s", filePath)
+	return nil
 }
 
 // stopSensorAndWorkload stops the workload manager and sensor in the correct order.
@@ -417,6 +439,16 @@ func main() {
 			log.Printf("Received %s during graceful shutdown, exiting immediately", forceSig)
 			os.Exit(130)
 		}()
+	}
+
+	if localConfig.WithMetrics {
+		metricsSnapshotOut := localConfig.MetricsSnapshotOut
+		if metricsSnapshotOut == "" {
+			metricsSnapshotOut = fmt.Sprintf("local-sensor-metrics-%s.prom", time.Now().UTC().Format(time.RFC3339))
+		}
+		if err := writeMetricsSnapshot(metricsSnapshotOut); err != nil {
+			log.Printf("warning: %v", err)
+		}
 	}
 
 	cancelFunc()
