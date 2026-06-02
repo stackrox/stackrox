@@ -325,9 +325,10 @@ async function main() {
     const changedConfigFiles = changedFiles.filter(
         (f) =>
             f.endsWith('vite.config.js') ||
-            f.endsWith('package.json') ||
             f.endsWith('tsconfig.json') ||
-            f.endsWith('eslint.config.js')
+            f.endsWith('cypress.config.js') ||
+            f.endsWith('package-lock.json') ||
+            f.endsWith('index.html')
     );
 
     // Fast path: config file changes → run all tests
