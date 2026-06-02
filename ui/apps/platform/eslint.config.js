@@ -1123,6 +1123,7 @@ module.exports = [
     },
     {
         files: ['src/**/*.{js,jsx,ts,tsx}'],
+        ignores: ['src/**/*.test.*', 'src/**/*.cy.*'],
         plugins: {
             limited: pluginLimited,
         },
