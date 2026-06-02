@@ -102,6 +102,21 @@ type ComponentImageRow struct {
 	Fixable     bool
 }
 
+// ImageListRow represents one row in the image list page.
+type ImageListRow struct {
+	ImageID        string
+	CVECount       int
+	ComponentCount int
+	TopSeverity    int32
+	TopCVSS        float32
+	Fixable        bool
+	ScanTime       *time.Time
+	CriticalCount  int
+	ImportantCount int
+	ModerateCount  int
+	LowCount       int
+}
+
 // ComponentVersionInfo represents one version of a component with CVE data.
 type ComponentVersionInfo struct {
 	Version     string

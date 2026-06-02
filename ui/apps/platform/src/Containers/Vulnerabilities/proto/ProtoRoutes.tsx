@@ -10,6 +10,7 @@ import ComponentListPage from './Components/ComponentListPage';
 import ComponentDetailPage from './Components/ComponentDetailPage';
 import DeploymentListPage from './Deployments/DeploymentListPage';
 import DeploymentDetailPage from './Deployments/DeploymentDetailPage';
+import ImageListPage from './Images/ImageListPage';
 import ImageDetailPage from './ImageDetail/ImageDetailPage';
 
 /**
@@ -21,6 +22,7 @@ function ProtoRoutes() {
     return (
         <Routes>
             <Route path="images/:imageId" element={<ImageDetailPage />} />
+            <Route path="images" element={<ImageListPage />} />
             <Route path="cves/:cveName" element={<CveDetailPage />} />
             <Route path="cves" element={<CveListPage />} />
             <Route path="advisories" element={<AdvisoryListPage />} />

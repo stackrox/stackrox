@@ -969,6 +969,90 @@ func (s *storeImpl) GetComponentImages(ctx context.Context, componentName string
 	})
 }
 
+// ListImages returns images with CVE summary data.
+func (s *storeImpl) ListImages(ctx context.Context, limit, offset int) ([]*types.ImageListRow, int, error) {
+	type result struct {
+		rows  []*types.ImageListRow
+		total int
+	}
+
+	res, err := pgutils.Retry2(ctx, func() (*result, error) {
+		// Get total count of distinct images with findings
+		countQuery := fmt.Sprintf(`
+			SELECT COUNT(DISTINCT s.imageid)
+			FROM %s s
+			JOIN %s f ON s.imageid = f.imageid
+			WHERE f.state = 0
+		`, imageScanV2Table, findingsTable)
+		var total int
+		if err := s.db.QueryRow(ctx, countQuery).Scan(&total); err != nil {
+			return nil, errors.Wrap(err, "counting images")
+		}
+
+		// Get paginated results
+		query := fmt.Sprintf(`
+			SELECT
+				s.imageid,
+				COUNT(DISTINCT f.cvename) as cve_count,
+				COUNT(DISTINCT c.id) as component_count,
+				MAX(f.severity)::int as top_severity,
+				MAX(f.cvss) as top_cvss,
+				BOOL_OR(f.isfixable) as fixable,
+				s.scantime,
+				COUNT(DISTINCT CASE WHEN f.severity = 4 THEN f.cvename END) as critical_count,
+				COUNT(DISTINCT CASE WHEN f.severity = 3 THEN f.cvename END) as important_count,
+				COUNT(DISTINCT CASE WHEN f.severity = 2 THEN f.cvename END) as moderate_count,
+				COUNT(DISTINCT CASE WHEN f.severity = 1 THEN f.cvename END) as low_count
+			FROM %s s
+			JOIN %s c ON s.id = c.scanid
+			JOIN %s f ON c.id = f.componentid
+			WHERE f.state = 0
+			GROUP BY s.imageid, s.scantime
+			ORDER BY MAX(f.severity) DESC, COUNT(DISTINCT f.cvename) DESC
+			LIMIT $1 OFFSET $2
+		`, imageScanV2Table, componentsTable, findingsTable)
+
+		rows, err := s.db.Query(ctx, query, limit, offset)
+		if err != nil {
+			return nil, errors.Wrap(err, "querying images")
+		}
+		defer rows.Close()
+
+		var results []*types.ImageListRow
+		for rows.Next() {
+			var row types.ImageListRow
+			if err := rows.Scan(
+				&row.ImageID,
+				&row.CVECount,
+				&row.ComponentCount,
+				&row.TopSeverity,
+				&row.TopCVSS,
+				&row.Fixable,
+				&row.ScanTime,
+				&row.CriticalCount,
+				&row.ImportantCount,
+				&row.ModerateCount,
+				&row.LowCount,
+			); err != nil {
+				return nil, errors.Wrap(err, "scanning image row")
+			}
+			results = append(results, &row)
+		}
+
+		if err := rows.Err(); err != nil {
+			return nil, errors.Wrap(err, "iterating image rows")
+		}
+
+		return &result{rows: results, total: total}, nil
+	})
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return res.rows, res.total, nil
+}
+
 // GetImageOS returns the operating system for an image.
 func (s *storeImpl) GetImageOS(ctx context.Context, imageID string) (string, error) {
 	return pgutils.Retry2(ctx, func() (string, error) {

@@ -59,4 +59,7 @@ type DataStore interface {
 
 	// GetImageOS returns the operating system for an image
 	GetImageOS(ctx context.Context, imageID string) (string, error)
+
+	// ListImages returns images with CVE summary data
+	ListImages(ctx context.Context, limit, offset int) ([]*types.ImageListRow, int, error)
 }

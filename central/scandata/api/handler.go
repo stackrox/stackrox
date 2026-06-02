@@ -38,6 +38,7 @@ func NewHandler(ds datastore.DataStore) http.Handler {
 	router := mux.NewRouter()
 	router.HandleFunc("/v1/scandata/cves", h.listCVEs).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/cves/{cveName}", h.getCVEDetail).Methods(http.MethodGet)
+	router.HandleFunc("/v1/scandata/images", h.listImages).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/images/{imageId}/findings", h.getImageFindings).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/images/{imageId}", h.getImageDetail).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/advisories", h.listAdvisories).Methods(http.MethodGet)
@@ -233,6 +234,30 @@ type AdvisoryListItem struct {
 	FixedBy     string  `json:"fixedBy,omitempty"`
 	ImageCount  int     `json:"imageCount"`
 	Link        string  `json:"link"`
+}
+
+// ImageListResponse is the response for GET /v1/scandata/images
+type ImageListResponse struct {
+	Images     []ImageListItem `json:"images"`
+	TotalCount int             `json:"totalCount"`
+}
+
+// ImageListItem represents one image in the list
+type ImageListItem struct {
+	ImageID        string     `json:"imageId"`
+	ImageUUID      string     `json:"imageUuid,omitempty"`
+	ImageName      string     `json:"imageName,omitempty"`
+	ImageOS        string     `json:"imageOS,omitempty"`
+	CVECount       int        `json:"cveCount"`
+	ComponentCount int        `json:"componentCount"`
+	TopSeverity    int32      `json:"topSeverity"`
+	TopCVSS        float32    `json:"topCvss"`
+	Fixable        bool       `json:"fixable"`
+	ScanTime       *time.Time `json:"scanTime,omitempty"`
+	CriticalCount  int        `json:"criticalCount"`
+	ImportantCount int        `json:"importantCount"`
+	ModerateCount  int        `json:"moderateCount"`
+	LowCount       int        `json:"lowCount"`
 }
 
 // ComponentListResponse is the response for GET /v1/scandata/components
@@ -824,6 +849,83 @@ func (h *handler) getImageFindings(w http.ResponseWriter, r *http.Request) {
 	response := ImageFindingsResponse{
 		ImageID:  imageID,
 		Findings: findingsWithComp,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Errorf("failed to encode response: %v", err)
+	}
+}
+
+func (h *handler) listImages(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse query parameters
+	limitStr := cmp.Or(r.URL.Query().Get("limit"), "50")
+	offsetStr := cmp.Or(r.URL.Query().Get("offset"), "0")
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.Wrap(err, "invalid limit"))
+		return
+	}
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.Wrap(err, "invalid offset"))
+		return
+	}
+
+	// Query data
+	rows, total, err := h.datastore.ListImages(ctx, limit, offset)
+	if err != nil {
+		log.Errorf("failed to list images: %v", err)
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "listing images"))
+		return
+	}
+
+	// Enrich with image name, UUID, and OS.
+	digests := make([]string, 0, len(rows))
+	for _, row := range rows {
+		digests = append(digests, row.ImageID)
+	}
+	imageInfoMap, enrichErr := h.datastore.GetImageInfoByDigests(ctx, digests)
+	if enrichErr != nil {
+		log.Warnf("failed to enrich image info: %v", enrichErr)
+	}
+
+	// Convert to response
+	items := make([]ImageListItem, 0, len(rows))
+	for _, row := range rows {
+		item := ImageListItem{
+			ImageID:        row.ImageID,
+			CVECount:       row.CVECount,
+			ComponentCount: row.ComponentCount,
+			TopSeverity:    row.TopSeverity,
+			TopCVSS:        row.TopCVSS,
+			Fixable:        row.Fixable,
+			ScanTime:       row.ScanTime,
+			CriticalCount:  row.CriticalCount,
+			ImportantCount: row.ImportantCount,
+			ModerateCount:  row.ModerateCount,
+			LowCount:       row.LowCount,
+		}
+		if info, ok := imageInfoMap[row.ImageID]; ok {
+			item.ImageUUID = info.UUID
+			item.ImageName = info.FullName
+		}
+		// Get OS for each image
+		imageOS, osErr := h.datastore.GetImageOS(ctx, row.ImageID)
+		if osErr != nil {
+			log.Warnf("failed to get image OS for %s: %v", row.ImageID, osErr)
+		}
+		item.ImageOS = imageOS
+		items = append(items, item)
+	}
+
+	response := ImageListResponse{
+		Images:     items,
+		TotalCount: total,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
