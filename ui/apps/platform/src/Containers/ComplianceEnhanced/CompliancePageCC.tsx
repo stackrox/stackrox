@@ -5,7 +5,6 @@ import type { ComplianceProfileScanStats } from 'services/ComplianceResultsStats
 import type { ComplianceCheckStatusCount } from 'services/ComplianceCommon';
 import { complianceKeys } from 'hooks/query/keys';
 
-import { CommandCenterLayout } from 'design-system/layout/command-center-layout';
 import { Card, CardHeader, CardTitle, CardContent } from 'design-system/ui/card';
 import { Badge } from 'design-system/ui/badge';
 import { Skeleton } from 'design-system/ui/skeleton';
@@ -118,7 +117,7 @@ export default function CompliancePageCC() {
     const profiles = data?.scanStats ?? [];
 
     return (
-        <CommandCenterLayout title="Compliance">
+        <>
             <div className="p-5">
                 <div className="mb-4 flex items-center gap-3">
                     <h2 className="text-sm font-600 text-text-primary">Compliance Profiles</h2>
@@ -152,6 +151,6 @@ export default function CompliancePageCC() {
                     </div>
                 )}
             </div>
-        </CommandCenterLayout>
+        </>
     );
 }

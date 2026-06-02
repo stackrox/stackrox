@@ -152,7 +152,6 @@ type RouteRequirements = {
 // prettier-ignore
 export type RouteKey =
     | 'access-control'
-    | 'access-control-cc'
     | 'administration-events'
     | 'apidocs'
     | 'apidocs-v2'
@@ -169,30 +168,23 @@ export type RouteKey =
     // Cluster secure-a-cluster-crs must precede generic Clusters in Body and so here for consistency.
     | 'clusters/secure-a-cluster-crs'
     | 'clusters'
-    | 'clusters-cc'
     | 'collections'
     | 'compliance'
     | 'compliance-coverage'
     | 'compliance-schedules'
     | 'configmanagement'
     | 'dashboard'
-    | 'compliance-cc'
-    | 'dashboard-cc'
     | 'exception-configuration'
     | 'integrations'
-    | 'integrations-cc'
     | 'listening-endpoints'
     | 'network-graph'
     | 'policy-management'
-    | 'policies-cc'
     | 'risk'
     | 'search'
     | 'system-health'
-    | 'system-health-cc'
     | 'systemconfig'
     | 'user'
     | 'violations'
-    | 'violations-cc'
     | 'vulnerabilities/exception-management'
     | 'vulnerabilities/node-cves'
     | 'vulnerabilities/reports'
@@ -203,7 +195,6 @@ export type RouteKey =
     | 'vulnerabilities/images-without-cves'
     | 'vulnerabilities/platform-cves'
     | 'vulnerabilities/virtual-machine-cves'
-    | 'vulnerabilities/workload-cves-cc'
     | 'base-images'
     | 'vulnerability-management'
     ;
@@ -211,9 +202,6 @@ export type RouteKey =
 // Add properties in same order as type to minimize merge conflicts when multiple people add strings.
 const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'access-control': {
-        resourceAccessRequirements: everyResource(['Access']),
-    },
-    'access-control-cc': {
         resourceAccessRequirements: everyResource(['Access']),
     },
     'administration-events': {
@@ -250,9 +238,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource([]),
     },
     clusters: {
-        resourceAccessRequirements: everyResource(['Cluster']),
-    },
-    'clusters-cc': {
         resourceAccessRequirements: everyResource(['Cluster']),
     },
     collections: {
@@ -304,19 +289,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     dashboard: {
         resourceAccessRequirements: everyResource([]),
     },
-    'compliance-cc': {
-        resourceAccessRequirements: everyResource(['Compliance']),
-    },
-    'dashboard-cc': {
-        resourceAccessRequirements: everyResource([]),
-    },
     'exception-configuration': {
         resourceAccessRequirements: everyResource(['Administration']),
     },
     integrations: {
-        resourceAccessRequirements: everyResource(['Integration']),
-    },
-    'integrations-cc': {
         resourceAccessRequirements: everyResource(['Integration']),
     },
     'listening-endpoints': {
@@ -324,9 +300,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     'network-graph': {
         resourceAccessRequirements: everyResource(nonGlobalResourceNamesForNetworkGraph),
-    },
-    'policies-cc': {
-        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
     'policy-management': {
         // The resources that are optional to view policies might become required to clone/create/edit a policy.
@@ -360,9 +333,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'system-health': {
         resourceAccessRequirements: someResource(['Administration', 'Cluster', 'Integration']),
     },
-    'system-health-cc': {
-        resourceAccessRequirements: someResource(['Administration', 'Cluster', 'Integration']),
-    },
     systemconfig: {
         resourceAccessRequirements: everyResource(['Administration']),
     },
@@ -370,9 +340,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource([]),
     },
     violations: {
-        resourceAccessRequirements: everyResource(['Alert']),
-    },
-    'violations-cc': {
         resourceAccessRequirements: everyResource(['Alert']),
     },
     'vulnerabilities/exception-management': {
@@ -408,9 +375,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'vulnerabilities/virtual-machine-cves': {
         featureFlagRequirements: allEnabled(['ROX_VIRTUAL_MACHINES']),
         resourceAccessRequirements: everyResource(['Cluster']),
-    },
-    'vulnerabilities/workload-cves-cc': {
-        resourceAccessRequirements: everyResource(['Image']),
     },
     'base-images': {
         featureFlagRequirements: allEnabled(['ROX_BASE_IMAGE_DETECTION']),

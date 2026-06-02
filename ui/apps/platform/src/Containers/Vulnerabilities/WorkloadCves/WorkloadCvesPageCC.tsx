@@ -9,7 +9,6 @@ import useURLSort from 'hooks/useURLSort';
 import { getRequestQueryStringForSearchFilter, getPaginationParams } from 'utils/searchUtils';
 import type { SearchFilter } from 'types/search';
 
-import { CommandCenterLayout } from 'design-system/layout/command-center-layout';
 import { Badge } from 'design-system/ui/badge';
 import { Skeleton } from 'design-system/ui/skeleton';
 import { cn } from 'design-system/lib/utils';
@@ -130,7 +129,7 @@ export default function WorkloadCvesPageCC() {
     const totalCount = countData?.imageCVECount ?? 0;
 
     return (
-        <CommandCenterLayout title="Vulnerabilities">
+        <>
             <div className="flex h-full flex-col">
                 {/* Header */}
                 <div className="flex shrink-0 items-center gap-3 border-b border-border-subtle bg-bg-secondary px-5 py-3">
@@ -299,6 +298,6 @@ export default function WorkloadCvesPageCC() {
                     )}
                 </div>
             </div>
-        </CommandCenterLayout>
+        </>
     );
 }

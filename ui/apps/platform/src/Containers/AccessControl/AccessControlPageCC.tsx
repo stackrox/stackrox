@@ -4,7 +4,6 @@ import { fetchPermissionSets, fetchRolesAsArray } from 'services/RolesService';
 import { fetchAuthProviders } from 'services/AuthService/AuthService';
 import { fetchAccessScopes } from 'services/AccessScopesService';
 
-import { CommandCenterLayout } from 'design-system/layout/command-center-layout';
 import { Card, CardHeader, CardTitle, CardContent } from 'design-system/ui/card';
 import { Badge } from 'design-system/ui/badge';
 import { Skeleton } from 'design-system/ui/skeleton';
@@ -61,7 +60,7 @@ export default function AccessControlPageCC() {
     });
 
     return (
-        <CommandCenterLayout title="Access Control">
+        <>
             <div className="p-5">
                 <div className="mb-4">
                     <h2 className="text-sm font-600 text-text-primary">Access Control Overview</h2>
@@ -136,6 +135,6 @@ export default function AccessControlPageCC() {
                     </div>
                 )}
             </div>
-        </CommandCenterLayout>
+        </>
     );
 }

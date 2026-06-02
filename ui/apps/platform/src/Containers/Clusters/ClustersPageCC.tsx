@@ -4,7 +4,6 @@ import { fetchClustersWithRetentionInfo } from 'services/ClustersService';
 import { clusterKeys } from 'hooks/query/keys';
 import type { Cluster } from 'types/cluster.proto';
 
-import { CommandCenterLayout } from 'design-system/layout/command-center-layout';
 import { Skeleton } from 'design-system/ui/skeleton';
 import { cn } from 'design-system/lib/utils';
 
@@ -62,7 +61,7 @@ export default function ClustersPageCC() {
     const clusters: Cluster[] = data?.clusters ?? [];
 
     return (
-        <CommandCenterLayout title="Clusters">
+        <>
             <div className="flex h-full flex-col">
                 {/* Header */}
                 <div className="flex shrink-0 items-center gap-3 border-b border-border-subtle bg-bg-secondary px-5 py-3">
@@ -167,6 +166,6 @@ export default function ClustersPageCC() {
                         `${clusters.length} ${clusters.length === 1 ? 'cluster' : 'clusters'}`}
                 </div>
             </div>
-        </CommandCenterLayout>
+        </>
     );
 }

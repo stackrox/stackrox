@@ -5,7 +5,6 @@ import { Image, Bell, Database, KeyRound, type LucideIcon } from 'lucide-react';
 import { fetchIntegration } from 'services/IntegrationsService';
 import axios from 'services/instance';
 
-import { CommandCenterLayout } from 'design-system/layout/command-center-layout';
 import { Card, CardHeader, CardTitle, CardContent } from 'design-system/ui/card';
 import { Badge } from 'design-system/ui/badge';
 import { Skeleton } from 'design-system/ui/skeleton';
@@ -85,7 +84,7 @@ function IntegrationCategoryCard({ category }: { category: IntegrationCategory }
 
 export default function IntegrationsPageCC() {
     return (
-        <CommandCenterLayout title="Integrations">
+        <>
             <div className="p-5">
                 <div className="mb-4">
                     <h2 className="text-sm font-600 text-text-primary">Platform Integrations</h2>
@@ -101,6 +100,6 @@ export default function IntegrationsPageCC() {
                     ))}
                 </div>
             </div>
-        </CommandCenterLayout>
+        </>
     );
 }

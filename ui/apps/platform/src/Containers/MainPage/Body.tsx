@@ -92,12 +92,8 @@ type RouteComponent = {
 // Add route keys in alphabetical order to minimize merge conflicts when multiple people add routes.
 const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'access-control': {
-        component: asyncComponent(() => import('Containers/AccessControl/AccessControl')),
-        path: accessControlBasePath,
-    },
-    'access-control-cc': {
         component: asyncComponent(() => import('Containers/AccessControl/AccessControlPageCC')),
-        path: '/main/access-control-cc',
+        path: accessControlBasePath,
     },
     'administration-events': {
         component: asyncComponent(
@@ -155,12 +151,8 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: clustersSecureClusterCrsPath,
     },
     clusters: {
-        component: asyncComponent(() => import('Containers/Clusters/ClustersPage')),
-        path: clustersPathWithParam,
-    },
-    'clusters-cc': {
         component: asyncComponent(() => import('Containers/Clusters/ClustersPageCC')),
-        path: '/main/clusters-cc',
+        path: clustersPathWithParam,
     },
     collections: {
         component: asyncComponent(() => import('Containers/Collections/CollectionsPage')),
@@ -189,18 +181,8 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: configManagementPath,
     },
     dashboard: {
-        component: asyncComponent(() => import('Containers/Dashboard/DashboardPage')),
-        path: dashboardPath,
-    },
-    'compliance-cc': {
-        component: asyncComponent(
-            () => import('Containers/ComplianceEnhanced/CompliancePageCC')
-        ),
-        path: '/main/compliance-cc',
-    },
-    'dashboard-cc': {
         component: asyncComponent(() => import('Containers/Dashboard/DashboardPageCC')),
-        path: '/main/dashboard-cc',
+        path: dashboardPath,
     },
     'exception-configuration': {
         component: asyncComponent(
@@ -209,12 +191,8 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: exceptionConfigurationPath,
     },
     integrations: {
-        component: asyncComponent(() => import('Containers/Integrations/IntegrationsPage')),
-        path: integrationsPath,
-    },
-    'integrations-cc': {
         component: asyncComponent(() => import('Containers/Integrations/IntegrationsPageCC')),
-        path: '/main/integrations-cc',
+        path: integrationsPath,
     },
     'listening-endpoints': {
         component: asyncComponent(
@@ -226,12 +204,8 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/NetworkGraph/NetworkGraphPage')),
         path: networkPath,
     },
-    'policies-cc': {
-        component: asyncComponent(() => import('Containers/Policies/PoliciesPageCC')),
-        path: '/main/policies-cc',
-    },
     'policy-management': {
-        component: asyncComponent(() => import('Containers/PolicyManagement/PolicyManagementPage')),
+        component: asyncComponent(() => import('Containers/Policies/PoliciesPageCC')),
         path: policyManagementBasePath,
     },
     risk: {
@@ -243,12 +217,8 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: searchPath,
     },
     'system-health': {
-        component: asyncComponent(() => import('Containers/SystemHealth/SystemHealthPage')),
-        path: systemHealthPath,
-    },
-    'system-health-cc': {
         component: asyncComponent(() => import('Containers/SystemHealth/SystemHealthPageCC')),
-        path: '/main/system-health-cc',
+        path: systemHealthPath,
     },
     systemconfig: {
         component: asyncComponent(() => import('Containers/SystemConfig/SystemConfigPage')),
@@ -259,12 +229,8 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: userBasePath,
     },
     violations: {
-        component: asyncComponent(() => import('Containers/Violations/ViolationsPage')),
-        path: violationsBasePath,
-    },
-    'violations-cc': {
         component: asyncComponent(() => import('Containers/Violations/ViolationsPageCC')),
-        path: '/main/violations-cc',
+        path: violationsBasePath,
     },
     'vulnerabilities/exception-management': {
         component: asyncComponent(
@@ -283,14 +249,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: vulnerabilitiesPlatformCvesPath,
     },
     'vulnerabilities/user-workloads': {
-        component: makeVulnMgmtUserWorkloadView('user-workloads'),
-        path: vulnerabilitiesUserWorkloadsPath,
-    },
-    'vulnerabilities/workload-cves-cc': {
         component: asyncComponent(
             () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPageCC')
         ),
-        path: '/main/vulnerabilities/workload-cves-cc',
+        path: vulnerabilitiesUserWorkloadsPath,
     },
     'vulnerabilities/virtual-machine-cves': {
         component: asyncComponent(

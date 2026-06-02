@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'services/instance';
 import { fetchClusters } from 'services/ClustersService';
 
-import { CommandCenterLayout } from 'design-system/layout/command-center-layout';
 import { Card, CardContent, CardHeader, CardTitle } from 'design-system/ui/card';
 import { Badge } from 'design-system/ui/badge';
 import { Skeleton } from 'design-system/ui/skeleton';
@@ -93,7 +92,7 @@ export default function SystemHealthPageCC() {
     });
 
     return (
-        <CommandCenterLayout title="System Health">
+        <>
             <div className="p-5">
                 <div className="mb-4">
                     <h2 className="text-sm font-600 text-text-primary">System Health</h2>
@@ -136,6 +135,6 @@ export default function SystemHealthPageCC() {
                     />
                 </div>
             </div>
-        </CommandCenterLayout>
+        </>
     );
 }

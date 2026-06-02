@@ -28,7 +28,6 @@ import {
 } from 'utils/searchUtils';
 import type { SearchFilter } from 'types/search';
 
-import { CommandCenterLayout } from 'design-system/layout/command-center-layout';
 import { Card, CardHeader, CardTitle, CardContent } from 'design-system/ui/card';
 import { Badge } from 'design-system/ui/badge';
 import { Skeleton } from 'design-system/ui/skeleton';
@@ -488,7 +487,7 @@ function getTimeAgo(isoTime: string): string {
 // === Main Dashboard Page ===
 export default function DashboardPageCC() {
     return (
-        <CommandCenterLayout title="Dashboard">
+        <>
             <div className="flex flex-col gap-4 p-5">
                 <SummaryStrip />
 
@@ -501,6 +500,6 @@ export default function DashboardPageCC() {
                     <DeploymentsAtMostRiskCC />
                 </div>
             </div>
-        </CommandCenterLayout>
+        </>
     );
 }

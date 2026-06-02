@@ -16,7 +16,6 @@ import type { SortOption } from 'types/table';
 import { severityLabels } from 'messages/common';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 
-import { CommandCenterLayout } from 'design-system/layout/command-center-layout';
 import { Badge } from 'design-system/ui/badge';
 import { Skeleton } from 'design-system/ui/skeleton';
 import { cn } from 'design-system/lib/utils';
@@ -160,7 +159,7 @@ export default function ViolationsPageCC() {
     ];
 
     return (
-        <CommandCenterLayout title="Violations">
+        <>
             <div className="flex h-full flex-col">
                 {/* View tabs */}
                 <div className="flex shrink-0 items-center gap-0 border-b border-border-subtle bg-bg-secondary px-5">
@@ -430,7 +429,7 @@ export default function ViolationsPageCC() {
                     </span>
                 </div>
             </div>
-        </CommandCenterLayout>
+        </>
     );
 }
 
