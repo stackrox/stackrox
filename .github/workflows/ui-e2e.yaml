@@ -45,6 +45,10 @@ on:
         description: "GKE zone of pre-provisioned cluster"
         required: false
         type: string
+      infra-cluster-name:
+        description: "Pre-provisioned infra cluster (GKE or OCP via infractl)"
+        required: false
+        type: string
 defaults:
   run:
     shell: bash
@@ -370,11 +374,11 @@ jobs:
   # ── GKE mode: shared cluster, scanner v2, all specs ──────────────────
   provision-gke:
     name: Provision GKE
-    if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke') || inputs.gke || inputs.gke-cluster-name
+    if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke') || inputs.gke || inputs.gke-cluster-name || inputs.infra-cluster-name
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
-      cluster-name: ${{ inputs.gke-cluster-name || steps.cluster.outputs.cluster-name }}
+      cluster-name: ${{ inputs.infra-cluster-name || inputs.gke-cluster-name || steps.cluster.outputs.cluster-name }}
       gke-zone: ${{ inputs.gke-zone || steps.cluster.outputs.zone }}
     env:
       CLUSTER_NAME: ui-e2e-gke-${{ github.run_id }}
@@ -385,20 +389,27 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         fetch-depth: 1
 
+    - name: Connect to infra cluster (GKE or OCP)
+      if: inputs.infra-cluster-name
+      uses: ./.github/actions/connect-infra-cluster
+      with:
+        cluster-name: ${{ inputs.infra-cluster-name }}
+        infra-token: ${{ secrets.INFRA_TOKEN }}
+
     - name: Connect to pre-provisioned cluster
-      if: inputs.gke-cluster-name
+      if: inputs.gke-cluster-name && !inputs.infra-cluster-name
       uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Setup gcloud (pre-provisioned)
-      if: inputs.gke-cluster-name
+      if: inputs.gke-cluster-name && !inputs.infra-cluster-name
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
         install_components: "gke-gcloud-auth-plugin"
 
     - name: Get kubeconfig (pre-provisioned)
-      if: inputs.gke-cluster-name
+      if: inputs.gke-cluster-name && !inputs.infra-cluster-name
       run: |
         zone="${{ inputs.gke-zone }}"
         if [ -z "$zone" ]; then
@@ -413,7 +424,7 @@ jobs:
           --project acs-team-temp-dev
 
     - name: Create GKE cluster
-      if: "!inputs.gke-cluster-name"
+      if: "!inputs.gke-cluster-name && !inputs.infra-cluster-name"
       id: cluster
       uses: ./.github/actions/create-gke-cluster
       with:
@@ -426,7 +437,7 @@ jobs:
 
     - name: Check for existing StackRox deployment
       id: check-deploy
-      if: inputs.gke-cluster-name
+      if: inputs.gke-cluster-name || inputs.infra-cluster-name
       run: |
         if kubectl get namespace stackrox &>/dev/null; then
           echo "StackRox already deployed — skipping deploy"
@@ -496,15 +507,25 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         fetch-depth: 1
 
+    - name: Connect to infra cluster (GKE or OCP)
+      if: inputs.infra-cluster-name
+      uses: ./.github/actions/connect-infra-cluster
+      with:
+        cluster-name: ${{ inputs.infra-cluster-name }}
+        infra-token: ${{ secrets.INFRA_TOKEN }}
+
     - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
+      if: "!inputs.infra-cluster-name"
       with:
         credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+      if: "!inputs.infra-cluster-name"
       with:
         install_components: "gke-gcloud-auth-plugin"
 
     - name: Connect to shared GKE cluster
+      if: "!inputs.infra-cluster-name"
       run: |
         project="${{ inputs.gke-cluster-name && 'acs-team-temp-dev' || 'acs-san-stackroxci' }}"
         gcloud container clusters get-credentials \

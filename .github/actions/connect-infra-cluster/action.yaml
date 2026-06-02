@@ -1,0 +1,31 @@
+name: Connect to infra-provisioned cluster
+description: Connect to a GKE or OCP cluster provisioned via infractl
+
+inputs:
+  cluster-name:
+    description: Cluster name (infractl ID)
+    required: true
+  infra-token:
+    description: INFRA_TOKEN secret
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install infractl
+      uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
+
+    - name: Get cluster artifacts
+      shell: bash
+      env:
+        INFRA_TOKEN: ${{ inputs.infra-token }}
+      run: |
+        mkdir -p artifacts
+        infractl artifacts "${{ inputs.cluster-name }}" --download-dir artifacts > /dev/null
+        echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
+
+    - name: Verify cluster access
+      shell: bash
+      run: |
+        kubectl cluster-info
+        kubectl get nodes
