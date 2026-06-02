@@ -7,7 +7,6 @@ metadata:
   name: stackrox-collector-psp
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox-collector-psp") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrole" "stackrox-collector-psp") | nindent 4 }}
 rules:
@@ -27,7 +26,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "stackrox-collector-psp") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "rolebinding" "stackrox-collector-psp") | nindent 4 }}
 roleRef:
@@ -45,7 +43,6 @@ metadata:
   name: stackrox-collector
   labels:
     {{- include "srox.labels" (list . "podsecuritypolicy" "stackrox-collector") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "podsecuritypolicy" "stackrox-collector") | nindent 4 }}
 spec:

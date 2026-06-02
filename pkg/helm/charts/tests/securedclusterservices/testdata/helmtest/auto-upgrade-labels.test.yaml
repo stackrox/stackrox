@@ -1,0 +1,59 @@
+name: "Test auto-upgrade labels required by the sensor auto-upgrader"
+defs: |
+  def autoUpgradeLabel:
+    .metadata.labels["auto-upgrade.stackrox.io/component"];
+
+  def isSensorBundleComponent:
+    .metadata.labels["app.kubernetes.io/component"] as $c |
+    $c == "sensor" or $c == "collector" or $c == "admission-control";
+
+values:
+  imagePullSecrets:
+    allowNone: true
+
+tests:
+- name: "all sensor bundle component resources carry the auto-upgrade label"
+  expect: |
+    [.objects[] | select(isSensorBundleComponent) | select(autoUpgradeLabel != "sensor") | "\(.kind)/\(.metadata.name)"]
+      | assertThat(length == 0)
+
+- name: "with TLS secrets created"
+  values:
+    createSecrets: true
+    sensor:
+      serviceTLS:
+        cert: "sensor cert"
+        key: "sensor key"
+    collector:
+      serviceTLS:
+        cert: "collector cert"
+        key: "collector key"
+    admissionControl:
+      serviceTLS:
+        cert: "ac cert"
+        key: "ac key"
+  expect: |
+    [.objects[] | select(isSensorBundleComponent) | select(autoUpgradeLabel != "sensor") | "\(.kind)/\(.metadata.name)"]
+      | assertThat(length == 0)
+
+- name: "with OpenShift SCC resources"
+  set:
+    env.openshift: 4
+  server:
+    availableSchemas:
+    - openshift-4.12
+  expect: |
+    [.objects[] | select(isSensorBundleComponent) | select(autoUpgradeLabel != "sensor") | "\(.kind)/\(.metadata.name)"]
+      | assertThat(length == 0)
+
+- name: "with OpenShift monitoring enabled"
+  set:
+    monitoring.openshift.enabled: true
+    env.openshift: 4
+  server:
+    availableSchemas:
+    - openshift-4.12
+    - com.coreos
+  expect: |
+    [.objects[] | select(isSensorBundleComponent) | select(autoUpgradeLabel != "sensor") | "\(.kind)/\(.metadata.name)"]
+      | assertThat(length == 0)
