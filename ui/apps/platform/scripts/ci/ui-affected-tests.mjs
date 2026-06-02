@@ -317,14 +317,24 @@ function getChangedFiles(flags) {
         // We need to filter to only ui/apps/platform/ files and strip that prefix
         const repoRoot = execSync('git rev-parse --show-toplevel', { encoding: 'utf-8' }).trim();
         const relPrefix = relative(repoRoot, ROOT);
-        const output = execSync(`git diff --name-only ${flags.diff}...HEAD`, {
+        const committed = execSync(`git diff --name-only ${flags.diff}...HEAD`, {
             cwd: repoRoot,
             encoding: 'utf-8',
         });
-        files = output
-            .trim()
-            .split('\n')
-            .filter(Boolean)
+        const uncommitted = execSync('git diff --name-only HEAD', {
+            cwd: repoRoot,
+            encoding: 'utf-8',
+        });
+        const staged = execSync('git diff --name-only --cached', {
+            cwd: repoRoot,
+            encoding: 'utf-8',
+        });
+        const allChanged = new Set(
+            [committed, uncommitted, staged]
+                .flatMap((o) => o.trim().split('\n'))
+                .filter(Boolean)
+        );
+        files = [...allChanged]
             .filter((f) => f.startsWith(relPrefix + '/'))
             .map((f) => f.slice(relPrefix.length + 1));
     } else {
