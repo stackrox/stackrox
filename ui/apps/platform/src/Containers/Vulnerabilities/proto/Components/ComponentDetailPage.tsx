@@ -31,7 +31,7 @@ import { useComponentCVEs } from './useComponentCVEs';
 import type { ProtoComponentVersion } from './useComponentDetail';
 import type { ProtoComponentImage } from './useComponentImages';
 import type { ComponentCVE } from './useComponentCVEs';
-import { DetailPageLayout } from '../components/DetailPageLayout';
+import { DetailPageLayout } from '../Components/DetailPageLayout';
 import { TABLE_HEADER_STYLE, TABLE_CELL_STYLE } from '../utils/tableDefaults';
 
 const severityNames: Record<number, string> = {

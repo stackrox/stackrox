@@ -89,7 +89,7 @@ function DeploymentListPage() {
                 )}
 
                 <Table aria-label="Vuln Management V5 deployment list" variant="compact">
-                    <Thead isStickyHeader style={{ borderBottom: '2px solid var(--pf-v5-global--BorderColor--100)' }}>
+                    <Thead style={{ borderBottom: '2px solid var(--pf-v5-global--BorderColor--100)' }}>
                         <Tr>
                             <Th {...getThSortProps(0)} style={TABLE_HEADER_STYLE}>Deployment</Th>
                             <Th style={TABLE_HEADER_STYLE}>Cluster</Th>

@@ -149,7 +149,7 @@ function ImageListPage() {
                 )}
 
                 <Table aria-label="Vuln Management V5 image list" variant="compact">
-                    <Thead isStickyHeader style={{ borderBottom: '2px solid var(--pf-v5-global--BorderColor--100)' }}>
+                    <Thead style={{ borderBottom: '2px solid var(--pf-v5-global--BorderColor--100)' }}>
                         <Tr>
                             <Th style={TABLE_HEADER_STYLE}>Image</Th>
                             <Th style={TABLE_HEADER_STYLE}>OS</Th>

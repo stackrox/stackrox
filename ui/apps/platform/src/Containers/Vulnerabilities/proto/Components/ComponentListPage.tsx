@@ -139,10 +139,10 @@ function ComponentListPage() {
                 <Table aria-label="Vuln Management V5 component list" variant="compact">
                     <Thead style={{ borderBottom: '2px solid var(--pf-global--BorderColor--100)' }}>
                         <Tr>
-                            <Th {...getThSortProps(0)} width={COMPONENT_NAME_WIDTH} style={TABLE_HEADER_STYLE}>Component</Th>
-                            <Th width={COUNT_WIDTH} style={TABLE_HEADER_STYLE}>Versions</Th>
+                            <Th {...getThSortProps(0)} style={TABLE_HEADER_STYLE}>Component</Th>
+                            <Th style={TABLE_HEADER_STYLE}>Versions</Th>
                             <Th {...getThSortProps(2)} style={TABLE_HEADER_STYLE} info={{ tooltip: 'CVE counts by severity: Critical, Important, Moderate, Low' }}>CVEs</Th>
-                            <Th {...getThSortProps(3)} width={COUNT_WIDTH} style={TABLE_HEADER_STYLE}>Images</Th>
+                            <Th {...getThSortProps(3)} style={TABLE_HEADER_STYLE}>Images</Th>
                             <Th {...getThSortProps(4)} style={TABLE_HEADER_STYLE}>Top Severity</Th>
                             <Th style={TABLE_HEADER_STYLE}>Top CVSS</Th>
                         </Tr>
@@ -150,7 +150,7 @@ function ComponentListPage() {
                     <Tbody>
                         {components.map((comp) => (
                             <Tr key={comp.name}>
-                                <Td dataLabel="Component" style={{ ...TABLE_CELL_STYLE, maxWidth: COMPONENT_NAME_WIDTH }}>
+                                <Td dataLabel="Component" style={{ ...TABLE_CELL_STYLE, maxWidth: `${COMPONENT_NAME_WIDTH}px` }}>
                                     <Link
                                         to={`${vulnerabilitiesPrototypeComponentsPath}/${encodeURIComponent(comp.name)}`}
                                         style={{
@@ -164,11 +164,11 @@ function ComponentListPage() {
                                         {comp.name}
                                     </Link>
                                 </Td>
-                                <Td dataLabel="Versions" style={TABLE_CELL_STYLE}>{comp.versionCount}</Td>
+                                <Td dataLabel="Versions" style={{ ...TABLE_CELL_STYLE, width: `${COUNT_WIDTH}px` }}>{comp.versionCount}</Td>
                                 <Td dataLabel="CVEs" style={TABLE_CELL_STYLE}>
                                     <SeverityBreakdown component={comp} />
                                 </Td>
-                                <Td dataLabel="Images" style={TABLE_CELL_STYLE}>{comp.imageCount}</Td>
+                                <Td dataLabel="Images" style={{ ...TABLE_CELL_STYLE, width: `${COUNT_WIDTH}px` }}>{comp.imageCount}</Td>
                                 <Td dataLabel="Top Severity" style={TABLE_CELL_STYLE}>
                                     <Label color={severityColor(comp.topSeverity)}>
                                         {severityLabel(comp.topSeverity)}

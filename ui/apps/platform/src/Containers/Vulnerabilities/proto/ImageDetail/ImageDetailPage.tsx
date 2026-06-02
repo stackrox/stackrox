@@ -27,7 +27,7 @@ import { vulnerabilitiesPrototypePath } from 'routePaths';
 import ScanInfo from './ScanInfo';
 import { useImageDetail } from './useImageDetail';
 import type { ImageComponent, ImageCVE } from './useImageDetail';
-import { DetailPageLayout } from '../components/DetailPageLayout';
+import { DetailPageLayout } from '../Components/DetailPageLayout';
 import { TABLE_HEADER_STYLE, TABLE_CELL_STYLE, formatDate } from '../utils/tableDefaults';
 
 const severityNames: Record<number, string> = {

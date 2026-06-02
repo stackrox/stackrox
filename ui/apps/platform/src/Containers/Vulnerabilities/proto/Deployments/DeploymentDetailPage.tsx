@@ -13,7 +13,7 @@ import { vulnerabilitiesPrototypePath, vulnerabilitiesPrototypeDeploymentsPath }
 
 import { useDeploymentDetail } from './useDeploymentDetail';
 import type { ProtoDeploymentImage } from './useDeploymentDetail';
-import { DetailPageLayout } from '../components/DetailPageLayout';
+import { DetailPageLayout } from '../Components/DetailPageLayout';
 import { TABLE_HEADER_STYLE, TABLE_CELL_STYLE } from '../utils/tableDefaults';
 
 const severityNames: Record<number, string> = {

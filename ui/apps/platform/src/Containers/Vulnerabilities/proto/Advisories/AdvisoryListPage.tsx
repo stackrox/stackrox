@@ -99,13 +99,13 @@ function AdvisoryListPage() {
                         <Tr>
                             <Th style={TABLE_HEADER_STYLE} {...getThSortProps(0)}>Advisory ID</Th>
                             <Th style={TABLE_HEADER_STYLE}>CVE</Th>
-                            <Th width={SEVERITY_WIDTH} style={TABLE_HEADER_STYLE} {...getThSortProps(2)}>Severity</Th>
+                            <Th style={TABLE_HEADER_STYLE} {...getThSortProps(2)}>Severity</Th>
                             <Th style={TABLE_HEADER_STYLE} {...getThSortProps(3)}>CVSS</Th>
                             <Th style={TABLE_HEADER_STYLE}>Source</Th>
-                            <Th width={20} style={TABLE_HEADER_STYLE}>Description</Th>
+                            <Th style={TABLE_HEADER_STYLE}>Description</Th>
                             <Th style={TABLE_HEADER_STYLE}>Fix Available</Th>
-                            <Th width={COUNT_WIDTH} style={TABLE_HEADER_STYLE}>Components</Th>
-                            <Th width={COUNT_WIDTH} style={TABLE_HEADER_STYLE} {...getThSortProps(8)}>Images</Th>
+                            <Th style={TABLE_HEADER_STYLE}>Components</Th>
+                            <Th style={TABLE_HEADER_STYLE} {...getThSortProps(8)}>Images</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
@@ -132,7 +132,7 @@ function AdvisoryListPage() {
                                         {adv.cveName}
                                     </Link>
                                 </Td>
-                                <Td style={TABLE_CELL_STYLE} dataLabel="Severity">
+                                <Td style={{ ...TABLE_CELL_STYLE, width: `${SEVERITY_WIDTH}px` }} dataLabel="Severity">
                                     <Label color={severityColor(adv.severity)}>
                                         {severityLabel(adv.severity)}
                                     </Label>
@@ -150,10 +150,10 @@ function AdvisoryListPage() {
                                 <Td style={TABLE_CELL_STYLE} dataLabel="Fix Available">
                                     {adv.fixedBy ? 'Yes' : 'No'}
                                 </Td>
-                                <Td style={TABLE_CELL_STYLE} dataLabel="Components">
+                                <Td style={{ ...TABLE_CELL_STYLE, width: `${COUNT_WIDTH}px` }} dataLabel="Components">
                                     {adv.componentCount}
                                 </Td>
-                                <Td style={TABLE_CELL_STYLE} dataLabel="Images">{adv.imageCount}</Td>
+                                <Td style={{ ...TABLE_CELL_STYLE, width: `${COUNT_WIDTH}px` }} dataLabel="Images">{adv.imageCount}</Td>
                             </Tr>
                         ))}
                         {!loading && advisories.length === 0 && (
