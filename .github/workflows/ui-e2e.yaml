@@ -395,6 +395,7 @@ jobs:
       with:
         cluster-name: ${{ inputs.infra-cluster-name }}
         infra-token: ${{ secrets.INFRA_TOKEN }}
+        wait-timeout: "60"
 
     - name: Connect to pre-provisioned cluster
       if: inputs.gke-cluster-name && !inputs.infra-cluster-name
@@ -513,6 +514,7 @@ jobs:
       with:
         cluster-name: ${{ inputs.infra-cluster-name }}
         infra-token: ${{ secrets.INFRA_TOKEN }}
+        wait-timeout: "60"
 
     - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
       if: "!inputs.infra-cluster-name"
