@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/central/administration/usage/datastore/securedunits/mocks"
 	"github.com/stackrox/rox/central/administration/usage/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -34,7 +35,7 @@ type securedUnitsDatastoreSACSuite struct {
 	testContexts map[string]context.Context
 
 	mockCtrl      *gomock.Controller
-	mockClusterDS *MockclusterDataStore
+	mockClusterDS *mocks.MockclusterDataStore
 }
 
 func (s *securedUnitsDatastoreSACSuite) SetupSuite() {
@@ -61,7 +62,7 @@ func (s *securedUnitsDatastoreSACSuite) SetupTest() {
 
 	// Create mock cluster datastore
 	s.mockCtrl = gomock.NewController(s.T())
-	s.mockClusterDS = NewMockclusterDataStore(s.mockCtrl)
+	s.mockClusterDS = mocks.NewMockclusterDataStore(s.mockCtrl)
 
 	// Configure mock to return empty cluster list by default
 	s.mockClusterDS.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{}, nil).AnyTimes()
@@ -78,12 +79,7 @@ func (s *securedUnitsDatastoreSACSuite) TearDownTest() {
 // Helper functions
 
 func getTestSecuredUnits() *storage.SecuredUnits {
-	return &storage.SecuredUnits{
-		Id:          uuid.NewV4().String(),
-		Timestamp:   protocompat.TimestampNow(),
-		NumNodes:    10,
-		NumCpuUnits: 100,
-	}
+	return getTestSecuredUnitsWithTime(time.Now())
 }
 
 func getTestSecuredUnitsWithTime(t time.Time) *storage.SecuredUnits {
@@ -167,24 +163,14 @@ func (s *securedUnitsDatastoreSACSuite) TestWalk() {
 // Test cases for GetMaxNumNodes operation (read)
 
 func (s *securedUnitsDatastoreSACSuite) TestGetMaxNumNodes() {
-	// Setup: Add test data with varying NumNodes
-	unrestrictedCtx := sac.WithAllAccess(context.Background())
-	baseTime := time.Now().Add(-1 * time.Hour)
-
-	units1 := getTestSecuredUnitsWithTime(baseTime.Add(10 * time.Minute))
-	units1.NumNodes = 5
-	err := s.datastore.Add(unrestrictedCtx, units1)
-	s.Require().NoError(err)
-
-	units2 := getTestSecuredUnitsWithTime(baseTime.Add(20 * time.Minute))
-	units2.NumNodes = 15 // Maximum
-	err = s.datastore.Add(unrestrictedCtx, units2)
-	s.Require().NoError(err)
-
-	units3 := getTestSecuredUnitsWithTime(baseTime.Add(30 * time.Minute))
-	units3.NumNodes = 10
-	err = s.datastore.Add(unrestrictedCtx, units3)
-	s.Require().NoError(err)
+	testData := s.setupTestData(
+		-1*time.Hour,                                   // baseTimeOffset
+		10*time.Minute, 20*time.Minute, 30*time.Minute, // time offsets
+		5,             // units1.NumNodes
+		15,            // units2.NumNodes (maximum)
+		10,            // units3.NumNodes
+		100, 100, 100, // NumCpuUnits (not relevant for this test)
+	)
 
 	cases := testutils.GenericGlobalSACReadTestCases("get max num nodes")
 
@@ -201,7 +187,7 @@ func (s *securedUnitsDatastoreSACSuite) TestGetMaxNumNodes() {
 				if c.ExpectedFound {
 					s.NotNil(result)
 					s.Equal(int64(15), result.GetNumNodes(), "Should return the record with maximum NumNodes")
-					protoassert.Equal(s.T(), units2, result)
+					protoassert.Equal(s.T(), testData.units2, result)
 				} else {
 					s.Nil(result)
 				}
@@ -213,24 +199,14 @@ func (s *securedUnitsDatastoreSACSuite) TestGetMaxNumNodes() {
 // Test cases for GetMaxNumCPUUnits operation (read)
 
 func (s *securedUnitsDatastoreSACSuite) TestGetMaxNumCPUUnits() {
-	// Setup: Add test data with varying NumCpuUnits
-	unrestrictedCtx := sac.WithAllAccess(context.Background())
-	baseTime := time.Now().Add(-1 * time.Hour)
-
-	units1 := getTestSecuredUnitsWithTime(baseTime.Add(10 * time.Minute))
-	units1.NumCpuUnits = 50
-	err := s.datastore.Add(unrestrictedCtx, units1)
-	s.Require().NoError(err)
-
-	units2 := getTestSecuredUnitsWithTime(baseTime.Add(20 * time.Minute))
-	units2.NumCpuUnits = 200 // Maximum
-	err = s.datastore.Add(unrestrictedCtx, units2)
-	s.Require().NoError(err)
-
-	units3 := getTestSecuredUnitsWithTime(baseTime.Add(30 * time.Minute))
-	units3.NumCpuUnits = 100
-	err = s.datastore.Add(unrestrictedCtx, units3)
-	s.Require().NoError(err)
+	testData := s.setupTestData(
+		-1*time.Hour,                                   // baseTimeOffset
+		10*time.Minute, 20*time.Minute, 30*time.Minute, // time offsets
+		10, 10, 10, // NumNodes (not relevant for this test)
+		50,  // units1.NumCpuUnits
+		200, // units2.NumCpuUnits (maximum)
+		100, // units3.NumCpuUnits
+	)
 
 	cases := testutils.GenericGlobalSACReadTestCases("get max num cpu units")
 
@@ -247,7 +223,7 @@ func (s *securedUnitsDatastoreSACSuite) TestGetMaxNumCPUUnits() {
 				if c.ExpectedFound {
 					s.NotNil(result)
 					s.Equal(int64(200), result.GetNumCpuUnits(), "Should return the record with maximum NumCpuUnits")
-					protoassert.Equal(s.T(), units2, result)
+					protoassert.Equal(s.T(), testData.units2, result)
 				} else {
 					s.Nil(result)
 				}
@@ -356,41 +332,91 @@ func (s *securedUnitsDatastoreSACSuite) TestUpdateUsage() {
 	}
 }
 
-// Test time range filtering for Walk
+// Test data setup helpers
 
-func (s *securedUnitsDatastoreSACSuite) TestWalkTimeRange() {
+type testData struct {
+	baseTime time.Time
+	units1   *storage.SecuredUnits
+	units2   *storage.SecuredUnits
+	units3   *storage.SecuredUnits
+	fromTime time.Time // Query range start (for time range tests)
+	toTime   time.Time // Query range end (for time range tests)
+}
+
+// setupTestData creates three test SecuredUnits records at different times with configurable values.
+// This is a general-purpose setup function used by both regular GetMax tests and time range filtering tests.
+//
+// Parameters:
+// - baseTimeOffset: offset from current time for the base timestamp (e.g., -1*time.Hour)
+// - offset1, offset2, offset3: time offsets from baseTime for each unit
+// - numNodes1, numNodes2, numNodes3: NumNodes values for each unit
+// - cpuUnits1, cpuUnits2, cpuUnits3: NumCpuUnits values for each unit
+//
+// Returns testData with:
+// - units1, units2, units3: the created records
+// - fromTime, toTime: time range for filtering (fromTime excludes units1, includes units2 and units3)
+func (s *securedUnitsDatastoreSACSuite) setupTestData(
+	baseTimeOffset time.Duration,
+	offset1, offset2, offset3 time.Duration,
+	numNodes1, numNodes2, numNodes3 int64,
+	cpuUnits1, cpuUnits2, cpuUnits3 int64,
+) *testData {
 	unrestrictedCtx := sac.WithAllAccess(context.Background())
-	baseTime := time.Now().Add(-2 * time.Hour)
+	baseTime := time.Now().Add(baseTimeOffset)
 
-	// Add data at different times
-	units1 := getTestSecuredUnitsWithTime(baseTime.Add(10 * time.Minute))
+	// Create data at different times
+	units1 := getTestSecuredUnitsWithTime(baseTime.Add(offset1))
+	units1.NumNodes = numNodes1
+	units1.NumCpuUnits = cpuUnits1
 	err := s.datastore.Add(unrestrictedCtx, units1)
 	s.Require().NoError(err)
 
-	units2 := getTestSecuredUnitsWithTime(baseTime.Add(1 * time.Hour))
+	units2 := getTestSecuredUnitsWithTime(baseTime.Add(offset2))
+	units2.NumNodes = numNodes2
+	units2.NumCpuUnits = cpuUnits2
 	err = s.datastore.Add(unrestrictedCtx, units2)
 	s.Require().NoError(err)
 
-	units3 := getTestSecuredUnitsWithTime(baseTime.Add(90 * time.Minute))
+	units3 := getTestSecuredUnitsWithTime(baseTime.Add(offset3))
+	units3.NumNodes = numNodes3
+	units3.NumCpuUnits = cpuUnits3
 	err = s.datastore.Add(unrestrictedCtx, units3)
 	s.Require().NoError(err)
+
+	return &testData{
+		baseTime: baseTime,
+		units1:   units1,
+		units2:   units2,
+		units3:   units3,
+		fromTime: baseTime.Add(30 * time.Minute), // Positioned to exclude units1, include units2 and units3
+		toTime:   baseTime.Add(2 * time.Hour),
+	}
+}
+
+// Test time range filtering for Walk
+
+func (s *securedUnitsDatastoreSACSuite) TestWalkTimeRange() {
+	testData := s.setupTestData(
+		-2*time.Hour,                                // baseTimeOffset
+		10*time.Minute, 1*time.Hour, 90*time.Minute, // time offsets
+		10, 10, 10, // NumNodes (all same for this test)
+		100, 100, 100, // NumCpuUnits (all same for this test)
+	)
 
 	// Test with read access - should be able to walk within time range
 	readCtx := s.testContexts[testutils.UnrestrictedReadCtx]
 	var count int
-	from := baseTime
-	to := baseTime.Add(70 * time.Minute)
-	err = s.datastore.Walk(readCtx, from, to, func(obj *storage.SecuredUnits) error {
+	err := s.datastore.Walk(readCtx, testData.fromTime, testData.toTime, func(obj *storage.SecuredUnits) error {
 		count++
 		return nil
 	})
 	s.NoError(err)
-	s.Equal(2, count, "Should find exactly 2 objects within time range")
+	s.Equal(2, count, "Should find exactly 2 objects within time range (units2 and units3, excluding units1)")
 
 	// Test with no access - should fail
 	noAccessCtx := s.testContexts[testutils.NoAccessCtx]
 	count = 0
-	err = s.datastore.Walk(noAccessCtx, from, to, func(obj *storage.SecuredUnits) error {
+	err = s.datastore.Walk(noAccessCtx, testData.fromTime, testData.toTime, func(obj *storage.SecuredUnits) error {
 		count++
 		return nil
 	})
@@ -401,63 +427,39 @@ func (s *securedUnitsDatastoreSACSuite) TestWalkTimeRange() {
 // Test time range filtering for GetMaxNumNodes
 
 func (s *securedUnitsDatastoreSACSuite) TestGetMaxNumNodesTimeRange() {
-	unrestrictedCtx := sac.WithAllAccess(context.Background())
-	baseTime := time.Now().Add(-2 * time.Hour)
-
-	// Add data at different times with different node counts
-	units1 := getTestSecuredUnitsWithTime(baseTime.Add(10 * time.Minute))
-	units1.NumNodes = 20 // Max overall, but outside range
-	err := s.datastore.Add(unrestrictedCtx, units1)
-	s.Require().NoError(err)
-
-	units2 := getTestSecuredUnitsWithTime(baseTime.Add(1 * time.Hour))
-	units2.NumNodes = 15 // Max within range
-	err = s.datastore.Add(unrestrictedCtx, units2)
-	s.Require().NoError(err)
-
-	units3 := getTestSecuredUnitsWithTime(baseTime.Add(90 * time.Minute))
-	units3.NumNodes = 10 // Within range but not max
-	err = s.datastore.Add(unrestrictedCtx, units3)
-	s.Require().NoError(err)
+	testData := s.setupTestData(
+		-2*time.Hour,                                // baseTimeOffset
+		10*time.Minute, 1*time.Hour, 90*time.Minute, // time offsets
+		20,            // units1: Max overall, but outside range
+		15,            // units2: Max within range
+		10,            // units3: Within range but not max
+		100, 100, 100, // NumCpuUnits (not relevant for this test)
+	)
 
 	// Test with read access and time range
 	readCtx := s.testContexts[testutils.UnrestrictedReadCtx]
-	from := baseTime.Add(30 * time.Minute)
-	to := baseTime.Add(2 * time.Hour)
-	result, err := s.datastore.GetMaxNumNodes(readCtx, from, to)
+	result, err := s.datastore.GetMaxNumNodes(readCtx, testData.fromTime, testData.toTime)
 	s.NoError(err)
 	s.NotNil(result)
-	s.Equal(int64(15), result.GetNumNodes(), "Should return max within time range, not overall max")
+	s.Equal(int64(15), result.GetNumNodes(), "Should return max within time range (units2), not overall max (units1)")
 }
 
 // Test time range filtering for GetMaxNumCPUUnits
 
 func (s *securedUnitsDatastoreSACSuite) TestGetMaxNumCPUUnitsTimeRange() {
-	unrestrictedCtx := sac.WithAllAccess(context.Background())
-	baseTime := time.Now().Add(-2 * time.Hour)
-
-	// Add data at different times with different CPU counts
-	units1 := getTestSecuredUnitsWithTime(baseTime.Add(10 * time.Minute))
-	units1.NumCpuUnits = 300 // Max overall, but outside range
-	err := s.datastore.Add(unrestrictedCtx, units1)
-	s.Require().NoError(err)
-
-	units2 := getTestSecuredUnitsWithTime(baseTime.Add(1 * time.Hour))
-	units2.NumCpuUnits = 150 // Max within range
-	err = s.datastore.Add(unrestrictedCtx, units2)
-	s.Require().NoError(err)
-
-	units3 := getTestSecuredUnitsWithTime(baseTime.Add(90 * time.Minute))
-	units3.NumCpuUnits = 100 // Within range but not max
-	err = s.datastore.Add(unrestrictedCtx, units3)
-	s.Require().NoError(err)
+	testData := s.setupTestData(
+		-2*time.Hour,                                // baseTimeOffset
+		10*time.Minute, 1*time.Hour, 90*time.Minute, // time offsets
+		10, 10, 10, // NumNodes (not relevant for this test)
+		300, // units1: Max overall, but outside range
+		150, // units2: Max within range
+		100, // units3: Within range but not max
+	)
 
 	// Test with read access and time range
 	readCtx := s.testContexts[testutils.UnrestrictedReadCtx]
-	from := baseTime.Add(30 * time.Minute)
-	to := baseTime.Add(2 * time.Hour)
-	result, err := s.datastore.GetMaxNumCPUUnits(readCtx, from, to)
+	result, err := s.datastore.GetMaxNumCPUUnits(readCtx, testData.fromTime, testData.toTime)
 	s.NoError(err)
 	s.NotNil(result)
-	s.Equal(int64(150), result.GetNumCpuUnits(), "Should return max within time range, not overall max")
+	s.Equal(int64(150), result.GetNumCpuUnits(), "Should return max within time range (units2), not overall max (units1)")
 }

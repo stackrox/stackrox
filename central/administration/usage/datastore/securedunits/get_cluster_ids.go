@@ -16,6 +16,8 @@ var (
 		sac.ResourceScopeKeys(resources.Cluster))
 )
 
+//go:generate mockgen-wrapper
+
 type clusterDataStore interface {
 	GetClusters(ctx context.Context) ([]*storage.Cluster, error)
 }
