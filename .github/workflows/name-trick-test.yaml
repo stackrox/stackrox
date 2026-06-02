@@ -6,7 +6,7 @@ on:
       - worktree-name-trick-test
 
 jobs:
-  # Test 1: plain matrix - shows how names look WITHOUT trick
+  # Test 1: plain matrix (no trick) - baseline
   plain-matrix:
     strategy:
       fail-fast: false
@@ -18,16 +18,57 @@ jobs:
     steps:
       - run: echo "plain matrix copy=${{ matrix.copy }} branding=${{ matrix.branding }}"
 
-  # Test 2: name trick - copy (a) gets exact original name, copy (b) gets backup name
+  # Test 2: multi-dimensional matrix (branding + arch) — like build-and-push-main
   build-and-push-main:
     strategy:
       fail-fast: false
       matrix:
         branding: [RHACS_BRANDING, STACKROX_BRANDING]
+        arch: [amd64, arm64]
         copy: [a, b]
+        exclude:
+          - arch: arm64
+            copy: b   # arm64 only runs copy a (no backup needed)
     name: >-
-      build-and-push-main (${{ matrix.branding }}${{ matrix.copy == 'b' && ', backup' || '' }})
+      build-and-push-main (${{ matrix.branding }}, ${{ matrix.arch }}${{ matrix.copy == 'b' && ', backup' || '' }})
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.copy == 'b' }}
     steps:
-      - run: echo "name-trick copy=${{ matrix.copy }} branding=${{ matrix.branding }}"
+      - run: echo "copy=${{ matrix.copy }} branding=${{ matrix.branding }} arch=${{ matrix.arch }}"
+
+  # Test 3: scanner — like build-and-push-scanner (default, linux, amd64, quay.io/stackrox-io)
+  build-and-push-scanner:
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [default]
+        os: [linux]
+        arch: [amd64, arm64]
+        registry: [quay.io/stackrox-io, quay.io/rhacs-eng]
+        copy: [a, b]
+        exclude:
+          - arch: arm64
+            copy: b
+    name: >-
+      build-and-push-scanner (${{ matrix.name }}, ${{ matrix.os }}, ${{ matrix.arch }}, ${{ matrix.registry }}${{ matrix.copy == 'b' && ', backup' || '' }})
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.copy == 'b' }}
+    steps:
+      - run: echo "copy=${{ matrix.copy }}"
+
+  # Test 4: go unit tests — like "go (GOTAGS=\"\")"
+  go:
+    strategy:
+      fail-fast: false
+      matrix:
+        gotags: ['GOTAGS=""', 'GOTAGS=release']
+        copy: [a, b]
+        exclude:
+          - gotags: 'GOTAGS=release'
+            copy: b
+    name: >-
+      go (${{ matrix.gotags }}${{ matrix.copy == 'b' && ', backup' || '' }})
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.copy == 'b' }}
+    steps:
+      - run: echo "copy=${{ matrix.copy }} gotags=${{ matrix.gotags }}"
