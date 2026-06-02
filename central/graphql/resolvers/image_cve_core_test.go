@@ -159,6 +159,18 @@ func (s *ImageCVECoreResolverTestSuite) TestGetImageCVEMalformed() {
 	s.Error(err)
 }
 
+func (s *ImageCVECoreResolverTestSuite) TestOccurrenceInfoFields() {
+	mockCore := imageCVEViewMock.NewMockCveCore(s.mockCtrl)
+	mockCore.EXPECT().GetSourceCount().Return(2)
+	mockCore.EXPECT().GetOccurrenceCount().Return(5)
+	mockCore.EXPECT().GetDistinctSeverityCount().Return(3)
+
+	resolver := &imageCVECoreResolver{ctx: s.ctx, root: s.resolver, data: mockCore}
+	s.Equal(int32(2), resolver.SourceCount(s.ctx))
+	s.Equal(int32(5), resolver.OccurrenceCount(s.ctx))
+	s.Equal(int32(3), resolver.DistinctSeverityCount(s.ctx))
+}
+
 func (s *ImageCVECoreResolverTestSuite) TestGetImageCVENonEmpty() {
 	// without filter
 	expectedQ := search.NewQueryBuilder().AddExactMatches(search.CVE, "cve-xyz").ProtoQuery()

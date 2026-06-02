@@ -69,6 +69,7 @@ var (
 	EPSSProbablity     = newFieldLabel("EPSS Probability")
 	AdvisoryName       = newFieldLabel("Advisory Name")
 	AdvisoryLink       = newFieldLabel("Advisory Link")
+	Datasource         = newFieldLabel("Datasource")
 
 	CVEInfo = newFieldLabel("CVE Info")
 

@@ -53,6 +53,10 @@ func (resolver *imageCVEV2Resolver) ComponentId(ctx context.Context) string {
 	return value
 }
 
+func (resolver *imageCVEV2Resolver) Datasource(_ context.Context) string {
+	return resolver.data.GetDatasource()
+}
+
 func (resolver *imageCVEV2Resolver) CveBaseInfo(ctx context.Context) (*cVEInfoResolver, error) {
 	value := resolver.data.GetCveBaseInfo()
 	return resolver.root.wrapCVEInfo(value, true, nil)

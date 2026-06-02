@@ -1003,6 +1003,8 @@ func applyPaginationProps(baseTc *testCase, paginationTc testCase) {
 
 func (s *ImageCVEViewTestSuite) compileExpected(images []testImage, filter *filterImpl, options views.ReadOptions, less lessFunc) []CveCore {
 	cveMap := make(map[string]*imageCVECoreResponse)
+	datasourceSets := make(map[string]*set.StringSet)
+	severitySets := make(map[string]*set.Set[storage.VulnerabilitySeverity])
 
 	for _, image := range images {
 		if !filter.matchImage(image) {
@@ -1072,6 +1074,20 @@ func (s *ImageCVEViewTestSuite) compileExpected(images []testImage, filter *filt
 					val.CVEIDs = append(val.CVEIDs, id)
 				}
 
+				val.OccurrenceCount++
+				if ds := vuln.GetDatasource(); ds != "" {
+					if datasourceSets[val.CVE] == nil {
+						s := set.NewStringSet()
+						datasourceSets[val.CVE] = &s
+					}
+					datasourceSets[val.CVE].Add(ds)
+				}
+				if severitySets[val.CVE] == nil {
+					s := set.NewSet[storage.VulnerabilitySeverity]()
+					severitySets[val.CVE] = &s
+				}
+				severitySets[val.CVE].Add(vuln.GetSeverity())
+
 				val.TopCVSS = pointers.Float32(max(val.GetTopCVSS(), vuln.GetCvss()))
 
 				if val.GetFirstDiscoveredInSystem().After(vulnTime) {
@@ -1119,7 +1135,20 @@ func (s *ImageCVEViewTestSuite) compileExpected(images []testImage, filter *filt
 		sort.SliceStable(entry.CVEIDs, func(i, j int) bool {
 			return entry.CVEIDs[i] < entry.CVEIDs[j]
 		})
+		if ds := datasourceSets[entry.CVE]; ds != nil {
+			entry.SourceCount = ds.Cardinality()
+		}
+		if sv := severitySets[entry.CVE]; sv != nil {
+			entry.DistinctSeverityCount = sv.Cardinality()
+		}
 		expected = append(expected, entry)
+	}
+	if options.SkipGetOccurrenceInfo {
+		for _, entry := range expected {
+			entry.SourceCount = 0
+			entry.OccurrenceCount = 0
+			entry.DistinctSeverityCount = 0
+		}
 	}
 	if options.SkipGetImagesBySeverity {
 		for _, entry := range expected {
@@ -1479,5 +1508,8 @@ func assertResponsesAreEqual(t *testing.T, expected []CveCore, actual []CveCore,
 		assert.Equal(t, expected[i].GetAffectedImageCount(), flatCVE.GetAffectedImageCount())
 		assert.Equal(t, expected[i].GetFirstDiscoveredInSystem(), flatCVE.GetFirstDiscoveredInSystem())
 		assert.Equal(t, expected[i].GetPublishDate(), flatCVE.GetPublishDate())
+		assert.Equal(t, expected[i].GetSourceCount(), flatCVE.GetSourceCount())
+		assert.Equal(t, expected[i].GetOccurrenceCount(), flatCVE.GetOccurrenceCount())
+		assert.Equal(t, expected[i].GetDistinctSeverityCount(), flatCVE.GetDistinctSeverityCount())
 	}
 }

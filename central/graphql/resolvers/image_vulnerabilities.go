@@ -48,6 +48,7 @@ func init() {
 		schema.AddType("ImageVulnerability",
 			append(commonVulnerabilitySubResolvers,
 				"advisory: Advisory",
+				"datasource: String!",
 				"deploymentCount(query: String): Int!",
 				"deployments(query: String, pagination: Pagination): [Deployment!]!",
 				"discoveredAtImage(query: String): Time",
@@ -75,6 +76,7 @@ type ImageVulnerabilityResolver interface {
 	CommonVulnerabilityResolver
 
 	Advisory(ctx context.Context) (*advisoryResolver, error)
+	Datasource(ctx context.Context) string
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
 	DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error)

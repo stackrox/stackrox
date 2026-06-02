@@ -1,5 +1,15 @@
 import type { ReactNode } from 'react';
-import { Content, Flex, Label, LabelGroup, List, ListItem, Title } from '@patternfly/react-core';
+import {
+    Content,
+    Flex,
+    Label,
+    LabelGroup,
+    List,
+    ListItem,
+    Title,
+    Tooltip,
+} from '@patternfly/react-core';
+import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 import uniqBy from 'lodash/uniqBy';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
@@ -22,10 +32,13 @@ export type CveMetadata = {
     cve: string;
     firstDiscoveredInSystem: string | null;
     publishedOn: string | null;
+    sourceCount?: number;
+    distinctSeverityCount?: number;
     distroTuples: {
         summary: string;
         link: string;
         operatingSystem: string;
+        datasource: string;
         cveBaseInfo: CveBaseInfo;
     }[];
 };
@@ -81,6 +94,23 @@ function CvePageHeader({ data }: CvePageHeaderProps) {
             </Label>
         );
     }
+    if (data.sourceCount && data.sourceCount > 1) {
+        labels.push(
+            <Label key="sourceCount">{data.sourceCount} sources</Label>
+        );
+    }
+    if (data.distinctSeverityCount && data.distinctSeverityCount > 1) {
+        labels.push(
+            <Tooltip
+                key="severityDisagreement"
+                content="Sources report different severities for this CVE"
+            >
+                <Label color="gold" icon={<ExclamationTriangleIcon />}>
+                    Severity varies by source
+                </Label>
+            </Tooltip>
+        );
+    }
 
     const prioritizedDistros = uniqBy(sortCveDistroList(data.distroTuples), getDistroLinkText);
     const topDistro = prioritizedDistros[0];
@@ -102,6 +132,11 @@ function CvePageHeader({ data }: CvePageHeaderProps) {
                                         {getDistroLinkText(distro)}
                                     </a>
                                 </ExternalLink>
+                                {distro.datasource && (
+                                    <Label variant="outline" isCompact className="pf-v6-u-ml-sm">
+                                        {distro.datasource}
+                                    </Label>
+                                )}
                             </ListItem>
                         ))}
                     </List>

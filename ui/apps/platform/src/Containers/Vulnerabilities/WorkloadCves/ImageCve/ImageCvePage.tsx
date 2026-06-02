@@ -79,10 +79,13 @@ export const imageCveMetadataQuery = gql`
             cve
             firstDiscoveredInSystem
             publishedOn
+            sourceCount
+            distinctSeverityCount
             distroTuples {
                 summary
                 link
                 operatingSystem
+                datasource
                 cveBaseInfo {
                     epss {
                         epssProbability
