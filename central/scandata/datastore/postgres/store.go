@@ -811,10 +811,10 @@ func (s *storeImpl) ListComponents(ctx context.Context, limit, offset int) ([]*t
 				COUNT(DISTINCT f.imageid) as image_count,
 				MAX(f.severity)::int as top_severity,
 				MAX(f.cvss) as top_cvss,
-				SUM(CASE WHEN f.severity = 4 THEN 1 ELSE 0 END) as critical_count,
-				SUM(CASE WHEN f.severity = 3 THEN 1 ELSE 0 END) as important_count,
-				SUM(CASE WHEN f.severity = 2 THEN 1 ELSE 0 END) as moderate_count,
-				SUM(CASE WHEN f.severity = 1 THEN 1 ELSE 0 END) as low_count
+				COUNT(DISTINCT CASE WHEN f.severity = 4 THEN f.cvename END) as critical_count,
+				COUNT(DISTINCT CASE WHEN f.severity = 3 THEN f.cvename END) as important_count,
+				COUNT(DISTINCT CASE WHEN f.severity = 2 THEN f.cvename END) as moderate_count,
+				COUNT(DISTINCT CASE WHEN f.severity = 1 THEN f.cvename END) as low_count
 			FROM %s c
 			JOIN %s f ON c.id = f.componentid
 			WHERE f.state = 0
@@ -915,6 +915,54 @@ func (s *storeImpl) GetComponentVersions(ctx context.Context, componentName stri
 
 		if err := rows.Err(); err != nil {
 			return nil, errors.Wrap(err, "iterating version rows")
+		}
+
+		return results, nil
+	})
+}
+
+// GetComponentImages returns images containing the named component with CVE summary.
+func (s *storeImpl) GetComponentImages(ctx context.Context, componentName string) ([]*types.ComponentImageRow, error) {
+	return pgutils.Retry2(ctx, func() ([]*types.ComponentImageRow, error) {
+		query := fmt.Sprintf(`
+			SELECT
+				c.imageid,
+				c.version,
+				c.arch,
+				COUNT(DISTINCT f.cvename) as cve_count,
+				MAX(f.severity)::int as top_severity,
+				BOOL_OR(f.isfixable) as fixable
+			FROM %s c
+			JOIN %s f ON c.id = f.componentid
+			WHERE c.name = $1 AND f.state = 0
+			GROUP BY c.imageid, c.version, c.arch
+			ORDER BY MAX(f.severity) DESC, COUNT(DISTINCT f.cvename) DESC
+		`, componentsTable, findingsTable)
+
+		rows, err := s.db.Query(ctx, query, componentName)
+		if err != nil {
+			return nil, errors.Wrap(err, "querying component images")
+		}
+		defer rows.Close()
+
+		var results []*types.ComponentImageRow
+		for rows.Next() {
+			var row types.ComponentImageRow
+			if err := rows.Scan(
+				&row.ImageID,
+				&row.Version,
+				&row.Arch,
+				&row.CVECount,
+				&row.TopSeverity,
+				&row.Fixable,
+			); err != nil {
+				return nil, errors.Wrap(err, "scanning component image row")
+			}
+			results = append(results, &row)
+		}
+
+		if err := rows.Err(); err != nil {
+			return nil, errors.Wrap(err, "iterating component image rows")
 		}
 
 		return results, nil

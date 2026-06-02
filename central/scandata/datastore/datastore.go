@@ -54,6 +54,9 @@ type DataStore interface {
 	// GetComponentVersions returns all versions of a component with CVE data
 	GetComponentVersions(ctx context.Context, componentName string) ([]*types.ComponentVersionInfo, error)
 
+	// GetComponentImages returns images containing the named component with CVE summary
+	GetComponentImages(ctx context.Context, componentName string) ([]*types.ComponentImageRow, error)
+
 	// GetImageOS returns the operating system for an image
 	GetImageOS(ctx context.Context, imageID string) (string, error)
 }

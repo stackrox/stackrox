@@ -90,6 +90,18 @@ type ComponentListRow struct {
 	LowCount       int
 }
 
+// ComponentImageRow represents one image containing a given component.
+type ComponentImageRow struct {
+	ImageID     string
+	ImageUUID   string
+	ImageName   string
+	Version     string
+	Arch        string
+	CVECount    int
+	TopSeverity int32
+	Fixable     bool
+}
+
 // ComponentVersionInfo represents one version of a component with CVE data.
 type ComponentVersionInfo struct {
 	Version     string
