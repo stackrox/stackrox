@@ -592,9 +592,6 @@ jobs:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     # copy: b is the backup speculative copy — non-blocking if it fails or is slow.
     continue-on-error: ${{ matrix.copy == 'b' }}
-    # Preserve required check names: copy a gets the original name, copy b gets "(backup)".
-    name: >-
-      build-and-push-main (${{ matrix.name }}, ${{ matrix.arch }}${{ matrix.copy == 'b' && ', backup' || '' }})
     needs:
       - define-job-matrix
       - pre-build-cli
@@ -1049,8 +1046,6 @@ jobs:
   build-and-push-scanner:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     continue-on-error: ${{ matrix.copy == 'b' }}
-    name: >-
-      build-and-push-scanner (${{ matrix.name }}, ${{ matrix.goos }}, ${{ matrix.arch }}, ${{ matrix.registry }}${{ matrix.copy == 'b' && ', backup' || '' }})
     needs:
       - define-job-matrix
       - build-and-push-db
