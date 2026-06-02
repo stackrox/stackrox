@@ -78,6 +78,11 @@ const (
 	crsProfileDefaultValidityPeriod = 24 * time.Hour
 )
 
+// CertLifetime is the maximum validity duration for standard leaf certificates.
+func CertLifetime() time.Duration {
+	return certLifetime
+}
+
 var (
 	log = logging.LoggerForModule()
 

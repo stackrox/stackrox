@@ -187,6 +187,26 @@ func (s *securedClusterCertGenSuite) TestSecuredClusterCertificateGeneration() {
 	}
 }
 
+func (s *securedClusterCertGenSuite) TestSecuredClusterCertificateGenerationCustomValidity() {
+	requestedValidity := 45 * 24 * time.Hour
+	ca, err := mtls.CAForSigning()
+	s.Require().NoError(err)
+
+	certIssuer := certIssuerImpl{
+		serviceTypes:             set.NewFrozenSet(storage.ServiceType_SENSOR_SERVICE),
+		signingCA:                ca,
+		sensorSupportsCARotation: false,
+		requestedValidity:        requestedValidity,
+	}
+	certMap, err := certIssuer.generateServiceCertMap(storage.ServiceType_SENSOR_SERVICE, namespace, clusterID)
+	s.Require().NoError(err)
+	cert, err := helpers.ParseCertificatePEM(certMap["cert.pem"])
+	s.Require().NoError(err)
+
+	expectedNotAfter := time.Now().Add(requestedValidity)
+	s.InDelta(float64(expectedNotAfter.Unix()), float64(cert.NotAfter.Unix()), float64(2*time.Minute), "cert NotAfter should match requested validity")
+}
+
 func (s *securedClusterCertGenSuite) TestServiceIssueLocalScannerCerts() {
 	getServiceTypes := func() set.FrozenSet[string] {
 		serviceTypes := scannerV2ServiceTypes
@@ -281,7 +301,7 @@ func (s *securedClusterCertGenSuite) TestServiceIssueSecuredClusterCerts() {
 
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
-			certs, err := IssueSecuredClusterCerts(tc.namespace, tc.clusterID, false, "")
+			certs, err := IssueSecuredClusterCerts(tc.namespace, tc.clusterID, false, "", 0)
 			if tc.shouldFail {
 				s.Require().Error(err)
 				return
@@ -436,7 +456,7 @@ func (s *securedClusterCARotationSuite) TestIssueSecuredClusterCertsWithCAs() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			certs, err := IssueSecuredClusterCertsWithCAs(namespace, clusterID, tc.sensorSupportsCARotation, tc.primaryCA, tc.secondaryCA, tc.sensorCAFingerprint)
+			certs, err := IssueSecuredClusterCertsWithCAs(namespace, clusterID, tc.sensorSupportsCARotation, tc.primaryCA, tc.secondaryCA, tc.sensorCAFingerprint, 0)
 			s.Require().NoError(err)
 			s.Require().NotNil(certs)
 			s.Require().NotEmpty(certs.GetCaPem())
@@ -518,7 +538,7 @@ func (s *securedClusterCARotationSuite) TestBuildCABundle() {
 }
 
 func (s *securedClusterCARotationSuite) TestServiceCertificateGeneration() {
-	certs, err := IssueSecuredClusterCertsWithCAs(namespace, clusterID, true, s.primaryCA, s.secondaryCA, "")
+	certs, err := IssueSecuredClusterCertsWithCAs(namespace, clusterID, true, s.primaryCA, s.secondaryCA, "", 0)
 	s.Require().NoError(err)
 	s.Require().NotNil(certs)
 
@@ -545,18 +565,18 @@ func (s *securedClusterCARotationSuite) TestServiceCertificateGeneration() {
 
 func (s *securedClusterCARotationSuite) TestErrorHandling() {
 	s.Run("empty namespace", func() {
-		_, err := IssueSecuredClusterCertsWithCAs("", clusterID, true, s.primaryCA, s.secondaryCA, "")
+		_, err := IssueSecuredClusterCertsWithCAs("", clusterID, true, s.primaryCA, s.secondaryCA, "", 0)
 		s.Error(err)
 		s.Contains(err.Error(), "namespace is required")
 	})
 
 	s.Run("empty cluster ID", func() {
-		_, err := IssueSecuredClusterCertsWithCAs(namespace, "", true, s.primaryCA, s.secondaryCA, "")
+		_, err := IssueSecuredClusterCertsWithCAs(namespace, "", true, s.primaryCA, s.secondaryCA, "", 0)
 		s.Error(err)
 	})
 
 	s.Run("nil primary CA", func() {
-		_, err := IssueSecuredClusterCertsWithCAs(namespace, clusterID, true, nil, s.secondaryCA, "")
+		_, err := IssueSecuredClusterCertsWithCAs(namespace, clusterID, true, nil, s.secondaryCA, "", 0)
 		s.Error(err)
 		s.Contains(err.Error(), "primary CA is required")
 	})

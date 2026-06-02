@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/securedcluster"
+	"google.golang.org/protobuf/types/known/durationpb"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -75,12 +76,16 @@ func NewSecuredClusterTLSIssuer(
 }
 
 func newSecuredClusterMsgFromSensor(requestID string) *central.MsgFromSensor {
+	request := &central.IssueSecuredClusterCertsRequest{
+		RequestId:     requestID,
+		CaFingerprint: currentSensorCAFingerprint(),
+	}
+	if requestedValidity := SensorCertRequestedValidity(); requestedValidity > 0 {
+		request.RequestedValidity = durationpb.New(requestedValidity)
+	}
 	return &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_IssueSecuredClusterCertsRequest{
-			IssueSecuredClusterCertsRequest: &central.IssueSecuredClusterCertsRequest{
-				RequestId:     requestID,
-				CaFingerprint: currentSensorCAFingerprint(),
-			},
+			IssueSecuredClusterCertsRequest: request,
 		},
 	}
 }

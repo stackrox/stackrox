@@ -8,6 +8,7 @@ createUpgraderServiceAccount: null # string
 helmManaged: null
 createSecrets: null
 additionalCAs: null # [obj]
+certRefreshValidity: null # [str]
 imagePullSecrets:
   username: null # string
   password: null # string

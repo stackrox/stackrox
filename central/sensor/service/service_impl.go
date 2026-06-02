@@ -175,7 +175,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		if err := safe.RunE(func() error {
 			sensorNamespace := sensorHello.GetDeploymentIdentification().GetAppNamespace()
 			certificateSet, err := securedclustercertgen.IssueSecuredClusterCerts(
-				sensorNamespace, clusterID, isCARotationSupported(sensorHello), "")
+				sensorNamespace, clusterID, isCARotationSupported(sensorHello), "", 0)
 			if err != nil {
 				return errors.Wrapf(err, "issuing a certificate bundle for cluster %s", cluster.GetName())
 			}

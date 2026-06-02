@@ -695,6 +695,32 @@ describe('cluster helpers', () => {
 
             expect(status).toBe('UNHEALTHY');
         });
+        it('should return HEALTHY when connection cert is stale but refresh issued healthy certs', () => {
+            const status = getCredentialExpirationStatus(
+                {
+                    sensorCertNotBefore: '2022-01-01T00:00:00Z',
+                    sensorCertExpiry: '2022-02-01T00:00:00Z',
+                    lastRefreshTime: '2022-06-01T00:00:00Z',
+                    lastRefreshedCertExpiry: '2022-08-01T00:00:00Z',
+                },
+                new Date('2022-07-01T00:00:00Z')
+            );
+
+            expect(status).toBe('HEALTHY');
+        });
+        it('should return DEGRADED when last refreshed cert is nearing expiry', () => {
+            const status = getCredentialExpirationStatus(
+                {
+                    sensorCertNotBefore: '2022-01-01T00:00:00Z',
+                    sensorCertExpiry: '2022-12-31T23:59:59Z',
+                    lastRefreshTime: '2022-06-01T00:00:00Z',
+                    lastRefreshedCertExpiry: '2022-07-10T00:00:00Z',
+                },
+                new Date('2022-07-05T00:00:00Z')
+            );
+
+            expect(status).toBe('DEGRADED');
+        });
         it('should return UNHEALTHY when the short lived cert expired', () => {
             const status = getCredentialExpirationStatus(
                 {

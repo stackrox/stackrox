@@ -70,6 +70,8 @@ export type CentralEnv = {
 export type CertExpiryStatus = {
     sensorCertExpiry: string; // ISO 8601
     sensorCertNotBefore: string; // ISO 8601
+    lastRefreshTime?: string; // ISO 8601
+    lastRefreshedCertExpiry?: string; // ISO 8601
 };
 
 export type ClusterStatus = {

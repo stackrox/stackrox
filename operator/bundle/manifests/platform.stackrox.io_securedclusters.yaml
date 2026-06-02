@@ -1882,6 +1882,11 @@ spec:
                       - name
                       type: object
                     type: array
+                  certRefreshValidity:
+                    description: |-
+                      Requested validity duration for automatically refreshed service certificates (e.g. "8760h").
+                      The default is: 8760h.
+                    type: string
                 type: object
             required:
             - clusterName

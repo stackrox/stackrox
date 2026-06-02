@@ -125,6 +125,10 @@ spec:
         - name: ROX_CERTS_NEW_DIR
           value: /run/secrets/stackrox.io/certs-new/
         {{- end }}
+        {{- if ._rox.certRefreshValidity }}
+        - name: ROX_SENSOR_CERT_REQUESTED_VALIDITY
+          value: {{ quote ._rox.certRefreshValidity }}
+        {{- end }}
         {{- include "srox.envVars" (list . "deployment" "sensor" "sensor") | nindent 8 }}
         volumeMounts:
         - name: sensor-etc-ssl-volume
@@ -241,6 +245,10 @@ spec:
         {{- if ._rox.monitoring.openshift.enabled }}
         - name: ROX_ENABLE_SECURE_METRICS
           value: "true"
+        {{- end }}
+        {{- if ._rox.certRefreshValidity }}
+        - name: ROX_SENSOR_CERT_REQUESTED_VALIDITY
+          value: {{ quote ._rox.certRefreshValidity }}
         {{- end }}
         {{- include "srox.envVars" (list . "deployment" "sensor" "sensor") | nindent 8 }}
         volumeMounts:

@@ -2,6 +2,7 @@ package securedclustercertgen
 
 import (
 	"os"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -37,12 +38,13 @@ type certIssuerImpl struct {
 	signingCA                mtls.CA
 	secondaryCA              mtls.CA
 	sensorSupportsCARotation bool
+	requestedValidity        time.Duration
 }
 
 // IssueSecuredClusterCerts issues certificates for all the services of a secured cluster (including local scanner).
 // It loads the CAs from disk and selects which CA to use for signing  based on Sensor capabilities
 // and the optional Sensor CA fingerprint.
-func IssueSecuredClusterCerts(namespace, clusterID string, sensorSupportsCARotation bool, sensorCAFingerprint string) (*storage.TypedServiceCertificateSet, error) {
+func IssueSecuredClusterCerts(namespace, clusterID string, sensorSupportsCARotation bool, sensorCAFingerprint string, requestedValidity time.Duration) (*storage.TypedServiceCertificateSet, error) {
 	primaryCA, err := mtls.CAForSigning()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not load CA for signing")
@@ -55,7 +57,7 @@ func IssueSecuredClusterCerts(namespace, clusterID string, sensorSupportsCARotat
 		}
 	}
 
-	return IssueSecuredClusterCertsWithCAs(namespace, clusterID, sensorSupportsCARotation, primaryCA, secondaryCA, sensorCAFingerprint)
+	return IssueSecuredClusterCertsWithCAs(namespace, clusterID, sensorSupportsCARotation, primaryCA, secondaryCA, sensorCAFingerprint, requestedValidity)
 }
 
 // IssueSecuredClusterCertsWithCAs issues certificates for all the services of a secured cluster (including local scanner),
@@ -68,6 +70,7 @@ func IssueSecuredClusterCertsWithCAs(
 	primaryCA mtls.CA,
 	secondaryCA mtls.CA,
 	sensorCAFingerprint string,
+	requestedValidity time.Duration,
 ) (*storage.TypedServiceCertificateSet, error) {
 	if primaryCA == nil {
 		return nil, errors.New("primary CA is required")
@@ -92,6 +95,7 @@ func IssueSecuredClusterCertsWithCAs(
 		signingCA:                primaryCA,
 		secondaryCA:              secondaryCA,
 		sensorSupportsCARotation: sensorSupportsCARotation,
+		requestedValidity:        requestedValidity,
 	}
 
 	return certIssuer.issueCertificates(namespace, clusterID)
@@ -191,6 +195,9 @@ func (c *certIssuerImpl) generateServiceCertMap(serviceType storage.ServiceType,
 	subject := mtls.NewSubject(clusterID, serviceType)
 	issueOpts := []mtls.IssueCertOption{
 		mtls.WithNamespace(namespace),
+	}
+	if c.requestedValidity > 0 {
+		issueOpts = append(issueOpts, mtls.WithValidityNotAfter(time.Now().Add(c.requestedValidity)))
 	}
 	if err := certgen.IssueServiceCert(fileMap, c.signingCA, subject, "", issueOpts...); err != nil {
 		return nil, errors.Wrap(err, "error generating service certificate")

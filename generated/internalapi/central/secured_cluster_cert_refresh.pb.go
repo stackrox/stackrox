@@ -10,6 +10,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -71,8 +72,10 @@ type IssueSecuredClusterCertsRequest struct {
 	RequestId string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	// Optional: hex-encoded SHA-512_256 fingerprint of the Sensor's currently trusted CA
 	CaFingerprint string `protobuf:"bytes,2,opt,name=ca_fingerprint,json=caFingerprint,proto3" json:"ca_fingerprint,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// Optional: requested validity duration for issued certificates. When unset, Central uses the default 1-year profile.
+	RequestedValidity *durationpb.Duration `protobuf:"bytes,3,opt,name=requested_validity,json=requestedValidity,proto3" json:"requested_validity,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *IssueSecuredClusterCertsRequest) Reset() {
@@ -117,6 +120,13 @@ func (x *IssueSecuredClusterCertsRequest) GetCaFingerprint() string {
 		return x.CaFingerprint
 	}
 	return ""
+}
+
+func (x *IssueSecuredClusterCertsRequest) GetRequestedValidity() *durationpb.Duration {
+	if x != nil {
+		return x.RequestedValidity
+	}
+	return nil
 }
 
 type IssueSecuredClusterCertsResponse struct {
@@ -213,13 +223,14 @@ var File_internalapi_central_secured_cluster_cert_refresh_proto protoreflect.Fil
 
 const file_internalapi_central_secured_cluster_cert_refresh_proto_rawDesc = "" +
 	"\n" +
-	"6internalapi/central/secured_cluster_cert_refresh.proto\x12\acentral\x1a\x1estorage/service_identity.proto\"9\n" +
+	"6internalapi/central/secured_cluster_cert_refresh.proto\x12\acentral\x1a\x1egoogle/protobuf/duration.proto\x1a\x1estorage/service_identity.proto\"9\n" +
 	"\x1dSecuredClusterCertsIssueError\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage\"g\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"\xb1\x01\n" +
 	"\x1fIssueSecuredClusterCertsRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12%\n" +
-	"\x0eca_fingerprint\x18\x02 \x01(\tR\rcaFingerprint\"\xd8\x01\n" +
+	"\x0eca_fingerprint\x18\x02 \x01(\tR\rcaFingerprint\x12H\n" +
+	"\x12requested_validity\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\x11requestedValidity\"\xd8\x01\n" +
 	" IssueSecuredClusterCertsResponse\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12I\n" +
@@ -245,16 +256,18 @@ var file_internalapi_central_secured_cluster_cert_refresh_proto_goTypes = []any{
 	(*SecuredClusterCertsIssueError)(nil),      // 0: central.SecuredClusterCertsIssueError
 	(*IssueSecuredClusterCertsRequest)(nil),    // 1: central.IssueSecuredClusterCertsRequest
 	(*IssueSecuredClusterCertsResponse)(nil),   // 2: central.IssueSecuredClusterCertsResponse
-	(*storage.TypedServiceCertificateSet)(nil), // 3: storage.TypedServiceCertificateSet
+	(*durationpb.Duration)(nil),                // 3: google.protobuf.Duration
+	(*storage.TypedServiceCertificateSet)(nil), // 4: storage.TypedServiceCertificateSet
 }
 var file_internalapi_central_secured_cluster_cert_refresh_proto_depIdxs = []int32{
-	3, // 0: central.IssueSecuredClusterCertsResponse.certificates:type_name -> storage.TypedServiceCertificateSet
-	0, // 1: central.IssueSecuredClusterCertsResponse.error:type_name -> central.SecuredClusterCertsIssueError
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	3, // 0: central.IssueSecuredClusterCertsRequest.requested_validity:type_name -> google.protobuf.Duration
+	4, // 1: central.IssueSecuredClusterCertsResponse.certificates:type_name -> storage.TypedServiceCertificateSet
+	0, // 2: central.IssueSecuredClusterCertsResponse.error:type_name -> central.SecuredClusterCertsIssueError
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_central_secured_cluster_cert_refresh_proto_init() }

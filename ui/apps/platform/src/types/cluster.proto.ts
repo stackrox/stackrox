@@ -155,6 +155,9 @@ export type ClusterManagerType =
 
 export type ClusterCertExpiryStatus = {
     sensorCertExpiry: string; // ISO 8601 date string
+    sensorCertNotBefore?: string; // ISO 8601 date string
+    lastRefreshTime?: string; // ISO 8601 date string
+    lastRefreshedCertExpiry?: string; // ISO 8601 date string
 };
 
 export type ClusterStatus = {

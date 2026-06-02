@@ -73,6 +73,20 @@ func (mr *MockClusterManagerMockRecorder) GetClusters(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusters", reflect.TypeOf((*MockClusterManager)(nil).GetClusters), ctx)
 }
 
+// UpdateClusterCertExpiryStatus mocks base method.
+func (m *MockClusterManager) UpdateClusterCertExpiryStatus(ctx context.Context, id string, status *storage.ClusterCertExpiryStatus) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateClusterCertExpiryStatus", ctx, id, status)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateClusterCertExpiryStatus indicates an expected call of UpdateClusterCertExpiryStatus.
+func (mr *MockClusterManagerMockRecorder) UpdateClusterCertExpiryStatus(ctx, id, status any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterCertExpiryStatus", reflect.TypeOf((*MockClusterManager)(nil).UpdateClusterCertExpiryStatus), ctx, id, status)
+}
+
 // UpdateClusterHealth mocks base method.
 func (m *MockClusterManager) UpdateClusterHealth(ctx context.Context, id string, status *storage.ClusterHealthStatus) error {
 	m.ctrl.T.Helper()

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/pkg/errors"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -34,6 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/rate"
 	"github.com/stackrox/rox/pkg/reflectutils"
@@ -460,12 +462,25 @@ func (c *sensorConnection) processIssueSecuredClusterCertsRequest(ctx context.Co
 		var certificates *storage.TypedServiceCertificateSet
 		sensorSupportsRotation := c.capabilities.Contains(centralsensor.SensorCARotationSupported)
 		caFingerprint := request.GetCaFingerprint()
-		certificates, err = securedclustercertgen.IssueSecuredClusterCerts(namespace, clusterID, sensorSupportsRotation, caFingerprint)
-		response = &central.IssueSecuredClusterCertsResponse{
-			RequestId: requestID,
-			Response: &central.IssueSecuredClusterCertsResponse_Certificates{
-				Certificates: certificates,
-			},
+		requestedValidity, validityErr := securedclustercertgen.ClampRequestedValidity(request.GetRequestedValidity())
+		if validityErr != nil {
+			err = validityErr
+		} else {
+			certificates, err = securedclustercertgen.IssueSecuredClusterCerts(
+				namespace, clusterID, sensorSupportsRotation, caFingerprint, requestedValidity)
+			if err == nil && c.clusterMgr != nil {
+				if updateErr := c.updateCertRefreshMetadata(ctx, certificates); updateErr != nil {
+					log.Warnf("Failed to update cert refresh metadata for cluster %s: %v", clusterID, updateErr)
+				}
+			}
+		}
+		if err == nil {
+			response = &central.IssueSecuredClusterCertsResponse{
+				RequestId: requestID,
+				Response: &central.IssueSecuredClusterCertsResponse_Certificates{
+					Certificates: certificates,
+				},
+			}
 		}
 	}
 	if err != nil {
@@ -485,6 +500,43 @@ func (c *sensorConnection) processIssueSecuredClusterCertsRequest(ctx context.Co
 		return errors.Wrap(err, errMsg)
 	}
 	return nil
+}
+
+func (c *sensorConnection) updateCertRefreshMetadata(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error {
+	_, notAfter, err := securedclustercertgen.SensorCertificateValidity(certificates)
+	if err != nil {
+		return err
+	}
+
+	cluster, exists, err := c.clusterMgr.GetCluster(ctx, c.clusterID)
+	if err != nil {
+		return errors.Wrap(err, "getting cluster for cert refresh metadata update")
+	}
+	if !exists {
+		return errors.New("cluster not found for cert refresh metadata update")
+	}
+
+	expiryStatus := cluster.GetStatus().GetCertExpiryStatus()
+	if expiryStatus == nil {
+		expiryStatus = &storage.ClusterCertExpiryStatus{}
+	} else {
+		expiryStatus = expiryStatus.CloneVT()
+	}
+
+	refreshTime := time.Now().UTC()
+	refreshTimestamp, err := protocompat.ConvertTimeToTimestampOrError(refreshTime)
+	if err != nil {
+		return errors.Wrap(err, "converting refresh time to timestamp")
+	}
+	refreshedCertExpiryTimestamp, err := protocompat.ConvertTimeToTimestampOrError(notAfter)
+	if err != nil {
+		return errors.Wrap(err, "converting refreshed cert expiry to timestamp")
+	}
+
+	expiryStatus.LastRefreshTime = refreshTimestamp
+	expiryStatus.LastRefreshedCertExpiry = refreshedCertExpiryTimestamp
+
+	return c.clusterMgr.UpdateClusterCertExpiryStatus(ctx, c.clusterID, expiryStatus)
 }
 
 // getPolicySyncMsg fetches stored policies and prepares them for delivery to sensor.

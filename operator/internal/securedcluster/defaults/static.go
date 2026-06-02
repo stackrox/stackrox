@@ -3,10 +3,12 @@ package defaults
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/common"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
 
@@ -76,6 +78,9 @@ var staticDefaults = platform.SecuredClusterSpec{
 	ProcessIndicators: &platform.ProcessIndicatorsSpec{
 		Persistence:        platform.ProcessIndicatorConfigEnabled.Pointer(),
 		ExcludeOpenshiftNs: platform.ProcessIndicatorConfigDisabled.Pointer(),
+	},
+	TLS: &platform.TLSConfig{
+		CertRefreshValidity: &metav1.Duration{Duration: 365 * 24 * time.Hour},
 	},
 }
 

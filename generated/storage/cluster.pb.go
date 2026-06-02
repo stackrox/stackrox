@@ -1701,8 +1701,12 @@ type ClusterCertExpiryStatus struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	SensorCertExpiry    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=sensor_cert_expiry,json=sensorCertExpiry,proto3" json:"sensor_cert_expiry,omitempty"`
 	SensorCertNotBefore *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=sensor_cert_not_before,json=sensorCertNotBefore,proto3" json:"sensor_cert_not_before,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Timestamp of the last successful cert issuance by Central for this cluster.
+	LastRefreshTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_refresh_time,json=lastRefreshTime,proto3" json:"last_refresh_time,omitempty"`
+	// Expiry of the certs issued in the last refresh.
+	LastRefreshedCertExpiry *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_refreshed_cert_expiry,json=lastRefreshedCertExpiry,proto3" json:"last_refreshed_cert_expiry,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ClusterCertExpiryStatus) Reset() {
@@ -1745,6 +1749,20 @@ func (x *ClusterCertExpiryStatus) GetSensorCertExpiry() *timestamppb.Timestamp {
 func (x *ClusterCertExpiryStatus) GetSensorCertNotBefore() *timestamppb.Timestamp {
 	if x != nil {
 		return x.SensorCertNotBefore
+	}
+	return nil
+}
+
+func (x *ClusterCertExpiryStatus) GetLastRefreshTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastRefreshTime
+	}
+	return nil
+}
+
+func (x *ClusterCertExpiryStatus) GetLastRefreshedCertExpiry() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastRefreshedCertExpiry
 	}
 	return nil
 }
@@ -2870,10 +2888,12 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x120\n" +
 	"\x05value\x18\x02 \x01(\v2\x1a.storage.AuditLogFileStateR\x05value:\x028\x01J\x04\b\x06\x10\aJ\x04\b\b\x10\tJ\x04\b\t\x10\n" +
 	"J\x04\b\n" +
-	"\x10\vJ\x04\b\v\x10\fJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0f\"\xb4\x01\n" +
+	"\x10\vJ\x04\b\v\x10\fJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0f\"\xd5\x02\n" +
 	"\x17ClusterCertExpiryStatus\x12H\n" +
 	"\x12sensor_cert_expiry\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x10sensorCertExpiry\x12O\n" +
-	"\x16sensor_cert_not_before\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x13sensorCertNotBefore\"\xbc\x03\n" +
+	"\x16sensor_cert_not_before\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x13sensorCertNotBefore\x12F\n" +
+	"\x11last_refresh_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x0flastRefreshTime\x12W\n" +
+	"\x1alast_refreshed_cert_expiry\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x17lastRefreshedCertExpiry\"\xbc\x03\n" +
 	"\rClusterStatus\x12%\n" +
 	"\x0esensor_version\x18\x01 \x01(\tR\rsensorVersion\x12R\n" +
 	"\x17DEPRECATED_last_contact\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x15DEPRECATEDLastContact\x12F\n" +
@@ -3069,34 +3089,36 @@ var file_storage_cluster_proto_depIdxs = []int32{
 	2,  // 25: storage.Cluster.managed_by:type_name -> storage.ManagerType
 	36, // 26: storage.ClusterCertExpiryStatus.sensor_cert_expiry:type_name -> google.protobuf.Timestamp
 	36, // 27: storage.ClusterCertExpiryStatus.sensor_cert_not_before:type_name -> google.protobuf.Timestamp
-	36, // 28: storage.ClusterStatus.DEPRECATED_last_contact:type_name -> google.protobuf.Timestamp
-	12, // 29: storage.ClusterStatus.provider_metadata:type_name -> storage.ProviderMetadata
-	13, // 30: storage.ClusterStatus.orchestrator_metadata:type_name -> storage.OrchestratorMetadata
-	24, // 31: storage.ClusterStatus.upgrade_status:type_name -> storage.ClusterUpgradeStatus
-	22, // 32: storage.ClusterStatus.cert_expiry_status:type_name -> storage.ClusterCertExpiryStatus
-	4,  // 33: storage.ClusterUpgradeStatus.upgradability:type_name -> storage.ClusterUpgradeStatus.Upgradability
-	35, // 34: storage.ClusterUpgradeStatus.most_recent_process:type_name -> storage.ClusterUpgradeStatus.UpgradeProcessStatus
-	6,  // 35: storage.UpgradeProgress.upgrade_state:type_name -> storage.UpgradeProgress.UpgradeState
-	36, // 36: storage.UpgradeProgress.since:type_name -> google.protobuf.Timestamp
-	36, // 37: storage.AuditLogFileState.collect_logs_since:type_name -> google.protobuf.Timestamp
-	28, // 38: storage.ClusterHealthStatus.collector_health_info:type_name -> storage.CollectorHealthInfo
-	29, // 39: storage.ClusterHealthStatus.admission_control_health_info:type_name -> storage.AdmissionControlHealthInfo
-	30, // 40: storage.ClusterHealthStatus.scanner_health_info:type_name -> storage.ScannerHealthInfo
-	7,  // 41: storage.ClusterHealthStatus.sensor_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
-	7,  // 42: storage.ClusterHealthStatus.collector_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
-	7,  // 43: storage.ClusterHealthStatus.overall_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
-	7,  // 44: storage.ClusterHealthStatus.admission_control_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
-	7,  // 45: storage.ClusterHealthStatus.scanner_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
-	36, // 46: storage.ClusterHealthStatus.last_contact:type_name -> google.protobuf.Timestamp
-	26, // 47: storage.Cluster.AuditLogStateEntry.value:type_name -> storage.AuditLogFileState
-	36, // 48: storage.ClusterUpgradeStatus.UpgradeProcessStatus.initiated_at:type_name -> google.protobuf.Timestamp
-	25, // 49: storage.ClusterUpgradeStatus.UpgradeProcessStatus.progress:type_name -> storage.UpgradeProgress
-	5,  // 50: storage.ClusterUpgradeStatus.UpgradeProcessStatus.type:type_name -> storage.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
-	51, // [51:51] is the sub-list for method output_type
-	51, // [51:51] is the sub-list for method input_type
-	51, // [51:51] is the sub-list for extension type_name
-	51, // [51:51] is the sub-list for extension extendee
-	0,  // [0:51] is the sub-list for field type_name
+	36, // 28: storage.ClusterCertExpiryStatus.last_refresh_time:type_name -> google.protobuf.Timestamp
+	36, // 29: storage.ClusterCertExpiryStatus.last_refreshed_cert_expiry:type_name -> google.protobuf.Timestamp
+	36, // 30: storage.ClusterStatus.DEPRECATED_last_contact:type_name -> google.protobuf.Timestamp
+	12, // 31: storage.ClusterStatus.provider_metadata:type_name -> storage.ProviderMetadata
+	13, // 32: storage.ClusterStatus.orchestrator_metadata:type_name -> storage.OrchestratorMetadata
+	24, // 33: storage.ClusterStatus.upgrade_status:type_name -> storage.ClusterUpgradeStatus
+	22, // 34: storage.ClusterStatus.cert_expiry_status:type_name -> storage.ClusterCertExpiryStatus
+	4,  // 35: storage.ClusterUpgradeStatus.upgradability:type_name -> storage.ClusterUpgradeStatus.Upgradability
+	35, // 36: storage.ClusterUpgradeStatus.most_recent_process:type_name -> storage.ClusterUpgradeStatus.UpgradeProcessStatus
+	6,  // 37: storage.UpgradeProgress.upgrade_state:type_name -> storage.UpgradeProgress.UpgradeState
+	36, // 38: storage.UpgradeProgress.since:type_name -> google.protobuf.Timestamp
+	36, // 39: storage.AuditLogFileState.collect_logs_since:type_name -> google.protobuf.Timestamp
+	28, // 40: storage.ClusterHealthStatus.collector_health_info:type_name -> storage.CollectorHealthInfo
+	29, // 41: storage.ClusterHealthStatus.admission_control_health_info:type_name -> storage.AdmissionControlHealthInfo
+	30, // 42: storage.ClusterHealthStatus.scanner_health_info:type_name -> storage.ScannerHealthInfo
+	7,  // 43: storage.ClusterHealthStatus.sensor_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
+	7,  // 44: storage.ClusterHealthStatus.collector_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
+	7,  // 45: storage.ClusterHealthStatus.overall_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
+	7,  // 46: storage.ClusterHealthStatus.admission_control_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
+	7,  // 47: storage.ClusterHealthStatus.scanner_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
+	36, // 48: storage.ClusterHealthStatus.last_contact:type_name -> google.protobuf.Timestamp
+	26, // 49: storage.Cluster.AuditLogStateEntry.value:type_name -> storage.AuditLogFileState
+	36, // 50: storage.ClusterUpgradeStatus.UpgradeProcessStatus.initiated_at:type_name -> google.protobuf.Timestamp
+	25, // 51: storage.ClusterUpgradeStatus.UpgradeProcessStatus.progress:type_name -> storage.UpgradeProgress
+	5,  // 52: storage.ClusterUpgradeStatus.UpgradeProcessStatus.type:type_name -> storage.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
+	53, // [53:53] is the sub-list for method output_type
+	53, // [53:53] is the sub-list for method input_type
+	53, // [53:53] is the sub-list for extension type_name
+	53, // [53:53] is the sub-list for extension extendee
+	0,  // [0:53] is the sub-list for field type_name
 }
 
 func init() { file_storage_cluster_proto_init() }
