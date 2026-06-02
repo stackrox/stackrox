@@ -143,10 +143,14 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(ctx context.Context, req 
 	var err error
 	var reportData *ReportData
 	if req.ReportSnapshot.GetVulnReportFilters() != nil {
+		log.Infof("Starting report query for config '%s'", req.ReportSnapshot.GetName())
 		reportData, err = rg.getReportDataSQF(ctx, req.ReportSnapshot, req.Collection, req.DataStartTime)
+		log.Infof("Report query finished for config '%s', err=%v, ctx.Err=%v", req.ReportSnapshot.GetName(), err, ctx.Err())
 	}
 	if req.ReportSnapshot.GetViewBasedVulnReportFilters() != nil {
+		log.Infof("Starting report query for config '%s'", req.ReportSnapshot.GetName())
 		reportData, err = rg.getReportDataViewBased(ctx, req.ReportSnapshot)
+		log.Infof("Report query finished for config '%s', err=%v, ctx.Err=%v", req.ReportSnapshot.GetName(), err, ctx.Err())
 	}
 	if err != nil {
 		return err

@@ -234,10 +234,11 @@ func (s *scheduler) removeRunningReportCancel(reportID string) {
 }
 
 func (s *scheduler) tryCancelRunningReport(reportID string) bool {
-	s.schedulerLock.Lock()
-	cancel, exists := s.runningReportCancels[reportID]
-	s.schedulerLock.Unlock()
-	if !exists {
+	var cancel context.CancelCauseFunc
+	s.schedulerLock.WithLock(func() {
+		cancel = s.runningReportCancels[reportID]
+	})
+	if cancel == nil {
 		return false
 	}
 	cancel(reportGen.ErrUserCancelled)
