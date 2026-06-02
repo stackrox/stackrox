@@ -132,6 +132,9 @@ func New(db postgres.DB) Store {
             targetResource,
             pgSearch.NoSerializedStoreOpts[storeType]{
                 BulkInsert: bulkInsertInto{{ .Schema.Table|upperCamelCase }},
+                {{- if .Schema.Children }}
+                ChildFetcher: FetchChildren,
+                {{- end }}
             },
     )
 {{- else }}
@@ -460,8 +463,113 @@ func bulkInsertInto{{ .Schema.Table|upperCamelCase }}(batch *pgx.Batch, objs []*
     }
     {{- end }}
 
+    {{- range $child := $schema.Children }}
+    {{- $singlePK := index $schema.PrimaryKeys 0 }}
+
+    // Child table {{ $child.Table }}: delete existing, then bulk insert
+    batch.Queue(`DELETE FROM {{ $child.Table }} WHERE {{ (index $child.FieldsReferringToParent 0).ColumnName }} = ANY($1::{{ pgArrayCast $singlePK }})`,
+        arr_{{ scanVarName $singlePK }},
+    )
+
+    {{- $childFields := $child.DBColumnFields }}
+    var (
+        {{- range $field := $childFields }}
+        arr_child_{{ $child.Table }}_{{ scanVarName $field }} {{ unnestArrayGoType $field }}
+        {{- end }}
+    )
+    for _, obj := range objs {
+        for childIdx, child := range obj.{{ getterToSetter $child.ObjectGetter }} {
+            _ = childIdx
+            _ = child
+            {{- range $field := $childFields }}
+            {{- if eq $field.ColumnName "idx" }}
+            arr_child_{{ $child.Table }}_{{ scanVarName $field }} = append(arr_child_{{ $child.Table }}_{{ scanVarName $field }}, childIdx)
+            {{- else if $field.ObjectGetter.IsVariable }}
+            arr_child_{{ $child.Table }}_{{ scanVarName $field }} = append(arr_child_{{ $child.Table }}_{{ scanVarName $field }}, {{ $singlePK.Getter "obj" }})
+            {{- else }}
+            arr_child_{{ $child.Table }}_{{ scanVarName $field }} = append(arr_child_{{ $child.Table }}_{{ scanVarName $field }}, child.{{ joinPath (setterPath $field) }})
+            {{- end }}
+            {{- end }}
+        }
+    }
+    {{- $firstField := index $childFields 0 }}
+    if len(arr_child_{{ $child.Table }}_{{ scanVarName $firstField }}) > 0 {
+        batch.Queue(`INSERT INTO {{ $child.Table }} ({{- range $i, $f := $childFields }}{{if $i}}, {{end}}{{ $f.ColumnName }}{{- end }}) SELECT * FROM unnest({{- range $i, $f := $childFields }}{{if $i}}, {{end}}${{ add $i 1 }}::{{ pgArrayCast $f }}{{- end }})`,
+            {{- range $field := $childFields }}
+            arr_child_{{ $child.Table }}_{{ scanVarName $field }},
+            {{- end }}
+        )
+    }
+    {{- end }}
+
     return nil
 }
+
+{{- if .Schema.Children }}
+// FetchChildren populates child table data for the given objects.
+// Not called automatically — callers must opt in via NoSerializedStoreOpts.ChildFetcher.
+func FetchChildren(ctx context.Context, db postgres.DB, objs []*storeType) error {
+    if len(objs) == 0 {
+        return nil
+    }
+    {{- $schema := .Schema }}
+    {{- $singlePK := index $schema.PrimaryKeys 0 }}
+    objsByID := make(map[string]*storeType, len(objs))
+    ids := make([]string, 0, len(objs))
+    for _, obj := range objs {
+        id := pkGetter(obj)
+        objsByID[id] = obj
+        ids = append(ids, id)
+    }
+    {{- range $child := $schema.Children }}
+    {
+        rows, err := db.Query(ctx,
+            "SELECT {{- range $i, $f := $child.DBColumnFields }}{{if $i}}, {{end}}{{ $f.ColumnName }}{{- end }} FROM {{ $child.Table }} WHERE {{ (index $child.FieldsReferringToParent 0).ColumnName }} = ANY($1::{{ pgArrayCast $singlePK }}) ORDER BY {{ (index $child.FieldsReferringToParent 0).ColumnName }}, idx",
+            ids)
+        if err != nil {
+            return err
+        }
+        defer rows.Close()
+        for rows.Next() {
+            {{- range $field := $child.DBColumnFields }}
+            var {{ scanVarName $field }} {{ scanVarType $field }}
+            {{- end }}
+            if err := rows.Scan(
+                {{- range $field := $child.DBColumnFields }}
+                &{{ scanVarName $field }},
+                {{- end }}
+            ); err != nil {
+                return err
+            }
+            {{- $parentIDField := index $child.FieldsReferringToParent 0 }}
+            parent, ok := objsByID[{{ scanVarName $parentIDField }}]
+            if !ok {
+                continue
+            }
+            child := &{{ $child.Type | stripPointer }}{}
+            {{- range $field := $child.DBColumnFields }}
+            {{- if not $field.ObjectGetter.IsVariable }}
+            {{- $setter := fieldSetterExpr $field }}
+            {{- if $setter }}
+            {{- $childSetter := printf "child.%s" (joinPath (setterPath $field)) }}
+            {{- if needsTypeConversion $field }}
+            {{ $childSetter }} = {{ typeConversionExpr $field (scanVarName $field) }}
+            {{- else }}
+            {{ $childSetter }} = {{ scanVarName $field }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            parent.{{ getterToSetter $child.ObjectGetter }} = append(parent.{{ getterToSetter $child.ObjectGetter }}, child)
+        }
+        if err := rows.Err(); err != nil {
+            return err
+        }
+    }
+    {{- end }}
+    return nil
+}
+{{- end }}
 {{- end }}
 
 // endregion Helper functions
