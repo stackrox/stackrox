@@ -19,6 +19,16 @@ import { usePagination } from '../usePagination';
 import { useSort } from '../useSort';
 import { useCveList } from './useCveList';
 import type { ProtoCVEListItem } from './useCveList';
+import {
+    CVE_NAME_WIDTH,
+    SEVERITY_WIDTH,
+    CVSS_SCORE_WIDTH,
+    COUNT_WIDTH,
+    DATE_WIDTH,
+    TABLE_HEADER_STYLE,
+    TABLE_CELL_STYLE,
+    formatDate,
+} from '../utils/tableDefaults';
 
 const severityNames: Record<number, string> = {
     0: 'Unknown',
@@ -47,17 +57,6 @@ function severityLabel(severity: number): string {
 
 function formatCvss(cvss: number): string {
     return cvss ? cvss.toFixed(1) : '-';
-}
-
-function formatDate(dateStr: string | null): string {
-    if (!dateStr) {
-        return '-';
-    }
-    try {
-        return new Date(dateStr).toLocaleDateString();
-    } catch {
-        return dateStr;
-    }
 }
 
 // Column keys must match backend sortBy values. Non-sortable columns use empty string.
@@ -97,47 +96,47 @@ function CveListPage() {
                 )}
 
                 <Table aria-label="Vuln Management V5 CVE list" variant="compact">
-                    <Thead>
+                    <Thead style={{ borderBottom: '2px solid var(--pf-global--BorderColor--100)' }}>
                         <Tr>
-                            <Th {...getThSortProps(0)}>CVE</Th>
-                            <Th {...getThSortProps(1)} info={{ tooltip: 'Highest severity reported by any advisory for this CVE' }}>Top Severity</Th>
-                            <Th {...getThSortProps(2)} info={{ tooltip: 'Highest CVSS score reported by any advisory for this CVE' }}>Top CVSS</Th>
-                            <Th {...getThSortProps(3)} info={{ tooltip: 'Number of distinct images affected by this CVE' }}>Images</Th>
-                            <Th info={{ tooltip: 'Whether a fix is available from any advisory source' }}>Fixable</Th>
-                            <Th {...getThSortProps(5)}>First Seen</Th>
-                            <Th>Published</Th>
-                            <Th info={{ tooltip: 'EPSS: Exploit Prediction Scoring System probability' }}>EPSS</Th>
+                            <Th {...getThSortProps(0)} width={CVE_NAME_WIDTH} style={TABLE_HEADER_STYLE}>CVE</Th>
+                            <Th {...getThSortProps(1)} width={SEVERITY_WIDTH} style={TABLE_HEADER_STYLE} info={{ tooltip: 'Highest severity reported by any advisory for this CVE' }}>Top Severity</Th>
+                            <Th {...getThSortProps(2)} width={CVSS_SCORE_WIDTH} style={TABLE_HEADER_STYLE} info={{ tooltip: 'Highest CVSS score reported by any advisory for this CVE' }}>Top CVSS</Th>
+                            <Th {...getThSortProps(3)} width={COUNT_WIDTH} style={TABLE_HEADER_STYLE} info={{ tooltip: 'Number of distinct images affected by this CVE' }}>Images</Th>
+                            <Th width={COUNT_WIDTH} style={TABLE_HEADER_STYLE} info={{ tooltip: 'Whether a fix is available from any advisory source' }}>Fixable</Th>
+                            <Th {...getThSortProps(5)} width={DATE_WIDTH} style={TABLE_HEADER_STYLE}>First Seen</Th>
+                            <Th width={DATE_WIDTH} style={TABLE_HEADER_STYLE}>Published</Th>
+                            <Th width={COUNT_WIDTH} style={TABLE_HEADER_STYLE} info={{ tooltip: 'EPSS: Exploit Prediction Scoring System probability' }}>EPSS</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
                         {cves.map((cve) => (
                             <Tr key={cve.cveName}>
-                                <Td dataLabel="CVE">
+                                <Td dataLabel="CVE" style={TABLE_CELL_STYLE}>
                                     <Link
                                         to={`${vulnerabilitiesPrototypeCvePath}/${encodeURIComponent(cve.cveName)}`}
                                     >
                                         {cve.cveName}
                                     </Link>
                                 </Td>
-                                <Td dataLabel="Severity">
+                                <Td dataLabel="Severity" style={TABLE_CELL_STYLE}>
                                     <Label color={severityColor(cve.severity)}>
                                         {severityLabel(cve.severity)}
                                     </Label>
                                 </Td>
-                                <Td dataLabel="CVSS">
+                                <Td dataLabel="CVSS" style={TABLE_CELL_STYLE}>
                                     {formatCvss(cve.cvss)}
                                 </Td>
-                                <Td dataLabel="Images">{cve.imageCount}</Td>
-                                <Td dataLabel="Fixable">
+                                <Td dataLabel="Images" style={TABLE_CELL_STYLE}>{cve.imageCount}</Td>
+                                <Td dataLabel="Fixable" style={TABLE_CELL_STYLE}>
                                     {cve.fixable ? 'Yes' : 'No'}
                                 </Td>
-                                <Td dataLabel="First Seen">
+                                <Td dataLabel="First Seen" style={TABLE_CELL_STYLE}>
                                     {formatDate(cve.firstSeen)}
                                 </Td>
-                                <Td dataLabel="Published">
+                                <Td dataLabel="Published" style={TABLE_CELL_STYLE}>
                                     {formatDate(cve.publishedDate ?? null)}
                                 </Td>
-                                <Td dataLabel="EPSS">
+                                <Td dataLabel="EPSS" style={TABLE_CELL_STYLE}>
                                     {cve.epssProbability != null
                                         ? `${(cve.epssProbability * 100).toFixed(1)}%`
                                         : '-'}
