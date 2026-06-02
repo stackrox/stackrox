@@ -32,14 +32,7 @@ func (v *vmCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, error)
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	result, err := pgSearch.RunSelectOneForSchema[vmCVECoreCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
-	if err != nil {
-		return 0, err
-	}
-	if result == nil {
-		return 0, nil
-	}
-	return result.CVECount, nil
+	return pgSearch.RunDistinctCountForSchema(queryCtx, v.db, v.schema, q, search.CVE)
 }
 
 func (v *vmCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error) {
@@ -156,14 +149,7 @@ func (v *vmCVECoreViewImpl) CountAffectedVMs(ctx context.Context, q *v1.Query) (
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	result, err := pgSearch.RunSelectOneForSchema[affectedVMCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.VirtualMachineID))
-	if err != nil {
-		return 0, err
-	}
-	if result == nil {
-		return 0, nil
-	}
-	return result.VMCount, nil
+	return pgSearch.RunDistinctCountForSchema(queryCtx, v.db, v.schema, q, search.VirtualMachineID)
 }
 
 func (v *vmCVECoreViewImpl) GetAffectedVMs(ctx context.Context, q *v1.Query) ([]AffectedVMCore, error) {
