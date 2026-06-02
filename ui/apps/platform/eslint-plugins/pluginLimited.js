@@ -649,6 +649,42 @@ const rules = {
             };
         },
     },
+
+    'no-hardcoded-route-paths': {
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    "Route paths must use constants from 'routePaths' instead of hardcoded '/main/...' strings",
+            },
+            schema: [],
+        },
+        create(context) {
+            const routePathPattern = /\/main\//;
+
+            return {
+                Literal(node) {
+                    if (typeof node.value === 'string' && routePathPattern.test(node.value)) {
+                        context.report({
+                            node,
+                            message:
+                                "Import route paths from 'routePaths' instead of hardcoding '/main/...' strings.",
+                        });
+                    }
+                },
+                TemplateLiteral(node) {
+                    const firstQuasi = node.quasis[0];
+                    if (firstQuasi && routePathPattern.test(firstQuasi.value.raw)) {
+                        context.report({
+                            node,
+                            message:
+                                "Import route paths from 'routePaths' instead of hardcoding '/main/...' strings.",
+                        });
+                    }
+                },
+            };
+        },
+    },
 };
 
 // Use limited as key of pluginLimited in eslint.config.js file.

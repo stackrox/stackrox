@@ -38,6 +38,7 @@ import type { Role } from 'services/RolesService';
 import { getIsAuthProviderImmutable } from 'services/AuthService';
 import type { AuthProvider, AuthProviderInfo, Group } from 'services/AuthService';
 import { isUserResource } from 'utils/traits.utils';
+import { accessControlBasePath } from 'routePaths';
 
 import ConfigurationFormFields from './ConfigurationFormFields';
 import RuleGroups from './RuleGroups';
@@ -336,7 +337,7 @@ function AuthProviderForm({
                                 <ToolbarGroup variant="action-group">
                                     <ToolbarItem>
                                         <Link
-                                            to="/main/access-control/auth-providers"
+                                            to={`${accessControlBasePath}/auth-providers`}
                                             aria-current="page"
                                             className="pf-v6-u-font-size-sm"
                                         >

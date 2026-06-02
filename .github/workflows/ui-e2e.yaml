@@ -163,6 +163,40 @@ jobs:
           "
           echo "matrix-all=$(cat /tmp/matrix-all.json)" >> "$GITHUB_OUTPUT"
 
+  analyze-affected:
+    name: Affected test analysis
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+        with:
+          node-version-file: ui/package.json
+
+      - name: Install UI dependencies
+        working-directory: ui/apps/platform
+        run: npm ci --ignore-scripts
+
+      - name: Run affected test analyzer
+        working-directory: ui/apps/platform
+        run: |
+          MERGE_BASE=$(git merge-base origin/${{ github.event.pull_request.base.ref }} HEAD)
+          echo "Merge base: $MERGE_BASE"
+          echo "Changed files:"
+          git diff --name-only "$MERGE_BASE"...HEAD | grep '^ui/apps/platform/' | sed 's|^ui/apps/platform/||' || true
+          echo ""
+          echo "--- Affected test analysis ---"
+          node scripts/ci/ui-affected-tests.mjs --diff "$MERGE_BASE" --json 2>&1 | tee /tmp/affected.json
+          echo ""
+          echo "### Affected Test Analysis" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/affected.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
   kind-e2e:
     name: "${{ matrix.name }}"
     needs: setup-shards
