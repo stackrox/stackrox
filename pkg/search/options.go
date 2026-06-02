@@ -572,6 +572,11 @@ var (
 	TestEnum1Custom             = newDerivedFieldLabelWithType("Test String Affected By Enum1", TestEnum, CustomFieldType, postgres.Integer)
 	TestEnum2Custom             = newDerivedFieldLabelWithType("Test String Affected By Enum2", TestEnum, CustomFieldType, postgres.Integer)
 	TestInvalidEnumCustom       = newDerivedFieldLabelWithType("Invalid Test String Affected By Enum1", TestEnum, CustomFieldType, postgres.Integer)
+
+	// TestNoSerialized search fields
+	TestNSID      = newFieldLabel("Test NS ID")
+	TestNSName    = newFieldLabel("Test NS Name")
+	TestNSCreated = newFieldLabel("Test NS Created")
 )
 
 func init() {

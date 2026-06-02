@@ -139,6 +139,7 @@ func init() {
 		&storage.TestParent4{}:             resources.Namespace,
 		&storage.TestChild1P4{}:            resources.Namespace,
 		&storage.TestShortCircuit{}:        resources.Namespace,
+		&storage.TestNoSerializedObj{}:     resources.Namespace,
 	} {
 		typeRegistry[fmt.Sprintf("%T", s)] = string(r.GetResource())
 	}

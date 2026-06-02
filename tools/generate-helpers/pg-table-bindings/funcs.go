@@ -289,6 +289,8 @@ func unnestAppendExpr(f walker.Field) string {
 		return fmt.Sprintf("pgutils.MustMarshalRepeatedMessages(%s)", getter)
 	case f.DataType == postgres.DateTime || f.DataType == postgres.DateTimeTZ:
 		return fmt.Sprintf("protocompat.NilOrTime(%s)", getter)
+	case f.DataType == postgres.Enum:
+		return fmt.Sprintf("int32(%s)", getter)
 	case f.SQLType == "uuid":
 		return getter
 	case f.SQLType == "cidr":

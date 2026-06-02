@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+option cc_enable_arenas = true;
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// TestNoSerializedObj is a synthetic test entity used to validate the
+// --no-serialized store generation framework. It covers the full field
+// type matrix: scalars, enums, timestamps, UUIDs, nested messages,
+// repeated scalars, and repeated messages (inlined as bytea).
+// Next available tag: 14
+message TestNoSerializedObj {
+  string id = 1; // @gotags: search:"Test NS ID,hidden" sql:"pk,type(uuid)"
+  string name = 2; // @gotags: search:"Test NS Name"
+  int32 value_int32 = 3;
+  int64 value_int64 = 4;
+  uint32 value_uint32 = 5;
+  uint64 value_uint64 = 6;
+  bool value_bool = 7;
+  float value_float = 8;
+  TestNoSerializedEnum value_enum = 9;
+  google.protobuf.Timestamp created_at = 10; // @gotags: search:"Test NS Created"
+  TestNoSerializedNested nested = 11;
+  repeated string tags = 12;
+  repeated TestNoSerializedMetadata metadata = 13;
+}
+
+enum TestNoSerializedEnum {
+  TEST_NO_SERIALIZED_ENUM_UNKNOWN = 0;
+  TEST_NO_SERIALIZED_ENUM_ACTIVE = 1;
+  TEST_NO_SERIALIZED_ENUM_INACTIVE = 2;
+}
+
+message TestNoSerializedNested {
+  string label = 1;
+  int64 score = 2;
+}
+
+message TestNoSerializedMetadata {
+  string key = 1;
+  string value = 2;
+}
