@@ -767,9 +767,19 @@ jobs:
 
       - name: Declare win (post required check + cancel losers via fail-fast)
         if: success()
-        uses: ./.github/actions/speculative-run
-        with:
-          required-check-name: build-and-push-main (${{ matrix.name }}, ${{ matrix.arch }})
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          check_name="build-and-push-main (${{ matrix.name }}, ${{ matrix.arch }})"
+          echo "Winner: posting '${check_name}' as success"
+          gh api repos/${{ github.repository }}/check-runs \
+            -f name="${check_name}" \
+            -f head_sha="${{ github.sha }}" \
+            -f status=completed \
+            -f conclusion=success \
+            -f "output[title]=Speculative run complete" \
+            -f "output[summary]=Copy ${{ matrix.copy }} won the race."
+          exit 1
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
@@ -1130,9 +1140,19 @@ jobs:
 
       - name: Declare win (post required check + cancel losers via fail-fast)
         if: success()
-        uses: ./.github/actions/speculative-run
-        with:
-          required-check-name: build-and-push-scanner (${{ matrix.name }}, ${{ matrix.goos }}, ${{ matrix.arch }}, ${{ matrix.registry }})
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          check_name="build-and-push-scanner (${{ matrix.name }}, ${{ matrix.goos }}, ${{ matrix.arch }}, ${{ matrix.registry }})"
+          echo "Winner: posting '${check_name}' as success"
+          gh api repos/${{ github.repository }}/check-runs \
+            -f name="${check_name}" \
+            -f head_sha="${{ github.sha }}" \
+            -f status=completed \
+            -f conclusion=success \
+            -f "output[title]=Speculative run complete" \
+            -f "output[summary]=Copy ${{ matrix.copy }} won the race."
+          exit 1
 
   push-scanner-manifests:
     runs-on: ubuntu-latest
