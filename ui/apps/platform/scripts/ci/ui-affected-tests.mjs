@@ -14,7 +14,10 @@ const ROUTE_PATHS_FILE = resolve(ROOT, 'src/routePaths.ts');
 // Every RouteKey from Body.tsx MUST have an entry (validated at startup).
 // Every test spec in cypress/integration/ MUST be covered by at least one glob (validated at startup).
 const routeTestMap = {
-    'access-control': ['cypress/integration/accessControl/**', 'cypress/integration/access.test.js'],
+    'access-control': [
+        'cypress/integration/accessControl/**',
+        'cypress/integration/access.test.js',
+    ],
     'administration-events': ['cypress/integration/administration/events/**'],
     apidocs: [],
     'apidocs-v2': [],
@@ -23,9 +26,13 @@ const routeTestMap = {
     'clusters/delegated-image-scanning': ['cypress/integration/clusters/delegatedScanning.test.js'],
     'clusters/discovered-clusters': ['cypress/integration/clusters/discovered-clusters/**'],
     'clusters/init-bundles': ['cypress/integration/clusters/init-bundles/**'],
-    'clusters/cluster-registration-secrets': ['cypress/integration/clusters/cluster-registration-secrets/**'],
+    'clusters/cluster-registration-secrets': [
+        'cypress/integration/clusters/cluster-registration-secrets/**',
+    ],
     'clusters/secure-a-cluster': ['cypress/integration/clusters/init-bundles/**'],
-    'clusters/secure-a-cluster-crs': ['cypress/integration/clusters/cluster-registration-secrets/**'],
+    'clusters/secure-a-cluster-crs': [
+        'cypress/integration/clusters/cluster-registration-secrets/**',
+    ],
     collections: ['cypress/integration/collections/**'],
     compliance: ['cypress/integration/compliance/**'],
     'compliance-coverage': ['cypress/integration/compliance-enhanced/**'],
@@ -54,7 +61,9 @@ const routeTestMap = {
     'vulnerabilities/all-images': ['cypress/integration/vulnerabilities/workloadCves/**'],
     'vulnerabilities/inactive-images': ['cypress/integration/vulnerabilities/workloadCves/**'],
     'vulnerabilities/images-without-cves': ['cypress/integration/vulnerabilities/workloadCves/**'],
-    'vulnerabilities/virtual-machine-cves': ['cypress/integration/vulnerabilities/virtualMachineCves/**'],
+    'vulnerabilities/virtual-machine-cves': [
+        'cypress/integration/vulnerabilities/virtualMachineCves/**',
+    ],
     'vulnerabilities/reports': ['cypress/integration/vulnerabilities/VulnerabilityReporting/**'],
     'vulnerability-management': ['cypress/integration/vulnmanagement/**'],
 };
@@ -109,7 +118,9 @@ async function validateMappingCompleteness(routeKeys) {
 
     for (const spec of allTestSpecs) {
         if (!coveredSpecs.has(spec)) {
-            errors.push(`Test spec "${spec}" is not covered by any routeTestMap glob or sharedTestSpecs`);
+            errors.push(
+                `Test spec "${spec}" is not covered by any routeTestMap glob or sharedTestSpecs`
+            );
         }
     }
 
@@ -133,14 +144,16 @@ function parseRouteEntryPoints() {
     // Match routeComponentMap entries with both quoted and unquoted keys
     // e.g., 'access-control': { component: asyncComponent(() => import('...')), ... }
     //        clusters: { component: asyncComponent(() => import('...')), ... }
-    const mapRegex = /(?:['"]([^'"]+)['"]|([a-zA-Z]\w*))\s*:\s*\{[^}]*?asyncComponent\(\s*\(\)\s*=>\s*import\(\s*'([^']+)'\s*\)/g;
+    const mapRegex =
+        /(?:['"]([^'"]+)['"]|([a-zA-Z]\w*))\s*:\s*\{[^}]*?asyncComponent\(\s*\(\)\s*=>\s*import\(\s*'([^']+)'\s*\)/g;
     let match;
     while ((match = mapRegex.exec(body)) !== null) {
         entries.push({ routeKey: match[1] || match[2], importPath: match[3] });
     }
 
     // Match makeVulnMgmtUserWorkloadView entries (both quoted and unquoted keys)
-    const vulnViewRegex = /(?:['"]([^'"]+)['"]|([a-zA-Z]\w*))\s*:\s*\{[^}]*?makeVulnMgmtUserWorkloadView\(/g;
+    const vulnViewRegex =
+        /(?:['"]([^'"]+)['"]|([a-zA-Z]\w*))\s*:\s*\{[^}]*?makeVulnMgmtUserWorkloadView\(/g;
     while ((match = vulnViewRegex.exec(body)) !== null) {
         entries.push({
             routeKey: match[1] || match[2],
@@ -233,10 +246,17 @@ async function crawlModuleGraph(server, entrySpecifier, importer) {
         // Check if this module imports from routePaths
         try {
             const source = readFileSync(mod.file, 'utf-8');
-            const routePathImportRegex = /import\s*\{([^}]+)\}\s*from\s*['"](?:\.\.\/)*routePaths['"]/g;
+
+            const routePathImportRegex =
+                /import\s*\{([^}]+)\}\s*from\s*['"](?:\.\.\/)*routePaths['"]/g;
             let importMatch;
             while ((importMatch = routePathImportRegex.exec(source)) !== null) {
-                const names = importMatch[1].split(',').map((n) => n.trim().split(/\s+as\s+/)[0].trim());
+                const names = importMatch[1].split(',').map((n) =>
+                    n
+                        .trim()
+                        .split(/\s+as\s+/)[0]
+                        .trim()
+                );
                 for (const name of names) {
                     if (name) routePathImports.add(name);
                 }
@@ -262,7 +282,11 @@ async function expandGlobs(patterns) {
     for (const pattern of patterns) {
         const fullPattern = resolve(ROOT, pattern);
         for await (const file of glob(fullPattern)) {
-            if (file.endsWith('.test.js') || file.endsWith('.test.ts') || file.endsWith('.test.tsx')) {
+            if (
+                file.endsWith('.test.js') ||
+                file.endsWith('.test.ts') ||
+                file.endsWith('.test.tsx')
+            ) {
                 files.add(relative(ROOT, file));
             }
         }
@@ -315,13 +339,17 @@ async function main() {
     const flags = parseArgs();
 
     if (!flags.diff && flags.files.length === 0) {
-        console.error('Usage: node ui-affected-tests.mjs [--diff <ref>] [--json] [--verbose] [files...]');
+        console.error(
+            'Usage: node ui-affected-tests.mjs [--diff <ref>] [--json] [--verbose] [files...]'
+        );
         process.exit(1);
     }
 
     const changedFiles = getChangedFiles(flags);
     const changedSrcFiles = changedFiles.filter((f) => f.startsWith(resolve(ROOT, 'src/')));
-    const changedTestFiles = changedFiles.filter((f) => f.startsWith(resolve(ROOT, 'cypress/integration/')));
+    const changedTestFiles = changedFiles.filter((f) =>
+        f.startsWith(resolve(ROOT, 'cypress/integration/'))
+    );
     const changedConfigFiles = changedFiles.filter(
         (f) =>
             f.endsWith('vite.config.js') ||
@@ -333,14 +361,24 @@ async function main() {
 
     // Fast path: config file changes → run all tests
     if (changedConfigFiles.length > 0) {
-        const result = { affectedRoutes: {}, testSpecs: [], runAll: true, reason: `Config file changed: ${relative(ROOT, changedConfigFiles[0])}` };
+        const result = {
+            affectedRoutes: {},
+            testSpecs: [],
+            runAll: true,
+            reason: `Config file changed: ${relative(ROOT, changedConfigFiles[0])}`,
+        };
         outputResult(result, flags);
         return;
     }
 
     // No src files changed — just test files or non-UI files
     if (changedSrcFiles.length === 0 && changedTestFiles.length === 0) {
-        const result = { affectedRoutes: {}, testSpecs: [], runAll: false, reason: 'No UI source or test files changed' };
+        const result = {
+            affectedRoutes: {},
+            testSpecs: [],
+            runAll: false,
+            reason: 'No UI source or test files changed',
+        };
         outputResult(result, flags);
         return;
     }
@@ -353,7 +391,9 @@ async function main() {
 
     if (flags.verbose) {
         console.error(`Parsed ${entries.length} route entry points from Body.tsx`);
-        console.error(`Mapped ${Object.keys(pathConstToRoute).length} path constants to route keys`);
+        console.error(
+            `Mapped ${Object.keys(pathConstToRoute).length} path constants to route keys`
+        );
     }
 
     // Start Vite server in middleware mode for module graph analysis
@@ -371,9 +411,16 @@ async function main() {
 
         for (const { routeKey, importPath } of entries) {
             if (flags.verbose) console.error(`  Crawling: ${routeKey} (${importPath})`);
-            const { files, routePathImports } = await crawlModuleGraph(server, importPath, BODY_PATH);
+            const { files, routePathImports } = await crawlModuleGraph(
+                server,
+                importPath,
+                BODY_PATH
+            );
             routeDepGraph.set(routeKey, { files, routePathImports });
-            if (flags.verbose) console.error(`    → ${files.size} files, ${routePathImports.size} routePath imports`);
+            if (flags.verbose)
+                console.error(
+                    `    → ${files.size} files, ${routePathImports.size} routePath imports`
+                );
         }
 
         // Build route adjacency: routeKey → Set<routeKey> (routes it links to)
@@ -445,7 +492,9 @@ async function main() {
 
         // Also include directly changed test files
         const directTestFiles = changedTestFiles
-            .filter((f) => f.endsWith('.test.js') || f.endsWith('.test.ts') || f.endsWith('.test.tsx'))
+            .filter(
+                (f) => f.endsWith('.test.js') || f.endsWith('.test.ts') || f.endsWith('.test.tsx')
+            )
             .map((f) => relative(ROOT, f));
 
         const expandedSpecs = await expandGlobs([...allTestGlobs]);
