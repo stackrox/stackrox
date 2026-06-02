@@ -11,6 +11,7 @@ export type ProtoAdvisoryListItem = {
     description: string;
     fixedBy?: string;
     imageCount: number;
+    componentCount: number;
     link: string;
 };
 

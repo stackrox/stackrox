@@ -695,20 +695,22 @@ func (s *storeImpl) ListAdvisories(ctx context.Context, limit, offset int) ([]*t
 		// Get paginated results
 		query := fmt.Sprintf(`
 			SELECT
-				advisoryid,
-				MAX(cvename) as cvename,
-				MAX(severity)::int as severity,
-				MAX(cvss) as cvss,
-				MAX(sourcename) as sourcename,
-				MAX(description) as description,
-				MAX(fixedby) as fixedby,
-				COUNT(DISTINCT imageid) as image_count
-			FROM %s
-			WHERE state = 0
-			GROUP BY advisoryid
-			ORDER BY MAX(severity) DESC, MAX(cvss) DESC
+				f.advisoryid,
+				MAX(f.cvename) as cvename,
+				MAX(f.severity)::int as severity,
+				MAX(f.cvss) as cvss,
+				MAX(f.sourcename) as sourcename,
+				MAX(f.description) as description,
+				MAX(f.fixedby) as fixedby,
+				COUNT(DISTINCT f.imageid) as image_count,
+				COUNT(DISTINCT c.name || '##' || c.version) as component_count
+			FROM %s f
+			JOIN %s c ON f.componentid = c.id
+			WHERE f.state = 0
+			GROUP BY f.advisoryid
+			ORDER BY MAX(f.severity) DESC, MAX(f.cvss) DESC
 			LIMIT $1 OFFSET $2
-		`, findingsTable)
+		`, findingsTable, componentsTable)
 
 		rows, err := s.db.Query(ctx, query, limit, offset)
 		if err != nil {
@@ -728,6 +730,7 @@ func (s *storeImpl) ListAdvisories(ctx context.Context, limit, offset int) ([]*t
 				&row.Description,
 				&row.FixedBy,
 				&row.ImageCount,
+				&row.ComponentCount,
 			); err != nil {
 				return nil, errors.Wrap(err, "scanning advisory row")
 			}

@@ -66,14 +66,15 @@ type DeploymentImageRow struct {
 
 // AdvisoryListRow represents one advisory in the advisory list page.
 type AdvisoryListRow struct {
-	AdvisoryID  string
-	CVEName     string
-	Severity    int32
-	CVSS        float32
-	SourceName  string
-	Description string
-	FixedBy     string
-	ImageCount  int
+	AdvisoryID     string
+	CVEName        string
+	Severity       int32
+	CVSS           float32
+	SourceName     string
+	Description    string
+	FixedBy        string
+	ImageCount     int
+	ComponentCount int
 }
 
 // ComponentListRow represents one row in the component list page.

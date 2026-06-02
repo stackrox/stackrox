@@ -87,8 +87,9 @@ function AdvisoryListPage() {
                             <Th>Severity</Th>
                             <Th>CVSS</Th>
                             <Th>Source</Th>
-                            <Th>Description</Th>
+                            <Th width={20}>Description</Th>
                             <Th>Fix Available</Th>
+                            <Th>Components</Th>
                             <Th>Images</Th>
                         </Tr>
                     </Thead>
@@ -134,12 +135,15 @@ function AdvisoryListPage() {
                                 <Td dataLabel="Fix Available">
                                     {adv.fixedBy ? 'Yes' : 'No'}
                                 </Td>
+                                <Td dataLabel="Components">
+                                    {adv.componentCount}
+                                </Td>
                                 <Td dataLabel="Images">{adv.imageCount}</Td>
                             </Tr>
                         ))}
                         {!loading && advisories.length === 0 && (
                             <Tr>
-                                <Td colSpan={8}>
+                                <Td colSpan={9}>
                                     <Bullseye>No advisories found</Bullseye>
                                 </Td>
                             </Tr>

@@ -226,15 +226,16 @@ type AdvisoryListResponse struct {
 
 // AdvisoryListItem represents one advisory in the list
 type AdvisoryListItem struct {
-	AdvisoryID  string  `json:"advisoryId"`
-	CVEName     string  `json:"cveName"`
-	Severity    int32   `json:"severity"`
-	CVSS        float32 `json:"cvss"`
-	SourceName  string  `json:"sourceName"`
-	Description string  `json:"description"`
-	FixedBy     string  `json:"fixedBy,omitempty"`
-	ImageCount  int     `json:"imageCount"`
-	Link        string  `json:"link"`
+	AdvisoryID     string  `json:"advisoryId"`
+	CVEName        string  `json:"cveName"`
+	Severity       int32   `json:"severity"`
+	CVSS           float32 `json:"cvss"`
+	SourceName     string  `json:"sourceName"`
+	Description    string  `json:"description"`
+	FixedBy        string  `json:"fixedBy,omitempty"`
+	ImageCount     int     `json:"imageCount"`
+	ComponentCount int     `json:"componentCount"`
+	Link           string  `json:"link"`
 }
 
 // ImageListResponse is the response for GET /v1/scandata/images
@@ -984,15 +985,16 @@ func (h *handler) listAdvisories(w http.ResponseWriter, r *http.Request) {
 	items := make([]AdvisoryListItem, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, AdvisoryListItem{
-			AdvisoryID:  row.AdvisoryID,
-			CVEName:     row.CVEName,
-			Severity:    row.Severity,
-			CVSS:        row.CVSS,
-			SourceName:  row.SourceName,
-			Description: row.Description,
-			FixedBy:     row.FixedBy,
-			ImageCount:  row.ImageCount,
-			Link:        advisoryLink(row.AdvisoryID),
+			AdvisoryID:     row.AdvisoryID,
+			CVEName:        row.CVEName,
+			Severity:       row.Severity,
+			CVSS:           row.CVSS,
+			SourceName:     row.SourceName,
+			Description:    row.Description,
+			FixedBy:        row.FixedBy,
+			ImageCount:     row.ImageCount,
+			ComponentCount: row.ComponentCount,
+			Link:           advisoryLink(row.AdvisoryID),
 		})
 	}
 
