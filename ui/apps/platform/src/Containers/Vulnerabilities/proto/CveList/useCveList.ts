@@ -21,7 +21,12 @@ type CveListResponse = {
 /**
  * Fetches the prototype CVE list from the REST API.
  */
-export function useCveList(limit = 50, offset = 0) {
+export function useCveList(
+    limit = 50,
+    offset = 0,
+    sortBy = 'severity',
+    sortDir = 'desc'
+) {
     const [data, setData] = useState<CveListResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -30,7 +35,7 @@ export function useCveList(limit = 50, offset = 0) {
         setLoading(true);
         axios
             .get<CveListResponse>(
-                `/v1/scandata/cves?limit=${limit}&offset=${offset}`
+                `/v1/scandata/cves?limit=${limit}&offset=${offset}&sortBy=${sortBy}&sortDir=${sortDir}`
             )
             .then((res) => {
                 setData(res.data);
@@ -38,7 +43,7 @@ export function useCveList(limit = 50, offset = 0) {
             })
             .catch((err: Error) => setError(err))
             .finally(() => setLoading(false));
-    }, [limit, offset]);
+    }, [limit, offset, sortBy, sortDir]);
 
     return { data, loading, error };
 }

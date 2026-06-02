@@ -23,7 +23,12 @@ type ComponentListResponse = {
 /**
  * Fetches the prototype component list from the REST API.
  */
-export function useComponentList(limit = 50, offset = 0) {
+export function useComponentList(
+    limit = 50,
+    offset = 0,
+    sortBy = 'severity',
+    sortDir = 'desc'
+) {
     const [data, setData] = useState<ComponentListResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -32,7 +37,7 @@ export function useComponentList(limit = 50, offset = 0) {
         setLoading(true);
         axios
             .get<ComponentListResponse>(
-                `/v1/scandata/components?limit=${limit}&offset=${offset}`
+                `/v1/scandata/components?limit=${limit}&offset=${offset}&sortBy=${sortBy}&sortDir=${sortDir}`
             )
             .then((res) => {
                 setData(res.data);
@@ -40,7 +45,7 @@ export function useComponentList(limit = 50, offset = 0) {
             })
             .catch((err: Error) => setError(err))
             .finally(() => setLoading(false));
-    }, [limit, offset]);
+    }, [limit, offset, sortBy, sortDir]);
 
     return { data, loading, error };
 }

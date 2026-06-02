@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom-v5-compat';
 import {
     Bullseye,
     Label,
+    Pagination,
     PageSection,
     Spinner,
     Title,
@@ -14,6 +15,8 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { vulnerabilitiesPrototypePath } from 'routePaths';
 
 import ProtoNav from '../ProtoNav';
+import { usePagination } from '../usePagination';
+import { useSort } from '../useSort';
 import { useImageList } from './useImageList';
 import type { ProtoImageListItem } from './useImageList';
 
@@ -114,8 +117,13 @@ function formatScanTime(scanTime: string | null): string {
     }
 }
 
+// Column keys: non-sortable columns use empty string.
+const imageSortColumns = ['', '', 'cveCount', 'componentCount', 'severity', '', ''];
+
 function ImageListPage() {
-    const { data, loading, error } = useImageList(50, 0);
+    const { sortBy, sortDir, getThSortProps } = useSort(imageSortColumns, 4);
+    const { page, perPage, offset, onSetPage, onPerPageSelect } = usePagination(20);
+    const { data, loading, error } = useImageList(perPage, offset, sortBy, sortDir);
 
     const images: ProtoImageListItem[] = data?.images ?? [];
     const totalCount = data?.totalCount ?? 0;
@@ -150,9 +158,9 @@ function ImageListPage() {
                         <Tr>
                             <Th>Image</Th>
                             <Th>OS</Th>
-                            <Th info={{ tooltip: 'CVE counts by severity: Critical, Important, Moderate, Low' }}>CVEs</Th>
-                            <Th>Components</Th>
-                            <Th>Top Severity</Th>
+                            <Th {...getThSortProps(2)} info={{ tooltip: 'CVE counts by severity: Critical, Important, Moderate, Low' }}>CVEs</Th>
+                            <Th {...getThSortProps(3)}>Components</Th>
+                            <Th {...getThSortProps(4)}>Top Severity</Th>
                             <Th>Fixable</Th>
                             <Th>Scan Time</Th>
                         </Tr>
@@ -194,6 +202,13 @@ function ImageListPage() {
                         )}
                     </Tbody>
                 </Table>
+                <Pagination
+                    itemCount={totalCount}
+                    perPage={perPage}
+                    page={page}
+                    onSetPage={onSetPage}
+                    onPerPageSelect={onPerPageSelect}
+                />
             </PageSection>
         </>
     );

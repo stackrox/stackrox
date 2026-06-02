@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom-v5-compat';
 import {
     Bullseye,
     Label,
+    Pagination,
     PageSection,
     Spinner,
     Title,
@@ -14,6 +15,8 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { vulnerabilitiesPrototypeComponentsPath } from 'routePaths';
 
 import ProtoNav from '../ProtoNav';
+import { usePagination } from '../usePagination';
+import { useSort } from '../useSort';
 import { useComponentList } from './useComponentList';
 import type { ProtoComponentListItem } from './useComponentList';
 
@@ -91,8 +94,13 @@ function SeverityBreakdown({ component }: { component: ProtoComponentListItem })
     );
 }
 
+// Column keys: name, versions (not sortable), cveCount, imageCount, severity, topCvss (not sortable)
+const compSortColumns = ['name', '', 'cveCount', 'imageCount', 'severity', ''];
+
 function ComponentListPage() {
-    const { data, loading, error } = useComponentList(50, 0);
+    const { sortBy, sortDir, getThSortProps } = useSort(compSortColumns, 4);
+    const { page, perPage, offset, onSetPage, onPerPageSelect } = usePagination(20);
+    const { data, loading, error } = useComponentList(perPage, offset, sortBy, sortDir);
 
     const components: ProtoComponentListItem[] = data?.components ?? [];
     const totalCount = data?.totalCount ?? 0;
@@ -125,11 +133,11 @@ function ComponentListPage() {
                 <Table aria-label="Vuln Management V5 component list" variant="compact">
                     <Thead>
                         <Tr>
-                            <Th>Component</Th>
+                            <Th {...getThSortProps(0)}>Component</Th>
                             <Th>Versions</Th>
-                            <Th info={{ tooltip: 'CVE counts by severity: Critical, Important, Moderate, Low' }}>CVEs</Th>
-                            <Th>Images</Th>
-                            <Th>Top Severity</Th>
+                            <Th {...getThSortProps(2)} info={{ tooltip: 'CVE counts by severity: Critical, Important, Moderate, Low' }}>CVEs</Th>
+                            <Th {...getThSortProps(3)}>Images</Th>
+                            <Th {...getThSortProps(4)}>Top Severity</Th>
                             <Th>Top CVSS</Th>
                         </Tr>
                     </Thead>
@@ -167,6 +175,13 @@ function ComponentListPage() {
                         )}
                     </Tbody>
                 </Table>
+                <Pagination
+                    itemCount={totalCount}
+                    perPage={perPage}
+                    page={page}
+                    onSetPage={onSetPage}
+                    onPerPageSelect={onPerPageSelect}
+                />
             </PageSection>
         </>
     );

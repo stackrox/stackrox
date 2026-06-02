@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom-v5-compat';
 import {
     Bullseye,
     Label,
+    Pagination,
     PageSection,
     Spinner,
     Title,
@@ -16,6 +17,8 @@ import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 import { vulnerabilitiesPrototypeCvePath } from 'routePaths';
 
 import ProtoNav from '../ProtoNav';
+import { usePagination } from '../usePagination';
+import { useSort } from '../useSort';
 import { useAdvisoryList } from './useAdvisoryList';
 import type { ProtoAdvisoryListItem } from './useAdvisoryList';
 
@@ -48,8 +51,14 @@ function formatCvss(cvss: number): string {
     return cvss ? cvss.toFixed(1) : '-';
 }
 
+// Column keys: advisoryId, cve (not sortable), severity, cvss, source (not sortable),
+// description (not sortable), fixAvail (not sortable), components (not sortable), imageCount
+const advSortColumns = ['advisoryId', '', 'severity', 'cvss', '', '', '', '', 'imageCount'];
+
 function AdvisoryListPage() {
-    const { data, loading, error } = useAdvisoryList(100, 0);
+    const { sortBy, sortDir, getThSortProps } = useSort(advSortColumns, 2);
+    const { page, perPage, offset, onSetPage, onPerPageSelect } = usePagination(20);
+    const { data, loading, error } = useAdvisoryList(perPage, offset, sortBy, sortDir);
 
     const advisories: ProtoAdvisoryListItem[] = data?.advisories ?? [];
     const totalCount = data?.totalCount ?? 0;
@@ -82,15 +91,15 @@ function AdvisoryListPage() {
                 <Table aria-label="Vuln Management V5 advisory list" variant="compact">
                     <Thead>
                         <Tr>
-                            <Th>Advisory ID</Th>
+                            <Th {...getThSortProps(0)}>Advisory ID</Th>
                             <Th>CVE</Th>
-                            <Th>Severity</Th>
-                            <Th>CVSS</Th>
+                            <Th {...getThSortProps(2)}>Severity</Th>
+                            <Th {...getThSortProps(3)}>CVSS</Th>
                             <Th>Source</Th>
                             <Th width={20}>Description</Th>
                             <Th>Fix Available</Th>
                             <Th>Components</Th>
-                            <Th>Images</Th>
+                            <Th {...getThSortProps(8)}>Images</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
@@ -150,6 +159,13 @@ function AdvisoryListPage() {
                         )}
                     </Tbody>
                 </Table>
+                <Pagination
+                    itemCount={totalCount}
+                    perPage={perPage}
+                    page={page}
+                    onSetPage={onSetPage}
+                    onPerPageSelect={onPerPageSelect}
+                />
             </PageSection>
         </>
     );

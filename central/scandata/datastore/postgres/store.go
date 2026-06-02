@@ -335,8 +335,24 @@ func (s *storeImpl) DeleteByImageID(ctx context.Context, imageID string) error {
 	})
 }
 
+// sortClause builds a safe ORDER BY clause from user-supplied sort parameters.
+// validSorts maps API sort keys to SQL column expressions. defaultSort is the
+// SQL expression used when sortBy is not in validSorts.
+func sortClause(sortBy, sortDir string, validSorts map[string]string, defaultSort string) string {
+	col, ok := validSorts[sortBy]
+	if !ok {
+		col = defaultSort
+	}
+	if sortDir != "asc" {
+		sortDir = "DESC"
+	} else {
+		sortDir = "ASC"
+	}
+	return fmt.Sprintf("ORDER BY %s %s", col, sortDir)
+}
+
 // ListCVEs returns the CVE list page data with GROUP BY aggregation
-func (s *storeImpl) ListCVEs(ctx context.Context, limit, offset int) ([]*types.CVEListRow, int, error) {
+func (s *storeImpl) ListCVEs(ctx context.Context, limit, offset int, sortBy, sortDir string) ([]*types.CVEListRow, int, error) {
 	type result struct {
 		rows  []*types.CVEListRow
 		total int
@@ -355,6 +371,15 @@ func (s *storeImpl) ListCVEs(ctx context.Context, limit, offset int) ([]*types.C
 		}
 
 		// Get paginated results
+		cveSorts := map[string]string{
+			"severity":   "MAX(severity)",
+			"cvss":       "MAX(cvss)",
+			"imageCount": "COUNT(DISTINCT imageid)",
+			"cveName":    "cvename",
+			"firstSeen":  "MIN(firstsystemoccurrence)",
+		}
+		orderBy := sortClause(sortBy, sortDir, cveSorts, "MAX(severity)")
+
 		query := fmt.Sprintf(`
 			SELECT cvename,
 			       MAX(severity)::int as severity,
@@ -367,9 +392,9 @@ func (s *storeImpl) ListCVEs(ctx context.Context, limit, offset int) ([]*types.C
 			FROM %s
 			WHERE state = 0
 			GROUP BY cvename
-			ORDER BY MAX(severity) DESC, MAX(cvss) DESC
+			%s
 			LIMIT $1 OFFSET $2
-		`, findingsTable)
+		`, findingsTable, orderBy)
 
 		rows, err := s.db.Query(ctx, query, limit, offset)
 		if err != nil {
@@ -543,7 +568,7 @@ func (s *storeImpl) GetImageInfoByDigests(ctx context.Context, digests []string)
 }
 
 // ListDeployments returns deployments with their CVE counts and severity.
-func (s *storeImpl) ListDeployments(ctx context.Context, limit, offset int) ([]*types.DeploymentListRow, int, error) {
+func (s *storeImpl) ListDeployments(ctx context.Context, limit, offset int, sortBy, sortDir string) ([]*types.DeploymentListRow, int, error) {
 	type result struct {
 		rows  []*types.DeploymentListRow
 		total int
@@ -564,6 +589,13 @@ func (s *storeImpl) ListDeployments(ctx context.Context, limit, offset int) ([]*
 		}
 
 		// Get paginated results with cluster name
+		depSorts := map[string]string{
+			"severity": "MAX(f.severity)",
+			"cveCount": "COUNT(DISTINCT f.cvename)",
+			"name":     "d.name",
+		}
+		orderBy := sortClause(sortBy, sortDir, depSorts, "MAX(f.severity)")
+
 		query := fmt.Sprintf(`
 			SELECT
 				d.id,
@@ -581,9 +613,9 @@ func (s *storeImpl) ListDeployments(ctx context.Context, limit, offset int) ([]*
 			LEFT JOIN %s c ON d.clusterid = c.id
 			WHERE f.state = 0
 			GROUP BY d.id, d.name, d.clusterid, c.name, d.namespace
-			ORDER BY MAX(f.severity) DESC, COUNT(DISTINCT f.cvename) DESC
+			%s
 			LIMIT $1 OFFSET $2
-		`, deploymentsTable, deploymentsContainers, findingsTable, clustersTable)
+		`, deploymentsTable, deploymentsContainers, findingsTable, clustersTable, orderBy)
 
 		rows, err := s.db.Query(ctx, query, limit, offset)
 		if err != nil {
@@ -674,7 +706,7 @@ func (s *storeImpl) GetDeploymentImages(ctx context.Context, deploymentID string
 }
 
 // ListAdvisories returns distinct advisories with image counts.
-func (s *storeImpl) ListAdvisories(ctx context.Context, limit, offset int) ([]*types.AdvisoryListRow, int, error) {
+func (s *storeImpl) ListAdvisories(ctx context.Context, limit, offset int, sortBy, sortDir string) ([]*types.AdvisoryListRow, int, error) {
 	type result struct {
 		rows  []*types.AdvisoryListRow
 		total int
@@ -693,6 +725,14 @@ func (s *storeImpl) ListAdvisories(ctx context.Context, limit, offset int) ([]*t
 		}
 
 		// Get paginated results
+		advSorts := map[string]string{
+			"severity":   "MAX(f.severity)",
+			"cvss":       "MAX(f.cvss)",
+			"imageCount": "COUNT(DISTINCT f.imageid)",
+			"advisoryId": "f.advisoryid",
+		}
+		orderBy := sortClause(sortBy, sortDir, advSorts, "MAX(f.severity)")
+
 		query := fmt.Sprintf(`
 			SELECT
 				f.advisoryid,
@@ -708,9 +748,9 @@ func (s *storeImpl) ListAdvisories(ctx context.Context, limit, offset int) ([]*t
 			JOIN %s c ON f.componentid = c.id
 			WHERE f.state = 0
 			GROUP BY f.advisoryid
-			ORDER BY MAX(f.severity) DESC, MAX(f.cvss) DESC
+			%s
 			LIMIT $1 OFFSET $2
-		`, findingsTable, componentsTable)
+		`, findingsTable, componentsTable, orderBy)
 
 		rows, err := s.db.Query(ctx, query, limit, offset)
 		if err != nil {
@@ -786,7 +826,7 @@ func (s *storeImpl) GetDeploymentByID(ctx context.Context, deploymentID string) 
 }
 
 // ListComponents returns distinct components with CVE severity breakdown.
-func (s *storeImpl) ListComponents(ctx context.Context, limit, offset int) ([]*types.ComponentListRow, int, error) {
+func (s *storeImpl) ListComponents(ctx context.Context, limit, offset int, sortBy, sortDir string) ([]*types.ComponentListRow, int, error) {
 	type result struct {
 		rows  []*types.ComponentListRow
 		total int
@@ -806,6 +846,14 @@ func (s *storeImpl) ListComponents(ctx context.Context, limit, offset int) ([]*t
 		}
 
 		// Get paginated results
+		compSorts := map[string]string{
+			"severity":   "MAX(f.severity)",
+			"cveCount":   "COUNT(DISTINCT f.cvename)",
+			"imageCount": "COUNT(DISTINCT f.imageid)",
+			"name":       "c.name",
+		}
+		orderBy := sortClause(sortBy, sortDir, compSorts, "MAX(f.severity)")
+
 		query := fmt.Sprintf(`
 			SELECT
 				c.name,
@@ -822,9 +870,9 @@ func (s *storeImpl) ListComponents(ctx context.Context, limit, offset int) ([]*t
 			JOIN %s f ON c.id = f.componentid
 			WHERE f.state = 0
 			GROUP BY c.name
-			ORDER BY MAX(f.severity) DESC, COUNT(DISTINCT f.cvename) DESC
+			%s
 			LIMIT $1 OFFSET $2
-		`, componentsTable, findingsTable)
+		`, componentsTable, findingsTable, orderBy)
 
 		rows, err := s.db.Query(ctx, query, limit, offset)
 		if err != nil {
@@ -973,7 +1021,7 @@ func (s *storeImpl) GetComponentImages(ctx context.Context, componentName string
 }
 
 // ListImages returns images with CVE summary data.
-func (s *storeImpl) ListImages(ctx context.Context, limit, offset int) ([]*types.ImageListRow, int, error) {
+func (s *storeImpl) ListImages(ctx context.Context, limit, offset int, sortBy, sortDir string) ([]*types.ImageListRow, int, error) {
 	type result struct {
 		rows  []*types.ImageListRow
 		total int
@@ -993,6 +1041,13 @@ func (s *storeImpl) ListImages(ctx context.Context, limit, offset int) ([]*types
 		}
 
 		// Get paginated results
+		imgSorts := map[string]string{
+			"severity":       "MAX(f.severity)",
+			"cveCount":       "COUNT(DISTINCT f.cvename)",
+			"componentCount": "COUNT(DISTINCT c.id)",
+		}
+		orderBy := sortClause(sortBy, sortDir, imgSorts, "MAX(f.severity)")
+
 		query := fmt.Sprintf(`
 			SELECT
 				s.imageid,
@@ -1011,9 +1066,9 @@ func (s *storeImpl) ListImages(ctx context.Context, limit, offset int) ([]*types
 			JOIN %s f ON c.id = f.componentid
 			WHERE f.state = 0
 			GROUP BY s.imageid, s.scantime
-			ORDER BY MAX(f.severity) DESC, COUNT(DISTINCT f.cvename) DESC
+			%s
 			LIMIT $1 OFFSET $2
-		`, imageScanV2Table, componentsTable, findingsTable)
+		`, imageScanV2Table, componentsTable, findingsTable, orderBy)
 
 		rows, err := s.db.Query(ctx, query, limit, offset)
 		if err != nil {

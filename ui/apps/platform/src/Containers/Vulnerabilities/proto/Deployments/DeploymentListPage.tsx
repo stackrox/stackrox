@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom-v5-compat';
 import {
     Bullseye,
     Label,
+    Pagination,
     PageSection,
     Spinner,
     Toolbar,
@@ -14,6 +15,8 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { vulnerabilitiesPrototypeDeploymentsPath } from 'routePaths';
 
 import ProtoNav from '../ProtoNav';
+import { usePagination } from '../usePagination';
+import { useSort } from '../useSort';
 import { useDeploymentList } from './useDeploymentList';
 import type { ProtoDeploymentListItem } from './useDeploymentList';
 
@@ -42,8 +45,14 @@ function severityLabel(severity: number): string {
     return severityNames[severity] ?? 'Unknown';
 }
 
+// Column keys: name, cluster (not sortable), namespace (not sortable), images (not sortable),
+// cveCount, severity, fixable (not sortable)
+const depSortColumns = ['name', '', '', '', 'cveCount', 'severity', ''];
+
 function DeploymentListPage() {
-    const { data, loading, error } = useDeploymentList(50, 0);
+    const { sortBy, sortDir, getThSortProps } = useSort(depSortColumns, 5);
+    const { page, perPage, offset, onSetPage, onPerPageSelect } = usePagination(20);
+    const { data, loading, error } = useDeploymentList(perPage, offset, sortBy, sortDir);
 
     const deployments: ProtoDeploymentListItem[] = data?.deployments ?? [];
     const totalCount = data?.totalCount ?? 0;
@@ -76,12 +85,12 @@ function DeploymentListPage() {
                 <Table aria-label="Vuln Management V5 deployment list" variant="compact">
                     <Thead>
                         <Tr>
-                            <Th>Deployment</Th>
+                            <Th {...getThSortProps(0)}>Deployment</Th>
                             <Th>Cluster</Th>
                             <Th>Namespace</Th>
                             <Th>Images</Th>
-                            <Th>CVEs</Th>
-                            <Th>Top Severity</Th>
+                            <Th {...getThSortProps(4)}>CVEs</Th>
+                            <Th {...getThSortProps(5)}>Top Severity</Th>
                             <Th>Fixable</Th>
                         </Tr>
                     </Thead>
@@ -118,6 +127,13 @@ function DeploymentListPage() {
                         )}
                     </Tbody>
                 </Table>
+                <Pagination
+                    itemCount={totalCount}
+                    perPage={perPage}
+                    page={page}
+                    onSetPage={onSetPage}
+                    onPerPageSelect={onPerPageSelect}
+                />
             </PageSection>
         </>
     );

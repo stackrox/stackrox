@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom-v5-compat';
 import {
     Bullseye,
     Label,
+    Pagination,
     PageSection,
     Spinner,
     Title,
@@ -14,6 +15,8 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { vulnerabilitiesPrototypeCvePath } from 'routePaths';
 
 import ProtoNav from '../ProtoNav';
+import { usePagination } from '../usePagination';
+import { useSort } from '../useSort';
 import { useCveList } from './useCveList';
 import type { ProtoCVEListItem } from './useCveList';
 
@@ -57,8 +60,13 @@ function formatDate(dateStr: string | null): string {
     }
 }
 
+// Column keys must match backend sortBy values. Non-sortable columns use empty string.
+const cveSortColumns = ['cveName', 'severity', 'cvss', 'imageCount', '', 'firstSeen', '', ''];
+
 function CveListPage() {
-    const { data, loading, error } = useCveList(100, 0);
+    const { sortBy, sortDir, getThSortProps } = useSort(cveSortColumns, 1);
+    const { page, perPage, offset, onSetPage, onPerPageSelect } = usePagination(20);
+    const { data, loading, error } = useCveList(perPage, offset, sortBy, sortDir);
 
     const cves: ProtoCVEListItem[] = data?.cves ?? [];
     const totalCount = data?.totalCount ?? 0;
@@ -91,12 +99,12 @@ function CveListPage() {
                 <Table aria-label="Vuln Management V5 CVE list" variant="compact">
                     <Thead>
                         <Tr>
-                            <Th>CVE</Th>
-                            <Th info={{ tooltip: 'Highest severity reported by any advisory for this CVE' }}>Top Severity</Th>
-                            <Th info={{ tooltip: 'Highest CVSS score reported by any advisory for this CVE' }}>Top CVSS</Th>
-                            <Th info={{ tooltip: 'Number of distinct images affected by this CVE' }}>Images</Th>
+                            <Th {...getThSortProps(0)}>CVE</Th>
+                            <Th {...getThSortProps(1)} info={{ tooltip: 'Highest severity reported by any advisory for this CVE' }}>Top Severity</Th>
+                            <Th {...getThSortProps(2)} info={{ tooltip: 'Highest CVSS score reported by any advisory for this CVE' }}>Top CVSS</Th>
+                            <Th {...getThSortProps(3)} info={{ tooltip: 'Number of distinct images affected by this CVE' }}>Images</Th>
                             <Th info={{ tooltip: 'Whether a fix is available from any advisory source' }}>Fixable</Th>
-                            <Th>First Seen</Th>
+                            <Th {...getThSortProps(5)}>First Seen</Th>
                             <Th>Published</Th>
                             <Th info={{ tooltip: 'EPSS: Exploit Prediction Scoring System probability' }}>EPSS</Th>
                         </Tr>
@@ -145,6 +153,13 @@ function CveListPage() {
                         )}
                     </Tbody>
                 </Table>
+                <Pagination
+                    itemCount={totalCount}
+                    perPage={perPage}
+                    page={page}
+                    onSetPage={onSetPage}
+                    onPerPageSelect={onPerPageSelect}
+                />
             </PageSection>
         </>
     );

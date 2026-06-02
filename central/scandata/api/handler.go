@@ -356,8 +356,11 @@ func (h *handler) listCVEs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sortBy := r.URL.Query().Get("sortBy")
+	sortDir := r.URL.Query().Get("sortDir")
+
 	// Query data
-	rows, total, err := h.datastore.ListCVEs(ctx, limit, offset)
+	rows, total, err := h.datastore.ListCVEs(ctx, limit, offset, sortBy, sortDir)
 	if err != nil {
 		log.Errorf("failed to list CVEs: %v", err)
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "listing CVEs"))
@@ -896,8 +899,11 @@ func (h *handler) listImages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sortBy := r.URL.Query().Get("sortBy")
+	sortDir := r.URL.Query().Get("sortDir")
+
 	// Query data
-	rows, total, err := h.datastore.ListImages(ctx, limit, offset)
+	rows, total, err := h.datastore.ListImages(ctx, limit, offset, sortBy, sortDir)
 	if err != nil {
 		log.Errorf("failed to list images: %v", err)
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "listing images"))
@@ -973,8 +979,11 @@ func (h *handler) listAdvisories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sortBy := r.URL.Query().Get("sortBy")
+	sortDir := r.URL.Query().Get("sortDir")
+
 	// Query data
-	rows, total, err := h.datastore.ListAdvisories(ctx, limit, offset)
+	rows, total, err := h.datastore.ListAdvisories(ctx, limit, offset, sortBy, sortDir)
 	if err != nil {
 		log.Errorf("failed to list advisories: %v", err)
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "listing advisories"))
@@ -1028,8 +1037,11 @@ func (h *handler) listDeployments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sortBy := r.URL.Query().Get("sortBy")
+	sortDir := r.URL.Query().Get("sortDir")
+
 	// Query data
-	rows, total, err := h.datastore.ListDeployments(ctx, limit, offset)
+	rows, total, err := h.datastore.ListDeployments(ctx, limit, offset, sortBy, sortDir)
 	if err != nil {
 		log.Errorf("failed to list deployments: %v", err)
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "listing deployments"))
@@ -1138,8 +1150,11 @@ func (h *handler) listComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sortBy := r.URL.Query().Get("sortBy")
+	sortDir := r.URL.Query().Get("sortDir")
+
 	// Query data
-	rows, total, err := h.datastore.ListComponents(ctx, limit, offset)
+	rows, total, err := h.datastore.ListComponents(ctx, limit, offset, sortBy, sortDir)
 	if err != nil {
 		log.Errorf("failed to list components: %v", err)
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "listing components"))

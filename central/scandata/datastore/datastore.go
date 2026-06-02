@@ -19,7 +19,7 @@ type DataStore interface {
 	DeleteByImageID(ctx context.Context, imageID string) error
 
 	// ListCVEs returns the CVE list page data with GROUP BY aggregation
-	ListCVEs(ctx context.Context, limit, offset int) ([]*types.CVEListRow, int, error)
+	ListCVEs(ctx context.Context, limit, offset int, sortBy, sortDir string) ([]*types.CVEListRow, int, error)
 
 	// GetFindingsByCVE returns all findings for a specific CVE name
 	GetFindingsByCVE(ctx context.Context, cveName string) ([]*storage.ScanFinding, error)
@@ -37,7 +37,7 @@ type DataStore interface {
 	GetImageInfoByDigests(ctx context.Context, digests []string) (map[string]types.ImageBasicInfo, error)
 
 	// ListDeployments returns deployments with their CVE counts and severity
-	ListDeployments(ctx context.Context, limit, offset int) ([]*types.DeploymentListRow, int, error)
+	ListDeployments(ctx context.Context, limit, offset int, sortBy, sortDir string) ([]*types.DeploymentListRow, int, error)
 
 	// GetDeploymentImages returns images for a deployment with CVE summary
 	GetDeploymentImages(ctx context.Context, deploymentID string) ([]*types.DeploymentImageRow, error)
@@ -46,10 +46,10 @@ type DataStore interface {
 	GetDeploymentByID(ctx context.Context, deploymentID string) (*types.DeploymentListRow, error)
 
 	// ListAdvisories returns distinct advisories with image counts
-	ListAdvisories(ctx context.Context, limit, offset int) ([]*types.AdvisoryListRow, int, error)
+	ListAdvisories(ctx context.Context, limit, offset int, sortBy, sortDir string) ([]*types.AdvisoryListRow, int, error)
 
 	// ListComponents returns distinct components with CVE severity breakdown
-	ListComponents(ctx context.Context, limit, offset int) ([]*types.ComponentListRow, int, error)
+	ListComponents(ctx context.Context, limit, offset int, sortBy, sortDir string) ([]*types.ComponentListRow, int, error)
 
 	// GetComponentVersions returns all versions of a component with CVE data
 	GetComponentVersions(ctx context.Context, componentName string) ([]*types.ComponentVersionInfo, error)
@@ -61,7 +61,7 @@ type DataStore interface {
 	GetImageOS(ctx context.Context, imageID string) (string, error)
 
 	// ListImages returns images with CVE summary data
-	ListImages(ctx context.Context, limit, offset int) ([]*types.ImageListRow, int, error)
+	ListImages(ctx context.Context, limit, offset int, sortBy, sortDir string) ([]*types.ImageListRow, int, error)
 
 	// GetComponentCVEs returns CVEs affecting a specific component name+version
 	GetComponentCVEs(ctx context.Context, componentName, componentVersion string) ([]*types.ComponentCVERow, error)

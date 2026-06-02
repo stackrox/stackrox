@@ -27,7 +27,12 @@ type ImageListResponse = {
 /**
  * Fetches the prototype image list from the REST API.
  */
-export function useImageList(limit = 50, offset = 0) {
+export function useImageList(
+    limit = 50,
+    offset = 0,
+    sortBy = 'severity',
+    sortDir = 'desc'
+) {
     const [data, setData] = useState<ImageListResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -36,7 +41,7 @@ export function useImageList(limit = 50, offset = 0) {
         setLoading(true);
         axios
             .get<ImageListResponse>(
-                `/v1/scandata/images?limit=${limit}&offset=${offset}`
+                `/v1/scandata/images?limit=${limit}&offset=${offset}&sortBy=${sortBy}&sortDir=${sortDir}`
             )
             .then((res) => {
                 setData(res.data);
@@ -44,7 +49,7 @@ export function useImageList(limit = 50, offset = 0) {
             })
             .catch((err: Error) => setError(err))
             .finally(() => setLoading(false));
-    }, [limit, offset]);
+    }, [limit, offset, sortBy, sortDir]);
 
     return { data, loading, error };
 }
