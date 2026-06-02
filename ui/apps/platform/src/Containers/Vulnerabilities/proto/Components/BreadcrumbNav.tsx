@@ -13,17 +13,27 @@ interface BreadcrumbNavProps {
 
 export function BreadcrumbNav({ items }: BreadcrumbNavProps): JSX.Element {
     return (
-        <Breadcrumb>
+        <Breadcrumb style={{ marginBottom: '20px' }}>
             {items.map((item, index) => {
-                const isActive = !item.path || index === items.length - 1;
+                const isCurrentPage = !item.path || index === items.length - 1;
+                const truncatedLabel =
+                    item.label.length > 60 ? `${item.label.substring(0, 57)}...` : item.label;
+
                 return (
-                    <BreadcrumbItem key={`${item.label}-${index}`} isActive={isActive}>
-                        {isActive ? (
-                            item.label
-                        ) : (
-                            <Link to={item.path!}>{item.label}</Link>
-                        )}
-                    </BreadcrumbItem>
+                    <BreadcrumbItem
+                        key={`${item.label}-${index}`}
+                        render={({ className }) =>
+                            isCurrentPage ? (
+                                <span className={className} title={item.label}>
+                                    {truncatedLabel}
+                                </span>
+                            ) : (
+                                <Link to={item.path!} className={className} title={item.label}>
+                                    {truncatedLabel}
+                                </Link>
+                            )
+                        }
+                    />
                 );
             })}
         </Breadcrumb>
