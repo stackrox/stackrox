@@ -32,7 +32,7 @@ export function useComponentImages(componentName: string) {
         setLoading(true);
         axios
             .get<ComponentImagesResponse>(
-                `/v1/scandata/components/${encodeURIComponent(componentName)}/images`
+                `/v1/scandata/components/images?name=${encodeURIComponent(componentName)}`
             )
             .then((res) => {
                 setData(res.data.images ?? []);

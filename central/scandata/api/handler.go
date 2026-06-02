@@ -44,8 +44,8 @@ func NewHandler(ds datastore.DataStore) http.Handler {
 	router.HandleFunc("/v1/scandata/deployments", h.listDeployments).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/deployments/{deploymentId}", h.getDeploymentDetail).Methods(http.MethodGet)
 	router.HandleFunc("/v1/scandata/components", h.listComponents).Methods(http.MethodGet)
-	router.HandleFunc("/v1/scandata/components/{componentName}/images", h.getComponentImages).Methods(http.MethodGet)
-	router.HandleFunc("/v1/scandata/components/{componentName}", h.getComponentDetail).Methods(http.MethodGet)
+	router.HandleFunc("/v1/scandata/components/images", h.getComponentImages).Methods(http.MethodGet)
+	router.HandleFunc("/v1/scandata/components/detail", h.getComponentDetail).Methods(http.MethodGet)
 
 	return router
 }
@@ -1054,10 +1054,9 @@ func (h *handler) listComponents(w http.ResponseWriter, r *http.Request) {
 func (h *handler) getComponentImages(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	vars := mux.Vars(r)
-	componentName := vars["componentName"]
+	componentName := r.URL.Query().Get("name")
 	if componentName == "" {
-		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.New("componentName is required"))
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.New("name query parameter is required"))
 		return
 	}
 
@@ -1106,10 +1105,9 @@ func (h *handler) getComponentImages(w http.ResponseWriter, r *http.Request) {
 func (h *handler) getComponentDetail(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	vars := mux.Vars(r)
-	componentName := vars["componentName"]
+	componentName := r.URL.Query().Get("name")
 	if componentName == "" {
-		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.New("componentName is required"))
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.New("name query parameter is required"))
 		return
 	}
 

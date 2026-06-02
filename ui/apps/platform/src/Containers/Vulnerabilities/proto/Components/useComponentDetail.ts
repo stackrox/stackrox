@@ -33,7 +33,7 @@ export function useComponentDetail(componentName: string) {
         setLoading(true);
         axios
             .get<ComponentDetailResponse>(
-                `/v1/scandata/components/${encodeURIComponent(componentName)}`
+                `/v1/scandata/components/detail?name=${encodeURIComponent(componentName)}`
             )
             .then((res) => {
                 setData(res.data);
