@@ -19,6 +19,12 @@ import { usePagination } from '../usePagination';
 import { useSort } from '../useSort';
 import { useComponentList } from './useComponentList';
 import type { ProtoComponentListItem } from './useComponentList';
+import {
+    COMPONENT_NAME_WIDTH,
+    COUNT_WIDTH,
+    TABLE_HEADER_STYLE,
+    TABLE_CELL_STYLE,
+} from '../utils/tableDefaults';
 
 const severityNames: Record<number, string> = {
     0: 'Unknown',
@@ -131,37 +137,44 @@ function ComponentListPage() {
                 )}
 
                 <Table aria-label="Vuln Management V5 component list" variant="compact">
-                    <Thead>
+                    <Thead style={{ borderBottom: '2px solid var(--pf-global--BorderColor--100)' }}>
                         <Tr>
-                            <Th {...getThSortProps(0)}>Component</Th>
-                            <Th>Versions</Th>
-                            <Th {...getThSortProps(2)} info={{ tooltip: 'CVE counts by severity: Critical, Important, Moderate, Low' }}>CVEs</Th>
-                            <Th {...getThSortProps(3)}>Images</Th>
-                            <Th {...getThSortProps(4)}>Top Severity</Th>
-                            <Th>Top CVSS</Th>
+                            <Th {...getThSortProps(0)} width={COMPONENT_NAME_WIDTH} style={TABLE_HEADER_STYLE}>Component</Th>
+                            <Th width={COUNT_WIDTH} style={TABLE_HEADER_STYLE}>Versions</Th>
+                            <Th {...getThSortProps(2)} style={TABLE_HEADER_STYLE} info={{ tooltip: 'CVE counts by severity: Critical, Important, Moderate, Low' }}>CVEs</Th>
+                            <Th {...getThSortProps(3)} width={COUNT_WIDTH} style={TABLE_HEADER_STYLE}>Images</Th>
+                            <Th {...getThSortProps(4)} style={TABLE_HEADER_STYLE}>Top Severity</Th>
+                            <Th style={TABLE_HEADER_STYLE}>Top CVSS</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
                         {components.map((comp) => (
                             <Tr key={comp.name}>
-                                <Td dataLabel="Component">
+                                <Td dataLabel="Component" style={{ ...TABLE_CELL_STYLE, maxWidth: COMPONENT_NAME_WIDTH }}>
                                     <Link
                                         to={`${vulnerabilitiesPrototypeComponentsPath}/${encodeURIComponent(comp.name)}`}
+                                        style={{
+                                            display: 'block',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                        title={comp.name}
                                     >
                                         {comp.name}
                                     </Link>
                                 </Td>
-                                <Td dataLabel="Versions">{comp.versionCount}</Td>
-                                <Td dataLabel="CVEs">
+                                <Td dataLabel="Versions" style={TABLE_CELL_STYLE}>{comp.versionCount}</Td>
+                                <Td dataLabel="CVEs" style={TABLE_CELL_STYLE}>
                                     <SeverityBreakdown component={comp} />
                                 </Td>
-                                <Td dataLabel="Images">{comp.imageCount}</Td>
-                                <Td dataLabel="Top Severity">
+                                <Td dataLabel="Images" style={TABLE_CELL_STYLE}>{comp.imageCount}</Td>
+                                <Td dataLabel="Top Severity" style={TABLE_CELL_STYLE}>
                                     <Label color={severityColor(comp.topSeverity)}>
                                         {severityLabel(comp.topSeverity)}
                                     </Label>
                                 </Td>
-                                <Td dataLabel="Top CVSS">
+                                <Td dataLabel="Top CVSS" style={TABLE_CELL_STYLE}>
                                     {formatCvss(comp.topCvss)}
                                 </Td>
                             </Tr>
