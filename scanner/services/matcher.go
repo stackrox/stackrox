@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"slices"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/quay/claircore"
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 	"github.com/stackrox/rox/scanner/indexer"
+	scannerversion "github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/matcher"
 	scannersbom "github.com/stackrox/rox/scanner/sbom"
 	"github.com/stackrox/rox/scanner/services/validators"
@@ -99,6 +101,14 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 	}
 	report.HashId = req.GetHashId()
 	report.Notes = s.notes(ctx, report)
+
+	// Populate scanner version and bundle version
+	report.ScannerVersion = scannerversion.Version
+	lastVulnUpdate, err := s.matcher.GetLastVulnerabilityUpdate(ctx)
+	if err == nil {
+		report.BundleVersion = lastVulnUpdate.Format(time.RFC3339)
+	}
+
 	return report, nil
 }
 

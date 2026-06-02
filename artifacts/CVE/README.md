@@ -98,6 +98,7 @@ After initial prototype implementation, several UX and data quality issues were 
 | No FK to images_v2 | Ingestion fires inside `GetScan()` before image is stored in `images_v2`. FK dropped for prototype; image names enriched at query time instead. |
 | Advisory dedup in API, not storage | Same advisory appears on multiple images as separate rows. API deduplicates advisories by ID when building CVE detail response. Per-image component expansion deduplicates by name+version and collects advisory IDs. |
 | Query params for component API | Component names can contain slashes (e.g., `google.golang.org/grpc`), breaking path-based routing. Use `?name=...` query param instead. |
+| Scanner version population | Scanner V4 service populates `scanner_version` (from `scanner/internal/version.Version`) and `bundle_version` (last vulnerability DB update in RFC3339 format) in `VulnerabilityReport`. These flow through ingestion to `image_scan_v2` table and are returned by `/v1/scandata/images/{id}` API. |
 
 ### What's NOT in this prototype
 
