@@ -33,7 +33,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"k8s.io/utils/strings/slices"
+	"slices"
 )
 
 type ManagerTestSuite struct {
@@ -394,96 +394,6 @@ func (m *ManagerTestSuite) TestHandleReadyScanDeleteOldResultsGate() {
 	}
 }
 
-func (m *ManagerTestSuite) TestHandleReadyScanConfigDeleteOldResultsGate() {
-	scanConfig := &storage.ComplianceOperatorScanConfigurationV2{
-		Id:             "config-1",
-		ScanConfigName: "test-config",
-	}
-
-	tests := map[string]struct {
-		err      error
-		expectFn func(done chan struct{}, profileDS *profileMocks.MockDataStore)
-	}{
-		"success should call DeleteOldResultsFromMissingScans": {
-			err: nil,
-			expectFn: func(done chan struct{}, profileDS *profileMocks.MockDataStore) {
-				profileDS.EXPECT().
-					SearchProfiles(gomock.Any(), gomock.Any()).
-					Times(1).
-					DoAndReturn(func(_ any, _ any) ([]*storage.ComplianceOperatorProfileV2, error) {
-						close(done)
-						return nil, nil
-					})
-			},
-		},
-		"ErrScanConfigTimeout should NOT call DeleteOldResultsFromMissingScans": {
-			err:      watcher.ErrScanConfigTimeout,
-			expectFn: func(_ chan struct{}, _ *profileMocks.MockDataStore) {},
-		},
-		"ErrScanConfigContextCancelled should NOT call DeleteOldResultsFromMissingScans": {
-			err:      watcher.ErrScanConfigContextCancelled,
-			expectFn: func(_ chan struct{}, _ *profileMocks.MockDataStore) {},
-		},
-	}
-
-	for name, tc := range tests {
-		m.Run(name, func() {
-			ctrl := gomock.NewController(m.T())
-			checkResultDS := checkResultsMocks.NewMockDataStore(ctrl)
-			scanConfigDS := scanConfigurationDS.NewMockDataStore(ctrl)
-			scanDS := scanMocks.NewMockDataStore(ctrl)
-			profileDS := profileMocks.NewMockDataStore(ctrl)
-			snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
-			integrationDS := integrationMocks.NewMockDataStore(ctrl)
-			suiteStore := suiteDS.NewMockDataStore(ctrl)
-			bindingsStore := bindingsDS.NewMockDataStore(ctrl)
-			generator := reportGen.NewMockComplianceReportGenerator(ctrl)
-
-			manager := New(scanConfigDS, scanDS, profileDS, snapshotDS, integrationDS, suiteStore, bindingsStore, checkResultDS, generator)
-			manager.Start()
-			managerImp := manager.(*managerImpl)
-
-			result := &watcher.ScanConfigWatcherResults{
-				WatcherID:   "config-watcher-1",
-				ScanConfig:  scanConfig,
-				ScanResults: map[string]*watcher.ScanWatcherResults{},
-				Error:       tc.err,
-			}
-
-			done := make(chan struct{})
-			tc.expectFn(done, profileDS)
-
-			// Seed the watcher map entry so cleanup doesn't panic.
-			concurrency.WithLock(&managerImp.watchingScanConfigsLock, func() {
-				managerImp.watchingScanConfigs[result.WatcherID] = nil
-			})
-
-			managerImp.scanConfigReadyQueue.Push(result)
-
-			if tc.err == nil {
-				// For the success case, wait for the mock signal.
-				select {
-				case <-done:
-				case <-time.After(2 * time.Second):
-					m.FailNow("timeout waiting for handleReadyScanConfig to process the result")
-				}
-			} else {
-				// For error cases, wait until the watcher is removed from the map (processed).
-				m.Eventually(func() bool {
-					var found bool
-					concurrency.WithLock(&managerImp.watchingScanConfigsLock, func() {
-						_, found = managerImp.watchingScanConfigs[result.WatcherID]
-					})
-					return !found
-				}, 2*time.Second, 10*time.Millisecond)
-			}
-
-			manager.Stop()
-			ctrl.Finish()
-		})
-	}
-}
-
 func (m *ManagerTestSuite) TestHandleScan() {
 	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
 		Return(
@@ -811,16 +721,7 @@ func (m *ManagerTestSuite) setupExpectCallsFromFinishAllScans(sc *storage.Compli
 		}
 		expectedCalls = append(expectedCalls, calls...)
 	}
-	allScans := getTestScansFromScanConfig(sc, timestamp)
 	calls := []any{
-		// Delete Old Results of Missing Clusters
-		m.profileDataStore.EXPECT().
-			SearchProfiles(gomock.Any(), gomock.Any()).
-			Times(1).
-			Return([]*storage.ComplianceOperatorProfileV2{{}}, nil),
-		m.scanDataStore.EXPECT().
-			SearchScans(gomock.Any(), gomock.Any()).
-			Times(1).Return(allScans, nil),
 		m.scanDataStore.EXPECT().
 			SearchScans(gomock.Any(), gomock.Any()).
 			Times(len(sc.GetClusters())*numSnapshots).
@@ -843,16 +744,7 @@ func (m *ManagerTestSuite) setupExpectCallsFromFailAllScans(sc *storage.Complian
 		}
 		expectedCalls = append(expectedCalls, calls...)
 	}
-	allScans := getTestScansFromScanConfig(sc, timestamp)
 	calls := []any{
-		// Delete Old Results of Missing Clusters
-		m.profileDataStore.EXPECT().
-			SearchProfiles(gomock.Any(), gomock.Any()).
-			Times(1).
-			Return([]*storage.ComplianceOperatorProfileV2{{}}, nil),
-		m.scanDataStore.EXPECT().
-			SearchScans(gomock.Any(), gomock.Any()).
-			Times(1).Return(allScans, nil),
 		// Validate Results
 		m.complianceIntegrationDataStore.EXPECT().
 			GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).
@@ -900,6 +792,8 @@ func (m *ManagerTestSuite) setupExpectCallsFromFinishScan(scan *storage.Complian
 			UpsertSnapshot(gomock.Any(), gomock.Any()).
 			Times(1).Return(nil))
 	}
+	// GetScansFromScanConfiguration is called inside handleScanResults
+	// when the scan config watcher receives its first result.
 	calls = append(calls, []any{
 		m.profileDataStore.EXPECT().
 			SearchProfiles(gomock.Any(), gomock.Any()).

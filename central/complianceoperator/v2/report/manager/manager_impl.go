@@ -607,14 +607,6 @@ func (m *managerImpl) handleReadyScanConfig() {
 		concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 			delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
 		})
-		if scanConfigWatcherResult.Error == nil {
-			if err := watcher.DeleteOldResultsFromMissingScans(m.automaticReportingCtx, scanConfigWatcherResult, m.profileDataStore, m.scanDataStore, m.checkResultDataStore); err != nil {
-				log.Errorf("unable to delete old CheckResults: %v", err)
-			}
-		} else {
-			log.Debugf("Skipping DeleteOldResultsFromMissingScans for scan config %s: %v",
-				scanConfigWatcherResult.ScanConfig.GetScanConfigName(), scanConfigWatcherResult.Error)
-		}
 		m.generateReportsFromWatcherResults(scanConfigWatcherResult)
 	}
 }
