@@ -9,7 +9,6 @@ permissions:
 
 jobs:
   # Test 0: DIRECT (no composite action) monitor to isolate the mechanism.
-  # Copy b does the monitor logic inline. If this works, the composite action has an issue.
   # Expected: copy a=success, copy b=cancelled.
   test-direct-monitor:
     strategy:
@@ -59,7 +58,7 @@ jobs:
         run: cat /tmp/direct-monitor.log 2>/dev/null || echo "(no log)"
 
   # Test 1: composite action — both copies fast.
-  # Expected: copy a=success, copy b=cancelled (with monitor log showing why).
+  # Expected: copy a=success, copy b=cancelled.
   test-a-wins:
     strategy:
       fail-fast: false
@@ -76,7 +75,7 @@ jobs:
           last-copy: b
           slow-cpu-pattern: NEVER_MATCH_THIS
 
-      - name: Work (60s — b should be cancelled at ~30s)
+      - name: Work (60s — b should be cancelled)
         run: |
           echo "Copy ${{ matrix.copy }}: working..."
           sleep 60
@@ -86,21 +85,14 @@ jobs:
         if: always()
         run: cat /tmp/speculative-monitor.log 2>/dev/null || echo "(no log)"
 
-      - name: Declare win
+      - uses: ./.github/actions/speculative-declare-win
         if: success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api repos/${{ github.repository }}/check-runs \
-            -f name="test-a-wins" \
-            -f head_sha="${{ github.sha }}" \
-            -f status=completed \
-            -f conclusion=success \
-            -f "output[title]=Copy ${{ matrix.copy }} won" \
-            2>&1 || echo "::warning::check-run post failed"
+        with:
+          check-name: test-a-wins
+          copy: ${{ matrix.copy }}
 
-  # Test 2: three-copy race. copy a wins on first runner, b/c cancelled.
-  # Expected: a=success, b=cancelled (~30s), c=cancelled (~60s).
+  # Test 2: three-copy race. copy a wins, b/c cancelled.
+  # Expected: a=success, b=cancelled, c=cancelled.
   test-three-copy:
     strategy:
       fail-fast: false
@@ -117,7 +109,7 @@ jobs:
           last-copy: c
           slow-cpu-pattern: NEVER_MATCH_THIS
 
-      - name: Work (90s — b cancelled at ~30s, c at ~60s)
+      - name: Work (90s — b cancelled, c cancelled)
         run: |
           echo "Copy ${{ matrix.copy }}: working..."
           sleep 90
@@ -127,18 +119,11 @@ jobs:
         if: always()
         run: cat /tmp/speculative-monitor.log 2>/dev/null || echo "(no log)"
 
-      - name: Declare win
+      - uses: ./.github/actions/speculative-declare-win
         if: success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api repos/${{ github.repository }}/check-runs \
-            -f name="test-three-copy" \
-            -f head_sha="${{ github.sha }}" \
-            -f status=completed \
-            -f conclusion=success \
-            -f "output[title]=Copy ${{ matrix.copy }} won" \
-            2>&1 || echo "::warning::check-run post failed"
+        with:
+          check-name: test-three-copy
+          copy: ${{ matrix.copy }}
 
   # Test 3: copy a is on a slow runner (cpu gate fires → gate fails).
   # Expected: copy a=failure (gate), copy b=success.
@@ -167,15 +152,8 @@ jobs:
           echo "Copy ${{ matrix.copy }}: working..."
           sleep 5
 
-      - name: Declare win
+      - uses: ./.github/actions/speculative-declare-win
         if: success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api repos/${{ github.repository }}/check-runs \
-            -f name="test-a-slow-b-wins" \
-            -f head_sha="${{ github.sha }}" \
-            -f status=completed \
-            -f conclusion=success \
-            -f "output[title]=Copy ${{ matrix.copy }} won" \
-            2>&1 || echo "::warning::check-run post failed"
+        with:
+          check-name: test-a-slow-b-wins
+          copy: ${{ matrix.copy }}
