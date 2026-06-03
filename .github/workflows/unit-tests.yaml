@@ -11,6 +11,7 @@ on:
     - opened
     - reopened
     - synchronize
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -31,9 +32,11 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+        copy: [a, b]
         exclude:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
     runs-on: ubuntu-latest
+    continue-on-error: true
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     # Stable version ldflags for test caching: Go's test cache keys include
@@ -45,6 +48,12 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - uses: ./.github/actions/speculative-run
+      with:
+        copy: ${{ matrix.copy }}
+        check-name: 'go (${{ matrix.gotags }})'
+        last-copy: b
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -94,7 +103,7 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report test failures to Jira
-      if: (!cancelled())
+      if: success()
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
@@ -104,16 +113,24 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
+    - uses: ./.github/actions/speculative-declare-win
+      if: success()
+      with:
+        check-name: 'go (${{ matrix.gotags }})'
+        copy: ${{ matrix.copy }}
+
   go-postgres:
     strategy:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         pg: [ 'default', '15' ]
+        copy: [a, b]
         exclude:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
           - pg: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-postgres-tests') && 'default' }}
     runs-on: ubuntu-latest
+    continue-on-error: true
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     # Stable version ldflags for test caching: Go's test cache keys include
@@ -135,6 +152,12 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - uses: ./.github/actions/speculative-run
+      with:
+        copy: ${{ matrix.copy }}
+        check-name: 'go-postgres (${{ matrix.gotags }}, ${{ matrix.pg }})'
+        last-copy: b
 
     # Image pinned in .github/test-images/postgres.dockerfile (Dependabot auto-bumps).
     - name: Start Postgres (${{ matrix.pg }})
@@ -184,7 +207,7 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: success()
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
@@ -193,6 +216,12 @@ jobs:
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
+
+    - uses: ./.github/actions/speculative-declare-win
+      if: success()
+      with:
+        check-name: 'go-postgres (${{ matrix.gotags }}, ${{ matrix.pg }})'
+        copy: ${{ matrix.copy }}
 
   # Benchmarks run each bench function once (-benchtime=1x -count=1) to verify
   # they compile and execute without errors. A single postgres version is

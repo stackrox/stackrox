@@ -11,6 +11,7 @@ on:
     - opened
     - reopened
     - synchronize
+  workflow_dispatch:
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 
@@ -23,15 +24,26 @@ jobs:
     uses: ./.github/workflows/detect-changes.yml
 
   check-generated-files:
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b]
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/speculative-run
+      with:
+        copy: ${{ matrix.copy }}
+        check-name: check-generated-files
+        last-copy: b
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -48,6 +60,12 @@ jobs:
 
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
+
+    - uses: ./.github/actions/speculative-declare-win
+      if: success()
+      with:
+        check-name: check-generated-files
+        copy: ${{ matrix.copy }}
 
   misc-checks:
     env:
@@ -94,13 +112,24 @@ jobs:
       run: if [ -s scripts/ci/jobs/check-dependabot-gomod.sh ]; then scripts/ci/jobs/check-dependabot-gomod.sh; fi
 
   style-check:
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b]
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/speculative-run
+        with:
+          copy: ${{ matrix.copy }}
+          check-name: style-check
+          last-copy: b
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -151,6 +180,12 @@ jobs:
 
       - name: make style-slim
         run: make style-slim
+
+      - uses: ./.github/actions/speculative-declare-win
+        if: success()
+        with:
+          check-name: style-check
+          copy: ${{ matrix.copy }}
 
   golangci-lint:
     timeout-minutes: 240
