@@ -186,17 +186,17 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: ./.github/actions/speculative-run
-        with:
-          copy: ${{ matrix.copy }}
-          check-name: pre-build-ui (${{ matrix.branding }})
-          last-copy: b
-
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/speculative-run
+        with:
+          copy: ${{ matrix.copy }}
+          check-name: pre-build-ui (${{ matrix.branding }})
+          last-copy: b
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -323,17 +323,17 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
       - uses: ./.github/actions/speculative-run
         id: gate
         with:
           copy: ${{ matrix.copy }}
           check-name: pre-build-go-binaries (${{ matrix.name }}, ${{ matrix.arch }})
           last-copy: c
-
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-        with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         if: steps.gate.conclusion == 'success'
@@ -422,17 +422,17 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: ./.github/actions/speculative-run
-        with:
-          copy: ${{ matrix.copy }}
-          check-name: pre-build-docs
-          last-copy: b
-
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/speculative-run
+        with:
+          copy: ${{ matrix.copy }}
+          check-name: pre-build-docs
+          last-copy: b
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -470,17 +470,17 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-    - uses: ./.github/actions/speculative-run
-      with:
-        copy: ${{ matrix.copy }}
-        check-name: pre-build-oss-notice
-        last-copy: b
-
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/speculative-run
+      with:
+        copy: ${{ matrix.copy }}
+        check-name: pre-build-oss-notice
+        last-copy: b
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -533,16 +533,16 @@ jobs:
     env:
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
       - uses: ./.github/actions/speculative-run
         with:
           copy: ${{ matrix.copy }}
           check-name: build-and-push-db
           last-copy: b
-
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-        with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -656,17 +656,17 @@ jobs:
       ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
       ROX_PRODUCT_BRANDING: RHACS_BRANDING
     steps:
-      - uses: ./.github/actions/speculative-run
-        with:
-          copy: ${{ matrix.copy }}
-          check-name: build-operator-bundle
-          last-copy: b
-
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/speculative-run
+        with:
+          copy: ${{ matrix.copy }}
+          check-name: build-operator-bundle
+          last-copy: b
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -729,13 +729,6 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
-      - uses: ./.github/actions/speculative-run
-        id: gate
-        with:
-          copy: ${{ matrix.copy }}
-          check-name: build-and-push-main (${{ matrix.name }}, ${{ matrix.arch }})
-          last-copy: c
-
       - name: Setup build env
         run: |
           case "${{ matrix.name }}" in
@@ -772,6 +765,13 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/speculative-run
+        id: gate
+        with:
+          copy: ${{ matrix.copy }}
+          check-name: build-and-push-main (${{ matrix.name }}, ${{ matrix.arch }})
+          last-copy: c
 
       - uses: ./.github/actions/job-preamble
         if: steps.gate.conclusion == 'success'
@@ -1063,17 +1063,17 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
       - uses: ./.github/actions/speculative-run
         id: gate
         with:
           copy: ${{ matrix.copy }}
           check-name: build-and-push-operator (${{ matrix.name }}, ${{ matrix.arch }})
           last-copy: c
-
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-        with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         if: steps.gate.conclusion == 'success'
@@ -1193,17 +1193,17 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
       - uses: ./.github/actions/speculative-run
         id: gate
         with:
           copy: ${{ matrix.copy }}
           check-name: build-and-push-scanner (${{ matrix.name }}, ${{ matrix.goos }}, ${{ matrix.arch }}, ${{ matrix.registry }})
           last-copy: b
-
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-        with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:

@@ -46,14 +46,14 @@ jobs:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
     steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
     - uses: ./.github/actions/speculative-run
       with:
         copy: ${{ matrix.copy }}
         check-name: 'go (${{ matrix.gotags }})'
         last-copy: b
-
-    - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -150,14 +150,14 @@ jobs:
         sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
         sudo systemctl start postgresql.service
 
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
     - uses: ./.github/actions/speculative-run
       with:
         copy: ${{ matrix.copy }}
         check-name: 'go-postgres (${{ matrix.gotags }}, ${{ matrix.pg }})'
         last-copy: b
-
-    - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
     # Image pinned in .github/test-images/postgres.dockerfile (Dependabot auto-bumps).
     - name: Start Postgres (${{ matrix.pg }})
@@ -338,14 +338,14 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
     - uses: ./.github/actions/speculative-run
       with:
         copy: ${{ matrix.copy }}
         check-name: ui-component
         last-copy: b
-
-    - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
     - uses: ./.github/actions/job-preamble
       with:
