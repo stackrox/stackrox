@@ -83,17 +83,27 @@ runs:
           # Snapshot current children so we can identify the work step PID later.
           pgrep -P "$MY_PARENT" | sort > /tmp/speculative-baseline
 
-          # Monitor checks JOB-level status using an exact job name match.
-          # Sibling job name format: "${CHECK_NAME}, ${check_copy})"
-          # grep -F (fixed string, no regex) avoids issues with special chars
-          # in check-name (dots, slashes in registry names, etc.).
+          # Pre-compute the sibling name prefix in the OUTER shell to avoid
+          # quoting hell inside the nohup string.
+          # Sibling job name depends on whether check-name already has dims:
+          #   multi-dim "Job (d1, d2)" → name_base="Job (d1, d2", sep=", " → "Job (d1, d2, a)"
+          #   single-dim "job-name"    → name_base="job-name (", sep=""    → "job-name (a)"
+          # grep -F (fixed string) handles dots/slashes in registry names.
+          if [[ "${CHECK_NAME}" == *")" ]]; then
+            SIBLING_BASE="${CHECK_NAME%\)}"
+            SIBLING_SEP=", "
+          else
+            SIBLING_BASE="${CHECK_NAME} ("
+            SIBLING_SEP=""
+          fi
+
           nohup bash -c "
             sleep ${wait_secs}
             all_jobs=\$(gh api 'repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100' \
               --jq '.jobs[] | \"\(.name)|\(.status)|\(.conclusion)\"' 2>/dev/null)
             winner_found=0
             for check_copy in ${prev_copies}; do
-              sibling_name='${CHECK_NAME}, '\${check_copy}')'
+              sibling_name='${SIBLING_BASE}${SIBLING_SEP}'\${check_copy}')'
               matching=\$(echo \"\$all_jobs\" | grep -F \"\${sibling_name}|\" | head -1)
               status=\$(echo \"\$matching\" | cut -d'|' -f2)
               conclusion=\$(echo \"\$matching\" | cut -d'|' -f3)
