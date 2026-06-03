@@ -1,0 +1,250 @@
+name: AI PR Fixxxer
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  ai_fixxx_bulk:
+    name: Run AI Fixxxer (bulk)
+    if: >-
+      github.event_name == 'issue_comment'
+      && github.event.issue.pull_request
+      && startsWith(github.event.comment.body, '/ai-fixxx')
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: React with eyes
+      run: |
+        gh api \
+          repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions \
+          -f content=eyes
+      env:
+        GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+
+    - name: Fetch PR metadata
+      id: pr-metadata
+      run: |
+        pr_json=$(gh api "${{ github.event.issue.pull_request.url }}")
+        pr_head_repo=$(echo "$pr_json" | jq -r '.head.repo.full_name')
+
+        if [ "$pr_head_repo" != "${{ github.repository }}" ]; then
+          echo "::error::PR is from a fork ($pr_head_repo). Cannot push back — aborting."
+          exit 1
+        fi
+
+        branch=$(echo "$pr_json" | jq -r '.head.ref')
+        pr_number=$(echo "$pr_json" | jq -r '.number')
+
+        if [ -z "$branch" ] || [ "$branch" = "null" ]; then
+          echo "::error::Failed to detect source branch."
+          exit 1
+        fi
+
+        echo "branch=$branch" >> "$GITHUB_OUTPUT"
+        echo "pr_number=$pr_number" >> "$GITHUB_OUTPUT"
+      env:
+        GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ steps.pr-metadata.outputs.branch }}
+        fetch-depth: 0
+        token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+
+    - name: Configure git
+      run: |
+        git config --global user.name "AI Fixxxer"
+        git config --global user.email "rhacs-bot@redhat.com"
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Install Claude Code
+      run: npm install -g @anthropic-ai/claude-code
+
+    - name: Authenticate gcloud
+      run: |
+        cat > $HOME/gcp-key.json <<'EOF'
+        ${{ secrets.AI_FIXXX_SA_KEY }}
+        EOF
+        gcloud auth activate-service-account \
+          "${{ secrets.AI_FIXXX_SA_EMAIL }}" \
+          --key-file=$HOME/gcp-key.json
+
+    - name: Run AI Fixxxer
+      id: ai-fixxx
+      run: |
+        chmod +x scripts/ai-fixxxer.sh
+        bash scripts/ai-fixxxer.sh
+      env:
+        GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+        CLAUDE_CODE_USE_VERTEX: "1"
+        CLOUD_ML_REGION: us-east5
+        ANTHROPIC_VERTEX_PROJECT_ID: itpc-gcp-hcm-pe-eng-claude
+        GOOGLE_APPLICATION_CREDENTIALS: /home/runner/gcp-key.json
+        PR_NUMBER: ${{ steps.pr-metadata.outputs.pr_number }}
+        REPO: ${{ github.repository }}
+
+    - name: Cleanup credentials
+      if: always()
+      run: rm -f "$HOME/gcp-key.json"
+
+    - name: Push changes
+      run: |
+        if [ -n "$(git log origin/${{ steps.pr-metadata.outputs.branch }}..HEAD --oneline)" ]; then
+          git remote set-url origin "https://x-access-token:${PUSH_TOKEN}@github.com/${{ github.repository }}.git"
+          git push origin HEAD:${{ steps.pr-metadata.outputs.branch }}
+          echo "pushed=true" >> "$GITHUB_ENV"
+        else
+          echo "No new commits to push."
+          echo "pushed=false" >> "$GITHUB_ENV"
+        fi
+      env:
+        PUSH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+
+    - name: React with rocket on success
+      if: success()
+      run: |
+        gh api \
+          repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions \
+          -f content=rocket
+      env:
+        GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+
+    - name: React with confused on failure
+      if: failure()
+      run: |
+        gh api \
+          repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions \
+          -f content=confused
+      env:
+        GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+
+  ai_fixxx_single:
+    name: Run AI Fixxxer (single comment)
+    if: >-
+      github.event_name == 'pull_request_review_comment'
+      && github.event.comment.in_reply_to_id != 0
+      && startsWith(github.event.comment.body, '/ai-fixxx')
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: React with eyes
+      run: |
+        gh api \
+          repos/${{ github.repository }}/pulls/comments/${{ github.event.comment.id }}/reactions \
+          -f content=eyes
+      env:
+        GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: metadata
+      run: |
+        echo "branch=${{ github.event.pull_request.head.ref }}" >> "$GITHUB_OUTPUT"
+        echo "pr_number=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+        echo "parent_comment_id=${{ github.event.comment.in_reply_to_id }}" >> "$GITHUB_OUTPUT"
+
+        raw_body="${{ github.event.comment.body }}"
+        instructions="${raw_body#/ai-fixxx}"
+        instructions="$(echo "$instructions" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')"
+        {
+          echo "user_instructions<<INSTRUCTIONS_EOF"
+          echo "$instructions"
+          echo "INSTRUCTIONS_EOF"
+        } >> "$GITHUB_OUTPUT"
+      env:
+        GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+
+    - name: Check fork
+      run: |
+        if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
+          echo "::error::PR is from a fork. Cannot push back — aborting."
+          exit 1
+        fi
+
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ steps.metadata.outputs.branch }}
+        fetch-depth: 0
+        token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+
+    - name: Configure git
+      run: |
+        git config --global user.name "AI Fixxxer"
+        git config --global user.email "rhacs-bot@redhat.com"
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Install Claude Code
+      run: npm install -g @anthropic-ai/claude-code
+
+    - name: Authenticate gcloud
+      run: |
+        cat > $HOME/gcp-key.json <<'EOF'
+        ${{ secrets.AI_FIXXX_SA_KEY }}
+        EOF
+        gcloud auth activate-service-account \
+          "${{ secrets.AI_FIXXX_SA_EMAIL }}" \
+          --key-file=$HOME/gcp-key.json
+
+    - name: Run AI Fixxxer
+      id: ai-fixxx
+      run: |
+        chmod +x scripts/ai-fixxxer.sh
+        bash scripts/ai-fixxxer.sh
+      env:
+        GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+        CLAUDE_CODE_USE_VERTEX: "1"
+        CLOUD_ML_REGION: us-east5
+        ANTHROPIC_VERTEX_PROJECT_ID: itpc-gcp-hcm-pe-eng-claude
+        GOOGLE_APPLICATION_CREDENTIALS: /home/runner/gcp-key.json
+        PR_NUMBER: ${{ steps.metadata.outputs.pr_number }}
+        REPO: ${{ github.repository }}
+        SINGLE_COMMENT_ID: ${{ steps.metadata.outputs.parent_comment_id }}
+        USER_INSTRUCTIONS: ${{ steps.metadata.outputs.user_instructions }}
+
+    - name: Cleanup credentials
+      if: always()
+      run: rm -f "$HOME/gcp-key.json"
+
+    - name: Push changes
+      run: |
+        if [ -n "$(git log origin/${{ steps.metadata.outputs.branch }}..HEAD --oneline)" ]; then
+          git remote set-url origin "https://x-access-token:${PUSH_TOKEN}@github.com/${{ github.repository }}.git"
+          git push origin HEAD:${{ steps.metadata.outputs.branch }}
+          echo "pushed=true" >> "$GITHUB_ENV"
+        else
+          echo "No new commits to push."
+          echo "pushed=false" >> "$GITHUB_ENV"
+        fi
+      env:
+        PUSH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+
+    - name: React with rocket on success
+      if: success()
+      run: |
+        gh api \
+          repos/${{ github.repository }}/pulls/comments/${{ github.event.comment.id }}/reactions \
+          -f content=rocket
+      env:
+        GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+
+    - name: React with confused on failure
+      if: failure()
+      run: |
+        gh api \
+          repos/${{ github.repository }}/pulls/comments/${{ github.event.comment.id }}/reactions \
+          -f content=confused
+      env:
+        GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
