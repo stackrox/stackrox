@@ -21,22 +21,19 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       - uses: ./.github/actions/speculative-run
-        id: gate
-        continue-on-error: true
         with:
           copy: ${{ matrix.copy }}
           last-copy: b
           slow-cpu-pattern: NEVER_MATCH_THIS
 
       - name: Work (60s — b should be cancelled at ~30s)
-        if: steps.gate.conclusion == 'success'
         run: |
           echo "Copy ${{ matrix.copy }}: working..."
           sleep 60
           echo "Copy ${{ matrix.copy }}: done"
 
       - name: Declare win
-        if: steps.gate.conclusion == 'success' && success()
+        if: success()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -65,21 +62,18 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       - uses: ./.github/actions/speculative-run
-        id: gate
-        continue-on-error: true
         with:
           copy: ${{ matrix.copy }}
           last-copy: b
           slow-cpu-pattern: ${{ matrix.slow_pattern }}
 
       - name: Work
-        if: steps.gate.conclusion == 'success'
         run: |
           echo "Copy ${{ matrix.copy }}: working..."
           sleep 5
 
       - name: Declare win
-        if: steps.gate.conclusion == 'success' && success()
+        if: success()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -102,22 +96,19 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       - uses: ./.github/actions/speculative-run
-        id: gate
-        continue-on-error: true
         with:
           copy: ${{ matrix.copy }}
           last-copy: c
           slow-cpu-pattern: NEVER_MATCH_THIS
 
       - name: Work (90s — b cancelled at ~30s, c at ~60s)
-        if: steps.gate.conclusion == 'success'
         run: |
           echo "Copy ${{ matrix.copy }}: working..."
           sleep 90
           echo "Copy ${{ matrix.copy }}: done"
 
       - name: Declare win
-        if: steps.gate.conclusion == 'success' && success()
+        if: success()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
