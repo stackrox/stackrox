@@ -68,16 +68,17 @@ runs:
         fi
 
         # ── 2. Post in_progress check-run ───────────────────────────────────────
-        # This IS the coordination signal for other copies' monitors.
-        # external_id "spec-a" etc. lets monitors identify which copy posted it.
+        # external_id includes run_id so monitors from different workflow runs
+        # on the same commit SHA (e.g. /retest) do not cross-contaminate.
+        EXT_ID="spec-${MY_COPY}-${RUN_ID}"
         check_id=$(gh api repos/"${{ github.repository }}"/check-runs \
           -f name="${CHECK_NAME}" \
           -f head_sha="${{ github.sha }}" \
           -f status=in_progress \
-          -f external_id="spec-${MY_COPY}" \
+          -f external_id="${EXT_ID}" \
           --jq '.id' 2>/dev/null)
         printf '%s\n' "${check_id:-}" > /tmp/speculative-check-id
-        echo "Posted in_progress check-run ${check_id} (spec-${MY_COPY})"
+        echo "Posted in_progress check-run ${check_id} (${EXT_ID})"
 
         # ── 3. Background monitor for non-first copies ──────────────────────────
         case "$MY_COPY" in
@@ -92,7 +93,7 @@ runs:
 
           sibling_ids=""
           for c in ${prev_copies}; do
-            sibling_ids="${sibling_ids:+${sibling_ids},}spec-${c}"
+            sibling_ids="${sibling_ids:+${sibling_ids},}spec-${c}-${RUN_ID}"
           done
 
           # Copy the monitor script from the action directory.
