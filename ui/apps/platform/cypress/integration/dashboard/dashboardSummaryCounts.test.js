@@ -1,9 +1,10 @@
 import { resourceToAccess as resourceToAccessForAnalyst } from '../../fixtures/auth/mypermissionsForAnalyst.json';
 import { resourceToAccess as resourceToAccessForNoAccess } from '../../fixtures/auth/mypermissionsNoAccess.json';
 
-import withAuth from '../../helpers/basicAuth';
+import withAuth, { setAuth } from '../../helpers/basicAuth';
 import {
     routeMatcherMapForSummaryCounts,
+    visitMainDashboard,
     visitMainDashboardWithStaticResponseForPermissions,
 } from '../../helpers/main';
 
@@ -37,10 +38,9 @@ describe('Dashboard SummaryCounts', () => {
     withAuth();
 
     it('should display 6 counts for Analyst role', () => {
-        visitMainDashboardWithStaticResponseForPermissions(
-            getStaticResponseForAnalystWithoutResources([]),
-            routeMatcherMapForSummaryCounts
-        );
+        setAuth('Analyst');
+
+        visitMainDashboard();
 
         cy.get(getSummaryCountSelector('Cluster'));
         cy.get(getSummaryCountSelector('Node'));
