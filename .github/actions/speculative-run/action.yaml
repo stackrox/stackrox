@@ -64,17 +64,22 @@ runs:
           # Snapshot current children so we can identify the work step PID later.
           pgrep -P "$MY_PARENT" | sort > /tmp/speculative-baseline
 
-          # Monitor checks JOB-level status (not step-level: composite action
-          # internal steps are not visible in the jobs API).
+          # Monitor checks JOB-level status.
+          # Note: composite-action internal steps are NOT visible in the jobs API,
+          # so we check job-level .status/.conclusion instead of step conclusions.
+          # --jq filter uses no shell variables (single-quote-safe); grep handles
+          # the copy-letter match where bash expands ${check_copy}.
           nohup bash -c "
             sleep ${wait_secs}
+            all_jobs=\$(gh api 'repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100' \
+              --jq '.jobs[] | \"\(.name)|\(.status)|\(.conclusion)\"' 2>/dev/null)
             winner_found=0
             for check_copy in ${prev_copies}; do
-              job_line=\$(gh api 'repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100' \
-                --jq '.jobs[] | select(.name | test(\"[( ,]\${check_copy}[)]\$\")) | \"\(.status)/\(.conclusion)\"' \
-                2>/dev/null | head -1)
-              echo \"[\$(date -u +%H:%M:%S)] Sibling \${check_copy}: '\${job_line}'\"
-              if [[ \"\${job_line}\" == 'in_progress/'* || \"\${job_line}\" == 'completed/success' ]]; then
+              matching=\$(echo \"\$all_jobs\" | grep -E \"[( ,]\${check_copy}[)][|]\" | head -1)
+              status=\$(echo \"\$matching\" | cut -d'|' -f2)
+              conclusion=\$(echo \"\$matching\" | cut -d'|' -f3)
+              echo \"[\$(date -u +%H:%M:%S)] Sibling \${check_copy}: status=\${status} conclusion=\${conclusion}\"
+              if [[ \"\${status}\" == 'in_progress' || \"\${conclusion}\" == 'success' ]]; then
                 winner_found=1
                 echo \"Sibling \${check_copy} is winning — cancelling this copy.\"
                 break
