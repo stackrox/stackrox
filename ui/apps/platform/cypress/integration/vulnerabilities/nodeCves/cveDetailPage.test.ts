@@ -47,7 +47,7 @@ const staticResponseMapForNodeCvePage = {
 };
 
 describe('Node CVEs - CVE Detail Page', () => {
-    withAuth();
+    withAuth('Sensor Creator');
 
     it('should restrict access to users with insufficient "Node" permission', () => {
         visitNodeCvePageWithStaticPermissions(mockCveName, { Node: 'READ_ACCESS' });

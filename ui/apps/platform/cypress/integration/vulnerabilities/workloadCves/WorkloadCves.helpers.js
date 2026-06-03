@@ -170,7 +170,7 @@ export function cancelAllCveExceptions() {
         return cy.get('@vulnExceptions').then((res) => {
             return Promise.all(
                 res.body.exceptions.map(({ id, expired, requester }) => {
-                    return requester?.name === 'ui_tests' && !expired
+                    return requester?.name === 'cypress_ui_tests_Admin' && !expired
                         ? cy.request({
                               url: `/v2/vulnerability-exceptions/${id}/cancel`,
                               auth,

@@ -1,0 +1,5 @@
+{
+    "tokenNamePrefix": "cypress_ui_tests",
+    "defaultRole": "Admin",
+    "roles": ["Admin", "Analyst"]
+}

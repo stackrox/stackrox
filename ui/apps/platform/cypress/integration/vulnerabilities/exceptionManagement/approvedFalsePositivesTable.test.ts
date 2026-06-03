@@ -203,7 +203,11 @@ describe('Exception Management - Approved False Positives Table', () => {
         approveRequest();
         visitApprovedFalsePositivesTab();
 
-        typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'ui_tests');
+        typeAndEnterCustomSearchFilterValue(
+            'Exception',
+            'Requester User Name',
+            'cypress_ui_tests_Admin'
+        );
         cy.get('table tr:nth(1) td[data-label="Request name"] a').should('exist');
         cy.get(vulnSelectors.clearFiltersButton).click();
         typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'BLAH');

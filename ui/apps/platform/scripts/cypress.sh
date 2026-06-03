@@ -21,7 +21,45 @@ if [[ -n "$ROX_ADMIN_PASSWORD" ]]; then
     export CYPRESS_"${name}"="${val}"
   done
 fi
-export CYPRESS_ROX_AUTH_TOKEN=$(./scripts/get-auth-token.sh)
+roles_json="./cypress/constants/cypressTestRoles.json"
+token_prefix=$(jq -r '.tokenNamePrefix' "$roles_json")
+default_role=$(jq -r '.defaultRole' "$roles_json")
+readarray -t roles < <(jq -r '.roles[]' "$roles_json")
+
+cleanup_tokens() {
+  echo "Cleaning up cypress test tokens..."
+  ./scripts/cleanup-cypress-tokens.sh 2>&1 || echo "Warning: token cleanup failed"
+}
+
+# Clean up tokens before test run, and then again once the script exits
+cleanup_tokens
+trap cleanup_tokens EXIT
+
+for role in "${roles[@]}"; do
+  token_name="${token_prefix}_${role}"
+  env_key="ROX_AUTH_TOKEN_$(echo "$role" | tr '[:lower:] ' '[:upper:]_')"
+
+  token_stderr=$(mktemp)
+  token=$(UI_API_TOKEN_NAME="$token_name" UI_API_TOKEN_ROLE="$role" ./scripts/get-auth-token.sh 2>"$token_stderr")
+
+  if [[ -n "$token" ]]; then
+    export "CYPRESS_${env_key}=${token}"
+    echo "Created token for role: $role"
+
+    if [[ "$role" == "$default_role" ]]; then
+      export CYPRESS_ROX_AUTH_TOKEN="$token"
+    fi
+  else
+    echo >&2 "ERROR: Failed to create token for role: $role (continuing...)"
+    cat >&2 "$token_stderr"
+  fi
+  rm -f "$token_stderr"
+done
+
+if [[ -z "${CYPRESS_ROX_AUTH_TOKEN:-}" ]]; then
+  echo >&2 "FATAL: Could not create token for default role ($default_role)"
+  exit 1
+fi
 
 # eventually it should be in cypress.config.js: https://github.com/cypress-io/cypress/issues/5218
 artifacts_dir="${TEST_RESULTS_OUTPUT_DIR:-cypress/test-results}/artifacts"
