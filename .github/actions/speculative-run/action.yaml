@@ -6,10 +6,12 @@ description: >
   - Instant CPU check: slow runner and not last-copy → exit 1 (gate failure,
     next copy's monitor sees this and proceeds).
   - Fast runner (or last-copy): start nohup background monitor then proceed.
-    Monitor polls every 5s starting at 5s, checking sibling JOB status:
-    - any sibling is in_progress or succeeded → kill -TERM MY_PARENT
-      → this job shows as cancelled, no further steps run. ✅
-    - all siblings failed (slow runners) → stop polling, this copy runs. ✅
+    Monitor polls every 5s starting after 5s. On each poll it checks the
+    sibling's gate step conclusion via the GHA API:
+    - sibling gate=success AND (in_progress OR succeeded) → cancel self ✅
+    - sibling gate=failure (slow runner) → that sibling is eliminated
+    - sibling gate not yet visible → keep waiting (job still in checkout)
+    - all siblings eliminated → stop polling, this copy runs ✅
 
   Pair with speculative-declare-win at the end of the job (if: success()).
   Both actions take the same check-name value.
@@ -93,46 +95,54 @@ runs:
             SIBLING_SEP=""
           fi
 
-          # Monitor polls every 5s. First check after 5s (enough for siblings to
-          # start and be visible in the GHA API). Exits as soon as a winner is
-          # found or all siblings have failed (all slow runners → this copy runs).
+          # Monitor polls every 5s. Checks the sibling's gate step conclusion
+          # (not just job-level in_progress — that includes the checkout phase
+          # before the gate runs). The outer composite action step is visible
+          # in the GHA API as "Run ./.github/actions/speculative-run".
+          #
+          # Cancel only when sibling gate=success AND (in_progress OR succeeded).
+          # Wait if gate not yet visible (job in checkout). Stop if all siblings
+          # gate=failure (all slow runners → this copy runs as winner).
           nohup bash -c "
             sleep 5
             deadline=\$(( \$(date +%s) + 300 ))
             while [[ \$(date +%s) -lt \$deadline ]]; do
-              all_jobs=\$(gh api 'repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100' \
-                --jq '.jobs[] | \"\(.name)|\(.status)|\(.conclusion)\"' 2>/dev/null)
+              all_jobs_json=\$(gh api 'repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100' 2>/dev/null)
               winner_found=0
-              all_siblings_failed=1
+              all_eliminated=1
               for check_copy in ${prev_copies}; do
                 sibling_name='${SIBLING_BASE}${SIBLING_SEP}'\${check_copy}')'
-                matching=\$(echo \"\$all_jobs\" | grep -F \"\${sibling_name}|\" | head -1)
-                status=\$(echo \"\$matching\" | cut -d'|' -f2)
-                conclusion=\$(echo \"\$matching\" | cut -d'|' -f3)
-                echo \"[\$(date -u +%H:%M:%S)] \${check_copy}: \${status}/\${conclusion}\"
-                if [[ \"\${status}\" == 'in_progress' || \"\${conclusion}\" == 'success' ]]; then
+                sibling_info=\$(echo \"\$all_jobs_json\" | jq -r --arg n \"\${sibling_name}\" '
+                  (.jobs[] | select(.name == \$n)) as \$j |
+                  (\$j.steps | map(select(.name == \"Run ./.github/actions/speculative-run\")) | first | .conclusion // \"\") as \$g |
+                  [\$g, (\$j.status // \"\"), (\$j.conclusion // \"\")] | join(\"|\")
+                ' 2>/dev/null | head -1)
+                gate_con=\$(echo \"\$sibling_info\" | cut -d'|' -f1)
+                job_status=\$(echo \"\$sibling_info\" | cut -d'|' -f2)
+                job_con=\$(echo \"\$sibling_info\" | cut -d'|' -f3)
+                echo \"[\$(date -u +%H:%M:%S)] \${check_copy}: gate=\${gate_con} job=\${job_status}/\${job_con}\"
+                if [[ \"\${gate_con}\" == 'success' && ( \"\${job_status}\" == 'in_progress' || \"\${job_con}\" == 'success' ) ]]; then
                   winner_found=1
-                  echo \"Sibling \${check_copy} is winning — cancelling copy ${MY_COPY}.\"
+                  echo \"Sibling \${check_copy} gate passed and winning — cancelling copy ${MY_COPY}.\"
                   break
                 fi
-                [[ \"\${conclusion}\" != 'failure' ]] && all_siblings_failed=0
+                [[ \"\${gate_con}\" != 'failure' ]] && all_eliminated=0
               done
               if [[ \$winner_found -eq 1 ]]; then
-                kill -TERM ${MY_PARENT} 2>/dev/null
-                sleep 0.1
+                kill -TERM ${MY_PARENT} 2>/dev/null; sleep 0.1
                 new=\$(comm -13 /tmp/speculative-baseline <(pgrep -P ${MY_PARENT} | sort) 2>/dev/null)
                 for pid in \$new; do kill -9 \$pid 2>/dev/null; done
                 break
               fi
-              if [[ \$all_siblings_failed -eq 1 ]]; then
-                echo 'All siblings failed (slow runners) — copy ${MY_COPY} proceeds.'
+              if [[ \$all_eliminated -eq 1 ]]; then
+                echo 'All siblings gate-failed (slow runners) — copy ${MY_COPY} proceeds.'
                 break
               fi
               sleep 5
             done
           " >> /tmp/speculative-monitor.log 2>&1 &
           disown
-          echo "Monitor started — polling [${prev_copies}] every 5s."
+          echo "Monitor started — polling [${prev_copies}] every 5s (gate-aware)."
         else
           echo "Copy ${MY_COPY} is first — no monitor needed."
         fi
