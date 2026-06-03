@@ -60,6 +60,9 @@ runs:
         esac
 
         if [[ -n "$prev_copy" ]]; then
+          # Snapshot current children so we can identify the work step PID later.
+          pgrep -P "$MY_PARENT" | sort > /tmp/speculative-baseline
+
           nohup bash -c "
             sleep ${wait_secs}
             prev_gate=\$(gh api 'repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100' \
@@ -67,8 +70,13 @@ runs:
               2>/dev/null | grep -v '^\$' | head -1)
             echo \"[\$(date -u +%H:%M:%S)] Sibling ${prev_copy} gate: '\${prev_gate}'\"
             if [[ \"\${prev_gate}\" == 'success' ]]; then
-              echo 'Sibling is fast — cancelling this copy (kill -TERM ${MY_PARENT})'
-              kill -TERM ${MY_PARENT}
+              echo 'Sibling is fast — cancelling this copy.'
+              # SIGTERM parent first: runner marks job as cancelled (not failure).
+              kill -TERM ${MY_PARENT} 2>/dev/null
+              sleep 0.1
+              # SIGKILL new children (the work step bash) so they stop immediately.
+              new=\$(comm -13 /tmp/speculative-baseline <(pgrep -P ${MY_PARENT} | sort) 2>/dev/null)
+              for pid in \$new; do kill -9 \$pid 2>/dev/null; done
             else
               echo 'Sibling was slow or absent — this copy proceeds normally.'
             fi
