@@ -422,17 +422,13 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 		// First, deduplicate any vulnerabilities which Claircore may repeat.
 		// This may happen, for example, when we match the same vulnerability to multiple CPEs
 		// in Red Hat's OVAL or VEX data.
-		// DISABLED for Scanner Output A: Keep all advisories, no CVE dedup.
+		// DISABLED for Scanner Output A: Keep all advisories, no CVE dedup, no RHSA dedup.
 		// vulnIDs = dedupeVulns(vulnIDs, ccVulnerabilities)
-		// Only do the following if we want RH advisories to be top level.
-		if !features.ScannerV4RedHatCVEs.Enabled() {
-			// Next, sort by NVD CVSS score.
-			sortByNVDCVSS(vulnIDs, vulnerabilities)
-			// Next, deduplicate and vulnerabilities with the same Red Hat advisory name.
-			// We just take the first one here, which is why we sorted by NVD CVSS score beforehand.
-			// We will take the version of the advisory associated with the highest NVD CVSS score.
-			vulnIDs = dedupeAdvisories(vulnIDs, vulnerabilities)
-		}
+		// DISABLED for Scanner Output A: Keep both CVE and RHSA advisories as separate findings.
+		// if !features.ScannerV4RedHatCVEs.Enabled() {
+		// 	sortByNVDCVSS(vulnIDs, vulnerabilities)
+		// 	vulnIDs = dedupeAdvisories(vulnIDs, vulnerabilities)
+		// }
 		// Lastly, sort by severity in case we may still have any duplications we missed previously.
 		sortBySeverity(vulnIDs, vulnerabilities)
 		pkgVulns[id] = &v4.StringList{
@@ -721,6 +717,22 @@ func toProtoV4VulnerabilitiesMap(
 		vulnerabilities[k].CveName = vulnerabilityName(v)
 		vulnerabilities[k].AdvisoryId = v.Name
 		vulnerabilities[k].SourceName = updaterDisplayName(v.Updater)
+
+		// For finding-as-advisory model: if this is Red Hat VEX and has RHSAs in Links,
+		// create additional findings for each RHSA (keeping the VEX finding too).
+		if strings.EqualFold(v.Updater, RedHatUpdaterName) {
+			rhsaNames := RedHatAdvisoryPattern.FindAllString(v.Links, -1)
+			for _, rhsaName := range rhsaNames {
+				// Create a new key for the RHSA finding
+				rhsaKey := k + ":" + rhsaName
+				// Clone the vulnerability but with RHSA as advisory ID
+				rhsaVuln := *vulnerabilities[k] // shallow copy
+				rhsaVuln.AdvisoryId = rhsaName
+				rhsaVuln.SourceName = "Red Hat Advisory"
+				rhsaVuln.Link = redhatErrataURLPrefix + rhsaName
+				vulnerabilities[rhsaKey] = &rhsaVuln
+			}
+		}
 	}
 	return vulnerabilities, nil
 }
