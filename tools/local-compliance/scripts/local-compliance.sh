@@ -30,5 +30,5 @@ ROX_NODE_SCANNING_INTERVAL="${ROX_NODE_SCANNING_INTERVAL:-30s}" \
 ROX_MTLS_CA_FILE="${DIR}/../certs/ca.pem" \
 ROX_MTLS_CERT_FILE="${DIR}/../certs/collector-cert.pem" \
 ROX_MTLS_KEY_FILE="${DIR}/../certs/collector-key.pem" \
-ROX_ADVERTISED_ENDPOINT="localhost:8554" \
+ROX_SENSOR_ENDPOINT="localhost:8554" \
     go run tools/local-compliance/*.go

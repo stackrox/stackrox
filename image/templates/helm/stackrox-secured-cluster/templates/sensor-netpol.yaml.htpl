@@ -8,7 +8,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "sensor") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "networkpolicy" "sensor") | nindent 4 }}
 spec:
@@ -54,7 +53,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "sensor-monitoring") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "networkpolicy" "sensor-monitoring") | nindent 4 }}
 spec:
@@ -78,7 +76,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "sensor-monitoring-tls") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "networkpolicy" "sensor-monitoring-tls") | nindent 4 }}
 spec:
@@ -102,7 +99,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "sensor-proxy") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "networkpolicy" "sensor-proxy") | nindent 4 }}
 spec:

@@ -549,7 +549,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # ratchet:docker/login-action@v4
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         with:
@@ -575,7 +575,7 @@ jobs:
       - name: Login to quay.io/stackrox-io
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # ratchet:docker/login-action@v4
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
@@ -614,7 +614,7 @@ jobs:
       - name: Login to quay.io/rhacs-eng
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # ratchet:docker/login-action@v4
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
@@ -779,7 +779,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # ratchet:docker/login-action@v4
         continue-on-error: true
         # Skip for external contributions.
         if: |
@@ -1129,7 +1129,7 @@ jobs:
           GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ docker-build-prebuilt
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # ratchet:docker/login-action@v4
         continue-on-error: true
         # Skip for external contributions.
         if: |
@@ -1210,7 +1210,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # ratchet:docker/login-action@v4
         continue-on-error: true
         if: |
           matrix.arch != 'amd64' && matrix.arch != 'arm64' &&
@@ -1461,6 +1461,8 @@ jobs:
       # Needed for stackrox/central-login to create the JWT token.
       id-token: write
       security-events: write
+    env:
+      ARTIFACT_DIR: junit-reports/
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).scan_images_with_roxctl }}
@@ -1486,6 +1488,7 @@ jobs:
           central-token: ${{ env.ROX_API_TOKEN }}
 
       - name: Scan images for vulnerabilities
+        id: scan
         env:
           BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
           SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
@@ -1497,10 +1500,17 @@ jobs:
           fi
 
           registry="$(./scripts/ci/lib.sh registry_from_branding "${{ matrix.name }}")"
+          image_ref="${registry}/${{ matrix.image }}:${release_tag}"
+          echo "image_ref=${image_ref}" >> "$GITHUB_OUTPUT"
 
           roxctl image scan --retries=10 --retry-delay=15 --force --severity=CRITICAL,IMPORTANT --output=sarif \
-            --image="${registry}/${{ matrix.image }}:${release_tag}" \
+            --image="${image_ref}" \
             | tee results.sarif
+
+      - name: Convert SARIF to JUnit
+        if: always()
+        run: |
+          ./scripts/ci/sarif-to-junit.sh results.sarif "${{ steps.scan.outputs.image_ref }}"
 
       # TODO: re-enable roxctl scan results upload once quota issue has been resolved
       # - name: Upload roxctl scan results to GitHub Security tab
@@ -1508,6 +1518,15 @@ jobs:
       #   with:
       #     category: ${{ matrix.image }}
       #     sarif_file: results.sarif
+
+      - name: Report junit failures in jira
+        uses: ./.github/actions/junit2jira
+        if: always()
+        with:
+          jira-user: ${{ secrets.JIRA_USER }}
+          jira-token: ${{ secrets.JIRA_TOKEN }}
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+          directory: 'junit-reports'
 
   slack-on-build-failure:
     env:
