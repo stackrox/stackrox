@@ -12,6 +12,9 @@ on:
     - reopened
     - synchronize
   workflow_dispatch:
+permissions:
+  checks: write  # speculative-run and speculative-declare-win post/patch check-runs
+
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 

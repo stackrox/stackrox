@@ -13,6 +13,9 @@ on:
     - synchronize
   workflow_dispatch:
 
+permissions:
+  checks: write  # speculative-run and speculative-declare-win post/patch check-runs
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true

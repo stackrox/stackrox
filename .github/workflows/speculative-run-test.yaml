@@ -201,6 +201,10 @@ jobs:
           echo "Copy ${{ matrix.copy }}: working..."
           sleep 5
 
+      - name: Monitor log
+        if: always()
+        run: cat /tmp/speculative-monitor.log 2>/dev/null || echo "(no log)"
+
       - uses: ./.github/actions/speculative-declare-win
         if: success()
         with:
