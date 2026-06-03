@@ -1,6 +1,7 @@
 package reportgenerator
 
 import (
+	"bytes"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -174,6 +175,13 @@ type ReportQueryParts struct {
 // ReportData contains the cve rows to be included in the report along with counts of deployed and watched image CVEs
 type ReportData struct {
 	CVEResponses            []*ImageCVEQueryResponse
+	NumDeployedImageResults int
+	NumWatchedImageResults  int
+}
+
+// StreamingReportResult holds the output of streaming CSV generation.
+type StreamingReportResult struct {
+	ZippedCSVData           *bytes.Buffer
 	NumDeployedImageResults int
 	NumWatchedImageResults  int
 }

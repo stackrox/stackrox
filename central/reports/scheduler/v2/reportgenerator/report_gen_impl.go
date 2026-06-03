@@ -133,24 +133,23 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 
 /* Report generation helper functions */
 func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error {
-	// Get the results of running the report query
+	var result *StreamingReportResult
 	var err error
-	var reportData *ReportData
-	if req.ReportSnapshot.GetVulnReportFilters() != nil {
-		reportData, err = rg.getReportDataSQF(req.ReportSnapshot, req.Collection, req.DataStartTime)
-	}
-	if req.ReportSnapshot.GetViewBasedVulnReportFilters() != nil {
-		reportData, err = rg.getReportDataViewBased(req.ReportSnapshot)
+
+	switch {
+	case req.ReportSnapshot.GetVulnReportFilters() != nil:
+		result, err = rg.generateReportStreamingSQF(req.ReportSnapshot, req.Collection,
+			req.DataStartTime, req.ReportSnapshot.GetName())
+	case req.ReportSnapshot.GetViewBasedVulnReportFilters() != nil:
+		result, err = rg.generateReportStreamingViewBased(req.ReportSnapshot, req.ReportSnapshot.GetName())
+	default:
+		return errors.New("report snapshot has no vulnerability report filters configured")
 	}
 	if err != nil {
 		return err
 	}
 
-	// Format results into CSV
-	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.GetName())
-	if err != nil {
-		return err
-	}
+	zippedCSVData := result.ZippedCSVData
 
 	req.ReportSnapshot.ReportStatus.CompletedAt = protocompat.TimestampNow()
 	err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_GENERATED)
@@ -173,11 +172,8 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 		if err != nil {
 			return errors.Wrap(err, "Error generating email subject")
 		}
-		// If it is an empty report, do not send an attachment in the final notification email and the email body
-		// will indicate that no vulns were found
 		templateStr := defaultEmailBodyTemplate
-		if reportData.NumDeployedImageResults == 0 && reportData.NumWatchedImageResults == 0 {
-			// If it is an empty report, the email body will indicate that no vulns were found
+		if result.NumDeployedImageResults == 0 && result.NumWatchedImageResults == 0 {
 			zippedCSVData = nil
 			templateStr = defaultNoVulnsEmailBodyTemplate
 		}
@@ -187,8 +183,8 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 			return errors.Wrap(err, "Error generating email body")
 		}
 
-		configDetailsHTML, err := formatReportConfigDetails(req.ReportSnapshot, reportData.NumDeployedImageResults,
-			reportData.NumWatchedImageResults)
+		configDetailsHTML, err := formatReportConfigDetails(req.ReportSnapshot, result.NumDeployedImageResults,
+			result.NumWatchedImageResults)
 		if err != nil {
 			return errors.Wrap(err, "Error adding report config details")
 		}
@@ -484,6 +480,110 @@ func (rg *reportGeneratorImpl) withCVEReferenceLinks(imageCVEResponses []*ImageC
 		}
 	}
 	return imageCVEResponses, nil
+}
+
+func (rg *reportGeneratorImpl) generateReportStreamingSQF(
+	snap *storage.ReportSnapshot,
+	collection *storage.ResourceCollection,
+	dataStartTime time.Time,
+	configName string,
+) (*StreamingReportResult, error) {
+	rQuery, err := rg.buildReportQuery(snap, collection, dataStartTime)
+	if err != nil {
+		return nil, err
+	}
+	cveFilterQuery, err := search.ParseQuery(rQuery.CveFieldsQuery, search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, err
+	}
+
+	var runDeployedQuery func(batchFn func(ctx context.Context, batch []*ImageCVEQueryResponse) error) error
+	var runWatchedQuery func(batchFn func(ctx context.Context, batch []*ImageCVEQueryResponse) error) error
+
+	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
+		query := search.ConjunctionQuery(rQuery.DeploymentsQuery, cveFilterQuery)
+		query.Pagination = deployedImagesQueryParts.Pagination
+		query.Selects = deployedImagesQueryParts.Selects
+		runDeployedQuery = func(batchFn func(ctx context.Context, batch []*ImageCVEQueryResponse) error) error {
+			return pgSearch.RunSelectRequestForSchemaFnCursored[ImageCVEQueryResponse](
+				reportGenCtx, rg.db, deployedImagesQueryParts.Schema, query,
+				chunkSize, batchFn)
+		}
+	}
+
+	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_WATCHED) {
+		watchedImages, err := rg.getWatchedImages()
+		if err != nil {
+			return nil, err
+		}
+		if len(watchedImages) != 0 {
+			query := search.ConjunctionQuery(
+				search.NewQueryBuilder().AddExactMatches(search.ImageName, watchedImages...).ProtoQuery(),
+				cveFilterQuery)
+			query.Pagination = watchedImagesQueryParts.Pagination
+			query.Selects = watchedImagesQueryParts.Selects
+			runWatchedQuery = func(batchFn func(ctx context.Context, batch []*ImageCVEQueryResponse) error) error {
+				return pgSearch.RunSelectRequestForSchemaFnCursored[ImageCVEQueryResponse](
+					reportGenCtx, rg.db, watchedImagesQueryParts.Schema, query,
+					chunkSize, batchFn)
+			}
+		}
+	}
+
+	return GenerateCSVStreaming(configName, rg.resolveCVELinks, runDeployedQuery, runWatchedQuery)
+}
+
+func (rg *reportGeneratorImpl) generateReportStreamingViewBased(
+	snap *storage.ReportSnapshot,
+	configName string,
+) (*StreamingReportResult, error) {
+	watchedImages, err := rg.getWatchedImages()
+	if err != nil {
+		return nil, err
+	}
+	query, err := rg.buildReportQueryViewBased(snap, watchedImages)
+	if err != nil {
+		return nil, err
+	}
+
+	query.DeployedImagesQuery.Pagination = deployedImagesQueryParts.Pagination
+	query.DeployedImagesQuery.Selects = deployedImagesQueryParts.Selects
+	runDeployedQuery := func(batchFn func(ctx context.Context, batch []*ImageCVEQueryResponse) error) error {
+		return pgSearch.RunSelectRequestForSchemaFnCursored[ImageCVEQueryResponse](
+			reportGenCtx, rg.db, deployedImagesQueryParts.Schema, query.DeployedImagesQuery,
+			chunkSize, batchFn)
+	}
+
+	var runWatchedQuery func(batchFn func(ctx context.Context, batch []*ImageCVEQueryResponse) error) error
+	if len(watchedImages) != 0 {
+		query.WatchedImagesQuery.Pagination = watchedImagesQueryParts.Pagination
+		query.WatchedImagesQuery.Selects = watchedImagesQueryParts.Selects
+		runWatchedQuery = func(batchFn func(ctx context.Context, batch []*ImageCVEQueryResponse) error) error {
+			return pgSearch.RunSelectRequestForSchemaFnCursored[ImageCVEQueryResponse](
+				reportGenCtx, rg.db, watchedImagesQueryParts.Schema, query.WatchedImagesQuery,
+				chunkSize, batchFn)
+		}
+	}
+
+	return GenerateCSVStreaming(configName, rg.resolveCVELinks, runDeployedQuery, runWatchedQuery)
+}
+
+// resolveCVELinks fetches reference links for the given CVE IDs via GetBatch.
+// The ctx should carry the cursor's transaction (via postgres.ContextWithTx)
+// so that GetBatch reuses the same DB connection.
+func (rg *reportGeneratorImpl) resolveCVELinks(ctx context.Context, cveIDs []string) (map[string]string, error) {
+	if len(cveIDs) == 0 {
+		return nil, nil
+	}
+	imageCVEV2, err := rg.imageCVE2Datastore.GetBatch(ctx, cveIDs)
+	if err != nil {
+		return nil, err
+	}
+	refLinks := make(map[string]string, len(imageCVEV2))
+	for _, cve := range imageCVEV2 {
+		refLinks[cve.GetId()] = cve.GetCveBaseInfo().GetLink()
+	}
+	return refLinks, nil
 }
 
 func (rg *reportGeneratorImpl) updateReportStatus(snapshot *storage.ReportSnapshot, status storage.ReportStatus_RunState) error {

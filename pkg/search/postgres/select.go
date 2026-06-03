@@ -12,9 +12,11 @@ import (
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/random"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -215,6 +217,122 @@ func RunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, sch
 	return pgutils.Retry(ctx, func() error {
 		return retryableRunSelectRequestForSchemaFn[T](ctx, db, query, fn)
 	})
+}
+
+// RunSelectRequestForSchemaFnCursored executes a select request using a
+// server-side cursor, yielding results in batches. The context passed to
+// batchFn has the cursor's transaction injected, so any DB operations inside
+// batchFn reuse the same connection (no pool contention).
+func RunSelectRequestForSchemaFnCursored[T any](
+	ctx context.Context,
+	db postgres.DB,
+	schema *walker.Schema,
+	q *v1.Query,
+	batchSize int,
+	batchFn func(ctx context.Context, batch []*T) error,
+) (retErr error) {
+	var preparedQuery *query
+	defer func() {
+		if r := recover(); r != nil {
+			if preparedQuery != nil {
+				log.Errorf("Query issue: %s: %v", preparedQuery.AsSQL(), r)
+			} else {
+				log.Errorf("Unexpected error running cursored select request: %v", r)
+			}
+			debug.PrintStack()
+			retErr = fmt.Errorf("unexpected error running cursored select request: %v", r)
+		}
+	}()
+
+	arrayFields := getArrayFieldsFromType[T]()
+
+	var err error
+	preparedQuery, err = standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT, arrayFields)
+	if err != nil {
+		return err
+	}
+	if preparedQuery == nil {
+		return nil
+	}
+
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
+	defer cancel()
+
+	return pgutils.Retry(ctx, func() error {
+		return retryableRunSelectCursored[T](ctx, db, preparedQuery, batchSize, batchFn)
+	})
+}
+
+func retryableRunSelectCursored[T any](
+	ctx context.Context,
+	db postgres.DB,
+	q *query,
+	batchSize int,
+	batchFn func(ctx context.Context, batch []*T) error,
+) error {
+	if len(q.SelectedFields) == 0 {
+		return errors.New("select fields required for cursored select query")
+	}
+
+	queryStr := q.AsSQL()
+
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return errors.Wrap(err, "creating cursor transaction")
+	}
+	defer func() {
+		if err := tx.Commit(ctx); err != nil {
+			log.Errorf("error committing cursor transaction: %v", err)
+		}
+	}()
+
+	cursorID := fmt.Sprintf("select_cursor_%s", random.GenerateString(8, random.CaseInsensitiveAlpha))
+	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursorID, queryStr), q.Data...)
+	if err != nil {
+		return errors.Wrap(err, "declaring cursor")
+	}
+
+	txCtx := postgres.ContextWithTx(ctx, tx)
+
+	// Pre-allocate batch slice; reused across iterations.
+	// batchFn must not retain the slice after returning.
+	batch := make([]*T, 0, batchSize)
+
+	for {
+		rows, err := tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", batchSize, cursorID))
+		if err != nil {
+			return errors.Wrap(err, "fetching from cursor")
+		}
+
+		batch = batch[:0]
+		scanner := scanAPI.NewRowScanner(rows)
+		for rows.Next() {
+			var row T
+			if err := scanner.Scan(&row); err != nil {
+				rows.Close()
+				return err
+			}
+			batch = append(batch, &row)
+		}
+		rows.Close()
+		if err := rows.Err(); err != nil {
+			return err
+		}
+
+		if len(batch) == 0 {
+			break
+		}
+
+		if err := batchFn(txCtx, batch); err != nil {
+			return errors.Wrap(err, "processing batch")
+		}
+
+		if len(batch) < batchSize {
+			break
+		}
+	}
+
+	return nil
 }
 
 func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType, arrayFields map[string]bool) (*query, error) {
