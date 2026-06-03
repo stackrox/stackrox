@@ -4,7 +4,10 @@ package reportgenerator
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"runtime"
+	"runtime/pprof"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -40,7 +43,8 @@ func BenchmarkFullReportPipeline(b *testing.B) {
 
 	var testDB *pgtest.TestPostgres
 	if reuseDB {
-		testDB = benchGetOrCreateDB(b, "bench_report_pipeline")
+		// testDB = benchGetOrCreateDB(b, "bench_report_pipeline")
+		testDB = benchGetOrCreateDB(b, "f4525a8b6264c19_QJbPL")
 	} else {
 		testDB = pgtest.ForT(b)
 	}
@@ -88,7 +92,7 @@ func BenchmarkFullReportPipeline(b *testing.B) {
 		{Id: uuid.NewV4().String(), Name: "c5"},
 	}
 
-	namespaces := testNamespaces(clusters, 100)
+	namespaces := testNamespaces(clusters, 1000)
 
 	// Check if test data already exists (for DB reuse).
 	depCount, err := resolver.DeploymentDataStore.Count(ctx, search.EmptyQuery())
@@ -148,14 +152,14 @@ func BenchmarkFullReportPipeline(b *testing.B) {
 		storage.VulnerabilityReportFilters_BOTH, allSeverities(), imageTypes, nil)
 
 	// 5 clusters × 100 ns × 100 deps × 2 CVEs + 500 watched × 2 CVEs = 101000
-	expectedRowCount := 101000
+	expectedRowCount := 1001000
 
 	b.Run("Old_Buffered", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			var peakHeap atomic.Uint64
 			done := make(chan struct{})
-			go trackPeakHeap(&peakHeap, done)
+			go trackPeakHeap(&peakHeap, done, nil)
 
 			reportData, err := reportGenerator.getReportDataSQF(reportSnap, collection, time.Time{})
 			require.NoError(b, err)
@@ -174,8 +178,22 @@ func BenchmarkFullReportPipeline(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			var peakHeap atomic.Uint64
+			profileSeq := 0
 			done := make(chan struct{})
-			go trackPeakHeap(&peakHeap, done)
+			go trackPeakHeap(&peakHeap, done, func(heapBytes uint64) {
+				profileSeq++
+				fname := fmt.Sprintf("streaming_heap_peak_%03d_%dMB.prof", profileSeq, heapBytes/(1024*1024))
+				f, err := os.Create(fname)
+				if err != nil {
+					b.Logf("failed to create heap profile %s: %v", fname, err)
+					return
+				}
+				defer f.Close()
+				runtime.GC()
+				if err := pprof.WriteHeapProfile(f); err != nil {
+					b.Logf("failed to write heap profile %s: %v", fname, err)
+				}
+			})
 
 			result, err := reportGenerator.generateReportStreamingSQF(reportSnap, collection, time.Time{}, "bench_test")
 			require.NoError(b, err)
@@ -184,6 +202,7 @@ func BenchmarkFullReportPipeline(b *testing.B) {
 
 			close(done)
 			b.ReportMetric(float64(peakHeap.Load()), "peak_heap_bytes")
+			b.Logf("wrote %d heap profiles", profileSeq)
 		}
 	})
 }
@@ -204,8 +223,8 @@ func benchGetOrCreateDB(b *testing.B, dbName string) *pgtest.TestPostgres {
 	}
 }
 
-func trackPeakHeap(peak *atomic.Uint64, done <-chan struct{}) {
-	ticker := time.NewTicker(5 * time.Millisecond)
+func trackPeakHeap(peak *atomic.Uint64, done <-chan struct{}, onNewPeak func(heapBytes uint64)) {
+	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 	for {
 		select {
@@ -214,10 +233,10 @@ func trackPeakHeap(peak *atomic.Uint64, done <-chan struct{}) {
 		case <-ticker.C:
 			var m runtime.MemStats
 			runtime.ReadMemStats(&m)
-			for {
-				cur := peak.Load()
-				if m.HeapAlloc <= cur || peak.CompareAndSwap(cur, m.HeapAlloc) {
-					break
+			cur := peak.Load()
+			if m.HeapAlloc > cur && peak.CompareAndSwap(cur, m.HeapAlloc) {
+				if onNewPeak != nil {
+					onNewPeak(m.HeapAlloc)
 				}
 			}
 		}

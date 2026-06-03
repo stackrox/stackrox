@@ -2,6 +2,7 @@ package reportgenerator
 
 import (
 	"archive/zip"
+	"bufio"
 	"bytes"
 	"context"
 	gocsv "encoding/csv"
@@ -226,7 +227,8 @@ func GenerateCSVStreaming(
 		return nil, errors.Wrapf(err, "unable to create zip file for report config '%s'", configName)
 	}
 
-	csvW := gocsv.NewWriter(zipFile)
+	bufferedZip := bufio.NewWriterSize(zipFile, 64*1024)
+	csvW := gocsv.NewWriter(bufferedZip)
 	csvW.UseCRLF = true
 	if err := csvW.Write(csvHeader); err != nil {
 		return nil, errors.Wrap(err, "error writing CSV header")
@@ -258,6 +260,9 @@ func GenerateCSVStreaming(
 	csvW.Flush()
 	if err := csvW.Error(); err != nil {
 		return nil, errors.Wrap(err, "error flushing CSV writer")
+	}
+	if err := bufferedZip.Flush(); err != nil {
+		return nil, errors.Wrap(err, "error flushing buffered zip writer")
 	}
 	if err := zipWriter.Close(); err != nil {
 		return nil, errors.Wrapf(err, "unable to close zip file for report config '%s'", configName)

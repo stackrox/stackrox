@@ -3,6 +3,7 @@ package reportgenerator
 import (
 	"bytes"
 	"context"
+	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -581,7 +582,7 @@ func (rg *reportGeneratorImpl) resolveCVELinks(ctx context.Context, cveIDs []str
 	}
 	refLinks := make(map[string]string, len(imageCVEV2))
 	for _, cve := range imageCVEV2 {
-		refLinks[cve.GetId()] = cve.GetCveBaseInfo().GetLink()
+		refLinks[strings.Clone(cve.GetId())] = strings.Clone(cve.GetCveBaseInfo().GetLink())
 	}
 	return refLinks, nil
 }
