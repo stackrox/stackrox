@@ -98,7 +98,47 @@ jobs:
             -f "output[title]=Copy ${{ matrix.copy }} won" \
             2>&1 || echo "::warning::check-run post failed"
 
-  # Test 2: copy a is on a slow runner (cpu gate fires → gate fails).
+  # Test 2: three-copy race. copy a wins on first runner, b/c cancelled.
+  # Expected: a=success, b=cancelled (~30s), c=cancelled (~60s).
+  test-three-copy:
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b, c]
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/speculative-run
+        with:
+          copy: ${{ matrix.copy }}
+          last-copy: c
+          slow-cpu-pattern: NEVER_MATCH_THIS
+
+      - name: Work (90s — b cancelled at ~30s, c at ~60s)
+        run: |
+          echo "Copy ${{ matrix.copy }}: working..."
+          sleep 90
+          echo "Copy ${{ matrix.copy }}: done"
+
+      - name: Monitor log
+        if: always()
+        run: cat /tmp/speculative-monitor.log 2>/dev/null || echo "(no log)"
+
+      - name: Declare win
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/${{ github.repository }}/check-runs \
+            -f name="test-three-copy" \
+            -f head_sha="${{ github.sha }}" \
+            -f status=completed \
+            -f conclusion=success \
+            -f "output[title]=Copy ${{ matrix.copy }} won" \
+            2>&1 || echo "::warning::check-run post failed"
+
+  # Test 3: copy a is on a slow runner (cpu gate fires → gate fails).
   # Expected: copy a=failure (gate), copy b=success.
   test-a-slow-b-wins:
     strategy:
