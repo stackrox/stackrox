@@ -53,7 +53,7 @@ func TestIndexer_IndexContainerImage(t *testing.T) {
 				err := json.NewDecoder(r.Body).Decode(&manifest)
 				require.NoError(t, err)
 				assert.Equal(t, tc.hashID, manifest.Hash)
-				assert.Empty(t, manifest.Layers) // Layers are empty for now
+				assert.Empty(t, manifest.Layers) // Stub fetcher returns empty layers
 
 				w.WriteHeader(tc.mockStatus)
 				if tc.mockResponse != nil {
@@ -63,11 +63,16 @@ func TestIndexer_IndexContainerImage(t *testing.T) {
 			}))
 			defer server.Close()
 
-			// Create client and indexer
+			// Create client and indexer with stub layer fetcher
 			client, err := clairclient.NewClient(server.URL)
 			require.NoError(t, err)
 
-			indexer := NewLocalIndexer(client, nil)
+			// Stub fetcher that returns empty layers
+			stubFetcher := func(ctx context.Context, imageURL string, opts indexOpts) ([]clairclient.Layer, error) {
+				return []clairclient.Layer{}, nil
+			}
+
+			indexer := NewLocalIndexer(client, nil, WithLayerFetcher(stubFetcher))
 
 			// Execute test
 			ctx := context.Background()
@@ -108,7 +113,12 @@ func TestIndexer_IndexContainerImage_WithMetadataStore(t *testing.T) {
 		stored: make(map[string]time.Time),
 	}
 
-	indexer := NewLocalIndexer(client, mockStore)
+	// Stub fetcher that returns empty layers
+	stubFetcher := func(ctx context.Context, imageURL string, opts indexOpts) ([]clairclient.Layer, error) {
+		return []clairclient.Layer{}, nil
+	}
+
+	indexer := NewLocalIndexer(client, mockStore, WithLayerFetcher(stubFetcher))
 
 	ctx := context.Background()
 	report, err := indexer.IndexContainerImage(ctx, "sha256:stored123", "registry.io/image:v1")
@@ -255,7 +265,12 @@ func TestIndexer_WithOptions(t *testing.T) {
 	client, err := clairclient.NewClient(server.URL)
 	require.NoError(t, err)
 
-	indexer := NewLocalIndexer(client, nil)
+	// Stub fetcher that returns empty layers
+	stubFetcher := func(ctx context.Context, imageURL string, opts indexOpts) ([]clairclient.Layer, error) {
+		return []clairclient.Layer{}, nil
+	}
+
+	indexer := NewLocalIndexer(client, nil, WithLayerFetcher(stubFetcher))
 
 	ctx := context.Background()
 	_, err = indexer.IndexContainerImage(

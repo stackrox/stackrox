@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -50,34 +51,58 @@ func WithInsecureSkipTLSVerify(skip bool) Option {
 	}
 }
 
+// layerFetcher is a function that fetches layer descriptors from a registry.
+type layerFetcher func(ctx context.Context, imageURL string, opts indexOpts) ([]clairclient.Layer, error)
+
 // localIndexer implements the Indexer interface using a Clair HTTP client.
 type localIndexer struct {
 	clair         *clairclient.Client
 	metadataStore datastore.IndexerMetadataStore // may be nil
+	fetchLayers   layerFetcher                   // defaults to fetchManifestLayers
+}
+
+// LocalIndexerOption configures a localIndexer.
+type LocalIndexerOption func(*localIndexer)
+
+// WithLayerFetcher overrides the default layer fetcher (used for testing).
+func WithLayerFetcher(fetcher layerFetcher) LocalIndexerOption {
+	return func(l *localIndexer) {
+		l.fetchLayers = fetcher
+	}
 }
 
 // NewLocalIndexer creates a new indexer that delegates to a Clair HTTP client.
 // The metadataStore parameter is optional (may be nil) and is used to track manifest lifecycle.
-func NewLocalIndexer(clair *clairclient.Client, metadataStore datastore.IndexerMetadataStore) Indexer {
-	return &localIndexer{
+func NewLocalIndexer(clair *clairclient.Client, metadataStore datastore.IndexerMetadataStore, opts ...LocalIndexerOption) Indexer {
+	idx := &localIndexer{
 		clair:         clair,
 		metadataStore: metadataStore,
+		fetchLayers:   fetchManifestLayers,
 	}
+	for _, opt := range opts {
+		opt(idx)
+	}
+	return idx
 }
 
 // IndexContainerImage indexes a container image by submitting a manifest to Clair.
-// Currently, layers are left empty as full registry interaction is planned for the future.
 func (l *localIndexer) IndexContainerImage(ctx context.Context, hashID, imageURL string, opts ...Option) (*clairclient.IndexReport, error) {
-	// Apply options (currently not used in manifest construction, reserved for future registry integration)
+	// Apply options
 	var options indexOpts
 	for _, opt := range opts {
 		opt(&options)
 	}
 
-	// Build manifest with empty layers (full registry interaction is a future plan)
+	// Fetch manifest layers from registry
+	layers, err := l.fetchLayers(ctx, imageURL, options)
+	if err != nil {
+		return nil, fmt.Errorf("fetching manifest layers: %w", err)
+	}
+
+	// Build manifest for Clair
 	manifest := clairclient.Manifest{
 		Hash:   hashID,
-		Layers: []clairclient.Layer{},
+		Layers: layers,
 	}
 
 	// Submit to Clair for indexing
