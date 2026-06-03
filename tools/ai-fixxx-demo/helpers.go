@@ -2,11 +2,11 @@ package demo
 
 import (
 	"fmt"
-	"strings"
 	"os"
+	"strings"
 )
 
-// FormatName formates a name for display.
+// FormatName formats a name for display.
 func FormatName(first, last string) string {
 	return fmt.Sprintf("%s %s", strings.TrimSpace(first), strings.TrimSpace(last))
 }
