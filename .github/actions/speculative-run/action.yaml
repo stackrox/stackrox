@@ -6,25 +6,35 @@ description: >
   - Instant CPU check: slow runner and not last-copy → exit 1 (gate failure,
     next copy's monitor sees this and proceeds).
   - Fast runner (or last-copy): start nohup background monitor then proceed.
-    Monitor waits 30s × position, then checks all earlier copies' JOB status:
+    Monitor waits 30s × position, then checks all earlier copies' JOB status
+    for THIS exact job (matched by check-name + copy letter):
     - any sibling is in_progress or succeeded → kill -TERM MY_PARENT
       → this job shows as cancelled, no further steps run. ✅
     - all siblings failed (slow runners) or absent → this copy runs. ✅
+
+  Pair with speculative-declare-win at the end of the job (if: success()).
+  Both actions take the same check-name value.
 
 inputs:
   copy:
     description: 'This copy letter (a, b, or c)'
     required: true
+  check-name:
+    description: >
+      Required check name WITHOUT the copy letter suffix (same value passed to
+      speculative-declare-win). Used to identify sibling copies in the GHA API.
+      Example: "pre-build-go-binaries (default, amd64)"
+    required: true
   last-copy:
-    description: 'Unconditional fallback (b for 2-copy, c for 3-copy)'
+    description: 'Unconditional fallback copy that always runs regardless of CPU (b for 2-copy, c for 3-copy)'
     required: false
     default: 'b'
   slow-cpu-pattern:
-    description: 'CPU substring marking a slow runner'
+    description: 'Substring of CPU model name that marks a slow runner'
     required: false
     default: '7763'
   enabled:
-    description: 'Set to false to disable speculative execution — all copies run normally'
+    description: 'Set to false to disable speculative execution — all copies run normally (useful for debugging)'
     required: false
     default: 'true'
 
@@ -43,6 +53,7 @@ runs:
           exit 0
         fi
         MY_COPY="${{ inputs.copy }}"
+        CHECK_NAME="${{ inputs.check-name }}"
         LAST_COPY="${{ inputs.last-copy }}"
         SLOW_PATTERN="${{ inputs.slow-cpu-pattern }}"
         RUN_ID="${{ github.run_id }}"
@@ -72,21 +83,21 @@ runs:
           # Snapshot current children so we can identify the work step PID later.
           pgrep -P "$MY_PARENT" | sort > /tmp/speculative-baseline
 
-          # Monitor checks JOB-level status.
-          # Note: composite-action internal steps are NOT visible in the jobs API,
-          # so we check job-level .status/.conclusion instead of step conclusions.
-          # --jq filter uses no shell variables (single-quote-safe); grep handles
-          # the copy-letter match where bash expands ${check_copy}.
+          # Monitor checks JOB-level status using an exact job name match.
+          # Sibling job name format: "${CHECK_NAME}, ${check_copy})"
+          # grep -F (fixed string, no regex) avoids issues with special chars
+          # in check-name (dots, slashes in registry names, etc.).
           nohup bash -c "
             sleep ${wait_secs}
             all_jobs=\$(gh api 'repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100' \
               --jq '.jobs[] | \"\(.name)|\(.status)|\(.conclusion)\"' 2>/dev/null)
             winner_found=0
             for check_copy in ${prev_copies}; do
-              matching=\$(echo \"\$all_jobs\" | grep -E \"[( ,]\${check_copy}[)][|]\" | head -1)
+              sibling_name='${CHECK_NAME}, '\${check_copy}')'
+              matching=\$(echo \"\$all_jobs\" | grep -F \"\${sibling_name}|\" | head -1)
               status=\$(echo \"\$matching\" | cut -d'|' -f2)
               conclusion=\$(echo \"\$matching\" | cut -d'|' -f3)
-              echo \"[\$(date -u +%H:%M:%S)] Sibling \${check_copy}: status=\${status} conclusion=\${conclusion}\"
+              echo \"[\$(date -u +%H:%M:%S)] Sibling \${check_copy} ('\${sibling_name}'): status=\${status} conclusion=\${conclusion}\"
               if [[ \"\${status}\" == 'in_progress' || \"\${conclusion}\" == 'success' ]]; then
                 winner_found=1
                 echo \"Sibling \${check_copy} is winning — cancelling this copy.\"

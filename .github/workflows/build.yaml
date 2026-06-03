@@ -318,6 +318,7 @@ jobs:
         id: gate
         with:
           copy: ${{ matrix.copy }}
+          check-name: pre-build-go-binaries (${{ matrix.name }}, ${{ matrix.arch }})
           last-copy: c
 
       - uses: ./.github/actions/job-preamble
@@ -981,6 +982,7 @@ jobs:
         id: gate
         with:
           copy: ${{ matrix.copy }}
+          check-name: build-and-push-operator (${{ matrix.name }}, ${{ matrix.arch }})
           last-copy: c
 
       - uses: ./.github/actions/job-preamble

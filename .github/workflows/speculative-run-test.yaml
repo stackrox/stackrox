@@ -72,6 +72,7 @@ jobs:
       - uses: ./.github/actions/speculative-run
         with:
           copy: ${{ matrix.copy }}
+          check-name: test-a-wins
           last-copy: b
           slow-cpu-pattern: NEVER_MATCH_THIS
 
@@ -112,6 +113,7 @@ jobs:
       - uses: ./.github/actions/speculative-run
         with:
           copy: ${{ matrix.copy }}
+          check-name: test-three-copy
           last-copy: c
           slow-cpu-pattern: NEVER_MATCH_THIS
 
@@ -156,6 +158,7 @@ jobs:
       - uses: ./.github/actions/speculative-run
         with:
           copy: ${{ matrix.copy }}
+          check-name: test-a-slow-b-wins
           last-copy: b
           slow-cpu-pattern: ${{ matrix.slow_pattern }}
 
