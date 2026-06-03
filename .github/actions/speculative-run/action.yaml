@@ -100,6 +100,7 @@ runs:
           cp "${GITHUB_ACTION_PATH}/monitor.sh" /tmp/speculative-monitor.sh
           chmod +x /tmp/speculative-monitor.sh
           export SPEC_REPO="${{ github.repository }}"
+          export SPEC_SHA="${{ github.sha }}"
           export SPEC_CHECK_NAME="${CHECK_NAME}"
           export SPEC_SIBLING_IDS="${sibling_ids}"
           export SPEC_PARENT="${MY_PARENT}"

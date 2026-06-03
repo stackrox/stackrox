@@ -28,6 +28,7 @@ runs:
       run: |
         echo "Copy '${{ inputs.copy }}' won — completing check '${{ inputs.check-name }}'"
         check_id=$(cat /tmp/speculative-check-id 2>/dev/null | head -1 | tr -d '[:space:]')
+        echo "check_id from gate: '${check_id}'"
         if [[ "$check_id" =~ ^[0-9]+$ ]]; then
           # PATCH the in_progress check-run the gate already posted.
           # This is cleaner than creating a duplicate entry.

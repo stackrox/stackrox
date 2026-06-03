@@ -15,7 +15,10 @@ IFS=',' read -ra sibling_arr <<< "$SPEC_SIBLING_IDS"
 
 while [[ $(date +%s) -lt $deadline ]]; do
   poll=$(( poll + 1 ))
-  response=$(gh api "repos/${SPEC_REPO}/commits/${GITHUB_SHA}/check-runs?per_page=100" 2>/dev/null)
+  # filter=all returns EVERY check-run (not just the latest per name).
+  # Default filter=latest only returns the most-recently-posted per name,
+  # which would shadow earlier copies' spec-a check with spec-c.
+  response=$(gh api "repos/${SPEC_REPO}/commits/${SPEC_SHA}/check-runs?per_page=100&filter=all" 2>/dev/null)
 
   winner=""
   all_gone=1
