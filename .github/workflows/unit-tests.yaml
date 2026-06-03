@@ -103,7 +103,7 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report test failures to Jira
-      if: success()
+      if: (!cancelled())
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
@@ -207,7 +207,7 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report junit failures in jira
-      if: success()
+      if: (!cancelled())
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
@@ -389,7 +389,7 @@ jobs:
         paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
 
     - name: Report junit failures in jira
-      if: success()
+      if: (!cancelled())
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
