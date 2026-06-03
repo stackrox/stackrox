@@ -49,12 +49,18 @@ data:
     departure_rate = 10
     conns_per_addr = 2
     nconnections = 4000
-  file-activity.ber: |
+  process-and-file-activity.ber: |
     machine {
       path("/tmp/data");
     }
 
-    main (workers = 2, duration = 0) {
+    processes (workers = 1, duration = 0) {
+      task(stub);
+    } : exp {
+      rate = 1.0;
+    }
+
+    file_activity (workers = 2, duration = 0) {
       open(random_path("/tmp/data"));
     } : exp {
       rate = 100.0;
