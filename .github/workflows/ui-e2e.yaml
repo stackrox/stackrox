@@ -469,7 +469,7 @@ jobs:
       uses: ./.github/actions/deploy-stackrox
       with:
         tag: ${{ inputs.tag }}
-        scanner: v4
+        scanner: v2
         background: "false"
         exposure: loadbalancer
         github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
