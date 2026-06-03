@@ -34,6 +34,7 @@ import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
 import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
+import { accessControlBasePath } from 'routePaths';
 import type { Role } from 'services/RolesService';
 import { getIsAuthProviderImmutable } from 'services/AuthService';
 import type { AuthProvider, AuthProviderInfo, Group } from 'services/AuthService';
@@ -336,7 +337,7 @@ function AuthProviderForm({
                                 <ToolbarGroup variant="action-group">
                                     <ToolbarItem>
                                         <Link
-                                            to="/main/access-control/auth-providers"
+                                            to={`${accessControlBasePath}/auth-providers`}
                                             aria-current="page"
                                             className="pf-v6-u-font-size-sm"
                                         >
