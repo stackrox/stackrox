@@ -445,9 +445,10 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 		names = append(names, bundleF.Name)
 		allowed = append(allowed, bundleF)
 	}
-	slog.InfoContext(ctx, "importing bundles in parallel", "count", len(allowed))
+	slog.InfoContext(ctx, "importing bundles", "count", len(allowed), "concurrency", 3)
 
 	g, gCtx := errgroup.WithContext(ctx)
+	g.SetLimit(3)
 	for _, bundleF := range allowed {
 		g.Go(func() error {
 			bundleCtx := log.With(gCtx, "bundle", bundleF.Name)
