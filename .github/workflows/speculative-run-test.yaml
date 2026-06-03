@@ -2,6 +2,15 @@ name: Speculative Run Test
 on:
   push:
     branches: [davdhacs/speed-racer-build]
+    paths:
+      - .github/actions/speculative-run/**
+      - .github/actions/speculative-declare-win/**
+      - .github/workflows/speculative-run-test.yaml
+  pull_request:
+    paths:
+      - .github/actions/speculative-run/**
+      - .github/actions/speculative-declare-win/**
+      - .github/workflows/speculative-run-test.yaml
   workflow_dispatch:
 
 permissions:
