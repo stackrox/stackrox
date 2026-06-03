@@ -9,12 +9,14 @@ import (
 )
 
 type Config struct {
-	ClairURL       string        `yaml:"clair_url"`
-	GRPCListenAddr string        `yaml:"grpc_listen_addr"`
-	HTTPListenAddr string        `yaml:"http_listen_addr"`
-	Indexer        IndexerConfig `yaml:"indexer"`
-	Matcher        MatcherConfig `yaml:"matcher"`
-	LogLevel       slog.Level    `yaml:"log_level"`
+	ClairURL           string        `yaml:"clair_url"`
+	GRPCListenAddr     string        `yaml:"grpc_listen_addr"`
+	HTTPListenAddr     string        `yaml:"http_listen_addr"`
+	UpdaterListenAddr  string        `yaml:"updater_listen_addr"`
+	VulnerabilitiesURL string        `yaml:"vulnerabilities_url"`
+	Indexer            IndexerConfig `yaml:"indexer"`
+	Matcher            MatcherConfig `yaml:"matcher"`
+	LogLevel           slog.Level    `yaml:"log_level"`
 }
 
 type IndexerConfig struct {
@@ -33,12 +35,14 @@ type DatabaseConfig struct {
 
 func Defaults() *Config {
 	return &Config{
-		ClairURL:       "http://localhost:8080",
-		GRPCListenAddr: ":8443",
-		HTTPListenAddr: ":9443",
-		Indexer:        IndexerConfig{Enable: true},
-		Matcher:        MatcherConfig{Enable: true},
-		LogLevel:       slog.LevelInfo,
+		ClairURL:           "http://localhost:8080",
+		GRPCListenAddr:     ":8443",
+		HTTPListenAddr:     ":9443",
+		UpdaterListenAddr:  ":9444",
+		VulnerabilitiesURL: "https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip",
+		Indexer:            IndexerConfig{Enable: true},
+		Matcher:            MatcherConfig{Enable: true},
+		LogLevel:           slog.LevelInfo,
 	}
 }
 

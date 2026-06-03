@@ -20,6 +20,7 @@ import (
 	idxpkg "github.com/stackrox/rox/clair-adapter/indexer"
 	matcherpkg "github.com/stackrox/rox/clair-adapter/matcher"
 	"github.com/stackrox/rox/clair-adapter/services"
+	"github.com/stackrox/rox/clair-adapter/updater"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -40,7 +41,6 @@ func run(configPath string) error {
 		return fmt.Errorf("loading config: %w", err)
 	}
 
-	// Set up logging
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: cfg.LogLevel,
 	})))
@@ -49,93 +49,104 @@ func run(configPath string) error {
 		"clair_url", cfg.ClairURL,
 		"grpc_addr", cfg.GRPCListenAddr,
 		"http_addr", cfg.HTTPListenAddr,
-		"indexer_enabled", cfg.Indexer.Enable,
-		"matcher_enabled", cfg.Matcher.Enable,
+		"updater_addr", cfg.UpdaterListenAddr,
+		"vuln_url", cfg.VulnerabilitiesURL,
 	)
 
-	// Create Clair client
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
 	clairClient, err := clairclient.NewClient(cfg.ClairURL)
 	if err != nil {
 		return fmt.Errorf("creating clair client: %w", err)
 	}
 
-	// Create CSAF enricher + pipeline
+	// Updater: fetch vulnerability data and serve to Clair
+	updaterServer := updater.NewServer()
+	fetcher := updater.NewFetcher(updaterServer, []string{cfg.VulnerabilitiesURL})
+	go func() {
+		slog.Info("starting vulnerability data fetcher")
+		if err := fetcher.Start(ctx); err != nil && ctx.Err() == nil {
+			slog.Error("vulnerability fetcher failed", "error", err)
+		}
+	}()
+
+	updaterHTTPServer := &http.Server{
+		Addr:    cfg.UpdaterListenAddr,
+		Handler: updaterServer,
+	}
+	go func() {
+		slog.Info("updater HTTP server listening", "addr", cfg.UpdaterListenAddr)
+		if err := updaterHTTPServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			slog.Error("updater HTTP server failed", "error", err)
+		}
+	}()
+
+	// Enrichment pipeline
 	csafEnricher := csafpkg.NewEnricher()
 	enricherPipeline := enricher.NewPipeline(enricher.WithCSAFEnricher(csafEnricher))
 
-	// Create indexer (nil metadataStore for now — DB init is future plan)
+	// Indexer
 	var idx idxpkg.Indexer
 	if cfg.Indexer.Enable {
 		idx = idxpkg.NewLocalIndexer(clairClient, nil)
 	}
 
-	// Create matcher (nil metadataStore)
+	// Matcher
 	var mtch matcherpkg.Matcher
 	if cfg.Matcher.Enable {
 		mtch = matcherpkg.NewLocalMatcher(clairClient, enricherPipeline, nil)
 	}
 
-	// Create gRPC server
+	// gRPC server
 	grpcServer := grpc.NewServer()
 	if idx != nil {
-		indexService := services.NewIndexerService(idx)
-		v4.RegisterIndexerServer(grpcServer, indexService)
+		v4.RegisterIndexerServer(grpcServer, services.NewIndexerService(idx))
 	}
 	if mtch != nil {
-		matchService := services.NewMatcherService(mtch)
-		v4.RegisterMatcherServer(grpcServer, matchService)
+		v4.RegisterMatcherServer(grpcServer, services.NewMatcherService(mtch))
 	}
 	reflection.Register(grpcServer)
 
-	// Create health HTTP server
-	isReady := func() bool {
-		// Ping Clair to verify connectivity
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel()
-		_, err := clairClient.GetIndexState(ctx)
-		return err == nil
-	}
-	healthHandler := healthz.NewHandler(isReady)
-	httpServer := &http.Server{
-		Addr:    cfg.HTTPListenAddr,
-		Handler: healthHandler,
-	}
-
-	// Start gRPC server
-	grpcListener, err := net.Listen("tcp", cfg.GRPCListenAddr)
+	grpcLis, err := net.Listen("tcp", cfg.GRPCListenAddr)
 	if err != nil {
 		return fmt.Errorf("creating grpc listener: %w", err)
 	}
 	go func() {
-		slog.Info("grpc server listening", "addr", cfg.GRPCListenAddr)
-		if err := grpcServer.Serve(grpcListener); err != nil {
-			slog.Error("grpc server failed", "error", err)
+		slog.Info("gRPC server listening", "addr", cfg.GRPCListenAddr)
+		if err := grpcServer.Serve(grpcLis); err != nil {
+			slog.Error("gRPC server failed", "error", err)
 		}
 	}()
 
-	// Start HTTP health server
+	// Health server
+	healthHandler := healthz.NewHandler(func() bool {
+		hctx, hcancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer hcancel()
+		_, err := clairClient.GetIndexState(hctx)
+		return err == nil
+	})
+	httpServer := &http.Server{
+		Addr:    cfg.HTTPListenAddr,
+		Handler: healthHandler,
+	}
 	go func() {
-		slog.Info("http health server listening", "addr", cfg.HTTPListenAddr)
+		slog.Info("health HTTP server listening", "addr", cfg.HTTPListenAddr)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("http server failed", "error", err)
+			slog.Error("health HTTP server failed", "error", err)
 		}
 	}()
 
-	// Wait for signal
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-	<-sigCh
-
+	// Wait for shutdown signal
+	<-ctx.Done()
 	slog.Info("shutting down gracefully")
 
-	// Graceful shutdown
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
 
 	grpcServer.GracefulStop()
-	if err := httpServer.Shutdown(shutdownCtx); err != nil {
-		slog.Error("http server shutdown failed", "error", err)
-	}
+	httpServer.Shutdown(shutdownCtx)
+	updaterHTTPServer.Shutdown(shutdownCtx)
 
 	slog.Info("shutdown complete")
 	return nil
