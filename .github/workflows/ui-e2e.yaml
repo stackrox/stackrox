@@ -564,6 +564,17 @@ jobs:
         name: gke-ui-credentials
         path: /tmp
 
+    - name: Detect cluster type and set orchestrator flavor
+      run: |
+        # Detect if this is an OpenShift cluster
+        if kubectl get clusterversion 2>/dev/null | grep -q VERSION; then
+          echo "OpenShift cluster detected"
+          echo "ORCHESTRATOR_FLAVOR=openshift" >> "$GITHUB_ENV"
+        else
+          echo "Kubernetes cluster detected"
+          echo "ORCHESTRATOR_FLAVOR=k8s" >> "$GITHUB_ENV"
+        fi
+
     - name: Set credentials and kubeconfig
       run: |
         set +x
@@ -731,7 +742,7 @@ jobs:
       env:
         CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
         CYPRESS_ROX_FLATTEN_IMAGE_DATA: "true"
-        CYPRESS_ORCHESTRATOR_FLAVOR: k8s
+        CYPRESS_ORCHESTRATOR_FLAVOR: ${{ env.ORCHESTRATOR_FLAVOR || 'k8s' }}
         NODE_TLS_REJECT_UNAUTHORIZED: "0"
 
     - name: Collect logs
