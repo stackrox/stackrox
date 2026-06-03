@@ -12,8 +12,8 @@ jobs:
     namespace: berserker
     jobIterations: 5
     jobPause: 1000h
-    qps: 5
-    burst: 5
+    qps: 40
+    burst: 40
     namespacedIterations: true
     podWait: false
     waitWhenFinished: true
@@ -35,7 +35,7 @@ jobs:
         replicas: 1
 
       - objectTemplate: {{ env "BERSERKER_DAEMONSET_TEMPLATE" }}
-        replicas: 2
+        replicas: 6
 
       - objectTemplate: {{ env "BERSERKER_SERVICE_TEMPLATE" }}
         replicas: 10

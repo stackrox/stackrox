@@ -33,8 +33,10 @@ data:
     target_port = 1337
     arrival_rate = 10
     departure_rate = 10
+    connections_static = 100
+    connections_dyn_max = 4000
     conns_per_addr = 2
-    nconnections = 4000
+    preempt = false
   network-client.toml: |
     restart_interval = 10
     workers = 1
@@ -47,8 +49,10 @@ data:
     target_port = 1337
     arrival_rate = 10
     departure_rate = 10
+    connections_static = 100
+    connections_dyn_max = 4000
     conns_per_addr = 2
-    nconnections = 4000
+    preempt = true
   process-and-file-activity.ber: |
     machine {
       path("/tmp/data");
