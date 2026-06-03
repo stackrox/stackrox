@@ -94,6 +94,7 @@ type localSensorConfig struct {
 	FakeWorkloadFile   string
 	WithMetrics        bool
 	MetricsSnapshotOut string
+	Name               string
 	NoCPUProfile       bool
 	NoMemProfile       bool
 	PprofServer        bool
@@ -120,6 +121,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 		FakeWorkloadFile:   "",
 		WithMetrics:        false,
 		MetricsSnapshotOut: "",
+		Name:               "",
 		NoCPUProfile:       false,
 		NoMemProfile:       false,
 		PprofServer:        false,
@@ -145,6 +147,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.StringVar(&sensorConfig.FakeWorkloadFile, "with-fakeworkload", sensorConfig.FakeWorkloadFile, " a file containing a FakeWorkload definition")
 	flag.BoolVar(&sensorConfig.WithMetrics, "with-metrics", sensorConfig.WithMetrics, "enables the metric server")
 	flag.StringVar(&sensorConfig.MetricsSnapshotOut, "metrics-snapshot-out", sensorConfig.MetricsSnapshotOut, "file to store a pre-shutdown Prometheus metrics snapshot when metrics are enabled")
+	flag.StringVar(&sensorConfig.Name, "name", sensorConfig.Name, "label used in all output filenames (cpu/mem profiles, metrics snapshot); defaults to UTC timestamp")
 	flag.BoolVar(&sensorConfig.PprofServer, "with-pprof-server", sensorConfig.PprofServer, "enables the pprof server on port :6060")
 	flag.StringVar(&sensorConfig.CentralEndpoint, "connect-central", sensorConfig.CentralEndpoint, "connects to a Central instance rather than a fake Central")
 	flag.StringVar(&sensorConfig.Namespace, "namespace", sensorConfig.Namespace, "namespace where sensor is deployed (used for certificate generation when connecting to real Central)")
@@ -188,8 +191,9 @@ func mustGetCommandLineArgs() localSensorConfig {
 	return sensorConfig
 }
 
-func writeMemoryProfile() {
-	f, err := os.Create(fmt.Sprintf("local-sensor-mem-%s.prof", time.Now().UTC().Format(time.RFC3339)))
+func writeMemoryProfile(runLabel string) {
+	name := fmt.Sprintf("local-sensor-mem-%s.prof", runLabel)
+	f, err := os.Create(name)
 	if err != nil {
 		log.Fatal("could not create memory profile: ", err)
 	}
@@ -198,7 +202,7 @@ func writeMemoryProfile() {
 	if err := pprof.Lookup("allocs").WriteTo(f, 0); err != nil {
 		log.Fatal("could not write memory profile: ", err)
 	}
-	log.Printf("Wrote memory profile")
+	log.Printf("Wrote memory profile to %s", name)
 }
 
 func writeMetricsSnapshot(filePath string) error {
@@ -280,8 +284,14 @@ func main() {
 		k8sClient, err = k8s.MakeOutOfClusterClient()
 		utils.CrashOnError(err)
 	}
+
+	runLabel := localConfig.Name
+	if runLabel == "" {
+		runLabel = time.Now().UTC().Format(time.RFC3339)
+	}
+
 	if !localConfig.NoCPUProfile {
-		f, err := os.Create(fmt.Sprintf("local-sensor-cpu-%s.prof", time.Now().UTC().Format(time.RFC3339)))
+		f, err := os.Create(fmt.Sprintf("local-sensor-cpu-%s.prof", runLabel))
 		if err != nil {
 			log.Fatal("could not create CPU profile: ", err)
 		}
@@ -444,7 +454,7 @@ func main() {
 	if localConfig.WithMetrics {
 		metricsSnapshotOut := localConfig.MetricsSnapshotOut
 		if metricsSnapshotOut == "" {
-			metricsSnapshotOut = fmt.Sprintf("local-sensor-metrics-%s.prom", time.Now().UTC().Format(time.RFC3339))
+			metricsSnapshotOut = fmt.Sprintf("local-sensor-metrics-%s.prom", runLabel)
 		}
 		if err := writeMetricsSnapshot(metricsSnapshotOut); err != nil {
 			log.Printf("warning: %v", err)
@@ -453,7 +463,7 @@ func main() {
 
 	cancelFunc()
 	if !localConfig.NoMemProfile {
-		writeMemoryProfile()
+		writeMemoryProfile(runLabel)
 	}
 	log.Printf("Stopping sensor and workload manager...")
 	stopSensorAndWorkload(workloadManager, s, processPipeline)
