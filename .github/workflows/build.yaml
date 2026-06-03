@@ -178,17 +178,25 @@ jobs:
       fail-fast: false
       matrix:
         branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
+        copy: [a, b]
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
       # For consistency with `image/rhel/konflux.Dockerfile`, see comment there.
       UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/speculative-run
+        with:
+          copy: ${{ matrix.copy }}
+          check-name: pre-build-ui (${{ matrix.branding }})
+          last-copy: b
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -220,6 +228,12 @@ jobs:
           path: |
             ui/build
             ui/apps/platform/package-lock.json
+
+      - uses: ./.github/actions/speculative-declare-win
+        if: success()
+        with:
+          check-name: pre-build-ui (${{ matrix.branding }})
+          copy: ${{ matrix.copy }}
 
   pre-build-cli:
     needs: define-job-matrix
@@ -401,13 +415,24 @@ jobs:
           copy: ${{ matrix.copy }}
 
   pre-build-docs:
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b]
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/speculative-run
+        with:
+          copy: ${{ matrix.copy }}
+          check-name: pre-build-docs
+          last-copy: b
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -431,14 +456,31 @@ jobs:
           path: |
             image/rhel/docs
 
+      - uses: ./.github/actions/speculative-declare-win
+        if: success()
+        with:
+          check-name: pre-build-docs
+          copy: ${{ matrix.copy }}
+
   pre-build-oss-notice:
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b]
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/speculative-run
+      with:
+        copy: ${{ matrix.copy }}
+        check-name: pre-build-oss-notice
+        last-copy: b
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -472,8 +514,19 @@ jobs:
         name: oss-notice
         path: image/rhel/THIRD_PARTY_NOTICES
 
+    - uses: ./.github/actions/speculative-declare-win
+      if: success()
+      with:
+        check-name: pre-build-oss-notice
+        copy: ${{ matrix.copy }}
+
   build-and-push-db:
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b]
     runs-on: ubuntu-latest
+    continue-on-error: true
     needs:
       - define-job-matrix
     if: ${{ !cancelled() }}
@@ -484,6 +537,12 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/speculative-run
+        with:
+          copy: ${{ matrix.copy }}
+          check-name: build-and-push-db
+          last-copy: b
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -577,8 +636,19 @@ jobs:
             "docker://quay.io/stackrox-io/scanner-v4-db:${{ env.BUILD_TAG }}" \
             "docker://quay.io/rhacs-eng/scanner-v4-db:${{ env.BUILD_TAG }}"
 
+      - uses: ./.github/actions/speculative-declare-win
+        if: success()
+        with:
+          check-name: build-and-push-db
+          copy: ${{ matrix.copy }}
+
   build-operator-bundle:
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b]
     runs-on: ubuntu-latest
+    continue-on-error: true
     env:
       QUAY_ORG: rhacs-eng
       QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -591,6 +661,12 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/speculative-run
+        with:
+          copy: ${{ matrix.copy }}
+          check-name: build-operator-bundle
+          last-copy: b
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -613,6 +689,12 @@ jobs:
           make -C operator/ docker-push-bundle | cat
           make -C operator/ index-build
           make -C operator/ docker-push-index | cat
+
+      - uses: ./.github/actions/speculative-declare-win
+        if: success()
+        with:
+          check-name: build-operator-bundle
+          copy: ${{ matrix.copy }}
 
   build-and-push-main:
     # Use native arm64 runner to avoid QEMU emulation overhead (~2x slower).

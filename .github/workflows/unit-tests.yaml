@@ -329,12 +329,23 @@ jobs:
       !needs.detect-changes.outputs.files ||
       contains(needs.detect-changes.outputs.files, '^ui/') ||
       contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b]
     runs-on: ubuntu-latest
+    continue-on-error: true
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - uses: ./.github/actions/speculative-run
+      with:
+        copy: ${{ matrix.copy }}
+        check-name: ui-component
+        last-copy: b
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -378,7 +389,7 @@ jobs:
         paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled())
+      if: success()
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
@@ -387,6 +398,12 @@ jobs:
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'ui/apps/platform/cypress/test-results/reports'
+
+    - uses: ./.github/actions/speculative-declare-win
+      if: success()
+      with:
+        check-name: ui-component
+        copy: ${{ matrix.copy }}
 
   local-roxctl-tests:
     runs-on: ubuntu-latest
