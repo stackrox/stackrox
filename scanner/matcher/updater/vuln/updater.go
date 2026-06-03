@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -432,7 +433,8 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 		return false, err
 	}
 
-	// Iterate through each vulnerability bundle in the .zip archive
+	// Collect allowed bundles, then import them in parallel.
+	var allowed []*zip.File
 	names := make([]string, 0, len(zipReader.File))
 	for i := range zipReader.File {
 		bundleF := zipReader.File[i]
@@ -441,14 +443,26 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 			continue
 		}
 		names = append(names, bundleF.Name)
-		bundleCtx := log.With(ctx, "bundle", bundleF.Name)
-		bundleStart := time.Now()
-		slog.InfoContext(bundleCtx, "starting bundle update")
-		if err := u.updateBundle(bundleCtx, bundleF, zipTime, prevTime); err != nil {
-			slog.ErrorContext(bundleCtx, "updating bundle failed", "reason", err)
-			return false, fmt.Errorf("updating bundle %s: %w", bundleF.Name, err)
-		}
-		slog.InfoContext(bundleCtx, "completed bundle update", "duration", time.Since(bundleStart))
+		allowed = append(allowed, bundleF)
+	}
+	slog.InfoContext(ctx, "importing bundles in parallel", "count", len(allowed))
+
+	g, gCtx := errgroup.WithContext(ctx)
+	for _, bundleF := range allowed {
+		g.Go(func() error {
+			bundleCtx := log.With(gCtx, "bundle", bundleF.Name)
+			bundleStart := time.Now()
+			slog.InfoContext(bundleCtx, "starting bundle update")
+			if err := u.updateBundle(bundleCtx, bundleF, zipTime, prevTime); err != nil {
+				slog.ErrorContext(bundleCtx, "updating bundle failed", "reason", err)
+				return fmt.Errorf("updating bundle %s: %w", bundleF.Name, err)
+			}
+			slog.InfoContext(bundleCtx, "completed bundle update", "duration", time.Since(bundleStart))
+			return nil
+		})
+	}
+	if err := g.Wait(); err != nil {
+		return false, err
 	}
 
 	// Clean updaters that were deleted (not in the zip and older than this update).
