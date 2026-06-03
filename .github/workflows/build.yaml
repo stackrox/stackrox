@@ -684,7 +684,15 @@ jobs:
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
+      - uses: ./.github/actions/speculative-run
+        id: gate
+        with:
+          copy: ${{ matrix.copy }}
+          check-name: build-and-push-main (${{ matrix.name }}, ${{ matrix.arch }})
+          last-copy: c
+
       - uses: ./.github/actions/job-preamble
+        if: steps.gate.conclusion == 'success'
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
@@ -1107,6 +1115,13 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/speculative-run
+        id: gate
+        with:
+          copy: ${{ matrix.copy }}
+          check-name: build-and-push-scanner (${{ matrix.name }}, ${{ matrix.goos }}, ${{ matrix.arch }}, ${{ matrix.registry }})
+          last-copy: b
 
       - uses: ./.github/actions/job-preamble
         with:
