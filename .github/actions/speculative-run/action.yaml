@@ -104,7 +104,7 @@ runs:
           # Wait if gate not yet visible (job in checkout). Stop if all siblings
           # gate=failure (all slow runners → this copy runs as winner).
           nohup bash -c "
-            sleep 5
+            sleep \$(( RANDOM % 3 + 8 ))
             deadline=\$(( \$(date +%s) + 300 ))
             while [[ \$(date +%s) -lt \$deadline ]]; do
               all_jobs_json=\$(gh api 'repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100' 2>/dev/null)
@@ -138,7 +138,7 @@ runs:
                 echo 'All siblings gate-failed (slow runners) — copy ${MY_COPY} proceeds.'
                 break
               fi
-              sleep 5
+              sleep 2
             done
           " >> /tmp/speculative-monitor.log 2>&1 &
           disown
