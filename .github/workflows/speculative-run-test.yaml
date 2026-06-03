@@ -8,51 +8,28 @@ permissions:
   checks: write
 
 jobs:
-  # Test SIGKILL on new children — does it produce 'cancelled'?
-  kill-sigkill-new-children:
+  # Test: kill parent first (SIGTERM → cancelled), then SIGKILL children immediately after
+  kill-parent-then-children:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - name: Gate (SIGKILL new children after 5s)
+      - name: Gate (kill parent then children after 5s)
         run: |
           parent=$PPID
           pgrep -P "$parent" | sort > /tmp/baseline
           nohup bash -c "
             sleep 5
-            new=\$(comm -13 /tmp/baseline <(pgrep -P $parent | sort))
-            echo 'Sending SIGKILL to: '\$new
+            echo 'Sending SIGTERM to parent $parent first...'
+            kill -TERM $parent 2>/dev/null
+            sleep 0.1
+            new=\$(comm -13 /tmp/baseline <(pgrep -P $parent | sort) 2>/dev/null)
+            echo 'Then SIGKILL children: '\$new
             for pid in \$new; do kill -9 \$pid 2>/dev/null; done
+            echo 'Done'
           " > /tmp/monitor.log 2>&1 &
           disown
 
-      - name: Work (sleep 30s — should be killed after 5s)
-        run: |
-          echo "Work PID=$$ sleeping 30s..."
-          sleep 30
-          echo "Work done (should NOT appear if kill worked)"
-
-      - name: Result
-        if: always()
-        run: echo "=== Monitor ===" && cat /tmp/monitor.log || true
-
-  # Control: SIGTERM (baseline — we know this gives 'failure')
-  kill-sigterm-new-children:
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - name: Gate (SIGTERM new children after 5s)
-        run: |
-          parent=$PPID
-          pgrep -P "$parent" | sort > /tmp/baseline
-          nohup bash -c "
-            sleep 5
-            new=\$(comm -13 /tmp/baseline <(pgrep -P $parent | sort))
-            echo 'Sending SIGTERM to: '\$new
-            for pid in \$new; do kill -TERM \$pid 2>/dev/null; done
-          " > /tmp/monitor.log 2>&1 &
-          disown
-
-      - name: Work (sleep 30s — should be killed after 5s)
+      - name: Work (sleep 30s — should be cancelled after 5s)
         run: |
           echo "Work PID=$$ sleeping 30s..."
           sleep 30
@@ -62,9 +39,37 @@ jobs:
         if: always()
         run: echo "=== Monitor ===" && cat /tmp/monitor.log || true
 
-  # Control: no kill
+  # Variant: SIGKILL parent (more forceful) then SIGKILL children
+  kill-parent-sigkill-then-children:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Gate (SIGKILL parent then children after 5s)
+        run: |
+          parent=$PPID
+          pgrep -P "$parent" | sort > /tmp/baseline
+          nohup bash -c "
+            sleep 5
+            echo 'Sending SIGKILL to parent $parent first...'
+            kill -9 $parent 2>/dev/null
+            sleep 0.1
+            new=\$(pgrep -P $parent 2>/dev/null)
+            echo 'Then SIGKILL children: '\$new
+            for pid in \$new; do kill -9 \$pid 2>/dev/null; done
+            echo 'Done'
+          " > /tmp/monitor.log 2>&1 &
+          disown
+
+      - name: Work (sleep 30s)
+        run: echo "Work PID=$$ sleeping..." && sleep 30 && echo "Done (should NOT appear)"
+
+      - name: Result
+        if: always()
+        run: echo "=== Monitor ===" && cat /tmp/monitor.log || true
+
+  # Control
   no-kill:
     runs-on: ubuntu-latest
     steps:
-      - name: Work (runs normally)
-        run: echo "Working..." && sleep 5 && echo "Done ✓"
+      - name: Work
+        run: echo "Working normally..." && sleep 5 && echo "Done ✓"
