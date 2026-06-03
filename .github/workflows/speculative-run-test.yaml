@@ -8,6 +8,63 @@ permissions:
   checks: write
 
 jobs:
+  # Diagnostic: log the process tree so we can understand GHA's process hierarchy
+  # and determine how to find the work step PID from a background monitor
+  process-tree-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Gate step — log process tree and start bg monitor
+        run: |
+          echo "=== Gate step PID=$$, PPID=$PPID ==="
+          echo "=== Full process tree ==="
+          ps auxf | head -60
+          echo "=== Children of PPID=$PPID ==="
+          pgrep -P $PPID -a || true
+          echo "=== /proc/$PPID/cmdline ==="
+          cat /proc/$PPID/cmdline | tr '\0' ' ' || true
+          echo "=== Parent of PPID ==="
+          ppid_of_ppid=$(cat /proc/$PPID/status | grep PPid | awk '{print $2}')
+          echo "PPID's parent: $ppid_of_ppid"
+          cat /proc/$ppid_of_ppid/cmdline 2>/dev/null | tr '\0' ' ' || true
+
+          # Record state at end of gate step
+          echo "gate_step_pid=$$" > /tmp/speculative-state
+          echo "runner_parent=$PPID" >> /tmp/speculative-state
+          pgrep -P $PPID > /tmp/speculative-gate-children 2>/dev/null || true
+
+          # Start background monitor that logs what it sees
+          nohup bash -c '
+            sleep 5  # short wait for next step to start
+            echo "=== Monitor: process tree after work step starts ==="
+            ps auxf | head -60
+            parent=$(cat /tmp/speculative-state | grep runner_parent | cut -d= -f2)
+            echo "=== Children of runner parent ($parent) ==="
+            pgrep -P "$parent" -a || true
+            old=$(cat /tmp/speculative-gate-children)
+            echo "=== Old children: $old ==="
+            new=$(pgrep -P "$parent")
+            echo "=== New children: $new ==="
+            for pid in $new; do
+              if ! echo "$old" | grep -qx "$pid"; then
+                echo "NEW child: $pid = $(cat /proc/$pid/cmdline 2>/dev/null | tr '\\0' ' ')"
+              fi
+            done
+          ' > /tmp/speculative-monitor.log 2>&1 &
+          echo "Monitor started (PID $!)"
+
+      - name: Work step — log own PID and run for a few seconds
+        run: |
+          echo "=== Work step PID=$$, PPID=$PPID ==="
+          ps auxf | grep -E "PID|bash|Runner|python|node" | head -20
+          echo "=== /proc/$$/status ==="
+          head -10 /proc/$$/status
+          sleep 10
+          echo "Work done."
+
+      - name: Show monitor output
+        if: always()
+        run: cat /tmp/speculative-monitor.log || echo "(no monitor log)"
+
   # Test 1: all fast — a proceeds, b waits 30s sees a=success → skips, c waits 60s sees b=success → skips
   test-all-fast:
     strategy:
