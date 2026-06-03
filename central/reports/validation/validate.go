@@ -356,12 +356,11 @@ func (v *Validator) ValidateCancelReportRequest(reportID string, requester *stor
 	}
 
 	switch snapshot.GetReportStatus().GetRunState() {
-	case storage.ReportStatus_DELIVERED, storage.ReportStatus_GENERATED, storage.ReportStatus_FAILURE:
+	case storage.ReportStatus_WAITING, storage.ReportStatus_PREPARING:
+		// valid states for cancellation — fall through
+	default:
 		return errors.Wrapf(errox.InvalidArgs, "Cannot cancel. Report job ID '%s' has already completed execution.", reportID)
-	case storage.ReportStatus_PREPARING:
-		return errors.Wrapf(errox.InvalidArgs, "Cannot cancel. Report job ID '%s' is currently being prepared.", reportID)
 	}
-
 	if requester.GetId() != snapshot.GetRequester().GetId() {
 		return errors.Wrap(errox.NotAuthorized, "Report job cannot be cancelled by a user who did not request the report.")
 	}

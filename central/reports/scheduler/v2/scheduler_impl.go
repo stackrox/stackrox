@@ -234,9 +234,8 @@ func (s *scheduler) removeRunningReportCancel(reportID string) {
 }
 
 func (s *scheduler) tryCancelRunningReport(reportID string) bool {
-	var cancel context.CancelCauseFunc
-	s.schedulerLock.WithLock(func() {
-		cancel = s.runningReportCancels[reportID]
+	cancel := concurrency.WithLock1(&s.schedulerLock, func() context.CancelCauseFunc {
+		return s.runningReportCancels[reportID]
 	})
 	if cancel == nil {
 		return false

@@ -156,6 +156,16 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(ctx context.Context, req 
 		return err
 	}
 
+	// TODO(surakuma): Remove this sleep after manual testing of report cancellation.
+	log.Info("Sleeping 30s to allow manual cancellation testing...")
+	select {
+	case <-time.After(30 * time.Second):
+		log.Info("Sleep completed, continuing report generation")
+	case <-ctx.Done():
+		log.Infof("Context cancelled during sleep: %v", context.Cause(ctx))
+		return ctx.Err()
+	}
+
 	if err := ctx.Err(); err != nil {
 		return err
 	}
