@@ -485,8 +485,9 @@ jobs:
           /tmp/rox-admin-password
           /tmp/rox-auth-token
           /tmp/rox-api-endpoint
+          artifacts/kubeconfig
         retention-days: 1
-        if-no-files-found: error
+        if-no-files-found: ignore
 
   gke-e2e:
     name: "GKE ${{ matrix.name }}"
@@ -542,7 +543,7 @@ jobs:
         name: gke-ui-credentials
         path: /tmp
 
-    - name: Set credentials
+    - name: Set credentials and kubeconfig
       run: |
         set +x
         AUTH_TOKEN="$(cat /tmp/rox-auth-token)"
@@ -552,6 +553,9 @@ jobs:
         echo "::add-mask::${ADMIN_PASSWORD}"
         echo "ROX_AUTH_TOKEN=${AUTH_TOKEN}" >> "$GITHUB_ENV"
         echo "API_ENDPOINT=${ENDPOINT}" >> "$GITHUB_ENV"
+        if [ -f /tmp/kubeconfig ]; then
+          echo "KUBECONFIG=/tmp/kubeconfig" >> "$GITHUB_ENV"
+        fi
         set -x
 
     - uses: ./.github/actions/cache-ui-dependencies
