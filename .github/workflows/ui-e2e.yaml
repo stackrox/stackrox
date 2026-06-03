@@ -681,13 +681,19 @@ jobs:
             fi
             ;;
           *vulnmanagement*)
-            echo "Waiting for cluster (platform) CVE data..."
-            cluster_id=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-              "https://${API_ENDPOINT}/v1/clusters" | jq -r '.clusters[0].id')
+            echo "Checking for cluster (platform) CVE data..."
 
-            # Wait up to 20 minutes for cluster CVEs
+            # On fresh deploys, wait up to 20 minutes for data to populate.
+            # On existing deploys, check once — data is either there or it won't come.
+            if [ "${{ inputs.force-redeploy }}" = "true" ] || [ -z "${{ inputs.gke-cluster-name }}${{ inputs.infra-cluster-name }}" ]; then
+              max_attempts=240  # 20 minutes
+            else
+              max_attempts=6    # 30 seconds quick check
+              echo "Existing deployment — quick check only"
+            fi
+
             cluster_ready=false
-            for i in $(seq 1 240); do
+            for i in $(seq 1 $max_attempts); do
               cluster_cves=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
                 "https://${API_ENDPOINT}/v1/cves/cluster?query=" | jq -r '.items | length // 0')
               if [ "${cluster_cves:-0}" -gt 0 ]; then
@@ -698,12 +704,11 @@ jobs:
               [ $((i % 12)) -eq 0 ] && echo "+$((i*5/60))m: cluster_cves=${cluster_cves:-0}"
               sleep 5
             done
-            [ "$cluster_ready" != "true" ] && echo "::warning::No cluster CVEs after 20 minutes"
+            [ "$cluster_ready" != "true" ] && echo "::warning::No cluster CVEs found"
 
-            # Wait up to 20 minutes for node CVEs
-            echo "Waiting for node CVE data..."
+            echo "Checking for node CVE data..."
             node_ready=false
-            for i in $(seq 1 240); do
+            for i in $(seq 1 $max_attempts); do
               node_cves=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
                 "https://${API_ENDPOINT}/v1/cves/node?query=" | jq -r '.items | length // 0')
               if [ "${node_cves:-0}" -gt 0 ]; then
@@ -714,7 +719,7 @@ jobs:
               [ $((i % 12)) -eq 0 ] && echo "+$((i*5/60))m: node_cves=${node_cves:-0}"
               sleep 5
             done
-            [ "$node_ready" != "true" ] && echo "::warning::No node CVEs after 20 minutes"
+            [ "$node_ready" != "true" ] && echo "::warning::No node CVEs found"
             ;;
           *policies*|*risk*)
             echo "Waiting for deployment events..."
