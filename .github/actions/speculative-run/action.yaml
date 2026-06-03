@@ -1,32 +1,53 @@
 name: Speculative Run Gate
 description: >
-  Hierarchical gate for speculative-execution matrix jobs.
+  Gate step for speculative-execution matrix jobs.
 
   Each copy follows this logic:
-  - Check if any EARLIER copy's gate already succeeded → they are handling it → skip
-  - Otherwise: check own CPU. If slow and not the last-copy → exit 1 (gate failure,
-    signals next copy to run). If fast or last-copy → exit 0 (gate success, proceed).
+  1. Instant CPU check: if slow runner and not last-copy → exit 1 (delegates to next copy)
+  2. Wait (b waits 30s, c waits 60s) then check previous sibling's gate:
+     - success  → sibling is fast and handling it → skip all work (exit 0, skip=true)
+     - failure  → sibling was slow → proceed (exit 0, skip=false)
+     - empty    → fail-safe → proceed (exit 0, skip=false)
+  3. Last copy always proceeds regardless of own CPU (unconditional fallback)
 
-  Call this as the FIRST step with continue-on-error: true. Gate all subsequent
-  build/push steps on: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
+  Usage:
+    strategy:
+      matrix:
+        copy: [a, b, c]
+    continue-on-error: true  # slow/skip exits look like failures to downstream jobs; harmless
+    steps:
+      - uses: ./.github/actions/speculative-run
+        id: gate
+        continue-on-error: true
+        with:
+          copy: ${{ matrix.copy }}
+          last-copy: c
 
-  After a successful push, inline the "Declare win" step:
-    - name: Declare win
-      if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true' && success()
-      run: |
-        gh api repos/$REPO/check-runs -f name="..." -f conclusion=success
-        exit 1
+      - name: Do work
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
+        ...
+
+      - name: Declare win
+        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true' && success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/${{ github.repository }}/check-runs \
+            -f name="my-required-check-name" \
+            -f head_sha="${{ github.sha }}" \
+            -f status=completed -f conclusion=success
+          # exit 0 — winner shows as success in UI
 
 inputs:
   copy:
     description: 'This copy letter (a, b, or c)'
     required: true
   last-copy:
-    description: 'Unconditional fallback copy letter (default b for 2-copy, c for 3-copy)'
+    description: 'Unconditional fallback copy (default b for 2-copy, c for 3-copy)'
     required: false
     default: 'b'
   slow-cpu-pattern:
-    description: 'CPU substring marking a slow runner'
+    description: 'CPU substring indicating a slow runner'
     required: false
     default: '7763'
 
@@ -51,46 +72,51 @@ runs:
         RUN_ID="${{ github.run_id }}"
         REPO="${{ github.repository }}"
 
-        declare -A ORDER=([a]=1 [b]=2 [c]=3)
-        my_order=${ORDER[$MY_COPY]}
+        cpu=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
+        [[ -z "$cpu" ]] && cpu=$(lscpu 2>/dev/null | awk -F: '/Model name/{gsub(/^ +/,"",$2); print $2}')
+        echo "cpu=${cpu:-unknown}"
 
-        # Check if any earlier copy's gate already succeeded (they are fast and running)
-        for sibling in a b c; do
-          sib_order=${ORDER[$sibling]}
-          [[ $sib_order -ge $my_order ]] && break
+        # ── Step 1: Own CPU check ─────────────────────────────────────────
+        # Last copy never aborts on slow CPU — it is the unconditional fallback.
+        if [[ "$MY_COPY" != "$LAST_COPY" && "$cpu" == *"${SLOW_PATTERN}"* ]]; then
+          echo "::warning::Slow runner (${cpu}) — delegating to next copy."
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          exit 1  # gate failure: signals next copy to check and potentially proceed
+        fi
 
-          sib_gate=""
-          for i in $(seq 1 12); do
-            sib_gate=$(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" \
-              --jq ".jobs[] | select(.name | test(\", ${sibling}[)]\$\")) | .steps[] | select(.name == \"Gate\") | .conclusion" \
-              2>/dev/null | head -1)
-            [[ -n "$sib_gate" ]] && break
-            sleep 5
-          done
+        # ── Step 2: Wait then check previous sibling ─────────────────────
+        declare -A ORDER=([a]=1 [b]=2 [c]=3 [d]=4)
+        my_order=${ORDER[$MY_COPY]:-1}
 
-          echo "Sibling ${sibling} gate: '${sib_gate}'"
-          if [[ "$sib_gate" == "success" ]]; then
-            echo "Sibling ${sibling} is fast and handling it — skipping."
+        # Determine which sibling to check and how long to wait
+        case "$MY_COPY" in
+          b) prev_copy="a"; wait_secs=30 ;;
+          c) prev_copy="b"; wait_secs=60 ;;
+          d) prev_copy="c"; wait_secs=90 ;;
+          *) prev_copy=""; wait_secs=0 ;;
+        esac
+
+        if [[ -n "$prev_copy" ]]; then
+          echo "Waiting ${wait_secs}s for sibling ${prev_copy} to settle..."
+          sleep "$wait_secs"
+
+          prev_gate=$(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" \
+            --jq ".jobs[] | select(.name | test(\", ${prev_copy}[)]\$\")) | .steps[] | select(.name == \"Gate\") | .conclusion" \
+            2>/dev/null | grep -v '^$' | head -1)
+
+          echo "Sibling ${prev_copy} gate conclusion: '${prev_gate}'"
+
+          if [[ "$prev_gate" == "success" ]]; then
+            echo "Sibling ${prev_copy} is fast and handling it — skipping this copy."
             echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
+          elif [[ "$prev_gate" == "failure" ]]; then
+            echo "Sibling ${prev_copy} was slow — proceeding."
+          else
+            echo "Sibling ${prev_copy} gate not found (${prev_gate}) — proceeding (fail-safe)."
           fi
-        done
+        fi
 
         echo "skip=false" >> "$GITHUB_OUTPUT"
-
-        # Last copy = unconditional fallback, always runs
-        if [[ "$MY_COPY" == "$LAST_COPY" ]]; then
-          echo "Unconditional fallback (copy ${MY_COPY}) — running."
-          exit 0
-        fi
-
-        # Check own CPU
-        cpu=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
-        echo "cpu=${cpu}"
-        if [[ "$cpu" == *"${SLOW_PATTERN}"* ]]; then
-          echo "::warning::Slow runner — delegating to next copy."
-          exit 1  # gate failure: signals next copy to run
-        fi
-
-        echo "Fast runner — proceeding."
+        echo "Proceeding with work."
         exit 0
