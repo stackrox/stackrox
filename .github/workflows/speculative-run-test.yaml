@@ -125,7 +125,47 @@ jobs:
           check-name: test-three-copy
           copy: ${{ matrix.copy }}
 
-  # Test 3: copy a is on a slow runner (cpu gate fires → gate fails).
+  # Test 3: both a AND b are slow → c falls back as last-copy.
+  # Monitor for c finds spec-a and spec-b absent after 3 polls → all_gone → c proceeds.
+  # Expected: a=failure (gate), b=failure (gate), c=success.
+  test-ab-slow-c-wins:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - copy: a
+            slow_pattern: EPYC   # matches all EPYC runners → always gated out
+          - copy: b
+            slow_pattern: EPYC
+          - copy: c
+            slow_pattern: NEVER_MATCH_THIS
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/speculative-run
+        with:
+          copy: ${{ matrix.copy }}
+          check-name: test-ab-slow-c-wins
+          last-copy: c
+          slow-cpu-pattern: ${{ matrix.slow_pattern }}
+
+      - name: Work
+        run: |
+          echo "Copy ${{ matrix.copy }}: working..."
+          sleep 10
+
+      - name: Monitor log
+        if: always()
+        run: cat /tmp/speculative-monitor.log 2>/dev/null || echo "(no log)"
+
+      - uses: ./.github/actions/speculative-declare-win
+        if: success()
+        with:
+          check-name: test-ab-slow-c-wins
+          copy: ${{ matrix.copy }}
+
+  # Test 4: copy a is on a slow runner (cpu gate fires → gate fails).
   # Expected: copy a=failure (gate), copy b=success.
   test-a-slow-b-wins:
     strategy:
