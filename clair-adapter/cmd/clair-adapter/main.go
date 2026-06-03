@@ -61,29 +61,29 @@ func run(configPath string) error {
 
 	// Create CSAF enricher + pipeline
 	csafEnricher := csafpkg.NewEnricher()
-	enricherPipeline := enricher.NewPipeline(csafEnricher)
+	enricherPipeline := enricher.NewPipeline(enricher.WithCSAFEnricher(csafEnricher))
 
 	// Create indexer (nil metadataStore for now — DB init is future plan)
-	var idx *idxpkg.Indexer
+	var idx idxpkg.Indexer
 	if cfg.Indexer.Enable {
-		idx = idxpkg.NewIndexer(clairClient, nil)
+		idx = idxpkg.NewLocalIndexer(clairClient, nil)
 	}
 
 	// Create matcher (nil metadataStore)
-	var mtch *matcherpkg.Matcher
+	var mtch matcherpkg.Matcher
 	if cfg.Matcher.Enable {
-		mtch = matcherpkg.NewMatcher(clairClient, nil, enricherPipeline)
+		mtch = matcherpkg.NewLocalMatcher(clairClient, enricherPipeline, nil)
 	}
 
 	// Create gRPC server
 	grpcServer := grpc.NewServer()
 	if idx != nil {
 		indexService := services.NewIndexerService(idx)
-		v4.RegisterIndexerServiceServer(grpcServer, indexService)
+		v4.RegisterIndexerServer(grpcServer, indexService)
 	}
 	if mtch != nil {
 		matchService := services.NewMatcherService(mtch)
-		v4.RegisterMatcherServiceServer(grpcServer, matchService)
+		v4.RegisterMatcherServer(grpcServer, matchService)
 	}
 	reflection.Register(grpcServer)
 
@@ -92,7 +92,8 @@ func run(configPath string) error {
 		// Ping Clair to verify connectivity
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		return clairClient.IndexState(ctx) != nil
+		_, err := clairClient.GetIndexState(ctx)
+		return err == nil
 	}
 	healthHandler := healthz.NewHandler(isReady)
 	httpServer := &http.Server{

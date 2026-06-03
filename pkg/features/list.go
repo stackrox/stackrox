@@ -181,6 +181,11 @@ var (
 	// This must be set in Scanner V4 Indexer to have any effect.
 	ScannerV4MavenSearch = registerFeature("Enables Scanner V4 to reach out to ROX_SCANNER_V4_MAVEN_SEARCH_URL for additional information about Java packages", "ROX_SCANNER_V4_MAVEN_SEARCH")
 
+	// ClairAdapter enables the Clair adapter as a drop-in replacement for Scanner V4.
+	// When enabled, Central and Sensor connect to the Clair adapter (which proxies to upstream Clair)
+	// instead of Scanner V4.
+	ClairAdapter = registerFeature("Use upstream Clair via the Clair adapter instead of Scanner V4", "ROX_CLAIR_ADAPTER")
+
 	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES")
 
 	// ScannerV4StoreExternalIndexReports enables storing index reports from delegated scans to Central's Scanner V4 Indexer.
