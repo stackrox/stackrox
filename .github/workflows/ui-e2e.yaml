@@ -446,12 +446,10 @@ jobs:
       run: |
         if kubectl get namespace stackrox &>/dev/null; then
           echo "Force redeploy requested — deleting existing StackRox"
-          kubectl delete namespace stackrox --wait=false
-          # Wait for namespace deletion to start
-          for i in $(seq 1 60); do
-            kubectl get namespace stackrox &>/dev/null || break
-            sleep 2
-          done
+          kubectl delete namespace stackrox
+          echo "Namespace deleted successfully"
+        else
+          echo "No existing stackrox namespace found"
         fi
 
     - name: Check for existing StackRox deployment
