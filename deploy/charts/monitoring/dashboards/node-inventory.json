@@ -187,15 +187,15 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "rox_sensor_node_inventories_received_total{job=\"sensor\"}",
+          "expr": "rox_sensor_node_scan_processed_total{job=\"sensor\"}",
           "interval": "",
-          "legendFormat": "{{exported_node_name}}",
+          "legendFormat": "{{node_name}}",
           "refId": "A"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Received Node Inventories per Node",
+      "title": "Processed Node Scans per Node",
       "type": "stat"
     },
     {

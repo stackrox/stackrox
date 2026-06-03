@@ -138,7 +138,3 @@ func (c *NodeComponentSearchResultConverter) BuildLocation(result *pkgSearch.Res
 func (c *NodeComponentSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_NODE_COMPONENTS
 }
-
-func (c *NodeComponentSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
-	return result.Score
-}

@@ -22,7 +22,7 @@ jobs:
       run: make -sC deps/fact tag | tee FACT_VERSION
     - name: Create Pull Request
       id: cpr
-      uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # ratchet:peter-evans/create-pull-request@v8
+      uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # ratchet:peter-evans/create-pull-request@v8
       with:
         token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
         commit-message: Update FACT_VERSION

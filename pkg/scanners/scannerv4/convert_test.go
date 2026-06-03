@@ -7,6 +7,7 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
@@ -557,7 +558,7 @@ func TestComponents(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := components(tc.metadata, tc.report)
+			got := componentsWithLayerMap(tc.metadata, tc.report, clair.BuildSHAToIndexMap(tc.metadata))
 			protoassert.SlicesEqual(t, tc.expected, got, fmt.Sprintf("expected: %+#v\ngot: %+#v", tc.expected, got))
 		})
 	}
@@ -1575,6 +1576,410 @@ func TestNotes(t *testing.T) {
 		t.Run(testcase.os, func(t *testing.T) {
 			notes := notes(testcase.report)
 			assert.ElementsMatch(t, testcase.expected, notes)
+		})
+	}
+}
+
+func TestFilterNotAffectedVulnerabilities(t *testing.T) {
+	// Layer SHAs for test scenarios:
+	// layer0 (index 0) - base layer
+	// layer1 (index 1) - middle layer where AncestryPackage's buildinfo lives
+	// layer2 (index 2) - user-added layer
+	layerSHAToIndex := map[string]int32{
+		"sha256:layer0": 0,
+		"sha256:layer1": 1,
+		"sha256:layer2": 2,
+	}
+
+	testcases := []struct {
+		name             string
+		report           *v4.VulnerabilityReport
+		expectedPkgVulns map[string][]string
+	}{
+		{
+			name: "nil PackageNotVulnerable - no filtering",
+			report: &v4.VulnerabilityReport{
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"go-pkg-1": {Values: []string{"vuln-1"}},
+				},
+				PackageNotVulnerable: nil,
+			},
+			expectedPkgVulns: map[string][]string{
+				"go-pkg-1": {"vuln-1"},
+			},
+		},
+		{
+			name: "empty PackageNotVulnerable - no filtering",
+			report: &v4.VulnerabilityReport{
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"go-pkg-1": {Values: []string{"vuln-1"}},
+				},
+				PackageNotVulnerable: map[string]*v4.StringList{},
+			},
+			expectedPkgVulns: map[string][]string{
+				"go-pkg-1": {"vuln-1"},
+			},
+		},
+		{
+			name: "no ancestry package in PackageNotVulnerable - no filtering",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"binary-pkg": {Id: "binary-pkg", Kind: "binary"},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vuln-1": {
+						Id:   "vuln-1",
+						Name: "CVE-2024-1234",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-1234"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"go-pkg-1": {Values: []string{"vuln-1"}},
+				},
+				PackageNotVulnerable: map[string]*v4.StringList{
+					"binary-pkg": {Values: []string{"vuln-1"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"go-pkg-1": {"vuln-1"},
+			},
+		},
+		{
+			name: "ancestry package covers package in same layer - CVE suppressed",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"ancestry-pkg": {Id: "ancestry-pkg", Kind: "ancestry", Name: "ubi9:9.4"},
+						"go-pkg-1":     {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"ancestry-pkg": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+						"go-pkg-1":     {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vuln-1": {
+						Id:   "vuln-1",
+						Name: "CVE-2024-24786",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"go-pkg-1": {Values: []string{"vuln-1"}},
+				},
+				PackageNotVulnerable: map[string]*v4.StringList{
+					"ancestry-pkg": {Values: []string{"vuln-1"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{},
+		},
+		{
+			name: "ancestry package covers package in lower layer - CVE suppressed",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"ancestry-pkg": {Id: "ancestry-pkg", Kind: "ancestry", Name: "ubi9:9.4"},
+						"go-pkg-1":     {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"ancestry-pkg": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+						"go-pkg-1":     {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vuln-1": {
+						Id:   "vuln-1",
+						Name: "CVE-2024-24786",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"go-pkg-1": {Values: []string{"vuln-1"}},
+				},
+				PackageNotVulnerable: map[string]*v4.StringList{
+					"ancestry-pkg": {Values: []string{"vuln-1"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{},
+		},
+		{
+			name: "package in user layer above ancestry - CVE NOT suppressed",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"ancestry-pkg": {Id: "ancestry-pkg", Kind: "ancestry", Name: "ubi9:9.4"},
+						"go-pkg-1":     {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"ancestry-pkg": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+						"go-pkg-1":     {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer2"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vuln-1": {
+						Id:   "vuln-1",
+						Name: "CVE-2024-24786",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"go-pkg-1": {Values: []string{"vuln-1"}},
+				},
+				PackageNotVulnerable: map[string]*v4.StringList{
+					"ancestry-pkg": {Values: []string{"vuln-1"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"go-pkg-1": {"vuln-1"},
+			},
+		},
+		{
+			name: "alias matching - GHSA in vuln, CVE in not-affected aliases",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"ancestry-pkg": {Id: "ancestry-pkg", Kind: "ancestry", Name: "ubi9:9.4"},
+						"go-pkg-1":     {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"ancestry-pkg": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+						"go-pkg-1":     {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"ghsa-vuln": {
+						Id:   "ghsa-vuln",
+						Name: "GHSA-8r3f-844c-mc37",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "ghsa", Name: "GHSA-8r3f-844c-mc37"},
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+					"cve-vuln": {
+						Id:   "cve-vuln",
+						Name: "CVE-2024-24786",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"go-pkg-1": {Values: []string{"ghsa-vuln"}},
+				},
+				PackageNotVulnerable: map[string]*v4.StringList{
+					"ancestry-pkg": {Values: []string{"cve-vuln"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{},
+		},
+		{
+			name: "no matching aliases - CVE NOT suppressed",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"ancestry-pkg": {Id: "ancestry-pkg", Kind: "ancestry", Name: "ubi9:9.4"},
+						"go-pkg-1":     {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"ancestry-pkg": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+						"go-pkg-1":     {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vuln-1": {
+						Id:   "vuln-1",
+						Name: "CVE-2024-1111",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-1111"},
+						},
+					},
+					"vuln-2": {
+						Id:   "vuln-2",
+						Name: "CVE-2024-2222",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-2222"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"go-pkg-1": {Values: []string{"vuln-1"}},
+				},
+				PackageNotVulnerable: map[string]*v4.StringList{
+					"ancestry-pkg": {Values: []string{"vuln-2"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"go-pkg-1": {"vuln-1"},
+			},
+		},
+		{
+			name: "package with no environment - not filtered (safe default)",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"ancestry-pkg": {Id: "ancestry-pkg", Kind: "ancestry", Name: "ubi9:9.4"},
+						"go-pkg-1":     {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"ancestry-pkg": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vuln-1": {
+						Id:   "vuln-1",
+						Name: "CVE-2024-24786",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"go-pkg-1": {Values: []string{"vuln-1"}},
+				},
+				PackageNotVulnerable: map[string]*v4.StringList{
+					"ancestry-pkg": {Values: []string{"vuln-1"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"go-pkg-1": {"vuln-1"},
+			},
+		},
+		{
+			name: "vulnerability with no aliases - not filtered",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"ancestry-pkg": {Id: "ancestry-pkg", Kind: "ancestry", Name: "ubi9:9.4"},
+						"go-pkg-1":     {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"ancestry-pkg": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+						"go-pkg-1":     {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vuln-1": {
+						Id:      "vuln-1",
+						Name:    "CVE-2024-24786",
+						Aliases: nil,
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"go-pkg-1": {Values: []string{"vuln-1"}},
+				},
+				PackageNotVulnerable: map[string]*v4.StringList{
+					"ancestry-pkg": {Values: []string{"vuln-1"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"go-pkg-1": {"vuln-1"},
+			},
+		},
+		{
+			name: "multiple boundaries - each checked independently",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"ancestry-pkg-1": {Id: "ancestry-pkg-1", Kind: "ancestry", Name: "ubi9:9.4"},
+						"ancestry-pkg-2": {Id: "ancestry-pkg-2", Kind: "ancestry", Name: "rhel:8"},
+						"go-pkg-1":       {Id: "go-pkg-1", Kind: "binary", Name: "pkg1"},
+						"go-pkg-2":       {Id: "go-pkg-2", Kind: "binary", Name: "pkg2"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"ancestry-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"ancestry-pkg-2": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+						"go-pkg-1":       {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"go-pkg-2":       {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vuln-1": {
+						Id:   "vuln-1",
+						Name: "CVE-2024-1111",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-1111"},
+						},
+					},
+					"vuln-2": {
+						Id:   "vuln-2",
+						Name: "CVE-2024-2222",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-2222"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"go-pkg-1": {Values: []string{"vuln-1"}},
+					"go-pkg-2": {Values: []string{"vuln-2"}},
+				},
+				PackageNotVulnerable: map[string]*v4.StringList{
+					"ancestry-pkg-1": {Values: []string{"vuln-1"}},
+					"ancestry-pkg-2": {Values: []string{"vuln-2"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{},
+		},
+		{
+			name: "partial suppression - only matching CVE removed",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"ancestry-pkg": {Id: "ancestry-pkg", Kind: "ancestry", Name: "ubi9:9.4"},
+						"go-pkg-1":     {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"ancestry-pkg": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+						"go-pkg-1":     {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vuln-1": {
+						Id:   "vuln-1",
+						Name: "CVE-2024-1111",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-1111"},
+						},
+					},
+					"vuln-2": {
+						Id:   "vuln-2",
+						Name: "CVE-2024-2222",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-2222"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"go-pkg-1": {Values: []string{"vuln-1", "vuln-2"}},
+				},
+				PackageNotVulnerable: map[string]*v4.StringList{
+					"ancestry-pkg": {Values: []string{"vuln-1"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"go-pkg-1": {"vuln-2"},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			filterNotAffectedVulnerabilities(tc.report, layerSHAToIndex)
+
+			got := make(map[string][]string)
+			for pkgID, vulns := range tc.report.GetPackageVulnerabilities() {
+				got[pkgID] = vulns.GetValues()
+			}
+			assert.Equal(t, tc.expectedPkgVulns, got)
 		})
 	}
 }

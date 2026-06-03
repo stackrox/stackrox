@@ -251,26 +251,6 @@ class VMScanningE2e(BaseTest):
         )
 
 
-class SensorIntegration(BaseTest):
-    TEST_TIMEOUT = 90 * 60
-    TEST_OUTPUT_DIR = "/tmp/sensor-integration-test-logs"
-
-    def run(self):
-        print("Executing the Sensor Integration Tests")
-
-        self.run_with_graceful_kill(
-            ["tests/e2e/sensor.sh", self.TEST_OUTPUT_DIR],
-            self.TEST_TIMEOUT,
-            output_dir=self.TEST_OUTPUT_DIR,
-        )
-
-
-class SensorIntegrationOCP(SensorIntegration):
-    def run(self):
-        # TODO(ROX-17875): make them work on OCP.
-        print("Skipping the Sensor Integration Tests for OCP")
-
-
 class ScaleTest(BaseTest):
     TEST_TIMEOUT = 90 * 60
     PPROF_ZIP_OUTPUT = "/tmp/scale-test/pprof.zip"

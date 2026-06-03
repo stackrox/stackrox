@@ -12,6 +12,7 @@ type Scanner struct {
 	ScannerV4DBImage string `json:"scannerV4DBImage"`
 	OfflineMode      bool   `json:"offlineMode"`
 
+	// Deprecated: IstioVersion is ignored. ACS now automatically prevents Istio sidecar injection.
 	IstioVersion string `json:"istioVersion"`
 
 	DisablePodSecurityPolicies bool `json:"disablePodSecurityPolicies"`

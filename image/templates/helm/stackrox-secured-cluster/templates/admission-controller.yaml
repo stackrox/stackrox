@@ -8,7 +8,6 @@ metadata:
   labels:
     {{- include "srox.labels" (list . "deployment" "admission-control") | nindent 4 }}
     app: admission-control
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "deployment" "admission-control") | nindent 4 }}
 spec:
@@ -22,9 +21,10 @@ spec:
       namespace: {{ ._rox._namespace }}
       labels:
         app: admission-control
+        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "admission-control") | nindent 8 }}
       annotations:
-        {{- $annotations := dict "traffic.sidecar.istio.io/excludeInboundPorts" "8443" -}}
+        {{- $annotations := dict -}}
         {{- if ._rox.env.openshift }}
           {{- $_ := set $annotations "openshift.io/required-scc" "restricted-v2" -}}
         {{- end }}
@@ -188,7 +188,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "service" "admission-control") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "service" "admission-control") | nindent 4 }}
     {{- if ._rox.monitoring.openshift.enabled }}
@@ -223,7 +222,6 @@ metadata:
   name: stackrox
   labels:
     {{- include "srox.labels" (list . "validatingwebhookconfiguration" "stackrox") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "validatingwebhookconfiguration" "stackrox") | nindent 4 }}
 webhooks:

@@ -5,13 +5,15 @@ import "time"
 // These environment variables are used in the deployment file.
 // Please check the files before deleting.
 var (
-	// AdvertisedEndpoint is used to provide the Sensor with the endpoint it
-	// should advertise to services that need to contact it, within its own cluster.
+	// AdvertisedEndpoint is deprecated; use SensorEndpointSetting() or SensorEndpoint instead.
+	// Kept for backward compatibility with manual installs and Central kubectl bundle rendering.
 	AdvertisedEndpoint = RegisterSetting("ROX_ADVERTISED_ENDPOINT", WithDefault("sensor.stackrox.svc:443"),
 		StripAnyPrefix("https://", "http://"))
 
 	// SensorEndpoint is used to communicate the sensor endpoint to other services in the same cluster.
-	SensorEndpoint = RegisterSetting("ROX_SENSOR_ENDPOINT", WithDefault("sensor.stackrox.svc:443"))
+	// Prefer SensorEndpointSetting() for the effective endpoint (legacy fallback and namespace derivation).
+	SensorEndpoint = RegisterSetting("ROX_SENSOR_ENDPOINT", WithDefault("sensor.stackrox.svc:443"),
+		StripAnyPrefix("https://", "http://"))
 
 	// ScannerSlimGRPCEndpoint is used to communicate the scanner endpoint to other services in the same cluster.
 	// This is typically used for Sensor to communicate with a local Scanner-slim's gRPC server.
@@ -48,9 +50,6 @@ var (
 	// NetworkFlowClosedConnRememberDuration controls how long the categorized update computer will track
 	// timestamps for closed connections to handle late-arriving updates.
 	NetworkFlowClosedConnRememberDuration = registerDurationSetting("ROX_NETFLOW_CLOSED_CONN_REMEMBER_DURATION", 6*time.Minute)
-	// NetworkFlowUseLegacyUpdateComputer enables the Legacy update computer for the network flow enrichment pipeline
-	// updates sent to Central. Setting this to `true` enables the behavior as in 4.8 and earlier.
-	NetworkFlowUseLegacyUpdateComputer = RegisterBooleanSetting("ROX_NETFLOW_USE_LEGACY_UPDATE_COMPUTER", false)
 
 	// ProcessIndicatorBufferSize indicates how many process indicators will be kept in Sensor while offline.
 	// 1 Item in the buffer = ~300 bytes

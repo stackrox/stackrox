@@ -418,11 +418,14 @@ type Map[T any] interface {
 	~map[EndpointTargetInfo]T
 }
 
-func doLookupEndpoint[M Map[T], T any](ep net.NumericEndpoint, src map[net.NumericEndpoint]map[string]M) (results []LookupResult) {
-	for deploymentID, targetInfoSet := range src[ep] {
+func doLookupEndpoint[M Map[T], T any](ep net.NumericEndpoint, src map[net.NumericEndpoint]map[string]M) []LookupResult {
+	deploymentsMap := src[ep]
+	results := make([]LookupResult, 0, len(deploymentsMap))
+	for deploymentID, targetInfoSet := range deploymentsMap {
 		result := LookupResult{
 			Entity:         networkgraph.EntityForDeployment(deploymentID),
-			ContainerPorts: make([]uint16, 0),
+			ContainerPorts: make([]uint16, 0, len(targetInfoSet)),
+			PortNames:      make([]string, 0, len(targetInfoSet)),
 		}
 		for tgtInfo := range targetInfoSet {
 			result.ContainerPorts = append(result.ContainerPorts, tgtInfo.ContainerPort)

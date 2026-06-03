@@ -100,8 +100,8 @@ issues:
 }
 
 var (
-	restestNTimes = regexp.MustCompile(`/retest-times (\d+) (.*)`)
-	testJob       = regexp.MustCompile(`/test (.*)`)
+	restestNTimes = regexp.MustCompile(`/retest-times\s+(\d+)\s+(.*)`)
+	testJob       = regexp.MustCompile(`/test\s+(.*)`)
 )
 
 func commentsToCreate(statuses map[string]string, jobsToRetest []string, shouldRetest bool) []string {
@@ -130,7 +130,7 @@ func jobsToRetestFromComments(userComments, allComments []string) ([]string, err
 	for _, c := range userComments {
 		testJobMatch := testJob.FindStringSubmatch(c)
 		if len(testJobMatch) == 2 {
-			job := testJobMatch[1]
+			job := strings.TrimSpace(testJobMatch[1])
 			if _, ok := testedJobs[job]; !ok {
 				testedJobs[job] = 0
 			}
@@ -145,7 +145,7 @@ func jobsToRetestFromComments(userComments, allComments []string) ([]string, err
 		if len(matched) != 3 {
 			continue
 		}
-		job := matched[2]
+		job := strings.TrimSpace(matched[2])
 		t, err := strconv.Atoi(matched[1])
 		if err != nil {
 			return nil, fmt.Errorf("got an error in a comment %q: %w", c, err)

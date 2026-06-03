@@ -1174,3 +1174,120 @@ func (s *AlertDatastoreImplSuite) TestUpsert_PlatformComponentAndEntityTypeAssig
 	s.Equal(storage.Alert_DEPLOYMENT, storedAlert.GetEntityType())
 	s.True(storedAlert.GetPlatformComponent())
 }
+
+func (s *AlertDatastoreImplSuite) TestSearchAlertMatchKeysDeployment() {
+	alert := fixtures.GetAlert()
+	alert.Id = fixtureconsts.Alert1
+	alert.State = storage.ViolationState_ACTIVE
+	alert.LifecycleStage = storage.LifecycleStage_DEPLOY
+	alert.GetDeployment().Id = fixtureconsts.Deployment2
+	alert.GetDeployment().Inactive = false
+
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+	s.createAndTrackAlert(alert)
+
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddExactMatches(search.DeploymentID, fixtureconsts.Deployment2).
+		ProtoQuery()
+
+	keys, err := s.datastore.SearchAlertMatchKeys(ctx, q, false)
+	s.NoError(err)
+	s.Require().Len(keys, 1)
+
+	key := keys[0]
+	s.Equal(alert.GetId(), key.GetId())
+	s.Equal(alert.GetPolicy().GetId(), key.GetPolicyId())
+	s.Equal(alert.GetState(), key.GetState())
+	s.Equal(alert.GetLifecycleStage(), key.GetLifecycleStage())
+	s.Equal(fixtureconsts.Deployment2, key.GetDeploymentId())
+	s.True(key.HasDeployment())
+	s.False(key.IsDeploymentInactive())
+	s.False(key.HasResource())
+	s.False(key.HasNode())
+}
+
+func (s *AlertDatastoreImplSuite) TestSearchAlertMatchKeysResource() {
+	alert := fixtures.GetResourceAlert()
+	alert.State = storage.ViolationState_ACTIVE
+	alert.LifecycleStage = storage.LifecycleStage_RUNTIME
+	res := alert.GetResource()
+
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+	s.createAndTrackAlert(alert)
+
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddExactMatches(search.AlertID, alert.GetId()).
+		ProtoQuery()
+
+	keys, err := s.datastore.SearchAlertMatchKeys(ctx, q, false)
+	s.NoError(err)
+	s.Require().Len(keys, 1)
+
+	key := keys[0]
+	s.Equal(alert.GetId(), key.GetId())
+	s.Equal(alert.GetPolicy().GetId(), key.GetPolicyId())
+	s.Equal(alert.GetState(), key.GetState())
+	s.Equal(alert.GetLifecycleStage(), key.GetLifecycleStage())
+	s.False(key.HasDeployment())
+	s.True(key.HasResource())
+	s.Equal(res.GetResourceType(), key.GetResourceType())
+	s.Equal(res.GetName(), key.GetResourceName())
+	s.Equal(res.GetClusterId(), key.GetClusterId())
+	s.Equal(res.GetNamespace(), key.GetNamespace())
+}
+
+func (s *AlertDatastoreImplSuite) TestSearchAlertMatchKeysNode() {
+	alert := fixtures.GetNodeAlert()
+	alert.State = storage.ViolationState_ACTIVE
+	alert.LifecycleStage = storage.LifecycleStage_RUNTIME
+	node := alert.GetNode()
+
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+	s.createAndTrackAlert(alert)
+
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddExactMatches(search.AlertID, alert.GetId()).
+		ProtoQuery()
+
+	keys, err := s.datastore.SearchAlertMatchKeys(ctx, q, false)
+	s.NoError(err)
+	s.Require().Len(keys, 1)
+
+	key := keys[0]
+	s.Equal(alert.GetId(), key.GetId())
+	s.Equal(alert.GetPolicy().GetId(), key.GetPolicyId())
+	s.Equal(alert.GetState(), key.GetState())
+	s.Equal(alert.GetLifecycleStage(), key.GetLifecycleStage())
+	s.False(key.HasDeployment())
+	s.False(key.HasResource())
+	s.True(key.HasNode())
+	s.Equal(node.GetId(), key.GetNodeId())
+	s.Equal(node.GetName(), key.GetNodeName())
+	s.Equal(node.GetClusterId(), key.GetClusterId())
+}
+
+func (s *AlertDatastoreImplSuite) TestSearchAlertMatchKeysExcludesResolved() {
+	active := fixtures.GetAlert()
+	active.Id = fixtureconsts.Alert1
+	active.State = storage.ViolationState_ACTIVE
+
+	resolved := fixtures.GetAlert()
+	resolved.Id = fixtureconsts.Alert2
+	resolved.State = storage.ViolationState_RESOLVED
+
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil).Times(2)
+	s.createAndTrackAlert(active)
+	s.createAndTrackAlert(resolved)
+
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.AlertID, active.GetId(), resolved.GetId()).
+		ProtoQuery()
+
+	keys, err := s.datastore.SearchAlertMatchKeys(ctx, q, true)
+	s.NoError(err)
+	s.Require().Len(keys, 1)
+	s.Equal(active.GetId(), keys[0].GetId())
+}

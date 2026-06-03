@@ -8,7 +8,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "admission-control-no-ingress") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "networkpolicy" "admission-control-no-ingress") | nindent 4 }}
 spec:
@@ -31,7 +30,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "admission-control-monitoring") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "networkpolicy" "admission-control-monitoring") | nindent 4 }}
 spec:
@@ -55,7 +53,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "admission-control-monitoring-tls") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "networkpolicy" "admission-control-monitoring-tls") | nindent 4 }}
 spec:

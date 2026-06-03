@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/toolkit/types"
 	"github.com/stackrox/rox/pkg/scannerv4/updater/manual"
 	"github.com/stackrox/rox/pkg/utils"
 	"go.yaml.in/yaml/v3"
@@ -176,7 +177,7 @@ func (u *updater) Parse(ctx context.Context, rc io.ReadCloser) ([]*claircore.Vul
 			NormalizedSeverity: severity(v.NormalizedSeverity),
 			Package: &claircore.Package{
 				Name:           v.Package.Name,
-				Kind:           claircore.BINARY,
+				Kind:           types.BinaryPackage,
 				RepositoryHint: v.Package.RepositoryHint,
 			},
 			FixedInVersion: v.FixedInVersion,

@@ -1,5 +1,7 @@
 # TLS certificates in StackRox
 
+This document covers **StackRox internal CA mTLS** only.
+
 ## Architecture
 
 - StackRox uses mTLS for most inter-service communication. Service type is extracted
@@ -37,7 +39,7 @@
 - Legacy manual cert download (UI/API): `central/certgen/` — generates YAML files for users to `kubectl apply`
 - CA rotation logic: `operator/internal/central/carotation/rotation.go`
 - Operator TLS reconciliation: `operator/internal/central/extensions/reconcile_tls.go`
-- Sensor cert init (one-time copy at startup): `sensor/kubernetes/certinit/init_tls_certs.go`
+- Sensor cert init (copy at startup, watch `certs-new` for updates): `sensor/kubernetes/certinit/init_tls_certs.go`
 - Sensor cert refresh (TLS challenge + CA bundle): `sensor/kubernetes/certrefresh/`
 - Postgres DB cert reload (Central DB, Scanner V4 DB): `image/postgres/scripts/cert-watcher.sh`, `image/templates/helm/shared/templates/_cert-watcher.tpl`
 
@@ -52,8 +54,6 @@
 The following certificates are currently known to be cached at start-up and not reloaded:
 
 - CA material (`CACert()`, `SecondaryCACert()`, `CAForSigning()`, etc.) in `pkg/mtls/crypto.go`: `sync.Once`, never refreshed. Intentional — the Operator restarts all pods on CA change.
-
-- Sensor: all certs are effectively cached because `certinit` copies them to an emptyDir at startup. Client certs are also cached at construction (`centralclient.NewClient`, `StartProxyServer`, scanner client).
 
 ## Certificate management — who manages what
 

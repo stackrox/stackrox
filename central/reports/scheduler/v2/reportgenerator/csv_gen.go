@@ -82,8 +82,14 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 		truncatedName = configName[0:80] + "..."
 	}
 
-	reportName := fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", truncatedName, time.Now().Format("02_January_2006"))
-	zipFile, err := zipWriter.Create(reportName)
+	now := time.Now()
+	reportName := fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", truncatedName, now.Format("02_January_2006"))
+	header := &zip.FileHeader{
+		Name:     reportName,
+		Method:   zip.Deflate,
+		Modified: now,
+	}
+	zipFile, err := zipWriter.CreateHeader(header)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to create the zip file for report config '%s'", configName)
 	}

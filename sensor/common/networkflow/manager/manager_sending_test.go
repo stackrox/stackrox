@@ -43,7 +43,7 @@ type sendNetflowsSuite struct {
 	suite.Suite
 	mockCtrl     *gomock.Controller
 	mockEntity   *mocksManager.MockEntityStore
-	uc           updatecomputer.UpdateComputer
+	uc           *updatecomputer.Computer
 	m            *networkFlowManager
 	mockDetector *mocksDetector.MockDetector
 	fakeTicker   chan time.Time
@@ -58,8 +58,7 @@ func (b *sendNetflowsSuite) SetupTest() {
 	b.mockCtrl = gomock.NewController(b.T())
 	enrichTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
-	// Need to expose the concrete type of update computer for deduper assertions
-	b.uc = updatecomputer.NewTransitionBased()
+	b.uc = updatecomputer.New()
 	b.m, b.mockEntity, _, b.mockDetector = createManager(b.mockCtrl, enrichTickerC)
 	b.m.updateComputer = b.uc
 
