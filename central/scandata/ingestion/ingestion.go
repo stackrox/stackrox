@@ -3,7 +3,6 @@ package ingestion
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -82,10 +81,9 @@ func convertPackagesAndVulns(scanID, imageID string, metadata *storage.ImageMeta
 	}
 	findings = make([]*storage.ScanFinding, 0, totalVulns)
 
-	index := 0
 	for pkgID, pkg := range pkgs {
 		// Create component
-		componentID := componentIDFromPackage(pkg.GetName(), index, scanID)
+		componentID := componentIDFromPackage(pkgID, scanID)
 		component := &storage.ScanComponent{
 			Id:              componentID,
 			ScanId:          scanID,
@@ -137,8 +135,6 @@ func convertPackagesAndVulns(scanID, imageID string, metadata *storage.ImageMeta
 			osForPackage(report, pkgID),
 		)
 		findings = append(findings, componentFindings...)
-
-		index++
 	}
 
 	return components, findings, nil
@@ -305,8 +301,8 @@ func setScoresFromMetrics(finding *storage.ScanFinding, cvssMetrics []*v4.Vulner
 	return nil
 }
 
-func componentIDFromPackage(name string, index int, scanID string) string {
-	return pgSearch.IDFromPks([]string{name, strconv.Itoa(index), scanID})
+func componentIDFromPackage(pkgID, scanID string) string {
+	return pgSearch.IDFromPks([]string{pkgID, scanID})
 }
 
 func findingIDFromAdvisory(advisoryID, componentID, scanID string) string {
