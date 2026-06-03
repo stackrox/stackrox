@@ -11,7 +11,7 @@ func FormatName(first, last string) string {
 	return fmt.Sprintf("%s %s", strings.TrimSpace(first), strings.TrimSpace(last))
 }
 
-// GetEnvOrDefault retreives an environment variable or returns a default.
+// GetEnvOrDefault retrieves an environment variable or returns a default.
 func GetEnvOrDefault(key, defaultVal string) string {
 	val := os.Getenv(key)
 	if val == "" {
