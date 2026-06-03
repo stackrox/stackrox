@@ -301,7 +301,7 @@ jobs:
       # race-condition-debug - built with -race
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
-    continue-on-error: ${{ matrix.copy == 'b' }}
+    continue-on-error: ${{ matrix.copy != 'a' }}
     needs: define-job-matrix
     runs-on: ubuntu-latest
     env:
@@ -316,10 +316,8 @@ jobs:
 
       - uses: ./.github/actions/speculative-run
         id: gate
-        if: matrix.copy != ''
-        continue-on-error: true
         with:
-          copy: ${{ matrix.copy || 'a' }}
+          copy: ${{ matrix.copy }}
           last-copy: c
 
       - uses: ./.github/actions/job-preamble
@@ -626,8 +624,8 @@ jobs:
   build-and-push-main:
     # Use native arm64 runner to avoid QEMU emulation overhead (~2x slower).
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
-    # copy: b is the backup speculative copy — non-blocking if it fails or is slow.
-    continue-on-error: ${{ matrix.copy == 'b' }}
+    # Non-first copies (b, c) are speculative backups — non-blocking if cancelled or slow.
+    continue-on-error: ${{ matrix.copy != 'a' }}
     needs:
       - define-job-matrix
       - pre-build-cli
@@ -975,7 +973,7 @@ jobs:
 
   build-and-push-operator:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
-    continue-on-error: ${{ matrix.copy == 'b' }}
+    continue-on-error: ${{ matrix.copy != 'a' }}
     needs:
       - define-job-matrix
       - pre-build-go-binaries
@@ -998,10 +996,8 @@ jobs:
 
       - uses: ./.github/actions/speculative-run
         id: gate
-        if: matrix.copy != ''
-        continue-on-error: true
         with:
-          copy: ${{ matrix.copy || 'a' }}
+          copy: ${{ matrix.copy }}
           last-copy: c
 
       - uses: ./.github/actions/job-preamble
