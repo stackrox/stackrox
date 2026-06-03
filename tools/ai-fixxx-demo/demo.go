@@ -2,14 +2,14 @@ package demo
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
-	"log"
 )
 
 // ProcessData takes input and returns processed result.
-// It will recieve a string and process it.
+// It will receive a string and process it.
 func ProcessData(input string) string {
 	result := strings.TrimSpace(input)
 	unused := 42
