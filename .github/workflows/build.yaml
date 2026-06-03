@@ -458,7 +458,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # ratchet:docker/login-action@v4
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         with:
@@ -484,7 +484,7 @@ jobs:
       - name: Login to quay.io/stackrox-io
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # ratchet:docker/login-action@v4
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
@@ -523,7 +523,7 @@ jobs:
       - name: Login to quay.io/rhacs-eng
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # ratchet:docker/login-action@v4
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
@@ -654,7 +654,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # ratchet:docker/login-action@v4
         continue-on-error: true
         # Skip for external contributions.
         if: |
@@ -990,7 +990,7 @@ jobs:
           GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ docker-build-prebuilt
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # ratchet:docker/login-action@v4
         continue-on-error: true
         # Skip for external contributions.
         if: |
@@ -1057,7 +1057,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # ratchet:docker/login-action@v4
         continue-on-error: true
         if: |
           matrix.arch != 'amd64' && matrix.arch != 'arm64' &&
