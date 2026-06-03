@@ -8,149 +8,116 @@ permissions:
   checks: write
 
 jobs:
-  # Diagnostic: log the process tree so we can understand GHA's process hierarchy
-  # and determine how to find the work step PID from a background monitor
-  process-tree-diagnostic:
+  # Test the three kill variants:
+  # Variant 1: kill NEW children only (comm -13 diff)
+  # Variant 2: kill ALL children of parent (pkill -P)
+  # Variant 3: kill the parent itself (runner worker)
+  # Each job: gate starts bg monitor, work step sleeps 30s, monitor fires after 5s
+
+  kill-variant-new-children:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
-      - name: Gate step — log process tree and start bg monitor
+      - name: Gate (start bg monitor — kill NEW children)
         run: |
-          echo "=== Gate step PID=$$, PPID=$PPID ==="
-          echo "=== Full process tree ==="
-          ps auxf | head -60
-          echo "=== Children of PPID=$PPID ==="
-          pgrep -P $PPID -a || true
-          echo "=== /proc/$PPID/cmdline ==="
-          cat /proc/$PPID/cmdline | tr '\0' ' ' || true
-          echo "=== Parent of PPID ==="
-          ppid_of_ppid=$(cat /proc/$PPID/status | grep PPid | awk '{print $2}')
-          echo "PPID's parent: $ppid_of_ppid"
-          cat /proc/$ppid_of_ppid/cmdline 2>/dev/null | tr '\0' ' ' || true
+          parent=$PPID
+          echo "Gate PID=$$  Parent=$parent"
+          pgrep -P "$parent" | sort > /tmp/baseline-children
 
-          # Record state at end of gate step
-          echo "gate_step_pid=$$" > /tmp/speculative-state
-          echo "runner_parent=$PPID" >> /tmp/speculative-state
-          pgrep -P $PPID > /tmp/speculative-gate-children 2>/dev/null || true
-
-          # Start background monitor that logs what it sees
-          nohup bash -c '
-            sleep 5  # short wait for next step to start
-            echo "=== Monitor: process tree after work step starts ==="
-            ps auxf | head -60
-            parent=$(cat /tmp/speculative-state | grep runner_parent | cut -d= -f2)
-            echo "=== Children of runner parent ($parent) ==="
-            pgrep -P "$parent" -a || true
-            old=$(cat /tmp/speculative-gate-children)
-            echo "=== Old children: $old ==="
-            new=$(pgrep -P "$parent")
-            echo "=== New children: $new ==="
-            for pid in $new; do
-              if ! echo "$old" | grep -qx "$pid"; then
-                echo "NEW child: $pid = $(cat /proc/$pid/cmdline 2>/dev/null | tr '\\0' ' ')"
-              fi
+          nohup bash -c "
+            sleep 5
+            echo 'Monitor firing — looking for new children of $parent'
+            ps auxf | grep -E 'bash|sleep' | grep -v grep
+            new_children=\$(comm -13 /tmp/baseline-children <(pgrep -P $parent | sort))
+            echo 'New children: '\$new_children
+            for pid in \$new_children; do
+              echo \"Sending SIGTERM to new child \$pid ($(cat /proc/\$pid/cmdline 2>/dev/null | tr '\\\\0' ' '))\"
+              kill -TERM \$pid 2>/dev/null
             done
-          ' > /tmp/speculative-monitor.log 2>&1 &
-          echo "Monitor started (PID $!)"
+          " > /tmp/monitor.log 2>&1 &
+          echo "Monitor PID=$!"
 
-      - name: Work step — log own PID and run for a few seconds
+      - name: Work (sleeps 30s — should be killed after 5s)
         run: |
-          echo "=== Work step PID=$$, PPID=$PPID ==="
-          ps auxf | grep -E "PID|bash|Runner|python|node" | head -20
-          echo "=== /proc/$$/status ==="
-          head -10 /proc/$$/status
-          sleep 10
-          echo "Work done."
+          echo "Work PID=$$ PPID=$PPID — sleeping 30s"
+          sleep 30
+          echo "Work completed (should NOT see this if kill worked)"
 
-      - name: Show monitor output
+      - name: Result
         if: always()
-        run: cat /tmp/speculative-monitor.log || echo "(no monitor log)"
+        run: |
+          echo "=== Monitor log ===" && cat /tmp/monitor.log || true
+          echo "Work step conclusion: ${{ steps.*.conclusion }}"
 
-  # Test 1: all fast — a proceeds, b waits 30s sees a=success → skips, c waits 60s sees b=success → skips
-  test-all-fast:
-    strategy:
-      fail-fast: false
-      matrix:
-        copy: [a, b, c]
+  kill-variant-all-children:
+    runs-on: ubuntu-latest
     continue-on-error: true
+    steps:
+      - name: Gate (start bg monitor — kill ALL children of parent)
+        run: |
+          parent=$PPID
+          echo "Gate PID=$$  Parent=$parent"
+
+          nohup bash -c "
+            sleep 5
+            echo 'Monitor firing — killing ALL children of $parent'
+            ps auxf | grep -E 'bash|sleep' | grep -v grep
+            echo 'Children:' \$(pgrep -P $parent)
+            pkill -TERM -P $parent
+            echo 'pkill sent'
+          " > /tmp/monitor.log 2>&1 &
+          echo "Monitor PID=$!"
+
+      - name: Work (sleeps 30s — should be killed after 5s)
+        run: |
+          echo "Work PID=$$ PPID=$PPID — sleeping 30s"
+          sleep 30
+          echo "Work completed (should NOT see this if kill worked)"
+
+      - name: Result
+        if: always()
+        run: |
+          echo "=== Monitor log ===" && cat /tmp/monitor.log || true
+
+  kill-variant-parent:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Gate (start bg monitor — kill the runner parent directly)
+        run: |
+          parent=$PPID
+          echo "Gate PID=$$  Parent=$parent ($(cat /proc/$parent/cmdline | tr '\0' ' '))"
+
+          nohup bash -c "
+            sleep 5
+            echo 'Monitor firing — killing parent $parent directly'
+            ps auxf | grep -E 'bash|sleep|Runner' | grep -v grep
+            echo 'Sending SIGTERM to parent $parent'
+            kill -TERM $parent 2>/dev/null
+            echo 'kill sent'
+          " > /tmp/monitor.log 2>&1 &
+          echo "Monitor PID=$!"
+
+      - name: Work (sleeps 30s — should be killed after 5s)
+        run: |
+          echo "Work PID=$$ PPID=$PPID — sleeping 30s"
+          sleep 30
+          echo "Work completed (should NOT see this if kill worked)"
+
+      - name: Result
+        if: always()
+        run: |
+          echo "=== Monitor log ===" && cat /tmp/monitor.log || true
+
+  # Control: no kill — work runs to completion
+  control-no-kill:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      - uses: ./.github/actions/speculative-run
-        id: gate
-        continue-on-error: true
-        with:
-          copy: ${{ matrix.copy }}
-          last-copy: c
-          slow-cpu-pattern: NEVER_MATCH
-      - name: Do work
-        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
-        run: echo "Copy ${{ matrix.copy }} working..."
-      - name: Declare win
-        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true' && success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api repos/${{ github.repository }}/check-runs \
-            -f name="test-all-fast" -f head_sha="${{ github.sha }}" \
-            -f status=completed -f conclusion=success \
-            -f "output[title]=Copy ${{ matrix.copy }} won" 2>&1 || true
+      - name: Gate (no monitor)
+        run: echo "Gate PID=$$  Parent=$PPID"
 
-  # Test 2: a=slow — a exits, b waits 30s sees a=failure → proceeds, c waits 60s sees b=success → skips
-  test-a-slow:
-    strategy:
-      fail-fast: false
-      matrix:
-        copy: [a, b, c]
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      - uses: ./.github/actions/speculative-run
-        id: gate
-        continue-on-error: true
-        with:
-          copy: ${{ matrix.copy }}
-          last-copy: c
-          slow-cpu-pattern: ${{ matrix.copy == 'a' && 'EPYC' || 'NEVER_MATCH' }}
-      - name: Do work
-        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
-        run: echo "Copy ${{ matrix.copy }} working..."
-      - name: Declare win
-        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true' && success()
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Work (sleeps 10s — should complete)
         run: |
-          gh api repos/${{ github.repository }}/check-runs \
-            -f name="test-a-slow" -f head_sha="${{ github.sha }}" \
-            -f status=completed -f conclusion=success \
-            -f "output[title]=Copy ${{ matrix.copy }} won" 2>&1 || true
-
-  # Test 3: a+b slow — both exit, c waits 60s sees b=failure → proceeds as fallback
-  test-both-slow:
-    strategy:
-      fail-fast: false
-      matrix:
-        copy: [a, b, c]
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      - uses: ./.github/actions/speculative-run
-        id: gate
-        continue-on-error: true
-        with:
-          copy: ${{ matrix.copy }}
-          last-copy: c
-          slow-cpu-pattern: ${{ (matrix.copy == 'a' || matrix.copy == 'b') && 'EPYC' || 'NEVER_MATCH' }}
-      - name: Do work (should only be c)
-        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
-        run: echo "Copy ${{ matrix.copy }} working (only c should reach here)..."
-      - name: Declare win
-        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true' && success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api repos/${{ github.repository }}/check-runs \
-            -f name="test-both-slow" -f head_sha="${{ github.sha }}" \
-            -f status=completed -f conclusion=success \
-            -f "output[title]=Copy ${{ matrix.copy }} won (fallback)" 2>&1 || true
+          echo "Work PID=$$ — sleeping 10s"
+          sleep 10
+          echo "Work completed normally ✓"
