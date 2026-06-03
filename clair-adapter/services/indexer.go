@@ -128,7 +128,7 @@ func (s *IndexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexRep
 }
 
 // StoreIndexReport is not implemented.
-func (s *IndexerService) StoreIndexReport(ctx context.Context, req *v4.StoreIndexReportRequest) (*v4.IndexReport, error) {
+func (s *IndexerService) StoreIndexReport(ctx context.Context, req *v4.StoreIndexReportRequest) (*v4.StoreIndexReportResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "StoreIndexReport is not implemented")
 }
 
