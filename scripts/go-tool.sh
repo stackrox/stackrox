@@ -86,6 +86,7 @@ function invoke_go() {
   # the top level because race builds override cgo_enabled to 1 after the
   # environment is read.
   if [[ "$cgo_enabled" != 0 ]]; then
+    echo >&2 "CGO_ENABLED=$cgo_enabled, adding -linkmode=external"
     cgo_ldflags+=('-linkmode=external')
   fi
 
