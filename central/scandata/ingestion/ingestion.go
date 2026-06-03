@@ -146,13 +146,9 @@ func convertVulnerabilities(scanID, imageID, componentID string, allVulns map[st
 	}
 
 	findings := make([]*storage.ScanFinding, 0, len(vulnIDs))
-	uniqueVulns := set.NewStringSet()
+	uniqueAdvisories := set.NewStringSet()
 
 	for _, vulnID := range vulnIDs {
-		if !uniqueVulns.Add(vulnID) {
-			continue // Already saw this vulnerability
-		}
-
 		ccVuln, ok := allVulns[vulnID]
 		if !ok {
 			continue
@@ -168,6 +164,11 @@ func convertVulnerabilities(scanID, imageID, componentID string, allVulns map[st
 		if advisoryID == "" {
 			// Fallback: use vuln ID if no advisory ID
 			advisoryID = vulnID
+		}
+
+		// Deduplicate by advisory ID since multiple vulnIDs can map to the same advisory
+		if !uniqueAdvisories.Add(advisoryID) {
+			continue // Already saw this advisory for this component
 		}
 
 		findingID := findingIDFromAdvisory(advisoryID, componentID, scanID)
