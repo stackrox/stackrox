@@ -145,35 +145,26 @@ Use whichever namespace has Central throughout. If none has it, go to **Phase 2c
 
 ### 2b: Authenticate to Central
 
-Determine the Central endpoint. Try in order:
+#### With Roxie (preferred — if Roxie deployed this cluster)
 
-1. **OpenShift route** (preferred):
-   ```bash
-   oc -n <ns> get route central -o jsonpath='{.status.ingress[0].host}' 2>/dev/null
-   ```
-   If found, the endpoint is `<route-host>:443`.
-
-2. **LoadBalancer service**:
-   ```bash
-   oc -n <ns> get svc central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null
-   ```
-   If found, the endpoint is `<lb-ip>:443`.
-
-3. **Port-forward** (fallback — use `run_in_background` for the Bash tool call):
-   ```bash
-   oc -n <ns> port-forward svc/central 8000:443
-   ```
-   If port 8000 is in use, try `18443:443`.
-
-Authenticate. Try credentials in this order:
-1. `ROX_ADMIN_PASSWORD` env var
-2. Password files: `deploy/k8s/central-deploy/password` or `deploy/openshift/central-deploy/password`
-3. Roxie manifest secret: `oc -n roxie get secret roxie-manifest -o jsonpath='{.data.environment}' 2>/dev/null | base64 -d | jq -r .roxAdminPassword`
-
-Test credentials:
+Use `roxie shell` to retrieve endpoint and credentials from the saved manifest:
+```bash
+export KUBECONFIG=<path> && roxie shell -- bash -c 'echo "ENDPOINT=$ROX_ENDPOINT PASSWORD=$ROX_ADMIN_PASSWORD"'
+```
+If this succeeds, you have the endpoint and password. Verify with:
 ```bash
 curl -sk -u "admin:<password>" "https://<endpoint>/v1/ping"
 ```
+
+#### Manual fallback (if roxie shell fails or deployment wasn't done by Roxie)
+
+Determine the Central endpoint. Try in order:
+1. **LoadBalancer**: `oc -n <ns> get svc central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}'`
+2. **OpenShift route**: `oc -n <ns> get route central -o jsonpath='{.status.ingress[0].host}'`
+3. **Port-forward** (use `run_in_background`): `oc -n <ns> port-forward svc/central 8000:443`
+
+Try credentials: `ROX_ADMIN_PASSWORD` env var, then password files in `deploy/*/central-deploy/password`.
+Test with `curl -sk -u "admin:<password>" "https://<endpoint>/v1/ping"`.
 
 If none work, ask the user. In YOLO mode, fail with a clear error.
 
