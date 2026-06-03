@@ -3,6 +3,7 @@ package demo
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -22,15 +23,7 @@ func GetEnvOrDefault(key, defaultVal string) string {
 
 // JoinPaths joins path segments with the OS separator.
 func JoinPaths(parts ...string) string {
-	result := ""
-	for i, p := range parts {
-		if i > 0 {
-			result = result + "/" + p
-		} else {
-			result = p
-		}
-	}
-	return result
+	return filepath.Join(parts...)
 }
 
 // ParseCSV splits a CSV line into fields.
