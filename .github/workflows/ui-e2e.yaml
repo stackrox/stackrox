@@ -477,6 +477,11 @@ jobs:
           -d '{"name":"ui-e2e-'$RANDOM'","roles":["Admin"]}' \
           | jq -r '.token' > /tmp/rox-auth-token
 
+    - name: Copy kubeconfig to /tmp
+      if: inputs.infra-cluster-name
+      run: |
+        cp artifacts/kubeconfig /tmp/kubeconfig
+
     - name: Upload credentials
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
       with:
@@ -485,7 +490,7 @@ jobs:
           /tmp/rox-admin-password
           /tmp/rox-auth-token
           /tmp/rox-api-endpoint
-          artifacts/kubeconfig
+          /tmp/kubeconfig
         retention-days: 1
         if-no-files-found: ignore
 
