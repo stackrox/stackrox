@@ -77,6 +77,7 @@ function ProcessBaselinesPage() {
     const [clusterInput, setClusterInput] = useState('*');
     const [namespaceInput, setNamespaceInput] = useState('default');
     const [deploymentNameInput, setDeploymentNameInput] = useState('');
+    const [imageInput, setImageInput] = useState('');
     const [containerNameInput, setContainerNameInput] = useState('');
 
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -175,6 +176,9 @@ function ProcessBaselinesPage() {
         if (deploymentNameInput.trim()) {
             terms.deploymentName = deploymentNameInput.trim();
         }
+        if (imageInput.trim()) {
+            terms.image = imageInput.trim();
+        }
         if (containerNameInput.trim()) {
             terms.containerName = containerNameInput.trim();
         }
@@ -188,6 +192,7 @@ function ProcessBaselinesPage() {
         setClusterInput('*');
         setNamespaceInput('default');
         setDeploymentNameInput('');
+        setImageInput('');
         setContainerNameInput('');
         setSearchTerms({});
         setHasSearched(false);
@@ -325,6 +330,15 @@ function ProcessBaselinesPage() {
                                 placeholder="Deployment name"
                                 value={deploymentNameInput}
                                 onChange={(_event, value) => setDeploymentNameInput(value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                            />
+                        </FlexItem>
+                        <FlexItem>
+                            <TextInput
+                                aria-label="Image"
+                                placeholder="Image"
+                                value={imageInput}
+                                onChange={(_event, value) => setImageInput(value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                             />
                         </FlexItem>
