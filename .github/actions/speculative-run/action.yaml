@@ -4,12 +4,12 @@ description: >
 
   Behaviour per copy:
   - Instant CPU check: slow runner and not last-copy → exit 1 (gate failure,
-    next copy sees this and proceeds).
+    next copy's monitor sees this and proceeds).
   - Fast runner (or last-copy): start nohup background monitor then proceed.
-    Monitor waits 30s (copy b) or 60s (copy c), checks previous sibling's gate:
-    - gate=success (sibling is fast, running) → kill -TERM MY_PARENT
-      → this job is cancelled, no further steps run. ✅ correct semantics.
-    - gate=failure/empty (sibling slow/absent) → do nothing, this copy runs. ✅
+    Monitor waits 30s × position, then checks all earlier copies' JOB status:
+    - any sibling is in_progress or succeeded → kill -TERM MY_PARENT
+      → this job shows as cancelled, no further steps run. ✅
+    - all siblings failed (slow runners) or absent → this copy runs. ✅
 
 inputs:
   copy:
@@ -51,26 +51,37 @@ runs:
           exit 1
         fi
 
-        # ── 2. Background monitor (watches previous sibling's gate) ─────────
+        # ── 2. Build list of all earlier copies ──────────────────────────────
+        # b→"a", c→"a b", d→"a b c"
         case "$MY_COPY" in
-          b) prev_copy="a"; wait_secs=30 ;;
-          c) prev_copy="b"; wait_secs=60 ;;
-          d) prev_copy="c"; wait_secs=90 ;;
-          *)  prev_copy="";  wait_secs=0  ;;
+          b) prev_copies="a";     wait_secs=30 ;;
+          c) prev_copies="a b";   wait_secs=60 ;;
+          d) prev_copies="a b c"; wait_secs=90 ;;
+          *)  prev_copies="";     wait_secs=0  ;;
         esac
 
-        if [[ -n "$prev_copy" ]]; then
+        if [[ -n "$prev_copies" ]]; then
           # Snapshot current children so we can identify the work step PID later.
           pgrep -P "$MY_PARENT" | sort > /tmp/speculative-baseline
 
+          # Monitor checks JOB-level status (not step-level: composite action
+          # internal steps are not visible in the jobs API).
           nohup bash -c "
             sleep ${wait_secs}
-            prev_gate=\$(gh api 'repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100' \
-              --jq '.jobs[] | select(.name | test(\"[( ,]${prev_copy}[)]\$\")) | .steps[] | select(.name == \"Gate\") | .conclusion' \
-              2>/dev/null | grep -v '^\$' | head -1)
-            echo \"[\$(date -u +%H:%M:%S)] Sibling ${prev_copy} gate: '\${prev_gate}'\"
-            if [[ \"\${prev_gate}\" == 'success' ]]; then
-              echo 'Sibling is fast — cancelling this copy.'
+            winner_found=0
+            for check_copy in ${prev_copies}; do
+              job_line=\$(gh api 'repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100' \
+                --jq '.jobs[] | select(.name | test(\"[( ,]\${check_copy}[)]\$\")) | \"\(.status)/\(.conclusion)\"' \
+                2>/dev/null | head -1)
+              echo \"[\$(date -u +%H:%M:%S)] Sibling \${check_copy}: '\${job_line}'\"
+              if [[ \"\${job_line}\" == 'in_progress/'* || \"\${job_line}\" == 'completed/success' ]]; then
+                winner_found=1
+                echo \"Sibling \${check_copy} is winning — cancelling this copy.\"
+                break
+              fi
+            done
+
+            if [[ \$winner_found -eq 1 ]]; then
               # SIGTERM parent first: runner marks job as cancelled (not failure).
               kill -TERM ${MY_PARENT} 2>/dev/null
               sleep 0.1
@@ -78,11 +89,11 @@ runs:
               new=\$(comm -13 /tmp/speculative-baseline <(pgrep -P ${MY_PARENT} | sort) 2>/dev/null)
               for pid in \$new; do kill -9 \$pid 2>/dev/null; done
             else
-              echo 'Sibling was slow or absent — this copy proceeds normally.'
+              echo 'No sibling is winning — this copy proceeds normally.'
             fi
           " >> /tmp/speculative-monitor.log 2>&1 &
           disown
-          echo "Monitor started — watching sibling ${prev_copy} with ${wait_secs}s delay."
+          echo "Monitor started — checking [${prev_copies}] after ${wait_secs}s."
         else
           echo "Copy ${MY_COPY} is first — no monitor needed."
         fi
