@@ -1,0 +1,37 @@
+name: Speculative Run — Declare Win
+description: >
+  Post a synthetic GitHub Checks API run to satisfy the required check for
+  speculative-execution jobs. Pair with the speculative-run gate action.
+
+  Usage: add at the end of the job with 'if: success()'. The winning copy
+  (the one that finishes real work) calls this; slow/cancelled copies never
+  reach it because either the gate exits 1 or the runner is killed by the monitor.
+
+inputs:
+  check-name:
+    description: >
+      Required check name without the copy letter suffix.
+      Must match the branch-protection required check name exactly.
+      Example: "build-and-push-main (RHACS_BRANDING, amd64)"
+    required: true
+  copy:
+    description: 'Which copy won this race (a, b, or c) — used in the summary message only'
+    default: 'winner'
+
+runs:
+  using: composite
+  steps:
+    - name: Post synthetic required check
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        echo "Copy '${{ inputs.copy }}' won — posting check '${{ inputs.check-name }}'"
+        gh api repos/${{ github.repository }}/check-runs \
+          -f name="${{ inputs.check-name }}" \
+          -f head_sha="${{ github.sha }}" \
+          -f status=completed \
+          -f conclusion=success \
+          -f "output[title]=Speculative run complete" \
+          -f "output[summary]=Copy ${{ inputs.copy }} won." \
+          2>&1 || echo "::warning::Failed to post synthetic check (non-fatal)"

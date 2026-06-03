@@ -23,6 +23,10 @@ inputs:
     description: 'CPU substring marking a slow runner'
     required: false
     default: '7763'
+  enabled:
+    description: 'Set to false to disable speculative execution — all copies run normally'
+    required: false
+    default: 'true'
 
 runs:
   using: composite
@@ -34,6 +38,10 @@ runs:
         GH_TOKEN: ${{ github.token }}
       run: |
         set +e
+        if [[ "${{ inputs.enabled }}" != 'true' ]]; then
+          echo "Speculative execution disabled — skipping gate, this copy always runs."
+          exit 0
+        fi
         MY_COPY="${{ inputs.copy }}"
         LAST_COPY="${{ inputs.last-copy }}"
         SLOW_PATTERN="${{ inputs.slow-cpu-pattern }}"

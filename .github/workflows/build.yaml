@@ -321,12 +321,12 @@ jobs:
           last-copy: c
 
       - uses: ./.github/actions/job-preamble
-        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
+        if: steps.gate.conclusion == 'success'
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Cache Go dependencies
-        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
+        if: steps.gate.conclusion == 'success'
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
@@ -379,33 +379,25 @@ jobs:
           sudo ln -sf /usr/include/asm /usr/include/x86_64-linux-musl/asm
 
       - name: Build Go Binaries
-        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
+        if: steps.gate.conclusion == 'success'
         run: GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
 
       - name: Bundle the build to preserve permissions
-        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
+        if: steps.gate.conclusion == 'success'
         run: tar -cvf go-binaries-build.tar bin/linux_${{ matrix.arch }}
 
       - uses: ./.github/actions/upload-artifact-with-retry
-        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
+        if: steps.gate.conclusion == 'success'
         with:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
           path: go-binaries-build.tar
           compression-level: 1
 
-      - name: Declare win — post synthetic required check
-        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true' && success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api repos/${{ github.repository }}/check-runs \
-            -f name="pre-build-go-binaries (${{ matrix.name }}, ${{ matrix.arch }})" \
-            -f head_sha="${{ github.sha }}" \
-            -f status=completed \
-            -f conclusion=success \
-            -f "output[title]=Speculative run complete" \
-            -f "output[summary]=Copy ${{ matrix.copy }} won." \
-            2>&1 || echo "::warning::Failed to post synthetic check"
+      - uses: ./.github/actions/speculative-declare-win
+        if: success()
+        with:
+          check-name: pre-build-go-binaries (${{ matrix.name }}, ${{ matrix.arch }})
+          copy: ${{ matrix.copy }}
 
   pre-build-docs:
     runs-on: ubuntu-latest
@@ -800,21 +792,11 @@ jobs:
             fi
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
-      - name: Declare win — post synthetic required check
+      - uses: ./.github/actions/speculative-declare-win
         if: success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          check_name="build-and-push-main (${{ matrix.name }}, ${{ matrix.arch }})"
-          echo "Winner: posting '${check_name}' as success"
-          gh api repos/${{ github.repository }}/check-runs \
-            -f name="${check_name}" \
-            -f head_sha="${{ github.sha }}" \
-            -f status=completed \
-            -f conclusion=success \
-            -f "output[title]=Speculative run complete" \
-            -f "output[summary]=Copy ${{ matrix.copy }} won the race." \
-            2>&1 || echo "::warning::Failed to post synthetic check (non-fatal)"
+        with:
+          check-name: build-and-push-main (${{ matrix.name }}, ${{ matrix.arch }})
+          copy: ${{ matrix.copy }}
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
@@ -1002,7 +984,7 @@ jobs:
           last-copy: c
 
       - uses: ./.github/actions/job-preamble
-        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
+        if: steps.gate.conclusion == 'success'
         with:
           free-disk-space: 40
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -1096,19 +1078,11 @@ jobs:
             fi
             echo "Operator image push completed successfully"
 
-      - name: Declare win — post synthetic required check
-        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true' && success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api repos/${{ github.repository }}/check-runs \
-            -f name="build-and-push-operator (${{ matrix.name }}, ${{ matrix.arch }})" \
-            -f head_sha="${{ github.sha }}" \
-            -f status=completed \
-            -f conclusion=success \
-            -f "output[title]=Speculative run complete" \
-            -f "output[summary]=Copy ${{ matrix.copy }} won." \
-            2>&1 || echo "::warning::Failed to post synthetic check"
+      - uses: ./.github/actions/speculative-declare-win
+        if: success()
+        with:
+          check-name: build-and-push-operator (${{ matrix.name }}, ${{ matrix.arch }})
+          copy: ${{ matrix.copy }}
 
   build-and-push-scanner:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
@@ -1195,21 +1169,11 @@ jobs:
           source ./scripts/ci/lib.sh
           push_scanner_image_set "${{ matrix.registry }}" "${{ matrix.arch }}"
 
-      - name: Declare win — post synthetic required check
+      - uses: ./.github/actions/speculative-declare-win
         if: success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          check_name="build-and-push-scanner (${{ matrix.name }}, ${{ matrix.goos }}, ${{ matrix.arch }}, ${{ matrix.registry }})"
-          echo "Winner: posting '${check_name}' as success"
-          gh api repos/${{ github.repository }}/check-runs \
-            -f name="${check_name}" \
-            -f head_sha="${{ github.sha }}" \
-            -f status=completed \
-            -f conclusion=success \
-            -f "output[title]=Speculative run complete" \
-            -f "output[summary]=Copy ${{ matrix.copy }} won the race." \
-            2>&1 || echo "::warning::Failed to post synthetic check (non-fatal)"
+        with:
+          check-name: build-and-push-scanner (${{ matrix.name }}, ${{ matrix.goos }}, ${{ matrix.arch }}, ${{ matrix.registry }})
+          copy: ${{ matrix.copy }}
 
 
   push-scanner-manifests:
