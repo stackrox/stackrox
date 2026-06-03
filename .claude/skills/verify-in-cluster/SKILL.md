@@ -38,116 +38,116 @@ Check which tools are available:
 
 ```bash
 command -v go      && echo "OK: go"      || echo "MISSING: go"
+command -v roxie   && echo "OK: roxie"   || echo "MISSING: roxie"
 command -v crane   && echo "OK: crane"   || echo "MISSING: crane"
 command -v docker  && echo "OK: docker"  || echo "MISSING: docker"
 command -v oc      && echo "OK: oc"      || echo "MISSING: oc"
 command -v kubectl && echo "OK: kubectl" || echo "MISSING: kubectl"
+command -v roxctl  && echo "OK: roxctl"  || echo "MISSING: roxctl"
 command -v curl    && echo "OK: curl"    || echo "MISSING: curl"
 command -v jq      && echo "OK: jq"      || echo "MISSING: jq"
+command -v gh      && echo "OK: gh"      || echo "MISSING: gh (optional)"
 command -v freeze  && echo "OK: freeze"  || echo "MISSING: freeze (optional)"
 ```
 
 **Required**: `go`, `curl`, `jq` — stop with install instructions if any are missing.
 
-**Cluster access**: need at least one of `oc` or `kubectl`. If both are available, prefer
-`oc`. Stop if neither is available. Use the chosen command literally in every subsequent
-Bash call — do not use shell variables across calls (Claude Code does not share shell state).
+**Cluster access**: need at least one of `oc` or `kubectl`. Prefer `oc` if both are
+available. Use the chosen command literally in every subsequent Bash call — do not use
+shell variables across calls (Claude Code does not share shell state).
+
+**Roxie** (`github.com/stackrox/roxie`): strongly preferred for cluster setup and
+deployment (Phases 1, 2). If missing, install it:
+```bash
+GOBIN=/usr/local/bin go install github.com/stackrox/roxie/cmd@latest && mv /usr/local/bin/cmd /usr/local/bin/roxie
+```
+If installation fails, fall back to manual cluster discovery and `deploy/deploy.sh`.
+
+**roxctl**: needed by Roxie for deployment. If missing, build it with version ldflags
+(roxctl panics without `MainVersion`):
+```bash
+MAIN_TAG=$(make --quiet --no-print-directory tag)
+SCANNER_VERSION=$(cat SCANNER_VERSION)
+CGO_ENABLED=0 go build \
+  -ldflags="-s -w \
+    -X github.com/stackrox/rox/pkg/version/internal.MainVersion=$MAIN_TAG \
+    -X github.com/stackrox/rox/pkg/version/internal.ScannerVersion=$SCANNER_VERSION" \
+  -o /usr/local/bin/roxctl ./roxctl
+```
 
 **Visual proof**: `freeze` (charmbracelet/freeze) is optional. If available, use it to
-render command outputs as PNG images for PR attachment. Install: `brew install charmbracelet/tap/freeze`.
+render command outputs as PNG images for PR attachment.
 
 **Image push**: need at least one of `crane` or `docker`. Stop if neither is available.
-
-**Registry selection** (quay.io preferred, ttl.sh fallback):
-
-If `crane` is available, check for quay.io push credentials first:
-```bash
-crane auth get quay.io 2>&1 | jq -r '{authenticated: (has("Username") and has("Secret")), username: .Username}'
-```
-This prints only the username and whether auth is configured — never the secret/token.
-If `authenticated` is `true`, quay.io is ready. Determine the push repository using the
-convention `quay.io/<user>/stackrox/main` where `<user>` is the authenticated username
-from the crane output above. Verify the repo exists **and is public** (the cluster must
-pull without credentials):
-```bash
-curl -s "https://quay.io/api/v1/repository/<user>/stackrox/main" | jq '{is_public, name}'
-```
-If `is_public` is `true`, quay.io is ready. If the repo doesn't exist (`null` / 404) or
-`is_public` is `false`, fall back to ttl.sh — do NOT attempt to create or change visibility
-of repos via the Quay API (it requires OAuth tokens, not Docker credentials).
-
-If quay.io is not available, test connectivity to ttl.sh:
+If `crane` is available, test connectivity to ttl.sh:
 ```bash
 crane manifest ttl.sh/test:1h 2>&1 || true
 ```
-If it fails with TLS/x509 errors (e.g., `x509: OSStatus -26276`), this is caused by
-Claude Code's sandbox network proxy. Retry with `--insecure`:
-```bash
-crane manifest --insecure ttl.sh/test:1h 2>&1 || true
-```
-If `--insecure` works, use `--insecure` on all subsequent `crane` commands throughout.
-If crane cannot connect even with `--insecure`, fall back to `docker`.
-
-Remember which registry was selected (quay.io or ttl.sh) — you'll use it in Phase 5.
-When using quay.io, tags don't need a TTL suffix. When using ttl.sh, append `:2h`.
-
-**Note on sandbox**: Both `crane` and Docker commands may require the user to approve
-sandbox override prompts or may need `--insecure` flags due to the sandbox proxy.
+If it fails with TLS/x509 errors, retry with `--insecure`. If that works, use
+`--insecure` on all subsequent `crane` commands. If crane cannot connect even with
+`--insecure`, fall back to `docker`.
 
 ## Phase 1: Discover Cluster
 
-Find a usable Kubernetes/OpenShift cluster. Try in order:
+### With Roxie (preferred)
 
-1. `KUBECONFIG` environment variable — check with `echo $KUBECONFIG` in a Bash call
-2. Argument passed to this skill (if `$context` contains a path to a kubeconfig)
-3. Uploaded artifacts — if running in an environment like Ambient where files may be
-   uploaded, check for kubeconfig files in the workspace or uploads directory
-4. Default kubectl context (`kubectl config current-context`)
+Find the kubeconfig. Try in order:
+1. `KUBECONFIG` environment variable
+2. `$context` argument (if it contains a kubeconfig path)
+3. Uploaded files — check `/workspace/file-uploads/` for kubeconfig files
+4. Default `~/.kube/config`
 
-**KUBECONFIG persistence**: Like all env vars, `KUBECONFIG` does not persist between
-Bash tool calls. If `KUBECONFIG` is set to a non-default path, you must prepend
-`export KUBECONFIG=<path> &&` to every `oc`/`kubectl` command, or hardcode the
-`--kubeconfig=<path>` flag.
+**KUBECONFIG persistence**: env vars do not persist between Bash tool calls. If
+`KUBECONFIG` is set to a non-default path, prepend `export KUBECONFIG=<path> &&`
+to every Bash call that uses `oc`, `kubectl`, or `roxie`.
 
-Verify connectivity (`oc` if available, otherwise `kubectl` — use the chosen
-command literally in every Bash call throughout):
+Run Roxie's environment detection:
 ```bash
-oc cluster-info        # or: kubectl cluster-info
+export KUBECONFIG=<path> && roxie env
 ```
+This prints the cluster type (OpenShift4, GKE, Kind, etc.), context name, and
+kubeconfig path. Roxie auto-detects architecture and cluster capabilities.
 
-Detect the cluster's architecture for cross-compilation later:
+Detect node architecture for cross-compilation:
 ```bash
-oc get nodes -o jsonpath='{.items[0].status.nodeInfo.architecture}'
+export KUBECONFIG=<path> && oc get nodes -o jsonpath='{.items[0].status.nodeInfo.architecture}'
 ```
-Remember the result (e.g., `amd64` or `arm64`) — you'll use it as the literal
-`GOARCH` value in Phase 4 and `--platform linux/<arch>` in Phase 5.
-If the result is `arm64`, use `GOARCH=arm64` instead of `GOARCH=amd64` in Phase 4.
 Default to `amd64` if detection fails.
 
-Print the cluster name/context and API server URL. Unless in YOLO mode, ask the user:
+Unless in YOLO mode, ask the user:
 > "I found cluster [name] at [url]. Is it OK to modify deployments in the StackRox namespace?"
+
+### Without Roxie (fallback)
+
+Verify connectivity manually:
+```bash
+export KUBECONFIG=<path> && oc cluster-info
+```
 
 ## Phase 2: Find StackRox and Authenticate
 
 ### 2a: Check if StackRox is deployed
 
-Check the `stackrox` namespace first (used by deploy scripts), then `rhacs-operator`
-(used by the operator):
+Check common namespaces where Central may be running:
 ```bash
-oc -n stackrox get deployment central --no-headers 2>/dev/null
+export KUBECONFIG=<path> &&   for ns in stackrox acs-central rhacs-operator; do
+    if oc -n "$ns" get deployment central --no-headers 2>/dev/null; then
+      echo "FOUND in namespace: $ns"
+      break
+    fi
+  done
 ```
-If not found, try `rhacs-operator`:
-```bash
-oc -n rhacs-operator get deployment central --no-headers 2>/dev/null
-```
-Use whichever namespace has Central throughout. If neither has it, go to
-**Phase 2c: Deploy StackRox**.
+- `stackrox` — used by `deploy/deploy.sh` and Roxie with `--single-namespace`
+- `acs-central` — Roxie's default namespace (when not using `--single-namespace`)
+- `rhacs-operator` — used by the operator
+
+Use whichever namespace has Central throughout. If none has it, go to **Phase 2c**.
 
 ### 2b: Authenticate to Central
 
 Determine the Central endpoint. Try in order:
 
-1. **OpenShift route** (preferred — survives pod restarts):
+1. **OpenShift route** (preferred):
    ```bash
    oc -n <ns> get route central -o jsonpath='{.status.ingress[0].host}' 2>/dev/null
    ```
@@ -163,175 +163,85 @@ Determine the Central endpoint. Try in order:
    ```bash
    oc -n <ns> port-forward svc/central 8000:443
    ```
-   Set `API_ENDPOINT="localhost:8000"`
-   Note: port-forward breaks on pod restart. Prefer routes/LB when available.
-   If port 8000 is already in use (common in Ambient/cloud workspaces), use a different
-   local port, e.g., `18443:443`, and set `API_ENDPOINT="localhost:18443"`.
+   If port 8000 is in use, try `18443:443`.
 
-Now authenticate. Try credentials in this order:
-
-1. **`ROX_ADMIN_PASSWORD` env var** — if already set, use it
-2. **Well-known password files** from previous `deploy/deploy.sh` runs:
-   - `deploy/k8s/central-deploy/password`
-   - `deploy/openshift/central-deploy/password`
-   Read whichever exists and use that value.
-3. **`admin` / `admin`** — last resort, only works when `ROX_HTPASSWD_AUTH=true` was set
-   explicitly during deployment
+Authenticate. Try credentials in this order:
+1. `ROX_ADMIN_PASSWORD` env var
+2. Password files: `deploy/k8s/central-deploy/password` or `deploy/openshift/central-deploy/password`
+3. Roxie manifest secret: `oc -n roxie get secret roxie-manifest -o jsonpath='{.data.environment}' 2>/dev/null | base64 -d | jq -r .roxAdminPassword`
 
 Test credentials:
 ```bash
 curl -sk -u "admin:<password>" "https://<endpoint>/v1/ping"
 ```
 
-If none work, ask the user for credentials. If in YOLO mode and no credentials work,
-fail with a clear error — do not silently skip auth.
+If none work, ask the user. In YOLO mode, fail with a clear error.
 
-When credentials are successfully discovered, remember them:
-- If the password came from a non-obvious source (not env var, not well-known file),
-  save a memory noting how auth works for this cluster so future sessions don't re-discover.
-
-Remember the password and endpoint values you discovered — substitute them literally
-into every subsequent command. Shell exports do not persist across Bash tool calls.
+Remember the password and endpoint — substitute them literally into every subsequent command.
 
 ### 2c: Deploy StackRox (only if not found)
 
-Use the repo's deployment scripts.
+#### With Roxie (preferred)
 
-**Prerequisites for `deploy/deploy.sh`:**
-- `oc` or `kubectl` — the script uses `oc` by default. If only `kubectl` is available,
-  symlink it: `ln -s "$(which kubectl)" /usr/local/bin/oc`
-- `roxctl` must be in PATH (the deploy script calls `roxctl central generate` internally).
-  If missing, build it with **version ldflags** — roxctl panics on startup without them.
-  **Critical**: build for the **host platform** (not `GOOS=linux`) since roxctl runs locally
-  to generate deployment configs. Also, `ScannerVersion` is **required** — the embedded Helm
-  chart templates use `required ""  .ScannerImageTag` which is populated from this value.
-  Without it, `roxctl central generate` fails with a template error.
+Roxie handles cluster detection, image pull secrets, operator deployment, Central + SecuredCluster
+CRs, readiness waiting, and credential generation — all in one command.
 
-  **Important**: Use the **Quay `MAIN_IMAGE_TAG`** (fetched below) as `MainVersion`, NOT
-  `make tag`. The `MainVersion` baked into roxctl determines the image tag for ALL components
-  (central, sensor, scanner-v4, scanner-v4-db, etc.) via `roxctl central generate`. If you
-  use a local `make tag` (which produces a `-dirty` suffix), the deploy will try to pull
-  images that don't exist on Quay. Fetch the Quay tag first (see "Finding a base image"
-  below), then build roxctl:
-  ```bash
-  # MAIN_IMAGE_TAG must be set first — see "Finding a base image from CI" below
-  SCANNER_VERSION=$(cat SCANNER_VERSION)
-  COLLECTOR_VERSION=$(cat COLLECTOR_VERSION)
-  CGO_ENABLED=0 go build \
-    -ldflags="-s -w \
-      -X github.com/stackrox/rox/pkg/version/internal.MainVersion=$MAIN_IMAGE_TAG \
-      -X github.com/stackrox/rox/pkg/version/internal.ScannerVersion=$SCANNER_VERSION \
-      -X github.com/stackrox/rox/pkg/version/internal.CollectorVersion=$COLLECTOR_VERSION" \
-    -o "$TMPDIR/roxctl" ./roxctl
-  export PATH="$TMPDIR:$PATH"
-  ```
-  The `MainVersion` and `ScannerVersion` ldflags are **required** — `MainVersion` prevents
-  a hard-panic, and `ScannerVersion` prevents the Helm chart template `required` error.
-  `CollectorVersion` is optional but recommended.
-- `helm` — needed for the monitoring stack sub-step. If missing, the deploy script may
-  fail at that step but Central/Scanner YAML generation usually succeeds. You can set
-  `MONITORING_SUPPORT=false` to skip it.
-- The main image must be available at the specified registry/tag.
-
-**Finding a base image from CI (Quay):**
-Local `make tag` produces a tag that only exists if you've pushed to your own registry.
-For from-scratch deployments, use CI-built images from `quay.io/stackrox-io/`. Fetch the
-latest tag whose embedded commit is on `origin/master`:
-
+**CRITICAL: You MUST pass `--tag` to Roxie.** Without it, Roxie defaults to an old hardcoded
+version (e.g., `4.9.2`) that will NOT match your source tree — causing DB migration mismatches
+and wasted time. Fetch the latest master-based tag from Quay first:
 ```bash
 git fetch origin master --quiet 2>/dev/null || true
-
-# Fetch recent multi-arch tags from Quay (exclude arch-specific suffixes)
 TAGS=$(curl -s "https://quay.io/api/v1/repository/stackrox-io/main/tag/?limit=100&onlyActiveTags=true" \
-  | jq -r '.tags[].name | select(test("^[0-9]+[.][0-9]+[.]x-")) | select(test("-(arm64|amd64|s390x|ppc64le)$") | not)' )
-
-# Find the first tag whose commit is an ancestor of origin/master
+  | jq -r '.tags[].name | select(test("^[0-9]+[.][0-9]+[.]x-")) | select(test("-(arm64|amd64|s390x|ppc64le)$") | not)')
 for tag in $TAGS; do
   hash="${tag##*-g}"
   if git merge-base --is-ancestor "$hash" origin/master 2>/dev/null; then
-    echo "Found master-based tag: $tag"
     MAIN_IMAGE_TAG="$tag"
+    echo "Using master-based tag: $MAIN_IMAGE_TAG"
     break
   fi
 done
 ```
-
-If no master-based tag is found, fall back to the most recent tag:
+If no master-based tag is found, take the most recent one:
 ```bash
-MAIN_IMAGE_TAG=$(curl -s "https://quay.io/api/v1/repository/stackrox-io/main/tag/?limit=5&onlyActiveTags=true" \
-  | jq -r '.tags[].name | select(test("^[0-9]+[.][0-9]+[.]x-")) | select(test("-(arm64|amd64|s390x|ppc64le)$") | not)' \
-  | head -1)
+MAIN_IMAGE_TAG=$(echo "$TAGS" | head -1)
 ```
 
-Also fetch tags for the supporting images (these are built separately and have their own
-version cadence):
+Now deploy with `--tag` and `--envrc` (Claude Code cannot use interactive subshells):
 ```bash
-# Scanner V4 (separate build pipeline)
-SCANNERV4_TAG=$(curl -s "https://quay.io/api/v1/repository/stackrox-io/scanner-v4/tag/?limit=5&onlyActiveTags=true" \
-  | jq -r '.tags[].name | select(test("^[0-9]+[.][0-9]+[.]x-")) | select(test("-(arm64|amd64|s390x|ppc64le)$") | not)' \
-  | head -1)
+export KUBECONFIG=<path> && roxie deploy both \
+  --tag "$MAIN_IMAGE_TAG" \
+  --envrc /tmp/roxie-env.sh \
+  --exposure loadbalancer \
+  --resources auto
+```
+The `--tag` flag is mandatory — do NOT omit it or let Roxie use its default tag.
 
-# Central DB
-DBS_TAG=$(curl -s "https://quay.io/api/v1/repository/stackrox-io/central-db/tag/?limit=5&onlyActiveTags=true" \
-  | jq -r '.tags[].name | select(test("^[0-9]+[.][0-9]+[.]x-")) | select(test("-(arm64|amd64|s390x|ppc64le)$") | not)' \
-  | head -1)
+After deployment, read the credentials from the envrc file:
+```bash
+cat /tmp/roxie-env.sh
+```
+This contains `ROX_ENDPOINT`, `ROX_ADMIN_PASSWORD`, `ROX_BASE_URL`, etc.
+Extract and remember these values for use in subsequent commands.
 
-# Collector
-COLLECTOR_TAG=$(curl -s "https://quay.io/api/v1/repository/stackrox-io/collector/tag/?limit=5&onlyActiveTags=true" \
-  | jq -r '.tags[].name | select(test("^[0-9]+[.][0-9]+[.]x-")) | select(test("-(arm64|amd64|s390x|ppc64le)$") | not)' \
-  | head -1)
+If Roxie's deploy fails (e.g., operator issues, image pull errors), check logs:
+```bash
+export KUBECONFIG=<path> && roxie logs operator 2>&1 | tail -30
 ```
 
-The key env vars to set:
+#### Without Roxie (fallback)
 
+If Roxie is not available, use `deploy/deploy.sh` with the appropriate env vars.
+See the repo's `deploy/` directory for details. Key env vars:
 ```bash
-export MAIN_IMAGE_TAG="<tag-from-above>"    # CI tag from Quay, NOT make tag
-export MAIN_IMAGE_REPO=quay.io/stackrox-io/main
-export CENTRAL_DB_IMAGE_REPO=quay.io/stackrox-io/central-db
-export SCANNERV4_IMAGE_REPO=quay.io/stackrox-io/scanner-v4
-export SCANNERV4_DB_IMAGE_REPO=quay.io/stackrox-io/scanner-v4-db
-export COLLECTOR_IMAGE_REPO=quay.io/stackrox-io/collector
-export SCANNER_IMAGE_REPO=quay.io/stackrox-io/scanner
-export SCANNER_DB_IMAGE_REPO=quay.io/stackrox-io/scanner-db
-export DBS_TAG="<central-db-tag>"
-export SCANNERV4_TAG="<scanner-v4-tag>"
-export COLLECTOR_TAG="<collector-tag>"
+export MAIN_IMAGE_TAG="<tag>"
 export ROX_HTPASSWD_AUTH=true
 export STORAGE=pvc
-export LOAD_BALANCER=route   # on OpenShift; omit on plain k8s
-export MONITORING_SUPPORT=false  # skip if helm is unavailable
+export LOAD_BALANCER=route   # on OpenShift
+export MONITORING_SUPPORT=false
 ```
-
-Then run:
-```bash
-./deploy/deploy.sh
-```
-
-**Post-deploy image fix for scanner-v4-db**: The deploy script uses `MAIN_IMAGE_TAG` for
-scanner-v4 and scanner-v4-db images. Since scanner-v4 is built on a separate pipeline with
-its own tags, the `MAIN_IMAGE_TAG` may not exist in the scanner-v4 repos. If scanner-v4-db
-pods show `ImagePullBackOff`, patch them with the correct scanner-v4 tag:
-```bash
-# Use the SCANNERV4_TAG fetched earlier from quay.io/stackrox-io/scanner-v4
-oc -n stackrox set image deployment/scanner-v4-db \
-  db="quay.io/stackrox-io/scanner-v4-db:$SCANNERV4_TAG" \
-  init-db="quay.io/stackrox-io/scanner-v4-db:$SCANNERV4_TAG"
-oc -n stackrox set image deployment/scanner-v4-indexer \
-  indexer="quay.io/stackrox-io/scanner-v4:$SCANNERV4_TAG"
-oc -n stackrox set image deployment/scanner-v4-matcher \
-  matcher="quay.io/stackrox-io/scanner-v4:$SCANNERV4_TAG"
-```
-Similarly, if central-db has a pull error, patch it:
-```bash
-oc -n stackrox set image deployment/central-db \
-  central-db="quay.io/stackrox-io/central-db:$DBS_TAG"
-```
-
-The deploy script will generate credentials and store them in
-`deploy/k8s/central-deploy/password` (or the openshift equivalent).
-Read the password from there after deployment completes.
-
-Wait for Central to become ready before continuing.
+Then run `./deploy/deploy.sh`. Read the password from `deploy/openshift/central-deploy/password`
+(or the k8s equivalent).
 
 ## Phase 3: Analyze Changes
 
@@ -436,14 +346,6 @@ Cross-compile each affected binary for the target architecture detected in Phase
 GOOS=linux GOARCH=<arch> CGO_ENABLED=0 go build -ldflags="-s -w" -o "$TMPDIR/<binary-name>" ./<package-path>
 ```
 
-The `-ldflags="-s -w"` strips debug info and reduces binary size. For version info in
-`/v1/metadata`, add `-X` flags from `scripts/go-build.sh` if available, but this is optional
-for central/migrator/sensor — they run fine without version ldflags.
-
-**Exception: roxctl** — if you need to build roxctl (e.g., for Phase 2c deployment), you
-**must** include at least `-X github.com/stackrox/rox/pkg/version/internal.MainVersion=<tag>`.
-Without it, roxctl hard-panics on startup. See Phase 2c for the full build command.
-
 Example for central + migrator (on an amd64 cluster):
 ```bash
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o "$TMPDIR/central" ./central
@@ -461,42 +363,32 @@ If the build fails, report the error and stop. Do NOT proceed with a broken buil
 
 ## Phase 5: Push Image
 
-First, record the current image for **each** deployment being modified. Different deployments
-may use different image references — always pull the base from the specific deployment:
+First, record the current image for **each** deployment being modified:
 
 ```bash
 oc -n stackrox get deployment/central -o jsonpath='{.spec.template.spec.containers[0].image}'
 ```
 Record this value — you'll use it as the base image for `crane mutate`.
 
-**Choosing the right base image:** The base image you append layers to MUST have a DB
-migration sequence compatible with your source tree. If the deployed image is from a CI
-nightly and your branch has newer migrations, central will crash on startup (see Phase 6
-"DB migration version mismatch"). To avoid this, use a base image from the same commit
-range as your source. If Phase 2c deployed StackRox using a master-based Quay tag, the
-deployed image is already correct. If you're patching a pre-existing deployment whose
-image version differs significantly from your branch, consider redeploying with a
-compatible base first.
+**Choosing the right base image:** The base image must have a DB migration sequence
+compatible with your source tree. If the deployed image was set up by Roxie with a
+master-based Quay tag, it's already correct. If patching a pre-existing deployment whose
+image version differs significantly from your branch, consider redeploying first.
 
-For scanner (uses a separate image):
-```bash
-oc -n stackrox get deployment/scanner -o jsonpath='{.spec.template.spec.containers[0].image}'
-```
+**Private registry note:** Roxie deploys from `quay.io/rhacs-eng/` which requires
+authentication. If `crane` cannot pull the base image (auth error), use the equivalent
+public image from `quay.io/stackrox-io/` with the same tag. For example, replace
+`quay.io/rhacs-eng/main:<tag>` with `quay.io/stackrox-io/main:<tag>`.
 
-Generate a unique tag using the registry selected in Phase 0:
-
-- **quay.io**: `quay.io/<user>/stackrox/main:verify-<short-uuid>`
-- **ttl.sh**: `ttl.sh/<uuid>:2h`
-
+Generate a unique tag:
 ```bash
 UUID=$(uuidgen | tr '[:upper:]' '[:lower:]' | cut -c1-8)
+TAG="ttl.sh/$UUID:2h"
 ```
 
 ### Method A: crane (preferred)
 
-Create tar layers with binaries at their correct **absolute** container paths.
-The tar MUST use absolute paths (e.g., the file entry must be `stackrox/central`,
-which maps to `/stackrox/central` in the container):
+Create tar layers with binaries at their correct **absolute** container paths:
 
 ```bash
 cd "$TMPDIR"
@@ -514,14 +406,13 @@ mkdir -p stackrox/bin && cp kubernetes-sensor stackrox/bin/kubernetes-sensor && 
 tar cf sensor-layer.tar stackrox/bin/kubernetes-sensor && rm -rf stackrox
 ```
 
-Push by appending layers to the current image. Use `--platform linux/<arch>` matching
-the cluster architecture detected in Phase 1 (e.g., `linux/amd64` or `linux/arm64`):
+Push by appending layers to the current image:
 ```bash
 crane mutate "<current-central-image>" \
   --platform linux/<arch> \
   --append central-layer.tar \
   --append migrator-layer.tar \
-  --tag "<tag>"
+  --tag "$TAG"
 ```
 
 For scanner (separate image, different binary path):
@@ -535,14 +426,7 @@ crane mutate "<current-scanner-image>" \
   --tag "<scanner-tag>"
 ```
 
-The `--tag` flag pushes directly to the registry. No separate `crane push` needed.
-
-If the push to quay.io fails with `UNAUTHORIZED` or `DENIED`, fall back to ttl.sh
-and retry with a `ttl.sh/<uuid>:2h` tag.
-
 ### Method B: docker (fallback if crane fails)
-
-Use this ONLY if crane failed in Phase 0 (TLS/proxy issues). Create a Dockerfile:
 
 ```dockerfile
 FROM <current-central-image>
@@ -550,19 +434,13 @@ COPY central /stackrox/central
 COPY migrator /stackrox/bin/migrator
 ```
 
-Build with explicit `--platform` matching the cluster architecture:
-
 ```bash
-docker buildx build --platform linux/<arch> --push -t "<tag>" -f Dockerfile .
+docker buildx build --platform linux/<arch> --push -t "$TAG" -f Dockerfile .
 ```
-
-Print the image reference for the user.
 
 ## Phase 6: Deploy
 
-Patch the deployment to use the new image. Use the concrete command (`oc` or `kubectl`)
-you determined in Phase 0 and the namespace discovered in Phase 2a — do not use shell
-variables across Bash calls.
+Patch the deployment to use the new image:
 
 ```bash
 oc -n <ns> set image deployment/central central=<tag>
@@ -581,41 +459,30 @@ Wait for rollout:
 oc -n <ns> rollout status deployment/central --timeout=300s
 ```
 
-If using port-forward (not route/LB), restart it after deployment completes:
+If using port-forward, restart it after deployment (use `run_in_background`):
 ```bash
 pkill -f "port-forward.*svc/central" 2>/dev/null || true
 sleep 2
-```
-Then start a new port-forward using `run_in_background` for the Bash tool call:
-```bash
 oc -n <ns> port-forward svc/central 8000:443
 ```
 
 ### Post-deployment health check
 
 ```bash
-# Verify pod is running
 oc -n <ns> get pods -l app=central
-
-# Verify API is responding and check version/build info
 curl -sk -u "admin:<password>" "https://<endpoint>/v1/metadata" | jq .
 ```
 
-Substitute the actual password and endpoint values you discovered in Phase 2.
-
-If pods crash-loop after deployment, capture logs and report them:
+If pods crash-loop, capture logs:
 ```bash
 oc -n <ns> logs deployment/central --previous --tail=50
 ```
-Do NOT automatically roll back. Report the crash to the parent context — it may want to
-inspect the failure, fix the code, and re-run this skill.
+Do NOT automatically roll back. Report the crash — the caller may want to inspect it.
 
-**DB migration version mismatch**: If central crashes with a message about database version
-or migration sequence numbers (e.g., "current DB version seq X but expected Y"), this means
-the source code has newer migrations than the base nightly image's database. The appended
-central binary expects a higher migration sequence than what the nightly's DB was initialized
-with. To fix: use a base image whose version matches the source tree, or temporarily adjust
-the `CurrentDBVersionSeqNum` constant in `pkg/migrations/seq.go` to match the deployed DB.
+**DB migration version mismatch**: If central crashes with a message about migration
+sequence numbers, the source code has newer migrations than the base image's database.
+To fix: use a base image matching the source tree, or temporarily adjust
+`CurrentDBVersionSeqNum` in `pkg/migrations/seq.go` to match the deployed DB.
 
 ## Phase 7: Test
 
@@ -624,42 +491,30 @@ Execute the test plan based on `$context`. Common patterns:
 ### Bug reproduction
 - Follow the reproduction steps described in `$context`
 - Use `curl` against the API, `oc` commands, or roxctl as appropriate
-- Report whether the bug reproduces or not, with evidence (command output, API responses)
+- Report whether the bug reproduces or not, with evidence
 
 ### Fix verification
 When verifying changes to **existing logic** (bug fixes, behavior changes), produce
 a before/after comparison proving the change works. Both sides must be tested on the
-real cluster — not made up.
+real cluster.
 
 **Step 1 — Identify the fix:**
 Figure out what constitutes "the fix" from context: `$context`, branch name,
 git log, and the relationship between the current branch and the base branch.
-The fix could be uncommitted changes, a single commit, multiple commits on a
-feature branch, etc. Determine how to temporarily revert it (e.g., `git stash`,
-`git revert`, checking out the base branch). If you cannot determine this
-confidently, ask the user.
+Determine how to temporarily revert it (e.g., `git stash`, `git revert`).
 
 **Step 2 — Test BEFORE (without the fix):**
-- Temporarily remove the fix using the approach from Step 1
-- Rebuild the affected component(s) and redeploy (Phase 4-6)
-- Run the verification steps and capture output
-- Write results to `$TMPDIR/verify-before.log` — include only the verification
-  commands and their output, with a header like:
-  ```
-  # ── BEFORE: <title> (base branch / without fix) ──────
-  ```
+- Temporarily remove the fix
+- Rebuild and redeploy (Phase 4-6)
+- Capture output to `$TMPDIR/verify-before.log`
 
 **Step 3 — Test AFTER (with the fix):**
-- Restore the fix (e.g., `git stash pop`, `git checkout <branch>`)
-- Rebuild and redeploy the fixed version (Phase 4-6)
-- Run the same verification steps and capture output
-- Write results to `$TMPDIR/verify-after.log` with a header like:
-  ```
-  # ── AFTER: <title> (with fix applied) ────────────────
-  ```
+- Restore the fix
+- Rebuild and redeploy
+- Capture output to `$TMPDIR/verify-after.log`
 
 **Step 4 — Render proof:**
-If `freeze` is available, render both logs as images:
+If `freeze` is available:
 ```bash
 freeze --language bash --window --margin 16 \
   --output "$TMPDIR/verify-before.png" < "$TMPDIR/verify-before.log"
@@ -667,55 +522,31 @@ freeze --language bash --window --margin 16 \
   --output "$TMPDIR/verify-after.png" < "$TMPDIR/verify-after.log"
 ```
 
-Report paths to both images so the caller can attach them side by side to the PR.
-
-For **new features** (no previous behavior to compare against), skip the BEFORE step
-and only produce the AFTER proof.
+For **new features**, skip the BEFORE step and only produce AFTER proof.
 
 ### API testing
-- Use curl with the authenticated endpoint:
-  ```bash
-  curl -sk -u "admin:<password>" "https://<endpoint>/..." | jq .
-  ```
+```bash
+curl -sk -u "admin:<password>" "https://<endpoint>/..." | jq .
+```
 
 ### E2E test execution
-- If `$context` names a specific Go test:
-  ```bash
-  go test -v -timeout 10m -count=1 -tags e2e ./<test-package> -run <test-name>
-  ```
-  Set `ROX_ENDPOINT` and `ROX_API_TOKEN` env vars as needed. To generate an API token:
-  ```bash
-  curl -sk -u "admin:<password>" "https://<endpoint>/v1/apitokens/generate" \
-    -d '{"name":"e2e-verify","roles":["Admin"]}' | jq -r .token
-  ```
+```bash
+go test -v -timeout 10m -count=1 -tags e2e ./<test-package> -run <test-name>
+```
 
 ### Manual verification
-- If `$context` describes manual steps, execute them and report results
+- Execute steps from `$context` and report results
 
-Capture ALL test output as evidence.
-
-**Proof logs**: For each test pattern, accumulate proof in log files under `$TMPDIR/`.
-Include only verification commands and their output — not build, deploy, or cluster
-discovery steps. Use bash comment headers and strip verbose noise. Redact passwords
-with `***`. The fix verification pattern above produces `verify-before.log` and
-`verify-after.log`; other patterns produce a single `verify-session.log`.
-
-If `freeze` is available, render each log as a PNG image at the end of Phase 7.
-When freeze is not available, the plain-text logs are the proof.
+Capture ALL test output as evidence. Redact passwords with `***`.
 
 ## Phase 8: Report
 
 Summarize results concisely:
 
 1. **What was built**: List components and binary sizes
-2. **Where it was pushed**: Image reference (quay.io or ttl.sh URL)
+2. **Where it was pushed**: Image reference
 3. **What was deployed**: Which deployments were patched
-4. **Original image**: The image reference before patching (so the user can restore with
-   `oc -n <ns> set image deployment/<name> <container>=<original-image>`)
-5. **Test results**: Pass/fail with evidence (command output, API responses)
-6. **Proof**: Paths to proof files — for fix verification: `verify-before.{log,png}`
-   and `verify-after.{log,png}`; for other patterns: `verify-session.{log,png}`
-7. **Issues found**: Any problems encountered during the process
-
-This summary should be suitable for pasting into a PR description as proof of verification.
-Mention the proof file paths so the caller can attach them to the PR.
+4. **Original image**: The image reference before patching (for restore)
+5. **Test results**: Pass/fail with evidence
+6. **Proof**: Paths to proof files
+7. **Issues found**: Any problems encountered
