@@ -100,6 +100,17 @@ After initial prototype implementation, several UX and data quality issues were 
 | Query params for component API | Component names can contain slashes (e.g., `google.golang.org/grpc`), breaking path-based routing. Use `?name=...` query param instead. |
 | Scanner version population | Scanner V4 service populates `scanner_version` (from `scanner/internal/version.Version`) and `bundle_version` (last vulnerability DB update in RFC3339 format) in `VulnerabilityReport`. These flow through ingestion to `image_scan_v2` table and are returned by `/v1/scandata/images/{id}` API. |
 
+### Future Capability: Scan History and Diff Detection
+
+**The `image_scan_v2` layer enables scan history and change detection** — a capability NOT in this prototype but designed into the schema. By introducing a scan entity between image and findings, the data model supports:
+
+- **Multi-scan retention**: Keep N scans per image with TTL-based cleanup (currently we delete old scan on rescan)
+- **"What changed?" queries**: `SELECT * FROM scan_findings WHERE scan_id IN (current_scan, previous_scan)` shows exactly which CVEs appeared or disappeared between scans
+- **Scan metadata history**: Track which scanner version and vuln DB bundle produced each scan result
+- **Audit trail**: Answer "when did this CVE first appear?" and "what scan last saw this CVE?"
+
+Enabling this requires only **ingestion logic changes** (stop deleting old scans, add TTL cleanup job) — **no schema migration**. The prototype uses latest-scan-only to keep it simple, but the foundation is already there.
+
 ### What's NOT in this prototype
 
 - Migration of existing data (new tables populated by new scans only)

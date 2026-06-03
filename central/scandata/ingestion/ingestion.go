@@ -174,7 +174,7 @@ func convertVulnerabilities(scanID, imageID, componentID string, allVulns map[st
 			advisoryID = vulnID
 		}
 
-		findingID := findingIDFromAdvisory(advisoryID, componentID)
+		findingID := findingIDFromAdvisory(advisoryID, componentID, scanID)
 
 		finding := &storage.ScanFinding{
 			Id:            findingID,
@@ -309,8 +309,8 @@ func componentIDFromPackage(name string, index int, scanID string) string {
 	return pgSearch.IDFromPks([]string{name, strconv.Itoa(index), scanID})
 }
 
-func findingIDFromAdvisory(advisoryID, componentID string) string {
-	return pgSearch.IDFromPks([]string{advisoryID, componentID})
+func findingIDFromAdvisory(advisoryID, componentID, scanID string) string {
+	return pgSearch.IDFromPks([]string{advisoryID, componentID, scanID})
 }
 
 func osForPackage(report *v4.VulnerabilityReport, pkgID string) string {
