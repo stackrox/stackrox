@@ -2,19 +2,16 @@ name: Speculative Run Gate
 description: >
   Gate step for speculative-execution matrix jobs.
 
-  Behaviour per copy:
-  - Instant CPU check: slow runner and not last-copy → exit 1 (gate failure,
-    next copy's monitor sees this and proceeds).
-  - Fast runner (or last-copy): start nohup background monitor then proceed.
-    Monitor polls every 5s starting after 5s. On each poll it checks the
-    sibling's gate step conclusion via the GHA API:
-    - sibling gate=success AND (in_progress OR succeeded) → cancel self ✅
-    - sibling gate=failure (slow runner) → that sibling is eliminated
-    - sibling gate not yet visible → keep waiting (job still in checkout)
-    - all siblings eliminated → stop polling, this copy runs ✅
+  Fast runner: posts an in_progress check-run (the coordination signal),
+  then starts a background monitor that polls for sibling check-runs.
+  When a winning sibling's check appears → cancel self.
+
+  Slow runner: exits 1 immediately (no check-run posted). Siblings treat
+  "absent after 3 polls" (t≥12s) as eliminated.
 
   Pair with speculative-declare-win at the end of the job (if: success()).
-  Both actions take the same check-name value.
+  That action PATCHes the check-run posted here to completed/success.
+  Both actions share the same check-name value.
 
 inputs:
   copy:
@@ -22,8 +19,9 @@ inputs:
     required: true
   check-name:
     description: >
-      Required check name WITHOUT the copy letter suffix (same value passed to
-      speculative-declare-win). Used to identify sibling copies in the GHA API.
+      Required check name WITHOUT the copy letter suffix. Must exactly match
+      the branch-protection required check name. Used as the check-run name
+      and sibling coordination key.
       Example: "pre-build-go-binaries (default, amd64)"
     required: true
   last-copy:
@@ -35,7 +33,7 @@ inputs:
     required: false
     default: '7763'
   enabled:
-    description: 'Set to false to disable speculative execution — all copies run normally (useful for debugging)'
+    description: 'Set to false to disable speculative execution — all copies run normally'
     required: false
     default: 'true'
 
@@ -50,29 +48,38 @@ runs:
       run: |
         set +e
         if [[ "${{ inputs.enabled }}" != 'true' ]]; then
-          echo "Speculative execution disabled — skipping gate, this copy always runs."
+          echo "Speculative execution disabled — this copy always runs."
           exit 0
         fi
         MY_COPY="${{ inputs.copy }}"
         CHECK_NAME="${{ inputs.check-name }}"
         LAST_COPY="${{ inputs.last-copy }}"
         SLOW_PATTERN="${{ inputs.slow-cpu-pattern }}"
-        RUN_ID="${{ github.run_id }}"
-        REPO="${{ github.repository }}"
         MY_PARENT=$PPID
 
         cpu=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
         [[ -z "$cpu" ]] && cpu=$(lscpu 2>/dev/null | awk -F: '/Model name/{gsub(/^ +/,"",$2); print $2}')
         echo "cpu=${cpu:-unknown}"
 
-        # ── 1. Own CPU check ────────────────────────────────────────────────
+        # ── 1. CPU check ────────────────────────────────────────────────────────
         if [[ "$MY_COPY" != "$LAST_COPY" && "$cpu" == *"${SLOW_PATTERN}"* ]]; then
           echo "::warning::Slow runner (${cpu}) — delegating to next copy."
-          exit 1
+          exit 1   # no check-run posted; monitor treats absent-after-3-polls as eliminated
         fi
 
-        # ── 2. Build list of all earlier copies ──────────────────────────────
-        # b→"a", c→"a b", d→"a b c"
+        # ── 2. Post in_progress check-run ───────────────────────────────────────
+        # This IS the coordination signal for other copies' monitors.
+        # external_id "spec-a" etc. lets monitors identify which copy posted it.
+        check_id=$(gh api repos/"${{ github.repository }}"/check-runs \
+          -f name="${CHECK_NAME}" \
+          -f head_sha="${{ github.sha }}" \
+          -f status=in_progress \
+          -f external_id="spec-${MY_COPY}" \
+          --jq '.id' 2>/dev/null)
+        printf '%s\n' "${check_id:-}" > /tmp/speculative-check-id
+        echo "Posted in_progress check-run ${check_id} (spec-${MY_COPY})"
+
+        # ── 3. Background monitor for non-first copies ──────────────────────────
         case "$MY_COPY" in
           b) prev_copies="a" ;;
           c) prev_copies="a b" ;;
@@ -81,68 +88,25 @@ runs:
         esac
 
         if [[ -n "$prev_copies" ]]; then
-          # Snapshot current children so we can identify the work step PID later.
           pgrep -P "$MY_PARENT" | sort > /tmp/speculative-baseline
 
-          # Pre-compute sibling name prefix in the outer shell.
-          # multi-dim "Job (d1, d2)" → base="Job (d1, d2", sep=", " → "Job (d1, d2, a)"
-          # single-dim "job-name"    → base="job-name (",  sep=""    → "job-name (a)"
-          if [[ "${CHECK_NAME}" == *")" ]]; then
-            SIBLING_BASE="${CHECK_NAME%\)}"
-            SIBLING_SEP=", "
-          else
-            SIBLING_BASE="${CHECK_NAME} ("
-            SIBLING_SEP=""
-          fi
+          sibling_ids=""
+          for c in ${prev_copies}; do
+            sibling_ids="${sibling_ids:+${sibling_ids},}spec-${c}"
+          done
 
-          # Monitor polls every 5s. Checks the sibling's gate step conclusion
-          # (not just job-level in_progress — that includes the checkout phase
-          # before the gate runs). The outer composite action step is visible
-          # in the GHA API as "Run ./.github/actions/speculative-run".
-          #
-          # Cancel only when sibling gate=success AND (in_progress OR succeeded).
-          # Wait if gate not yet visible (job in checkout). Stop if all siblings
-          # gate=failure (all slow runners → this copy runs as winner).
-          nohup bash -c "
-            sleep \$(( RANDOM % 3 + 8 ))
-            deadline=\$(( \$(date +%s) + 300 ))
-            while [[ \$(date +%s) -lt \$deadline ]]; do
-              all_jobs_json=\$(gh api 'repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100' 2>/dev/null)
-              winner_found=0
-              all_eliminated=1
-              for check_copy in ${prev_copies}; do
-                sibling_name='${SIBLING_BASE}${SIBLING_SEP}'\${check_copy}')'
-                sibling_info=\$(echo \"\$all_jobs_json\" | jq -r --arg n \"\${sibling_name}\" '
-                  (.jobs[] | select(.name == \$n)) as \$j |
-                  (\$j.steps | map(select(.name == \"Run ./.github/actions/speculative-run\")) | first | .conclusion // \"\") as \$g |
-                  [\$g, (\$j.status // \"\"), (\$j.conclusion // \"\")] | join(\"|\")
-                ' 2>/dev/null | head -1)
-                gate_con=\$(echo \"\$sibling_info\" | cut -d'|' -f1)
-                job_status=\$(echo \"\$sibling_info\" | cut -d'|' -f2)
-                job_con=\$(echo \"\$sibling_info\" | cut -d'|' -f3)
-                echo \"[\$(date -u +%H:%M:%S)] \${check_copy}: gate=\${gate_con} job=\${job_status}/\${job_con}\"
-                if [[ \"\${gate_con}\" == 'success' && ( \"\${job_status}\" == 'in_progress' || \"\${job_con}\" == 'success' ) ]]; then
-                  winner_found=1
-                  echo \"Sibling \${check_copy} gate passed and winning — cancelling copy ${MY_COPY}.\"
-                  break
-                fi
-                [[ \"\${gate_con}\" != 'failure' ]] && all_eliminated=0
-              done
-              if [[ \$winner_found -eq 1 ]]; then
-                kill -TERM ${MY_PARENT} 2>/dev/null; sleep 0.1
-                new=\$(comm -13 /tmp/speculative-baseline <(pgrep -P ${MY_PARENT} | sort) 2>/dev/null)
-                for pid in \$new; do kill -9 \$pid 2>/dev/null; done
-                break
-              fi
-              if [[ \$all_eliminated -eq 1 ]]; then
-                echo 'All siblings gate-failed (slow runners) — copy ${MY_COPY} proceeds.'
-                break
-              fi
-              sleep 2
-            done
-          " >> /tmp/speculative-monitor.log 2>&1 &
+          # Copy the monitor script from the action directory.
+          # Avoids heredoc/YAML indentation conflicts; monitor.sh is readable standalone.
+          cp "${GITHUB_ACTION_PATH}/monitor.sh" /tmp/speculative-monitor.sh
+          chmod +x /tmp/speculative-monitor.sh
+          export SPEC_REPO="${{ github.repository }}"
+          export SPEC_CHECK_NAME="${CHECK_NAME}"
+          export SPEC_SIBLING_IDS="${sibling_ids}"
+          export SPEC_PARENT="${MY_PARENT}"
+
+          nohup bash /tmp/speculative-monitor.sh >> /tmp/speculative-monitor.log 2>&1 &
           disown
-          echo "Monitor started — polling [${prev_copies}] every 5s (gate-aware)."
+          echo "Monitor started — watching [${prev_copies}] via check-runs API."
         else
           echo "Copy ${MY_COPY} is first — no monitor needed."
         fi
