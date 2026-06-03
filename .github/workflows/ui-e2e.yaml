@@ -673,13 +673,37 @@ jobs:
             echo "Waiting for cluster (platform) CVE data..."
             cluster_id=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
               "https://${API_ENDPOINT}/v1/clusters" | jq -r '.clusters[0].id')
-            for _ in $(seq 1 90); do
-              cves=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+
+            # Wait up to 20 minutes for cluster CVEs
+            cluster_ready=false
+            for i in $(seq 1 240); do
+              cluster_cves=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
                 "https://${API_ENDPOINT}/v1/cves/cluster?query=" | jq -r '.items | length // 0')
-              [ "${cves:-0}" -gt 0 ] && echo "Cluster CVEs: ${cves}" && break
+              if [ "${cluster_cves:-0}" -gt 0 ]; then
+                echo "Cluster CVEs: ${cluster_cves}"
+                cluster_ready=true
+                break
+              fi
+              [ $((i % 12)) -eq 0 ] && echo "+$((i*5/60))m: cluster_cves=${cluster_cves:-0}"
               sleep 5
             done
-            [ "${cves:-0}" -eq 0 ] && echo "::warning::No cluster CVEs after 7.5 minutes"
+            [ "$cluster_ready" != "true" ] && echo "::warning::No cluster CVEs after 20 minutes"
+
+            # Wait up to 20 minutes for node CVEs
+            echo "Waiting for node CVE data..."
+            node_ready=false
+            for i in $(seq 1 240); do
+              node_cves=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/cves/node?query=" | jq -r '.items | length // 0')
+              if [ "${node_cves:-0}" -gt 0 ]; then
+                echo "Node CVEs: ${node_cves}"
+                node_ready=true
+                break
+              fi
+              [ $((i % 12)) -eq 0 ] && echo "+$((i*5/60))m: node_cves=${node_cves:-0}"
+              sleep 5
+            done
+            [ "$node_ready" != "true" ] && echo "::warning::No node CVEs after 20 minutes"
             ;;
           *policies*|*risk*)
             echo "Waiting for deployment events..."
