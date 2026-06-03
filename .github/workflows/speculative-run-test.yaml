@@ -8,9 +8,58 @@ permissions:
   checks: write
 
 jobs:
-  # Test 1: both copies are on fast runners.
-  # Expected: copy a runs, copy b's monitor fires at 30s, sees a=success → cancels b.
-  # copy a: success. copy b: cancelled (Work skipped).
+  # Test 0: DIRECT (no composite action) monitor to isolate the mechanism.
+  # Copy b does the monitor logic inline. If this works, the composite action has an issue.
+  # Expected: copy a=success, copy b=cancelled.
+  test-direct-monitor:
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b]
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Gate
+        run: |
+          MY_COPY="${{ matrix.copy }}"
+          MY_PARENT=$PPID
+          echo "MY_COPY=${MY_COPY} MY_PARENT=${MY_PARENT} PPID=${PPID}"
+          if [[ "$MY_COPY" == "b" ]]; then
+            pgrep -P "$MY_PARENT" | sort > /tmp/speculative-baseline
+            nohup bash -c "
+              sleep 25
+              job_line=\$(gh api 'repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs?per_page=100' \
+                --jq '.jobs[] | select(.name | test(\"[( ,]a[)]\$\")) | \"\(.status)/\(.conclusion)\"' \
+                2>/dev/null | head -1)
+              echo \"[\$(date -u +%H:%M:%S)] Sibling a: '\${job_line}'\"
+              if [[ \"\${job_line}\" == 'in_progress/'* || \"\${job_line}\" == 'completed/success' ]]; then
+                echo 'Sibling a is winning — cancelling b.'
+                kill -TERM ${MY_PARENT} 2>/dev/null
+                sleep 0.1
+                new=\$(comm -13 /tmp/speculative-baseline <(pgrep -P ${MY_PARENT} | sort) 2>/dev/null)
+                for pid in \$new; do kill -9 \$pid 2>/dev/null; done
+              else
+                echo 'No winner found — proceeding.'
+              fi
+            " >> /tmp/direct-monitor.log 2>&1 &
+            disown
+            echo "Monitor started."
+          fi
+
+      - name: Work (60s — b should be cancelled at ~25s)
+        run: |
+          echo "Copy ${{ matrix.copy }}: working..."
+          sleep 60
+          echo "Copy ${{ matrix.copy }}: done"
+
+      - name: Monitor log
+        if: always()
+        run: cat /tmp/direct-monitor.log 2>/dev/null || echo "(no log)"
+
+  # Test 1: composite action — both copies fast.
+  # Expected: copy a=success, copy b=cancelled (with monitor log showing why).
   test-a-wins:
     strategy:
       fail-fast: false
@@ -32,6 +81,10 @@ jobs:
           sleep 60
           echo "Copy ${{ matrix.copy }}: done"
 
+      - name: Monitor log
+        if: always()
+        run: cat /tmp/speculative-monitor.log 2>/dev/null || echo "(no log)"
+
       - name: Declare win
         if: success()
         env:
@@ -46,15 +99,14 @@ jobs:
             2>&1 || echo "::warning::check-run post failed"
 
   # Test 2: copy a is on a slow runner (cpu gate fires → gate fails).
-  # copy b sees gate=failure → proceeds normally.
-  # Expected: copy a=failure (gate), copy b=success (runs and declares win).
+  # Expected: copy a=failure (gate), copy b=success.
   test-a-slow-b-wins:
     strategy:
       fail-fast: false
       matrix:
         include:
           - copy: a
-            slow_pattern: EPYC   # matches everything → always gated out
+            slow_pattern: EPYC
           - copy: b
             slow_pattern: NEVER_MATCH_THIS
     continue-on-error: true
@@ -79,41 +131,6 @@ jobs:
         run: |
           gh api repos/${{ github.repository }}/check-runs \
             -f name="test-a-slow-b-wins" \
-            -f head_sha="${{ github.sha }}" \
-            -f status=completed \
-            -f conclusion=success \
-            -f "output[title]=Copy ${{ matrix.copy }} won" \
-            2>&1 || echo "::warning::check-run post failed"
-
-  # Test 3: three-copy race. copy a wins on first runner, b/c cancelled at 30/60s.
-  test-three-copy:
-    strategy:
-      fail-fast: false
-      matrix:
-        copy: [a, b, c]
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      - uses: ./.github/actions/speculative-run
-        with:
-          copy: ${{ matrix.copy }}
-          last-copy: c
-          slow-cpu-pattern: NEVER_MATCH_THIS
-
-      - name: Work (90s — b cancelled at ~30s, c at ~60s)
-        run: |
-          echo "Copy ${{ matrix.copy }}: working..."
-          sleep 90
-          echo "Copy ${{ matrix.copy }}: done"
-
-      - name: Declare win
-        if: success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api repos/${{ github.repository }}/check-runs \
-            -f name="test-three-copy" \
             -f head_sha="${{ github.sha }}" \
             -f status=completed \
             -f conclusion=success \
