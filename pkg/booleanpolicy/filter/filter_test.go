@@ -204,6 +204,6 @@ func TestEvaluationFilter_Apply_NoOpFilter(t *testing.T) {
 	imgs := []*storage.Image{{Id: "img"}}
 
 	resultDep, resultImgs := f.Apply(dep, imgs)
-	assert.Equal(t, dep, resultDep)
-	assert.Equal(t, imgs, resultImgs)
+	assert.True(t, dep == resultDep, "expected same deployment pointer")
+	assert.True(t, &imgs[0] == &resultImgs[0], "expected same images slice")
 }
