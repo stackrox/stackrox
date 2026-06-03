@@ -6,11 +6,10 @@ description: >
   - Instant CPU check: slow runner and not last-copy → exit 1 (gate failure,
     next copy's monitor sees this and proceeds).
   - Fast runner (or last-copy): start nohup background monitor then proceed.
-    Monitor waits 30s × position, then checks all earlier copies' JOB status
-    for THIS exact job (matched by check-name + copy letter):
+    Monitor polls every 5s starting at 5s, checking sibling JOB status:
     - any sibling is in_progress or succeeded → kill -TERM MY_PARENT
       → this job shows as cancelled, no further steps run. ✅
-    - all siblings failed (slow runners) or absent → this copy runs. ✅
+    - all siblings failed (slow runners) → stop polling, this copy runs. ✅
 
   Pair with speculative-declare-win at the end of the job (if: success()).
   Both actions take the same check-name value.
@@ -73,22 +72,19 @@ runs:
         # ── 2. Build list of all earlier copies ──────────────────────────────
         # b→"a", c→"a b", d→"a b c"
         case "$MY_COPY" in
-          b) prev_copies="a";     wait_secs=30 ;;
-          c) prev_copies="a b";   wait_secs=60 ;;
-          d) prev_copies="a b c"; wait_secs=90 ;;
-          *)  prev_copies="";     wait_secs=0  ;;
+          b) prev_copies="a" ;;
+          c) prev_copies="a b" ;;
+          d) prev_copies="a b c" ;;
+          *)  prev_copies="" ;;
         esac
 
         if [[ -n "$prev_copies" ]]; then
           # Snapshot current children so we can identify the work step PID later.
           pgrep -P "$MY_PARENT" | sort > /tmp/speculative-baseline
 
-          # Pre-compute the sibling name prefix in the OUTER shell to avoid
-          # quoting hell inside the nohup string.
-          # Sibling job name depends on whether check-name already has dims:
-          #   multi-dim "Job (d1, d2)" → name_base="Job (d1, d2", sep=", " → "Job (d1, d2, a)"
-          #   single-dim "job-name"    → name_base="job-name (", sep=""    → "job-name (a)"
-          # grep -F (fixed string) handles dots/slashes in registry names.
+          # Pre-compute sibling name prefix in the outer shell.
+          # multi-dim "Job (d1, d2)" → base="Job (d1, d2", sep=", " → "Job (d1, d2, a)"
+          # single-dim "job-name"    → base="job-name (",  sep=""    → "job-name (a)"
           if [[ "${CHECK_NAME}" == *")" ]]; then
             SIBLING_BASE="${CHECK_NAME%\)}"
             SIBLING_SEP=", "
@@ -97,37 +93,46 @@ runs:
             SIBLING_SEP=""
           fi
 
+          # Monitor polls every 5s. First check after 5s (enough for siblings to
+          # start and be visible in the GHA API). Exits as soon as a winner is
+          # found or all siblings have failed (all slow runners → this copy runs).
           nohup bash -c "
-            sleep ${wait_secs}
-            all_jobs=\$(gh api 'repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100' \
-              --jq '.jobs[] | \"\(.name)|\(.status)|\(.conclusion)\"' 2>/dev/null)
-            winner_found=0
-            for check_copy in ${prev_copies}; do
-              sibling_name='${SIBLING_BASE}${SIBLING_SEP}'\${check_copy}')'
-              matching=\$(echo \"\$all_jobs\" | grep -F \"\${sibling_name}|\" | head -1)
-              status=\$(echo \"\$matching\" | cut -d'|' -f2)
-              conclusion=\$(echo \"\$matching\" | cut -d'|' -f3)
-              echo \"[\$(date -u +%H:%M:%S)] Sibling \${check_copy} ('\${sibling_name}'): status=\${status} conclusion=\${conclusion}\"
-              if [[ \"\${status}\" == 'in_progress' || \"\${conclusion}\" == 'success' ]]; then
-                winner_found=1
-                echo \"Sibling \${check_copy} is winning — cancelling this copy.\"
+            sleep 5
+            deadline=\$(( \$(date +%s) + 300 ))
+            while [[ \$(date +%s) -lt \$deadline ]]; do
+              all_jobs=\$(gh api 'repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100' \
+                --jq '.jobs[] | \"\(.name)|\(.status)|\(.conclusion)\"' 2>/dev/null)
+              winner_found=0
+              all_siblings_failed=1
+              for check_copy in ${prev_copies}; do
+                sibling_name='${SIBLING_BASE}${SIBLING_SEP}'\${check_copy}')'
+                matching=\$(echo \"\$all_jobs\" | grep -F \"\${sibling_name}|\" | head -1)
+                status=\$(echo \"\$matching\" | cut -d'|' -f2)
+                conclusion=\$(echo \"\$matching\" | cut -d'|' -f3)
+                echo \"[\$(date -u +%H:%M:%S)] \${check_copy}: \${status}/\${conclusion}\"
+                if [[ \"\${status}\" == 'in_progress' || \"\${conclusion}\" == 'success' ]]; then
+                  winner_found=1
+                  echo \"Sibling \${check_copy} is winning — cancelling copy ${MY_COPY}.\"
+                  break
+                fi
+                [[ \"\${conclusion}\" != 'failure' ]] && all_siblings_failed=0
+              done
+              if [[ \$winner_found -eq 1 ]]; then
+                kill -TERM ${MY_PARENT} 2>/dev/null
+                sleep 0.1
+                new=\$(comm -13 /tmp/speculative-baseline <(pgrep -P ${MY_PARENT} | sort) 2>/dev/null)
+                for pid in \$new; do kill -9 \$pid 2>/dev/null; done
                 break
               fi
+              if [[ \$all_siblings_failed -eq 1 ]]; then
+                echo 'All siblings failed (slow runners) — copy ${MY_COPY} proceeds.'
+                break
+              fi
+              sleep 5
             done
-
-            if [[ \$winner_found -eq 1 ]]; then
-              # SIGTERM parent first: runner marks job as cancelled (not failure).
-              kill -TERM ${MY_PARENT} 2>/dev/null
-              sleep 0.1
-              # SIGKILL new children (the work step bash) so they stop immediately.
-              new=\$(comm -13 /tmp/speculative-baseline <(pgrep -P ${MY_PARENT} | sort) 2>/dev/null)
-              for pid in \$new; do kill -9 \$pid 2>/dev/null; done
-            else
-              echo 'No sibling is winning — this copy proceeds normally.'
-            fi
           " >> /tmp/speculative-monitor.log 2>&1 &
           disown
-          echo "Monitor started — checking [${prev_copies}] after ${wait_secs}s."
+          echo "Monitor started — polling [${prev_copies}] every 5s."
         else
           echo "Copy ${MY_COPY} is first — no monitor needed."
         fi
