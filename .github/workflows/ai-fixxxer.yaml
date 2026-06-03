@@ -19,6 +19,9 @@ jobs:
       && github.event.issue.pull_request
       && startsWith(github.event.comment.body, '/ai-fixxx')
     runs-on: ubuntu-latest
+    concurrency:
+      group: ai-fixxxer-bulk-${{ github.event.issue.number }}
+      cancel-in-progress: true
     steps:
 
     - name: React with eyes
@@ -68,7 +71,17 @@ jobs:
       with:
         node-version: 20
 
+    - name: Cache Claude Code
+      id: cache-claude
+      uses: actions/cache@v4
+      with:
+        path: |
+          /usr/local/lib/node_modules/@anthropic-ai
+          /usr/local/bin/claude
+        key: claude-code-v1
+
     - name: Install Claude Code
+      if: steps.cache-claude.outputs.cache-hit != 'true'
       run: npm install -g @anthropic-ai/claude-code
 
     - name: Authenticate gcloud
@@ -136,6 +149,9 @@ jobs:
       && github.event.comment.in_reply_to_id != 0
       && startsWith(github.event.comment.body, '/ai-fixxx')
     runs-on: ubuntu-latest
+    concurrency:
+      group: ai-fixxxer-single-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
     steps:
 
     - name: React with eyes
@@ -186,7 +202,17 @@ jobs:
       with:
         node-version: 20
 
+    - name: Cache Claude Code
+      id: cache-claude
+      uses: actions/cache@v4
+      with:
+        path: |
+          /usr/local/lib/node_modules/@anthropic-ai
+          /usr/local/bin/claude
+        key: claude-code-v1
+
     - name: Install Claude Code
+      if: steps.cache-claude.outputs.cache-hit != 'true'
       run: npm install -g @anthropic-ai/claude-code
 
     - name: Authenticate gcloud
