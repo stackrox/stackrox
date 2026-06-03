@@ -56,20 +56,33 @@ However, these differences don't affect node/cluster CVE scanning capability.
 
 ## Tested Configurations
 
-| Run | Scanner | Node Index | Cluster CVEs | Node CVEs | Result |
-|-----|---------|------------|--------------|-----------|--------|
-| 26861050410 | v2 | N/A | 0 (20min wait) | N/A | 8 pass, 1 cancelled |
-| 26863424884 | v4 | default | 0 (20min wait) | N/A | 5 pass, 3 fail, 1 cancelled |
-| 26864704631 | v2 | N/A | 0 (20min wait) | N/A | 8 pass, 1 cancelled |
+| Run | Scanner | Force Redeploy | Deployment Age | Cluster CVEs | Result |
+|-----|---------|----------------|----------------|--------------|--------|
+| 26861050410 | v2 | ✅ Yes | Fresh | 0 (20min wait) | 8 pass, 1 cancelled |
+| 26863424884 | v4 | ✅ Yes | Fresh | 0 (20min wait) | 5 pass, 3 fail, 1 cancelled |
+| 26864704631 | v2 | ✅ Yes | Fresh | 0 (20min wait) | 8 pass, 1 cancelled |
+| 26899272977 | v2 | ❌ No | 6+ hours | 0 (20min wait) | 5 fail, 4 cancelled |
 
-Scanner V4 without node indexing performed worse than V2.
+**Key findings:**
+- Scanner V4 without node indexing performed worse than V2
+- **Long-running deployments accumulate stale state** causing test failures
+- **Scanner v2 NEVER populates cluster/node CVEs** regardless of runtime
+- **force-redeploy is essential** for reliable test runs
 
 ## Recommendations
 
 ### Short term (current)
 - **Keep using Scanner V2** - provides 89% test coverage (8/9 shards)
+- **Always use force-redeploy** - prevents stale state failures
 - **Skip vulnmanagement tests on OCP** - document as known limitation
 - **Focus on the 8 passing shards** - comprehensive StackRox feature coverage
+
+### Deployment Re-use
+**DO NOT re-use long-running deployments** for testing:
+- Fresh deployment (run 26864704631): 8/9 passing ✅
+- 6-hour-old deployment (run 26899272977): 5 failures + 4 cancelled ❌
+- Root cause: Stale state accumulates (auth issues, broken connections, etc.)
+- Always use `force-redeploy=true` for reliable results
 
 ### Long term (future enhancement)
 To enable vulnmanagement tests on OCP:
