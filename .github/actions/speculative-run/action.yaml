@@ -2,59 +2,27 @@ name: Speculative Run Gate
 description: >
   Gate step for speculative-execution matrix jobs.
 
-  Each copy follows this logic:
-  1. Instant CPU check: if slow runner and not last-copy → exit 1 (delegates to next copy)
-  2. Wait (b waits 30s, c waits 60s) then check previous sibling's gate:
-     - success  → sibling is fast and handling it → skip all work (exit 0, skip=true)
-     - failure  → sibling was slow → proceed (exit 0, skip=false)
-     - empty    → fail-safe → proceed (exit 0, skip=false)
-  3. Last copy always proceeds regardless of own CPU (unconditional fallback)
-
-  Usage:
-    strategy:
-      matrix:
-        copy: [a, b, c]
-    continue-on-error: true  # slow/skip exits look like failures to downstream jobs; harmless
-    steps:
-      - uses: ./.github/actions/speculative-run
-        id: gate
-        continue-on-error: true
-        with:
-          copy: ${{ matrix.copy }}
-          last-copy: c
-
-      - name: Do work
-        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true'
-        ...
-
-      - name: Declare win
-        if: steps.gate.conclusion == 'success' && steps.gate.outputs.skip != 'true' && success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api repos/${{ github.repository }}/check-runs \
-            -f name="my-required-check-name" \
-            -f head_sha="${{ github.sha }}" \
-            -f status=completed -f conclusion=success
-          # exit 0 — winner shows as success in UI
+  Behaviour per copy:
+  - Instant CPU check: slow runner and not last-copy → exit 1 (gate failure,
+    next copy sees this and proceeds).
+  - Fast runner (or last-copy): start nohup background monitor then proceed.
+    Monitor waits 30s (copy b) or 60s (copy c), checks previous sibling's gate:
+    - gate=success (sibling is fast, running) → kill -TERM MY_PARENT
+      → this job is cancelled, no further steps run. ✅ correct semantics.
+    - gate=failure/empty (sibling slow/absent) → do nothing, this copy runs. ✅
 
 inputs:
   copy:
     description: 'This copy letter (a, b, or c)'
     required: true
   last-copy:
-    description: 'Unconditional fallback copy (default b for 2-copy, c for 3-copy)'
+    description: 'Unconditional fallback (b for 2-copy, c for 3-copy)'
     required: false
     default: 'b'
   slow-cpu-pattern:
-    description: 'CPU substring indicating a slow runner'
+    description: 'CPU substring marking a slow runner'
     required: false
     default: '7763'
-
-outputs:
-  skip:
-    description: '"true" if a fast sibling is already handling this work'
-    value: ${{ steps.gate.outputs.skip }}
 
 runs:
   using: composite
@@ -71,52 +39,45 @@ runs:
         SLOW_PATTERN="${{ inputs.slow-cpu-pattern }}"
         RUN_ID="${{ github.run_id }}"
         REPO="${{ github.repository }}"
+        MY_PARENT=$PPID
 
         cpu=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
         [[ -z "$cpu" ]] && cpu=$(lscpu 2>/dev/null | awk -F: '/Model name/{gsub(/^ +/,"",$2); print $2}')
         echo "cpu=${cpu:-unknown}"
 
-        # ── Step 1: Own CPU check ─────────────────────────────────────────
-        # Last copy never aborts on slow CPU — it is the unconditional fallback.
+        # ── 1. Own CPU check ────────────────────────────────────────────────
         if [[ "$MY_COPY" != "$LAST_COPY" && "$cpu" == *"${SLOW_PATTERN}"* ]]; then
           echo "::warning::Slow runner (${cpu}) — delegating to next copy."
-          echo "skip=false" >> "$GITHUB_OUTPUT"
-          exit 1  # gate failure: signals next copy to check and potentially proceed
+          exit 1
         fi
 
-        # ── Step 2: Wait then check previous sibling ─────────────────────
-        declare -A ORDER=([a]=1 [b]=2 [c]=3 [d]=4)
-        my_order=${ORDER[$MY_COPY]:-1}
-
-        # Determine which sibling to check and how long to wait
+        # ── 2. Background monitor (watches previous sibling's gate) ─────────
         case "$MY_COPY" in
           b) prev_copy="a"; wait_secs=30 ;;
           c) prev_copy="b"; wait_secs=60 ;;
           d) prev_copy="c"; wait_secs=90 ;;
-          *) prev_copy=""; wait_secs=0 ;;
+          *)  prev_copy="";  wait_secs=0  ;;
         esac
 
         if [[ -n "$prev_copy" ]]; then
-          echo "Waiting ${wait_secs}s for sibling ${prev_copy} to settle..."
-          sleep "$wait_secs"
-
-          prev_gate=$(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" \
-            --jq ".jobs[] | select(.name | test(\", ${prev_copy}[)]\$\")) | .steps[] | select(.name == \"Gate\") | .conclusion" \
-            2>/dev/null | grep -v '^$' | head -1)
-
-          echo "Sibling ${prev_copy} gate conclusion: '${prev_gate}'"
-
-          if [[ "$prev_gate" == "success" ]]; then
-            echo "Sibling ${prev_copy} is fast and handling it — skipping this copy."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          elif [[ "$prev_gate" == "failure" ]]; then
-            echo "Sibling ${prev_copy} was slow — proceeding."
-          else
-            echo "Sibling ${prev_copy} gate not found (${prev_gate}) — proceeding (fail-safe)."
-          fi
+          nohup bash -c "
+            sleep ${wait_secs}
+            prev_gate=\$(gh api 'repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100' \
+              --jq '.jobs[] | select(.name | test(\", ${prev_copy}[)]\$\")) | .steps[] | select(.name == \"Gate\") | .conclusion' \
+              2>/dev/null | grep -v '^\$' | head -1)
+            echo \"[\$(date -u +%H:%M:%S)] Sibling ${prev_copy} gate: '\${prev_gate}'\"
+            if [[ \"\${prev_gate}\" == 'success' ]]; then
+              echo 'Sibling is fast — cancelling this copy (kill -TERM ${MY_PARENT})'
+              kill -TERM ${MY_PARENT}
+            else
+              echo 'Sibling was slow or absent — this copy proceeds normally.'
+            fi
+          " >> /tmp/speculative-monitor.log 2>&1 &
+          disown
+          echo "Monitor started — watching sibling ${prev_copy} with ${wait_secs}s delay."
+        else
+          echo "Copy ${MY_COPY} is first — no monitor needed."
         fi
 
-        echo "skip=false" >> "$GITHUB_OUTPUT"
-        echo "Proceeding with work."
+        echo "Gate passed."
         exit 0

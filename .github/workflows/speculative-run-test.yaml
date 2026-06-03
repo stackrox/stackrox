@@ -8,116 +8,73 @@ permissions:
   checks: write
 
 jobs:
-  # Test the three kill variants:
-  # Variant 1: kill NEW children only (comm -13 diff)
-  # Variant 2: kill ALL children of parent (pkill -P)
-  # Variant 3: kill the parent itself (runner worker)
-  # Each job: gate starts bg monitor, work step sleeps 30s, monitor fires after 5s
-
-  kill-variant-new-children:
-    runs-on: ubuntu-latest
+  # Test 1: a=fast, b=fast — a proceeds, b's monitor sees a=success after 30s → cancels b
+  test-a-wins:
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b]
     continue-on-error: true
-    steps:
-      - name: Gate (start bg monitor — kill NEW children)
-        run: |
-          parent=$PPID
-          echo "Gate PID=$$  Parent=$parent"
-          pgrep -P "$parent" | sort > /tmp/baseline-children
-
-          nohup bash -c "
-            sleep 5
-            echo 'Monitor firing — looking for new children of $parent'
-            ps auxf | grep -E 'bash|sleep' | grep -v grep
-            new_children=\$(comm -13 /tmp/baseline-children <(pgrep -P $parent | sort))
-            echo 'New children: '\$new_children
-            for pid in \$new_children; do
-              echo \"Sending SIGTERM to new child \$pid ($(cat /proc/\$pid/cmdline 2>/dev/null | tr '\\\\0' ' '))\"
-              kill -TERM \$pid 2>/dev/null
-            done
-          " > /tmp/monitor.log 2>&1 &
-          echo "Monitor PID=$!"
-
-      - name: Work (sleeps 30s — should be killed after 5s)
-        run: |
-          echo "Work PID=$$ PPID=$PPID — sleeping 30s"
-          sleep 30
-          echo "Work completed (should NOT see this if kill worked)"
-
-      - name: Result
-        if: always()
-        run: |
-          echo "=== Monitor log ===" && cat /tmp/monitor.log || true
-          echo "Work step conclusion: ${{ steps.*.conclusion }}"
-
-  kill-variant-all-children:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/speculative-run
+        id: gate
+        continue-on-error: true
+        with:
+          copy: ${{ matrix.copy }}
+          last-copy: b
+          slow-cpu-pattern: NEVER_MATCH   # all fast for this test
+
+      - name: Work (sleeps 60s — b should be cancelled after ~30s)
+        if: steps.gate.conclusion == 'success'
+        run: |
+          echo "Copy ${{ matrix.copy }} working..."
+          sleep 60
+          echo "Copy ${{ matrix.copy }} done."
+
+      - name: Declare win
+        if: steps.gate.conclusion == 'success' && success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/${{ github.repository }}/check-runs \
+            -f name="test-a-wins" \
+            -f head_sha="${{ github.sha }}" \
+            -f status=completed -f conclusion=success \
+            -f "output[title]=Copy ${{ matrix.copy }} won" 2>&1 || true
+
+  # Test 2: a=slow, b=fast — a exits (gate failure), b's monitor sees a=failure → b runs
+  test-b-fallback:
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b]
     continue-on-error: true
-    steps:
-      - name: Gate (start bg monitor — kill ALL children of parent)
-        run: |
-          parent=$PPID
-          echo "Gate PID=$$  Parent=$parent"
-
-          nohup bash -c "
-            sleep 5
-            echo 'Monitor firing — killing ALL children of $parent'
-            ps auxf | grep -E 'bash|sleep' | grep -v grep
-            echo 'Children:' \$(pgrep -P $parent)
-            pkill -TERM -P $parent
-            echo 'pkill sent'
-          " > /tmp/monitor.log 2>&1 &
-          echo "Monitor PID=$!"
-
-      - name: Work (sleeps 30s — should be killed after 5s)
-        run: |
-          echo "Work PID=$$ PPID=$PPID — sleeping 30s"
-          sleep 30
-          echo "Work completed (should NOT see this if kill worked)"
-
-      - name: Result
-        if: always()
-        run: |
-          echo "=== Monitor log ===" && cat /tmp/monitor.log || true
-
-  kill-variant-parent:
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - name: Gate (start bg monitor — kill the runner parent directly)
-        run: |
-          parent=$PPID
-          echo "Gate PID=$$  Parent=$parent ($(cat /proc/$parent/cmdline | tr '\0' ' '))"
-
-          nohup bash -c "
-            sleep 5
-            echo 'Monitor firing — killing parent $parent directly'
-            ps auxf | grep -E 'bash|sleep|Runner' | grep -v grep
-            echo 'Sending SIGTERM to parent $parent'
-            kill -TERM $parent 2>/dev/null
-            echo 'kill sent'
-          " > /tmp/monitor.log 2>&1 &
-          echo "Monitor PID=$!"
-
-      - name: Work (sleeps 30s — should be killed after 5s)
-        run: |
-          echo "Work PID=$$ PPID=$PPID — sleeping 30s"
-          sleep 30
-          echo "Work completed (should NOT see this if kill worked)"
-
-      - name: Result
-        if: always()
-        run: |
-          echo "=== Monitor log ===" && cat /tmp/monitor.log || true
-
-  # Control: no kill — work runs to completion
-  control-no-kill:
     runs-on: ubuntu-latest
     steps:
-      - name: Gate (no monitor)
-        run: echo "Gate PID=$$  Parent=$PPID"
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/speculative-run
+        id: gate
+        continue-on-error: true
+        with:
+          copy: ${{ matrix.copy }}
+          last-copy: b
+          slow-cpu-pattern: ${{ matrix.copy == 'a' && 'EPYC' || 'NEVER_MATCH' }}
 
-      - name: Work (sleeps 10s — should complete)
+      - name: Work
+        if: steps.gate.conclusion == 'success'
         run: |
-          echo "Work PID=$$ — sleeping 10s"
+          echo "Copy ${{ matrix.copy }} working (should only be b)..."
           sleep 10
-          echo "Work completed normally ✓"
+
+      - name: Declare win
+        if: steps.gate.conclusion == 'success' && success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/${{ github.repository }}/check-runs \
+            -f name="test-b-fallback" \
+            -f head_sha="${{ github.sha }}" \
+            -f status=completed -f conclusion=success \
+            -f "output[title]=Copy ${{ matrix.copy }} won" 2>&1 || true
