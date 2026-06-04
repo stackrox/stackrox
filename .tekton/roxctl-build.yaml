@@ -66,24 +66,58 @@ spec:
     name: basic-component-pipeline
 
   taskRunSpecs:
+  # The following are overrides to default step resources to prevent occasional or deterministic OOM kills.
   - pipelineTaskName: prefetch-dependencies
+    podTemplate: &go-memlimit
+      env:
+      - name: GOMEMLIMIT
+        value: 2500MiB
     stepSpecs:
-    # Limit CPU for Go dependencies prefetch, as it tends to be OOM-killed when it gets lots of it without OOTB limit.
     - name: prefetch-dependencies
       computeResources:
         limits:
+          memory: 5Gi
+        requests:
+          memory: 5Gi
+    - name: create-trusted-artifact
+      computeResources: &ta-resources
+        limits:
           cpu: 2
+          memory: 5Gi
         requests:
           cpu: 2
-  - pipelineTaskName: build-source-image
+          memory: 5Gi
+  - pipelineTaskName: build-images
+    podTemplate: *go-memlimit
     stepSpecs:
-    # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: build-source-image
+    podTemplate: *go-memlimit
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
     - name: build
       computeResources:
         limits:
           memory: 3Gi
         requests:
           memory: 3Gi
+  - pipelineTaskName: sast-shell-check
+    podTemplate: *go-memlimit
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: sast-unicode-check
+    podTemplate: *go-memlimit
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: sast-snyk-check
+    podTemplate: *go-memlimit
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
 
   taskRunTemplate:
     serviceAccountName: build-pipeline-roxctl-4-10
