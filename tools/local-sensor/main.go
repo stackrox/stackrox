@@ -235,6 +235,20 @@ func waitForSignalOrTimeout(signal concurrency.ReadOnlySignal, timeoutC <-chan t
 	}
 }
 
+func logTimeLeft(stop <-chan struct{}, deadline time.Time, tickerC <-chan time.Time, now func() time.Time, logf func(string, ...any)) {
+	for {
+		select {
+		case <-stop:
+			return
+		case <-tickerC:
+			remaining := deadline.Sub(now()).Round(time.Second)
+			if remaining > 0 {
+				logf("Time left in local-sensor run: %s", remaining)
+			}
+		}
+	}
+}
+
 // stopSensorAndWorkload stops the workload manager and sensor in the correct order.
 // This function is idempotent and safe to call multiple times.
 func stopSensorAndWorkload(workloadManager *fake.WorkloadManager, sensor *commonSensor.Sensor, pipeline sensor.ProcessPipelineHandle) {
@@ -266,10 +280,18 @@ func main() {
 	}
 	localConfig := mustGetCommandLineArgs()
 	var durationC <-chan time.Time
+	var durationDeadline time.Time
+	var durationLogStop chan struct{}
 	if localConfig.Duration > 0 {
+		durationDeadline = time.Now().Add(localConfig.Duration)
 		durationTimer := time.NewTimer(localConfig.Duration)
 		defer durationTimer.Stop()
 		durationC = durationTimer.C
+		durationLogStop = make(chan struct{})
+		durationLogTicker := time.NewTicker(time.Minute)
+		defer durationLogTicker.Stop()
+		defer close(durationLogStop)
+		go logTimeLeft(durationLogStop, durationDeadline, durationLogTicker.C, time.Now, log.Printf)
 	}
 	if localConfig.WithMetrics {
 		// Start the prometheus metrics server
