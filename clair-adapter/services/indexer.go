@@ -3,10 +3,12 @@ package services
 import (
 	"context"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/clair-adapter/indexer"
 	"github.com/stackrox/rox/clair-adapter/mappers"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -135,4 +137,14 @@ func (s *IndexerService) StoreIndexReport(ctx context.Context, req *v4.StoreInde
 // GetRepositoryToCPEMapping is not implemented.
 func (s *IndexerService) GetRepositoryToCPEMapping(ctx context.Context, req *v4.GetRepositoryToCPEMappingRequest) (*v4.GetRepositoryToCPEMappingResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "GetRepositoryToCPEMapping is not implemented")
+}
+
+// RegisterServiceServer registers the IndexerService with the gRPC server.
+func (s *IndexerService) RegisterServiceServer(grpcServer *grpc.Server) {
+	v4.RegisterIndexerServer(grpcServer, s)
+}
+
+// RegisterServiceHandler is a no-op for IndexerService (no HTTP gateway needed).
+func (s *IndexerService) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
+	return nil
 }

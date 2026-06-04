@@ -4,11 +4,13 @@ import (
 	"context"
 	"strings"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/clair-adapter/enricher/csaf"
 	"github.com/stackrox/rox/clair-adapter/mappers"
 	"github.com/stackrox/rox/clair-adapter/matcher"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -78,6 +80,16 @@ func (s *MatcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*
 // ScanSBOM is not implemented.
 func (s *MatcherService) ScanSBOM(ctx context.Context, req *v4.ScanSBOMRequest) (*v4.ScanSBOMResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "ScanSBOM is not implemented")
+}
+
+// RegisterServiceServer registers the MatcherService with the gRPC server.
+func (s *MatcherService) RegisterServiceServer(grpcServer *grpc.Server) {
+	v4.RegisterMatcherServer(grpcServer, s)
+}
+
+// RegisterServiceHandler is a no-op for MatcherService (no HTTP gateway needed).
+func (s *MatcherService) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
+	return nil
 }
 
 // convertCSAFAdvisories converts from enricher/csaf.Advisory to mappers.CSAFAdvisory.

@@ -5,10 +5,10 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -21,9 +21,9 @@ import (
 	matcherpkg "github.com/stackrox/rox/clair-adapter/matcher"
 	"github.com/stackrox/rox/clair-adapter/services"
 	"github.com/stackrox/rox/clair-adapter/updater"
-	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	pkggrpc "github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/mtls/verifier"
 )
 
 func main() {
@@ -51,7 +51,16 @@ func run(configPath string) error {
 		"http_addr", cfg.HTTPListenAddr,
 		"updater_addr", cfg.UpdaterListenAddr,
 		"vuln_url", cfg.VulnerabilitiesURL,
+		"certs_dir", cfg.CertsDir,
 	)
+
+	// Configure mTLS certificate paths if CertsDir is set
+	if cfg.CertsDir != "" {
+		os.Setenv(mtls.CAFileEnvName, filepath.Join(cfg.CertsDir, mtls.CACertFileName))
+		os.Setenv(mtls.CertFilePathEnvName, filepath.Join(cfg.CertsDir, mtls.ServiceCertFileName))
+		os.Setenv(mtls.KeyFileEnvName, filepath.Join(cfg.CertsDir, mtls.ServiceKeyFileName))
+		slog.Info("mTLS configured", "certs_dir", cfg.CertsDir)
+	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
@@ -98,44 +107,47 @@ func run(configPath string) error {
 		mtch = matcherpkg.NewLocalMatcher(clairClient, enricherPipeline, nil)
 	}
 
-	// gRPC server
-	grpcServer := grpc.NewServer()
-	if idx != nil {
-		v4.RegisterIndexerServer(grpcServer, services.NewIndexerService(idx))
-	}
-	if mtch != nil {
-		v4.RegisterMatcherServer(grpcServer, services.NewMatcherService(mtch))
-	}
-	reflection.Register(grpcServer)
-
-	grpcLis, err := net.Listen("tcp", cfg.GRPCListenAddr)
-	if err != nil {
-		return fmt.Errorf("creating grpc listener: %w", err)
-	}
-	go func() {
-		slog.Info("gRPC server listening", "addr", cfg.GRPCListenAddr)
-		if err := grpcServer.Serve(grpcLis); err != nil {
-			slog.Error("gRPC server failed", "error", err)
-		}
-	}()
-
-	// Health server
-	healthHandler := healthz.NewHandler(func() bool {
+	// Health handler with readiness check
+	readinessFunc := func() bool {
 		hctx, hcancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer hcancel()
 		_, err := clairClient.GetIndexState(hctx)
 		return err == nil
-	})
-	httpServer := &http.Server{
-		Addr:    cfg.HTTPListenAddr,
-		Handler: healthHandler,
 	}
-	go func() {
-		slog.Info("health HTTP server listening", "addr", cfg.HTTPListenAddr)
-		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("health HTTP server failed", "error", err)
+	healthHandler := healthz.NewHandler(readinessFunc)
+
+	// Build gRPC API with mTLS support
+	grpcAPI := pkggrpc.NewAPI(pkggrpc.Config{
+		CustomRoutes: healthHandler.CustomRoutes(),
+		Endpoints: []*pkggrpc.EndpointConfig{
+			{ListenEndpoint: cfg.GRPCListenAddr, TLS: verifier.NonCA{}, ServeGRPC: true, ServeHTTP: false},
+			{ListenEndpoint: cfg.HTTPListenAddr, TLS: verifier.NonCA{}, ServeGRPC: false, ServeHTTP: true},
+		},
+	})
+
+	// Register API services
+	var apiServices []pkggrpc.APIService
+	if idx != nil {
+		apiServices = append(apiServices, services.NewIndexerService(idx))
+	}
+	if mtch != nil {
+		apiServices = append(apiServices, services.NewMatcherService(mtch))
+	}
+	grpcAPI.Register(apiServices...)
+
+	// Start gRPC API
+	startSig := grpcAPI.Start()
+	select {
+	case <-startSig.Done():
+		if err := startSig.Err(); err != nil {
+			return fmt.Errorf("failed to start gRPC API: %w", err)
 		}
-	}()
+		slog.Info("gRPC API started", "grpc_addr", cfg.GRPCListenAddr, "http_addr", cfg.HTTPListenAddr)
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(10 * time.Second):
+		return fmt.Errorf("timeout waiting for gRPC API to start")
+	}
 
 	// Wait for shutdown signal
 	<-ctx.Done()
@@ -144,8 +156,7 @@ func run(configPath string) error {
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownCancel()
 
-	grpcServer.GracefulStop()
-	httpServer.Shutdown(shutdownCtx)
+	grpcAPI.Stop()
 	updaterHTTPServer.Shutdown(shutdownCtx)
 
 	slog.Info("shutdown complete")

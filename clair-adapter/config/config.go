@@ -14,6 +14,7 @@ type Config struct {
 	HTTPListenAddr     string        `yaml:"http_listen_addr"`
 	UpdaterListenAddr  string        `yaml:"updater_listen_addr"`
 	VulnerabilitiesURL string        `yaml:"vulnerabilities_url"`
+	CertsDir           string        `yaml:"certs_dir"`
 	Indexer            IndexerConfig `yaml:"indexer"`
 	Matcher            MatcherConfig `yaml:"matcher"`
 	LogLevel           slog.Level    `yaml:"log_level"`

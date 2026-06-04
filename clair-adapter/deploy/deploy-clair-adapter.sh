@@ -318,6 +318,9 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /etc/clair-adapter
+        - name: tls-volume
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
         resources:
           requests:
             cpu: 200m
@@ -341,6 +344,10 @@ spec:
       - name: config
         configMap:
           name: clair-adapter-config
+      - name: tls-volume
+        secret:
+          secretName: scanner-v4-matcher-tls
+          optional: true
 ---
 apiVersion: v1
 kind: Service
