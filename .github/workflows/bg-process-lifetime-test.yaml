@@ -1,5 +1,9 @@
 name: Background Process Lifetime Test
 on:
+  push:
+    branches: [davdhacs/speed-racer-build]
+    paths:
+      - .github/workflows/bg-process-lifetime-test.yaml
   workflow_dispatch:
     inputs:
       work_seconds:
