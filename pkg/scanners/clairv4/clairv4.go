@@ -2,6 +2,7 @@ package clairv4
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -164,7 +165,12 @@ func (c *clairv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		return nil, errors.Wrapf(err, "Clair v4: getting vulnerability report for %s", imgName)
 	}
 
-	return imageScan(report), nil
+	ctx := context.Background()
+	scan, err := imageScan(ctx, image.GetMetadata(), report)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Clair v4: converting vulnerability report for %s", imgName)
+	}
+	return scan, nil
 }
 
 func (c *clairv4) indexReportExists(digest string) (bool, error) {

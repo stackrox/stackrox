@@ -22,7 +22,8 @@ import (
 // Claircore or StackRox updater names.
 const vulnDataSourceDelimiter = "::"
 
-func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, scannerVersion string) *storage.ImageScan {
+// ImageScan converts a v4.VulnerabilityReport to storage.ImageScan.
+func ImageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, scannerVersion string) *storage.ImageScan {
 	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
 	if features.ScannerV4RedHatVEXNotAffected.Enabled() {
 		filterNotAffectedVulnerabilities(report, layerSHAToIndex)

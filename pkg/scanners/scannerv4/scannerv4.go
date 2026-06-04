@@ -163,7 +163,7 @@ func (s *scannerv4) ScanSBOM(ctx context.Context, sbomReader io.Reader, contentT
 }
 
 func sbomScan(vr *v4.VulnerabilityReport, scannerVersionStr string) *v1.SBOMScanResponse_SBOMScan {
-	imageScan := imageScan(nil, vr, scannerVersionStr)
+	imageScan := ImageScan(nil, vr, scannerVersionStr)
 
 	for _, c := range imageScan.GetComponents() {
 		for _, v := range c.GetVulns() {
@@ -236,7 +236,7 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		len(vr.GetVulnerabilities()),
 	)
 
-	return imageScan(image.GetMetadata(), vr, scannerVersionStr), nil
+	return ImageScan(image.GetMetadata(), vr, scannerVersionStr), nil
 }
 
 func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
@@ -330,7 +330,7 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 		len(vr.GetVulnerabilities()),
 	)
 
-	return imageScan(image.GetMetadata(), vr, scannerVersionStr), nil
+	return ImageScan(image.GetMetadata(), vr, scannerVersionStr), nil
 }
 
 func (s *scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *v4.IndexReport) (*v4.VulnerabilityReport, error) {
