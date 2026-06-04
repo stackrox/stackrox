@@ -65,9 +65,8 @@ jobs:
       run: scripts/ci/jobs/check-generated.sh
 
     - uses: ./.github/actions/speculative-declare-win
-      if: '!cancelled()'
+      if: success()
       with:
-        job-status: ${{ job.status }}
         check-name: check-generated-files
         copy: ${{ matrix.copy }}
 
@@ -186,9 +185,8 @@ jobs:
         run: make style-slim
 
       - uses: ./.github/actions/speculative-declare-win
-        if: '!cancelled()'
+        if: success()
         with:
-          job-status: ${{ job.status }}
           check-name: style-check
           copy: ${{ matrix.copy }}
 

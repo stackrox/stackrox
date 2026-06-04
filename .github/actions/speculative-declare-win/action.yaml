@@ -1,14 +1,12 @@
 name: Speculative Run — Declare Win
 description: >
-  Resolves the in_progress check-run posted by the gate action. Call with
-  'if: !cancelled()' and pass 'job-status: ${{ job.status }}' so the action
-  marks the check-run as success on win or failure on real job failure.
+  Marks the winner of a speculative-execution race. Call with 'if: success()'
+  at the end of the job. Updates the in_progress check-run posted by the gate
+  action to completed/success.
 
-  Callers must handle both outcomes:
-  - Job succeeds → check-run → completed/success (required check turns green)
-  - Job fails    → check-run → completed/failure (unblocks branch protection;
-    prevents sibling monitors from treating a failed copy as a "winner")
-  - Job cancelled (SIGTERM from monitor) → step skipped by 'if: !cancelled()'
+  Failure cleanup (resolving a stuck in_progress check-run when the job fails)
+  is handled automatically by a post-job hook registered inside the gate action
+  itself — no extra steps needed in calling workflows.
 
 inputs:
   check-name:
@@ -18,56 +16,36 @@ inputs:
       Example: "pre-build-go-binaries (default, amd64)"
     required: true
   copy:
-    description: 'Which copy ran (a, b, or c) — used in the summary message only'
+    description: 'Which copy won (a, b, or c) — used in the summary message only'
     default: 'winner'
-  job-status:
-    description: >
-      Pass '${{ job.status }}' from the calling workflow. Determines whether
-      to mark the check-run as success (job won) or failure (real failure
-      after gate). Defaults to success for backward compatibility.
-    default: 'success'
 
 runs:
   using: composite
   steps:
-    - name: Resolve check-run
+    - name: Mark check-run complete
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        JOB_STATUS="${{ inputs.job-status }}"
-        if [[ "$JOB_STATUS" == "success" ]]; then
-          conclusion=success
-          title="Speculative run complete"
-          summary="Copy ${{ inputs.copy }} won."
-        else
-          conclusion=failure
-          title="Speculative job failed"
-          summary="Copy ${{ inputs.copy }} failed after the gate — resolved to prevent siblings treating this as a winner."
-        fi
-
-        echo "Copy '${{ inputs.copy }}' status=${JOB_STATUS} — resolving check '${{ inputs.check-name }}' as ${conclusion}"
+        echo "Copy '${{ inputs.copy }}' won — completing check '${{ inputs.check-name }}'"
         check_id=$(cat /tmp/speculative-check-id 2>/dev/null | head -1 | tr -d '[:space:]')
         echo "check_id from gate: '${check_id}'"
         if [[ "$check_id" =~ ^[0-9]+$ ]]; then
           gh api repos/${{ github.repository }}/check-runs/"${check_id}" \
             -X PATCH \
             -f status=completed \
-            -f conclusion="${conclusion}" \
-            -f "output[title]=${title}" \
-            -f "output[summary]=${summary}" \
+            -f conclusion=success \
+            -f "output[title]=Speculative run complete" \
+            -f "output[summary]=Copy ${{ inputs.copy }} won." \
             2>&1 || echo "::warning::Failed to update check-run (non-fatal)"
         else
           # Fallback: gate didn't store an ID (enabled=false, or API hiccup).
-          # Only post on success to avoid spurious failure checks.
-          if [[ "$conclusion" == "success" ]]; then
-            gh api repos/${{ github.repository }}/check-runs \
-              -f name="${{ inputs.check-name }}" \
-              -f head_sha="${{ github.sha }}" \
-              -f status=completed \
-              -f conclusion=success \
-              -f "output[title]=${title}" \
-              -f "output[summary]=${summary}" \
-              2>&1 || echo "::warning::Failed to post check-run (non-fatal)"
-          fi
+          gh api repos/${{ github.repository }}/check-runs \
+            -f name="${{ inputs.check-name }}" \
+            -f head_sha="${{ github.sha }}" \
+            -f status=completed \
+            -f conclusion=success \
+            -f "output[title]=Speculative run complete" \
+            -f "output[summary]=Copy ${{ inputs.copy }} won." \
+            2>&1 || echo "::warning::Failed to post check-run (non-fatal)"
         fi

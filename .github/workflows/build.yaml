@@ -230,9 +230,8 @@ jobs:
             ui/apps/platform/package-lock.json
 
       - uses: ./.github/actions/speculative-declare-win
-        if: '!cancelled()'
+        if: success()
         with:
-          job-status: ${{ job.status }}
           check-name: pre-build-ui (${{ matrix.branding }})
           copy: ${{ matrix.copy }}
 
@@ -410,9 +409,8 @@ jobs:
           compression-level: 1
 
       - uses: ./.github/actions/speculative-declare-win
-        if: '!cancelled()'
+        if: success()
         with:
-          job-status: ${{ job.status }}
           check-name: pre-build-go-binaries (${{ matrix.name }}, ${{ matrix.arch }})
           copy: ${{ matrix.copy }}
 
@@ -459,9 +457,8 @@ jobs:
             image/rhel/docs
 
       - uses: ./.github/actions/speculative-declare-win
-        if: '!cancelled()'
+        if: success()
         with:
-          job-status: ${{ job.status }}
           check-name: pre-build-docs
           copy: ${{ matrix.copy }}
 
@@ -518,9 +515,8 @@ jobs:
         path: image/rhel/THIRD_PARTY_NOTICES
 
     - uses: ./.github/actions/speculative-declare-win
-      if: '!cancelled()'
+      if: success()
       with:
-        job-status: ${{ job.status }}
         check-name: pre-build-oss-notice
         copy: ${{ matrix.copy }}
 
@@ -641,9 +637,8 @@ jobs:
             "docker://quay.io/rhacs-eng/scanner-v4-db:${{ env.BUILD_TAG }}"
 
       - uses: ./.github/actions/speculative-declare-win
-        if: '!cancelled()'
+        if: success()
         with:
-          job-status: ${{ job.status }}
           check-name: build-and-push-db
           copy: ${{ matrix.copy }}
 
@@ -696,9 +691,8 @@ jobs:
           make -C operator/ docker-push-index | cat
 
       - uses: ./.github/actions/speculative-declare-win
-        if: '!cancelled()'
+        if: success()
         with:
-          job-status: ${{ job.status }}
           check-name: build-operator-bundle
           copy: ${{ matrix.copy }}
 
@@ -890,9 +884,8 @@ jobs:
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
       - uses: ./.github/actions/speculative-declare-win
-        if: '!cancelled()'
+        if: success()
         with:
-          job-status: ${{ job.status }}
           check-name: build-and-push-main (${{ matrix.name }}, ${{ matrix.arch }})
           copy: ${{ matrix.copy }}
 
@@ -1178,9 +1171,8 @@ jobs:
             echo "Operator image push completed successfully"
 
       - uses: ./.github/actions/speculative-declare-win
-        if: '!cancelled()'
+        if: success()
         with:
-          job-status: ${{ job.status }}
           check-name: build-and-push-operator (${{ matrix.name }}, ${{ matrix.arch }})
           copy: ${{ matrix.copy }}
 
@@ -1277,9 +1269,8 @@ jobs:
           push_scanner_image_set "${{ matrix.registry }}" "${{ matrix.arch }}"
 
       - uses: ./.github/actions/speculative-declare-win
-        if: '!cancelled()'
+        if: success()
         with:
-          job-status: ${{ job.status }}
           check-name: build-and-push-scanner (${{ matrix.name }}, ${{ matrix.goos }}, ${{ matrix.arch }}, ${{ matrix.registry }})
           copy: ${{ matrix.copy }}
 
