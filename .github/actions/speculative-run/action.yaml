@@ -61,16 +61,6 @@ runs:
         [[ -z "$cpu" ]] && cpu=$(lscpu 2>/dev/null | awk -F: '/Model name/{gsub(/^ +/,"",$2); print $2}')
         echo "cpu=${cpu:-unknown}"
 
-        # DIAGNOSTIC: reveal what $PPID is inside this composite action step
-        echo "=== Composite action process hierarchy ==="
-        echo "Gate bash: PID=$$ PPID=$PPID"
-        echo "Parent ($PPID):"
-        ps -p $MY_PARENT -o pid,ppid,comm,args 2>/dev/null || echo "ps failed"
-        GPID=$(ps -p $MY_PARENT -o ppid= 2>/dev/null | tr -d ' ')
-        echo "Grandparent ($GPID):"
-        ps -p $GPID -o pid,ppid,comm,args 2>/dev/null || echo "ps failed"
-        echo "==="
-
         # ── 1. CPU check ────────────────────────────────────────────────────────
         if [[ "$MY_COPY" != "$LAST_COPY" && "$cpu" == *"${SLOW_PATTERN}"* ]]; then
           echo "::warning::Slow runner (${cpu}) — delegating to next copy."
@@ -121,7 +111,8 @@ runs:
 
           nohup bash /tmp/speculative-monitor.sh >> /tmp/speculative-monitor.log 2>&1 &
           disown
-          echo "Monitor started — Gate step staying alive until decision."
+          GATE_BLOCK_START=$(date +%s%3N)
+          echo "Monitor started at ${GATE_BLOCK_START}ms — Gate blocking until decision."
 
           # KEY: Keep this Gate composite action step alive so $MY_PARENT (the
           # composite action coordinator) remains valid. When the monitor finds a
@@ -138,10 +129,12 @@ runs:
             sleep 1
           done
 
+          GATE_BLOCK_END=$(date +%s%3N)
+          GATE_BLOCK_MS=$(( GATE_BLOCK_END - GATE_BLOCK_START ))
           if [[ -f /tmp/speculative-monitor-result ]]; then
-            echo "Monitor decision: $(cat /tmp/speculative-monitor-result) — proceeding to work."
+            echo "Monitor decision: $(cat /tmp/speculative-monitor-result) after ${GATE_BLOCK_MS}ms — proceeding to work."
           else
-            echo "Gate timeout — proceeding as fallback."
+            echo "Gate timeout after ${GATE_BLOCK_MS}ms — proceeding as fallback."
           fi
         else
           echo "Copy ${MY_COPY} is first — no monitor needed."

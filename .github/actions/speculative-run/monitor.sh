@@ -16,7 +16,7 @@
 #   SPEC_PARENT       PPID of the gate step's bash (composite action coordinator)
 #   SPEC_SHA          github.sha
 
-sleep $(( RANDOM % 3 + 8 ))   # 8-10s: past checkout+gate, spreads API calls
+sleep $(( RANDOM % 2 + 5 ))   # 5-6s: past checkout+gate, spreads API calls
 deadline=$(( $(date +%s) + 300 ))
 poll=0
 IFS=',' read -ra sibling_arr <<< "$SPEC_SIBLING_IDS"
@@ -44,7 +44,7 @@ while [[ $(date +%s) -lt $deadline ]]; do
       break
     fi
 
-    if [[ "$result" == "pending" || ( "$result" == "absent" && $poll -lt 3 ) ]]; then
+    if [[ "$result" == "pending" || ( "$result" == "absent" && $poll -lt 2 ) ]]; then
       all_gone=0
     fi
   done
