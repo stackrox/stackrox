@@ -36,6 +36,9 @@ inputs:
   central-env:
     description: "Extra env vars for Central (KEY=VALUE,KEY2=VALUE2)"
     default: ""
+  scanner-v4-env:
+    description: "Extra env vars for scanner-v4-matcher (KEY=VALUE,KEY2=VALUE2)"
+    default: ""
   background:
     description: Run deploy in background
     default: "false"
@@ -132,6 +135,24 @@ runs:
         else
           deploy 2>&1 | tee /tmp/deploy-stackrox.log
         fi
+
+    - name: Configure scanner-v4-matcher
+      if: inputs.scanner-v4-env
+      shell: bash
+      run: |
+        if ! kubectl -n stackrox get deploy scanner-v4-matcher &>/dev/null; then
+          echo "scanner-v4-matcher not found, skipping"
+          exit 0
+        fi
+        IFS=',' read -ra PAIRS <<< "${{ inputs.scanner-v4-env }}"
+        env_args=()
+        for pair in "${PAIRS[@]}"; do
+          echo "Setting scanner-v4-matcher env: ${pair%%=*}"
+          env_args+=("$pair")
+        done
+        kubectl -n stackrox set env deploy/scanner-v4-matcher "${env_args[@]}"
+        echo "Waiting for scanner-v4-matcher rollout..."
+        kubectl -n stackrox rollout status deploy/scanner-v4-matcher --timeout=5m
 
     - name: Enable OpenShift console plugin
       shell: bash

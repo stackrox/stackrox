@@ -63,6 +63,10 @@ on:
         description: "Extra env vars for Central (KEY=VALUE,KEY2=VALUE2)"
         required: false
         type: string
+      scanner-v4-env:
+        description: "Extra env vars for scanner-v4-matcher (KEY=VALUE,KEY2=VALUE2)"
+        required: false
+        type: string
       shard-filter:
         description: "Only run shards matching this substring (e.g. vulnmanagement)"
         required: false
@@ -484,6 +488,7 @@ jobs:
         tag: ${{ inputs.tag }}
         scanner: ${{ inputs.scanner || 'v2' }}
         central-env: ${{ inputs.central-env }}
+        scanner-v4-env: ${{ inputs.scanner-v4-env }}
         background: "false"
         exposure: loadbalancer
         github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
