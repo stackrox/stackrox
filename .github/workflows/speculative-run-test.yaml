@@ -24,7 +24,6 @@ jobs:
       fail-fast: false
       matrix:
         copy: [a, b]
-    continue-on-error: true
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
@@ -73,7 +72,6 @@ jobs:
       fail-fast: false
       matrix:
         copy: [a, b]
-    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -107,7 +105,6 @@ jobs:
       fail-fast: false
       matrix:
         copy: [a, b, c]
-    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -143,7 +140,6 @@ jobs:
       fail-fast: false
       matrix:
         copy: [a, b, c]
-    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -182,7 +178,6 @@ jobs:
       fail-fast: false
       matrix:
         copy: [a, b]
-    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -221,7 +216,6 @@ jobs:
       fail-fast: false
       matrix:
         copy: [a, b]
-    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -247,7 +241,6 @@ jobs:
       fail-fast: false
       matrix:
         copy: [a, b]
-    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -281,7 +274,6 @@ jobs:
       fail-fast: false
       matrix:
         copy: [a, b, c, d]
-    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6

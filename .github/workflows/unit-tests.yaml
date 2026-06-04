@@ -39,7 +39,6 @@ jobs:
         exclude:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
     runs-on: ubuntu-latest
-    continue-on-error: true
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     # Stable version ldflags for test caching: Go's test cache keys include
@@ -133,7 +132,6 @@ jobs:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
           - pg: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-postgres-tests') && 'default' }}
     runs-on: ubuntu-latest
-    continue-on-error: true
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     # Stable version ldflags for test caching: Go's test cache keys include
@@ -337,7 +335,6 @@ jobs:
       matrix:
         copy: [a, b]
     runs-on: ubuntu-latest
-    continue-on-error: true
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:

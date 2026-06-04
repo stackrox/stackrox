@@ -184,7 +184,6 @@ jobs:
       # For consistency with `image/rhel/konflux.Dockerfile`, see comment there.
       UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -315,7 +314,6 @@ jobs:
       # race-condition-debug - built with -race
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
-    continue-on-error: true
     needs: define-job-matrix
     runs-on: ubuntu-latest
     env:
@@ -420,7 +418,6 @@ jobs:
       matrix:
         copy: [a, b]
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -468,7 +465,6 @@ jobs:
       matrix:
         copy: [a, b]
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -526,7 +522,6 @@ jobs:
       matrix:
         copy: [a, b]
     runs-on: ubuntu-latest
-    continue-on-error: true
     needs:
       - define-job-matrix
     if: ${{ !failure() }}
@@ -648,7 +643,6 @@ jobs:
       matrix:
         copy: [a, b]
     runs-on: ubuntu-latest
-    continue-on-error: true
     env:
       QUAY_ORG: rhacs-eng
       QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -701,7 +695,6 @@ jobs:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     # All copies are speculative — any copy failure (slow runner, cancellation) is non-blocking.
     # Real failures are caught by the required check not being posted by any copy.
-    continue-on-error: true
     needs:
       - define-job-matrix
       - pre-build-cli
@@ -1047,7 +1040,6 @@ jobs:
 
   build-and-push-operator:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
-    continue-on-error: true
     if: ${{ !failure() }}
     needs:
       - define-job-matrix
@@ -1179,7 +1171,6 @@ jobs:
 
   build-and-push-scanner:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
-    continue-on-error: true
     needs:
       - define-job-matrix
       - build-and-push-db
