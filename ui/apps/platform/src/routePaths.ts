@@ -55,6 +55,7 @@ export const integrationsListPath = `${integrationsPath}/:source/:type`;
 export const listeningEndpointsBasePath = `${mainPath}/listening-endpoints`;
 export const networkBasePath = `${mainPath}/network-graph`;
 export const networkPath = `${networkBasePath}/:nodeType?/:nodeId?/:detailType?/:detailID?`;
+export const processBaselinesBasePath = `${mainPath}/process-baselines`;
 export const policyManagementBasePath = `${mainPath}/policy-management`;
 export const policiesBasePath = `${policyManagementBasePath}/policies`;
 export const policiesPath = `${policiesBasePath}/:policyId?/:command?`;
@@ -179,6 +180,7 @@ export type RouteKey =
     | 'listening-endpoints'
     | 'network-graph'
     | 'policy-management'
+    | 'process-baselines'
     | 'risk'
     | 'search'
     | 'system-health'
@@ -309,6 +311,9 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
             // 'Integration',
             'WorkflowAdministration',
         ]),
+    },
+    'process-baselines': {
+        resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
     },
     risk: {
         resourceAccessRequirements: everyResource(['Deployment']),

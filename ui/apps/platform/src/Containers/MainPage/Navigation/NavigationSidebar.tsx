@@ -31,6 +31,7 @@ import {
     listeningEndpointsBasePath,
     networkBasePath,
     policyManagementBasePath,
+    processBaselinesBasePath,
     riskBasePath,
     systemConfigPath,
     systemHealthPath,
@@ -202,6 +203,12 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
             content: 'Risk',
             path: riskBasePath,
             routeKey: 'risk',
+        },
+        {
+            type: 'link',
+            content: 'Process Baselines',
+            path: processBaselinesBasePath,
+            routeKey: 'process-baselines',
         },
         {
             type: 'parent',
