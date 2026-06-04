@@ -158,10 +158,10 @@ type TLSConfig struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Additional CAs"
 	AdditionalCAs []AdditionalCA `json:"additionalCAs,omitempty"`
 
-	// Requested validity duration for automatically refreshed service certificates.
+	// Requested validity duration for automatically refreshed service certificates (e.g. "8760h").
 	// The default is: 8760h.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Certificate Refresh Validity"
-	CertRefreshValidity *metav1.Duration `json:"certRefreshValidity,omitempty"`
+	CertRefreshValidity *string `json:"certRefreshValidity,omitempty"`
 }
 
 // LocalSecretReference is a reference to a secret within the same namespace.

@@ -2585,6 +2585,16 @@
                 "id": 2,
                 "name": "sensor_cert_not_before",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 3,
+                "name": "last_refresh_time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 4,
+                "name": "last_refreshed_cert_expiry",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           },

@@ -3,7 +3,6 @@ package translation
 import (
 	"context"
 	"testing"
-	"time"
 
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/utils"
@@ -181,10 +180,10 @@ func TestGetTLSConfigValues(t *testing.T) {
 		},
 		"cert-refresh-validity": {
 			tls: &platform.TLSConfig{
-				CertRefreshValidity: &v1.Duration{Duration: 45 * 24 * time.Hour},
+				CertRefreshValidity: pointers.String("1080h0m0s"),
 			},
 			want: chartutil.Values{
-				"certRefreshValidity": (45 * 24 * time.Hour).String(),
+				"certRefreshValidity": "1080h0m0s",
 			},
 		},
 	}

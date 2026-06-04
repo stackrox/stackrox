@@ -22,7 +22,6 @@ package v1alpha1
 
 import (
 	"k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -1887,7 +1886,7 @@ func (in *TLSConfig) DeepCopyInto(out *TLSConfig) {
 	}
 	if in.CertRefreshValidity != nil {
 		in, out := &in.CertRefreshValidity, &out.CertRefreshValidity
-		*out = new(metav1.Duration)
+		*out = new(string)
 		**out = **in
 	}
 }

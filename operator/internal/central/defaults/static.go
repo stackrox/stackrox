@@ -91,6 +91,9 @@ var staticDefaults = platform.CentralSpec{
 	ConfigAsCode: &platform.ConfigAsCodeSpec{
 		ComponentPolicy: ptr.To(platform.ConfigAsCodeComponentEnabled),
 	},
+	TLS: &platform.TLSConfig{
+		CertRefreshValidity: ptr.To("8760h"),
+	},
 	Customize: &platform.CustomizeSpec{
 		DeploymentDefaults: &platform.DeploymentDefaultsSpec{
 			PinToNodes: ptr.To(platform.PinToNodesNone),

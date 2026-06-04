@@ -716,7 +716,7 @@ describe('cluster helpers', () => {
                     lastRefreshTime: '2022-06-01T00:00:00Z',
                     lastRefreshedCertExpiry: '2022-07-10T00:00:00Z',
                 },
-                new Date('2022-07-05T00:00:00Z')
+                new Date('2022-07-08T00:00:00Z')
             );
 
             expect(status).toBe('DEGRADED');
