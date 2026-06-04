@@ -377,10 +377,7 @@ export const getCredentialExpirationStatus = (
     sensorCertExpiryStatus: CertExpiryStatus,
     currentDatetime
 ) => {
-    if (
-        sensorCertExpiryStatus.lastRefreshedCertExpiry &&
-        sensorCertExpiryStatus.lastRefreshTime
-    ) {
+    if (sensorCertExpiryStatus.lastRefreshedCertExpiry && sensorCertExpiryStatus.lastRefreshTime) {
         const refreshedDurationMinutes = differenceInMinutes(
             sensorCertExpiryStatus.lastRefreshedCertExpiry,
             sensorCertExpiryStatus.lastRefreshTime
