@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery } from '@apollo/client';
 import { Flex, PageSection } from '@patternfly/react-core';
 
 import { searchCategories } from 'constants/entityTypes';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
+import useAnalytics, { RISK_PAGE_VIEWED } from 'hooks/useAnalytics';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useURLSearch from 'hooks/useURLSearch';
@@ -34,6 +35,7 @@ function getFilteredWorkflowViewSearchFilter(
 }
 
 function RiskTablePage() {
+    const { analyticsTrack } = useAnalytics();
     const urlSort = useURLSort({
         sortFields,
         defaultSortOption,
@@ -43,6 +45,15 @@ function RiskTablePage() {
     const urlSearch = useURLSearch();
 
     const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
+
+    useEffect(() => {
+        analyticsTrack({
+            event: RISK_PAGE_VIEWED,
+            properties: {
+                view: filteredWorkflowView as 'Applications view' | 'Platform view' | 'Full view',
+            },
+        });
+    }, [analyticsTrack, filteredWorkflowView]);
     const additionalContextFilter = useMemo(
         () => getFilteredWorkflowViewSearchFilter(filteredWorkflowView),
         [filteredWorkflowView]

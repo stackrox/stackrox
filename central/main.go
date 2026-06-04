@@ -147,6 +147,7 @@ import (
 	v2Service "github.com/stackrox/rox/central/reports/service/v2"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
+	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
@@ -705,6 +706,7 @@ func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
 	add(roleDataStore.Gather)
 	add(signatureIntegrationDS.Gather)
 	add(virtualMachineDS.Gather(virtualMachineDS.Singleton()))
+	add(riskDS.Gather)
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
