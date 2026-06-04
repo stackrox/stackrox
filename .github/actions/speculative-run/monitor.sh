@@ -1,14 +1,22 @@
 #!/bin/bash
 # Speculative-run background monitor.
 # Polls the GHA check-runs API for sibling copies' in_progress/success signals.
+#
+# When a winner is found: SIGTERM the Gate step's composite action coordinator
+# ($SPEC_PARENT). Since the Gate step is still alive (sleeping in a poll loop),
+# the composite coordinator is still active — SIGTERM to it produces 'cancelled'.
+#
+# When all siblings are gone (slow runners): write a file to wake up the Gate
+# step's poll loop so it can exit 0 and allow work steps to proceed.
+#
 # Environment (set by the gate action before nohup):
 #   SPEC_REPO         github.repository
 #   SPEC_CHECK_NAME   required check name (without copy letter)
 #   SPEC_SIBLING_IDS  comma-separated external_ids to watch, e.g. "spec-a,spec-b"
-#   SPEC_PARENT       PPID of the gate step's bash process (the runner worker)
-#   GITHUB_SHA        provided by GHA automatically
+#   SPEC_PARENT       PPID of the gate step's bash (composite action coordinator)
+#   SPEC_SHA          github.sha
 
-sleep $(( RANDOM % 3 + 8 ))   # 8-10s: past checkout+gate, spreads API calls across copies
+sleep $(( RANDOM % 3 + 8 ))   # 8-10s: past checkout+gate, spreads API calls
 deadline=$(( $(date +%s) + 300 ))
 poll=0
 IFS=',' read -ra sibling_arr <<< "$SPEC_SIBLING_IDS"
@@ -16,19 +24,12 @@ IFS=',' read -ra sibling_arr <<< "$SPEC_SIBLING_IDS"
 while [[ $(date +%s) -lt $deadline ]]; do
   poll=$(( poll + 1 ))
   # filter=all returns EVERY check-run (not just the latest per name).
-  # Default filter=latest only returns the most-recently-posted per name,
-  # which would shadow earlier copies' spec-a check with spec-c.
   response=$(gh api "repos/${SPEC_REPO}/commits/${SPEC_SHA}/check-runs?per_page=100&filter=all" 2>/dev/null)
 
   winner=""
   all_gone=1
 
   for sid in "${sibling_arr[@]}"; do
-    # Classify this sibling's check-run:
-    #   winner  — in_progress or success (sibling's gate passed and is working/done)
-    #   absent  — no check-run posted yet (sibling still in checkout, or was slow)
-    #   pending — check posted but not yet complete (shouldn't happen with our flow)
-    #   failed  — check completed with non-success (shouldn't happen; gate posts in_progress)
     result=$(echo "$response" | jq -r --arg cn "$SPEC_CHECK_NAME" --arg sid "$sid" \
       '[.check_runs[] | select(.name == $cn and .external_id == $sid)] as $checks |
       if   ($checks | any(.[]; .status == "in_progress" or .conclusion == "success")) then "winner"
@@ -43,27 +44,31 @@ while [[ $(date +%s) -lt $deadline ]]; do
       break
     fi
 
-    # Keep waiting if: sibling is pending, or absent before poll 3.
-    # Polls 1-3 cover the first ~12s from job start (checkout+gate window).
-    # After poll 3, an absent sibling never posted → it was a slow runner → gone.
     if [[ "$result" == "pending" || ( "$result" == "absent" && $poll -lt 3 ) ]]; then
       all_gone=0
     fi
   done
 
   if [[ -n "$winner" ]]; then
-    echo "Sibling $winner is winning — cancelling this copy."
+    echo "Sibling $winner is winning — cancelling Gate step via SIGTERM to composite coordinator."
+    # Gate step is alive (sleeping in a poll loop). SPEC_PARENT is the composite
+    # action coordinator — SIGTERM to it produces 'cancelled' (not 'failure').
     kill -TERM "$SPEC_PARENT" 2>/dev/null
-    sleep 0.1
-    new=$(comm -13 /tmp/speculative-baseline <(pgrep -P "$SPEC_PARENT" | sort) 2>/dev/null)
-    for pid in $new; do kill -9 "$pid" 2>/dev/null; done
+    # No child-kill needed: Gate step is just sleeping, no real work processes.
     break
   fi
 
   if [[ $all_gone -eq 1 ]]; then
-    echo "All siblings gone (slow runners) — this copy proceeds."
+    echo "All siblings gone (slow runners) — waking Gate step to proceed with work."
+    echo "all_gone" > /tmp/speculative-monitor-result
     break
   fi
 
   sleep 2
 done
+
+# Deadline reached without a decision — wake Gate step to proceed.
+if [[ ! -f /tmp/speculative-monitor-result ]]; then
+  echo "Monitor deadline — waking Gate step."
+  echo "timeout" > /tmp/speculative-monitor-result
+fi
