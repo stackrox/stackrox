@@ -1,69 +1,233 @@
 name: Background Process Lifetime Test
+# Tests 10 signal variants to determine which produce 'cancelled' vs 'failure'.
+# Each job has NO continue-on-error — we need the raw job conclusion.
+# Results determine the fix for speculative monitor-kill producing 'failure'.
 on:
   push:
     branches: [davdhacs/speed-racer-build]
     paths:
       - .github/workflows/bg-process-lifetime-test.yaml
   workflow_dispatch:
-    inputs:
-      work_seconds:
-        description: 'How long the "work" step sleeps (default: 5)'
-        default: '5'
 
 jobs:
-  test:
+  # ── 1. Control: SIGTERM sent directly from within the step ──────────────────
+  # Expected: cancelled (known to work — this is how gate-exit works)
+  direct-sigterm-from-step:
     runs-on: ubuntu-latest
     steps:
-      - name: Start background logger
+      - name: Prior step (simulates checkout)
+        run: echo "prior step done PPID=$PPID"
+      - name: SIGTERM self-parent directly from step
         run: |
-          cat > /tmp/bg_logger.sh << 'BGEOF'
-          #!/bin/bash
-          log=/tmp/bg.log
-
-          # Trap every killable signal and record it
-          for sig in SIGTERM SIGINT SIGHUP SIGQUIT SIGPIPE; do
-            trap "echo \"\$(date +%s.%3N) KILLED_BY_${sig} pid=\$\$\" >> \$log; exit 0" $sig
-          done
-
-          echo "$(date +%s.%3N) START pid=$$ ppid=$PPID" >> $log
-
-          count=0
-          while true; do
-            count=$((count+1))
-            echo "$(date +%s.%3N) tick=${count} alive" >> $log
-            sleep 0.5
-          done
-          BGEOF
-
-          chmod +x /tmp/bg_logger.sh
-          nohup /tmp/bg_logger.sh > /dev/null 2>&1 &
-          BGPID=$!
-          disown $BGPID
-          echo "$(date +%s.%3N) STEP1_started_bg_pid=${BGPID}" >> /tmp/timeline.log
-          echo "Background logger started with pid ${BGPID}"
-
-      - name: Work step (simulate real job work)
-        run: |
-          echo "$(date +%s.%3N) STEP2_work_start" >> /tmp/timeline.log
-          sleep ${{ inputs.work_seconds || 5 }}
-          echo "$(date +%s.%3N) STEP2_work_done" >> /tmp/timeline.log
-
-      - name: Final step (last explicit step before job ends)
-        run: |
-          echo "$(date +%s.%3N) STEP3_final_start" >> /tmp/timeline.log
-          # Snapshot the background log RIGHT NOW so we can see
-          # how far it got up to the end of explicit steps
-          echo "$(date +%s.%3N) STEP3_final_done — bg ticks so far: $(wc -l < /tmp/bg.log)" >> /tmp/timeline.log
-
-      # Upload runs in the POST-JOB phase (after all steps complete).
-      # Any timestamps in bg.log beyond STEP3_final_done mean the process
-      # survived past the last explicit step.
-      - name: Upload logs (post-job phase)
+          echo "killing parent $PPID from step"
+          kill -TERM $PPID 2>/dev/null
+          sleep 600
+      - name: Reached? (never if cancelled)
         if: always()
-        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # ratchet:actions/upload-artifact@v4
-        with:
-          name: bg-process-lifetime
-          path: |
-            /tmp/bg.log
-            /tmp/timeline.log
-          retention-days: 1
+        run: echo "REACHED — not cancelled"
+
+  # ── 2. KEY TEST: bg SIGTERM while the SAME step is still sleeping ────────────
+  # Hypothesis: SIGTERM from bg during the same step that launched it → cancelled?
+  # If YES → gate step can stay alive while bg monitors → Option A works cleanly.
+  bg-sigterm-same-step-sleeping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prior step (simulates checkout)
+        run: echo "prior step done PPID=$PPID"
+      - name: Launch bg then sleep — bg SIGTERMs while THIS step still runs
+        run: |
+          PARENT=$PPID
+          echo "parent=$PARENT, starting bg to SIGTERM in 5s"
+          (sleep 5; echo "bg firing SIGTERM to $PARENT"; kill -TERM $PARENT 2>/dev/null) &
+          disown
+          echo "main sleeping 600s..."
+          sleep 600
+      - name: Reached? (never if cancelled)
+        if: always()
+        run: echo "REACHED — not cancelled"
+
+  # ── 3. Replicates current monitor exactly: bg SIGTERM during a NEXT step ────
+  # Expected: failure (this is exactly what our monitor does, known to fail)
+  bg-sigterm-captured-in-step1-fires-in-step2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prior step (simulates checkout)
+        run: echo "prior step done PPID=$PPID"
+      - name: Step 1 — capture parent, launch bg, exit step
+        run: |
+          PARENT=$PPID
+          echo "parent=$PARENT captured in step1, bg fires in 5s"
+          (sleep 5; echo "bg firing SIGTERM to $PARENT"; kill -TERM $PARENT 2>/dev/null) &
+          disown
+          echo "step1 exiting"
+      - name: Step 2 — work step (bg SIGTERM fires here)
+        run: |
+          echo "work step running, bg will fire..."
+          sleep 60
+          echo "work done (should not reach here)"
+      - name: Reached? (never if cancelled)
+        if: always()
+        run: echo "REACHED — not cancelled"
+
+  # ── 4. bg SIGTERM during SAME step but parent captured in THAT step ─────────
+  # Tests if it matters WHICH step captured the parent, vs which step is sleeping.
+  # If cancelled: staying alive in the step is what matters (not same-step-capture).
+  bg-sigterm-captured-in-step2-fires-in-step2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prior step (simulates checkout)
+        run: echo "prior step done PPID=$PPID"
+      - name: Prior step 2
+        run: echo "another prior step"
+      - name: Step 2 — capture parent HERE, launch bg, sleep in same step
+        run: |
+          PARENT=$PPID
+          echo "parent=$PARENT captured in step2 (same as where we sleep)"
+          (sleep 5; echo "bg firing SIGTERM to $PARENT"; kill -TERM $PARENT 2>/dev/null) &
+          disown
+          echo "sleeping 600s in same step that captured parent..."
+          sleep 600
+      - name: Reached? (never if cancelled)
+        if: always()
+        run: echo "REACHED — not cancelled"
+
+  # ── 5. bg SIGKILL (not SIGTERM) while SAME step sleeping ────────────────────
+  # Hypothesis: SIGTERM lets runner report 'failure' before dying; SIGKILL cuts it off.
+  # If SIGKILL → cancelled, we can use it in monitor.sh for a simple 1-line fix.
+  bg-sigkill-same-step-sleeping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prior step (simulates checkout)
+        run: echo "prior step done PPID=$PPID"
+      - name: Launch bg then sleep — bg SIGKILLs while THIS step still runs
+        run: |
+          PARENT=$PPID
+          echo "parent=$PARENT, starting bg to SIGKILL in 5s"
+          (sleep 5; echo "bg firing SIGKILL to $PARENT"; kill -9 $PARENT 2>/dev/null) &
+          disown
+          echo "main sleeping 600s..."
+          sleep 600
+      - name: Reached? (never if cancelled)
+        if: always()
+        run: echo "REACHED — not cancelled"
+
+  # ── 6. bg SIGKILL during NEXT step (key: does SIGKILL fix the monitor case?) ─
+  # If cancelled: switch monitor.sh to use SIGKILL instead of SIGTERM. Simple fix!
+  bg-sigkill-next-step:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prior step (simulates checkout)
+        run: echo "prior step done PPID=$PPID"
+      - name: Step 1 — capture parent, launch bg, exit
+        run: |
+          PARENT=$PPID
+          echo "parent=$PARENT, bg SIGKILLs in 5s"
+          (sleep 5; echo "bg firing SIGKILL to $PARENT"; kill -9 $PARENT 2>/dev/null) &
+          disown
+          echo "step1 exiting"
+      - name: Step 2 — work (bg SIGKILL fires here)
+        run: |
+          echo "work step, bg SIGKILL incoming..."
+          sleep 60
+          echo "work done (should not reach)"
+      - name: Reached? (never if cancelled)
+        if: always()
+        run: echo "REACHED — not cancelled"
+
+  # ── 7. bg SIGINT during next step ───────────────────────────────────────────
+  # SIGINT (Ctrl+C equivalent) — does it produce cancelled?
+  bg-sigint-next-step:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prior step (simulates checkout)
+        run: echo "prior step done PPID=$PPID"
+      - name: Step 1 — capture parent, launch bg SIGINT, exit
+        run: |
+          PARENT=$PPID
+          echo "parent=$PARENT, bg SIGINTs in 5s"
+          (sleep 5; echo "bg firing SIGINT to $PARENT"; kill -INT $PARENT 2>/dev/null) &
+          disown
+          echo "step1 exiting"
+      - name: Step 2 — work (bg SIGINT fires here)
+        run: |
+          echo "work step, bg SIGINT incoming..."
+          sleep 60
+          echo "work done (should not reach)"
+      - name: Reached? (never if cancelled)
+        if: always()
+        run: echo "REACHED — not cancelled"
+
+  # ── 8. bg SIGTERMs the work step's OWN bash (not the parent) ────────────────
+  # Kills the step's bash process itself rather than its parent runner.
+  bg-sigterm-step-bash-itself:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prior step (simulates checkout)
+        run: echo "prior step done PPID=$PPID"
+      - name: Step 1 — exit
+        run: echo "step1 done"
+      - name: Step 2 — bg kills this step's OWN bash ($$)
+        run: |
+          SELF=$$
+          echo "self bash pid=$SELF, bg kills it in 5s"
+          (sleep 5; echo "bg killing step bash $SELF"; kill -TERM $SELF 2>/dev/null) &
+          disown
+          echo "sleeping..."
+          sleep 60
+          echo "done (should not reach)"
+      - name: Reached? (never if cancelled)
+        if: always()
+        run: echo "REACHED — not cancelled"
+
+  # ── 9. bg SIGTERMs the entire process GROUP ─────────────────────────────────
+  # kill -TERM -$PGID signals the runner's process group.
+  bg-sigterm-process-group:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prior step (simulates checkout)
+        run: echo "prior step done PPID=$PPID"
+      - name: Step 1 — capture pgid, launch bg, exit
+        run: |
+          PGID=$(ps -o pgid= $$ | tr -d ' ')
+          echo "pgid=$PGID, bg sends SIGTERM to group in 5s"
+          (sleep 5; echo "bg killing process group -$PGID"; kill -TERM -$PGID 2>/dev/null) &
+          disown
+          echo "step1 exiting"
+      - name: Step 2 — work (bg SIGTERM to process group fires here)
+        run: |
+          echo "work step, process-group SIGTERM incoming..."
+          sleep 60
+          echo "work done (should not reach)"
+      - name: Reached? (never if cancelled)
+        if: always()
+        run: echo "REACHED — not cancelled"
+
+  # ── 10. Exact monitor replication: SIGTERM + SIGKILL children ───────────────
+  # This is what monitor.sh does today. Expected: failure (the known broken case).
+  bg-sigterm-plus-sigkill-children-next-step:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prior step (simulates checkout)
+        run: echo "prior step done PPID=$PPID"
+      - name: Step 1 — capture parent+baseline, launch bg (exact monitor behavior)
+        run: |
+          PARENT=$PPID
+          pgrep -P $PARENT | sort > /tmp/baseline
+          echo "parent=$PARENT, baseline captured, bg fires in 5s"
+          (sleep 5
+           echo "bg: SIGTERM $PARENT then SIGKILL children"
+           kill -TERM $PARENT 2>/dev/null
+           sleep 0.1
+           comm -13 /tmp/baseline <(pgrep -P $PARENT | sort 2>/dev/null) 2>/dev/null | \
+             xargs -r kill -9 2>/dev/null
+           echo "bg done") &
+          disown
+          echo "step1 exiting"
+      - name: Step 2 — work (exact monitor scenario fires here)
+        run: |
+          echo "work step, exact monitor scenario incoming..."
+          sleep 60
+          echo "work done (should not reach)"
+      - name: Reached? (never if cancelled)
+        if: always()
+        run: echo "REACHED — not cancelled"
