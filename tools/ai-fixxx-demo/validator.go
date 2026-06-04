@@ -9,7 +9,7 @@ import (
 
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 
-// ValidateEmail checks wether an email address is valid.
+// ValidateEmail checks whether an email address is valid.
 func ValidateEmail(email string) error {
 	if email == "" {
 		return fmt.Errorf("email is requred")
