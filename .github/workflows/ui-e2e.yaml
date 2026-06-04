@@ -54,6 +54,19 @@ on:
         required: false
         type: boolean
         default: false
+      scanner:
+        description: "Scanner version: v2, v4, or both (default: v2)"
+        required: false
+        type: string
+        default: "v2"
+      central-env:
+        description: "Extra env vars for Central (KEY=VALUE,KEY2=VALUE2)"
+        required: false
+        type: string
+      shard-filter:
+        description: "Only run shards matching this substring (e.g. vulnmanagement)"
+        required: false
+        type: string
 defaults:
   run:
     shell: bash
@@ -381,7 +394,7 @@ jobs:
     name: Provision GKE
     if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke') || inputs.gke || inputs.gke-cluster-name || inputs.infra-cluster-name
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
     outputs:
       cluster-name: ${{ inputs.infra-cluster-name || inputs.gke-cluster-name || steps.cluster.outputs.cluster-name }}
       gke-zone: ${{ inputs.gke-zone || steps.cluster.outputs.zone }}
@@ -464,12 +477,13 @@ jobs:
           echo "exists=false" >> "$GITHUB_OUTPUT"
         fi
 
-    - name: Deploy StackRox (foreground, scanner v2)
+    - name: Deploy StackRox (foreground, scanner ${{ inputs.scanner || 'v2' }})
       if: "!inputs.force-redeploy && steps.check-deploy.outputs.exists != 'true' || inputs.force-redeploy"
       uses: ./.github/actions/deploy-stackrox
       with:
         tag: ${{ inputs.tag }}
-        scanner: v2
+        scanner: ${{ inputs.scanner || 'v2' }}
+        central-env: ${{ inputs.central-env }}
         background: "false"
         exposure: loadbalancer
         github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
@@ -515,7 +529,7 @@ jobs:
     needs: [setup-shards, provision-gke]
     if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke') || inputs.gke || inputs.gke-cluster-name || inputs.infra-cluster-name
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     strategy:
       fail-fast: false
@@ -525,13 +539,32 @@ jobs:
       ARTIFACT_DIR: ./test-artifacts
 
     steps:
+    - name: Check shard filter
+      id: filter
+      run: |
+        if [ -n "${{ inputs.shard-filter }}" ]; then
+          case "${{ matrix.name }}" in
+            *${{ inputs.shard-filter }}*)
+              echo "Shard matches filter '${{ inputs.shard-filter }}'"
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Skipping ${{ matrix.name }} — does not match filter '${{ inputs.shard-filter }}'"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+        else
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+        fi
+
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      if: steps.filter.outputs.skip != 'true'
       with:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         fetch-depth: 1
 
     - name: Connect to infra cluster (GKE or OCP)
-      if: inputs.infra-cluster-name
+      if: inputs.infra-cluster-name && steps.filter.outputs.skip != 'true'
       uses: ./.github/actions/connect-infra-cluster
       with:
         cluster-name: ${{ inputs.infra-cluster-name }}
@@ -539,17 +572,17 @@ jobs:
         wait-timeout: "60"
 
     - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
-      if: "!inputs.infra-cluster-name"
+      if: "!inputs.infra-cluster-name && steps.filter.outputs.skip != 'true'"
       with:
         credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
-      if: "!inputs.infra-cluster-name"
+      if: "!inputs.infra-cluster-name && steps.filter.outputs.skip != 'true'"
       with:
         install_components: "gke-gcloud-auth-plugin"
 
     - name: Connect to shared GKE cluster
-      if: "!inputs.infra-cluster-name"
+      if: "!inputs.infra-cluster-name && steps.filter.outputs.skip != 'true'"
       run: |
         project="${{ inputs.gke-cluster-name && 'acs-team-temp-dev' || 'acs-san-stackroxci' }}"
         gcloud container clusters get-credentials \
@@ -559,12 +592,14 @@ jobs:
         kubectl cluster-info
 
     - name: Download credentials
+      if: steps.filter.outputs.skip != 'true'
       uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # ratchet:actions/download-artifact@v4
       with:
         name: gke-ui-credentials
         path: /tmp
 
     - name: Detect cluster type and set orchestrator flavor
+      if: steps.filter.outputs.skip != 'true'
       run: |
         # Detect if this is an OpenShift cluster
         if kubectl get clusterversion 2>/dev/null | grep -q VERSION; then
@@ -576,6 +611,7 @@ jobs:
         fi
 
     - name: Set credentials and kubeconfig
+      if: steps.filter.outputs.skip != 'true'
       run: |
         set +x
         AUTH_TOKEN="$(cat /tmp/rox-auth-token)"
@@ -591,12 +627,15 @@ jobs:
         set -x
 
     - uses: ./.github/actions/cache-ui-dependencies
+      if: steps.filter.outputs.skip != 'true'
 
     - name: Install Cypress dependencies
+      if: steps.filter.outputs.skip != 'true'
       working-directory: ui/apps/platform
       run: npm ci
 
     - name: Wait for shard-specific data
+      if: steps.filter.outputs.skip != 'true'
       run: |
         set +x
         ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
@@ -737,6 +776,7 @@ jobs:
         set -x
 
     - name: Run Cypress
+      if: steps.filter.outputs.skip != 'true'
       working-directory: ui/apps/platform
       run: |
         echo "${{ matrix.name }}: ${{ matrix.specs }}"
@@ -751,14 +791,14 @@ jobs:
         NODE_TLS_REJECT_UNAUTHORIZED: "0"
 
     - name: Collect logs
-      if: always()
+      if: always() && steps.filter.outputs.skip != 'true'
       run: |
         mkdir -p "$ARTIFACT_DIR"
         cp -r ui/apps/platform/cypress/screenshots/ "${ARTIFACT_DIR}/cypress-screenshots/" 2>/dev/null || true
 
     - name: Upload artifacts
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
-      if: always()
+      if: always() && steps.filter.outputs.skip != 'true'
       with:
         name: gke-e2e-shard-${{ matrix.name }}-${{ github.run_id }}
         path: ${{ env.ARTIFACT_DIR }}

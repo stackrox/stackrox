@@ -33,6 +33,9 @@ inputs:
   exposure:
     description: "Service exposure: auto (default), none, loadbalancer, route"
     default: ""
+  central-env:
+    description: "Extra env vars for Central (KEY=VALUE,KEY2=VALUE2)"
+    default: ""
   background:
     description: Run deploy in background
     default: "false"
@@ -87,6 +90,17 @@ runs:
             v2)   yq -i '.central.spec.scanner.scannerComponent = "Enabled" | .central.spec.scannerV4.scannerComponent = "Disabled"' /tmp/roxie-override.yaml ;;
             both) yq -i '.central.spec.scanner.scannerComponent = "Enabled"' /tmp/roxie-override.yaml ;;
           esac
+
+          # Apply central env vars to override
+          if [ -n "${{ inputs.central-env }}" ]; then
+            IFS=',' read -ra PAIRS <<< "${{ inputs.central-env }}"
+            for pair in "${PAIRS[@]}"; do
+              key="${pair%%=*}"
+              val="${pair#*=}"
+              echo "Setting Central env: ${key}=${val}"
+              yq -i ".central.customize.envVars.${key} = \"${val}\"" /tmp/roxie-override.yaml
+            done
+          fi
 
           exposure_flag=""
           if [ -n "${{ inputs.exposure }}" ]; then
