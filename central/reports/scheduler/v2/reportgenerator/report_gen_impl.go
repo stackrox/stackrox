@@ -156,16 +156,6 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(ctx context.Context, req 
 		return err
 	}
 
-	// TODO(surakuma): Remove this sleep after manual testing of report cancellation.
-	log.Info("Sleeping 30s to allow manual cancellation testing...")
-	select {
-	case <-time.After(30 * time.Second):
-		log.Info("Sleep completed, continuing report generation")
-	case <-ctx.Done():
-		log.Infof("Context cancelled during sleep: %v", context.Cause(ctx))
-		return ctx.Err()
-	}
-
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -285,6 +275,16 @@ func (rg *reportGeneratorImpl) getReportDataSQF(ctx context.Context, snap *stora
 	numDeployedImageResults := 0
 	var cveResponses []*ImageCVEQueryResponse
 	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
+		// TODO(surakuma): Remove this sleep after manual testing of report cancellation.
+		log.Info("[SQF] Sleeping 20s before deployed images query to allow cancellation testing...")
+		select {
+		case <-time.After(20 * time.Second):
+			log.Info("[SQF] Sleep completed, executing deployed images query")
+		case <-ctx.Done():
+			log.Infof("[SQF] Context cancelled during sleep: %v", context.Cause(ctx))
+			return nil, ctx.Err()
+		}
+
 		query := search.ConjunctionQuery(rQuery.DeploymentsQuery, cveFilterQuery)
 		query.Pagination = deployedImagesQueryParts.Pagination
 		query.Selects = deployedImagesQueryParts.Selects
@@ -351,6 +351,17 @@ func (rg *reportGeneratorImpl) getReportDataViewBased(ctx context.Context, snap 
 
 	numDeployedImageResults := 0
 	var cveResponses []*ImageCVEQueryResponse
+
+	// TODO(surakuma): Remove this sleep after manual testing of report cancellation.
+	log.Info("[ViewBased] Sleeping 20s before deployed images query to allow cancellation testing...")
+	select {
+	case <-time.After(20 * time.Second):
+		log.Info("[ViewBased] Sleep completed, executing deployed images query")
+	case <-ctx.Done():
+		log.Infof("[ViewBased] Context cancelled during sleep: %v", context.Cause(ctx))
+		return nil, ctx.Err()
+	}
+
 	query.DeployedImagesQuery.Pagination = deployedImagesQueryParts.Pagination
 	query.DeployedImagesQuery.Selects = deployedImagesQueryParts.Selects
 	err = pgSearch.RunSelectRequestForSchemaFn[ImageCVEQueryResponse](ctx, rg.db,
