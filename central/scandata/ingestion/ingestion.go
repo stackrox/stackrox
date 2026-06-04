@@ -220,6 +220,17 @@ func convertVulnerabilities(scanID, imageID, componentID string, allVulns map[st
 		}
 
 		findings = append(findings, finding)
+
+		// If this vuln has an Advisory (RHSA), create a second finding for it.
+		// The Advisory field is populated by Scanner V4's mappers from CSAF enrichment.
+		if adv := ccVuln.GetAdvisory(); adv != nil && adv.GetName() != "" && uniqueAdvisories.Add(adv.GetName()) {
+			rhsaFinding := *finding // shallow copy
+			rhsaFinding.AdvisoryId = adv.GetName()
+			rhsaFinding.Id = findingIDFromAdvisory(adv.GetName(), componentID, scanID)
+			rhsaFinding.SourceName = "Red Hat Advisory"
+			rhsaFinding.Links = []string{adv.GetLink()}
+			findings = append(findings, &rhsaFinding)
+		}
 	}
 
 	return findings

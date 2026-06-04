@@ -431,22 +431,8 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 		// }
 		// Lastly, sort by severity in case we may still have any duplications we missed previously.
 		sortBySeverity(vulnIDs, vulnerabilities)
-
-		// For finding-as-advisory model: add any RHSA synthetic keys that were
-		// created in toProtoV4VulnerabilitiesMap for vulns in this package.
-		var withRHSA []string
-		withRHSA = append(withRHSA, vulnIDs...)
-		for _, vulnID := range vulnIDs {
-			for rhsaKey := range vulnerabilities {
-				if strings.HasPrefix(rhsaKey, vulnID+":") {
-					slog.Info("Adding RHSA to PackageVulnerabilities", "vulnID", vulnID, "rhsaKey", rhsaKey)
-					withRHSA = append(withRHSA, rhsaKey)
-				}
-			}
-		}
-
 		pkgVulns[id] = &v4.StringList{
-			Values: withRHSA,
+			Values: vulnIDs,
 		}
 	}
 	return pkgVulns
@@ -731,25 +717,6 @@ func toProtoV4VulnerabilitiesMap(
 		vulnerabilities[k].CveName = vulnerabilityName(v)
 		vulnerabilities[k].AdvisoryId = v.Name
 		vulnerabilities[k].SourceName = updaterDisplayName(v.Updater)
-
-		// For finding-as-advisory model: if this vuln has an Advisory (RHSA),
-		// create an additional finding for it (keeping the VEX finding too).
-		vuln := vulnerabilities[k]
-		if vuln.Advisory != nil && vuln.Advisory.Name != "" {
-			// Create a new key for the RHSA finding
-			rhsaKey := k + ":" + vuln.Advisory.Name
-			// Clone the vulnerability but with RHSA as advisory ID
-			rhsaVuln := *vuln // shallow copy
-			rhsaVuln.AdvisoryId = vuln.Advisory.Name
-			rhsaVuln.SourceName = "Red Hat Advisory"
-			rhsaVuln.Link = vuln.Advisory.Link
-			// Use CSAF data if available for this RHSA
-			if csafAdvisoryExists {
-				rhsaVuln.NormalizedSeverity = toProtoV4VulnerabilitySeverityFromString(ctx, csafAdvisory.Severity)
-				rhsaVuln.Description = csafAdvisory.Description
-			}
-			vulnerabilities[rhsaKey] = &rhsaVuln
-		}
 	}
 	return vulnerabilities, nil
 }
@@ -1572,9 +1539,11 @@ func FindName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
 //
 // Only Red Hat advisories (RHSA/RHBA/RHEA) are supported at this time.
 func advisory(vuln *claircore.Vulnerability) *v4.VulnerabilityReport_Advisory {
-	// For finding-as-advisory prototype: ALWAYS return advisory to support both CVE and RHSA findings.
-	// Original logic: only return when ScannerV4RedHatCVEs is disabled (old model wanted RHSA OR CVE).
-	// Prototype model: we want BOTH CVE AND RHSA as separate findings.
+	// Do not return an advisory if we do not want to separate
+	// CVEs and Red Hat advisories.
+	if !features.ScannerV4RedHatCVEs.Enabled() {
+		return nil
+	}
 
 	// If the vulnerability is not from Red Hat's VEX data,
 	// then it's definitely not an advisory we support at this time.
