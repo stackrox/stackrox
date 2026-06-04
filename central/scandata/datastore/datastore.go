@@ -18,8 +18,9 @@ type DataStore interface {
 	// DeleteByImageID removes all scan data for an image
 	DeleteByImageID(ctx context.Context, imageID string) error
 
-	// ListCVEs returns the CVE list page data with GROUP BY aggregation
-	ListCVEs(ctx context.Context, limit, offset int, sortBy, sortDir string) ([]*types.CVEListRow, int, error)
+	// ListCVEs returns the CVE list page data with GROUP BY aggregation.
+	// cveFilter optionally filters to a specific CVE name (exact match).
+	ListCVEs(ctx context.Context, limit, offset int, sortBy, sortDir, cveFilter string) ([]*types.CVEListRow, int, error)
 
 	// GetFindingsByCVE returns all findings for a specific CVE name
 	GetFindingsByCVE(ctx context.Context, cveName string) ([]*storage.ScanFinding, error)

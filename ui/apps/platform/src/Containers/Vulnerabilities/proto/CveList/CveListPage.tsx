@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import {
     Bullseye,
     Label,
     Pagination,
     PageSection,
+    SearchInput,
     Spinner,
     Title,
     Toolbar,
@@ -63,9 +65,10 @@ function formatCvss(cvss: number): string {
 const cveSortColumns = ['cveName', 'severity', 'cvss', 'imageCount', '', 'firstSeen', '', ''];
 
 function CveListPage() {
+    const [cveFilter, setCveFilter] = useState('');
     const { sortBy, sortDir, getThSortProps } = useSort(cveSortColumns, 1);
     const { page, perPage, offset, onSetPage, onPerPageSelect } = usePagination(20);
-    const { data, loading, error } = useCveList(perPage, offset, sortBy, sortDir);
+    const { data, loading, error } = useCveList(perPage, offset, sortBy, sortDir, cveFilter);
 
     const cves: ProtoCVEListItem[] = data?.cves ?? [];
     const totalCount = data?.totalCount ?? 0;
@@ -81,6 +84,15 @@ function CveListPage() {
             <PageSection hasBodyWrapper={false}>
                 <Toolbar>
                     <ToolbarContent>
+                        <ToolbarItem>
+                            <SearchInput
+                                placeholder="Filter by CVE (e.g. CVE-2026-0968)"
+                                value={cveFilter}
+                                onChange={(_event, value) => setCveFilter(value)}
+                                onClear={() => setCveFilter('')}
+                                style={{ minWidth: '320px' }}
+                            />
+                        </ToolbarItem>
                         <ToolbarItem>
                             {loading && <Spinner size="md" />}
                             {!loading &&

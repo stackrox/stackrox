@@ -359,9 +359,10 @@ func (h *handler) listCVEs(w http.ResponseWriter, r *http.Request) {
 
 	sortBy := r.URL.Query().Get("sortBy")
 	sortDir := r.URL.Query().Get("sortDir")
+	cveFilter := r.URL.Query().Get("cve")
 
 	// Query data
-	rows, total, err := h.datastore.ListCVEs(ctx, limit, offset, sortBy, sortDir)
+	rows, total, err := h.datastore.ListCVEs(ctx, limit, offset, sortBy, sortDir, cveFilter)
 	if err != nil {
 		log.Errorf("failed to list CVEs: %v", err)
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "listing CVEs"))

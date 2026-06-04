@@ -352,21 +352,29 @@ func sortClause(sortBy, sortDir string, validSorts map[string]string, defaultSor
 }
 
 // ListCVEs returns the CVE list page data with GROUP BY aggregation
-func (s *storeImpl) ListCVEs(ctx context.Context, limit, offset int, sortBy, sortDir string) ([]*types.CVEListRow, int, error) {
+func (s *storeImpl) ListCVEs(ctx context.Context, limit, offset int, sortBy, sortDir, cveFilter string) ([]*types.CVEListRow, int, error) {
 	type result struct {
 		rows  []*types.CVEListRow
 		total int
 	}
 
 	res, err := pgutils.Retry2(ctx, func() (*result, error) {
+		// Build optional CVE name filter
+		whereClause := "WHERE state = 0"
+		var queryArgs []interface{}
+		if cveFilter != "" {
+			whereClause += " AND cvename = $1"
+			queryArgs = append(queryArgs, cveFilter)
+		}
+
 		// Get total count
 		countQuery := fmt.Sprintf(`
 			SELECT COUNT(DISTINCT cvename)
 			FROM %s
-			WHERE state = 0
-		`, findingsTable)
+			%s
+		`, findingsTable, whereClause)
 		var total int
-		if err := s.db.QueryRow(ctx, countQuery).Scan(&total); err != nil {
+		if err := s.db.QueryRow(ctx, countQuery, queryArgs...).Scan(&total); err != nil {
 			return nil, errors.Wrap(err, "counting CVEs")
 		}
 
@@ -380,6 +388,14 @@ func (s *storeImpl) ListCVEs(ctx context.Context, limit, offset int, sortBy, sor
 		}
 		orderBy := sortClause(sortBy, sortDir, cveSorts, "MAX(severity)")
 
+		// Positional args shift based on whether cveFilter is present
+		limitParam := "$1"
+		offsetParam := "$2"
+		if cveFilter != "" {
+			limitParam = "$2"
+			offsetParam = "$3"
+		}
+
 		query := fmt.Sprintf(`
 			SELECT cvename,
 			       MAX(severity)::int as severity,
@@ -390,13 +406,13 @@ func (s *storeImpl) ListCVEs(ctx context.Context, limit, offset int, sortBy, sor
 			       MIN(publisheddate) as published_date,
 			       MAX(epssprobability) as epss_probability
 			FROM %s
-			WHERE state = 0
+			%s
 			GROUP BY cvename
 			%s
-			LIMIT $1 OFFSET $2
-		`, findingsTable, orderBy)
+			LIMIT %s OFFSET %s
+		`, findingsTable, whereClause, orderBy, limitParam, offsetParam)
 
-		rows, err := s.db.Query(ctx, query, limit, offset)
+		rows, err := s.db.Query(ctx, query, append(queryArgs, limit, offset)...)
 		if err != nil {
 			return nil, errors.Wrap(err, "querying CVEs")
 		}

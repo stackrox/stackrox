@@ -25,7 +25,8 @@ export function useCveList(
     limit = 50,
     offset = 0,
     sortBy = 'severity',
-    sortDir = 'desc'
+    sortDir = 'desc',
+    cveFilter = ''
 ) {
     const [data, setData] = useState<CveListResponse | null>(null);
     const [loading, setLoading] = useState(true);
@@ -33,17 +34,24 @@ export function useCveList(
 
     useEffect(() => {
         setLoading(true);
+        const params = new URLSearchParams({
+            limit: String(limit),
+            offset: String(offset),
+            sortBy,
+            sortDir,
+        });
+        if (cveFilter) {
+            params.set('cve', cveFilter);
+        }
         axios
-            .get<CveListResponse>(
-                `/v1/scandata/cves?limit=${limit}&offset=${offset}&sortBy=${sortBy}&sortDir=${sortDir}`
-            )
+            .get<CveListResponse>(`/v1/scandata/cves?${params.toString()}`)
             .then((res) => {
                 setData(res.data);
                 setError(null);
             })
             .catch((err: Error) => setError(err))
             .finally(() => setLoading(false));
-    }, [limit, offset, sortBy, sortDir]);
+    }, [limit, offset, sortBy, sortDir, cveFilter]);
 
     return { data, loading, error };
 }
