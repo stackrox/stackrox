@@ -431,6 +431,10 @@ func (u *Updater) Update(ctx context.Context) error {
 		slog.InfoContext(ctx, "no vulnerability updates: skipping GC")
 	}
 
+	if u.Initialized(ctx) {
+		u.notifyCentralReady(ctx)
+	}
+
 	return nil
 }
 
@@ -521,9 +525,7 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	}
 	slog.InfoContext(ctx, "known-distributions updated", "duration", time.Since(distStart))
 
-	if u.Initialized(ctx) {
-		u.notifyCentralReady(ctx)
-	}
+	_ = u.Initialized(ctx)
 
 	return true, nil
 }
