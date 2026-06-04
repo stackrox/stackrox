@@ -64,7 +64,11 @@ runs:
         # ── 1. CPU check ────────────────────────────────────────────────────────
         if [[ "$MY_COPY" != "$LAST_COPY" && "$cpu" == *"${SLOW_PATTERN}"* ]]; then
           echo "::warning::Slow runner (${cpu}) — delegating to next copy."
-          exit 1   # no check-run posted; monitor treats absent-after-3-polls as eliminated
+          # SIGTERM the runner parent so the job shows as 'cancelled' (not 'failure').
+          # This avoids red X marks in the PR summary for expected speculative exits.
+          # Monitor treats absent-after-3-polls as eliminated — same as before.
+          kill -TERM "$MY_PARENT" 2>/dev/null
+          sleep 600  # stay alive until the runner's cancellation cleanup kills us
         fi
 
         # ── 2. Post in_progress check-run ───────────────────────────────────────
