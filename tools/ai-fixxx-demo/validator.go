@@ -54,7 +54,7 @@ func SanitizeInput(input string) string {
 	return strings.Join(words, " ")
 }
 
-// ValidateUsername checks that a username meets naming requirments.
+// ValidateUsername checks that a username meets naming requirements.
 func ValidateUsername(username string) error {
 	if len(username) < 3 || len(username) > 32 {
 		return fmt.Errorf("username must be between 3 and 32 characters")
