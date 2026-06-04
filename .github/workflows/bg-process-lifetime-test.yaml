@@ -1,0 +1,65 @@
+name: Background Process Lifetime Test
+on:
+  workflow_dispatch:
+    inputs:
+      work_seconds:
+        description: 'How long the "work" step sleeps (default: 5)'
+        default: '5'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start background logger
+        run: |
+          cat > /tmp/bg_logger.sh << 'BGEOF'
+          #!/bin/bash
+          log=/tmp/bg.log
+
+          # Trap every killable signal and record it
+          for sig in SIGTERM SIGINT SIGHUP SIGQUIT SIGPIPE; do
+            trap "echo \"\$(date +%s.%3N) KILLED_BY_${sig} pid=\$\$\" >> \$log; exit 0" $sig
+          done
+
+          echo "$(date +%s.%3N) START pid=$$ ppid=$PPID" >> $log
+
+          count=0
+          while true; do
+            count=$((count+1))
+            echo "$(date +%s.%3N) tick=${count} alive" >> $log
+            sleep 0.5
+          done
+          BGEOF
+
+          chmod +x /tmp/bg_logger.sh
+          nohup /tmp/bg_logger.sh > /dev/null 2>&1 &
+          BGPID=$!
+          disown $BGPID
+          echo "$(date +%s.%3N) STEP1_started_bg_pid=${BGPID}" >> /tmp/timeline.log
+          echo "Background logger started with pid ${BGPID}"
+
+      - name: Work step (simulate real job work)
+        run: |
+          echo "$(date +%s.%3N) STEP2_work_start" >> /tmp/timeline.log
+          sleep ${{ inputs.work_seconds || 5 }}
+          echo "$(date +%s.%3N) STEP2_work_done" >> /tmp/timeline.log
+
+      - name: Final step (last explicit step before job ends)
+        run: |
+          echo "$(date +%s.%3N) STEP3_final_start" >> /tmp/timeline.log
+          # Snapshot the background log RIGHT NOW so we can see
+          # how far it got up to the end of explicit steps
+          echo "$(date +%s.%3N) STEP3_final_done — bg ticks so far: $(wc -l < /tmp/bg.log)" >> /tmp/timeline.log
+
+      # Upload runs in the POST-JOB phase (after all steps complete).
+      # Any timestamps in bg.log beyond STEP3_final_done mean the process
+      # survived past the last explicit step.
+      - name: Upload logs (post-job phase)
+        if: always()
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # ratchet:actions/upload-artifact@v4
+        with:
+          name: bg-process-lifetime
+          path: |
+            /tmp/bg.log
+            /tmp/timeline.log
+          retention-days: 1
