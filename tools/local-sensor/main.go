@@ -221,20 +221,6 @@ func writeMetricsSnapshot(filePath string) error {
 	return nil
 }
 
-func waitForSignalOrTimeout(signal concurrency.ReadOnlySignal, timeoutC <-chan time.Time) bool {
-	if timeoutC == nil {
-		signal.Wait()
-		return true
-	}
-
-	select {
-	case <-signal.Done():
-		return true
-	case <-timeoutC:
-		return false
-	}
-}
-
 func logTimeLeft(stop <-chan struct{}, deadline time.Time, tickerC <-chan time.Time, now func() time.Time, logf func(string, ...any)) {
 	for {
 		select {
@@ -468,13 +454,31 @@ func main() {
 	// pipe and the next log write terminates the process before graceful shutdown.
 	signal.Ignore(syscall.SIGPIPE)
 
+	// Global signal handler: first signal triggers graceful shutdown from any
+	// phase (waiting for connection, running scenario, or cleanup). Second
+	// signal force-exits. Without this, signals received outside the main
+	// select are silently buffered and dropped once the buffer fills.
+	shutdownRequested := concurrency.NewSignal()
+	go func() {
+		sig := <-sigCh
+		log.Printf("Received %s, starting graceful shutdown (press Ctrl-C again to force exit)", sig)
+		shutdownRequested.Signal()
+		sig = <-sigCh
+		log.Printf("Received %s during graceful shutdown, exiting immediately", sig)
+		os.Exit(130)
+	}()
+
 	go s.Start()
 
 	durationExpired := false
 	if spyCentral != nil {
-		durationExpired = !waitForSignalOrTimeout(&spyCentral.ConnectionStarted, durationC)
-		if durationExpired {
+		select {
+		case <-spyCentral.ConnectionStarted.Done():
+		case <-durationC:
+			durationExpired = true
 			log.Printf("Scenario duration elapsed before fake central connection started")
+		case <-shutdownRequested.Done():
+			durationExpired = true
 		}
 	}
 
@@ -490,13 +494,7 @@ func main() {
 		select {
 		case <-durationC:
 		case <-s.Stopped().Done():
-		case sig := <-sigCh:
-			log.Printf("Received %s, starting graceful shutdown (press Ctrl-C again to force exit)", sig)
-			go func() {
-				forceSig := <-sigCh
-				log.Printf("Received %s during graceful shutdown, exiting immediately", forceSig)
-				os.Exit(130)
-			}()
+		case <-shutdownRequested.Done():
 		}
 	}
 
