@@ -44,6 +44,17 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// Option configures the updater.
+type Option func(*updaterImpl)
+
+// WithQuietErrors suppresses error logging when set to true.
+// Health status errors are still reported in the protobuf messages sent to Central.
+func WithQuietErrors(quiet bool) Option {
+	return func(u *updaterImpl) {
+		u.quietErrors = quiet
+	}
+}
+
 type updaterImpl struct {
 	unimplemented.Receiver
 
@@ -56,6 +67,7 @@ type updaterImpl struct {
 	ctxMutex       sync.Mutex
 	pipelineCtx    context.Context
 	cancelCtx      context.CancelFunc
+	quietErrors    bool
 }
 
 func (u *updaterImpl) Name() string {
@@ -171,7 +183,7 @@ func (u *updaterImpl) getCollectorInfo() *storage.CollectorHealthInfo {
 		}
 	}
 
-	if len(result.GetStatusErrors()) > 0 {
+	if len(result.GetStatusErrors()) > 0 && !u.quietErrors {
 		log.Errorf("Errors while getting collector info: %v", result.GetStatusErrors())
 	}
 
@@ -194,7 +206,7 @@ func (u *updaterImpl) getAdmissionControlInfo() *storage.AdmissionControlHealthI
 		}
 	}
 
-	if len(result.GetStatusErrors()) > 0 {
+	if len(result.GetStatusErrors()) > 0 && !u.quietErrors {
 		log.Errorf("Errors while getting admission control info: %v", result.GetStatusErrors())
 	}
 	return &result
@@ -218,7 +230,7 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 	}
 
 	result := u.getScannerHealthInfo(analyzerDeploymentName, dbDeploymentName)
-	if len(result.GetStatusErrors()) > 0 {
+	if len(result.GetStatusErrors()) > 0 && !u.quietErrors {
 		log.Errorf("Errors while getting local scanner info: %v", result.GetStatusErrors())
 	}
 
@@ -263,14 +275,14 @@ func (u *updaterImpl) ctx() context.Context {
 
 // NewUpdater returns a new ready-to-use updater.
 // updateInterval is optional argument, default 30 seconds interval is used.
-func NewUpdater(client kubernetes.Interface, updateInterval time.Duration) common.SensorComponent {
+func NewUpdater(client kubernetes.Interface, updateInterval time.Duration, opts ...Option) common.SensorComponent {
 	interval := updateInterval
 	if interval == 0 {
 		interval = defaultInterval
 	}
 	updateTicker := time.NewTicker(interval)
 	updateTicker.Stop()
-	return &updaterImpl{
+	u := &updaterImpl{
 		client:         client,
 		updates:        make(chan *message.ExpiringMessage),
 		stopSig:        concurrency.NewSignal(),
@@ -278,4 +290,8 @@ func NewUpdater(client kubernetes.Interface, updateInterval time.Duration) commo
 		namespace:      pods.GetPodNamespace(),
 		updateTicker:   updateTicker,
 	}
+	for _, o := range opts {
+		o(u)
+	}
+	return u
 }
