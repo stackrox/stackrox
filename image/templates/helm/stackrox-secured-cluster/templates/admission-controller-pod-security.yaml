@@ -7,7 +7,6 @@ metadata:
   name: stackrox-admission-control
   labels:
     {{- include "srox.labels" (list . "podsecuritypolicy" "stackrox-admission-control") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "podsecuritypolicy" "stackrox-admission-control") | nindent 4 }}
 spec:
@@ -42,7 +41,6 @@ metadata:
   name: stackrox-admission-control-psp
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox-admission-control-psp") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrole" "stackrox-admission-control-psp") | nindent 4 }}
 rules:
@@ -62,7 +60,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "stackrox-admission-control-psp") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "rolebinding" "stackrox-admission-control-psp") | nindent 4 }}
 roleRef:

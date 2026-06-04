@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/mocks"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -261,4 +262,57 @@ func TestPolicySet_WithLabelProviders(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Equal(t, 3, policyCount, "ForEach should iterate over all policies")
+}
+
+func TestPolicySet_RemoveNotifier_ConcurrentPolicyDeletion(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	policySetMock := mocks.NewMockPolicySet(mockCtrl)
+	policyDatastoreMock := mocks2.NewMockDataStore(mockCtrl)
+
+	policySet := &setImpl{
+		PolicySet:   policySetMock,
+		policyStore: policyDatastoreMock,
+	}
+
+	policySetMock.EXPECT().GetCompiledPolicies().Return(map[string]detection.CompiledPolicy{
+		"policy1": wrapPolicy(&storage.Policy{
+			Id:        "policy1",
+			Notifiers: []string{"notifier1", "notifier2"},
+		}),
+		"deleted-policy": wrapPolicy(&storage.Policy{
+			Id:        "deleted-policy",
+			Notifiers: []string{"notifier1", "notifier2", "notifier3"},
+		}),
+		"policy3": wrapPolicy(&storage.Policy{
+			Id:        "policy3",
+			Notifiers: []string{"notifier2", "notifier3"},
+		}),
+	})
+
+	var updatedPolicies []*storage.Policy
+	policyDatastoreMock.EXPECT().UpdatePolicy(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(_ context.Context, policy *storage.Policy) error {
+		if policy.GetId() == "deleted-policy" {
+			// Test assumes that toErrox() is called and DB error is mapped.
+			return errox.ReferencedObjectNotFound
+		}
+		updatedPolicies = append(updatedPolicies, policy)
+		return nil
+	})
+
+	require.NoError(t, policySet.RemoveNotifier("notifier2"))
+
+	expectedUpdates := []*storage.Policy{
+		{
+			Id:        "policy1",
+			Notifiers: []string{"notifier1"},
+		},
+		{
+			Id:        "policy3",
+			Notifiers: []string{"notifier3"},
+		},
+	}
+
+	protoassert.ElementsMatch(t, expectedUpdates, updatedPolicies)
 }

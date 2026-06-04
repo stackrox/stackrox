@@ -77,10 +77,6 @@ func (c *nodeCVECoreResponse) GetOperatingSystemCount() int {
 	return c.OperatingSystemCount
 }
 
-type nodeCVECoreCount struct {
-	CVECount int `db:"cve_count"`
-}
-
 type countByNodeCVESeverity struct {
 	CriticalSeverityCount         int `db:"critical_severity_count"`
 	FixableCriticalSeverityCount  int `db:"fixable_critical_severity_count"`

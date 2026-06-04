@@ -24,14 +24,7 @@ func (n *nodeCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, erro
 		return 0, err
 	}
 
-	result, err := pgSearch.RunSelectOneForSchema[nodeCVECoreCount](ctx, n.db, n.schema, common.WithCountQuery(q, search.CVE))
-	if err != nil {
-		return 0, err
-	}
-	if result == nil {
-		return 0, nil
-	}
-	return result.CVECount, nil
+	return pgSearch.RunDistinctCountForSchema(ctx, n.db, n.schema, q, search.CVE)
 }
 func (n *nodeCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCore, error) {
 	if err := common.ValidateQuery(q); err != nil {

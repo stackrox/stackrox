@@ -132,7 +132,7 @@
                         "value": "central.stackrox:443"
                     },
                     {
-                        "name": "ROX_ADVERTISED_ENDPOINT",
+                        "name": "ROX_SENSOR_ENDPOINT",
                         "value": "sensor.stackrox.svc:443"
                     },
                     {

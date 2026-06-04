@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
@@ -112,6 +113,58 @@ func RunSelectOneForSchema[T any](ctx context.Context, db postgres.DB, schema *w
 	return pgutils.Retry2(ctx, func() (*T, error) {
 		return retryableRunSelectOneForSchema[T](ctx, db, query)
 	})
+}
+
+// RunDistinctCountForSchema executes a SELECT COUNT(DISTINCT field) query and
+// returns the count as an int. This eliminates the need for callers to define
+// single-field count structs and handle nil checks.
+func RunDistinctCountForSchema(ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query, field searchPkg.FieldLabel) (retCount int, retErr error) {
+	var query *query
+	defer func() {
+		if r := recover(); r != nil {
+			if query != nil {
+				log.Errorf("Query issue: %s: %v", query.AsSQL(), r)
+			} else {
+				log.Errorf("Unexpected error running search request: %v", r)
+			}
+			debug.PrintStack()
+			retErr = fmt.Errorf("unexpected error running search request: %v", r)
+		}
+	}()
+
+	cloned := q.CloneVT()
+	cloned.Selects = []*v1.QuerySelect{
+		searchPkg.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+	}
+
+	type countResult struct {
+		Count int `db:"count"`
+	}
+
+	var err error
+	query, err = standardizeSelectQueryAndPopulatePath(ctx, cloned, schema, SELECT, nil)
+	if err != nil {
+		return 0, err
+	}
+	if query == nil {
+		return 0, nil
+	}
+
+	// Override the alias to a fixed name so we can scan into a known struct.
+	if len(query.SelectedFields) > 0 {
+		query.SelectedFields[0].Alias = "count"
+	}
+
+	result, err := pgutils.Retry2(ctx, func() (*countResult, error) {
+		return retryableRunSelectOneForSchema[countResult](ctx, db, query)
+	})
+	if err != nil {
+		return 0, err
+	}
+	if result == nil {
+		return 0, nil
+	}
+	return result.Count, nil
 }
 
 // RunSelectRequestForSchema executes a select request against the database for given schema. The input query must
