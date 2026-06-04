@@ -231,3 +231,82 @@ jobs:
       - name: Reached? (never if cancelled)
         if: always()
         run: echo "REACHED — not cancelled"
+
+  # ── 11. bg SIGINT to work step's OWN bash (mimics what GHA does on cancel) ───
+  # GHA sends SIGINT to the step's leader bash → exit code 130 → 'cancelled'.
+  # Different from test 7 which sent SIGINT to the PARENT (was ignored).
+  bg-sigint-step-bash-itself:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prior step
+        run: echo "prior step PPID=$PPID"
+      - name: Step 1 exit
+        run: echo "step1 done"
+      - name: Step 2 — bg sends SIGINT to this step's own bash
+        run: |
+          SELF=$$
+          echo "self bash=$SELF; bg SIGINT in 5s"
+          (sleep 5; kill -INT $SELF 2>/dev/null) &
+          disown
+          sleep 60
+      - name: Reached?
+        if: always()
+        run: echo "REACHED — not cancelled"
+
+  # ── 12. Step directly SIGINTs itself (no bg, inline control) ──────────────
+  step-sigint-self-direct:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prior step
+        run: echo "prior step PPID=$PPID"
+      - name: Step 1 exit
+        run: echo "step1 done"
+      - name: Step 2 — SIGINT self directly
+        run: |
+          echo "SIGINT to self ($$)"
+          kill -INT $$
+          sleep 600
+      - name: Reached?
+        if: always()
+        run: echo "REACHED — not cancelled"
+
+  # ── 13. bg SIGINT to runner worker captured from work step's PPID ─────────
+  # Test 7 sent SIGINT to step-1's PPID. This captures PPID from within step-2.
+  bg-sigint-runner-from-work-step-ppid:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prior step
+        run: echo "prior step PPID=$PPID"
+      - name: Step 1 exit
+        run: echo "step1 done"
+      - name: Step 2 — captures its OWN PPID (runner worker), bg SIGINTs it
+        run: |
+          RUNNER=$PPID
+          echo "runner=$RUNNER from work step; bg SIGINT in 5s"
+          (sleep 5; kill -INT $RUNNER 2>/dev/null) &
+          disown
+          sleep 60
+      - name: Reached?
+        if: always()
+        run: echo "REACHED — not cancelled"
+
+  # ── 14. setsid: new session leader; bg SIGTERMs the setsid PID ───────────
+  # setsid creates a new session. SIGTERM to that session leader may be different.
+  bg-sigterm-setsid-leader:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prior step
+        run: echo "prior step PPID=$PPID"
+      - name: Step 1 exit
+        run: echo "step1 done"
+      - name: Step 2 — run work inside setsid, bg SIGTERMs the setsid PID
+        run: |
+          setsid bash -c 'echo $$ > /tmp/setsid_pid; sleep 60' &
+          SPID=$!
+          echo "setsid pid=$SPID"
+          (sleep 5; kill -TERM $SPID 2>/dev/null) &
+          disown
+          wait $SPID
+      - name: Reached?
+        if: always()
+        run: echo "REACHED — not cancelled"
