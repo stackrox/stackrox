@@ -1301,8 +1301,6 @@ jobs:
       # Needed for stackrox/central-login to create the JWT token.
       id-token: write
       security-events: write
-    env:
-      ARTIFACT_DIR: junit-reports/
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).scan_images_with_roxctl }}
@@ -1328,7 +1326,6 @@ jobs:
           central-token: ${{ env.ROX_API_TOKEN }}
 
       - name: Scan images for vulnerabilities
-        id: scan
         env:
           BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
           SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
@@ -1340,17 +1337,10 @@ jobs:
           fi
 
           registry="$(./scripts/ci/lib.sh registry_from_branding "${{ matrix.name }}")"
-          image_ref="${registry}/${{ matrix.image }}:${release_tag}"
-          echo "image_ref=${image_ref}" >> "$GITHUB_OUTPUT"
 
           roxctl image scan --retries=10 --retry-delay=15 --force --severity=CRITICAL,IMPORTANT --output=sarif \
-            --image="${image_ref}" \
+            --image="${registry}/${{ matrix.image }}:${release_tag}" \
             | tee results.sarif
-
-      - name: Convert SARIF to JUnit
-        if: always()
-        run: |
-          ./scripts/ci/sarif-to-junit.sh results.sarif "${{ steps.scan.outputs.image_ref }}"
 
       # TODO: re-enable roxctl scan results upload once quota issue has been resolved
       # - name: Upload roxctl scan results to GitHub Security tab
@@ -1358,15 +1348,6 @@ jobs:
       #   with:
       #     category: ${{ matrix.image }}
       #     sarif_file: results.sarif
-
-      - name: Report junit failures in jira
-        uses: ./.github/actions/junit2jira
-        if: always()
-        with:
-          jira-user: ${{ secrets.JIRA_USER }}
-          jira-token: ${{ secrets.JIRA_TOKEN }}
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-          directory: 'junit-reports'
 
   slack-on-build-failure:
     env:
