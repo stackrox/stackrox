@@ -589,6 +589,16 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         fetch-depth: 1
 
+    - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
+      if: "(!inputs.infra-cluster-name || startsWith(inputs.infra-flavor, 'gke')) && steps.filter.outputs.skip != 'true'"
+      with:
+        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+      if: "(!inputs.infra-cluster-name || startsWith(inputs.infra-flavor, 'gke')) && steps.filter.outputs.skip != 'true'"
+      with:
+        install_components: "gke-gcloud-auth-plugin"
+
     - name: Connect to infra cluster (GKE or OCP)
       if: (inputs.infra-cluster-name || inputs.infra-flavor) && steps.filter.outputs.skip != 'true'
       uses: ./.github/actions/connect-infra-cluster
@@ -596,16 +606,6 @@ jobs:
         cluster-name: ${{ inputs.infra-cluster-name || needs.provision-gke.outputs.cluster-name }}
         infra-token: ${{ secrets.INFRA_TOKEN }}
         wait-timeout: "60"
-
-    - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
-      if: "!inputs.infra-cluster-name && !inputs.infra-flavor && steps.filter.outputs.skip != 'true'"
-      with:
-        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
-      if: "!inputs.infra-cluster-name && !inputs.infra-flavor && steps.filter.outputs.skip != 'true'"
-      with:
-        install_components: "gke-gcloud-auth-plugin"
 
     - name: Connect to shared GKE cluster
       if: "!inputs.infra-cluster-name && !inputs.infra-flavor && steps.filter.outputs.skip != 'true'"
