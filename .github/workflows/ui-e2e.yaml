@@ -432,14 +432,6 @@ jobs:
         lifespan: 4h
         wait: false
 
-    - name: Connect to infra cluster
-      if: inputs.infra-cluster-name || steps.infra-name.outputs.name
-      uses: ./.github/actions/connect-infra-cluster
-      with:
-        cluster-name: ${{ inputs.infra-cluster-name || steps.infra-name.outputs.name }}
-        infra-token: ${{ secrets.INFRA_TOKEN }}
-        wait-timeout: ${{ startsWith(inputs.infra-flavor, 'openshift') && '60' || '25' }}
-
     - name: GCP auth (for GKE clusters)
       if: (inputs.gke-cluster-name || startsWith(inputs.infra-flavor, 'gke')) && !inputs.infra-cluster-name
       uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
@@ -451,6 +443,14 @@ jobs:
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
         install_components: "gke-gcloud-auth-plugin"
+
+    - name: Connect to infra cluster
+      if: inputs.infra-cluster-name || steps.infra-name.outputs.name
+      uses: ./.github/actions/connect-infra-cluster
+      with:
+        cluster-name: ${{ inputs.infra-cluster-name || steps.infra-name.outputs.name }}
+        infra-token: ${{ secrets.INFRA_TOKEN }}
+        wait-timeout: ${{ startsWith(inputs.infra-flavor, 'openshift') && '60' || '25' }}
 
     - name: Get kubeconfig (pre-provisioned GKE)
       if: inputs.gke-cluster-name && !inputs.infra-cluster-name && !inputs.infra-flavor
