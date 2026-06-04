@@ -373,6 +373,8 @@ func (u *Updater) KnownDistributions() []claircore.Distribution {
 //
 // Note: periodic full GC will not be started.
 func (u *Updater) Update(ctx context.Context) error {
+	wasInitialized := u.initialized.Load()
+
 	var (
 		updated bool
 		err     error
@@ -384,10 +386,14 @@ func (u *Updater) Update(ctx context.Context) error {
 
 	// Only bother running the GC when it's not disabled
 	// and when the vulnerabilities have been updated.
-	if !u.skipGC && updated {
+	// Skip GC on the initial load — the DB has no old update
+	// operations to collect, so GC is pure overhead.
+	if !u.skipGC && updated && wasInitialized {
 		gcStart := time.Now()
 		u.runGC(ctx)
 		slog.InfoContext(ctx, "post-update GC completed", "duration", time.Since(gcStart))
+	} else if !u.skipGC && updated && !wasInitialized {
+		slog.InfoContext(ctx, "skipping post-update GC on initial load")
 	} else if !u.skipGC {
 		slog.InfoContext(ctx, "no vulnerability updates: skipping GC")
 	}
