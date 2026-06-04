@@ -88,6 +88,12 @@ runs:
             sleep 2
           done
 
+          # Ensure kubeconfig is at the default path for tools that don't honor KUBECONFIG
+          if [ -n "${KUBECONFIG:-}" ] && [ ! -f "$HOME/.kube/config" ]; then
+            mkdir -p "$HOME/.kube"
+            cp "$KUBECONFIG" "$HOME/.kube/config"
+          fi
+
           yq -n ".securedCluster.spec.clusterName = \"${{ inputs.cluster-name }}\"" > /tmp/roxie-override.yaml
           case "${{ inputs.scanner }}" in
             v2)   yq -i '.central.spec.scanner.scannerComponent = "Enabled" | .central.spec.scannerV4.scannerComponent = "Disabled"' /tmp/roxie-override.yaml ;;
