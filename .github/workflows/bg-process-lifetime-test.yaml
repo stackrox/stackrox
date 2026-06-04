@@ -310,3 +310,26 @@ jobs:
       - name: Reached?
         if: always()
         run: echo "REACHED — not cancelled"
+
+  # ── 15. DIAGNOSTIC: what IS $PPID inside a composite action? ───────────────
+  # This tells us if the composite action coordinator is a separate process
+  # (proving Theory A) or if it's the runner worker directly.
+  composite-action-ppid-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - name: Log PPID from within the composite action
+        uses: ./.github/actions/speculative-run
+        with:
+          copy: a
+          check-name: ppid-diagnostic
+          last-copy: a
+          enabled: 'false'  # disabled — just want the gate to log process info
+      - name: Log PPID from a regular run step (for comparison)
+        run: |
+          echo "=== Regular run step ==="
+          echo "PID=$$  PPID=$PPID"
+          ps -p $PPID -o pid,ppid,comm,args || true
+          echo "Grandparent:"
+          GPID=$(ps -p $PPID -o ppid= | tr -d ' ')
+          ps -p $GPID -o pid,ppid,comm,args || true

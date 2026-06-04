@@ -61,6 +61,16 @@ runs:
         [[ -z "$cpu" ]] && cpu=$(lscpu 2>/dev/null | awk -F: '/Model name/{gsub(/^ +/,"",$2); print $2}')
         echo "cpu=${cpu:-unknown}"
 
+        # DIAGNOSTIC: reveal what $PPID is inside this composite action step
+        echo "=== Composite action process hierarchy ==="
+        echo "Gate bash: PID=$$ PPID=$PPID"
+        echo "Parent ($PPID):"
+        ps -p $MY_PARENT -o pid,ppid,comm,args 2>/dev/null || echo "ps failed"
+        GPID=$(ps -p $MY_PARENT -o ppid= 2>/dev/null | tr -d ' ')
+        echo "Grandparent ($GPID):"
+        ps -p $GPID -o pid,ppid,comm,args 2>/dev/null || echo "ps failed"
+        echo "==="
+
         # ── 1. CPU check ────────────────────────────────────────────────────────
         if [[ "$MY_COPY" != "$LAST_COPY" && "$cpu" == *"${SLOW_PATTERN}"* ]]; then
           echo "::warning::Slow runner (${cpu}) — delegating to next copy."
