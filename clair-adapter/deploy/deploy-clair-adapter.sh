@@ -77,6 +77,67 @@ kubectl create namespace "${NAMESPACE}" 2>/dev/null || true
 if [[ "${SCALE_DOWN_SCANNER_V4}" == "true" ]]; then
     echo "--- Scaling down Scanner V4 (if present) ---"
     kubectl scale deploy scanner-v4-indexer scanner-v4-matcher -n "${NAMESPACE}" --replicas=0 2>/dev/null || true
+
+    echo "--- Patching Scanner V4 services to route to clair-adapter ---"
+    for svc in scanner-v4-indexer scanner-v4-matcher; do
+        kubectl patch svc "${svc}" -n "${NAMESPACE}" --type=json \
+            -p '[{"op":"replace","path":"/spec/selector","value":{"app":"clair-adapter"}}]' 2>/dev/null || true
+    done
+fi
+
+# Step 3b: Generate combined TLS cert for the adapter
+# The adapter needs a cert valid for both scanner-v4-indexer and scanner-v4-matcher
+# DNS names so Central can connect to it as either service.
+if kubectl get secret central-tls -n "${NAMESPACE}" &>/dev/null; then
+    echo "--- Generating clair-adapter TLS certificate ---"
+    CERT_TMPDIR="$(mktemp -d)"
+    trap 'rm -rf "${CERT_TMPDIR}"' EXIT
+
+    kubectl get secret central-tls -n "${NAMESPACE}" -o jsonpath='{.data.ca\.pem}' | base64 -d > "${CERT_TMPDIR}/ca.pem"
+    kubectl get secret central-tls -n "${NAMESPACE}" -o jsonpath='{.data.ca-key\.pem}' | base64 -d > "${CERT_TMPDIR}/ca-key.pem"
+
+    openssl genrsa -out "${CERT_TMPDIR}/key.pem" 2048 2>/dev/null
+
+    cat > "${CERT_TMPDIR}/csr.conf" <<CSREOF
+[req]
+default_bits = 2048
+prompt = no
+distinguished_name = dn
+req_extensions = v3_req
+
+[dn]
+CN = SCANNER_V4_INDEXER_SERVICE: Scanner V4 Indexer
+OU = SCANNER_V4_MATCHER_SERVICE
+
+[v3_req]
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth, clientAuth
+basicConstraints = critical, CA:FALSE
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = scanner-v4-indexer.${NAMESPACE}
+DNS.2 = scanner-v4-indexer.${NAMESPACE}.svc
+DNS.3 = scanner-v4-indexer.${NAMESPACE}.svc.cluster.local
+DNS.4 = scanner-v4-matcher.${NAMESPACE}
+DNS.5 = scanner-v4-matcher.${NAMESPACE}.svc
+DNS.6 = scanner-v4-matcher.${NAMESPACE}.svc.cluster.local
+CSREOF
+
+    openssl req -new -key "${CERT_TMPDIR}/key.pem" -out "${CERT_TMPDIR}/csr.pem" -config "${CERT_TMPDIR}/csr.conf" 2>/dev/null
+    openssl x509 -req -in "${CERT_TMPDIR}/csr.pem" \
+        -CA "${CERT_TMPDIR}/ca.pem" -CAkey "${CERT_TMPDIR}/ca-key.pem" -CAcreateserial \
+        -out "${CERT_TMPDIR}/cert.pem" -days 365 \
+        -extensions v3_req -extfile "${CERT_TMPDIR}/csr.conf" 2>/dev/null
+
+    kubectl create secret generic clair-adapter-tls -n "${NAMESPACE}" \
+        --from-file=ca.pem="${CERT_TMPDIR}/ca.pem" \
+        --from-file=cert.pem="${CERT_TMPDIR}/cert.pem" \
+        --from-file=key.pem="${CERT_TMPDIR}/key.pem" \
+        --dry-run=client -o yaml | kubectl apply -f - 2>/dev/null
+    echo "  clair-adapter-tls secret created"
+else
+    echo "  WARNING: central-tls secret not found, skipping TLS cert generation"
 fi
 
 # Step 4: Deploy Clair PostgreSQL
@@ -154,6 +215,31 @@ EOF
 
 # Step 5: Deploy Clair config and service
 echo "--- Deploying upstream Clair ---"
+
+# Capture desired config to detect changes
+CLAIR_CONFIG_DESIRED="$(cat <<CFGEOF
+http_listen_addr: 0.0.0.0:8080
+introspection_addr: 0.0.0.0:8089
+log_level: info
+indexer:
+  connstring: host=clair-db.${NAMESPACE}.svc port=5432 user=clair dbname=clair sslmode=disable
+  scanlock_retry: 10
+  layer_scan_concurrency: 5
+  migrations: true
+matcher:
+  connstring: host=clair-db.${NAMESPACE}.svc port=5432 user=clair dbname=clair sslmode=disable
+  migrations: true
+notifier:
+  connstring: host=clair-db.${NAMESPACE}.svc port=5432 user=clair dbname=clair sslmode=disable
+  migrations: true
+CFGEOF
+)"
+CLAIR_CONFIG_CURRENT="$(kubectl get configmap clair-config -n "${NAMESPACE}" -o jsonpath='{.data.config\.yaml}' 2>/dev/null)"
+CLAIR_CONFIG_CHANGED=false
+if [[ "${CLAIR_CONFIG_DESIRED}" != "${CLAIR_CONFIG_CURRENT}" ]]; then
+    CLAIR_CONFIG_CHANGED=true
+fi
+
 kubectl apply -n "${NAMESPACE}" -f - <<EOF
 apiVersion: v1
 kind: ConfigMap
@@ -163,20 +249,7 @@ metadata:
     app.kubernetes.io/part-of: clair-adapter
 data:
   config.yaml: |
-    http_listen_addr: 0.0.0.0:8080
-    introspection_addr: 0.0.0.0:8089
-    log_level: info
-    indexer:
-      connstring: host=clair-db.${NAMESPACE}.svc port=5432 user=clair dbname=clair sslmode=disable
-      scanlock_retry: 10
-      layer_scan_concurrency: 5
-      migrations: true
-    matcher:
-      connstring: host=clair-db.${NAMESPACE}.svc port=5432 user=clair dbname=clair sslmode=disable
-      migrations: true
-    notifier:
-      connstring: host=clair-db.${NAMESPACE}.svc port=5432 user=clair dbname=clair sslmode=disable
-      migrations: true
+$(echo "${CLAIR_CONFIG_DESIRED}" | sed 's/^/    /')
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -227,12 +300,15 @@ spec:
             port: 8089
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
         livenessProbe:
           httpGet:
             path: /healthz
             port: 8089
-          initialDelaySeconds: 60
+          initialDelaySeconds: 120
           periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 5
       volumes:
       - name: config
         configMap:
@@ -258,6 +334,11 @@ spec:
     name: introspection
     protocol: TCP
 EOF
+
+if [[ "${CLAIR_CONFIG_CHANGED}" == "true" ]]; then
+    echo "  Clair config changed, restarting deployment"
+    kubectl rollout restart deploy/clair -n "${NAMESPACE}" 2>/dev/null || true
+fi
 
 # Step 6: Deploy Clair Adapter
 echo "--- Deploying Clair Adapter ---"
@@ -324,20 +405,22 @@ spec:
         resources:
           requests:
             cpu: 200m
-            memory: 512Mi
+            memory: 1Gi
           limits:
-            cpu: "1"
-            memory: 2Gi
+            cpu: "2"
+            memory: 4Gi
         readinessProbe:
           httpGet:
             path: /healthz/ready
             port: 9443
+            scheme: HTTPS
           initialDelaySeconds: 10
           periodSeconds: 10
         livenessProbe:
           httpGet:
             path: /healthz/live
             port: 9443
+            scheme: HTTPS
           initialDelaySeconds: 5
           periodSeconds: 15
       volumes:
@@ -346,7 +429,7 @@ spec:
           name: clair-adapter-config
       - name: tls-volume
         secret:
-          secretName: scanner-v4-matcher-tls
+          secretName: clair-adapter-tls
           optional: true
 ---
 apiVersion: v1
@@ -374,7 +457,15 @@ spec:
     protocol: TCP
 EOF
 
-# Step 7: Wait for deployments
+# Step 7: Restart adapter if the local image differs from what the pod is running
+BUILT_IMAGE_ID="$(docker inspect --format='{{.Id}}' "${CLAIR_ADAPTER_IMAGE}" 2>/dev/null)"
+RUNNING_IMAGE_ID="$(kubectl get pods -n "${NAMESPACE}" -l app=clair-adapter -o jsonpath='{.items[0].status.containerStatuses[0].imageID}' 2>/dev/null)"
+if [[ -n "${BUILT_IMAGE_ID}" && "${RUNNING_IMAGE_ID}" != *"${BUILT_IMAGE_ID}"* ]]; then
+    echo "--- Restarting clair-adapter (image changed) ---"
+    kubectl rollout restart deploy/clair-adapter -n "${NAMESPACE}" 2>/dev/null || true
+fi
+
+# Step 8: Wait for deployments
 echo ""
 echo "--- Waiting for pods to be ready ---"
 kubectl rollout status deploy/clair-db -n "${NAMESPACE}" --timeout=120s
