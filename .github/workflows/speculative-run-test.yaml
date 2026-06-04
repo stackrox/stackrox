@@ -135,29 +135,29 @@ jobs:
           copy: ${{ matrix.copy }}
 
   # Test 3: both a AND b are slow → c falls back as last-copy.
-  # Monitor for c finds spec-a and spec-b absent after 3 polls → all_gone → c proceeds.
+  # Uses deterministic CPU detection so the gate always fires on a and b
+  # regardless of actual runner type (no EPYC dependency).
   # Expected: a=failure (gate), b=failure (gate), c=success.
   test-ab-slow-c-wins:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - copy: a
-            slow_pattern: EPYC   # matches all EPYC runners → always gated out
-          - copy: b
-            slow_pattern: EPYC
-          - copy: c
-            slow_pattern: NEVER_MATCH_THIS
+        copy: [a, b, c]
     continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - name: Read CPU model (deterministic slow pattern for a and b)
+        id: cpu
+        run: |
+          model=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)
+          echo "model=${model}" >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/speculative-run
         with:
           copy: ${{ matrix.copy }}
           check-name: test-ab-slow-c-wins
           last-copy: c
-          slow-cpu-pattern: ${{ matrix.slow_pattern }}
+          slow-cpu-pattern: ${{ contains(fromJSON('["a","b"]'), matrix.copy) && steps.cpu.outputs.model || 'NEVER_MATCH_THIS' }}
 
       - name: Work
         run: |
@@ -174,27 +174,29 @@ jobs:
           check-name: test-ab-slow-c-wins
           copy: ${{ matrix.copy }}
 
-  # Test 4: copy a is on a slow runner (cpu gate fires → gate fails).
+  # Test 4: copy a is on a slow runner (deterministic: reads actual CPU model
+  # and uses it as the slow pattern so the gate always fires on any runner type).
   # Expected: copy a=failure (gate), copy b=success.
   test-a-slow-b-wins:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - copy: a
-            slow_pattern: EPYC
-          - copy: b
-            slow_pattern: NEVER_MATCH_THIS
+        copy: [a, b]
     continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - name: Read CPU model (for deterministic slow-runner pattern on copy a)
+        id: cpu
+        run: |
+          model=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)
+          echo "model=${model}" >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/speculative-run
         with:
           copy: ${{ matrix.copy }}
           check-name: test-a-slow-b-wins
           last-copy: b
-          slow-cpu-pattern: ${{ matrix.slow_pattern }}
+          slow-cpu-pattern: ${{ matrix.copy == 'a' && steps.cpu.outputs.model || 'NEVER_MATCH_THIS' }}
 
       - name: Work
         run: |
@@ -209,4 +211,98 @@ jobs:
         if: success()
         with:
           check-name: test-a-slow-b-wins
+          copy: ${{ matrix.copy }}
+
+  # Test 5: enabled=false → kill switch. Both copies run normally with no
+  # racing or cancellation. Tests the emergency bypass input.
+  # Expected: a=success, b=success (both complete independently).
+  test-disabled:
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b]
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/speculative-run
+        with:
+          copy: ${{ matrix.copy }}
+          check-name: test-disabled
+          last-copy: b
+          enabled: 'false'
+
+      - name: Work (both copies must reach here — no cancellation)
+        run: |
+          echo "Copy ${{ matrix.copy }}: working (enabled=false, should not be cancelled)..."
+          sleep 5
+
+  # Test 6: winner completes before monitor's first poll (8-10s initial sleep).
+  # Work is only 2s → copy a finishes and posts conclusion=success before copy b's
+  # monitor wakes up. Tests the monitor's conclusion==success branch, not just
+  # the in_progress branch.
+  # Expected: a=success (declares win ~10s), b=cancelled (monitor finds a=success).
+  test-fast-winner:
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b]
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/speculative-run
+        with:
+          copy: ${{ matrix.copy }}
+          check-name: test-fast-winner
+          last-copy: b
+          slow-cpu-pattern: NEVER_MATCH_THIS
+
+      - name: Work (2s — completes before monitor's 8-10s initial sleep)
+        run: |
+          echo "Copy ${{ matrix.copy }}: fast work..."
+          sleep 2
+
+      - name: Monitor log
+        if: always()
+        run: cat /tmp/speculative-monitor.log 2>/dev/null || echo "(no log)"
+
+      - uses: ./.github/actions/speculative-declare-win
+        if: success()
+        with:
+          check-name: test-fast-winner
+          copy: ${{ matrix.copy }}
+
+  # Test 7: 4-copy (copy d). Tests the gate's d→"a b c" case and monitor
+  # watching three siblings.
+  # Expected: a=success, b/c/d=cancelled.
+  test-four-copy:
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b, c, d]
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/speculative-run
+        with:
+          copy: ${{ matrix.copy }}
+          check-name: test-four-copy
+          last-copy: d
+          slow-cpu-pattern: NEVER_MATCH_THIS
+
+      - name: Work (120s — d should be cancelled after a wins)
+        run: |
+          echo "Copy ${{ matrix.copy }}: working..."
+          sleep 120
+
+      - name: Monitor log
+        if: always()
+        run: cat /tmp/speculative-monitor.log 2>/dev/null || echo "(no log)"
+
+      - uses: ./.github/actions/speculative-declare-win
+        if: success()
+        with:
+          check-name: test-four-copy
           copy: ${{ matrix.copy }}
