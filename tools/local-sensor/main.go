@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -220,6 +221,20 @@ func writeMetricsSnapshot(filePath string) error {
 	return nil
 }
 
+func waitForSignalOrTimeout(signal concurrency.ReadOnlySignal, timeoutC <-chan time.Time) bool {
+	if timeoutC == nil {
+		signal.Wait()
+		return true
+	}
+
+	select {
+	case <-signal.Done():
+		return true
+	case <-timeoutC:
+		return false
+	}
+}
+
 // stopSensorAndWorkload stops the workload manager and sensor in the correct order.
 // This function is idempotent and safe to call multiple times.
 func stopSensorAndWorkload(workloadManager *fake.WorkloadManager, sensor *commonSensor.Sensor, pipeline sensor.ProcessPipelineHandle) {
@@ -250,6 +265,12 @@ func main() {
 		log.Printf("unable to start continuous profiling: %v", err)
 	}
 	localConfig := mustGetCommandLineArgs()
+	var durationC <-chan time.Time
+	if localConfig.Duration > 0 {
+		durationTimer := time.NewTimer(localConfig.Duration)
+		defer durationTimer.Stop()
+		durationC = durationTimer.C
+	}
 	if localConfig.WithMetrics {
 		// Start the prometheus metrics server
 		metrics.NewServer(metrics.SensorSubsystem, metrics.NewTLSConfigurerFromEnv()).RunForever()
@@ -427,28 +448,34 @@ func main() {
 
 	go s.Start()
 
+	durationExpired := false
 	if spyCentral != nil {
-		spyCentral.ConnectionStarted.Wait()
+		durationExpired = !waitForSignalOrTimeout(&spyCentral.ConnectionStarted, durationC)
+		if durationExpired {
+			log.Printf("Scenario duration elapsed before fake central connection started")
+		}
 	}
 
-	if localConfig.FakeCollector {
+	if !durationExpired && localConfig.FakeCollector {
 		fakeCollector := collector.NewFakeCollector(collector.WithDefaultConfig())
 		if err := fakeCollector.Start(); err != nil {
 			log.Fatalln(err)
 		}
 	}
 
-	log.Printf("Running scenario for %f minutes\n", localConfig.Duration.Minutes())
-	select {
-	case <-time.Tick(localConfig.Duration):
-	case <-s.Stopped().Done():
-	case sig := <-sigCh:
-		log.Printf("Received %s, starting graceful shutdown (press Ctrl-C again to force exit)", sig)
-		go func() {
-			forceSig := <-sigCh
-			log.Printf("Received %s during graceful shutdown, exiting immediately", forceSig)
-			os.Exit(130)
-		}()
+	if !durationExpired {
+		log.Printf("Running scenario for %f minutes\n", localConfig.Duration.Minutes())
+		select {
+		case <-durationC:
+		case <-s.Stopped().Done():
+		case sig := <-sigCh:
+			log.Printf("Received %s, starting graceful shutdown (press Ctrl-C again to force exit)", sig)
+			go func() {
+				forceSig := <-sigCh
+				log.Printf("Received %s during graceful shutdown, exiting immediately", forceSig)
+				os.Exit(130)
+			}()
+		}
 	}
 
 	if localConfig.WithMetrics {
