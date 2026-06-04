@@ -607,6 +607,9 @@ func toProtoV4VulnerabilitiesMap(
 
 		name := vulnerabilityName(v)
 		csafAdvisory, csafAdvisoryExists := csafAdvisories[v.ID]
+		if csafAdvisoryExists && strings.EqualFold(v.Updater, RedHatUpdaterName) {
+			slog.InfoContext(ctx, "CSAF advisory found", "vuln_id", v.ID, "vuln_name", v.Name, "rhsa", csafAdvisory.Name)
+		}
 
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
 		if shouldReplaceWithAdvisoryData(csafAdvisoryExists) {
@@ -718,20 +721,31 @@ func toProtoV4VulnerabilitiesMap(
 		vulnerabilities[k].AdvisoryId = v.Name
 		vulnerabilities[k].SourceName = updaterDisplayName(v.Updater)
 
-		// For finding-as-advisory model: if this is Red Hat VEX and has RHSAs in Links,
-		// create additional findings for each RHSA (keeping the VEX finding too).
+		// For finding-as-advisory model: if this vuln has an Advisory (RHSA),
+		// create an additional finding for it (keeping the VEX finding too).
+		vuln := vulnerabilities[k]
 		if strings.EqualFold(v.Updater, RedHatUpdaterName) {
-			rhsaNames := RedHatAdvisoryPattern.FindAllString(v.Links, -1)
-			for _, rhsaName := range rhsaNames {
-				// Create a new key for the RHSA finding
-				rhsaKey := k + ":" + rhsaName
-				// Clone the vulnerability but with RHSA as advisory ID
-				rhsaVuln := *vulnerabilities[k] // shallow copy
-				rhsaVuln.AdvisoryId = rhsaName
-				rhsaVuln.SourceName = "Red Hat Advisory"
-				rhsaVuln.Link = redhatErrataURLPrefix + rhsaName
-				vulnerabilities[rhsaKey] = &rhsaVuln
+			slog.InfoContext(ctx, "Red Hat vuln", "id", v.ID, "name", v.Name, "has_advisory", vuln.Advisory != nil, "advisory_name", func() string {
+				if vuln.Advisory != nil {
+					return vuln.Advisory.Name
+				}
+				return "nil"
+			}())
+		}
+		if vuln.Advisory != nil && vuln.Advisory.Name != "" {
+			// Create a new key for the RHSA finding
+			rhsaKey := k + ":" + vuln.Advisory.Name
+			// Clone the vulnerability but with RHSA as advisory ID
+			rhsaVuln := *vuln // shallow copy
+			rhsaVuln.AdvisoryId = vuln.Advisory.Name
+			rhsaVuln.SourceName = "Red Hat Advisory"
+			rhsaVuln.Link = vuln.Advisory.Link
+			// Use CSAF data if available for this RHSA
+			if csafAdvisoryExists {
+				rhsaVuln.NormalizedSeverity = toProtoV4VulnerabilitySeverityFromString(ctx, csafAdvisory.Severity)
+				rhsaVuln.Description = csafAdvisory.Description
 			}
+			vulnerabilities[rhsaKey] = &rhsaVuln
 		}
 	}
 	return vulnerabilities, nil
@@ -1555,11 +1569,9 @@ func FindName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
 //
 // Only Red Hat advisories (RHSA/RHBA/RHEA) are supported at this time.
 func advisory(vuln *claircore.Vulnerability) *v4.VulnerabilityReport_Advisory {
-	// Do not return an advisory if we do not want to separate
-	// CVEs and Red Hat advisories.
-	if !features.ScannerV4RedHatCVEs.Enabled() {
-		return nil
-	}
+	// For finding-as-advisory prototype: ALWAYS return advisory to support both CVE and RHSA findings.
+	// Original logic: only return when ScannerV4RedHatCVEs is disabled (old model wanted RHSA OR CVE).
+	// Prototype model: we want BOTH CVE AND RHSA as separate findings.
 
 	// If the vulnerability is not from Red Hat's VEX data,
 	// then it's definitely not an advisory we support at this time.
