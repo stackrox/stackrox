@@ -113,40 +113,30 @@ runs:
           echo "Copy ${MY_COPY} is first — no monitor needed."
         fi
 
+        # Copy the cleanup script so the post-job hook can call it.
+        # (Cleanup script resolves stuck in_progress check-runs when the job fails.)
+        cp "${GITHUB_ACTION_PATH}/cleanup.sh" /tmp/speculative-cleanup.sh
+        chmod +x /tmp/speculative-cleanup.sh
+
         echo "Gate passed."
         exit 0
 
     - name: Register post-job cleanup
       # Uses gacts/run-and-post-run (JS action) to register a post callback.
-      # The callback runs after all job steps complete — including on failure —
-      # and resolves any in_progress check-run the gate posted, preventing it
-      # from being stuck forever when the job fails after a gate pass.
+      # The post: script is ONE LINE — YAML '>' fold preserves newlines for
+      # more-indented content, which breaks multi-line bash in this context.
+      # Cleanup logic lives in cleanup.sh, copied by the Gate step above.
       #
       # Logic:
       #   success  → declare-win already patched to completed/success; skip.
       #   cancelled → in_progress is harmless (filter=latest ignores it); skip.
-      #   failure  → declare-win was skipped; patch to completed/failure so
-      #              branch protection is not blocked and sibling monitors do
-      #              not treat this copy as a winner.
+      #   failure  → cleanup.sh resolves check-run so branch protection unblocks.
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       if: inputs.enabled == 'true'
       env:
         GH_TOKEN: ${{ github.token }}
+        SPEC_REPO: ${{ github.repository }}
       with:
         shell: bash
         run: 'true'
-        post: >
-          if [[ "${{ job.status }}" == "failure" ]]; then
-            spec_id=$(cat /tmp/speculative-check-id 2>/dev/null | head -1 | tr -d '[:space:]');
-            if [[ "$spec_id" =~ ^[0-9]+$ ]]; then
-              cur=$(gh api repos/${{ github.repository }}/check-runs/"$spec_id" --jq '.status' 2>/dev/null || echo "");
-              if [[ "$cur" == "in_progress" ]]; then
-                echo "Post-job: resolving stuck in_progress check-run ${spec_id} to failure.";
-                gh api repos/${{ github.repository }}/check-runs/"$spec_id" -X PATCH
-                  -f status=completed -f conclusion=failure
-                  -f 'output[title]=Post-job speculative cleanup'
-                  -f 'output[summary]=Job failed after gate; check-run resolved by post-job hook.'
-                  2>/dev/null || true;
-              fi;
-            fi;
-          fi;
+        post: if [[ "${{ job.status }}" == "failure" ]]; then SPEC_REPO=${{ github.repository }} GH_TOKEN=${{ github.token }} bash /tmp/speculative-cleanup.sh; fi
