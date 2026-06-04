@@ -439,6 +439,7 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 		for _, vulnID := range vulnIDs {
 			for rhsaKey := range vulnerabilities {
 				if strings.HasPrefix(rhsaKey, vulnID+":") {
+					slog.Info("Adding RHSA to PackageVulnerabilities", "vulnID", vulnID, "rhsaKey", rhsaKey)
 					withRHSA = append(withRHSA, rhsaKey)
 				}
 			}
