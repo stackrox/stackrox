@@ -717,7 +717,7 @@ func buildImageDetailResponse(imageID, imageName, imageOS string, scanData *type
 		}
 
 		// Track max severity for summary.
-		if int32(f.GetSeverity()) > allCVEs[cveName] {
+		if sev, seen := allCVEs[cveName]; !seen || int32(f.GetSeverity()) > sev {
 			allCVEs[cveName] = int32(f.GetSeverity())
 		}
 
