@@ -22,6 +22,8 @@ import (
 	"github.com/stackrox/rox/clair-adapter/services"
 	"github.com/stackrox/rox/clair-adapter/updater"
 	pkggrpc "github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	authnservice "github.com/stackrox/rox/pkg/grpc/authn/service"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 )
@@ -116,9 +118,16 @@ func run(configPath string) error {
 	}
 	healthHandler := healthz.NewHandler(readinessFunc)
 
+	// Identity extractor for mTLS client certificates
+	identityExtractor, err := authnservice.NewExtractor()
+	if err != nil {
+		return fmt.Errorf("creating identity extractor: %w", err)
+	}
+
 	// Build gRPC API with mTLS support
 	grpcAPI := pkggrpc.NewAPI(pkggrpc.Config{
-		CustomRoutes: healthHandler.CustomRoutes(),
+		CustomRoutes:       healthHandler.CustomRoutes(),
+		IdentityExtractors: []authn.IdentityExtractor{identityExtractor},
 		Endpoints: []*pkggrpc.EndpointConfig{
 			{ListenEndpoint: cfg.GRPCListenAddr, TLS: verifier.NonCA{}, ServeGRPC: true, ServeHTTP: false},
 			{ListenEndpoint: cfg.HTTPListenAddr, TLS: verifier.NonCA{}, ServeGRPC: false, ServeHTTP: true},

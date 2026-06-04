@@ -16,8 +16,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// newTestIndexerService creates a test IndexerService backed by a mock Clair server.
-func newTestIndexerService(t *testing.T, handler http.Handler) *IndexerService {
+// newTestIndexerService creates a test indexerService backed by a mock Clair server.
+func newTestIndexerService(t *testing.T, handler http.Handler) *indexerService {
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
 

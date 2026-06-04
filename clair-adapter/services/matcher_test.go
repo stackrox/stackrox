@@ -19,8 +19,8 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-// newTestMatcherService creates a test MatcherService backed by a mock Clair server.
-func newTestMatcherService(t *testing.T, handler http.Handler) *MatcherService {
+// newTestMatcherService creates a test matcherService backed by a mock Clair server.
+func newTestMatcherService(t *testing.T, handler http.Handler) *matcherService {
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
 
