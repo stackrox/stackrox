@@ -122,6 +122,14 @@ Enabling this requires only **ingestion logic changes** (stop deleting old scans
 - CSV export UI button (backend exists)
 - Branch 2 (finding-as-cve variant with JSONB advisories)
 
+### Known Issue: Advisory ID Collisions Across Sources
+
+When multiple data sources use the CVE ID itself as the advisory ID (e.g., Alpine SecDB reports `CVE-2026-27135` and Red Hat VEX also reports `CVE-2026-27135`), ingestion deduplicates by advisory ID and only keeps the first one processed. This means one source's finding is silently dropped.
+
+In practice this is acceptable when an RHSA is also present (the RHSA is the actionable Red Hat advisory, making the VEX CVE-as-advisory redundant). However, if no RHSA exists, the dropped finding means we lose visibility into one data source's assessment (severity, CVSS, description may differ between sources).
+
+**Decision needed for production:** Should advisory ID uniqueness be scoped per-source (i.e., `(advisory_id, source_name)` as the dedup key instead of just `advisory_id`)? This would preserve both findings but increase row count for OS-level CVEs where every source uses the CVE ID as the advisory.
+
 ### Definition of CVE Uniqueness
 
 A CVE instance is unique by: **(cve_name, component_name, component_version, component_source, image_id)**.
