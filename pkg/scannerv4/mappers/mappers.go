@@ -431,8 +431,21 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 		// }
 		// Lastly, sort by severity in case we may still have any duplications we missed previously.
 		sortBySeverity(vulnIDs, vulnerabilities)
+
+		// For finding-as-advisory model: add any RHSA synthetic keys that were
+		// created in toProtoV4VulnerabilitiesMap for vulns in this package.
+		var withRHSA []string
+		withRHSA = append(withRHSA, vulnIDs...)
+		for _, vulnID := range vulnIDs {
+			for rhsaKey := range vulnerabilities {
+				if strings.HasPrefix(rhsaKey, vulnID+":") {
+					withRHSA = append(withRHSA, rhsaKey)
+				}
+			}
+		}
+
 		pkgVulns[id] = &v4.StringList{
-			Values: vulnIDs,
+			Values: withRHSA,
 		}
 	}
 	return pkgVulns
@@ -607,9 +620,6 @@ func toProtoV4VulnerabilitiesMap(
 
 		name := vulnerabilityName(v)
 		csafAdvisory, csafAdvisoryExists := csafAdvisories[v.ID]
-		if csafAdvisoryExists && strings.EqualFold(v.Updater, RedHatUpdaterName) {
-			slog.InfoContext(ctx, "CSAF advisory found", "vuln_id", v.ID, "vuln_name", v.Name, "rhsa", csafAdvisory.Name)
-		}
 
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
 		if shouldReplaceWithAdvisoryData(csafAdvisoryExists) {
@@ -724,14 +734,6 @@ func toProtoV4VulnerabilitiesMap(
 		// For finding-as-advisory model: if this vuln has an Advisory (RHSA),
 		// create an additional finding for it (keeping the VEX finding too).
 		vuln := vulnerabilities[k]
-		if strings.EqualFold(v.Updater, RedHatUpdaterName) {
-			slog.InfoContext(ctx, "Red Hat vuln", "id", v.ID, "name", v.Name, "has_advisory", vuln.Advisory != nil, "advisory_name", func() string {
-				if vuln.Advisory != nil {
-					return vuln.Advisory.Name
-				}
-				return "nil"
-			}())
-		}
 		if vuln.Advisory != nil && vuln.Advisory.Name != "" {
 			// Create a new key for the RHSA finding
 			rhsaKey := k + ":" + vuln.Advisory.Name
