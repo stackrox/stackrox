@@ -102,6 +102,11 @@ export const BASE_IMAGE_REFERENCE_ADD_SUCCESS = 'Base Image Reference Add Succes
 export const BASE_IMAGE_REFERENCE_ADD_FAILURE = 'Base Image Reference Add Failure';
 export const BASE_IMAGE_REFERENCE_DELETED = 'Base Image Reference Deleted';
 
+// risk
+export const RISK_PAGE_VIEWED = 'Risk Page Viewed';
+export const RISK_DEPLOYMENT_DETAIL_VIEWED = 'Risk Deployment Detail Viewed';
+export const RISK_CREATE_POLICY_CLICKED = 'Risk Create Policy Clicked';
+
 // error boundary
 export const PAGE_CRASH = 'Page Crash';
 
@@ -552,6 +557,20 @@ export type AnalyticsEvent =
       }
     /** Tracks each time a base image is deleted */
     | typeof BASE_IMAGE_REFERENCE_DELETED
+    | {
+          event: typeof RISK_PAGE_VIEWED;
+          properties: {
+              view: 'Applications view' | 'Platform view' | 'Full view';
+          };
+      }
+    | {
+          event: typeof RISK_DEPLOYMENT_DETAIL_VIEWED;
+          properties: {
+              tab: 'Risk indicators' | 'Deployment details' | 'Process discovery';
+              riskIndicatorCount: number;
+          };
+      }
+    | typeof RISK_CREATE_POLICY_CLICKED
     /**
      * Tracks each time a page crash occurs (caught by error boundary).
      * Includes error name, truncated message, and component location.

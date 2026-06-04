@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { Alert, Flex, PageSection, Tab, TabTitleText, Tabs } from '@patternfly/react-core';
 
+import useAnalytics, { RISK_DEPLOYMENT_DETAIL_VIEWED } from 'hooks/useAnalytics';
 import usePermissions from 'hooks/usePermissions';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import type { Deployment } from 'types/deployment.proto';
@@ -19,6 +21,7 @@ export type RiskDetailTabsProps = {
 };
 
 function RiskDetailTabs({ deployment, risk }: RiskDetailTabsProps) {
+    const { analyticsTrack } = useAnalytics();
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForDeploymentExtension = hasReadAccess('DeploymentExtension');
 
@@ -27,6 +30,16 @@ function RiskDetailTabs({ deployment, risk }: RiskDetailTabsProps) {
         deploymentDetailsTab,
         processDiscoveryTab,
     ]);
+
+    useEffect(() => {
+        analyticsTrack({
+            event: RISK_DEPLOYMENT_DETAIL_VIEWED,
+            properties: {
+                tab: activeTabKey as 'Risk indicators' | 'Deployment details' | 'Process discovery',
+                riskIndicatorCount: risk?.results.length ?? 0,
+            },
+        });
+    }, [analyticsTrack, activeTabKey, risk]);
 
     return (
         <>
