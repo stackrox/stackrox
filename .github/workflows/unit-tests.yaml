@@ -117,8 +117,9 @@ jobs:
         directory: 'junit-reports'
 
     - uses: ./.github/actions/speculative-declare-win
-      if: success()
+      if: '!cancelled()'
       with:
+        job-status: ${{ job.status }}
         check-name: 'go (${{ matrix.gotags }})'
         copy: ${{ matrix.copy }}
 
@@ -221,8 +222,9 @@ jobs:
         directory: 'junit-reports'
 
     - uses: ./.github/actions/speculative-declare-win
-      if: success()
+      if: '!cancelled()'
       with:
+        job-status: ${{ job.status }}
         check-name: 'go-postgres (${{ matrix.gotags }}, ${{ matrix.pg }})'
         copy: ${{ matrix.copy }}
 
@@ -403,8 +405,9 @@ jobs:
         directory: 'ui/apps/platform/cypress/test-results/reports'
 
     - uses: ./.github/actions/speculative-declare-win
-      if: success()
+      if: '!cancelled()'
       with:
+        job-status: ${{ job.status }}
         check-name: ui-component
         copy: ${{ matrix.copy }}
 

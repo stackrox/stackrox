@@ -95,8 +95,9 @@ jobs:
         run: cat /tmp/speculative-monitor.log 2>/dev/null || echo "(no log)"
 
       - uses: ./.github/actions/speculative-declare-win
-        if: success()
+        if: '!cancelled()'
         with:
+          job-status: ${{ job.status }}
           check-name: test-a-wins
           copy: ${{ matrix.copy }}
 
@@ -129,8 +130,9 @@ jobs:
         run: cat /tmp/speculative-monitor.log 2>/dev/null || echo "(no log)"
 
       - uses: ./.github/actions/speculative-declare-win
-        if: success()
+        if: '!cancelled()'
         with:
+          job-status: ${{ job.status }}
           check-name: test-three-copy
           copy: ${{ matrix.copy }}
 
@@ -169,8 +171,9 @@ jobs:
         run: cat /tmp/speculative-monitor.log 2>/dev/null || echo "(no log)"
 
       - uses: ./.github/actions/speculative-declare-win
-        if: success()
+        if: '!cancelled()'
         with:
+          job-status: ${{ job.status }}
           check-name: test-ab-slow-c-wins
           copy: ${{ matrix.copy }}
 
@@ -208,8 +211,9 @@ jobs:
         run: cat /tmp/speculative-monitor.log 2>/dev/null || echo "(no log)"
 
       - uses: ./.github/actions/speculative-declare-win
-        if: success()
+        if: '!cancelled()'
         with:
+          job-status: ${{ job.status }}
           check-name: test-a-slow-b-wins
           copy: ${{ matrix.copy }}
 
@@ -268,8 +272,9 @@ jobs:
         run: cat /tmp/speculative-monitor.log 2>/dev/null || echo "(no log)"
 
       - uses: ./.github/actions/speculative-declare-win
-        if: success()
+        if: '!cancelled()'
         with:
+          job-status: ${{ job.status }}
           check-name: test-fast-winner
           copy: ${{ matrix.copy }}
 
@@ -302,7 +307,8 @@ jobs:
         run: cat /tmp/speculative-monitor.log 2>/dev/null || echo "(no log)"
 
       - uses: ./.github/actions/speculative-declare-win
-        if: success()
+        if: '!cancelled()'
         with:
+          job-status: ${{ job.status }}
           check-name: test-four-copy
           copy: ${{ matrix.copy }}
