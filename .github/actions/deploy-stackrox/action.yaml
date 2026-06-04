@@ -89,9 +89,15 @@ runs:
           done
 
           # Ensure kubeconfig is at the default path for tools that don't honor KUBECONFIG
+          echo "KUBECONFIG=${KUBECONFIG:-not set}"
           if [ -n "${KUBECONFIG:-}" ] && [ ! -f "$HOME/.kube/config" ]; then
+            echo "Copying $KUBECONFIG to $HOME/.kube/config"
             mkdir -p "$HOME/.kube"
             cp "$KUBECONFIG" "$HOME/.kube/config"
+          elif [ -f "$HOME/.kube/config" ]; then
+            echo "Default kubeconfig already exists"
+          else
+            echo "WARNING: No KUBECONFIG set and no default kubeconfig"
           fi
 
           yq -n ".securedCluster.spec.clusterName = \"${{ inputs.cluster-name }}\"" > /tmp/roxie-override.yaml
