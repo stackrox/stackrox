@@ -33,17 +33,12 @@ on:
         required: true
         type: string
       gke:
-        description: "Use GKE instead of KinD"
-        required: false
-        type: boolean
-        default: false
-      ocp:
-        description: "Provision OCP cluster via infractl (openshift-4 flavor)"
+        description: "Use GKE instead of KinD (provisions via gcloud)"
         required: false
         type: boolean
         default: false
       infra-flavor:
-        description: "infractl flavor (default: openshift-4 for ocp, gke-default for gke)"
+        description: "Provision cluster via infractl (e.g. gke-default, rosa-hcp, openshift-4)"
         required: false
         type: string
       gke-cluster-name:
@@ -209,7 +204,7 @@ jobs:
   kind-e2e:
     name: "${{ matrix.name }}"
     needs: setup-shards
-    if: "!contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke') && !inputs.gke && !inputs.ocp && !inputs.gke-cluster-name && !inputs.infra-cluster-name"
+    if: "!contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke') && !inputs.gke && !inputs.infra-flavor && !inputs.gke-cluster-name && !inputs.infra-cluster-name"
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -407,7 +402,7 @@ jobs:
   # ── GKE mode: shared cluster, scanner v2, all specs ──────────────────
   provision-gke:
     name: Provision GKE
-    if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke') || inputs.gke || inputs.ocp || inputs.gke-cluster-name || inputs.infra-cluster-name
+    if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke') || inputs.gke || inputs.infra-flavor || inputs.gke-cluster-name || inputs.infra-cluster-name
     runs-on: ubuntu-latest
     timeout-minutes: 90
     outputs:
@@ -422,24 +417,24 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         fetch-depth: 1
 
-    - name: Provision infra cluster
-      if: inputs.ocp && !inputs.infra-cluster-name
+    - name: Provision infra cluster (${{ inputs.infra-flavor }})
+      if: inputs.infra-flavor && !inputs.infra-cluster-name
       id: infra-create
       uses: stackrox/actions/infra/create-cluster@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/create-cluster@v1
       with:
         token: ${{ secrets.INFRA_TOKEN }}
-        flavor: ${{ inputs.infra-flavor || 'openshift-4' }}
+        flavor: ${{ inputs.infra-flavor }}
         name: ui-e2e-${{ github.run_id }}
         lifespan: 4h
         wait: false
 
-    - name: Connect to infra cluster (GKE or OCP)
+    - name: Connect to infra cluster
       if: inputs.infra-cluster-name || steps.infra-create.outputs.cluster-name
       uses: ./.github/actions/connect-infra-cluster
       with:
         cluster-name: ${{ inputs.infra-cluster-name || steps.infra-create.outputs.cluster-name }}
         infra-token: ${{ secrets.INFRA_TOKEN }}
-        wait-timeout: "60"
+        wait-timeout: ${{ contains(inputs.infra-flavor || '', 'openshift') && '60' || '25' }}
 
     - name: Connect to pre-provisioned cluster
       if: inputs.gke-cluster-name && !inputs.infra-cluster-name && !steps.infra-create.outputs.cluster-name
@@ -448,13 +443,13 @@ jobs:
         credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Setup gcloud (pre-provisioned)
-      if: inputs.gke-cluster-name && !inputs.infra-cluster-name && !inputs.ocp
+      if: inputs.gke-cluster-name && !inputs.infra-cluster-name && !inputs.infra-flavor
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
         install_components: "gke-gcloud-auth-plugin"
 
     - name: Get kubeconfig (pre-provisioned)
-      if: inputs.gke-cluster-name && !inputs.infra-cluster-name && !inputs.ocp
+      if: inputs.gke-cluster-name && !inputs.infra-cluster-name && !inputs.infra-flavor
       run: |
         zone="${{ inputs.gke-zone }}"
         if [ -z "$zone" ]; then
@@ -469,7 +464,7 @@ jobs:
           --project acs-team-temp-dev
 
     - name: Create GKE cluster
-      if: "!inputs.gke-cluster-name && !inputs.infra-cluster-name && !inputs.ocp"
+      if: "!inputs.gke-cluster-name && !inputs.infra-cluster-name && !inputs.infra-flavor"
       id: cluster
       uses: ./.github/actions/create-gke-cluster
       with:
@@ -535,7 +530,7 @@ jobs:
           | jq -r '.token' > /tmp/rox-auth-token
 
     - name: Copy kubeconfig to /tmp
-      if: inputs.infra-cluster-name || inputs.ocp
+      if: inputs.infra-cluster-name || inputs.infra-flavor
       run: |
         cp artifacts/kubeconfig /tmp/kubeconfig
 
@@ -554,7 +549,7 @@ jobs:
   gke-e2e:
     name: "GKE ${{ matrix.name }}"
     needs: [setup-shards, provision-gke]
-    if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke') || inputs.gke || inputs.ocp || inputs.gke-cluster-name || inputs.infra-cluster-name
+    if: contains(github.event.pull_request.labels.*.name, 'e2e-ui-gke') || inputs.gke || inputs.infra-flavor || inputs.gke-cluster-name || inputs.infra-cluster-name
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -591,7 +586,7 @@ jobs:
         fetch-depth: 1
 
     - name: Connect to infra cluster (GKE or OCP)
-      if: (inputs.infra-cluster-name || inputs.ocp) && steps.filter.outputs.skip != 'true'
+      if: (inputs.infra-cluster-name || inputs.infra-flavor) && steps.filter.outputs.skip != 'true'
       uses: ./.github/actions/connect-infra-cluster
       with:
         cluster-name: ${{ inputs.infra-cluster-name || needs.provision-gke.outputs.cluster-name }}
@@ -599,17 +594,17 @@ jobs:
         wait-timeout: "60"
 
     - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
-      if: "!inputs.infra-cluster-name && !inputs.ocp && steps.filter.outputs.skip != 'true'"
+      if: "!inputs.infra-cluster-name && !inputs.infra-flavor && steps.filter.outputs.skip != 'true'"
       with:
         credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
-      if: "!inputs.infra-cluster-name && !inputs.ocp && steps.filter.outputs.skip != 'true'"
+      if: "!inputs.infra-cluster-name && !inputs.infra-flavor && steps.filter.outputs.skip != 'true'"
       with:
         install_components: "gke-gcloud-auth-plugin"
 
     - name: Connect to shared GKE cluster
-      if: "!inputs.infra-cluster-name && !inputs.ocp && steps.filter.outputs.skip != 'true'"
+      if: "!inputs.infra-cluster-name && !inputs.infra-flavor && steps.filter.outputs.skip != 'true'"
       run: |
         project="${{ inputs.gke-cluster-name && 'acs-team-temp-dev' || 'acs-san-stackroxci' }}"
         gcloud container clusters get-credentials \
@@ -838,27 +833,28 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+    - name: Install infractl
+      if: inputs.infra-flavor
+      uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
+
     - name: Delete infra cluster
-      if: inputs.ocp
+      if: inputs.infra-flavor
       env:
         INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
-      run: |
-        curl -fsSL https://infra.rox.systems/v1/cli/linux/amd64 -o /tmp/infractl
-        chmod +x /tmp/infractl
-        /tmp/infractl delete "${{ needs.provision-gke.outputs.cluster-name }}" || echo "infractl delete failed; relying on lifespan expiry"
+      run: infractl delete "${{ needs.provision-gke.outputs.cluster-name }}" || echo "infractl delete failed; relying on lifespan expiry"
 
     - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
-      if: "!inputs.ocp"
+      if: "!inputs.infra-flavor"
       with:
         credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
-      if: "!inputs.ocp"
+      if: "!inputs.infra-flavor"
       with:
         install_components: "gke-gcloud-auth-plugin"
 
     - name: Delete GKE cluster
-      if: "!inputs.ocp"
+      if: "!inputs.infra-flavor"
       run: |
         gcloud container clusters delete \
           "${{ needs.provision-gke.outputs.cluster-name }}" \
