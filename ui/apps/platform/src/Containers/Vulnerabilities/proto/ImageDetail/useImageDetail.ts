@@ -23,6 +23,7 @@ export type CVESummary = {
     important: number;
     moderate: number;
     low: number;
+    unknown: number;
 };
 
 export type ImageDetailResponse = {

@@ -299,6 +299,11 @@ function ImageDetailPage() {
                                 count={data.cveSummary.low}
                                 color="yellow"
                             />
+                            <SummaryBadge
+                                label="Unknown"
+                                count={data.cveSummary.unknown}
+                                color="grey"
+                            />
                             <FlexItem>
                                 <Label color="grey">
                                     Total: {data.cveSummary.total}

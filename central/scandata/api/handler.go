@@ -216,6 +216,7 @@ type ImageDetailCVESummary struct {
 	Important int `json:"important"`
 	Moderate  int `json:"moderate"`
 	Low       int `json:"low"`
+	Unknown   int `json:"unknown"`
 }
 
 // AdvisoryListResponse is the response for GET /v1/scandata/advisories
@@ -799,6 +800,8 @@ func buildImageDetailResponse(imageID, imageName, imageOS string, scanData *type
 			summary.Moderate++
 		case 1:
 			summary.Low++
+		case 0:
+			summary.Unknown++
 		}
 	}
 
