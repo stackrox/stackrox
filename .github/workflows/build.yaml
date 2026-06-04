@@ -331,7 +331,7 @@ jobs:
         with:
           copy: ${{ matrix.copy }}
           check-name: pre-build-go-binaries (${{ matrix.name }}, ${{ matrix.arch }})
-          last-copy: c
+          last-copy: ${{ matrix.arch == 'arm64' && 'a' || 'c' }}
 
       - uses: ./.github/actions/job-preamble
         if: steps.gate.conclusion == 'success'
@@ -764,7 +764,7 @@ jobs:
         with:
           copy: ${{ matrix.copy }}
           check-name: build-and-push-main (${{ matrix.name }}, ${{ matrix.arch }})
-          last-copy: c
+          last-copy: ${{ matrix.arch == 'arm64' && 'a' || 'c' }}
 
       - uses: ./.github/actions/job-preamble
         if: steps.gate.conclusion == 'success'
@@ -1066,7 +1066,7 @@ jobs:
         with:
           copy: ${{ matrix.copy }}
           check-name: build-and-push-operator (${{ matrix.name }}, ${{ matrix.arch }})
-          last-copy: c
+          last-copy: ${{ matrix.arch == 'arm64' && 'a' || 'c' }}
 
       - uses: ./.github/actions/job-preamble
         if: steps.gate.conclusion == 'success'
@@ -1195,7 +1195,7 @@ jobs:
         with:
           copy: ${{ matrix.copy }}
           check-name: build-and-push-scanner (${{ matrix.name }}, ${{ matrix.goos }}, ${{ matrix.arch }}, ${{ matrix.registry }})
-          last-copy: b
+          last-copy: ${{ matrix.arch == 'arm64' && 'a' || 'b' }}
 
       - uses: ./.github/actions/job-preamble
         with:
