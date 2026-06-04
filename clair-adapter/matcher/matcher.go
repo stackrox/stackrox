@@ -2,12 +2,20 @@ package matcher
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/stackrox/rox/clair-adapter/clairclient"
 	"github.com/stackrox/rox/clair-adapter/datastore"
 	"github.com/stackrox/rox/clair-adapter/enricher"
 )
+
+func clairDigest(hashID string) string {
+	if i := strings.LastIndex(hashID, "sha256:"); i > 0 {
+		return hashID[i:]
+	}
+	return hashID
+}
 
 // Matcher provides vulnerability matching operations.
 type Matcher interface {
@@ -40,7 +48,7 @@ func NewLocalMatcher(clair *clairclient.Client, pipeline *enricher.Pipeline, met
 // GetVulnerabilities retrieves and enriches vulnerability data for a container image.
 func (l *localMatcher) GetVulnerabilities(ctx context.Context, hashID string) (*clairclient.VulnerabilityReport, *enricher.EnrichmentResult, error) {
 	// Get vulnerability report from Clair
-	report, err := l.clair.GetVulnerabilityReport(ctx, hashID)
+	report, err := l.clair.GetVulnerabilityReport(ctx, clairDigest(hashID))
 	if err != nil {
 		return nil, nil, err
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/stackrox/rox/clair-adapter/clairclient"
@@ -101,7 +101,7 @@ func (l *localIndexer) IndexContainerImage(ctx context.Context, hashID, imageURL
 
 	// Build manifest for Clair
 	manifest := clairclient.Manifest{
-		Hash:   hashID,
+		Hash:   clairclient.DigestFromHashID(hashID),
 		Layers: layers,
 	}
 
@@ -117,7 +117,7 @@ func (l *localIndexer) IndexContainerImage(ctx context.Context, hashID, imageURL
 		expiration := time.Now().Add(24 * time.Hour)
 		if err := l.metadataStore.StoreManifest(ctx, hashID, expiration); err != nil {
 			// Log warning but don't fail the operation
-			log.Printf("warning: failed to store manifest metadata for %s: %v", hashID, err)
+			slog.WarnContext(ctx, "failed to store manifest metadata", "manifest_id", hashID, "error", err)
 		}
 	}
 
@@ -127,7 +127,7 @@ func (l *localIndexer) IndexContainerImage(ctx context.Context, hashID, imageURL
 // GetIndexReport retrieves an index report from Clair by manifest hash.
 // Returns (report, true, nil) if found, (nil, false, nil) if not found.
 func (l *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*clairclient.IndexReport, bool, error) {
-	report, err := l.clair.GetIndexReport(ctx, hashID)
+	report, err := l.clair.GetIndexReport(ctx, clairclient.DigestFromHashID(hashID))
 	if err != nil {
 		if errors.Is(err, clairclient.ErrNotFound) {
 			return nil, false, nil
@@ -140,7 +140,7 @@ func (l *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*clai
 
 // HasIndexReport checks if an index report exists in Clair.
 func (l *localIndexer) HasIndexReport(ctx context.Context, hashID string) (bool, error) {
-	_, err := l.clair.GetIndexReport(ctx, hashID)
+	_, err := l.clair.GetIndexReport(ctx, clairclient.DigestFromHashID(hashID))
 	if err != nil {
 		if errors.Is(err, clairclient.ErrNotFound) {
 			return false, nil
