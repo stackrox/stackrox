@@ -2,6 +2,8 @@ package clairclient
 
 import (
 	"encoding/json"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -61,9 +63,43 @@ type Package struct {
 }
 
 // NormalizedVersion represents a parsed and normalized package version.
+// Clair returns this as a string like "dpkg:0:1.19.7" which we parse into Kind + V fields.
 type NormalizedVersion struct {
 	Kind string `json:"kind"`
 	V    []int  `json:"V"`
+}
+
+// UnmarshalJSON handles Clair's string format for normalized_version.
+func (nv *NormalizedVersion) UnmarshalJSON(data []byte) error {
+	// Try string format first (Clair API returns this)
+	var s string
+	if json.Unmarshal(data, &s) == nil && s != "" {
+		return nv.parseString(s)
+	}
+	// Fallback to struct format
+	type alias NormalizedVersion
+	var a alias
+	if err := json.Unmarshal(data, &a); err != nil {
+		return err
+	}
+	*nv = NormalizedVersion(a)
+	return nil
+}
+
+func (nv *NormalizedVersion) parseString(s string) error {
+	parts := strings.SplitN(s, ":", 2)
+	if len(parts) != 2 {
+		return nil
+	}
+	nv.Kind = parts[0]
+	for _, seg := range strings.Split(parts[1], ".") {
+		v, err := strconv.Atoi(seg)
+		if err != nil {
+			v = 0
+		}
+		nv.V = append(nv.V, v)
+	}
+	return nil
 }
 
 // Distribution represents a Linux distribution.
