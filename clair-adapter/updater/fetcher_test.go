@@ -199,7 +199,7 @@ func TestFetcher_FetchOnce_InvalidZip(t *testing.T) {
 	ctx := t.Context()
 	err := fetcher.FetchOnce(ctx)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to unpack bundle")
+	assert.Contains(t, err.Error(), "unpacking bundle")
 }
 
 func TestFetcher_FetchOnce_ContextCancellation(t *testing.T) {

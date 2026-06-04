@@ -21,6 +21,7 @@ import (
 	matcherpkg "github.com/stackrox/rox/clair-adapter/matcher"
 	"github.com/stackrox/rox/clair-adapter/services"
 	"github.com/stackrox/rox/clair-adapter/updater"
+	"github.com/stackrox/rox/clair-adapter/vulnimporter"
 	pkggrpc "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	authnservice "github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -49,14 +50,14 @@ func run(configPath string) error {
 
 	slog.Info("starting clair-adapter",
 		"clair_url", cfg.ClairURL,
+		"clair_db", cfg.ClairDBConnString != "",
 		"grpc_addr", cfg.GRPCListenAddr,
 		"http_addr", cfg.HTTPListenAddr,
-		"updater_addr", cfg.UpdaterListenAddr,
 		"vuln_url", cfg.VulnerabilitiesURL,
 		"certs_dir", cfg.CertsDir,
 	)
 
-	// Configure mTLS certificate paths if CertsDir is set
+	// Configure mTLS certificate paths if CertsDir is set.
 	if cfg.CertsDir != "" {
 		os.Setenv(mtls.CAFileEnvName, filepath.Join(cfg.CertsDir, mtls.CACertFileName))
 		os.Setenv(mtls.CertFilePathEnvName, filepath.Join(cfg.CertsDir, mtls.ServiceCertFileName))
@@ -72,9 +73,36 @@ func run(configPath string) error {
 		return fmt.Errorf("creating clair client: %w", err)
 	}
 
-	// Updater: fetch vulnerability data and serve to Clair
+	// Set up vulnerability bundle importer if Clair DB connection is configured.
+	var imp *vulnimporter.Importer
+	if cfg.ClairDBConnString != "" {
+		slog.Info("connecting to Clair database for direct vulnerability import")
+		store, err := vulnimporter.NewMatcherStore(ctx, cfg.ClairDBConnString)
+		if err != nil {
+			return fmt.Errorf("creating Clair matcher store: %w", err)
+		}
+		// Pass adapter's MatcherMetadataStore if available (nil is safe).
+		imp = vulnimporter.NewImporter(store, nil)
+	}
+
+	// Configure HTTP client for fetching vulnerability bundles.
+	// Use mTLS if certs are available (for Central's definitions endpoint).
+	var fetcherOpts []updater.FetcherOption
+	if cfg.CertsDir != "" {
+		mtlsClient, err := updater.NewMTLSHTTPClient()
+		if err != nil {
+			slog.WarnContext(ctx, "failed to create mTLS HTTP client, using default", "error", err)
+		} else {
+			fetcherOpts = append(fetcherOpts, updater.WithHTTPClient(mtlsClient))
+		}
+	}
+	if imp != nil {
+		fetcherOpts = append(fetcherOpts, updater.WithImporter(imp))
+	}
+
+	// Updater: fetch vulnerability data, serve to Clair, and import into Clair's DB.
 	updaterServer := updater.NewServer()
-	fetcher := updater.NewFetcher(updaterServer, []string{cfg.VulnerabilitiesURL})
+	fetcher := updater.NewFetcher(updaterServer, []string{cfg.VulnerabilitiesURL}, fetcherOpts...)
 	go func() {
 		slog.Info("starting vulnerability data fetcher")
 		if err := fetcher.Start(ctx); err != nil && ctx.Err() == nil {
@@ -82,6 +110,7 @@ func run(configPath string) error {
 		}
 	}()
 
+	// Keep the updater HTTP server as a diagnostic endpoint.
 	updaterHTTPServer := &http.Server{
 		Addr:    cfg.UpdaterListenAddr,
 		Handler: updaterServer,
@@ -93,23 +122,23 @@ func run(configPath string) error {
 		}
 	}()
 
-	// Enrichment pipeline
+	// Enrichment pipeline.
 	csafEnricher := csafpkg.NewEnricher()
 	enricherPipeline := enricher.NewPipeline(enricher.WithCSAFEnricher(csafEnricher))
 
-	// Indexer
+	// Indexer.
 	var idx idxpkg.Indexer
 	if cfg.Indexer.Enable {
 		idx = idxpkg.NewLocalIndexer(clairClient, nil)
 	}
 
-	// Matcher
+	// Matcher.
 	var mtch matcherpkg.Matcher
 	if cfg.Matcher.Enable {
 		mtch = matcherpkg.NewLocalMatcher(clairClient, enricherPipeline, nil)
 	}
 
-	// Health handler with readiness check
+	// Health handler.
 	readinessFunc := func() bool {
 		hctx, hcancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer hcancel()
@@ -118,13 +147,13 @@ func run(configPath string) error {
 	}
 	healthHandler := healthz.NewHandler(readinessFunc)
 
-	// Identity extractor for mTLS client certificates
+	// Identity extractor for mTLS client certificates.
 	identityExtractor, err := authnservice.NewExtractor()
 	if err != nil {
 		return fmt.Errorf("creating identity extractor: %w", err)
 	}
 
-	// Build gRPC API with mTLS support
+	// gRPC API with mTLS.
 	grpcAPI := pkggrpc.NewAPI(pkggrpc.Config{
 		CustomRoutes:       healthHandler.CustomRoutes(),
 		IdentityExtractors: []authn.IdentityExtractor{identityExtractor},
@@ -134,7 +163,6 @@ func run(configPath string) error {
 		},
 	})
 
-	// Register API services
 	var apiServices []pkggrpc.APIService
 	if idx != nil {
 		apiServices = append(apiServices, services.NewIndexerService(idx))
@@ -144,7 +172,6 @@ func run(configPath string) error {
 	}
 	grpcAPI.Register(apiServices...)
 
-	// Start gRPC API
 	startSig := grpcAPI.Start()
 	select {
 	case <-startSig.Done():
@@ -158,7 +185,6 @@ func run(configPath string) error {
 		return fmt.Errorf("timeout waiting for gRPC API to start")
 	}
 
-	// Wait for shutdown signal
 	<-ctx.Done()
 	slog.Info("shutting down gracefully")
 

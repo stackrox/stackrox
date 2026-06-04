@@ -26,9 +26,17 @@ NAMESPACE="${NAMESPACE:-stackrox}"
 CLAIR_ADAPTER_IMAGE="${CLAIR_ADAPTER_IMAGE:-clair-adapter:dev}"
 CLAIR_IMAGE="${CLAIR_IMAGE:-quay.io/projectquay/clair:4.7.4}"
 CLAIR_DB_IMAGE="${CLAIR_DB_IMAGE:-docker.io/library/postgres:15}"
-VULN_URL="${VULN_URL:-https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip}"
 SCALE_DOWN_SCANNER_V4="${SCALE_DOWN_SCANNER_V4:-true}"
 BUILD_IMAGE="${BUILD_IMAGE:-false}"
+
+# Default VULN_URL: use Central's endpoint if Central is deployed, otherwise fall back to public CDN
+if [[ -z "${VULN_URL:-}" ]]; then
+    if kubectl get svc central -n "${NAMESPACE}" &>/dev/null; then
+        VULN_URL="https://central.${NAMESPACE}.svc/api/extensions/scannerdefinitions?version=dev"
+    else
+        VULN_URL="https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip"
+    fi
+fi
 
 # Auto-detect cluster type
 detect_cluster_type() {
@@ -352,10 +360,12 @@ metadata:
 data:
   config.yaml: |
     clair_url: "http://clair.${NAMESPACE}.svc:8080"
+    clair_db_connstring: "host=clair-db.${NAMESPACE}.svc port=5432 user=clair dbname=clair sslmode=disable"
     grpc_listen_addr: "0.0.0.0:8443"
     http_listen_addr: "0.0.0.0:9443"
     updater_listen_addr: "0.0.0.0:9444"
     vulnerabilities_url: "${VULN_URL}"
+    certs_dir: "/run/secrets/stackrox.io/certs"
     indexer:
       enable: true
     matcher:

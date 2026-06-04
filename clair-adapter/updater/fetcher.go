@@ -2,40 +2,49 @@ package updater
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/stackrox/rox/pkg/mtls"
 )
+
+// BundleImporter imports vulnerability bundles from a ZIP file on disk.
+type BundleImporter interface {
+	ImportFromZip(ctx context.Context, zipPath string) error
+}
 
 // Fetcher fetches vulnerability data from URLs in online mode.
 type Fetcher struct {
 	server       *Server
+	importer     BundleImporter
 	client       *http.Client
-	urls         []string      // candidate URLs, tried in order
-	interval     time.Duration // default 5 minutes
-	lastModified string        // for If-Modified-Since header
+	urls         []string
+	interval     time.Duration
+	lastModified string
 }
 
 // FetcherOption configures the Fetcher.
 type FetcherOption func(*Fetcher)
 
 // WithFetchInterval sets the interval between fetch cycles.
-// Default is 5 minutes.
 func WithFetchInterval(d time.Duration) FetcherOption {
-	return func(f *Fetcher) {
-		f.interval = d
-	}
+	return func(f *Fetcher) { f.interval = d }
 }
 
 // WithHTTPClient sets the HTTP client to use for requests.
-// Default is http.DefaultClient.
 func WithHTTPClient(c *http.Client) FetcherOption {
-	return func(f *Fetcher) {
-		f.client = c
-	}
+	return func(f *Fetcher) { f.client = c }
+}
+
+// WithImporter sets the bundle importer called after successful fetch.
+func WithImporter(imp BundleImporter) FetcherOption {
+	return func(f *Fetcher) { f.importer = imp }
 }
 
 // NewFetcher creates a new vulnerability data fetcher.
@@ -46,20 +55,16 @@ func NewFetcher(server *Server, urls []string, opts ...FetcherOption) *Fetcher {
 		urls:     urls,
 		interval: 5 * time.Minute,
 	}
-
 	for _, opt := range opts {
 		opt(f)
 	}
-
 	return f
 }
 
 // Start starts the fetch loop and blocks until the context is canceled.
-// It fetches immediately on start, then runs at the configured interval.
 func (f *Fetcher) Start(ctx context.Context) error {
-	// Fetch immediately on start
 	if err := f.FetchOnce(ctx); err != nil {
-		slog.ErrorContext(ctx, "Initial fetch failed", "error", err)
+		slog.ErrorContext(ctx, "initial fetch failed", "error", err)
 	}
 
 	ticker := time.NewTicker(f.interval)
@@ -71,7 +76,7 @@ func (f *Fetcher) Start(ctx context.Context) error {
 			return nil
 		case <-ticker.C:
 			if err := f.FetchOnce(ctx); err != nil {
-				slog.ErrorContext(ctx, "Fetch cycle failed", "error", err)
+				slog.ErrorContext(ctx, "fetch cycle failed", "error", err)
 			}
 		}
 	}
@@ -85,17 +90,14 @@ func (f *Fetcher) FetchOnce(ctx context.Context) error {
 
 	var lastErr error
 
-	// Try each URL in order
 	for _, url := range f.urls {
-		slog.InfoContext(ctx, "Fetching vulnerability data", "url", url)
+		slog.InfoContext(ctx, "fetching vulnerability data", "url", url)
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 		if err != nil {
-			lastErr = fmt.Errorf("failed to create request: %w", err)
+			lastErr = fmt.Errorf("creating request: %w", err)
 			continue
 		}
-
-		// Add If-Modified-Since header if we have a last modified time
 		if f.lastModified != "" {
 			req.Header.Set("If-Modified-Since", f.lastModified)
 		}
@@ -109,50 +111,50 @@ func (f *Fetcher) FetchOnce(ctx context.Context) error {
 		switch resp.StatusCode {
 		case http.StatusNotModified:
 			resp.Body.Close()
-			slog.InfoContext(ctx, "Vulnerability data not modified")
+			slog.InfoContext(ctx, "vulnerability data not modified")
 			return nil
 
 		case http.StatusOK:
-			// Download to temporary file
 			tmpFile, err := os.CreateTemp("", "vulnerabilities-*.zip")
 			if err != nil {
 				resp.Body.Close()
-				lastErr = fmt.Errorf("failed to create temp file: %w", err)
+				lastErr = fmt.Errorf("creating temp file: %w", err)
 				continue
 			}
 			tmpPath := tmpFile.Name()
 
-			// Copy response to temp file
 			_, err = io.Copy(tmpFile, resp.Body)
 			resp.Body.Close()
 			tmpFile.Close()
-
 			if err != nil {
 				os.Remove(tmpPath)
-				lastErr = fmt.Errorf("failed to download file: %w", err)
+				lastErr = fmt.Errorf("downloading: %w", err)
 				continue
 			}
 
-			// Unpack bundles
+			// Import into Clair's DB by streaming from the ZIP on disk.
+			if f.importer != nil {
+				if err := f.importer.ImportFromZip(ctx, tmpPath); err != nil {
+					slog.ErrorContext(ctx, "failed to import bundles into Clair DB", "error", err)
+				}
+			}
+
+			// Unpack bundles into memory for the HTTP server.
 			bundles, err := UnpackBundle(tmpPath)
 			os.Remove(tmpPath)
-
 			if err != nil {
-				lastErr = fmt.Errorf("failed to unpack bundle: %w", err)
+				lastErr = fmt.Errorf("unpacking bundle: %w", err)
 				continue
 			}
 
-			// Update server with new bundles
 			f.server.SetBundles(bundles)
 
-			// Update last modified time from response header
 			if lastMod := resp.Header.Get("Last-Modified"); lastMod != "" {
 				f.lastModified = lastMod
 			}
 
-			slog.InfoContext(ctx, "Successfully fetched and loaded vulnerability data",
-				"bundles", len(bundles),
-				"url", url)
+			slog.InfoContext(ctx, "vulnerability data loaded",
+				"bundles", len(bundles), "url", url, "imported", f.importer != nil)
 			return nil
 
 		case http.StatusNotFound:
@@ -169,4 +171,32 @@ func (f *Fetcher) FetchOnce(ctx context.Context) error {
 	}
 
 	return fmt.Errorf("all URLs failed, last error: %w", lastErr)
+}
+
+// NewMTLSHTTPClient creates an HTTP client configured with StackRox mTLS
+// certificates for authenticating to Central.
+func NewMTLSHTTPClient() (*http.Client, error) {
+	caPEM, err := mtls.CACertPEM()
+	if err != nil {
+		return nil, fmt.Errorf("loading CA certificate: %w", err)
+	}
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(caPEM) {
+		return nil, fmt.Errorf("failed to add CA certificate to pool")
+	}
+
+	cert, err := mtls.LeafCertificateFromFile()
+	if err != nil {
+		return nil, fmt.Errorf("loading client certificate: %w", err)
+	}
+
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				RootCAs:      certPool,
+				Certificates: []tls.Certificate{cert},
+			},
+		},
+		Timeout: 5 * time.Minute,
+	}, nil
 }

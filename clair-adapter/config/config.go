@@ -10,6 +10,7 @@ import (
 
 type Config struct {
 	ClairURL           string        `yaml:"clair_url"`
+	ClairDBConnString  string        `yaml:"clair_db_connstring"`
 	GRPCListenAddr     string        `yaml:"grpc_listen_addr"`
 	HTTPListenAddr     string        `yaml:"http_listen_addr"`
 	UpdaterListenAddr  string        `yaml:"updater_listen_addr"`
