@@ -28,6 +28,10 @@ import (
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/claircore/toolkit/log"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
@@ -82,6 +86,8 @@ type Opts struct {
 	RetryMax   int
 
 	VulnBundleAllowlist []string
+
+	CentralEndpoint string
 }
 
 // Updater represents a vulnerability updater.
@@ -116,6 +122,9 @@ type Updater struct {
 
 	vulnBundleAllowlist set.FrozenSet[string]
 
+	centralEndpoint  string
+	notifiedCentral  atomic.Bool
+
 	distManager *distManager
 }
 
@@ -145,6 +154,8 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 
 		retryDelay: opts.RetryDelay,
 		retryMax:   opts.RetryMax,
+
+		centralEndpoint: opts.CentralEndpoint,
 
 		distManager: newDistManager(opts.Store),
 	}
@@ -369,6 +380,28 @@ func (u *Updater) KnownDistributions() []claircore.Distribution {
 	return u.distManager.get()
 }
 
+func (u *Updater) notifyCentralReady(ctx context.Context) {
+	if u.centralEndpoint == "" || !u.notifiedCentral.CompareAndSwap(false, true) {
+		return
+	}
+	slog.InfoContext(ctx, "notifying Central that scanner is ready", "endpoint", u.centralEndpoint)
+	conn, err := clientconn.AuthenticatedGRPCConnection(ctx, u.centralEndpoint, mtls.CentralSubject)
+	if err != nil {
+		slog.WarnContext(ctx, "failed to connect to Central for readiness notification", "reason", err)
+		u.notifiedCentral.Store(false)
+		return
+	}
+	defer utils.IgnoreError(conn.Close)
+
+	client := central.NewScannerServiceClient(conn)
+	if _, err := client.NotifyScannerReady(ctx, protocompat.ProtoEmpty()); err != nil {
+		slog.WarnContext(ctx, "failed to notify Central of scanner readiness", "reason", err)
+		u.notifiedCentral.Store(false)
+		return
+	}
+	slog.InfoContext(ctx, "Central notified that scanner is ready")
+}
+
 // Update runs the full vulnerability update process.
 //
 // Note: periodic full GC will not be started.
@@ -488,7 +521,9 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	}
 	slog.InfoContext(ctx, "known-distributions updated", "duration", time.Since(distStart))
 
-	_ = u.Initialized(ctx)
+	if u.Initialized(ctx) {
+		u.notifyCentralReady(ctx)
+	}
 
 	return true, nil
 }

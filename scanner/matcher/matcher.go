@@ -200,6 +200,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 		Client:              client,
 		URLs:                cfg.VulnerabilitiesURLs,
 		VulnBundleAllowlist: cfg.VulnBundleAllowlist,
+		CentralEndpoint:     cfg.CentralEndpoint,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating vuln updater: %w", err)

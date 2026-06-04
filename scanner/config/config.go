@@ -19,6 +19,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/internal/version"
 )
@@ -200,6 +201,8 @@ type MatcherConfig struct {
 	// but means vulnerabilities from excluded bundles will not be detected,
 	// leading to potentially incomplete scan results.
 	VulnBundleAllowlist []string `mapstructure:"vuln_bundle_allowlist"`
+	// CentralEndpoint is the gRPC address of Central, derived from ROX_CENTRAL_ENDPOINT.
+	CentralEndpoint string `mapstructure:"-"`
 }
 
 // resolveVersions returns values for ROX_VERSION and ROX_VULNERABILITY_VERSION
@@ -269,6 +272,8 @@ func (c *MatcherConfig) validate() error {
 	default:
 		return fmt.Errorf("readiness: invalid readiness type %q", c.Readiness)
 	}
+
+	c.CentralEndpoint = env.CentralEndpoint.Setting()
 
 	return nil
 }

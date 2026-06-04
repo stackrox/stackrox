@@ -154,6 +154,7 @@ import (
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/central/scanner"
+	scannerNotifyService "github.com/stackrox/rox/central/scanner/service"
 	scannerDefinitionsHandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
 	searchService "github.com/stackrox/rox/central/search/service"
 	secretService "github.com/stackrox/rox/central/secret/service"
@@ -459,6 +460,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		processListeningOnPorts.Singleton(),
 		rbacService.Singleton(),
 		roleService.Singleton(),
+		scannerNotifyService.New(reprocessor.Singleton()),
 		searchService.Singleton(),
 		secretService.Singleton(),
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton(), installationStore.Singleton(), clusterInitStore.Singleton()),
