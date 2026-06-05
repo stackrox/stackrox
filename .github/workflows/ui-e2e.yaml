@@ -719,17 +719,17 @@ jobs:
 
             check_scan_data() {
               local label="$1"
-              local count_sha count_graphql
-              count_sha=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+              local count_images count_cves
+              count_images=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
                 "https://${API_ENDPOINT}/v1/imagescount" \
                 | jq '.count // 0' 2>/dev/null)
-              count_graphql=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+              count_cves=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
                 "https://${API_ENDPOINT}/api/graphql" \
                 -X POST -H 'Content-Type: application/json' \
-                -d '{"query":"{ imageCount imageCVECount }"}' \
-                | jq '.data | "\(.imageCount // 0) images, \(.imageCVECount // 0) cves"' 2>/dev/null)
-              echo "${label}: v1_total=${count_sha:-0} graphql=${count_graphql}"
-              [ "${count_sha:-0}" -gt 5 ] && return 0 || return 1
+                -d '{"query":"{ imageCVECount }"}' \
+                | jq '.data.imageCVECount // 0' 2>/dev/null)
+              echo "${label}: images=${count_images:-0} imageCVEs=${count_cves:-0}"
+              [ "${count_images:-0}" -gt 5 ] && [ "${count_cves:-0}" -gt 0 ] && return 0 || return 1
             }
 
             total=0
