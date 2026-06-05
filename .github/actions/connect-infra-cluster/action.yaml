@@ -33,26 +33,25 @@ runs:
         infractl artifacts "${{ inputs.cluster-name }}" --download-dir artifacts > /dev/null
         echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
 
-    - name: Setup GKE auth if needed
+    - name: Check if GKE auth needed
+      id: gke-check
       shell: bash
-      env:
-        GCP_CREDENTIALS: ${{ inputs.gcp-credentials }}
       run: |
-        if ! grep -q "gke-gcloud-auth-plugin" artifacts/kubeconfig 2>/dev/null; then
-          echo "Not a GKE kubeconfig, skipping"
-          exit 0
+        if grep -q "gke-gcloud-auth-plugin" artifacts/kubeconfig 2>/dev/null; then
+          echo "gke=true" >> "$GITHUB_OUTPUT"
         fi
-        if [ -z "$GCP_CREDENTIALS" ]; then
-          echo "::warning::GKE kubeconfig but no gcp-credentials provided"
-          exit 0
-        fi
-        echo "GKE kubeconfig detected — setting up gcloud auth"
-        echo "$GCP_CREDENTIALS" > /tmp/gcp-sa-key.json
-        gcloud auth activate-service-account --key-file=/tmp/gcp-sa-key.json
-        gcloud components install gke-gcloud-auth-plugin --quiet 2>/dev/null || \
-          sudo apt-get install -yq google-cloud-sdk-gke-gcloud-auth-plugin 2>/dev/null || \
-          sudo apt-get install -yq google-cloud-cli-gke-gcloud-auth-plugin
-        rm /tmp/gcp-sa-key.json
+
+    - name: GCP auth for GKE cluster
+      if: steps.gke-check.outputs.gke && inputs.gcp-credentials
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ inputs.gcp-credentials }}
+
+    - name: Install gke-gcloud-auth-plugin
+      if: steps.gke-check.outputs.gke
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+      with:
+        install_components: "gke-gcloud-auth-plugin"
 
     - name: Refresh OpenShift token if needed
       shell: bash
