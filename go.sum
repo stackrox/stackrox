@@ -329,8 +329,8 @@ github.com/aws/aws-sdk-go-v2/service/ssooidc v1.36.4 h1:p9+Fizo2sUB6wI5Yb3K5lmyk
 github.com/aws/aws-sdk-go-v2/service/ssooidc v1.36.4/go.mod h1:0x10Wy0dVS4Gn552xhHY5th2QdYpfJf44EsfyYGV194=
 github.com/aws/aws-sdk-go-v2/service/sts v1.43.1 h1:r/vUkpLilfCA3sxbRnkHbJejaoVHEdj4FEhv+Zva4DU=
 github.com/aws/aws-sdk-go-v2/service/sts v1.43.1/go.mod h1:t01JURC8Fe5M+7R1K0vzIZ2NT04HqvZR+FjlHrHDT2A=
-github.com/aws/smithy-go v1.27.0 h1:ZoFioDKJxkSIW2otF9T0aPtNlUwhdVCcuZh/rzH9Hus=
-github.com/aws/smithy-go v1.27.0/go.mod h1:YE2RhdIuDbA5E5bTdciG9KrW3+TiEONeUWCqxX9i1Fc=
+github.com/aws/smithy-go v1.27.1 h1:4T340VFndXtADGF52gYa1POyL7s9E4Z1OeZ1hCscIw8=
+github.com/aws/smithy-go v1.27.1/go.mod h1:YE2RhdIuDbA5E5bTdciG9KrW3+TiEONeUWCqxX9i1Fc=
 github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.11.0 h1:GOPttfOAf5qAgx7r6b+zCWZrvCsfKffkL4H6mSYx1kA=
 github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.11.0/go.mod h1:a2HN6+p7k0JLDO8514sMr0l4cnrR52z4sWoZ/Uc82ho=
 github.com/aymerick/douceur v0.2.0 h1:Mv+mAeH1Q+n9Fr+oyamOlAkUNPWPlA8PPGR0QAaYuPk=
