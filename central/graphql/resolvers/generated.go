@@ -4,6 +4,7 @@ package resolvers
 
 import (
 	"context"
+	"encoding/base64"
 	"reflect"
 
 	"github.com/graph-gophers/graphql-go"
@@ -7023,27 +7024,27 @@ func (resolver *Resolver) wrapCosignSignaturesWithContext(ctx context.Context, v
 
 func (resolver *cosignSignatureResolver) CertChainPem(ctx context.Context) string {
 	value := resolver.data.GetCertChainPem()
-	return string(value)
+	return base64.StdEncoding.EncodeToString(value)
 }
 
 func (resolver *cosignSignatureResolver) CertPem(ctx context.Context) string {
 	value := resolver.data.GetCertPem()
-	return string(value)
+	return base64.StdEncoding.EncodeToString(value)
 }
 
 func (resolver *cosignSignatureResolver) RawSignature(ctx context.Context) string {
 	value := resolver.data.GetRawSignature()
-	return string(value)
+	return base64.StdEncoding.EncodeToString(value)
 }
 
 func (resolver *cosignSignatureResolver) RekorBundle(ctx context.Context) string {
 	value := resolver.data.GetRekorBundle()
-	return string(value)
+	return base64.StdEncoding.EncodeToString(value)
 }
 
 func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) string {
 	value := resolver.data.GetSignaturePayload()
-	return string(value)
+	return base64.StdEncoding.EncodeToString(value)
 }
 
 type dataSourceResolver struct {
