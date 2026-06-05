@@ -29,6 +29,57 @@ runs:
         infractl artifacts "${{ inputs.cluster-name }}" --download-dir artifacts > /dev/null
         echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
 
+    - name: Refresh OpenShift token if needed
+      shell: bash
+      run: |
+        # Check if kubeconfig uses a token (ROSA HCP, etc.) vs certificate (OCP)
+        if ! grep -q "token: sha256~" artifacts/kubeconfig 2>/dev/null; then
+          echo "Certificate-based auth, no refresh needed"
+          exit 0
+        fi
+
+        # Test if current token works
+        if kubectl cluster-info &>/dev/null; then
+          echo "Token still valid"
+          exit 0
+        fi
+
+        echo "Token expired — refreshing via OAuth"
+
+        # Get API endpoint and console credentials from artifacts
+        API_URL=$(grep "server:" artifacts/kubeconfig | awk '{print $2}')
+        CONSOLE_USER=$(cat artifacts/cluster-console-username 2>/dev/null)
+        CONSOLE_PASS=$(cat artifacts/cluster-console-password 2>/dev/null)
+
+        if [ -z "$CONSOLE_USER" ] || [ -z "$CONSOLE_PASS" ]; then
+          echo "::error::No console credentials in artifacts — cannot refresh token"
+          exit 1
+        fi
+
+        # Discover OAuth server
+        OAUTH_URL=$(curl -sk "$API_URL/.well-known/oauth-authorization-server" | jq -r '.authorization_endpoint // empty')
+        if [ -z "$OAUTH_URL" ]; then
+          echo "::error::Cannot discover OAuth endpoint"
+          exit 1
+        fi
+
+        # Get fresh token
+        echo "::add-mask::${CONSOLE_PASS}"
+        LOCATION=$(curl -sk -u "${CONSOLE_USER}:${CONSOLE_PASS}" \
+          "${OAUTH_URL}?response_type=token&client_id=openshift-challenging-client" \
+          -H "X-CSRF-Token: 1" \
+          -D - -o /dev/null | grep -i "^Location:" | tr -d '\r')
+        NEW_TOKEN=$(echo "$LOCATION" | grep -oE 'access_token=[^&]+' | cut -d= -f2)
+
+        if [ -z "$NEW_TOKEN" ]; then
+          echo "::error::Failed to obtain fresh token"
+          exit 1
+        fi
+
+        echo "::add-mask::${NEW_TOKEN}"
+        sed -i "s|token: sha256~.*|token: ${NEW_TOKEN}|" artifacts/kubeconfig
+        echo "Token refreshed successfully"
+
     - name: Verify cluster access
       shell: bash
       run: |
