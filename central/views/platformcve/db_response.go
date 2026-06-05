@@ -65,10 +65,6 @@ func (c *platformCVECoreResponse) GetFirstDiscoveredTime() *time.Time {
 	return c.FirstDiscoveredTime
 }
 
-type platformCVECoreCount struct {
-	CVECount int `db:"cve_id_count"`
-}
-
 type clusterCountByPlatformType struct {
 	GenericClusterCount    int
 	KubernetesClusterCount int
