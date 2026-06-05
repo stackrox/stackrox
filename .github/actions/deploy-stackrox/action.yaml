@@ -134,10 +134,18 @@ runs:
           source /tmp/roxie-env.sh
           echo "$API_ENDPOINT" > /tmp/rox-api-endpoint
 
-          curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-            "https://${API_ENDPOINT}/v1/apitokens/generate" \
-            -X POST -d '{"name":"ui_tests","role":"Admin"}' \
-            | jq -r '.token' > /tmp/rox-auth-token
+          echo "Generating API token (endpoint: ${API_ENDPOINT})..."
+          for attempt in $(seq 1 12); do
+            if curl -sk --connect-timeout 10 -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://${API_ENDPOINT}/v1/apitokens/generate" \
+              -X POST -d '{"name":"ui_tests","role":"Admin"}' \
+              | jq -r '.token' > /tmp/rox-auth-token && [ -s /tmp/rox-auth-token ]; then
+              echo "API token generated"
+              break
+            fi
+            echo "Attempt $attempt/12 failed, waiting 10s..."
+            sleep 10
+          done
 
         }
 

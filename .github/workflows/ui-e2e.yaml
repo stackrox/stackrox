@@ -38,7 +38,7 @@ on:
         type: boolean
         default: false
       infra-flavor:
-        description: "Provision cluster via infractl (e.g. gke-default, rosa-hcp, openshift-4)"
+        description: "Provision cluster via infractl (e.g. gke-default, rosahcp, openshift-4)"
         required: false
         type: string
       gke-cluster-name:
