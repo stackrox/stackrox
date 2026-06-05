@@ -1,39 +1,34 @@
-name: Speculative Run Gate
+name: Speedracer Gate
 description: >
-  Gate step for speculative-execution matrix jobs.
+  Gate step for speculative-execution (speedracer) matrix jobs.
 
-  Fast runner: posts an in_progress check-run (the coordination signal),
-  then starts a background monitor that polls for sibling check-runs.
-  When a winning sibling's check appears → cancel self.
+  Add 'speedracer: [a, b]' (or [a, b, c]) as the LAST dimension of your job
+  matrix and call this action as the first step after checkout. No inputs are
+  needed — the action reads matrix.speedracer for the current copy, auto-derives
+  check-name from the remaining matrix dimensions, and queries the GHA jobs API
+  to determine which copy is the last-resort fallback (no explicit last-copy
+  input required, even for arm64 with matrix excludes).
 
-  Slow runner: exits 1 immediately (no check-run posted). Siblings treat
-  "absent after 3 polls" (t≥12s) as eliminated.
+  Slow runner: exits as 'cancelled' immediately (no work wasted).
+  Fast runner: posts an in_progress check-run, starts a background monitor.
+  Monitor fires when a sibling check-run appears and cancels this copy.
 
-  Pair with speculative-declare-win at the end of the job (if: success()).
-  That action PATCHes the check-run posted here to completed/success.
-  Both actions share the same check-name value.
+  Pair with speedracer-finish as the last step (no if: condition needed).
 
 inputs:
-  copy:
-    description: 'This copy letter (a, b, or c)'
-    required: true
   check-name:
     description: >
-      Required check name WITHOUT the copy letter suffix. Must exactly match
-      the branch-protection required check name. Used as the check-run name
-      and sibling coordination key.
-      Example: "pre-build-go-binaries (default, amd64)"
-    required: true
-  last-copy:
-    description: 'Unconditional fallback copy that always runs regardless of CPU (b for 2-copy, c for 3-copy)'
+      Override the auto-derived required check name. Auto-derived as:
+        github.job + " (" + matrix-values-excluding-speedracer + ")"
+      Only set this if the auto-derived name does not match branch protection.
     required: false
-    default: 'b'
+    default: ''
   slow-cpu-pattern:
     description: 'Substring of CPU model name that marks a slow runner'
     required: false
     default: '7763'
   enabled:
-    description: 'Set to false to disable speculative execution — all copies run normally'
+    description: 'Set to false to disable speedracer — all copies run normally'
     required: false
     default: 'true'
 
@@ -48,43 +43,71 @@ runs:
       run: |
         set +e
         if [[ "${{ inputs.enabled }}" != 'true' ]]; then
-          echo "Speculative execution disabled — this copy always runs."
+          echo "Speedracer disabled — this copy always runs."
           exit 0
         fi
-        MY_COPY="${{ inputs.copy }}"
-        CHECK_NAME="${{ inputs.check-name }}"
-        LAST_COPY="${{ inputs.last-copy }}"
-        SLOW_PATTERN="${{ inputs.slow-cpu-pattern }}"
+
+        MY_COPY="${{ matrix.speedracer }}"
+        RUN_ID="${{ github.run_id }}"
+        REPO="${{ github.repository }}"
         MY_PARENT=$PPID
+
+        # Auto-derive check-name from matrix (excluding speedracer key)
+        CHECK_NAME="${{ inputs.check-name }}"
+        if [[ -z "$CHECK_NAME" ]]; then
+          MATRIX_JSON='${{ toJSON(matrix) }}'
+          OTHER_VALS=$(echo "$MATRIX_JSON" | \
+            jq -r 'del(.speedracer) | to_entries | map(.value | tostring) | join(", ")' 2>/dev/null)
+          if [[ -n "$OTHER_VALS" ]]; then
+            CHECK_NAME="${{ github.job }} ($OTHER_VALS)"
+          else
+            CHECK_NAME="${{ github.job }}"
+          fi
+          echo "Auto-derived check-name: $CHECK_NAME"
+        fi
+
+        # Auto-detect last speedracer copy via jobs API.
+        # Speedracer must be the last matrix dimension so the GHA job name ends
+        # with ", <letter>)" — we extract the last lowercase letter before ")".
+        # arm64 jobs that exclude b/c copies auto-resolve to last=a with no
+        # special input needed.
+        if [[ "$CHECK_NAME" == *"("* ]]; then
+          check_stem="${CHECK_NAME%\)}"   # "job (foo, bar" — strip trailing ")"
+        else
+          check_stem="$CHECK_NAME"       # "job" — no parens
+        fi
+        all_copies=$(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" 2>/dev/null | \
+          jq -r --arg s "$check_stem" '.jobs[] | select(.name | startswith($s)) | .name' | \
+          grep -oE '[a-z]\)$' | tr -d ')' | sort -u)
+        LAST_COPY=$(echo "$all_copies" | tail -1)
+        [[ -z "$LAST_COPY" ]] && LAST_COPY="b"   # safe fallback
+        echo "Detected copies: $(echo "$all_copies" | tr '\n' ' ')→ last=${LAST_COPY}"
 
         cpu=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
         [[ -z "$cpu" ]] && cpu=$(lscpu 2>/dev/null | awk -F: '/Model name/{gsub(/^ +/,"",$2); print $2}')
-        echo "cpu=${cpu:-unknown}"
+        echo "cpu=${cpu:-unknown} copy=${MY_COPY} last=${LAST_COPY}"
 
-        # ── 1. CPU check ────────────────────────────────────────────────────────
-        if [[ "$MY_COPY" != "$LAST_COPY" && "$cpu" == *"${SLOW_PATTERN}"* ]]; then
+        # ── 1. CPU check ────────────────────────────────────────────────────
+        if [[ "$MY_COPY" != "$LAST_COPY" && "$cpu" == *"${{ inputs.slow-cpu-pattern }}"* ]]; then
           echo "::warning::Slow runner (${cpu}) — delegating to next copy."
-          # SIGTERM the runner parent so the job shows as 'cancelled' (not 'failure').
-          # This avoids red X marks in the PR summary for expected speculative exits.
-          # Monitor treats absent-after-3-polls as eliminated — same as before.
           kill -TERM "$MY_PARENT" 2>/dev/null
-          sleep 600  # stay alive until the runner's cancellation cleanup kills us
+          sleep 600
         fi
 
-        # ── 2. Post in_progress check-run ───────────────────────────────────────
-        # external_id includes run_id so monitors from different workflow runs
-        # on the same commit SHA (e.g. /retest) do not cross-contaminate.
+        # ── 2. Post in_progress check-run ───────────────────────────────────
+        # external_id includes run_id so monitors from concurrent runs on the
+        # same SHA (e.g. /retest) do not cross-contaminate.
         EXT_ID="spec-${MY_COPY}-${RUN_ID}"
-        check_id=$(gh api repos/"${{ github.repository }}"/check-runs \
+        check_id=$(gh api repos/"${REPO}"/check-runs \
           -f name="${CHECK_NAME}" \
           -f head_sha="${{ github.sha }}" \
           -f status=in_progress \
           -f external_id="${EXT_ID}" \
           --jq '.id' 2>/dev/null)
-        printf '%s\n' "${check_id:-}" > /tmp/speculative-check-id
+        printf '%s\n' "${check_id:-}" > /tmp/speedracer-check-id
         echo "Posted in_progress check-run ${check_id} (${EXT_ID})"
 
-        # ── 3. Background monitor for non-first copies ──────────────────────────
+        # ── 3. Background monitor for non-first copies ──────────────────────
         case "$MY_COPY" in
           b) prev_copies="a" ;;
           c) prev_copies="a b" ;;
@@ -93,46 +116,38 @@ runs:
         esac
 
         if [[ -n "$prev_copies" ]]; then
-          # No baseline capture needed — Gate step stays alive (sleeping), so
-          # there are no "work" child processes to kill when the monitor fires.
-
           sibling_ids=""
           for c in ${prev_copies}; do
             sibling_ids="${sibling_ids:+${sibling_ids},}spec-${c}-${RUN_ID}"
           done
 
-          cp "${GITHUB_ACTION_PATH}/monitor.sh" /tmp/speculative-monitor.sh
-          chmod +x /tmp/speculative-monitor.sh
-          export SPEC_REPO="${{ github.repository }}"
+          cp "${GITHUB_ACTION_PATH}/monitor.sh" /tmp/speedracer-monitor.sh
+          chmod +x /tmp/speedracer-monitor.sh
+          export SPEC_REPO="${REPO}"
           export SPEC_SHA="${{ github.sha }}"
           export SPEC_CHECK_NAME="${CHECK_NAME}"
           export SPEC_SIBLING_IDS="${sibling_ids}"
           export SPEC_PARENT="${MY_PARENT}"
 
-          nohup bash /tmp/speculative-monitor.sh >> /tmp/speculative-monitor.log 2>&1 &
+          nohup bash /tmp/speedracer-monitor.sh >> /tmp/speedracer-monitor.log 2>&1 &
           disown
           GATE_BLOCK_START=$(date +%s%3N)
-          echo "Monitor started at ${GATE_BLOCK_START}ms — Gate blocking until decision."
+          echo "Monitor started — Gate blocking until decision."
 
-          # KEY: Keep this Gate composite action step alive so $MY_PARENT (the
-          # composite action coordinator) remains valid. When the monitor finds a
-          # winning sibling, it SIGTERMs $SPEC_PARENT (= $MY_PARENT = coordinator).
-          # Since the coordinator is still running, GHA marks the step as 'cancelled'
-          # — not 'failure'. This is the crucial difference from a background process
-          # firing during a later regular step (which produces 'failure').
-          #
-          # The monitor writes /tmp/speculative-monitor-result when all siblings are
-          # gone (slow runners) — we detect that and exit 0 to let work proceed.
-          rm -f /tmp/speculative-monitor-result
+          # KEY: Keep this Gate step alive so $MY_PARENT (composite action coordinator)
+          # remains valid. SIGTERM to an active composite coordinator → 'cancelled'.
+          # SIGTERM to the coordinator during a regular step → 'failure'.
+          # Monitor writes /tmp/speedracer-monitor-result when all siblings gone.
+          rm -f /tmp/speedracer-monitor-result
           gate_deadline=$(( $(date +%s) + 300 ))
-          while [[ ! -f /tmp/speculative-monitor-result && $(date +%s) -lt $gate_deadline ]]; do
+          while [[ ! -f /tmp/speedracer-monitor-result && $(date +%s) -lt $gate_deadline ]]; do
             sleep 1
           done
 
           GATE_BLOCK_END=$(date +%s%3N)
           GATE_BLOCK_MS=$(( GATE_BLOCK_END - GATE_BLOCK_START ))
-          if [[ -f /tmp/speculative-monitor-result ]]; then
-            echo "Monitor decision: $(cat /tmp/speculative-monitor-result) after ${GATE_BLOCK_MS}ms — proceeding to work."
+          if [[ -f /tmp/speedracer-monitor-result ]]; then
+            echo "Monitor: $(cat /tmp/speedracer-monitor-result) after ${GATE_BLOCK_MS}ms — proceeding."
           else
             echo "Gate timeout after ${GATE_BLOCK_MS}ms — proceeding as fallback."
           fi
@@ -140,23 +155,12 @@ runs:
           echo "Copy ${MY_COPY} is first — no monitor needed."
         fi
 
-        # Copy the cleanup script so the post-job hook can call it.
-        cp "${GITHUB_ACTION_PATH}/cleanup.sh" /tmp/speculative-cleanup.sh
-        chmod +x /tmp/speculative-cleanup.sh
-
+        cp "${GITHUB_ACTION_PATH}/cleanup.sh" /tmp/speedracer-cleanup.sh
+        chmod +x /tmp/speedracer-cleanup.sh
         echo "Gate passed."
         exit 0
 
     - name: Register post-job cleanup
-      # Uses gacts/run-and-post-run (JS action) to register a post callback.
-      # The post: script is ONE LINE — YAML '>' fold preserves newlines for
-      # more-indented content, which breaks multi-line bash in this context.
-      # Cleanup logic lives in cleanup.sh, copied by the Gate step above.
-      #
-      # Logic:
-      #   success  → declare-win already patched to completed/success; skip.
-      #   cancelled → in_progress is harmless (filter=latest ignores it); skip.
-      #   failure  → cleanup.sh resolves check-run so branch protection unblocks.
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       if: inputs.enabled == 'true'
       env:
@@ -165,4 +169,4 @@ runs:
       with:
         shell: bash
         run: 'true'
-        post: if [[ "${{ job.status }}" == "failure" ]]; then SPEC_REPO=${{ github.repository }} GH_TOKEN=${{ github.token }} bash /tmp/speculative-cleanup.sh; fi
+        post: if [[ "${{ job.status }}" == "failure" ]]; then SPEC_REPO=${{ github.repository }} GH_TOKEN=${{ github.token }} bash /tmp/speedracer-cleanup.sh; fi

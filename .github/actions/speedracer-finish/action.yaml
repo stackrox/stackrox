@@ -1,23 +1,24 @@
-name: Speculative Run — Declare Win
+name: Speedracer Finish
 description: >
-  Marks the winner of a speculative-execution race. Call with 'if: success()'
-  at the end of the job. Updates the in_progress check-run posted by the gate
-  action to completed/success.
+  Marks the winner of a speedracer race. Call as the last step of the job —
+  no 'if:' condition needed; GHA's default step behavior only runs this on
+  success (cancelled/failed jobs don't reach this step).
 
-  Failure cleanup (resolving a stuck in_progress check-run when the job fails)
-  is handled automatically by a post-job hook registered inside the gate action
-  itself — no extra steps needed in calling workflows.
+  Updates the in_progress check-run posted by speedracer-gate to
+  completed/success. The check-name is auto-derived from the job matrix
+  (excluding the speedracer key) — no inputs required in the common case.
+
+  Failure cleanup (resolving a stuck in_progress check-run) is handled
+  automatically by a post-job hook registered inside speedracer-gate.
 
 inputs:
   check-name:
     description: >
-      Required check name without the copy letter suffix — same value passed
-      to the gate action. Used as fallback if no stored check-run ID.
-      Example: "pre-build-go-binaries (default, amd64)"
-    required: true
-  copy:
-    description: 'Which copy won (a, b, or c) — used in the summary message only'
-    default: 'winner'
+      Override the auto-derived required check name. Auto-derived as:
+        github.job + " (" + matrix-values-excluding-speedracer + ")"
+      Only set this if the auto-derived name does not match what the gate used.
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -27,25 +28,39 @@ runs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        echo "Copy '${{ inputs.copy }}' won — completing check '${{ inputs.check-name }}'"
-        check_id=$(cat /tmp/speculative-check-id 2>/dev/null | head -1 | tr -d '[:space:]')
+        MY_COPY="${{ matrix.speedracer }}"
+
+        CHECK_NAME="${{ inputs.check-name }}"
+        if [[ -z "$CHECK_NAME" ]]; then
+          MATRIX_JSON='${{ toJSON(matrix) }}'
+          OTHER_VALS=$(echo "$MATRIX_JSON" | \
+            jq -r 'del(.speedracer) | to_entries | map(.value | tostring) | join(", ")' 2>/dev/null)
+          if [[ -n "$OTHER_VALS" ]]; then
+            CHECK_NAME="${{ github.job }} ($OTHER_VALS)"
+          else
+            CHECK_NAME="${{ github.job }}"
+          fi
+        fi
+
+        echo "Copy '${MY_COPY}' won — completing check '${CHECK_NAME}'"
+        check_id=$(cat /tmp/speedracer-check-id 2>/dev/null | head -1 | tr -d '[:space:]')
         echo "check_id from gate: '${check_id}'"
         if [[ "$check_id" =~ ^[0-9]+$ ]]; then
           gh api repos/${{ github.repository }}/check-runs/"${check_id}" \
             -X PATCH \
             -f status=completed \
             -f conclusion=success \
-            -f "output[title]=Speculative run complete" \
-            -f "output[summary]=Copy ${{ inputs.copy }} won." \
+            -f "output[title]=Speedracer complete" \
+            -f "output[summary]=Copy ${MY_COPY} won." \
             2>&1 || echo "::warning::Failed to update check-run (non-fatal)"
         else
           # Fallback: gate didn't store an ID (enabled=false, or API hiccup).
           gh api repos/${{ github.repository }}/check-runs \
-            -f name="${{ inputs.check-name }}" \
+            -f name="${CHECK_NAME}" \
             -f head_sha="${{ github.sha }}" \
             -f status=completed \
             -f conclusion=success \
-            -f "output[title]=Speculative run complete" \
-            -f "output[summary]=Copy ${{ inputs.copy }} won." \
+            -f "output[title]=Speedracer complete" \
+            -f "output[summary]=Copy ${MY_COPY} won." \
             2>&1 || echo "::warning::Failed to post check-run (non-fatal)"
         fi

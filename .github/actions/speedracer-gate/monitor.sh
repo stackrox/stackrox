@@ -1,18 +1,18 @@
 #!/bin/bash
-# Speculative-run background monitor.
+# Speedracer background monitor.
 # Polls the GHA check-runs API for sibling copies' in_progress/success signals.
 #
 # When a winner is found: SIGTERM the Gate step's composite action coordinator
 # ($SPEC_PARENT). Since the Gate step is still alive (sleeping in a poll loop),
 # the composite coordinator is still active — SIGTERM to it produces 'cancelled'.
 #
-# When all siblings are gone (slow runners): write a file to wake up the Gate
-# step's poll loop so it can exit 0 and allow work steps to proceed.
+# When all siblings are gone (slow runners): write a file to wake the Gate step
+# so it exits 0 and allows work steps to proceed.
 #
 # Environment (set by the gate action before nohup):
 #   SPEC_REPO         github.repository
-#   SPEC_CHECK_NAME   required check name (without copy letter)
-#   SPEC_SIBLING_IDS  comma-separated external_ids to watch, e.g. "spec-a,spec-b"
+#   SPEC_CHECK_NAME   required check name (without speedracer letter)
+#   SPEC_SIBLING_IDS  comma-separated external_ids, e.g. "spec-a-123,spec-b-123"
 #   SPEC_PARENT       PPID of the gate step's bash (composite action coordinator)
 #   SPEC_SHA          github.sha
 
@@ -51,24 +51,20 @@ while [[ $(date +%s) -lt $deadline ]]; do
 
   if [[ -n "$winner" ]]; then
     echo "Sibling $winner is winning — cancelling Gate step via SIGTERM to composite coordinator."
-    # Gate step is alive (sleeping in a poll loop). SPEC_PARENT is the composite
-    # action coordinator — SIGTERM to it produces 'cancelled' (not 'failure').
     kill -TERM "$SPEC_PARENT" 2>/dev/null
-    # No child-kill needed: Gate step is just sleeping, no real work processes.
     break
   fi
 
   if [[ $all_gone -eq 1 ]]; then
     echo "All siblings gone (slow runners) — waking Gate step to proceed with work."
-    echo "all_gone" > /tmp/speculative-monitor-result
+    echo "all_gone" > /tmp/speedracer-monitor-result
     break
   fi
 
   sleep 2
 done
 
-# Deadline reached without a decision — wake Gate step to proceed.
-if [[ ! -f /tmp/speculative-monitor-result ]]; then
+if [[ ! -f /tmp/speedracer-monitor-result ]]; then
   echo "Monitor deadline — waking Gate step."
-  echo "timeout" > /tmp/speculative-monitor-result
+  echo "timeout" > /tmp/speedracer-monitor-result
 fi
