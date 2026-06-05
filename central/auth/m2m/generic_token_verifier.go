@@ -14,7 +14,10 @@ type genericTokenVerifier struct {
 var _ tokenVerifier = (*genericTokenVerifier)(nil)
 
 func (g *genericTokenVerifier) VerifyIDToken(ctx context.Context, rawIDToken string) (*IDToken, error) {
-	// Skip the client id check unless the user has configured the expected audience claim.
+	// When an expected audience is configured, validate the token's aud claim via the go-oidc
+	// ClientID check. Otherwise skip it for backward compatibility: a single client ID cannot
+	// cover all cases (e.g. GitHub Actions tokens use per-repository audience values), and the
+	// audience may still be verified indirectly through claim mappings.
 	oidcConfig := &oidc.Config{SkipClientIDCheck: true}
 	if g.audience != "" {
 		oidcConfig.ClientID = g.audience
