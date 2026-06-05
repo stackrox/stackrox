@@ -79,6 +79,8 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
+      - uses: ./.github/actions/speedracer-finish
+
 
   # Test 2: 3-copy, all fast, a wins. Expected: a=success, b=cancelled, c=cancelled.
   test-three-copy:
@@ -96,6 +98,8 @@ jobs:
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+
+      - uses: ./.github/actions/speedracer-finish
 
 
   # Test 3: a and b are slow (deterministic CPU match); c wins as last-copy fallback.
@@ -121,6 +125,8 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
+      - uses: ./.github/actions/speedracer-finish
+
 
   # Test 4: a is slow (deterministic), b wins. Expected: a=cancelled (gate), b=success.
   test-a-slow-b-wins:
@@ -143,6 +149,8 @@ jobs:
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+
+      - uses: ./.github/actions/speedracer-finish
 
 
   # Test 5: enabled=false — both copies run, no gating. Expected: a=success, b=success.
@@ -177,6 +185,8 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
+      - uses: ./.github/actions/speedracer-finish
+
 
   # Test 7: 4-copy. Expected: a=success, b/c/d=cancelled.
   test-four-copy:
@@ -195,6 +205,7 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
+      - uses: ./.github/actions/speedracer-finish
 
   # ─── New: API-verified tests ────────────────────────────────────────────────
 
@@ -232,6 +243,8 @@ jobs:
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+
+      - uses: ./.github/actions/speedracer-finish
 
 
   verify-check-run-success:
@@ -295,6 +308,8 @@ jobs:
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+
+      - uses: ./.github/actions/speedracer-finish
 
 
   verify-failure-path:
@@ -407,6 +422,7 @@ jobs:
       - name: Work
         run: sleep 5
 
+      - uses: ./.github/actions/speedracer-finish
 
   verify-single-copy:
     needs: test-single-copy
@@ -461,6 +477,8 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
+      - uses: ./.github/actions/speedracer-finish
+
 
   verify-multi-dim-check-name:
     needs: test-multi-dim-check-name
@@ -513,6 +531,8 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
+      - uses: ./.github/actions/speedracer-finish
+
 
   verify-explicit-check-name:
     needs: test-explicit-check-name
@@ -564,6 +584,8 @@ jobs:
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+
+      - uses: ./.github/actions/speedracer-finish
 
 
   verify-sibling-fails-not-winner:

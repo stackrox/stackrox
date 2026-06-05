@@ -1,0 +1,32 @@
+name: Speedracer Finish
+description: >
+  Marks the winning speedracer copy's check-run as completed/success.
+  Call as the last step of the job — GHA's default step behavior (only
+  runs when all previous steps succeeded) handles the condition.
+
+  The gate's post-hook resolves check-runs to completed/failure on job
+  failure, so branch protection is never permanently blocked.
+
+runs:
+  using: composite
+  steps:
+    - name: Mark check-run complete
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        check_name=$(cat /tmp/speedracer-check-name | head -1 | tr -d '\n')
+        my_copy=$(cat /tmp/speedracer-copy | head -1 | tr -d '\n')
+        ext_id="spec-${my_copy}-${{ github.run_id }}"
+        echo "Speedracer finish: copy=${my_copy} check_name=${check_name}"
+        gh api "repos/${{ github.repository }}/check-runs" \
+          -f name="${check_name}" \
+          -f head_sha="${{ github.sha }}" \
+          -f external_id="${ext_id}" \
+          -f status=completed \
+          -f conclusion=success \
+          -f "output[title]=Speedracer complete" \
+          -f "output[summary]=Copy ${my_copy} won." \
+          && echo "posted completed/success for ${check_name}" \
+          || echo "::warning::POST failed for ${check_name}"
+        touch /tmp/speedracer-success

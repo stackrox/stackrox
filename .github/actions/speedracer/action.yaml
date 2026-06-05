@@ -157,31 +157,18 @@ runs:
 
         echo "Gate passed."
 
-    # post-if: conditions are passed as literal strings (not ${{ }} expressions) so
-    # gacts evaluates them at post-step time using the actual job conclusion.
-    - name: Register success post-handler
+    # Single post-hook: gacts/run-and-post-run has no real post-if feature —
+    # the action always runs unconditionally. Route on a marker file instead:
+    # speedracer-finish writes /tmp/speedracer-success on job success.
+    # If the marker is absent the job failed, so we resolve the check-run.
+    - name: Register failure cleanup hook
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       if: inputs.enabled == 'true'
       with:
         shell: bash
         run: 'true'
-        post-if: success()
         post: >-
-          export GH_TOKEN=${{ github.token }};
-          check_name=$(cat /tmp/speedracer-check-name | head -1 | tr -d '\n');
-          my_copy=$(cat /tmp/speedracer-copy | head -1 | tr -d '\n');
-          ext_id="spec-${my_copy}-${{ github.run_id }}";
-          echo "Speedracer post-success: copy=${my_copy} ext_id=${ext_id}";
-          gh api "repos/${{ github.repository }}/check-runs" -f name="${check_name}" -f head_sha="${{ github.sha }}" -f external_id="${ext_id}" -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." && echo "posted completed/success for ${check_name}" || echo "::warning::POST failed for ${check_name}"
-
-    - name: Register failure post-handler
-      uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
-      if: inputs.enabled == 'true'
-      with:
-        shell: bash
-        run: 'true'
-        post-if: failure()
-        post: >-
+          [[ -f /tmp/speedracer-success ]] && { echo "Speedracer: job succeeded, finish step handled check-run"; exit 0; };
           export GH_TOKEN=${{ github.token }};
           spec_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]');
           echo "Speedracer post-failure: spec_id=${spec_id}";
