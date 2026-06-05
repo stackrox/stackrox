@@ -168,13 +168,12 @@ runs:
         post-if: success()
         post: >-
           export GH_TOKEN=${{ github.token }};
-          _retry(){ for _i in 1 2 3; do "$@" && return 0 || { echo "attempt ${_i}/3 failed, retrying..."; sleep $((_i*5)); }; done; echo "::warning::all retries exhausted"; return 1; };
           check_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]');
           check_name=$(cat /tmp/speedracer-check-name | head -1 | tr -d '\n');
           my_copy=$(cat /tmp/speedracer-copy | head -1 | tr -d '\n');
           echo "Speedracer post-success: copy=${my_copy} check_id=${check_id}";
-          if [[ "$check_id" =~ ^[0-9]+$ ]]; then _retry gh api "repos/${{ github.repository }}/check-runs/${check_id}" -X PATCH -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." && echo "check-run ${check_id} → success";
-          else _retry gh api "repos/${{ github.repository }}/check-runs" -f name="${check_name}" -f head_sha="${{ github.sha }}" -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." && echo "posted check-run for ${check_name}";
+          if [[ "$check_id" =~ ^[0-9]+$ ]]; then gh api "repos/${{ github.repository }}/check-runs/${check_id}" -X PATCH -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." && echo "check-run ${check_id} → success" || echo "::warning::PATCH failed for check-run ${check_id}";
+          else gh api "repos/${{ github.repository }}/check-runs" -f name="${check_name}" -f head_sha="${{ github.sha }}" -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." && echo "posted check-run for ${check_name}" || echo "::warning::POST failed for ${check_name}";
           fi
 
     - name: Register failure post-handler
@@ -186,11 +185,10 @@ runs:
         post-if: failure()
         post: >-
           export GH_TOKEN=${{ github.token }};
-          _retry(){ for _i in 1 2 3; do "$@" && return 0 || { echo "attempt ${_i}/3 failed, retrying..."; sleep $((_i*5)); }; done; echo "::warning::all retries exhausted"; return 1; };
           spec_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]');
           echo "Speedracer post-failure: spec_id=${spec_id}";
           [[ "$spec_id" =~ ^[0-9]+$ ]] || { echo "no valid check-id, skipping"; exit 0; };
-          cur=$(_retry gh api "repos/${{ github.repository }}/check-runs/${spec_id}" --jq '.status');
+          cur=$(gh api "repos/${{ github.repository }}/check-runs/${spec_id}" --jq '.status');
           echo "current check-run status: ${cur}";
           [[ "$cur" == "in_progress" ]] || { echo "already resolved (${cur}), skipping"; exit 0; };
-          _retry gh api "repos/${{ github.repository }}/check-runs/${spec_id}" -X PATCH -f status=completed -f conclusion=failure -f 'output[title]=Post-job speedracer cleanup' -f 'output[summary]=Job failed after gate; check-run resolved to unblock branch protection.' && echo "check-run ${spec_id} → failure"
+          gh api "repos/${{ github.repository }}/check-runs/${spec_id}" -X PATCH -f status=completed -f conclusion=failure -f 'output[title]=Post-job speedracer cleanup' -f 'output[summary]=Job failed after gate; check-run resolved to unblock branch protection.' && echo "check-run ${spec_id} → failure" || echo "::warning::PATCH to failure failed"
