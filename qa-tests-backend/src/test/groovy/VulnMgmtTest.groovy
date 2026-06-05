@@ -94,6 +94,7 @@ query getFixableCvesForEntity(\$id: ID!, \$scopeQuery: String, \$vulnQuery: Stri
     vulnerabilities: imageVulnerabilities(
       query: \$vulnQuery
       scopeQuery: \$scopeQuery
+      pagination: null
     ) {
       ...cveFields
       __typename
