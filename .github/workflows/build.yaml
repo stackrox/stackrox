@@ -956,7 +956,6 @@ jobs:
 
   build-and-push-operator:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
-    if: ${{ !cancelled() }}
     needs:
       - define-job-matrix
       - pre-build-go-binaries
