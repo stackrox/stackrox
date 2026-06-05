@@ -58,6 +58,8 @@ jobs:
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
 
+    - uses: ./.github/actions/speedracer-finish
+
   misc-checks:
     env:
       ARTIFACT_DIR: junit-reports/
@@ -165,6 +167,8 @@ jobs:
 
       - name: make style-slim
         run: make style-slim
+
+      - uses: ./.github/actions/speedracer-finish
 
   golangci-lint:
     timeout-minutes: 240

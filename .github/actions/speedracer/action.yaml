@@ -1,13 +1,13 @@
 name: Speedracer
 description: >
   Speculative execution for matrix jobs. Add 'speedracer: [a, b]' (or [a, b, c])
-  as the LAST matrix dimension and call this as the first step — nothing else needed.
+  as the LAST matrix dimension, call this as the first step, and call
+  speedracer-finish as the last step.
 
   Slow runner: exits as 'cancelled' immediately (no work wasted).
-  Fast runner: posts an in_progress check-run, polls for sibling check-runs,
-  and registers a post-step that marks the check-run complete on job exit.
-
-  Self-contained — no separate speedracer-finish step required.
+  Fast runner: posts an in_progress check-run and polls for sibling check-runs.
+  On failure the gate's post-hook resolves the check-run so branch protection
+  is not permanently blocked.
 
 inputs:
   check-name:
@@ -158,31 +158,16 @@ runs:
 
         echo "Gate passed."
 
-    # Two separate post-handlers so post-if: is evaluated at post time
-    # (unlike '${{ job.status }}' in post: which is pre-evaluated at registration).
-    - name: Register success post-handler
+    - name: Register failure cleanup hook
+      # Resolves the in_progress check-run to completed/failure when the job
+      # fails, so branch protection is not permanently blocked.
+      # post-if defaults to always() so this fires for all outcomes; the script
+      # guards on status==in_progress and skips if already resolved by finish.
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       if: inputs.enabled == 'true'
       with:
         shell: bash
         run: 'true'
-        post-if: success()
-        post: >-
-          check_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]');
-          check_name=$(cat /tmp/speedracer-check-name | head -1 | tr -d '\n');
-          my_copy=$(cat /tmp/speedracer-copy | head -1 | tr -d '\n');
-          echo "Speedracer: copy '${my_copy}' won.";
-          if [[ "$check_id" =~ ^[0-9]+$ ]]; then GH_TOKEN=${{ github.token }} gh api "repos/${{ github.repository }}/check-runs/${check_id}" -X PATCH -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." || echo "::warning::Failed to update check-run (non-fatal)";
-          else GH_TOKEN=${{ github.token }} gh api "repos/${{ github.repository }}/check-runs" -f name="${check_name}" -f head_sha="${{ github.sha }}" -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." || echo "::warning::Failed to post check-run (non-fatal)";
-          fi
-
-    - name: Register failure post-handler
-      uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
-      if: inputs.enabled == 'true'
-      with:
-        shell: bash
-        run: 'true'
-        post-if: failure()
         post: >-
           spec_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]');
           [[ "$spec_id" =~ ^[0-9]+$ ]] || exit 0;
