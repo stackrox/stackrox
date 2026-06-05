@@ -19,7 +19,7 @@ on:
     - synchronize
 
 permissions:
-  checks: write   # Required for speedracer-gate to post synthetic required check results
+  checks: write   # Required for speedracer to post synthetic required check results
 
 defaults:
   run:
@@ -190,7 +190,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speedracer-gate
+      - uses: ./.github/actions/speedracer
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -223,7 +223,6 @@ jobs:
             ui/build
             ui/apps/platform/package-lock.json
 
-      - uses: ./.github/actions/speedracer-finish
 
   pre-build-cli:
     needs: define-job-matrix
@@ -316,7 +315,7 @@ jobs:
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speedracer-gate
+      - uses: ./.github/actions/speedracer
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -386,7 +385,6 @@ jobs:
           path: go-binaries-build.tar
           compression-level: 1
 
-      - uses: ./.github/actions/speedracer-finish
 
   pre-build-docs:
     strategy:
@@ -400,7 +398,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speedracer-gate
+      - uses: ./.github/actions/speedracer
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -424,7 +422,6 @@ jobs:
           path: |
             image/rhel/docs
 
-      - uses: ./.github/actions/speedracer-finish
 
   pre-build-oss-notice:
     strategy:
@@ -438,7 +435,7 @@ jobs:
         fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-    - uses: ./.github/actions/speedracer-gate
+    - uses: ./.github/actions/speedracer
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -472,7 +469,6 @@ jobs:
         name: oss-notice
         path: image/rhel/THIRD_PARTY_NOTICES
 
-    - uses: ./.github/actions/speedracer-finish
 
   build-and-push-db:
     strategy:
@@ -490,7 +486,7 @@ jobs:
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speedracer-gate
+      - uses: ./.github/actions/speedracer
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -584,7 +580,6 @@ jobs:
             "docker://quay.io/stackrox-io/scanner-v4-db:${{ env.BUILD_TAG }}" \
             "docker://quay.io/rhacs-eng/scanner-v4-db:${{ env.BUILD_TAG }}"
 
-      - uses: ./.github/actions/speedracer-finish
 
   build-operator-bundle:
     strategy:
@@ -604,7 +599,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speedracer-gate
+      - uses: ./.github/actions/speedracer
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -628,7 +623,6 @@ jobs:
           make -C operator/ index-build
           make -C operator/ docker-push-index | cat
 
-      - uses: ./.github/actions/speedracer-finish
 
   build-and-push-main:
     # Use native arm64 runner to avoid QEMU emulation overhead (~2x slower).
@@ -698,7 +692,7 @@ jobs:
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speedracer-gate
+      - uses: ./.github/actions/speedracer
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -809,7 +803,6 @@ jobs:
             fi
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
-      - uses: ./.github/actions/speedracer-finish
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
@@ -989,7 +982,7 @@ jobs:
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speedracer-gate
+      - uses: ./.github/actions/speedracer
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -1085,7 +1078,6 @@ jobs:
             fi
             echo "Operator image push completed successfully"
 
-      - uses: ./.github/actions/speedracer-finish
 
   build-and-push-scanner:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
@@ -1107,7 +1099,7 @@ jobs:
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speedracer-gate
+      - uses: ./.github/actions/speedracer
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -1172,7 +1164,6 @@ jobs:
           source ./scripts/ci/lib.sh
           push_scanner_image_set "${{ matrix.registry }}" "${{ matrix.arch }}"
 
-      - uses: ./.github/actions/speedracer-finish
 
 
   push-scanner-manifests:

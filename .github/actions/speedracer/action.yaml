@@ -1,19 +1,14 @@
-name: Speedracer Gate
+name: Speedracer
 description: >
-  Gate step for speculative-execution (speedracer) matrix jobs.
-
-  Add 'speedracer: [a, b]' (or [a, b, c]) as the LAST dimension of your job
-  matrix and call this action as the first step after checkout. No inputs are
-  needed — the action reads matrix.speedracer for the current copy, auto-derives
-  check-name from the remaining matrix dimensions, and queries the GHA jobs API
-  to determine which copy is the last-resort fallback (no explicit last-copy
-  input required, even for arm64 with matrix excludes).
+  Speculative execution for matrix jobs. Add 'speedracer: [a, b]' (or [a, b, c])
+  as the LAST matrix dimension and call this as the first step — nothing else needed.
 
   Slow runner: exits as 'cancelled' immediately (no work wasted).
-  Fast runner: posts an in_progress check-run, starts a background monitor.
+  Fast runner: posts an in_progress check-run, starts a background monitor,
+  and registers a post-step that marks the check-run complete on job exit.
   Monitor fires when a sibling check-run appears and cancels this copy.
 
-  Pair with speedracer-finish as the last step (no if: condition needed).
+  Self-contained — no separate speedracer-finish step required.
 
 inputs:
   check-name:
@@ -105,6 +100,8 @@ runs:
           -f external_id="${EXT_ID}" \
           --jq '.id' 2>/dev/null)
         printf '%s\n' "${check_id:-}" > /tmp/speedracer-check-id
+        printf '%s\n' "${CHECK_NAME}"  > /tmp/speedracer-check-name
+        printf '%s\n' "${MY_COPY}"     > /tmp/speedracer-copy
         echo "Posted in_progress check-run ${check_id} (${EXT_ID})"
 
         # ── 3. Background monitor for non-first copies ──────────────────────
@@ -155,18 +152,15 @@ runs:
           echo "Copy ${MY_COPY} is first — no monitor needed."
         fi
 
-        cp "${GITHUB_ACTION_PATH}/cleanup.sh" /tmp/speedracer-cleanup.sh
-        chmod +x /tmp/speedracer-cleanup.sh
+        cp "${GITHUB_ACTION_PATH}/post.sh" /tmp/speedracer-post.sh
+        chmod +x /tmp/speedracer-post.sh
         echo "Gate passed."
         exit 0
 
-    - name: Register post-job cleanup
+    - name: Register post-job handler
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       if: inputs.enabled == 'true'
-      env:
-        GH_TOKEN: ${{ github.token }}
-        SPEC_REPO: ${{ github.repository }}
       with:
         shell: bash
         run: 'true'
-        post: if [[ "${{ job.status }}" == "failure" ]]; then SPEC_REPO=${{ github.repository }} GH_TOKEN=${{ github.token }} bash /tmp/speedracer-cleanup.sh; fi
+        post: JOB_STATUS=${{ job.status }} GH_TOKEN=${{ github.token }} SPEC_REPO=${{ github.repository }} SPEC_SHA=${{ github.sha }} bash /tmp/speedracer-post.sh

@@ -13,7 +13,7 @@ on:
     - synchronize
   workflow_dispatch:
 permissions:
-  checks: write  # speedracer-gate and speedracer-finish post/patch check-runs
+  checks: write  # speedracer posts/patches check-runs via post-step
 
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
@@ -40,7 +40,7 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
-    - uses: ./.github/actions/speedracer-gate
+    - uses: ./.github/actions/speedracer
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -58,7 +58,6 @@ jobs:
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
 
-    - uses: ./.github/actions/speedracer-finish
 
   misc-checks:
     env:
@@ -116,7 +115,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speedracer-gate
+      - uses: ./.github/actions/speedracer
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -168,7 +167,6 @@ jobs:
       - name: make style-slim
         run: make style-slim
 
-      - uses: ./.github/actions/speedracer-finish
 
   golangci-lint:
     timeout-minutes: 240

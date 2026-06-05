@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  checks: write  # speedracer-gate and speedracer-finish post/patch check-runs
+  checks: write  # speedracer posts/patches check-runs via post-step
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -50,7 +50,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
-    - uses: ./.github/actions/speedracer-gate
+    - uses: ./.github/actions/speedracer
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -110,7 +110,6 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
-    - uses: ./.github/actions/speedracer-finish
 
   go-postgres:
     strategy:
@@ -144,7 +143,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
-    - uses: ./.github/actions/speedracer-gate
+    - uses: ./.github/actions/speedracer
 
     # Image pinned in .github/test-images/postgres.dockerfile (Dependabot auto-bumps).
     - name: Start Postgres (${{ matrix.pg }})
@@ -204,7 +203,6 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
-    - uses: ./.github/actions/speedracer-finish
 
   # Benchmarks run each bench function once (-benchtime=1x -count=1) to verify
   # they compile and execute without errors. A single postgres version is
@@ -322,7 +320,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
-    - uses: ./.github/actions/speedracer-gate
+    - uses: ./.github/actions/speedracer
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -376,7 +374,6 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'ui/apps/platform/cypress/test-results/reports'
 
-    - uses: ./.github/actions/speedracer-finish
 
   local-roxctl-tests:
     runs-on: ubuntu-latest

@@ -3,13 +3,13 @@ on:
   push:
     branches: [davdhacs/speed-racer-build]
     paths:
-      - .github/actions/speedracer-gate/**
-      - .github/actions/speedracer-finish/**
+      - .github/actions/speedracer/**
+      - .github/actions/speedracer/**
       - .github/workflows/speculative-run-test.yaml
   pull_request:
     paths:
-      - .github/actions/speedracer-gate/**
-      - .github/actions/speedracer-finish/**
+      - .github/actions/speedracer/**
+      - .github/actions/speedracer/**
       - .github/workflows/speculative-run-test.yaml
   workflow_dispatch:
 
@@ -74,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      - uses: ./.github/actions/speedracer-gate
+      - uses: ./.github/actions/speedracer
         with:
           slow-cpu-pattern: NEVER_MATCH_THIS
 
@@ -88,7 +88,6 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-      - uses: ./.github/actions/speedracer-finish
 
   # Test 2: three-copy race. copy a wins, b/c cancelled.
   # Expected: a=success, b=cancelled, c=cancelled.
@@ -99,7 +98,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      - uses: ./.github/actions/speedracer-gate
+      - uses: ./.github/actions/speedracer
         with:
           slow-cpu-pattern: NEVER_MATCH_THIS
 
@@ -113,7 +112,6 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-      - uses: ./.github/actions/speedracer-finish
 
   # Test 3: both a AND b are slow → c falls back as last-copy.
   # Uses deterministic CPU detection so the gate always fires on a and b
@@ -131,7 +129,7 @@ jobs:
         run: |
           model=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)
           echo "model=${model}" >> "$GITHUB_OUTPUT"
-      - uses: ./.github/actions/speedracer-gate
+      - uses: ./.github/actions/speedracer
         with:
           slow-cpu-pattern: ${{ contains(fromJSON('["a","b"]'), matrix.speedracer) && steps.cpu.outputs.model || 'NEVER_MATCH_THIS' }}
 
@@ -144,7 +142,6 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-      - uses: ./.github/actions/speedracer-finish
 
   # Test 4: copy a is on a slow runner (deterministic: reads actual CPU model
   # and uses it as the slow pattern so the gate always fires on any runner type).
@@ -161,7 +158,7 @@ jobs:
         run: |
           model=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)
           echo "model=${model}" >> "$GITHUB_OUTPUT"
-      - uses: ./.github/actions/speedracer-gate
+      - uses: ./.github/actions/speedracer
         with:
           slow-cpu-pattern: ${{ matrix.speedracer == 'a' && steps.cpu.outputs.model || 'NEVER_MATCH_THIS' }}
 
@@ -174,7 +171,6 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-      - uses: ./.github/actions/speedracer-finish
 
   # Test 5: enabled=false → kill switch. Both copies run normally with no
   # racing or cancellation. Tests the emergency bypass input.
@@ -186,7 +182,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      - uses: ./.github/actions/speedracer-gate
+      - uses: ./.github/actions/speedracer
         with:
           enabled: 'false'
 
@@ -206,7 +202,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      - uses: ./.github/actions/speedracer-gate
+      - uses: ./.github/actions/speedracer
         with:
           slow-cpu-pattern: NEVER_MATCH_THIS
 
@@ -219,7 +215,6 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-      - uses: ./.github/actions/speedracer-finish
 
   # Test 7: 4-copy (copy d). Tests the gate's d→"a b c" case and monitor
   # watching three siblings.
@@ -231,7 +226,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      - uses: ./.github/actions/speedracer-gate
+      - uses: ./.github/actions/speedracer
         with:
           slow-cpu-pattern: NEVER_MATCH_THIS
 
@@ -244,4 +239,3 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-      - uses: ./.github/actions/speedracer-finish
