@@ -270,6 +270,7 @@ spec:
         steps:
         - name: compute-index-tag
           image: registry.access.redhat.com/ubi9-minimal:latest@sha256:ae09ecc3d754bc1726cbda3e2599cc7839e09fe1cc547ce173cf669b645be3cc
+          imagePullPolicy: IfNotPresent
           script: |
             #!/bin/bash
             set -euo pipefail
@@ -348,11 +349,13 @@ spec:
         steps:
         - name: use-trusted-artifact
           image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:9b180776a41d9a22a1c51539f1647c60defbbd55b44bbebdd4130e33512d8b0d
+          imagePullPolicy: IfNotPresent
           args:
           - use
           - $(params.SOURCE_ARTIFACT)=/var/workdir/source
         - name: build-index-content
           image: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25@sha256:977bd041377a1367c8b102a460ae8e63f89905f7cf9d8235484ae658c9b47646
+          imagePullPolicy: IfNotPresent
           workingDir: /var/workdir/source/operator
           securityContext:
             runAsUser: 0
@@ -383,6 +386,7 @@ spec:
             echo "Index content generated successfully"
         - name: create-trusted-artifact
           image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:9b180776a41d9a22a1c51539f1647c60defbbd55b44bbebdd4130e33512d8b0d
+          imagePullPolicy: IfNotPresent
           args:
           - create
           - --store
