@@ -22,6 +22,7 @@ jobs:
   # Expected: copy a=success, copy b=cancelled.
   test-direct-monitor:
     strategy:
+      fail-fast: false  # b intentionally produces failure; don't cascade-cancel a
       matrix:
         speedracer: [a, b]
     runs-on: ubuntu-latest
