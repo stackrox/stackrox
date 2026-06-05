@@ -750,9 +750,10 @@ jobs:
           *vulnmanagement*)
             echo "Checking for cluster (platform) CVE data..."
 
-            # Scanner V2 never produces cluster/node CVEs. Short wait to confirm,
-            # then move on. Scanner V4 would need longer but we don't use it here.
-            max_attempts=24  # 2 minutes
+            # Scanner V2 never produces cluster/node CVEs but the tests need
+            # enough time after deploy for image scan data to populate.
+            # Too short and tests fail instead of gracefully skipping.
+            max_attempts=120  # 10 minutes
 
             cluster_ready=false
             for i in $(seq 1 $max_attempts); do
