@@ -76,17 +76,17 @@ spec:
     - name: prefetch-dependencies
       computeResources:
         limits:
-          memory: 5Gi
+          memory: 6Gi
         requests:
-          memory: 5Gi
+          memory: 6Gi
     - name: create-trusted-artifact
       computeResources: &ta-resources
         limits:
           cpu: 2
-          memory: 5Gi
+          memory: 7Gi
         requests:
           cpu: 2
-          memory: 5Gi
+          memory: 7Gi
   - pipelineTaskName: build-images
     podTemplate: *go-memlimit
     stepSpecs:
@@ -100,8 +100,10 @@ spec:
     - name: build
       computeResources:
         limits:
+          cpu: 1
           memory: 3Gi
         requests:
+          cpu: 1
           memory: 3Gi
   - pipelineTaskName: sast-shell-check
     podTemplate: *go-memlimit
