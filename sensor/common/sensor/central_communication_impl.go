@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deduperkey"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -32,6 +33,7 @@ import (
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // sensor implements the Sensor interface by sending inputs to central,
@@ -147,6 +149,9 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		DeploymentIdentification: configHandler.GetDeploymentIdentification(),
 		SensorState:              s.getSensorState(),
 		RequestDeduperState:      s.clientReconcile,
+	}
+	if requestedValidity := env.SensorCertRequestedValidity.DurationSetting(); requestedValidity > 0 {
+		sensorHello.RequestedCertValidity = durationpb.New(requestedValidity)
 	}
 
 	capsSet := set.NewSet[centralsensor.SensorCapability]()

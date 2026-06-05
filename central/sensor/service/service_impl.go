@@ -174,8 +174,13 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 		if err := safe.RunE(func() error {
 			sensorNamespace := sensorHello.GetDeploymentIdentification().GetAppNamespace()
+			requestedValidity, err := securedclustercertgen.ClampRequestedValidity(sensorHello.GetRequestedCertValidity())
+			if err != nil {
+				log.Warnf("Sensor for cluster %s requested invalid cert validity: %v; using default", cluster.GetName(), err)
+				requestedValidity = 0
+			}
 			certificateSet, err := securedclustercertgen.IssueSecuredClusterCerts(
-				sensorNamespace, clusterID, isCARotationSupported(sensorHello), "", 0)
+				sensorNamespace, clusterID, isCARotationSupported(sensorHello), "", requestedValidity)
 			if err != nil {
 				return errors.Wrapf(err, "issuing a certificate bundle for cluster %s", cluster.GetName())
 			}
