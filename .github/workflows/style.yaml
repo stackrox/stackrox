@@ -58,7 +58,6 @@ jobs:
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
 
-
   misc-checks:
     env:
       ARTIFACT_DIR: junit-reports/
@@ -166,7 +165,6 @@ jobs:
 
       - name: make style-slim
         run: make style-slim
-
 
   golangci-lint:
     timeout-minutes: 240
