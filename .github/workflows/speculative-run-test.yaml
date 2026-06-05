@@ -17,6 +17,10 @@ on:
       - .github/workflows/speculative-run-test.yaml
   workflow_dispatch:
 
+concurrency:
+  group: speedracer-test-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   checks: write
 
@@ -46,10 +50,10 @@ jobs:
               sleep 25
               job_line=\$(gh api 'repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs?per_page=100' \
                 --jq '.jobs[] | select(.name | test(\"[( ,]a[)]\$\")) | \"\(.status)/\(.conclusion)\"' \
-                2>/dev/null | head -1)
+                | head -1)
               echo \"Sibling a: '\${job_line}'\"
               if [[ \"\${job_line}\" == 'in_progress/'* || \"\${job_line}\" == 'completed/success' ]]; then
-                kill -TERM ${MY_PARENT} 2>/dev/null
+                kill -TERM ${MY_PARENT}
               fi
             " >> /tmp/direct-monitor.log 2>&1 &
             disown
@@ -60,7 +64,7 @@ jobs:
 
       - name: Monitor log
         if: always()
-        run: cat /tmp/direct-monitor.log 2>/dev/null || echo "(no log)"
+        run: cat /tmp/direct-monitor.log || echo "(no log)"
 
   # Test 1: 2-copy, both fast, first wins. Expected: a=success, b=cancelled.
   test-a-wins:
@@ -77,7 +81,7 @@ jobs:
         run: sleep 60
       - name: Monitor log
         if: always()
-        run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+        run: cat /tmp/speedracer-monitor.log || echo "(no log)"
 
   # Test 2: 3-copy, all fast, a wins. Expected: a=success, b=cancelled, c=cancelled.
   test-three-copy:
@@ -94,7 +98,7 @@ jobs:
         run: sleep 90
       - name: Monitor log
         if: always()
-        run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+        run: cat /tmp/speedracer-monitor.log || echo "(no log)"
 
   # Test 3: a and b are slow (deterministic CPU match); c wins as last-copy fallback.
   # Expected: a=cancelled (gate), b=cancelled (gate), c=success.
@@ -117,7 +121,7 @@ jobs:
         run: sleep 10
       - name: Monitor log
         if: always()
-        run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+        run: cat /tmp/speedracer-monitor.log || echo "(no log)"
 
   # Test 4: a is slow (deterministic), b wins. Expected: a=cancelled (gate), b=success.
   test-a-slow-b-wins:
@@ -139,7 +143,7 @@ jobs:
         run: sleep 5
       - name: Monitor log
         if: always()
-        run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+        run: cat /tmp/speedracer-monitor.log || echo "(no log)"
 
   # Test 5: enabled=false — both copies run, no gating. Expected: a=success, b=success.
   test-disabled:
@@ -171,7 +175,7 @@ jobs:
         run: sleep 2
       - name: Monitor log
         if: always()
-        run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+        run: cat /tmp/speedracer-monitor.log || echo "(no log)"
 
   # Test 7: 4-copy. Expected: a=success, b/c/d=cancelled.
   test-four-copy:
@@ -188,7 +192,7 @@ jobs:
         run: sleep 120
       - name: Monitor log
         if: always()
-        run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+        run: cat /tmp/speedracer-monitor.log || echo "(no log)"
 
   # ─── New: API-verified tests ────────────────────────────────────────────────
 
@@ -225,7 +229,7 @@ jobs:
 
       - name: Monitor log
         if: always()
-        run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+        run: cat /tmp/speedracer-monitor.log || echo "(no log)"
 
   verify-check-run-success:
     needs: test-verify-check-run-success
@@ -242,9 +246,8 @@ jobs:
           ext_id="spec-a-${{ github.run_id }}"
           for i in $(seq 1 12); do
             conclusion=$(gh api \
-              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-              --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion' \
-              2>/dev/null)
+              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" |
+              jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion')
             echo "attempt $i: conclusion=${conclusion}"
             [[ "$conclusion" == "success" ]] && { echo "PASS: conclusion=success"; exit 0; }
             sleep 10
@@ -255,9 +258,8 @@ jobs:
         run: |
           ext_id="spec-b-${{ github.run_id }}"
           conclusion=$(gh api \
-            "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-            --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion' \
-            2>/dev/null)
+            "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" |
+            jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion')
           echo "copy b conclusion: ${conclusion:-absent}"
           [[ "$conclusion" != "success" ]] || { echo "FAIL: cancelled copy b has conclusion=success"; exit 1; }
           echo "PASS: cancelled copy has no spurious success"
@@ -287,7 +289,7 @@ jobs:
           fi
       - name: Monitor log
         if: always()
-        run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+        run: cat /tmp/speedracer-monitor.log || echo "(no log)"
 
   verify-failure-path:
     needs: test-failure-path
@@ -303,9 +305,8 @@ jobs:
           ext_id="spec-a-${{ github.run_id }}"
           for i in $(seq 1 12); do
             conclusion=$(gh api \
-              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-              --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion' \
-              2>/dev/null)
+              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" |
+              jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion')
             echo "attempt $i: copy a conclusion=${conclusion}"
             [[ "$conclusion" == "failure" ]] && { echo "PASS: copy a check-run=failure (branch protection unblocked)"; break; }
             sleep 10
@@ -316,9 +317,8 @@ jobs:
           ext_id="spec-b-${{ github.run_id }}"
           for i in $(seq 1 12); do
             conclusion=$(gh api \
-              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-              --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion' \
-              2>/dev/null)
+              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" |
+              jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion')
             echo "attempt $i: copy b conclusion=${conclusion}"
             [[ "$conclusion" == "success" ]] && { echo "PASS: copy b check-run=success"; exit 0; }
             sleep 10
@@ -340,7 +340,7 @@ jobs:
           enabled: 'false'
       - name: Assert no check-id file was written
         run: |
-          if [[ -f /tmp/speedracer-check-id ]] && [[ -n "$(cat /tmp/speedracer-check-id 2>/dev/null)" ]]; then
+          if [[ -f /tmp/speedracer-check-id ]] && [[ -n "$(cat /tmp/speedracer-check-id)" ]]; then
             echo "FAIL: /tmp/speedracer-check-id written despite enabled=false"
             exit 1
           fi
@@ -359,10 +359,9 @@ jobs:
         run: |
           run_id="${{ github.run_id }}"
           count=$(gh api \
-            "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-            --jq --arg run "$run_id" \
+            "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" |
+            jq --arg run "$run_id"
             '[.check_runs[] | select(.name | startswith("test-no-check-run-when-disabled")) | select(.external_id | endswith($run))] | length' \
-            2>/dev/null)
           echo "check-runs with spec- external_id for this job: ${count}"
           [[ "$count" == "0" ]] || { echo "FAIL: ${count} unexpected check-run(s) despite enabled=false"; exit 1; }
           echo "PASS: no check-runs posted when disabled"
@@ -389,7 +388,7 @@ jobs:
           slow-cpu-pattern: ${{ steps.cpu.outputs.model }}  # matches real CPU — must NOT gate single copy
       - name: Assert check-run was posted (not gated)
         run: |
-          check_id=$(cat /tmp/speedracer-check-id 2>/dev/null | head -1 | tr -d '[:space:]')
+          check_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]')
           [[ "$check_id" =~ ^[0-9]+$ ]] || { echo "FAIL: no valid check-id — single copy was wrongly gated"; exit 1; }
           echo "PASS: check-run posted (id=${check_id}), single copy not gated"
       - name: Assert monitor was NOT started
@@ -413,9 +412,8 @@ jobs:
           ext_id="spec-a-${{ github.run_id }}"
           for i in $(seq 1 12); do
             conclusion=$(gh api \
-              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-              --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion' \
-              2>/dev/null)
+              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" |
+              jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion')
             echo "attempt $i: conclusion=${conclusion}"
             [[ "$conclusion" == "success" ]] && { echo "PASS: single-copy check-run=success"; exit 0; }
             sleep 10
@@ -441,7 +439,7 @@ jobs:
           slow-cpu-pattern: NEVER_MATCH_THIS
       - name: Assert check-name excludes speedracer key
         run: |
-          check_name=$(cat /tmp/speedracer-check-name 2>/dev/null | head -1 | tr -d '\n')
+          check_name=$(cat /tmp/speedracer-check-name | head -1 | tr -d '\n')
           expected="test-multi-dim-check-name (alpha)"
           echo "check_name='${check_name}' expected='${expected}'"
           [[ "$check_name" == "$expected" ]] || { echo "FAIL: check-name mismatch"; exit 1; }
@@ -450,7 +448,7 @@ jobs:
         run: sleep 60
       - name: Monitor log
         if: always()
-        run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+        run: cat /tmp/speedracer-monitor.log || echo "(no log)"
 
   verify-multi-dim-check-name:
     needs: test-multi-dim-check-name
@@ -465,9 +463,8 @@ jobs:
         run: |
           ext_id="spec-a-${{ github.run_id }}"
           result=$(gh api \
-            "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-            --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | {name,conclusion}' \
-            2>/dev/null)
+            "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" |
+            jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | {name,conclusion}')
           name=$(echo "$result" | jq -r '.name')
           conclusion=$(echo "$result" | jq -r '.conclusion')
           echo "name='${name}' conclusion='${conclusion}'"
@@ -492,7 +489,7 @@ jobs:
           check-name: speedracer-explicit-override
       - name: Assert stored check-name matches override
         run: |
-          check_name=$(cat /tmp/speedracer-check-name 2>/dev/null | head -1 | tr -d '\n')
+          check_name=$(cat /tmp/speedracer-check-name | head -1 | tr -d '\n')
           [[ "$check_name" == "speedracer-explicit-override" ]] || {
             echo "FAIL: check_name='${check_name}' (expected 'speedracer-explicit-override')"; exit 1
           }
@@ -501,7 +498,7 @@ jobs:
         run: sleep 60
       - name: Monitor log
         if: always()
-        run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+        run: cat /tmp/speedracer-monitor.log || echo "(no log)"
 
   verify-explicit-check-name:
     needs: test-explicit-check-name
@@ -516,9 +513,8 @@ jobs:
         run: |
           ext_id="spec-a-${{ github.run_id }}"
           result=$(gh api \
-            "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-            --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | {name,conclusion}' \
-            2>/dev/null)
+            "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" |
+            jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | {name,conclusion}')
           name=$(echo "$result" | jq -r '.name')
           conclusion=$(echo "$result" | jq -r '.conclusion')
           echo "name='${name}' conclusion='${conclusion}'"
@@ -552,7 +548,7 @@ jobs:
           fi
       - name: Monitor log
         if: always()
-        run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+        run: cat /tmp/speedracer-monitor.log || echo "(no log)"
 
   verify-sibling-fails-not-winner:
     needs: test-sibling-fails-not-winner
@@ -568,9 +564,8 @@ jobs:
           ext_id="spec-a-${{ github.run_id }}"
           for i in $(seq 1 12); do
             conclusion=$(gh api \
-              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-              --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion' \
-              2>/dev/null)
+              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" |
+              jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion')
             echo "attempt $i: copy a conclusion=${conclusion}"
             [[ "$conclusion" == "failure" ]] && { echo "PASS: copy a check-run=failure"; break; }
             sleep 10
@@ -581,9 +576,8 @@ jobs:
           ext_id="spec-b-${{ github.run_id }}"
           for i in $(seq 1 12); do
             conclusion=$(gh api \
-              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-              --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion' \
-              2>/dev/null)
+              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" |
+              jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion')
             echo "attempt $i: copy b conclusion=${conclusion}"
             [[ "$conclusion" == "success" ]] && { echo "PASS: copy b check-run=success"; exit 0; }
             sleep 10
