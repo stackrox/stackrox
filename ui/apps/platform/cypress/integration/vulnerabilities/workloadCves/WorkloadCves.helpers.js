@@ -29,9 +29,6 @@ export function getFutureDateByDays(days) {
 
 export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch = '' } = {}) {
     const routeMatcherMap = getRouteMatcherMapForGraphQL(['getImageCVEList']);
-    Object.keys(routeMatcherMap).forEach((key) => {
-        routeMatcherMap[key].times = 1;
-    });
     const staticResponseMap = {
         getImageCVEList: { fixture: 'vulnerabilities/workloadCves/getImageCVEList.json' },
     };

@@ -149,6 +149,8 @@ function getWorkloadCveContextFromView(
         // TODO Handle user-defined views, or error
     }
 
+    baseSearchFilter['Cluster ID'] = ['-'];
+
     return {
         pageTitle,
         pageTitleDescription,

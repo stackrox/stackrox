@@ -152,11 +152,12 @@ describe('Exception Management Request Details Page', () => {
         };
 
         cy.get('table td[data-label="CVE"] a')
+            .first()
             .invoke('text')
             .then((cveName) => {
                 interactAndWaitForResponses(
                     () => {
-                        cy.get('table td[data-label="CVE"] a').click();
+                        cy.get('table td[data-label="CVE"] a').first().click();
                     },
                     routeMatcherMap,
                     staticResponseMap
