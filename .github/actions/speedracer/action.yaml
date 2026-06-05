@@ -65,15 +65,15 @@ runs:
         # with ", <letter>)" — we extract the last lowercase letter before ")".
         # arm64 jobs that exclude b/c copies auto-resolve to last=a.
         if [[ "$CHECK_NAME" == *"("* ]]; then
-          check_stem="${CHECK_NAME%\)}"   # "job (foo, bar" — strip trailing ")"
+          check_stem="${CHECK_NAME%\)}"
         else
-          check_stem="$CHECK_NAME"       # "job" — no parens
+          check_stem="$CHECK_NAME"
         fi
         all_copies=$(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" | \
           jq -r --arg s "$check_stem" '.jobs[] | select(.name | startswith($s)) | .name' | \
           grep -oE '[a-z]\)$' | tr -d ')' | sort -u)
         LAST_COPY=$(echo "$all_copies" | tail -1)
-        [[ -z "$LAST_COPY" ]] && LAST_COPY="b"   # safe fallback
+        [[ -z "$LAST_COPY" ]] && LAST_COPY="b"
         echo "Detected copies: $(echo "$all_copies" | tr '\n' ' ')→ last=${LAST_COPY}"
 
         cpu=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)
@@ -88,8 +88,6 @@ runs:
         fi
 
         # ── 2. Post in_progress check-run ───────────────────────────────────
-        # external_id includes run_id so concurrent runs on the same SHA
-        # (e.g. /retest) do not cross-contaminate each other's monitors.
         EXT_ID="spec-${MY_COPY}-${RUN_ID}"
         check_id=$(gh api repos/"${REPO}"/check-runs \
           -f name="${CHECK_NAME}" \
@@ -103,7 +101,6 @@ runs:
         echo "Posted in_progress check-run ${check_id} (${EXT_ID})"
 
         # ── 3. Poll for sibling check-runs (non-first copies only) ──────────
-        # Build the list of sibling external_ids to watch.
         case "$MY_COPY" in
           b) sibling_ids="spec-a-${RUN_ID}" ;;
           c) sibling_ids="spec-a-${RUN_ID},spec-b-${RUN_ID}" ;;
@@ -115,9 +112,6 @@ runs:
           IFS=',' read -ra sibling_arr <<< "$sibling_ids"
           GATE_START=$(date +%s%3N)
           echo "Polling for siblings (${sibling_ids})..."
-
-          # Initial sleep: lets siblings reach checkout + gate before we poll.
-          # Spreads API calls across copies (RANDOM % 2 gives 0 or 1 extra second).
           sleep $(( RANDOM % 2 + 5 ))
 
           poll=0
@@ -157,18 +151,12 @@ runs:
             sleep 2
           done
 
-          if [[ $(date +%s) -ge $deadline ]]; then
-            echo "Gate timeout — proceeding as fallback."
-          fi
+          [[ $(date +%s) -ge $deadline ]] && echo "Gate timeout — proceeding as fallback."
         else
           echo "Copy ${MY_COPY} is first — no sibling polling needed."
         fi
 
-        cp "${GITHUB_ACTION_PATH}/success.sh" /tmp/speedracer-success.sh
-        cp "${GITHUB_ACTION_PATH}/cleanup.sh" /tmp/speedracer-cleanup.sh
-        chmod +x /tmp/speedracer-success.sh /tmp/speedracer-cleanup.sh
         echo "Gate passed."
-        exit 0
 
     # Two separate post-handlers so post-if: is evaluated at post time
     # (unlike '${{ job.status }}' in post: which is pre-evaluated at registration).
@@ -179,7 +167,14 @@ runs:
         shell: bash
         run: 'true'
         post-if: success()
-        post: GH_TOKEN=${{ github.token }} SPEC_REPO=${{ github.repository }} SPEC_SHA=${{ github.sha }} bash /tmp/speedracer-success.sh
+        post: >-
+          check_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]');
+          check_name=$(cat /tmp/speedracer-check-name | head -1 | tr -d '\n');
+          my_copy=$(cat /tmp/speedracer-copy | head -1 | tr -d '\n');
+          echo "Speedracer: copy '${my_copy}' won.";
+          if [[ "$check_id" =~ ^[0-9]+$ ]]; then GH_TOKEN=${{ github.token }} gh api "repos/${{ github.repository }}/check-runs/${check_id}" -X PATCH -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." || echo "::warning::Failed to update check-run (non-fatal)";
+          else GH_TOKEN=${{ github.token }} gh api "repos/${{ github.repository }}/check-runs" -f name="${check_name}" -f head_sha="${{ github.sha }}" -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." || echo "::warning::Failed to post check-run (non-fatal)";
+          fi
 
     - name: Register failure post-handler
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
@@ -188,4 +183,10 @@ runs:
         shell: bash
         run: 'true'
         post-if: failure()
-        post: GH_TOKEN=${{ github.token }} SPEC_REPO=${{ github.repository }} bash /tmp/speedracer-cleanup.sh
+        post: >-
+          spec_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]');
+          [[ "$spec_id" =~ ^[0-9]+$ ]] || exit 0;
+          cur=$(GH_TOKEN=${{ github.token }} gh api "repos/${{ github.repository }}/check-runs/${spec_id}" --jq '.status');
+          [[ "$cur" == "in_progress" ]] || exit 0;
+          echo "Post-job cleanup: resolving check-run ${spec_id} → completed/failure";
+          GH_TOKEN=${{ github.token }} gh api "repos/${{ github.repository }}/check-runs/${spec_id}" -X PATCH -f status=completed -f conclusion=failure -f 'output[title]=Post-job speedracer cleanup' -f 'output[summary]=Job failed after gate; check-run resolved to unblock branch protection.'
