@@ -748,8 +748,9 @@ jobs:
             fi
             ;;
           *vulnmanagement*)
-            # Vulnmanagement tests need image scan data (same as vulnerabilities shard).
-            # Trigger a scan and wait for image data to populate.
+            # Vulnmanagement tests need image scan data AND time for background
+            # processing (node scanning, cluster metadata enrichment).
+            # Trigger a scan, then wait for data to fully populate.
             echo "Waiting for scanner registration..."
             for _ in $(seq 1 60); do
               registered=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
@@ -766,9 +767,10 @@ jobs:
                 | jq -r '.name // .error // .message' || true
             fi
 
-            # Wait for image data to appear
+            # Wait for image + vuln data to fully populate.
+            # This runs in parallel with other shards so doesn't affect wall-clock.
             echo "Waiting for image scan data..."
-            for i in $(seq 1 120); do
+            for i in $(seq 1 360); do
               count=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
                 "https://${API_ENDPOINT}/v1/imagescount" | jq '.count // 0' 2>/dev/null)
               if [ "${count:-0}" -gt 5 ]; then
@@ -778,7 +780,23 @@ jobs:
               [ $((i % 12)) -eq 0 ] && echo "+$((i*5/60))m: images=${count:-0}"
               sleep 5
             done
-            [ "${count:-0}" -le 5 ] && echo "::warning::Limited image data after 10 minutes"
+
+            # Also wait for image CVE data (components, not just image count)
+            echo "Waiting for image CVE data to populate..."
+            for i in $(seq 1 360); do
+              cve_count=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/api/graphql" \
+                -X POST -H 'Content-Type: application/json' \
+                -d '{"query":"{ imageCVECount }"}' \
+                | jq '.data.imageCVECount // 0' 2>/dev/null)
+              if [ "${cve_count:-0}" -gt 0 ]; then
+                echo "Image CVE data ready: ${cve_count} CVEs"
+                break
+              fi
+              [ $((i % 12)) -eq 0 ] && echo "+$((i*5/60))m: imageCVEs=${cve_count:-0}"
+              sleep 5
+            done
+            [ "${cve_count:-0}" -eq 0 ] && echo "::warning::No image CVE data after 30 minutes"
             ;;
           *policies*|*risk*)
             echo "Waiting for deployment events..."
