@@ -802,11 +802,41 @@ jobs:
       if: steps.filter.outputs.skip != 'true'
       working-directory: ui/apps/platform
       run: |
-        echo "${{ matrix.name }}: ${{ matrix.specs }}"
-        npx cypress run \
-          --browser chrome \
-          --spec "${{ matrix.specs }}" \
-          --config "baseUrl=https://${API_ENDPOINT},specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false,retries=0"
+        SHARD="${{ matrix.name }}"
+        SPECS="${{ matrix.specs }}"
+        echo "${SHARD}: ${SPECS}"
+
+        run_cypress() {
+          npx cypress run \
+            --browser chrome \
+            --spec "${SPECS}" \
+            --config "baseUrl=https://${API_ENDPOINT},specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false,retries=0"
+        }
+
+        case "$SHARD" in
+          *vulnmanagement*)
+            # Retry loop: vuln data may take time to populate after fresh deploy
+            for attempt in $(seq 1 5); do
+              echo "=== Attempt ${attempt}/5 at $(date -u +%H:%M:%S) ==="
+              if run_cypress; then
+                echo "=== Attempt ${attempt}: PASSED ==="
+                exit 0
+              else
+                rc=$?
+                echo "=== Attempt ${attempt}: FAILED (exit ${rc}) ==="
+              fi
+              if [ "$attempt" -lt 5 ]; then
+                echo "Waiting 2 minutes before retry..."
+                sleep 120
+              fi
+            done
+            echo "All 5 attempts failed"
+            exit 1
+            ;;
+          *)
+            run_cypress
+            ;;
+        esac
       env:
         CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
         CYPRESS_ROX_FLATTEN_IMAGE_DATA: "true"
