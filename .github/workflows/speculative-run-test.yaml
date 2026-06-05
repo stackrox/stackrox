@@ -243,7 +243,7 @@ jobs:
           for i in $(seq 1 12); do
             conclusion=$(gh api \
               "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-              --jq '[.check_runs[] | select(.name == "'"$check_name"'" and .external_id == "'"$ext_id"'")] | first | .conclusion')
+              --jq '[.check_runs[] | select(.external_id == "'"$ext_id"'")] | first | .conclusion')
             echo "attempt $i: conclusion=${conclusion}"
             [[ "$conclusion" == "success" ]] && { echo "PASS: conclusion=success"; exit 0; }
             sleep 10
@@ -255,7 +255,7 @@ jobs:
           ext_id="spec-b-${{ github.run_id }}-test-verify-check-run-success"
           conclusion=$(gh api \
             "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-            --jq '[.check_runs[] | select(.name == "'"$check_name"'" and .external_id == "'"$ext_id"'")] | last | .conclusion')
+            --jq '[.check_runs[] | select(.external_id == "'"$ext_id"'")] | last | .conclusion')
           echo "copy b conclusion: ${conclusion:-absent} (may be success if post-hook registered before SIGTERM)"
 
   # Test 9: Failure path — winner fails, post.sh patches check-run to completed/failure.
@@ -300,7 +300,7 @@ jobs:
           for i in $(seq 1 12); do
             conclusion=$(gh api \
               "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-              --jq '[.check_runs[] | select(.name == "'"$check_name"'" and .external_id == "'"$ext_id"'")] | first | .conclusion')
+              --jq '[.check_runs[] | select(.external_id == "'"$ext_id"'")] | first | .conclusion')
             echo "attempt $i: copy a conclusion=${conclusion}"
             [[ "$conclusion" == "failure" ]] && { echo "PASS: copy a check-run=failure (branch protection unblocked)"; break; }
             sleep 10
@@ -312,7 +312,7 @@ jobs:
           for i in $(seq 1 12); do
             conclusion=$(gh api \
               "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-              --jq '[.check_runs[] | select(.name == "'"$check_name"'" and .external_id == "'"$ext_id"'")] | first | .conclusion')
+              --jq '[.check_runs[] | select(.external_id == "'"$ext_id"'")] | first | .conclusion')
             echo "attempt $i: copy b conclusion=${conclusion}"
             [[ "$conclusion" == "success" ]] && { echo "PASS: copy b check-run=success"; exit 0; }
             sleep 10
@@ -405,7 +405,7 @@ jobs:
           for i in $(seq 1 12); do
             conclusion=$(gh api \
               "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-              --jq '[.check_runs[] | select(.name == "'"$check_name"'" and .external_id == "'"$ext_id"'")] | first | .conclusion')
+              --jq '[.check_runs[] | select(.external_id == "'"$ext_id"'")] | first | .conclusion')
             echo "attempt $i: conclusion=${conclusion}"
             [[ "$conclusion" == "success" ]] && { echo "PASS: single-copy check-run=success"; exit 0; }
             sleep 10
@@ -456,7 +456,7 @@ jobs:
           ext_id="spec-a-${{ github.run_id }}-test-multi-dim-check-name"
           result=$(gh api \
             "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-            --jq '[.check_runs[] | select(.name == "'"$check_name"'" and .external_id == "'"$ext_id"'")] | last | {name, conclusion}')
+            --jq '[.check_runs[] | select(.external_id == "'"$ext_id"'")] | last | {name, conclusion}')
           name=$(echo "$result" | jq -r '.name')
           conclusion=$(echo "$result" | jq -r '.conclusion')
           echo "name='${name}' conclusion='${conclusion}'"
@@ -506,7 +506,7 @@ jobs:
           ext_id="spec-a-${{ github.run_id }}-test-explicit-check-name"
           result=$(gh api \
             "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-            --jq '[.check_runs[] | select(.name == "'"$check_name"'" and .external_id == "'"$ext_id"'")] | last | {name, conclusion}')
+            --jq '[.check_runs[] | select(.external_id == "'"$ext_id"'")] | last | {name, conclusion}')
           name=$(echo "$result" | jq -r '.name')
           conclusion=$(echo "$result" | jq -r '.conclusion')
           echo "name='${name}' conclusion='${conclusion}'"
@@ -557,7 +557,7 @@ jobs:
           for i in $(seq 1 12); do
             conclusion=$(gh api \
               "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-              --jq '[.check_runs[] | select(.name == "'"$check_name"'" and .external_id == "'"$ext_id"'")] | first | .conclusion')
+              --jq '[.check_runs[] | select(.external_id == "'"$ext_id"'")] | first | .conclusion')
             echo "attempt $i: copy a conclusion=${conclusion}"
             [[ "$conclusion" == "failure" ]] && { echo "PASS: copy a check-run=failure"; break; }
             sleep 10
@@ -569,7 +569,7 @@ jobs:
           for i in $(seq 1 12); do
             conclusion=$(gh api \
               "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
-              --jq '[.check_runs[] | select(.name == "'"$check_name"'" and .external_id == "'"$ext_id"'")] | first | .conclusion')
+              --jq '[.check_runs[] | select(.external_id == "'"$ext_id"'")] | first | .conclusion')
             echo "attempt $i: copy b conclusion=${conclusion}"
             [[ "$conclusion" == "success" ]] && { echo "PASS: copy b check-run=success"; exit 0; }
             sleep 10
