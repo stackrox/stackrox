@@ -111,8 +111,6 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
-    - uses: ./.github/actions/speedracer-finish
-
   go-postgres:
     strategy:
       fail-fast: false
@@ -205,8 +203,6 @@ jobs:
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
-
-    - uses: ./.github/actions/speedracer-finish
 
   # Benchmarks run each bench function once (-benchtime=1x -count=1) to verify
   # they compile and execute without errors. A single postgres version is
@@ -377,8 +373,6 @@ jobs:
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'ui/apps/platform/cypress/test-results/reports'
-
-    - uses: ./.github/actions/speedracer-finish
 
   local-roxctl-tests:
     runs-on: ubuntu-latest

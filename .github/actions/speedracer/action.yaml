@@ -1,13 +1,12 @@
 name: Speedracer
 description: >
   Speculative execution for matrix jobs. Add 'speedracer: [a, b]' (or [a, b, c])
-  as the LAST matrix dimension, call this as the first step, and call
-  speedracer-finish as the last step.
+  as the LAST matrix dimension and call this as the first step — nothing else needed.
 
   Slow runner: exits as 'cancelled' immediately (no work wasted).
   Fast runner: posts an in_progress check-run and polls for sibling check-runs.
-  On failure the gate's post-hook resolves the check-run so branch protection
-  is not permanently blocked.
+  Post-step marks the check-run complete on job exit — success patches to
+  completed/success, failure patches to completed/failure.
 
 inputs:
   check-name:
@@ -158,20 +157,36 @@ runs:
 
         echo "Gate passed."
 
-    - name: Register failure cleanup hook
-      # Resolves the in_progress check-run to completed/failure when the job
-      # fails, so branch protection is not permanently blocked.
-      # post-if defaults to always() so this fires for all outcomes; the script
-      # guards on status==in_progress and skips if already resolved by finish.
+    # post-if: conditions are passed as literal strings (not ${{ }} expressions) so
+    # gacts evaluates them at post-step time using the actual job conclusion.
+    - name: Register success post-handler
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       if: inputs.enabled == 'true'
       with:
         shell: bash
         run: 'true'
+        post-if: success()
+        post: >-
+          check_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]');
+          check_name=$(cat /tmp/speedracer-check-name | head -1 | tr -d '\n');
+          my_copy=$(cat /tmp/speedracer-copy | head -1 | tr -d '\n');
+          echo "Speedracer post-success: copy=${my_copy} check_id=${check_id} check_name=${check_name}";
+          if [[ "$check_id" =~ ^[0-9]+$ ]]; then GH_TOKEN=${{ github.token }} gh api "repos/${{ github.repository }}/check-runs/${check_id}" -X PATCH -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." && echo "check-run ${check_id} patched to success" || echo "::warning::PATCH failed for check-run ${check_id}";
+          else GH_TOKEN=${{ github.token }} gh api "repos/${{ github.repository }}/check-runs" -f name="${check_name}" -f head_sha="${{ github.sha }}" -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." && echo "posted new check-run for ${check_name}" || echo "::warning::POST failed for ${check_name}";
+          fi
+
+    - name: Register failure post-handler
+      uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
+      if: inputs.enabled == 'true'
+      with:
+        shell: bash
+        run: 'true'
+        post-if: failure()
         post: >-
           spec_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]');
-          [[ "$spec_id" =~ ^[0-9]+$ ]] || exit 0;
+          echo "Speedracer post-failure: spec_id=${spec_id}";
+          [[ "$spec_id" =~ ^[0-9]+$ ]] || { echo "no valid check-id, skipping"; exit 0; };
           cur=$(GH_TOKEN=${{ github.token }} gh api "repos/${{ github.repository }}/check-runs/${spec_id}" --jq '.status');
-          [[ "$cur" == "in_progress" ]] || exit 0;
-          echo "Post-job cleanup: resolving check-run ${spec_id} → completed/failure";
-          GH_TOKEN=${{ github.token }} gh api "repos/${{ github.repository }}/check-runs/${spec_id}" -X PATCH -f status=completed -f conclusion=failure -f 'output[title]=Post-job speedracer cleanup' -f 'output[summary]=Job failed after gate; check-run resolved to unblock branch protection.'
+          echo "current check-run status: ${cur}";
+          [[ "$cur" == "in_progress" ]] || { echo "already resolved (${cur}), skipping"; exit 0; };
+          GH_TOKEN=${{ github.token }} gh api "repos/${{ github.repository }}/check-runs/${spec_id}" -X PATCH -f status=completed -f conclusion=failure -f 'output[title]=Post-job speedracer cleanup' -f 'output[summary]=Job failed after gate; check-run resolved to unblock branch protection.' && echo "check-run ${spec_id} patched to failure" || echo "::warning::PATCH to failure failed for ${spec_id}"
