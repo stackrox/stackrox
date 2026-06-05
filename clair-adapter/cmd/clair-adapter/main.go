@@ -73,16 +73,17 @@ func run(configPath string) error {
 		return fmt.Errorf("creating clair client: %w", err)
 	}
 
-	// Set up vulnerability bundle importer if Clair DB connection is configured.
+	// Set up vulnerability bundle importer and enrichment fetcher if Clair DB is configured.
 	var imp *vulnimporter.Importer
+	var enrichFetcher *vulnimporter.EnrichmentFetcher
 	if cfg.ClairDBConnString != "" {
 		slog.Info("connecting to Clair database for direct vulnerability import")
-		store, err := vulnimporter.NewMatcherStore(ctx, cfg.ClairDBConnString)
+		store, pool, err := vulnimporter.NewMatcherStoreAndPool(ctx, cfg.ClairDBConnString)
 		if err != nil {
 			return fmt.Errorf("creating Clair matcher store: %w", err)
 		}
-		// Pass adapter's MatcherMetadataStore if available (nil is safe).
 		imp = vulnimporter.NewImporter(store, nil)
+		enrichFetcher = vulnimporter.NewEnrichmentFetcher(pool)
 	}
 
 	// Configure HTTP client for fetching vulnerability bundles.
@@ -135,7 +136,11 @@ func run(configPath string) error {
 	// Matcher.
 	var mtch matcherpkg.Matcher
 	if cfg.Matcher.Enable {
-		mtch = matcherpkg.NewLocalMatcher(clairClient, enricherPipeline, nil)
+		var matcherOpts []matcherpkg.LocalMatcherOption
+		if enrichFetcher != nil {
+			matcherOpts = append(matcherOpts, matcherpkg.WithEnrichmentFetcher(enrichFetcher))
+		}
+		mtch = matcherpkg.NewLocalMatcher(clairClient, enricherPipeline, nil, matcherOpts...)
 	}
 
 	// Health handler.

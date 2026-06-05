@@ -11,16 +11,16 @@ import (
 	ccpostgres "github.com/quay/claircore/datastore/postgres"
 )
 
-// NewMatcherStore connects to Clair's PostgreSQL and returns a MatcherStore
-// suitable for importing vulnerability data directly.
+// NewMatcherStoreAndPool connects to Clair's PostgreSQL and returns both
+// a MatcherStore for importing data and the underlying pgxpool.Pool for
+// direct queries (e.g., enrichment fetching).
 //
 // doMigration is false because Clair manages its own schema migrations.
-// If Clair hasn't started yet and tables don't exist, this will retry
-// until the context is canceled or the connection succeeds.
-func NewMatcherStore(ctx context.Context, connString string) (datastore.MatcherStore, error) {
+// Retries connection and waits for schema to be ready.
+func NewMatcherStoreAndPool(ctx context.Context, connString string) (datastore.MatcherStore, *pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig(connString)
 	if err != nil {
-		return nil, fmt.Errorf("parsing Clair DB connection string: %w", err)
+		return nil, nil, fmt.Errorf("parsing Clair DB connection string: %w", err)
 	}
 	cfg.ConnConfig.RuntimeParams["application_name"] = "clair-adapter-importer"
 
@@ -36,15 +36,14 @@ func NewMatcherStore(ctx context.Context, connString string) (datastore.MatcherS
 		slog.WarnContext(ctx, "waiting for Clair database", "attempt", attempt, "error", err)
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, nil, ctx.Err()
 		case <-time.After(10 * time.Second):
 		}
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to Clair database after 30 attempts: %w", err)
+		return nil, nil, fmt.Errorf("failed to connect to Clair database after 30 attempts: %w", err)
 	}
 
-	// Wait for Clair's tables to exist (Clair runs migrations on startup).
 	for attempt := 1; attempt <= 30; attempt++ {
 		var exists bool
 		err = pool.QueryRow(ctx,
@@ -56,7 +55,7 @@ func NewMatcherStore(ctx context.Context, connString string) (datastore.MatcherS
 		select {
 		case <-ctx.Done():
 			pool.Close()
-			return nil, ctx.Err()
+			return nil, nil, ctx.Err()
 		case <-time.After(5 * time.Second):
 		}
 	}
@@ -64,8 +63,8 @@ func NewMatcherStore(ctx context.Context, connString string) (datastore.MatcherS
 	store, err := ccpostgres.InitPostgresMatcherStore(ctx, pool, false)
 	if err != nil {
 		pool.Close()
-		return nil, fmt.Errorf("initializing Clair matcher store: %w", err)
+		return nil, nil, fmt.Errorf("initializing Clair matcher store: %w", err)
 	}
 
-	return store, nil
+	return store, pool, nil
 }

@@ -2,20 +2,17 @@ package matcher
 
 import (
 	"context"
-	"strings"
+	"regexp"
 	"time"
 
 	"github.com/stackrox/rox/clair-adapter/clairclient"
 	"github.com/stackrox/rox/clair-adapter/datastore"
 	"github.com/stackrox/rox/clair-adapter/enricher"
+	"github.com/stackrox/rox/clair-adapter/mappers"
+	"github.com/stackrox/rox/clair-adapter/vulnimporter"
 )
 
-func clairDigest(hashID string) string {
-	if i := strings.LastIndex(hashID, "sha256:"); i > 0 {
-		return hashID[i:]
-	}
-	return hashID
-}
+var cvePattern = regexp.MustCompile(`CVE-\d{4}-\d+`)
 
 // Matcher provides vulnerability matching operations.
 type Matcher interface {
@@ -29,37 +26,78 @@ type Matcher interface {
 
 // localMatcher implements the Matcher interface using a Clair HTTP client.
 type localMatcher struct {
-	clair         *clairclient.Client
-	pipeline      *enricher.Pipeline
-	metadataStore datastore.MatcherMetadataStore // may be nil
+	clair             *clairclient.Client
+	pipeline          *enricher.Pipeline
+	enrichmentFetcher *vulnimporter.EnrichmentFetcher // may be nil
+	metadataStore     datastore.MatcherMetadataStore  // may be nil
 }
 
 // NewLocalMatcher creates a new matcher that delegates to a Clair HTTP client
 // and enriches results using the provided enrichment pipeline.
 // The metadataStore parameter is optional (may be nil) and is used to track vulnerability updates.
-func NewLocalMatcher(clair *clairclient.Client, pipeline *enricher.Pipeline, metadataStore datastore.MatcherMetadataStore) Matcher {
-	return &localMatcher{
+func NewLocalMatcher(clair *clairclient.Client, pipeline *enricher.Pipeline, metadataStore datastore.MatcherMetadataStore, opts ...LocalMatcherOption) Matcher {
+	m := &localMatcher{
 		clair:         clair,
 		pipeline:      pipeline,
 		metadataStore: metadataStore,
 	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// LocalMatcherOption configures a localMatcher.
+type LocalMatcherOption func(*localMatcher)
+
+// WithEnrichmentFetcher configures direct DB enrichment fetching.
+func WithEnrichmentFetcher(f *vulnimporter.EnrichmentFetcher) LocalMatcherOption {
+	return func(m *localMatcher) { m.enrichmentFetcher = f }
 }
 
 // GetVulnerabilities retrieves and enriches vulnerability data for a container image.
 func (l *localMatcher) GetVulnerabilities(ctx context.Context, hashID string) (*clairclient.VulnerabilityReport, *enricher.EnrichmentResult, error) {
-	// Get vulnerability report from Clair
-	report, err := l.clair.GetVulnerabilityReport(ctx, clairDigest(hashID))
+	report, err := l.clair.GetVulnerabilityReport(ctx, clairclient.DigestFromHashID(hashID))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// Enrich the report using the pipeline
-	enrichmentResult, err := l.pipeline.Enrich(report)
+	enrichmentResult, err := l.pipeline.Enrich(ctx, report)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	// Clair doesn't return enrichment data (NVD/EPSS) because it doesn't have
+	// the StackRox enricher plugins. Fetch directly from the DB if available.
+	if l.enrichmentFetcher != nil {
+		cves := extractCVEs(report)
+		if len(cves) > 0 {
+			nvd := l.enrichmentFetcher.FetchNVD(ctx, cves)
+			if len(nvd) > 0 {
+				enrichmentResult.NVDVulns = map[string]map[string]*mappers.NVDItem{"db": nvd}
+			}
+			epss := l.enrichmentFetcher.FetchEPSS(ctx, cves)
+			if len(epss) > 0 {
+				enrichmentResult.EPSSItems = map[string]map[string]*mappers.EPSSItem{"db": epss}
+			}
+		}
 	}
 
 	return report, enrichmentResult, nil
+}
+
+func extractCVEs(report *clairclient.VulnerabilityReport) []string {
+	seen := make(map[string]struct{})
+	for _, v := range report.Vulnerabilities {
+		for _, m := range cvePattern.FindAllString(v.Name, -1) {
+			seen[m] = struct{}{}
+		}
+	}
+	cves := make([]string, 0, len(seen))
+	for cve := range seen {
+		cves = append(cves, cve)
+	}
+	return cves
 }
 
 // GetLastVulnerabilityUpdate returns the most recent vulnerability database update timestamp.
