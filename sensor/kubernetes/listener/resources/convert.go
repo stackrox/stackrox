@@ -327,96 +327,93 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 
 	// Determine each image's ID, if not already populated, as well as if the image is pullable and/or cluster-local.
 	for _, p := range pods {
-		// Build a map from container name to pod spec container for name-based lookup.
-		mapSize := len(p.Spec.Containers)
-		statusCount := len(p.Status.ContainerStatuses)
+		w.processContainerStatuses(p.Status.ContainerStatuses, p.Spec.Containers, containersByName, localImages)
 		if features.InitContainerSupport.Enabled() {
-			mapSize += len(p.Spec.InitContainers)
-			statusCount += len(p.Status.InitContainerStatuses)
+			w.processContainerStatuses(p.Status.InitContainerStatuses, p.Spec.InitContainers, containersByName, localImages)
+		}
+	}
+}
+
+// processContainerStatuses iterates over container statuses and populates image
+// metadata by matching against the deployment containers via containersByName.
+func (w *deploymentWrap) processContainerStatuses(
+	statuses []v1.ContainerStatus,
+	specContainers []v1.Container,
+	containersByName map[string]*storage.Container,
+	localImages set.StringSet,
+) {
+	for i := range statuses {
+		c := &statuses[i]
+		deployContainer, found := containersByName[c.Name]
+		if !found {
+			log.Debugf("Skipping container status %q with no matching deployment container for deploy %q, pod %q", c.Name, w.GetDeployment().GetName(), w.GetDeployment().GetId())
+			continue
 		}
 
-		specContainersByName := make(map[string]v1.Container, mapSize)
-		for _, sc := range p.Spec.Containers {
-			specContainersByName[sc.Name] = sc
-		}
-		if features.InitContainerSupport.Enabled() {
-			for _, sc := range p.Spec.InitContainers {
-				specContainersByName[sc.Name] = sc
+		image := deployContainer.GetImage()
+
+		var runtimeImageName *storage.ImageName
+		if features.UnqualifiedSearchRegistries.Enabled() && c.ImageID != "" {
+			var err error
+			if runtimeImageName, _, err = imageUtils.GenerateImageNameFromString(imageUtils.RemoveScheme(c.ImageID)); err != nil {
+				log.Warnf("Error parsing image ID %q, will not sync image names with runtime for deploy %q: %v", c.ImageID, w.GetDeployment().GetName(), err)
 			}
 		}
 
-		// Process both regular and init container statuses.
-		allStatuses := make([]v1.ContainerStatus, 0, statusCount)
-		allStatuses = append(allStatuses, p.Status.ContainerStatuses...)
-		if features.InitContainerSupport.Enabled() {
-			allStatuses = append(allStatuses, p.Status.InitContainerStatuses...)
-		}
-
-		for _, c := range allStatuses {
-			deployContainer, found := containersByName[c.Name]
-			if !found {
-				log.Debugf("Skipping container status %q with no matching deployment container for deploy %q, pod %q", c.Name, w.GetDeployment().GetName(), p.GetName())
-				continue
-			}
-
-			image := deployContainer.GetImage()
-
-			var runtimeImageName *storage.ImageName
-			if features.UnqualifiedSearchRegistries.Enabled() && c.ImageID != "" {
-				var err error
-				if runtimeImageName, _, err = imageUtils.GenerateImageNameFromString(imageUtils.RemoveScheme(c.ImageID)); err != nil {
-					log.Warnf("Error parsing image ID %q, will not sync image names with runtime for deploy %q, pod %q: %v", c.ImageID, w.GetDeployment().GetName(), p.GetName(), err)
-				}
-			}
-
-			// If there already is an image ID for the image then that implies that the name of the image
-			// had a digest. e.g. quay.io/stackrox-io/main@sha256:xyz or main@sha256:xyz
-			// If the ID already exists populate NotPullable, IsClusterLocal, and sync the registry
-			// and remote with the container runtime.
-			if image.GetId() != "" {
-				// If the image ID is populated then determine if the image is pullable,
-				// otherwise assume the image is pullable. An Image ID may be empty when a
-				// container is not ready yet per the container runtime.
-				if c.ImageID != "" {
-					image.NotPullable = !imageUtils.IsPullable(c.ImageID)
-				}
-
-				image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())
-				updateImageWithNewerImageName(image, runtimeImageName, true)
-				if features.FlattenImageData.Enabled() {
-					image.IdV2 = imageUtils.NewImageV2ID(image.GetName(), image.GetId())
-				}
-				continue
-			}
-
-			specContainer, found := specContainersByName[c.Name]
-			if !found {
-				continue
-			}
-
-			parsedName, err := imageUtils.GenerateImageFromStringWithOverride(specContainer.Image, w.registryOverride)
-			if err != nil {
-				// This error will only happen if we could not parse the image, this is possible if the image in kubernetes is malformed
-				// e.g. us.gcr.io/$PROJECT/xyz:latest is an example that we have seen
-				continue
-			}
-
-			// If the pod spec image doesn't match the top level image, then it is an old spec, so we should ignore its digest
-			if parsedName.GetName().GetFullName() != image.GetName().GetFullName() {
-				continue
-			}
-
-			if digest := imageUtils.ExtractImageDigest(c.ImageID); digest != "" {
-				image.Id = digest
+		// If there already is an image ID for the image then that implies that the name of the image
+		// had a digest. e.g. quay.io/stackrox-io/main@sha256:xyz or main@sha256:xyz
+		// If the ID already exists populate NotPullable, IsClusterLocal, and sync the registry
+		// and remote with the container runtime.
+		if image.GetId() != "" {
+			if c.ImageID != "" {
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
-				image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())
-				updateImageWithNewerImageName(image, runtimeImageName, false)
-				if features.FlattenImageData.Enabled() {
-					image.IdV2 = imageUtils.NewImageV2ID(image.GetName(), digest)
-				}
+			}
+
+			image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())
+			updateImageWithNewerImageName(image, runtimeImageName, true)
+			if features.FlattenImageData.Enabled() {
+				image.IdV2 = imageUtils.NewImageV2ID(image.GetName(), image.GetId())
+			}
+			continue
+		}
+
+		specImage := findSpecContainerImage(specContainers, c.Name)
+		if specImage == "" {
+			continue
+		}
+
+		parsedName, err := imageUtils.GenerateImageFromStringWithOverride(specImage, w.registryOverride)
+		if err != nil {
+			continue
+		}
+
+		// If the pod spec image doesn't match the top level image, then it is an old spec, so we should ignore its digest
+		if parsedName.GetName().GetFullName() != image.GetName().GetFullName() {
+			continue
+		}
+
+		if digest := imageUtils.ExtractImageDigest(c.ImageID); digest != "" {
+			image.Id = digest
+			image.NotPullable = !imageUtils.IsPullable(c.ImageID)
+			image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())
+			updateImageWithNewerImageName(image, runtimeImageName, false)
+			if features.FlattenImageData.Enabled() {
+				image.IdV2 = imageUtils.NewImageV2ID(image.GetName(), digest)
 			}
 		}
 	}
+}
+
+// findSpecContainerImage returns the image string for the spec container with
+// the given name. Returns empty string if not found. Uses linear scan since pod
+// spec container lists are typically small (1-10 entries).
+func findSpecContainerImage(specContainers []v1.Container, name string) string {
+	for i := range specContainers {
+		if specContainers[i].Name == name {
+			return specContainers[i].Image
+		}
+	}
+	return ""
 }
 
 // updateImageWithNewerImageName will update the registry, remote, and full name
