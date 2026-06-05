@@ -18,7 +18,7 @@ spec:
         args:
         - -f
         - /etc/berserker/workload.ber
-        image: quay.io/stackrox-io/berserker:1.0-96-gc213cfd0c7
+        image: quay.io/stackrox-io/berserker:1.0-97-g64cfd0ee0b
         resources:
           requests:
             memory: "200Mi"
