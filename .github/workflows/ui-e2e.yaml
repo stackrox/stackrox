@@ -750,10 +750,8 @@ jobs:
           *vulnmanagement*)
             echo "Checking for cluster (platform) CVE data..."
 
-            # Scanner V2 never produces cluster/node CVEs but the tests need
-            # enough time after deploy for image scan data to populate.
-            # Too short and tests fail instead of gracefully skipping.
-            max_attempts=120  # 10 minutes
+            # Quick check only — the Cypress retry loop below handles the real waiting
+            max_attempts=6  # 30 seconds
 
             cluster_ready=false
             for i in $(seq 1 $max_attempts); do
@@ -816,9 +814,11 @@ jobs:
 
         case "$SHARD" in
           *vulnmanagement*)
-            # Retry loop: vuln data may take time to populate after fresh deploy
-            for attempt in $(seq 1 5); do
-              echo "=== Attempt ${attempt}/5 at $(date -u +%H:%M:%S) ==="
+            # Retry loop: vuln/image data takes time to populate after fresh deploy.
+            # Each Cypress run is ~2-4 min. Retry with 3-min gaps up to 75 min total.
+            MAX_ATTEMPTS=15
+            for attempt in $(seq 1 $MAX_ATTEMPTS); do
+              echo "=== Attempt ${attempt}/${MAX_ATTEMPTS} at $(date -u +%H:%M:%S) ==="
               if run_cypress; then
                 echo "=== Attempt ${attempt}: PASSED ==="
                 exit 0
@@ -826,12 +826,12 @@ jobs:
                 rc=$?
                 echo "=== Attempt ${attempt}: FAILED (exit ${rc}) ==="
               fi
-              if [ "$attempt" -lt 5 ]; then
-                echo "Waiting 2 minutes before retry..."
-                sleep 120
+              if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
+                echo "Waiting 3 minutes before retry..."
+                sleep 180
               fi
             done
-            echo "All 5 attempts failed"
+            echo "All ${MAX_ATTEMPTS} attempts failed"
             exit 1
             ;;
           *)
