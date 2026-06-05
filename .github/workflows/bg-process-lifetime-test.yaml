@@ -319,11 +319,8 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       - name: Log PPID from within the composite action
-        uses: ./.github/actions/speculative-run
+        uses: ./.github/actions/speedracer-gate
         with:
-          copy: a
-          check-name: ppid-diagnostic
-          last-copy: a
           enabled: 'false'  # disabled — just want the gate to log process info
       - name: Log PPID from a regular run step (for comparison)
         run: |

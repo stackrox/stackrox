@@ -19,7 +19,7 @@ on:
     - synchronize
 
 permissions:
-  checks: write   # Required for speculative-run to post synthetic required check results
+  checks: write   # Required for speedracer-gate to post synthetic required check results
 
 defaults:
   run:
@@ -96,21 +96,21 @@ jobs:
           # The base matrix
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.pre_build_go_binaries.arch += ["amd64", "arm64"]' <<< "$matrix")"
-          matrix="$(jq '.pre_build_go_binaries.copy += ["a", "b", "c"]' <<< "$matrix")"
-          matrix="$(jq '.pre_build_go_binaries.exclude += [{"copy": "b", "arch": "arm64"}, {"copy": "c", "arch": "arm64"}]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.speedracer += ["a", "b", "c"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.exclude += [{"speedracer": "b", "arch": "arm64"}, {"speedracer": "c", "arch": "arm64"}]' <<< "$matrix")"
 
           matrix="$(jq '.build_and_push_main.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_main.copy += ["a", "b", "c"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_main.speedracer += ["a", "b", "c"]' <<< "$matrix")"
           # Only run copy b on amd64 — arm64 runners are consistent hardware, backup not needed
-          matrix="$(jq '.build_and_push_main.exclude += [{"copy": "b", "arch": "arm64"}, {"copy": "c", "arch": "arm64"}]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_main.exclude += [{"speedracer": "b", "arch": "arm64"}, {"speedracer": "c", "arch": "arm64"}]' <<< "$matrix")"
 
           matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
 
           matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_operator.arch += ["amd64", "arm64"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_operator.copy += ["a", "b", "c"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_operator.exclude += [{"copy": "b", "arch": "arm64"}, {"copy": "c", "arch": "arm64"}]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_operator.speedracer += ["a", "b", "c"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_operator.exclude += [{"speedracer": "b", "arch": "arm64"}, {"speedracer": "c", "arch": "arm64"}]' <<< "$matrix")"
 
           matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.push_operator_multiarch_manifests.archs = [.build_and_push_operator.arch | join(",")]' <<< "$matrix")"
@@ -119,8 +119,8 @@ jobs:
           matrix="$(jq '.build_and_push_scanner.goos += ["linux"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_scanner.arch += ["amd64", "arm64"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_scanner.registry += ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_scanner.copy += ["a", "b"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_scanner.exclude += [{"copy": "b", "arch": "arm64"}]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_scanner.speedracer += ["a", "b"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_scanner.exclude += [{"speedracer": "b", "arch": "arm64"}]' <<< "$matrix")"
 
           matrix="$(jq '.push_scanner_manifests.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.push_scanner_manifests.registry += ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
@@ -175,10 +175,9 @@ jobs:
 
   pre-build-ui:
     strategy:
-      fail-fast: false
       matrix:
         branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
-        copy: [a, b]
+        speedracer: [a, b]
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
       # For consistency with `image/rhel/konflux.Dockerfile`, see comment there.
@@ -191,11 +190,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speculative-run
-        with:
-          copy: ${{ matrix.copy }}
-          check-name: pre-build-ui (${{ matrix.branding }})
-          last-copy: b
+      - uses: ./.github/actions/speedracer-gate
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -228,11 +223,7 @@ jobs:
             ui/build
             ui/apps/platform/package-lock.json
 
-      - uses: ./.github/actions/speculative-declare-win
-        if: success()
-        with:
-          check-name: pre-build-ui (${{ matrix.branding }})
-          copy: ${{ matrix.copy }}
+      - uses: ./.github/actions/speedracer-finish
 
   pre-build-cli:
     needs: define-job-matrix
@@ -312,7 +303,6 @@ jobs:
       # default - built with environment defaults (see env.mk)
       # prerelease - built with GOTAGS=release
       # race-condition-debug - built with -race
-      fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
     needs: define-job-matrix
     runs-on: ubuntu-latest
@@ -326,20 +316,13 @@ jobs:
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speculative-run
-        id: gate
-        with:
-          copy: ${{ matrix.copy }}
-          check-name: pre-build-go-binaries (${{ matrix.name }}, ${{ matrix.arch }})
-          last-copy: ${{ matrix.arch == 'arm64' && 'a' || 'c' }}
+      - uses: ./.github/actions/speedracer-gate
 
       - uses: ./.github/actions/job-preamble
-        if: steps.gate.conclusion == 'success'
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Cache Go dependencies
-        if: steps.gate.conclusion == 'success'
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
@@ -392,31 +375,23 @@ jobs:
           sudo ln -sf /usr/include/asm /usr/include/x86_64-linux-musl/asm
 
       - name: Build Go Binaries
-        if: steps.gate.conclusion == 'success'
         run: GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
 
       - name: Bundle the build to preserve permissions
-        if: steps.gate.conclusion == 'success'
         run: tar -cvf go-binaries-build.tar bin/linux_${{ matrix.arch }}
 
       - uses: ./.github/actions/upload-artifact-with-retry
-        if: steps.gate.conclusion == 'success'
         with:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
           path: go-binaries-build.tar
           compression-level: 1
 
-      - uses: ./.github/actions/speculative-declare-win
-        if: success()
-        with:
-          check-name: pre-build-go-binaries (${{ matrix.name }}, ${{ matrix.arch }})
-          copy: ${{ matrix.copy }}
+      - uses: ./.github/actions/speedracer-finish
 
   pre-build-docs:
     strategy:
-      fail-fast: false
       matrix:
-        copy: [a, b]
+        speedracer: [a, b]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -425,11 +400,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speculative-run
-        with:
-          copy: ${{ matrix.copy }}
-          check-name: pre-build-docs
-          last-copy: b
+      - uses: ./.github/actions/speedracer-gate
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -453,17 +424,12 @@ jobs:
           path: |
             image/rhel/docs
 
-      - uses: ./.github/actions/speculative-declare-win
-        if: success()
-        with:
-          check-name: pre-build-docs
-          copy: ${{ matrix.copy }}
+      - uses: ./.github/actions/speedracer-finish
 
   pre-build-oss-notice:
     strategy:
-      fail-fast: false
       matrix:
-        copy: [a, b]
+        speedracer: [a, b]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -472,11 +438,7 @@ jobs:
         fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-    - uses: ./.github/actions/speculative-run
-      with:
-        copy: ${{ matrix.copy }}
-        check-name: pre-build-oss-notice
-        last-copy: b
+    - uses: ./.github/actions/speedracer-gate
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -510,17 +472,12 @@ jobs:
         name: oss-notice
         path: image/rhel/THIRD_PARTY_NOTICES
 
-    - uses: ./.github/actions/speculative-declare-win
-      if: success()
-      with:
-        check-name: pre-build-oss-notice
-        copy: ${{ matrix.copy }}
+    - uses: ./.github/actions/speedracer-finish
 
   build-and-push-db:
     strategy:
-      fail-fast: false
       matrix:
-        copy: [a, b]
+        speedracer: [a, b]
     runs-on: ubuntu-latest
     needs:
       - define-job-matrix
@@ -533,11 +490,7 @@ jobs:
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speculative-run
-        with:
-          copy: ${{ matrix.copy }}
-          check-name: build-and-push-db
-          last-copy: b
+      - uses: ./.github/actions/speedracer-gate
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -631,17 +584,12 @@ jobs:
             "docker://quay.io/stackrox-io/scanner-v4-db:${{ env.BUILD_TAG }}" \
             "docker://quay.io/rhacs-eng/scanner-v4-db:${{ env.BUILD_TAG }}"
 
-      - uses: ./.github/actions/speculative-declare-win
-        if: success()
-        with:
-          check-name: build-and-push-db
-          copy: ${{ matrix.copy }}
+      - uses: ./.github/actions/speedracer-finish
 
   build-operator-bundle:
     strategy:
-      fail-fast: false
       matrix:
-        copy: [a, b]
+        speedracer: [a, b]
     runs-on: ubuntu-latest
     env:
       QUAY_ORG: rhacs-eng
@@ -656,11 +604,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speculative-run
-        with:
-          copy: ${{ matrix.copy }}
-          check-name: build-operator-bundle
-          last-copy: b
+      - uses: ./.github/actions/speedracer-gate
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -684,11 +628,7 @@ jobs:
           make -C operator/ index-build
           make -C operator/ docker-push-index | cat
 
-      - uses: ./.github/actions/speculative-declare-win
-        if: success()
-        with:
-          check-name: build-operator-bundle
-          copy: ${{ matrix.copy }}
+      - uses: ./.github/actions/speedracer-finish
 
   build-and-push-main:
     # Use native arm64 runner to avoid QEMU emulation overhead (~2x slower).
@@ -713,7 +653,6 @@ jobs:
       # RHACS_BRANDING
       # prerelease
       # race-condition-debug
-      fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_main }}
     env:
       GO_BINARIES_BUILD_ARTIFACT: ""
@@ -759,15 +698,9 @@ jobs:
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speculative-run
-        id: gate
-        with:
-          copy: ${{ matrix.copy }}
-          check-name: build-and-push-main (${{ matrix.name }}, ${{ matrix.arch }})
-          last-copy: ${{ matrix.arch == 'arm64' && 'a' || 'c' }}
+      - uses: ./.github/actions/speedracer-gate
 
       - uses: ./.github/actions/job-preamble
-        if: steps.gate.conclusion == 'success'
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
@@ -876,11 +809,7 @@ jobs:
             fi
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
-      - uses: ./.github/actions/speculative-declare-win
-        if: success()
-        with:
-          check-name: build-and-push-main (${{ matrix.name }}, ${{ matrix.arch }})
-          copy: ${{ matrix.copy }}
+      - uses: ./.github/actions/speedracer-finish
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
@@ -1046,7 +975,6 @@ jobs:
       - pre-build-go-binaries
       - pre-build-oss-notice
     strategy:
-      fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
@@ -1061,15 +989,9 @@ jobs:
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speculative-run
-        id: gate
-        with:
-          copy: ${{ matrix.copy }}
-          check-name: build-and-push-operator (${{ matrix.name }}, ${{ matrix.arch }})
-          last-copy: ${{ matrix.arch == 'arm64' && 'a' || 'c' }}
+      - uses: ./.github/actions/speedracer-gate
 
       - uses: ./.github/actions/job-preamble
-        if: steps.gate.conclusion == 'success'
         with:
           free-disk-space: 40
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -1163,11 +1085,7 @@ jobs:
             fi
             echo "Operator image push completed successfully"
 
-      - uses: ./.github/actions/speculative-declare-win
-        if: success()
-        with:
-          check-name: build-and-push-operator (${{ matrix.name }}, ${{ matrix.arch }})
-          copy: ${{ matrix.copy }}
+      - uses: ./.github/actions/speedracer-finish
 
   build-and-push-scanner:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
@@ -1178,7 +1096,6 @@ jobs:
       - pre-build-oss-notice
     if: ${{ !failure() }}
     strategy:
-      fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_scanner }}
     env:
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
@@ -1190,12 +1107,7 @@ jobs:
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speculative-run
-        id: gate
-        with:
-          copy: ${{ matrix.copy }}
-          check-name: build-and-push-scanner (${{ matrix.name }}, ${{ matrix.goos }}, ${{ matrix.arch }}, ${{ matrix.registry }})
-          last-copy: ${{ matrix.arch == 'arm64' && 'a' || 'b' }}
+      - uses: ./.github/actions/speedracer-gate
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -1260,11 +1172,7 @@ jobs:
           source ./scripts/ci/lib.sh
           push_scanner_image_set "${{ matrix.registry }}" "${{ matrix.arch }}"
 
-      - uses: ./.github/actions/speculative-declare-win
-        if: success()
-        with:
-          check-name: build-and-push-scanner (${{ matrix.name }}, ${{ matrix.goos }}, ${{ matrix.arch }}, ${{ matrix.registry }})
-          copy: ${{ matrix.copy }}
+      - uses: ./.github/actions/speedracer-finish
 
 
   push-scanner-manifests:

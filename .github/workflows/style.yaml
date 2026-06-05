@@ -13,7 +13,7 @@ on:
     - synchronize
   workflow_dispatch:
 permissions:
-  checks: write  # speculative-run and speculative-declare-win post/patch check-runs
+  checks: write  # speedracer-gate and speedracer-finish post/patch check-runs
 
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
@@ -28,9 +28,8 @@ jobs:
 
   check-generated-files:
     strategy:
-      fail-fast: false
       matrix:
-        copy: [a, b]
+        speedracer: [a, b]
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
@@ -41,11 +40,7 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
-    - uses: ./.github/actions/speculative-run
-      with:
-        copy: ${{ matrix.copy }}
-        check-name: check-generated-files
-        last-copy: b
+    - uses: ./.github/actions/speedracer-gate
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -63,11 +58,7 @@ jobs:
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
 
-    - uses: ./.github/actions/speculative-declare-win
-      if: success()
-      with:
-        check-name: check-generated-files
-        copy: ${{ matrix.copy }}
+    - uses: ./.github/actions/speedracer-finish
 
   misc-checks:
     env:
@@ -115,9 +106,8 @@ jobs:
 
   style-check:
     strategy:
-      fail-fast: false
       matrix:
-        copy: [a, b]
+        speedracer: [a, b]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -126,11 +116,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: ./.github/actions/speculative-run
-        with:
-          copy: ${{ matrix.copy }}
-          check-name: style-check
-          last-copy: b
+      - uses: ./.github/actions/speedracer-gate
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -182,11 +168,7 @@ jobs:
       - name: make style-slim
         run: make style-slim
 
-      - uses: ./.github/actions/speculative-declare-win
-        if: success()
-        with:
-          check-name: style-check
-          copy: ${{ matrix.copy }}
+      - uses: ./.github/actions/speedracer-finish
 
   golangci-lint:
     timeout-minutes: 240
