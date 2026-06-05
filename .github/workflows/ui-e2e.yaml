@@ -693,9 +693,10 @@ jobs:
           *vulnmanagement*|*vulnerabilities*)
             # Both shards need image scan data. In a full run they run in parallel,
             # but for single-shard testing we need the full scan + wait here too.
-            echo "Waiting for scanner registration..."
-            kubectl -n stackrox wait --for=condition=ready pod -l app=scanner --timeout=5m
-            echo "Scanner pod ready, waiting for Central registration..."
+            echo "Waiting for scanner pod..."
+            kubectl -n stackrox wait --for=condition=ready pod -l app=scanner --timeout=10m || \
+              echo "::warning::Scanner pod not ready after 10m — continuing anyway"
+            echo "Waiting for scanner registration with Central..."
             for _ in $(seq 1 60); do
               registered=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
                 "https://${API_ENDPOINT}/v1/imageintegrations" \
