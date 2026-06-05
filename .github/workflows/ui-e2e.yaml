@@ -748,39 +748,37 @@ jobs:
             fi
             ;;
           *vulnmanagement*)
-            echo "Checking for cluster (platform) CVE data..."
-
-            # Quick check only — the Cypress retry loop below handles the real waiting
-            max_attempts=6  # 30 seconds
-
-            cluster_ready=false
-            for i in $(seq 1 $max_attempts); do
-              cluster_cves=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/v1/cves/cluster?query=" | jq -r '.items | length // 0')
-              if [ "${cluster_cves:-0}" -gt 0 ]; then
-                echo "Cluster CVEs: ${cluster_cves}"
-                cluster_ready=true
-                break
-              fi
-              [ $((i % 12)) -eq 0 ] && echo "+$((i*5/60))m: cluster_cves=${cluster_cves:-0}"
+            # Vulnmanagement tests need image scan data (same as vulnerabilities shard).
+            # Trigger a scan and wait for image data to populate.
+            echo "Waiting for scanner registration..."
+            for _ in $(seq 1 60); do
+              registered=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/imageintegrations" \
+                | jq '[.integrations[]? | select(.type == "clairify" or .type == "scanner")] | length')
+              [ "${registered:-0}" -gt 0 ] && echo "Scanner registered" && break
               sleep 5
             done
-            [ "$cluster_ready" != "true" ] && echo "::warning::No cluster CVEs found"
+            if [ "${registered:-0}" -gt 0 ]; then
+              echo "Triggering image scan..."
+              curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/images/scan" \
+                -X POST -d '{"imageName":"docker.io/nginx:1.12","force":true}' 2>&1 \
+                | jq -r '.name // .error // .message' || true
+            fi
 
-            echo "Checking for node CVE data..."
-            node_ready=false
-            for i in $(seq 1 $max_attempts); do
-              node_cves=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/v1/cves/node?query=" | jq -r '.items | length // 0')
-              if [ "${node_cves:-0}" -gt 0 ]; then
-                echo "Node CVEs: ${node_cves}"
-                node_ready=true
+            # Wait for image data to appear
+            echo "Waiting for image scan data..."
+            for i in $(seq 1 120); do
+              count=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/imagescount" | jq '.count // 0' 2>/dev/null)
+              if [ "${count:-0}" -gt 5 ]; then
+                echo "Image data ready: ${count} images"
                 break
               fi
-              [ $((i % 12)) -eq 0 ] && echo "+$((i*5/60))m: node_cves=${node_cves:-0}"
+              [ $((i % 12)) -eq 0 ] && echo "+$((i*5/60))m: images=${count:-0}"
               sleep 5
             done
-            [ "$node_ready" != "true" ] && echo "::warning::No node CVEs found"
+            [ "${count:-0}" -le 5 ] && echo "::warning::Limited image data after 10 minutes"
             ;;
           *policies*|*risk*)
             echo "Waiting for deployment events..."
@@ -801,43 +799,11 @@ jobs:
       if: steps.filter.outputs.skip != 'true'
       working-directory: ui/apps/platform
       run: |
-        SHARD="${{ matrix.name }}"
-        SPECS="${{ matrix.specs }}"
-        echo "${SHARD}: ${SPECS}"
-
-        run_cypress() {
-          npx cypress run \
-            --browser chrome \
-            --spec "${SPECS}" \
-            --config "baseUrl=https://${API_ENDPOINT},specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false,retries=0"
-        }
-
-        case "$SHARD" in
-          *vulnmanagement*)
-            # Retry loop: vuln/image data takes time to populate after fresh deploy.
-            # Each Cypress run is ~2-4 min. Retry with 3-min gaps up to 75 min total.
-            MAX_ATTEMPTS=15
-            for attempt in $(seq 1 $MAX_ATTEMPTS); do
-              echo "=== Attempt ${attempt}/${MAX_ATTEMPTS} at $(date -u +%H:%M:%S) ==="
-              if run_cypress; then
-                echo "=== Attempt ${attempt}: PASSED ==="
-                exit 0
-              else
-                rc=$?
-                echo "=== Attempt ${attempt}: FAILED (exit ${rc}) ==="
-              fi
-              if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
-                echo "Waiting 3 minutes before retry..."
-                sleep 180
-              fi
-            done
-            echo "All ${MAX_ATTEMPTS} attempts failed"
-            exit 1
-            ;;
-          *)
-            run_cypress
-            ;;
-        esac
+        echo "${{ matrix.name }}: ${{ matrix.specs }}"
+        npx cypress run \
+          --browser chrome \
+          --spec "${{ matrix.specs }}" \
+          --config "baseUrl=https://${API_ENDPOINT},specPattern=cypress/integration/**/*.test.{js,ts},video=false,screenshotOnRunFailure=false,retries=0"
       env:
         CYPRESS_ROX_AUTH_TOKEN: ${{ env.ROX_AUTH_TOKEN }}
         CYPRESS_ROX_FLATTEN_IMAGE_DATA: "true"
