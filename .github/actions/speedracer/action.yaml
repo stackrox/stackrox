@@ -168,11 +168,11 @@ runs:
         post-if: success()
         post: >-
           export GH_TOKEN=${{ github.token }};
-          check_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]');
+          check_name=$(cat /tmp/speedracer-check-name | head -1 | tr -d '\n');
           my_copy=$(cat /tmp/speedracer-copy | head -1 | tr -d '\n');
-          echo "Speedracer post-success: copy=${my_copy} check_id=${check_id}";
-          [[ "$check_id" =~ ^[0-9]+$ ]] || { echo "::warning::no check_id — gate check-run POST must have failed"; exit 0; };
-          gh api "repos/${{ github.repository }}/check-runs/${check_id}" -X PATCH -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." && echo "check-run ${check_id} → success" || echo "::warning::PATCH failed for check-run ${check_id}"
+          ext_id="spec-${my_copy}-${{ github.run_id }}";
+          echo "Speedracer post-success: copy=${my_copy} ext_id=${ext_id}";
+          gh api "repos/${{ github.repository }}/check-runs" -f name="${check_name}" -f head_sha="${{ github.sha }}" -f external_id="${ext_id}" -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." && echo "posted completed/success for ${check_name}" || echo "::warning::POST failed for ${check_name}"
 
     - name: Register failure post-handler
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
