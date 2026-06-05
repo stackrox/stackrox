@@ -590,3 +590,4 @@ jobs:
             sleep 10
           done
           echo "FAIL: copy b did not reach success"; exit 1
+# Sample run 5 — post-refactor verification
