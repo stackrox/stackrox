@@ -191,7 +191,8 @@ function MachineAccessIntegrationForm({
                             <FormHelperText>
                                 <HelperText>
                                     <HelperTextItem>
-                                        Expected audience (aud) claim of the identity token. Leave blank to accept any audience.
+                                        Expected audience (aud) claim of the identity token. Leave
+                                        blank to accept any audience.
                                     </HelperTextItem>
                                 </HelperText>
                             </FormHelperText>
