@@ -1,4 +1,5 @@
 name: Speedracer Test
+# Sample run 1 — automated CI sampling
 on:
   push:
     branches: [davdhacs/speed-racer-build]
