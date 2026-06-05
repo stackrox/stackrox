@@ -4,9 +4,8 @@ description: >
   as the LAST matrix dimension and call this as the first step — nothing else needed.
 
   Slow runner: exits as 'cancelled' immediately (no work wasted).
-  Fast runner: posts an in_progress check-run, starts a background monitor,
+  Fast runner: posts an in_progress check-run, polls for sibling check-runs,
   and registers a post-step that marks the check-run complete on job exit.
-  Monitor fires when a sibling check-run appears and cancels this copy.
 
   Self-contained — no separate speedracer-finish step required.
 
@@ -64,8 +63,7 @@ runs:
         # Auto-detect last speedracer copy via jobs API.
         # Speedracer must be the last matrix dimension so the GHA job name ends
         # with ", <letter>)" — we extract the last lowercase letter before ")".
-        # arm64 jobs that exclude b/c copies auto-resolve to last=a with no
-        # special input needed.
+        # arm64 jobs that exclude b/c copies auto-resolve to last=a.
         if [[ "$CHECK_NAME" == *"("* ]]; then
           check_stem="${CHECK_NAME%\)}"   # "job (foo, bar" — strip trailing ")"
         else
@@ -90,8 +88,8 @@ runs:
         fi
 
         # ── 2. Post in_progress check-run ───────────────────────────────────
-        # external_id includes run_id so monitors from concurrent runs on the
-        # same SHA (e.g. /retest) do not cross-contaminate.
+        # external_id includes run_id so concurrent runs on the same SHA
+        # (e.g. /retest) do not cross-contaminate each other's monitors.
         EXT_ID="spec-${MY_COPY}-${RUN_ID}"
         check_id=$(gh api repos/"${REPO}"/check-runs \
           -f name="${CHECK_NAME}" \
@@ -104,52 +102,66 @@ runs:
         printf '%s\n' "${MY_COPY}"     > /tmp/speedracer-copy
         echo "Posted in_progress check-run ${check_id} (${EXT_ID})"
 
-        # ── 3. Background monitor for non-first copies ──────────────────────
+        # ── 3. Poll for sibling check-runs (non-first copies only) ──────────
+        # Build the list of sibling external_ids to watch.
         case "$MY_COPY" in
-          b) prev_copies="a" ;;
-          c) prev_copies="a b" ;;
-          d) prev_copies="a b c" ;;
-          *)  prev_copies="" ;;
+          b) sibling_ids="spec-a-${RUN_ID}" ;;
+          c) sibling_ids="spec-a-${RUN_ID},spec-b-${RUN_ID}" ;;
+          d) sibling_ids="spec-a-${RUN_ID},spec-b-${RUN_ID},spec-c-${RUN_ID}" ;;
+          *) sibling_ids="" ;;
         esac
 
-        if [[ -n "$prev_copies" ]]; then
-          sibling_ids=""
-          for c in ${prev_copies}; do
-            sibling_ids="${sibling_ids:+${sibling_ids},}spec-${c}-${RUN_ID}"
+        if [[ -n "$sibling_ids" ]]; then
+          IFS=',' read -ra sibling_arr <<< "$sibling_ids"
+          GATE_START=$(date +%s%3N)
+          echo "Polling for siblings (${sibling_ids})..."
+
+          # Initial sleep: lets siblings reach checkout + gate before we poll.
+          # Spreads API calls across copies (RANDOM % 2 gives 0 or 1 extra second).
+          sleep $(( RANDOM % 2 + 5 ))
+
+          poll=0
+          deadline=$(( $(date +%s) + 300 ))
+          while [[ $(date +%s) -lt $deadline ]]; do
+            poll=$(( poll + 1 ))
+            response=$(gh api \
+              "repos/${REPO}/commits/${{ github.sha }}/check-runs?per_page=100&filter=all")
+
+            winner=""
+            all_gone=1
+            for sid in "${sibling_arr[@]}"; do
+              result=$(echo "$response" | jq -r --arg cn "$CHECK_NAME" --arg sid "$sid" \
+                '[.check_runs[] | select(.name == $cn and .external_id == $sid)] as $checks |
+                if   ($checks | any(.[]; .status == "in_progress" or .conclusion == "success")) then "winner"
+                elif ($checks | length == 0)                                                    then "absent"
+                elif ($checks | any(.[]; .conclusion == null))                                  then "pending"
+                else "failed" end')
+              echo "[$(date -u +%H:%M:%S)] poll=${poll} ${sid}: ${result}"
+              if [[ "$result" == "winner" ]]; then winner="$sid"; break; fi
+              if [[ "$result" == "pending" || ( "$result" == "absent" && $poll -lt 2 ) ]]; then
+                all_gone=0
+              fi
+            done
+
+            if [[ -n "$winner" ]]; then
+              echo "Sibling ${winner} is winning — cancelling this copy."
+              kill -TERM "$MY_PARENT"
+              sleep 600
+            fi
+
+            if [[ $all_gone -eq 1 ]]; then
+              echo "All siblings eliminated after $(( $(date +%s%3N) - GATE_START ))ms — proceeding."
+              break
+            fi
+
+            sleep 2
           done
 
-          cp "${GITHUB_ACTION_PATH}/monitor.sh" /tmp/speedracer-monitor.sh
-          chmod +x /tmp/speedracer-monitor.sh
-          export SPEC_REPO="${REPO}"
-          export SPEC_SHA="${{ github.sha }}"
-          export SPEC_CHECK_NAME="${CHECK_NAME}"
-          export SPEC_SIBLING_IDS="${sibling_ids}"
-          export SPEC_PARENT="${MY_PARENT}"
-
-          nohup bash /tmp/speedracer-monitor.sh >> /tmp/speedracer-monitor.log 2>&1 &
-          disown
-          GATE_BLOCK_START=$(date +%s%3N)
-          echo "Monitor started — Gate blocking until decision."
-
-          # KEY: Keep this Gate step alive so $MY_PARENT (composite action coordinator)
-          # remains valid. SIGTERM to an active composite coordinator → 'cancelled'.
-          # SIGTERM to the coordinator during a regular step → 'failure'.
-          # Monitor writes /tmp/speedracer-monitor-result when all siblings gone.
-          rm -f /tmp/speedracer-monitor-result
-          gate_deadline=$(( $(date +%s) + 300 ))
-          while [[ ! -f /tmp/speedracer-monitor-result && $(date +%s) -lt $gate_deadline ]]; do
-            sleep 1
-          done
-
-          GATE_BLOCK_END=$(date +%s%3N)
-          GATE_BLOCK_MS=$(( GATE_BLOCK_END - GATE_BLOCK_START ))
-          if [[ -f /tmp/speedracer-monitor-result ]]; then
-            echo "Monitor: $(cat /tmp/speedracer-monitor-result) after ${GATE_BLOCK_MS}ms — proceeding."
-          else
-            echo "Gate timeout after ${GATE_BLOCK_MS}ms — proceeding as fallback."
+          if [[ $(date +%s) -ge $deadline ]]; then
+            echo "Gate timeout — proceeding as fallback."
           fi
         else
-          echo "Copy ${MY_COPY} is first — no monitor needed."
+          echo "Copy ${MY_COPY} is first — no sibling polling needed."
         fi
 
         cp "${GITHUB_ACTION_PATH}/success.sh" /tmp/speedracer-success.sh
@@ -158,7 +170,7 @@ runs:
         echo "Gate passed."
         exit 0
 
-    # Two separate post-handlers so post-if: can be evaluated at post time
+    # Two separate post-handlers so post-if: is evaluated at post time
     # (unlike '${{ job.status }}' in post: which is pre-evaluated at registration).
     - name: Register success post-handler
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
