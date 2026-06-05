@@ -327,9 +327,9 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 
 	// Determine each image's ID, if not already populated, as well as if the image is pullable and/or cluster-local.
 	for _, p := range pods {
-		w.processContainerStatuses(p.Status.ContainerStatuses, p.Spec.Containers, containersByName, localImages)
+		w.processContainerStatuses(p.Status.ContainerStatuses, p.Spec.Containers, containersByName, localImages, p.GetName())
 		if features.InitContainerSupport.Enabled() {
-			w.processContainerStatuses(p.Status.InitContainerStatuses, p.Spec.InitContainers, containersByName, localImages)
+			w.processContainerStatuses(p.Status.InitContainerStatuses, p.Spec.InitContainers, containersByName, localImages, p.GetName())
 		}
 	}
 }
@@ -341,12 +341,13 @@ func (w *deploymentWrap) processContainerStatuses(
 	specContainers []v1.Container,
 	containersByName map[string]*storage.Container,
 	localImages set.StringSet,
+	podName string,
 ) {
 	for i := range statuses {
 		c := &statuses[i]
 		deployContainer, found := containersByName[c.Name]
 		if !found {
-			log.Debugf("Skipping container status %q with no matching deployment container for deploy %q, pod %q", c.Name, w.GetDeployment().GetName(), w.GetDeployment().GetId())
+			log.Debugf("Skipping container status %q with no matching deployment container for deploy %q, pod %q", c.Name, w.GetDeployment().GetName(), podName)
 			continue
 		}
 
@@ -356,7 +357,7 @@ func (w *deploymentWrap) processContainerStatuses(
 		if features.UnqualifiedSearchRegistries.Enabled() && c.ImageID != "" {
 			var err error
 			if runtimeImageName, _, err = imageUtils.GenerateImageNameFromString(imageUtils.RemoveScheme(c.ImageID)); err != nil {
-				log.Warnf("Error parsing image ID %q, will not sync image names with runtime for deploy %q: %v", c.ImageID, w.GetDeployment().GetName(), err)
+				log.Warnf("Error parsing image ID %q, will not sync image names with runtime for deploy %q, pod %q: %v", c.ImageID, w.GetDeployment().GetName(), podName, err)
 			}
 		}
 
