@@ -34,15 +34,20 @@ runs:
         echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
 
     - name: Setup GKE auth if needed
-      if: inputs.gcp-credentials
       shell: bash
+      env:
+        GCP_CREDENTIALS: ${{ inputs.gcp-credentials }}
       run: |
         if ! grep -q "gke-gcloud-auth-plugin" artifacts/kubeconfig 2>/dev/null; then
           echo "Not a GKE kubeconfig, skipping"
           exit 0
         fi
+        if [ -z "$GCP_CREDENTIALS" ]; then
+          echo "::warning::GKE kubeconfig but no gcp-credentials provided"
+          exit 0
+        fi
         echo "GKE kubeconfig detected — setting up gcloud auth"
-        echo '${{ inputs.gcp-credentials }}' > /tmp/gcp-sa-key.json
+        echo "$GCP_CREDENTIALS" > /tmp/gcp-sa-key.json
         gcloud auth activate-service-account --key-file=/tmp/gcp-sa-key.json
         sudo apt-get install -yq google-cloud-cli-gke-gcloud-auth-plugin
         rm /tmp/gcp-sa-key.json
