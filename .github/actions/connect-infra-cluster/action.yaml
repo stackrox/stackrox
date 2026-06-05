@@ -49,7 +49,9 @@ runs:
         echo "GKE kubeconfig detected — setting up gcloud auth"
         echo "$GCP_CREDENTIALS" > /tmp/gcp-sa-key.json
         gcloud auth activate-service-account --key-file=/tmp/gcp-sa-key.json
-        sudo apt-get install -yq google-cloud-cli-gke-gcloud-auth-plugin
+        gcloud components install gke-gcloud-auth-plugin --quiet 2>/dev/null || \
+          sudo apt-get install -yq google-cloud-sdk-gke-gcloud-auth-plugin 2>/dev/null || \
+          sudo apt-get install -yq google-cloud-cli-gke-gcloud-auth-plugin
         rm /tmp/gcp-sa-key.json
 
     - name: Refresh OpenShift token if needed
