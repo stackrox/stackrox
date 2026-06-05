@@ -750,14 +750,9 @@ jobs:
           *vulnmanagement*)
             echo "Checking for cluster (platform) CVE data..."
 
-            # On fresh deploys, wait up to 20 minutes for data to populate.
-            # On existing deploys, check once — data is either there or it won't come.
-            if [ "${{ inputs.force-redeploy }}" = "true" ] || [ -z "${{ inputs.gke-cluster-name }}${{ inputs.infra-cluster-name }}" ]; then
-              max_attempts=240  # 20 minutes
-            else
-              max_attempts=6    # 30 seconds quick check
-              echo "Existing deployment — quick check only"
-            fi
+            # Scanner V2 never produces cluster/node CVEs. Short wait to confirm,
+            # then move on. Scanner V4 would need longer but we don't use it here.
+            max_attempts=24  # 2 minutes
 
             cluster_ready=false
             for i in $(seq 1 $max_attempts); do
