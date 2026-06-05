@@ -157,23 +157,30 @@ runs:
 
         echo "Gate passed."
 
-    # Single post-hook: gacts/run-and-post-run has no real post-if feature —
-    # the action always runs unconditionally. Route on a marker file instead:
-    # speedracer-finish writes /tmp/speedracer-success on job success.
-    # If the marker is absent the job failed, so we resolve the check-run.
-    - name: Register failure cleanup hook
+    # Post-hook: gacts/run-and-post-run runs unconditionally (post-if is not a
+    # real feature of the action). Route on /tmp/speedracer-success — callers
+    # write this marker as their last step ('run: touch /tmp/speedracer-success')
+    # which only executes when all previous steps succeeded (GHA default).
+    - name: Register post-hook
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       if: inputs.enabled == 'true'
       with:
         shell: bash
         run: 'true'
         post: >-
-          [[ -f /tmp/speedracer-success ]] && { echo "Speedracer: job succeeded, finish step handled check-run"; exit 0; };
           export GH_TOKEN=${{ github.token }};
+          if [[ -f /tmp/speedracer-success ]]; then
+          check_name=$(cat /tmp/speedracer-check-name | head -1 | tr -d '\n');
+          my_copy=$(cat /tmp/speedracer-copy | head -1 | tr -d '\n');
+          ext_id="spec-${my_copy}-${{ github.run_id }}";
+          echo "Speedracer post-success: copy=${my_copy} check_name=${check_name}";
+          gh api "repos/${{ github.repository }}/check-runs" -f name="${check_name}" -f head_sha="${{ github.sha }}" -f external_id="${ext_id}" -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." && echo "posted completed/success" || echo "::warning::POST failed";
+          else
           spec_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]');
           echo "Speedracer post-failure: spec_id=${spec_id}";
           [[ "$spec_id" =~ ^[0-9]+$ ]] || { echo "no valid check-id, skipping"; exit 0; };
           cur=$(gh api "repos/${{ github.repository }}/check-runs/${spec_id}" --jq '.status');
           echo "current check-run status: ${cur}";
-          [[ "$cur" == "in_progress" ]] || { echo "already resolved (${cur}), skipping"; exit 0; };
-          gh api "repos/${{ github.repository }}/check-runs/${spec_id}" -X PATCH -f status=completed -f conclusion=failure -f 'output[title]=Post-job speedracer cleanup' -f 'output[summary]=Job failed after gate; check-run resolved to unblock branch protection.' && echo "check-run ${spec_id} → failure" || echo "::warning::PATCH to failure failed"
+          [[ "$cur" == "in_progress" ]] || { echo "already resolved, skipping"; exit 0; };
+          gh api "repos/${{ github.repository }}/check-runs/${spec_id}" -X PATCH -f status=completed -f conclusion=failure -f 'output[title]=Post-job speedracer cleanup' -f 'output[summary]=Job failed after gate; check-run resolved to unblock branch protection.' && echo "check-run ${spec_id} → failure" || echo "::warning::PATCH to failure failed";
+          fi

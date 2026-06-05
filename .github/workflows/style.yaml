@@ -58,7 +58,7 @@ jobs:
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
 
-    - uses: ./.github/actions/speedracer-finish
+    - run: touch /tmp/speedracer-success
 
   misc-checks:
     env:
@@ -168,7 +168,7 @@ jobs:
       - name: make style-slim
         run: make style-slim
 
-      - uses: ./.github/actions/speedracer-finish
+      - run: touch /tmp/speedracer-success
 
   golangci-lint:
     timeout-minutes: 240

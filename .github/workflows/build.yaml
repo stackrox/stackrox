@@ -224,7 +224,7 @@ jobs:
             ui/build
             ui/apps/platform/package-lock.json
 
-      - uses: ./.github/actions/speedracer-finish
+      - run: touch /tmp/speedracer-success
 
   pre-build-cli:
     needs: define-job-matrix
@@ -387,7 +387,7 @@ jobs:
           path: go-binaries-build.tar
           compression-level: 1
 
-      - uses: ./.github/actions/speedracer-finish
+      - run: touch /tmp/speedracer-success
 
   pre-build-docs:
     strategy:
@@ -425,7 +425,7 @@ jobs:
           path: |
             image/rhel/docs
 
-      - uses: ./.github/actions/speedracer-finish
+      - run: touch /tmp/speedracer-success
 
   pre-build-oss-notice:
     strategy:
@@ -473,7 +473,7 @@ jobs:
         name: oss-notice
         path: image/rhel/THIRD_PARTY_NOTICES
 
-    - uses: ./.github/actions/speedracer-finish
+    - run: touch /tmp/speedracer-success
 
   build-and-push-db:
     strategy:
@@ -585,7 +585,7 @@ jobs:
             "docker://quay.io/stackrox-io/scanner-v4-db:${{ env.BUILD_TAG }}" \
             "docker://quay.io/rhacs-eng/scanner-v4-db:${{ env.BUILD_TAG }}"
 
-      - uses: ./.github/actions/speedracer-finish
+      - run: touch /tmp/speedracer-success
 
   build-operator-bundle:
     strategy:
@@ -629,7 +629,7 @@ jobs:
           make -C operator/ index-build
           make -C operator/ docker-push-index | cat
 
-      - uses: ./.github/actions/speedracer-finish
+      - run: touch /tmp/speedracer-success
 
   build-and-push-main:
     # Use native arm64 runner to avoid QEMU emulation overhead (~2x slower).
@@ -810,7 +810,7 @@ jobs:
             fi
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
-      - uses: ./.github/actions/speedracer-finish
+      - run: touch /tmp/speedracer-success
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
@@ -1086,7 +1086,7 @@ jobs:
             fi
             echo "Operator image push completed successfully"
 
-      - uses: ./.github/actions/speedracer-finish
+      - run: touch /tmp/speedracer-success
 
   build-and-push-scanner:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
@@ -1174,7 +1174,7 @@ jobs:
           source ./scripts/ci/lib.sh
           push_scanner_image_set "${{ matrix.registry }}" "${{ matrix.arch }}"
 
-      - uses: ./.github/actions/speedracer-finish
+      - run: touch /tmp/speedracer-success
 
   push-scanner-manifests:
     runs-on: ubuntu-latest
