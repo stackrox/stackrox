@@ -24,6 +24,7 @@ type AuthMachineToMachineConfig struct {
 	TokenExpirationDuration string                         `yaml:"tokenExpirationDuration,omitempty"`
 	Mappings                []MachineToMachineRoleMapping  `yaml:"mappings,omitempty"`
 	Issuer                  string                         `yaml:"issuer,omitempty"`
+	Audience                string                         `yaml:"audience,omitempty"`
 }
 
 // AuthMachineToMachineConfigType is representation of storage.AuthMachineToMachineConfig_Type
