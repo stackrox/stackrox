@@ -21,7 +21,7 @@ spec:
       terminationGracePeriodSeconds: 0
       containers:
       - name: process-and-file-activity
-        image: "quay.io/stackrox-io/berserker:1.0-96-gc213cfd0c7"
+        image: "quay.io/stackrox-io/berserker:1.0-97-g64cfd0ee0b"
         command:
         - berserker
         args:
