@@ -79,9 +79,6 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-      - run: touch /tmp/speedracer-success
-
-
   # Test 2: 3-copy, all fast, a wins. Expected: a=success, b=cancelled, c=cancelled.
   test-three-copy:
     strategy:
@@ -98,9 +95,6 @@ jobs:
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
-
-      - run: touch /tmp/speedracer-success
-
 
   # Test 3: a and b are slow (deterministic CPU match); c wins as last-copy fallback.
   # Expected: a=cancelled (gate), b=cancelled (gate), c=success.
@@ -125,9 +119,6 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-      - run: touch /tmp/speedracer-success
-
-
   # Test 4: a is slow (deterministic), b wins. Expected: a=cancelled (gate), b=success.
   test-a-slow-b-wins:
     strategy:
@@ -149,9 +140,6 @@ jobs:
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
-
-      - run: touch /tmp/speedracer-success
-
 
   # Test 5: enabled=false — both copies run, no gating. Expected: a=success, b=success.
   test-disabled:
@@ -185,9 +173,6 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-      - run: touch /tmp/speedracer-success
-
-
   # Test 7: 4-copy. Expected: a=success, b/c/d=cancelled.
   test-four-copy:
     strategy:
@@ -204,8 +189,6 @@ jobs:
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
-
-      - run: touch /tmp/speedracer-success
 
   # ─── New: API-verified tests ────────────────────────────────────────────────
 
@@ -243,9 +226,6 @@ jobs:
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
-
-      - run: touch /tmp/speedracer-success
-
 
   verify-check-run-success:
     needs: test-verify-check-run-success
@@ -308,9 +288,6 @@ jobs:
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
-
-      - run: touch /tmp/speedracer-success
-
 
   verify-failure-path:
     needs: test-failure-path
@@ -422,8 +399,6 @@ jobs:
       - name: Work
         run: sleep 5
 
-      - run: touch /tmp/speedracer-success
-
   verify-single-copy:
     needs: test-single-copy
     if: always()
@@ -477,9 +452,6 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-      - run: touch /tmp/speedracer-success
-
-
   verify-multi-dim-check-name:
     needs: test-multi-dim-check-name
     if: always()
@@ -531,9 +503,6 @@ jobs:
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-      - run: touch /tmp/speedracer-success
-
-
   verify-explicit-check-name:
     needs: test-explicit-check-name
     if: always()
@@ -584,9 +553,6 @@ jobs:
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
-
-      - run: touch /tmp/speedracer-success
-
 
   verify-sibling-fails-not-winner:
     needs: test-sibling-fails-not-winner
