@@ -12,9 +12,11 @@ import (
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/random"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -215,6 +217,92 @@ func RunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, sch
 	return pgutils.Retry(ctx, func() error {
 		return retryableRunSelectRequestForSchemaFn[T](ctx, db, query, fn)
 	})
+}
+
+// RunSelectCursorForSchemaFn executes a select request using a PostgreSQL server-side cursor.
+// It fetches rows in batches of cursorBatchSize (1000), keeping only one batch in PostgreSQL
+// server memory at a time. This is critical for large result sets where materializing the full
+// result would exhaust server memory.
+func RunSelectCursorForSchemaFn[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query, fn func(*T) error) (retErr error) {
+	var builtQuery *query
+	defer func() {
+		if r := recover(); r != nil {
+			if builtQuery != nil {
+				log.Errorf("Query issue: %s: %v", builtQuery.AsSQL(), r)
+			} else {
+				log.Errorf("Unexpected error running search request: %v", r)
+			}
+			debug.PrintStack()
+			retErr = fmt.Errorf("unexpected error running search request: %v", r)
+		}
+	}()
+
+	arrayFields := getArrayFieldsFromType[T]()
+
+	var err error
+	builtQuery, err = standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT, arrayFields)
+	if err != nil {
+		return err
+	}
+	if builtQuery == nil {
+		return nil
+	}
+
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
+	defer cancel()
+
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return errors.Wrap(err, "creating transaction for cursor")
+	}
+	defer func() {
+		commitCtx, commitCancel := contextutil.ContextWithTimeoutIfNotExists(context.Background(), cursorDefaultTimeout)
+		defer commitCancel()
+		if retErr != nil {
+			_ = tx.Rollback(commitCtx)
+		} else {
+			retErr = tx.Commit(commitCtx)
+		}
+	}()
+
+	cursorID := fmt.Sprintf("report_%s", random.GenerateString(16, random.CaseInsensitiveAlpha))
+	queryStr := builtQuery.AsSQL()
+
+	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursorID, queryStr), builtQuery.Data...)
+	if err != nil {
+		return errors.Wrap(err, "declaring cursor")
+	}
+
+	for {
+		rows, err := tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", cursorBatchSize, cursorID))
+		if err != nil {
+			return errors.Wrap(err, "fetching from cursor")
+		}
+
+		scanner := scanAPI.NewRowScanner(rows)
+		count := 0
+		for rows.Next() {
+			var row T
+			if err := scanner.Scan(&row); err != nil {
+				rows.Close()
+				return err
+			}
+			if err := fn(&row); err != nil {
+				rows.Close()
+				return err
+			}
+			count++
+		}
+		rows.Close()
+		if err := rows.Err(); err != nil {
+			return err
+		}
+
+		if count < cursorBatchSize {
+			break
+		}
+	}
+	return nil
 }
 
 func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType, arrayFields map[string]bool) (*query, error) {
