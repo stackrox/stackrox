@@ -71,6 +71,23 @@ func schemaType(fd fieldData) string {
 	return schemaExpand(fd.Type)
 }
 
+// hasSchemaFields reports whether the entry will produce at least one GraphQL field.
+// GraphQL spec requires every object type to define one or more fields.
+func hasSchemaFields(entry schemaEntry) bool {
+	for _, fd := range entry.Data.FieldData {
+		if schemaType(fd) != "" {
+			return true
+		}
+	}
+	return len(entry.Data.UnionData) > 0
+}
+
+// TODO(ROX-34963): Add support for []byte fields in GraphQL schema generation.
+// Proto fields of type `bytes` (Go []byte) are silently dropped because uint8
+// has no GraphQL scalar mapping, causing types like CosignSignature to appear
+// empty. A proper fix would map []byte to a String scalar (base64-encoded) and
+// update the resolver codegen to emit encoding/decoding wrappers.
+
 func schemaExpand(p reflect.Type) string {
 	switch p.Kind() {
 	case reflect.String:

@@ -124,16 +124,17 @@ func GenerateResolvers(parameters generator.TypeWalkParameters, writer io.Writer
 	typeData := typeWalk(parameters)
 	rootTemplate := template.New("codegen")
 	rootTemplate.Funcs(template.FuncMap{
-		"importedName": importedName,
-		"isEnum":       isEnum,
-		"listField":    listField,
-		"listName":     listName,
-		"lower":        lower,
-		"nonListField": func(td schemaEntry, field fieldData) bool { return !listField(td, field) },
-		"plural":       plural,
-		"translator":   translator(rootTemplate),
-		"valueType":    valueType,
-		"schemaType":   schemaType,
+		"importedName":    importedName,
+		"isEnum":          isEnum,
+		"listField":       listField,
+		"listName":        listName,
+		"lower":           lower,
+		"nonListField":    func(td schemaEntry, field fieldData) bool { return !listField(td, field) },
+		"plural":          plural,
+		"translator":      translator(rootTemplate),
+		"valueType":       valueType,
+		"hasSchemaFields": hasSchemaFields,
+		"schemaType":      schemaType,
 	})
 	for name, text := range templates {
 		thisTemplate := rootTemplate

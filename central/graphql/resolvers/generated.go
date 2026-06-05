@@ -568,6 +568,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ContainerType(0)))
 	utils.Must(builder.AddType("CosignSignature", []string{
+		"_unused: Boolean",
 	}))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
@@ -661,6 +662,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 	}))
 	utils.Must(builder.AddType("FalsePositiveRequest", []string{
+		"_unused: Boolean",
 	}))
 	utils.Must(builder.AddInput("FalsePositiveVulnRequest", []string{
 		"comment: String",
@@ -707,6 +709,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"runs: [ComplianceRun]!",
 	}))
 	utils.Must(builder.AddType("GetPermissionsResponse", []string{
+		"_unused: Boolean",
 	}))
 	utils.Must(builder.AddType("GoogleProviderMetadata", []string{
 		"clusterName: String!",
@@ -1568,6 +1571,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"VulnerabilityRequest_Scope_Global",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Global", []string{
+		"_unused: Boolean",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Image", []string{
 		"registry: String!",
@@ -7039,6 +7043,10 @@ func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) [
 	return value
 }
 
+func (resolver *cosignSignatureResolver) Unused() *bool {
+	return nil
+}
+
 type dataSourceResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -8013,6 +8021,10 @@ func (resolver *Resolver) wrapFalsePositiveRequestsWithContext(ctx context.Conte
 	return output, nil
 }
 
+func (resolver *falsePositiveRequestResolver) Unused() *bool {
+	return nil
+}
+
 type fileAccessResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -8453,6 +8465,10 @@ func (resolver *Resolver) wrapGetPermissionsResponsesWithContext(ctx context.Con
 		output[i] = &getPermissionsResponseResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *getPermissionsResponseResolver) Unused() *bool {
+	return nil
 }
 
 type googleProviderMetadataResolver struct {
@@ -16803,6 +16819,10 @@ func (resolver *Resolver) wrapVulnerabilityRequest_Scope_GlobalsWithContext(ctx 
 		output[i] = &vulnerabilityRequest_Scope_GlobalResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *vulnerabilityRequest_Scope_GlobalResolver) Unused() *bool {
+	return nil
 }
 
 type vulnerabilityRequest_Scope_ImageResolver struct {
