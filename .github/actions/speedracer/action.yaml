@@ -152,15 +152,28 @@ runs:
           echo "Copy ${MY_COPY} is first — no monitor needed."
         fi
 
-        cp "${GITHUB_ACTION_PATH}/post.sh" /tmp/speedracer-post.sh
-        chmod +x /tmp/speedracer-post.sh
+        cp "${GITHUB_ACTION_PATH}/success.sh" /tmp/speedracer-success.sh
+        cp "${GITHUB_ACTION_PATH}/cleanup.sh" /tmp/speedracer-cleanup.sh
+        chmod +x /tmp/speedracer-success.sh /tmp/speedracer-cleanup.sh
         echo "Gate passed."
         exit 0
 
-    - name: Register post-job handler
+    # Two separate post-handlers so post-if: can be evaluated at post time
+    # (unlike '${{ job.status }}' in post: which is pre-evaluated at registration).
+    - name: Register success post-handler
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       if: inputs.enabled == 'true'
       with:
         shell: bash
         run: 'true'
-        post: JOB_STATUS=${{ job.status }} GH_TOKEN=${{ github.token }} SPEC_REPO=${{ github.repository }} SPEC_SHA=${{ github.sha }} bash /tmp/speedracer-post.sh
+        post-if: success()
+        post: GH_TOKEN=${{ github.token }} SPEC_REPO=${{ github.repository }} SPEC_SHA=${{ github.sha }} bash /tmp/speedracer-success.sh
+
+    - name: Register failure post-handler
+      uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
+      if: inputs.enabled == 'true'
+      with:
+        shell: bash
+        run: 'true'
+        post-if: failure()
+        post: GH_TOKEN=${{ github.token }} SPEC_REPO=${{ github.repository }} bash /tmp/speedracer-cleanup.sh
