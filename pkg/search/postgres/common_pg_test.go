@@ -8,14 +8,16 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	conn "github.com/stackrox/rox/pkg/postgres/pgtest/conn"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/multitest/postgres"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -109,6 +111,7 @@ func TestCursorNameContainsHint(t *testing.T) {
 func TestCursorNameWithWalkByQuery(t *testing.T) {
 	testDB := pgtest.ForT(t)
 	ctx := sac.WithAllAccess(context.Background())
+
 	store := postgres.New(testDB.DB)
 
 	testStructs := getTestStructs()
@@ -148,4 +151,37 @@ func TestCursorNameWithWalkByQuery(t *testing.T) {
 		"cursor name %q should start with test_structs_WalkByQuery_", cursorName)
 
 	t.Logf("cursor name: %s", cursorName)
+}
+
+func TestRunDistinctCountForSchema(t *testing.T) {
+	ctx := sac.WithAllAccess(context.Background())
+	testDB := pgtest.ForT(t)
+
+	store := postgres.New(testDB.DB)
+	testStructs := getTestStructs()
+	for _, s := range testStructs {
+		require.NoError(t, store.Upsert(ctx, s))
+	}
+
+	// 4 structs with unique keys
+	count, err := pgSearch.RunDistinctCountForSchema(ctx, testDB.DB, schema.TestStructsSchema, search.EmptyQuery(), search.TestKey)
+	require.NoError(t, err)
+	assert.Equal(t, 4, count)
+
+	// 4 structs with 2 distinct string values ("acs", "bcs")
+	count, err = pgSearch.RunDistinctCountForSchema(ctx, testDB.DB, schema.TestStructsSchema, search.EmptyQuery(), search.TestString)
+	require.NoError(t, err)
+	assert.Equal(t, 2, count)
+
+	// Filtered: only "acs" strings, 2 distinct keys
+	q := search.NewQueryBuilder().AddExactMatches(search.TestString, "acs").ProtoQuery()
+	count, err = pgSearch.RunDistinctCountForSchema(ctx, testDB.DB, schema.TestStructsSchema, q, search.TestKey)
+	require.NoError(t, err)
+	assert.Equal(t, 2, count)
+
+	// Empty result set
+	q = search.NewQueryBuilder().AddExactMatches(search.TestString, "nonexistent").ProtoQuery()
+	count, err = pgSearch.RunDistinctCountForSchema(ctx, testDB.DB, schema.TestStructsSchema, q, search.TestKey)
+	require.NoError(t, err)
+	assert.Equal(t, 0, count)
 }

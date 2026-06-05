@@ -80,10 +80,6 @@ func (c *imageCVECoreResponse) GetPublishDate() *time.Time {
 	return c.Published
 }
 
-type imageCVECoreCount struct {
-	CVECount int `db:"cve_count"`
-}
-
 type imageResponse struct {
 	ImageID string `db:"image_sha"`
 }
