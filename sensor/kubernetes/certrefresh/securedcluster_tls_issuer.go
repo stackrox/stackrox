@@ -80,7 +80,7 @@ func newSecuredClusterMsgFromSensor(requestID string) *central.MsgFromSensor {
 		RequestId:     requestID,
 		CaFingerprint: currentSensorCAFingerprint(),
 	}
-	if requestedValidity := SensorCertRequestedValidity(); requestedValidity > 0 {
+	if requestedValidity := SensorServiceCertValidity(); requestedValidity > 0 {
 		request.RequestedValidity = durationpb.New(requestedValidity)
 	}
 	return &central.MsgFromSensor{

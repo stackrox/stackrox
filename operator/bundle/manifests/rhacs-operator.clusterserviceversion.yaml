@@ -906,10 +906,10 @@ spec:
             displayName: Additional CAs
             path: tls.additionalCAs
           - description: |-
-              Requested validity duration for automatically refreshed service certificates (e.g. "8760h").
+              Validity duration for service certificates issued to secured cluster components (e.g. "8760h").
               The default is: 8760h.
-            displayName: Certificate Refresh Validity
-            path: tls.certRefreshValidity
+            displayName: Service Certificate Validity
+            path: tls.serviceCertValidity
         statusDescriptors:
           - description: Info stores information on how to obtain the admin password.
             displayName: Admin Credentials Info
@@ -1563,10 +1563,10 @@ spec:
             displayName: Additional CAs
             path: tls.additionalCAs
           - description: |-
-              Requested validity duration for automatically refreshed service certificates (e.g. "8760h").
+              Validity duration for service certificates issued to secured cluster components (e.g. "8760h").
               The default is: 8760h.
-            displayName: Certificate Refresh Validity
-            path: tls.certRefreshValidity
+            displayName: Service Certificate Validity
+            path: tls.serviceCertValidity
         statusDescriptors:
           - description: The deployed version of the product.
             displayName: Product Version

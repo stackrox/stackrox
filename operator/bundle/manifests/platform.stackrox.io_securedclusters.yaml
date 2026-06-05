@@ -1882,9 +1882,9 @@ spec:
                       - name
                       type: object
                     type: array
-                  certRefreshValidity:
+                  serviceCertValidity:
                     description: |-
-                      Requested validity duration for automatically refreshed service certificates (e.g. "8760h").
+                      Validity duration for service certificates issued to secured cluster components (e.g. "8760h").
                       The default is: 8760h.
                     pattern: ^(\d+(\.\d+)?(ns|us|µs|ms|s|m|h))+$
                     type: string

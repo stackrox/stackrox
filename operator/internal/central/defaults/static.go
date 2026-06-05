@@ -92,7 +92,7 @@ var staticDefaults = platform.CentralSpec{
 		ComponentPolicy: ptr.To(platform.ConfigAsCodeComponentEnabled),
 	},
 	TLS: &platform.TLSConfig{
-		CertRefreshValidity: ptr.To(platform.DefaultCertRefreshValidity),
+		ServiceCertValidity: ptr.To(platform.DefaultServiceCertValidity),
 	},
 	Customize: &platform.CustomizeSpec{
 		DeploymentDefaults: &platform.DeploymentDefaultsSpec{

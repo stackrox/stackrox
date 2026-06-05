@@ -178,12 +178,12 @@ func TestGetTLSConfigValues(t *testing.T) {
 				},
 			},
 		},
-		"cert-refresh-validity": {
+		"service-cert-validity": {
 			tls: &platform.TLSConfig{
-				CertRefreshValidity: pointers.String("1080h0m0s"),
+				ServiceCertValidity: pointers.String("1080h0m0s"),
 			},
 			want: chartutil.Values{
-				"certRefreshValidity": "1080h0m0s",
+				"serviceCertValidity": "1080h0m0s",
 			},
 		},
 	}

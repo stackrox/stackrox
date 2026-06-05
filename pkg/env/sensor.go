@@ -143,9 +143,9 @@ var (
 	// ignored (unless debug logging is enabled). Set to 0 to log every tick at Info level.
 	ClusterEntitiesSlowRecordTickLogThreshold = registerDurationSetting("ROX_CLUSTER_ENTITIES_SLOW_RECORD_TICK_LOG_THRESHOLD", 5*time.Second, WithDurationZeroAllowed())
 
-	// SensorCertRequestedValidity is the validity duration requested when refreshing secured cluster certificates.
+	// SensorServiceCertValidity is the desired validity duration for service certificates issued to secured cluster components.
 	// When unset or zero, Central uses the default 1-year signing profile.
-	SensorCertRequestedValidity = registerDurationSetting("ROX_SENSOR_CERT_REQUESTED_VALIDITY", 0, WithDurationZeroAllowed())
+	SensorServiceCertValidity = registerDurationSetting("ROX_SENSOR_SERVICE_CERT_VALIDITY", 0, WithDurationZeroAllowed())
 
 	// NetworkFlowBatching enables batching of network flow updates to smooth out data spikes.
 	NetworkFlowBatching = RegisterBooleanSetting("ROX_NETFLOW_BATCHING", false)

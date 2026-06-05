@@ -152,8 +152,8 @@ type AdditionalCA struct {
 	Content string `json:"content"`
 }
 
-// DefaultCertRefreshValidity is the default value for CertRefreshValidity (1 year).
-const DefaultCertRefreshValidity = "8760h"
+// DefaultServiceCertValidity is the default value for ServiceCertValidity (1 year).
+const DefaultServiceCertValidity = "8760h"
 
 // TLSConfig defines common TLS-related settings for all components.
 type TLSConfig struct {
@@ -161,11 +161,11 @@ type TLSConfig struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Additional CAs"
 	AdditionalCAs []AdditionalCA `json:"additionalCAs,omitempty"`
 
-	// Requested validity duration for automatically refreshed service certificates (e.g. "8760h").
+	// Validity duration for service certificates issued to secured cluster components (e.g. "8760h").
 	// The default is: 8760h.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Certificate Refresh Validity"
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Service Certificate Validity"
 	// +kubebuilder:validation:Pattern=`^(\d+(\.\d+)?(ns|us|µs|ms|s|m|h))+$`
-	CertRefreshValidity *string `json:"certRefreshValidity,omitempty"`
+	ServiceCertValidity *string `json:"serviceCertValidity,omitempty"`
 }
 
 // LocalSecretReference is a reference to a secret within the same namespace.

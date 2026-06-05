@@ -150,7 +150,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		SensorState:              s.getSensorState(),
 		RequestDeduperState:      s.clientReconcile,
 	}
-	if requestedValidity := env.SensorCertRequestedValidity.DurationSetting(); requestedValidity > 0 {
+	if requestedValidity := env.SensorServiceCertValidity.DurationSetting(); requestedValidity > 0 {
 		sensorHello.RequestedCertValidity = durationpb.New(requestedValidity)
 	}
 

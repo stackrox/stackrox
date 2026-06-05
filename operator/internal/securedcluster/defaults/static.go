@@ -78,7 +78,7 @@ var staticDefaults = platform.SecuredClusterSpec{
 		ExcludeOpenshiftNs: platform.ProcessIndicatorConfigDisabled.Pointer(),
 	},
 	TLS: &platform.TLSConfig{
-		CertRefreshValidity: ptr.To(platform.DefaultCertRefreshValidity),
+		ServiceCertValidity: ptr.To(platform.DefaultServiceCertValidity),
 	},
 }
 

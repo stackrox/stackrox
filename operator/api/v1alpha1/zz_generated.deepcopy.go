@@ -1884,8 +1884,8 @@ func (in *TLSConfig) DeepCopyInto(out *TLSConfig) {
 		*out = make([]AdditionalCA, len(*in))
 		copy(*out, *in)
 	}
-	if in.CertRefreshValidity != nil {
-		in, out := &in.CertRefreshValidity, &out.CertRefreshValidity
+	if in.ServiceCertValidity != nil {
+		in, out := &in.ServiceCertValidity, &out.ServiceCertValidity
 		*out = new(string)
 		**out = **in
 	}

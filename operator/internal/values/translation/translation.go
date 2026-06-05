@@ -118,9 +118,9 @@ func GetTLSConfigValues(tls *platform.TLSConfig) *ValuesBuilder {
 		}
 		res.AddChild("additionalCAs", &cas)
 	}
-	if tls.CertRefreshValidity != nil && *tls.CertRefreshValidity != "" {
+	if tls.ServiceCertValidity != nil && *tls.ServiceCertValidity != "" {
 		hasValues = true
-		res.SetStringValue("certRefreshValidity", *tls.CertRefreshValidity)
+		res.SetStringValue("serviceCertValidity", *tls.ServiceCertValidity)
 	}
 	if !hasValues {
 		return nil

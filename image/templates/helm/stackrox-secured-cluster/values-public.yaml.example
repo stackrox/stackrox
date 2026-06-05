@@ -47,9 +47,9 @@
 ##       -----END CERTIFICATE-----
 #additionalCAs: null
 #
-## Requested validity duration for automatically refreshed service certificates (e.g. "1080h" for 45 days).
-## When unset, Sensor uses the Operator default (8760h). Central caps at 1 year and enforces a 5-minute floor.
-#certRefreshValidity: null
+## Validity duration for service certificates issued to secured cluster components (e.g. "1080h" for 45 days).
+## When unset, the Operator default (8760h) is used. Central caps at 1 year and enforces a 5-minute floor.
+#serviceCertValidity: null
 #
 # Specify `true` to create the `sensor-upgrader` account. By default, the StackRox Kubernetes
 # Security Platform creates a service account called `sensor-upgrader` in each secured cluster.
