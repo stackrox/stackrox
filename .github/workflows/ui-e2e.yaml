@@ -690,7 +690,9 @@ jobs:
             done
             [ "${collector_edges:-0}" -eq 0 ] && echo "::warning::No collector outgoing edges after 10 minutes"
             ;;
-          *vulnerabilities*)
+          *vulnmanagement*|*vulnerabilities*)
+            # Both shards need image scan data. In a full run they run in parallel,
+            # but for single-shard testing we need the full scan + wait here too.
             echo "Waiting for scanner registration..."
             kubectl -n stackrox wait --for=condition=ready pod -l app=scanner --timeout=5m
             echo "Scanner pod ready, waiting for Central registration..."
@@ -708,17 +710,14 @@ jobs:
                 -X POST -d '{"imageName":"docker.io/nginx:1.12","force":true}' 2>&1 | jq -r '.name // .error // .message' || true
             fi
 
-            # Log the full scan response for diagnostics
             echo "Scan response:"
             curl -sk -u "admin:${ADMIN_PASSWORD}" \
               "https://${API_ENDPOINT}/v1/images/scan" \
               -X POST -d '{"imageName":"docker.io/nginx:1.12","force":true}' 2>&1 \
               | jq '{id: .id, name: .name, components: (.scan.components | length), cves: .cves, notes: .notes}' || true
 
-            # Poll until the scanned image appears in search results
             check_scan_data() {
               local label="$1"
-              # Try multiple query formats to find the nginx image
               local count_sha count_graphql
               count_sha=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
                 "https://${API_ENDPOINT}/v1/imagescount" \
@@ -732,7 +731,6 @@ jobs:
               [ "${count_sha:-0}" -gt 5 ] && return 0 || return 1
             }
 
-            # Check at 0, 1, 3, 5, 7, 10, 15, 20, 25, 30 min
             total=0
             data_ready=false
             check_scan_data "+0s" && data_ready=true
@@ -746,57 +744,6 @@ jobs:
             if [ "$data_ready" != "true" ]; then
               echo "::warning::Limited image data after 30 minutes — some vulnerability tests may fail"
             fi
-            ;;
-          *vulnmanagement*)
-            # Vulnmanagement tests need image scan data AND time for background
-            # processing (node scanning, cluster metadata enrichment).
-            # Trigger a scan, then wait for data to fully populate.
-            echo "Waiting for scanner registration..."
-            for _ in $(seq 1 60); do
-              registered=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/v1/imageintegrations" \
-                | jq '[.integrations[]? | select(.type == "clairify" or .type == "scanner")] | length')
-              [ "${registered:-0}" -gt 0 ] && echo "Scanner registered" && break
-              sleep 5
-            done
-            if [ "${registered:-0}" -gt 0 ]; then
-              echo "Triggering image scan..."
-              curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/v1/images/scan" \
-                -X POST -d '{"imageName":"docker.io/nginx:1.12","force":true}' 2>&1 \
-                | jq -r '.name // .error // .message' || true
-            fi
-
-            # Wait for image + vuln data to fully populate.
-            # This runs in parallel with other shards so doesn't affect wall-clock.
-            echo "Waiting for image scan data..."
-            for i in $(seq 1 360); do
-              count=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/v1/imagescount" | jq '.count // 0' 2>/dev/null)
-              if [ "${count:-0}" -gt 5 ]; then
-                echo "Image data ready: ${count} images"
-                break
-              fi
-              [ $((i % 12)) -eq 0 ] && echo "+$((i*5/60))m: images=${count:-0}"
-              sleep 5
-            done
-
-            # Also wait for image CVE data (components, not just image count)
-            echo "Waiting for image CVE data to populate..."
-            for i in $(seq 1 360); do
-              cve_count=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/api/graphql" \
-                -X POST -H 'Content-Type: application/json' \
-                -d '{"query":"{ imageCVECount }"}' \
-                | jq '.data.imageCVECount // 0' 2>/dev/null)
-              if [ "${cve_count:-0}" -gt 0 ]; then
-                echo "Image CVE data ready: ${cve_count} CVEs"
-                break
-              fi
-              [ $((i % 12)) -eq 0 ] && echo "+$((i*5/60))m: imageCVEs=${cve_count:-0}"
-              sleep 5
-            done
-            [ "${cve_count:-0}" -eq 0 ] && echo "::warning::No image CVE data after 30 minutes"
             ;;
           *policies*|*risk*)
             echo "Waiting for deployment events..."
