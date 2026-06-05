@@ -1,14 +1,18 @@
 name: Speedracer Test
+# Comprehensive test suite for .github/actions/speedracer.
+# Tests both job outcomes (success/cancelled/failure) AND the GHA Checks API
+# state (check-run name, status, conclusion) to prove the full contract.
+#
+# Overall workflow conclusion may be 'cancelled' or 'failure' — expected,
+# because non-winner copies are cancelled and some tests deliberately fail.
 on:
   push:
     branches: [davdhacs/speed-racer-build]
     paths:
       - .github/actions/speedracer/**
-      - .github/actions/speedracer/**
       - .github/workflows/speculative-run-test.yaml
   pull_request:
     paths:
-      - .github/actions/speedracer/**
       - .github/actions/speedracer/**
       - .github/workflows/speculative-run-test.yaml
   workflow_dispatch:
@@ -17,11 +21,16 @@ permissions:
   checks: write
 
 jobs:
-  # Test 0: DIRECT (no composite action) monitor to isolate the mechanism.
-  # Expected: copy a=success, copy b=cancelled.
+
+  # ─── Original tests: structural scenarios ───────────────────────────────────
+
+  # Test 0: DIRECT (no composite action) monitor isolates the raw mechanism.
+  # Proves SIGTERM from a background process during a regular step → 'failure'.
+  # This is why we use composite actions. fail-fast:false because b deliberately fails.
+  # Expected: a=success, b=failure.
   test-direct-monitor:
     strategy:
-      fail-fast: false  # b intentionally produces failure; don't cascade-cancel a
+      fail-fast: false
       matrix:
         speedracer: [a, b]
     runs-on: ubuntu-latest
@@ -32,41 +41,28 @@ jobs:
         run: |
           MY_COPY="${{ matrix.speedracer }}"
           MY_PARENT=$PPID
-          echo "MY_COPY=${MY_COPY} MY_PARENT=${MY_PARENT} PPID=${PPID}"
           if [[ "$MY_COPY" == "b" ]]; then
-            pgrep -P "$MY_PARENT" | sort > /tmp/speculative-baseline
             nohup bash -c "
               sleep 25
               job_line=\$(gh api 'repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs?per_page=100' \
                 --jq '.jobs[] | select(.name | test(\"[( ,]a[)]\$\")) | \"\(.status)/\(.conclusion)\"' \
                 2>/dev/null | head -1)
-              echo \"[\$(date -u +%H:%M:%S)] Sibling a: '\${job_line}'\"
+              echo \"Sibling a: '\${job_line}'\"
               if [[ \"\${job_line}\" == 'in_progress/'* || \"\${job_line}\" == 'completed/success' ]]; then
-                echo 'Sibling a is winning — cancelling b.'
                 kill -TERM ${MY_PARENT} 2>/dev/null
-                sleep 0.1
-                new=\$(comm -13 /tmp/speculative-baseline <(pgrep -P ${MY_PARENT} | sort) 2>/dev/null)
-                for pid in \$new; do kill -9 \$pid 2>/dev/null; done
-              else
-                echo 'No winner found — proceeding.'
               fi
             " >> /tmp/direct-monitor.log 2>&1 &
             disown
-            echo "Monitor started."
           fi
 
-      - name: Work (60s — b should be cancelled at ~25s)
-        run: |
-          echo "Copy ${{ matrix.speedracer }}: working..."
-          sleep 60
-          echo "Copy ${{ matrix.speedracer }}: done"
+      - name: Work (60s — b killed at ~25s via regular step SIGTERM → failure)
+        run: sleep 60
 
       - name: Monitor log
         if: always()
         run: cat /tmp/direct-monitor.log 2>/dev/null || echo "(no log)"
 
-  # Test 1: composite action — both copies fast.
-  # Expected: copy a=success, copy b=cancelled.
+  # Test 1: 2-copy, both fast, first wins. Expected: a=success, b=cancelled.
   test-a-wins:
     strategy:
       matrix:
@@ -77,20 +73,13 @@ jobs:
       - uses: ./.github/actions/speedracer
         with:
           slow-cpu-pattern: NEVER_MATCH_THIS
-
-      - name: Work (60s — b should be cancelled)
-        run: |
-          echo "Copy ${{ matrix.speedracer }}: working..."
-          sleep 60
-          echo "Copy ${{ matrix.speedracer }}: done"
-
+      - name: Work (60s)
+        run: sleep 60
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-
-  # Test 2: three-copy race. copy a wins, b/c cancelled.
-  # Expected: a=success, b=cancelled, c=cancelled.
+  # Test 2: 3-copy, all fast, a wins. Expected: a=success, b=cancelled, c=cancelled.
   test-three-copy:
     strategy:
       matrix:
@@ -101,21 +90,13 @@ jobs:
       - uses: ./.github/actions/speedracer
         with:
           slow-cpu-pattern: NEVER_MATCH_THIS
-
-      - name: Work (90s — b cancelled, c cancelled)
-        run: |
-          echo "Copy ${{ matrix.speedracer }}: working..."
-          sleep 90
-          echo "Copy ${{ matrix.speedracer }}: done"
-
+      - name: Work (90s)
+        run: sleep 90
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-
-  # Test 3: both a AND b are slow → c falls back as last-copy.
-  # Uses deterministic CPU detection so the gate always fires on a and b
-  # regardless of actual runner type (no EPYC dependency).
+  # Test 3: a and b are slow (deterministic CPU match); c wins as last-copy fallback.
   # Expected: a=cancelled (gate), b=cancelled (gate), c=success.
   test-ab-slow-c-wins:
     strategy:
@@ -124,7 +105,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      - name: Read CPU model (deterministic slow pattern for a and b)
+      - name: Read CPU model for deterministic slow pattern
         id: cpu
         run: |
           model=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)
@@ -132,20 +113,13 @@ jobs:
       - uses: ./.github/actions/speedracer
         with:
           slow-cpu-pattern: ${{ contains(fromJSON('["a","b"]'), matrix.speedracer) && steps.cpu.outputs.model || 'NEVER_MATCH_THIS' }}
-
       - name: Work
-        run: |
-          echo "Copy ${{ matrix.speedracer }}: working..."
-          sleep 10
-
+        run: sleep 10
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-
-  # Test 4: copy a is on a slow runner (deterministic: reads actual CPU model
-  # and uses it as the slow pattern so the gate always fires on any runner type).
-  # Expected: copy a=cancelled (gate), copy b=success.
+  # Test 4: a is slow (deterministic), b wins. Expected: a=cancelled (gate), b=success.
   test-a-slow-b-wins:
     strategy:
       matrix:
@@ -153,7 +127,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      - name: Read CPU model (for deterministic slow-runner pattern on copy a)
+      - name: Read CPU model
         id: cpu
         run: |
           model=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)
@@ -161,20 +135,13 @@ jobs:
       - uses: ./.github/actions/speedracer
         with:
           slow-cpu-pattern: ${{ matrix.speedracer == 'a' && steps.cpu.outputs.model || 'NEVER_MATCH_THIS' }}
-
       - name: Work
-        run: |
-          echo "Copy ${{ matrix.speedracer }}: working..."
-          sleep 5
-
+        run: sleep 5
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-
-  # Test 5: enabled=false → kill switch. Both copies run normally with no
-  # racing or cancellation. Tests the emergency bypass input.
-  # Expected: a=success, b=success (both complete independently).
+  # Test 5: enabled=false — both copies run, no gating. Expected: a=success, b=success.
   test-disabled:
     strategy:
       matrix:
@@ -185,16 +152,11 @@ jobs:
       - uses: ./.github/actions/speedracer
         with:
           enabled: 'false'
+      - name: Work
+        run: sleep 5
 
-      - name: Work (both copies must reach here — no cancellation)
-        run: |
-          echo "Copy ${{ matrix.speedracer }}: working (enabled=false, should not be cancelled)..."
-          sleep 5
-
-  # Test 6: winner completes before monitor's first poll (5-6s initial sleep).
-  # Work is only 2s → copy a finishes and posts conclusion=success before copy b's
-  # monitor wakes up. Tests the monitor's conclusion==success branch.
-  # Expected: a=success (declares win ~10s), b=cancelled (monitor finds a=success).
+  # Test 6: Winner finishes before monitor's first poll (5-6s sleep).
+  # Expected: a=success, b=cancelled (monitor finds a=completed/success).
   test-fast-winner:
     strategy:
       matrix:
@@ -205,20 +167,13 @@ jobs:
       - uses: ./.github/actions/speedracer
         with:
           slow-cpu-pattern: NEVER_MATCH_THIS
-
-      - name: Work (2s — completes before monitor's 5-6s initial sleep)
-        run: |
-          echo "Copy ${{ matrix.speedracer }}: fast work..."
-          sleep 2
-
+      - name: Work (2s — completes before monitor's initial sleep)
+        run: sleep 2
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-
-  # Test 7: 4-copy (copy d). Tests the gate's d→"a b c" case and monitor
-  # watching three siblings.
-  # Expected: a=success, b/c/d=cancelled.
+  # Test 7: 4-copy. Expected: a=success, b/c/d=cancelled.
   test-four-copy:
     strategy:
       matrix:
@@ -229,13 +184,409 @@ jobs:
       - uses: ./.github/actions/speedracer
         with:
           slow-cpu-pattern: NEVER_MATCH_THIS
+      - name: Work (120s)
+        run: sleep 120
+      - name: Monitor log
+        if: always()
+        run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
-      - name: Work (120s — d should be cancelled after a wins)
+
+  # ─── New: API-verified tests ────────────────────────────────────────────────
+
+  # Test 8: Verify post.sh patches check-run to completed/success via Checks API.
+  # Most critical untested behavior: the branch-protection contract.
+  # Also verifies in_progress is posted immediately after gate step.
+  # Expected: a=success, b=cancelled. Verify job: API shows conclusion=success.
+  test-verify-check-run-success:
+    strategy:
+      matrix:
+        speedracer: [a, b]
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/speedracer
+        with:
+          slow-cpu-pattern: NEVER_MATCH_THIS
+
+      - name: Assert check-run is in_progress immediately after gate (before work)
         run: |
-          echo "Copy ${{ matrix.speedracer }}: working..."
-          sleep 120
+          check_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]')
+          [[ "$check_id" =~ ^[0-9]+$ ]] || { echo "FAIL: no check-id posted"; exit 1; }
+          status=$(gh api "repos/${{ github.repository }}/check-runs/${check_id}" --jq '.status')
+          ext_id=$(gh api "repos/${{ github.repository }}/check-runs/${check_id}" --jq '.external_id')
+          echo "check_id=${check_id} status=${status} external_id=${ext_id}"
+          [[ "$status" == "in_progress" ]] || { echo "FAIL: expected in_progress, got: ${status}"; exit 1; }
+          [[ "$ext_id" == "spec-a-${{ github.run_id }}" ]] || { echo "FAIL: wrong external_id: ${ext_id}"; exit 1; }
+          echo "PASS: in_progress check-run posted with correct external_id"
+
+      - name: Work (20s)
+        run: sleep 20
 
       - name: Monitor log
         if: always()
         run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
 
+  verify-check-run-success:
+    needs: test-verify-check-run-success
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Wait for post-step to propagate
+        run: sleep 20
+
+      - name: Assert winning copy check-run conclusion=success
+        run: |
+          ext_id="spec-a-${{ github.run_id }}"
+          for i in $(seq 1 12); do
+            conclusion=$(gh api \
+              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
+              --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion' \
+              2>/dev/null)
+            echo "attempt $i: conclusion=${conclusion}"
+            [[ "$conclusion" == "success" ]] && { echo "PASS: conclusion=success"; exit 0; }
+            sleep 10
+          done
+          echo "FAIL: check-run did not reach conclusion=success"; exit 1
+
+      - name: Assert cancelled copy has no spurious success
+        run: |
+          ext_id="spec-b-${{ github.run_id }}"
+          conclusion=$(gh api \
+            "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
+            --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion' \
+            2>/dev/null)
+          echo "copy b conclusion: ${conclusion:-absent}"
+          [[ "$conclusion" != "success" ]] || { echo "FAIL: cancelled copy b has conclusion=success"; exit 1; }
+          echo "PASS: cancelled copy has no spurious success"
+
+  # Test 9: Failure path — winner fails, post.sh patches check-run to completed/failure.
+  # Also validates monitor 'failed' jq branch: b sees a=conclusion:failure → all_gone → b proceeds.
+  # Expected: a=failure, b=success. Verify: a check-run=failure, b check-run=success.
+  test-failure-path:
+    strategy:
+      fail-fast: false
+      matrix:
+        speedracer: [a, b]
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/speedracer
+        with:
+          slow-cpu-pattern: NEVER_MATCH_THIS
+      - name: Work (a fails; b waits for monitor all_gone signal)
+        run: |
+          if [[ "${{ matrix.speedracer }}" == "a" ]]; then
+            sleep 3 && echo "Copy a: deliberate failure" && exit 1
+          else
+            sleep 90 && echo "Copy b: done (monitor saw a=failed → all_gone)"
+          fi
+      - name: Monitor log
+        if: always()
+        run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+
+  verify-failure-path:
+    needs: test-failure-path
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Wait for post-steps to propagate
+        run: sleep 20
+      - name: Assert copy a check-run conclusion=failure
+        run: |
+          ext_id="spec-a-${{ github.run_id }}"
+          for i in $(seq 1 12); do
+            conclusion=$(gh api \
+              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
+              --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion' \
+              2>/dev/null)
+            echo "attempt $i: copy a conclusion=${conclusion}"
+            [[ "$conclusion" == "failure" ]] && { echo "PASS: copy a check-run=failure (branch protection unblocked)"; break; }
+            sleep 10
+          done
+          [[ "$conclusion" == "failure" ]] || { echo "FAIL: copy a check-run not failure"; exit 1; }
+      - name: Assert copy b check-run conclusion=success
+        run: |
+          ext_id="spec-b-${{ github.run_id }}"
+          for i in $(seq 1 12); do
+            conclusion=$(gh api \
+              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
+              --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion' \
+              2>/dev/null)
+            echo "attempt $i: copy b conclusion=${conclusion}"
+            [[ "$conclusion" == "success" ]] && { echo "PASS: copy b check-run=success"; exit 0; }
+            sleep 10
+          done
+          echo "FAIL: copy b did not reach success"; exit 1
+
+  # Test 10: enabled=false posts ZERO check-runs.
+  # Extends test-disabled by also verifying via API that no check-run exists.
+  # Expected: a=success, b=success. Verify: 0 check-runs with spec- external_id.
+  test-no-check-run-when-disabled:
+    strategy:
+      matrix:
+        speedracer: [a, b]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/speedracer
+        with:
+          enabled: 'false'
+      - name: Assert no check-id file was written
+        run: |
+          if [[ -f /tmp/speedracer-check-id ]] && [[ -n "$(cat /tmp/speedracer-check-id 2>/dev/null)" ]]; then
+            echo "FAIL: /tmp/speedracer-check-id written despite enabled=false"
+            exit 1
+          fi
+          echo "PASS: no check-id file (no check-run posted)"
+      - name: Work
+        run: sleep 5
+
+  verify-no-check-run-when-disabled:
+    needs: test-no-check-run-when-disabled
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Assert zero check-runs posted for this job
+        run: |
+          run_id="${{ github.run_id }}"
+          count=$(gh api \
+            "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
+            --jq --arg run "$run_id" \
+            '[.check_runs[] | select(.name | startswith("test-no-check-run-when-disabled")) | select(.external_id | endswith($run))] | length' \
+            2>/dev/null)
+          echo "check-runs with spec- external_id for this job: ${count}"
+          [[ "$count" == "0" ]] || { echo "FAIL: ${count} unexpected check-run(s) despite enabled=false"; exit 1; }
+          echo "PASS: no check-runs posted when disabled"
+
+  # Test 11: Single-copy matrix (speedracer: [a] only).
+  # Gate detects LAST_COPY=a, skips CPU check even with matching pattern, no monitor.
+  # Expected: a=success, no monitor log, check-run posted and eventually marked success.
+  test-single-copy:
+    strategy:
+      matrix:
+        speedracer: [a]
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - name: Read actual CPU model (will be used as slow pattern to prove gate skips it)
+        id: cpu
+        run: |
+          model=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)
+          echo "model=${model}" >> "$GITHUB_OUTPUT"
+      - uses: ./.github/actions/speedracer
+        with:
+          slow-cpu-pattern: ${{ steps.cpu.outputs.model }}  # matches real CPU — must NOT gate single copy
+      - name: Assert check-run was posted (not gated)
+        run: |
+          check_id=$(cat /tmp/speedracer-check-id 2>/dev/null | head -1 | tr -d '[:space:]')
+          [[ "$check_id" =~ ^[0-9]+$ ]] || { echo "FAIL: no valid check-id — single copy was wrongly gated"; exit 1; }
+          echo "PASS: check-run posted (id=${check_id}), single copy not gated"
+      - name: Assert monitor was NOT started
+        run: |
+          [[ ! -f /tmp/speedracer-monitor.log ]] || { echo "FAIL: monitor started for single-copy matrix"; exit 1; }
+          echo "PASS: no monitor started for single-copy matrix"
+      - name: Work
+        run: sleep 5
+
+  verify-single-copy:
+    needs: test-single-copy
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Wait for post-step
+        run: sleep 20
+      - name: Assert single-copy check-run conclusion=success
+        run: |
+          ext_id="spec-a-${{ github.run_id }}"
+          for i in $(seq 1 12); do
+            conclusion=$(gh api \
+              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
+              --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion' \
+              2>/dev/null)
+            echo "attempt $i: conclusion=${conclusion}"
+            [[ "$conclusion" == "success" ]] && { echo "PASS: single-copy check-run=success"; exit 0; }
+            sleep 10
+          done
+          echo "FAIL: single-copy check-run did not reach success"; exit 1
+
+  # Test 12: Multi-dimensional matrix — check-name auto-derived excludes speedracer key.
+  # Matrix: flavor x speedracer. CHECK_NAME must be "test-multi-dim-check-name (alpha)".
+  # Also tests last-copy stem extraction with parentheses.
+  # Expected: a=success, b=cancelled. Verify: check-run name correct.
+  test-multi-dim-check-name:
+    strategy:
+      matrix:
+        flavor: [alpha]
+        speedracer: [a, b]
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/speedracer
+        with:
+          slow-cpu-pattern: NEVER_MATCH_THIS
+      - name: Assert check-name excludes speedracer key
+        run: |
+          check_name=$(cat /tmp/speedracer-check-name 2>/dev/null | head -1 | tr -d '\n')
+          expected="test-multi-dim-check-name (alpha)"
+          echo "check_name='${check_name}' expected='${expected}'"
+          [[ "$check_name" == "$expected" ]] || { echo "FAIL: check-name mismatch"; exit 1; }
+          echo "PASS: check-name correctly derived"
+      - name: Work (60s)
+        run: sleep 60
+      - name: Monitor log
+        if: always()
+        run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+
+  verify-multi-dim-check-name:
+    needs: test-multi-dim-check-name
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Wait for post-step
+        run: sleep 20
+      - name: Assert check-run name is correct (no speedracer letter in name)
+        run: |
+          ext_id="spec-a-${{ github.run_id }}"
+          result=$(gh api \
+            "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
+            --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | {name,conclusion}' \
+            2>/dev/null)
+          name=$(echo "$result" | jq -r '.name')
+          conclusion=$(echo "$result" | jq -r '.conclusion')
+          echo "name='${name}' conclusion='${conclusion}'"
+          [[ "$name" == "test-multi-dim-check-name (alpha)" ]] || { echo "FAIL: wrong name: ${name}"; exit 1; }
+          [[ "$conclusion" == "success" ]] || { echo "FAIL: wrong conclusion: ${conclusion}"; exit 1; }
+          echo "PASS: check-run name and conclusion correct"
+
+  # Test 13: Explicit check-name input overrides auto-derivation verbatim.
+  # Expected: a=success, b=cancelled. Verify: check-run name='speedracer-explicit-override'.
+  test-explicit-check-name:
+    strategy:
+      matrix:
+        speedracer: [a, b]
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/speedracer
+        with:
+          slow-cpu-pattern: NEVER_MATCH_THIS
+          check-name: speedracer-explicit-override
+      - name: Assert stored check-name matches override
+        run: |
+          check_name=$(cat /tmp/speedracer-check-name 2>/dev/null | head -1 | tr -d '\n')
+          [[ "$check_name" == "speedracer-explicit-override" ]] || {
+            echo "FAIL: check_name='${check_name}' (expected 'speedracer-explicit-override')"; exit 1
+          }
+          echo "PASS: explicit check-name stored verbatim"
+      - name: Work (60s)
+        run: sleep 60
+      - name: Monitor log
+        if: always()
+        run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+
+  verify-explicit-check-name:
+    needs: test-explicit-check-name
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Wait for post-step
+        run: sleep 20
+      - name: Assert check-run uses override name in API
+        run: |
+          ext_id="spec-a-${{ github.run_id }}"
+          result=$(gh api \
+            "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
+            --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | {name,conclusion}' \
+            2>/dev/null)
+          name=$(echo "$result" | jq -r '.name')
+          conclusion=$(echo "$result" | jq -r '.conclusion')
+          echo "name='${name}' conclusion='${conclusion}'"
+          [[ "$name" == "speedracer-explicit-override" ]] || { echo "FAIL: wrong name: ${name}"; exit 1; }
+          [[ "$conclusion" == "success" ]] || { echo "FAIL: wrong conclusion: ${conclusion}"; exit 1; }
+          echo "PASS: explicit override name used in API"
+
+  # Test 14: Sibling fails after posting check-run → monitor treats it as all_gone (not winner).
+  # copy a: passes gate, posts check-run, then deliberately fails.
+  # copy b: monitor sees a's check-run reach conclusion=failure → jq 'failed' branch → all_gone → b proceeds.
+  # Expected: a=failure, b=success. Verify: both check-runs reach correct conclusions.
+  test-sibling-fails-not-winner:
+    strategy:
+      fail-fast: false
+      matrix:
+        speedracer: [a, b]
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: ./.github/actions/speedracer
+        with:
+          slow-cpu-pattern: NEVER_MATCH_THIS
+      - name: Work (a fails to trigger failure path; b waits for all_gone)
+        run: |
+          if [[ "${{ matrix.speedracer }}" == "a" ]]; then
+            sleep 3 && echo "Copy a: deliberate failure (tests monitor 'failed' branch)" && exit 1
+          else
+            sleep 90 && echo "Copy b: done (monitor treated a=failure as all_gone)"
+          fi
+      - name: Monitor log
+        if: always()
+        run: cat /tmp/speedracer-monitor.log 2>/dev/null || echo "(no log)"
+
+  verify-sibling-fails-not-winner:
+    needs: test-sibling-fails-not-winner
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Wait for post-steps to propagate
+        run: sleep 20
+      - name: Assert copy a check-run conclusion=failure
+        run: |
+          ext_id="spec-a-${{ github.run_id }}"
+          for i in $(seq 1 12); do
+            conclusion=$(gh api \
+              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
+              --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion' \
+              2>/dev/null)
+            echo "attempt $i: copy a conclusion=${conclusion}"
+            [[ "$conclusion" == "failure" ]] && { echo "PASS: copy a check-run=failure"; break; }
+            sleep 10
+          done
+          [[ "$conclusion" == "failure" ]] || { echo "FAIL: copy a check-run not failure"; exit 1; }
+      - name: Assert copy b check-run conclusion=success (all_gone not winner)
+        run: |
+          ext_id="spec-b-${{ github.run_id }}"
+          for i in $(seq 1 12); do
+            conclusion=$(gh api \
+              "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?filter=all&per_page=100" \
+              --jq --arg eid "$ext_id" '[.check_runs[] | select(.external_id == $eid)] | first | .conclusion' \
+              2>/dev/null)
+            echo "attempt $i: copy b conclusion=${conclusion}"
+            [[ "$conclusion" == "success" ]] && { echo "PASS: copy b check-run=success"; exit 0; }
+            sleep 10
+          done
+          echo "FAIL: copy b did not reach success"; exit 1
