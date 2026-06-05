@@ -450,6 +450,7 @@ jobs:
       with:
         cluster-name: ${{ inputs.infra-cluster-name || steps.infra-name.outputs.name }}
         infra-token: ${{ secrets.INFRA_TOKEN }}
+        gcp-credentials: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         wait-timeout: ${{ startsWith(inputs.infra-flavor, 'openshift') && '60' || '25' }}
 
     - name: Get kubeconfig (pre-provisioned GKE)
@@ -605,6 +606,7 @@ jobs:
       with:
         cluster-name: ${{ inputs.infra-cluster-name || needs.provision-gke.outputs.cluster-name }}
         infra-token: ${{ secrets.INFRA_TOKEN }}
+        gcp-credentials: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         wait-timeout: "60"
 
     - name: Connect to shared GKE cluster

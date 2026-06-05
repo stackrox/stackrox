@@ -12,6 +12,10 @@ inputs:
     description: Timeout for infractl wait in minutes (default 25 for GKE, use 60 for OCP)
     required: false
     default: "25"
+  gcp-credentials:
+    description: GCP service account JSON (required for GKE infra clusters)
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -28,6 +32,20 @@ runs:
         mkdir -p artifacts
         infractl artifacts "${{ inputs.cluster-name }}" --download-dir artifacts > /dev/null
         echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
+
+    - name: Setup GKE auth if needed
+      if: inputs.gcp-credentials
+      shell: bash
+      run: |
+        if ! grep -q "gke-gcloud-auth-plugin" artifacts/kubeconfig 2>/dev/null; then
+          echo "Not a GKE kubeconfig, skipping"
+          exit 0
+        fi
+        echo "GKE kubeconfig detected — setting up gcloud auth"
+        echo '${{ inputs.gcp-credentials }}' > /tmp/gcp-sa-key.json
+        gcloud auth activate-service-account --key-file=/tmp/gcp-sa-key.json
+        sudo apt-get install -yq google-cloud-cli-gke-gcloud-auth-plugin
+        rm /tmp/gcp-sa-key.json
 
     - name: Refresh OpenShift token if needed
       shell: bash
