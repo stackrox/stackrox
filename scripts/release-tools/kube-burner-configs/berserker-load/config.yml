@@ -12,12 +12,12 @@ jobs:
     namespace: berserker
     jobIterations: 5
     jobPause: 1000h
-    qps: 20
-    burst: 20
+    qps: 40
+    burst: 40
     namespacedIterations: true
     podWait: false
     waitWhenFinished: true
-    preLoadImages: true
+    preLoadImages: false
     preLoadPeriod: 30s
     churn: true
     churnDuration: 1000h
@@ -31,29 +31,11 @@ jobs:
       pod-security.kubernetes.io/warn: privileged
     objects:
 
-      - objectTemplate: process-load-daemonset.yml
+      - objectTemplate: {{ env "BERSERKER_CONFIGMAP_TEMPLATE" }}
+        replicas: 1
+
+      - objectTemplate: {{ env "BERSERKER_DAEMONSET_TEMPLATE" }}
         replicas: 6
-        inputVars:
-          podReplicas: 2
 
-      - objectTemplate: endpoint-load-daemonset.yml
-        replicas: 6
-        inputVars:
-          podReplicas: 2
-
-      - objectTemplate: connection-load-daemonset.yml
-        replicas: 6
-        inputVars:
-          podReplicas: 2
-
-      - objectTemplate: service.yml
-        replicas: 10
-
-      - objectTemplate: berserker-configmap-endpoints-zipf.yml
-        replicas: 10
-
-      - objectTemplate: berserker-configmap-connections.yml
-        replicas: 10
-
-      - objectTemplate: berserker-configmap-processes.yml
+      - objectTemplate: {{ env "BERSERKER_SERVICE_TEMPLATE" }}
         replicas: 10

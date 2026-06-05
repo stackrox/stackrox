@@ -1,0 +1,76 @@
+{{- $ip1 := randInt 1 223 -}}
+{{- $ip2 := randInt 0 255 -}}
+{{- $ip3 := randInt 0 255 -}}
+{{- $ip4 := randInt 0 255 -}}
+{{- $ip := printf "%d.%d.%d.%d/16" $ip1 $ip2 $ip3 $ip4 -}}
+{{- $berserkerAddress := printf "%d.%d.%d.%d" $ip1 $ip2 $ip3 $ip4 }}
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: {{ .namePrefix }}-{{.Replica}}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .namePrefix }}-{{.Replica}}
+  template:
+    metadata:
+      labels:
+        app: {{ .namePrefix }}-{{.Replica}}
+    spec:
+      containers:
+      - image: "quay.io/stackrox-io/berserker:{{ .imageTag }}"
+        {{- if index . "command" }}
+        command:
+{{ index . "command" | indent 8 | trimSuffix "\n" }}
+        {{- end }}
+        {{- if index . "args" }}
+        args:
+{{ index . "args" | indent 8 | trimSuffix "\n" }}
+        {{- end }}
+        resources:
+          requests:
+            memory: "{{ .memRequest }}"
+            cpu: "{{ .cpuRequest }}"
+          limits:
+            memory: "{{ .memLimit }}"
+            cpu: "{{ .cpuLimit }}"
+        volumeMounts:
+        - name: config
+          mountPath: "/etc/berserker"
+          readOnly: true
+        imagePullPolicy: IfNotPresent
+        {{- if index . "ports" }}
+        ports:
+{{ index . "ports" | indent 8 | trimSuffix "\n" }}
+        {{- end }}
+        name: berserker
+        env:
+        - name: RUST_LOG
+          value: "error"
+        {{- if index . "generateIP" }}
+        - name: IP_BASE
+          value: "{{ $ip }}"
+        - name: BERSERKER__WORKLOAD__ADDRESS
+          value: "{{ $berserkerAddress }}"
+        {{- end }}
+        {{- if index . "extraEnv" }}
+{{ index . "extraEnv" | indent 8 | trimSuffix "\n" }}
+        {{- end }}
+        {{- if index . "privileged" }}
+        securityContext:
+          privileged: true
+        {{- end }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{.JobName}}-{{ .configMapName }}
+      tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 900
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 900
