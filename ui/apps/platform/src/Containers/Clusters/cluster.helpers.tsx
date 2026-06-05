@@ -403,6 +403,7 @@ export const getCredentialExpirationStatus = (
     );
     const connectionEstablishedAfterLastRefresh =
         !sensorCertExpiryStatus.lastRefreshTime ||
+        !sensorCertExpiryStatus.sensorCertNotBefore ||
         new Date(sensorCertExpiryStatus.sensorCertNotBefore) >=
             new Date(sensorCertExpiryStatus.lastRefreshTime);
 

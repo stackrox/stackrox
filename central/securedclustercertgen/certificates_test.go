@@ -204,7 +204,7 @@ func (s *securedClusterCertGenSuite) TestSecuredClusterCertificateGenerationCust
 	s.Require().NoError(err)
 
 	expectedNotAfter := time.Now().Add(requestedValidity)
-	s.InDelta(float64(expectedNotAfter.Unix()), float64(cert.NotAfter.Unix()), float64(2*time.Minute), "cert NotAfter should match requested validity")
+	s.InDelta(float64(expectedNotAfter.Unix()), float64(cert.NotAfter.Unix()), float64((2 * time.Minute).Seconds()), "cert NotAfter should match requested validity")
 }
 
 func (s *securedClusterCertGenSuite) TestServiceIssueLocalScannerCerts() {

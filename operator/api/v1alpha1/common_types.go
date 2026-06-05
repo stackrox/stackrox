@@ -152,6 +152,9 @@ type AdditionalCA struct {
 	Content string `json:"content"`
 }
 
+// DefaultCertRefreshValidity is the default value for CertRefreshValidity (1 year).
+const DefaultCertRefreshValidity = "8760h"
+
 // TLSConfig defines common TLS-related settings for all components.
 type TLSConfig struct {
 	// Allows you to specify additional trusted Root CAs.
@@ -161,6 +164,7 @@ type TLSConfig struct {
 	// Requested validity duration for automatically refreshed service certificates (e.g. "8760h").
 	// The default is: 8760h.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Certificate Refresh Validity"
+	// +kubebuilder:validation:Pattern=`^(\d+(\.\d+)?(ns|us|µs|ms|s|m|h))+$`
 	CertRefreshValidity *string `json:"certRefreshValidity,omitempty"`
 }
 

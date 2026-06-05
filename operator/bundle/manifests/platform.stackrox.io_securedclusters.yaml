@@ -1886,6 +1886,7 @@ spec:
                     description: |-
                       Requested validity duration for automatically refreshed service certificates (e.g. "8760h").
                       The default is: 8760h.
+                    pattern: ^(\d+(\.\d+)?(ns|us|µs|ms|s|m|h))+$
                     type: string
                 type: object
             required:
