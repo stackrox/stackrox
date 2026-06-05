@@ -168,9 +168,9 @@ runs:
           export GH_TOKEN=${{ github.token }};
           JOB_STATUS="${{ job.status }}";
           echo "Speedracer post: job.status=${JOB_STATUS}";
-          check_name=$(cat /tmp/speedracer-check-name | head -1 | tr -d '\n');
-          my_copy=$(cat /tmp/speedracer-copy | head -1 | tr -d '\n');
-          check_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]');
+          check_name=$(head -1 < /tmp/speedracer-check-name | tr -d '\n');
+          my_copy=$(head -1 < /tmp/speedracer-copy | tr -d '\n');
+          check_id=$(head -1 < /tmp/speedracer-check-id | tr -d '[:space:]');
           ext_id="spec-${my_copy}-${{ github.run_id }}-${{ github.job }}";
           echo "copy=${my_copy} check_name=${check_name} check_id=${check_id} ext_id=${ext_id}";
           if [[ "$JOB_STATUS" == "success" ]]; then gh api "repos/${{ github.repository }}/check-runs" -f name="${check_name}" -f head_sha="${{ github.sha }}" -f external_id="${ext_id}" -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." && echo "posted completed/success" || echo "::warning::POST success failed";

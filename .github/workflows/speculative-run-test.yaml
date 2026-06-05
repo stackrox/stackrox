@@ -211,7 +211,7 @@ jobs:
 
       - name: Assert check-run is in_progress immediately after gate (before work)
         run: |
-          check_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]')
+          check_id=$(head -1 < /tmp/speedracer-check-id | tr -d '[:space:]')
           [[ "$check_id" =~ ^[0-9]+$ ]] || { echo "FAIL: no check-id posted"; exit 1; }
           status=$(gh api "repos/${{ github.repository }}/check-runs/${check_id}" --jq '.status')
           ext_id=$(gh api "repos/${{ github.repository }}/check-runs/${check_id}" --jq '.external_id')
@@ -380,7 +380,7 @@ jobs:
           slow-cpu-pattern: ${{ steps.cpu.outputs.model }}  # matches real CPU — must NOT gate single copy
       - name: Assert check-run was posted (not gated)
         run: |
-          check_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]')
+          check_id=$(head -1 < /tmp/speedracer-check-id | tr -d '[:space:]')
           [[ "$check_id" =~ ^[0-9]+$ ]] || { echo "FAIL: no valid check-id — single copy was wrongly gated"; exit 1; }
           echo "PASS: check-run posted (id=${check_id}), single copy not gated"
       - name: Assert monitor was NOT started
@@ -431,7 +431,7 @@ jobs:
           slow-cpu-pattern: NEVER_MATCH_THIS
       - name: Assert check-name excludes speedracer key
         run: |
-          check_name=$(cat /tmp/speedracer-check-name | head -1 | tr -d '\n')
+          check_name=$(head -1 < /tmp/speedracer-check-name | tr -d '\n')
           expected="test-multi-dim-check-name (alpha)"
           echo "check_name='${check_name}' expected='${expected}'"
           [[ "$check_name" == "$expected" ]] || { echo "FAIL: check-name mismatch"; exit 1; }
@@ -481,7 +481,7 @@ jobs:
           check-name: speedracer-explicit-override
       - name: Assert stored check-name matches override
         run: |
-          check_name=$(cat /tmp/speedracer-check-name | head -1 | tr -d '\n')
+          check_name=$(head -1 < /tmp/speedracer-check-name | tr -d '\n')
           [[ "$check_name" == "speedracer-explicit-override" ]] || {
             echo "FAIL: check_name='${check_name}' (expected 'speedracer-explicit-override')"; exit 1
           }
