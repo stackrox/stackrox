@@ -224,7 +224,6 @@ jobs:
             ui/build
             ui/apps/platform/package-lock.json
 
-
   pre-build-cli:
     needs: define-job-matrix
     runs-on: ubuntu-latest
@@ -386,7 +385,6 @@ jobs:
           path: go-binaries-build.tar
           compression-level: 1
 
-
   pre-build-docs:
     strategy:
       matrix:
@@ -422,7 +420,6 @@ jobs:
           name: docs-build
           path: |
             image/rhel/docs
-
 
   pre-build-oss-notice:
     strategy:
@@ -469,7 +466,6 @@ jobs:
       with:
         name: oss-notice
         path: image/rhel/THIRD_PARTY_NOTICES
-
 
   build-and-push-db:
     strategy:
@@ -581,7 +577,6 @@ jobs:
             "docker://quay.io/stackrox-io/scanner-v4-db:${{ env.BUILD_TAG }}" \
             "docker://quay.io/rhacs-eng/scanner-v4-db:${{ env.BUILD_TAG }}"
 
-
   build-operator-bundle:
     strategy:
       matrix:
@@ -623,7 +618,6 @@ jobs:
           make -C operator/ docker-push-bundle | cat
           make -C operator/ index-build
           make -C operator/ docker-push-index | cat
-
 
   build-and-push-main:
     # Use native arm64 runner to avoid QEMU emulation overhead (~2x slower).
@@ -803,7 +797,6 @@ jobs:
               push_context="merge-to-master"
             fi
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
-
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
@@ -1080,7 +1073,6 @@ jobs:
             fi
             echo "Operator image push completed successfully"
 
-
   build-and-push-scanner:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:
@@ -1166,8 +1158,6 @@ jobs:
         run: |
           source ./scripts/ci/lib.sh
           push_scanner_image_set "${{ matrix.registry }}" "${{ matrix.arch }}"
-
-
 
   push-scanner-manifests:
     runs-on: ubuntu-latest
