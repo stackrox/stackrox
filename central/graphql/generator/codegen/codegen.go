@@ -31,7 +31,7 @@ var templates = map[string]string{
 	"raw":          `value`,
 	"rawslice":     `value`,
 	"time":         `protocompat.ConvertTimestampToGraphqlTimeOrError(value)`,
-	"bytes":        `string(value)`,
+	"bytes":        `base64.StdEncoding.EncodeToString(value)`,
 }
 
 func listName(td typeData) string {
@@ -88,7 +88,7 @@ func getFieldTransform(fd fieldData) (templateName string, returnType string) {
 			return "pointer", fmt.Sprintf("(*%sResolver, error)", lower(fd.Type.Elem().Name()))
 		}
 	case reflect.Slice:
-		// Handle []byte (protobuf bytes) as raw strings
+		// Handle []byte (protobuf bytes) as base64-encoded strings
 		if fd.Type.Elem().Kind() == reflect.Uint8 {
 			return "bytes", "string"
 		}
