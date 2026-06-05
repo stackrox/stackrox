@@ -10,9 +10,9 @@
 #
 # Env: JOB_STATUS, GH_TOKEN, SPEC_REPO, SPEC_SHA (injected by post: line)
 
-check_id=$(cat /tmp/speedracer-check-id 2>/dev/null | head -1 | tr -d '[:space:]')
-check_name=$(cat /tmp/speedracer-check-name 2>/dev/null | head -1 | tr -d '\n')
-my_copy=$(cat /tmp/speedracer-copy 2>/dev/null | head -1 | tr -d '\n')
+check_id=$(cat /tmp/speedracer-check-id | head -1 | tr -d '[:space:]')
+check_name=$(cat /tmp/speedracer-check-name | head -1 | tr -d '\n')
+my_copy=$(cat /tmp/speedracer-copy | head -1 | tr -d '\n')
 
 if [[ "$JOB_STATUS" == "success" ]]; then
   echo "Speedracer post: copy '${my_copy}' won — marking check-run complete."
@@ -23,7 +23,7 @@ if [[ "$JOB_STATUS" == "success" ]]; then
       -f conclusion=success \
       -f "output[title]=Speedracer complete" \
       -f "output[summary]=Copy ${my_copy} won." \
-      2>/dev/null || echo "::warning::Failed to update check-run (non-fatal)"
+      || echo "::warning::Failed to update check-run (non-fatal)"
   else
     gh api "repos/${SPEC_REPO}/check-runs" \
       -f name="${check_name}" \
@@ -32,12 +32,12 @@ if [[ "$JOB_STATUS" == "success" ]]; then
       -f conclusion=success \
       -f "output[title]=Speedracer complete" \
       -f "output[summary]=Copy ${my_copy} won." \
-      2>/dev/null || echo "::warning::Failed to post check-run (non-fatal)"
+      || echo "::warning::Failed to post check-run (non-fatal)"
   fi
 elif [[ "$JOB_STATUS" == "failure" ]]; then
   echo "Speedracer post: job failed — resolving check-run to unblock branch protection."
   [[ "$check_id" =~ ^[0-9]+$ ]] || exit 0
-  cur=$(gh api "repos/${SPEC_REPO}/check-runs/${check_id}" --jq '.status' 2>/dev/null || echo "")
+  cur=$(gh api "repos/${SPEC_REPO}/check-runs/${check_id}" --jq '.status' || echo "")
   if [[ "$cur" == "in_progress" ]]; then
     gh api "repos/${SPEC_REPO}/check-runs/${check_id}" \
       -X PATCH \
@@ -45,6 +45,6 @@ elif [[ "$JOB_STATUS" == "failure" ]]; then
       -f conclusion=failure \
       -f 'output[title]=Speedracer post-job cleanup' \
       -f 'output[summary]=Job failed; check-run resolved to unblock branch protection.' \
-      2>/dev/null || true
+      || true
   fi
 fi

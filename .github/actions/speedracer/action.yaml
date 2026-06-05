@@ -52,7 +52,7 @@ runs:
         if [[ -z "$CHECK_NAME" ]]; then
           MATRIX_JSON='${{ toJSON(matrix) }}'
           OTHER_VALS=$(echo "$MATRIX_JSON" | \
-            jq -r 'del(.speedracer) | to_entries | map(.value | tostring) | join(", ")' 2>/dev/null)
+            jq -r 'del(.speedracer) | to_entries | map(.value | tostring) | join(", ")')
           if [[ -n "$OTHER_VALS" ]]; then
             CHECK_NAME="${{ github.job }} ($OTHER_VALS)"
           else
@@ -71,21 +71,21 @@ runs:
         else
           check_stem="$CHECK_NAME"       # "job" — no parens
         fi
-        all_copies=$(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" 2>/dev/null | \
+        all_copies=$(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" | \
           jq -r --arg s "$check_stem" '.jobs[] | select(.name | startswith($s)) | .name' | \
           grep -oE '[a-z]\)$' | tr -d ')' | sort -u)
         LAST_COPY=$(echo "$all_copies" | tail -1)
         [[ -z "$LAST_COPY" ]] && LAST_COPY="b"   # safe fallback
         echo "Detected copies: $(echo "$all_copies" | tr '\n' ' ')→ last=${LAST_COPY}"
 
-        cpu=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
-        [[ -z "$cpu" ]] && cpu=$(lscpu 2>/dev/null | awk -F: '/Model name/{gsub(/^ +/,"",$2); print $2}')
+        cpu=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)
+        [[ -z "$cpu" ]] && cpu=$(lscpu | awk -F: '/Model name/{gsub(/^ +/,"",$2); print $2}')
         echo "cpu=${cpu:-unknown} copy=${MY_COPY} last=${LAST_COPY}"
 
         # ── 1. CPU check ────────────────────────────────────────────────────
         if [[ "$MY_COPY" != "$LAST_COPY" && "$cpu" == *"${{ inputs.slow-cpu-pattern }}"* ]]; then
           echo "::warning::Slow runner (${cpu}) — delegating to next copy."
-          kill -TERM "$MY_PARENT" 2>/dev/null
+          kill -TERM "$MY_PARENT"
           sleep 600
         fi
 
@@ -98,7 +98,7 @@ runs:
           -f head_sha="${{ github.sha }}" \
           -f status=in_progress \
           -f external_id="${EXT_ID}" \
-          --jq '.id' 2>/dev/null)
+          --jq '.id')
         printf '%s\n' "${check_id:-}" > /tmp/speedracer-check-id
         printf '%s\n' "${CHECK_NAME}"  > /tmp/speedracer-check-name
         printf '%s\n' "${MY_COPY}"     > /tmp/speedracer-copy

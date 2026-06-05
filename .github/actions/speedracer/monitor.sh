@@ -24,7 +24,7 @@ IFS=',' read -ra sibling_arr <<< "$SPEC_SIBLING_IDS"
 while [[ $(date +%s) -lt $deadline ]]; do
   poll=$(( poll + 1 ))
   # filter=all returns EVERY check-run (not just the latest per name).
-  response=$(gh api "repos/${SPEC_REPO}/commits/${SPEC_SHA}/check-runs?per_page=100&filter=all" 2>/dev/null)
+  response=$(gh api "repos/${SPEC_REPO}/commits/${SPEC_SHA}/check-runs?per_page=100&filter=all")
 
   winner=""
   all_gone=1
@@ -35,7 +35,7 @@ while [[ $(date +%s) -lt $deadline ]]; do
       if   ($checks | any(.[]; .status == "in_progress" or .conclusion == "success")) then "winner"
       elif ($checks | length == 0)                                                    then "absent"
       elif ($checks | any(.[]; .conclusion == null))                                  then "pending"
-      else "failed" end' 2>/dev/null)
+      else "failed" end')
 
     echo "[$(date -u +%H:%M:%S)] poll=$poll $sid: ${result:-absent}"
 
@@ -51,7 +51,7 @@ while [[ $(date +%s) -lt $deadline ]]; do
 
   if [[ -n "$winner" ]]; then
     echo "Sibling $winner is winning — cancelling Gate step via SIGTERM to composite coordinator."
-    kill -TERM "$SPEC_PARENT" 2>/dev/null
+    kill -TERM "$SPEC_PARENT"
     break
   fi
 
