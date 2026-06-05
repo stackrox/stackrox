@@ -4,6 +4,7 @@ package resolvers
 
 import (
 	"context"
+	"encoding/base64"
 	"reflect"
 
 	"github.com/graph-gophers/graphql-go"
