@@ -1,0 +1,25 @@
+workload:
+  namespaces: 2
+  deployments:
+    count: 50
+    containers: 1
+    image: "nginx:1.25"
+    serviceAccount: "default"
+  roles:
+    count: 10
+    clusterWide: false
+    verbs: ["get", "list"]
+  roleBindings:
+    count: 10
+  services:
+    count: 10
+    type: "ClusterIP"
+
+policies:
+  useDefaults: true
+
+completion:
+  timeout: 60s
+  conditions:
+    - type: deploymentCount
+      count: 50
