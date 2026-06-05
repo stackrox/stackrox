@@ -202,6 +202,73 @@ describe('Auth Sagas', () => {
             });
     });
 
+    it('should reject roxctl callback URL pointing to non-localhost host', () => {
+        delete window.location;
+        window.location = { assign: vi.fn() };
+        const token = 'my-token';
+        const maliciousURL = 'https://evil.com/steal';
+        const serverState = `provider-id:2ed17ca6-4b3c-4279-8317-f26f8ba01c52#${maliciousURL}`;
+
+        return expectSaga(saga)
+            .provide([
+                ...createStateSelectors(),
+                [call(authServiceFetchLoginAuthProviders), { response: [] }],
+                [
+                    call(authServiceExchangeAuthToken, `#id_token=${token}`, 'oidc', serverState),
+                    { token, clientState: maliciousURL },
+                ],
+                [call(authServiceGetAndClearRequestedLocation), null],
+                [call(authServiceLogout), null],
+                [call(fetchUserRolePermissions), { response: {} }],
+                [call(authServiceFetchAvailableProviderTypes), { response: [] }],
+            ])
+            .dispatch(
+                createLocationChange(
+                    '/auth/response/oidc',
+                    null,
+                    `#id_token=${token}&state=${serverState}`
+                )
+            )
+            .silentRun()
+            .then(() => {
+                expect(window.location.assign).not.toHaveBeenCalled();
+            });
+    });
+
+    it('should reject roxctl callback URL with javascript: protocol', () => {
+        delete window.location;
+        window.location = { assign: vi.fn() };
+        const token = 'my-token';
+        // eslint-disable-next-line no-script-url
+        const maliciousURL = 'javascript://localhost/%0aalert(1)';
+        const serverState = `provider-id:2ed17ca6-4b3c-4279-8317-f26f8ba01c52#${maliciousURL}`;
+
+        return expectSaga(saga)
+            .provide([
+                ...createStateSelectors(),
+                [call(authServiceFetchLoginAuthProviders), { response: [] }],
+                [
+                    call(authServiceExchangeAuthToken, `#id_token=${token}`, 'oidc', serverState),
+                    { token, clientState: maliciousURL },
+                ],
+                [call(authServiceGetAndClearRequestedLocation), null],
+                [call(authServiceLogout), null],
+                [call(fetchUserRolePermissions), { response: {} }],
+                [call(authServiceFetchAvailableProviderTypes), { response: [] }],
+            ])
+            .dispatch(
+                createLocationChange(
+                    '/auth/response/oidc',
+                    null,
+                    `#id_token=${token}&state=${serverState}`
+                )
+            )
+            .silentRun()
+            .then(() => {
+                expect(window.location.assign).not.toHaveBeenCalled();
+            });
+    });
+
     it('should handle SAML response with test mode', () => {
         const storeLocationMock = vi.fn();
         const user =
