@@ -10,11 +10,11 @@ on:
     branches: [davdhacs/speed-racer-build]
     paths:
       - .github/actions/speedracer/**
-      - .github/workflows/speculative-run-test.yaml
+      - .github/workflows/speedracer-test.yaml
   pull_request:
     paths:
       - .github/actions/speedracer/**
-      - .github/workflows/speculative-run-test.yaml
+      - .github/workflows/speedracer-test.yaml
   workflow_dispatch:
 
 permissions:
@@ -575,4 +575,3 @@ jobs:
             sleep 10
           done
           echo "FAIL: copy b did not reach success"; exit 1
-# Sample run 5 — post-refactor verification

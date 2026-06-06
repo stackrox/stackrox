@@ -5,8 +5,11 @@ description: >
 
   Slow runner: exits as 'cancelled' immediately (no work wasted).
   Fast runner: posts an in_progress check-run and polls for sibling check-runs.
-  Post-step marks the check-run complete on job exit — success patches to
-  completed/success, failure patches to completed/failure.
+  Post-step resolves the check-run on job exit — POSTs completed/success on
+  success, PATCHes to completed/failure on failure. The success path POSTs a
+  new check-run (rather than PATCHing the in_progress one) because it avoids
+  needing the check_id in the post-step; the orphaned in_progress is harmless
+  as GitHub's filter=latest shows only the newest per name.
 
 inputs:
   check-name:
@@ -34,7 +37,6 @@ runs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        set +e
         if [[ "${{ inputs.enabled }}" != 'true' ]]; then
           echo "Speedracer disabled — this copy always runs."
           exit 0
@@ -45,7 +47,6 @@ runs:
         REPO="${{ github.repository }}"
         MY_PARENT=$PPID
 
-        # Auto-derive check-name from matrix (excluding speedracer key)
         CHECK_NAME="${{ inputs.check-name }}"
         if [[ -z "$CHECK_NAME" ]]; then
           MATRIX_JSON='${{ toJSON(matrix) }}'
@@ -59,10 +60,11 @@ runs:
           echo "Auto-derived check-name: $CHECK_NAME"
         fi
 
-        # Auto-detect last speedracer copy via jobs API.
-        # Speedracer must be the last matrix dimension so the GHA job name ends
-        # with ", <letter>)" — we extract the last lowercase letter before ")".
-        # arm64 jobs that exclude b/c copies auto-resolve to last=a.
+        # Detect which copy is last (fallback that always runs regardless of CPU).
+        # Queries the jobs API for all matrix entries of this job, extracts the
+        # speedracer letter from each job name (last single letter before ")"),
+        # and takes the alphabetically last one. arm64 jobs that exclude b/c
+        # via matrix excludes naturally resolve to last=a with no special input.
         if [[ "$CHECK_NAME" == *"("* ]]; then
           check_stem="${CHECK_NAME%\)}"
         else
@@ -70,23 +72,28 @@ runs:
         fi
         all_copies=$(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" | \
           jq -r --arg s "$check_stem" '.jobs[] | select(.name | startswith($s)) | .name' | \
-          grep -oE '[a-z]\)$' | tr -d ')' | sort -u)
+          grep -oE '[a-z]\)$' | tr -d ')' | sort -u) || true
         LAST_COPY=$(echo "$all_copies" | tail -1)
         [[ -z "$LAST_COPY" ]] && LAST_COPY="b"
         echo "Detected copies: $(echo "$all_copies" | tr '\n' ' ')→ last=${LAST_COPY}"
 
-        cpu=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)
-        [[ -z "$cpu" ]] && cpu=$(lscpu | awk -F: '/Model name/{gsub(/^ +/,"",$2); print $2}')
+        cpu=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs || true)
+        [[ -z "$cpu" ]] && cpu=$(lscpu | awk -F: '/Model name/{gsub(/^ +/,"",$2); print $2}' || true)
         echo "cpu=${cpu:-unknown} copy=${MY_COPY} last=${LAST_COPY}"
 
         # ── 1. CPU check ────────────────────────────────────────────────────
         if [[ "$MY_COPY" != "$LAST_COPY" && "$cpu" == *"${{ inputs.slow-cpu-pattern }}"* ]]; then
           echo "::warning::Slow runner (${cpu}) — delegating to next copy."
+          # SIGTERM the composite action coordinator so GHA marks this as
+          # 'cancelled' (not 'failure'). Sleep keeps the process alive until
+          # the runner's cancellation cleanup terminates it.
           kill -TERM "$MY_PARENT"
           sleep 600
         fi
 
         # ── 2. Post in_progress check-run ───────────────────────────────────
+        # external_id is unique per job × copy × workflow run, so monitors
+        # and API queries can unambiguously identify sibling check-runs.
         JOB_KEY="${{ github.job }}"
         EXT_ID="spec-${MY_COPY}-${RUN_ID}-${JOB_KEY}"
         check_id=$(gh api repos/"${REPO}"/check-runs \
@@ -112,6 +119,8 @@ runs:
           IFS=',' read -ra sibling_arr <<< "$sibling_ids"
           GATE_START=$(date +%s%3N)
           echo "Polling for siblings (${sibling_ids})..."
+          # Initial sleep lets siblings complete checkout+gate before first poll.
+          # RANDOM jitter spreads API calls when multiple copies start simultaneously.
           sleep $(( RANDOM % 2 + 5 ))
 
           poll=0
@@ -158,6 +167,10 @@ runs:
 
         echo "Gate passed."
 
+    # gacts/run-and-post-run is the only way to register a post-step from a
+    # composite action (GHA has no native post: for composite actions).
+    # ${{ job.status }} is evaluated at post-step execution time (not registration
+    # time) because GHA re-evaluates expressions in the post phase.
     - name: Register post-hook
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       if: inputs.enabled == 'true'
