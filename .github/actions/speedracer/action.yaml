@@ -106,25 +106,30 @@ runs:
         # completed/success check-run. When found, writes a marker file and
         # SIGTERMs the runner. The job shows as 'failure' but the post-step
         # detects the marker and PATCHes this copy's check-run to 'cancelled'.
+        # Monitor watches for sibling JOBS that completed successfully (via the
+        # jobs API, not the check-runs API). A sibling job reaches completed/success
+        # as soon as its last step finishes — before the post-step fires. This lets
+        # us kill duplicates before they reach their upload/push steps.
         nohup bash -c '
-          sleep $(( RANDOM % 3 + 8 ))
+          sleep $(( RANDOM % 2 + 3 ))
           REPO="'"${REPO}"'"
-          SHA="${{ github.sha }}"
+          RUN_ID="'"${RUN_ID}"'"
           CHECK_NAME="'"${CHECK_NAME}"'"
-          EXT_ID="'"${EXT_ID}"'"
+          MY_JOB_NAME="${{ github.job }}"
+          MY_COPY="'"${MY_COPY}"'"
           deadline=$(( $(date +%s) + 600 ))
           while [[ $(date +%s) -lt $deadline ]]; do
             winner=$(gh api \
-              "repos/${REPO}/commits/${SHA}/check-runs?per_page=100&filter=all" \
-              --jq "[.check_runs[] | select(.name == \"${CHECK_NAME}\" and .conclusion == \"success\" and .external_id != \"${EXT_ID}\")] | length")
-            echo "[$(date -u +%H:%M:%S)] winner check: ${winner} completed/success siblings"
+              "repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100&filter=latest" \
+              --jq "[.jobs[] | select(.name | startswith(\"${CHECK_NAME}\")) | select(.name | endswith(\", ${MY_COPY})\") | not) | select(.conclusion == \"success\")] | length")
+            echo "[$(date -u +%H:%M:%S)] sibling jobs completed/success: ${winner}"
             if [[ "$winner" -gt 0 ]]; then
-              echo "Sibling won — killing this copy."
+              echo "Sibling job finished — killing this copy."
               touch /tmp/speedracer-killed
               kill -TERM $PPID
               exit 0
             fi
-            sleep 5
+            sleep 3
           done
         ' >> /tmp/speedracer-monitor.log 2>&1 &
         disown
