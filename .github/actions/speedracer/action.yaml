@@ -115,8 +115,8 @@ runs:
         # Copy a never monitors — it always wins if it passes the CPU gate.
         case "$MY_COPY" in
           b) WATCH_IDS="spec-a-${RUN_ID}-${CHECK_NAME}" ;;
-          c) WATCH_IDS="spec-a-${RUN_ID}-${CHECK_NAME} spec-b-${RUN_ID}-${CHECK_NAME}" ;;
-          d) WATCH_IDS="spec-a-${RUN_ID}-${CHECK_NAME} spec-b-${RUN_ID}-${CHECK_NAME} spec-c-${RUN_ID}-${CHECK_NAME}" ;;
+          c) WATCH_IDS="spec-a-${RUN_ID}-${CHECK_NAME}|spec-b-${RUN_ID}-${CHECK_NAME}" ;;
+          d) WATCH_IDS="spec-a-${RUN_ID}-${CHECK_NAME}|spec-b-${RUN_ID}-${CHECK_NAME}|spec-c-${RUN_ID}-${CHECK_NAME}" ;;
           *) WATCH_IDS="" ;;
         esac
 
@@ -137,7 +137,7 @@ runs:
                 "repos/${REPO}/commits/${SHA}/check-runs?per_page=100&filter=all")
               total=$(echo "$response" | jq ".check_runs | length")
               echo "[$(date -u +%H:%M:%S)] poll: ${total} check-runs on SHA"
-              for sid in ${WATCH_IDS}; do
+              IFS="|" read -ra _sids <<< "${WATCH_IDS}"; for sid in "${_sids[@]}"; do
                 found=$(echo "$response" | jq -r --arg sid "$sid" \
                   "[.check_runs[] | select(.external_id == \$sid) | select(.status == \"in_progress\" or .conclusion == \"success\")] | length")
                 echo "[$(date -u +%H:%M:%S)] ${sid}: found=${found}"
