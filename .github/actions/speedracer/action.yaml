@@ -106,32 +106,50 @@ runs:
         # completed/success check-run. When found, writes a marker file and
         # SIGTERMs the runner. The job shows as 'failure' but the post-step
         # detects the marker and PATCHes this copy's check-run to 'cancelled'.
-        # Monitor watches for sibling JOBS that completed successfully (via the
-        # jobs API, not the check-runs API). A sibling job reaches completed/success
-        # as soon as its last step finishes — before the post-step fires. This lets
-        # us kill duplicates before they reach their upload/push steps.
-        nohup bash -c '
-          sleep $(( RANDOM % 2 + 3 ))
-          REPO="'"${REPO}"'"
-          RUN_ID="'"${RUN_ID}"'"
-          CHECK_NAME="'"${CHECK_NAME}"'"
-          MY_JOB_NAME="${{ github.job }}"
-          MY_COPY="'"${MY_COPY}"'"
-          deadline=$(( $(date +%s) + 600 ))
-          while [[ $(date +%s) -lt $deadline ]]; do
-            winner=$(gh api \
-              "repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100&filter=latest" \
-              --jq "[.jobs[] | select(.name | startswith(\"${CHECK_NAME}\")) | select(.name | endswith(\", ${MY_COPY})\") | not) | select(.conclusion == \"success\")] | length")
-            echo "[$(date -u +%H:%M:%S)] sibling jobs completed/success: ${winner}"
-            if [[ "$winner" -gt 0 ]]; then
-              echo "Sibling job finished — killing this copy."
-              touch /tmp/speedracer-killed
-              kill -TERM $PPID
-              exit 0
-            fi
-            sleep 3
-          done
-        ' >> /tmp/speedracer-monitor.log 2>&1 &
+        # Build list of lower-lettered siblings to watch (deterministic tiebreak).
+        # Copy b watches a. Copy c watches a,b. Copy d watches a,b,c.
+        # Copy a never monitors — it always wins if it passes the CPU gate.
+        case "$MY_COPY" in
+          b) WATCH_IDS="spec-a-${RUN_ID}-${JOB_KEY}" ;;
+          c) WATCH_IDS="spec-a-${RUN_ID}-${JOB_KEY} spec-b-${RUN_ID}-${JOB_KEY}" ;;
+          d) WATCH_IDS="spec-a-${RUN_ID}-${JOB_KEY} spec-b-${RUN_ID}-${JOB_KEY} spec-c-${RUN_ID}-${JOB_KEY}" ;;
+          *) WATCH_IDS="" ;;
+        esac
+
+        if [[ -n "$WATCH_IDS" ]]; then
+          # Monitor checks if a lower-lettered sibling also passed the CPU gate
+          # (posted an in_progress check-run). If so, this copy is a duplicate.
+          # Fires within seconds of the sibling posting, before real work begins,
+          # avoiding duplicate artifact uploads or image pushes.
+          nohup bash -c '
+            sleep $(( RANDOM % 2 + 5 ))
+            REPO="'"${REPO}"'"
+            SHA="${{ github.sha }}"
+            WATCH_IDS="'"${WATCH_IDS}"'"
+            MY_COPY="'"${MY_COPY}"'"
+            deadline=$(( $(date +%s) + 600 ))
+            while [[ $(date +%s) -lt $deadline ]]; do
+              response=$(gh api \
+                "repos/${REPO}/commits/${SHA}/check-runs?per_page=100&filter=all")
+              for sid in ${WATCH_IDS}; do
+                found=$(echo "$response" | jq -r --arg sid "$sid" \
+                  "[.check_runs[] | select(.external_id == \$sid) | select(.status == \"in_progress\" or .conclusion == \"success\")] | length")
+                if [[ "$found" -gt 0 ]]; then
+                  echo "[$(date -u +%H:%M:%S)] sibling ${sid} is running — copy ${MY_COPY} is a duplicate."
+                  touch /tmp/speedracer-killed
+                  kill -TERM $PPID
+                  exit 0
+                fi
+              done
+              echo "[$(date -u +%H:%M:%S)] no lower-lettered siblings running yet"
+              sleep 3
+            done
+          ' >> /tmp/speedracer-monitor.log 2>&1 &
+          disown
+          echo "Background monitor started for copy ${MY_COPY} — watching: ${WATCH_IDS}"
+        else
+          echo "Copy a — no monitor needed (always wins if fast)."
+        fi
         disown
         echo "Background monitor started for copy ${MY_COPY}."
         echo "Speedracer ready — proceeding to work."
