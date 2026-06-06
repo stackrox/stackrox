@@ -155,8 +155,7 @@ runs:
         else
           echo "Copy a — no monitor needed (always wins if fast)."
         fi
-        disown
-        echo "Background monitor started for copy ${MY_COPY}."
+
         echo "Speedracer ready — proceeding to work."
 
     # Post-step resolves the check-run based on job outcome.
