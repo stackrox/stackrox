@@ -142,7 +142,7 @@ runs:
                 if [[ "$found" -gt 0 ]]; then
                   echo "[$(date -u +%H:%M:%S)] sibling ${sid} is running — copy ${MY_COPY} is a duplicate."
                   touch /tmp/speedracer-killed
-                  kill -TERM $PPID
+                  kill -TERM '"$PPID"'
                   exit 0
                 fi
               done
