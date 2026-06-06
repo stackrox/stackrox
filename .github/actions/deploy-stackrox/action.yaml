@@ -33,6 +33,12 @@ inputs:
   exposure:
     description: "Service exposure: auto (default), none, loadbalancer, route"
     default: ""
+  central-env:
+    description: "Extra env vars for Central (KEY=VALUE,KEY2=VALUE2)"
+    default: ""
+  scanner-v4-env:
+    description: "Extra env vars for scanner-v4-matcher (KEY=VALUE,KEY2=VALUE2)"
+    default: ""
   background:
     description: Run deploy in background
     default: "false"
@@ -82,11 +88,34 @@ runs:
             sleep 2
           done
 
+          # Ensure kubeconfig is at the default path for tools that don't honor KUBECONFIG
+          echo "KUBECONFIG=${KUBECONFIG:-not set}"
+          if [ -n "${KUBECONFIG:-}" ] && [ ! -f "$HOME/.kube/config" ]; then
+            echo "Copying $KUBECONFIG to $HOME/.kube/config"
+            mkdir -p "$HOME/.kube"
+            cp "$KUBECONFIG" "$HOME/.kube/config"
+          elif [ -f "$HOME/.kube/config" ]; then
+            echo "Default kubeconfig already exists"
+          else
+            echo "WARNING: No KUBECONFIG set and no default kubeconfig"
+          fi
+
           yq -n ".securedCluster.spec.clusterName = \"${{ inputs.cluster-name }}\"" > /tmp/roxie-override.yaml
           case "${{ inputs.scanner }}" in
             v2)   yq -i '.central.spec.scanner.scannerComponent = "Enabled" | .central.spec.scannerV4.scannerComponent = "Disabled"' /tmp/roxie-override.yaml ;;
             both) yq -i '.central.spec.scanner.scannerComponent = "Enabled"' /tmp/roxie-override.yaml ;;
           esac
+
+          # Apply central env vars to override
+          if [ -n "${{ inputs.central-env }}" ]; then
+            IFS=',' read -ra PAIRS <<< "${{ inputs.central-env }}"
+            for pair in "${PAIRS[@]}"; do
+              key="${pair%%=*}"
+              val="${pair#*=}"
+              echo "Setting Central env: ${key}=${val}"
+              yq -i ".central.customize.envVars.${key} = \"${val}\"" /tmp/roxie-override.yaml
+            done
+          fi
 
           exposure_flag=""
           if [ -n "${{ inputs.exposure }}" ]; then
@@ -105,10 +134,18 @@ runs:
           source /tmp/roxie-env.sh
           echo "$API_ENDPOINT" > /tmp/rox-api-endpoint
 
-          curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
-            "https://${API_ENDPOINT}/v1/apitokens/generate" \
-            -X POST -d '{"name":"ui_tests","role":"Admin"}' \
-            | jq -r '.token' > /tmp/rox-auth-token
+          echo "Generating API token (endpoint: ${API_ENDPOINT})..."
+          for attempt in $(seq 1 12); do
+            if curl -sk --connect-timeout 10 -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://${API_ENDPOINT}/v1/apitokens/generate" \
+              -X POST -d '{"name":"ui_tests","role":"Admin"}' \
+              | jq -r '.token' > /tmp/rox-auth-token && [ -s /tmp/rox-auth-token ]; then
+              echo "API token generated"
+              break
+            fi
+            echo "Attempt $attempt/12 failed, waiting 10s..."
+            sleep 10
+          done
 
         }
 
@@ -117,4 +154,64 @@ runs:
           echo $! > /tmp/deploy-stackrox.pid
         else
           deploy 2>&1 | tee /tmp/deploy-stackrox.log
+        fi
+
+    - name: Configure scanner-v4-matcher
+      if: inputs.scanner-v4-env
+      shell: bash
+      run: |
+        if ! kubectl -n stackrox get deploy scanner-v4-matcher &>/dev/null; then
+          echo "scanner-v4-matcher not found, skipping"
+          exit 0
+        fi
+        IFS=',' read -ra PAIRS <<< "${{ inputs.scanner-v4-env }}"
+        env_args=()
+        for pair in "${PAIRS[@]}"; do
+          echo "Setting scanner-v4-matcher env: ${pair%%=*}"
+          env_args+=("$pair")
+        done
+        kubectl -n stackrox set env deploy/scanner-v4-matcher "${env_args[@]}"
+        echo "Waiting for scanner-v4-matcher rollout..."
+        kubectl -n stackrox rollout status deploy/scanner-v4-matcher --timeout=5m
+
+    - name: Enable OpenShift console plugin
+      shell: bash
+      run: |
+        # Only run on OpenShift clusters
+        if ! kubectl get clusterversion 2>/dev/null | grep -q VERSION; then
+          echo "Not an OpenShift cluster, skipping console plugin enablement"
+          exit 0
+        fi
+
+        # Check if ConsolePlugin resource exists
+        if ! kubectl get consoleplugin advanced-cluster-security 2>/dev/null; then
+          echo "ConsolePlugin resource not found, skipping"
+          exit 0
+        fi
+
+        echo "Enabling advanced-cluster-security console plugin"
+
+        # Wait for ConsolePlugin CRD
+        kubectl wait --for=condition=Established --timeout=120s \
+          crd/consoleplugins.console.openshift.io
+
+        # Enable the plugin in console config (idempotent)
+        # Use kubectl instead of oc — GHA runners don't have oc installed
+        current_plugins=$(kubectl get console.operator.openshift.io cluster -o jsonpath='{.spec.plugins[*]}' 2>/dev/null || echo "")
+        if [[ "$current_plugins" =~ (^|[[:space:]])advanced-cluster-security([[:space:]]|$) ]]; then
+          echo "Plugin already enabled"
+        else
+          echo "Enabling plugin in console config"
+          if [[ -z "$current_plugins" || "$current_plugins" == "null" ]]; then
+            kubectl patch console.operator.openshift.io cluster --type=merge \
+              -p '{"spec":{"plugins":["advanced-cluster-security"]}}'
+          else
+            kubectl patch console.operator.openshift.io cluster --type=json \
+              -p '[{"op": "add", "path": "/spec/plugins/-", "value": "advanced-cluster-security"}]'
+          fi
+
+          echo "Waiting for console deployment rollout..."
+          kubectl rollout status deployment/console -n openshift-console --timeout=3m || {
+            echo "::warning::Console rollout did not complete within 3m"
+          }
         fi
