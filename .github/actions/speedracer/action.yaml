@@ -151,7 +151,7 @@ runs:
           ext_id="spec-${my_copy}-${{ github.run_id }}-${{ github.job }}";
           echo "Speedracer post: job.status=${JOB_STATUS} copy=${my_copy} check_id=${check_id}";
           if [[ "$JOB_STATUS" == "success" ]]; then gh api "repos/${{ github.repository }}/check-runs" -f name="${check_name}" -f head_sha="${{ github.sha }}" -f external_id="${ext_id}" -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." && echo "posted completed/success" || echo "::warning::POST success failed";
-          elif [[ -f /tmp/speedracer-killed ]]; then echo "Speedracer loss — killed by monitor"; [[ "$check_id" =~ ^[0-9]+$ ]] || exit 0; gh api "repos/${{ github.repository }}/check-runs/${check_id}" -X PATCH -f status=completed -f conclusion=cancelled -f 'output[title]=Speedracer loss' -f 'output[summary]=Another copy finished first.' && echo "check-run → cancelled" || echo "::warning::PATCH cancelled failed";
+          elif [[ -f /tmp/speedracer-killed ]]; then echo "Speedracer loss — killed by monitor, winner handles check-run";
           elif [[ "$JOB_STATUS" == "failure" ]]; then echo "Real failure — resolving check-run"; [[ "$check_id" =~ ^[0-9]+$ ]] || { echo "no valid check-id, skipping"; exit 0; }; gh api "repos/${{ github.repository }}/check-runs/${check_id}" -X PATCH -f status=completed -f conclusion=failure -f 'output[title]=Speedracer cleanup' -f 'output[summary]=Job failed; check-run resolved.' && echo "check-run → failure" || echo "::warning::PATCH failure failed";
           else echo "job.status=${JOB_STATUS} — no action taken";
           fi
