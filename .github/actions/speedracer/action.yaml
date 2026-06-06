@@ -83,11 +83,16 @@ runs:
         # ── 1. CPU check ────────────────────────────────────────────────────
         if [[ "$MY_COPY" != "$LAST_COPY" && "$cpu" == *"${{ inputs.slow-cpu-pattern }}"* ]]; then
           echo "::warning::Slow runner (${cpu}) — delegating to next copy."
+          # Do NOT post the in_progress check-run — siblings would see it and
+          # defer to this copy, but this copy is about to die.
           kill -TERM "$PPID"
+          # Keep bash alive in the composite action step until the runner kills us.
+          # Without this, bash exits and the runner leaves composite-action mode —
+          # a late-arriving SIGTERM would produce 'failure' instead of 'cancelled'.
           sleep 600
         fi
 
-        # ── 2. Post in_progress check-run ───────────────────────────────────
+        # ── 2. Post in_progress check-run (only reached by fast runners) ────
         JOB_KEY="${{ github.job }}"
         EXT_ID="spec-${MY_COPY}-${RUN_ID}-${JOB_KEY}"
         check_id=$(gh api repos/"${REPO}"/check-runs \

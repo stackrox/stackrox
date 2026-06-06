@@ -288,6 +288,7 @@ jobs:
 
   pre-build-go-binaries:
     strategy:
+      fail-fast: false
       # Supports three go binary builds:
       # default - built with environment defaults (see env.mk)
       # prerelease - built with GOTAGS=release
