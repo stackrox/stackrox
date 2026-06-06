@@ -96,8 +96,8 @@ jobs:
           # The base matrix
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.pre_build_go_binaries.arch += ["amd64", "arm64"]' <<< "$matrix")"
-          matrix="$(jq '.pre_build_go_binaries.speedracer += ["a", "b"]' <<< "$matrix")"
-          matrix="$(jq '.pre_build_go_binaries.exclude += [{"speedracer": "b", "arch": "arm64"}]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.speedracer += ["a", "b", "c"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.exclude += [{"speedracer": "b", "arch": "arm64"}, {"speedracer": "c", "arch": "arm64"}]' <<< "$matrix")"
 
           matrix="$(jq '.build_and_push_main.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64"]' <<< "$matrix")"
