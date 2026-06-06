@@ -438,6 +438,11 @@ func (resolver *clusterCVEResolver) Suppressed(_ context.Context) bool {
 	return resolver.data.GetSnoozed()
 }
 
+func (resolver *clusterCVEResolver) Cvss(_ context.Context) *float64 {
+	v := float64(resolver.data.GetCvss())
+	return &v
+}
+
 func (resolver *clusterCVEResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
 	return nil
 }

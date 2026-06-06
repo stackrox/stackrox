@@ -125,18 +125,12 @@ func (res *ImageCVEQueryResponse) GetSeverity() storage.VulnerabilitySeverity {
 	return *res.Severity
 }
 
-func (res *ImageCVEQueryResponse) GetCVSS() float64 {
-	if res.CVSS == nil {
-		return 0.0
-	}
-	return *res.CVSS
+func (res *ImageCVEQueryResponse) GetCVSS() *float64 {
+	return res.CVSS
 }
 
-func (res *ImageCVEQueryResponse) GetNVDCVSS() float64 {
-	if res.NVDCVSS == nil {
-		return 0.0
-	}
-	return *res.NVDCVSS
+func (res *ImageCVEQueryResponse) GetNVDCVSS() *float64 {
+	return res.NVDCVSS
 }
 
 func (res *ImageCVEQueryResponse) GetEPSSProbability() *float64 {

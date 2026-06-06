@@ -50,7 +50,7 @@ type viewBasedReportData struct {
 	imageNames      []string
 	componentNames  []string
 	cveNames        []string
-	cvss            []float64
+	cvss            []*float64
 }
 
 func (s *ViewBasedReportingTestSuite) SetupSuite() {
@@ -637,7 +637,7 @@ func (s *ViewBasedReportingTestSuite) collectViewBasedReportData(cveResponses []
 	imageNames := set.NewStringSet()
 	componentNames := set.NewStringSet()
 	cveNames := make([]string, 0)
-	cvss := make([]float64, 0)
+	cvss := make([]*float64, 0)
 
 	for _, res := range cveResponses {
 		if res.GetDeployment() != "" {

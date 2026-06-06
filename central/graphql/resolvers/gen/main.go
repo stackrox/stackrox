@@ -131,6 +131,14 @@ var (
 				ParentType: reflect.TypeOf(storage.ImageSignatureVerificationResult{}),
 				FieldName:  "VerifierName",
 			},
+			{
+				ParentType: reflect.TypeOf(storage.ClusterCVE{}),
+				FieldName:  "Cvss",
+			},
+			{
+				ParentType: reflect.TypeOf(storage.NodeCVE{}),
+				FieldName:  "Cvss",
+			},
 		},
 		InputTypes: []reflect.Type{
 			reflect.TypeOf((*inputtypes.FalsePositiveVulnRequest)(nil)),

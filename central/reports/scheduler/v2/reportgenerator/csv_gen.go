@@ -41,6 +41,18 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 	csvWriter := csv.NewGenericWriter(csvHeader, true)
 
 	for _, r := range cveResponses {
+		var cvssScore string
+		if r.GetCVSS() != nil {
+			cvssScore = strconv.FormatFloat(*r.GetCVSS(), 'f', 2, 64)
+		} else {
+			cvssScore = "Not Available"
+		}
+		var nvdCVSSScore string
+		if r.GetNVDCVSS() != nil {
+			nvdCVSSScore = strconv.FormatFloat(*r.GetNVDCVSS(), 'f', 2, 64)
+		} else {
+			nvdCVSSScore = "Not Available"
+		}
 		var epssScore string
 		if r.GetEPSSProbability() != nil {
 			epssScore = strconv.FormatFloat(*r.GetEPSSProbability()*100, 'f', 3, 64)
@@ -58,8 +70,8 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 			strconv.FormatBool(r.GetFixable()),
 			r.GetFixedByVersion(),
 			strings.ToTitle(stringutils.GetUpTo(r.GetSeverity().String(), "_")),
-			strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
-			strconv.FormatFloat(r.GetNVDCVSS(), 'f', 2, 64),
+			cvssScore,
+			nvdCVSSScore,
 			epssScore,
 			r.GetDiscoveredAtImage(),
 			r.Link,
