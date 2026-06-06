@@ -20,6 +20,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 
+- ROX-34804: The machine access configuration for `config-controller` now validates the audience of the service account token. All audience values are allowed if other role bindings have been added to the machine access configuration.
+
 ## [4.11.0]
 
 
