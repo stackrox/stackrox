@@ -120,6 +120,8 @@ runs:
           *) WATCH_IDS="" ;;
         esac
 
+        # Last-copy fallback never monitors — it must always run.
+        [[ "$MY_COPY" == "$LAST_COPY" ]] && WATCH_IDS=""
         if [[ -n "$WATCH_IDS" ]]; then
           # Monitor checks if a lower-lettered sibling also passed the CPU gate
           # (posted an in_progress check-run). If so, this copy is a duplicate.
