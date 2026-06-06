@@ -301,7 +301,14 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
-      - uses: stackrox/stackrox/.github/actions/speedracer@davdhacs/speedracer-minimal
+      - name: Sparse checkout (speedracer action only)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+          sparse-checkout: .github/actions/speedracer
+          depth: 1
+
+      - uses: ./.github/actions/speedracer
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
