@@ -18,6 +18,9 @@ on:
     - reopened
     - synchronize
 
+permissions:
+  checks: write   # Required for speedracer to post synthetic required check results
+
 defaults:
   run:
     # This enables `-o pipefail` for all jobs as compared to when shell isn't set.
@@ -93,6 +96,8 @@ jobs:
           # The base matrix
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.pre_build_go_binaries.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.speedracer += ["a", "b"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.exclude += [{"speedracer": "b", "arch": "arm64"}]' <<< "$matrix")"
 
           matrix="$(jq '.build_and_push_main.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64"]' <<< "$matrix")"
@@ -299,6 +304,8 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/speedracer
 
       - uses: ./.github/actions/job-preamble
         with:
