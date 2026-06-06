@@ -20,6 +20,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 
+- ROX-30599: The internal GraphQL API now returns `null` instead of `0` for CVSS and NVD CVSS scores when a score is unavailable for a CVE. CSV vulnerability reports now display "Not Available" for these fields, consistent with EPSS score handling. While the GraphQL API is for internal use only and is not officially supported, this is a breaking schema change: the `cvss` and `nvdcvss` fields on image vulnerability types changed from non-nullable to nullable.
+
 ## [4.11.0]
 
 
