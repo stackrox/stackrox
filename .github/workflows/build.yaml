@@ -101,11 +101,15 @@ jobs:
 
           matrix="$(jq '.build_and_push_main.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_main.speedracer += ["a", "b", "c"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_main.exclude += [{"speedracer": "b", "arch": "arm64"}, {"speedracer": "c", "arch": "arm64"}]' <<< "$matrix")"
 
           matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
 
           matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_operator.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_operator.speedracer += ["a", "b", "c"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_operator.exclude += [{"speedracer": "b", "arch": "arm64"}, {"speedracer": "c", "arch": "arm64"}]' <<< "$matrix")"
 
           matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.push_operator_multiarch_manifests.archs = [.build_and_push_operator.arch | join(",")]' <<< "$matrix")"
@@ -113,6 +117,8 @@ jobs:
           matrix="$(jq '.build_and_push_scanner.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_scanner.goos += ["linux"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_scanner.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_scanner.speedracer += ["a", "b"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_scanner.exclude += [{"speedracer": "b", "arch": "arm64"}]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_scanner.registry += ["quay.io/stackrox-io", "quay.io/rhacs-eng"]' <<< "$matrix")"
 
           matrix="$(jq '.push_scanner_manifests.name += ["default"]' <<< "$matrix")"
@@ -597,6 +603,7 @@ jobs:
   build-and-push-main:
     # Use native arm64 runner to avoid QEMU emulation overhead (~2x slower).
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
+    if: ${{ !cancelled() }}
     needs:
       - define-job-matrix
       - pre-build-cli
@@ -655,6 +662,8 @@ jobs:
           if [[ "${GITHUB_HEAD_REF:-}" =~ -debug ]]; then
             echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
           fi
+
+      - uses: davdhacs/speedracer@v0.1.0
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -944,6 +953,8 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
+      - uses: davdhacs/speedracer@v0.1.0
+
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
@@ -1059,6 +1070,8 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
+      - uses: davdhacs/speedracer@v0.1.0
+
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:

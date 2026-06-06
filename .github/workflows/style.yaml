@@ -11,6 +11,10 @@ on:
     - opened
     - reopened
     - synchronize
+
+permissions:
+  checks: write
+
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 
@@ -23,10 +27,15 @@ jobs:
     uses: ./.github/workflows/detect-changes.yml
 
   check-generated-files:
+    strategy:
+      matrix:
+        speedracer: [a, b]
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     steps:
+    - uses: davdhacs/speedracer@v0.1.0
+
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
@@ -94,8 +103,13 @@ jobs:
       run: if [ -s scripts/ci/jobs/check-dependabot-gomod.sh ]; then scripts/ci/jobs/check-dependabot-gomod.sh; fi
 
   style-check:
+    strategy:
+      matrix:
+        speedracer: [a, b]
     runs-on: ubuntu-latest
     steps:
+      - uses: davdhacs/speedracer@v0.1.0
+
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
