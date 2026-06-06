@@ -93,8 +93,7 @@ runs:
         fi
 
         # ── 2. Post in_progress check-run (only reached by fast runners) ────
-        JOB_KEY="${{ github.job }}"
-        EXT_ID="spec-${MY_COPY}-${RUN_ID}-${JOB_KEY}"
+        EXT_ID="spec-${MY_COPY}-${RUN_ID}-${CHECK_NAME}"
         check_id=$(gh api repos/"${REPO}"/check-runs \
           -f name="${CHECK_NAME}" \
           -f head_sha="${{ github.sha }}" \
@@ -115,9 +114,9 @@ runs:
         # Copy b watches a. Copy c watches a,b. Copy d watches a,b,c.
         # Copy a never monitors — it always wins if it passes the CPU gate.
         case "$MY_COPY" in
-          b) WATCH_IDS="spec-a-${RUN_ID}-${JOB_KEY}" ;;
-          c) WATCH_IDS="spec-a-${RUN_ID}-${JOB_KEY} spec-b-${RUN_ID}-${JOB_KEY}" ;;
-          d) WATCH_IDS="spec-a-${RUN_ID}-${JOB_KEY} spec-b-${RUN_ID}-${JOB_KEY} spec-c-${RUN_ID}-${JOB_KEY}" ;;
+          b) WATCH_IDS="spec-a-${RUN_ID}-${CHECK_NAME}" ;;
+          c) WATCH_IDS="spec-a-${RUN_ID}-${CHECK_NAME} spec-b-${RUN_ID}-${CHECK_NAME}" ;;
+          d) WATCH_IDS="spec-a-${RUN_ID}-${CHECK_NAME} spec-b-${RUN_ID}-${CHECK_NAME} spec-c-${RUN_ID}-${CHECK_NAME}" ;;
           *) WATCH_IDS="" ;;
         esac
 
@@ -179,7 +178,7 @@ runs:
           check_name=$(head -1 < /tmp/speedracer-check-name | tr -d '\n');
           my_copy=$(head -1 < /tmp/speedracer-copy | tr -d '\n');
           check_id=$(head -1 < /tmp/speedracer-check-id | tr -d '[:space:]');
-          ext_id="spec-${my_copy}-${{ github.run_id }}-${{ github.job }}";
+          ext_id="spec-${my_copy}-${{ github.run_id }}-${check_name}";
           echo "Speedracer post: job.status=${JOB_STATUS} copy=${my_copy} check_id=${check_id}";
           if [[ "$JOB_STATUS" == "success" ]]; then gh api "repos/${{ github.repository }}/check-runs" -f name="${check_name}" -f head_sha="${{ github.sha }}" -f external_id="${ext_id}" -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." && echo "posted completed/success" || echo "::warning::POST success failed";
           elif [[ -f /tmp/speedracer-killed ]]; then echo "Speedracer loss — killed by monitor, winner handles check-run";
