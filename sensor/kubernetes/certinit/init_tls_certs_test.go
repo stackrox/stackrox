@@ -182,6 +182,40 @@ func (s *initTLSCertsSuite) TestRun() {
 	})
 }
 
+func (s *initTLSCertsSuite) TestCertsNewSyncHandler() {
+	s.createDirs()
+	s.createFiles(newSourceDir, 3, "cert", "v1")
+
+	handler := &certsNewSyncHandler{destDir: destinationDir}
+	files, err := handler.OnChange(newSourceDir)
+	s.Require().NoError(err)
+	handler.OnStableUpdate(files, nil)
+
+	destFiles, err := os.ReadDir(destinationDir)
+	s.Require().NoError(err)
+	s.Len(destFiles, 3)
+	for _, f := range destFiles {
+		content, err := os.ReadFile(filepath.Join(destinationDir, f.Name()))
+		s.Require().NoError(err)
+		s.Equal("v1", string(content))
+	}
+
+	for i := 0; i < 3; i++ {
+		err := os.WriteFile(filepath.Join(newSourceDir, fmt.Sprintf("cert%d", i)), []byte("v2"), 0600)
+		s.Require().NoError(err)
+	}
+
+	files, err = handler.OnChange(newSourceDir)
+	s.Require().NoError(err)
+	handler.OnStableUpdate(files, nil)
+
+	for _, f := range destFiles {
+		content, err := os.ReadFile(filepath.Join(destinationDir, f.Name()))
+		s.Require().NoError(err)
+		s.Equal("v2", string(content), "expected file %q to be updated", f.Name())
+	}
+}
+
 func (s *initTLSCertsSuite) createDirs() {
 	legacySourceDir = s.T().TempDir()
 	newSourceDir = s.T().TempDir()

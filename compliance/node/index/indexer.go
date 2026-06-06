@@ -3,7 +3,6 @@ package index
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -22,12 +21,12 @@ import (
 	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/utils"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	pkgutils "github.com/stackrox/rox/pkg/utils"
 )
@@ -51,32 +50,46 @@ var (
 	// so we use a fake one for all nodes.
 	layerDigest   = fmt.Sprintf("sha256:%s", strings.Repeat("a", 64))
 	ccLayerDigest = claircore.MustParseDigest(layerDigest)
-
-	clientOnce       sync.Once
-	defaultClient    *http.Client
-	defaultClientErr error
 )
 
-func getDefaultClient() (*http.Client, error) {
-	clientOnce.Do(func() {
-		clientCert, err := mtls.LeafCertificateFromFile()
-		if err != nil {
-			defaultClientErr = errors.Wrap(err, "obtaining defaultClient certificate")
-			return
-		}
-		defaultClient = &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					// TODO: Should this always be set to true...?
-					InsecureSkipVerify: true,
-					Certificates:       []tls.Certificate{clientCert},
-				},
-				Proxy: proxy.FromConfig(),
-			},
-			Timeout: 30 * time.Second,
-		}
+// newDefaultClient configures an HTTP client that works with both internal
+// mTLS endpoints (Sensor) and external publicly-trusted endpoints.
+func newDefaultClient(mappingURL string) (*http.Client, error) {
+	serverName, err := extractHostname(mappingURL)
+	if err != nil {
+		return nil, err
+	}
+	// SensorSubject identifies the expected StackRox service for cert verification
+	// when the endpoint is Sensor (the default). ServerName is set to the actual
+	// hostname to avoid defaulting to sensor.stackrox, which would fail hostname
+	// verification for external endpoints.
+	tlsConf, err := clientconn.TLSConfig(mtls.SensorSubject, clientconn.TLSConfigOptions{
+		UseClientCert: clientconn.MustUseClientCert,
+		ServerName:    serverName,
 	})
-	return defaultClient, defaultClientErr
+	if err != nil {
+		return nil, errors.Wrap(err, "creating TLS config")
+	}
+	// Clear gRPC ALPN protos to avoid HTTP/2 framing issues (see ROX-21861).
+	tlsConf.NextProtos = nil
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConf,
+			Proxy:           proxy.FromConfig(),
+		},
+		Timeout: 30 * time.Second,
+	}, nil
+}
+
+func extractHostname(rawURL string) (string, error) {
+	if !strings.Contains(rawURL, "://") {
+		rawURL = "https://" + rawURL
+	}
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return "", errors.Wrapf(err, "parsing URL %q", rawURL)
+	}
+	return parsed.Hostname(), nil
 }
 
 // NodeIndexerConfig represents Scanner V4 node indexer configuration parameters.
@@ -101,9 +114,7 @@ type NodeIndexerConfig struct {
 // DefaultNodeIndexerConfig provides the default configuration for a node indexer.
 func DefaultNodeIndexerConfig() NodeIndexerConfig {
 	return NodeIndexerConfig{
-		HostPath: env.NodeIndexHostPath.Setting(),
-		// The default, mTLS-capable client will be used.
-		Client:             nil,
+		HostPath:           env.NodeIndexHostPath.Setting(),
 		Repo2CPEMappingURL: buildMappingURL(),
 		Timeout:            10 * time.Second,
 		PackageDBFilter:    rhcosPackageDB,
@@ -114,7 +125,7 @@ func buildMappingURL() string {
 	if len(env.NodeIndexMappingURL.Setting()) > 0 {
 		return urlfmt.FormatURL(env.NodeIndexMappingURL.Setting(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	}
-	u := env.AdvertisedEndpoint.Setting() + scannerDefinitionsRouteInSensor + "?file=" + sensorMappingsFile
+	u := env.SensorEndpointSetting() + scannerDefinitionsRouteInSensor + "?file=" + sensorMappingsFile
 	return urlfmt.FormatURL(u, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 }
 
@@ -203,9 +214,9 @@ func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *clairco
 	client := cfg.Client
 	if client == nil {
 		var err error
-		client, err = getDefaultClient()
+		client, err = newDefaultClient(cfg.Repo2CPEMappingURL)
 		if err != nil {
-			return nil, errors.Wrap(err, "creating repository scanner http client - check TLS config")
+			return nil, errors.Wrap(err, "creating repository scanner http client")
 		}
 	}
 

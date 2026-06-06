@@ -59,7 +59,6 @@ func processSpecDescriptorsMap(crd map[string]any) error {
 
 // fixDescriptorOrderMap performs a stable sort based on the parent path.
 // This ensures children always come after their parents.
-// Mimics Python: descriptors.sort(key=lambda d: f'.{d["path"]}'.rsplit('.', 1)[0])
 func fixDescriptorOrderMap(descriptors []any) {
 	sort.SliceStable(descriptors, func(i, j int) bool {
 		parentI := getDescriptorParentPath(descriptors[i])

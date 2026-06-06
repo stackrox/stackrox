@@ -6,6 +6,7 @@ metadata:
 data:
   workload.toml: |
     restart_interval = 10
+    workers = 9
 
     [workload]
     type = "endpoints"

@@ -3,6 +3,9 @@ package relay
 import (
 	"context"
 	"errors"
+	"fmt"
+	"maps"
+	"slices"
 	"testing"
 	"time"
 
@@ -11,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/time/rate"
 )
 
 func TestRelay(t *testing.T) {
@@ -33,6 +37,12 @@ var errTestStreamStart = errors.New("test stream start failure")
 // errTest is a generic test error for use in mock implementations.
 var errTest = errors.New("test error")
 
+const (
+	noThrottlingReportsPerMinute = 0
+	singleReportPerMinute        = 1
+	testStaleAckThreshold        = 4 * time.Hour
+)
+
 // TestRelay_StartFailure verifies that Relay.Run propagates stream startup
 // errors and does not enter the main select loop when initialization fails.
 func (s *relayTestSuite) TestRelay_StartFailure() {
@@ -51,7 +61,7 @@ func (s *relayTestSuite) TestRelay_StartFailure() {
 	}
 
 	// Construct the relay under test.
-	relay := New(stream, sender)
+	relay := New(stream, sender, &mockUMH{}, noThrottlingReportsPerMinute, testStaleAckThreshold)
 
 	// Run the relay in a goroutine so we can assert it returns promptly and
 	// does not block in its select loop.
@@ -107,7 +117,8 @@ func (s *relayTestSuite) TestRelay_Integration() {
 	}
 
 	// Create relay with mock dependencies using the public constructor
-	relay := New(mockIndexReportStream, mockIndexReportSender)
+	// Rate limiting disabled (0)
+	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, noThrottlingReportsPerMinute, testStaleAckThreshold)
 
 	// Run relay in background
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
@@ -129,11 +140,14 @@ func (s *relayTestSuite) TestRelay_Integration() {
 	cancel()
 
 	// Verify all messages were sent with discovered data preserved
-	mockIndexReportSender.mu.Lock()
-	s.Require().Len(mockIndexReportSender.sentMessages, 2)
+	var sentMessages []*v1.VMReport
+	concurrency.WithLock(&mockIndexReportSender.mu, func() {
+		sentMessages = append(sentMessages, mockIndexReportSender.sentMessages...)
+	})
+	s.Require().Len(sentMessages, 2)
 
-	first := mockIndexReportSender.sentMessages[0]
-	second := mockIndexReportSender.sentMessages[1]
+	first := sentMessages[0]
+	second := sentMessages[1]
 
 	// IndexReport fields are preserved
 	s.Equal("100", first.GetIndexReport().GetVsockCid())
@@ -149,8 +163,6 @@ func (s *relayTestSuite) TestRelay_Integration() {
 	s.Equal("unknown", second.GetDiscoveredData().GetOsVersion())
 	s.Equal(v1.ActivationStatus_INACTIVE, second.GetDiscoveredData().GetActivationStatus())
 	s.Equal(v1.DnfMetadataStatus_UNAVAILABLE, second.GetDiscoveredData().GetDnfMetadataStatus())
-
-	mockIndexReportSender.mu.Unlock()
 
 	// Verify relay exited cleanly
 	err := <-errChan
@@ -175,7 +187,8 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 		},
 	}
 
-	relay := New(mockIndexReportStream, mockIndexReportSender)
+	umh := &mockUMH{}
+	relay := New(mockIndexReportStream, mockIndexReportSender, umh, noThrottlingReportsPerMinute, testStaleAckThreshold)
 
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
 	defer cancel()
@@ -196,12 +209,20 @@ func (s *relayTestSuite) TestRelay_SenderErrorsDoNotStopProcessing() {
 	cancel()
 
 	// All three messages should have been attempted
-	mockIndexReportSender.mu.Lock()
-	s.Require().Len(mockIndexReportSender.sentMessages, 3)
-	mockIndexReportSender.mu.Unlock()
+	var sentCount int
+	concurrency.WithLock(&mockIndexReportSender.mu, func() {
+		sentCount = len(mockIndexReportSender.sentMessages)
+	})
+	s.Require().Equal(3, sentCount)
 
 	err := <-errChan
 	s.ErrorIs(err, context.Canceled)
+
+	var nacks []string
+	concurrency.WithLock(&umh.mu, func() {
+		nacks = slices.Clone(umh.nacks)
+	})
+	s.Contains(nacks, "200", "failed send should be recorded as NACK")
 }
 
 // TestRelay_ContextCancellation verifies relay stops on context cancellation
@@ -220,7 +241,7 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 		failOnIndex: -1, // never fail
 	}
 
-	relay := New(mockIndexReportStream, mockIndexReportSender)
+	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, noThrottlingReportsPerMinute, testStaleAckThreshold)
 
 	ctx, cancel := context.WithCancel(s.ctx)
 
@@ -242,6 +263,311 @@ func (s *relayTestSuite) TestRelay_ContextCancellation() {
 	case <-time.After(100 * time.Millisecond):
 		s.Fail("Relay did not exit after context cancellation")
 	}
+}
+
+// TestRelay_RateLimiting verifies that rate limiting works
+func (s *relayTestSuite) TestRelay_RateLimiting() {
+	// Create mock sender
+	done := concurrency.NewSignal()
+	mockIndexReportSender := &mockIndexReportSender{
+		failOnIndex:   -1, // never fail
+		done:          &done,
+		expectedCount: 1, // only first should pass
+	}
+
+	// Send 3 reports from same VSOCK ID
+	mockIndexReportStream := &mockIndexReportStream{
+		reports: []*v1.VMReport{
+			{IndexReport: &v1.IndexReport{VsockCid: "100"}},
+			{IndexReport: &v1.IndexReport{VsockCid: "100"}}, // Same ID - should be rate limited
+			{IndexReport: &v1.IndexReport{VsockCid: "100"}}, // Same ID - should be rate limited
+		},
+	}
+
+	// Rate limit: 1 per minute (effectively blocks after first)
+	relay := New(mockIndexReportStream, mockIndexReportSender, &mockUMH{}, singleReportPerMinute, testStaleAckThreshold)
+
+	ctx, cancel := context.WithTimeout(s.ctx, 1*time.Second)
+	defer cancel()
+
+	errChan := make(chan error, 1)
+	go func() {
+		errChan <- relay.Run(ctx)
+	}()
+
+	// Wait for first report
+	select {
+	case <-done.Done():
+		// First report processed
+	case <-time.After(500 * time.Millisecond):
+		s.Fail("Timeout waiting for first report")
+	}
+
+	// Give time for other reports to be processed (they should be rate limited)
+	time.Sleep(100 * time.Millisecond)
+
+	cancel()
+
+	// Only 1 report should have been sent (others rate limited)
+	var sentCount int
+	concurrency.WithLock(&mockIndexReportSender.mu, func() {
+		sentCount = len(mockIndexReportSender.sentMessages)
+	})
+	s.Equal(1, sentCount)
+
+	err := <-errChan
+	s.ErrorIs(err, context.Canceled)
+}
+
+// TestRelay_UMHInteraction verifies the relay observes UMH signals and marks ACKs.
+func (s *relayTestSuite) TestRelay_UMHInteraction() {
+	done := concurrency.NewSignal()
+
+	mockIndexReportSender := &mockIndexReportSender{
+		failOnIndex: -1,
+	}
+
+	mockIndexReportStream := &mockIndexReportStream{
+		reports: []*v1.VMReport{
+			{IndexReport: &v1.IndexReport{VsockCid: "100"}},
+		},
+	}
+
+	umh := &mockUMH{
+		retryCh: make(chan string, 1),
+		onObserveSendingCb: func(_ string) {
+			done.Signal()
+		},
+	}
+
+	relay := New(mockIndexReportStream, mockIndexReportSender, umh, noThrottlingReportsPerMinute, testStaleAckThreshold)
+
+	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
+	defer cancel()
+
+	errChan := make(chan error, 1)
+	go func() {
+		errChan <- relay.Run(ctx)
+	}()
+
+	select {
+	case <-done.Done():
+	case <-time.After(time.Second):
+		s.Fail("timeout waiting for ObserveSending")
+	}
+
+	var sends []string
+	concurrency.WithLock(&umh.mu, func() {
+		sends = append(sends, umh.sends...)
+	})
+	s.Contains(sends, "100")
+
+	// Send an ACK via UMH and ensure relay records it in cache.
+	umh.HandleACK("100")
+	time.Sleep(50 * time.Millisecond)
+
+	var cached *cachedReportMetadata
+	concurrency.WithLock(&relay.mu, func() {
+		cached = relay.cache["100"]
+	})
+	s.Require().NotNil(cached, "cached report should exist after ACK")
+	s.False(cached.lastAckedAt.IsZero(), "lastAckedAt should be recorded")
+
+	cancel()
+	<-errChan
+}
+
+// TestRelay_StaleCacheEntriesAreEvicted asserts that stale cache entries
+// for VSOCK IDs that are no longer active get evicted.
+func (s *relayTestSuite) TestRelay_StaleCacheEntriesAreEvicted() {
+	const (
+		numStale = 25
+		numFresh = 25
+		total    = numStale + numFresh
+	)
+
+	now := time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC)
+	threshold := 4 * time.Hour
+
+	evictCh := make(chan time.Time)
+	r := &Relay{
+		reportStream:      &mockIndexReportStream{},
+		reportSender:      &mockIndexReportSender{failOnIndex: -1},
+		umh:               &mockUMH{},
+		staleAckThreshold: threshold,
+		cacheEvictTickCh:  evictCh,
+		cache:             make(map[string]*cachedReportMetadata),
+	}
+	r.umh.OnACK(r.markAcked)
+
+	for i := range numStale {
+		id := fmt.Sprintf("stale-%d", i)
+		r.cache[id] = &cachedReportMetadata{
+			updatedAt: now.Add(-10 * time.Hour),
+			limiter:   rate.NewLimiter(1, 1),
+		}
+	}
+	for i := range numFresh {
+		id := fmt.Sprintf("fresh-%d", i)
+		r.cache[id] = &cachedReportMetadata{
+			updatedAt: now.Add(-1 * time.Hour),
+			limiter:   rate.NewLimiter(1, 1),
+		}
+	}
+	s.Require().Equal(total, len(r.cache), "precondition: cache should have %d entries", total)
+
+	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
+	defer cancel()
+
+	errChan := make(chan error, 1)
+	go func() { errChan <- r.Run(ctx) }()
+
+	evictCh <- now
+
+	cancel()
+	<-errChan
+
+	var cacheLen int
+	concurrency.WithLock(&r.mu, func() {
+		cacheLen = len(r.cache)
+	})
+
+	s.Equal(numFresh, cacheLen,
+		"cache should contain %d fresh entries but got %d instead", numFresh, cacheLen)
+}
+
+// TestRelay_EvictStaleEntries verifies that evictStaleEntries removes cache
+// entries whose updatedAt is older than staleAckThreshold, and retains entries
+// that are still fresh.
+func (s *relayTestSuite) TestRelay_EvictStaleEntries() {
+	now := time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC)
+
+	cases := map[string]struct {
+		initialCache map[string]*cachedReportMetadata
+		now          time.Time
+		threshold    time.Duration
+		wantCache    []string
+	}{
+		"should evict entries older than threshold": {
+			now:       now,
+			threshold: 4 * time.Hour,
+			initialCache: map[string]*cachedReportMetadata{
+				"stale": {updatedAt: now.Add(-5 * time.Hour), limiter: rate.NewLimiter(1, 1)},
+				"fresh": {updatedAt: now.Add(-1 * time.Hour), limiter: rate.NewLimiter(1, 1)},
+			},
+			wantCache: []string{"fresh"},
+		},
+		"should evict stale entry even if it was recently acked": {
+			now:       now,
+			threshold: 4 * time.Hour,
+			initialCache: map[string]*cachedReportMetadata{
+				"stale-acked": {
+					updatedAt:   now.Add(-10 * time.Hour),
+					lastAckedAt: now.Add(-1 * time.Hour),
+					limiter:     rate.NewLimiter(1, 1),
+				},
+				"fresh": {updatedAt: now.Add(-30 * time.Minute), limiter: rate.NewLimiter(1, 1)},
+			},
+			wantCache: []string{"fresh"},
+		},
+		"should retain all entries when none are stale": {
+			now:       now,
+			threshold: 4 * time.Hour,
+			initialCache: map[string]*cachedReportMetadata{
+				"vm-a": {updatedAt: now.Add(-1 * time.Hour), limiter: rate.NewLimiter(1, 1)},
+				"vm-b": {updatedAt: now.Add(-2 * time.Hour), limiter: rate.NewLimiter(1, 1)},
+			},
+			wantCache: []string{"vm-a", "vm-b"},
+		},
+		"should evict all entries when all are stale": {
+			now:       now,
+			threshold: 4 * time.Hour,
+			initialCache: map[string]*cachedReportMetadata{
+				"old-a": {updatedAt: now.Add(-25 * time.Hour), limiter: rate.NewLimiter(1, 1)},
+				"old-b": {updatedAt: now.Add(-48 * time.Hour), limiter: rate.NewLimiter(1, 1)},
+			},
+			wantCache: nil,
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			r := &Relay{
+				cache: tc.initialCache,
+			}
+
+			r.evictStaleEntries(tc.now, tc.threshold)
+
+			var gotCacheKeys []string
+			concurrency.WithLock(&r.mu, func() {
+				gotCacheKeys = slices.Collect(maps.Keys(r.cache))
+			})
+
+			s.ElementsMatch(gotCacheKeys, tc.wantCache, "cache should contain %v but got %v instead", tc.wantCache, gotCacheKeys)
+		})
+	}
+}
+
+func (s *relayTestSuite) TestRelay_StaleAckTicker() {
+	cases := map[string]struct {
+		staleAck time.Duration
+		wantMeta bool
+	}{
+		"non-positive stale ACK disables ticker": {
+			staleAck: 0, wantMeta: false,
+		},
+		"negative stale ACK disables ticker": {
+			staleAck: -time.Second, wantMeta: false,
+		},
+		"positive stale ACK enables ticker": {
+			staleAck: time.Hour, wantMeta: true,
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			r := New(&mockIndexReportStream{}, &mockIndexReportSender{failOnIndex: -1}, &mockUMH{}, 0, tc.staleAck)
+			if tc.wantMeta {
+				s.NotNil(r.cacheEvictTicker, "metadata eviction ticker should exist")
+				s.NotNil(r.cacheEvictTickCh, "metadata eviction channel should be set")
+			} else {
+				s.Nil(r.cacheEvictTicker, "metadata eviction ticker should not exist")
+				s.Nil(r.cacheEvictTickCh, "metadata eviction channel should be disabled")
+			}
+		})
+	}
+}
+
+func (s *relayTestSuite) TestRelay_RunReturnsErrorWhenRetryChannelCloses() {
+	retryCh := make(chan string)
+	close(retryCh)
+	umh := &mockUMH{
+		retryCh: retryCh,
+	}
+	r := New(&mockIndexReportStream{}, &mockIndexReportSender{failOnIndex: -1}, umh, noThrottlingReportsPerMinute, testStaleAckThreshold)
+	s.Require().NotNil(r.cacheEvictTicker)
+
+	ctx, cancel := context.WithTimeout(s.ctx, time.Second)
+	defer cancel()
+
+	err := r.Run(ctx)
+	s.Require().Error(err)
+	s.ErrorContains(err, "UMH retry command channel closed")
+}
+
+func (s *relayTestSuite) TestRelay_TryConsumeCreatesMetadataOnCacheMiss() {
+	r := &Relay{
+		maxReportsPerMinute: singleReportPerMinute,
+		cache:               make(map[string]*cachedReportMetadata),
+	}
+
+	s.NotPanics(func() {
+		s.True(r.tryConsume("missing"))
+	})
+
+	metadata := r.cache["missing"]
+	s.Require().NotNil(metadata, "missing cache entries should be initialized on first consumption")
+	s.NotNil(metadata.limiter, "newly initialized metadata should include a limiter")
 }
 
 // Mock implementations
@@ -294,19 +620,76 @@ type mockIndexReportSender struct {
 }
 
 func (m *mockIndexReportSender) Send(_ context.Context, vmReport *v1.VMReport) error {
-	m.mu.Lock()
-	currentIndex := len(m.sentMessages)
-	m.sentMessages = append(m.sentMessages, vmReport)
+	var currentIndex int
+	concurrency.WithLock(&m.mu, func() {
+		currentIndex = len(m.sentMessages)
+		m.sentMessages = append(m.sentMessages, vmReport)
 
-	// Signal done when we've sent expected count
-	if m.done != nil && len(m.sentMessages) == m.expectedCount {
-		m.done.Signal()
-	}
-	m.mu.Unlock()
+		// Signal done when we've sent expected count
+		if m.done != nil && len(m.sentMessages) == m.expectedCount {
+			m.done.Signal()
+		}
+	})
 
 	// Fail on the specified index
 	if currentIndex == m.failOnIndex {
 		return errTest
 	}
 	return nil
+}
+
+// mockUMH is a mock UnconfirmedMessageHandler for testing
+type mockUMH struct {
+	mu                 sync.Mutex
+	acks               []string
+	nacks              []string
+	sends              []string
+	retryCh            chan string
+	onACKCb            func(resourceID string)
+	onObserveSendingCb func(resourceID string)
+}
+
+func (m *mockUMH) HandleACK(resourceID string) {
+	var cb func(resourceID string)
+	concurrency.WithLock(&m.mu, func() {
+		m.acks = append(m.acks, resourceID)
+		cb = m.onACKCb
+	})
+	if cb != nil {
+		cb(resourceID)
+	}
+}
+
+func (m *mockUMH) HandleNACK(resourceID string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.nacks = append(m.nacks, resourceID)
+}
+
+func (m *mockUMH) ObserveSending(resourceID string) {
+	concurrency.WithLock(&m.mu, func() {
+		m.sends = append(m.sends, resourceID)
+		if m.onObserveSendingCb != nil {
+			m.onObserveSendingCb(resourceID)
+		}
+	})
+}
+
+func (m *mockUMH) RetryCommand() <-chan string {
+	if m.retryCh == nil {
+		m.retryCh = make(chan string)
+	}
+	return m.retryCh
+}
+
+func (m *mockUMH) OnACK(callback func(resourceID string)) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.onACKCb = callback
+}
+
+func (m *mockUMH) Stopped() concurrency.ReadOnlyErrorSignal {
+	s := concurrency.NewStopper()
+	s.Flow().ReportStopped()
+	return s.Client().Stopped()
 }

@@ -57,7 +57,6 @@ function ComplianceByStandards({
                     entityId={entityId}
                     entityName={entityName}
                     entityType={entityType}
-                    className="pdf-page"
                 />
             ))}
         </>

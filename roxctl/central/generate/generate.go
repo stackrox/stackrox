@@ -335,8 +335,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	centralGenerateCmd := &centralGenerateCommand{rendererConfig: &cfg, env: cliEnvironment}
 
 	c := &cobra.Command{
-		Use:   "generate",
-		Short: "Generate the required YAML configuration files containing the orchestrator objects to deploy StackRox Central",
+		Use:        "generate",
+		Short:      "Generate the required YAML configuration files containing the orchestrator objects to deploy StackRox Central",
+		Deprecated: common.DeprecatedInFavorOfOperator,
 	}
 
 	c.PersistentFlags().BoolVar(&centralGenerateCmd.rendererConfig.PasswordDisabled, "disable-admin-password", false,

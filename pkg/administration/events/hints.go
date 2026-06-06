@@ -16,6 +16,13 @@ var (
 	// vulnerability definitions).
 	hints = map[string]map[string]map[string]string{
 		AuthenticationDomain: {
+			adminResources.AuthProvider: {
+				codes.SAMLAssertionExpired: `A SAML assertion was rejected because it is expired or not yet valid. This may indicate:
+- A replay attack using a previously captured assertion.
+- Clock skew between the identity provider and StackRox Central.
+
+Verify that the system clocks on Central and the identity provider are synchronized. If this occurs during legitimate login attempts, check the identity provider's assertion lifetime configuration.`,
+			},
 			adminResources.APIToken: {
 				codes.APITokenCreated: `An API token has been created.`,
 				codes.APITokenExpired: `An API token is about to expire. See the details on the expiration time within the event message.

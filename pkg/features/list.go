@@ -136,8 +136,12 @@ var (
 
 	// InitContainerSupport enables extraction, scanning, and evaluation of init containers in deployments.
 	InitContainerSupport = registerFeature("Enable init container support", "ROX_INIT_CONTAINER_SUPPORT")
+
+	// PolicyFiltersUI enables the image layer and init container filters UI in the policy editor.
+	PolicyFiltersUI = registerFeature("Enable image layer and init container filters UI in the policy editor", "ROX_POLICY_FILTERS_UI")
+
 	// BackgroundMigration enables long-running background migrations in Central
-	BackgroundMigration = registerFeature("Enable long-running background migrations in Central", "ROX_BACKGROUND_MIGRATION")
+	BackgroundMigration = registerFeature("Enable long-running background migrations in Central", "ROX_BACKGROUND_MIGRATION", enabled)
 )
 
 // The following feature flags are related to Scanner V4.
@@ -187,4 +191,7 @@ var (
 
 	// SensorInformerWatchdog enables periodic logging of sensor informers that are stuck or have not synced.
 	SensorInformerWatchdog = registerFeature("Sensor informer watchdog logging", "ROX_SENSOR_INFORMER_WATCHDOG", enabled)
+
+	// ScannerV4RedHatVEXNotAffected enables filtering image vulnerabilities using Red Hat VEX known_not_affected assertions.
+	ScannerV4RedHatVEXNotAffected = registerFeature("Scanner V4 will filter image vulnerabilities using Red Hat VEX known_not_affected assertions", "ROX_SCANNER_V4_RED_HAT_VEX_NOT_AFFECTED")
 )

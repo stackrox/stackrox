@@ -15,13 +15,32 @@
 {{ $forPod := index . 5 }}
 {{ $_ := set $labels "app.kubernetes.io/name" "stackrox" }}
 {{ $_ = set $labels "app.kubernetes.io/managed-by" $.Release.Service }}
-{{ $_ = set $labels "helm.sh/chart" (printf "%s-%s" $.Chart.Name ($.Chart.Version | replace "+" "_")) }}
+{{ $chartLabel := printf "%s-%s" $.Chart.Name ($.Chart.Version | replace "+" "_") }}
+{{ if gt (len $chartLabel) 63 }}
+  {{ $chartLabel = trunc 63 $chartLabel }}
+  {{/* Ensure label ends with alphanumeric character */}}
+  {{ $chartLabel = regexReplaceAll "[^a-zA-Z0-9]+$" $chartLabel "" }}
+{{ end }}
+{{ $_ = set $labels "helm.sh/chart" $chartLabel }}
 {{ $_ = set $labels "app.kubernetes.io/instance" $.Release.Name }}
 {{ $_ = set $labels "app.kubernetes.io/version" $.Chart.AppVersion }}
 {{ $_ = set $labels "app.kubernetes.io/part-of" "stackrox-secured-cluster-services" }}
+{{/* Derive the component from the template filename (e.g. sensor-rbac.yaml → sensor). */}}
 {{ $component := regexReplaceAll "^.*/(\\d{2}-)?(admission-control|collector|sensor|scanner-v4)[^/]*\\.yaml" $.Template.Name "${2}" }}
 {{ if not (contains "/" $component) }}
   {{ $_ = set $labels "app.kubernetes.io/component" $component }}
+  {{/*
+    The sensor auto-upgrader manages all three components (sensor, collector, admission-control)
+    as a single upgrade bundle and uses the auto-upgrade.stackrox.io/component label to discover
+    the resources it owns. For manifest-based installs (non-Helm, non-Operator), the upgrader
+    validates this label on all bundle objects before applying them. Missing it will cause the
+    auto-upgrade to fail. See also: sensor/upgrader/bundle/instantiator.go
+
+    Only set on resource metadata, not pod labels.
+  */}}
+  {{ if and (not $forPod) (or (eq $component "sensor") (eq $component "collector") (eq $component "admission-control")) }}
+    {{ $_ = set $labels "auto-upgrade.stackrox.io/component" "sensor" }}
+  {{ end }}
 {{ end }}
 {{ $metadataNames := list "labels" }}
 {{ if $forPod }}

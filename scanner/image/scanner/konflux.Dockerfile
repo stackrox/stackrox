@@ -16,9 +16,9 @@ WORKDIR /src
 
 RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-scripts
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:1ef916d40ff7f1a4882a31ad5ab37f9572baa7bd182c3519d5e0cb557ffc04f3 AS ubi-micro-base
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:b498b3ea26111ab4b81d65139f2ebd2ef9a2abb7a4588b7fdcc54889f95e9caa AS ubi-micro-base
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:8ca59004c1c505bdabadd5202bd3363986f5bf873fcfb36f60561d7362fe52a7 AS package_installer
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:80b1f4c34a7eed1b03a05d12b55768f3e522eef6ec294c6fbd5fa47b6b2892ee AS package_installer
 
 COPY --from=ubi-micro-base / /out/
 

@@ -946,6 +946,13 @@ function launch_sensor {
       helm upgrade --install -n "${sensor_namespace}" --create-namespace stackrox-secured-cluster-services "${sensor_helm_chart}" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
     else
+      if [[ -n "${ROX_PROCESS_INDICATORS_PER_NAMESPACE}" ]]; then
+        if [[ -n "$extra_json_dynamic_config" ]]; then
+            extra_json_dynamic_config+=", "
+        fi
+        extra_json_dynamic_config+='"processIndicators": {"excludeNamespaceFilter": "namespace-without-persistence"}'
+      fi
+
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
         roxctl --endpoint "${API_ENDPOINT}" --ca "" --insecure-skip-tls-verify sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
@@ -953,6 +960,25 @@ function launch_sensor {
              "${ORCH}" \
              "${extra_config[@]+"${extra_config[@]}"}"
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
+
+        # roxctl sensor generate does not support setting dynamicConfig fields
+        # (e.g. processIndicators.excludeNamespaceFilter), so we patch the
+        # cluster via the API after creation.
+        if [[ -n "$extra_json_dynamic_config" ]]; then
+          echo "Updating cluster dynamic config after roxctl sensor generate..."
+          local cluster_json
+          cluster_json="$(curl_central_retry \
+              "https://${API_ENDPOINT}/v1/clusters" \
+            | jq -r ".clusters[] | select(.name == \"${CLUSTER}\")")"
+          local cluster_id
+          cluster_id="$(echo "$cluster_json" | jq -r '.id')"
+          local updated_cluster
+          updated_cluster="$(echo "$cluster_json" | jq ".dynamicConfig += {${extra_json_dynamic_config}}")"
+          curl_central_retry -X PUT \
+              -d "$updated_cluster" \
+              "https://${API_ENDPOINT}/v1/clusters/${cluster_id}"
+        fi
+
         if [[ "${GENERATE_SCANNER_DEPLOYMENT_BUNDLE:-}" == "true" ]]; then
             roxctl --endpoint "${API_ENDPOINT}" --ca "" --insecure-skip-tls-verify scanner generate \
                   --output-dir="scanner-deploy" "${scanner_extra_config[@]+"${scanner_extra_config[@]}"}"
@@ -964,14 +990,6 @@ function launch_sensor {
             echo >&2 "ERROR: Unable to generate a Scanner deployment bundle, as has been requested by setting GENERATE_SCANNER_DEPLOYMENT_BUNDLE=true."
             echo >&2 "Please make sure to have a roxctl version ${MAIN_IMAGE_TAG} in PATH."
             exit 1
-        fi
-
-        if [[ -n "${ROX_PROCESS_INDICATORS_PER_NAMESPACE}" ]]; then
-          if [[ -n "$extra_json_dynamic_config" ]]; then
-              extra_json_dynamic_config+=", "
-          fi
-
-          extra_json_dynamic_config+='"processIndicators": {"excludeNamespaceFilter": "namespace-without-persistence"}'
         fi
 
         extra_json_config="${extra_json_config}, "'"dynamicConfig"'": {${extra_json_dynamic_config}}"

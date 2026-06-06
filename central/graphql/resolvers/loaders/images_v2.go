@@ -10,7 +10,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -48,7 +47,6 @@ type ImageV2Loader interface {
 	FullImageWithID(ctx context.Context, id string) (*storage.ImageV2, error)
 
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
-	CountAll(ctx context.Context) (int32, error)
 }
 
 // imageV2LoaderImpl implements the ImageDataLoader interface.
@@ -121,11 +119,6 @@ func (idl *imageV2LoaderImpl) CountFromQuery(ctx context.Context, query *v1.Quer
 		return 0, err
 	}
 	return int32(count), nil
-}
-
-func (idl *imageV2LoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.ds.Count(ctx, searchPkg.EmptyQuery())
-	return int32(count), err
 }
 
 func (idl *imageV2LoaderImpl) load(ctx context.Context, ids []string, pullFullObject bool) ([]*storage.ImageV2, error) {

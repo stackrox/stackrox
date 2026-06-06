@@ -1,0 +1,152 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/max-keep-runs: "500"
+    pipelinesascode.tekton.dev/on-comment: "/konflux-retest checks"
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      (event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")) ||
+      (event == "pull_request" && body.action != "ready_for_review")
+  labels:
+    appstudio.openshift.io/application: acs
+  name: checks
+  namespace: rh-acs-tenant
+
+spec:
+
+  params:
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-operator-bundle
+
+  timeouts:
+    tasks: 10m
+    finally: 2m
+    pipeline: 12m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+
+  pipelineSpec:
+
+    finally:
+    - name: slack-notification
+      params:
+      - name: message
+        value: ':x: `{{event_type}}` pipeline for <https://konflux-ui.apps.stone-prd-rh01.pg1f.p1.openshiftapps.com/ns/$(context.pipelineRun.namespace)/pipelinerun/$(context.pipelineRun.name)|$(context.pipelineRun.name)> (revision <$(params.git-url)/commit/$(params.revision)|$(params.revision)>) has failed.'
+      - name: key-name
+        value: 'acs-konflux-notifications'
+      when:
+      - input: $(tasks.status)
+        operator: in
+        values: ["Failed"]
+      taskRef:
+        params:
+        - name: name
+          value: slack-webhook-notification
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:14766aebbf6f4739e1b7dde0406dcba2d1e300170d3b084f23df9fb074d87dc3
+        - name: kind
+          value: task
+        resolver: bundles
+
+    - name: post-metric-end
+      params:
+      - name: AGGREGATE_TASKS_STATUS
+        value: $(tasks.status)
+      taskRef: &post-bigquery-metrics-ref
+        params:
+        - name: name
+          value: post-bigquery-metrics
+        - name: bundle
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:69dccf80691e60c85b7650a8a5f0382d66a5fff98b46b4986fbf7e2bc47e5b1b
+        - name: kind
+          value: task
+        resolver: bundles
+
+    params:
+    - default: "{{source_url}}"
+      description: Source Repository URL
+      name: git-url
+      type: string
+    - default: "{{revision}}"
+      description: Revision of the Source Repository
+      name: revision
+      type: string
+    - default: quay.io/rhacs-eng/konflux-checks
+      description: Output Image Repository (for OCI artifacts)
+      name: output-image-repo
+      type: string
+    - default: "1d"
+      description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
+      name: oci-artifact-expires-after
+      type: string
+
+
+    workspaces:
+    - name: git-auth
+
+    tasks:
+
+    - name: post-metric-start
+      taskRef: *post-bigquery-metrics-ref
+
+    - name: clone-repository
+      params:
+      - name: url
+        value: $(params.git-url)
+      - name: revision
+        value: $(params.revision)
+      - name: depth
+        value: "1"
+      - name: fetchTags
+        value: "false"
+      - name: ociStorage
+        value: $(params.output-image-repo):konflux-$(params.revision).git
+      - name: ociArtifactExpiresAfter
+        value: $(params.oci-artifact-expires-after)
+      taskRef:
+        params:
+        - name: name
+          value: git-clone-oci-ta
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:d30f13dd15daf89dd6dc645243b3444d35570d13f7840c3fd65e366022515205
+        - name: kind
+          value: task
+        resolver: bundles
+      workspaces:
+      - name: basic-auth
+        workspace: git-auth
+
+    - name: check-go-builder-version
+      params:
+      - name: IMAGE
+        value: $(params.output-image-repo):$(params.revision)-check-go-builder-version
+      - name: DOCKERFILE
+        value: .konflux/konflux.check-go-builder-version.Dockerfile
+      - name: CONTEXT
+        value: .
+      - name: IMAGE_EXPIRES_AFTER
+        value: $(params.oci-artifact-expires-after)
+      - name: COMMIT_SHA
+        value: $(params.revision)
+      - name: SOURCE_ARTIFACT
+        value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+      - name: HERMETIC
+        value: "true"
+      taskRef:
+        params:
+        - name: name
+          value: buildah-oci-ta
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.10@sha256:85102e448619f65a1fb7d4512660f8ec05677f99b724f1f838e1964545d7c857
+        - name: kind
+          value: task
+        resolver: bundles

@@ -24,6 +24,7 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: central-db
+        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "central-db") | nindent 8 }}
       annotations:
         {{- $annotations := dict -}}
@@ -74,6 +75,7 @@ spec:
       {{- end }}
       serviceAccountName: central-db
       terminationGracePeriodSeconds: 120
+      shareProcessNamespace: true
       initContainers:
       - name: init-db
         image: {{ ._rox.central.db.image.fullRef | quote }}
@@ -138,6 +140,7 @@ spec:
           mountPath: /run/secrets/stackrox.io/certs
         - mountPath: /dev/shm
           name: shared-memory
+      {{- include "srox.certWatcherSidecar" (list . "central-db" ._rox.central.db.image.fullRef "central-db-tls-volume") | nindent 6 }}
       securityContext:
         fsGroup: 70
       volumes:

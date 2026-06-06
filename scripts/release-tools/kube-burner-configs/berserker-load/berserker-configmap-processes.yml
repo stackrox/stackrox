@@ -5,6 +5,7 @@ metadata:
 data:
   workload.toml: |
     restart_interval = 10
+    workers = 1
 
     [workload]
     type = "processes"

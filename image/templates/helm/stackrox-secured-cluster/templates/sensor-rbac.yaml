@@ -7,7 +7,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "serviceaccount" "sensor") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "serviceaccount" "sensor") | nindent 4 }}
 {{- if ._rox.mainImagePullSecrets._names }}
@@ -24,7 +23,6 @@ metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:view-cluster") }}
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox:view-cluster") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrole" "stackrox:view-cluster") | nindent 4 }}
 rules:
@@ -43,7 +41,6 @@ metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:monitor-cluster") }}
   labels:
     {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:monitor-cluster") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox:monitor-cluster") | nindent 4 }}
 subjects:
@@ -64,7 +61,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "role" "edit") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "role" "edit") | nindent 4 }}
 rules:
@@ -89,7 +85,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "manage-namespace") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "rolebinding" "manage-namespace") | nindent 4 }}
 subjects:
@@ -107,7 +102,6 @@ metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:edit-workloads") }}
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox:edit-workloads") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrole" "stackrox:edit-workloads") | nindent 4 }}
 rules:
@@ -136,7 +130,6 @@ metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:enforce-policies") }}
   labels:
     {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:enforce-policies") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox:enforce-policies") | nindent 4 }}
 subjects:
@@ -154,7 +147,6 @@ metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:network-policies") }}
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox:network-policies") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrole" "stackrox:network-policies") | nindent 4 }}
 rules:
@@ -178,7 +170,6 @@ metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:network-policies-binding") }}
   labels:
     {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:network-policies-binding") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox:network-policies-binding") | nindent 4 }}
 subjects:
@@ -196,7 +187,6 @@ metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:update-namespaces") }}
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox:update-namespaces") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrole" "stackrox:update-namespaces") | nindent 4 }}
 rules:
@@ -212,7 +202,6 @@ metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:update-namespaces-binding") }}
   labels:
     {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:update-namespaces-binding") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox:update-namespaces-binding") | nindent 4 }}
 subjects:
@@ -230,7 +219,6 @@ metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:create-events") }}
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox:create-events") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrole" "stackrox:create-events") | nindent 4 }}
 rules:
@@ -248,7 +236,6 @@ metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:create-events-binding") }}
   labels:
     {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:create-events-binding") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox:create-events-binding") | nindent 4 }}
 subjects:
@@ -266,7 +253,6 @@ metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:review-tokens") }}
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox:review-tokens") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrole" "stackrox:review-tokens") | nindent 4 }}
 rules:
@@ -282,7 +268,6 @@ metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:review-tokens-binding") }}
   labels:
     {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:review-tokens-binding") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox:review-tokens-binding") | nindent 4 }}
 subjects:
@@ -300,7 +285,6 @@ metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:review-access") }}
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox:review-access") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrole" "stackrox:review-access") | nindent 4 }}
 rules:
@@ -316,7 +300,6 @@ metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:review-access-binding") }}
   labels:
     {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:review-access-binding") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox:review-access-binding") | nindent 4 }}
 subjects:

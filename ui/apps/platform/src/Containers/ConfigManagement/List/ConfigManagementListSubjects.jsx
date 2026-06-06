@@ -35,13 +35,9 @@ const buildTableColumns = (match, location) => {
             Header: 'Users & Groups',
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const url = getConfigMgmtPathForEntitiesAndId('SUBJECT', original.id);
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {original.name}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{original.name}</TableCellLink>;
             },
             accessor: 'name',
             id: subjectSortFields.SUBJECT,
@@ -76,7 +72,7 @@ const buildTableColumns = (match, location) => {
             Header: `Roles`,
             headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { id, k8sRoles } = original;
                 const { length } = k8sRoles;
                 if (!length) {
@@ -85,11 +81,7 @@ const buildTableColumns = (match, location) => {
                 const url = URLService.getURL(match, location).push(id).push('ROLE').url();
                 const text =
                     length === 1 ? k8sRoles[0].name : `${length} ${pluralize('Role', length)}`;
-                return (
-                    <TableCellLink pdf={pdf} url={url}>
-                        {text}
-                    </TableCellLink>
-                );
+                return <TableCellLink url={url}>{text}</TableCellLink>;
             },
             accessor: 'k8sRoles',
             sortable: false,

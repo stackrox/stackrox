@@ -22,6 +22,7 @@ type DataStore interface {
 	SearchRawPods(ctx context.Context, q *v1.Query) ([]*storage.Pod, error)
 
 	GetPod(ctx context.Context, id string) (*storage.Pod, bool, error)
+	GetDeploymentIDsByDigest(ctx context.Context, digest string) ([]string, error)
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(p *storage.Pod) error) error
 
 	UpsertPod(ctx context.Context, pod *storage.Pod) error

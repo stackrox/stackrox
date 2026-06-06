@@ -1,5 +1,7 @@
 # TLS certificates in StackRox
 
+This document covers **StackRox internal CA mTLS** only.
+
 ## Architecture
 
 - StackRox uses mTLS for most inter-service communication. Service type is extracted
@@ -37,13 +39,14 @@
 - Legacy manual cert download (UI/API): `central/certgen/` — generates YAML files for users to `kubectl apply`
 - CA rotation logic: `operator/internal/central/carotation/rotation.go`
 - Operator TLS reconciliation: `operator/internal/central/extensions/reconcile_tls.go`
-- Sensor cert init (one-time copy at startup): `sensor/kubernetes/certinit/init_tls_certs.go`
+- Sensor cert init (copy at startup, watch `certs-new` for updates): `sensor/kubernetes/certinit/init_tls_certs.go`
 - Sensor cert refresh (TLS challenge + CA bundle): `sensor/kubernetes/certrefresh/`
+- Postgres DB cert reload (Central DB, Scanner V4 DB): `image/postgres/scripts/cert-watcher.sh`, `image/templates/helm/shared/templates/_cert-watcher.tpl`
 
 ### Central has three independent cert-handling paths
 
 1. **TLS manager** (`TLSConfigHolder`) — incoming connections. Composes default cert (watched) + internal cert (watched) + sync.Once trust roots.
-2. **Outbound client connections** (`clientconn.TLSConfig`) — reads leaf from disk per connection, trust pool from `mtls.CACert()`.
+2. **Outbound client connections** (`clientconn.TLSConfig`) — reads leaf cert from disk on each TLS handshake, trust pool from `mtls.CACert()`.
 3. **TLS challenge endpoint** (`central/metadata/service`) — reads primary leaf via certwatch, issues secondary leaf with short validity and auto-renewal, reads CA via `mtls.CACert()`.
 
 ## Certificate caching
@@ -51,12 +54,6 @@
 The following certificates are currently known to be cached at start-up and not reloaded:
 
 - CA material (`CACert()`, `SecondaryCACert()`, `CAForSigning()`, etc.) in `pkg/mtls/crypto.go`: `sync.Once`, never refreshed. Intentional — the Operator restarts all pods on CA change.
-
-- Sensor: all certs are effectively cached because `certinit` copies them to an emptyDir at startup. Client certs are also cached at construction (`centralclient.NewClient`, `StartProxyServer`, scanner client).
-- Scanner V4 (indexer/matcher) client certs: cached at dial time via `clientconn.TLSConfig`
-- Admission controller client cert for Sensor connection: `clientconn.AuthenticatedGRPCConnection` at startup
-- Compliance client cert for Sensor connection: `clientconn.AuthenticatedGRPCConnection` at startup
-- Postgres (Central DB, Scanner DB, Scanner V4 DB): need SIGHUP to reload SSL certs
 
 ## Certificate management — who manages what
 

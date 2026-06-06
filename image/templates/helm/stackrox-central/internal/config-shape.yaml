@@ -11,7 +11,6 @@ env:
   grpcEnforceALPN: null # bool
   installMethod: null # string
   openshift: null # bool
-  istio: null # bool
   platform: null # string
   offlineMode: null # bool
   proxyConfig: null # string | dict

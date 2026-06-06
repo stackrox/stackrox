@@ -181,9 +181,9 @@ const ConfigManagementEntityImage = ({
                     });
                 }
                 return (
-                    <div className="w-full" id="capture-dashboard-stretch">
+                    <div className="w-full">
                         <CollapsibleSection title="Image Summary">
-                            <div className="flex mb-4 flex-wrap pdf-page">
+                            <div className="flex mb-4 flex-wrap">
                                 <Metadata
                                     className="mx-4 bg-base-100 min-h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
@@ -199,7 +199,7 @@ const ConfigManagementEntityImage = ({
                             </div>
                         </CollapsibleSection>
                         <CollapsibleSection title="Dockerfile">
-                            <div className="flex pdf-page pdf-stretch shadow relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                            <div className="flex shadow relative rounded bg-base-100 mb-4 ml-4 mr-4">
                                 {layers.length === 0 && (
                                     <NoResultsMessage
                                         message="No layers available in this image"

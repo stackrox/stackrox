@@ -6,7 +6,6 @@ metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:edit-compliance") }}
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox:edit-compliance") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrole" "stackrox:edit-compliance") | nindent 4 }}
 rules:
@@ -23,7 +22,6 @@ metadata:
   name: {{ include "srox.globalResourceName" (list . "stackrox:manage-compliance") }}
   labels:
     {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:manage-compliance") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox:manage-compliance") | nindent 4 }}
 subjects:

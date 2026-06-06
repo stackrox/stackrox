@@ -155,7 +155,7 @@ jobs:
           --quiet --async || true
 
     - name: Publish test summary
-      uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml

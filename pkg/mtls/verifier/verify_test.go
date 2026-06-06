@@ -45,4 +45,18 @@ func TestLoadLeafCertFromDirectory(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, cert)
 	})
+
+	t.Run("respects custom filenames from env vars", func(t *testing.T) {
+		dir := t.TempDir()
+		require.NoError(t, os.WriteFile(filepath.Join(dir, "custom-cert.pem"), issuedCert.CertPEM, 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(dir, "custom-key.pem"), issuedCert.KeyPEM, 0600))
+		t.Setenv(mtls.CertFilePathEnvName, filepath.Join(dir, "custom-cert.pem"))
+		t.Setenv(mtls.KeyFileEnvName, filepath.Join(dir, "custom-key.pem"))
+
+		cert, err := loadLeafCertFromDirectory(dir)
+		require.NoError(t, err)
+		require.NotNil(t, cert)
+		require.NotNil(t, cert.Leaf)
+		assert.Contains(t, cert.Leaf.DNSNames, "central.stackrox.svc")
+	})
 }

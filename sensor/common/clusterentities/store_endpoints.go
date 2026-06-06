@@ -2,6 +2,7 @@ package clusterentities
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -104,9 +105,8 @@ func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool)
 func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) {
 	defer e.updateMetricsNoLock()
 	if !incremental {
-		for deploymentID := range updates {
-			e.purgeNoLock(deploymentID)
-		}
+		e.replaceNoLock(updates)
+		return
 	}
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
@@ -115,6 +115,231 @@ func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental
 		}
 		e.applySingleNoLock(deploymentID, *data)
 	}
+}
+
+func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) {
+	for deploymentID, data := range updates {
+		if data.isDeleteOnly() {
+			// A call to Apply()->replaceNoLock() with empty payload of the updates map (no values) is meant to be a delete operation.
+			e.purgeNoLock(deploymentID)
+			continue
+		}
+		// Fast path: if all endpoints are identical, skip the diff entirely.
+		// endpointsUnchangedNoLock handles all edge cases cheaply:
+		// - deployment not in store + empty new → true in O(1)
+		// - deployment not in store + non-empty new → false in O(1)
+		// - deployment in store with nil set + empty new → true (length match)
+		if e.endpointsUnchangedNoLock(deploymentID, data.endpoints) {
+			// applySingleNoLock records a nil "seen" marker in reverseEndpointMap
+			// the first time a deployment arrives with zero endpoints (e.g. a pod
+			// exists but no Service selects it yet). That marker later prevents
+			// the endpoint-takeover path from incorrectly moving other deployments
+			// to history when this deployment finally acquires real endpoints.
+			// Because endpointsUnchangedNoLock short-circuits "not-in-store +
+			// empty" as unchanged, we must replicate the marker here.
+			if _, exists := e.reverseEndpointMap[deploymentID]; !exists && len(data.endpoints) == 0 {
+				e.reverseEndpointMap[deploymentID] = nil
+			}
+			continue
+		}
+		currentEndpoints, deploymentKnown := e.reverseEndpointMap[deploymentID]
+		if !deploymentKnown {
+			// Brand-new deployment: use the full insert path which handles endpoint takeover.
+			e.applySingleNoLock(deploymentID, *data)
+			continue
+		}
+		e.diffReplaceNoLock(deploymentID, currentEndpoints, data.endpoints)
+		if len(data.endpoints) == 0 {
+			if _, exists := e.reverseEndpointMap[deploymentID]; !exists {
+				e.reverseEndpointMap[deploymentID] = nil
+			}
+		}
+	}
+}
+
+// diffReplaceNoLock applies an endpoint update by computing a per-endpoint diff
+// against the current store state. Only endpoints that were actually added, removed,
+// or had their target info changed are touched. Unchanged endpoints are left in place,
+// avoiding the O(M × T) allocation cost of the purge-all/reinsert-all cycle.
+//
+// The three passes (removed, added/changed, re-check) each iterate at most M endpoints
+// with O(T) per-endpoint target comparison, giving O(M × T) total read-only work for
+// the comparison, plus O(k × T) mutation work proportional to the k endpoints that
+// actually changed.
+func (e *endpointsStore) diffReplaceNoLock(deploymentID string, currentEndpoints set.Set[net.NumericEndpoint], newEndpoints map[net.NumericEndpoint][]EndpointTargetInfo) {
+	// Pass 1: endpoints removed (in current but not in new) → move to history.
+	for ep := range currentEndpoints {
+		if _, inNew := newEndpoints[ep]; !inNew {
+			e.moveToHistory(deploymentID, ep)
+		}
+	}
+
+	// Pass 2: endpoints added or changed target info.
+	// History recording for changed target info is deferred to Pass 3 so
+	// that the common path (unchanged / newly added) stays allocation-free.
+	// addToHistory must read the old etiSet, so it runs before the in-place
+	// clear+refill in Pass 3.
+	var changedTargetInfoEps []net.NumericEndpoint
+	for ep, newTargetInfos := range newEndpoints {
+		if !currentEndpoints.Contains(ep) {
+			e.insertSingleEndpointNoLock(deploymentID, ep, newTargetInfos)
+			continue
+		}
+		if e.targetInfoUnchangedNoLock(deploymentID, ep, newTargetInfos) {
+			continue
+		}
+		changedTargetInfoEps = append(changedTargetInfoEps, ep)
+	}
+
+	// Pass 3: apply changed target infos.
+	// This is the rare path (target info changes while the endpoint IP:port
+	// stays the same). Recording history and updating the set in-place is
+	// kept out of the hot comparison loop above.
+	recordHistory := e.historyEnabled()
+	for _, ep := range changedTargetInfoEps {
+		if recordHistory {
+			e.addToHistory(deploymentID, ep)
+		}
+		etiSet := e.endpointMap[ep][deploymentID]
+		clear(etiSet)
+		for _, ti := range newEndpoints[ep] {
+			etiSet.Add(ti)
+		}
+	}
+}
+
+// insertSingleEndpointNoLock inserts one endpoint's target info for an existing
+// deployment. Unlike applySingleNoLock, it does not perform deployment-takeover
+// checks (those only apply when a deployment is first seen).
+func (e *endpointsStore) insertSingleEndpointNoLock(deploymentID string, ep net.NumericEndpoint, targetInfos []EndpointTargetInfo) {
+	dSet := e.reverseEndpointMap[deploymentID]
+	if dSet == nil {
+		dSet = make(set.Set[net.NumericEndpoint], 1)
+		e.reverseEndpointMap[deploymentID] = dSet
+	}
+	dSet.Add(ep)
+
+	etiSet := make(set.Set[EndpointTargetInfo], len(targetInfos))
+	for _, ti := range targetInfos {
+		etiSet.Add(ti)
+	}
+	if _, ok := e.endpointMap[ep]; !ok {
+		e.endpointMap[ep] = map[string]set.Set[EndpointTargetInfo]{deploymentID: etiSet}
+	} else {
+		e.endpointMap[ep][deploymentID] = etiSet
+	}
+	e.deleteFromHistory(deploymentID, ep)
+}
+
+// targetInfoUnchangedNoLock checks whether one endpoint's target info set is
+// identical to what is already stored, comparing |set| elements against a
+// slice of equal length.
+//
+// The simple set-iteration + slices.Contains loop is the fastest
+// zero-allocation approach when comparing a set against a slice.
+// Benchmarked on Apple M3 Pro (count=6, N≤6):
+//
+//	n=1  ~30 ns/op  0 allocs
+//	n=2  ~37 ns/op  0 allocs
+//	n=3  ~43 ns/op  0 allocs
+//	n=4  ~50 ns/op  0 allocs
+//	n=5  ~56 ns/op  0 allocs
+//	n=6  ~62 ns/op  0 allocs
+//
+// Cases with more than 6 target infos per endpoint are extremely rare in
+// practice (typically 1-4), so we accept the O(n²) cost rather than adding
+// hint-table complexity that would almost never be exercised.
+func (e *endpointsStore) targetInfoUnchangedNoLock(deploymentID string, ep net.NumericEndpoint, newTargetInfos []EndpointTargetInfo) bool {
+	currentTargetInfos := e.endpointMap[ep][deploymentID]
+	if len(currentTargetInfos) != len(newTargetInfos) {
+		return false
+	}
+	for ti := range currentTargetInfos {
+		if !slices.Contains(newTargetInfos, ti) {
+			return false
+		}
+	}
+	return true
+}
+
+// endpointsUnchangedNoLock checks whether the incoming endpoints are
+// identical to the ones already stored for the given deployment.
+//
+// # Correctness
+//
+// The stored set (currentTargetInfos) is duplicate-free by definition.
+// The incoming slice (newTargetInfos) may contain duplicates.
+// We iterate the set and verify every element exists in the slice.
+// Combined with the length check |set| == |slice|, this is sufficient:
+// if every one of the n distinct set elements appears in a slice of length n,
+// the slice must be an exact permutation of the set (pigeonhole principle).
+// No separate duplicate-tracking structure is needed, so the function
+// allocates nothing on the heap.
+//
+// # Hint table
+//
+// For target lists above a small threshold, a stack-allocated [64]uint8 array
+// accelerates element lookup. The table maps ContainerPort % 64 to a 1-based
+// index into newTargetInfos. During lookup, the hint gives an O(1) candidate
+// position; if the candidate matches, we skip the linear scan entirely.
+//
+// Collisions (two ports mapping to the same bucket) are harmless: the last
+// writer wins during construction, and any lookup that finds a non-matching
+// candidate simply falls through to slices.Contains for that single element.
+// Correctness never depends on the hint table — it is purely a performance
+// optimisation that degrades gracefully from O(n) (no collisions) to O(n²)
+// (all collisions, equivalent to the plain linear scan path).
+func (e *endpointsStore) endpointsUnchangedNoLock(deploymentID string, newEndpoints map[net.NumericEndpoint][]EndpointTargetInfo) bool {
+	currentEndpoints, found := e.reverseEndpointMap[deploymentID]
+	if !found {
+		return len(newEndpoints) == 0
+	}
+	if len(currentEndpoints) != len(newEndpoints) {
+		return false
+	}
+
+	const hintBuckets = 64
+	const hintThreshold = 6
+	var hints [hintBuckets]uint8
+
+	for endpoint, newTargetInfos := range newEndpoints {
+		if !currentEndpoints.Contains(endpoint) {
+			return false
+		}
+
+		currentTargetInfos, found := e.endpointMap[endpoint][deploymentID]
+		if !found || len(currentTargetInfos) != len(newTargetInfos) {
+			return false
+		}
+
+		n := len(newTargetInfos)
+
+		if n <= hintThreshold || n > 254 {
+			for ti := range currentTargetInfos {
+				if !slices.Contains(newTargetInfos, ti) {
+					return false
+				}
+			}
+			continue
+		}
+
+		// Build hint table: ContainerPort % 64 → 1-based slice index.
+		// Zero means "no entry"; values 1..255 encode indices 0..254.
+		clear(hints[:])
+		for i, ti := range newTargetInfos {
+			hints[ti.ContainerPort%hintBuckets] = uint8(i + 1)
+		}
+		for ti := range currentTargetInfos {
+			idx := int(hints[ti.ContainerPort%hintBuckets]) - 1
+			if idx >= 0 && idx < n && newTargetInfos[idx] == ti {
+				continue
+			}
+			if !slices.Contains(newTargetInfos, ti) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func (e *endpointsStore) purgeNoLock(deploymentID string) {
@@ -193,11 +418,14 @@ type Map[T any] interface {
 	~map[EndpointTargetInfo]T
 }
 
-func doLookupEndpoint[M Map[T], T any](ep net.NumericEndpoint, src map[net.NumericEndpoint]map[string]M) (results []LookupResult) {
-	for deploymentID, targetInfoSet := range src[ep] {
+func doLookupEndpoint[M Map[T], T any](ep net.NumericEndpoint, src map[net.NumericEndpoint]map[string]M) []LookupResult {
+	deploymentsMap := src[ep]
+	results := make([]LookupResult, 0, len(deploymentsMap))
+	for deploymentID, targetInfoSet := range deploymentsMap {
 		result := LookupResult{
 			Entity:         networkgraph.EntityForDeployment(deploymentID),
-			ContainerPorts: make([]uint16, 0),
+			ContainerPorts: make([]uint16, 0, len(targetInfoSet)),
+			PortNames:      make([]string, 0, len(targetInfoSet)),
 		}
 		for tgtInfo := range targetInfoSet {
 			result.ContainerPorts = append(result.ContainerPorts, tgtInfo.ContainerPort)

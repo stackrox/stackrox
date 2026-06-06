@@ -8,7 +8,6 @@ metadata:
   labels:
     {{- include "srox.labels" (list . "deployment" "sensor") | nindent 4 }}
     app: sensor
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "deployment" "sensor") | nindent 4 }}
 spec:
@@ -23,9 +22,9 @@ spec:
     metadata:
       labels:
         app: sensor
+        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "sensor") | nindent 8 }}
       annotations:
-        traffic.sidecar.istio.io/excludeInboundPorts: "8443,9443"
         {{- include "srox.podAnnotations" (list . "deployment" "sensor") | nindent 8 }}
         {{- if eq ._rox.env.openshift 4 }}
         openshift.io/required-scc: restricted-v2
@@ -215,6 +214,8 @@ spec:
           value: {{ ._rox.centralEndpoint }}
         - name: ROX_ADVERTISED_ENDPOINT
           value: {{ ._rox.sensor.endpoint }}
+        - name: ROX_SENSOR_ENDPOINT
+          value: {{ ._rox.sensor.endpoint }}
         - name: GRPC_ENFORCE_ALPN_ENABLED
           value: {{ quote ._rox.env.grpcEnforceALPN }}
         {{- if ._rox.env.openshift }}
@@ -383,7 +384,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "service" "sensor") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "service" "sensor") | nindent 4 }}
     {{- if ._rox.monitoring.openshift.enabled }}
@@ -438,28 +438,6 @@ spec:
 {{- end }}
 [<- end >]
 
-{{- if ._rox.env.istio }}
-apiVersion: networking.istio.io/v1alpha3
-kind: DestinationRule
-metadata:
-  name: sensor-internal-no-istio-mtls
-  namespace: {{ ._rox._namespace }}
-  labels:
-    {{- include "srox.labels" (list . "destinationrule" "sensor-internal-no-istio-mtls") | nindent 4 }}
-  annotations:
-    {{- include "srox.annotations" (list . "destinationrule" "sensor-internal-no-istio-mtls") | nindent 4 }}
-    stackrox.io/description: "Disable Istio mTLS for port 443, since StackRox services use built-in mTLS."
-spec:
-  host: sensor.stackrox.svc.cluster.local
-  trafficPolicy:
-    portLevelSettings:
-    - port:
-        number: 443
-      tls:
-        mode: DISABLE
----
-{{- end }}
-
 apiVersion: v1
 kind: Service
 metadata:
@@ -467,7 +445,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "service" "sensor-webhook") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "service" "sensor-webhook") | nindent 4 }}
 spec:
@@ -490,7 +467,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "secret" "helm-effective-cluster-name") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: sensor
   annotations:
     {{- $annotations := dict -}}
     {{- $_ := include "srox.getAnnotationTemplate" (list . "helm-hook_secret" $annotations) -}}

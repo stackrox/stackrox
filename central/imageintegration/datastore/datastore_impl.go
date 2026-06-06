@@ -152,7 +152,3 @@ func (c *ImageIntegrationSearchResultConverter) BuildLocation(result *searchPkg.
 func (c *ImageIntegrationSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_IMAGE_INTEGRATIONS
 }
-
-func (c *ImageIntegrationSearchResultConverter) GetScore(result *searchPkg.Result) float64 {
-	return result.Score
-}

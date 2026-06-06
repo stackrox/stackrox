@@ -1,17 +1,24 @@
 package clientconn
 
 import (
+	"bytes"
+	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -137,4 +144,43 @@ func (t *ClientTestSuite) TestAuthenticatedHTTPTransport_WebSocket() {
 			t.Equal(http.StatusOK, resp.StatusCode)
 		})
 	}
+}
+
+func writeCertToFiles(t testing.TB, certDir string, cert *tls.Certificate) {
+	t.Helper()
+	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Certificate[0]})
+	keyBytes, err := x509.MarshalPKCS8PrivateKey(cert.PrivateKey)
+	require.NoError(t, err)
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyBytes})
+	require.NoError(t, os.WriteFile(filepath.Join(certDir, "cert.pem"), certPEM, 0600))
+	require.NoError(t, os.WriteFile(filepath.Join(certDir, "key.pem"), keyPEM, 0600))
+}
+
+func (t *ClientTestSuite) TestGetClientCertificate_ReloadsFromDisk() {
+	certDir := t.T().TempDir()
+	t.T().Setenv(mtls.CertFilePathEnvName, filepath.Join(certDir, "cert.pem"))
+	t.T().Setenv(mtls.KeyFileEnvName, filepath.Join(certDir, "key.pem"))
+
+	cert1 := testutils.IssueSelfSignedCert(t.T(), "first-cert")
+	writeCertToFiles(t.T(), certDir, &cert1)
+
+	conf, err := TLSConfig(mtls.CentralSubject, TLSConfigOptions{
+		UseClientCert:      MustUseClientCert,
+		InsecureSkipVerify: true,
+	})
+	t.Require().NoError(err)
+	t.Require().NotNil(conf.GetClientCertificate)
+
+	got1, err := conf.GetClientCertificate(nil)
+	t.Require().NoError(err)
+	t.Equal(cert1.Certificate[0], got1.Certificate[0])
+
+	cert2 := testutils.IssueSelfSignedCert(t.T(), "second-cert")
+	writeCertToFiles(t.T(), certDir, &cert2)
+
+	t.Require().Eventually(func() bool {
+		got, err := conf.GetClientCertificate(nil)
+		return err == nil && len(got.Certificate) > 0 &&
+			bytes.Equal(got.Certificate[0], cert2.Certificate[0])
+	}, 30*time.Second, 200*time.Millisecond, "expected rotated cert to be picked up by certwatch")
 }
