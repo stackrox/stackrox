@@ -603,7 +603,6 @@ jobs:
   build-and-push-main:
     # Use native arm64 runner to avoid QEMU emulation overhead (~2x slower).
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
-    if: ${{ !cancelled() }}
     needs:
       - define-job-matrix
       - pre-build-cli
