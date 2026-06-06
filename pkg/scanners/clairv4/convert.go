@@ -1,18 +1,21 @@
 package clairv4
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/pkg/errors"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/sbom/spdx"
 	"github.com/stackrox/rox/generated/storage"
 	imageutils "github.com/stackrox/rox/pkg/images/utils"
 	registrytypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // manifest returns a ClairCore image manifest for the given image.
@@ -85,4 +88,24 @@ func imageScan(ctx context.Context, metadata *storage.ImageMetadata, report *cla
 	}
 
 	return scannerv4.ImageScan(metadata, v4Report, clairV4ScannerVersion), nil
+}
+
+func encodeSPDX(ir *claircore.IndexReport, image *storage.Image) ([]byte, error) {
+	imgName := image.GetName()
+	name := imgName.GetRegistry() + "/" + imgName.GetRemote()
+	namespace := "https://" + name + "-" + uuid.NewV4().String()
+
+	encoder := spdx.NewDefaultEncoder(
+		spdx.WithDocumentName(name),
+		spdx.WithDocumentNamespace(namespace),
+	)
+	encoder.Creators = append(encoder.Creators, spdx.Creator{Creator: "clair-v4", CreatorType: "Tool"})
+	encoder.Version = spdx.V2_3
+	encoder.Format = spdx.FormatJSON
+
+	var buf bytes.Buffer
+	if err := encoder.Encode(context.Background(), &buf, ir); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
