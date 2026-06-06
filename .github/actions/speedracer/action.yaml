@@ -136,11 +136,15 @@ runs:
             while [[ $(date +%s) -lt $deadline ]]; do
               response=$(gh api \
                 "repos/${REPO}/commits/${SHA}/check-runs?per_page=100&filter=all")
+              total=$(echo "$response" | jq ".check_runs | length")
+              echo "[$(date -u +%H:%M:%S)] poll: ${total} check-runs on SHA"
               for sid in ${WATCH_IDS}; do
                 found=$(echo "$response" | jq -r --arg sid "$sid" \
                   "[.check_runs[] | select(.external_id == \$sid) | select(.status == \"in_progress\" or .conclusion == \"success\")] | length")
+                echo "[$(date -u +%H:%M:%S)] ${sid}: found=${found}"
                 if [[ "$found" -gt 0 ]]; then
                   echo "[$(date -u +%H:%M:%S)] sibling ${sid} is running — copy ${MY_COPY} is a duplicate."
+                  echo "$response" | jq --arg sid "$sid" "[.check_runs[] | select(.external_id == \$sid)]"
                   touch /tmp/speedracer-killed
                   kill -TERM '"$PPID"'
                   exit 0
