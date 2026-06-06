@@ -376,6 +376,10 @@ jobs:
           path: go-binaries-build.tar
           compression-level: 1
 
+      - name: Speedracer monitor log
+        if: always()
+        run: cat /tmp/speedracer-monitor.log || echo "(no monitor log)"
+
   pre-build-docs:
     runs-on: ubuntu-latest
     steps:
