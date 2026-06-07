@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-slim
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -184,7 +184,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -229,7 +229,7 @@ jobs:
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -310,7 +310,7 @@ jobs:
       - uses: davdhacs/speedracer@819f6dfebc639daa8d1b7c3deacf32f91e0e6813 # ratchet:davdhacs/speedracer@v0.1.0
 
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -388,7 +388,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -419,7 +419,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -465,7 +465,7 @@ jobs:
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -571,7 +571,7 @@ jobs:
       ROX_PRODUCT_BRANDING: RHACS_BRANDING
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -663,7 +663,7 @@ jobs:
       - uses: davdhacs/speedracer@819f6dfebc639daa8d1b7c3deacf32f91e0e6813 # ratchet:davdhacs/speedracer@v0.1.0
 
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -793,7 +793,7 @@ jobs:
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -864,7 +864,7 @@ jobs:
         } >> "$GITHUB_ENV"
 
     - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
       with:
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -955,7 +955,7 @@ jobs:
       - uses: davdhacs/speedracer@819f6dfebc639daa8d1b7c3deacf32f91e0e6813 # ratchet:davdhacs/speedracer@v0.1.0
 
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -1074,7 +1074,7 @@ jobs:
       - uses: davdhacs/speedracer@819f6dfebc639daa8d1b7c3deacf32f91e0e6813 # ratchet:davdhacs/speedracer@v0.1.0
 
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -1163,7 +1163,7 @@ jobs:
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
     - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
       with:
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -1227,7 +1227,7 @@ jobs:
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
     - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
       with:
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -1267,7 +1267,7 @@ jobs:
     - pre-build-go-binaries
     steps:
     - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
       with:
         fetch-depth: 1
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -1334,7 +1334,7 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).scan_images_with_roxctl }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -1406,7 +1406,7 @@ jobs:
       actions: read
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
 
       - name: Slack message
         env:

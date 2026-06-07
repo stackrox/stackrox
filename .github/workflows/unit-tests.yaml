@@ -50,7 +50,7 @@ jobs:
     - uses: davdhacs/speedracer@819f6dfebc639daa8d1b7c3deacf32f91e0e6813 # ratchet:davdhacs/speedracer@v0.1.0
 
     - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -145,7 +145,7 @@ jobs:
     - uses: davdhacs/speedracer@819f6dfebc639daa8d1b7c3deacf32f91e0e6813 # ratchet:davdhacs/speedracer@v0.1.0
 
     - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
 
     # Image pinned in .github/test-images/postgres.dockerfile (Dependabot auto-bumps).
     - name: Start Postgres (${{ matrix.pg }})
@@ -223,7 +223,7 @@ jobs:
         sudo systemctl start postgresql.service
 
     - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -264,7 +264,7 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -318,7 +318,7 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -383,7 +383,7 @@ jobs:
         - /opt:/mnt/opt
     steps:
     - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -425,7 +425,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
     steps:
     - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -460,7 +460,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -483,7 +483,7 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -574,7 +574,7 @@ jobs:
       actions: read
     steps:
     - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
 
     - name: Slack message
       env:
