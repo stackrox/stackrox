@@ -34,10 +34,10 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     steps:
-    - uses: davdhacs/speedracer@819f6dfebc639daa8d1b7c3deacf32f91e0e6813 # ratchet:davdhacs/speedracer@v0.1.0
+    - uses: davdhacs/speedracer@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:davdhacs/speedracer@v0.1.0
 
     - name: Checkout
-      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -110,10 +110,10 @@ jobs:
         speedracer: [a, b]
     runs-on: ubuntu-latest
     steps:
-      - uses: davdhacs/speedracer@819f6dfebc639daa8d1b7c3deacf32f91e0e6813 # ratchet:davdhacs/speedracer@v0.1.0
+      - uses: davdhacs/speedracer@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:davdhacs/speedracer@v0.1.0
 
       - name: Checkout
-        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -175,7 +175,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -222,7 +222,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -275,7 +275,7 @@ jobs:
       contains(needs.detect-changes.outputs.files, '^.github/')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -289,7 +289,7 @@ jobs:
       contains(needs.detect-changes.outputs.files, '^.github/')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -304,7 +304,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -347,7 +347,7 @@ jobs:
       actions: read
     steps:
     - name: Checkout
-      uses: actions/checkout@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
     - name: Slack message
       env:
