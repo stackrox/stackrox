@@ -307,7 +307,7 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
-      - uses: davdhacs/speedracer@189c0518a50f152578b32aee87a9fea52b4f7b87 # ratchet:davdhacs/speedracer@v0.1.0
+      - uses: davdhacs/speedracer@819f6dfebc639daa8d1b7c3deacf32f91e0e6813 # ratchet:davdhacs/speedracer@v0.1.0
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -382,9 +382,7 @@ jobs:
           path: go-binaries-build.tar
           compression-level: 1
 
-      - name: Speedracer monitor log
-        if: always()
-        run: cat /tmp/speedracer-monitor.log || echo "(no monitor log)"
+      - run: touch /tmp/speedracer-success
 
   pre-build-docs:
     runs-on: ubuntu-latest
@@ -662,7 +660,7 @@ jobs:
             echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
           fi
 
-      - uses: davdhacs/speedracer@189c0518a50f152578b32aee87a9fea52b4f7b87 # ratchet:davdhacs/speedracer@v0.1.0
+      - uses: davdhacs/speedracer@819f6dfebc639daa8d1b7c3deacf32f91e0e6813 # ratchet:davdhacs/speedracer@v0.1.0
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -778,6 +776,8 @@ jobs:
               push_context="merge-to-master"
             fi
             push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
+
+      - run: touch /tmp/speedracer-success
 
   push-matching-collector-scanner:
     runs-on: ubuntu-latest
@@ -952,7 +952,7 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
-      - uses: davdhacs/speedracer@189c0518a50f152578b32aee87a9fea52b4f7b87 # ratchet:davdhacs/speedracer@v0.1.0
+      - uses: davdhacs/speedracer@819f6dfebc639daa8d1b7c3deacf32f91e0e6813 # ratchet:davdhacs/speedracer@v0.1.0
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -1053,6 +1053,8 @@ jobs:
             fi
             echo "Operator image push completed successfully"
 
+      - run: touch /tmp/speedracer-success
+
   build-and-push-scanner:
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-latest' }}
     needs:
@@ -1069,7 +1071,7 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
-      - uses: davdhacs/speedracer@189c0518a50f152578b32aee87a9fea52b4f7b87 # ratchet:davdhacs/speedracer@v0.1.0
+      - uses: davdhacs/speedracer@819f6dfebc639daa8d1b7c3deacf32f91e0e6813 # ratchet:davdhacs/speedracer@v0.1.0
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -1138,6 +1140,8 @@ jobs:
         run: |
           source ./scripts/ci/lib.sh
           push_scanner_image_set "${{ matrix.registry }}" "${{ matrix.arch }}"
+
+      - run: touch /tmp/speedracer-success
 
   push-scanner-manifests:
     runs-on: ubuntu-latest

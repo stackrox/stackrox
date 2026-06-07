@@ -47,7 +47,7 @@ jobs:
       BUILD_TAG: 0.0.0
       SHORTCOMMIT: "0000000"
     steps:
-    - uses: davdhacs/speedracer@189c0518a50f152578b32aee87a9fea52b4f7b87 # ratchet:davdhacs/speedracer@v0.1.0
+    - uses: davdhacs/speedracer@819f6dfebc639daa8d1b7c3deacf32f91e0e6813 # ratchet:davdhacs/speedracer@v0.1.0
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -99,6 +99,8 @@ jobs:
       with:
         paths: 'junit-reports/report.xml'
 
+    - run: touch /tmp/speedracer-success
+
     - name: Report test failures to Jira
       if: (!cancelled())
       id: junit2jira
@@ -140,7 +142,7 @@ jobs:
         sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
         sudo systemctl start postgresql.service
 
-    - uses: davdhacs/speedracer@189c0518a50f152578b32aee87a9fea52b4f7b87 # ratchet:davdhacs/speedracer@v0.1.0
+    - uses: davdhacs/speedracer@819f6dfebc639daa8d1b7c3deacf32f91e0e6813 # ratchet:davdhacs/speedracer@v0.1.0
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -191,6 +193,8 @@ jobs:
       if: always()
       with:
         paths: 'junit-reports/report.xml'
+
+    - run: touch /tmp/speedracer-success
 
     - name: Report junit failures in jira
       if: (!cancelled())

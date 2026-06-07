@@ -34,7 +34,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     steps:
-    - uses: davdhacs/speedracer@189c0518a50f152578b32aee87a9fea52b4f7b87 # ratchet:davdhacs/speedracer@v0.1.0
+    - uses: davdhacs/speedracer@819f6dfebc639daa8d1b7c3deacf32f91e0e6813 # ratchet:davdhacs/speedracer@v0.1.0
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -57,6 +57,8 @@ jobs:
 
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
+
+    - run: touch /tmp/speedracer-success
 
   misc-checks:
     env:
@@ -108,7 +110,7 @@ jobs:
         speedracer: [a, b]
     runs-on: ubuntu-latest
     steps:
-      - uses: davdhacs/speedracer@189c0518a50f152578b32aee87a9fea52b4f7b87 # ratchet:davdhacs/speedracer@v0.1.0
+      - uses: davdhacs/speedracer@819f6dfebc639daa8d1b7c3deacf32f91e0e6813 # ratchet:davdhacs/speedracer@v0.1.0
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -165,6 +167,8 @@ jobs:
 
       - name: make style-slim
         run: make style-slim
+
+      - run: touch /tmp/speedracer-success
 
   golangci-lint:
     timeout-minutes: 240
