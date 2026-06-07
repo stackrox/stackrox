@@ -14,7 +14,6 @@ description: >
   'a' proceeds on slow hardware (the only option).
 
 
-  Callers add 'run: touch /tmp/speedracer-success' as their last step.
   The post-step reads this marker to resolve the check-run:
     marker present → POST completed/success
     marker absent  → PATCH to completed/failure (real job failure)
@@ -150,8 +149,7 @@ runs:
 
         echo "Speedracer ready — proceeding to work."
 
-    # Post-step routes on /tmp/speedracer-success marker file.
-    # Callers write it as their last step: run: touch /tmp/speedracer-success
+    # ${{ job.status }} is evaluated at post-step execution time by GHA.
     - name: Register post-hook
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       if: inputs.enabled == 'true'
@@ -160,12 +158,13 @@ runs:
         run: 'true'
         post: >-
           export GH_TOKEN=${{ github.token }};
+          JOB_STATUS="${{ job.status }}";
           check_name=$(head -1 < /tmp/speedracer-check-name | tr -d '\n' || true);
           my_copy=$(head -1 < /tmp/speedracer-copy | tr -d '\n' || true);
           check_id=$(head -1 < /tmp/speedracer-check-id | tr -d '[:space:]' || true);
           ext_id="spec-${my_copy}-${{ github.run_id }}-${check_name}";
-          echo "Speedracer post: copy=${my_copy} check_id=${check_id} marker=$(test -f /tmp/speedracer-success && echo present || echo absent)";
-          if [[ -f /tmp/speedracer-success ]]; then echo "Job succeeded — posting completed/success"; gh api "repos/${{ github.repository }}/check-runs" -f name="${check_name}" -f head_sha="${{ github.sha }}" -f external_id="${ext_id}" -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." && echo "posted completed/success" || echo "::warning::POST success failed";
-          elif [[ "$check_id" =~ ^[0-9]+$ ]]; then echo "Job failed — resolving check-run to failure"; gh api "repos/${{ github.repository }}/check-runs/${check_id}" -X PATCH -f status=completed -f conclusion=failure -f 'output[title]=Speedracer cleanup' -f 'output[summary]=Job failed; check-run resolved.' && echo "check-run → failure" || echo "::warning::PATCH failure failed";
-          else echo "No marker, no check-id — copy was cancelled or disabled";
+          echo "Speedracer post: job.status=${JOB_STATUS} copy=${my_copy} check_id=${check_id}";
+          if [[ "$JOB_STATUS" == "success" ]]; then echo "Job succeeded"; gh api "repos/${{ github.repository }}/check-runs" -f name="${check_name}" -f head_sha="${{ github.sha }}" -f external_id="${ext_id}" -f status=completed -f conclusion=success -f "output[title]=Speedracer complete" -f "output[summary]=Copy ${my_copy} won." && echo "posted completed/success" || echo "::warning::POST success failed";
+          elif [[ "$JOB_STATUS" == "failure" ]]; then echo "Job failed"; [[ "$check_id" =~ ^[0-9]+$ ]] || { echo "no valid check-id, skipping"; exit 0; }; gh api "repos/${{ github.repository }}/check-runs/${check_id}" -X PATCH -f status=completed -f conclusion=failure -f 'output[title]=Speedracer cleanup' -f 'output[summary]=Job failed; check-run resolved.' && echo "check-run → failure" || echo "::warning::PATCH failure failed";
+          else echo "job.status=${JOB_STATUS} — no action taken (cancelled or other)";
           fi
