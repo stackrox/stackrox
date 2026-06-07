@@ -12,9 +12,6 @@ on:
     - reopened
     - synchronize
 
-permissions:
-  checks: write
-
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 
@@ -27,15 +24,10 @@ jobs:
     uses: ./.github/workflows/detect-changes.yml
 
   check-generated-files:
-    strategy:
-      matrix:
-        speedracer: [a, b]
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     steps:
-    - uses: davdhacs/speedracer@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:davdhacs/speedracer@v0.1.0
-
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
@@ -57,8 +49,6 @@ jobs:
 
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
-
-    - run: touch /tmp/speedracer-success
 
   misc-checks:
     env:
@@ -105,13 +95,8 @@ jobs:
       run: if [ -s scripts/ci/jobs/check-dependabot-gomod.sh ]; then scripts/ci/jobs/check-dependabot-gomod.sh; fi
 
   style-check:
-    strategy:
-      matrix:
-        speedracer: [a, b]
     runs-on: ubuntu-latest
     steps:
-      - uses: davdhacs/speedracer@54aa6a067997a344c35d69107af3d0793bd532ff # ratchet:davdhacs/speedracer@v0.1.0
-
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
@@ -167,8 +152,6 @@ jobs:
 
       - name: make style-slim
         run: make style-slim
-
-      - run: touch /tmp/speedracer-success
 
   golangci-lint:
     timeout-minutes: 240
