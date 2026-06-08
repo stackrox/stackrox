@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -561,6 +562,48 @@ func (f Field) Getter(prefix string) string {
 		return value
 	}
 	return prefix + "." + value
+}
+
+// Setter returns the settable field path for assignment, e.g. "Id" or "Signal.Name".
+// Converts getter chain "GetFoo().GetBar()" → "Foo.Bar".
+func (f Field) Setter(prefix string) string {
+	if f.ObjectGetter.variable {
+		return f.ObjectGetter.value
+	}
+	return prefix + "." + getterToSetter(f.ObjectGetter.value)
+}
+
+// NeedsSubMessageInit returns the prefix chain of sub-messages that must be initialized
+// before setting this field. Returns empty string for top-level fields.
+// E.g., for getter "GetSignal().GetName()", returns "Signal" — the caller must
+// ensure obj.Signal is non-nil before setting obj.Signal.Name.
+func (f Field) NeedsSubMessageInit(prefix string) string {
+	parts := strings.Split(f.ObjectGetter.value, ".")
+	if len(parts) <= 1 {
+		return ""
+	}
+	// Build init chain for all but the last part
+	var initParts []string
+	for _, p := range parts[:len(parts)-1] {
+		initParts = append(initParts, getterPartToField(p))
+	}
+	return prefix + "." + strings.Join(initParts, ".")
+}
+
+// getterPartToField converts "GetFoo()" → "Foo".
+func getterPartToField(part string) string {
+	part = strings.TrimSuffix(part, "()")
+	part = strings.TrimPrefix(part, "Get")
+	return part
+}
+
+// getterToSetter converts "GetFoo().GetBar()" → "Foo.Bar".
+func getterToSetter(getter string) string {
+	parts := strings.Split(getter, ".")
+	for i, p := range parts {
+		parts[i] = getterPartToField(p)
+	}
+	return strings.Join(parts, ".")
 }
 
 // Include returns if the field should be included in the schema

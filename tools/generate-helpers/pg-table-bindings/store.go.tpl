@@ -53,6 +53,10 @@ type (
     callback  = func(obj *storeType) error
 )
 
+{{- if .NoSerialized }}
+// Store is the interface to interact with the storage for {{ .Type }}
+type Store = pgSearch.NoSerializedStore[storeType]
+{{- else }}
 // Store is the interface to interact with the storage for {{ .Type }}
 type Store interface {
 {{- if not .JoinTable }}
@@ -86,6 +90,7 @@ type Store interface {
     GetAllFromCacheForSAC() []*storeType
 {{- end }}
 }
+{{- end }}
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
@@ -103,6 +108,64 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
+    {{- if .NoSerialized }}
+    {{- if .Obj.IsDirectlyScoped }}
+    return pgSearch.NewNoSerializedGenericStore[storeType](
+            db,
+            schema,
+            pkGetter,
+            {{ template "insertFunctionName" .Schema }},
+            {{- if not .NoCopyFrom }}
+            {{ template "copyFunctionName" .Schema }},
+            {{- else }}
+            nil,
+            {{- end }}
+            scanRow,
+            scanRows,
+            metricsSetAcquireDBConnDuration,
+            metricsSetPostgresOperationDurationTime,
+            isUpsertAllowed,
+            targetResource,
+            {{- if .DefaultSortStore }}
+            pgSearch.GetDefaultSort({{.DefaultSort}}, {{.ReverseDefaultSort}}),
+            {{- else }}
+            nil,
+            {{- end }}
+            {{- if .DefaultTransform }}
+            pkgSchema.{{.TransformSortOptions}},
+            {{- else }}
+            nil,
+            {{- end }}
+    )
+    {{- else }}
+    return pgSearch.NewNoSerializedGloballyScopedGenericStore[storeType](
+            db,
+            schema,
+            pkGetter,
+            {{ template "insertFunctionName" .Schema }},
+            {{- if not .NoCopyFrom }}
+            {{ template "copyFunctionName" .Schema }},
+            {{- else }}
+            nil,
+            {{- end }}
+            scanRow,
+            scanRows,
+            metricsSetAcquireDBConnDuration,
+            metricsSetPostgresOperationDurationTime,
+            targetResource,
+            {{- if .DefaultSortStore }}
+            pgSearch.GetDefaultSort({{.DefaultSort}}, {{.ReverseDefaultSort}}),
+            {{- else }}
+            nil,
+            {{- end }}
+            {{- if .DefaultTransform }}
+            pkgSchema.{{.TransformSortOptions}},
+            {{- else }}
+            nil,
+            {{- end }}
+    )
+    {{- end }}
+    {{- else }}
     {{ if .CachedStore -}}
     // Use of {{ template "storeCreator" . }} can be dangerous with high cardinality stores,
     // and be the source of memory pressure. Think twice about the need for in-memory caching
@@ -143,6 +206,7 @@ func New(db postgres.DB) Store {
             nil,
             {{- end }}
     )
+    {{- end }}
 }
 
 // region Helper functions
@@ -213,7 +277,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 {{- define "insertObject"}}
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
-    {{if not $schema.Parent }}
+    {{if and (not $schema.Parent) (not $schema.NoSerialized) }}
     serialized, marshalErr := obj.MarshalVT()
     if marshalErr != nil {
         return marshalErr
@@ -290,7 +354,7 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         obj := objs[idx]
         idx++
 
-        {{if not $schema.Parent }}
+        {{if and (not $schema.Parent) (not $schema.NoSerialized) }}
         serialized, marshalErr := obj.MarshalVT()
         if marshalErr != nil {
             return nil, marshalErr
@@ -324,6 +388,72 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
 {{- if not .NoCopyFrom }}
 {{ template "copyObject" dict "schema" .Schema }}
 {{- end }}
+{{- end }}
+
+{{- if .NoSerialized }}
+// region No-serialized scan functions
+
+func scanRow(row pgx.Row) (*storeType, error) {
+    var obj storeType
+
+    // Declare intermediate scan variables for types needing conversion
+    {{- range $field := .Schema.DBColumnFields }}
+    {{- if or (eq $field.DataType "datetime") (eq $field.DataType "datetimetz") }}
+    var col_{{$field.ColumnName}} *time.Time
+    {{- else if eq $field.SQLType "uuid" }}
+    var col_{{$field.ColumnName}} *string
+    {{- else if eq $field.SQLType "cidr" }}
+    var col_{{$field.ColumnName}} *string
+    {{- else if isMessageBytes $field }}
+    var col_{{$field.ColumnName}} []byte
+    {{- end }}
+    {{- end }}
+
+    if err := row.Scan(
+        {{- range $field := .Schema.DBColumnFields }}
+        {{- if or (eq $field.DataType "datetime") (eq $field.DataType "datetimetz") }}
+        &col_{{$field.ColumnName}},
+        {{- else if eq $field.SQLType "uuid" }}
+        &col_{{$field.ColumnName}},
+        {{- else if eq $field.SQLType "cidr" }}
+        &col_{{$field.ColumnName}},
+        {{- else if isMessageBytes $field }}
+        &col_{{$field.ColumnName}},
+        {{- else }}
+        &{{$field.Setter "obj"}},
+        {{- end }}
+        {{- end }}
+    ); err != nil {
+        return nil, err
+    }
+
+    // Post-scan conversions
+    {{- range $field := .Schema.DBColumnFields }}
+    {{- if or (eq $field.DataType "datetime") (eq $field.DataType "datetimetz") }}
+    if col_{{$field.ColumnName}} != nil {
+        {{$field.Setter "obj"}} = protocompat.ConvertTimeToTimestampOrNil(col_{{$field.ColumnName}})
+    }
+    {{- else if eq $field.SQLType "uuid" }}
+    if col_{{$field.ColumnName}} != nil {
+        {{$field.Setter "obj"}} = *col_{{$field.ColumnName}}
+    }
+    {{- else if eq $field.SQLType "cidr" }}
+    if col_{{$field.ColumnName}} != nil {
+        {{$field.Setter "obj"}} = *col_{{$field.ColumnName}}
+    }
+    {{- end }}
+    {{- end }}
+
+    return &obj, nil
+}
+
+func scanRows(rows pgx.Rows) ([]*storeType, error) {
+    return pgx.CollectRows(rows, func(r pgx.CollectableRow) (*storeType, error) {
+        return scanRow(r)
+    })
+}
+
+// endregion No-serialized scan functions
 {{- end }}
 
 // endregion Helper functions

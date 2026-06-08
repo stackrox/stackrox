@@ -8,6 +8,7 @@ import (
 	"text/template"
 	"unicode"
 
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -132,6 +133,10 @@ func arr(els ...any) []any {
 	return els
 }
 
+func isMessageBytes(f walker.Field) bool {
+	return f.DataType == postgres.MessageBytes
+}
+
 var funcMap = template.FuncMap{
 	"arr":                          arr,
 	"lowerCamelCase":               lowerCamelCase,
@@ -141,6 +146,7 @@ var funcMap = template.FuncMap{
 	"concatWith":                   concatWith,
 	"searchFieldNameInOtherSchema": searchFieldNameInOtherSchema,
 	"isSacScoping":                 isSacScoping,
+	"isMessageBytes":               isMessageBytes,
 	"dict":                         dict,
 	"pluralType": func(s string) string {
 		if s[len(s)-1] == 'y' {
