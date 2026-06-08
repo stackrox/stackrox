@@ -75,7 +75,7 @@ func removeTablesWithNoSearchableFields(schema *Schema) (shouldInclude bool) {
 }
 
 func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
-	if len(parentPrimaryKeys) == 0 {
+	if len(parentPrimaryKeys) == 0 && !s.NoSerialized {
 		s.Fields = append(s.Fields, getSerializedField(s))
 	} else {
 		// Collect additional fields separately so we can put them in front of the field list
@@ -136,13 +136,29 @@ func postProcessSchema(s *Schema) {
 	addCommonFields(s)
 }
 
+// WalkOption configures schema generation.
+type WalkOption func(*Schema)
+
+// WithNoSerialized produces a schema without a serialized bytea column.
+// All proto fields become individual DB columns.
+func WithNoSerialized() WalkOption {
+	return func(s *Schema) {
+		s.NoSerialized = true
+	}
+}
+
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
-func Walk(obj reflect.Type, table string) *Schema {
+func Walk(obj reflect.Type, table string, opts ...WalkOption) *Schema {
 	schema := &Schema{
 		Table:    table,
 		Type:     obj.String(),
 		TypeName: obj.Elem().Name(),
 	}
+
+	for _, opt := range opts {
+		opt(schema)
+	}
+
 	handleStruct(walkerContext{}, schema, obj.Elem())
 
 	// Post-process schema
