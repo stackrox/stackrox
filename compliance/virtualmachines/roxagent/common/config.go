@@ -1,6 +1,10 @@
 package common
 
-import "time"
+import (
+	"time"
+
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+)
 
 type Config struct {
 	DaemonMode            bool
@@ -9,6 +13,7 @@ type Config struct {
 	MaxInitialReportDelay time.Duration
 	RepoToCPEMappingURL   string
 	Timeout               time.Duration
+	Trigger               v1.ReportTrigger
 	Verbose               bool
 	VsockPort             uint32
 }

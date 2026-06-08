@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/index"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/lock"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsock"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -66,10 +67,17 @@ func RootCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().Uint32Var(&cfg.VsockPort, "port", 818,
 		"VSock port to connect with the virtual machine host.",
 	)
+	var triggerStr string
+	cmd.Flags().StringVar(&triggerStr, "trigger", "",
+		"Scan trigger: 'scheduled' for periodic timer runs. "+
+			"All other values (or omitted) default to reactive.",
+	)
 	cmd.RunE = func(cmd *cobra.Command, _ []string) error {
 		if err := validateDaemonConfig(cfg); err != nil {
 			return err
 		}
+
+		cfg.Trigger = parseTrigger(triggerStr)
 
 		client := &vsock.Client{
 			Port:     cfg.VsockPort,
@@ -108,4 +116,11 @@ func validateDaemonConfig(cfg *common.Config) error {
 		return fmt.Errorf("index interval must be at least %s in daemon mode (got %s)", minDaemonIndexInterval, cfg.IndexInterval)
 	}
 	return nil
+}
+
+func parseTrigger(s string) v1.ReportTrigger {
+	if s == "scheduled" {
+		return v1.ReportTrigger_REPORT_TRIGGER_SCHEDULED
+	}
+	return v1.ReportTrigger_REPORT_TRIGGER_REACTIVE
 }
