@@ -10,6 +10,7 @@ const (
 	EnrichedProcessIndicatorLane
 	DetectorProcessIndicatorLane
 	DetectorNetworkFlowLane
+	DetectorFileAccessLane
 )
 
 var (
@@ -21,6 +22,7 @@ var (
 		EnrichedProcessIndicatorLane:   "EnrichedProcessIndicator",
 		DetectorProcessIndicatorLane:   "DetectorProcessIndicator",
 		DetectorNetworkFlowLane:        "DetectorNetworkFlow",
+		DetectorFileAccessLane:         "DetectorFileAccess",
 	}
 )
 
