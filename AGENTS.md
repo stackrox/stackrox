@@ -174,6 +174,8 @@ When working on specific areas, refer to these detailed guides:
 - `image/templates/CHART_TEMPLATING.md` - Meta-templating system, feature flags, and chart instantiation
 - `image/templates/CHANGING_CHARTS.md` - How to add/modify Helm values fields and cluster config
 
+When making code changes, keep this in-code documentation up-to-date.
+
 ## Development
 
 ### Style and Conventions
