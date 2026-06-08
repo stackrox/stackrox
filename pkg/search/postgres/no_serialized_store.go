@@ -30,6 +30,36 @@ type RowScanner[T any] func(row pgx.Row) (*T, error)
 // RowsScanner scans pgx.Rows into a slice of proto messages.
 type RowsScanner[T any] func(rows pgx.Rows) ([]*T, error)
 
+// FetchOption controls what data is fetched from the store.
+type FetchOption func(*fetchConfig)
+
+type fetchConfig struct {
+	includeChildren bool
+}
+
+func defaultFetchConfig() fetchConfig {
+	return fetchConfig{includeChildren: true}
+}
+
+func applyFetchOptions(opts []FetchOption) fetchConfig {
+	cfg := defaultFetchConfig()
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+	return cfg
+}
+
+// WithChildren explicitly requests child table data (the default).
+func WithChildren() FetchOption {
+	return func(c *fetchConfig) { c.includeChildren = true }
+}
+
+// WithoutChildren skips child table fetching for read performance.
+// Repeated message fields will be returned as nil/empty slices.
+func WithoutChildren() FetchOption {
+	return func(c *fetchConfig) { c.includeChildren = false }
+}
+
 // NoSerializedStore is the store interface for types without a serialized column.
 type NoSerializedStore[T any] interface {
 	Exists(ctx context.Context, id string) (bool, error)
@@ -38,11 +68,13 @@ type NoSerializedStore[T any] interface {
 	Walk(ctx context.Context, fn func(obj *T) error) error
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(obj *T) error) error
 	Get(ctx context.Context, id string) (*T, bool, error)
+	GetWithOptions(ctx context.Context, id string, opts ...FetchOption) (*T, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error)
 	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *T) error) error
 	GetIDs(ctx context.Context) ([]string, error)
 	GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*T, []int, error)
+	WalkByQueryWithOptions(ctx context.Context, q *v1.Query, fn func(obj *T) error, opts ...FetchOption) error
 	DeleteByQuery(ctx context.Context, query *v1.Query) error
 	DeleteByQueryWithIDs(ctx context.Context, query *v1.Query) ([]string, error)
 	Delete(ctx context.Context, id string) error
@@ -211,15 +243,37 @@ func (s *noSerializedGenericStore[T]) Get(ctx context.Context, id string) (*T, b
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Get)
 
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
-	data, err := s.runGetQuery(ctx, q)
+	data, err := s.runGetQuery(ctx, s.schema, q)
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 	return data, true, nil
 }
 
-func (s *noSerializedGenericStore[T]) runGetQuery(ctx context.Context, q *v1.Query) (*T, error) {
-	query, err := standardizeQueryAndPopulatePath(ctx, q, s.schema, GET)
+// GetWithOptions returns the object with configurable child table fetching.
+func (s *noSerializedGenericStore[T]) GetWithOptions(ctx context.Context, id string, opts ...FetchOption) (*T, bool, error) {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.Get)
+
+	cfg := applyFetchOptions(opts)
+	schema := s.schemaForFetch(cfg)
+
+	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
+	data, err := s.runGetQuery(ctx, schema, q)
+	if err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+	return data, true, nil
+}
+
+func (s *noSerializedGenericStore[T]) schemaForFetch(cfg fetchConfig) *walker.Schema {
+	if !cfg.includeChildren {
+		return s.schema.ShallowCopyWithoutChildren()
+	}
+	return s.schema
+}
+
+func (s *noSerializedGenericStore[T]) runGetQuery(ctx context.Context, schema *walker.Schema, q *v1.Query) (*T, error) {
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
 	if err != nil {
 		return nil, err
 	}
@@ -296,15 +350,15 @@ func (s *noSerializedGenericStore[T]) GetByQuery(ctx context.Context, query *v1.
 
 func (s *noSerializedGenericStore[T]) walkByQuery(ctx context.Context, query *v1.Query, hint string, fn func(obj *T) error) error {
 	query = s.applyQueryDefaults(query)
-	return s.runCursorQueryFn(ctx, query, hint, fn)
+	return s.runCursorQueryFn(ctx, s.schema, query, hint, fn)
 }
 
-func (s *noSerializedGenericStore[T]) runCursorQueryFn(ctx context.Context, q *v1.Query, hint string, callback func(obj *T) error) error {
+func (s *noSerializedGenericStore[T]) runCursorQueryFn(ctx context.Context, schema *walker.Schema, q *v1.Query, hint string, callback func(obj *T) error) error {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
 	defer cancel()
 
 	cursor, err := pgutils.Retry2(ctx, func() (*cursorSession, error) {
-		return retryableGetCursorSession(ctx, s.schema, q, s.db, hint)
+		return retryableGetCursorSession(ctx, schema, q, s.db, hint)
 	})
 	if err != nil {
 		return errors.Wrap(err, "prepare cursor")
@@ -350,6 +404,16 @@ func (s *noSerializedGenericStore[T]) Walk(ctx context.Context, fn func(obj *T) 
 func (s *noSerializedGenericStore[T]) WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *T) error) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.WalkByQuery)
 	return s.walkByQuery(ctx, query, "WalkByQuery", fn)
+}
+
+// WalkByQueryWithOptions iterates over objects with configurable child table fetching.
+func (s *noSerializedGenericStore[T]) WalkByQueryWithOptions(ctx context.Context, query *v1.Query, fn func(obj *T) error, opts ...FetchOption) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.WalkByQuery)
+
+	cfg := applyFetchOptions(opts)
+	schema := s.schemaForFetch(cfg)
+	query = s.applyQueryDefaults(query)
+	return s.runCursorQueryFn(ctx, schema, query, "WalkByQueryWithOptions", fn)
 }
 
 func (s *noSerializedGenericStore[T]) fetchIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
