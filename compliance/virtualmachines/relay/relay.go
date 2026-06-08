@@ -169,7 +169,8 @@ func (r *Relay) handleIncomingReport(ctx context.Context, vmReport *v1.VMReport)
 
 	r.cacheReport(vsockID, now)
 
-	if !r.tryConsume(vsockID) {
+	isReactive := vmReport.GetTrigger() == v1.ReportTrigger_REPORT_TRIGGER_REACTIVE
+	if !isReactive && !r.tryConsume(vsockID) {
 		if r.staleAckThreshold > 0 && r.isACKStale(vsockID) {
 			metrics.ReportsRateLimited.WithLabelValues("stale_ack").Inc()
 			log.Warnf("Rate limited for VSOCK %s and last ACK is stale or missing (threshold=%s); dropping report", vsockID, r.staleAckThreshold)
@@ -178,6 +179,10 @@ func (r *Relay) handleIncomingReport(ctx context.Context, vmReport *v1.VMReport)
 			log.Debugf("Rate limited for VSOCK %s; dropping report and relying on agent retry", vsockID)
 		}
 		return
+	}
+
+	if isReactive {
+		log.Infof("Reactive report from VSOCK %s; bypassing rate limit", vsockID)
 	}
 
 	if err := r.reportSender.Send(ctx, vmReport); err != nil {

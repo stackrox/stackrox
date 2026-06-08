@@ -570,6 +570,54 @@ func (s *relayTestSuite) TestRelay_TryConsumeCreatesMetadataOnCacheMiss() {
 	s.NotNil(metadata.limiter, "newly initialized metadata should include a limiter")
 }
 
+func (s *relayTestSuite) TestRelay_ReactiveReportBypassesRateLimit() {
+	mockSender := &mockIndexReportSender{failOnIndex: -1}
+	umh := &mockUMH{}
+
+	relay := &Relay{
+		reportSender:        mockSender,
+		umh:                 umh,
+		maxReportsPerMinute: 0.001, // Extremely low: would block almost everything
+		staleAckThreshold:   4 * time.Hour,
+		cache:               make(map[string]*cachedReportMetadata),
+	}
+
+	reactiveReport := relaytest.NewTestVMReport("reactive-pkg")
+	reactiveReport.Trigger = v1.ReportTrigger_REPORT_TRIGGER_REACTIVE
+
+	ctx := context.Background()
+	for i := 0; i < 5; i++ {
+		relay.handleIncomingReport(ctx, reactiveReport)
+	}
+
+	s.Equal(5, len(mockSender.sentMessages),
+		"all 5 reactive reports should bypass rate limiting")
+}
+
+func (s *relayTestSuite) TestRelay_ScheduledReportIsRateLimited() {
+	mockSender := &mockIndexReportSender{failOnIndex: -1}
+	umh := &mockUMH{}
+
+	relay := &Relay{
+		reportSender:        mockSender,
+		umh:                 umh,
+		maxReportsPerMinute: 0.001,
+		staleAckThreshold:   4 * time.Hour,
+		cache:               make(map[string]*cachedReportMetadata),
+	}
+
+	scheduledReport := relaytest.NewTestVMReport("sched-pkg")
+	scheduledReport.Trigger = v1.ReportTrigger_REPORT_TRIGGER_SCHEDULED
+
+	ctx := context.Background()
+	for i := 0; i < 5; i++ {
+		relay.handleIncomingReport(ctx, scheduledReport)
+	}
+
+	s.Less(len(mockSender.sentMessages), 5,
+		"scheduled reports should be rate limited")
+}
+
 // Mock implementations
 
 // failingIndexReportStream is a mock IndexReportStream whose Start method
