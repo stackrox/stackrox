@@ -17,5 +17,8 @@ func (f EvaluationFilter) IsNonDefault() bool {
 
 // Apply runs the filter callback on the given deployment and images.
 func (f EvaluationFilter) Apply(dep *storage.Deployment, imgs []*storage.Image) (*storage.Deployment, []*storage.Image) {
+	if f.apply == nil {
+		return dep, imgs
+	}
 	return f.apply(dep, imgs)
 }

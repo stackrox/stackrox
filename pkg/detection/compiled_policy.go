@@ -325,10 +325,13 @@ func (cp *compiledPolicy) applyFilters(ed booleanpolicy.EnhancedDeployment) (boo
 
 func (cp *compiledPolicy) applyImageFilters(image *storage.Image) (*storage.Image, bool) {
 	ed, changed := cp.applyFilters(booleanpolicy.EnhancedDeployment{Images: []*storage.Image{image}})
-	if changed && len(ed.Images) > 0 {
-		return ed.Images[0], true
+	if !changed {
+		return image, false
 	}
-	return image, false
+	if len(ed.Images) == 0 {
+		return nil, true
+	}
+	return ed.Images[0], true
 }
 
 func (cp *compiledPolicy) MatchAgainstAuditLogEvent(
@@ -418,6 +421,9 @@ func (cp *compiledPolicy) MatchAgainstImage(cache *booleanpolicy.CacheReceptacle
 	if filtered, changed := cp.applyImageFilters(image); changed {
 		cache = nil
 		image = filtered
+	}
+	if image == nil {
+		return booleanpolicy.Violations{}, nil
 	}
 	return cp.imageMatcher.MatchImage(cache, image)
 }
