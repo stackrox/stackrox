@@ -1039,8 +1039,8 @@ func applyTestFilters(ed EnhancedDeployment, filters ...filter.EvaluationFilter)
 	}
 }
 
-func excludeContainerByName(name string) filter.EvaluationFilter {
-	return filter.NewTestFilter(func(dep *storage.Deployment, imgs []*storage.Image) (*storage.Deployment, []*storage.Image) {
+func excludeContainerByName(t testing.TB, name string) filter.EvaluationFilter {
+	return filter.NewTestFilter(t, func(dep *storage.Deployment, imgs []*storage.Image) (*storage.Deployment, []*storage.Image) {
 		var kept []*storage.Container
 		var keptImgs []*storage.Image
 		for i, c := range dep.GetContainers() {
@@ -1060,8 +1060,8 @@ func excludeContainerByName(name string) filter.EvaluationFilter {
 	})
 }
 
-func excludeLowLayerComponents() filter.EvaluationFilter {
-	return filter.NewTestFilter(func(dep *storage.Deployment, imgs []*storage.Image) (*storage.Deployment, []*storage.Image) {
+func excludeLowLayerComponents(t testing.TB) filter.EvaluationFilter {
+	return filter.NewTestFilter(t, func(dep *storage.Deployment, imgs []*storage.Image) (*storage.Deployment, []*storage.Image) {
 		result := make([]*storage.Image, len(imgs))
 		for i, img := range imgs {
 			if img == nil || img.GetScan() == nil || len(img.GetBaseImageInfo()) == 0 {
@@ -1123,7 +1123,7 @@ func (suite *WorkloadCriteriaTestSuite) TestFilter_ExcludeByContainerName() {
 		matcher, err := BuildDeploymentMatcher(privPolicy)
 		suite.NoError(err)
 		ed := enhancedDeployment(dep, suite.getImagesForDeployment(dep))
-		ed = applyTestFilters(ed, excludeContainerByName("helper"))
+		ed = applyTestFilters(ed, excludeContainerByName(suite.T(), "helper"))
 		violations, err := matcher.MatchDeployment(nil, ed)
 		suite.NoError(err)
 		suite.Len(violations.AlertViolations, 1)
@@ -1195,7 +1195,7 @@ func (suite *WorkloadCriteriaTestSuite) TestFilter_CombinedContainerAndImage() {
 		matcher, err := BuildDeploymentMatcher(cvssPolicy)
 		suite.NoError(err)
 		ed := enhancedDeployment(dep, suite.getImagesForDeployment(dep))
-		ed = applyTestFilters(ed, excludeContainerByName("excluded"), excludeLowLayerComponents())
+		ed = applyTestFilters(ed, excludeContainerByName(suite.T(), "excluded"), excludeLowLayerComponents(suite.T()))
 		violations, err := matcher.MatchDeployment(nil, ed)
 		suite.NoError(err)
 		suite.Len(violations.AlertViolations, 1)

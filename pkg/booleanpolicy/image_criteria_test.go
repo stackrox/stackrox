@@ -573,7 +573,7 @@ func (suite *ImageCriteriaTestSuite) TestFilter_ExcludeLowLayerComponents() {
 		matcher, err := BuildDeploymentMatcher(cvssPolicy)
 		suite.NoError(err)
 		ed := enhancedDeployment(dep, []*storage.Image{img})
-		ed = applyTestFilters(ed, excludeLowLayerComponents())
+		ed = applyTestFilters(ed, excludeLowLayerComponents(suite.T()))
 		violations, err := matcher.MatchDeployment(nil, ed)
 		suite.NoError(err)
 		suite.Len(violations.AlertViolations, 1)
@@ -584,7 +584,7 @@ func (suite *ImageCriteriaTestSuite) TestFilter_ExcludeLowLayerComponents() {
 		matcher, err := BuildDeploymentMatcher(cvssPolicy)
 		suite.NoError(err)
 		ed := enhancedDeployment(dep, []*storage.Image{img})
-		ed = applyTestFilters(ed, excludeHighLayerComponents())
+		ed = applyTestFilters(ed, excludeHighLayerComponents(suite.T()))
 		violations, err := matcher.MatchDeployment(nil, ed)
 		suite.NoError(err)
 		suite.Len(violations.AlertViolations, 1)
@@ -622,15 +622,15 @@ func (suite *ImageCriteriaTestSuite) TestFilter_MissingBaseImageInfo() {
 	matcher, err := BuildDeploymentMatcher(cvssPolicy)
 	suite.NoError(err)
 	ed := enhancedDeployment(dep, []*storage.Image{img})
-	ed = applyTestFilters(ed, excludeLowLayerComponents())
+	ed = applyTestFilters(ed, excludeLowLayerComponents(suite.T()))
 	violations, err := matcher.MatchDeployment(nil, ed)
 	suite.NoError(err)
 	suite.Len(violations.AlertViolations, 1,
 		"without BaseImageInfo, filter is a no-op and image should produce violations")
 }
 
-func excludeHighLayerComponents() filter.EvaluationFilter {
-	return filter.NewTestFilter(func(dep *storage.Deployment, imgs []*storage.Image) (*storage.Deployment, []*storage.Image) {
+func excludeHighLayerComponents(t testing.TB) filter.EvaluationFilter {
+	return filter.NewTestFilter(t, func(dep *storage.Deployment, imgs []*storage.Image) (*storage.Deployment, []*storage.Image) {
 		result := make([]*storage.Image, len(imgs))
 		for i, img := range imgs {
 			if img == nil || img.GetScan() == nil || len(img.GetBaseImageInfo()) == 0 {
