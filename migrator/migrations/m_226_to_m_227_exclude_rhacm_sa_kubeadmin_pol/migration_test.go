@@ -8,6 +8,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/m_226_to_m_227_exclude_rhacm_sa_kubeadmin_pol/schema"
+	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
+	categorySchema "github.com/stackrox/rox/migrator/migrations/policymigrationhelper/categorypostgresstorefortest/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -15,14 +17,9 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var (
-	existingSAs = []string{
-		"system:serviceaccount:openshift-authentication-operator:authentication-operator",
-		"system:apiserver",
-		"system:serviceaccount:openshift-authentication:oauth-openshift",
-		"system:serviceaccount:openshift-compliance:api-resource-collector",
-		"system:serviceaccount:openshift-oauth-apiserver:oauth-apiserver-sa",
-	}
+const (
+	testPolicyID = "18cbcb62-7d18-4a6c-b2ca-dd1242746943"
+	rhacmSA      = "system:serviceaccount:open-cluster-management-agent-addon:config-policy-controller-sa"
 )
 
 type migrationTestSuite struct {
@@ -40,6 +37,7 @@ func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pghelper.ForT(s.T(), false)
 	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTablePoliciesStmt)
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), categorySchema.CreateTablePolicyCategoriesStmt)
 }
 
 func (s *migrationTestSuite) TearDownSuite() {
@@ -51,30 +49,52 @@ func (s *migrationTestSuite) SetupTest() {
 	s.Require().NoError(err)
 }
 
-func (s *migrationTestSuite) TestMigrationAddsRHACMSA() {
-	policy := buildPolicy(existingSAs)
-	s.insertPolicy(policy)
+func (s *migrationTestSuite) TestMigrationAddsSAToUnmodifiedPolicy() {
+	beforePolicy := s.readBeforePolicy()
+	s.insertPolicy(beforePolicy)
 
 	s.runMigration()
 
 	updated := s.getPolicy()
-	group := findUserNameGroup(updated)
-	s.Require().NotNil(group)
-	s.Require().Len(group.GetValues(), 6)
-	s.Equal(rhacmSA, group.GetValues()[5].GetValue())
+	group := findNegatedUserNameGroup(updated)
+	s.Require().NotNil(group, "negated Kubernetes User Name group should exist")
+	s.Assert().True(hasValue(group, rhacmSA), "RHACM SA should be added")
+	s.Assert().Len(group.GetValues(), 6)
 }
 
 func (s *migrationTestSuite) TestMigrationIsIdempotent() {
-	sasWithRHACM := append(existingSAs, rhacmSA)
-	policy := buildPolicy(sasWithRHACM)
-	s.insertPolicy(policy)
+	beforePolicy := s.readBeforePolicy()
+	s.insertPolicy(beforePolicy)
+
+	s.runMigration()
+	s.runMigration()
+
+	updated := s.getPolicy()
+	group := findNegatedUserNameGroup(updated)
+	s.Require().NotNil(group)
+
+	count := 0
+	for _, v := range group.GetValues() {
+		if v.GetValue() == rhacmSA {
+			count++
+		}
+	}
+	s.Assert().Equal(1, count, "RHACM SA should appear exactly once")
+}
+
+func (s *migrationTestSuite) TestMigrationSkipsUserModifiedPolicy() {
+	beforePolicy := s.readBeforePolicy()
+	beforePolicy.PolicySections[0].PolicyGroups[0].Values[0].Value = "CONFIGMAPS"
+	s.insertPolicy(beforePolicy)
 
 	s.runMigration()
 
 	updated := s.getPolicy()
-	group := findUserNameGroup(updated)
+	group := findNegatedUserNameGroup(updated)
 	s.Require().NotNil(group)
-	s.Require().Len(group.GetValues(), 6, "should not duplicate the RHACM SA")
+	s.Assert().False(hasValue(group, rhacmSA), "should not modify user-customized policy")
+	s.Assert().Equal("CONFIGMAPS", updated.PolicySections[0].PolicyGroups[0].Values[0].Value,
+		"user modification should be preserved")
 }
 
 func (s *migrationTestSuite) TestMigrationSkipsMissingPolicy() {
@@ -94,6 +114,14 @@ func (s *migrationTestSuite) runMigration() {
 	}))
 }
 
+func (s *migrationTestSuite) readBeforePolicy() *storage.Policy {
+	s.T().Helper()
+	policy, err := policymigrationhelper.ReadPolicyFromFile(
+		policyDiffFS, "policies_before_and_after/before/access_kubeadmin_secret.json")
+	s.Require().NoError(err)
+	return policy
+}
+
 func (s *migrationTestSuite) insertPolicy(policy *storage.Policy) {
 	s.T().Helper()
 	serialized, err := policy.MarshalVT()
@@ -109,7 +137,7 @@ func (s *migrationTestSuite) getPolicy() *storage.Policy {
 	s.T().Helper()
 	var serialized []byte
 	err := s.db.QueryRow(s.ctx,
-		"SELECT serialized FROM policies WHERE id = $1", policyID).Scan(&serialized)
+		"SELECT serialized FROM policies WHERE id = $1", testPolicyID).Scan(&serialized)
 	s.Require().NoError(err)
 
 	policy := &storage.Policy{}
@@ -117,39 +145,22 @@ func (s *migrationTestSuite) getPolicy() *storage.Policy {
 	return policy
 }
 
-func buildPolicy(excludedSAs []string) *storage.Policy {
-	values := make([]*storage.PolicyValue, len(excludedSAs))
-	for i, sa := range excludedSAs {
-		values[i] = &storage.PolicyValue{Value: sa}
+func findNegatedUserNameGroup(policy *storage.Policy) *storage.PolicyGroup {
+	for _, section := range policy.GetPolicySections() {
+		for _, group := range section.GetPolicyGroups() {
+			if group.GetFieldName() == "Kubernetes User Name" && group.GetNegate() {
+				return group
+			}
+		}
 	}
+	return nil
+}
 
-	return &storage.Policy{
-		Id:          policyID,
-		Name:        "OpenShift: Kubeadmin Secret Accessed",
-		Description: "Alert when the kubeadmin secret is accessed",
-		Severity:    storage.Severity_HIGH_SEVERITY,
-		PolicySections: []*storage.PolicySection{
-			{
-				PolicyGroups: []*storage.PolicyGroup{
-					{
-						FieldName: "Kubernetes Resource",
-						Values:    []*storage.PolicyValue{{Value: "SECRETS"}},
-					},
-					{
-						FieldName: "Kubernetes API Verb",
-						Values:    []*storage.PolicyValue{{Value: "GET"}},
-					},
-					{
-						FieldName: "Kubernetes Resource Name",
-						Values:    []*storage.PolicyValue{{Value: "kubeadmin"}},
-					},
-					{
-						FieldName: "Kubernetes User Name",
-						Negate:    true,
-						Values:    values,
-					},
-				},
-			},
-		},
+func hasValue(group *storage.PolicyGroup, value string) bool {
+	for _, v := range group.GetValues() {
+		if v.GetValue() == value {
+			return true
+		}
 	}
+	return false
 }
