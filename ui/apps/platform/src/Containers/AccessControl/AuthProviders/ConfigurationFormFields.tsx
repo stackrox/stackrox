@@ -409,7 +409,7 @@ function ConfigurationFormFields({
                             <TextInput
                                 type="text"
                                 id="config.sp_audience"
-                                value={(config.sp_audience as string) || ''}
+                                value={(config.sp_audience as string) ?? ''}
                                 onChange={onChange}
                                 isDisabled={isViewing || isActiveModificationsDisabled}
                                 onBlur={onBlur}
