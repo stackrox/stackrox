@@ -51,6 +51,7 @@ func (s *sensorIndexReportSender) Send(ctx context.Context, vmReport *v1.VMRepor
 	req := &sensor.UpsertVirtualMachineIndexReportRequest{
 		IndexReport:    indexReport,
 		DiscoveredData: vmReport.GetDiscoveredData(),
+		Trigger:        vmReport.GetTrigger(),
 	}
 
 	resp, err := s.sensorClient.UpsertVirtualMachineIndexReport(sendToSensorCtx, req)

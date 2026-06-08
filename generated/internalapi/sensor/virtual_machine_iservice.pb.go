@@ -27,6 +27,7 @@ type UpsertVirtualMachineIndexReportRequest struct {
 	IndexReport *v1.IndexReport        `protobuf:"bytes,1,opt,name=index_report,json=indexReport,proto3" json:"index_report,omitempty"`
 	// VM data discovered by roxagent
 	DiscoveredData *v1.DiscoveredData `protobuf:"bytes,2,opt,name=discovered_data,json=discoveredData,proto3" json:"discovered_data,omitempty"`
+	Trigger        v1.ReportTrigger   `protobuf:"varint,3,opt,name=trigger,proto3,enum=virtualmachine.v1.ReportTrigger" json:"trigger,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -73,6 +74,13 @@ func (x *UpsertVirtualMachineIndexReportRequest) GetDiscoveredData() *v1.Discove
 		return x.DiscoveredData
 	}
 	return nil
+}
+
+func (x *UpsertVirtualMachineIndexReportRequest) GetTrigger() v1.ReportTrigger {
+	if x != nil {
+		return x.Trigger
+	}
+	return v1.ReportTrigger(0)
 }
 
 type UpsertVirtualMachineIndexReportResponse struct {
@@ -123,10 +131,11 @@ var File_internalapi_sensor_virtual_machine_iservice_proto protoreflect.FileDesc
 
 const file_internalapi_sensor_virtual_machine_iservice_proto_rawDesc = "" +
 	"\n" +
-	"1internalapi/sensor/virtual_machine_iservice.proto\x12\x06sensor\x1a0internalapi/virtualmachine/v1/index_report.proto\"\xb7\x01\n" +
+	"1internalapi/sensor/virtual_machine_iservice.proto\x12\x06sensor\x1a0internalapi/virtualmachine/v1/index_report.proto\"\xf3\x01\n" +
 	"&UpsertVirtualMachineIndexReportRequest\x12A\n" +
 	"\findex_report\x18\x01 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\vindexReport\x12J\n" +
-	"\x0fdiscovered_data\x18\x02 \x01(\v2!.virtualmachine.v1.DiscoveredDataR\x0ediscoveredData\"C\n" +
+	"\x0fdiscovered_data\x18\x02 \x01(\v2!.virtualmachine.v1.DiscoveredDataR\x0ediscoveredData\x12:\n" +
+	"\atrigger\x18\x03 \x01(\x0e2 .virtualmachine.v1.ReportTriggerR\atrigger\"C\n" +
 	"'UpsertVirtualMachineIndexReportResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess2\xa9\x01\n" +
 	" VirtualMachineIndexReportService\x12\x84\x01\n" +
@@ -150,17 +159,19 @@ var file_internalapi_sensor_virtual_machine_iservice_proto_goTypes = []any{
 	(*UpsertVirtualMachineIndexReportResponse)(nil), // 1: sensor.UpsertVirtualMachineIndexReportResponse
 	(*v1.IndexReport)(nil),                          // 2: virtualmachine.v1.IndexReport
 	(*v1.DiscoveredData)(nil),                       // 3: virtualmachine.v1.DiscoveredData
+	(v1.ReportTrigger)(0),                           // 4: virtualmachine.v1.ReportTrigger
 }
 var file_internalapi_sensor_virtual_machine_iservice_proto_depIdxs = []int32{
 	2, // 0: sensor.UpsertVirtualMachineIndexReportRequest.index_report:type_name -> virtualmachine.v1.IndexReport
 	3, // 1: sensor.UpsertVirtualMachineIndexReportRequest.discovered_data:type_name -> virtualmachine.v1.DiscoveredData
-	0, // 2: sensor.VirtualMachineIndexReportService.UpsertVirtualMachineIndexReport:input_type -> sensor.UpsertVirtualMachineIndexReportRequest
-	1, // 3: sensor.VirtualMachineIndexReportService.UpsertVirtualMachineIndexReport:output_type -> sensor.UpsertVirtualMachineIndexReportResponse
-	3, // [3:4] is the sub-list for method output_type
-	2, // [2:3] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	4, // 2: sensor.UpsertVirtualMachineIndexReportRequest.trigger:type_name -> virtualmachine.v1.ReportTrigger
+	0, // 3: sensor.VirtualMachineIndexReportService.UpsertVirtualMachineIndexReport:input_type -> sensor.UpsertVirtualMachineIndexReportRequest
+	1, // 4: sensor.VirtualMachineIndexReportService.UpsertVirtualMachineIndexReport:output_type -> sensor.UpsertVirtualMachineIndexReportResponse
+	4, // [4:5] is the sub-list for method output_type
+	3, // [3:4] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_sensor_virtual_machine_iservice_proto_init() }

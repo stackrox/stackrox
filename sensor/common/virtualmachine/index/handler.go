@@ -16,7 +16,7 @@ import (
 type Handler interface {
 	common.ComplianceComponent
 
-	Send(ctx context.Context, vm *v1.IndexReport) error
+	Send(ctx context.Context, vm *v1.IndexReport, trigger v1.ReportTrigger) error
 }
 
 // VirtualMachineStore interface to the VirtualMachine store

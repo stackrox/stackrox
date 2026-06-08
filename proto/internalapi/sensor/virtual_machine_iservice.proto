@@ -11,6 +11,8 @@ message UpsertVirtualMachineIndexReportRequest {
 
   // VM data discovered by roxagent
   virtualmachine.v1.DiscoveredData discovered_data = 2;
+
+  virtualmachine.v1.ReportTrigger trigger = 3;
 }
 
 message UpsertVirtualMachineIndexReportResponse {

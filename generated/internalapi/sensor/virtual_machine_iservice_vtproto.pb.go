@@ -25,6 +25,7 @@ func (m *UpsertVirtualMachineIndexReportRequest) CloneVT() *UpsertVirtualMachine
 		return (*UpsertVirtualMachineIndexReportRequest)(nil)
 	}
 	r := new(UpsertVirtualMachineIndexReportRequest)
+	r.Trigger = m.Trigger
 	if rhs := m.IndexReport; rhs != nil {
 		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *v1.IndexReport }); ok {
 			r.IndexReport = vtpb.CloneVT()
@@ -87,6 +88,9 @@ func (this *UpsertVirtualMachineIndexReportRequest) EqualVT(that *UpsertVirtualM
 	} else if !proto.Equal(this.DiscoveredData, that.DiscoveredData) {
 		return false
 	}
+	if this.Trigger != that.Trigger {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -145,6 +149,11 @@ func (m *UpsertVirtualMachineIndexReportRequest) MarshalToSizedBufferVT(dAtA []b
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Trigger != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Trigger))
+		i--
+		dAtA[i] = 0x18
 	}
 	if m.DiscoveredData != nil {
 		if vtmsg, ok := interface{}(m.DiscoveredData).(interface {
@@ -261,6 +270,9 @@ func (m *UpsertVirtualMachineIndexReportRequest) SizeVT() (n int) {
 			l = proto.Size(m.DiscoveredData)
 		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Trigger != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Trigger))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -396,6 +408,25 @@ func (m *UpsertVirtualMachineIndexReportRequest) UnmarshalVT(dAtA []byte) error 
 				}
 			}
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Trigger", wireType)
+			}
+			m.Trigger = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Trigger |= v1.ReportTrigger(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -606,6 +637,25 @@ func (m *UpsertVirtualMachineIndexReportRequest) UnmarshalVTUnsafe(dAtA []byte) 
 				}
 			}
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Trigger", wireType)
+			}
+			m.Trigger = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Trigger |= v1.ReportTrigger(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

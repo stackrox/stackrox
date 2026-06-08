@@ -72,7 +72,7 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 	// Test that the goroutine processes sent VMs.
 	vm := &v1.IndexReport{VsockCid: cid}
 	go func() {
-		err := s.handler.Send(context.Background(), vm)
+		err := s.handler.Send(context.Background(), vm, v1.ReportTrigger_REPORT_TRIGGER_UNSPECIFIED)
 		s.Require().NoError(err)
 	}()
 
@@ -132,7 +132,7 @@ func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 					}
 					cont++
 				})
-				err := s.handler.Send(ctx, req)
+				err := s.handler.Send(ctx, req, v1.ReportTrigger_REPORT_TRIGGER_UNSPECIFIED)
 				s.Require().NoError(err)
 			}
 		}(i)
@@ -169,7 +169,7 @@ func (s *virtualMachineHandlerSuite) TestVirtualMachineNotFound() {
 	vm := &v1.IndexReport{VsockCid: cid}
 	wg := sync.WaitGroup{}
 	wg.Go(func() {
-		err := s.handler.Send(context.Background(), vm)
+		err := s.handler.Send(context.Background(), vm, v1.ReportTrigger_REPORT_TRIGGER_UNSPECIFIED)
 		s.Require().NoError(err)
 	})
 
@@ -196,7 +196,7 @@ func (s *virtualMachineHandlerSuite) TestInvalidCID() {
 	vm := &v1.IndexReport{VsockCid: cid}
 	wg := sync.WaitGroup{}
 	wg.Go(func() {
-		err := s.handler.Send(context.Background(), vm)
+		err := s.handler.Send(context.Background(), vm, v1.ReportTrigger_REPORT_TRIGGER_UNSPECIFIED)
 		s.Require().NoError(err)
 	})
 
@@ -650,7 +650,7 @@ func (s *virtualMachineHandlerSuite) TestSend_CapabilityNotSupported() {
 	vm := &v1.IndexReport{VsockCid: cid}
 
 	// Send should return errCapabilityNotSupported when capability is absent
-	err := s.handler.Send(context.Background(), vm)
+	err := s.handler.Send(context.Background(), vm, v1.ReportTrigger_REPORT_TRIGGER_UNSPECIFIED)
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, errCapabilityNotSupported)
 	s.Require().ErrorIs(err, errox.NotImplemented)
@@ -663,7 +663,7 @@ func (s *virtualMachineHandlerSuite) TestSend_AfterStop() {
 	s.handler.Stop()
 
 	vm := &v1.IndexReport{VsockCid: "1"}
-	err = s.handler.Send(context.Background(), vm)
+	err = s.handler.Send(context.Background(), vm, v1.ReportTrigger_REPORT_TRIGGER_UNSPECIFIED)
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, errInputChanClosed)
 	s.Require().ErrorIs(err, errox.InvariantViolation)
@@ -675,7 +675,7 @@ func (s *virtualMachineHandlerSuite) TestSend_CentralNotReachable() {
 	defer s.handler.Stop()
 
 	vm := &v1.IndexReport{VsockCid: "1"}
-	err = s.handler.Send(context.Background(), vm)
+	err = s.handler.Send(context.Background(), vm, v1.ReportTrigger_REPORT_TRIGGER_UNSPECIFIED)
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, errCentralNotReachable)
 	s.Require().ErrorIs(err, errox.ResourceExhausted)
