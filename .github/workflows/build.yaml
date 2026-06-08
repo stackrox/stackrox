@@ -575,9 +575,7 @@ jobs:
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # ratchet:docker/login-action@v4
         continue-on-error: true
         # Skip for external contributions.
-        if: |
-          matrix.arch != 'amd64' && matrix.arch != 'arm64' &&
-          (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
+        if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         with:
           username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}

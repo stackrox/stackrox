@@ -42,7 +42,7 @@ RUN --mount=type=cache,target=/var/cache/dnf,sharing=shared \
 
 FROM ubi-micro-base
 
-ARG TARGETARCH=amd64
+ARG TARGETARCH
 ARG ROX_IMAGE_FLAVOR
 ARG ROX_PRODUCT_BRANDING
 

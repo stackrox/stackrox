@@ -32,7 +32,7 @@ RUN --mount=type=cache,target=/var/cache/dnf,sharing=shared \
 
 FROM ubi-micro-base
 
-ARG TARGETARCH=amd64
+ARG TARGETARCH
 
 SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 
