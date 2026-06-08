@@ -22,6 +22,7 @@ import (
 	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
 	"github.com/stackrox/rox/sensor/common/pubsub/lane"
 	mockStore "github.com/stackrox/rox/sensor/common/store/mocks"
+	"github.com/stackrox/rox/sensor/common/updater"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -75,6 +76,7 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 		baselineEval:              baseline.NewBaselineEvaluator(),
 		networkbaselineEval:       networkBaselineEval.NewNetworkBaselineEvaluator(),
 		enforcer:                  &fakeEnforcer{},
+		auditLogUpdater:           &fakeAuditLogUpdater{},
 		deduper:                   newDeduper(),
 		detectorStopper:           detectorStopper,
 		auditStopper:              concurrency.NewStopper(),
@@ -111,6 +113,7 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 						),
 					),
 				),
+				lane.NewBlockingLane(pubsub.DetectorAuditLogLane),
 			},
 		))
 		require.NoError(tb, err)
@@ -191,3 +194,19 @@ func (f *fakeEnforcer) ProcessMessage(_ context.Context, _ *central.MsgToSensor)
 }
 func (f *fakeEnforcer) ProcessAlertResults(_ central.ResourceAction, _ storage.LifecycleStage, _ *central.AlertResults) {
 }
+
+type fakeAuditLogUpdater struct{}
+
+func (f *fakeAuditLogUpdater) Start() error                                   { return nil }
+func (f *fakeAuditLogUpdater) Stop()                                          {}
+func (f *fakeAuditLogUpdater) Notify(_ common.SensorComponentEvent)           {}
+func (f *fakeAuditLogUpdater) Capabilities() []centralsensor.SensorCapability { return nil }
+func (f *fakeAuditLogUpdater) Name() string                                   { return "fake-updater" }
+func (f *fakeAuditLogUpdater) ResponsesC() <-chan *message.ExpiringMessage    { return nil }
+func (f *fakeAuditLogUpdater) Accepts(_ *central.MsgToSensor) bool            { return false }
+func (f *fakeAuditLogUpdater) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
+	return nil
+}
+func (f *fakeAuditLogUpdater) ForceUpdate() {}
+
+var _ updater.Component = (*fakeAuditLogUpdater)(nil)

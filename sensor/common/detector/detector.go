@@ -243,14 +243,22 @@ func (d *detectorImpl) Start() error {
 		); err != nil {
 			return errors.Wrap(err, "failed to register detector file access consumer")
 		}
+		if err := d.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.DetectorAuditLogConsumer,
+			pubsub.DetectorAuditLogTopic,
+			pubsub.DetectorAuditLogLane,
+			d.handleAuditLogEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register detector audit log consumer")
+		}
 	}
 
 	go d.runDetector()
-	go d.runAuditLogEventDetector()
 	go d.serializeDeployTimeOutput()
 	go d.processDeployment()
 
 	if !d.pubSubEnabled() {
+		go d.runAuditLogEventDetector()
 		go d.processIndicator()
 		go d.processAlertsForFlowOnEntity()
 		go d.processFileAccess()
@@ -336,7 +344,9 @@ func (d *detectorImpl) Stop() {
 	d.enricher.stop()
 
 	_ = d.detectorStopper.Client().Stopped().Wait()
-	_ = d.auditStopper.Client().Stopped().Wait()
+	if !d.pubSubEnabled() {
+		_ = d.auditStopper.Client().Stopped().Wait()
+	}
 	_ = d.serializerStopper.Client().Stopped().Wait()
 }
 
@@ -509,6 +519,50 @@ func (d *detectorImpl) runDetector() {
 	}
 }
 
+func (d *detectorImpl) detectAndAlertForAuditLog(auditEvents *sensor.AuditEvents) {
+	alerts := d.unifiedDetector.DetectAuditLogEvents(auditEvents)
+	if len(alerts) == 0 {
+		// No need to process runtime alerts that have no violations
+		return
+	}
+
+	// Force update the audit log status since alerts were detected
+	// This is required because if sensor were to restart right after this alert, it's possible that
+	// the saved state is prior to this the event that generated this alert (because the updater updates on a timer)
+	// To avoid duplicate alerts force the state to be updated
+	// This is non-blocking as the updates happen on another goroutine
+	d.auditLogUpdater.ForceUpdate()
+
+	sort.Slice(alerts, func(i, j int) bool {
+		return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
+	})
+
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_AlertResults{
+					AlertResults: &central.AlertResults{
+						Source: central.AlertResults_AUDIT_EVENT,
+						Alerts: alerts,
+						Stage:  storage.LifecycleStage_RUNTIME,
+					},
+				},
+			},
+		},
+	}
+
+	// These messages are coming from compliance, and since compliance supports offline mode as well
+	// it should be ok to leave these messages without expiration.
+	expiringMessage := message.New(msg)
+
+	select {
+	case <-d.auditStopper.Flow().StopRequested():
+	case <-d.serializerStopper.Flow().StopRequested():
+	case d.output <- expiringMessage:
+	}
+}
+
 func (d *detectorImpl) runAuditLogEventDetector() {
 	defer d.auditStopper.Flow().ReportStopped()
 	for {
@@ -516,51 +570,18 @@ func (d *detectorImpl) runAuditLogEventDetector() {
 		case <-d.auditStopper.Flow().StopRequested():
 			return
 		case auditEvents := <-d.auditEventsChan:
-			alerts := d.unifiedDetector.DetectAuditLogEvents(auditEvents)
-			if len(alerts) == 0 {
-				// No need to process runtime alerts that have no violations
-				continue
-			}
-
-			// Force update the audit log status since alerts were detected
-			// This is required because if sensor were to restart right after this alert, it's possible that
-			// the saved state is prior to this the event that generated this alert (because the updater updates on a timer)
-			// To avoid duplicate alerts force the state to be updated
-			// This is non-blocking as the updates happen on another goroutine
-			d.auditLogUpdater.ForceUpdate()
-
-			sort.Slice(alerts, func(i, j int) bool {
-				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
-			})
-
-			msg := &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Event{
-					Event: &central.SensorEvent{
-						Action: central.ResourceAction_CREATE_RESOURCE,
-						Resource: &central.SensorEvent_AlertResults{
-							AlertResults: &central.AlertResults{
-								Source: central.AlertResults_AUDIT_EVENT,
-								Alerts: alerts,
-								Stage:  storage.LifecycleStage_RUNTIME,
-							},
-						},
-					},
-				},
-			}
-
-			// These messages are coming from compliance, and since compliance supports offline mode as well
-			// it should be ok to leave these messages without expiration.
-			expiringMessage := message.New(msg)
-
-			select {
-			case <-d.auditStopper.Flow().StopRequested():
-				return
-			case <-d.serializerStopper.Flow().StopRequested():
-				return
-			case d.output <- expiringMessage:
-			}
+			d.detectAndAlertForAuditLog(auditEvents)
 		}
 	}
+}
+
+func (d *detectorImpl) handleAuditLogEvent(event pubsub.Event) error {
+	auditEvent, ok := event.(*detectorEvents.AuditLogEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	d.detectAndAlertForAuditLog(auditEvent.AuditEvents)
+	return nil
 }
 
 func (d *detectorImpl) markDeploymentForProcessing(id string) {

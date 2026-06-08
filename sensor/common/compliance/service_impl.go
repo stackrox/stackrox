@@ -13,12 +13,15 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/compliance/index"
+	detectorEvents "github.com/stackrox/rox/sensor/common/detector/events"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
@@ -42,6 +45,7 @@ type serviceImpl struct {
 	orchestrator orchestrator.Orchestrator
 
 	connectionManager *connectionManager
+	pubSubDispatcher  common.PubSubDispatcher
 
 	offlineMode *atomic.Bool
 	stopperLock sync.Mutex
@@ -247,7 +251,13 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			if s.offlineMode.Load() {
 				continue
 			}
-			s.auditEvents <- t.AuditEvents
+			if features.SensorInternalPubSub.Enabled() && s.pubSubDispatcher != nil {
+				if err := s.pubSubDispatcher.Publish(&detectorEvents.AuditLogEvent{AuditEvents: t.AuditEvents}); err != nil {
+					logging.GetRateLimitedLogger().ErrorL("audit-log-publish", "Failed to publish audit log event: %v", err)
+				}
+			} else {
+				s.auditEvents <- t.AuditEvents
+			}
 			s.auditLogCollectionManager.AuditMessagesChan() <- msg
 		case *sensor.MsgFromCompliance_NodeInventory:
 			s.nodeInventories <- t.NodeInventory
