@@ -9,7 +9,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "srox.labels" (list . "role" "secured-cluster-prometheus-k8s") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "role" "secured-cluster-prometheus-k8s") | nindent 4 }}
 rules:
@@ -33,7 +32,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "secured-cluster-prometheus-k8s") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "rolebinding" "secured-cluster-prometheus-k8s") | nindent 4 }}
 roleRef:
@@ -59,7 +57,6 @@ metadata:
   namespace: openshift-monitoring
   labels:
     {{- include "srox.labels" (list . "servicemonitor" (print "sensor-monitor-" .Release.Namespace)) | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "servicemonitor" (print "sensor-monitor-" .Release.Namespace)) | nindent 4 }}
 spec:
@@ -93,7 +90,6 @@ metadata:
   namespace: openshift-monitoring
   labels:
     {{- include "srox.labels" (list . "servicemonitor" (print "admission-control-monitor-" .Release.Namespace)) | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "servicemonitor" (print "admission-control-monitor-" .Release.Namespace)) | nindent 4 }}
 spec:
@@ -126,7 +122,6 @@ metadata:
   namespace: kube-system
   labels:
     {{- include "srox.labels" (list . "rolebinding" (print "rhacs-sensor-auth-reader-" .Release.Namespace)) | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "rolebinding" (print "rhacs-sensor-auth-reader-" .Release.Namespace)) | nindent 4 }}
 roleRef:
@@ -150,7 +145,6 @@ metadata:
   namespace: kube-system
   labels:
     {{- include "srox.labels" (list . "rolebinding" (print "rhacs-admission-control-auth-reader-" .Release.Namespace)) | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "rolebinding" (print "rhacs-admission-control-auth-reader-" .Release.Namespace)) | nindent 4 }}
 roleRef:
@@ -178,7 +172,6 @@ metadata:
   namespace: openshift-monitoring
   labels:
     {{- include "srox.labels" (list . "prometheusrule" (print "sensor-telemeter-" .Release.Namespace )) | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "prometheusrule" (print "sensor-telemeter-" .Release.Namespace )) | nindent 4 }}
 spec:

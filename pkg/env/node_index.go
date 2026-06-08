@@ -8,7 +8,7 @@ var (
 	NodeIndexHostPath = RegisterSetting("ROX_NODE_INDEX_HOST_PATH", WithDefault("/host"))
 
 	// NodeIndexMappingURL defines the endpoint for the RepositoryScanner to download mapping information from.
-	// If left empty, the URL will be computed based on Sensor's ROX_ADVERTISED_ENDPOINT.
+	// If left empty, the URL will be computed based on Sensor's ROX_SENSOR_ENDPOINT (see SensorEndpointSetting).
 	// The default "https://sensor.stackrox.svc/scanner/definitions?file=repo2cpe" is not set here to not hardcode the namespace of Sensor.
 	NodeIndexMappingURL = RegisterSetting("ROX_NODE_INDEX_MAPPING_URL", AllowEmpty())
 

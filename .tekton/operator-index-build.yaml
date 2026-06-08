@@ -104,7 +104,7 @@ spec:
         - name: name
           value: summary
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-summary:0.2@sha256:e1b8e42962b0c6d9ebe95f3709c34ae5e1569b73941a79654248e0af55eb3ff9
+          value: quay.io/konflux-ci/tekton-catalog/task-summary:0.2@sha256:a009e5892e0ef23f8c45fe98a96d6c56aff3bdc0343d994f30661e56ff901253
         - name: kind
           value: task
         resolver: bundles
@@ -118,7 +118,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f62cd38699f3b203e51c99e2175701791cb5dea036065bc635cb1f2701bf9bac
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:69dccf80691e60c85b7650a8a5f0382d66a5fff98b46b4986fbf7e2bc47e5b1b
         - name: kind
           value: task
         resolver: bundles
@@ -155,8 +155,8 @@ spec:
       description: Additional labels to put on the built containers.
       default: []
     - default:
-      - linux-d160-m2xlarge/amd64
-      - linux-d160-m2xlarge/arm64
+      - linux/amd64
+      - linux/arm64
       - linux/ppc64le
       - linux/s390x
       description: >
@@ -169,6 +169,10 @@ spec:
       description: Repository where the operator bundle image is pushed by operator-bundle-build.yaml.
       type: string
       default: "quay.io/rhacs-eng/release-operator-bundle"
+    - name: buildah-format
+      default: docker
+      type: string
+      description: The format for the resulting image's mediaType. Valid values are oci or docker.
 
     results:
     - description: ""
@@ -230,7 +234,7 @@ spec:
         - name: name
           value: determine-image-expiration
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f62cd38699f3b203e51c99e2175701791cb5dea036065bc635cb1f2701bf9bac
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:69dccf80691e60c85b7650a8a5f0382d66a5fff98b46b4986fbf7e2bc47e5b1b
         - name: kind
           value: task
         resolver: bundles
@@ -246,7 +250,7 @@ spec:
         - name: name
           value: determine-image-tag
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f62cd38699f3b203e51c99e2175701791cb5dea036065bc635cb1f2701bf9bac
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:69dccf80691e60c85b7650a8a5f0382d66a5fff98b46b4986fbf7e2bc47e5b1b
         - name: kind
           value: task
         resolver: bundles
@@ -265,7 +269,8 @@ spec:
           description: Full operator-index image tag with v prefix and -fast suffix to avoid collision with GHA builds
         steps:
         - name: compute-index-tag
-          image: registry.access.redhat.com/ubi9-minimal:latest@sha256:5b74fce9d6e629942a0c6dc0f546c193e70d7f974d999a48c948c53dd3d36362
+          image: registry.access.redhat.com/ubi9-minimal:latest@sha256:ae09ecc3d754bc1726cbda3e2599cc7839e09fe1cc547ce173cf669b645be3cc
+          imagePullPolicy: IfNotPresent
           script: |
             #!/bin/bash
             set -euo pipefail
@@ -291,7 +296,7 @@ spec:
         - name: name
           value: wait-for-image
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:f62cd38699f3b203e51c99e2175701791cb5dea036065bc635cb1f2701bf9bac
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:69dccf80691e60c85b7650a8a5f0382d66a5fff98b46b4986fbf7e2bc47e5b1b
         - name: kind
           value: task
         resolver: bundles
@@ -344,12 +349,13 @@ spec:
         steps:
         - name: use-trusted-artifact
           image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:9b180776a41d9a22a1c51539f1647c60defbbd55b44bbebdd4130e33512d8b0d
+          imagePullPolicy: IfNotPresent
           args:
           - use
           - $(params.SOURCE_ARTIFACT)=/var/workdir/source
         - name: build-index-content
-          # Using the image with go and yq preinstalled
-          image: quay.io/stackrox-io/apollo-ci:stackrox-test-stable@sha256:d8f6164e396534c9cfb7fd908f42278ea8063e14132009cbed7504006dd46bd6
+          image: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25@sha256:977bd041377a1367c8b102a460ae8e63f89905f7cf9d8235484ae658c9b47646
+          imagePullPolicy: IfNotPresent
           workingDir: /var/workdir/source/operator
           securityContext:
             runAsUser: 0
@@ -358,14 +364,16 @@ spec:
             value: $(params.BUNDLE_IMAGE)
           - name: INDEX_IMAGE
             value: $(params.INDEX_IMAGE)
-          - name: YQ
-            value: yq
           script: |
             #!/bin/bash
             set -euo pipefail
 
             echo "Building operator index for bundle: ${BUNDLE_IMAGE}"
             echo "Target index image: ${INDEX_IMAGE}"
+
+            echo "Building yq..."
+            GOFLAGS="-mod=mod" make yq
+            export YQ="${PWD}/.gotools/bin/yq"
 
             # Use the existing build script to generate index content
             ./hack/build-index-image.sh \
@@ -378,6 +386,7 @@ spec:
             echo "Index content generated successfully"
         - name: create-trusted-artifact
           image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:9b180776a41d9a22a1c51539f1647c60defbbd55b44bbebdd4130e33512d8b0d
+          imagePullPolicy: IfNotPresent
           args:
           - create
           - --store
@@ -402,7 +411,7 @@ spec:
       - name: IMAGE
         value: $(params.output-image-repo):$(tasks.determine-index-tag.results.INDEX_TAG)
       - name: DOCKERFILE
-        # The Dockerfile si generated in the build-index-image.sh script (via OPM generate dockerfile)
+        # The Dockerfile is generated in the build-index-image.sh script (via OPM generate dockerfile)
         value: rhacs-operator-index.Dockerfile
       - name: CONTEXT
         value: .
@@ -416,12 +425,16 @@ spec:
         value: "$(tasks.clone-repository.results.commit-timestamp)"
       - name: LABELS
         value: ["$(params.extra-labels[*])"]
+      - name: BUILDAH_FORMAT
+        value: $(params.buildah-format)
+      - name: IMAGE_APPEND_PLATFORM
+        value: "true"
       taskRef:
         params:
         - name: name
-          value: buildah-oci-ta
+          value: buildah-remote-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.9@sha256:75ecb662f343f6f34e553c5b37734d28d9b53ce218c2321a19b96c39bf769357
+          value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.10@sha256:41f3f361785550b378b50b8ce42870092026ae413c723c738c496a75587eff82
         - name: kind
           value: task
         resolver: bundles
@@ -432,7 +445,9 @@ spec:
         value: $(params.output-image-repo):$(tasks.determine-index-tag.results.INDEX_TAG)
       - name: IMAGES
         value:
-        - $(tasks.build-images.results.IMAGE_URL[*])
+        - $(tasks.build-images.results.IMAGE_REF[*])
+      - name: BUILDAH_FORMAT
+        value: $(params.buildah-format)
       taskRef:
         params:
         - name: name

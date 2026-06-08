@@ -127,7 +127,7 @@
                         "envVarSource": "FIELD"
                     },
                     {
-                        "key": "ROX_ADVERTISED_ENDPOINT",
+                        "key": "ROX_SENSOR_ENDPOINT",
                         "value": "sensor.stackrox:443",
                         "envVarSource": "RAW"
                     }

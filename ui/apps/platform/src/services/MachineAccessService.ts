@@ -15,6 +15,7 @@ export type AuthMachineToMachineConfig = {
     tokenExpirationDuration: string;
     type: MachineConfigType;
     issuer: string;
+    audience: string;
     mappings: MachineConfigMapping[];
     traits?: Traits;
 };

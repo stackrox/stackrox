@@ -86,7 +86,3 @@ func (c *imageCVEFlatResponse) GetState() *storage.VulnerabilityState {
 	}
 	return c.State
 }
-
-type imageCVEFlatCount struct {
-	CVECount int `db:"cve_count"`
-}

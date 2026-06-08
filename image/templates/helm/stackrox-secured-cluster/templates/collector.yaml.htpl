@@ -7,7 +7,6 @@ metadata:
     {{- include "srox.labels" (list . "daemonset" "collector") | nindent 4 }}
     service: collector
     app: collector
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "daemonset" "collector") | nindent 4 }}
   name: collector
@@ -196,6 +195,8 @@ spec:
               fieldPath: spec.nodeName
         - name: ROX_ADVERTISED_ENDPOINT
           value: {{ quote ._rox.sensor.endpoint }}
+        - name: ROX_SENSOR_ENDPOINT
+          value: {{ quote ._rox.sensor.endpoint }}
         - name: ROX_NODE_SCANNING_ENDPOINT
           value: {{ quote ._rox.collector.nodescanningEndpoint }}
         {{- include "srox.envVars" (list . "daemonset" "collector" "compliance") | nindent 8 }}
@@ -347,7 +348,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "service" "compliance-metrics") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "service" "compliance-metrics") | nindent 4 }}
 spec:

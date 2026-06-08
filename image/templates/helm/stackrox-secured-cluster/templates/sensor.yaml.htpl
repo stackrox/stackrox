@@ -1,12 +1,5 @@
 {{- include "srox.init" . -}}
 
-{{- /*
-  Every resource in this file must have the auto-upgrade.stackrox.io/component label.
-  For manifest-based installs (non-Helm, non-Operator), the sensor-upgrader validates
-  this label on all bundle objects before applying them. Missing it will cause the
-  auto-upgrade to fail. See also: sensor/upgrader/bundle/instantiator.go
-*/ -}}
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,7 +8,6 @@ metadata:
   labels:
     {{- include "srox.labels" (list . "deployment" "sensor") | nindent 4 }}
     app: sensor
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "deployment" "sensor") | nindent 4 }}
 spec:
@@ -222,6 +214,8 @@ spec:
           value: {{ ._rox.centralEndpoint }}
         - name: ROX_ADVERTISED_ENDPOINT
           value: {{ ._rox.sensor.endpoint }}
+        - name: ROX_SENSOR_ENDPOINT
+          value: {{ ._rox.sensor.endpoint }}
         - name: GRPC_ENFORCE_ALPN_ENABLED
           value: {{ quote ._rox.env.grpcEnforceALPN }}
         {{- if ._rox.env.openshift }}
@@ -390,7 +384,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "service" "sensor") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "service" "sensor") | nindent 4 }}
     {{- if ._rox.monitoring.openshift.enabled }}
@@ -428,7 +421,6 @@ metadata:
   namespace: {{ ._rox._namespace | quote }}
   labels:
     {{- include "srox.labels" (list . "service" "sensor-proxy") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- $annotations := dict -}}
     {{- $_ := set $annotations "service.beta.openshift.io/serving-cert-secret-name" "sensor-proxy-tls" -}}
@@ -453,7 +445,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "service" "sensor-webhook") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "service" "sensor-webhook") | nindent 4 }}
 spec:
@@ -476,7 +467,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "secret" "helm-effective-cluster-name") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: sensor
   annotations:
     {{- $annotations := dict -}}
     {{- $_ := include "srox.getAnnotationTemplate" (list . "helm-hook_secret" $annotations) -}}
