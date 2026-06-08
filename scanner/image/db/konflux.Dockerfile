@@ -27,6 +27,7 @@ USER root
 COPY \
      scanner/image/db/scripts/docker-entrypoint.sh \
      scanner/image/db/scripts/init-entrypoint.sh \
+     scanner/image/db/scripts/cert-watcher.sh \
      /usr/local/bin/
 
 RUN localedef -f UTF-8 -i en_US en_US.UTF-8 && \
