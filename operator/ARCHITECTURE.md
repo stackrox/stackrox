@@ -5,7 +5,7 @@ For how to extend the CRDs and set defaults, see [EXTENDING_CRDS.md](EXTENDING_C
 
 ## High-level design
 
-The operator is a Helm-based operator built on a
+The operator is a hybrid Go+Helm-based operator built on a
 [fork](https://github.com/stackrox/helm-operator) of
 [operator-framework/helm-operator-plugins](https://github.com/operator-framework/helm-operator-plugins).
 The fork includes features and bug fixes specific to StackRox that have not
@@ -26,24 +26,23 @@ the corresponding Helm chart (`stackrox-central-services` /
 Each reconciler and status controller can be independently disabled via
 environment variables (`CENTRAL_RECONCILER_ENABLED`, etc.).
 
-The manager also configures label-filtered caching for Secrets and ConfigMaps
-(to limit memory consumption), leader election, metrics serving with
-cluster-wide TLS profile enforcement, and a TLS profile watcher that triggers
-graceful restart of the operator process when the cluster TLS profile changes.
+The manager also configures:
+- label-filtered caching for Secrets and ConfigMaps (to limit memory consumption),
+- leader election,
+- metrics serving,
+- TLS profile enforcement and watcher (see [TLS profile management](#tls-profile-management-internaltlsprofile)).
 
 ### Reconciliation pipeline
 
 The Helm reconcilers process each CR through this pipeline:
 
-```
-CR change detected
-  -> Pre-extensions (defaulting, secret reconciliation, validation, ...)
-  -> Values translation (CR spec -> Helm values)
-  -> Values enrichment (proxy env, TLS profile, image pull secrets, routes)
-  -> Helm render
-  -> Post-renderers (overlays, labels, config-hash annotations)
-  -> Apply to cluster
-```
+1. CR change detected
+2. Pre-extensions (defaulting, secret reconciliation, validation, ...)
+3. Values translation (CR spec -> Helm values)
+4. Values enrichment (proxy env, TLS profile, image pull secrets, routes)
+5. Helm render templates from `image/templates/helm` into manifests using above values
+6. Post-renderers apply changes to rendered manifests (overlays, labels, CA-hash annotations)
+7. Apply to cluster
 
 ## Key components
 
@@ -55,9 +54,7 @@ structs with kubebuilder validation markers and operator-sdk CSV markers.
 [`common_types.go`](api/v1alpha1/common_types.go) contains shared types (image overrides, TLS config,
 customization, scanner specs, etc.).
 
-[`defaults_merging.go`](api/v1alpha1/defaults_merging.go) implements the logic to merge the `.Defaults` field
-(populated by defaulting flows) onto `.Spec`, giving user-specified values
-precedence.
+[`defaults_merging.go`](api/v1alpha1/defaults_merging.go) implements the defaults-related logic, see section on defaulting, below.
 
 ### Generic reconciler factory ([`internal/reconciler/reconciler_factory.go`](internal/reconciler/reconciler_factory.go))
 
@@ -69,9 +66,6 @@ reconcilers call. It:
    [post-renderers](#post-renderers) chained.
 3. Assembles reconciler options (value translator, release history size,
    failure timeout, etc.) and registers the reconciler with the manager.
-4. Provides `HandleSiblings` — a generic event handler that triggers
-   reconciliation of one CR type when a related resource (e.g. the sibling
-   CR type) changes in the same namespace.
 
 ### CR-specific reconcilers ([`internal/central/reconciler/`](internal/central/reconciler/reconciler.go), [`internal/securedcluster/reconciler/`](internal/securedcluster/reconciler/reconciler.go))
 
@@ -89,16 +83,15 @@ Each `RegisterNewReconciler` function wires up the CR-specific pieces:
   and shared ones in
   [`internal/common/extensions/`](internal/common/extensions/).
 
-- **Extra watches** — each reconciler watches the *sibling* CR type. Central
-  watches SecuredCluster (for init-bundle decisions); SecuredCluster watches
-  Central (for local scanner decisions). SecuredCluster also watches specific
-  Secrets and ConfigMaps (sensor TLS, CA bundle).
+- **Extra watches** — each reconciler watches the sibling CR type
+  (see [Cross-CR interaction](#cross-cr-interaction)) and SecuredCluster
+  also watches specific Secrets and ConfigMaps (sensor TLS, CA bundle).
 
 - **Values translator** — the CR-specific translator wrapped in an enrichment
   chain (see [Values translation pipeline](#values-translation-pipeline) below).
 
-- **Event predicates** — skip reconciliation for status-only updates from the
-  status controller.
+- **Event predicates** — skip reconciliation for status-only updates
+  (see [Status controller](#status-controller-internalcommonstatuscontrollergo)).
 
 ### Values translation pipeline
 
@@ -164,9 +157,9 @@ After Helm renders manifests, three post-renderers process the output:
 1. **Overlays** ([`internal/overlays/postrenderer.go`](internal/overlays/postrenderer.go)) — applies user-defined patches from `spec.overlays` using
    [k8s-overlay-patch](https://github.com/stackrox/k8s-overlay-patch).
 2. **Labels** ([`internal/common/labels/labels.go`](internal/common/labels/labels.go)) — adds standard operator labels to all rendered objects.
-3. **Config-hash annotations** ([`internal/common/confighash/pod_template_annotation.go`](internal/common/confighash/pod_template_annotation.go)) — computes a hash of referenced ConfigMaps and
-   Secrets and annotates pod templates, causing automatic rollout when
-   configuration changes.
+3. **Config-hash annotations** ([`internal/common/confighash/pod_template_annotation.go`](internal/common/confighash/pod_template_annotation.go)) — computes a hash of the CA
+   certificate and annotates Deployment and DaemonSet pod templates, causing
+   automatic rollout when the CA rotates.
 
 ### TLS profile management ([`internal/tlsprofile/`](internal/tlsprofile/))
 
