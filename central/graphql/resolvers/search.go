@@ -19,6 +19,15 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
+		schema.AddInput("PaginatedQuery", []string{
+			"query: String",
+			"scopeQuery: String",
+			"pagination: Pagination",
+		}),
+		schema.AddInput("RawQuery", []string{
+			"query: String",
+			"scopeQuery: String",
+		}),
 		schema.AddQuery("searchOptions(categories: [SearchCategory!]): [String!]!"),
 		schema.AddQuery("globalSearch(categories: [SearchCategory!], query: String!): [SearchResult!]!"),
 		schema.AddQuery("searchAutocomplete(categories: [SearchCategory!], query: String!): [String!]!"),
