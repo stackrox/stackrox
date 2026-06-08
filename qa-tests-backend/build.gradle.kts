@@ -15,10 +15,9 @@ codenarc {
 apply(from = "protobuf.gradle")
 
 // Assign all Java source dirs to Groovy, as the groovy compiler should take care of them.
-// Proto-generated Java sources (registered by the protobuf plugin) stay in the Java source
-// set so that compileJava produces classes the Groovy compiler can reference.
 project.sourceSets.forEach { sourceSet ->
-    sourceSet.groovy.srcDirs += sourceSet.java.srcDirs
+    sourceSet.java.srcDirs.forEach { dir -> sourceSet.groovy.srcDir(dir) }
+    sourceSet.java.setSrcDirs(emptyList<File>())
 }
 
 dependencies {
@@ -85,6 +84,10 @@ dependencies {
     implementation(libs.uuid.creator)
 
     implementation(projects.annotations)
+}
+
+tasks.withType<GroovyCompile>().configureEach {
+    groovyOptions.forkOptions.memoryMaximumSize = "4g"
 }
 
 // Apply some base attributes to all the test tasks.

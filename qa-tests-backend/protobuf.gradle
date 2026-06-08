@@ -16,5 +16,11 @@ protobuf {
                 outputSubDir = "java"
             }
         }
+
+        all().each { task ->
+            task.outputSourceDirectories.each { srcDir ->
+                project.sourceSets.getByName(task.sourceSet.name).groovy.srcDirs += srcDir
+            }
+        }
     }
 }
