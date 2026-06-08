@@ -295,6 +295,8 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 		case strings.HasPrefix(field, "type"):
 			typeName := field[strings.Index(field, "(")+1 : strings.Index(field, ")")]
 			opts.ColumnType = typeName
+		case strings.HasPrefix(field, "strategy"):
+			opts.RepeatedStrategy = field[strings.Index(field, "(")+1 : strings.Index(field, ")")]
 		case field == "":
 		default:
 			// ignore for just right now
@@ -428,6 +430,11 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 				} else {
 					schema.AddFieldWithType(field, postgres.IntArray, opts)
 				}
+				continue
+			}
+
+			if opts.RepeatedStrategy == "bytea" {
+				schema.AddFieldWithType(field, postgres.MessageBytes, opts)
 				continue
 			}
 

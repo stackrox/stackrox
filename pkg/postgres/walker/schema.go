@@ -470,6 +470,10 @@ type PostgresOptions struct {
 	// IgnoreChildIndexes is an option used to tell the walker that
 	// index options of children of this field should be ignored.
 	IgnoreChildIndexes bool
+
+	// RepeatedStrategy overrides how a repeated message field is stored.
+	// Valid values: "" (default, child table), "bytea" (inline as MessageBytes).
+	RepeatedStrategy string
 }
 
 type foreignKeyRef struct {
@@ -564,5 +568,5 @@ func (f Field) Include() bool {
 	if f.Schema != nil && f.Schema.Root().NoSerialized {
 		return f.ColumnName != "serialized"
 	}
-	return f.Options.PrimaryKey || f.Options.Unique || f.Search.Enabled || f.ColumnName == "serialized" || f.Options.Reference != nil
+	return f.Options.PrimaryKey || f.Options.Unique || f.Search.Enabled || f.ColumnName == "serialized" || f.Options.Reference != nil || f.Options.RepeatedStrategy != ""
 }

@@ -4,12 +4,23 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 type TestStorageType struct {
 	ID string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id,type(uuid)"`
+}
+
+type TestChildMessage struct {
+	Value string `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty" search:"Test Child Value"`
+}
+
+type TestStorageWithRepeatedStrategy struct {
+	ID      string              `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`
+	Inlined []*TestChildMessage `protobuf:"bytes,2,rep,name=inlined,proto3" json:"inlined,omitempty" sql:"strategy(bytea)"`
+	AsChild []*TestChildMessage `protobuf:"bytes,3,rep,name=as_child,proto3" json:"as_child,omitempty"`
 }
 
 // One can specify a custom SQL type for the structure field
@@ -94,6 +105,35 @@ func TestWalkWithNoSerialized(t *testing.T) {
 		for _, f := range schema.DBColumnFields() {
 			assert.NotEqual(t, "serialized", f.ColumnName,
 				"no-serialized schema should not have serialized in DBColumnFields")
+		}
+	})
+}
+
+func TestRepeatedFieldStrategy(t *testing.T) {
+	mt := reflect.TypeOf(&TestStorageWithRepeatedStrategy{})
+	schema := Walk(mt, "test_strategy")
+
+	t.Run("strategy(bytea) inlines as MessageBytes column", func(t *testing.T) {
+		var found bool
+		for _, f := range schema.Fields {
+			if f.Name == "Inlined" {
+				found = true
+				assert.Equal(t, postgres.MessageBytes, f.DataType)
+				assert.Equal(t, "bytea", f.SQLType)
+			}
+		}
+		assert.True(t, found, "Inlined field should exist as a column")
+	})
+
+	t.Run("default strategy creates child table", func(t *testing.T) {
+		require.Len(t, schema.Children, 1)
+		assert.Contains(t, schema.Children[0].Table, "as_child")
+	})
+
+	t.Run("inlined field is not a child table", func(t *testing.T) {
+		for _, child := range schema.Children {
+			assert.NotContains(t, child.Table, "inlined",
+				"strategy(bytea) field should not create a child table")
 		}
 	})
 }
