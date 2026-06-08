@@ -1172,6 +1172,11 @@
                 "id": 6,
                 "name": "traits",
                 "type": "Traits"
+              },
+              {
+                "id": 7,
+                "name": "audience",
+                "type": "string"
               }
             ],
             "messages": [

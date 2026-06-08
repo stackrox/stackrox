@@ -66,7 +66,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:69dccf80691e60c85b7650a8a5f0382d66a5fff98b46b4986fbf7e2bc47e5b1b
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:72c050dbc90421d03a703c742151cdbec441d1fda072ae2d611962d6d3a8ffbd
         - name: kind
           value: task
         resolver: bundles
@@ -146,7 +146,7 @@ spec:
         - name: name
           value: buildah-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.9@sha256:75ecb662f343f6f34e553c5b37734d28d9b53ce218c2321a19b96c39bf769357
+          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.10@sha256:85102e448619f65a1fb7d4512660f8ec05677f99b724f1f838e1964545d7c857
         - name: kind
           value: task
         resolver: bundles

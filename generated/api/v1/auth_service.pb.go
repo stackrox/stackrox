@@ -285,8 +285,13 @@ type AuthMachineToMachineConfig struct {
 	//
 	// Issuer is a unique key, therefore there may be at most one GITHUB_ACTIONS config, and each
 	// GENERIC config must have a distinct issuer.
-	Issuer        string  `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer,omitempty"`
-	Traits        *Traits `protobuf:"bytes,6,opt,name=traits,proto3" json:"traits,omitempty"`
+	Issuer string  `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer,omitempty"`
+	Traits *Traits `protobuf:"bytes,6,opt,name=traits,proto3" json:"traits,omitempty"`
+	// The expected audience (aud claim) of the ID token.
+	// When set, the OIDC token verifier validates that the token's aud claim contains this value,
+	// rejecting tokens intended for other recipients (RFC 7519 Section 4.1.3).
+	// When empty, the audience check is skipped for backward compatibility.
+	Audience      string `protobuf:"bytes,7,opt,name=audience,proto3" json:"audience,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -361,6 +366,13 @@ func (x *AuthMachineToMachineConfig) GetTraits() *Traits {
 		return x.Traits
 	}
 	return nil
+}
+
+func (x *AuthMachineToMachineConfig) GetAudience() string {
+	if x != nil {
+		return x.Audience
+	}
+	return ""
 }
 
 type ListAuthMachineToMachineConfigResponse struct {
@@ -760,7 +772,7 @@ const file_api_v1_auth_service_proto_rawDesc = "" +
 	"\tuser_info\x18\x06 \x01(\v2\x11.storage.UserInfoR\buserInfo\x12:\n" +
 	"\x0fuser_attributes\x18\a \x03(\v2\x11.v1.UserAttributeR\x0euserAttributes\x12\x1b\n" +
 	"\tidp_token\x18\b \x01(\tR\bidpTokenB\x04\n" +
-	"\x02id\"\xc0\x03\n" +
+	"\x02id\"\xdc\x03\n" +
 	"\x1aAuthMachineToMachineConfig\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x127\n" +
 	"\x04type\x18\x02 \x01(\x0e2#.v1.AuthMachineToMachineConfig.TypeR\x04type\x12:\n" +
@@ -768,7 +780,8 @@ const file_api_v1_auth_service_proto_rawDesc = "" +
 	"\bmappings\x18\x04 \x03(\v2&.v1.AuthMachineToMachineConfig.MappingR\bmappings\x12\x16\n" +
 	"\x06issuer\x18\x05 \x01(\tR\x06issuer\x12\"\n" +
 	"\x06traits\x18\x06 \x01(\v2\n" +
-	".v1.TraitsR\x06traits\x1aZ\n" +
+	".v1.TraitsR\x06traits\x12\x1a\n" +
+	"\baudience\x18\a \x01(\tR\baudience\x1aZ\n" +
 	"\aMapping\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12)\n" +
 	"\x10value_expression\x18\x02 \x01(\tR\x0fvalueExpression\x12\x12\n" +

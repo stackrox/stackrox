@@ -340,13 +340,13 @@ arches:
     name: elfutils-libs
     evr: 0.194-1.el9
     sourcerpm: elfutils-0.194-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/e/expat-2.5.0-6.el9.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/e/expat-2.5.0-6.el9_8.1.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 114418
-    checksum: sha256:acbb03d5e75b387a4cff967de7db4030a0299103acab30709c3b739082112017
+    size: 120882
+    checksum: sha256:7cc4e533f63bdec0ead003d176cb262b8d4d2583dfd57b2e9cfeeed4ead13475
     name: expat
-    evr: 2.5.0-6.el9
-    sourcerpm: expat-2.5.0-6.el9.src.rpm
+    evr: 2.5.0-6.el9_8.1
+    sourcerpm: expat-2.5.0-6.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/f/filesystem-3.16-5.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 5003914
@@ -536,13 +536,13 @@ arches:
     name: libdb
     evr: 5.3.28-57.el9_6
     sourcerpm: libdb-5.3.28-57.el9_6.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/l/libeconf-0.4.1-5.el9.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/l/libeconf-0.4.1-7.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 25806
-    checksum: sha256:e1a899e85549254117622b7e6bf58a8fb8f4d0484773d1bf3fc7753b559f82d8
+    size: 32324
+    checksum: sha256:8a5e117c2690c82835c6013f1fbac37b026f3e953fbffbd84c2f5ef6cf8df571
     name: libeconf
-    evr: 0.4.1-5.el9
-    sourcerpm: libeconf-0.4.1-5.el9.src.rpm
+    evr: 0.4.1-7.el9_8
+    sourcerpm: libeconf-0.4.1-7.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/l/libevent-2.1.12-8.el9_4.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 265763
@@ -1207,12 +1207,12 @@ arches:
     checksum: sha256:643279e796ded16c5be5cdc2a91839c787e62e59757008675eb0580a4a42af21
     name: elfutils
     evr: 0.194-1.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/e/expat-2.5.0-6.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/e/expat-2.5.0-6.el9_8.1.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
-    size: 8380129
-    checksum: sha256:770b7a3482856c990fdedb23c930f071743a5f2dbd87af02b86b12471796612a
+    size: 8390481
+    checksum: sha256:3ef9a4df767dbc5e75944b5c197d186f8b5ca8745522e07cdf1a195229d381b4
     name: expat
-    evr: 2.5.0-6.el9
+    evr: 2.5.0-6.el9_8.1
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/f/filesystem-3.16-5.el9.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
     size: 20486
@@ -1327,12 +1327,12 @@ arches:
     checksum: sha256:6a74a3d96bd4657659524050945e2a47e93779addf2de374a13e1baf32b4ab8d
     name: libdb
     evr: 5.3.28-57.el9_6
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/l/libeconf-0.4.1-5.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/l/libeconf-0.4.1-7.el9_8.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
-    size: 200350
-    checksum: sha256:76c260055a883661f8b8577bf323e7110ef87f873ce89711dc3d13905a4e0fdc
+    size: 206886
+    checksum: sha256:425009c96135f39ca7bdb8a6ea948187d052d339dd76235979439fbd169da331
     name: libeconf
-    evr: 0.4.1-5.el9
+    evr: 0.4.1-7.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/l/libevent-2.1.12-8.el9_4.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
     size: 1123179
@@ -1622,10 +1622,10 @@ arches:
     name: zstd
     evr: 1.5.5-1.el9
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/repodata/1de5b39dd276dfa2421119bb7fd44da4718846a4933985d51af3b6bcb01ce60b-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/repodata/b143915f15b0c9e76b5dcc5057cbdb70dac037354c39039da5574b1f6c9d0610-modules.yaml.gz
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 54283
-    checksum: sha256:1de5b39dd276dfa2421119bb7fd44da4718846a4933985d51af3b6bcb01ce60b
+    size: 55268
+    checksum: sha256:b143915f15b0c9e76b5dcc5057cbdb70dac037354c39039da5574b1f6c9d0610
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/c/cpp-11.5.0-14.el9.ppc64le.rpm
@@ -1964,13 +1964,13 @@ arches:
     name: elfutils-libs
     evr: 0.194-1.el9
     sourcerpm: elfutils-0.194-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/e/expat-2.5.0-6.el9.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/e/expat-2.5.0-6.el9_8.1.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 125321
-    checksum: sha256:b9ae1a0a21a6a7469ce37d3c6823eda4be08f539959f965f27758159c774410d
+    size: 132202
+    checksum: sha256:eae0d2c0c23adc9b878e86d46a7cd176e991a84fc5780877dd58f15552b6a5c6
     name: expat
-    evr: 2.5.0-6.el9
-    sourcerpm: expat-2.5.0-6.el9.src.rpm
+    evr: 2.5.0-6.el9_8.1
+    sourcerpm: expat-2.5.0-6.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/f/filesystem-3.16-5.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 5003944
@@ -2160,13 +2160,13 @@ arches:
     name: libdb
     evr: 5.3.28-57.el9_6
     sourcerpm: libdb-5.3.28-57.el9_6.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/l/libeconf-0.4.1-5.el9.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/l/libeconf-0.4.1-7.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 29147
-    checksum: sha256:fb259a32af3af28236a1b8c6d436fb3c02c9eb7b8e54631a830ffa63c033a122
+    size: 35680
+    checksum: sha256:4a26999b09960559538b2fbee1aece9f6c3c47e386b918f3f50260dd125e1ac4
     name: libeconf
-    evr: 0.4.1-5.el9
-    sourcerpm: libeconf-0.4.1-5.el9.src.rpm
+    evr: 0.4.1-7.el9_8
+    sourcerpm: libeconf-0.4.1-7.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/l/libevent-2.1.12-8.el9_4.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 287857
@@ -2838,12 +2838,12 @@ arches:
     checksum: sha256:643279e796ded16c5be5cdc2a91839c787e62e59757008675eb0580a4a42af21
     name: elfutils
     evr: 0.194-1.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/e/expat-2.5.0-6.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/e/expat-2.5.0-6.el9_8.1.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
-    size: 8380129
-    checksum: sha256:770b7a3482856c990fdedb23c930f071743a5f2dbd87af02b86b12471796612a
+    size: 8390481
+    checksum: sha256:3ef9a4df767dbc5e75944b5c197d186f8b5ca8745522e07cdf1a195229d381b4
     name: expat
-    evr: 2.5.0-6.el9
+    evr: 2.5.0-6.el9_8.1
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/f/filesystem-3.16-5.el9.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
     size: 20486
@@ -2958,12 +2958,12 @@ arches:
     checksum: sha256:6a74a3d96bd4657659524050945e2a47e93779addf2de374a13e1baf32b4ab8d
     name: libdb
     evr: 5.3.28-57.el9_6
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/l/libeconf-0.4.1-5.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/l/libeconf-0.4.1-7.el9_8.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
-    size: 200350
-    checksum: sha256:76c260055a883661f8b8577bf323e7110ef87f873ce89711dc3d13905a4e0fdc
+    size: 206886
+    checksum: sha256:425009c96135f39ca7bdb8a6ea948187d052d339dd76235979439fbd169da331
     name: libeconf
-    evr: 0.4.1-5.el9
+    evr: 0.4.1-7.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/l/libevent-2.1.12-8.el9_4.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
     size: 1123179
@@ -3259,10 +3259,10 @@ arches:
     name: zstd
     evr: 1.5.5-1.el9
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/repodata/ff3b57765b96b19c18e7e85a99e664db3f3717591c56608a5fc61e223fa9651a-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/repodata/151438702e23a651c408af61c9dc55e20d9164fe422d916d405af6cdcefce96d-modules.yaml.gz
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 50587
-    checksum: sha256:ff3b57765b96b19c18e7e85a99e664db3f3717591c56608a5fc61e223fa9651a
+    size: 51224
+    checksum: sha256:151438702e23a651c408af61c9dc55e20d9164fe422d916d405af6cdcefce96d
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/c/cpp-11.5.0-14.el9.s390x.rpm
@@ -3601,13 +3601,13 @@ arches:
     name: elfutils-libs
     evr: 0.194-1.el9
     sourcerpm: elfutils-0.194-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/e/expat-2.5.0-6.el9.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/e/expat-2.5.0-6.el9_8.1.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 116325
-    checksum: sha256:0fa875cffe13bdca519605d13e913bc3d973ce813d490e424ca390aaf4bffe83
+    size: 123151
+    checksum: sha256:a5b24ad347a1722a948f417a7289a89b1aee9047350e88866173e05157239142
     name: expat
-    evr: 2.5.0-6.el9
-    sourcerpm: expat-2.5.0-6.el9.src.rpm
+    evr: 2.5.0-6.el9_8.1
+    sourcerpm: expat-2.5.0-6.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/f/filesystem-3.16-5.el9.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 5003897
@@ -3797,13 +3797,13 @@ arches:
     name: libdb
     evr: 5.3.28-57.el9_6
     sourcerpm: libdb-5.3.28-57.el9_6.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/l/libeconf-0.4.1-5.el9.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/l/libeconf-0.4.1-7.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 26645
-    checksum: sha256:1c2c6196da476519dfe2e7f6220bd6b5d5e449195f077997dcc49d7f89837c78
+    size: 33180
+    checksum: sha256:37d39a7fa03848dde2f48a0f32cd27b182317f9a5b85ce0af7252a44ffc42155
     name: libeconf
-    evr: 0.4.1-5.el9
-    sourcerpm: libeconf-0.4.1-5.el9.src.rpm
+    evr: 0.4.1-7.el9_8
+    sourcerpm: libeconf-0.4.1-7.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/l/libevent-2.1.12-8.el9_4.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 264391
@@ -4462,12 +4462,12 @@ arches:
     checksum: sha256:643279e796ded16c5be5cdc2a91839c787e62e59757008675eb0580a4a42af21
     name: elfutils
     evr: 0.194-1.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/e/expat-2.5.0-6.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/e/expat-2.5.0-6.el9_8.1.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
-    size: 8380129
-    checksum: sha256:770b7a3482856c990fdedb23c930f071743a5f2dbd87af02b86b12471796612a
+    size: 8390481
+    checksum: sha256:3ef9a4df767dbc5e75944b5c197d186f8b5ca8745522e07cdf1a195229d381b4
     name: expat
-    evr: 2.5.0-6.el9
+    evr: 2.5.0-6.el9_8.1
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/f/filesystem-3.16-5.el9.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
     size: 20486
@@ -4582,12 +4582,12 @@ arches:
     checksum: sha256:6a74a3d96bd4657659524050945e2a47e93779addf2de374a13e1baf32b4ab8d
     name: libdb
     evr: 5.3.28-57.el9_6
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/l/libeconf-0.4.1-5.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/l/libeconf-0.4.1-7.el9_8.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
-    size: 200350
-    checksum: sha256:76c260055a883661f8b8577bf323e7110ef87f873ce89711dc3d13905a4e0fdc
+    size: 206886
+    checksum: sha256:425009c96135f39ca7bdb8a6ea948187d052d339dd76235979439fbd169da331
     name: libeconf
-    evr: 0.4.1-5.el9
+    evr: 0.4.1-7.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/l/libevent-2.1.12-8.el9_4.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
     size: 1123179
@@ -4877,10 +4877,10 @@ arches:
     name: zstd
     evr: 1.5.5-1.el9
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/repodata/0f6cce324f76bae50a120472c49c5addc928b2ea38b35d62a65a60d40bc41023-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/repodata/119aa24d6e96406a1441b36f7021142944c6e49ab8621c980237f3db5719f249-modules.yaml.gz
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 52274
-    checksum: sha256:0f6cce324f76bae50a120472c49c5addc928b2ea38b35d62a65a60d40bc41023
+    size: 52682
+    checksum: sha256:119aa24d6e96406a1441b36f7021142944c6e49ab8621c980237f3db5719f249
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/c/cpp-11.5.0-14.el9.x86_64.rpm
@@ -5212,13 +5212,13 @@ arches:
     name: elfutils-libs
     evr: 0.194-1.el9
     sourcerpm: elfutils-0.194-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/e/expat-2.5.0-6.el9.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/e/expat-2.5.0-6.el9_8.1.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 120289
-    checksum: sha256:d3db74f301ef2aab029523c80fcd8744bff69aab442a6ee9f71f85934ad910c2
+    size: 126909
+    checksum: sha256:6a0c98d67b643fe620297e4cd7e990f99a86ed6bc90a8295a952c626ecbb9f62
     name: expat
-    evr: 2.5.0-6.el9
-    sourcerpm: expat-2.5.0-6.el9.src.rpm
+    evr: 2.5.0-6.el9_8.1
+    sourcerpm: expat-2.5.0-6.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/f/filesystem-3.16-5.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 5003807
@@ -5401,13 +5401,13 @@ arches:
     name: libdb
     evr: 5.3.28-57.el9_6
     sourcerpm: libdb-5.3.28-57.el9_6.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/l/libeconf-0.4.1-5.el9.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/l/libeconf-0.4.1-7.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 26622
-    checksum: sha256:7fe6bfb72cd91d17d64d5dab0a8914532403a33236676fb7c948692fb5128632
+    size: 33179
+    checksum: sha256:a570c5baaedeb1445bc2e4f3930b0a709411bbefbdbf463c3e006cbfc7018894
     name: libeconf
-    evr: 0.4.1-5.el9
-    sourcerpm: libeconf-0.4.1-5.el9.src.rpm
+    evr: 0.4.1-7.el9_8
+    sourcerpm: libeconf-0.4.1-7.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/l/libevent-2.1.12-8.el9_4.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 272588
@@ -6072,12 +6072,12 @@ arches:
     checksum: sha256:643279e796ded16c5be5cdc2a91839c787e62e59757008675eb0580a4a42af21
     name: elfutils
     evr: 0.194-1.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/e/expat-2.5.0-6.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/e/expat-2.5.0-6.el9_8.1.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
-    size: 8380129
-    checksum: sha256:770b7a3482856c990fdedb23c930f071743a5f2dbd87af02b86b12471796612a
+    size: 8390481
+    checksum: sha256:3ef9a4df767dbc5e75944b5c197d186f8b5ca8745522e07cdf1a195229d381b4
     name: expat
-    evr: 2.5.0-6.el9
+    evr: 2.5.0-6.el9_8.1
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/f/filesystem-3.16-5.el9.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
     size: 20486
@@ -6192,12 +6192,12 @@ arches:
     checksum: sha256:6a74a3d96bd4657659524050945e2a47e93779addf2de374a13e1baf32b4ab8d
     name: libdb
     evr: 5.3.28-57.el9_6
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/l/libeconf-0.4.1-5.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/l/libeconf-0.4.1-7.el9_8.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
-    size: 200350
-    checksum: sha256:76c260055a883661f8b8577bf323e7110ef87f873ce89711dc3d13905a4e0fdc
+    size: 206886
+    checksum: sha256:425009c96135f39ca7bdb8a6ea948187d052d339dd76235979439fbd169da331
     name: libeconf
-    evr: 0.4.1-5.el9
+    evr: 0.4.1-7.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/l/libevent-2.1.12-8.el9_4.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
     size: 1123179
@@ -6487,7 +6487,7 @@ arches:
     name: zstd
     evr: 1.5.5-1.el9
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/repodata/b95c9aeafef6fa6d266675fa5ec67120ed9c496ef1d394c5672c1376e4674261-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/repodata/0e42b8aeee788edd8f156d5d5d0e0bc657cf3420325d93004cb9995e8ae6b73c-modules.yaml.gz
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 54422
-    checksum: sha256:b95c9aeafef6fa6d266675fa5ec67120ed9c496ef1d394c5672c1376e4674261
+    size: 54761
+    checksum: sha256:0e42b8aeee788edd8f156d5d5d0e0bc657cf3420325d93004cb9995e8ae6b73c

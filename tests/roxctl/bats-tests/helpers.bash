@@ -37,7 +37,7 @@ any_version='[0-9]+\.[0-9]+\.'
 
 delete-outdated-binaries() {
     local roxctl_ver="${1}"
-    current_tag="$(git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')"
+    current_tag="$(make --quiet --no-print-directory tag)"
     echo "Roxctl version='${roxctl_ver}'" >&3
     echo "Current tag   ='${current_tag}'" >&3
     if [[ "${current_tag}" != "${roxctl_ver}" ]]; then
