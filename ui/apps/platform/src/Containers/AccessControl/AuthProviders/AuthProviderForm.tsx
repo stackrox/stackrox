@@ -189,6 +189,7 @@ function AuthProviderForm({
                     configSchema.shape({
                         configurationType: yup.string().required(), // selected from a list where one is always selected
                         sp_issuer: yup.string().required('A service provider issuer is required.'),
+                        sp_audience: yup.string(),
                         idp_metadata_url: yup.string().when('configurationType', {
                             is: (value) => value === 'dynamic',
                             then: (schema) =>

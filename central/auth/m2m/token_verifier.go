@@ -40,5 +40,5 @@ func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToM
 		return nil, errors.Wrapf(err, "creating OIDC provider for issuer %q", config.GetIssuer())
 	}
 
-	return &genericTokenVerifier{provider: provider}, nil
+	return &genericTokenVerifier{provider: provider, audience: config.GetAudience()}, nil
 }
