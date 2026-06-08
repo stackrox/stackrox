@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Collect diagnostics after performance/scale testing completes.
-# This script collects debug dumps and diagnostics from Central.
+# This script collects a diagnostic bundle from Central.
 
 set -euo pipefail
 
@@ -14,7 +14,6 @@ source "$ROOT/tests/e2e/lib.sh"
 info "Collecting diagnostics after performance/scale tests"
 
 # Directory names match what PostClusterTest uses in post_tests.py
-DEBUG_OUTPUT="debug-dump"
 DIAGNOSTIC_OUTPUT="diagnostic-bundle"
 CENTRAL_DATA_OUTPUT="central-data"
 
@@ -69,14 +68,6 @@ fi
 wait_for_api || true
 info "Central API is responsive, collecting diagnostics"
 
-# Get central debug dump (includes metrics)
-if get_central_debug_dump "${DEBUG_OUTPUT}"; then
-    info "Collected central debug dump to ${DEBUG_OUTPUT}"
-    # Skip metrics processing - debug dump already contains raw metrics in the zip
-else
-    info "Warning: Failed to collect central debug dump"
-fi
-
 # Get central diagnostics bundle
 if get_central_diagnostics "${DIAGNOSTIC_OUTPUT}"; then
     info "Collected central diagnostics to ${DIAGNOSTIC_OUTPUT}"
@@ -94,7 +85,7 @@ fi
 # Store artifacts to OpenShift CI artifact directory
 if [[ -n "${ARTIFACT_DIR:-}" ]]; then
     info "Copying diagnostics to ${ARTIFACT_DIR}"
-    for dir in "${DEBUG_OUTPUT}" "${DIAGNOSTIC_OUTPUT}" "${CENTRAL_DATA_OUTPUT}"; do
+    for dir in "${DIAGNOSTIC_OUTPUT}" "${CENTRAL_DATA_OUTPUT}"; do
         if [[ -d "${dir}" ]]; then
             cp -r "${dir}" "${ARTIFACT_DIR}/" || info "Warning: Failed to copy ${dir}"
         fi
