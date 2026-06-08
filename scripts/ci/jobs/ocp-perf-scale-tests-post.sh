@@ -15,7 +15,6 @@ info "Getting diagnostics after performance/scale tests"
 
 # Directory names match what PostClusterTest uses in post_tests.py
 DIAGNOSTIC_OUTPUT="diagnostic-bundle"
-CENTRAL_DATA_OUTPUT="central-data"
 
 # Set up port forward to Central with retry
 info "Setting up port forward to central"
@@ -75,21 +74,12 @@ else
     info "Warning: Failed to get central diagnostics"
 fi
 
-# Grab additional data from Central
-if "$ROOT/scripts/grab-data-from-central.sh" "${CENTRAL_DATA_OUTPUT}"; then
-    info "Got central data to ${CENTRAL_DATA_OUTPUT}"
-else
-    info "Warning: Failed to get central data"
-fi
-
 # Store artifacts to OpenShift CI artifact directory
 if [[ -n "${ARTIFACT_DIR:-}" ]]; then
     info "Copying diagnostics to ${ARTIFACT_DIR}"
-    for dir in "${DIAGNOSTIC_OUTPUT}" "${CENTRAL_DATA_OUTPUT}"; do
-        if [[ -d "${dir}" ]]; then
-            cp -r "${dir}" "${ARTIFACT_DIR}/" || info "Warning: Failed to copy ${dir}"
-        fi
-    done
+    if [[ -d "${DIAGNOSTIC_OUTPUT}" ]]; then
+        cp -r "${DIAGNOSTIC_OUTPUT}" "${ARTIFACT_DIR}/" || info "Warning: Failed to copy ${DIAGNOSTIC_OUTPUT}"
+    fi
 else
     info "Warning: ARTIFACT_DIR not set, diagnostics not copied to artifacts"
 fi
