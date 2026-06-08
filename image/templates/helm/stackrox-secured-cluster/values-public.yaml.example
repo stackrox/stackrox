@@ -48,7 +48,7 @@
 #additionalCAs: null
 #
 ## Validity duration for service certificates issued to secured cluster components (e.g. "1080h" for 45 days).
-## When unset, the Operator default (8760h) is used. Central caps at 1 year and enforces a 5-minute floor.
+## When unset, the Operator default (8760h) is used. Central caps at 1 year and enforces a 2-hour minimum.
 #serviceCertValidity: null
 #
 # Specify `true` to create the `sensor-upgrader` account. By default, the StackRox Kubernetes

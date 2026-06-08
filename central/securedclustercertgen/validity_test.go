@@ -36,6 +36,14 @@ func TestClampRequestedValidity(t *testing.T) {
 			requested: durationpb.New(time.Minute),
 			wantErr:   "below the minimum",
 		},
+		"just below minimum": {
+			requested: durationpb.New(2*time.Hour - time.Second),
+			wantErr:   "below the minimum",
+		},
+		"exactly minimum": {
+			requested: durationpb.New(2 * time.Hour),
+			want:      2 * time.Hour,
+		},
 		"negative": {
 			requested: durationpb.New(-time.Hour),
 			wantErr:   "must not be negative",

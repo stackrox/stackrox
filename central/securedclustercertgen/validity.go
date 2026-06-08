@@ -10,7 +10,9 @@ import (
 
 const (
 	// minRequestedCertValidity is the absolute floor for requested certificate validity.
-	minRequestedCertValidity = 5 * time.Minute
+	// Must be greater than the 1h clock-skew grace period used when setting notBefore,
+	// otherwise the refresher would see a near-zero or negative window and loop immediately.
+	minRequestedCertValidity = 2 * time.Hour
 )
 
 // ClampRequestedValidity validates and clamps the requested certificate validity duration.
