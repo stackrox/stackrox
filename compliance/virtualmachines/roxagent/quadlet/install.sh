@@ -33,6 +33,9 @@ STAGED_INSTALL_FILES=(
     roxagent.timer
     roxagent-prep.service
     roxagent-tmpfiles.conf
+    roxagent-reactive.container
+    roxagent-watch.path
+    roxagent-debounce.timer
 )
 
 TRANSPORT_KIND=""
@@ -213,6 +216,16 @@ install_from_stage_dir() {
     sudo cp "${stage_dir}/roxagent-prep.service" /etc/systemd/system/
     sudo restorecon -Rv /etc/systemd/system/roxagent.timer /etc/systemd/system/roxagent-prep.service 2>/dev/null || true
 
+    # Reactive container goes to Quadlet directory
+    filter_container_file "${stage_dir}/roxagent-reactive.container" \
+        | sudo tee /etc/containers/systemd/roxagent-reactive.container >/dev/null
+    sudo restorecon -Rv /etc/containers/systemd/roxagent-reactive.container 2>/dev/null || true
+
+    # Path unit and debounce timer go to systemd directory
+    sudo cp "${stage_dir}/roxagent-watch.path" /etc/systemd/system/
+    sudo cp "${stage_dir}/roxagent-debounce.timer" /etc/systemd/system/
+    sudo restorecon -Rv /etc/systemd/system/roxagent-watch.path /etc/systemd/system/roxagent-debounce.timer 2>/dev/null || true
+
     # Recreate the lock directory on every boot since /run is tmpfs.
     sudo mkdir -p /etc/tmpfiles.d/
     sudo cp "${stage_dir}/roxagent-tmpfiles.conf" /etc/tmpfiles.d/roxagent.conf
@@ -225,6 +238,9 @@ install_from_stage_dir() {
 
     echo "Enabling and starting timer..."
     sudo systemctl enable --now roxagent.timer
+
+    echo "Enabling path watcher for reactive scans..."
+    sudo systemctl enable --now roxagent-watch.path
 
     echo "Status:"
     sudo systemctl list-timers roxagent.timer

@@ -1,0 +1,12 @@
+[Unit]
+Description=Watch DNF history for package changes
+
+[Path]
+# Default path for RHEL 9/10. Override by editing this file if
+# history.sqlite lives elsewhere on your RHEL version.
+PathModified=/var/lib/dnf/history.sqlite
+# Trigger the debounce timer, not the service directly.
+Unit=roxagent-debounce.timer
+
+[Install]
+WantedBy=multi-user.target
