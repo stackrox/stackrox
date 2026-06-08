@@ -30,7 +30,8 @@ function CredentialExpiration({
         return <HealthStatusNotApplicable testId={testId} />;
     }
 
-    const { sensorCertExpiry } = certExpiryStatus;
+    const { sensorCertExpiry, sensorCertNotBefore, lastRefreshTime, lastRefreshedCertExpiry } =
+        certExpiryStatus;
     const currentDatetime = new Date();
 
     // Adapt health status categories to certificate expiration.
@@ -38,23 +39,32 @@ function CredentialExpiration({
     const { Icon, fgColor } = healthStatusStylesLegacy[healthStatus];
     const icon = <Icon className="h-4 w-4" />;
 
+    // When a refresh has occurred after the current connection was established, show the
+    // refreshed cert's expiry instead of the (potentially stale) connection cert expiry.
+    const refreshedAfterConnection =
+        lastRefreshedCertExpiry &&
+        lastRefreshTime &&
+        sensorCertNotBefore &&
+        new Date(sensorCertNotBefore) < new Date(lastRefreshTime);
+    const displayedExpiry = refreshedAfterConnection ? lastRefreshedCertExpiry : sensorCertExpiry;
+
     // Order arguments according to date-fns@2 convention:
-    // If sensorCertExpiry > currentDateTime: in X units
-    // If sensorCertExpiry <= currentDateTime: X units ago
+    // If expiry > currentDateTime: in X units
+    // If expiry <= currentDateTime: X units ago
     const distanceElement = (
         <span className="whitespace-nowrap">
-            {getDistanceStrictAsPhrase(sensorCertExpiry, currentDatetime)}
+            {getDistanceStrictAsPhrase(displayedExpiry, currentDatetime)}
         </span>
     );
 
     let expirationElement = <></>;
-    const diffInDays = differenceInDays(sensorCertExpiry, currentDatetime);
+    const diffInDays = differenceInDays(displayedExpiry, currentDatetime);
     if (healthStatus === 'HEALTHY') {
         let tooltipText: string;
         if (diffInDays === 0) {
-            tooltipText = `Expiration time: ${getTime(sensorCertExpiry)}`;
+            tooltipText = `Expiration time: ${getTime(displayedExpiry)}`;
         } else {
-            tooltipText = `Expiration date: ${getDate(sensorCertExpiry)}`;
+            tooltipText = `Expiration date: ${getDate(displayedExpiry)}`;
         }
         // A tooltip displays expiration date or time
         expirationElement = (
@@ -70,8 +80,8 @@ function CredentialExpiration({
                 {distanceElement}{' '}
                 <span className="whitespace-nowrap">{`on ${
                     diffInDays > 0 && diffInDays < 7
-                        ? getDayOfWeek(sensorCertExpiry)
-                        : getDate(sensorCertExpiry)
+                        ? getDayOfWeek(displayedExpiry)
+                        : getDate(displayedExpiry)
                 }`}</span>
             </div>
         );
