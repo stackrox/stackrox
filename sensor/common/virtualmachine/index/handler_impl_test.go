@@ -93,6 +93,59 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 	}
 }
 
+func (s *virtualMachineHandlerSuite) TestSendForwardsTriggerToCentral() {
+	tests := map[string]v1.ReportTrigger{
+		"reactive":  v1.ReportTrigger_REPORT_TRIGGER_REACTIVE,
+		"scheduled": v1.ReportTrigger_REPORT_TRIGGER_SCHEDULED,
+	}
+
+	for name, trigger := range tests {
+		s.Run(name, func() {
+			ctrl := gomock.NewController(s.T())
+			defer ctrl.Finish()
+
+			store := mocks.NewMockVirtualMachineStore(ctrl)
+			handler := &handlerImpl{
+				centralReady: concurrency.NewSignal(),
+				lock:         &sync.RWMutex{},
+				stopper:      concurrency.NewStopper(),
+				store:        store,
+			}
+			centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
+			defer centralcaps.Set(nil)
+
+			err := handler.Start()
+			s.Require().NoError(err)
+			handler.Notify(common.SensorComponentEventCentralReachable)
+			defer handler.Stop()
+
+			cid := "1"
+			store.EXPECT().GetFromCID(gomock.Eq(uint32(1))).Times(1).Return(
+				&virtualmachine.Info{
+					ID: "test-vm",
+				})
+
+			vm := &v1.IndexReport{VsockCid: cid}
+			go func() {
+				err := handler.Send(context.Background(), vm, trigger)
+				s.Require().NoError(err)
+			}()
+
+			select {
+			case msg := <-handler.ResponsesC():
+				s.Require().NotNil(msg)
+				s.Require().NotNil(msg.MsgFromSensor)
+
+				sensorEvent := msg.GetEvent()
+				s.Require().NotNil(sensorEvent)
+				s.Assert().Equal(trigger, sensorEvent.GetVirtualMachineIndexReport().GetTrigger())
+			case <-time.After(time.Second):
+				s.Fail("Expected message to be sent to central")
+			}
+		})
+	}
+}
+
 func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 	err := s.handler.Start()
 	s.Require().NoError(err)

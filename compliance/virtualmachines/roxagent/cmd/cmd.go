@@ -67,17 +67,17 @@ func RootCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().Uint32Var(&cfg.VsockPort, "port", 818,
 		"VSock port to connect with the virtual machine host.",
 	)
-	var triggerStr string
-	cmd.Flags().StringVar(&triggerStr, "trigger", "",
-		"Scan trigger: 'scheduled' for periodic timer runs. "+
-			"All other values (or omitted) default to reactive.",
+	var scheduled bool
+	cmd.Flags().BoolVar(&scheduled, "scheduled", false,
+		"Mark this run as a routine scheduled scan. "+
+			"If omitted, the report is treated as reactive.",
 	)
 	cmd.RunE = func(cmd *cobra.Command, _ []string) error {
 		if err := validateDaemonConfig(cfg); err != nil {
 			return err
 		}
 
-		cfg.Trigger = parseTrigger(triggerStr)
+		cfg.Trigger = triggerFromScheduled(scheduled)
 
 		client := &vsock.Client{
 			Port:     cfg.VsockPort,
@@ -118,8 +118,8 @@ func validateDaemonConfig(cfg *common.Config) error {
 	return nil
 }
 
-func parseTrigger(s string) v1.ReportTrigger {
-	if s == "scheduled" {
+func triggerFromScheduled(scheduled bool) v1.ReportTrigger {
+	if scheduled {
 		return v1.ReportTrigger_REPORT_TRIGGER_SCHEDULED
 	}
 	return v1.ReportTrigger_REPORT_TRIGGER_REACTIVE

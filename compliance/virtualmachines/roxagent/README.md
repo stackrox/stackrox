@@ -29,6 +29,7 @@ sudo ./roxagent --daemon --index-interval 10m --host-path /custom/path --port 20
 - `--max-initial-report-delay` - Max delay before starting to send in daemon mode (default: 20m).
 - `--port` - VSock port (default: 818).
 - `--repo-cpe-url` - URL for the repository to CPE mapping.
+- `--scheduled` - Mark the report as coming from the routine scheduled scan.
 - `--timeout` - VSock client timeout when sending index reports.
 - `--verbose` - Prints the index reports to stdout.
 

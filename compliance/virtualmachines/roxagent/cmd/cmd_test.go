@@ -9,29 +9,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTriggerFlagDefaultsToReactive(t *testing.T) {
+func TestScheduledFlagDefaultsToReactive(t *testing.T) {
 	cmd := RootCmd(context.Background())
 	err := cmd.ParseFlags([]string{})
 	require.NoError(t, err)
 
-	flag := cmd.Flags().Lookup("trigger")
-	require.NotNil(t, flag, "expected --trigger flag to exist")
-	assert.Equal(t, "", flag.Value.String(), "default should be empty string (resolves to reactive)")
+	flag := cmd.Flags().Lookup("scheduled")
+	require.NotNil(t, flag, "expected --scheduled flag to exist")
+	assert.Equal(t, "false", flag.Value.String(), "default should be false (reactive)")
+	assert.Nil(t, cmd.Flags().Lookup("trigger"), "old --trigger flag should be removed")
 }
 
-func TestParseTriggerScheduled(t *testing.T) {
-	trigger := parseTrigger("scheduled")
+func TestTriggerFromScheduled(t *testing.T) {
+	trigger := triggerFromScheduled(true)
 	assert.Equal(t, v1.ReportTrigger_REPORT_TRIGGER_SCHEDULED, trigger)
 }
 
-func TestParseTriggerDefaultsToReactive(t *testing.T) {
-	cases := map[string]string{
-		"empty string":  "",
-		"unknown value": "something",
+func TestTriggerFromReactiveDefault(t *testing.T) {
+	cases := map[string]bool{
+		"default": false,
 	}
-	for name, input := range cases {
+	for name, scheduled := range cases {
 		t.Run(name, func(t *testing.T) {
-			trigger := parseTrigger(input)
+			trigger := triggerFromScheduled(scheduled)
 			assert.Equal(t, v1.ReportTrigger_REPORT_TRIGGER_REACTIVE, trigger)
 		})
 	}

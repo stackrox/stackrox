@@ -53,19 +53,41 @@ STAGE_PREP_SERVICE='SENTINEL-PREP=true'
 
 STAGE_TMPFILES_CONF='SENTINEL-TMPFILES=true'
 
+STAGE_REACTIVE_CONTAINER='[Container]
+SENTINEL-REACTIVE-CONTAINER=true'
+
+STAGE_WATCH_PATH='[Unit]
+Description=SENTINEL-WATCH
+
+[Path]
+PathModified=@DNF_HISTORY_PATH@
+Unit=roxagent-debounce.timer'
+
+STAGE_DEBOUNCE_TIMER='[Unit]
+Description=SENTINEL-DEBOUNCE
+
+[Timer]
+OnActiveSec=5min
+RemainAfterElapse=false
+Unit=roxagent-reactive.service'
+
 setup() {
     INSTALL_SCRIPT="${BATS_TEST_DIRNAME}/../../../${INSTALL_SCRIPT_REL}"
     STAGE_DIR="${BATS_TEST_TMPDIR}/custom-stage"
     BIN_DIR="${BATS_TEST_TMPDIR}/bin"
     FAKE_ROOT="${BATS_TEST_TMPDIR}/fake-root"
     CALL_LOG="${BATS_TEST_TMPDIR}/calls.log"
+    HISTORY_PATH="${BATS_TEST_TMPDIR}/history.sqlite"
 
     mkdir -p "${STAGE_DIR}" "${BIN_DIR}" "${FAKE_ROOT}"
+    touch "${HISTORY_PATH}"
     # Truncate file to 0 bytes
     : > "${CALL_LOG}"
 
     export FAKE_ROOT
     export CALL_LOG
+    export HISTORY_PATH
+    export DNF_HISTORY_PATH_CANDIDATES="${HISTORY_PATH}"
     export PATH="${BIN_DIR}:${PATH}"
 
     write_stage_files
@@ -86,8 +108,11 @@ setup() {
     assert_output --partial "periodically"
 
     [ -f "${FAKE_ROOT}/etc/containers/systemd/roxagent.container" ]
+    [ -f "${FAKE_ROOT}/etc/containers/systemd/roxagent-reactive.container" ]
     [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent.timer" ]
     [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent-prep.service" ]
+    [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent-watch.path" ]
+    [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent-debounce.timer" ]
     [ -f "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf" ]
 
     run cat "${FAKE_ROOT}/etc/containers/systemd/roxagent.container"
@@ -98,6 +123,12 @@ setup() {
 
     run cat "${FAKE_ROOT}/etc/systemd/system/roxagent-prep.service"
     assert_output --partial "SENTINEL-PREP"
+
+    run cat "${FAKE_ROOT}/etc/systemd/system/roxagent-watch.path"
+    assert_output --partial "PathModified=${HISTORY_PATH}"
+
+    run cat "${FAKE_ROOT}/etc/systemd/system/roxagent-debounce.timer"
+    assert_output --partial "RemainAfterElapse=false"
 
     run cat "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf"
     assert_output --partial "SENTINEL-TMPFILES"
@@ -113,8 +144,11 @@ setup() {
     refute_output --partial "Done!"
 
     [ -f "${FAKE_ROOT}/etc/containers/systemd/roxagent.container" ]
+    [ -f "${FAKE_ROOT}/etc/containers/systemd/roxagent-reactive.container" ]
     [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent.timer" ]
     [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent-prep.service" ]
+    [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent-watch.path" ]
+    [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent-debounce.timer" ]
     [ -f "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf" ]
 
     run cat "${FAKE_ROOT}/etc/containers/systemd/roxagent.container"
@@ -125,6 +159,12 @@ setup() {
 
     run cat "${FAKE_ROOT}/etc/systemd/system/roxagent-prep.service"
     assert_output --partial "SENTINEL-PREP"
+
+    run cat "${FAKE_ROOT}/etc/systemd/system/roxagent-watch.path"
+    assert_output --partial "PathModified=${HISTORY_PATH}"
+
+    run cat "${FAKE_ROOT}/etc/systemd/system/roxagent-debounce.timer"
+    assert_output --partial "RemainAfterElapse=false"
 
     run cat "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf"
     assert_output --partial "SENTINEL-TMPFILES"
@@ -310,6 +350,51 @@ setup() {
     refute_output --partial "Volume=/missing/path"
 }
 
+@test "resolve_dnf_history_path returns first existing candidate" {
+    local first_missing="${BATS_TEST_TMPDIR}/missing.sqlite"
+    local second_existing="${BATS_TEST_TMPDIR}/existing.sqlite"
+    touch "${second_existing}"
+
+    run bash -c "
+        set -euo pipefail
+        source <(sed -n '/^resolve_dnf_history_path/,/^}/p' '${INSTALL_SCRIPT}')
+        DNF_HISTORY_PATH_CANDIDATES='${first_missing} ${second_existing}'
+        resolve_dnf_history_path
+    "
+    assert_success
+    assert_output "${second_existing}"
+}
+
+@test "resolve_dnf_history_path fails when no candidate exists" {
+    local first_missing="${BATS_TEST_TMPDIR}/missing1.sqlite"
+    local second_missing="${BATS_TEST_TMPDIR}/missing2.sqlite"
+
+    run bash -c "
+        set -euo pipefail
+        source <(sed -n '/^resolve_dnf_history_path/,/^}/p' '${INSTALL_SCRIPT}')
+        DNF_HISTORY_PATH_CANDIDATES='${first_missing} ${second_missing}'
+        resolve_dnf_history_path
+    "
+    assert_failure
+    assert_output --partial 'unable to locate DNF history database'
+}
+
+@test "render_watch_path_file substitutes detected history path" {
+    local template_file="${BATS_TEST_TMPDIR}/watch.path"
+    local history_path="${BATS_TEST_TMPDIR}/history.sqlite"
+    printf '%s\n' "${STAGE_WATCH_PATH}" > "${template_file}"
+    touch "${history_path}"
+
+    run bash -c "
+        set -euo pipefail
+        source <(sed -n '/^render_watch_path_file/,/^}/p' '${INSTALL_SCRIPT}')
+        render_watch_path_file '${template_file}' '${history_path}'
+    "
+    assert_success
+    assert_output --partial 'PathModified='"${history_path}"
+    refute_output --partial '@DNF_HISTORY_PATH@'
+}
+
 # =============================================================================
 # Remote stage dir flow (mocked)
 # =============================================================================
@@ -441,6 +526,9 @@ write_stage_files() {
     printf '%s\n' "${STAGE_TIMER}" > "${STAGE_DIR}/roxagent.timer"
     printf '%s\n' "${STAGE_PREP_SERVICE}" > "${STAGE_DIR}/roxagent-prep.service"
     printf '%s\n' "${STAGE_TMPFILES_CONF}" > "${STAGE_DIR}/roxagent-tmpfiles.conf"
+    printf '%s\n' "${STAGE_REACTIVE_CONTAINER}" > "${STAGE_DIR}/roxagent-reactive.container"
+    printf '%s\n' "${STAGE_WATCH_PATH}" > "${STAGE_DIR}/roxagent-watch.path"
+    printf '%s\n' "${STAGE_DEBOUNCE_TIMER}" > "${STAGE_DIR}/roxagent-debounce.timer"
 }
 
 # Place a fake "sudo" on PATH that intercepts file operations and redirects

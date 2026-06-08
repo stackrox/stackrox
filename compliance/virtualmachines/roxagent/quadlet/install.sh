@@ -27,6 +27,12 @@ OPTIONAL_HOST_PATHS=(
     /var/lib/dnf
 )
 
+# Candidate DNF transaction history databases. The first existing path is used
+# to render roxagent-watch.path at install time.
+# DNF 4: /var/lib/dnf/history.sqlite
+# DNF 5: /usr/lib/sysimage/libdnf5/transaction_history.sqlite
+DEFAULT_DNF_HISTORY_PATH_CANDIDATES="/var/lib/dnf/history.sqlite /usr/lib/sysimage/libdnf5/transaction_history.sqlite"
+
 STAGED_INSTALL_FILES=(
     install.sh
     roxagent.container
@@ -200,9 +206,12 @@ validate_stage_dir() {
 
 install_from_stage_dir() {
     local stage_dir="$1"
+    local dnf_history_path
     validate_stage_dir "${stage_dir}"
+    dnf_history_path="$(resolve_dnf_history_path)"
 
     echo "Installing Quadlet units from ${stage_dir}..."
+    echo "Using DNF history database at ${dnf_history_path}"
 
     # Quadlet container file (strip mounts for paths missing on this host)
     sudo mkdir -p /etc/containers/systemd/
@@ -222,7 +231,8 @@ install_from_stage_dir() {
     sudo restorecon -Rv /etc/containers/systemd/roxagent-reactive.container 2>/dev/null || true
 
     # Path unit and debounce timer go to systemd directory
-    sudo cp "${stage_dir}/roxagent-watch.path" /etc/systemd/system/
+    render_watch_path_file "${stage_dir}/roxagent-watch.path" "${dnf_history_path}" \
+        | sudo tee /etc/systemd/system/roxagent-watch.path >/dev/null
     sudo cp "${stage_dir}/roxagent-debounce.timer" /etc/systemd/system/
     sudo restorecon -Rv /etc/systemd/system/roxagent-watch.path /etc/systemd/system/roxagent-debounce.timer 2>/dev/null || true
 
@@ -286,6 +296,29 @@ filter_container_file() {
     else
         grep -Ev "${pattern}" "${file}"
     fi
+}
+
+resolve_dnf_history_path() {
+    local candidates_string="${DNF_HISTORY_PATH_CANDIDATES:-${DEFAULT_DNF_HISTORY_PATH_CANDIDATES}}"
+    local candidates=()
+    local candidate
+    read -r -a candidates <<< "${candidates_string}"
+
+    for candidate in "${candidates[@]}"; do
+        if [ -f "${candidate}" ]; then
+            printf '%s\n' "${candidate}"
+            return 0
+        fi
+    done
+
+    echo "unable to locate DNF history database; checked: ${candidates_string}" >&2
+    return 1
+}
+
+render_watch_path_file() {
+    local file="$1"
+    local dnf_history_path="$2"
+    sed "s|@DNF_HISTORY_PATH@|${dnf_history_path}|g" "${file}"
 }
 
 main "$@"
