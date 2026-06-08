@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# Collect diagnostics after performance/scale testing completes.
-# This script collects a diagnostic bundle from Central.
+# Gets diagnostics after performance/scale testing completes.
+# This script gets a diagnostic bundle from Central.
 
 set -euo pipefail
 
@@ -11,7 +11,7 @@ source "$ROOT/scripts/ci/lib.sh"
 # shellcheck source=../../tests/e2e/lib.sh
 source "$ROOT/tests/e2e/lib.sh"
 
-info "Collecting diagnostics after performance/scale tests"
+info "Getting diagnostics after performance/scale tests"
 
 # Directory names match what PostClusterTest uses in post_tests.py
 DIAGNOSTIC_OUTPUT="diagnostic-bundle"
@@ -66,20 +66,20 @@ fi
 # If wait_for_api truly fails (API down), it will exit the script with exit 1
 # If it succeeds but ci_export fails, || true catches that and we continue
 wait_for_api || true
-info "Central API is responsive, collecting diagnostics"
+info "Central API is responsive, getting diagnostics"
 
 # Get central diagnostics bundle
 if get_central_diagnostics "${DIAGNOSTIC_OUTPUT}"; then
     info "Collected central diagnostics to ${DIAGNOSTIC_OUTPUT}"
 else
-    info "Warning: Failed to collect central diagnostics"
+    info "Warning: Failed to get central diagnostics"
 fi
 
 # Grab additional data from Central
 if "$ROOT/scripts/grab-data-from-central.sh" "${CENTRAL_DATA_OUTPUT}"; then
-    info "Collected central data to ${CENTRAL_DATA_OUTPUT}"
+    info "Got central data to ${CENTRAL_DATA_OUTPUT}"
 else
-    info "Warning: Failed to collect central data"
+    info "Warning: Failed to get central data"
 fi
 
 # Store artifacts to OpenShift CI artifact directory
@@ -99,4 +99,4 @@ if [[ -n "${PORT_FORWARD_PID:-}" ]]; then
     kill "${PORT_FORWARD_PID}" 2>/dev/null || true
 fi
 
-info "Diagnostic collection complete"
+info "Getting diagnostics complete"
