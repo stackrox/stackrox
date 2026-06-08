@@ -66,6 +66,7 @@ jobs:
         uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # ratchet:helm/kind-action@v1
         with:
           cluster_name: kind
+          version: v0.32.0
       - name: Run Test
         env:
           IMG_WAIT_TIMEOUT_SECONDS: 2100
