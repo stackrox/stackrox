@@ -170,6 +170,58 @@ func (DnfMetadataStatus) EnumDescriptor() ([]byte, []int) {
 	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{2}
 }
 
+// ReportTrigger indicates why this scan was initiated.
+type ReportTrigger int32
+
+const (
+	ReportTrigger_REPORT_TRIGGER_UNSPECIFIED ReportTrigger = 0
+	// Routine periodic scan (e.g. 4h systemd timer).
+	ReportTrigger_REPORT_TRIGGER_SCHEDULED ReportTrigger = 1
+	// Scan triggered by a detected system event (e.g. DNF history change).
+	ReportTrigger_REPORT_TRIGGER_REACTIVE ReportTrigger = 2
+)
+
+// Enum value maps for ReportTrigger.
+var (
+	ReportTrigger_name = map[int32]string{
+		0: "REPORT_TRIGGER_UNSPECIFIED",
+		1: "REPORT_TRIGGER_SCHEDULED",
+		2: "REPORT_TRIGGER_REACTIVE",
+	}
+	ReportTrigger_value = map[string]int32{
+		"REPORT_TRIGGER_UNSPECIFIED": 0,
+		"REPORT_TRIGGER_SCHEDULED":   1,
+		"REPORT_TRIGGER_REACTIVE":    2,
+	}
+)
+
+func (x ReportTrigger) Enum() *ReportTrigger {
+	p := new(ReportTrigger)
+	*p = x
+	return p
+}
+
+func (x ReportTrigger) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ReportTrigger) Descriptor() protoreflect.EnumDescriptor {
+	return file_internalapi_virtualmachine_v1_index_report_proto_enumTypes[3].Descriptor()
+}
+
+func (ReportTrigger) Type() protoreflect.EnumType {
+	return &file_internalapi_virtualmachine_v1_index_report_proto_enumTypes[3]
+}
+
+func (x ReportTrigger) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ReportTrigger.Descriptor instead.
+func (ReportTrigger) EnumDescriptor() ([]byte, []int) {
+	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{3}
+}
+
 // VMReport is the message sent over vsock from roxagent to relay.
 // It wraps IndexReport and includes VM discovered data that stays in Sensor.
 type VMReport struct {
@@ -177,6 +229,7 @@ type VMReport struct {
 	IndexReport *IndexReport           `protobuf:"bytes,1,opt,name=index_report,json=indexReport,proto3" json:"index_report,omitempty"`
 	// VM data discovered by roxagent (not forwarded to Central)
 	DiscoveredData *DiscoveredData `protobuf:"bytes,2,opt,name=discovered_data,json=discoveredData,proto3" json:"discovered_data,omitempty"`
+	Trigger        ReportTrigger   `protobuf:"varint,3,opt,name=trigger,proto3,enum=virtualmachine.v1.ReportTrigger" json:"trigger,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -223,6 +276,13 @@ func (x *VMReport) GetDiscoveredData() *DiscoveredData {
 		return x.DiscoveredData
 	}
 	return nil
+}
+
+func (x *VMReport) GetTrigger() ReportTrigger {
+	if x != nil {
+		return x.Trigger
+	}
+	return ReportTrigger_REPORT_TRIGGER_UNSPECIFIED
 }
 
 // DiscoveredData contains data discovered by roxagent.
@@ -356,8 +416,9 @@ type IndexReportEvent struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// This is the id of the virtual machine resource that matches the vsock_cid
 	// of the report.
-	Id            string       `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Index         *IndexReport `protobuf:"bytes,2,opt,name=index,proto3" json:"index,omitempty"`
+	Id            string        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Index         *IndexReport  `protobuf:"bytes,2,opt,name=index,proto3" json:"index,omitempty"`
+	Trigger       ReportTrigger `protobuf:"varint,3,opt,name=trigger,proto3,enum=virtualmachine.v1.ReportTrigger" json:"trigger,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -406,14 +467,22 @@ func (x *IndexReportEvent) GetIndex() *IndexReport {
 	return nil
 }
 
+func (x *IndexReportEvent) GetTrigger() ReportTrigger {
+	if x != nil {
+		return x.Trigger
+	}
+	return ReportTrigger_REPORT_TRIGGER_UNSPECIFIED
+}
+
 var File_internalapi_virtualmachine_v1_index_report_proto protoreflect.FileDescriptor
 
 const file_internalapi_virtualmachine_v1_index_report_proto_rawDesc = "" +
 	"\n" +
-	"0internalapi/virtualmachine/v1/index_report.proto\x12\x11virtualmachine.v1\x1a)internalapi/scanner/v4/index_report.proto\"\x99\x01\n" +
+	"0internalapi/virtualmachine/v1/index_report.proto\x12\x11virtualmachine.v1\x1a)internalapi/scanner/v4/index_report.proto\"\xd5\x01\n" +
 	"\bVMReport\x12A\n" +
 	"\findex_report\x18\x01 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\vindexReport\x12J\n" +
-	"\x0fdiscovered_data\x18\x02 \x01(\v2!.virtualmachine.v1.DiscoveredDataR\x0ediscoveredData\"\x97\x02\n" +
+	"\x0fdiscovered_data\x18\x02 \x01(\v2!.virtualmachine.v1.DiscoveredDataR\x0ediscoveredData\x12:\n" +
+	"\atrigger\x18\x03 \x01(\x0e2 .virtualmachine.v1.ReportTriggerR\atrigger\"\x97\x02\n" +
 	"\x0eDiscoveredData\x12>\n" +
 	"\vdetected_os\x18\x01 \x01(\x0e2\x1d.virtualmachine.v1.DetectedOSR\n" +
 	"detectedOs\x12\x1d\n" +
@@ -423,10 +492,11 @@ const file_internalapi_virtualmachine_v1_index_report_proto_rawDesc = "" +
 	"\x13dnf_metadata_status\x18\x04 \x01(\x0e2$.virtualmachine.v1.DnfMetadataStatusR\x11dnfMetadataStatus\"^\n" +
 	"\vIndexReport\x12\x1b\n" +
 	"\tvsock_cid\x18\x01 \x01(\tR\bvsockCid\x122\n" +
-	"\bindex_v4\x18\x02 \x01(\v2\x17.scanner.v4.IndexReportR\aindexV4\"X\n" +
+	"\bindex_v4\x18\x02 \x01(\v2\x17.scanner.v4.IndexReportR\aindexV4\"\x94\x01\n" +
 	"\x10IndexReportEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x124\n" +
-	"\x05index\x18\x02 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\x05index*#\n" +
+	"\x05index\x18\x02 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\x05index\x12:\n" +
+	"\atrigger\x18\x03 \x01(\x0e2 .virtualmachine.v1.ReportTriggerR\atrigger*#\n" +
 	"\n" +
 	"DetectedOS\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\b\n" +
@@ -439,7 +509,11 @@ const file_internalapi_virtualmachine_v1_index_report_proto_rawDesc = "" +
 	"\x11DnfMetadataStatus\x12\x1c\n" +
 	"\x18DNF_METADATA_UNSPECIFIED\x10\x00\x12\r\n" +
 	"\tAVAILABLE\x10\x01\x12\x0f\n" +
-	"\vUNAVAILABLE\x10\x02B$Z\"./internalapi/virtualmachine/v1;v1b\x06proto3"
+	"\vUNAVAILABLE\x10\x02*j\n" +
+	"\rReportTrigger\x12\x1e\n" +
+	"\x1aREPORT_TRIGGER_UNSPECIFIED\x10\x00\x12\x1c\n" +
+	"\x18REPORT_TRIGGER_SCHEDULED\x10\x01\x12\x1b\n" +
+	"\x17REPORT_TRIGGER_REACTIVE\x10\x02B$Z\"./internalapi/virtualmachine/v1;v1b\x06proto3"
 
 var (
 	file_internalapi_virtualmachine_v1_index_report_proto_rawDescOnce sync.Once
@@ -453,31 +527,34 @@ func file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP() []byte 
 	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescData
 }
 
-var file_internalapi_virtualmachine_v1_index_report_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_internalapi_virtualmachine_v1_index_report_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_internalapi_virtualmachine_v1_index_report_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_internalapi_virtualmachine_v1_index_report_proto_goTypes = []any{
 	(DetectedOS)(0),          // 0: virtualmachine.v1.DetectedOS
 	(ActivationStatus)(0),    // 1: virtualmachine.v1.ActivationStatus
 	(DnfMetadataStatus)(0),   // 2: virtualmachine.v1.DnfMetadataStatus
-	(*VMReport)(nil),         // 3: virtualmachine.v1.VMReport
-	(*DiscoveredData)(nil),   // 4: virtualmachine.v1.DiscoveredData
-	(*IndexReport)(nil),      // 5: virtualmachine.v1.IndexReport
-	(*IndexReportEvent)(nil), // 6: virtualmachine.v1.IndexReportEvent
-	(*v4.IndexReport)(nil),   // 7: scanner.v4.IndexReport
+	(ReportTrigger)(0),       // 3: virtualmachine.v1.ReportTrigger
+	(*VMReport)(nil),         // 4: virtualmachine.v1.VMReport
+	(*DiscoveredData)(nil),   // 5: virtualmachine.v1.DiscoveredData
+	(*IndexReport)(nil),      // 6: virtualmachine.v1.IndexReport
+	(*IndexReportEvent)(nil), // 7: virtualmachine.v1.IndexReportEvent
+	(*v4.IndexReport)(nil),   // 8: scanner.v4.IndexReport
 }
 var file_internalapi_virtualmachine_v1_index_report_proto_depIdxs = []int32{
-	5, // 0: virtualmachine.v1.VMReport.index_report:type_name -> virtualmachine.v1.IndexReport
-	4, // 1: virtualmachine.v1.VMReport.discovered_data:type_name -> virtualmachine.v1.DiscoveredData
-	0, // 2: virtualmachine.v1.DiscoveredData.detected_os:type_name -> virtualmachine.v1.DetectedOS
-	1, // 3: virtualmachine.v1.DiscoveredData.activation_status:type_name -> virtualmachine.v1.ActivationStatus
-	2, // 4: virtualmachine.v1.DiscoveredData.dnf_metadata_status:type_name -> virtualmachine.v1.DnfMetadataStatus
-	7, // 5: virtualmachine.v1.IndexReport.index_v4:type_name -> scanner.v4.IndexReport
-	5, // 6: virtualmachine.v1.IndexReportEvent.index:type_name -> virtualmachine.v1.IndexReport
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	6, // 0: virtualmachine.v1.VMReport.index_report:type_name -> virtualmachine.v1.IndexReport
+	5, // 1: virtualmachine.v1.VMReport.discovered_data:type_name -> virtualmachine.v1.DiscoveredData
+	3, // 2: virtualmachine.v1.VMReport.trigger:type_name -> virtualmachine.v1.ReportTrigger
+	0, // 3: virtualmachine.v1.DiscoveredData.detected_os:type_name -> virtualmachine.v1.DetectedOS
+	1, // 4: virtualmachine.v1.DiscoveredData.activation_status:type_name -> virtualmachine.v1.ActivationStatus
+	2, // 5: virtualmachine.v1.DiscoveredData.dnf_metadata_status:type_name -> virtualmachine.v1.DnfMetadataStatus
+	8, // 6: virtualmachine.v1.IndexReport.index_v4:type_name -> scanner.v4.IndexReport
+	6, // 7: virtualmachine.v1.IndexReportEvent.index:type_name -> virtualmachine.v1.IndexReport
+	3, // 8: virtualmachine.v1.IndexReportEvent.trigger:type_name -> virtualmachine.v1.ReportTrigger
+	9, // [9:9] is the sub-list for method output_type
+	9, // [9:9] is the sub-list for method input_type
+	9, // [9:9] is the sub-list for extension type_name
+	9, // [9:9] is the sub-list for extension extendee
+	0, // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_virtualmachine_v1_index_report_proto_init() }
@@ -490,7 +567,7 @@ func file_internalapi_virtualmachine_v1_index_report_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_virtualmachine_v1_index_report_proto_rawDesc), len(file_internalapi_virtualmachine_v1_index_report_proto_rawDesc)),
-			NumEnums:      3,
+			NumEnums:      4,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,

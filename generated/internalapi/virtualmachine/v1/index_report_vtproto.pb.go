@@ -28,6 +28,7 @@ func (m *VMReport) CloneVT() *VMReport {
 	r := new(VMReport)
 	r.IndexReport = m.IndexReport.CloneVT()
 	r.DiscoveredData = m.DiscoveredData.CloneVT()
+	r.Trigger = m.Trigger
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -90,6 +91,7 @@ func (m *IndexReportEvent) CloneVT() *IndexReportEvent {
 	r := new(IndexReportEvent)
 	r.Id = m.Id
 	r.Index = m.Index.CloneVT()
+	r.Trigger = m.Trigger
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -111,6 +113,9 @@ func (this *VMReport) EqualVT(that *VMReport) bool {
 		return false
 	}
 	if !this.DiscoveredData.EqualVT(that.DiscoveredData) {
+		return false
+	}
+	if this.Trigger != that.Trigger {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -189,6 +194,9 @@ func (this *IndexReportEvent) EqualVT(that *IndexReportEvent) bool {
 	if !this.Index.EqualVT(that.Index) {
 		return false
 	}
+	if this.Trigger != that.Trigger {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -228,6 +236,11 @@ func (m *VMReport) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Trigger != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Trigger))
+		i--
+		dAtA[i] = 0x18
 	}
 	if m.DiscoveredData != nil {
 		size, err := m.DiscoveredData.MarshalToSizedBufferVT(dAtA[:i])
@@ -399,6 +412,11 @@ func (m *IndexReportEvent) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Trigger != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Trigger))
+		i--
+		dAtA[i] = 0x18
+	}
 	if m.Index != nil {
 		size, err := m.Index.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -432,6 +450,9 @@ func (m *VMReport) SizeVT() (n int) {
 	if m.DiscoveredData != nil {
 		l = m.DiscoveredData.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Trigger != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Trigger))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -497,6 +518,9 @@ func (m *IndexReportEvent) SizeVT() (n int) {
 	if m.Index != nil {
 		l = m.Index.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Trigger != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Trigger))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -603,6 +627,25 @@ func (m *VMReport) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Trigger", wireType)
+			}
+			m.Trigger = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Trigger |= ReportTrigger(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -989,6 +1032,25 @@ func (m *IndexReportEvent) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Trigger", wireType)
+			}
+			m.Trigger = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Trigger |= ReportTrigger(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -1112,6 +1174,25 @@ func (m *VMReport) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Trigger", wireType)
+			}
+			m.Trigger = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Trigger |= ReportTrigger(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -1510,6 +1591,25 @@ func (m *IndexReportEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Trigger", wireType)
+			}
+			m.Trigger = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Trigger |= ReportTrigger(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

@@ -13,6 +13,7 @@ message VMReport {
 
   // VM data discovered by roxagent (not forwarded to Central)
   DiscoveredData discovered_data = 2;
+  ReportTrigger trigger = 3;
 }
 
 // DiscoveredData contains data discovered by roxagent.
@@ -46,6 +47,15 @@ enum DnfMetadataStatus {
   UNAVAILABLE = 2;
 }
 
+// ReportTrigger indicates why this scan was initiated.
+enum ReportTrigger {
+  REPORT_TRIGGER_UNSPECIFIED = 0;
+  // Routine periodic scan (e.g. 4h systemd timer).
+  REPORT_TRIGGER_SCHEDULED = 1;
+  // Scan triggered by a detected system event (e.g. DNF history change).
+  REPORT_TRIGGER_REACTIVE = 2;
+}
+
 // The index report is collected from the virtual machine agent and contains
 // the package information.
 message IndexReport {
@@ -60,4 +70,5 @@ message IndexReportEvent {
   // of the report.
   string id = 1;
   IndexReport index = 2;
+  ReportTrigger trigger = 3;
 }
