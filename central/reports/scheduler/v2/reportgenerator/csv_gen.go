@@ -145,51 +145,48 @@ func formatRowInto(r *ImageCVEQueryResponse, row csv.Value) {
 	row[16] = r.GetAdvisoryLink()
 }
 
-// csvBatchWriter writes batches of rows to CSV with pre-allocated row buffers.
-// CVE reference links are resolved per batch via the provided resolver and
-// accumulated across batches so each CVE ID is fetched at most once.
+// csvBatchWriter writes batches of rows to CSV with pre-allocated buffers.
+// CVE reference links are resolved per batch via the provided resolver.
+// The link map is scoped to each batch since CVE IDs are unique primary keys.
 type csvBatchWriter struct {
 	csvW         *gocsv.Writer
-	resolveLinks func(ctx context.Context, newIDs []string) (map[string]string, error)
-	linkMap      map[string]string
+	resolveLinks func(ctx context.Context, cveIDs []string) (map[string]string, error)
 	rowBuf       csv.Value
-	newIDs       []string
+	cveIDs       []string
 }
 
-func newCSVBatchWriter(csvW *gocsv.Writer, resolveLinks func(ctx context.Context, newIDs []string) (map[string]string, error)) *csvBatchWriter {
+func newCSVBatchWriter(csvW *gocsv.Writer, resolveLinks func(ctx context.Context, cveIDs []string) (map[string]string, error)) *csvBatchWriter {
 	return &csvBatchWriter{
 		csvW:         csvW,
 		resolveLinks: resolveLinks,
-		linkMap:      make(map[string]string),
 		rowBuf:       make(csv.Value, csvColCount),
-		newIDs:       make([]string, 0, chunkSize),
+		cveIDs:       make([]string, 0, chunkSize),
 	}
 }
 
 func (bw *csvBatchWriter) writeBatch(ctx context.Context, batch []*ImageCVEQueryResponse) error {
-	bw.newIDs = bw.newIDs[:0]
+	bw.cveIDs = bw.cveIDs[:0]
 	for _, r := range batch {
 		if id := r.GetCVEID(); id != "" {
-			if _, ok := bw.linkMap[id]; !ok {
-				bw.newIDs = append(bw.newIDs, id)
-			}
+			bw.cveIDs = append(bw.cveIDs, id)
 		}
 	}
 
-	if len(bw.newIDs) > 0 {
-		resolved, err := bw.resolveLinks(ctx, bw.newIDs)
+	var linkMap map[string]string
+	if len(bw.cveIDs) > 0 {
+		var err error
+		linkMap, err = bw.resolveLinks(ctx, bw.cveIDs)
 		if err != nil {
 			return err
-		}
-		for k, v := range resolved {
-			bw.linkMap[k] = v
 		}
 	}
 
 	for _, r := range batch {
 		formatRowInto(r, bw.rowBuf)
-		if link, ok := bw.linkMap[r.GetCVEID()]; ok {
-			bw.rowBuf[linkColumnIdx] = link
+		if linkMap != nil {
+			if link, ok := linkMap[r.GetCVEID()]; ok {
+				bw.rowBuf[linkColumnIdx] = link
+			}
 		}
 		if err := bw.csvW.Write(bw.rowBuf); err != nil {
 			return err

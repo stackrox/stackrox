@@ -43,8 +43,8 @@ func BenchmarkFullReportPipeline(b *testing.B) {
 
 	var testDB *pgtest.TestPostgres
 	if reuseDB {
-		// testDB = benchGetOrCreateDB(b, "bench_report_pipeline")
-		testDB = benchGetOrCreateDB(b, "f4525a8b6264c19_QJbPL")
+		testDB = benchGetOrCreateDB(b, "bench_report_pipeline")
+		// testDB = benchGetOrCreateDB(b, "f4525a8b6264c19_QJbPL")
 	} else {
 		testDB = pgtest.ForT(b)
 	}
@@ -92,7 +92,7 @@ func BenchmarkFullReportPipeline(b *testing.B) {
 		{Id: uuid.NewV4().String(), Name: "c5"},
 	}
 
-	namespaces := testNamespaces(clusters, 1000)
+	namespaces := testNamespaces(clusters, 100)
 
 	// Check if test data already exists (for DB reuse).
 	depCount, err := resolver.DeploymentDataStore.Count(ctx, search.EmptyQuery())
@@ -120,7 +120,7 @@ func BenchmarkFullReportPipeline(b *testing.B) {
 			require.NoError(b, resolver.DeploymentDataStore.UpsertDeployment(ctx, dep))
 		}
 
-		watchedImages := testWatchedImages(500)
+		watchedImages := testWatchedImages(400000)
 		if features.FlattenImageData.Enabled() {
 			for _, img := range watchedImages {
 				require.NoError(b, resolver.ImageV2DataStore.UpsertImage(ctx, imageUtils.ConvertToV2(img)))
@@ -152,7 +152,7 @@ func BenchmarkFullReportPipeline(b *testing.B) {
 		storage.VulnerabilityReportFilters_BOTH, allSeverities(), imageTypes, nil)
 
 	// 5 clusters × 100 ns × 100 deps × 2 CVEs + 500 watched × 2 CVEs = 101000
-	expectedRowCount := 1001000
+	expectedRowCount := 1000000
 
 	b.Run("Old_Buffered", func(b *testing.B) {
 		b.ReportAllocs()
