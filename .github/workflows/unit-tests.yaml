@@ -99,7 +99,6 @@ jobs:
       with:
         paths: 'junit-reports/report.xml'
 
-
     - name: Report test failures to Jira
       if: (!cancelled())
       id: junit2jira
@@ -192,7 +191,6 @@ jobs:
       if: always()
       with:
         paths: 'junit-reports/report.xml'
-
 
     - name: Report junit failures in jira
       if: (!cancelled())
