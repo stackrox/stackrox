@@ -84,7 +84,7 @@ func (s *migrationTestSuite) TestMigrationIsIdempotent() {
 
 func (s *migrationTestSuite) TestMigrationSkipsUserModifiedPolicy() {
 	beforePolicy := s.readBeforePolicy()
-	beforePolicy.PolicySections[0].PolicyGroups[0].Values[0].Value = "CONFIGMAPS"
+	beforePolicy.GetPolicySections()[0].GetPolicyGroups()[0].GetValues()[0].Value = "CONFIGMAPS"
 	s.insertPolicy(beforePolicy)
 
 	s.runMigration()
@@ -93,7 +93,7 @@ func (s *migrationTestSuite) TestMigrationSkipsUserModifiedPolicy() {
 	group := findNegatedUserNameGroup(updated)
 	s.Require().NotNil(group)
 	s.Assert().False(hasValue(group, rhacmSA), "should not modify user-customized policy")
-	s.Assert().Equal("CONFIGMAPS", updated.PolicySections[0].PolicyGroups[0].Values[0].Value,
+	s.Assert().Equal("CONFIGMAPS", updated.GetPolicySections()[0].GetPolicyGroups()[0].GetValues()[0].GetValue(),
 		"user modification should be preserved")
 }
 
