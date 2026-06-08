@@ -66,7 +66,7 @@ func RunSingle(ctx context.Context, cfg *common.Config, client *vsock.Client) er
 	if !report.GetSuccess() {
 		return fmt.Errorf("failed index report: %s", report.GetErr())
 	}
-	if err := client.SendIndexReport(report); err != nil {
+	if err := client.SendIndexReport(report, cfg.Trigger); err != nil {
 		return fmt.Errorf("sending index report: %w", err)
 	}
 	return nil

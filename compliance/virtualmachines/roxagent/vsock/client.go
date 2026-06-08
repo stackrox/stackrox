@@ -23,7 +23,7 @@ type Client struct {
 	Verbose  bool
 }
 
-func (c *Client) SendIndexReport(report *v4.IndexReport) error {
+func (c *Client) SendIndexReport(report *v4.IndexReport, trigger v1.ReportTrigger) error {
 	vsockCid, err := vsock.ContextID()
 	if err != nil {
 		return fmt.Errorf("getting vsock context id: %w", err)
@@ -40,6 +40,7 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 	vmReport := &v1.VMReport{
 		IndexReport:    wrappedReport,
 		DiscoveredData: discovered,
+		Trigger:        trigger,
 	}
 
 	if c.Verbose {
