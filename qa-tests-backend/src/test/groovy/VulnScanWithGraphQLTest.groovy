@@ -62,36 +62,34 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     private static final String GET_IMAGE_INFO_FROM_VULN_QUERY = """
     query getCve(\$id: ID!) {
         result: imageVulnerability(id: \$id) {
-            cve
-            cvss
-            scoreVersion
-            link
-            vectors : vectors() {
-              __typename
-              ... on CVSSV2 {
-                impactScore
-                exploitabilityScore
-                vector
-              }
-              ... on CVSSV3 {
-                impactScore
-                exploitabilityScore
-                vector
-              }
-            }
-            summary
-            fixedByVersion : fixedByVersion()
-            isFixable
-            lastScanned : lastScanned()
-            imageComponentCount : imageComponentCount(query: null, scopeQuery: null)
-            imageCount : imageCount(query: null, scopeQuery: null)
-            deploymentCount : deploymentCount(query: null, scopeQuery: nill)
-            images : images(query: null, scopeQuery: null, pagination: null) {
-                id  name {fullName} scan {
-                    scanTime
-                }
-            }
+        cve
+        cvss
+        scoreVersion
+        link
+        vectors {
+          __typename
+          ... on CVSSV2 {
+            impactScore
+            exploitabilityScore
+            vector
+          }
+          ... on CVSSV3 {
+            impactScore
+            exploitabilityScore
+            vector
+          }
         }
+        summary
+        fixedByVersion
+        isFixable
+        lastScanned
+        imageComponentCount
+        imageCount
+        deploymentCount
+        images {
+            id  name {fullName} scan {
+                scanTime
+            }}}
     }"""
 
     private static final String DEP_QUERY = """query getDeployment(\$id: ID!) {
