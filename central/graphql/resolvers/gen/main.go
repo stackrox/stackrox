@@ -77,6 +77,7 @@ var (
 			reflect.TypeOf(storage.NodeVulnerability{}),
 			reflect.TypeOf((*storage.ImageCVEV2)(nil)),
 			reflect.TypeOf((*storage.ImageComponentV2)(nil)),
+			reflect.TypeOf(storage.EvaluationFilter{}),
 		},
 		SkipFields: []generator.TypeAndField{
 			{
@@ -130,6 +131,14 @@ var (
 			{
 				ParentType: reflect.TypeOf(storage.ImageSignatureVerificationResult{}),
 				FieldName:  "VerifierName",
+			},
+			{
+				ParentType: reflect.TypeOf(storage.Policy{}),
+				FieldName:  "EvaluationFilter",
+			},
+			{
+				ParentType: reflect.TypeOf(storage.ListPolicy{}),
+				FieldName:  "EvaluationFilter",
 			},
 		},
 		InputTypes: []reflect.Type{
