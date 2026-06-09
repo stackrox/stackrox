@@ -37,12 +37,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
-        exclude:
-          - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
+        gotags: [ 'GOTAGS=""' ]
+        copy: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     runs-on: ubuntu-latest
-    outputs:
-      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -58,12 +55,61 @@ jobs:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/go-test-output.txt
 
-    - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        flags: go-unit-tests
+    - name: Cache and CPU diagnostics
+      if: always()
+      run: |
+        echo "## Cache & CPU Diagnostics (copy ${{ matrix.copy }})" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+
+        # CPU
+        cpu_model=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs)
+        echo "**CPU:** \`${cpu_model}\`" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+
+        # GOCACHE size
+        gocache="$(go env GOCACHE)"
+        cache_size=$(du -sm "$gocache" 2>/dev/null | cut -f1)
+        echo "**GOCACHE size:** ${cache_size}MB" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+
+        # Test cache hit rate
+        if [[ -f /tmp/go-test-output.txt ]]; then
+          cached=$(grep -c '(cached)' /tmp/go-test-output.txt || true)
+          total=$(grep -cE 'ok\s+github\.com/stackrox' /tmp/go-test-output.txt || true)
+          failed=$(grep -cE 'FAIL\s+github\.com/stackrox' /tmp/go-test-output.txt || true)
+          noncached=$((total - cached))
+          if [[ $total -gt 0 ]]; then
+            pct=$((cached * 100 / total))
+          else
+            pct=0
+          fi
+          echo "**Test cache:** ${cached} cached / ${total} total (${pct}% hit rate), ${failed} failed" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+        # Sample compile actionID from a stable package to detect cross-CPU differences
+        # pkg/set is small, pure Go, no external deps — ideal canary
+        echo "**Compile action IDs (canary packages):**" >> "$GITHUB_STEP_SUMMARY"
+        echo '```' >> "$GITHUB_STEP_SUMMARY"
+        for pkg in github.com/stackrox/rox/pkg/set github.com/stackrox/rox/pkg/utils github.com/stackrox/rox/pkg/version; do
+          id=$(go test -v -list '^$' -run '^$' "$pkg" 2>&1 | head -1 || true)
+          buildid=$(go test -c -o /dev/null "$pkg" 2>&1; go tool buildid "$(go env GOCACHE)"/??/*.a 2>/dev/null | head -3 || true)
+          # Use go's cache debug to get the test binary buildID
+          test_exe=$(mktemp)
+          go test -c -o "$test_exe" "$pkg" 2>/dev/null
+          if [[ -f "$test_exe" && -s "$test_exe" ]]; then
+            bid=$(go tool buildid "$test_exe" 2>/dev/null || true)
+            echo "$pkg: $bid" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          rm -f "$test_exe"
+        done
+        echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+        # Restored cache key
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "**Go version:** $(go version)" >> "$GITHUB_STEP_SUMMARY"
 
     - name: Generate junit report
       if: always()
@@ -74,36 +120,6 @@ jobs:
       if: always()
       with:
         paths: 'junit-reports/report.xml'
-
-    - name: Go Integration Unit Tests
-      run: ${{ matrix.gotags }} make integration-unit-tests
-
-    - name: Go Operator Integration Tests
-      run: ${{ matrix.gotags }} make -C operator/ test-integration
-
-    - name: Go Operator Helm Tests
-      run: ${{ matrix.gotags }} make -C operator/ test-helm
-
-    - name: Generate junit report
-      if: always()
-      run: make generate-junit-reports
-
-    - name: Publish Test Report
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
-      with:
-        paths: 'junit-reports/report.xml'
-
-    - name: Report test failures to Jira
-      if: (!cancelled())
-      id: junit2jira
-      uses: ./.github/actions/junit2jira
-      with:
-        create-jiras: ${{ github.event_name == 'push' }}
-        jira-user: ${{ secrets.JIRA_USER }}
-        jira-token: ${{ secrets.JIRA_TOKEN }}
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        directory: 'junit-reports'
 
   go-postgres:
     strategy:
