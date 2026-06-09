@@ -54,8 +54,21 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
+    - name: Cache debug — single package with GODEBUG
+      if: matrix.copy == 1
+      run: |
+        echo "## GODEBUG cache trace" >> "$GITHUB_STEP_SUMMARY"
+        echo '```' >> "$GITHUB_STEP_SUMMARY"
+        GODEBUG=gocachetest=1 ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 \
+          bash scripts/go-test.sh -race -cover -coverprofile /dev/null \
+          github.com/stackrox/rox/pkg/set \
+          github.com/stackrox/rox/central/cluster/util \
+          github.com/stackrox/rox/central/notifiers/slack \
+          2>&1 | grep testcache >> "$GITHUB_STEP_SUMMARY" || true
+        echo '```' >> "$GITHUB_STEP_SUMMARY"
+
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} GOFLAGS="-trimpath" make go-unit-tests 2>&1 | tee /tmp/go-test-output.txt
+      run: ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/go-test-output.txt
 
     - name: Cache and CPU diagnostics
       if: always()
