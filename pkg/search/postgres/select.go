@@ -259,7 +259,7 @@ func RunSelectRequestForSchemaFnCursored[T any](
 	defer cancel()
 
 	return pgutils.Retry(ctx, func() error {
-		return retryableRunSelectCursored[T](ctx, db, preparedQuery, batchSize, batchFn)
+		return retryableRunSelectCursored(ctx, db, preparedQuery, batchSize, batchFn)
 	})
 }
 
