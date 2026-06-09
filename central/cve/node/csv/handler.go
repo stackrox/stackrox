@@ -166,7 +166,11 @@ func NodeCVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQu
 			errorList.AddError(err)
 		}
 		dataRow.Fixable = strconv.FormatBool(isFixable)
-		dataRow.CvssScore = fmt.Sprintf("%.2f (%s)", d.Cvss(ctx), d.ScoreVersion(ctx))
+		if cvss := d.Cvss(ctx); cvss != nil {
+			dataRow.CvssScore = fmt.Sprintf("%.2f (%s)", *cvss, d.ScoreVersion(ctx))
+		} else {
+			dataRow.CvssScore = "Not Available"
+		}
 		envImpact, err := d.EnvImpact(ctx)
 		if err != nil {
 			errorList.AddError(err)
