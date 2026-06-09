@@ -20,7 +20,12 @@ var (
 	// CreateTableTestNoSerializedsStmt holds the create statement for table `test_no_serializeds`.
 	CreateTableTestNoSerializedsStmt = &postgres.CreateStmts{
 		GormModel: (*TestNoSerializeds)(nil),
-		Children:  []*postgres.CreateStmts{},
+		Children: []*postgres.CreateStmts{
+			&postgres.CreateStmts{
+				GormModel: (*TestNoSerializedsLabels)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
+		},
 	}
 
 	// TestNoSerializedsSchema is the go schema for table `test_no_serializeds`.
@@ -41,24 +46,36 @@ var (
 const (
 	// TestNoSerializedsTableName specifies the name of the table in postgres.
 	TestNoSerializedsTableName = "test_no_serializeds"
+	// TestNoSerializedsLabelsTableName specifies the name of the table in postgres.
+	TestNoSerializedsLabelsTableName = "test_no_serializeds_labels"
 )
 
 // TestNoSerializeds holds the Gorm model for Postgres table `test_no_serializeds`.
 type TestNoSerializeds struct {
-	ID               string                            `gorm:"column:id;type:uuid;primaryKey"`
-	Name             string                            `gorm:"column:name;type:varchar"`
-	Description      string                            `gorm:"column:description;type:varchar"`
-	Int32Val         int32                             `gorm:"column:int32val;type:integer"`
-	Int64Val         int64                             `gorm:"column:int64val;type:bigint"`
-	Uint64Val        uint64                            `gorm:"column:uint64val;type:numeric"`
-	BoolVal          bool                              `gorm:"column:boolval;type:bool"`
-	FloatVal         float32                           `gorm:"column:floatval;type:numeric"`
-	DoubleVal        float64                           `gorm:"column:doubleval;type:numeric"`
-	Priority         storage.TestNoSerialized_Priority `gorm:"column:priority;type:integer"`
-	CreatedAt        *time.Time                        `gorm:"column:createdat;type:timestamp"`
-	ClusterID        string                            `gorm:"column:clusterid;type:uuid"`
-	Tags             *pq.StringArray                   `gorm:"column:tags;type:text[]"`
-	MetadataAuthor   string                            `gorm:"column:metadata_author;type:varchar"`
-	MetadataVersion  string                            `gorm:"column:metadata_version;type:varchar"`
-	MetadataRevision int32                             `gorm:"column:metadata_revision;type:integer"`
+	ID               string                                 `gorm:"column:id;type:uuid;primaryKey"`
+	Name             string                                 `gorm:"column:name;type:varchar"`
+	Description      string                                 `gorm:"column:description;type:varchar"`
+	Int32Val         int32                                  `gorm:"column:int32val;type:integer"`
+	Int64Val         int64                                  `gorm:"column:int64val;type:bigint"`
+	Uint64Val        uint64                                 `gorm:"column:uint64val;type:numeric"`
+	BoolVal          bool                                   `gorm:"column:boolval;type:bool"`
+	FloatVal         float32                                `gorm:"column:floatval;type:numeric"`
+	DoubleVal        float64                                `gorm:"column:doubleval;type:numeric"`
+	Priority         storage.TestNoSerialized_Priority      `gorm:"column:priority;type:integer"`
+	CreatedAt        *time.Time                             `gorm:"column:createdat;type:timestamp"`
+	ClusterID        string                                 `gorm:"column:clusterid;type:uuid"`
+	Tags             *pq.StringArray                        `gorm:"column:tags;type:text[]"`
+	MetadataAuthor   string                                 `gorm:"column:metadata_author;type:varchar"`
+	MetadataVersion  string                                 `gorm:"column:metadata_version;type:varchar"`
+	MetadataRevision int32                                  `gorm:"column:metadata_revision;type:integer"`
+	Annotations      []*storage.TestNoSerialized_Annotation `gorm:"column:annotations;type:bytea"`
+}
+
+// TestNoSerializedsLabels holds the Gorm model for Postgres table `test_no_serializeds_labels`.
+type TestNoSerializedsLabels struct {
+	TestNoSerializedsID  string            `gorm:"column:test_no_serializeds_id;type:uuid;primaryKey"`
+	Idx                  int               `gorm:"column:idx;type:integer;primaryKey;index:testnoserializedslabels_idx,type:btree"`
+	Key                  string            `gorm:"column:key;type:varchar"`
+	Value                string            `gorm:"column:value;type:varchar"`
+	TestNoSerializedsRef TestNoSerializeds `gorm:"foreignKey:test_no_serializeds_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

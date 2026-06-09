@@ -50,6 +50,9 @@ func (s *NoSerializedIntegrationSuite) TestRoundTrip() {
 	s.Require().NoError(err)
 	s.True(exists)
 
+	// Child table fields (Labels) are not auto-fetched in no-serialized stores.
+	// Compare parent fields only. Child fetch is handled by PR 4 (ROX-34907).
+	obj.Labels = nil
 	protoassert.Equal(s.T(), obj, got)
 }
 
@@ -160,12 +163,77 @@ func (s *NoSerializedIntegrationSuite) TestUpsertOverwrite() {
 
 	obj.Name = "updated-name"
 	obj.Priority = storage.TestNoSerialized_LOW_PRIORITY
+	obj.Annotations = []*storage.TestNoSerialized_Annotation{
+		{Key: "updated-ann", Value: "yes"},
+	}
 	s.Require().NoError(s.store.Upsert(s.ctx, obj))
 
 	got, _, err := s.store.Get(s.ctx, obj.GetId())
 	s.Require().NoError(err)
 	s.Equal("updated-name", got.GetName())
 	s.Equal(storage.TestNoSerialized_LOW_PRIORITY, got.GetPriority())
+	s.Len(got.GetAnnotations(), 1)
+	s.Equal("updated-ann", got.GetAnnotations()[0].GetKey())
+}
+
+func (s *NoSerializedIntegrationSuite) TestRepeatedFieldStrategies() {
+	obj := s.makeTestObject("strategies")
+
+	s.Require().NoError(s.store.Upsert(s.ctx, obj))
+
+	got, exists, err := s.store.Get(s.ctx, obj.GetId())
+	s.Require().NoError(err)
+	s.True(exists)
+
+	// Repeated scalar → Postgres array (native)
+	s.Equal(obj.GetTags(), got.GetTags())
+
+	// Repeated message → inlined bytea (strategy(bytea)) — round-trips through parent row
+	s.Require().Len(got.GetAnnotations(), 2)
+	s.Equal("owner", got.GetAnnotations()[0].GetKey())
+	s.Equal("alice", got.GetAnnotations()[0].GetValue())
+	s.Equal("tier", got.GetAnnotations()[1].GetKey())
+	s.Equal("1", got.GetAnnotations()[1].GetValue())
+
+	// Repeated message → child table (default strategy) — not auto-fetched on Get.
+	// Child table data is written correctly (verified by DB query) but requires
+	// explicit child fetch (ROX-34907) to reconstruct on read.
+	s.Nil(got.GetLabels())
+}
+
+func (s *NoSerializedIntegrationSuite) TestChildTableWriteVerification() {
+	obj := s.makeTestObject("child-write")
+	s.Require().NoError(s.store.Upsert(s.ctx, obj))
+
+	// Verify child table rows were written correctly via direct SQL
+	var count int
+	err := s.testDB.QueryRow(s.ctx,
+		"SELECT COUNT(*) FROM test_no_serializeds_labels WHERE test_no_serializeds_id = $1",
+		obj.GetId()).Scan(&count)
+	s.Require().NoError(err)
+	s.Equal(2, count, "child table should have 2 label rows")
+
+	// Verify orphan cleanup: reduce labels to 1 and re-upsert
+	obj.Labels = []*storage.TestNoSerialized_Label{
+		{Key: "only-one", Value: "left"},
+	}
+	s.Require().NoError(s.store.Upsert(s.ctx, obj))
+
+	err = s.testDB.QueryRow(s.ctx,
+		"SELECT COUNT(*) FROM test_no_serializeds_labels WHERE test_no_serializeds_id = $1",
+		obj.GetId()).Scan(&count)
+	s.Require().NoError(err)
+	s.Equal(1, count, "orphan cleanup should leave 1 label row")
+}
+
+func (s *NoSerializedIntegrationSuite) TestBytesStrategyEmptySlice() {
+	obj := s.makeTestObject("empty-annotations")
+	obj.Annotations = nil
+	s.Require().NoError(s.store.Upsert(s.ctx, obj))
+
+	got, _, err := s.store.Get(s.ctx, obj.GetId())
+	s.Require().NoError(err)
+	s.Empty(got.GetAnnotations())
 }
 
 func (s *NoSerializedIntegrationSuite) makeTestObject(name string) *storage.TestNoSerialized {
@@ -189,6 +257,14 @@ func (s *NoSerializedIntegrationSuite) makeTestObject(name string) *storage.Test
 			Author:   "test-author",
 			Version:  "1.0.0",
 			Revision: 7,
+		},
+		Labels: []*storage.TestNoSerialized_Label{
+			{Key: "env", Value: "prod"},
+			{Key: "team", Value: "platform"},
+		},
+		Annotations: []*storage.TestNoSerialized_Annotation{
+			{Key: "owner", Value: "alice"},
+			{Key: "tier", Value: "1"},
 		},
 	}
 }

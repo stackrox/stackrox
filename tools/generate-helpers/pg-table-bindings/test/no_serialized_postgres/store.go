@@ -91,9 +91,36 @@ func insertIntoTestNoSerializeds(batch *pgx.Batch, obj *storage.TestNoSerialized
 		obj.GetMetadata().GetAuthor(),
 		obj.GetMetadata().GetVersion(),
 		obj.GetMetadata().GetRevision(),
+		pgutils.MustMarshalRepeatedMessages(obj.GetAnnotations()),
 	}
 
-	finalStr := "INSERT INTO test_no_serializeds (Id, Name, Description, Int32Val, Int64Val, Uint64Val, BoolVal, FloatVal, DoubleVal, Priority, CreatedAt, ClusterId, Tags, Metadata_Author, Metadata_Version, Metadata_Revision) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Int32Val = EXCLUDED.Int32Val, Int64Val = EXCLUDED.Int64Val, Uint64Val = EXCLUDED.Uint64Val, BoolVal = EXCLUDED.BoolVal, FloatVal = EXCLUDED.FloatVal, DoubleVal = EXCLUDED.DoubleVal, Priority = EXCLUDED.Priority, CreatedAt = EXCLUDED.CreatedAt, ClusterId = EXCLUDED.ClusterId, Tags = EXCLUDED.Tags, Metadata_Author = EXCLUDED.Metadata_Author, Metadata_Version = EXCLUDED.Metadata_Version, Metadata_Revision = EXCLUDED.Metadata_Revision"
+	finalStr := "INSERT INTO test_no_serializeds (Id, Name, Description, Int32Val, Int64Val, Uint64Val, BoolVal, FloatVal, DoubleVal, Priority, CreatedAt, ClusterId, Tags, Metadata_Author, Metadata_Version, Metadata_Revision, Annotations) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Int32Val = EXCLUDED.Int32Val, Int64Val = EXCLUDED.Int64Val, Uint64Val = EXCLUDED.Uint64Val, BoolVal = EXCLUDED.BoolVal, FloatVal = EXCLUDED.FloatVal, DoubleVal = EXCLUDED.DoubleVal, Priority = EXCLUDED.Priority, CreatedAt = EXCLUDED.CreatedAt, ClusterId = EXCLUDED.ClusterId, Tags = EXCLUDED.Tags, Metadata_Author = EXCLUDED.Metadata_Author, Metadata_Version = EXCLUDED.Metadata_Version, Metadata_Revision = EXCLUDED.Metadata_Revision, Annotations = EXCLUDED.Annotations"
+	batch.Queue(finalStr, values...)
+
+	var query string
+
+	for childIndex, child := range obj.GetLabels() {
+		if err := insertIntoTestNoSerializedsLabels(batch, child, obj.GetId(), childIndex); err != nil {
+			return err
+		}
+	}
+
+	query = "delete from test_no_serializeds_labels where test_no_serializeds_Id = $1 AND idx >= $2"
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetLabels()))
+	return nil
+}
+
+func insertIntoTestNoSerializedsLabels(batch *pgx.Batch, obj *storage.TestNoSerialized_Label, testNoSerializedID string, idx int) error {
+
+	values := []interface{}{
+		// parent primary keys start
+		pgutils.NilOrUUID(testNoSerializedID),
+		idx,
+		obj.GetKey(),
+		obj.GetValue(),
+	}
+
+	finalStr := "INSERT INTO test_no_serializeds_labels (test_no_serializeds_Id, idx, Key, Value) VALUES($1, $2, $3, $4) ON CONFLICT(test_no_serializeds_Id, idx) DO UPDATE SET test_no_serializeds_Id = EXCLUDED.test_no_serializeds_Id, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -116,6 +143,7 @@ var copyColsTestNoSerializeds = []string{
 	"metadata_author",
 	"metadata_version",
 	"metadata_revision",
+	"annotations",
 }
 
 func copyFromTestNoSerializeds(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestNoSerialized) error {
@@ -160,10 +188,52 @@ func copyFromTestNoSerializeds(ctx context.Context, s pgSearch.Deleter, tx *post
 			obj.GetMetadata().GetAuthor(),
 			obj.GetMetadata().GetVersion(),
 			obj.GetMetadata().GetRevision(),
+			pgutils.MustMarshalRepeatedMessages(obj.GetAnnotations()),
 		}, nil
 	})
 
 	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_no_serializeds"}, copyColsTestNoSerializeds, inputRows); err != nil {
+		return err
+	}
+
+	for _, obj := range objs {
+		if err := copyFromTestNoSerializedsLabels(ctx, s, tx, obj.GetId(), obj.GetLabels()...); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+var copyColsTestNoSerializedsLabels = []string{
+	"test_no_serializeds_id",
+	"idx",
+	"key",
+	"value",
+}
+
+func copyFromTestNoSerializedsLabels(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testNoSerializedID string, objs ...*storage.TestNoSerialized_Label) error {
+	if len(objs) == 0 {
+		return nil
+	}
+
+	idx := 0
+	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
+		if idx >= len(objs) {
+			return nil, nil
+		}
+		obj := objs[idx]
+		idx++
+
+		return []interface{}{
+			pgutils.NilOrUUID(testNoSerializedID),
+			idx,
+			obj.GetKey(),
+			obj.GetValue(),
+		}, nil
+	})
+
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_no_serializeds_labels"}, copyColsTestNoSerializedsLabels, inputRows); err != nil {
 		return err
 	}
 
@@ -182,6 +252,7 @@ func scanRow(row pgx.Row) (*storeType, error) {
 	var col_Id *string
 	var col_CreatedAt *time.Time
 	var col_ClusterId *string
+	var col_Annotations []byte
 
 	if err := row.Scan(
 		&col_Id,
@@ -200,6 +271,7 @@ func scanRow(row pgx.Row) (*storeType, error) {
 		&obj.Metadata.Author,
 		&obj.Metadata.Version,
 		&obj.Metadata.Revision,
+		&col_Annotations,
 	); err != nil {
 		return nil, err
 	}
@@ -213,6 +285,13 @@ func scanRow(row pgx.Row) (*storeType, error) {
 	}
 	if col_ClusterId != nil {
 		obj.ClusterId = *col_ClusterId
+	}
+	if col_Annotations != nil {
+		unmarshaled, unmarshalErr := pgutils.UnmarshalRepeatedMessages(col_Annotations, func() *storage.TestNoSerialized_Annotation { return new(storage.TestNoSerialized_Annotation) })
+		if unmarshalErr != nil {
+			return nil, unmarshalErr
+		}
+		obj.Annotations = unmarshaled
 	}
 
 	return obj, nil
@@ -243,6 +322,12 @@ func Destroy(ctx context.Context, db postgres.DB) {
 
 func dropTableTestNoSerializeds(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_no_serializeds CASCADE")
+	dropTableTestNoSerializedsLabels(ctx, db)
+
+}
+
+func dropTableTestNoSerializedsLabels(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_no_serializeds_labels CASCADE")
 
 }
 

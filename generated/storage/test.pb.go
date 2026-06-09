@@ -1735,21 +1735,23 @@ func (x *TestShortCircuit) GetG2GrandchildId() string {
 // TestNoSerialized is a synthetic message for testing no-serialized store generation.
 // It covers scalar types, timestamps, enums, nested messages, and repeated strings.
 type TestNoSerialized struct {
-	state         protoimpl.MessageState     `protogen:"open.v1"`
-	Id            string                     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test NoSer ID,hidden" sql:"pk,type(uuid)"`     // @gotags: search:"Test NoSer ID,hidden" sql:"pk,type(uuid)"
-	Name          string                     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Test NoSer Name"` // @gotags: search:"Test NoSer Name"
-	Description   string                     `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	Int32Val      int32                      `protobuf:"varint,4,opt,name=int32_val,json=int32Val,proto3" json:"int32_val,omitempty"`
-	Int64Val      int64                      `protobuf:"varint,5,opt,name=int64_val,json=int64Val,proto3" json:"int64_val,omitempty"`
-	Uint64Val     uint64                     `protobuf:"varint,6,opt,name=uint64_val,json=uint64Val,proto3" json:"uint64_val,omitempty"`
-	BoolVal       bool                       `protobuf:"varint,7,opt,name=bool_val,json=boolVal,proto3" json:"bool_val,omitempty"`
-	FloatVal      float32                    `protobuf:"fixed32,8,opt,name=float_val,json=floatVal,proto3" json:"float_val,omitempty"`
-	DoubleVal     float64                    `protobuf:"fixed64,9,opt,name=double_val,json=doubleVal,proto3" json:"double_val,omitempty"`
-	Priority      TestNoSerialized_Priority  `protobuf:"varint,10,opt,name=priority,proto3,enum=storage.TestNoSerialized_Priority" json:"priority,omitempty" search:"Test NoSer Priority"` // @gotags: search:"Test NoSer Priority"
-	CreatedAt     *timestamppb.Timestamp     `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Test NoSer Created At"`                      // @gotags: search:"Test NoSer Created At"
-	ClusterId     string                     `protobuf:"bytes,12,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Test NoSer Cluster ID" sql:"type(uuid)"`                      // @gotags: search:"Test NoSer Cluster ID" sql:"type(uuid)"
-	Tags          []string                   `protobuf:"bytes,13,rep,name=tags,proto3" json:"tags,omitempty" search:"Test NoSer Tags"`                                                 // @gotags: search:"Test NoSer Tags"
-	Metadata      *TestNoSerialized_Metadata `protobuf:"bytes,14,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	state         protoimpl.MessageState         `protogen:"open.v1"`
+	Id            string                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test NoSer ID,hidden" sql:"pk,type(uuid)"`     // @gotags: search:"Test NoSer ID,hidden" sql:"pk,type(uuid)"
+	Name          string                         `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Test NoSer Name"` // @gotags: search:"Test NoSer Name"
+	Description   string                         `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Int32Val      int32                          `protobuf:"varint,4,opt,name=int32_val,json=int32Val,proto3" json:"int32_val,omitempty"`
+	Int64Val      int64                          `protobuf:"varint,5,opt,name=int64_val,json=int64Val,proto3" json:"int64_val,omitempty"`
+	Uint64Val     uint64                         `protobuf:"varint,6,opt,name=uint64_val,json=uint64Val,proto3" json:"uint64_val,omitempty"`
+	BoolVal       bool                           `protobuf:"varint,7,opt,name=bool_val,json=boolVal,proto3" json:"bool_val,omitempty"`
+	FloatVal      float32                        `protobuf:"fixed32,8,opt,name=float_val,json=floatVal,proto3" json:"float_val,omitempty"`
+	DoubleVal     float64                        `protobuf:"fixed64,9,opt,name=double_val,json=doubleVal,proto3" json:"double_val,omitempty"`
+	Priority      TestNoSerialized_Priority      `protobuf:"varint,10,opt,name=priority,proto3,enum=storage.TestNoSerialized_Priority" json:"priority,omitempty" search:"Test NoSer Priority"` // @gotags: search:"Test NoSer Priority"
+	CreatedAt     *timestamppb.Timestamp         `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Test NoSer Created At"`                      // @gotags: search:"Test NoSer Created At"
+	ClusterId     string                         `protobuf:"bytes,12,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Test NoSer Cluster ID" sql:"type(uuid)"`                      // @gotags: search:"Test NoSer Cluster ID" sql:"type(uuid)"
+	Tags          []string                       `protobuf:"bytes,13,rep,name=tags,proto3" json:"tags,omitempty" search:"Test NoSer Tags"`                                                 // @gotags: search:"Test NoSer Tags"
+	Metadata      *TestNoSerialized_Metadata     `protobuf:"bytes,14,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	Labels        []*TestNoSerialized_Label      `protobuf:"bytes,15,rep,name=labels,proto3" json:"labels,omitempty"`
+	Annotations   []*TestNoSerialized_Annotation `protobuf:"bytes,16,rep,name=annotations,proto3" json:"annotations,omitempty" sql:"strategy(bytea)"` // @gotags: sql:"strategy(bytea)"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1878,6 +1880,20 @@ func (x *TestNoSerialized) GetTags() []string {
 func (x *TestNoSerialized) GetMetadata() *TestNoSerialized_Metadata {
 	if x != nil {
 		return x.Metadata
+	}
+	return nil
+}
+
+func (x *TestNoSerialized) GetLabels() []*TestNoSerialized_Label {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
+func (x *TestNoSerialized) GetAnnotations() []*TestNoSerialized_Annotation {
+	if x != nil {
+		return x.Annotations
 	}
 	return nil
 }
@@ -2946,6 +2962,112 @@ func (x *TestNoSerialized_Metadata) GetRevision() int32 {
 	return 0
 }
 
+// Repeated message → child table (default strategy)
+type TestNoSerialized_Label struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TestNoSerialized_Label) Reset() {
+	*x = TestNoSerialized_Label{}
+	mi := &file_storage_test_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TestNoSerialized_Label) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestNoSerialized_Label) ProtoMessage() {}
+
+func (x *TestNoSerialized_Label) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_test_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestNoSerialized_Label.ProtoReflect.Descriptor instead.
+func (*TestNoSerialized_Label) Descriptor() ([]byte, []int) {
+	return file_storage_test_proto_rawDescGZIP(), []int{16, 1}
+}
+
+func (x *TestNoSerialized_Label) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *TestNoSerialized_Label) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+// Repeated message → inlined as bytea (strategy(bytea))
+type TestNoSerialized_Annotation struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TestNoSerialized_Annotation) Reset() {
+	*x = TestNoSerialized_Annotation{}
+	mi := &file_storage_test_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TestNoSerialized_Annotation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestNoSerialized_Annotation) ProtoMessage() {}
+
+func (x *TestNoSerialized_Annotation) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_test_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestNoSerialized_Annotation.ProtoReflect.Descriptor instead.
+func (*TestNoSerialized_Annotation) Descriptor() ([]byte, []int) {
+	return file_storage_test_proto_rawDescGZIP(), []int{16, 2}
+}
+
+func (x *TestNoSerialized_Annotation) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *TestNoSerialized_Annotation) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
 var File_storage_test_proto protoreflect.FileDescriptor
 
 const file_storage_test_proto_rawDesc = "" +
@@ -3150,7 +3272,7 @@ const file_storage_test_proto_rawDesc = "" +
 	"\x10TestShortCircuit\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\bchild_id\x18\x02 \x01(\tR\achildId\x12(\n" +
-	"\x10g2_grandchild_id\x18\x03 \x01(\tR\x0eg2GrandchildId\"\xc1\x05\n" +
+	"\x10g2_grandchild_id\x18\x03 \x01(\tR\x0eg2GrandchildId\"\xa9\a\n" +
 	"\x10TestNoSerialized\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -3170,11 +3292,20 @@ const file_storage_test_proto_rawDesc = "" +
 	"\n" +
 	"cluster_id\x18\f \x01(\tR\tclusterId\x12\x12\n" +
 	"\x04tags\x18\r \x03(\tR\x04tags\x12>\n" +
-	"\bmetadata\x18\x0e \x01(\v2\".storage.TestNoSerialized.MetadataR\bmetadata\x1aX\n" +
+	"\bmetadata\x18\x0e \x01(\v2\".storage.TestNoSerialized.MetadataR\bmetadata\x127\n" +
+	"\x06labels\x18\x0f \x03(\v2\x1f.storage.TestNoSerialized.LabelR\x06labels\x12F\n" +
+	"\vannotations\x18\x10 \x03(\v2$.storage.TestNoSerialized.AnnotationR\vannotations\x1aX\n" +
 	"\bMetadata\x12\x16\n" +
 	"\x06author\x18\x01 \x01(\tR\x06author\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1a\n" +
-	"\brevision\x18\x03 \x01(\x05R\brevision\"o\n" +
+	"\brevision\x18\x03 \x01(\x05R\brevision\x1a/\n" +
+	"\x05Label\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\x1a4\n" +
+	"\n" +
+	"Annotation\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\"o\n" +
 	"\bPriority\x12\x12\n" +
 	"\x0eUNSET_PRIORITY\x10\x00\x12\x10\n" +
 	"\fLOW_PRIORITY\x10\x01\x12\x13\n" +
@@ -3196,7 +3327,7 @@ func file_storage_test_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_test_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_storage_test_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_storage_test_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
 var file_storage_test_proto_goTypes = []any{
 	(TestSingleKeyStruct_Enum)(0),                   // 0: storage.TestSingleKeyStruct.Enum
 	(TestSingleUUIDKeyStruct_Enum)(0),               // 1: storage.TestSingleUUIDKeyStruct.Enum
@@ -3244,48 +3375,52 @@ var file_storage_test_proto_goTypes = []any{
 	(*TestGrandparent_Embedded_Embedded2)(nil), // 43: storage.TestGrandparent.Embedded.Embedded2
 	(*TestParent1_Child1Ref)(nil),              // 44: storage.TestParent1.Child1Ref
 	(*TestNoSerialized_Metadata)(nil),          // 45: storage.TestNoSerialized.Metadata
-	(*timestamppb.Timestamp)(nil),              // 46: google.protobuf.Timestamp
+	(*TestNoSerialized_Label)(nil),             // 46: storage.TestNoSerialized.Label
+	(*TestNoSerialized_Annotation)(nil),        // 47: storage.TestNoSerialized.Annotation
+	(*timestamppb.Timestamp)(nil),              // 48: google.protobuf.Timestamp
 }
 var file_storage_test_proto_depIdxs = []int32{
 	21, // 0: storage.TestSingleKeyStruct.labels:type_name -> storage.TestSingleKeyStruct.LabelsEntry
-	46, // 1: storage.TestSingleKeyStruct.timestamp:type_name -> google.protobuf.Timestamp
+	48, // 1: storage.TestSingleKeyStruct.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 2: storage.TestSingleKeyStruct.enum:type_name -> storage.TestSingleKeyStruct.Enum
 	0,  // 3: storage.TestSingleKeyStruct.enums:type_name -> storage.TestSingleKeyStruct.Enum
 	22, // 4: storage.TestSingleKeyStruct.embedded:type_name -> storage.TestSingleKeyStruct.Embedded
 	23, // 5: storage.TestSingleKeyStruct.nested:type_name -> storage.TestSingleKeyStruct.Nested
 	24, // 6: storage.TestSingleKeyStruct.oneofnested:type_name -> storage.TestSingleKeyStruct.OneOfNested
-	46, // 7: storage.TestSingleKeyStruct.timestamptz:type_name -> google.protobuf.Timestamp
+	48, // 7: storage.TestSingleKeyStruct.timestamptz:type_name -> google.protobuf.Timestamp
 	28, // 8: storage.TestSingleUUIDKeyStruct.labels:type_name -> storage.TestSingleUUIDKeyStruct.LabelsEntry
-	46, // 9: storage.TestSingleUUIDKeyStruct.timestamp:type_name -> google.protobuf.Timestamp
+	48, // 9: storage.TestSingleUUIDKeyStruct.timestamp:type_name -> google.protobuf.Timestamp
 	1,  // 10: storage.TestSingleUUIDKeyStruct.enum:type_name -> storage.TestSingleUUIDKeyStruct.Enum
 	1,  // 11: storage.TestSingleUUIDKeyStruct.enums:type_name -> storage.TestSingleUUIDKeyStruct.Enum
 	29, // 12: storage.TestSingleUUIDKeyStruct.embedded:type_name -> storage.TestSingleUUIDKeyStruct.Embedded
 	30, // 13: storage.TestSingleUUIDKeyStruct.nested:type_name -> storage.TestSingleUUIDKeyStruct.Nested
 	31, // 14: storage.TestSingleUUIDKeyStruct.oneofnested:type_name -> storage.TestSingleUUIDKeyStruct.OneOfNested
 	35, // 15: storage.TestStruct.labels:type_name -> storage.TestStruct.LabelsEntry
-	46, // 16: storage.TestStruct.timestamp:type_name -> google.protobuf.Timestamp
+	48, // 16: storage.TestStruct.timestamp:type_name -> google.protobuf.Timestamp
 	2,  // 17: storage.TestStruct.enum:type_name -> storage.TestStruct.Enum
 	2,  // 18: storage.TestStruct.enums:type_name -> storage.TestStruct.Enum
-	46, // 19: storage.TestStruct.timestamptz:type_name -> google.protobuf.Timestamp
+	48, // 19: storage.TestStruct.timestamptz:type_name -> google.protobuf.Timestamp
 	36, // 20: storage.TestStruct.embedded:type_name -> storage.TestStruct.Embedded
 	37, // 21: storage.TestStruct.nested:type_name -> storage.TestStruct.Nested
 	38, // 22: storage.TestStruct.oneofnested:type_name -> storage.TestStruct.OneOfNested
 	42, // 23: storage.TestGrandparent.embedded:type_name -> storage.TestGrandparent.Embedded
 	44, // 24: storage.TestParent1.children:type_name -> storage.TestParent1.Child1Ref
 	3,  // 25: storage.TestNoSerialized.priority:type_name -> storage.TestNoSerialized.Priority
-	46, // 26: storage.TestNoSerialized.created_at:type_name -> google.protobuf.Timestamp
+	48, // 26: storage.TestNoSerialized.created_at:type_name -> google.protobuf.Timestamp
 	45, // 27: storage.TestNoSerialized.metadata:type_name -> storage.TestNoSerialized.Metadata
-	26, // 28: storage.TestSingleKeyStruct.Nested.nested2:type_name -> storage.TestSingleKeyStruct.Nested.Nested2
-	27, // 29: storage.TestSingleKeyStruct.OneOfNested.nested2:type_name -> storage.TestSingleKeyStruct.OneOfNested.Nested2
-	33, // 30: storage.TestSingleUUIDKeyStruct.Nested.nested2:type_name -> storage.TestSingleUUIDKeyStruct.Nested.Nested2
-	34, // 31: storage.TestSingleUUIDKeyStruct.OneOfNested.nested2:type_name -> storage.TestSingleUUIDKeyStruct.OneOfNested.Nested2
-	40, // 32: storage.TestStruct.Nested.nested2:type_name -> storage.TestStruct.Nested.Nested2
-	43, // 33: storage.TestGrandparent.Embedded.embedded2:type_name -> storage.TestGrandparent.Embedded.Embedded2
-	34, // [34:34] is the sub-list for method output_type
-	34, // [34:34] is the sub-list for method input_type
-	34, // [34:34] is the sub-list for extension type_name
-	34, // [34:34] is the sub-list for extension extendee
-	0,  // [0:34] is the sub-list for field type_name
+	46, // 28: storage.TestNoSerialized.labels:type_name -> storage.TestNoSerialized.Label
+	47, // 29: storage.TestNoSerialized.annotations:type_name -> storage.TestNoSerialized.Annotation
+	26, // 30: storage.TestSingleKeyStruct.Nested.nested2:type_name -> storage.TestSingleKeyStruct.Nested.Nested2
+	27, // 31: storage.TestSingleKeyStruct.OneOfNested.nested2:type_name -> storage.TestSingleKeyStruct.OneOfNested.Nested2
+	33, // 32: storage.TestSingleUUIDKeyStruct.Nested.nested2:type_name -> storage.TestSingleUUIDKeyStruct.Nested.Nested2
+	34, // 33: storage.TestSingleUUIDKeyStruct.OneOfNested.nested2:type_name -> storage.TestSingleUUIDKeyStruct.OneOfNested.Nested2
+	40, // 34: storage.TestStruct.Nested.nested2:type_name -> storage.TestStruct.Nested.Nested2
+	43, // 35: storage.TestGrandparent.Embedded.embedded2:type_name -> storage.TestGrandparent.Embedded.Embedded2
+	36, // [36:36] is the sub-list for method output_type
+	36, // [36:36] is the sub-list for method input_type
+	36, // [36:36] is the sub-list for extension type_name
+	36, // [36:36] is the sub-list for extension extendee
+	0,  // [0:36] is the sub-list for field type_name
 }
 
 func init() { file_storage_test_proto_init() }
@@ -3313,7 +3448,7 @@ func file_storage_test_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_test_proto_rawDesc), len(file_storage_test_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   42,
+			NumMessages:   44,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

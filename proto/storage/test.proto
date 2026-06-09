@@ -375,4 +375,20 @@ message TestNoSerialized {
   }
 
   Metadata metadata = 14;
+
+  // Repeated message → child table (default strategy)
+  message Label {
+    string key = 1;
+    string value = 2;
+  }
+
+  repeated Label labels = 15;
+
+  // Repeated message → inlined as bytea (strategy(bytea))
+  message Annotation {
+    string key = 1;
+    string value = 2;
+  }
+
+  repeated Annotation annotations = 16; // @gotags: sql:"strategy(bytea)"
 }
