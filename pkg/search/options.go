@@ -51,6 +51,7 @@ var (
 	Category       = newFieldLabel("Category")
 	Severity       = newFieldLabel("Severity")
 	Disabled       = newFieldLabel("Disabled")
+	ConfigScope    = newFieldLabel("Config Scope")
 
 	CVEID              = newFieldLabel("CVE ID")
 	CVE                = newFieldLabel("CVE")

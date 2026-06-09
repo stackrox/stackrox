@@ -800,9 +800,13 @@
         },
         "source": {
           "$ref": "#/definitions/storagePolicySource"
+        },
+        "configScope": {
+          "type": "string",
+          "description": "Identifies the declarative configuration scope that owns this policy.\nUsed to distinguish between different declarative managers (config-controller, roxctl, etc.)\nand between different reconciler instances targeting the same Central.\nEmpty for imperative (UI/API-created) and config-controller-managed policies."
         }
       },
-      "title": "Next tag: 28"
+      "title": "Next tag: 29"
     },
     "googleRpcStatus": {
       "type": "object",
@@ -949,6 +953,9 @@
         },
         "source": {
           "$ref": "#/definitions/storagePolicySource"
+        },
+        "configScope": {
+          "type": "string"
         }
       }
     },
@@ -1120,9 +1127,13 @@
         },
         "source": {
           "$ref": "#/definitions/storagePolicySource"
+        },
+        "configScope": {
+          "type": "string",
+          "description": "Identifies the declarative configuration scope that owns this policy.\nUsed to distinguish between different declarative managers (config-controller, roxctl, etc.)\nand between different reconciler instances targeting the same Central.\nEmpty for imperative (UI/API-created) and config-controller-managed policies."
         }
       },
-      "title": "Next tag: 28"
+      "title": "Next tag: 29"
     },
     "storagePolicyGroup": {
       "type": "object",

@@ -392,7 +392,7 @@ func (Comparator) EnumDescriptor() ([]byte, []int) {
 	return file_storage_policy_proto_rawDescGZIP(), []int{6}
 }
 
-// Next tag: 28
+// Next tag: 29
 type Policy struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Policy ID,hidden" sql:"pk,index=btree" crYaml:"-"` // @gotags: search:"Policy ID,hidden" sql:"pk,index=btree" crYaml:"-"
@@ -440,8 +440,13 @@ type Policy struct {
 	// Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only.
 	MitreVectorsLocked bool `protobuf:"varint,25,opt,name=mitre_vectors_locked,json=mitreVectorsLocked,proto3" json:"mitre_vectors_locked,omitempty" crYaml:"mitreVectorsLocked"` // @gotags: crYaml:"mitreVectorsLocked"
 	// Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
-	IsDefault     bool         `protobuf:"varint,26,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty" crYaml:"isDefault"`    // @gotags: crYaml:"isDefault"
-	Source        PolicySource `protobuf:"varint,27,opt,name=source,proto3,enum=storage.PolicySource" json:"source,omitempty" crYaml:"-"` // @gotags: crYaml:"-"
+	IsDefault bool         `protobuf:"varint,26,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty" crYaml:"isDefault"`    // @gotags: crYaml:"isDefault"
+	Source    PolicySource `protobuf:"varint,27,opt,name=source,proto3,enum=storage.PolicySource" json:"source,omitempty" crYaml:"-"` // @gotags: crYaml:"-"
+	// Identifies the declarative configuration scope that owns this policy.
+	// Used to distinguish between different declarative managers (config-controller, roxctl, etc.)
+	// and between different reconciler instances targeting the same Central.
+	// Empty for imperative (UI/API-created) and config-controller-managed policies.
+	ConfigScope   string `protobuf:"bytes,28,opt,name=config_scope,json=configScope,proto3" json:"config_scope,omitempty" search:"Config Scope,hidden" crYaml:"-"` // @gotags: search:"Config Scope,hidden" crYaml:"-"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -649,6 +654,13 @@ func (x *Policy) GetSource() PolicySource {
 		return x.Source
 	}
 	return PolicySource_IMPERATIVE
+}
+
+func (x *Policy) GetConfigScope() string {
+	if x != nil {
+		return x.ConfigScope
+	}
+	return ""
 }
 
 type PolicySection struct {
@@ -877,6 +889,7 @@ type ListPolicy struct {
 	EventSource     EventSource            `protobuf:"varint,9,opt,name=event_source,json=eventSource,proto3,enum=storage.EventSource" json:"event_source,omitempty"`
 	IsDefault       bool                   `protobuf:"varint,10,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
 	Source          PolicySource           `protobuf:"varint,11,opt,name=source,proto3,enum=storage.PolicySource" json:"source,omitempty"`
+	ConfigScope     string                 `protobuf:"bytes,12,opt,name=config_scope,json=configScope,proto3" json:"config_scope,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -986,6 +999,13 @@ func (x *ListPolicy) GetSource() PolicySource {
 		return x.Source
 	}
 	return PolicySource_IMPERATIVE
+}
+
+func (x *ListPolicy) GetConfigScope() string {
+	if x != nil {
+		return x.ConfigScope
+	}
+	return ""
 }
 
 type Exclusion struct {
@@ -1298,7 +1318,7 @@ var File_storage_policy_proto protoreflect.FileDescriptor
 
 const file_storage_policy_proto_rawDesc = "" +
 	"\n" +
-	"\x14storage/policy.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13storage/image.proto\x1a\x13storage/scope.proto\"\xb4\t\n" +
+	"\x14storage/policy.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13storage/image.proto\x1a\x13storage/scope.proto\"\xd7\t\n" +
 	"\x06Policy\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -1329,7 +1349,8 @@ const file_storage_policy_proto_rawDesc = "" +
 	"\x14mitre_vectors_locked\x18\x19 \x01(\bR\x12mitreVectorsLocked\x12\x1d\n" +
 	"\n" +
 	"is_default\x18\x1a \x01(\bR\tisDefault\x12-\n" +
-	"\x06source\x18\x1b \x01(\x0e2\x15.storage.PolicySourceR\x06source\x1aL\n" +
+	"\x06source\x18\x1b \x01(\x0e2\x15.storage.PolicySourceR\x06source\x12!\n" +
+	"\fconfig_scope\x18\x1c \x01(\tR\vconfigScope\x1aL\n" +
 	"\x12MitreAttackVectors\x12\x16\n" +
 	"\x06tactic\x18\x01 \x01(\tR\x06tactic\x12\x1e\n" +
 	"\n" +
@@ -1349,7 +1370,7 @@ const file_storage_policy_proto_rawDesc = "" +
 	"\x05value\x18\x01 \x01(\tR\x05value\"9\n" +
 	"\n" +
 	"PolicyList\x12+\n" +
-	"\bpolicies\x18\x01 \x03(\v2\x0f.storage.PolicyR\bpolicies\"\xc5\x03\n" +
+	"\bpolicies\x18\x01 \x03(\v2\x0f.storage.PolicyR\bpolicies\"\xe8\x03\n" +
 	"\n" +
 	"ListPolicy\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -1364,7 +1385,8 @@ const file_storage_policy_proto_rawDesc = "" +
 	"\n" +
 	"is_default\x18\n" +
 	" \x01(\bR\tisDefault\x12-\n" +
-	"\x06source\x18\v \x01(\x0e2\x15.storage.PolicySourceR\x06source\"\xf5\x02\n" +
+	"\x06source\x18\v \x01(\x0e2\x15.storage.PolicySourceR\x06source\x12!\n" +
+	"\fconfig_scope\x18\f \x01(\tR\vconfigScope\"\xf5\x02\n" +
 	"\tExclusion\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12=\n" +
 	"\n" +

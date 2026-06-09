@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/roxctl/image"
 	"github.com/stackrox/rox/roxctl/logconvert"
 	"github.com/stackrox/rox/roxctl/netpol"
+	"github.com/stackrox/rox/roxctl/policyconfig"
 	"github.com/stackrox/rox/roxctl/sbom"
 	"github.com/stackrox/rox/roxctl/scanner"
 	"github.com/stackrox/rox/roxctl/sensor"
@@ -88,6 +89,7 @@ func Command() *cobra.Command {
 		versionCommand(cliEnvironment),
 		completion.Command(cliEnvironment),
 		netpol.Command(cliEnvironment),
+		policyconfig.Command(cliEnvironment),
 	)
 	if env.DeclarativeConfiguration.BooleanSetting() {
 		c.AddCommand(declarativeconfig.Command(cliEnvironment))

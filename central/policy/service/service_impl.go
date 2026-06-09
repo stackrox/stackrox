@@ -175,6 +175,7 @@ func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPo
 			EventSource:     p.GetEventSource(),
 			IsDefault:       p.GetIsDefault(),
 			Source:          p.GetSource(),
+			ConfigScope:     p.GetConfigScope(),
 		})
 	}
 	return listPolicies
@@ -339,8 +340,10 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 		return nil, errors.Wrap(errox.InvalidArgs, "A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
 	}
 
-	// Declarative policies can only be deleted by the config-controller via its finalizer.
-	if policy.GetSource() == storage.PolicySource_DECLARATIVE {
+	// Declarative policies without a config_scope can only be deleted by the config-controller.
+	// Declarative policies with a config_scope (e.g., roxctl-managed) can be deleted by any
+	// caller with WorkflowAdministration write permission (already enforced by the gRPC authorizer).
+	if policy.GetSource() == storage.PolicySource_DECLARATIVE && policy.GetConfigScope() == "" {
 		identity, err := authn.IdentityFromContext(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to determine caller identity")

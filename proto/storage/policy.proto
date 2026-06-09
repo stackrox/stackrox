@@ -13,7 +13,7 @@ option java_package = "io.stackrox.proto.storage";
 // in `config-controller/api/v1alpha1/policy_types.go` and the ToProtobuf() function
 // to account for the new field, and its conversion.
 
-//Next tag: 28
+//Next tag: 29
 message Policy {
   string id = 1; // @gotags: search:"Policy ID,hidden" sql:"pk,index=btree" crYaml:"-"
   // Name of the policy.  Must be unique.
@@ -77,6 +77,11 @@ message Policy {
   bool is_default = 26; // @gotags: crYaml:"isDefault"
 
   PolicySource source = 27; // @gotags: crYaml:"-"
+  // Identifies the declarative configuration scope that owns this policy.
+  // Used to distinguish between different declarative managers (config-controller, roxctl, etc.)
+  // and between different reconciler instances targeting the same Central.
+  // Empty for imperative (UI/API-created) and config-controller-managed policies.
+  string config_scope = 28; // @gotags: search:"Config Scope,hidden" crYaml:"-"
 }
 
 enum PolicySource {
@@ -133,6 +138,7 @@ message ListPolicy {
   EventSource event_source = 9;
   bool is_default = 10;
   PolicySource source = 11;
+  string config_scope = 12;
 }
 
 // Please ensure any changes to the following are reflected in comment of top-level policy field `enforcement_actions`.
