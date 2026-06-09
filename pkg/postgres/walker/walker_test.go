@@ -81,6 +81,10 @@ func TestFieldIncludeNoSerialized(t *testing.T) {
 			field:    Field{Schema: normalSchema, ColumnName: "name", Name: "name"},
 			expected: false,
 		},
+		"normal: RepeatedStrategy field included": {
+			field:    Field{Schema: normalSchema, ColumnName: "data", Options: PostgresOptions{RepeatedStrategy: "bytea"}},
+			expected: true,
+		},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
