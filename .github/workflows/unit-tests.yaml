@@ -11,6 +11,8 @@ on:
     - opened
     - reopened
     - synchronize
+    paths-ignore:
+    - 'ui/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -24,14 +26,6 @@ env:
   SHORTCOMMIT: "0000000"
 
 jobs:
-  detect-changes:
-    uses: ./.github/workflows/detect-changes.yml
-    with:
-      run_all: |
-        ^Makefile$
-        ^make/
-        ^.github/workflows/unit-tests.yaml$
-        ^.github/actions/job-preamble/
 
   go:
     strategy:
@@ -149,7 +143,7 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
       with:
-        key-suffix: ${{ matrix.gotags }}
+        key-suffix: ${{ matrix.gotags }}-${{ matrix.pg }}
 
     - name: Is Postgres ready
       run: |
@@ -235,125 +229,6 @@ jobs:
 
     # Do not create junit report for bench tests:
     # https://github.com/jstemmer/go-junit-report/issues/174
-
-  ui:
-    needs: detect-changes
-    if: >-
-      !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^ui/') ||
-      contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
-    runs-on: ubuntu-latest
-    outputs:
-      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Set up Node.js
-      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
-      with:
-        node-version-file: ui/package.json
-
-    - name: Cache UI dependencies
-      id: cache-ui
-      uses: ./.github/actions/cache-ui-dependencies
-
-    - name: Install UI dependencies
-      if: steps.cache-ui.outputs.cache-hit != 'true'
-      run: make -C ui deps
-
-    - name: Skip UI deps on cache hit
-      if: steps.cache-ui.outputs.cache-hit == 'true'
-      run: touch ui/deps
-
-    - name: UI Unit Tests
-      run: make ui-test
-
-    - name: Publish Test Report
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
-      with:
-        paths: 'ui/apps/platform/test-results/reports/*.xml'
-
-    - name: Report junit failures in jira
-      if: (!cancelled())
-      id: junit2jira
-      uses: ./.github/actions/junit2jira
-      with:
-        create-jiras: ${{ github.event_name == 'push' }}
-        jira-user: ${{ secrets.JIRA_USER }}
-        jira-token: ${{ secrets.JIRA_TOKEN }}
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        directory: 'ui/apps/platform/test-results/reports'
-
-  ui-component:
-    needs: detect-changes
-    if: >-
-      !needs.detect-changes.outputs.files ||
-      contains(needs.detect-changes.outputs.files, '^ui/') ||
-      contains(needs.detect-changes.outputs.files, '^.github/actions/cache-ui-dependencies/')
-    runs-on: ubuntu-latest
-    outputs:
-      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Set up Node.js
-      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
-      with:
-        node-version-file: ui/package.json
-
-    - name: Cache UI dependencies
-      id: cache-ui
-      uses: ./.github/actions/cache-ui-dependencies
-
-    - name: Install UI dependencies
-      if: steps.cache-ui.outputs.cache-hit != 'true'
-      run: make -C ui deps
-
-    - name: Skip UI deps on cache hit
-      if: steps.cache-ui.outputs.cache-hit == 'true'
-      run: touch ui/deps
-
-    - name: UI Component Tests
-      uses: cypress-io/github-action@dace029018fcdf86e0df89a31bc3cfa5b32570d8 # ratchet:cypress-io/github-action@v7
-      with:
-        working-directory: ui/apps/platform
-        install: false
-        command: npm run test-component -- --browser chrome
-
-    - name: Upload Cypress test result artifacts
-      uses: ./.github/actions/upload-artifact-with-retry
-      if: always()
-      with:
-        name: Cypress test results
-        path: ui/apps/platform/cypress/test-results/
-
-    - name: Publish Test Report
-      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
-      with:
-        paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
-
-    - name: Report junit failures in jira
-      if: (!cancelled())
-      id: junit2jira
-      uses: ./.github/actions/junit2jira
-      with:
-        create-jiras: ${{ github.event_name == 'push' }}
-        jira-user: ${{ secrets.JIRA_USER }}
-        jira-token: ${{ secrets.JIRA_TOKEN }}
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        directory: 'ui/apps/platform/cypress/test-results/reports'
 
   local-roxctl-tests:
     runs-on: ubuntu-latest
@@ -544,8 +419,6 @@ jobs:
       - openshift-ci-unit-tests
       - sensor-integration-tests
       - shell-unit-tests
-      - ui
-      - ui-component
     permissions:
       actions: read
     steps:

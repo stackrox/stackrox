@@ -1,0 +1,14 @@
+name: UI Unit Tests
+# Satisfies the 'ui' required check when UI tests are skipped on non-UI PRs.
+# See unit-tests-go-passthrough.yaml for explanation.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths-ignore:
+    - 'ui/**'
+
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Skipped — no UI changes"

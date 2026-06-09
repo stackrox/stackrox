@@ -1,0 +1,130 @@
+name: UI Unit Tests
+on:
+  push:
+    tags:
+    - '*'
+    branches:
+    - master
+    - release-*
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+    paths:
+    - 'ui/**'
+    - '.github/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    outputs:
+      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Set up Node.js
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+      with:
+        node-version-file: ui/package.json
+
+    - name: Cache UI dependencies
+      id: cache-ui
+      uses: ./.github/actions/cache-ui-dependencies
+
+    - name: Install UI dependencies
+      if: steps.cache-ui.outputs.cache-hit != 'true'
+      run: make -C ui deps
+
+    - name: Skip UI deps on cache hit
+      if: steps.cache-ui.outputs.cache-hit == 'true'
+      run: touch ui/deps
+
+    - name: UI Unit Tests
+      run: make ui-test
+
+    - name: Publish Test Report
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: 'ui/apps/platform/test-results/reports/*.xml'
+
+    - name: Report junit failures in jira
+      if: (!cancelled())
+      id: junit2jira
+      uses: ./.github/actions/junit2jira
+      with:
+        create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ secrets.JIRA_USER }}
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        directory: 'ui/apps/platform/test-results/reports'
+
+  ui-component:
+    runs-on: ubuntu-latest
+    outputs:
+      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Set up Node.js
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+      with:
+        node-version-file: ui/package.json
+
+    - name: Cache UI dependencies
+      id: cache-ui
+      uses: ./.github/actions/cache-ui-dependencies
+
+    - name: Install UI dependencies
+      if: steps.cache-ui.outputs.cache-hit != 'true'
+      run: make -C ui deps
+
+    - name: Skip UI deps on cache hit
+      if: steps.cache-ui.outputs.cache-hit == 'true'
+      run: touch ui/deps
+
+    - name: UI Component Tests
+      uses: cypress-io/github-action@dace029018fcdf86e0df89a31bc3cfa5b32570d8 # ratchet:cypress-io/github-action@v7
+      with:
+        working-directory: ui/apps/platform
+        install: false
+        command: npm run test-component -- --browser chrome
+
+    - name: Upload Cypress test result artifacts
+      uses: ./.github/actions/upload-artifact-with-retry
+      if: always()
+      with:
+        name: Cypress test results
+        path: ui/apps/platform/cypress/test-results/
+
+    - name: Publish Test Report
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
+
+    - name: Report junit failures in jira
+      if: (!cancelled())
+      id: junit2jira
+      uses: ./.github/actions/junit2jira
+      with:
+        create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ secrets.JIRA_USER }}
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        directory: 'ui/apps/platform/cypress/test-results/reports'
