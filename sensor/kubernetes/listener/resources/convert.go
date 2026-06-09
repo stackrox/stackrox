@@ -327,6 +327,7 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 
 	// Determine each image's ID, if not already populated, as well as if the image is pullable and/or cluster-local.
 	for _, p := range pods {
+		// Process regular and init container statuses separately to avoid building a combined status slice.
 		w.processContainerStatuses(p.Status.ContainerStatuses, p.Spec.Containers, containersByName, localImages, p.GetName())
 		if features.InitContainerSupport.Enabled() {
 			w.processContainerStatuses(p.Status.InitContainerStatuses, p.Spec.InitContainers, containersByName, localImages, p.GetName())

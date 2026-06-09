@@ -11,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func BenchmarkPopulateImageMetadata(b *testing.B) {
+func BenchmarkPopulateImageMetadataCompare(b *testing.B) {
 	cases := []struct {
 		numContainers int
 		numPods       int
@@ -23,8 +23,8 @@ func BenchmarkPopulateImageMetadata(b *testing.B) {
 
 	for _, tc := range cases {
 		b.Run(fmt.Sprintf("%dc_%dp", tc.numContainers, tc.numPods), func(b *testing.B) {
-			containers := makeContainers(tc.numContainers)
-			pods := makePods(tc.numContainers, tc.numPods)
+			containers := makeCompareBenchmarkContainers(tc.numContainers)
+			pods := makeCompareBenchmarkPods(tc.numContainers, tc.numPods)
 			wrap := &deploymentWrap{
 				Deployment: &storage.Deployment{
 					Name:       "bench-deploy",
@@ -36,17 +36,14 @@ func BenchmarkPopulateImageMetadata(b *testing.B) {
 
 			b.ReportAllocs()
 			for b.Loop() {
-				b.StopTimer()
-				resetContainerImages(containers)
-				b.StartTimer()
-
+				resetCompareBenchmarkContainerImages(containers)
 				wrap.populateImageMetadata(localImages, pods...)
 			}
 		})
 	}
 }
 
-func makeContainers(n int) []*storage.Container {
+func makeCompareBenchmarkContainers(n int) []*storage.Container {
 	containers := make([]*storage.Container, n)
 	for i := range n {
 		name := fmt.Sprintf("container-%d", i)
@@ -58,7 +55,7 @@ func makeContainers(n int) []*storage.Container {
 	return containers
 }
 
-func makePods(numContainers, numPods int) []*v1.Pod {
+func makeCompareBenchmarkPods(numContainers, numPods int) []*v1.Pod {
 	pods := make([]*v1.Pod, numPods)
 	for p := range numPods {
 		statuses := make([]v1.ContainerStatus, numContainers)
@@ -83,9 +80,7 @@ func makePods(numContainers, numPods int) []*v1.Pod {
 	return pods
 }
 
-// resetContainerImages clears mutable fields set by populateImageMetadata so
-// each benchmark iteration measures the full cold-path population logic.
-func resetContainerImages(containers []*storage.Container) {
+func resetCompareBenchmarkContainerImages(containers []*storage.Container) {
 	for _, c := range containers {
 		img := c.GetImage()
 		if img == nil {
