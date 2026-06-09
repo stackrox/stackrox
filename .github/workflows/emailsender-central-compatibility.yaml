@@ -56,7 +56,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
         with:
-          go-version-file: stackrox/go.mod
+          # Version needs to be compatible with both repos. acs-fleet-manager's Go version usually gets bumped first
+          go-version-file: acs-fleet-manager/go.mod
           cache: false  # rarely runs, and repo checkout is in stackrox/ subdir
       - uses: ./stackrox/.github/actions/job-preamble
         with:
@@ -65,6 +66,7 @@ jobs:
         uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # ratchet:helm/kind-action@v1
         with:
           cluster_name: kind
+          version: v0.32.0
       - name: Run Test
         env:
           IMG_WAIT_TIMEOUT_SECONDS: 2100
