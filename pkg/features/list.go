@@ -142,6 +142,9 @@ var (
 
 	// BackgroundMigration enables long-running background migrations in Central
 	BackgroundMigration = registerFeature("Enable long-running background migrations in Central", "ROX_BACKGROUND_MIGRATION", enabled)
+
+	// VulnMgmtDateRangeFilter enables date/time range filtering conditions in Vulnerability Management 2.0 advanced filters
+	VulnMgmtDateRangeFilter = registerFeature("Enables date/time range filtering in Vulnerability Management 2.0", "ROX_VULN_MGMT_DATE_RANGE_FILTER")
 )
 
 // The following feature flags are related to Scanner V4.
