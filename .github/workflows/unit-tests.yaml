@@ -55,7 +55,7 @@ jobs:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/go-test-output.txt
+      run: ${{ matrix.gotags }} GOFLAGS="-trimpath" make go-unit-tests 2>&1 | tee /tmp/go-test-output.txt
 
     - name: Cache and CPU diagnostics
       if: always()
