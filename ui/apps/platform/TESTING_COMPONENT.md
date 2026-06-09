@@ -55,19 +55,14 @@ cy.mount(<ComponentTestProvider><MyComponent /></ComponentTestProvider>);
 cy.intercept('POST', graphqlUrl('getData'), ...);
 ```
 
-### Describe block naming
-
-Use `Cypress.spec.relative` as the describe label so test output shows the file path:
-
-```jsx
-describe(Cypress.spec.relative, () => { ... });
-```
-
 ### Element query priority
 
 Prefer Testing Library Cypress commands for accessible queries:
 
-`cy.findByRole` > `cy.findByLabelText` > `cy.findByText` > `cy.get('css selector')`
+1. `cy.findByRole` 
+2. `cy.findByLabelText` 
+3. `cy.findByText` 
+4. `cy.get('css selector')`
 
 ### Mocking API calls
 
@@ -78,6 +73,14 @@ import { graphqlUrl } from 'test-utils/apiEndpoints';
 
 cy.intercept('POST', graphqlUrl('getDeployments'), (req) => {
     req.reply({ data: { deployments: mockDeployments } });
+}).as('getDeployments');
+```
+
+Use `cy.intercept()` with the standard route argument for REST APIs:
+
+```jsx
+cy.intercept('POST', '/v1/deployments', (req) => {
+    req.reply({ deployments: mockDeployments });
 }).as('getDeployments');
 ```
 
@@ -106,6 +109,15 @@ src/Components/
 ├── CodeViewer.tsx
 ├── CodeViewer.cy.jsx
 ```
+
+### Describe block naming
+
+Use `Cypress.spec.relative` as the describe label so test output shows the file path:
+
+```jsx
+describe(Cypress.spec.relative, () => { ... });
+```
+
 
 ## Running Tests
 
