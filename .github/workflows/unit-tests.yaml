@@ -16,6 +16,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+env:
+  # Stable version ldflags for test caching: Go's test cache keys include
+  # link ActionID which includes -X ldflags. Fixed BUILD_TAG/SHORTCOMMIT
+  # prevent per-commit cache misses.
+  BUILD_TAG: 0.0.0
+  SHORTCOMMIT: "0000000"
+
 jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
@@ -36,22 +43,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    # Stable version ldflags for test caching: Go's test cache keys include
-    # link ActionID which includes -X ldflags. Fixed BUILD_TAG/SHORTCOMMIT
-    # prevent per-commit cache misses.
-    env:
-      BUILD_TAG: 0.0.0
-      SHORTCOMMIT: "0000000"
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -116,41 +110,41 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
-        pg: [ '15' ]
+        pg: [ 'default', '15' ]
         exclude:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
+          - pg: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-postgres-tests') && 'default' }}
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    # Stable version ldflags for test caching: Go's test cache keys include
-    # link ActionID which includes -X ldflags. Fixed BUILD_TAG/SHORTCOMMIT
-    # prevent per-commit cache misses.
     env:
-      BUILD_TAG: 0.0.0
-      SHORTCOMMIT: "0000000"
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+      POSTGRES_PASSWORD: testpassword
     steps:
-    - name: Set Postgres version
+    # Runner's postgres is initialized with C.UTF-8 locale (GHA default).
+    # Tests (e.g. central/splunk) require byte-order collation.
+    - name: Start Postgres (pre-installed)
+      if: matrix.pg == 'default'
       run: |
-        echo "/usr/pgsql-${{ matrix.pg }}/bin" >> "${GITHUB_PATH}"
+        # the unit tests expect a local postgres with passwordless access.
+        sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
+        sudo systemctl start postgresql.service
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      with:
-        fetch-depth: 0
+
+    # Image pinned in .github/test-images/postgres.dockerfile (Dependabot auto-bumps).
+    - name: Start Postgres (${{ matrix.pg }})
+      if: matrix.pg != 'default'
+      run: |
+        docker build -t postgres-test -f .github/test-images/postgres.dockerfile .
+        docker run --rm -d --name postgres --network=host \
+          -e POSTGRESQL_ADMIN_PASSWORD="$POSTGRES_PASSWORD" \
+          -e LANG=C.UTF-8 \
+          postgres-test
 
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Run Postgres
-      run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
@@ -158,7 +152,14 @@ jobs:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Is Postgres ready
-      run: pg_isready -h 127.0.0.1
+      run: |
+        if [ "${{ matrix.pg }}" = "default" ]; then
+          timeout 60 bash -c 'until pg_isready; do sleep 1; done' \
+            || { sudo journalctl -u postgresql --no-pager -n 20; exit 1; }
+        else
+          timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' \
+            || { docker logs postgres; exit 1; }
+        fi
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
@@ -189,37 +190,35 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
+  # Benchmarks run each bench function once (-benchtime=1x -count=1) to verify
+  # they compile and execute without errors. A single postgres version is
+  # sufficient since go-postgres already tests against multiple versions.
   go-bench:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+    env:
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
     steps:
-    - name: Set Postgres version
+    - name: Start Postgres
       run: |
-        echo "/usr/pgsql-15/bin" >> "${GITHUB_PATH}"
+        # the unit tests expect a local postgres with passwordless access. Change  host to 'trust'
+        sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
+        sudo systemctl start postgresql.service
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Run Postgres
-      run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
-
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Is Postgres ready
-      run: pg_isready -h 127.0.0.1
+      run: |
+        timeout 60 bash -c 'until pg_isready; do sleep 1; done' \
+          || { sudo journalctl -u postgresql --no-pager -n 20; exit 1; }
 
     - name: Go Bench Tests
       run: make go-postgres-bench-tests
@@ -265,12 +264,14 @@ jobs:
 
     - name: Install UI dependencies
       if: steps.cache-ui.outputs.cache-hit != 'true'
-      working-directory: ui/apps/platform
-      run: npm ci
+      run: make -C ui deps
+
+    - name: Skip UI deps on cache hit
+      if: steps.cache-ui.outputs.cache-hit == 'true'
+      run: touch ui/deps
 
     - name: UI Unit Tests
-      working-directory: ui/apps/platform
-      run: npm run test
+      run: make ui-test
 
     - name: Publish Test Report
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
@@ -315,11 +316,19 @@ jobs:
       id: cache-ui
       uses: ./.github/actions/cache-ui-dependencies
 
+    - name: Install UI dependencies
+      if: steps.cache-ui.outputs.cache-hit != 'true'
+      run: make -C ui deps
+
+    - name: Skip UI deps on cache hit
+      if: steps.cache-ui.outputs.cache-hit == 'true'
+      run: touch ui/deps
+
     - name: UI Component Tests
       uses: cypress-io/github-action@dace029018fcdf86e0df89a31bc3cfa5b32570d8 # ratchet:cypress-io/github-action@v7
       with:
         working-directory: ui/apps/platform
-        install: ${{ steps.cache-ui.outputs.cache-hit != 'true' }}
+        install: false
         command: npm run test-component -- --browser chrome
 
     - name: Upload Cypress test result artifacts
@@ -359,7 +368,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -401,7 +409,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -449,17 +456,12 @@ jobs:
   sensor-integration-tests:
     env:
       KUBECONFIG: "/tmp/kubeconfig"
-      # Stable version ldflags for test caching (see go job comment).
-      BUILD_TAG: 0.0.0
-      SHORTCOMMIT: "0000000"
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -469,7 +471,7 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Login to Quay.io
-      uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # ratchet:docker/login-action@v4
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # ratchet:docker/login-action@v4
       with:
         registry: quay.io
         username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}

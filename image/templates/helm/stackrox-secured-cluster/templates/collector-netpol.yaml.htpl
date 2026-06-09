@@ -8,7 +8,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "collector-no-ingress") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "networkpolicy" "collector-no-ingress") | nindent 4 }}
 spec:
@@ -27,7 +26,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "collector-monitoring") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "networkpolicy" "collector-monitoring") | nindent 4 }}
 spec:

@@ -99,6 +99,24 @@ func TransportFunc(req *http.Request) (*url.URL, error) {
 	return FromConfig()(req)
 }
 
+// ProxyHostForURL returns the proxy host:port used for the given URL, or an
+// empty string if the request would connect directly.
+func ProxyHostForURL(endpoint string) (string, error) {
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return "", err
+	}
+
+	proxyURL, err := TransportFunc(req)
+	if err != nil {
+		return "", err
+	}
+	if proxyURL == nil {
+		return "", nil
+	}
+	return proxyURL.Host, nil
+}
+
 // Without is a ProxyFunc for http.Transport that will always attempt a direct connection.
 func Without(options ...Option) http.RoundTripper {
 	transport := copyDefaultTransport()

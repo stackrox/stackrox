@@ -121,23 +121,22 @@ class DeploymentCheck extends BaseSpecification {
                 build()
         policyID = PolicyService.createNewPolicy(policy)
 
-        when:
+        expect:
         withRetry(20, 5) {
             res = DetectionService.getDetectDeploytimeFromYAML(req)
+            verifyAll(res) {
+                getRemarks(0).getName() == DEPLOYMENT_CHECK
+                getRunsCount() == 1
+                verifyAll(getRuns(0)) {
+                    getAlertsCount() == 1
+                    verifyAll(getAlerts(0).getPolicy()) {
+                        getName() == DEPLOYMENT_CHECK
+                        getCategoriesCount() == 1
+                        getCategories(0) == DEPLOYMENT_CHECK_POLICY_CATEGORY
+                    }
+                }
+            }
         }
-
-        then:
-        assert res
-        assert res.getRemarks(0).getName() == DEPLOYMENT_CHECK
-        assert res.getRunsCount() == 1
-        def run = res.getRuns(0)
-        assert run
-        assert run.getAlertsCount() == 1
-        def alert = run.getAlerts(0)
-        assert alert
-        assert alert.getPolicy().getName() == DEPLOYMENT_CHECK
-        assert alert.getPolicy().getCategoriesCount() == 1
-        assert alert.getPolicy().getCategories(0) == DEPLOYMENT_CHECK_POLICY_CATEGORY
     }
 
     @Tag("BAT")
@@ -153,19 +152,21 @@ class DeploymentCheck extends BaseSpecification {
         def req = builder.build()
         DetectionServiceOuterClass.DeployDetectionResponse res
 
-        when:
+        expect:
         withRetry(20, 5) {
             res = DetectionService.getDetectDeploytimeFromYAML(req)
-        }
-        log.info "Got remarks:\n ${res.remarksList}"
+            log.info "Got remarks:\n ${res.remarksList}"
 
-        then:
-        assert res
-        assert res.getRemarksList().size() == 1
-        assert res.getRemarks(0).getName() == DEPLOYMENT_CHECK
-        assert res.getRemarks(0).getPermissionLevel() == Rbac.PermissionLevel.CLUSTER_ADMIN.toString()
-        assert res.getRemarks(0).getAppliedNetworkPoliciesList().size() == 1
-        assert res.getRemarks(0).getAppliedNetworkPolicies(0) == DEPLOYMENT_CHECK
+            verifyAll(res) {
+                getRemarksList().size() == 1
+                verifyAll(getRemarks(0)) {
+                    getName() == DEPLOYMENT_CHECK
+                    getPermissionLevel() == Rbac.PermissionLevel.CLUSTER_ADMIN.toString()
+                    getAppliedNetworkPoliciesList().size() == 1
+                    getAppliedNetworkPolicies(0) == DEPLOYMENT_CHECK
+                }
+            }
+        }
     }
 
     @Tag("BAT")
@@ -184,17 +185,17 @@ class DeploymentCheck extends BaseSpecification {
         def req = builder.build()
         DetectionServiceOuterClass.DeployDetectionResponse res
 
-        when:
+        expect:
         withRetry(20, 5) {
             res = DetectionService.getDetectDeploytimeFromYAML(req)
-        }
-        log.info "Got remarks:\n ${res.remarksList}"
+            log.info "Got remarks:\n ${res.remarksList}"
 
-        then:
-        assert res
-        assert res.getRemarksList().size() == 2
-        assert !res.getRemarksList().findAll { it.getName() == DEPLOYMENT_CHECK }.isEmpty()
-        assert !res.getRemarksList().findAll { it.getName() == secondDeployment }.isEmpty()
+            verifyAll(res) {
+                getRemarksList().size() == 2
+                !getRemarksList().findAll { it.getName() == DEPLOYMENT_CHECK }.isEmpty()
+                !getRemarksList().findAll { it.getName() == secondDeployment }.isEmpty()
+            }
+        }
     }
 
     static String createDeploymentYaml(String deploymentName, String namespace,

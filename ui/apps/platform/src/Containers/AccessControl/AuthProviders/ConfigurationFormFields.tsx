@@ -405,6 +405,28 @@ function ConfigurationFormFields({
                         </FormGroup>
                     </GridItem>
                     <GridItem span={12} lg={6}>
+                        <FormGroup label="Service Provider audience" fieldId="config.sp_audience">
+                            <TextInput
+                                type="text"
+                                id="config.sp_audience"
+                                value={(config.sp_audience as string) ?? ''}
+                                onChange={onChange}
+                                isDisabled={isViewing || isActiveModificationsDisabled}
+                                onBlur={onBlur}
+                            />
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem variant="default">
+                                        <span className="pf-v6-u-font-size-sm">
+                                            Expected audience in SAML assertions. Leave blank to
+                                            accept any audience.
+                                        </span>
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
+                        </FormGroup>
+                    </GridItem>
+                    <GridItem span={12} lg={6}>
                         <FormGroup
                             label="Configuration"
                             fieldId="config.configurationType"

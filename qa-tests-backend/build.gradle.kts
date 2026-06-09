@@ -16,7 +16,7 @@ apply(from = "protobuf.gradle")
 
 // Assign all Java source dirs to Groovy, as the groovy compiler should take care of them.
 project.sourceSets.forEach { sourceSet ->
-    sourceSet.groovy.srcDirs += sourceSet.java.srcDirs
+    sourceSet.java.srcDirs.forEach { dir -> sourceSet.groovy.srcDir(dir) }
     sourceSet.java.setSrcDirs(emptyList<File>())
 }
 
@@ -86,6 +86,10 @@ dependencies {
     implementation(libs.uuid.creator)
 
     implementation(projects.annotations)
+}
+
+tasks.withType<GroovyCompile>().configureEach {
+    groovyOptions.forkOptions.memoryMaximumSize = "4g"
 }
 
 // Apply some base attributes to all the test tasks.
@@ -247,7 +251,8 @@ tasks.register<Test>("testDeploymentCheck") {
 allprojects {
     apply(plugin = "java")
     java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
     }
 }

@@ -120,15 +120,15 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 
 	if opts.UseClientCert != DontUseClientCert {
 		conf.GetClientCertificate = func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
-			cert, err := mtls.LeafCertificateFromFile()
-			if err != nil {
+			cert := verifier.WatchedLeafCert()
+			if cert == nil {
 				if opts.UseClientCert == MustUseClientCert {
-					return nil, err
+					return nil, errors.New("no leaf certificate available")
 				}
-				log.Warnf("Failed to load client certificate for TLS connection: %v", err)
+				log.Warn("No leaf certificate available for TLS connection")
 				return &tls.Certificate{}, nil
 			}
-			return &cert, nil
+			return cert, nil
 		}
 	}
 
@@ -293,11 +293,11 @@ func OptionsForEndpoint(endpoint string, extraConnOpts ...ConnectionOption) (Opt
 	}
 
 	if connOpts.useServiceCertToken {
-		leafCert, err := mtls.LeafCertificateFromFile()
-		if err != nil {
-			return Options{}, errors.Wrap(err, "loading client certificate")
+		cert := verifier.WatchedLeafCert()
+		if cert == nil {
+			return Options{}, errors.New("no leaf certificate available for service cert token")
 		}
-		clientConnOpts.PerRPCCreds = servicecerttoken.NewServiceCertClientCreds(&leafCert)
+		clientConnOpts.PerRPCCreds = servicecerttoken.NewServiceCertClientCreds(cert)
 	}
 
 	clientConnOpts.MaxMsgRecvSize = connOpts.maxMsgRecvSize
