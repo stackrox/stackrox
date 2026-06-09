@@ -1,10 +1,9 @@
-//go:build sql_integration
-
 package resolvers
 
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"testing"
 	"time"
 
@@ -12,20 +11,16 @@ import (
 	imageCVEV2Mocks "github.com/stackrox/rox/central/cve/image/v2/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	imageComponentV2Mocks "github.com/stackrox/rox/central/imagecomponent/v2/datastore/mocks"
-	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	"github.com/stackrox/rox/central/views/imagecomponentflat"
 	imageComponentFlatViewMocks "github.com/stackrox/rox/central/views/imagecomponentflat/mocks"
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imageCVEFlatViewMocks "github.com/stackrox/rox/central/views/imagecveflat/mocks"
-	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
-	imageUtils "github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/utils"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -51,6 +46,110 @@ const (
 	`
 )
 
+var (
+	systemdStorageComponent = &storage.ImageComponentV2{
+		Id:        "systemd#0#4cd5259a-d1fc-5c81-ab1a-92484311441e",
+		Name:      "systemd",
+		Version:   "249.11-0ubuntu3.11",
+		Priority:  1,
+		Source:    storage.SourceType_OS,
+		RiskScore: 0,
+		SetTopCvss: &storage.ImageComponentV2_TopCvss{
+			TopCvss: 5.5,
+		},
+		OperatingSystem: "ubuntu:22.04",
+		ImageIdV2:       "4cd5259a-d1fc-5c81-ab1a-92484311441e",
+		FromBaseImage:   false,
+		LayerType:       storage.LayerType_APPLICATION,
+	}
+
+	systemdFlatComponent = &flatComponentV2{
+		component:       "systemd",
+		componentIDs:    []string{"systemd#0#4cd5259a-d1fc-5c81-ab1a-92484311441e"},
+		version:         "249.11-0ubuntu3.11",
+		operatingSystem: "ubuntu:22.04",
+		riskScore:       0,
+		topCVSS:         5.5,
+	}
+
+	cve2023x7008 = &storage.ImageCVEV2{
+		Id: "CVE-2023-7008#0#systemd#0#4cd5259a-d1fc-5c81-ab1a-92484311441e",
+		CveBaseInfo: &storage.CVEInfo{
+			Cve:          "CVE-2023-7008",
+			CreatedAt:    protocompat.TimestampNow(),
+			ScoreVersion: storage.CVEInfo_V2,
+		},
+		Cvss:                 5.5,
+		Severity:             storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+		NvdScoreVersion:      storage.CvssScoreVersion_UNKNOWN_VERSION,
+		FirstImageOccurrence: protocompat.TimestampNow(),
+		State:                storage.VulnerabilityState_OBSERVED,
+		IsFixable:            true,
+		HasFixedBy: &storage.ImageCVEV2_FixedBy{
+			FixedBy: "249.11-0ubuntu3.12",
+		},
+		ComponentId: "systemd#0#4cd5259a-d1fc-5c81-ab1a-92484311441e",
+		ImageIdV2:   "4cd5259a-d1fc-5c81-ab1a-92484311441e",
+	}
+
+	now           = time.Now()
+	moderateVuln  = storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY
+	observedState = storage.VulnerabilityState_OBSERVED
+
+	flatCVE2023x7008 = &flatCVEV2{
+		cve:                     "CVE-2023-7008",
+		cveIDs:                  []string{"CVE-2023-7008#0#systemd#0#4cd5259a-d1fc-5c81-ab1a-92484311441e"},
+		severity:                &moderateVuln,
+		topCVSS:                 5.5,
+		affectedImageCount:      1,
+		firstDiscoveredInSystem: &now,
+		firstImageOccurrence:    &now,
+		state:                   &observedState,
+	}
+)
+
+type flatComponentV2 struct {
+	component       string
+	componentIDs    []string
+	version         string
+	operatingSystem string
+	riskScore       float32
+	topCVSS         float32
+}
+
+func (c *flatComponentV2) GetComponent() string       { return c.component }
+func (c *flatComponentV2) GetComponentIDs() []string  { return c.componentIDs }
+func (c *flatComponentV2) GetVersion() string         { return c.version }
+func (c *flatComponentV2) GetTopCVSS() float32        { return c.topCVSS }
+func (c *flatComponentV2) GetRiskScore() float32      { return c.riskScore }
+func (c *flatComponentV2) GetOperatingSystem() string { return c.operatingSystem }
+
+type flatCVEV2 struct {
+	cve                     string
+	cveIDs                  []string
+	severity                *storage.VulnerabilitySeverity
+	topCVSS                 float32
+	topNVDCVSS              float32
+	epssProbability         float32
+	affectedImageCount      int
+	firstDiscoveredInSystem *time.Time
+	publishedDate           *time.Time
+	firstImageOccurrence    *time.Time
+	state                   *storage.VulnerabilityState
+}
+
+func (f *flatCVEV2) GetCVE() string                              { return f.cve }
+func (f *flatCVEV2) GetCVEIDs() []string                         { return f.cveIDs }
+func (f *flatCVEV2) GetSeverity() *storage.VulnerabilitySeverity { return f.severity }
+func (f *flatCVEV2) GetTopCVSS() float32                         { return f.topCVSS }
+func (f *flatCVEV2) GetTopNVDCVSS() float32                      { return f.topNVDCVSS }
+func (f *flatCVEV2) GetEPSSProbability() float32                 { return f.epssProbability }
+func (f *flatCVEV2) GetAffectedImageCount() int                  { return f.affectedImageCount }
+func (f *flatCVEV2) GetFirstDiscoveredInSystem() *time.Time      { return f.firstDiscoveredInSystem }
+func (f *flatCVEV2) GetPublishDate() *time.Time                  { return f.publishedDate }
+func (f *flatCVEV2) GetFirstImageOccurrence() *time.Time         { return f.firstImageOccurrence }
+func (f *flatCVEV2) GetState() *storage.VulnerabilityState       { return f.state }
+
 func TestGetFixableCVEsForEntityGraphQL(t *testing.T) {
 	suite.Run(t, new(ImageComponentCVEGraphQLTestSuite))
 }
@@ -59,7 +158,6 @@ type ImageComponentCVEGraphQLTestSuite struct {
 	suite.Suite
 
 	ctx      context.Context
-	testDB   *pgtest.TestPostgres
 	resolver *Resolver
 	schema   *graphql.Schema
 
@@ -74,7 +172,6 @@ type ImageComponentCVEGraphQLTestSuite struct {
 func (s *ImageComponentCVEGraphQLTestSuite) SetupSuite() {
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	s.mockCtrl = gomock.NewController(s.T())
-	s.testDB = pgtest.ForT(s.T())
 
 	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
 	var resolver *Resolver
@@ -83,36 +180,18 @@ func (s *ImageComponentCVEGraphQLTestSuite) SetupSuite() {
 	s.imageCVEDS = imageCVEV2Mocks.NewMockDataStore(s.mockCtrl)
 	s.imageCVEFlatView = imageCVEFlatViewMocks.NewMockCveFlatView(s.mockCtrl)
 	if features.FlattenImageData.Enabled() {
-		imgV2DataStore := CreateTestImageV2Datastore(s.T(), s.testDB, s.mockCtrl)
 		resolver, _ = SetupTestResolver(s.T(),
-			imagesView.NewImageView(s.testDB.DB),
-			imgV2DataStore,
-			// s.imageComponentDS,
-			CreateTestImageComponentV2Datastore(s.T(), s.testDB, s.mockCtrl),
-			// s.imageCVEDS,
-			CreateTestImageCVEV2Datastore(s.T(), s.testDB),
-			CreateTestDeploymentDatastoreWithImageV2(s.T(), s.testDB, s.mockCtrl, imgV2DataStore),
-			deploymentsView.NewDeploymentView(s.testDB.DB),
-			// s.imageCVEFlatView,
-			imagecveflat.NewCVEFlatView(s.testDB.DB),
-			// s.imageComponentFlatView,
-			imagecomponentflat.NewComponentFlatView(s.testDB.DB),
+			s.imageComponentDS,
+			s.imageCVEDS,
+			s.imageCVEFlatView,
+			s.imageComponentFlatView,
 		)
 	} else {
-		imageDataStore := CreateTestImageDatastore(s.T(), s.testDB, s.mockCtrl)
 		resolver, _ = SetupTestResolver(s.T(),
-			imagesView.NewImageView(s.testDB.DB),
-			imageDataStore,
-			// s.imageComponentDS,
-			CreateTestImageComponentV2Datastore(s.T(), s.testDB, s.mockCtrl),
-			// s.imageCVEDS,
-			CreateTestImageCVEV2Datastore(s.T(), s.testDB),
-			CreateTestDeploymentDatastore(s.T(), s.testDB, s.mockCtrl, imageDataStore),
-			deploymentsView.NewDeploymentView(s.testDB.DB),
-			// s.imageCVEFlatView,
-			imagecveflat.NewCVEFlatView(s.testDB.DB),
-			// s.imageComponentFlatView,
-			imagecomponentflat.NewComponentFlatView(s.testDB.DB),
+			s.imageComponentDS,
+			s.imageCVEDS,
+			s.imageCVEFlatView,
+			s.imageComponentFlatView,
 		)
 	}
 	s.resolver = resolver
@@ -121,57 +200,6 @@ func (s *ImageComponentCVEGraphQLTestSuite) SetupSuite() {
 	var err error
 	s.schema, err = graphql.ParseSchema(Schema(), s.resolver)
 	s.Require().NoError(err)
-
-	// Create test image with systemd component and CVE-2023-7008
-	testImage := s.createUbuntuImageWithSystemd()
-
-	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
-	if features.FlattenImageData.Enabled() {
-		err := s.resolver.ImageV2DataStore.UpsertImage(s.ctx, imageUtils.ConvertToV2(testImage))
-		s.NoError(err)
-	} else {
-		err := s.resolver.ImageDataStore.UpsertImage(s.ctx, testImage)
-		s.NoError(err)
-	}
-}
-
-func (s *ImageComponentCVEGraphQLTestSuite) createUbuntuImageWithSystemd() *storage.Image {
-	scanTime, err := protocompat.ConvertTimeToTimestampOrError(time.Now())
-	utils.CrashOnError(err)
-
-	return &storage.Image{
-		Id: "sha256:ubuntu-22.04-amd64",
-		Name: &storage.ImageName{
-			Registry: "quay.io",
-			Remote:   "rhacs-eng/qa",
-			Tag:      "ubuntu-22.04-amd64",
-			FullName: "quay.io/rhacs-eng/qa:ubuntu-22.04-amd64",
-		},
-		SetCves: &storage.Image_Cves{
-			Cves: 1,
-		},
-		Scan: &storage.ImageScan{
-			ScanTime: scanTime,
-			Components: []*storage.EmbeddedImageScanComponent{
-				{
-					Name:    "systemd",
-					Version: "249.11-0ubuntu3.11",
-					Source:  storage.SourceType_OS,
-					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve: "CVE-2023-7008",
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "249.11-0ubuntu3.12",
-							},
-							Cvss:     5.5,
-							Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-						},
-					},
-				},
-			},
-			OperatingSystem: "ubuntu:22.04",
-		},
-	}
 }
 
 // Response structure matching the GraphQL query
@@ -205,27 +233,19 @@ func (s *ImageComponentCVEGraphQLTestSuite) TestGetFixableCVEsForEntityWithGraph
 		}
 	`
 
-	/*
-		mockComponentView := imageComponentFlatViewMocks.NewMockComponentFlat(s.mockCtrl)
-		mockComponentView.EXPECT().GetComponentIDs().AnyTimes().Return([]string{"4ed5259a-d1fc-5c81-ab1a-92484311441e"})
-		mockComponentView.EXPECT().GetComponent().AnyTimes().Return("systemd")
-		mockComponentView.EXPECT().GetVersion().AnyTimes().Return("249.11-0ubuntu3.11")
-		mockComponentView.EXPECT().GetOperatingSystem().AnyTimes().Return("ubuntu:22.04")
-		s.imageComponentFlatView.EXPECT().
-			Get(gomock.Any(), gomock.Any()).
-			Times(1).
-			Return([]imageComponentFlatView.ComponentFlat{mockComponentView}, nil)
-		testComponent := &storage.ImageComponentV2{
-			Id:              "systemd#0#4ed5259a-d1fc-5c81-ab1a-92484311441e",
-			Name:            "systemd",
-			Version:         "249.11-0ubuntu3.11",
-			OperatingSystem: "ubuntu:22.04",
-		}
-		s.imageComponentDS.EXPECT().
-			SearchRawImageComponents(gomock.Any(), gomock.Any()).
-			Times(1).
-			Return([]*storage.ImageComponentV2{testComponent}, nil)
-	*/
+	s.imageComponentFlatView.EXPECT().
+		Get(gomock.Any(), gomock.Any()).
+		AnyTimes().
+		Return([]imagecomponentflat.ComponentFlat{systemdFlatComponent}, nil)
+	s.imageComponentDS.EXPECT().
+		SearchRawImageComponents(gomock.Any(), gomock.Any()).
+		AnyTimes().
+		Return([]*storage.ImageComponentV2{systemdStorageComponent}, nil)
+	jsonBytes, err := s.schema.ToJSON()
+	s.NoError(err)
+	err = os.WriteFile("schema.json", jsonBytes, 0644)
+	s.NoError(err)
+	s.T().Logf("GraphQL schema written to schema.json")
 	findResponse := s.schema.Exec(ctx, findComponentQuery, "findComponent",
 		map[string]interface{}{
 			"query": "Component:systemd+Component Version:249.11-0ubuntu3.11",
@@ -246,6 +266,11 @@ func (s *ImageComponentCVEGraphQLTestSuite) TestGetFixableCVEsForEntityWithGraph
 
 	s.T().Run("query without filters", func(t *testing.T) {
 		// Execute the GraphQL query without vulnerability filters
+		s.imageComponentDS.EXPECT().GetBatch(gomock.Any(), gomock.Any()).AnyTimes().Return([]*storage.ImageComponentV2{systemdStorageComponent}, nil)
+		s.imageCVEDS.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return([]searchPkg.Result{{ID: cve2023x7008.GetId()}}, nil)
+		s.imageCVEDS.EXPECT().GetBatch(gomock.Any(), gomock.Any()).AnyTimes().Return([]*storage.ImageCVEV2{cve2023x7008}, nil)
+		s.imageCVEDS.EXPECT().SearchRawImageCVEs(gomock.Any(), gomock.Any()).AnyTimes().Return([]*storage.ImageCVEV2{cve2023x7008}, nil)
+		s.imageCVEFlatView.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return([]imagecveflat.CveFlat{flatCVE2023x7008}, nil)
 		response := s.schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
 			map[string]interface{}{
 				"id":         componentID,
@@ -286,6 +311,9 @@ func (s *ImageComponentCVEGraphQLTestSuite) TestGetFixableCVEsForEntityWithGraph
 
 	s.T().Run("query with vulnQuery filter", func(t *testing.T) {
 		// Execute the GraphQL query with CVE filter
+		s.imageCVEDS.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return([]searchPkg.Result{{ID: cve2023x7008.GetId()}}, nil)
+		s.imageCVEDS.EXPECT().SearchRawImageCVEs(gomock.Any(), gomock.Any()).AnyTimes().Return([]*storage.ImageCVEV2{cve2023x7008}, nil)
+		s.imageCVEFlatView.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return([]imagecveflat.CveFlat{flatCVE2023x7008}, nil)
 		response := s.schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
 			map[string]interface{}{
 				"id":         componentID,
@@ -314,6 +342,9 @@ func (s *ImageComponentCVEGraphQLTestSuite) TestGetFixableCVEsForEntityWithGraph
 
 	s.T().Run("query with fixable filter", func(t *testing.T) {
 		// Execute the GraphQL query with fixable filter
+		s.imageCVEDS.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return([]searchPkg.Result{{ID: cve2023x7008.GetId()}}, nil)
+		s.imageCVEDS.EXPECT().SearchRawImageCVEs(gomock.Any(), gomock.Any()).AnyTimes().Return([]*storage.ImageCVEV2{cve2023x7008}, nil)
+		s.imageCVEFlatView.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return([]imagecveflat.CveFlat{flatCVE2023x7008}, nil)
 		response := s.schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
 			map[string]interface{}{
 				"id":         componentID,
@@ -343,6 +374,9 @@ func (s *ImageComponentCVEGraphQLTestSuite) TestGetFixableCVEsForEntityWithGraph
 
 	s.T().Run("query with combined filters", func(t *testing.T) {
 		// Execute the GraphQL query with combined CVE and fixable filters
+		s.imageCVEDS.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return([]searchPkg.Result{{ID: cve2023x7008.GetId()}}, nil)
+		s.imageCVEDS.EXPECT().SearchRawImageCVEs(gomock.Any(), gomock.Any()).AnyTimes().Return([]*storage.ImageCVEV2{cve2023x7008}, nil)
+		s.imageCVEFlatView.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return([]imagecveflat.CveFlat{flatCVE2023x7008}, nil)
 		response := s.schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
 			map[string]interface{}{
 				"id":         componentID,
@@ -396,6 +430,9 @@ func (s *ImageComponentCVEGraphQLTestSuite) TestGraphQLVariableTypes() {
 				}
 			}
 		`
+		s.imageCVEDS.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return([]searchPkg.Result{{ID: cve2023x7008.GetId()}}, nil)
+		s.imageCVEDS.EXPECT().SearchRawImageCVEs(gomock.Any(), gomock.Any()).AnyTimes().Return([]*storage.ImageCVEV2{cve2023x7008}, nil)
+		s.imageCVEFlatView.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return([]imagecveflat.CveFlat{flatCVE2023x7008}, nil)
 		findResponse := s.schema.Exec(ctx, findComponentQuery, "findComponent", nil)
 		require.Empty(t, findResponse.Errors)
 
