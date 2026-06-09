@@ -53,6 +53,9 @@ message PatchPolicyRequest {
   oneof set_disabled {
     bool disabled = 2;
   }
+  // When set, replaces the policy's evaluation filter.
+  // An empty EvaluationFilter clears all filters.
+  storage.EvaluationFilter evaluation_filter = 3;
 }
 
 message ExportPoliciesRequest {

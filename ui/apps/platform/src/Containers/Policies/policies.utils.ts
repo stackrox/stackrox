@@ -58,6 +58,10 @@ export const initialPolicy: ClientPolicy = {
     exclusions: [],
     scope: [],
     enforcementActions: [],
+    evaluationFilter: {
+        skipContainerTypes: [],
+        skipImageLayers: 'SKIP_NONE',
+    },
     excludedImageNames: [],
     excludedDeploymentScopes: [],
     SORTName: '', // For internal use only.
