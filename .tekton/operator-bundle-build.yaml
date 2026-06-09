@@ -88,7 +88,7 @@ spec:
         requests:
           cpu: 2
           memory: 7Gi
-  - pipelineTaskName: build-container
+  - pipelineTaskName: build-images
     podTemplate: *go-memlimit
     stepSpecs:
     - name: use-trusted-artifact
