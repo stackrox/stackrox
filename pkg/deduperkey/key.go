@@ -65,14 +65,14 @@ func (k *Key) String() string {
 // of the keys might have failed when being parsed.
 func ParseKeySlice(keys []string) ([]Key, error) {
 	errList := errorhelpers.NewErrorList("malformed key entries")
-	result := make([]Key, len(keys))
-	for i, v := range keys {
+	result := make([]Key, 0, len(keys))
+	for _, v := range keys {
 		parsedKey, err := KeyFrom(v)
 		if err != nil {
 			errList.AddError(errors.Wrapf(err, "key: %s", v))
 			continue
 		}
-		result[i] = parsedKey
+		result = append(result, parsedKey)
 	}
 	return result, errList.ToError()
 }
