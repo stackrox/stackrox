@@ -580,12 +580,11 @@ func applyFixFields(dst *storage.EmbeddedVulnerability, src *v4.VulnerabilityRep
 	dst.Advisory = srcAdv
 	dst.Datasource = vulnDataSource(src, envOS)
 	dst.FixAvailableTimestamp = src.GetFixedDate()
+	dst.SetFixedBy = nil
 	if fix := src.GetFixedInVersion(); fix != "" {
 		dst.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: fix,
 		}
-	} else {
-		dst.SetFixedBy = nil
 	}
 }
 
