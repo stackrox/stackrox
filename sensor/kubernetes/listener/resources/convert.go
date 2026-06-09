@@ -367,6 +367,9 @@ func (w *deploymentWrap) processContainerStatuses(
 		// If the ID already exists populate NotPullable, IsClusterLocal, and sync the registry
 		// and remote with the container runtime.
 		if image.GetId() != "" {
+			// If the image ID is populated then determine if the image is pullable,
+			// otherwise assume the image is pullable. An Image ID may be empty when a
+			// container is not ready yet per the container runtime.
 			if c.ImageID != "" {
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
 			}
@@ -386,6 +389,8 @@ func (w *deploymentWrap) processContainerStatuses(
 
 		parsedName, err := imageUtils.GenerateImageFromStringWithOverride(specImage, w.registryOverride)
 		if err != nil {
+			// This error will only happen if we could not parse the image, this is possible if the image in kubernetes is malformed
+			// e.g. us.gcr.io/$PROJECT/xyz:latest is an example that we have seen
 			continue
 		}
 
