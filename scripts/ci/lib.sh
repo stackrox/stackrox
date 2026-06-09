@@ -696,7 +696,16 @@ image_prefetcher_start_set() {
         ;;
     ocp)
         flavor=ocp
-        kubelet_image_creds="" # i.e. disabled
+        local ocp_platform
+        ocp_platform="$(oc get infrastructure cluster -o jsonpath='{.status.platformStatus.type}' 2>/dev/null || true)"
+        case "${ocp_platform}" in
+        AWS)
+            kubelet_image_creds=OCP-ECR
+            ;;
+        *)
+            kubelet_image_creds="" # i.e. disabled
+            ;;
+        esac
         ;;
     *)
         die "unsupported KUBERNETES_PROVIDER: ${KUBERNETES_PROVIDER}"
@@ -717,15 +726,6 @@ image_prefetcher_start_set() {
     local image_list
     image_list=$(mktemp)
     populate_prefetcher_image_list "$name" "${image_list}"
-
-    # Filter out gcr.io images on non-GKE clusters (they require GKE-specific credentials)
-    if [[ "${KUBERNETES_PROVIDER}" != "gke" ]]; then
-        local filtered_image_list
-        filtered_image_list=$(mktemp)
-        info "Filtering out *.gcr.io images for non-GKE cluster"
-        grep -v -E '^([^/]+\.)?gcr\.io/' "${image_list}" > "${filtered_image_list}" || true
-        mv "${filtered_image_list}" "${image_list}"
-    fi
 
     echo "---" >> "$manifest"
     kubectl create --dry-run=client -o yaml configmap "$name" --from-file="images.txt=$image_list" >> "$manifest"
@@ -935,6 +935,12 @@ populate_prefetcher_image_list() {
         ;;
     qa-e2e)
         cp "$SCRIPTS_ROOT/qa-tests-backend/scripts/images-to-prefetch.txt" "$image_list"
+        # Append ECR test image for qa-tests-backend/src/test/groovy/ImageScanningTest.groovy when registry ID and region are known
+        if [[ -n "${AWS_ECR_REGISTRY_NAME:-}" && -n "${AWS_ECR_REGISTRY_REGION:-}" ]]; then
+            local ecr_image="${AWS_ECR_REGISTRY_NAME}.dkr.ecr.${AWS_ECR_REGISTRY_REGION}.amazonaws.com/stackrox-qa-ecr-test:registry-image-no-secrets"
+            info "Adding ECR test image to prefetch list: ${ecr_image}"
+            echo "${ecr_image}" >> "${image_list}"
+        fi
         ;;
     qa-nongroovy-e2e)
         cp "$SCRIPTS_ROOT/tests/images-to-prefetch.txt" "$image_list"
@@ -949,6 +955,15 @@ populate_prefetcher_image_list() {
         die "ERROR: An unsupported image prefetcher target was requested: $name"
         ;;
     esac
+
+    # Filter out gcr.io images on non-GKE clusters (they require GKE-specific credentials)
+    if [[ "${KUBERNETES_PROVIDER}" != "gke" ]]; then
+        local filtered_image_list
+        filtered_image_list=$(mktemp)
+        info "Filtering out *.gcr.io images for non-GKE cluster"
+        grep -v -E '^([^/]+\.)?gcr\.io/' "${image_list}" > "${filtered_image_list}" || true
+        mv "${filtered_image_list}" "${image_list}"
+    fi
 }
 
 populate_stackrox_image_list() {
