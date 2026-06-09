@@ -11,7 +11,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func BenchmarkPopulateImageMetadataCompare(b *testing.B) {
+// BenchmarkPopulateImageMetadataCompare_SteadyStateSortedPods measures the
+// steady-state cost of populateImageMetadata once the pod slice is already in
+// the expected newest-to-oldest order. This intentionally models the warm path
+// after an earlier call has sorted the shared pod fixture, and it excludes the
+// container image reset from timing so the benchmark isolates the metadata
+// population work rather than fixture repair.
+func BenchmarkPopulateImageMetadataCompare_SteadyStateSortedPods(b *testing.B) {
 	cases := []struct {
 		numContainers int
 		numPods       int
@@ -36,7 +42,9 @@ func BenchmarkPopulateImageMetadataCompare(b *testing.B) {
 
 			b.ReportAllocs()
 			for b.Loop() {
+				b.StopTimer()
 				resetCompareBenchmarkContainerImages(containers)
+				b.StartTimer()
 				wrap.populateImageMetadata(localImages, pods...)
 			}
 		})
@@ -57,6 +65,7 @@ func makeCompareBenchmarkContainers(n int) []*storage.Container {
 
 func makeCompareBenchmarkPods(numContainers, numPods int) []*v1.Pod {
 	pods := make([]*v1.Pod, numPods)
+	baseTime := time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
 	for p := range numPods {
 		statuses := make([]v1.ContainerStatus, numContainers)
 		specContainers := make([]v1.Container, numContainers)
@@ -72,7 +81,7 @@ func makeCompareBenchmarkPods(numContainers, numPods int) []*v1.Pod {
 			}
 		}
 		pods[p] = &v1.Pod{
-			ObjectMeta: metav1.ObjectMeta{CreationTimestamp: metav1.Time{Time: time.Now().Add(-time.Duration(p) * time.Minute)}},
+			ObjectMeta: metav1.ObjectMeta{CreationTimestamp: metav1.Time{Time: baseTime.Add(-time.Duration(p) * time.Minute)}},
 			Spec:       v1.PodSpec{Containers: specContainers},
 			Status:     v1.PodStatus{ContainerStatuses: statuses},
 		}
