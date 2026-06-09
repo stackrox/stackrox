@@ -9,10 +9,14 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	imageCVEV2Mocks "github.com/stackrox/rox/central/cve/image/v2/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	imageComponentV2Mocks "github.com/stackrox/rox/central/imagecomponent/v2/datastore/mocks"
 	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	"github.com/stackrox/rox/central/views/imagecomponentflat"
+	imageComponentFlatViewMocks "github.com/stackrox/rox/central/views/imagecomponentflat/mocks"
 	"github.com/stackrox/rox/central/views/imagecveflat"
+	imageCVEFlatViewMocks "github.com/stackrox/rox/central/views/imagecveflat/mocks"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -58,37 +62,56 @@ type ImageComponentCVEGraphQLTestSuite struct {
 	testDB   *pgtest.TestPostgres
 	resolver *Resolver
 	schema   *graphql.Schema
+
+	mockCtrl *gomock.Controller
+
+	imageComponentDS       *imageComponentV2Mocks.MockDataStore
+	imageComponentFlatView *imageComponentFlatViewMocks.MockComponentFlatView
+	imageCVEDS             *imageCVEV2Mocks.MockDataStore
+	imageCVEFlatView       *imageCVEFlatViewMocks.MockCveFlatView
 }
 
 func (s *ImageComponentCVEGraphQLTestSuite) SetupSuite() {
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
-	mockCtrl := gomock.NewController(s.T())
+	s.mockCtrl = gomock.NewController(s.T())
 	s.testDB = pgtest.ForT(s.T())
 
 	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
 	var resolver *Resolver
+	s.imageComponentDS = imageComponentV2Mocks.NewMockDataStore(s.mockCtrl)
+	s.imageComponentFlatView = imageComponentFlatViewMocks.NewMockComponentFlatView(s.mockCtrl)
+	s.imageCVEDS = imageCVEV2Mocks.NewMockDataStore(s.mockCtrl)
+	s.imageCVEFlatView = imageCVEFlatViewMocks.NewMockCveFlatView(s.mockCtrl)
 	if features.FlattenImageData.Enabled() {
-		imgV2DataStore := CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
+		imgV2DataStore := CreateTestImageV2Datastore(s.T(), s.testDB, s.mockCtrl)
 		resolver, _ = SetupTestResolver(s.T(),
 			imagesView.NewImageView(s.testDB.DB),
 			imgV2DataStore,
-			CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+			// s.imageComponentDS,
+			CreateTestImageComponentV2Datastore(s.T(), s.testDB, s.mockCtrl),
+			// s.imageCVEDS,
 			CreateTestImageCVEV2Datastore(s.T(), s.testDB),
-			CreateTestDeploymentDatastoreWithImageV2(s.T(), s.testDB, mockCtrl, imgV2DataStore),
+			CreateTestDeploymentDatastoreWithImageV2(s.T(), s.testDB, s.mockCtrl, imgV2DataStore),
 			deploymentsView.NewDeploymentView(s.testDB.DB),
+			// s.imageCVEFlatView,
 			imagecveflat.NewCVEFlatView(s.testDB.DB),
+			// s.imageComponentFlatView,
 			imagecomponentflat.NewComponentFlatView(s.testDB.DB),
 		)
 	} else {
-		imageDataStore := CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
+		imageDataStore := CreateTestImageDatastore(s.T(), s.testDB, s.mockCtrl)
 		resolver, _ = SetupTestResolver(s.T(),
 			imagesView.NewImageView(s.testDB.DB),
 			imageDataStore,
-			CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+			// s.imageComponentDS,
+			CreateTestImageComponentV2Datastore(s.T(), s.testDB, s.mockCtrl),
+			// s.imageCVEDS,
 			CreateTestImageCVEV2Datastore(s.T(), s.testDB),
-			CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
+			CreateTestDeploymentDatastore(s.T(), s.testDB, s.mockCtrl, imageDataStore),
 			deploymentsView.NewDeploymentView(s.testDB.DB),
+			// s.imageCVEFlatView,
 			imagecveflat.NewCVEFlatView(s.testDB.DB),
+			// s.imageComponentFlatView,
 			imagecomponentflat.NewComponentFlatView(s.testDB.DB),
 		)
 	}
@@ -182,6 +205,27 @@ func (s *ImageComponentCVEGraphQLTestSuite) TestGetFixableCVEsForEntityWithGraph
 		}
 	`
 
+	/*
+		mockComponentView := imageComponentFlatViewMocks.NewMockComponentFlat(s.mockCtrl)
+		mockComponentView.EXPECT().GetComponentIDs().AnyTimes().Return([]string{"4ed5259a-d1fc-5c81-ab1a-92484311441e"})
+		mockComponentView.EXPECT().GetComponent().AnyTimes().Return("systemd")
+		mockComponentView.EXPECT().GetVersion().AnyTimes().Return("249.11-0ubuntu3.11")
+		mockComponentView.EXPECT().GetOperatingSystem().AnyTimes().Return("ubuntu:22.04")
+		s.imageComponentFlatView.EXPECT().
+			Get(gomock.Any(), gomock.Any()).
+			Times(1).
+			Return([]imageComponentFlatView.ComponentFlat{mockComponentView}, nil)
+		testComponent := &storage.ImageComponentV2{
+			Id:              "systemd#0#4ed5259a-d1fc-5c81-ab1a-92484311441e",
+			Name:            "systemd",
+			Version:         "249.11-0ubuntu3.11",
+			OperatingSystem: "ubuntu:22.04",
+		}
+		s.imageComponentDS.EXPECT().
+			SearchRawImageComponents(gomock.Any(), gomock.Any()).
+			Times(1).
+			Return([]*storage.ImageComponentV2{testComponent}, nil)
+	*/
 	findResponse := s.schema.Exec(ctx, findComponentQuery, "findComponent",
 		map[string]interface{}{
 			"query": "Component:systemd+Component Version:249.11-0ubuntu3.11",
