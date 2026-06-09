@@ -89,6 +89,10 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	// The occurrence of a "Synced" event from the sensor marks the conclusion
 	// of the initial synchronization process.
 	case *central.SensorEvent_Synced:
+		if s.reconciliationMap.IsClosed() {
+			log.Warnf("Ignoring duplicate reconciliation event for cluster %s (%s)", s.cluster.GetName(), s.cluster.GetId())
+			return
+		}
 		// Call the reconcile functions
 		log.Info("Receiving reconciliation event")
 

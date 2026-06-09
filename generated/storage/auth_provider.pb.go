@@ -53,6 +53,7 @@ type AuthProvider struct {
 	//
 	// SAML:
 	// - "sp_issuer": the service provider issuer according to https://datatracker.ietf.org/doc/html/rfc7522#section-3.
+	// - "sp_audience": the expected audience URI for assertion validation. If empty, audience is not enforced.
 	// - "idp_metadata_url": the metadata URL according to https://docs.oasis-open.org/security/saml/v2.0/saml-metadata-2.0-os.pdf.
 	// - "idp_issuer": the IdP issuer.
 	// - "idp_cert_pem": the cert PEM encoded for the IdP endpoint.
