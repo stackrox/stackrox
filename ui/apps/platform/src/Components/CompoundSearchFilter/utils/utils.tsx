@@ -35,13 +35,70 @@ export const dateConditions = Object.keys(
     dateConditionMap
 ) as unknown as (keyof typeof dateConditionMap)[];
 
+// Range condition for the date-picker input. Unlike Before/On/After it is not a
+// prefix on a single date; it serializes to the backend time-range format tr/<startMs>-<endMs>.
+export const dateRangeCondition = 'Between' as const;
+
+const absoluteDateRangeRegex = /^tr\/(\d+)-(\d+)$/;
+const relativeDateRangeRegex = /^(\d+)d-(\d+)d$/;
+const relativeDateOlderThanRegex = /^>(\d+)d$/;
+
+/**
+ * Serializes an absolute date range into the backend time-range query format.
+ * The start is widened to the start of its day and the end to the end of its day
+ * (local time) so the range covers the full calendar days the user selected.
+ * @param startMs - Epoch ms within the first day of the range
+ * @param endMs - Epoch ms within the last day of the range
+ * @returns Value like "tr/1735689600000-1743465599999"
+ * @throws If either input is not a valid date or the start date falls after the end date
+ */
+export function serializeAbsoluteDateRange(startMs: number, endMs: number): string {
+    if (Number.isNaN(startMs) || Number.isNaN(endMs)) {
+        throw new Error('Date range start and end must be valid dates');
+    }
+
+    const start = new Date(startMs);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endMs);
+    end.setHours(23, 59, 59, 999);
+
+    if (start.getTime() > end.getTime()) {
+        throw new Error('Start date of a date range must not be after the end date');
+    }
+
+    return `tr/${start.getTime()}-${end.getTime()}`;
+}
+
 /**
  * Formats date picker value like CVE discovered time filter values into user-friendly text
- * @param value - Filter value like ">2024-01-01" or "2024-01-01"
- * @returns Formatted string like "After January 1, 2024"
+ * @param value - Filter value like ">2024-01-01", "2024-01-01", "tr/<startMs>-<endMs>", "30d-90d", or ">365d"
+ * @returns Formatted string like "After January 1, 2024" or "Between 30 and 90 days ago"
  */
 export function convertFromInternalToExternalDatePicker(value: string): string {
     try {
+        if (value.startsWith('tr/')) {
+            const absoluteRangeMatch = value.match(absoluteDateRangeRegex);
+            if (!absoluteRangeMatch) {
+                return value; // Return original if the time-range value is malformed
+            }
+            const startDate = new Date(Number(absoluteRangeMatch[1]));
+            const endDate = new Date(Number(absoluteRangeMatch[2]));
+            if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+                return value; // Return original if epoch values are invalid
+            }
+            return `Between ${getDate(startDate)} and ${getDate(endDate)}`;
+        }
+
+        const relativeRangeMatch = value.match(relativeDateRangeRegex);
+        if (relativeRangeMatch) {
+            return `Between ${relativeRangeMatch[1]} and ${relativeRangeMatch[2]} days ago`;
+        }
+
+        const olderThanMatch = value.match(relativeDateOlderThanRegex);
+        if (olderThanMatch) {
+            return `More than ${olderThanMatch[1]} days ago`;
+        }
+
         // Parse the condition prefix and date
         const match = value.match(/^([<>]?)(.+)$/);
         if (!match) {
