@@ -17,10 +17,9 @@ protobuf {
             }
         }
 
-        // Add each output source directory to the sourceSet based on its basename (e.g., `java`).
         all().each { task ->
-            task.outputSourceDirectorySet.srcDirs.each { srcDir ->
-                sourceSets[task.sourceSet.name][srcDir.name].srcDirs += srcDir
+            task.outputSourceDirectories.each { srcDir ->
+                project.sourceSets.getByName(task.sourceSet.name).groovy.srcDirs += srcDir
             }
         }
     }

@@ -77,6 +77,7 @@ export const domains = ['Authentication', 'General', 'Image Scanning', 'Integrat
  */
 export const resourceTypes = [
     'API Token',
+    'Auth Provider',
     'Backup',
     'Cloud Source',
     'Cluster',
