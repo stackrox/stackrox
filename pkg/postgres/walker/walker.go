@@ -75,8 +75,11 @@ func removeTablesWithNoSearchableFields(schema *Schema) (shouldInclude bool) {
 }
 
 func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
-	if len(parentPrimaryKeys) == 0 && !s.NoSerialized {
-		s.Fields = append(s.Fields, getSerializedField(s))
+	if len(parentPrimaryKeys) == 0 {
+		// Root table: add serialized field unless NoSerialized is set.
+		if !s.NoSerialized {
+			s.Fields = append(s.Fields, getSerializedField(s))
+		}
 	} else {
 		// Collect additional fields separately so we can put them in front of the field list
 		// (since these are primary keys, that is cleaner).
@@ -378,6 +381,9 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 		}
 		opts := getPostgresOptions(structField.Tag.Get("sql"), schema.Parent == nil, ctx.ignorePK, ctx.ignoreUnique, ctx.ignoreFKs, ctx.ignoreIndex)
 		if opts.Ignored {
+			if schema.Root().NoSerialized {
+				log.Panicf("field %s.%s has sql:\"-\" which is incompatible with --no-serialized", original.Name(), structField.Name)
+			}
 			continue
 		}
 		searchOpts, derivedFields := getSearchOptions(ctx, structField.Tag.Get("search"))

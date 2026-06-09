@@ -17,6 +17,12 @@ type TestChildMessage struct {
 	Value string `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty" search:"Test Child Value"`
 }
 
+type TestStorageWithIgnoredField struct {
+	ID      string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`
+	Name    string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Ignored string `protobuf:"bytes,3,opt,name=ignored,proto3" json:"ignored,omitempty" sql:"-"`
+}
+
 type TestStorageWithRepeatedStrategy struct {
 	ID      string              `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`
 	Inlined []*TestChildMessage `protobuf:"bytes,2,rep,name=inlined,proto3" json:"inlined,omitempty" sql:"strategy(bytea)"`
@@ -136,4 +142,11 @@ func TestRepeatedFieldStrategy(t *testing.T) {
 				"strategy(bytea) field should not create a child table")
 		}
 	})
+}
+
+func TestNoSerializedRejectsSqlIgnored(t *testing.T) {
+	mt := reflect.TypeOf(&TestStorageWithIgnoredField{})
+	assert.Panics(t, func() {
+		Walk(mt, "test_table", WithNoSerialized())
+	}, "Walk with NoSerialized should fatal on sql:\"-\" fields")
 }
