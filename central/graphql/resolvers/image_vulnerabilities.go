@@ -31,13 +31,13 @@ func init() {
 	utils.Must(schema.AddType("ImageCVEV2", []string{
 		"componentId: String!",
 		"cveBaseInfo: CVEInfo",
-		"cvss: Float!",
+		"cvss: Float",
 		"firstImageOccurrence: Time",
 		"id: ID!",
 		"imageId: String!",
 		"impactScore: Float!",
 		"nvdScoreVersion: CvssScoreVersion!",
-		"nvdcvss: Float!",
+		"nvdcvss: Float",
 		"operatingSystem: String!",
 		"severity: VulnerabilitySeverity!",
 		"state: VulnerabilityState!",
@@ -59,7 +59,7 @@ func init() {
 				"images(query: String, pagination: Pagination): [Image!]!",
 				"operatingSystem: String!",
 				"vulnerabilityState: String!",
-				"nvdCvss: Float!",
+				"nvdCvss: Float",
 				"nvdScoreVersion: String!",
 			)),
 		schema.AddQuery("imageVulnerability(id: ID): ImageVulnerability"),
@@ -86,7 +86,7 @@ type ImageVulnerabilityResolver interface {
 	Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error)
 	OperatingSystem(ctx context.Context) string
 	VulnerabilityState(ctx context.Context) string
-	Nvdcvss(ctx context.Context) float64
+	Nvdcvss(ctx context.Context) *float64
 	NvdScoreVersion(ctx context.Context) string
 }
 

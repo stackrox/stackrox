@@ -478,6 +478,11 @@ func (resolver *nodeCVEResolver) SuppressExpiry(_ context.Context) (*graphql.Tim
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(resolver.data.GetSnoozeExpiry())
 }
 
+func (resolver *nodeCVEResolver) Cvss(_ context.Context) *float64 {
+	v := float64(resolver.data.GetCvss())
+	return &v
+}
+
 // Suppressed returns true if the node CVE is snoozed
 func (resolver *nodeCVEResolver) Suppressed(_ context.Context) bool {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "Suppressed")
