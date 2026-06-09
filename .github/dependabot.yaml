@@ -309,6 +309,11 @@ updates:
     commit-message:
       include: scope
       prefix: chore
+    ignore:
+      # ubi9/go-toolset has both Go-based (1.x) and RHEL-based (9.x) tags.
+      # Only track Go version tags.
+      - dependency-name: "ubi9/go-toolset"
+        versions: [">= 2"]
 
   - package-ecosystem: 'docker'
     directory: 'operator/tests/controller/metrics'
