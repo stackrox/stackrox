@@ -116,11 +116,16 @@ describe('Workload CVE overview page tests', () => {
     });
 
     it('should apply the correct baseline filters when switching between built in views using the user-workload based template', () => {
-        visitWorkloadCveOverview({ clearFiltersOnVisit: false });
+        // Direct visit without using helper since we do not care about global mocking for this test, and
+        // the mocking interferes with the granular waits used in this test
+        visit('/main/vulnerabilities/platform/');
 
         interceptAndWatchRequests(
             getRouteMatcherMapForGraphQL(['getImageCVEList', 'getImageList'])
         ).then(({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
+            // Initial request
+            waitForRequests(['getImageCVEList']); // Wait for the third request after the filters have been changed to complete
+
             applyDefaultFilters(['Critical', 'Important'], ['Fixable']); // Set the default filters to none to prevent multiple requests on each page visit
             waitForRequests(['getImageCVEList']); // Wait for the third request after the filters have been changed to complete
 
