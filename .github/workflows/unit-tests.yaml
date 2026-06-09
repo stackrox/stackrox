@@ -75,14 +75,58 @@ jobs:
       with:
         paths: 'junit-reports/report.xml'
 
-    - name: Go Integration Unit Tests
-      run: ${{ matrix.gotags }} make integration-unit-tests
-
     - name: Go Operator Integration Tests
       run: ${{ matrix.gotags }} make -C operator/ test-integration
 
     - name: Go Operator Helm Tests
       run: ${{ matrix.gotags }} make -C operator/ test-helm
+
+    - name: Generate junit report
+      if: always()
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
+
+    - name: Report test failures to Jira
+      if: (!cancelled())
+      id: junit2jira
+      uses: ./.github/actions/junit2jira
+      with:
+        create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ secrets.JIRA_USER }}
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        directory: 'junit-reports'
+
+  go-integration:
+    strategy:
+      fail-fast: false
+      matrix:
+        gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+        exclude:
+          - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
+    runs-on: ubuntu-latest
+    outputs:
+      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+      with:
+        key-suffix: ${{ matrix.gotags }}
+
+    - name: Go Integration Unit Tests
+      run: ${{ matrix.gotags }} make integration-unit-tests
 
     - name: Generate junit report
       if: always()
@@ -539,6 +583,7 @@ jobs:
     needs:
       - go
       - go-bench
+      - go-integration
       - go-postgres
       - local-roxctl-tests
       - openshift-ci-unit-tests
@@ -555,7 +600,7 @@ jobs:
     - name: Slack message
       env:
         GITHUB_CONTEXT: ${{ toJSON(github) }}
-        mention_author: ${{ needs.go.outputs.new-jiras || needs.go-postgres.outputs.new-jiras || needs.local-roxctl-tests.outputs.new-jiras || needs.ui.outputs.new-jiras || needs.go.outputs.new-jiras || needs.shell-unit-tests.outputs.new-jiras || needs.sensor-integration-tests.outputs.new-jiras }}
+        mention_author: ${{ needs.go.outputs.new-jiras || needs.go-integration.outputs.new-jiras || needs.go-postgres.outputs.new-jiras || needs.local-roxctl-tests.outputs.new-jiras || needs.ui.outputs.new-jiras || needs.shell-unit-tests.outputs.new-jiras || needs.sensor-integration-tests.outputs.new-jiras }}
       run: |
         source scripts/ci/lib.sh
         slack_workflow_failure
