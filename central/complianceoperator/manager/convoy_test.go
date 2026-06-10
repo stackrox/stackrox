@@ -5,7 +5,6 @@ package manager
 import (
 	"context"
 	"fmt"
-	"github.com/stackrox/rox/pkg/sync"
 	"testing"
 	"time"
 
@@ -26,6 +25,7 @@ import (
 	scanSettingBindingStore "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
