@@ -29,7 +29,7 @@ linters:
     - gosec
     - govet
     - ineffassign
-    # - modernize # TODO ROX-34147: Enable in follow-up PR for Go 1.26 new(expr) syntax adoption (373 instances)
+    # - modernize # TODO ROX-35007: Enable in follow-up PR
     - nolintlint
     - protogetter
     - revive # replaces golint
