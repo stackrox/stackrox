@@ -119,7 +119,10 @@ func (b *backend) Config() map[string]string {
 }
 
 func (b *backend) LoginURL(clientState string, ri *requestinfo.RequestInfo) (string, error) {
-	state := idputil.MakeState(b.id, clientState)
+	state, err := idputil.IssueStateNonce(b.id, clientState)
+	if err != nil {
+		return "", err
+	}
 
 	// Augment baseRedirectURLPath to a redirect URL with hostname, etc set.
 	redirectURI := dexconnector.MakeRedirectURI(ri, b.baseRedirectURLPath)
