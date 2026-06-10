@@ -154,12 +154,20 @@ deploy_stackrox_with_roxie() {
 
     # Persist and load (extended) roxie environment, mimicking the effect of ci_export in a more concise way.
     extend_roxie_envrc "$roxie_envrc"
-    if [[ -n "${BASH_ENV:-}" ]]; then
-        cat "$roxie_envrc" >> "$BASH_ENV"
-    fi
     # shellcheck source=/dev/null
     source "$roxie_envrc"
 
+    # Re-export every variable from the envrc via ci_export so that it is
+    # persisted correctly for subsequent GHA steps (GITHUB_ENV) or Prow
+    # (BASH_ENV).  The envrc has already been sourced above, so we read
+    # the properly unquoted values from the current shell environment
+    # instead of trying to strip Go %q quoting from the file.
+    local var_name
+    while IFS= read -r envrc_line; do
+        var_name="${envrc_line#export }"  # strip "export " prefix
+        var_name="${var_name%%=*}"      # strip "=value" suffix
+        ci_export "$var_name" "${!var_name}"
+    done < <(grep '^export ' "$roxie_envrc")
     record_build_info "${central_namespace}"
 
     # This implements something between roxie's (upcoming) `--early-readiness=true` and `--early-readiness=false`.
