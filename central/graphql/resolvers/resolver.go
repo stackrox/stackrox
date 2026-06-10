@@ -25,6 +25,7 @@ import (
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/globaldb"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentV2DataStore "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
@@ -47,6 +48,8 @@ import (
 	k8srolebindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	scanDataStore "github.com/stackrox/rox/central/scandata/datastore"
+	scanDataPG "github.com/stackrox/rox/central/scandata/datastore/postgres"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	signatureIntegrationDataStore "github.com/stackrox/rox/central/signatureintegration/datastore"
@@ -118,6 +121,7 @@ type Resolver struct {
 	AuditLogger                   auditPkg.Auditor
 	ImageComponentV2DataStore     imageComponentV2DataStore.DataStore
 	ImageCVEV2DataStore           imageCVEV2DataStore.DataStore
+	ScanDataStore                 scanDataStore.DataStore
 
 	// Views
 	ImageComponentFlatView imagecomponentflat.ComponentFlatView
@@ -193,6 +197,8 @@ func New() *Resolver {
 
 	resolver.ImageComponentV2DataStore = imageComponentV2DataStore.Singleton()
 	resolver.ImageCVEV2DataStore = imageCVEV2DataStore.Singleton()
+	// Prototype: instantiate scandata datastore directly to avoid import cycle
+	resolver.ScanDataStore = scanDataPG.New(globaldb.GetPostgres())
 	if features.FlattenImageData.Enabled() {
 		// Only initialize the ImageV2DataStore if we have the new image data model enabled, otherwise this makes no sense
 		resolver.ImageV2DataStore = imageV2Datastore.Singleton()

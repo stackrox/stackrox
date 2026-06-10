@@ -196,9 +196,15 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			continue
 		}
 
+		// Use CveName from scanner if available, otherwise fall back to Name for backward compatibility.
+		cveName := ccVuln.GetCveName()
+		if cveName == "" {
+			cveName = ccVuln.GetName()
+		}
+
 		// TODO(ROX-20355): Populate last modified once the API is available.
 		vuln := &storage.EmbeddedVulnerability{
-			Cve:      ccVuln.GetName(),
+			Cve:      cveName,
 			Advisory: advisory(ccVuln.GetAdvisory()),
 			Summary:  ccVuln.GetDescription(),
 			// TODO(ROX-26547)

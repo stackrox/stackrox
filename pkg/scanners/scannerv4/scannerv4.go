@@ -55,6 +55,10 @@ var (
 
 	scanTimeout     = env.ScanTimeout.DurationSetting()
 	metadataTimeout = 1 * time.Minute
+
+	// ScanIngestFunc is an optional callback for prototype scan data ingestion.
+	// Set by central/ at init time to avoid pkg/ importing central/.
+	ScanIngestFunc func(ctx context.Context, imageID string, metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) error
 )
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
@@ -235,6 +239,13 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		len(vr.GetPackageVulnerabilities()),
 		len(vr.GetVulnerabilities()),
 	)
+
+	// Ingest scan data into prototype tables (non-blocking)
+	if ScanIngestFunc != nil {
+		if err := ScanIngestFunc(ctx, image.GetId(), image.GetMetadata(), vr); err != nil {
+			log.Warnf("Failed to ingest scan data for image %q: %v", image.GetId(), err)
+		}
+	}
 
 	return imageScan(image.GetMetadata(), vr, scannerVersionStr), nil
 }

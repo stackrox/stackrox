@@ -96,6 +96,15 @@ export const vulnerabilitiesImagesWithoutCvesPath = `${vulnerabilitiesBasePath}/
 // user-workload template views path
 export const vulnerabilitiesViewPath = `${vulnerabilitiesBasePath}/results/:viewTemplate/:viewId`;
 
+export const vulnerabilitiesPrototypePath = `${vulnerabilitiesBasePath}/prototype`;
+export const vulnerabilitiesPrototypeCvePath = `${vulnerabilitiesPrototypePath}/cves`;
+export const vulnerabilitiesPrototypeCveDetailPath = `${vulnerabilitiesPrototypeCvePath}/:cveName`;
+export const vulnerabilitiesPrototypeDeploymentsPath = `${vulnerabilitiesPrototypePath}/deployments`;
+export const vulnerabilitiesPrototypeAdvisoriesPath = `${vulnerabilitiesPrototypePath}/advisories`;
+export const vulnerabilitiesPrototypeComponentsPath = `${vulnerabilitiesPrototypePath}/components`;
+export const vulnerabilitiesPrototypeImagesPath = `${vulnerabilitiesPrototypePath}/images`;
+export const vulnerabilitiesPrototypeImageDetailPath = `${vulnerabilitiesPrototypePath}/images/:imageId`;
+
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 export const vulnerabilityConfigurationReportsPath = `${vulnerabilityReportsPath}/configuration`;
 export const vulnerabilityViewBasedReportsPath = `${vulnerabilityReportsPath}/view-based`;
@@ -195,6 +204,7 @@ export type RouteKey =
     | 'vulnerabilities/images-without-cves'
     | 'vulnerabilities/platform-cves'
     | 'vulnerabilities/virtual-machine-cves'
+    | 'vulnerabilities/prototype'
     | 'base-images'
     | 'vulnerability-management'
     ;
@@ -375,6 +385,9 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'vulnerabilities/virtual-machine-cves': {
         featureFlagRequirements: allEnabled(['ROX_VIRTUAL_MACHINES']),
         resourceAccessRequirements: everyResource(['Cluster']),
+    },
+    'vulnerabilities/prototype': {
+        resourceAccessRequirements: everyResource(['Image']),
     },
     'base-images': {
         featureFlagRequirements: allEnabled(['ROX_BASE_IMAGE_DETECTION']),

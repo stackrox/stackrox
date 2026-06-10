@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+import "storage/cve.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+message ScanFinding {
+  string id = 1; // @gotags: search:"Finding ID,hidden" sql:"pk,id"
+  string advisory_id = 2; // @gotags: search:"Advisory ID" sql:"index=btree"
+  string cve_name = 3; // @gotags: search:"CVE" sql:"index=btree"
+  string component_id = 4; // @gotags: search:"Component ID,hidden" sql:"fk(ScanComponent:id),index=btree"
+  string scan_id = 5; // @gotags: search:"Scan ID,hidden" sql:"fk(ImageScanV2:id)"
+  string image_id = 6; // @gotags: search:"Image ID,hidden" sql:"index=btree"
+  VulnerabilitySeverity severity = 7; // @gotags: search:"Severity" sql:"index=btree"
+  float cvss = 8; // @gotags: search:"CVSS"
+  CvssScoreVersion cvss_version = 9; // @gotags: search:"CVSS Version,hidden"
+  float nvd_cvss = 10; // @gotags: search:"NVD CVSS"
+  CvssScoreVersion nvd_cvss_version = 11; // @gotags: search:"NVD CVSS Version,hidden"
+  float epss_probability = 12; // @gotags: search:"EPSS Probability"
+  float epss_percentile = 13; // @gotags: search:"EPSS Percentile"
+  bool is_fixable = 14; // @gotags: search:"Fixable"
+  string fixed_by = 15; // @gotags: search:"Fixed By,hidden"
+  google.protobuf.Timestamp fixed_date = 16; // @gotags: search:"Fixed Date,hidden"
+  string description = 17; // @gotags: search:"Description,hidden"
+  google.protobuf.Timestamp published_date = 18; // @gotags: search:"Published Date,hidden"
+  string data_source = 19; // @gotags: search:"Data Source,hidden"
+  string source_name = 20; // @gotags: search:"Source Name"
+  repeated string links = 21; // @gotags: sql:"type(text[])"
+  VulnerabilityState state = 22; // @gotags: search:"Vulnerability State" sql:"index=btree"
+  google.protobuf.Timestamp first_image_occurrence = 23; // @gotags: search:"First Image Occurrence,hidden"
+  google.protobuf.Timestamp first_system_occurrence = 24; // @gotags: search:"First System Occurrence,hidden"
+}
