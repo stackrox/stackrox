@@ -18,31 +18,31 @@ const scannerVersion = "indexer=4.8.3"
 
 func TestNoPanic(t *testing.T) {
 	assert.NotPanics(t, func() {
-		imageScan(nil, nil, "")
+		ImageScan(nil, nil, "")
 
 		report := &v4.VulnerabilityReport{}
-		imageScan(nil, report, scannerVersion)
+		ImageScan(nil, report, scannerVersion)
 
 		report.Contents = &v4.Contents{}
-		imageScan(nil, report, scannerVersion)
+		ImageScan(nil, report, scannerVersion)
 
 		report.Contents.Packages = map[string]*v4.Package{}
-		imageScan(nil, report, scannerVersion)
+		ImageScan(nil, report, scannerVersion)
 
 		report.Contents.Packages = map[string]*v4.Package{"1": {Id: "1"}}
-		imageScan(nil, report, scannerVersion)
+		ImageScan(nil, report, scannerVersion)
 
 		report.PackageVulnerabilities = map[string]*v4.StringList{}
-		imageScan(nil, report, scannerVersion)
+		ImageScan(nil, report, scannerVersion)
 
 		report.PackageVulnerabilities["1"] = &v4.StringList{}
-		imageScan(nil, report, scannerVersion)
+		ImageScan(nil, report, scannerVersion)
 
 		report.PackageVulnerabilities["1"].Values = []string{}
-		imageScan(nil, report, scannerVersion)
+		ImageScan(nil, report, scannerVersion)
 
 		report.PackageVulnerabilities["1"].Values = []string{"CVE1"}
-		imageScan(nil, report, scannerVersion)
+		ImageScan(nil, report, scannerVersion)
 	})
 }
 
@@ -302,7 +302,7 @@ func TestConvert(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := imageScan(tc.metadata, tc.report, scannerVersion)
+			got := ImageScan(tc.metadata, tc.report, scannerVersion)
 			protoassert.SlicesEqual(t, tc.expected.GetComponents(), got.GetComponents())
 			assert.Equal(t, tc.expected.GetOperatingSystem(), got.GetOperatingSystem())
 			assert.Equal(t, scannerVersion, got.GetScannerVersion())
