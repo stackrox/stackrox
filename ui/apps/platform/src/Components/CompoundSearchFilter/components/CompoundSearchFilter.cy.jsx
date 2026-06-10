@@ -1,6 +1,5 @@
 import { useState } from 'react';
 
-import { FeatureFlagsContext } from 'hooks/useFeatureFlags';
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
 
@@ -89,27 +88,10 @@ function Wrapper({ config, searchFilter, onSearch }) {
     );
 }
 
-// Mock provider because useFeatureFlags in CompoundSearchFilterInputField requires the context
-function MockFeatureFlagsProvider({ children, enabledFeatureFlags = [] }) {
-    return (
-        <FeatureFlagsContext.Provider
-            value={{
-                isFeatureFlagEnabled: (flag) => enabledFeatureFlags.includes(flag),
-                isLoadingFeatureFlags: false,
-                error: undefined,
-            }}
-        >
-            {children}
-        </FeatureFlagsContext.Provider>
-    );
-}
-
-function setup(config, searchFilter, onSearch, enabledFeatureFlags = []) {
+function setup(config, searchFilter, onSearch) {
     cy.mount(
         <ComponentTestProvider>
-            <MockFeatureFlagsProvider enabledFeatureFlags={enabledFeatureFlags}>
-                <Wrapper config={config} searchFilter={searchFilter} onSearch={onSearch} />
-            </MockFeatureFlagsProvider>
+            <Wrapper config={config} searchFilter={searchFilter} onSearch={onSearch} />
         </ComponentTestProvider>
     );
 }
@@ -387,7 +369,7 @@ describe(Cypress.spec.relative, () => {
         cy.get('input[aria-label="Filter by date"]').should('have.value', '');
     });
 
-    it('should not include the Between date condition when the date range feature flag is disabled', () => {
+    it('should not include the Between date condition when the attribute does not enable it', () => {
         const config = [imageCVESearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
@@ -405,12 +387,21 @@ describe(Cypress.spec.relative, () => {
         );
     });
 
-    it('should include the Between date condition when the date range feature flag is enabled', () => {
-        const config = [imageCVESearchFilterConfig];
+    it('should include the Between date condition when the attribute enables it', () => {
+        const config = [
+            {
+                ...imageCVESearchFilterConfig,
+                attributes: imageCVESearchFilterConfig.attributes.map((attribute) =>
+                    attribute.inputType === 'date-picker'
+                        ? { ...attribute, inputProps: { enableBetweenCondition: true } }
+                        : attribute
+                ),
+            },
+        ];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
-        setup(config, searchFilter, onSearch, ['ROX_VULN_MGMT_DATE_RANGE_FILTER']);
+        setup(config, searchFilter, onSearch);
 
         cy.get(selectors.attributeSelectToggle).click();
         cy.get(selectors.attributeSelectItem('Discovered time')).click();
@@ -567,19 +558,17 @@ describe(Cypress.spec.relative, () => {
             ]);
             return (
                 <ComponentTestProvider>
-                    <MockFeatureFlagsProvider>
-                        <button type="button" onClick={() => setConfig([imageSearchFilterConfig])}>
-                            Trim config
-                        </button>
-                        <div className="pf-v6-u-p-md">
-                            <CompoundSearchFilter
-                                defaultEntity="Image"
-                                config={config}
-                                searchFilter={searchFilter}
-                                onSearch={onSearch}
-                            />
-                        </div>
-                    </MockFeatureFlagsProvider>
+                    <button type="button" onClick={() => setConfig([imageSearchFilterConfig])}>
+                        Trim config
+                    </button>
+                    <div className="pf-v6-u-p-md">
+                        <CompoundSearchFilter
+                            defaultEntity="Image"
+                            config={config}
+                            searchFilter={searchFilter}
+                            onSearch={onSearch}
+                        />
+                    </div>
                 </ComponentTestProvider>
             );
         }

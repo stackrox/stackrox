@@ -1,4 +1,3 @@
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { SearchFilter } from 'types/search';
 import { ensureExhaustive } from 'utils/type.utils';
 
@@ -33,8 +32,6 @@ function CompoundSearchFilterInputField({
     searchFilter,
     additionalContextFilter,
 }: CompoundSearchFilterInputFieldProps) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-
     const { inputType } = attribute;
     switch (inputType) {
         case 'text':
@@ -49,7 +46,6 @@ function CompoundSearchFilterInputField({
             return (
                 <SearchFilterConditionDate
                     attribute={attribute}
-                    isBetweenEnabled={isFeatureFlagEnabled('ROX_VULN_MGMT_DATE_RANGE_FILTER')}
                     isDisabled={isDisabled}
                     onSearch={onSearch}
                 />

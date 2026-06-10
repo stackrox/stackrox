@@ -9,6 +9,11 @@ const attribute = {
     inputType: 'date-picker',
 };
 
+const attributeWithBetween = {
+    ...attribute,
+    inputProps: { enableBetweenCondition: true },
+};
+
 const selectors = {
     conditionSelectToggle: 'button[aria-label="Condition selector toggle"]',
     conditionSelectItems: '[aria-label="Condition selector menu"] li',
@@ -27,8 +32,7 @@ function setup({ isBetweenEnabled = false } = {}) {
         <Toolbar>
             <ToolbarContent>
                 <SearchFilterConditionDate
-                    attribute={attribute}
-                    isBetweenEnabled={isBetweenEnabled}
+                    attribute={isBetweenEnabled ? attributeWithBetween : attribute}
                     onSearch={onSearch}
                 />
             </ToolbarContent>
@@ -46,7 +50,7 @@ function selectCondition(condition) {
 }
 
 describe(Cypress.spec.relative, () => {
-    describe('without isBetweenEnabled', () => {
+    describe('without enableBetweenCondition on the attribute', () => {
         it('should not include Between in the condition selector', () => {
             setup({ isBetweenEnabled: false });
 
@@ -59,7 +63,7 @@ describe(Cypress.spec.relative, () => {
         });
     });
 
-    describe('with isBetweenEnabled', () => {
+    describe('with enableBetweenCondition on the attribute', () => {
         it('should include Between in the condition selector after Before/On/After', () => {
             setup({ isBetweenEnabled: true });
 

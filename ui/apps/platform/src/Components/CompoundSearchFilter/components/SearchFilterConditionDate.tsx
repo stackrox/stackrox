@@ -9,7 +9,7 @@ import {
     dateRangeCondition,
     serializeAbsoluteDateRange,
 } from '../utils/utils';
-import type { GenericSearchFilterAttribute, OnSearchCallback } from '../types';
+import type { DatePickerSearchFilterAttribute, OnSearchCallback } from '../types';
 
 import SimpleSelect from './SimpleSelect';
 
@@ -40,8 +40,7 @@ function isValidDate(date: Date): boolean {
 type DateCondition = (typeof dateConditions)[number] | typeof dateRangeCondition;
 
 export type SearchFilterConditionDateProps = {
-    attribute: GenericSearchFilterAttribute;
-    isBetweenEnabled?: boolean;
+    attribute: DatePickerSearchFilterAttribute;
     isDisabled?: boolean;
     onSearch: OnSearchCallback;
     // does not depend on searchFilter
@@ -49,11 +48,11 @@ export type SearchFilterConditionDateProps = {
 
 function SearchFilterConditionDate({
     attribute,
-    isBetweenEnabled = false,
     isDisabled = false,
     onSearch,
 }: SearchFilterConditionDateProps) {
     const { searchTerm: category } = attribute;
+    const isBetweenEnabled = attribute.inputProps?.enableBetweenCondition ?? false;
 
     const [conditionExternal, setConditionExternal] = useState<DateCondition>(dateConditions[1]);
     const [dateString, setDateString] = useState('');
