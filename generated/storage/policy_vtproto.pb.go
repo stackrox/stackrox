@@ -257,6 +257,11 @@ func (m *EvaluationFilter) CloneVT() *EvaluationFilter {
 		return (*EvaluationFilter)(nil)
 	}
 	r := new(EvaluationFilter)
+	if rhs := m.SkipContainerTypes; rhs != nil {
+		tmpContainer := make([]ContainerType, len(rhs))
+		copy(tmpContainer, rhs)
+		r.SkipContainerTypes = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -764,6 +769,15 @@ func (this *EvaluationFilter) EqualVT(that *EvaluationFilter) bool {
 		return true
 	} else if this == nil || that == nil {
 		return false
+	}
+	if len(this.SkipContainerTypes) != len(that.SkipContainerTypes) {
+		return false
+	}
+	for i, vx := range this.SkipContainerTypes {
+		vy := that.SkipContainerTypes[i]
+		if vx != vy {
+			return false
+		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -1626,6 +1640,27 @@ func (m *EvaluationFilter) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.SkipContainerTypes) > 0 {
+		var pksize2 int
+		for _, num := range m.SkipContainerTypes {
+			pksize2 += protohelpers.SizeOfVarint(uint64(num))
+		}
+		i -= pksize2
+		j1 := i
+		for _, num1 := range m.SkipContainerTypes {
+			num := uint64(num1)
+			for num >= 1<<7 {
+				dAtA[j1] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j1++
+			}
+			dAtA[j1] = uint8(num)
+			j1++
+		}
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(pksize2))
+		i--
+		dAtA[i] = 0xa
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -2161,6 +2196,13 @@ func (m *EvaluationFilter) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
+	if len(m.SkipContainerTypes) > 0 {
+		l = 0
+		for _, e := range m.SkipContainerTypes {
+			l += protohelpers.SizeOfVarint(uint64(e))
+		}
+		n += 1 + protohelpers.SizeOfVarint(uint64(l)) + l
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -4129,6 +4171,75 @@ func (m *EvaluationFilter) UnmarshalVT(dAtA []byte) error {
 			return fmt.Errorf("proto: EvaluationFilter: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType == 0 {
+				var v ContainerType
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= ContainerType(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.SkipContainerTypes = append(m.SkipContainerTypes, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				if elementCount != 0 && len(m.SkipContainerTypes) == 0 {
+					m.SkipContainerTypes = make([]ContainerType, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v ContainerType
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= ContainerType(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.SkipContainerTypes = append(m.SkipContainerTypes, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field SkipContainerTypes", wireType)
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -6668,6 +6779,75 @@ func (m *EvaluationFilter) UnmarshalVTUnsafe(dAtA []byte) error {
 			return fmt.Errorf("proto: EvaluationFilter: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 1:
+			if wireType == 0 {
+				var v ContainerType
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= ContainerType(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.SkipContainerTypes = append(m.SkipContainerTypes, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				if elementCount != 0 && len(m.SkipContainerTypes) == 0 {
+					m.SkipContainerTypes = make([]ContainerType, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v ContainerType
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= ContainerType(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.SkipContainerTypes = append(m.SkipContainerTypes, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field SkipContainerTypes", wireType)
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

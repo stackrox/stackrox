@@ -1007,9 +1007,10 @@ func (x *ListPolicy) GetEvaluationFilter() *EvaluationFilter {
 
 // EvaluationFilter pre-filters which entities a policy evaluates.
 type EvaluationFilter struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	SkipContainerTypes []ContainerType        `protobuf:"varint,1,rep,packed,name=skip_container_types,json=skipContainerTypes,proto3,enum=storage.ContainerType" json:"skip_container_types,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *EvaluationFilter) Reset() {
@@ -1040,6 +1041,13 @@ func (x *EvaluationFilter) ProtoReflect() protoreflect.Message {
 // Deprecated: Use EvaluationFilter.ProtoReflect.Descriptor instead.
 func (*EvaluationFilter) Descriptor() ([]byte, []int) {
 	return file_storage_policy_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *EvaluationFilter) GetSkipContainerTypes() []ContainerType {
+	if x != nil {
+		return x.SkipContainerTypes
+	}
+	return nil
 }
 
 type Exclusion struct {
@@ -1352,7 +1360,7 @@ var File_storage_policy_proto protoreflect.FileDescriptor
 
 const file_storage_policy_proto_rawDesc = "" +
 	"\n" +
-	"\x14storage/policy.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13storage/image.proto\x1a\x13storage/scope.proto\"\xfc\t\n" +
+	"\x14storage/policy.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x13storage/image.proto\x1a\x13storage/scope.proto\"\xfc\t\n" +
 	"\x06Policy\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -1420,8 +1428,9 @@ const file_storage_policy_proto_rawDesc = "" +
 	"is_default\x18\n" +
 	" \x01(\bR\tisDefault\x12-\n" +
 	"\x06source\x18\v \x01(\x0e2\x15.storage.PolicySourceR\x06source\x12F\n" +
-	"\x11evaluation_filter\x18\f \x01(\v2\x19.storage.EvaluationFilterR\x10evaluationFilter\"\x12\n" +
-	"\x10EvaluationFilter\"\xf5\x02\n" +
+	"\x11evaluation_filter\x18\f \x01(\v2\x19.storage.EvaluationFilterR\x10evaluationFilter\"\\\n" +
+	"\x10EvaluationFilter\x12H\n" +
+	"\x14skip_container_types\x18\x01 \x03(\x0e2\x16.storage.ContainerTypeR\x12skipContainerTypes\"\xf5\x02\n" +
 	"\tExclusion\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12=\n" +
 	"\n" +
@@ -1522,7 +1531,8 @@ var file_storage_policy_proto_goTypes = []any{
 	(*Exclusion_Image)(nil),           // 19: storage.Exclusion.Image
 	(*Scope)(nil),                     // 20: storage.Scope
 	(*timestamppb.Timestamp)(nil),     // 21: google.protobuf.Timestamp
-	(*ImageName)(nil),                 // 22: storage.ImageName
+	(ContainerType)(0),                // 22: storage.ContainerType
+	(*ImageName)(nil),                 // 23: storage.ImageName
 }
 var file_storage_policy_proto_depIdxs = []int32{
 	5,  // 0: storage.Policy.lifecycle_stages:type_name -> storage.LifecycleStage
@@ -1546,17 +1556,18 @@ var file_storage_policy_proto_depIdxs = []int32{
 	1,  // 18: storage.ListPolicy.event_source:type_name -> storage.EventSource
 	0,  // 19: storage.ListPolicy.source:type_name -> storage.PolicySource
 	13, // 20: storage.ListPolicy.evaluation_filter:type_name -> storage.EvaluationFilter
-	18, // 21: storage.Exclusion.deployment:type_name -> storage.Exclusion.Deployment
-	19, // 22: storage.Exclusion.image:type_name -> storage.Exclusion.Image
-	21, // 23: storage.Exclusion.expiration:type_name -> google.protobuf.Timestamp
-	7,  // 24: storage.ExportPoliciesResponse.policies:type_name -> storage.Policy
-	22, // 25: storage.Exclusion.Container.image_name:type_name -> storage.ImageName
-	20, // 26: storage.Exclusion.Deployment.scope:type_name -> storage.Scope
-	27, // [27:27] is the sub-list for method output_type
-	27, // [27:27] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	22, // 21: storage.EvaluationFilter.skip_container_types:type_name -> storage.ContainerType
+	18, // 22: storage.Exclusion.deployment:type_name -> storage.Exclusion.Deployment
+	19, // 23: storage.Exclusion.image:type_name -> storage.Exclusion.Image
+	21, // 24: storage.Exclusion.expiration:type_name -> google.protobuf.Timestamp
+	7,  // 25: storage.ExportPoliciesResponse.policies:type_name -> storage.Policy
+	23, // 26: storage.Exclusion.Container.image_name:type_name -> storage.ImageName
+	20, // 27: storage.Exclusion.Deployment.scope:type_name -> storage.Scope
+	28, // [28:28] is the sub-list for method output_type
+	28, // [28:28] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_storage_policy_proto_init() }
@@ -1564,6 +1575,7 @@ func file_storage_policy_proto_init() {
 	if File_storage_policy_proto != nil {
 		return
 	}
+	file_storage_deployment_proto_init()
 	file_storage_image_proto_init()
 	file_storage_scope_proto_init()
 	type x struct{}
