@@ -16,14 +16,14 @@ var (
 	watcherFileErrorTotal = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "key_bundle_watcher_file_error_total",
+		Name:      "key_bundle_watcher_file_errors_total",
 		Help:      "Total number of file-level errors in the watcher (stat, read, oversize, parse failures)",
 	})
 
 	watcherKeyCount = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "key_bundle_watcher_key_count",
+		Name:      "key_bundle_watcher_keys_count",
 		Help:      "Number of keys in the most recently applied Red Hat signing key bundle",
 	})
 
