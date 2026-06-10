@@ -11,9 +11,15 @@ The operator is a hybrid Go+Helm-based operator built on a
 The fork includes features and bug fixes specific to StackRox that have not
 been upstreamed; see [ROX-7911](https://issues.redhat.com/browse/ROX-7911).
 
-It watches two CRDs — `Central` and `SecuredCluster` — and for each, renders
+It watches essentially two CRDs — `Central` and `SecuredCluster` — and for each, renders
 the corresponding Helm chart (`stackrox-central-services` /
 `stackrox-secured-cluster-services`) with values derived from the CR spec.
+
+Apart from that, there are some more features and caveats such as:
+- additional watches (see [section on reconcilers](#cr-specific-reconcilers-internalcentralreconciler-internalsecuredclusterreconciler)),
+- [post-renderers](#post-renderers),
+- an advanced [defaulting](#defaulting-internalcentraldefaults-internalsecuredclusterdefaults) mechanism,
+- separate [status controller](#status-controller-internalcommonstatuscontrollergo).
 
 ## Entry point ([`cmd/main.go`](cmd/main.go))
 
@@ -191,7 +197,7 @@ Central and SecuredCluster reconcilers watch each other's CR type. This enables:
 
 ## Directory layout
 
-```
+```text
 operator/
 ├── api/v1alpha1/          CRD Go types, defaults merging, deep-copy
 ├── cmd/                   Entry point (main.go)
@@ -209,7 +215,7 @@ operator/
 │   │   ├── scanner/         Local scanner auto-sense logic
 │   │   └── values/          CR-to-Helm-values translation
 │   ├── common/            Shared logic
-│   │   ├── confighash/      Config-hash computation and pod-template annotation
+│   │   ├── confighash/      CA certificate hash and pod-template annotation for rollout on CA rotation
 │   │   ├── extensions/      Shared pre-extensions (forbidden namespaces, label selectors, etc.)
 │   │   ├── labels/          Default labels and label post-renderer
 │   │   ├── rendercache/     Caches rendered manifests between reconciliation cycles
