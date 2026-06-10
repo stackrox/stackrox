@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { FeatureFlagsContext } from 'hooks/useFeatureFlags';
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
 
@@ -88,10 +89,27 @@ function Wrapper({ config, searchFilter, onSearch }) {
     );
 }
 
-function setup(config, searchFilter, onSearch) {
+// Mock provider because useFeatureFlags in CompoundSearchFilterInputField requires the context
+function MockFeatureFlagsProvider({ children, enabledFeatureFlags = [] }) {
+    return (
+        <FeatureFlagsContext.Provider
+            value={{
+                isFeatureFlagEnabled: (flag) => enabledFeatureFlags.includes(flag),
+                isLoadingFeatureFlags: false,
+                error: undefined,
+            }}
+        >
+            {children}
+        </FeatureFlagsContext.Provider>
+    );
+}
+
+function setup(config, searchFilter, onSearch, enabledFeatureFlags = []) {
     cy.mount(
         <ComponentTestProvider>
-            <Wrapper config={config} searchFilter={searchFilter} onSearch={onSearch} />
+            <MockFeatureFlagsProvider enabledFeatureFlags={enabledFeatureFlags}>
+                <Wrapper config={config} searchFilter={searchFilter} onSearch={onSearch} />
+            </MockFeatureFlagsProvider>
         </ComponentTestProvider>
     );
 }
@@ -369,6 +387,40 @@ describe(Cypress.spec.relative, () => {
         cy.get('input[aria-label="Filter by date"]').should('have.value', '');
     });
 
+    it('should not include the Between date condition when the date range feature flag is disabled', () => {
+        const config = [imageCVESearchFilterConfig];
+        const onSearch = cy.stub().as('onSearch');
+        const searchFilter = {};
+
+        setup(config, searchFilter, onSearch);
+
+        cy.get(selectors.attributeSelectToggle).click();
+        cy.get(selectors.attributeSelectItem('Discovered time')).click();
+
+        cy.get('button[aria-label="Condition selector toggle"]').click();
+
+        cy.get('[aria-label="Condition selector menu"] li').should('have.length', 3);
+        cy.get('[aria-label="Condition selector menu"] li button:contains("Between")').should(
+            'not.exist'
+        );
+    });
+
+    it('should include the Between date condition when the date range feature flag is enabled', () => {
+        const config = [imageCVESearchFilterConfig];
+        const onSearch = cy.stub().as('onSearch');
+        const searchFilter = {};
+
+        setup(config, searchFilter, onSearch, ['ROX_VULN_MGMT_DATE_RANGE_FILTER']);
+
+        cy.get(selectors.attributeSelectToggle).click();
+        cy.get(selectors.attributeSelectItem('Discovered time')).click();
+
+        cy.get('button[aria-label="Condition selector toggle"]').click();
+
+        cy.get('[aria-label="Condition selector menu"] li').should('have.length', 4);
+        cy.get('[aria-label="Condition selector menu"] li').eq(3).should('have.text', 'Between');
+    });
+
     it('should display the condition-number input and correctly search for image cvss', () => {
         const config = [imageCVESearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
@@ -515,17 +567,19 @@ describe(Cypress.spec.relative, () => {
             ]);
             return (
                 <ComponentTestProvider>
-                    <button type="button" onClick={() => setConfig([imageSearchFilterConfig])}>
-                        Trim config
-                    </button>
-                    <div className="pf-v6-u-p-md">
-                        <CompoundSearchFilter
-                            defaultEntity="Image"
-                            config={config}
-                            searchFilter={searchFilter}
-                            onSearch={onSearch}
-                        />
-                    </div>
+                    <MockFeatureFlagsProvider>
+                        <button type="button" onClick={() => setConfig([imageSearchFilterConfig])}>
+                            Trim config
+                        </button>
+                        <div className="pf-v6-u-p-md">
+                            <CompoundSearchFilter
+                                defaultEntity="Image"
+                                config={config}
+                                searchFilter={searchFilter}
+                                onSearch={onSearch}
+                            />
+                        </div>
+                    </MockFeatureFlagsProvider>
                 </ComponentTestProvider>
             );
         }
