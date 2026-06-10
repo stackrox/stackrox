@@ -1,6 +1,6 @@
 module github.com/stackrox/stackrox/tools/build
 
-go 1.26.2
+go 1.26.3
 
 require github.com/stackrox/ossls v0.0.0-20240813203729-5ad46ced9610
 
