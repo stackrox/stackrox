@@ -14087,7 +14087,15 @@
             ]
           },
           {
-            "name": "EvaluationFilter"
+            "name": "EvaluationFilter",
+            "fields": [
+              {
+                "id": 1,
+                "name": "skip_container_types",
+                "type": "ContainerType",
+                "is_repeated": true
+              }
+            ]
           },
           {
             "name": "Exclusion",
@@ -14169,6 +14177,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/deployment.proto"
           },
           {
             "path": "storage/image.proto"

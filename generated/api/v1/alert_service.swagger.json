@@ -1182,6 +1182,14 @@
       },
       "title": "Next tag: 13"
     },
+    "storageContainerType": {
+      "type": "string",
+      "enum": [
+        "REGULAR",
+        "INIT"
+      ],
+      "default": "REGULAR"
+    },
     "storageEnforcementAction": {
       "type": "string",
       "enum": [
@@ -1199,6 +1207,14 @@
     },
     "storageEvaluationFilter": {
       "type": "object",
+      "properties": {
+        "skipContainerTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageContainerType"
+          }
+        }
+      },
       "description": "EvaluationFilter pre-filters which entities a policy evaluates."
     },
     "storageEventSource": {
