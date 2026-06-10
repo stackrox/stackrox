@@ -29,7 +29,7 @@ linters:
     - gosec
     - govet
     - ineffassign
-    # - modernize # TODO ROX-35007: Enable in follow-up PR
+    - modernize
     - nolintlint
     - protogetter
     - revive # replaces golint
@@ -175,6 +175,7 @@ linters:
         - fmtappendf
         - mapsloop
         - minmax
+        - newexpr
         - rangeint
         - reflecttypefor
         - slicescontains
