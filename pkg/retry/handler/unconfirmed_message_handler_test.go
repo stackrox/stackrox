@@ -72,8 +72,7 @@ func TestWithRetryable(t *testing.T) {
 			counterMux := &sync.Mutex{}
 			counter := 0
 
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			ctx := t.Context()
 			umh := NewUnconfirmedMessageHandler(ctx, "test", cc.baseDuration)
 			// sending loop
 			for _, tt := range cc.sendAfter {
@@ -190,8 +189,7 @@ func TestNonPositiveBaseIntervalUsesDefaultForFirstRetry(t *testing.T) {
 }
 
 func TestOnACKCallback(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	baseInterval := 50 * time.Millisecond
 	umh := NewUnconfirmedMessageHandler(ctx, "test", baseInterval)
 
