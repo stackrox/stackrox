@@ -11,6 +11,7 @@ import type {
     OnSearchPayload,
 } from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { SearchFilter } from 'types/search';
 import { getHasSearchApplied, searchValueAsArray } from 'utils/searchUtils';
 
@@ -20,6 +21,7 @@ import {
     attributeForFixableInFrontendAndLocalStorage,
     attributeForSeverityInFrontendAndLocalStorage,
     attributeForSnoozed,
+    enableDateRangeConditions,
 } from '../searchFilterConfig';
 import { normalizeSearchFilterKeys } from '../utils/searchUtils';
 
@@ -55,9 +57,22 @@ function AdvancedFiltersToolbar({
     additionalContextFilter,
     children,
 }: AdvancedFiltersToolbarProps): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isDateRangeFilterEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_DATE_RANGE_FILTER');
+
     // Normalize legacy URL keys (e.g. SEVERITY → Severity) so that child
     // components render correctly even for bookmarked URLs from before the rename.
     const normalizedFilter = useMemo(() => normalizeSearchFilterKeys(searchFilter), [searchFilter]);
+
+    // The Between date condition is opted in here, at the vulnerability layer, so that
+    // non-vulnerability surfaces sharing the same attribute constants are unaffected.
+    const config = useMemo(
+        () =>
+            isDateRangeFilterEnabled
+                ? enableDateRangeConditions(searchFilterConfig)
+                : searchFilterConfig,
+        [isDateRangeFilterEnabled, searchFilterConfig]
+    );
 
     const attributesSeparateFromConfig: CompoundSearchFilterAttribute[] = [attributeForSnoozed];
     if (includeCveSeverityFilters) {
@@ -83,7 +98,7 @@ function AdvancedFiltersToolbar({
         <Toolbar className={`advanced-filters-toolbar ${className}`}>
             <ToolbarContent>
                 <CompoundSearchFilter
-                    config={searchFilterConfig}
+                    config={config}
                     searchFilter={normalizedFilter}
                     additionalContextFilter={additionalContextFilter}
                     onSearch={onFilterApplied}
@@ -118,7 +133,7 @@ function AdvancedFiltersToolbar({
                     <ToolbarGroup aria-label="applied search filters" className="pf-v6-u-w-100">
                         <CompoundSearchFilterLabels
                             attributesSeparateFromConfig={attributesSeparateFromConfig}
-                            config={searchFilterConfig}
+                            config={config}
                             isGlobalPredicate={isGlobalPredicate}
                             onFilterChange={onFilterChange}
                             searchFilter={normalizedFilter}
