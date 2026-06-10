@@ -22,7 +22,7 @@ spec:
   params:
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-operator-bundle
+    serviceAccountName: build-pipeline-operator-bundle-4-11
 
   timeouts:
     tasks: 10m
