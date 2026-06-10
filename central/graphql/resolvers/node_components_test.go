@@ -6,8 +6,8 @@ import (
 )
 
 func TestNodeComponentResolverType(t *testing.T) {
-	resolverInterface := reflect.TypeOf((*NodeComponentResolver)(nil)).Elem()
-	resolverImplType := reflect.TypeOf((*nodeComponentResolver)(nil))
+	resolverInterface := reflect.TypeFor[NodeComponentResolver]()
+	resolverImplType := reflect.TypeFor[*nodeComponentResolver]()
 
 	validateAlignedMethodIndex(t, resolverInterface, resolverImplType)
 }

@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	messageType = reflect.TypeOf((*protocompat.Message)(nil)).Elem()
+	messageType = reflect.TypeFor[protocompat.Message]()
 )
 
 func isProto(p reflect.Type) bool {
