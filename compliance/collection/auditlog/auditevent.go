@@ -59,10 +59,10 @@ type userRef struct {
 }
 
 type responseStatusRef struct {
-	Metadata map[string]interface{} `json:"metadata"`
-	Status   string                 `json:"status"`
-	Message  string                 `json:"message"`
-	Code     int32                  `json:"code"`
+	Metadata map[string]any `json:"metadata"`
+	Status   string         `json:"status"`
+	Message  string         `json:"message"`
+	Code     int32          `json:"code"`
 }
 
 func (u *userRef) ToKubernetesEventUser() *storage.KubernetesEvent_User {

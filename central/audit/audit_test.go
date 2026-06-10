@@ -235,8 +235,8 @@ func (suite *AuditLogTestSuite) TestUserRequestsContinueToBeAudited() {
 	suite.Equal(v1.Audit_CLI, msg.GetMethod(), "User gRPC requests should have method=CLI")
 }
 
-func handler(err error) func(ctx context.Context, req interface{}) (interface{}, error) {
-	return func(ctx context.Context, req interface{}) (interface{}, error) {
+func handler(err error) func(ctx context.Context, req any) (any, error) {
+	return func(ctx context.Context, req any) (any, error) {
 		return nil, err
 	}
 }

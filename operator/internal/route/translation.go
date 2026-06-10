@@ -57,11 +57,11 @@ func (i *routeInjector) Enrich(ctx context.Context, obj k8sutil.Object, vals cha
 	}
 
 	routeVals := chartutil.Values{
-		"central": map[string]interface{}{
-			"exposure": map[string]interface{}{
-				"route": map[string]interface{}{
-					"reencrypt": map[string]interface{}{
-						"tls": map[string]interface{}{
+		"central": map[string]any{
+			"exposure": map[string]any{
+				"route": map[string]any{
+					"reencrypt": map[string]any{
+						"tls": map[string]any{
 							"destinationCACertificate": string(tlsSecret.Data[mtls.CACertFileName]),
 						},
 					},

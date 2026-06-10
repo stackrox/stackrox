@@ -47,7 +47,7 @@ func (w *pollWatcher) Run(ctx concurrency.Waitable, interval time.Duration) {
 }
 
 func (w *pollWatcher) pollAndHandleOnce() error {
-	var val interface{}
+	var val any
 	var updateErr error
 
 	changed := false

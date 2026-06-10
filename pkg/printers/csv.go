@@ -122,7 +122,7 @@ func NewCSVPrinter(rowJSONPathExpression string, options ...CSVPrinterOption) *C
 // Print prints the given json object into csv row(s) and writes it to the given writer.
 // It will return an error if there are any issues with the JSON object, constructing the rows or
 // writing to the io.Writer.
-func (c *CSVPrinter) Print(jsonObject interface{}, out io.Writer) error {
+func (c *CSVPrinter) Print(jsonObject any, out io.Writer) error {
 	csvWriter := csv.NewWriter(out)
 
 	rowMapper, err := gjson.NewRowMapper(jsonObject, c.rowJSONPathExpression, c.columnTreeOptions...)

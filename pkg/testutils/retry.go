@@ -12,10 +12,10 @@ var (
 
 // T generalizes testing.T
 type T interface {
-	Errorf(format string, args ...interface{})
-	Fatalf(format string, args ...interface{})
+	Errorf(format string, args ...any)
+	Fatalf(format string, args ...any)
 	FailNow()
-	Logf(format string, args ...interface{})
+	Logf(format string, args ...any)
 }
 
 type failure struct{}
@@ -24,11 +24,11 @@ type retryT struct {
 	t T
 }
 
-func (retryT) Errorf(string, ...interface{}) {
+func (retryT) Errorf(string, ...any) {
 	panic(failure{})
 }
 
-func (retryT) Fatalf(string, ...interface{}) {
+func (retryT) Fatalf(string, ...any) {
 	panic(failure{})
 }
 
@@ -36,7 +36,7 @@ func (retryT) FailNow() {
 	panic(failure{})
 }
 
-func (r retryT) Logf(format string, args ...interface{}) {
+func (r retryT) Logf(format string, args ...any) {
 	r.t.Logf(format, args...)
 }
 

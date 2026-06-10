@@ -39,7 +39,7 @@ func GetTargetRef(target ComplianceTarget) TargetRef {
 }
 
 // TargetObject obtains the underlying object for a target.
-func TargetObject(tgt ComplianceTarget) interface{} {
+func TargetObject(tgt ComplianceTarget) any {
 	switch tgt.Kind() {
 	case framework.ClusterKind:
 		return tgt.Cluster()

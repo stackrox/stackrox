@@ -14,7 +14,7 @@ type watchHandler struct {
 	manager *basic.Manager
 }
 
-func (h *watchHandler) OnChange(dir string) (interface{}, error) {
+func (h *watchHandler) OnChange(dir string) (any, error) {
 	htpasswdPath := filepath.Join(dir, htpasswdFile)
 	f, err := os.Open(htpasswdPath)
 	if err != nil {
@@ -25,7 +25,7 @@ func (h *watchHandler) OnChange(dir string) (interface{}, error) {
 	return htpasswd.ReadHashFile(f)
 }
 
-func (h *watchHandler) OnStableUpdate(val interface{}, err error) {
+func (h *watchHandler) OnStableUpdate(val any, err error) {
 	var hashFile *htpasswd.HashFile
 	if err != nil {
 		log.Warnf("Error reading htpasswd file: %v. Basic (username/password) auth will be disabled until the issue is remediated", err)

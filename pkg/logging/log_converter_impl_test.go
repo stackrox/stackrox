@@ -19,7 +19,7 @@ func TestConvert(t *testing.T) {
 		msg    string
 		level  string
 		module string
-		fields []interface{}
+		fields []any
 	}{
 		{
 			event: &events.AdministrationEvent{
@@ -34,7 +34,7 @@ func TestConvert(t *testing.T) {
 			msg:    "Warn: this is an events test",
 			level:  "warn",
 			module: "reprocessor",
-			fields: []interface{}{ImageName("some-image"), zap.Bool("another", true)},
+			fields: []any{ImageName("some-image"), zap.Bool("another", true)},
 		},
 		{
 			event: &events.AdministrationEvent{
@@ -49,7 +49,7 @@ func TestConvert(t *testing.T) {
 			msg:    "Error: this is an events test",
 			level:  "error",
 			module: "pkg/notifiers/awssh",
-			fields: []interface{}{
+			fields: []any{
 				NotifierName("some-notifier"), String("something", "somewhere"),
 				ErrCode("awssh-cache-exhausted"),
 			},
@@ -68,7 +68,7 @@ func TestConvert(t *testing.T) {
 			msg:    "Error: this is an events test",
 			level:  "error",
 			module: "apitoken/expiration",
-			fields: []interface{}{
+			fields: []any{
 				APITokenID("some-token-id"), APITokenName("some-token-name"),
 			},
 		},
@@ -76,7 +76,7 @@ func TestConvert(t *testing.T) {
 			msg:    "Error: something went wrong",
 			level:  "error",
 			module: "pkg/random/something",
-			fields: []interface{}{
+			fields: []any{
 				String("response", "some api response"),
 			},
 		},

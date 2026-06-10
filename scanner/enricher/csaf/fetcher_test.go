@@ -15,7 +15,7 @@ func TestFetchEnrichment(t *testing.T) {
 	ctx := test.Logging(t)
 	root, c := testvex.ServeSecDB(ctx, t, "testdata/server.txtar")
 	enricher := &Enricher{}
-	err := enricher.Configure(ctx, func(v interface{}) error {
+	err := enricher.Configure(ctx, func(v any) error {
 		cf := v.(*Config)
 		cf.URL = root + "/"
 		return nil

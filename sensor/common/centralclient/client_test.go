@@ -167,7 +167,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_ErrorHandling() {
 		t.Run(name, func() {
 			ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				t.Contains(r.URL.String(), "/v1/tls-challenge?challengeToken=")
-				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				_ = json.NewEncoder(w).Encode(map[string]any{
 					"trustInfoSerialized": testCase.TrustInfoSerialized,
 					"signature":           testCase.TrustInfoSignature,
 				})
@@ -210,7 +210,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_GetCertificate() {
 		t.Require().NoError(err)
 		t.Assert().Len(sensorChallengeTokenBytes, centralsensor.ChallengeTokenLength)
 
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"trustInfoSerialized": t.trustInfoExample,
 			"signature":           t.signatureExample,
 		})
@@ -244,7 +244,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_GetCertificate() {
 
 func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithSignatureSignedByAnotherPrivateKey_ShouldFail() {
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"trustInfoSerialized": t.trustInfoExample,
 			"signature":           invalidSignature,
 		})
@@ -261,7 +261,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithSignatureSignedByAnotherPri
 
 func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithInvalidTrustInfo() {
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"trustInfoSerialized": base64.StdEncoding.EncodeToString([]byte("Invalid trust info")),
 			"signature":           t.signatureExample,
 		})
@@ -277,7 +277,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithInvalidTrustInfo() {
 
 func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithInvalidSignature() {
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"trustInfoSerialized": t.trustInfoExample,
 			"signature":           base64.StdEncoding.EncodeToString([]byte("Invalid signature")),
 		})
@@ -294,7 +294,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithInvalidSignature() {
 
 func (t *ClientTestSuite) TestGetTLSTrustedCertsWithDifferentSensorChallengeShouldFail() {
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"trustInfoSerialized": t.trustInfoExample, "signature": t.signatureExample})
+		_ = json.NewEncoder(w).Encode(map[string]any{"trustInfoSerialized": t.trustInfoExample, "signature": t.signatureExample})
 	}))
 	defer ts.Close()
 
@@ -409,7 +409,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCA() {
 			// Test server that returns the TLSChallengeResponse built above
 			ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				t.Contains(r.URL.String(), "/v1/tls-challenge?challengeToken=")
-				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				_ = json.NewEncoder(w).Encode(map[string]any{
 					"trustInfoSerialized":  base64.StdEncoding.EncodeToString(trustInfoBytes),
 					"signature":            base64.StdEncoding.EncodeToString(primarySignature),
 					"signatureSecondaryCa": base64.StdEncoding.EncodeToString(secondarySignature),

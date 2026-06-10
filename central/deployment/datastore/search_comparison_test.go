@@ -250,7 +250,7 @@ func (s *SearchComparisonTestSuite) TestDeploymentSearchResults() {
 		{
 			deployment: fixtures.GetDeployment(),
 			query: search.NewQueryBuilder().AddGenericTypeLinkedFieldsHighligted(
-				[]search.FieldLabel{search.AddCapabilities, search.Privileged}, []interface{}{"SYS_ADMIN", true}).ProtoQuery(),
+				[]search.FieldLabel{search.AddCapabilities, search.Privileged}, []any{"SYS_ADMIN", true}).ProtoQuery(),
 		},
 	}
 

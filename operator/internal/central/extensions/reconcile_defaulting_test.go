@@ -171,7 +171,7 @@ func centralToUnstructured(t *testing.T, central *platform.Central) *unstructure
 
 func extractCentralDefaults(t *testing.T, u *unstructured.Unstructured) *platform.CentralSpec {
 	defaults := platform.CentralSpec{}
-	unstructuredCentralDefaults, ok := u.Object["defaults"].(map[string]interface{})
+	unstructuredCentralDefaults, ok := u.Object["defaults"].(map[string]any)
 	if ok {
 		err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredCentralDefaults, &defaults)
 		assert.Nil(t, err, "failed to extract Central Defaults from unstructured object")

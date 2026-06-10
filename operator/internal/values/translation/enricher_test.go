@@ -39,23 +39,23 @@ func TestWithEnrichment(t *testing.T) {
 		},
 		"no enrichment": {
 			translator: values.TranslatorFunc(func(_ context.Context, obj *unstructured.Unstructured) (chartutil.Values, error) {
-				return map[string]interface{}{"foo": "bar"}, nil
+				return map[string]any{"foo": "bar"}, nil
 			}),
-			want: map[string]interface{}{"foo": "bar"},
+			want: map[string]any{"foo": "bar"},
 		},
 		"with enrichment": {
 			translator: values.TranslatorFunc(func(_ context.Context, obj *unstructured.Unstructured) (chartutil.Values, error) {
-				return map[string]interface{}{"foo": "val1", "bar": "val2"}, nil
+				return map[string]any{"foo": "val1", "bar": "val2"}, nil
 			}),
 			enrichers: []Enricher{
 				enricher{key: "bar", val: "val3"},
 				enricher{key: "baz", val: "val4"},
 			},
-			want: map[string]interface{}{"foo": "val1", "bar": "val3", "baz": "val4"},
+			want: map[string]any{"foo": "val1", "bar": "val3", "baz": "val4"},
 		},
 		"enrichment error": {
 			translator: values.TranslatorFunc(func(_ context.Context, obj *unstructured.Unstructured) (chartutil.Values, error) {
-				return map[string]interface{}{"foo": "val1", "bar": "val2"}, nil
+				return map[string]any{"foo": "val1", "bar": "val2"}, nil
 			}),
 			enrichers: []Enricher{
 				enricher{key: "bar", val: "val3"},

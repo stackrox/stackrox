@@ -67,7 +67,7 @@ func invertNumericPrefix(prefix string) string {
 	return prefixesToInversions[prefix]
 }
 
-func getValueAsFloat64(foundValue interface{}) (float64, bool) {
+func getValueAsFloat64(foundValue any) (float64, bool) {
 	switch foundValue := foundValue.(type) {
 	case float64:
 		return foundValue, true
@@ -103,9 +103,9 @@ func getComparator(prefix string) func(a, b float64) bool {
 	}
 }
 
-func getEquivalentGoFuncForNumericQuery(prefix string, value float64) func(foundValue interface{}) bool {
+func getEquivalentGoFuncForNumericQuery(prefix string, value float64) func(foundValue any) bool {
 	comparator := getComparator(prefix)
-	return func(foundValue interface{}) bool {
+	return func(foundValue any) bool {
 		asFloat, ok := getValueAsFloat64(foundValue)
 		if !ok {
 			return false
@@ -119,8 +119,8 @@ func createNumericRangeQuery(root string, lower float64, upper float64) WhereCla
 	upperStr := readable.Float(upper, 2)
 	return WhereClause{
 		Query:  fmt.Sprintf("(%s > $$) AND (%s < $$)", root, root),
-		Values: []interface{}{lowerStr, upperStr},
-		equivalentGoFunc: func(foundValue interface{}) bool {
+		Values: []any{lowerStr, upperStr},
+		equivalentGoFunc: func(foundValue any) bool {
 			asFloat, ok := getValueAsFloat64(foundValue)
 			if !ok {
 				return false
@@ -138,7 +138,7 @@ func createNumericPrefixQuery(root string, prefix string, value float64) WhereCl
 	}
 	return WhereClause{
 		Query:            fmt.Sprintf("%s %s $$", root, prefix),
-		Values:           []interface{}{valueStr},
+		Values:           []any{valueStr},
 		equivalentGoFunc: getEquivalentGoFuncForNumericQuery(prefix, value),
 	}
 }
@@ -185,7 +185,7 @@ func newNumericQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 		}
 		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
 			Query:  fmt.Sprintf("%s is %s null", ctx.qualifiedColumnName, existenceStr),
-			Values: []interface{}{},
+			Values: []any{},
 		}, nil), nil
 	}
 

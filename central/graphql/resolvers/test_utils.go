@@ -651,7 +651,7 @@ func getFixableRawQuery(fixable bool) (string, error) {
 	return search.NewQueryBuilder().AddBools(search.Fixable, fixable).RawQuery()
 }
 
-func getIDList(ctx context.Context, resolvers interface{}) []string {
+func getIDList(ctx context.Context, resolvers any) []string {
 	var list []string
 	switch res := resolvers.(type) {
 	case []ImageVulnerabilityResolver:

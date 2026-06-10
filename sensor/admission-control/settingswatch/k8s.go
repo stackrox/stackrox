@@ -45,7 +45,7 @@ type k8sSettingsWatch struct {
 	namespace string
 }
 
-func getConfigMapFromObj(obj interface{}) *v1.ConfigMap {
+func getConfigMapFromObj(obj any) *v1.ConfigMap {
 	cm, _ := obj.(*v1.ConfigMap)
 	if cm == nil || cm.GetName() != admissioncontrol.ConfigMapName {
 		return nil
@@ -53,7 +53,7 @@ func getConfigMapFromObj(obj interface{}) *v1.ConfigMap {
 	return cm
 }
 
-func (w *k8sSettingsWatch) OnAdd(obj interface{}, _ bool) {
+func (w *k8sSettingsWatch) OnAdd(obj any, _ bool) {
 	cm := getConfigMapFromObj(obj)
 	if cm == nil {
 		return
@@ -62,7 +62,7 @@ func (w *k8sSettingsWatch) OnAdd(obj interface{}, _ bool) {
 	w.parseAndSendSettings(cm)
 }
 
-func (w *k8sSettingsWatch) OnUpdate(_, newObj interface{}) {
+func (w *k8sSettingsWatch) OnUpdate(_, newObj any) {
 	cm := getConfigMapFromObj(newObj)
 	if cm == nil {
 		return
@@ -71,7 +71,7 @@ func (w *k8sSettingsWatch) OnUpdate(_, newObj interface{}) {
 	w.parseAndSendSettings(cm)
 }
 
-func (w *k8sSettingsWatch) OnDelete(_ interface{}) {
+func (w *k8sSettingsWatch) OnDelete(_ any) {
 	w.sendSettings(nil)
 }
 

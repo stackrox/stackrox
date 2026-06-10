@@ -398,7 +398,7 @@ func (s *serviceImpl) SubmitDryRunPolicyJob(ctx context.Context, request *storag
 		return nil, err
 	}
 
-	t := func(c concurrency.ErrorWaitable) (interface{}, error) {
+	t := func(c concurrency.ErrorWaitable) (any, error) {
 		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
 		return s.predicateBasedDryRunPolicy(ctx, c, request)
 	}
@@ -407,7 +407,7 @@ func (s *serviceImpl) SubmitDryRunPolicyJob(ctx context.Context, request *storag
 	if err != nil {
 		return nil, err
 	}
-	metadata := map[string]interface{}{identityUIDKey: identity.UID()}
+	metadata := map[string]any{identityUIDKey: identity.UID()}
 	id, err := s.dryRunPolicyJobManager.AddTask(metadata, t)
 	if err != nil {
 		return nil, errors.Errorf("failed to add dry-run job: %v", err)
@@ -732,7 +732,7 @@ func (s *serviceImpl) disablePolicyNotification(ctx context.Context, policyID st
 	return nil
 }
 
-func checkIdentityFromMetadata(ctx context.Context, metadata map[string]interface{}) error {
+func checkIdentityFromMetadata(ctx context.Context, metadata map[string]any) error {
 	identityUID, ok := metadata[identityUIDKey].(string)
 	if !ok {
 		return errors.New("Invalid job.")

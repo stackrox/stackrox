@@ -10,13 +10,13 @@ import (
 
 // Queryable is an interface to support both Tx and Conn
 type Queryable interface {
-	Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error)
-	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
+	Query(ctx context.Context, sql string, args ...any) (*Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
 // Executable is an interface to support both Tx and Conn
 type Executable interface {
-	Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error)
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 }
 
 // Conn is a wrapper around pgxpool.Conn
@@ -57,7 +57,7 @@ func (c *Conn) Begin(ctx context.Context) (*Tx, context.Context, error) {
 }
 
 // Exec wraps pgxpool.Conn Exec
-func (c *Conn) Exec(ctx context.Context, sql string, args ...interface{}) (ct pgconn.CommandTag, err error) {
+func (c *Conn) Exec(ctx context.Context, sql string, args ...any) (ct pgconn.CommandTag, err error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 	defer cancel()
 
@@ -75,7 +75,7 @@ func (c *Conn) Exec(ctx context.Context, sql string, args ...interface{}) (ct pg
 }
 
 // Query wraps pgxpool.Conn Query
-func (c *Conn) Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error) {
+func (c *Conn) Query(ctx context.Context, sql string, args ...any) (*Rows, error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
 	if tx, ok := TxFromContext(ctx); ok {
@@ -98,7 +98,7 @@ func (c *Conn) Query(ctx context.Context, sql string, args ...interface{}) (*Row
 }
 
 // QueryRow wraps pgxpool.Conn QueryRow
-func (c *Conn) QueryRow(ctx context.Context, sql string, args ...interface{}) *Row {
+func (c *Conn) QueryRow(ctx context.Context, sql string, args ...any) *Row {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
 	var row pgx.Row

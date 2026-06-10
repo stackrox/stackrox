@@ -18,13 +18,13 @@ type testLogger struct {
 	t *testing.T
 }
 
-func (l *testLogger) InfofLn(format string, args ...interface{}) { l.t.Logf(format, args...) }
-func (l *testLogger) WarnfLn(format string, args ...interface{}) { l.t.Logf("WARN: "+format, args...) }
-func (l *testLogger) ErrfLn(format string, args ...interface{})  { l.t.Logf("ERROR: "+format, args...) }
-func (l *testLogger) ErrorfLn(format string, args ...interface{}) {
+func (l *testLogger) InfofLn(format string, args ...any) { l.t.Logf(format, args...) }
+func (l *testLogger) WarnfLn(format string, args ...any) { l.t.Logf("WARN: "+format, args...) }
+func (l *testLogger) ErrfLn(format string, args ...any)  { l.t.Logf("ERROR: "+format, args...) }
+func (l *testLogger) ErrorfLn(format string, args ...any) {
 	l.t.Logf("ERROR: "+format, args...)
 }
-func (l *testLogger) PrintfLn(format string, args ...interface{}) { l.t.Logf(format, args...) }
+func (l *testLogger) PrintfLn(format string, args ...any) { l.t.Logf(format, args...) }
 
 // TestExtractZipToFolder_HappyPaths verifies ZIP extraction works correctly for various valid scenarios
 func TestExtractZipToFolder_HappyPaths(t *testing.T) {

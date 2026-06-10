@@ -5,7 +5,7 @@ package storecache
 // The cache must never update an existing key with a new value that has an older version
 // The cache must never write to any empty key with a version lower than the last Removed version
 type Cache interface {
-	Add(key, value interface{}, version uint64)
-	Get(key interface{}) interface{}
-	Remove(key interface{}, version uint64) bool
+	Add(key, value any, version uint64)
+	Get(key any) any
+	Remove(key any, version uint64) bool
 }

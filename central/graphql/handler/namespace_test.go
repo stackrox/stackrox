@@ -14,7 +14,7 @@ import (
 
 func TestGetNamespaces(t *testing.T) {
 	mocks := mockResolver(t)
-	loaders.RegisterTypeFactory(reflect.TypeFor[storage.NamespaceMetadata](), func() interface{} {
+	loaders.RegisterTypeFactory(reflect.TypeFor[storage.NamespaceMetadata](), func() any {
 		return loaders.NewNamespaceLoader(mocks.namespace)
 	})
 	mocks.namespace.EXPECT().Search(gomock.Any(), emptyPaginatedQuery()).Return([]search.Result{

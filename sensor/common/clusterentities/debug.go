@@ -27,7 +27,7 @@ func (e *Store) StartDebugServer() {
 
 // Debug returns an object that represents the current state of the entire store
 func (e *Store) Debug() []byte {
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	m["endpoints"] = e.endpointsStore.debug()
 	m["IPs"] = e.podIPsStore.debug()
 	m["containerIDs"] = e.containerIDsStore.debug()
@@ -45,7 +45,7 @@ func (e *Store) Debug() []byte {
 	return ret
 }
 
-func (e *Store) track(format string, vals ...interface{}) {
+func (e *Store) track(format string, vals ...any) {
 	if !e.debugMode {
 		return
 	}
@@ -54,11 +54,11 @@ func (e *Store) track(format string, vals ...interface{}) {
 	e.trace[time.Now().Format(time.RFC3339Nano)] = fmt.Sprintf(format, vals...)
 }
 
-func (e *containerIDsStore) debug() interface{} {
-	dbg := make(map[string]map[string]interface{})
-	dbg["containerIDMap"] = make(map[string]interface{})
-	dbg["historicalContainerIDs"] = make(map[string]interface{})
-	dbg["reverseContainerIDMap"] = make(map[string]interface{})
+func (e *containerIDsStore) debug() any {
+	dbg := make(map[string]map[string]any)
+	dbg["containerIDMap"] = make(map[string]any)
+	dbg["historicalContainerIDs"] = make(map[string]any)
+	dbg["reverseContainerIDMap"] = make(map[string]any)
 
 	concurrency.WithRLock(&e.mutex, func() {
 		for cID, metadata := range e.containerIDMap {
@@ -66,7 +66,7 @@ func (e *containerIDsStore) debug() interface{} {
 		}
 		for cID, submap := range e.historicalContainerIDs {
 			for metadata, status := range submap {
-				dbg["historicalContainerIDs"][cID] = map[string]interface{}{
+				dbg["historicalContainerIDs"][cID] = map[string]any{
 					"metadata":  metadata,
 					"ticksLeft": status.ticksLeft,
 				}
@@ -79,11 +79,11 @@ func (e *containerIDsStore) debug() interface{} {
 	return dbg
 }
 
-func (e *podIPsStore) debug() interface{} {
-	dbg := make(map[string]map[string]interface{})
-	dbg["ipMap"] = make(map[string]interface{})
-	dbg["reverseIPMap"] = make(map[string]interface{})
-	dbg["historicalIPs"] = make(map[string]interface{})
+func (e *podIPsStore) debug() any {
+	dbg := make(map[string]map[string]any)
+	dbg["ipMap"] = make(map[string]any)
+	dbg["reverseIPMap"] = make(map[string]any)
+	dbg["historicalIPs"] = make(map[string]any)
 
 	concurrency.WithRLock(&e.mutex, func() {
 		for addr, deplSet := range e.ipMap {
@@ -99,7 +99,7 @@ func (e *podIPsStore) debug() interface{} {
 		}
 		for addr, submap := range e.historicalIPs {
 			for deplID, status := range submap {
-				dbg["historicalIPs"][addr.AsNetIP().String()] = map[string]interface{}{
+				dbg["historicalIPs"][addr.AsNetIP().String()] = map[string]any{
 					"deplID":    deplID,
 					"ticksLeft": status.ticksLeft,
 				}
@@ -109,21 +109,21 @@ func (e *podIPsStore) debug() interface{} {
 	return dbg
 }
 
-func (e *endpointsStore) debug() interface{} {
-	dbg := make(map[string]map[string]map[string]interface{})
-	dbg["endpointMap"] = make(map[string]map[string]interface{})
-	dbg["reverseEndpointMap"] = make(map[string]map[string]interface{})
-	dbg["historicalEndpoints"] = make(map[string]map[string]interface{})
-	dbg["reverseHistoricalEndpoints"] = make(map[string]map[string]interface{})
+func (e *endpointsStore) debug() any {
+	dbg := make(map[string]map[string]map[string]any)
+	dbg["endpointMap"] = make(map[string]map[string]any)
+	dbg["reverseEndpointMap"] = make(map[string]map[string]any)
+	dbg["historicalEndpoints"] = make(map[string]map[string]any)
+	dbg["reverseHistoricalEndpoints"] = make(map[string]map[string]any)
 
 	concurrency.WithRLock(&e.mutex, func() {
 		for ep, submap := range e.endpointMap {
-			dbg["endpointMap"][ep.String()] = make(map[string]interface{})
+			dbg["endpointMap"][ep.String()] = make(map[string]any)
 			for deplID, targetInfoSet := range submap {
 				dbg["endpointMap"][ep.String()][deplID] = targetInfoSet.AsSlice()
 			}
 		}
-		dbg["reverseEndpointMap"]["deployments"] = make(map[string]interface{})
+		dbg["reverseEndpointMap"]["deployments"] = make(map[string]any)
 		for deplID, setOfEp := range e.reverseEndpointMap {
 			// setOfEp.AsSlice() does not print well
 			arr := make([]string, 0, setOfEp.Cardinality())
@@ -134,21 +134,21 @@ func (e *endpointsStore) debug() interface{} {
 			dbg["reverseEndpointMap"]["deployments"][deplID] = arr
 		}
 		for ep, submap := range e.historicalEndpoints {
-			dbg["historicalEndpoints"][ep.String()] = make(map[string]interface{})
+			dbg["historicalEndpoints"][ep.String()] = make(map[string]any)
 			for deplID, targetInfoSetMap := range submap {
 				for targetInfo, status := range targetInfoSetMap {
-					dbg["historicalEndpoints"][ep.String()][deplID] = map[string]interface{}{
+					dbg["historicalEndpoints"][ep.String()][deplID] = map[string]any{
 						"targetInfo": targetInfo,
 						"ticksLeft":  status.ticksLeft,
 					}
 				}
 			}
 		}
-		dbg["reverseHistoricalEndpoints"] = make(map[string]map[string]interface{})
+		dbg["reverseHistoricalEndpoints"] = make(map[string]map[string]any)
 		for deplID, submap := range e.reverseHistoricalEndpoints {
-			dbg["reverseHistoricalEndpoints"][deplID] = make(map[string]interface{})
+			dbg["reverseHistoricalEndpoints"][deplID] = make(map[string]any)
 			for ep, status := range submap {
-				dbg["reverseHistoricalEndpoints"][deplID] = map[string]interface{}{
+				dbg["reverseHistoricalEndpoints"][deplID] = map[string]any{
 					"endpoint":  ep.String(),
 					"ticksLeft": status.ticksLeft,
 				}

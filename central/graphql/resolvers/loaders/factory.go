@@ -10,7 +10,7 @@ import (
 var Factory = newLoaderFactory()
 
 // TypedFactory is a Loader factory. It returns a new instance of a Loader for a single type every call.
-type TypedFactory func() interface{}
+type TypedFactory func() any
 
 // RegisterTypeFactory registers a TypedFactory for the given reflect.Type, which is the key we use to decide
 // what kind of loader to generate.
@@ -29,7 +29,7 @@ type loaderFactoryImpl struct {
 }
 
 // CreateLoader creates a new, type specific, loader for the given input type.
-func (lf *loaderFactoryImpl) CreateLoader(lt reflect.Type) (interface{}, error) {
+func (lf *loaderFactoryImpl) CreateLoader(lt reflect.Type) (any, error) {
 	loaderFactory, exists := lf.typedFactories[lt]
 	if !exists {
 		return nil, errors.New("do not have loader for type")

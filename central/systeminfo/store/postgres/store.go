@@ -126,7 +126,7 @@ func insert(ctx context.Context, tx *postgres.Tx, obj *storage.SystemInfo) error
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		serialized,
 	}
 

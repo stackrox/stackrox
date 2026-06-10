@@ -373,7 +373,7 @@ func (pc *PolicyAsCodeSuite) createPolicyInK8s(toCreate *v1alpha1.SecurityPolicy
 func (pc *PolicyAsCodeSuite) watch(name string) (chan *v1alpha1.SecurityPolicy, func()) {
 	ch := make(chan *v1alpha1.SecurityPolicy)
 	reg, err := pc.informer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		UpdateFunc: func(oldObj, newObj interface{}) {
+		UpdateFunc: func(oldObj, newObj any) {
 			p := pc.toPolicy(newObj)
 			if p.GetName() == name {
 				ch <- p
@@ -389,20 +389,20 @@ func (pc *PolicyAsCodeSuite) watch(name string) (chan *v1alpha1.SecurityPolicy, 
 	return ch, deferFunc
 }
 
-func (pc *PolicyAsCodeSuite) toPolicy(i interface{}) *v1alpha1.SecurityPolicy {
+func (pc *PolicyAsCodeSuite) toPolicy(i any) *v1alpha1.SecurityPolicy {
 	policyCR := v1alpha1.SecurityPolicy{}
 	obj := i.(*unstructured.Unstructured)
 	pc.Require().NoError(runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &policyCR))
 	return &policyCR
 }
 
-func (pc *PolicyAsCodeSuite) toUnstructured(i interface{}) *unstructured.Unstructured {
+func (pc *PolicyAsCodeSuite) toUnstructured(i any) *unstructured.Unstructured {
 	m, err := runtime.DefaultUnstructuredConverter.ToUnstructured(i)
 	pc.Require().NoError(err)
 	return &unstructured.Unstructured{Object: m}
 }
 
-func (pc *PolicyAsCodeSuite) fromUnstructured(u *unstructured.Unstructured, i interface{}) {
+func (pc *PolicyAsCodeSuite) fromUnstructured(u *unstructured.Unstructured, i any) {
 	pc.Require().NoError(runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, i))
 }
 

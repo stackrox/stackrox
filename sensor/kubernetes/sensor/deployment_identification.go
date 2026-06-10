@@ -40,7 +40,7 @@ func populateFromServiceAccountTokenFile(out *storage.SensorDeploymentIdentifica
 		return errors.Wrapf(err, "parsing service account JWT from file %s", tokenFile)
 	}
 
-	var claims map[string]interface{}
+	var claims map[string]any
 	if err := saToken.UnsafeClaimsWithoutVerification(&claims); err != nil {
 		return errors.Wrapf(err, "obtaining claims from service account JWT from file %s", tokenFile)
 	}

@@ -17,11 +17,11 @@ func getProxyConfigHelmValues(obj k8sutil.Object, proxyEnvVars map[string]string
 
 	secretName := getProxyEnvSecretName(obj)
 
-	envVarsMap := map[string]interface{}{}
+	envVarsMap := map[string]any{}
 	for envVarName := range proxyEnvVars {
-		envVarsMap[envVarName] = map[string]interface{}{
-			"valueFrom": map[string]interface{}{
-				"secretKeyRef": map[string]interface{}{
+		envVarsMap[envVarName] = map[string]any{
+			"valueFrom": map[string]any{
+				"secretKeyRef": map[string]any{
 					"key":  envVarName,
 					"name": secretName,
 				},
@@ -30,7 +30,7 @@ func getProxyConfigHelmValues(obj k8sutil.Object, proxyEnvVars map[string]string
 	}
 
 	return chartutil.Values{
-		"customize": map[string]interface{}{
+		"customize": map[string]any{
 			"envVars": envVarsMap,
 		},
 	}

@@ -389,7 +389,7 @@ type messagesMatcher struct {
 	error           string
 }
 
-func (m *messagesMatcher) Matches(target interface{}) bool {
+func (m *messagesMatcher) Matches(target any) bool {
 	msg, ok := target.(*central.MsgFromSensor)
 	if !ok {
 		m.error += " received message that isn't a MsgFromSensor"

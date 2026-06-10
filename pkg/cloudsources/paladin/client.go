@@ -276,7 +276,7 @@ func (c *paladinClient) getAssets(ctx context.Context) (*AssetsResponse, error) 
 	return &assets, nil
 }
 
-func (c *paladinClient) sendRequest(ctx context.Context, method string, apiPath string, query string, response interface{}) error {
+func (c *paladinClient) sendRequest(ctx context.Context, method string, apiPath string, query string, response any) error {
 	path, err := url.JoinPath(c.endpoint, apiPath)
 	if err != nil {
 		return errox.InvalidArgs.CausedBy(err)

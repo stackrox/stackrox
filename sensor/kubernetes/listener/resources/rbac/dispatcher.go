@@ -34,7 +34,7 @@ func NewDispatcher(store Store, k8sAPI kubernetes.Interface) *Dispatcher {
 }
 
 // ProcessEvent handles RBAC-related events
-func (r *Dispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (r *Dispatcher) ProcessEvent(obj, _ any, action central.ResourceAction) *component.ResourceEvent {
 	update := r.processEvent(obj, action)
 	events := component.NewEvent(update.events...)
 	serviceAccountReferences := mapReference(update.deploymentReference)
@@ -55,7 +55,7 @@ func mapReference(subjects set.Set[namespacedSubject]) []resolver.NamespaceServi
 	return result
 }
 
-func (r *Dispatcher) processEvent(obj interface{}, action central.ResourceAction) rbacUpdate {
+func (r *Dispatcher) processEvent(obj any, action central.ResourceAction) rbacUpdate {
 	var update rbacUpdate
 	switch obj := obj.(type) {
 	case *v1.Role:

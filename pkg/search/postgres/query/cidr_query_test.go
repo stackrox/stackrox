@@ -9,7 +9,7 @@ import (
 )
 
 type PredicatePair struct {
-	value             interface{}
+	value             any
 	expectedSelection bool
 }
 
@@ -20,13 +20,13 @@ func TestCIDRQuery(t *testing.T) {
 		value             string
 		expectErr         bool
 		expectedQuery     string
-		expectedValues    []interface{}
+		expectedValues    []any
 		goEquivalentPairs *[]PredicatePair
 	}{
 		{
 			value:          valueCIDR.String(),
 			expectedQuery:  "blah <<= $$",
-			expectedValues: []interface{}{valueCIDR},
+			expectedValues: []any{valueCIDR},
 			goEquivalentPairs: &[]PredicatePair{
 				{
 					value:             "1.1.1.1/32",

@@ -77,7 +77,7 @@ func (d *db) Begin(ctx context.Context) (*Tx, error) {
 }
 
 // Exec wraps pgxpool.Pool Exec
-func (d *db) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error) {
+func (d *db) Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 	defer cancel()
 
@@ -98,7 +98,7 @@ func (d *db) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.
 }
 
 // Query wraps pgxpool.Pool Query
-func (d *db) Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error) {
+func (d *db) Query(ctx context.Context, sql string, args ...any) (*Rows, error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 	rows := &Rows{
 		query:      sql,
@@ -119,7 +119,7 @@ func (d *db) Query(ctx context.Context, sql string, args ...interface{}) (*Rows,
 }
 
 // QueryRow wraps pgxpool.Pool QueryRow
-func (d *db) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
+func (d *db) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
 	row := &Row{

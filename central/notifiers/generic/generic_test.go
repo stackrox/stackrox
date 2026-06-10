@@ -58,7 +58,7 @@ func TestConstructJSON(t *testing.T) {
 			reader, err := notifier.constructJSON(fixtures.GetAlert(), alertMessageKey)
 			require.NoError(t, err)
 
-			jsonTarget := make(map[string]interface{})
+			jsonTarget := make(map[string]any)
 			assert.NoError(t, json.NewDecoder(reader).Decode(&jsonTarget))
 		})
 	}

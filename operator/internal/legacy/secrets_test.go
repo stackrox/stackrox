@@ -29,7 +29,7 @@ func Test_injector_Enrich(t *testing.T) {
 			existingSecrets: []string{"secret1"},
 			commonKey:       "imagePullSecrets",
 			commonSecrets:   []string{"secret1"},
-			vals: map[string]interface{}{
+			vals: map[string]any{
 				"imagePullSecrets": "badger",
 			},
 			wantErr: fmt.Errorf("key %q maps to a string, table expected", "imagePullSecrets"),
@@ -38,8 +38,8 @@ func Test_injector_Enrich(t *testing.T) {
 			existingSecrets: []string{"secret1"},
 			commonKey:       "imagePullSecrets",
 			commonSecrets:   []string{"secret1"},
-			vals: map[string]interface{}{
-				"imagePullSecrets": map[string]interface{}{
+			vals: map[string]any{
+				"imagePullSecrets": map[string]any{
 					"useExisting": "badger",
 				},
 			},
@@ -53,12 +53,12 @@ func Test_injector_Enrich(t *testing.T) {
 				"mainImagePullSecrets":      {"secret3", "secret4"},
 				"collectorImagePullSecrets": {"secret5", "secret6"},
 			},
-			want: map[string]interface{}{
-				"imagePullSecrets": map[string]interface{}{
-					"useExisting": []interface{}{"secret1"},
+			want: map[string]any{
+				"imagePullSecrets": map[string]any{
+					"useExisting": []any{"secret1"},
 				},
-				"mainImagePullSecrets": map[string]interface{}{
-					"useExisting": []interface{}{"secret3"},
+				"mainImagePullSecrets": map[string]any{
+					"useExisting": []any{"secret3"},
 				},
 			},
 		},
@@ -70,26 +70,26 @@ func Test_injector_Enrich(t *testing.T) {
 				"mainImagePullSecrets":      {"secret3", "secret4"},
 				"collectorImagePullSecrets": {"secret5", "secret6"},
 			},
-			vals: map[string]interface{}{
-				"imagePullSecrets": map[string]interface{}{
-					"useExisting": []interface{}{"secret01"},
+			vals: map[string]any{
+				"imagePullSecrets": map[string]any{
+					"useExisting": []any{"secret01"},
 				},
-				"mainImagePullSecrets": map[string]interface{}{
-					"useExisting": []interface{}{"secret02"},
+				"mainImagePullSecrets": map[string]any{
+					"useExisting": []any{"secret02"},
 				},
-				"collectorImagePullSecrets": map[string]interface{}{
-					"useExisting": []interface{}{"secret03"},
+				"collectorImagePullSecrets": map[string]any{
+					"useExisting": []any{"secret03"},
 				},
 			},
-			want: map[string]interface{}{
-				"imagePullSecrets": map[string]interface{}{
-					"useExisting": []interface{}{"secret01", "secret1"},
+			want: map[string]any{
+				"imagePullSecrets": map[string]any{
+					"useExisting": []any{"secret01", "secret1"},
 				},
-				"mainImagePullSecrets": map[string]interface{}{
-					"useExisting": []interface{}{"secret02", "secret3"},
+				"mainImagePullSecrets": map[string]any{
+					"useExisting": []any{"secret02", "secret3"},
 				},
-				"collectorImagePullSecrets": map[string]interface{}{
-					"useExisting": []interface{}{"secret03"},
+				"collectorImagePullSecrets": map[string]any{
+					"useExisting": []any{"secret03"},
 				},
 			},
 		},

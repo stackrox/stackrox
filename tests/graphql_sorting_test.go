@@ -26,9 +26,9 @@ func getDeploymentsWithSortOption(t *testing.T, field string, reversed bool) []*
 				namespace
   			}
 		}
-	`, map[string]interface{}{
-		"pagination": map[string]interface{}{
-			"sortOption": map[string]interface{}{"field": field, "reversed": reversed},
+	`, map[string]any{
+		"pagination": map[string]any{
+			"sortOption": map[string]any{"field": field, "reversed": reversed},
 		},
 	}, &resp, timeout)
 

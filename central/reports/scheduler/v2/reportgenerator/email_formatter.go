@@ -218,7 +218,7 @@ func formatSingleDetail[T any](writer *strings.Builder, heading string, values .
 	writer.WriteString("</div>")
 }
 
-func convertValueToFriendlyText(valI interface{}) string {
+func convertValueToFriendlyText(valI any) string {
 	switch val := valI.(type) {
 	case string:
 		return val

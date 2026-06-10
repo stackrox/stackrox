@@ -82,7 +82,7 @@ func NewStoreMap() *StoreMap {
 
 // Get retrieves the store for that type
 // Never return nil to prevent accidental panics if nil checks are not performed.
-func (s *StoreMap) Get(i interface{}) Store {
+func (s *StoreMap) Get(i any) Store {
 	if s.reconciliationMap == nil {
 		utils.Should(errors.Errorf("Attempted to perform a Get on a closed reconciliation store for the following: %+v", i))
 		return NewStore()
@@ -111,7 +111,7 @@ func (s *StoreMap) AddWithTypeString(typeString string, id string) {
 }
 
 // Add adds an id to the type
-func (s *StoreMap) Add(i interface{}, id string) {
+func (s *StoreMap) Add(i any, id string) {
 	typeString := reflectutils.Type(i)
 	s.AddWithTypeString(typeString, id)
 }

@@ -20,7 +20,7 @@ type RowMapper struct {
 // NewRowMapper creates a RowMapper which takes a json object and GJSON compatible multi-path JSON expression
 // and will retrieve all values from the JSON object and create a row representation in form of a two-dimensional
 // string array. Each element within the multi-path JSON expression will be seen as a column value
-func NewRowMapper(jsonObj interface{}, multiPathExpression string, options ...ColumnTreeOptions) (*RowMapper, error) {
+func NewRowMapper(jsonObj any, multiPathExpression string, options ...ColumnTreeOptions) (*RowMapper, error) {
 	bytes, err := json.Marshal(jsonObj)
 	if err != nil {
 		return nil, errox.InvariantViolation.CausedBy(err)

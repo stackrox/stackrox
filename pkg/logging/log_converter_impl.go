@@ -16,7 +16,7 @@ type zapLogConverter struct {
 	consoleEncoder zapcore.Encoder
 }
 
-func (z *zapLogConverter) Convert(msg string, level string, module string, context ...interface{}) *events.AdministrationEvent {
+func (z *zapLogConverter) Convert(msg string, level string, module string, context ...any) *events.AdministrationEvent {
 	enc := &stringObjectEncoder{
 		m:              make(map[string]string, len(context)),
 		consoleEncoder: z.consoleEncoder,

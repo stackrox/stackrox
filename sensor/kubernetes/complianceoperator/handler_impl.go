@@ -61,8 +61,8 @@ type scanScheduleConfiguration struct {
 	Suspend        *bool
 	Schedule       *string
 	ScanName       string
-	Request        interface{}
-	ValidationFunc func(interface{}) error
+	Request        any
+	ValidationFunc func(any) error
 }
 
 // NewRequestHandler returns instance of common.SensorComponent interface which can handle compliance requests from Central.
@@ -549,7 +549,7 @@ func (m *handlerImpl) getScanSettingForUpdate(getFunc func() (*unstructured.Unst
 	return obj, nil
 }
 
-func validateInterface(i interface{}) error {
+func validateInterface(i any) error {
 	switch req := i.(type) {
 	case *central.ApplyComplianceScanConfigRequest_SuspendScheduledScan:
 		return validateApplySuspendScheduledScanRequest(req)

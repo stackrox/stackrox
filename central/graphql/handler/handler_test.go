@@ -82,7 +82,7 @@ func mockResolver(t *testing.T) mocks {
 		SecretsDataStore:      secret,
 		NetworkPoliciesStore:  nps,
 	}
-	loaders.RegisterTypeFactory(reflect.TypeFor[storage.Deployment](), func() interface{} {
+	loaders.RegisterTypeFactory(reflect.TypeFor[storage.Deployment](), func() any {
 		return loaders.NewDeploymentLoader(deployment, deploymentView)
 	})
 
@@ -192,7 +192,7 @@ func executeTestQueryWithVariables(t *testing.T, mocks mocks, query string, vari
 		t.Fatal(err)
 	}
 	h := &relay.Handler{Schema: ourSchema}
-	vals := map[string]interface{}{"query": query}
+	vals := map[string]any{"query": query}
 	if variables != nil {
 		vals["variables"] = variables
 	}

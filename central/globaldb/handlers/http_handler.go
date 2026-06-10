@@ -24,7 +24,7 @@ func BackupDB(postgresDB postgres.DB, backupListener listener.BackupListener, in
 	return dumpDB(postgresDB, backupListener, includeCerts)
 }
 
-func logAndWriteErrorMsg(w http.ResponseWriter, code int, t string, args ...interface{}) {
+func logAndWriteErrorMsg(w http.ResponseWriter, code int, t string, args ...any) {
 	errMsg := fmt.Sprintf(t, args...)
 	log.Error(errMsg)
 	http.Error(w, errMsg, code)

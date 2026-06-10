@@ -35,8 +35,8 @@ func TestEnricher_UserValuesOverrideInjected(t *testing.T) {
 	e := NewEnricher(intermediateProfile)
 
 	vals := chartutil.Values{
-		"customize": map[string]interface{}{
-			"envVars": map[string]interface{}{
+		"customize": map[string]any{
+			"envVars": map[string]any{
 				"ROX_TLS_MIN_VERSION": "TLSv1.3",
 				"MY_CUSTOM_VAR":       "keep-me",
 			},

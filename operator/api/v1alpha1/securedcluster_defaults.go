@@ -23,7 +23,7 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
-func securedClusterDefaultsToUnstructured(securedCluster *SecuredCluster) (map[string]interface{}, error) {
+func securedClusterDefaultsToUnstructured(securedCluster *SecuredCluster) (map[string]any, error) {
 	defaults, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&securedCluster.Defaults)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func AddUnstructuredDefaultsToSecuredCluster(securedCluster *SecuredCluster, u *
 	if !found {
 		return nil
 	}
-	unstructuredDefaults, ok := defaultsInterface.(map[string]interface{})
+	unstructuredDefaults, ok := defaultsInterface.(map[string]any)
 	if !ok {
 		return errors.New("unstructured SecuredCluster defaults of unexpected type")
 	}

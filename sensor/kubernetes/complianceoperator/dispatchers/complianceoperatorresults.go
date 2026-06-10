@@ -79,7 +79,7 @@ func getSuiteName(labels map[string]string) string {
 }
 
 // ProcessEvent processes a compliance operator check result
-func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (c *ResultDispatcher) ProcessEvent(obj, _ any, action central.ResourceAction) *component.ResourceEvent {
 	var complianceCheckResult v1alpha1.ComplianceCheckResult
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)

@@ -18,7 +18,7 @@ type customMarshaler struct {
 	*runtime.JSONPb
 }
 
-func (c customMarshaler) Unmarshal(data []byte, v interface{}) error {
+func (c customMarshaler) Unmarshal(data []byte, v any) error {
 	err := protojson.Unmarshal(data, v.(proto.Message))
 	if err == nil {
 		return nil
@@ -30,7 +30,7 @@ func (c customMarshaler) Unmarshal(data []byte, v interface{}) error {
 	return nil
 }
 
-func (c customMarshaler) unmarshalBackwardCompatible(data []byte, v interface{}) bool {
+func (c customMarshaler) unmarshalBackwardCompatible(data []byte, v any) bool {
 	suppressCVERequest, ok := v.(*v1.SuppressCVERequest)
 	if !ok {
 		return false
@@ -70,7 +70,7 @@ type customDecoder struct {
 	protoDecoder runtime.Decoder
 }
 
-func (c customDecoder) Decode(v interface{}) error {
+func (c customDecoder) Decode(v any) error {
 	x, ok := v.(*v1.SuppressCVERequest)
 	if !ok {
 		return c.protoDecoder.Decode(v)

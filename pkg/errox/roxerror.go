@@ -36,8 +36,8 @@ type Error interface {
 	error
 	Unwrap() error
 	New(message string) *RoxError
-	Newf(format string, args ...interface{}) *RoxError
-	CausedBy(cause interface{}) error
+	Newf(format string, args ...any) *RoxError
+	CausedBy(cause any) error
 }
 
 // RoxError is the basic type for rox errors. Not intended to be instantiated
@@ -90,7 +90,7 @@ func (e *RoxError) New(message string) *RoxError {
 //	ErrRecordNotFound := errox.NotFound.Newf("record <%d> not found", recordIndex)
 //	ErrRecordNotFound.Error() == "record <5> not found" // true
 //	errors.Is(ErrRecordNotFound, errox.NotFound)        // true
-func (e *RoxError) Newf(format string, args ...interface{}) *RoxError {
+func (e *RoxError) Newf(format string, args ...any) *RoxError {
 	// Return *RoxError instead of errox.Error to enable `go vet` checks.
 	return e.New(fmt.Sprintf(format, args...))
 }
@@ -109,7 +109,7 @@ func (e *RoxError) Newf(format string, args ...interface{}) *RoxError {
 // or
 //
 //	return errox.InvalidArgument.CausedBy("unknown parameter")
-func (e *RoxError) CausedBy(cause interface{}) error {
+func (e *RoxError) CausedBy(cause any) error {
 	if causeErr, ok := cause.(error); ok {
 		return fmt.Errorf("%w: %w", e, causeErr)
 	}
@@ -123,6 +123,6 @@ func (e *RoxError) CausedBy(cause interface{}) error {
 // Example:
 //
 //	return errox.InvalidArgs.CausedByf("unknown parameter %v", p)
-func (e *RoxError) CausedByf(format string, args ...interface{}) error {
+func (e *RoxError) CausedByf(format string, args ...any) error {
 	return e.CausedBy(fmt.Sprintf(format, args...))
 }

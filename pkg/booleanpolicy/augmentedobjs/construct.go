@@ -51,7 +51,7 @@ func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*st
 }
 
 // ConstructKubeResourceWithEvent constructs an augmented deployment with kube event information.
-func ConstructKubeResourceWithEvent(kubeResource interface{}, event *storage.KubernetesEvent) (*pathutil.AugmentedObj, error) {
+func ConstructKubeResourceWithEvent(kubeResource any, event *storage.KubernetesEvent) (*pathutil.AugmentedObj, error) {
 	obj, isAugmented := kubeResource.(*pathutil.AugmentedObj)
 	if !isAugmented {
 		if !supportedKubeResourceForEvent(kubeResource) {
@@ -66,7 +66,7 @@ func ConstructKubeResourceWithEvent(kubeResource interface{}, event *storage.Kub
 	return obj, nil
 }
 
-func supportedKubeResourceForEvent(obj interface{}) bool {
+func supportedKubeResourceForEvent(obj any) bool {
 	switch obj.(type) {
 	case *storage.Deployment:
 		return true

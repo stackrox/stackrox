@@ -26,7 +26,7 @@ func NewTailoredProfileDispatcher(profileLister cache.GenericLister) *TailoredPr
 }
 
 // ProcessEvent processes a compliance operator tailored profile
-func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ any, action central.ResourceAction) *component.ResourceEvent {
 	var tailoredProfile v1alpha1.TailoredProfile
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)

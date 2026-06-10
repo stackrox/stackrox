@@ -526,7 +526,7 @@ func newClusterIdMatcher(idx, numClusters int) *clusterIdMatcher {
 	}
 }
 
-func (m *clusterIdMatcher) Matches(target interface{}) bool {
+func (m *clusterIdMatcher) Matches(target any) bool {
 	id, ok := target.(string)
 	if !ok {
 		m.error = "target is not of type string"

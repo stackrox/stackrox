@@ -528,7 +528,7 @@ func TestRowMapper_CreateRows_DeepHierarchyAndEmptyValuesWithStrictColumnsEmptyT
 		[]string{"result.#.people.#.address"})
 }
 
-func runRowMapperTest(t *testing.T, obj interface{}, expression string, expectedRows [][]string, strictColumns []string) {
+func runRowMapperTest(t *testing.T, obj any, expression string, expectedRows [][]string, strictColumns []string) {
 	mapper, err := NewRowMapper(obj, expression, HideRowsIfColumnNotPopulated(strictColumns))
 	require.NoError(t, err)
 	rows, err := mapper.CreateRows()

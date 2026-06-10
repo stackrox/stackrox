@@ -28,23 +28,23 @@ var (
 // with either "ERROR:", "WARN:" or "INFO:"
 type ColorfulPrinter interface {
 	// Err prints a formatted string to the io.Writer, prefixed with ERROR and colorized
-	Err(out io.Writer, format string, a ...interface{})
+	Err(out io.Writer, format string, a ...any)
 
 	// Warn prints a formatted string to the io.Writer, prefixed with WARN and colorized
-	Warn(out io.Writer, format string, a ...interface{})
+	Warn(out io.Writer, format string, a ...any)
 
 	// Info prints a formatted string to the io.Writer, prefixed with INFO and colorized
-	Info(out io.Writer, format string, a ...interface{})
+	Info(out io.Writer, format string, a ...any)
 
 	// ColorWords colors a words with a specific color and returns the colorized string
 	ColorWords(s string) string
 }
 
 type colorPrinter struct {
-	err             func(w io.Writer, format string, a ...interface{})
-	warn            func(w io.Writer, format string, a ...interface{})
-	info            func(w io.Writer, format string, a ...interface{})
-	bold            func(w io.Writer, format string, a ...interface{})
+	err             func(w io.Writer, format string, a ...any)
+	warn            func(w io.Writer, format string, a ...any)
+	info            func(w io.Writer, format string, a ...any)
+	bold            func(w io.Writer, format string, a ...any)
 	colorKeyWordMap map[string]string
 }
 
@@ -66,7 +66,7 @@ func DefaultColorPrinter() ColorfulPrinter {
 
 // NoColorPrinter is a printer that does not support colors.
 func NoColorPrinter() ColorfulPrinter {
-	printf := func(w io.Writer, format string, a ...interface{}) {
+	printf := func(w io.Writer, format string, a ...any) {
 		_, _ = fmt.Fprintf(w, format, a...)
 	}
 	c := &colorPrinter{
@@ -78,15 +78,15 @@ func NoColorPrinter() ColorfulPrinter {
 	return c
 }
 
-func (c *colorPrinter) Err(out io.Writer, format string, a ...interface{}) {
+func (c *colorPrinter) Err(out io.Writer, format string, a ...any) {
 	c.err(out, errorMsgPrefix+format, a...)
 }
 
-func (c *colorPrinter) Warn(out io.Writer, format string, a ...interface{}) {
+func (c *colorPrinter) Warn(out io.Writer, format string, a ...any) {
 	c.warn(out, warnMsgPrefix+format, a...)
 }
 
-func (c *colorPrinter) Info(out io.Writer, format string, a ...interface{}) {
+func (c *colorPrinter) Info(out io.Writer, format string, a ...any) {
 	c.info(out, infoMsgPrefix+format, a...)
 }
 

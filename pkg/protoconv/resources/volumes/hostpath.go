@@ -18,7 +18,7 @@ func (h *hostPath) Type() string {
 	return hostPathType
 }
 
-func createHostPath(i interface{}) VolumeSource {
+func createHostPath(i any) VolumeSource {
 	hostPathVolume, ok := i.(*v1.HostPathVolumeSource)
 	if !ok {
 		return &Unimplemented{}

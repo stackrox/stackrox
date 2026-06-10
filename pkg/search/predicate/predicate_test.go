@@ -134,7 +134,7 @@ func TestSearchPredicate(t *testing.T) {
 		name        string
 		query       *v1.Query
 		factory     Factory
-		object      interface{}
+		object      any
 		expectation bool
 	}{
 		{

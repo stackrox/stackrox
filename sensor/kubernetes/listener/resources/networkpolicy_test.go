@@ -137,8 +137,8 @@ func createSensorEvent(np *networkingV1.NetworkPolicy, action central.ResourceAc
 
 func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 	cases := map[string]struct {
-		netpol              interface{}
-		oldNetpol           interface{}
+		netpol              any
+		oldNetpol           any
 		action              central.ResourceAction
 		expectedEvents      map[string]*central.SensorEvent
 		expectedDeployments []*deploymentWrap

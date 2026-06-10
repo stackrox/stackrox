@@ -10,8 +10,8 @@ import (
 
 // imageSpecFromOverrides produces an image spec to be used in the Secured Cluster Helm chart configuration,
 // given a map returned by `renderer.ComputeImageOverrides`.
-func imageSpecFromOverrides(overrides map[string]string) map[string]interface{} {
-	image := make(map[string]interface{})
+func imageSpecFromOverrides(overrides map[string]string) map[string]any {
+	image := make(map[string]any)
 
 	if val := overrides["Registry"]; val != "" {
 		image["registry"] = val
@@ -27,7 +27,7 @@ func imageSpecFromOverrides(overrides map[string]string) map[string]interface{} 
 }
 
 // FromCluster returns the cluster's Helm chart configuration based on cluster and image flavor.
-func FromCluster(cluster *storage.Cluster, flavor defaults.ImageFlavor) (map[string]interface{}, error) {
+func FromCluster(cluster *storage.Cluster, flavor defaults.ImageFlavor) (map[string]any, error) {
 	mainImageOverrides := renderer.ComputeImageOverrides(cluster.GetMainImage(), flavor.MainRegistry, flavor.MainImageName, "")
 	mainImage := imageSpecFromOverrides(mainImageOverrides)
 	collectorImageOverrides := renderer.ComputeImageOverrides(cluster.GetCollectorImage(), flavor.CollectorRegistry, flavor.CollectorImageName, "")
@@ -35,11 +35,11 @@ func FromCluster(cluster *storage.Cluster, flavor defaults.ImageFlavor) (map[str
 
 	dynAdmissionControllerCfg := cluster.GetDynamicConfig().GetAdmissionControllerConfig()
 
-	admissionControllerCfg := map[string]interface{}{
+	admissionControllerCfg := map[string]any{
 		"image": mainImage,
 	}
 	if features.AdmissionControllerConfig.Enabled() {
-		admissionControllerCfg["dynamic"] = map[string]interface{}{
+		admissionControllerCfg["dynamic"] = map[string]any{
 			"disableBypass": dynAdmissionControllerCfg.GetDisableBypass(),
 			"enforce":       dynAdmissionControllerCfg.GetEnabled() || dynAdmissionControllerCfg.GetEnforceOnUpdates(),
 		}
@@ -51,7 +51,7 @@ func FromCluster(cluster *storage.Cluster, flavor defaults.ImageFlavor) (map[str
 		admissionControllerCfg["listenOnCreates"] = cluster.GetAdmissionController()
 		admissionControllerCfg["listenOnUpdates"] = cluster.GetAdmissionControllerUpdates()
 		admissionControllerCfg["listenOnEvents"] = cluster.GetAdmissionControllerEvents()
-		admissionControllerCfg["dynamic"] = map[string]interface{}{
+		admissionControllerCfg["dynamic"] = map[string]any{
 			"enforceOnCreates": dynAdmissionControllerCfg.GetEnabled(),
 			"enforceOnUpdates": dynAdmissionControllerCfg.GetEnforceOnUpdates(),
 			"scanInline":       dynAdmissionControllerCfg.GetScanInline(),
@@ -60,14 +60,14 @@ func FromCluster(cluster *storage.Cluster, flavor defaults.ImageFlavor) (map[str
 		}
 	}
 
-	m := map[string]interface{}{
+	m := map[string]any{
 		"clusterName":     cluster.GetName(),
 		"centralEndpoint": cluster.GetCentralApiEndpoint(),
-		"sensor": map[string]interface{}{
+		"sensor": map[string]any{
 			"image": mainImage,
 		},
 		"admissionControl": admissionControllerCfg,
-		"collector": map[string]interface{}{
+		"collector": map[string]any{
 			"collectionMethod":        cluster.GetCollectionMethod().String(),
 			"disableTaintTolerations": cluster.GetTolerationsConfig().GetDisabled(),
 			"slimMode":                cluster.GetSlimCollector(),

@@ -354,8 +354,8 @@ func TestInternalRoleJSONEncoding(t *testing.T) {
 			assert.NoError(it, err)
 
 			// Verify JSON structure matches expected (order-independent comparison for maps)
-			var actualJSON map[string]interface{}
-			var expectedJSON map[string]interface{}
+			var actualJSON map[string]any
+			var expectedJSON map[string]any
 
 			if tc.role == nil {
 				assert.Equal(it, "null", string(jsonBytes))

@@ -13,7 +13,7 @@ import (
 // A Validator checks JSON Web Tokens (JWTs) to ensure they are intended for
 // this service and are cryptographically trusted.
 type Validator interface {
-	Validate(rawToken string, jwtClaims *jwt.Claims, extraClaims ...interface{}) error
+	Validate(rawToken string, jwtClaims *jwt.Claims, extraClaims ...any) error
 }
 
 type validator struct {
@@ -56,7 +56,7 @@ var (
 )
 
 // Validate validates the token or returns an error.
-func (v validator) Validate(rawToken string, claims *jwt.Claims, extraClaims ...interface{}) error {
+func (v validator) Validate(rawToken string, claims *jwt.Claims, extraClaims ...any) error {
 	token, err := ParseSigned(rawToken)
 	if err != nil {
 		return err
@@ -75,7 +75,7 @@ func (v validator) Validate(rawToken string, claims *jwt.Claims, extraClaims ...
 	return nil
 }
 
-func (v validator) validateHeaderFields(token *jwt.JSONWebToken, header jose.Header, claims *jwt.Claims, extraClaims ...interface{}) error {
+func (v validator) validateHeaderFields(token *jwt.JSONWebToken, header jose.Header, claims *jwt.Claims, extraClaims ...any) error {
 	if header.Algorithm != v.algorithm {
 		return ErrInvalidAlgorithm
 	}
@@ -89,7 +89,7 @@ func (v validator) validateHeaderFields(token *jwt.JSONWebToken, header jose.Hea
 		return ErrKeyNotFound
 	}
 
-	allClaims := make([]interface{}, len(extraClaims)+1)
+	allClaims := make([]any, len(extraClaims)+1)
 	allClaims[0] = claims
 	copy(allClaims[1:], extraClaims)
 	err := token.Claims(key, allClaims...)

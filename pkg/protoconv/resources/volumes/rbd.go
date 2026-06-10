@@ -18,7 +18,7 @@ func (h *rbd) Type() string {
 	return rbdType
 }
 
-func createRBD(i interface{}) VolumeSource {
+func createRBD(i any) VolumeSource {
 	rbdVolume, ok := i.(*v1.RBDVolumeSource)
 	if !ok {
 		return &Unimplemented{}

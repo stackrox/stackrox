@@ -74,7 +74,7 @@ func ComputeImageOverrides(fullImageRef, defRegistry, defName, defTag string) ma
 // inferred, and instead the inferred central and scanner "registries" are
 // `us.gcr.io/stackrox-main` and `us.gcr.io/stackrox-scanner`.
 func configureImageOverrides(c *Config, imageFlavor defaults.ImageFlavor) {
-	imageOverrides := make(map[string]interface{})
+	imageOverrides := make(map[string]any)
 
 	mainOverrides := ComputeImageOverrides(c.K8sConfig.MainImage, imageFlavor.MainRegistry, imageFlavor.MainImageName,
 		imageFlavor.MainImageTag)

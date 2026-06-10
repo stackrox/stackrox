@@ -101,24 +101,24 @@ func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 	s.Require().Equal(initBundle.CACert, caCert)
 
 	// Verify YAML-rendered init bundle looks as expected.
-	expected := map[string]interface{}{
-		"ca": map[string]interface{}{
+	expected := map[string]any{
+		"ca": map[string]any{
 			"cert": caCert,
 		},
-		"sensor": map[string]interface{}{
-			"serviceTLS": map[string]interface{}{
+		"sensor": map[string]any{
+			"serviceTLS": map[string]any{
 				"cert": string(certBundle[storage.ServiceType_SENSOR_SERVICE].CertPEM),
 				"key":  string(certBundle[storage.ServiceType_SENSOR_SERVICE].KeyPEM),
 			},
 		},
-		"collector": map[string]interface{}{
-			"serviceTLS": map[string]interface{}{
+		"collector": map[string]any{
+			"serviceTLS": map[string]any{
 				"cert": string(certBundle[storage.ServiceType_COLLECTOR_SERVICE].CertPEM),
 				"key":  string(certBundle[storage.ServiceType_COLLECTOR_SERVICE].KeyPEM),
 			},
 		},
-		"admissionControl": map[string]interface{}{
-			"serviceTLS": map[string]interface{}{
+		"admissionControl": map[string]any{
+			"serviceTLS": map[string]any{
 				"cert": string(certBundle[storage.ServiceType_ADMISSION_CONTROL_SERVICE].CertPEM),
 				"key":  string(certBundle[storage.ServiceType_ADMISSION_CONTROL_SERVICE].KeyPEM),
 			},
@@ -129,7 +129,7 @@ func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 	s.Require().NoError(err)
 
 	// Compute diff.
-	var parsed map[string]interface{}
+	var parsed map[string]any
 	err = yaml.Unmarshal(initBundleYAML, &parsed)
 	s.Require().NoError(err)
 

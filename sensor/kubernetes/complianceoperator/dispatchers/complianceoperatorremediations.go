@@ -23,7 +23,7 @@ func NewRemediationDispatcher() *RemediationDispatcher {
 }
 
 // ProcessEvent processes a compliance operator remediation
-func (c *RemediationDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (c *RemediationDispatcher) ProcessEvent(obj, _ any, action central.ResourceAction) *component.ResourceEvent {
 	if !centralcaps.Has(centralsensor.ComplianceV2Remediations) {
 		return nil
 	}

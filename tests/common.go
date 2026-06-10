@@ -20,6 +20,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
+
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/retryablehttp"
@@ -79,7 +80,7 @@ var (
 // Use this tiny adapter ONLY where retryablehttp requires it. Everywhere else uses testutils.T naturally.
 type testutilsLogger struct{ testutils.T }
 
-func (l testutilsLogger) Printf(format string, v ...interface{}) { l.Logf(format, v...) }
+func (l testutilsLogger) Printf(format string, v ...any) { l.Logf(format, v...) }
 
 // logf logs using the testing logger, prefixing a high-resolution timestamp.
 // Using testing.T.Logf means that the output is hidden unless the test fails or verbose logging is enabled with -v.
@@ -609,6 +610,7 @@ func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 	defer cancel()
 
 	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: new(0)})
+	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: new(int64(0))})
 	require.NoError(t, err)
 
 	waitForTermination(t, pod.GetName())
@@ -1424,13 +1426,13 @@ type collectT struct {
 	c *assert.CollectT
 }
 
-func (c *collectT) Fatalf(format string, args ...interface{}) {
+func (c *collectT) Fatalf(format string, args ...any) {
 	if c.t != nil {
 		c.t.Fatalf(format, args...)
 	}
 }
 
-func (c *collectT) Errorf(format string, args ...interface{}) {
+func (c *collectT) Errorf(format string, args ...any) {
 	if c.c != nil {
 		c.c.Errorf(format, args...)
 	}
@@ -1442,7 +1444,7 @@ func (c *collectT) FailNow() {
 	}
 }
 
-func (c *collectT) Logf(format string, values ...interface{}) {
+func (c *collectT) Logf(format string, values ...any) {
 	if c.t != nil {
 		c.t.Logf(format, values...)
 	}

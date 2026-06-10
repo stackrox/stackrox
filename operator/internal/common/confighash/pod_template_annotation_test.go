@@ -74,7 +74,7 @@ func TestApplyPodTemplateAnnotationAndSerialize(t *testing.T) {
 
 func createTestDeployment() *unstructured.Unstructured {
 	return &unstructured.Unstructured{
-		Object: map[string]interface{}{
+		Object: map[string]any{
 			"apiVersion": "apps/v1",
 			"kind":       "Deployment",
 		},
@@ -83,13 +83,13 @@ func createTestDeployment() *unstructured.Unstructured {
 
 func createTestDaemonSet() *unstructured.Unstructured {
 	return &unstructured.Unstructured{
-		Object: map[string]interface{}{
+		Object: map[string]any{
 			"apiVersion": "apps/v1",
 			"kind":       "DaemonSet",
-			"spec": map[string]interface{}{
-				"template": map[string]interface{}{
-					"metadata": map[string]interface{}{
-						"annotations": map[string]interface{}{
+			"spec": map[string]any{
+				"template": map[string]any{
+					"metadata": map[string]any{
+						"annotations": map[string]any{
 							AnnotationKey:      "old-hash-to-be-replaced",
 							"other-annotation": "other-value",
 						},
@@ -102,7 +102,7 @@ func createTestDaemonSet() *unstructured.Unstructured {
 
 func createTestReplicaSet() *unstructured.Unstructured {
 	return &unstructured.Unstructured{
-		Object: map[string]interface{}{
+		Object: map[string]any{
 			"apiVersion": "apps/v1",
 			"kind":       "ReplicaSet",
 		},

@@ -85,20 +85,20 @@ func (c *SecretInformer) HasSynced() bool {
 }
 
 // OnAdd is called when the secret is added.
-func (c *SecretInformer) OnAdd(obj interface{}, _ bool) {
+func (c *SecretInformer) OnAdd(obj any, _ bool) {
 	if secret, ok := obj.(*v1.Secret); ok {
 		c.onAddFn(secret)
 	}
 }
 
 // OnUpdate is called when the secret is updated.
-func (c *SecretInformer) OnUpdate(_, newObj interface{}) {
+func (c *SecretInformer) OnUpdate(_, newObj any) {
 	if secret, ok := newObj.(*v1.Secret); ok {
 		c.onUpdateFn(secret)
 	}
 }
 
 // OnDelete is called when the secret is deleted.
-func (c *SecretInformer) OnDelete(_ interface{}) {
+func (c *SecretInformer) OnDelete(_ any) {
 	c.onDeleteFn()
 }

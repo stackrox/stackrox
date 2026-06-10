@@ -18,7 +18,7 @@ func (h *gitRepo) Type() string {
 	return gitRepoType
 }
 
-func createGitRepo(i interface{}) VolumeSource {
+func createGitRepo(i any) VolumeSource {
 	gitVolume, ok := i.(*v1.GitRepoVolumeSource)
 	if !ok {
 		return &Unimplemented{}

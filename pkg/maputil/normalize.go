@@ -3,10 +3,10 @@ package maputil
 import "github.com/stackrox/rox/pkg/reflectutils"
 
 // NormalizeGenericMap removes empty values from the provided generic map.
-func NormalizeGenericMap(src map[string]interface{}) map[string]interface{} {
-	dst := make(map[string]interface{})
+func NormalizeGenericMap(src map[string]any) map[string]any {
+	dst := make(map[string]any)
 	for k, v := range src {
-		if obj, ok := v.(map[string]interface{}); ok {
+		if obj, ok := v.(map[string]any); ok {
 			v = NormalizeGenericMap(obj)
 		}
 		if reflectutils.IsNil(v) {

@@ -18,7 +18,7 @@ func ParseMapQuery(label string) (string, string, bool) {
 	return key, value, hasEquals
 }
 
-func readMapValue(val interface{}) map[string]string {
+func readMapValue(val any) map[string]string {
 	// Maps are stored in a jsonb column, which we get back as a byte array.
 	// We know that supported maps are only map[string]string, so we unmarshal accordingly.
 	v, ok := val.(*[]byte)
@@ -49,7 +49,7 @@ func newMapQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 	if query == search.WildcardString {
 		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
 			Query: "true",
-		}, func(i interface{}) interface{} {
+		}, func(i any) any {
 			asMap := readMapValue(i)
 			results := make([]string, 0, len(asMap))
 			for k, v := range asMap {
@@ -69,8 +69,8 @@ func newMapQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 		}
 		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
 			Query:  fmt.Sprintf("%s(%s ? $$)", negationString, ctx.qualifiedColumnName),
-			Values: []interface{}{key},
-		}, func(i interface{}) interface{} {
+			Values: []any{key},
+		}, func(i any) any {
 			// If key is negated, no highlight value.
 			if keyNegated {
 				return []string(nil)
@@ -105,7 +105,7 @@ func newMapQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 	}
 
 	combinedWhereClause := &WhereClause{}
-	var keyEquivGoFunc, valueEquivGoFunc func(interface{}) bool
+	var keyEquivGoFunc, valueEquivGoFunc func(any) bool
 	var queryPortion string
 	if key == "" && value == "" {
 		queryPortion = "true"
@@ -125,7 +125,7 @@ func newMapQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 		valueEquivGoFunc = valueQuery.equivalentGoFunc
 	}
 	combinedWhereClause.Query = fmt.Sprintf("(jsonb_typeof(%s) = 'object') and (exists (select * from jsonb_each_text(%s) elem where %s))", ctx.qualifiedColumnName, ctx.qualifiedColumnName, queryPortion)
-	return qeWithSelectFieldIfNeeded(ctx, combinedWhereClause, func(i interface{}) interface{} {
+	return qeWithSelectFieldIfNeeded(ctx, combinedWhereClause, func(i any) any {
 		asMap := readMapValue(i)
 		var out []string
 		for k, v := range asMap {

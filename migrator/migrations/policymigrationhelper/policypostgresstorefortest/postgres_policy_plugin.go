@@ -76,7 +76,7 @@ func insertIntoPolicies(_ context.Context, batch *pgx.Batch, obj *storage.Policy
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
@@ -101,7 +101,7 @@ func insertIntoPolicies(_ context.Context, batch *pgx.Batch, obj *storage.Policy
 
 func (s *storeImpl) copyFromPolicies(ctx context.Context, tx *postgres.Tx, objs ...*storage.Policy) error {
 
-	inputRows := [][]interface{}{}
+	inputRows := [][]any{}
 
 	var err error
 
@@ -149,7 +149,7 @@ func (s *storeImpl) copyFromPolicies(ctx context.Context, tx *postgres.Tx, objs 
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows = append(inputRows, []any{
 
 			obj.GetId(),
 

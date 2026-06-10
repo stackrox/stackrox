@@ -35,7 +35,7 @@ type Tx struct {
 }
 
 // Exec wraps pgx.Tx Exec
-func (t *Tx) Exec(ctx context.Context, sql string, args ...interface{}) (commandTag pgconn.CommandTag, err error) {
+func (t *Tx) Exec(ctx context.Context, sql string, args ...any) (commandTag pgconn.CommandTag, err error) {
 	ct, err := t.Tx.Exec(ctx, sql, args...)
 	if err != nil {
 		incQueryErrors(sql, err)
@@ -45,7 +45,7 @@ func (t *Tx) Exec(ctx context.Context, sql string, args ...interface{}) (command
 }
 
 // Query wraps pgx.Tx Query
-func (t *Tx) Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error) {
+func (t *Tx) Query(ctx context.Context, sql string, args ...any) (*Rows, error) {
 	rows, err := t.Tx.Query(ctx, sql, args...)
 	if err != nil {
 		incQueryErrors(sql, err)
@@ -59,7 +59,7 @@ func (t *Tx) Query(ctx context.Context, sql string, args ...interface{}) (*Rows,
 }
 
 // QueryRow wraps pgx.Tx QueryRow
-func (t *Tx) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
+func (t *Tx) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
 	return t.Tx.QueryRow(ctx, sql, args...)
 }
 

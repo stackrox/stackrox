@@ -265,34 +265,34 @@ func LoggerForModule(opts ...OptionsFunc) Logger {
 // convenience methods log apply to root logger
 
 // Debug implements logging.Logger interface.
-func Debug(args ...interface{}) { rootLogger.Debug(args...) }
+func Debug(args ...any) { rootLogger.Debug(args...) }
 
 // Debugf implements logging.Logger interface.
-func Debugf(format string, args ...interface{}) { rootLogger.Debugf(format, args...) }
+func Debugf(format string, args ...any) { rootLogger.Debugf(format, args...) }
 
 // Error implements logging.Logger interface.
-func Error(args ...interface{}) { rootLogger.Error(args...) }
+func Error(args ...any) { rootLogger.Error(args...) }
 
 // Errorf implements logging.Logger interface.
-func Errorf(format string, args ...interface{}) { rootLogger.Errorf(format, args...) }
+func Errorf(format string, args ...any) { rootLogger.Errorf(format, args...) }
 
 // Fatalf implements logging.Logger interface.
-func Fatalf(format string, args ...interface{}) { rootLogger.Fatalf(format, args...) }
+func Fatalf(format string, args ...any) { rootLogger.Fatalf(format, args...) }
 
 // Info implements logging.Logger interface.
-func Info(args ...interface{}) { rootLogger.Info(args...) }
+func Info(args ...any) { rootLogger.Info(args...) }
 
 // Infof implements logging.Logger interface.
-func Infof(format string, args ...interface{}) { rootLogger.Infof(format, args...) }
+func Infof(format string, args ...any) { rootLogger.Infof(format, args...) }
 
 // Panicf implements logging.Logger interface.
-func Panicf(format string, args ...interface{}) { rootLogger.Panicf(format, args...) }
+func Panicf(format string, args ...any) { rootLogger.Panicf(format, args...) }
 
 // Warn implements logging.Logger interface.
-func Warn(args ...interface{}) { rootLogger.Warn(args...) }
+func Warn(args ...any) { rootLogger.Warn(args...) }
 
 // Warnf implements logging.Logger interface.
-func Warnf(format string, args ...interface{}) { rootLogger.Warnf(format, args...) }
+func Warnf(format string, args ...any) { rootLogger.Warnf(format, args...) }
 
 // LabelForLevel takes a zapcore.Level and returns its name. If the level has no associated name, a zero-valued
 // string is returned, and the bool return value will be false.

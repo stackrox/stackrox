@@ -21,10 +21,10 @@ type taskWrapper struct {
 	exec Task
 
 	// Metadata related to task.
-	metadata map[string]interface{}
+	metadata map[string]any
 
 	// Results from execution of task.
-	result interface{}
+	result any
 
 	// Errors from execution of task.
 	err error
@@ -33,7 +33,7 @@ type taskWrapper struct {
 	cancel context.CancelFunc
 }
 
-func (t *taskWrapper) execute(ctx context.Context) (res interface{}, err error) {
+func (t *taskWrapper) execute(ctx context.Context) (res any, err error) {
 	if err = ctx.Err(); err != nil {
 		return
 	}
@@ -105,7 +105,7 @@ func (m *managerImpl) applyDefaults() {
 }
 
 // AddTask adds a task to its pending task list to be run as a background process and returns a jobid.
-func (m *managerImpl) AddTask(metadata map[string]interface{}, task Task) (string, error) {
+func (m *managerImpl) AddTask(metadata map[string]any, task Task) (string, error) {
 	t := &taskWrapper{
 		exec:     task,
 		metadata: metadata,
@@ -194,7 +194,7 @@ func (m *managerImpl) cleanupExpiredCompletedTasks() {
 }
 
 // GetTaskStatus returns the status of the jobid.
-func (m *managerImpl) GetTaskStatusAndMetadata(taskID string) (map[string]interface{}, interface{}, bool, error) {
+func (m *managerImpl) GetTaskStatusAndMetadata(taskID string) (map[string]any, any, bool, error) {
 	m.completedTasksMutex.Lock()
 	defer m.completedTasksMutex.Unlock()
 	m.existingTasksMutex.Lock()

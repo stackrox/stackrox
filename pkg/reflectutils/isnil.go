@@ -5,7 +5,7 @@ import (
 )
 
 // IsNil uses reflection to reliably check if the provided argument is a Nil pointer.
-func IsNil(i interface{}) bool {
+func IsNil(i any) bool {
 	if i == nil {
 		return true
 	}

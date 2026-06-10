@@ -37,18 +37,18 @@ func MergeResults(results ...*search.Result) *search.Result {
 // predicates `AlwaysTrue` and `AlwaysFalse` -- any predicate can safely be compared against those special predicates
 // to test whether its a constant predicate.
 type Predicate interface {
-	Evaluate(instance interface{}) (*search.Result, bool)
-	Matches(instance interface{}) bool
+	Evaluate(instance any) (*search.Result, bool)
+	Matches(instance any) bool
 }
 
 // predicateFunc wraps a regular function as a predicate.
-type predicateFunc func(instance interface{}) (*search.Result, bool)
+type predicateFunc func(instance any) (*search.Result, bool)
 
-func (f predicateFunc) Evaluate(instance interface{}) (*search.Result, bool) {
+func (f predicateFunc) Evaluate(instance any) (*search.Result, bool) {
 	return f(instance)
 }
 
-func (f predicateFunc) Matches(instance interface{}) bool {
+func (f predicateFunc) Matches(instance any) bool {
 	_, matches := f(instance)
 	return matches
 }
@@ -57,11 +57,11 @@ func (f predicateFunc) Matches(instance interface{}) bool {
 type Factory struct {
 	searchFields fieldmap.FieldMap
 	searchPaths  wrappedOptionsMap
-	exampleObj   interface{}
+	exampleObj   any
 }
 
 // NewFactory returns a new predicate factory for the type of the given object.
-func NewFactory(prefix string, obj interface{}) Factory {
+func NewFactory(prefix string, obj any) Factory {
 	return Factory{
 		searchFields: fieldmap.MapSearchTagsToFieldPaths(obj),
 		searchPaths: wrappedOptionsMap{
@@ -112,7 +112,7 @@ func wrapInternal(ip internalPredicate) Predicate {
 	if ip == alwaysFalse {
 		return AlwaysFalse
 	}
-	return predicateFunc(func(in interface{}) (*search.Result, bool) {
+	return predicateFunc(func(in any) (*search.Result, bool) {
 		val := reflect.ValueOf(in)
 		return ip.Evaluate(val)
 	})

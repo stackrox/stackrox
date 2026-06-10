@@ -11,8 +11,8 @@ import (
 )
 
 type message struct {
-	Headers map[string][]string    `json:"headers"`
-	Data    map[string]interface{} `json:"data"`
+	Headers map[string][]string `json:"headers"`
+	Data    map[string]any      `json:"data"`
 }
 
 var (
@@ -30,7 +30,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	dataMap := make(map[string]interface{})
+	dataMap := make(map[string]any)
 	if err := json.Unmarshal(data, &dataMap); err != nil {
 		log.Printf("Error unmarshalling data: %v", err)
 		w.WriteHeader(http.StatusBadRequest)

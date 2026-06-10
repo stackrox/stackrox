@@ -132,7 +132,7 @@ func (p *TablePrinter) createTableWriter(out io.Writer) *tablewriter.Table {
 // Print will print the given JSON object as a tabular format to the io.Writer.
 // It will return an error if there is an issue with the JSON object, creation of the rows failed or
 // it was not possible to write to the io.Writer.
-func (p *TablePrinter) Print(jsonObject interface{}, out io.Writer) error {
+func (p *TablePrinter) Print(jsonObject any, out io.Writer) error {
 	// create table writer with headers and options.
 	table := p.createTableWriter(out)
 

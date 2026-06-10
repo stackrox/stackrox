@@ -109,7 +109,7 @@ func shouldRetryForTests(err error) bool {
 
 // loggingUnaryInterceptor logs gRPC requests and responses for debugging test failures.
 func loggingUnaryInterceptor(logger testutils.T) grpc.UnaryClientInterceptor {
-	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		start := time.Now()
 		err := invoker(ctx, method, req, reply, cc, opts...)
 		duration := time.Since(start)

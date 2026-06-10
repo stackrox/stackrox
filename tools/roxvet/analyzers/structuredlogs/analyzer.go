@@ -35,7 +35,7 @@ var packagesToLint = []*regexp.Regexp{
 	regexp.MustCompile(`^github\.com/stackrox/rox/central/reprocessor(/|$)|^github\.com/stackrox/rox/central/image/service(/|$)|^github\.com/stackrox/rox/pkg/notifiers(/|$)`),
 }
 
-func run(pass *analysis.Pass) (interface{}, error) {
+func run(pass *analysis.Pass) (any, error) {
 	if !matchesPackagePattern(pass.Pkg.Path()) {
 		return nil, nil
 	}

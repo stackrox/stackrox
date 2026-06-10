@@ -75,10 +75,10 @@ func (s *watcherSuite) createWatcher(stopSig *concurrency.Signal) *crdWatcher {
 
 func newFakeCRD(name string) *unstructured.Unstructured {
 	return &unstructured.Unstructured{
-		Object: map[string]interface{}{
+		Object: map[string]any{
 			"apiVersion": apiVersion,
 			"kind":       kind,
-			"metadata": map[string]interface{}{
+			"metadata": map[string]any{
 				"name": name,
 			},
 		},

@@ -11,16 +11,16 @@ import (
 // See the documentation on the PostTransform field of the SelectQueryField struct
 // for more clarity on the purpose of these post transform funcs.
 
-func matchAllFilter(_ interface{}) bool {
+func matchAllFilter(_ any) bool {
 	return true
 }
 
-func getStringArrayPostTransformFunc(entry *QueryEntry) (func(val interface{}) interface{}, error) {
+func getStringArrayPostTransformFunc(entry *QueryEntry) (func(val any) any, error) {
 	filterFunc := entry.Where.equivalentGoFunc
 	if filterFunc == nil {
 		return nil, errors.New("no filter func found")
 	}
-	return func(val interface{}) interface{} {
+	return func(val any) any {
 		textArray, _ := val.(*[]string)
 		if textArray == nil {
 			return (*[]string)(nil)
@@ -36,13 +36,13 @@ func getStringArrayPostTransformFunc(entry *QueryEntry) (func(val interface{}) i
 	}, nil
 }
 
-func getIntArrayPostTransformFunc(entry *QueryEntry) (func(val interface{}) interface{}, error) {
+func getIntArrayPostTransformFunc(entry *QueryEntry) (func(val any) any, error) {
 	filterFunc := entry.Where.equivalentGoFunc
 	if filterFunc == nil {
 		return nil, errors.New("no filter func found")
 	}
 
-	return func(val interface{}) interface{} {
+	return func(val any) any {
 		asIntArray := *(val.(*[]int))
 		var out []string
 		for _, elem := range asIntArray {
@@ -54,7 +54,7 @@ func getIntArrayPostTransformFunc(entry *QueryEntry) (func(val interface{}) inte
 	}, nil
 }
 
-func getEnumArrayPostTransformFunc(entry *QueryEntry) (func(val interface{}) interface{}, error) {
+func getEnumArrayPostTransformFunc(entry *QueryEntry) (func(val any) any, error) {
 	filterFunc := entry.Where.equivalentGoFunc
 	if filterFunc == nil {
 		return nil, errors.New("no filter func found")
@@ -63,7 +63,7 @@ func getEnumArrayPostTransformFunc(entry *QueryEntry) (func(val interface{}) int
 		return nil, errors.New("no enum stringify func found")
 	}
 
-	return func(val interface{}) interface{} {
+	return func(val any) any {
 		asIntArray := *(val.(*[]int))
 		var out []string
 		for _, elem := range asIntArray {
@@ -75,7 +75,7 @@ func getEnumArrayPostTransformFunc(entry *QueryEntry) (func(val interface{}) int
 	}, nil
 }
 
-func queryOnArray(baseQueryFunc queryFunction, postTransformFuncGetter func(entry *QueryEntry) (func(interface{}) interface{}, error)) queryFunction {
+func queryOnArray(baseQueryFunc queryFunction, postTransformFuncGetter func(entry *QueryEntry) (func(any) any, error)) queryFunction {
 	return func(ctx *queryAndFieldContext) (*QueryEntry, error) {
 		clonedCtx := *ctx
 		clonedCtx.highlight = false

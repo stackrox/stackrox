@@ -22,7 +22,7 @@ func NewScanDispatcher() *ScanDispatcher {
 }
 
 // ProcessEvent processes a compliance operator scan
-func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (c *ScanDispatcher) ProcessEvent(obj, _ any, action central.ResourceAction) *component.ResourceEvent {
 	var complianceScan v1alpha1.ComplianceScan
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)

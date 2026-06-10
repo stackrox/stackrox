@@ -27,7 +27,7 @@ var Analyzer = &analysis.Analyzer{
 	Run:      run,
 }
 
-func run(pass *analysis.Pass) (interface{}, error) {
+func run(pass *analysis.Pass) (any, error) {
 	root := strings.TrimPrefix(pass.Pkg.Path(), roxPrefix)
 
 	// If we are not the migrator, simply move along

@@ -53,12 +53,12 @@ func Test_injector_Enrich(t *testing.T) {
 			}
 			i := NewRouteInjector(fake.NewFakeClient(tlsSecret), fake.NewFakeClient(tlsSecret), logr.New(nil))
 			vals := chartutil.Values{
-				"central": map[string]interface{}{
-					"exposure": map[string]interface{}{
-						"route": map[string]interface{}{
-							"reencrypt": map[string]interface{}{
+				"central": map[string]any{
+					"exposure": map[string]any{
+						"route": map[string]any{
+							"reencrypt": map[string]any{
 								"enabled": tt.enabled,
-								"tls":     map[string]interface{}{},
+								"tls":     map[string]any{},
 							},
 						},
 					},

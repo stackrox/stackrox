@@ -86,10 +86,10 @@ func (s *postgresConnTestSuite) TestConnBegin() {
 
 func (s *postgresConnTestSuite) TestConnExec() {
 	expectedCt := pgconn.NewCommandTag("signature")
-	errFunc := func(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error) {
+	errFunc := func(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
 		return pgconn.CommandTag{}, errFake
 	}
-	successFunc := func(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error) {
+	successFunc := func(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
 		return expectedCt, nil
 	}
 
@@ -122,10 +122,10 @@ func (s *postgresConnTestSuite) TestConnExec() {
 
 func (s *postgresConnTestSuite) TestConnQuery() {
 	expectedRows := pkgmocks.NewRows(nil).ToPgxRows()
-	errFunc := func(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
+	errFunc := func(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
 		return nil, errFake
 	}
-	successFunc := func(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
+	successFunc := func(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
 		return expectedRows, nil
 	}
 
@@ -158,7 +158,7 @@ func (s *postgresConnTestSuite) TestConnQuery() {
 
 func (s *postgresConnTestSuite) TestConnQueryRow() {
 	expectedRow := pkgmocks.NewRows(nil).ToPgxRows()
-	successFunc := func(ctx context.Context, sql string, args ...interface{}) pgx.Row {
+	successFunc := func(ctx context.Context, sql string, args ...any) pgx.Row {
 		return expectedRow
 	}
 

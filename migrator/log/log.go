@@ -14,6 +14,6 @@ func WriteToStderr(s string) {
 }
 
 // WriteToStderrf writes to stderr with a format string.
-func WriteToStderrf(format string, args ...interface{}) {
+func WriteToStderrf(format string, args ...any) {
 	logger.Infof(format, args...)
 }

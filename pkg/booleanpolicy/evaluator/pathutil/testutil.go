@@ -8,7 +8,7 @@ import (
 
 // PathFromSteps returns a path based on a list of steps.
 // It's a convenience function for testing.
-func PathFromSteps(t *testing.T, steps ...interface{}) *Path {
+func PathFromSteps(t *testing.T, steps ...any) *Path {
 	p := &Path{}
 	for _, step := range steps {
 		switch typedStep := step.(type) {

@@ -81,7 +81,7 @@ func insertIntoClusters(batch *pgx.Batch, obj *storage.Cluster) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),

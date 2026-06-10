@@ -23,7 +23,7 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
-func centralDefaultsToUnstructured(central *Central) (map[string]interface{}, error) {
+func centralDefaultsToUnstructured(central *Central) (map[string]any, error) {
 	defaults, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&central.Defaults)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func AddUnstructuredDefaultsToCentral(central *Central, u *unstructured.Unstruct
 	if !found {
 		return nil
 	}
-	unstructuredDefaults, ok := defaultsInterface.(map[string]interface{})
+	unstructuredDefaults, ok := defaultsInterface.(map[string]any)
 	if !ok {
 		return errors.New("unstructured Central defaults of unexpected type")
 	}

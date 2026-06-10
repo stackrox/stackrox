@@ -18,15 +18,15 @@ func NewLogger(l logger.Logger) *Logger {
 }
 
 // Debugf empty func, mutes debug messages as they are being returned explicitly by the library.
-func (nl *Logger) Debugf(_ string, _ ...interface{}) {}
+func (nl *Logger) Debugf(_ string, _ ...any) {}
 
 // Infof prints a formatted string with a newline, prefixed with INFO and colorized
-func (nl *Logger) Infof(format string, o ...interface{}) {
+func (nl *Logger) Infof(format string, o ...any) {
 	nl.l.InfofLn(format, o...)
 }
 
 // Warnf empty func, mutes the warnings as they are being returned explicitly by NP-Guard library
-func (nl *Logger) Warnf(_ string, _ ...interface{}) {}
+func (nl *Logger) Warnf(_ string, _ ...any) {}
 
 // Errorf empty func, mutes the errors as they are being returned explicitly by NP-Guard library
-func (nl *Logger) Errorf(_ error, _ string, _ ...interface{}) {}
+func (nl *Logger) Errorf(_ error, _ string, _ ...any) {}

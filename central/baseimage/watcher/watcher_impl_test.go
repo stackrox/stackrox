@@ -681,7 +681,7 @@ func TestWatcher_ContextCancellation(t *testing.T) {
 	// Block on GetDelegateClusterID until context is cancelled
 	mockDelegator.EXPECT().
 		GetDelegateClusterID(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, _ interface{}) (string, bool, error) {
+		DoAndReturn(func(ctx context.Context, _ any) (string, bool, error) {
 			<-ctx.Done()
 			return "", false, ctx.Err()
 		}).

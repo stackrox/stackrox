@@ -29,19 +29,19 @@ var (
 
 type alwaysTrueType struct{}
 
-func (alwaysTrueType) Evaluate(interface{}) (*search.Result, bool) {
+func (alwaysTrueType) Evaluate(any) (*search.Result, bool) {
 	return &search.Result{}, true
 }
-func (alwaysTrueType) Matches(interface{}) bool {
+func (alwaysTrueType) Matches(any) bool {
 	return true
 }
 
 type alwaysFalseType struct{}
 
-func (alwaysFalseType) Evaluate(interface{}) (*search.Result, bool) {
+func (alwaysFalseType) Evaluate(any) (*search.Result, bool) {
 	return nil, false
 }
-func (alwaysFalseType) Matches(interface{}) bool {
+func (alwaysFalseType) Matches(any) bool {
 	return false
 }
 

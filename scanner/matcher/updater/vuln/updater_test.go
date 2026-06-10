@@ -306,7 +306,7 @@ func TestUpdater_Initialized(t *testing.T) {
 		got := u.Initialized(ctx)
 		assert.False(t, got, `expecting "not ready" got "ready"`)
 
-		var entry map[string]interface{}
+		var entry map[string]any
 		require.NoError(t, json.Unmarshal(buf.Bytes(), &entry))
 		assert.Equal(t, "did not get previous vuln update timestamp", entry["msg"])
 		assert.Contains(t, entry["reason"], "last update failed (fake error)")

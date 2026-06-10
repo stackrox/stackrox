@@ -46,7 +46,7 @@ func newWatchHandler(id string, updater declarativeConfigContentUpdater) *watchH
 	}
 }
 
-func (w *watchHandler) OnChange(dir string) (interface{}, error) {
+func (w *watchHandler) OnChange(dir string) (any, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (w *watchHandler) OnChange(dir string) (interface{}, error) {
 	return declarativeConfigFiles, nil
 }
 
-func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
+func (w *watchHandler) OnStableUpdate(val any, err error) {
 	// We receive an array of file contents (i.e. bytes) which contain valid YAML format (this has been achieved within
 	// OnUpdate, and OnStableUpdate will only be called _iff_ OnStable deemed the contents as valid YAMLs.
 	if err != nil {
@@ -181,7 +181,7 @@ func readDeclarativeConfigFile(file string) ([]byte, error) {
 		return nil, err
 	}
 
-	if err := yaml.Unmarshal(fileContents, &map[string]interface{}{}); err != nil {
+	if err := yaml.Unmarshal(fileContents, &map[string]any{}); err != nil {
 		return nil, err
 	}
 	return fileContents, nil

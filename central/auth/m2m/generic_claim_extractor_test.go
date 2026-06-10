@@ -11,12 +11,12 @@ import (
 func Test_genericClaimExtractor(t *testing.T) {
 	testCases := []struct {
 		subject      string
-		unstructured map[string]interface{}
+		unstructured map[string]any
 		roxClaims    tokens.RoxClaims
 	}{
 		{
 			subject: "test-subject-email",
-			unstructured: map[string]interface{}{
+			unstructured: map[string]any{
 				"email":     "test@something.com",
 				"something": "else",
 				"another":   []string{"value", "of", "things"},
@@ -38,7 +38,7 @@ func Test_genericClaimExtractor(t *testing.T) {
 		},
 		{
 			subject: "test-subject-preferred_username",
-			unstructured: map[string]interface{}{
+			unstructured: map[string]any{
 				"preferred_username": "test-user",
 				"something":          "else",
 				"another":            []string{"value", "of", "things"},
@@ -60,7 +60,7 @@ func Test_genericClaimExtractor(t *testing.T) {
 		},
 		{
 			subject: "test-subject-full_name",
-			unstructured: map[string]interface{}{
+			unstructured: map[string]any{
 				"full_name": "i am the test user",
 				"something": "else",
 				"another":   []string{"value", "of", "things"},
@@ -82,7 +82,7 @@ func Test_genericClaimExtractor(t *testing.T) {
 		},
 		{
 			subject: "test-subject-empty",
-			unstructured: map[string]interface{}{
+			unstructured: map[string]any{
 				"something": "else",
 				"another":   []string{"value", "of", "things"},
 			},
@@ -102,15 +102,15 @@ func Test_genericClaimExtractor(t *testing.T) {
 		},
 		{
 			subject: "test-k8s",
-			unstructured: map[string]interface{}{
+			unstructured: map[string]any{
 				"aud": []string{"https://example.com"},
 				"exp": 1763119831,
 				"iat": 1763116231,
 				"iss": "https://example.com",
 				"jti": "6a5e8681-3b2a-44f2-9462-ecf16f52c779",
-				"kubernetes.io": map[string]interface{}{
+				"kubernetes.io": map[string]any{
 					"namespace": "stackrox",
-					"serviceaccount": map[string]interface{}{
+					"serviceaccount": map[string]any{
 						"name": "config-controller",
 						"uid":  "3cd68f8a-7e72-44e7-af17-b283e7027980",
 					},

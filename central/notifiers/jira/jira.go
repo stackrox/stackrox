@@ -56,7 +56,7 @@ type jira struct {
 	severityToPriority map[storage.Severity]string
 	needsPriority      bool
 
-	unknownMap map[string]interface{}
+	unknownMap map[string]any
 }
 
 type issueTypeResult struct {
@@ -87,7 +87,7 @@ type permissionResult struct {
 	}
 }
 
-func callJira(client *jiraLib.Client, urlPath string, result interface{}, startAt int) error {
+func callJira(client *jiraLib.Client, urlPath string, result any, startAt int) error {
 	req, err := client.NewRequest("GET", urlPath, nil)
 	if err != nil {
 		return errors.Wrap(err, "Failed to create Jira request")
@@ -409,7 +409,7 @@ func newJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter
 	}
 
 	// marshal unknowns
-	var unknownMap map[string]interface{}
+	var unknownMap map[string]any
 	if conf.GetDefaultFieldsJson() != "" {
 		if err := json.Unmarshal([]byte(conf.GetDefaultFieldsJson()), &unknownMap); err != nil {
 			return nil, errors.Wrap(err, "could not unmarshal default fields JSON")

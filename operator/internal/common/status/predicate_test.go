@@ -605,15 +605,15 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 		{
 			name: "Available condition changed should skip reconciliation",
 			old: &unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "platform.stackrox.io/v1alpha1",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "stackrox",
 						"namespace": "stackrox",
 					},
-					"status": map[string]interface{}{
-						"conditions": []interface{}{
-							map[string]interface{}{
+					"status": map[string]any{
+						"conditions": []any{
+							map[string]any{
 								"type":   "Available",
 								"status": "False",
 								"reason": "DeploymentsNotReady",
@@ -623,15 +623,15 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 				},
 			},
 			new: &unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "platform.stackrox.io/v1alpha1",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "stackrox",
 						"namespace": "stackrox",
 					},
-					"status": map[string]interface{}{
-						"conditions": []interface{}{
-							map[string]interface{}{
+					"status": map[string]any{
+						"conditions": []any{
+							map[string]any{
 								"type":   "Available",
 								"status": "True",
 								"reason": "WorkloadsReady",
@@ -645,20 +645,20 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 		{
 			name: "Deployed condition changed should allow reconciliation",
 			old: &unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "platform.stackrox.io/v1alpha1",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "stackrox",
 						"namespace": "stackrox",
 					},
-					"status": map[string]interface{}{
-						"conditions": []interface{}{
-							map[string]interface{}{
+					"status": map[string]any{
+						"conditions": []any{
+							map[string]any{
 								"type":   "Available",
 								"status": "True",
 								"reason": "WorkloadsReady",
 							},
-							map[string]interface{}{
+							map[string]any{
 								"type":   "Deployed",
 								"status": "True",
 								"reason": "InstallSuccessful",
@@ -668,20 +668,20 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 				},
 			},
 			new: &unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "platform.stackrox.io/v1alpha1",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "stackrox",
 						"namespace": "stackrox",
 					},
-					"status": map[string]interface{}{
-						"conditions": []interface{}{
-							map[string]interface{}{
+					"status": map[string]any{
+						"conditions": []any{
+							map[string]any{
 								"type":   "Available",
 								"status": "True",
 								"reason": "WorkloadsReady",
 							},
-							map[string]interface{}{
+							map[string]any{
 								"type":   "Deployed",
 								"status": "True",
 								"reason": "UpgradeSuccessful",
@@ -696,17 +696,17 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 			name:              "Central spec change should allow reconciliation",
 			testWithFixedKind: true,
 			old: &unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "platform.stackrox.io/v1alpha1",
 					"kind":       "Central",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "stackrox-central-services",
 						"namespace": "acs-central",
 					},
-					"spec": map[string]interface{}{
-						"central": map[string]interface{}{
-							"persistence": map[string]interface{}{
-								"persistentVolumeClaim": map[string]interface{}{
+					"spec": map[string]any{
+						"central": map[string]any{
+							"persistence": map[string]any{
+								"persistentVolumeClaim": map[string]any{
 									"size": "100Gi",
 								},
 							},
@@ -715,17 +715,17 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 				},
 			},
 			new: &unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "platform.stackrox.io/v1alpha1",
 					"kind":       "Central",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "stackrox-central-services",
 						"namespace": "acs-central",
 					},
-					"spec": map[string]interface{}{
-						"central": map[string]interface{}{
-							"persistence": map[string]interface{}{
-								"persistentVolumeClaim": map[string]interface{}{
+					"spec": map[string]any{
+						"central": map[string]any{
+							"persistence": map[string]any{
+								"persistentVolumeClaim": map[string]any{
 									"size": "200Gi", // Changed
 								},
 							},
@@ -739,27 +739,27 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 			name:              "SecuredCluster spec change should allow reconciliation",
 			testWithFixedKind: true,
 			old: &unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "platform.stackrox.io/v1alpha1",
 					"kind":       "SecuredCluster",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "stackrox-secured-cluster-services",
 						"namespace": "stackrox",
 					},
-					"spec": map[string]interface{}{
+					"spec": map[string]any{
 						"clusterName": "cluster1",
 					},
 				},
 			},
 			new: &unstructured.Unstructured{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"apiVersion": "platform.stackrox.io/v1alpha1",
 					"kind":       "SecuredCluster",
-					"metadata": map[string]interface{}{
+					"metadata": map[string]any{
 						"name":      "stackrox-secured-cluster-services",
 						"namespace": "stackrox",
 					},
-					"spec": map[string]interface{}{
+					"spec": map[string]any{
 						"clusterName": "cluster2",
 					},
 				},

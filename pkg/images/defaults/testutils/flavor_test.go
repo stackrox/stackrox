@@ -24,7 +24,7 @@ func TestFlavorsDontHaveEmptyFields(t *testing.T) {
 		data, err := json.Marshal(f)
 		require.NoError(t, err)
 
-		mapData := make(map[string]interface{})
+		mapData := make(map[string]any)
 		err = json.Unmarshal(data, &mapData)
 		require.NoError(t, err)
 

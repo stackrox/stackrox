@@ -123,7 +123,7 @@ func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ..
 	}
 
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
+	inputRows := make([][]any, 0, batchSize)
 
 	var err error
 
@@ -168,7 +168,7 @@ func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ..
 				return marshalErr
 			}
 
-			inputRows = append(inputRows, []interface{}{
+			inputRows = append(inputRows, []any{
 				obj.GetId(),
 				obj.GetType(),
 				obj.GetCveBaseInfo().GetCve(),
@@ -211,7 +211,7 @@ func copyFromClusterCVEEdges(ctx context.Context, tx *postgres.Tx, cveType stora
 	}
 
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
+	inputRows := make([][]any, 0, batchSize)
 
 	var err error
 	copyCols := []string{
@@ -239,7 +239,7 @@ func copyFromClusterCVEEdges(ctx context.Context, tx *postgres.Tx, cveType stora
 				return marshalErr
 			}
 
-			inputRows = append(inputRows, []interface{}{
+			inputRows = append(inputRows, []any{
 				obj.GetId(),
 				obj.GetIsFixable(),
 				obj.GetFixedBy(),

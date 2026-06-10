@@ -19,7 +19,7 @@ const (
 )
 
 // ValidateEndpoints validates endpoints to ensure they do not reference localhost or local metadata service
-func ValidateEndpoints(obj interface{}) error {
+func ValidateEndpoints(obj any) error {
 	validator := func(field reflect.Value, validateTag string) error {
 		switch validateTag {
 		case validateTagNoLocalEndpoint:

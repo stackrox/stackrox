@@ -39,17 +39,17 @@ type namespacePatchHandler struct {
 	ctx      context.Context
 }
 
-func (h *namespacePatchHandler) OnAdd(obj interface{}, _ bool) {
+func (h *namespacePatchHandler) OnAdd(obj any, _ bool) {
 	h.checkAndPatchNamespace(obj)
 }
 
-func (h *namespacePatchHandler) OnUpdate(_, newObj interface{}) {
+func (h *namespacePatchHandler) OnUpdate(_, newObj any) {
 	h.checkAndPatchNamespace(newObj)
 }
 
-func (h *namespacePatchHandler) OnDelete(_ interface{}) {}
+func (h *namespacePatchHandler) OnDelete(_ any) {}
 
-func (h *namespacePatchHandler) checkAndPatchNamespace(obj interface{}) {
+func (h *namespacePatchHandler) checkAndPatchNamespace(obj any) {
 	ns, ok := obj.(*v1.Namespace)
 	if !ok {
 		return

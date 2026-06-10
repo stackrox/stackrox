@@ -19,7 +19,7 @@ func (h *azureFile) Type() string {
 	return azureFileType
 }
 
-func createAzureFile(i interface{}) VolumeSource {
+func createAzureFile(i any) VolumeSource {
 	azureVolume, ok := i.(*v1.AzureFileVolumeSource)
 	if !ok {
 		return &Unimplemented{}

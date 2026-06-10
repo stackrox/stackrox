@@ -11,7 +11,7 @@ import (
 const UnknownEventType = "UnknownEventType"
 
 // GetEventTypeWithoutPrefix trims the *central.SensorEvent_ from the event type
-func GetEventTypeWithoutPrefix(i interface{}) string {
+func GetEventTypeWithoutPrefix(i any) string {
 	if i == nil {
 		return UnknownEventType
 	}

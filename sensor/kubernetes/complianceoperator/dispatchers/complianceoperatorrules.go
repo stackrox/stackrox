@@ -20,7 +20,7 @@ func NewRulesDispatcher() *RulesDispatcher {
 }
 
 // ProcessEvent processes a rule event
-func (c *RulesDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (c *RulesDispatcher) ProcessEvent(obj, _ any, action central.ResourceAction) *component.ResourceEvent {
 	var complianceRule v1alpha1.Rule
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)

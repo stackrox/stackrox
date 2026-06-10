@@ -84,7 +84,7 @@ func makeCtxWithCommandHeader(ctx context.Context) context.Context {
 }
 
 // addCommandHeaderUnaryInterceptor adds the roxctl command header to all unary requests.
-func addCommandHeaderUnaryInterceptor(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+func addCommandHeaderUnaryInterceptor(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 	return invoker(makeCtxWithCommandHeader(ctx), method, req, reply, cc, opts...)
 }
 

@@ -129,7 +129,7 @@ var _ = Describe("MapKubeAPIsExtension", func() {
 				install.ClientOnly = true
 				install.ReleaseName = obj.GetName()
 				install.Namespace = obj.GetNamespace()
-				rel, err := install.Run(&chartWithPSP, map[string]interface{}{})
+				rel, err := install.Run(&chartWithPSP, map[string]any{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(store.Create(rel)).To(Succeed())
 			}

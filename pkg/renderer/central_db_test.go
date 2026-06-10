@@ -95,7 +95,7 @@ func (suite *centralDBTestSuite) verifyFiles(t *testing.T, files []*zip.File, c 
 		assert.NoError(t, err)
 		assert.True(t, ok)
 		for _, val := range vals {
-			vol := val.(map[string]interface{})
+			vol := val.(map[string]any)
 			if vol["name"] == "disk" {
 				verifyNestedString(t, vol, "/var/lib/stackrox-db", "hostPath", "path")
 				break
@@ -109,14 +109,14 @@ func (suite *centralDBTestSuite) verifyFiles(t *testing.T, files []*zip.File, c 
 	}
 }
 
-func verifyNestedString(t *testing.T, objMap map[string]interface{}, value string, fields ...string) {
+func verifyNestedString(t *testing.T, objMap map[string]any, value string, fields ...string) {
 	val, ok, err := unstructured.NestedString(objMap, fields...)
 	assert.NoError(t, err)
 	assert.True(t, ok)
 	assert.Equal(t, value, val)
 }
 
-func getMatchedMapInFile(t *testing.T, fileMap map[string][]unstructured.Unstructured, fileName string, kind string) map[string]interface{} {
+func getMatchedMapInFile(t *testing.T, fileMap map[string][]unstructured.Unstructured, fileName string, kind string) map[string]any {
 	objs, ok := fileMap[fileName]
 	require.True(t, ok, "%s not found", fileName)
 	require.GreaterOrEqual(t, len(objs), 1)

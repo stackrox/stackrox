@@ -49,7 +49,7 @@ func getStatusConditions(conditions v1alpha1.Conditions) []*central.ComplianceOp
 }
 
 // ProcessEvent processes a scan setting binding event
-func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (c *ScanSettingBindings) ProcessEvent(obj, _ any, action central.ResourceAction) *component.ResourceEvent {
 	var scanSettingBindings v1alpha1.ScanSettingBinding
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)

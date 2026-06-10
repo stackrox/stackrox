@@ -24,7 +24,7 @@ type responseHeaderContextKey struct{}
 // `protocompat.Message`, and `encoding/json` otherwise).
 // If you need to mutate response headers, these can be accessed by calling ResponseHeaderFromContext.
 // Any errors that occur writing to the response body are simply logged.
-func RESTHandler(endpointFunc func(*http.Request) (interface{}, error)) http.HandlerFunc {
+func RESTHandler(endpointFunc func(*http.Request) (any, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 

@@ -18,7 +18,7 @@ func (h *persistentVolumeClaim) Type() string {
 	return persistentVolumeClaimType
 }
 
-func createPersistentVolumeClaim(i interface{}) VolumeSource {
+func createPersistentVolumeClaim(i any) VolumeSource {
 	persistent, ok := i.(*v1.PersistentVolumeClaimVolumeSource)
 	if !ok {
 		return &Unimplemented{}

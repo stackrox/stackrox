@@ -20,7 +20,7 @@ var (
 
 // PanicOnInvariantViolationUnaryInterceptor panics on ErrInvariantViolation.
 // Note: this interceptor should ONLY be used in dev builds.
-func PanicOnInvariantViolationUnaryInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func PanicOnInvariantViolationUnaryInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	resp, err := handler(ctx, req)
 	if errors.Is(err, errox.InvariantViolation) {
 		panic(err)
@@ -30,7 +30,7 @@ func PanicOnInvariantViolationUnaryInterceptor(ctx context.Context, req interfac
 
 // PanicOnInvariantViolationStreamInterceptor panics on ErrInvariantViolation.
 // Note: this interceptor should ONLY be used in dev builds.
-func PanicOnInvariantViolationStreamInterceptor(srv interface{}, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+func PanicOnInvariantViolationStreamInterceptor(srv any, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	err := handler(srv, ss)
 	if errors.Is(err, errox.InvariantViolation) {
 		panic(err)
@@ -41,7 +41,7 @@ func PanicOnInvariantViolationStreamInterceptor(srv interface{}, ss grpc.ServerS
 // LogInternalErrorInterceptor logs internal errors.
 // Note: this interceptor should ONLY be used in dev builds because Internal is the default code,
 // so all errors that have not been assigned a class will appear in the log.
-func LogInternalErrorInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func LogInternalErrorInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	resp, err := handler(ctx, req)
 	logErrorIfInternal(err)
 	return resp, err
@@ -50,7 +50,7 @@ func LogInternalErrorInterceptor(ctx context.Context, req interface{}, _ *grpc.U
 // LogInternalErrorStreamInterceptor logs internal errors.
 // Note: this interceptor should ONLY be used in dev builds because Internal is the default code,
 // so all errors that have not been assigned a class will appear in the log.
-func LogInternalErrorStreamInterceptor(srv interface{}, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+func LogInternalErrorStreamInterceptor(srv any, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	err := handler(srv, ss)
 	logErrorIfInternal(err)
 	return err
@@ -63,14 +63,14 @@ func logErrorIfInternal(err error) {
 }
 
 // ErrorToGrpcCodeInterceptor translates common errors defined in errorhelpers to GRPC codes.
-func ErrorToGrpcCodeInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func ErrorToGrpcCodeInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	resp, err := handler(ctx, req)
 	grpcStatus := ErrToGrpcStatus(err)
 	return resp, grpcStatus.Err()
 }
 
 // ErrorToGrpcCodeStreamInterceptor translates common errors defined in errorhelpers to GRPC codes.
-func ErrorToGrpcCodeStreamInterceptor(srv interface{}, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+func ErrorToGrpcCodeStreamInterceptor(srv any, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	err := handler(srv, ss)
 	grpcStatus := ErrToGrpcStatus(err)
 	return grpcStatus.Err()

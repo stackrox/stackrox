@@ -113,7 +113,7 @@ func NewSarifPrinter(jsonPathExpressions map[string]string, entity string, repor
 }
 
 // Print will create a sarif report from the given object and write the output to the given io.Writer.
-func (s *SarifPrinter) Print(object interface{}, out io.Writer) error {
+func (s *SarifPrinter) Print(object any, out io.Writer) error {
 	sarifEntries, err := sarifEntriesFromJSONObject(object, s.jsonPathExpressions)
 	if err != nil {
 		return err
@@ -179,7 +179,7 @@ func (s *SarifPrinter) addEntry(run *sarif.Run, entry sarifEntry) {
 		}))
 }
 
-func sarifEntriesFromJSONObject(jsonObject interface{}, pathExpressions map[string]string) ([]sarifEntry, error) {
+func sarifEntriesFromJSONObject(jsonObject any, pathExpressions map[string]string) ([]sarifEntry, error) {
 	for _, requiredKey := range requiredKeys {
 		if _, contains := pathExpressions[requiredKey]; !contains {
 			return nil, errox.InvalidArgs.Newf("not all required JSON path expressions given, ensure JSON "+

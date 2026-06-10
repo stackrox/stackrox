@@ -74,9 +74,9 @@ type FakeEventsManager struct {
 	// Reader the TraceReader
 	Reader *TraceReader
 	// clientMap map with the k8s clients
-	clientMap map[string]func(string) interface{}
+	clientMap map[string]func(string) any
 	// resourceMap map with the k8s resources
-	resourceMap map[string]interface{}
+	resourceMap map[string]any
 	// Verbose prints messages to stdout
 	Verbose bool
 }
@@ -94,7 +94,7 @@ var actionToMethod = map[string]string{
 	removeAction: "Delete",
 }
 
-var actionToOptions = map[string]interface{}{
+var actionToOptions = map[string]any{
 	createAction: metav1.CreateOptions{},
 	updateAction: metav1.UpdateOptions{},
 	removeAction: metav1.DeleteOptions{},
@@ -102,31 +102,31 @@ var actionToOptions = map[string]interface{}{
 
 // Init initializes the FakeEventsManager
 func (f *FakeEventsManager) Init() {
-	f.clientMap = map[string]func(string) interface{}{
-		namespaceKind:          func(string) interface{} { return f.Client.Kubernetes().CoreV1().Namespaces() },
-		clusterRoleKind:        func(string) interface{} { return f.Client.Kubernetes().RbacV1().ClusterRoles() },
-		clusterRoleBindingKind: func(string) interface{} { return f.Client.Kubernetes().RbacV1().ClusterRoleBindings() },
-		nodeKind:               func(string) interface{} { return f.Client.Kubernetes().CoreV1().Nodes() },
-		secretKind:             func(namespace string) interface{} { return f.Client.Kubernetes().CoreV1().Secrets(namespace) },
-		serviceAccountsKind:    func(namespace string) interface{} { return f.Client.Kubernetes().CoreV1().ServiceAccounts(namespace) },
-		roleKind:               func(namespace string) interface{} { return f.Client.Kubernetes().RbacV1().Roles(namespace) },
-		roleBindingKind:        func(namespace string) interface{} { return f.Client.Kubernetes().RbacV1().RoleBindings(namespace) },
-		networkPolicyKind: func(namespace string) interface{} {
+	f.clientMap = map[string]func(string) any{
+		namespaceKind:          func(string) any { return f.Client.Kubernetes().CoreV1().Namespaces() },
+		clusterRoleKind:        func(string) any { return f.Client.Kubernetes().RbacV1().ClusterRoles() },
+		clusterRoleBindingKind: func(string) any { return f.Client.Kubernetes().RbacV1().ClusterRoleBindings() },
+		nodeKind:               func(string) any { return f.Client.Kubernetes().CoreV1().Nodes() },
+		secretKind:             func(namespace string) any { return f.Client.Kubernetes().CoreV1().Secrets(namespace) },
+		serviceAccountsKind:    func(namespace string) any { return f.Client.Kubernetes().CoreV1().ServiceAccounts(namespace) },
+		roleKind:               func(namespace string) any { return f.Client.Kubernetes().RbacV1().Roles(namespace) },
+		roleBindingKind:        func(namespace string) any { return f.Client.Kubernetes().RbacV1().RoleBindings(namespace) },
+		networkPolicyKind: func(namespace string) any {
 			return f.Client.Kubernetes().NetworkingV1().NetworkPolicies(namespace)
 		},
-		serviceKind:    func(namespace string) interface{} { return f.Client.Kubernetes().CoreV1().Services(namespace) },
-		jobKind:        func(namespace string) interface{} { return f.Client.Kubernetes().BatchV1().Jobs(namespace) },
-		replicaSetKind: func(namespace string) interface{} { return f.Client.Kubernetes().AppsV1().ReplicaSets(namespace) },
-		replicationControllerKind: func(namespace string) interface{} {
+		serviceKind:    func(namespace string) any { return f.Client.Kubernetes().CoreV1().Services(namespace) },
+		jobKind:        func(namespace string) any { return f.Client.Kubernetes().BatchV1().Jobs(namespace) },
+		replicaSetKind: func(namespace string) any { return f.Client.Kubernetes().AppsV1().ReplicaSets(namespace) },
+		replicationControllerKind: func(namespace string) any {
 			return f.Client.Kubernetes().CoreV1().ReplicationControllers(namespace)
 		},
-		daemonSetKind:   func(namespace string) interface{} { return f.Client.Kubernetes().AppsV1().DaemonSets(namespace) },
-		deploymentKind:  func(namespace string) interface{} { return f.Client.Kubernetes().AppsV1().Deployments(namespace) },
-		statefulSetKind: func(namespace string) interface{} { return f.Client.Kubernetes().AppsV1().StatefulSets(namespace) },
-		cronJobKind:     func(namespace string) interface{} { return f.Client.Kubernetes().BatchV1().CronJobs(namespace) },
-		podKind:         func(namespace string) interface{} { return f.Client.Kubernetes().CoreV1().Pods(namespace) },
+		daemonSetKind:   func(namespace string) any { return f.Client.Kubernetes().AppsV1().DaemonSets(namespace) },
+		deploymentKind:  func(namespace string) any { return f.Client.Kubernetes().AppsV1().Deployments(namespace) },
+		statefulSetKind: func(namespace string) any { return f.Client.Kubernetes().AppsV1().StatefulSets(namespace) },
+		cronJobKind:     func(namespace string) any { return f.Client.Kubernetes().BatchV1().CronJobs(namespace) },
+		podKind:         func(namespace string) any { return f.Client.Kubernetes().CoreV1().Pods(namespace) },
 	}
-	f.resourceMap = map[string]interface{}{
+	f.resourceMap = map[string]any{
 		namespaceKind:             &corev1.Namespace{},
 		secretKind:                &corev1.Secret{},
 		serviceAccountsKind:       &corev1.ServiceAccount{},

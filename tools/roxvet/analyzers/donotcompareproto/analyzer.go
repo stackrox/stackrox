@@ -84,7 +84,7 @@ var (
 	)
 )
 
-func run(pass *analysis.Pass) (interface{}, error) {
+func run(pass *analysis.Pass) (any, error) {
 	callerPkg := pass.Pkg.Path()
 	for _, allowedPkg := range allowedCallerPackages {
 		if strings.HasPrefix(callerPkg, allowedPkg) {

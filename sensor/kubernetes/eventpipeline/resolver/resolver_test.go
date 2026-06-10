@@ -98,7 +98,7 @@ func (s *resolverSuite) Test_MessageSentToOutput() {
 			messageReceived := sync.WaitGroup{}
 			messageReceived.Add(1)
 
-			s.mockOutput.EXPECT().Send(gomock.Any()).Times(1).Do(func(arg0 interface{}) {
+			s.mockOutput.EXPECT().Send(gomock.Any()).Times(1).Do(func(arg0 any) {
 				defer messageReceived.Done()
 			})
 			event := &component.ResourceEvent{
@@ -157,7 +157,7 @@ func (s *resolverSuite) Test_Send_DeploymentWithRBACs() {
 					acceptableNumberOfMismatches: 1,
 				}
 
-				s.mockOutput.EXPECT().Send(&expectedDeployment).Times(2).Do(func(arg0 interface{}) {
+				s.mockOutput.EXPECT().Send(&expectedDeployment).Times(2).Do(func(arg0 any) {
 					defer messageReceived.Done()
 				})
 
@@ -205,7 +205,7 @@ func (s *resolverSuite) Test_Send_DeploymentsWithServiceExposure() {
 				acceptableNumberOfMismatches: 1,
 			}
 
-			s.mockOutput.EXPECT().Send(&expectedDeployment).Times(2).Do(func(arg0 interface{}) {
+			s.mockOutput.EXPECT().Send(&expectedDeployment).Times(2).Do(func(arg0 any) {
 				defer messageReceived.Done()
 			})
 
@@ -240,7 +240,7 @@ func (s *resolverSuite) Test_Send_MultipleDeploymentRefs() {
 			s.givenPermissionLevelForDeployment("4321", storage.PermissionLevel_ELEVATED_IN_NAMESPACE)
 			s.givenPermissionLevelForDeployment("6543", storage.PermissionLevel_ELEVATED_CLUSTER_WIDE)
 
-			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: []int{0, 1, 1, 1}}).Times(4).Do(func(arg0 interface{}) {
+			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: []int{0, 1, 1, 1}}).Times(4).Do(func(arg0 any) {
 				defer messageReceived.Done()
 			})
 
@@ -285,7 +285,7 @@ func (s *resolverSuite) Test_Send_ResourceAction() {
 							resourceAction:               action,
 							acceptableNumberOfMismatches: 1,
 						},
-					).Times(2).Do(func(arg0 interface{}) {
+					).Times(2).Do(func(arg0 any) {
 						defer messageReceived.Done()
 					})
 
@@ -319,7 +319,7 @@ func (s *resolverSuite) Test_Send_BuildDeploymentWithDependenciesError() {
 
 			s.givenBuildDependenciesError("1234", &waitForEvents)
 
-			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: []int{0}}).Times(1).Do(func(arg0 interface{}) {
+			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: []int{0}}).Times(1).Do(func(arg0 any) {
 				defer waitForEvents.Done()
 			})
 
@@ -355,7 +355,7 @@ func (s *resolverSuite) Test_Send_DeploymentNotFound() {
 			s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(0)
 			s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(gomock.Any(), gomock.Any()).Times(0)
 
-			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: []int{0}}).Times(1).Do(func(arg0 interface{}) {
+			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: []int{0}}).Times(1).Do(func(arg0 any) {
 				defer waitForEvents.Done()
 			})
 
@@ -393,7 +393,7 @@ func (s *resolverSuite) Test_Send_DetectorReference() {
 				},
 			}
 
-			s.mockOutput.EXPECT().Send(&detectionObjectMatcher{expected: detectionObject}).Times(1).Do(func(arg0 interface{}) {
+			s.mockOutput.EXPECT().Send(&detectionObjectMatcher{expected: detectionObject}).Times(1).Do(func(arg0 any) {
 				defer messageReceived.Done()
 			})
 
@@ -467,7 +467,7 @@ func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
 
 				s.givenAnyDeploymentProcessedNTimes(testCase.expectedDeploymentProcessed)
 
-				s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: testCase.expectedEvents}).Times(len(testCase.expectedEvents)).Do(func(arg0 interface{}) {
+				s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: testCase.expectedEvents}).Times(len(testCase.expectedEvents)).Do(func(arg0 any) {
 					defer messageReceived.Done()
 				})
 
@@ -520,7 +520,7 @@ func (s *resolverSuite) Test_Send_SkipDedupingBehavior() {
 					id:                           "1234",
 					permissionLevel:              storage.PermissionLevel_NONE,
 					acceptableNumberOfMismatches: tc.expectedSends - 1,
-				}).Times(tc.expectedSends).Do(func(arg0 interface{}) {
+				}).Times(tc.expectedSends).Do(func(arg0 any) {
 					defer messageReceived.Done()
 				})
 
@@ -599,14 +599,14 @@ func (s *resolverSuite) givenStubPortExposure() map[service.PortRef][]*storage.P
 }
 
 func (s *resolverSuite) givenBuildDependenciesError(deployment string, wg *sync.WaitGroup) {
-	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
+	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 any) *storage.Deployment {
 		return &storage.Deployment{}
 	})
 	s.mockEndpointManager.EXPECT().OnDeploymentCreateOrUpdateByID(gomock.Eq(deployment)).Times(1)
 	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(1).
-		DoAndReturn(func(arg0 interface{}) storage.PermissionLevel { return storage.PermissionLevel_NONE })
+		DoAndReturn(func(arg0 any) storage.PermissionLevel { return storage.PermissionLevel_NONE })
 	s.mockServiceStore.EXPECT().GetExposureInfos(gomock.Any(), gomock.Any()).Times(1).
-		DoAndReturn(func(arg0, arg1 interface{}) []map[service.PortRef][]*storage.PortConfig_ExposureInfo { return nil })
+		DoAndReturn(func(arg0, arg1 any) []map[service.PortRef][]*storage.PortConfig_ExposureInfo { return nil })
 
 	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(
 		gomock.Eq(deployment), gomock.Eq(store.Dependencies{
@@ -615,21 +615,21 @@ func (s *resolverSuite) givenBuildDependenciesError(deployment string, wg *sync.
 			LocalImages:     set.NewStringSet(),
 		})).
 		Times(1).
-		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, bool, error) {
+		DoAndReturn(func(arg0, arg1 any) (*storage.Deployment, bool, error) {
 			defer wg.Done()
 			return nil, false, errors.New("dependency error")
 		})
 }
 
 func (s *resolverSuite) givenNilDeployment(wg *sync.WaitGroup) {
-	s.mockDeploymentStore.EXPECT().Get(gomock.Any()).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
+	s.mockDeploymentStore.EXPECT().Get(gomock.Any()).Times(1).DoAndReturn(func(arg0 any) *storage.Deployment {
 		defer wg.Done()
 		return nil
 	})
 }
 
 func (s *resolverSuite) givenPermissionLevelForDeployment(deployment string, permissionLevel storage.PermissionLevel) {
-	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
+	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 any) *storage.Deployment {
 		return &storage.Deployment{
 			Labels: map[string]string{},
 		}
@@ -637,12 +637,12 @@ func (s *resolverSuite) givenPermissionLevelForDeployment(deployment string, per
 
 	s.mockEndpointManager.EXPECT().OnDeploymentCreateOrUpdateByID(gomock.Eq(deployment)).Times(1)
 
-	s.mockServiceStore.EXPECT().GetExposureInfos(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(arg0, arg1 interface{}) []map[service.PortRef][]*storage.PortConfig_ExposureInfo {
+	s.mockServiceStore.EXPECT().GetExposureInfos(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(arg0, arg1 any) []map[service.PortRef][]*storage.PortConfig_ExposureInfo {
 		return nil
 	})
 
 	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(1).
-		DoAndReturn(func(arg0 interface{}) storage.PermissionLevel { return permissionLevel })
+		DoAndReturn(func(arg0 any) storage.PermissionLevel { return permissionLevel })
 
 	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(
 		gomock.Eq(deployment), gomock.Eq(store.Dependencies{
@@ -651,13 +651,13 @@ func (s *resolverSuite) givenPermissionLevelForDeployment(deployment string, per
 			LocalImages:     set.NewStringSet(),
 		})).
 		Times(1).
-		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, bool, error) {
+		DoAndReturn(func(arg0, arg1 any) (*storage.Deployment, bool, error) {
 			return &storage.Deployment{Id: deployment, ServiceAccountPermissionLevel: permissionLevel}, true, nil
 		})
 }
 
 func (s *resolverSuite) givenServiceExposureForDeployment(deployment string, exposure []map[service.PortRef][]*storage.PortConfig_ExposureInfo) {
-	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
+	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 any) *storage.Deployment {
 		return &storage.Deployment{
 			Namespace: "example",
 			Labels:    map[string]string{"app": "a"},
@@ -667,10 +667,10 @@ func (s *resolverSuite) givenServiceExposureForDeployment(deployment string, exp
 	s.mockEndpointManager.EXPECT().OnDeploymentCreateOrUpdateByID(gomock.Eq(deployment)).Times(1)
 
 	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).AnyTimes().
-		DoAndReturn(func(arg0 interface{}) storage.PermissionLevel { return storage.PermissionLevel_NONE })
+		DoAndReturn(func(arg0 any) storage.PermissionLevel { return storage.PermissionLevel_NONE })
 
 	s.mockServiceStore.EXPECT().GetExposureInfos(gomock.Any(), gomock.Any()).Times(1).
-		DoAndReturn(func(arg0, arg1 interface{}) []map[service.PortRef][]*storage.PortConfig_ExposureInfo { return exposure })
+		DoAndReturn(func(arg0, arg1 any) []map[service.PortRef][]*storage.PortConfig_ExposureInfo { return exposure })
 
 	var flatExposures []*storage.PortConfig_ExposureInfo
 	for _, e := range exposure {
@@ -686,7 +686,7 @@ func (s *resolverSuite) givenServiceExposureForDeployment(deployment string, exp
 			LocalImages:     set.NewStringSet(),
 		})).
 		Times(1).
-		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, bool, error) {
+		DoAndReturn(func(arg0, arg1 any) (*storage.Deployment, bool, error) {
 			return &storage.Deployment{
 				Id:                            deployment,
 				ServiceAccountPermissionLevel: storage.PermissionLevel_NONE,
@@ -700,21 +700,21 @@ func (s *resolverSuite) givenServiceExposureForDeployment(deployment string, exp
 }
 
 func (s *resolverSuite) givenAnyDeploymentProcessedNTimes(times int) {
-	s.mockDeploymentStore.EXPECT().Get(gomock.Any()).Times(times).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
+	s.mockDeploymentStore.EXPECT().Get(gomock.Any()).Times(times).DoAndReturn(func(arg0 any) *storage.Deployment {
 		return &storage.Deployment{}
 	})
 
 	s.mockEndpointManager.EXPECT().OnDeploymentCreateOrUpdateByID(gomock.Any()).Times(times)
 
 	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(times).
-		DoAndReturn(func(arg0 interface{}) storage.PermissionLevel { return storage.PermissionLevel_DEFAULT })
+		DoAndReturn(func(arg0 any) storage.PermissionLevel { return storage.PermissionLevel_DEFAULT })
 
 	s.mockServiceStore.EXPECT().GetExposureInfos(gomock.Any(), gomock.Any()).Times(times).
-		DoAndReturn(func(arg0, arg1 interface{}) []map[service.PortRef][]*storage.PortConfig_ExposureInfo { return nil })
+		DoAndReturn(func(arg0, arg1 any) []map[service.PortRef][]*storage.PortConfig_ExposureInfo { return nil })
 
 	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(gomock.Any(), gomock.Any()).
 		Times(times).
-		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, bool, error) {
+		DoAndReturn(func(arg0, arg1 any) (*storage.Deployment, bool, error) {
 			return &storage.Deployment{}, true, nil
 		})
 }
@@ -727,7 +727,7 @@ type deploymentMatcher struct {
 	error                        string
 }
 
-func (m *deploymentMatcher) Matches(target interface{}) bool {
+func (m *deploymentMatcher) Matches(target any) bool {
 	event, ok := target.(*component.ResourceEvent)
 	if !ok {
 		m.error = "received message isn't a resource event"
@@ -787,7 +787,7 @@ type detectionObjectMatcher struct {
 	error                        string
 }
 
-func (m *detectionObjectMatcher) Matches(target interface{}) bool {
+func (m *detectionObjectMatcher) Matches(target any) bool {
 	event, ok := target.(*component.ResourceEvent)
 	if !ok {
 		m.error = "received message isn't a resource event"
@@ -829,7 +829,7 @@ type messageCounterMatcher struct {
 	error     string
 }
 
-func (m *messageCounterMatcher) Matches(target interface{}) bool {
+func (m *messageCounterMatcher) Matches(target any) bool {
 	event, ok := target.(*component.ResourceEvent)
 	if !ok {
 		m.error = "received message isn't a resource event"
@@ -864,7 +864,7 @@ type resourceActionMatcher struct {
 	error                        string
 }
 
-func (m *resourceActionMatcher) Matches(target interface{}) bool {
+func (m *resourceActionMatcher) Matches(target any) bool {
 	event, ok := target.(*component.ResourceEvent)
 	if !ok {
 		m.error = "received message isn't a resource event"

@@ -12,19 +12,19 @@ type crdHandler struct {
 }
 
 // OnAdd this function is called by the informer whenever a resource is created in the cluster
-func (h *crdHandler) OnAdd(obj interface{}, _ bool) {
+func (h *crdHandler) OnAdd(obj any, _ bool) {
 	h.processEvent(nil, obj, central.ResourceAction_CREATE_RESOURCE)
 }
 
 // OnUpdate this function is called by the informer whenever a resource is updated in the cluster
-func (h *crdHandler) OnUpdate(_, _ interface{}) {}
+func (h *crdHandler) OnUpdate(_, _ any) {}
 
 // OnDelete this function is called by the informer whenever a resource is deleted the cluster
-func (h *crdHandler) OnDelete(obj interface{}) {
+func (h *crdHandler) OnDelete(obj any) {
 	h.processEvent(nil, obj, central.ResourceAction_REMOVE_RESOURCE)
 }
 
-func (h *crdHandler) processEvent(_, new interface{}, action central.ResourceAction) {
+func (h *crdHandler) processEvent(_, new any, action central.ResourceAction) {
 	unstructuredObj, ok := new.(*unstructured.Unstructured)
 	if !ok {
 		log.Errorf("Object %v is not an unstructured object", new)

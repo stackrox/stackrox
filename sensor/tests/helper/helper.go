@@ -87,7 +87,7 @@ const (
 type K8sResourceInfo struct {
 	Kind      string
 	YamlFile  string
-	Obj       interface{}
+	Obj       any
 	Name      string
 	PatchFile string
 }
@@ -450,7 +450,7 @@ type AssertFunc func(deployment *storage.Deployment, action central.ResourceActi
 type MatchResource func(resource *central.MsgFromSensor) bool
 
 // AssertFuncAny is similar to AssertFunc but generic to any type of resource.
-type AssertFuncAny func(resource interface{}) error
+type AssertFuncAny func(resource any) error
 
 // LastResourceState same as LastResourceStateWithTimeout with a 3s default timeout.
 func (c *TestContext) LastResourceState(t *testing.T, matchResourceFn MatchResource, assertFn AssertFuncAny, message string) {

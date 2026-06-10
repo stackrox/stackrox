@@ -23,7 +23,7 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 		AllowPrivilegeEscalation: true,
 	}
 	base := struct {
-		inputObj           interface{}
+		inputObj           any
 		deploymentType     string
 		action             central.ResourceAction
 		podLister          *mockPodLister

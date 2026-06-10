@@ -16,7 +16,7 @@ func (e *emptyDir) Type() string {
 	return emptyDirType
 }
 
-func createEmptyDir(i interface{}) VolumeSource {
+func createEmptyDir(i any) VolumeSource {
 	emptyDirVolume, ok := i.(*v1.EmptyDirVolumeSource)
 	if !ok {
 		return &Unimplemented{}

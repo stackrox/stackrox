@@ -162,7 +162,7 @@ func (c *collector) createDynamicClients() map[schema.GroupVersionKind]dynamic.N
 }
 
 func (c *collector) collectPodData(pod *v1.Pod) error {
-	objToMarshal := (interface{})(pod)
+	objToMarshal := (any)(pod)
 
 	var unstructuredPod unstructured.Unstructured
 	if err := scheme.Scheme.Convert(pod, &unstructuredPod, nil); err == nil {

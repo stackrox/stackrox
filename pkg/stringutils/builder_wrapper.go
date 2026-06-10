@@ -14,6 +14,6 @@ func WriteStrings(sb *strings.Builder, strings ...string) {
 }
 
 // WriteStringf writes the given formatted string to the builder, and ignores the error.
-func WriteStringf(sb *strings.Builder, format string, args ...interface{}) {
+func WriteStringf(sb *strings.Builder, format string, args ...any) {
 	_, _ = sb.WriteString(fmt.Sprintf(format, args...))
 }

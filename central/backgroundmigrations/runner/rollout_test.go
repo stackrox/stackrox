@@ -33,7 +33,7 @@ func readyDeployment() *appsv1.Deployment {
 			Generation: 1,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: int32Ptr(1),
+			Replicas: new(int32(1)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"app": "central"},
 			},

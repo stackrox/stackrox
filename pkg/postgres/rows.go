@@ -14,7 +14,7 @@ type Row struct {
 }
 
 // Scan wraps pgx.Row Scan
-func (r *Row) Scan(dest ...interface{}) error {
+func (r *Row) Scan(dest ...any) error {
 	defer r.cancelFunc()
 
 	if err := r.Row.Scan(dest...); err != nil {
@@ -41,7 +41,7 @@ func (r *Rows) Close() {
 }
 
 // Scan wraps pgx.Rows Scan
-func (r *Rows) Scan(dest ...interface{}) error {
+func (r *Rows) Scan(dest ...any) error {
 	err := r.Rows.Scan(dest...)
 	if err != nil {
 		incQueryErrors(r.query, err)

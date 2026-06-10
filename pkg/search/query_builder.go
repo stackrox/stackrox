@@ -455,7 +455,7 @@ func (qb *QueryBuilder) AddNumericFieldHighlighted(k FieldLabel, comparator stor
 }
 
 // AddGenericTypeLinkedFields allows you to add linked fields of different types.
-func (qb *QueryBuilder) AddGenericTypeLinkedFields(fields []FieldLabel, values []interface{}) *QueryBuilder {
+func (qb *QueryBuilder) AddGenericTypeLinkedFields(fields []FieldLabel, values []any) *QueryBuilder {
 	strValues := make([]string, 0, len(values))
 	for _, value := range values {
 		strValues = append(strValues, generic.String(value))
@@ -464,7 +464,7 @@ func (qb *QueryBuilder) AddGenericTypeLinkedFields(fields []FieldLabel, values [
 }
 
 // AddGenericTypeLinkedFieldsHighligted allows you to add linked fields of different types and MarkHighlighted.
-func (qb *QueryBuilder) AddGenericTypeLinkedFieldsHighligted(fields []FieldLabel, values []interface{}) *QueryBuilder {
+func (qb *QueryBuilder) AddGenericTypeLinkedFieldsHighligted(fields []FieldLabel, values []any) *QueryBuilder {
 	strValues := make([]string, 0, len(values))
 	for _, value := range values {
 		strValues = append(strValues, generic.String(value))

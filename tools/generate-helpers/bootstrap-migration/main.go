@@ -52,7 +52,7 @@ func main() {
 		startVersion := migrations.CurrentDBVersionSeqNum()
 		migrationDirName := bc.GetMigrationDirName(startVersion, migrationName, false)
 
-		templateMap := map[string]interface{}{
+		templateMap := map[string]any{
 			"nextSeqNum":          startVersion + 1,
 			"packageName":         bc.GetPackageName(startVersion),
 			"startSequenceNumber": startVersion,

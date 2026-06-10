@@ -18,7 +18,7 @@ func CompressResults(results map[string]*compliance.ComplianceStandardResult) (*
 	return compress(wrappedResults)
 }
 
-func compress(compressable interface{}) (*compliance.GZIPDataChunk, error) {
+func compress(compressable any) (*compliance.GZIPDataChunk, error) {
 	var buf bytes.Buffer
 	gz, err := gzip.NewWriterLevel(&buf, gzip.BestCompression)
 	if err != nil {

@@ -10,12 +10,12 @@ import (
 )
 
 type mockClaimExtractor struct {
-	claims map[string]interface{}
+	claims map[string]any
 }
 
-func (e *mockClaimExtractor) Claims(input interface{}) error {
+func (e *mockClaimExtractor) Claims(input any) error {
 	switch u := input.(type) {
-	case *map[string]interface{}:
+	case *map[string]any:
 		maps.Copy((*u), e.claims)
 		return nil
 	default:
@@ -26,20 +26,20 @@ func (e *mockClaimExtractor) Claims(input interface{}) error {
 func TestMapCustomClaims(t *testing.T) {
 	for _, testCase := range []struct {
 		desc               string
-		claims             map[string]interface{}
+		claims             map[string]any
 		mappings           map[string]string
 		expectedAttributes map[string][]string
 		wantErr            bool
 	}{
 		{
 			desc: "ignore non-existent, map arrays and string/bool primitives",
-			claims: map[string]interface{}{
-				"realm_access": map[string]interface{}{
-					"roles": []interface{}{
+			claims: map[string]any{
+				"realm_access": map[string]any{
+					"roles": []any{
 						"a", "b", "c",
 					},
 				},
-				"a": map[string]interface{}{
+				"a": map[string]any{
 					"b": "a-b-value",
 				},
 				"is_internal":       true,
@@ -63,8 +63,8 @@ func TestMapCustomClaims(t *testing.T) {
 		},
 		{
 			desc: "mapping struct claims should result in an error",
-			claims: map[string]interface{}{
-				"a": map[string]interface{}{
+			claims: map[string]any{
+				"a": map[string]any{
 					"b": "c",
 				},
 			},
@@ -76,8 +76,8 @@ func TestMapCustomClaims(t *testing.T) {
 		},
 		{
 			desc: "ignore mapping if can't follow the path",
-			claims: map[string]interface{}{
-				"a": map[string]interface{}{
+			claims: map[string]any{
+				"a": map[string]any{
 					"b": "c",
 				},
 			},

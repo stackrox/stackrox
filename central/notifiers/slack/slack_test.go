@@ -101,7 +101,7 @@ func TestNotificationContainsFlatFields(t *testing.T) {
 	data, err := json.Marshal(&n)
 	require.NoError(t, err)
 
-	var raw map[string]interface{}
+	var raw map[string]any
 	require.NoError(t, json.Unmarshal(data, &raw))
 
 	assert.Equal(t, alert.GetId(), raw["alert_id"])

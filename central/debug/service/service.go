@@ -295,7 +295,7 @@ func (s *serviceImpl) StreamAuthzTraces(_ *v1.Empty, stream v1.DebugService_Stre
 }
 
 func fetchAndAddJSONToZip(ctx context.Context, zipWriter *zipWriter, fileName string,
-	fetchData func(ctx context.Context) (interface{}, error)) {
+	fetchData func(ctx context.Context) (any, error)) {
 	jsonObj, errFetchData := fetchData(ctx)
 	if errFetchData != nil {
 		log.Error(errFetchData)
@@ -308,7 +308,7 @@ func fetchAndAddJSONToZip(ctx context.Context, zipWriter *zipWriter, fileName st
 	}
 }
 
-func addJSONToZip(zipWriter *zipWriter, fileName string, jsonObj interface{}) error {
+func addJSONToZip(zipWriter *zipWriter, fileName string, jsonObj any) error {
 	zipWriter.LockWrite()
 	defer zipWriter.UnlockWrite()
 	w, err := zipWriter.writerWithCurrentTimestampNoLock(fileName)
@@ -559,12 +559,12 @@ func (m safeRawMessage) MarshalJSON() ([]byte, error) {
 	}
 	msg, err := json.Marshal(json.RawMessage(m))
 	if err != nil {
-		msg, err = json.Marshal(map[string]interface{}{"encodingError": err.Error(), "raw": string(m)})
+		msg, err = json.Marshal(map[string]any{"encodingError": err.Error(), "raw": string(m)})
 	}
 	return msg, err
 }
 
-func (s *serviceImpl) getAuthProviders(_ context.Context) (interface{}, error) {
+func (s *serviceImpl) getAuthProviders(_ context.Context) (any, error) {
 	authProviders := s.authProviderRegistry.GetProviders(nil, nil)
 
 	var storageAuthProviders []*storage.AuthProvider
@@ -575,7 +575,7 @@ func (s *serviceImpl) getAuthProviders(_ context.Context) (interface{}, error) {
 	return storageAuthProviders, nil
 }
 
-func (s *serviceImpl) getGroups(_ context.Context) (interface{}, error) {
+func (s *serviceImpl) getGroups(_ context.Context) (any, error) {
 	accessGroupsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
@@ -595,7 +595,7 @@ type diagResolvedRole struct {
 	AccessScope   *storage.SimpleAccessScope `json:"access_scope,omitempty"`
 }
 
-func (s *serviceImpl) getRoles(_ context.Context) (interface{}, error) {
+func (s *serviceImpl) getRoles(_ context.Context) (any, error) {
 	accessRolesCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
@@ -628,7 +628,7 @@ func (s *serviceImpl) getRoles(_ context.Context) (interface{}, error) {
 	return resolvedRoles, nil
 }
 
-func (s *serviceImpl) getNotifiers(_ context.Context) (interface{}, error) {
+func (s *serviceImpl) getNotifiers(_ context.Context) (any, error) {
 	accessNotifierCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
@@ -647,7 +647,7 @@ func (s *serviceImpl) getNotifiers(_ context.Context) (interface{}, error) {
 	return notifiers, nil
 }
 
-func (s *serviceImpl) getConfig(_ context.Context) (interface{}, error) {
+func (s *serviceImpl) getConfig(_ context.Context) (any, error) {
 	accessConfigCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),

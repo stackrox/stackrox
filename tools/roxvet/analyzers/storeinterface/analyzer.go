@@ -134,7 +134,7 @@ func returnValuesFromForbiddenPackage(forbiddenPackageNames set.StringSet, inter
 	return ""
 }
 
-func run(pass *analysis.Pass) (interface{}, error) {
+func run(pass *analysis.Pass) (any, error) {
 	for _, f := range pass.Files {
 		imports := localPackageNamesForGeneratedImports(pass.TypesInfo, f)
 		for name, interfaceType := range retrieveStoreInterfaces(f) {
