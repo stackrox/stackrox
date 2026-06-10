@@ -439,9 +439,14 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 				continue
 			}
 
-			if opts.RepeatedStrategy == "bytea" {
+			switch opts.RepeatedStrategy {
+			case "bytea":
 				schema.AddFieldWithType(field, postgres.MessageBytes, opts)
 				continue
+			case "child_table", "":
+				// Default behavior: create a child table.
+			default:
+				log.Errorf("field %s.%s has unsupported strategy(%s), valid values are: bytea, child_table", original.Name(), structField.Name, opts.RepeatedStrategy)
 			}
 
 			childSchema := &Schema{

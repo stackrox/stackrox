@@ -29,6 +29,11 @@ type TestStorageWithRepeatedStrategy struct {
 	AsChild []*TestChildMessage `protobuf:"bytes,3,rep,name=as_child,proto3" json:"as_child,omitempty"`
 }
 
+type TestStorageWithExplicitChildTable struct {
+	ID      string              `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`
+	AsChild []*TestChildMessage `protobuf:"bytes,2,rep,name=as_child,proto3" json:"as_child,omitempty" sql:"strategy(child_table)"`
+}
+
 // One can specify a custom SQL type for the structure field
 func TestClusterGetter(t *testing.T) {
 	IDField := Field{SQLType: ""}
@@ -153,4 +158,12 @@ func TestNoSerializedRejectsSqlIgnored(t *testing.T) {
 	assert.Panics(t, func() {
 		Walk(mt, "test_table", WithNoSerialized())
 	}, "Walk with NoSerialized should fatal on sql:\"-\" fields")
+}
+
+func TestExplicitChildTableStrategy(t *testing.T) {
+	mt := reflect.TypeOf(&TestStorageWithExplicitChildTable{})
+	schema := Walk(mt, "test_explicit_child")
+
+	require.Len(t, schema.Children, 1)
+	assert.Contains(t, schema.Children[0].Table, "as_child")
 }
