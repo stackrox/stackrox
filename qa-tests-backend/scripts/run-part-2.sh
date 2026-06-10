@@ -25,6 +25,11 @@ run_tests_part_2() {
 
     make -C qa-tests-backend sensor-bounce-test || touch FAIL
 
+    if ! find qa-tests-backend/build/test-results -name '*.xml' -print -quit 2>/dev/null | grep -q .; then
+        info "ERROR: No test results (JUnit XML) produced. Gradle may have skipped tests (NO-SOURCE)."
+        touch FAIL
+    fi
+
     store_qa_test_results "part-2-tests"
     [[ ! -f FAIL ]] || die "Part 2 tests failed"
 }

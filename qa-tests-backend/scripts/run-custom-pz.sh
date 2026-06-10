@@ -97,6 +97,11 @@ test_custom() {
 
     make -C qa-tests-backend "${test_target}" || touch FAIL
 
+    if ! find qa-tests-backend/build/test-results -name '*.xml' -print -quit 2>/dev/null | grep -q .; then
+        info "ERROR: No test results (JUnit XML) produced. Gradle may have skipped tests (NO-SOURCE)."
+        touch FAIL
+    fi
+
     store_qa_test_results "pz-tests"
     [[ ! -f FAIL ]] || die "PZ tests failed"
 }

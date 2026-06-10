@@ -83,6 +83,11 @@ _compatibility_test() {
 
     make -C qa-tests-backend compatibility-test || touch FAIL
 
+    if ! find qa-tests-backend/build/test-results -name '*.xml' -print -quit 2>/dev/null | grep -q .; then
+        info "ERROR: No test results (JUnit XML) produced. Gradle may have skipped tests (NO-SOURCE)."
+        touch FAIL
+    fi
+
     update_junit_prefix_with_central_and_sensor_version "${short_central_tag}" "${short_sensor_tag}" "${ROOT}/qa-tests-backend/build/test-results/testCOMPATIBILITY"
 
     store_qa_test_results "compatibility-test-central-v${short_central_tag}-sensor-v${short_sensor_tag}"

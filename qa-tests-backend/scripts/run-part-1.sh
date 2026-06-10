@@ -180,6 +180,11 @@ test_part_1() {
 
     make -C qa-tests-backend "${test_target}" || touch FAIL
 
+    if ! find qa-tests-backend/build/test-results -name '*.xml' -print -quit 2>/dev/null | grep -q .; then
+        info "ERROR: No test results (JUnit XML) produced. Gradle may have skipped tests (NO-SOURCE)."
+        touch FAIL
+    fi
+
     cleanup_workload_identities
     store_qa_test_results "part-1-tests"
     [[ ! -f FAIL ]] || die "Part 1 tests failed"
