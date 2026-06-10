@@ -52,6 +52,32 @@ message FileXattrChange {
   string xattr_name = 2;
 }
 
+enum AclTag {
+  ACL_TAG_UNSPECIFIED = 0;
+  ACL_TAG_USER_OBJ = 1;
+  ACL_TAG_USER = 2;
+  ACL_TAG_GROUP_OBJ = 3;
+  ACL_TAG_GROUP = 4;
+  ACL_TAG_MASK = 5;
+  ACL_TAG_OTHER = 6;
+}
+
+message AclEntry {
+  AclTag tag = 1;
+  uint32 perm = 2;
+  // The uid or gid for ACL_TAG_USER / ACL_TAG_GROUP entries.
+  // Set to 0xFFFFFFFF when not applicable.
+  uint32 id = 3;
+}
+
+message FileAclChange {
+  FileActivityBase activity = 1;
+  // "access" or "default"
+  string acl_type = 2;
+  // The ACL entries being set. Empty when the ACL is being removed.
+  repeated AclEntry entries = 3;
+}
+
 message FileActivity {
   google.protobuf.Timestamp timestamp = 1;
   ProcessSignal process = 2;
@@ -65,6 +91,7 @@ message FileActivity {
     FileWrite write = 9;
     FileXattrChange xattr_set = 11;
     FileXattrChange xattr_remove = 12;
+    FileAclChange acl = 13;
   }
   // The hostname/name of the node where the file activity occurred
   string hostname = 10;
