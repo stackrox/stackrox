@@ -5,6 +5,7 @@ package imagecveflat
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"testing"
 	"time"
@@ -886,11 +887,8 @@ func (s *ImageCVEFlatViewTestSuite) compileExpected(images []testImage, filter *
 
 				id := vuln.GetId()
 				var found bool
-				for _, seenID := range val.GetCVEIDs() {
-					if seenID == id {
-						found = true
-						break
-					}
+				if slices.Contains(val.GetCVEIDs(), id) {
+					found = true
 				}
 
 				if !found {

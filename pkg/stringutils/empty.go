@@ -4,42 +4,27 @@ import (
 	"slices"
 )
 
+func isNonEmpty(s string) bool { return s != "" }
+
 // AllEmpty returns true if all the strings that are passed are empty
 func AllEmpty(strs ...string) bool {
-	for _, s := range strs {
-		if s != "" {
-			return false
-		}
-	}
-	return true
+	return !slices.ContainsFunc(strs, isNonEmpty)
 }
 
 // AllNotEmpty returns true if all the strings that are passed are not empty.
 func AllNotEmpty(strs ...string) bool {
-	for _, s := range strs {
-		if s == "" {
-			return false
-		}
-	}
-	return true
+	return !slices.Contains(strs, "")
 }
 
 // AtLeastOneEmpty returns true if at least one of the strings is empty
 func AtLeastOneEmpty(strs ...string) bool {
-	for _, s := range strs {
-		if s == "" {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(strs, "")
 }
 
 // FirstNonEmpty returns the first string that is non-empty in the variadic or returns an empty string
 func FirstNonEmpty(strs ...string) string {
-	for _, s := range strs {
-		if s != "" {
-			return s
-		}
+	if i := slices.IndexFunc(strs, isNonEmpty); i >= 0 {
+		return strs[i]
 	}
 	return ""
 }

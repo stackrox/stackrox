@@ -2,6 +2,7 @@ package policy
 
 import (
 	"encoding/json"
+	"slices"
 	"sort"
 	"strings"
 
@@ -225,12 +226,7 @@ func getAlertViolationsStrings(alert *storage.Alert) []string {
 // checkIfPolicyHasForbiddenEnforcementAction iterates through the Policy's enforcement actions and returns true
 // if the forbidden action is included
 func checkIfPolicyHasForbiddenEnforcementAction(policy *storage.Policy, forbiddenAction storage.EnforcementAction) bool {
-	for _, action := range policy.GetEnforcementActions() {
-		if action == forbiddenAction {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(policy.GetEnforcementActions(), forbiddenAction)
 }
 
 // sortPoliciesBySeverity sorts policies by their severity from highest (CriticalSeverity) to lowest (LowSeverity)

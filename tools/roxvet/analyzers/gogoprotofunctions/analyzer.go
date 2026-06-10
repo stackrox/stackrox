@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
+	"slices"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
@@ -69,10 +70,8 @@ var (
 
 func run(pass *analysis.Pass) (interface{}, error) {
 	callerPkg := pass.Pkg.Path()
-	for _, allowedPkg := range allowedCallerPackages {
-		if allowedPkg == callerPkg {
-			return nil, nil
-		}
+	if slices.Contains(allowedCallerPackages, callerPkg) {
+		return nil, nil
 	}
 
 	nodeFilter := []ast.Node{(*ast.CallExpr)(nil)}
@@ -93,13 +92,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					continue
 				}
 				extraAllowedPackages := replacedPkgExtraAllowedCallers[monitoredFunction]
-				isCallerPkgAllowed := false
-				for _, extraAllowedPkg := range extraAllowedPackages {
-					if callerPkg == extraAllowedPkg {
-						isCallerPkgAllowed = true
-						break
-					}
-				}
+				isCallerPkgAllowed := slices.Contains(extraAllowedPackages, callerPkg)
 				if isCallerPkgAllowed {
 					continue
 				}

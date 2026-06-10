@@ -2,6 +2,7 @@ package matcher
 
 import (
 	"context"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -43,12 +44,7 @@ func (m *clusterMatcher) IsPolicyApplicable(_ context.Context, policy *storage.P
 }
 
 func (m *clusterMatcher) anyExclusionMatches(exclusions []*storage.Exclusion) bool {
-	for _, exclusion := range exclusions {
-		if m.exclusionMatches(exclusion) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(exclusions, m.exclusionMatches)
 }
 
 func (m *clusterMatcher) exclusionMatches(exclusion *storage.Exclusion) bool {
@@ -79,12 +75,7 @@ func (m *clusterMatcher) anyScopeMatches(scopes []*storage.Scope) bool {
 		return true
 	}
 
-	for _, scope := range scopes {
-		if m.scopeMatches(scope) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(scopes, m.scopeMatches)
 }
 
 func (m *clusterMatcher) scopeMatches(scope *storage.Scope) bool {
