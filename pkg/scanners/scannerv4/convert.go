@@ -245,8 +245,9 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 		// same CVE identifier. Merge duplicates into a single entry.
 		if dedupe && name != "" {
 			if idx, exists := cveNameToIdx[name]; exists {
-				mergeFixFields(vulns[idx], ccVuln, envOS, pkgFixedByVersion)
-				mergeScoringFields(vulns[idx], ccVuln)
+				candidate := buildEmbeddedVulnerability(ccVuln, envOS)
+				mergeFixFields(vulns[idx], candidate, pkgFixedByVersion)
+				mergeScoringFields(vulns[idx], candidate)
 				continue
 			}
 			cveNameToIdx[name] = len(vulns)
@@ -653,14 +654,13 @@ func notes(report *v4.VulnerabilityReport) []storage.ImageScan_Note {
 // recent or more complete fix data. Priority: later advisory, has fix over
 // doesn't, matches package-level fix version, higher version by numeric
 // comparison.
-func mergeFixFields(dst *storage.EmbeddedVulnerability, src *v4.VulnerabilityReport_Vulnerability, envOS, pkgFixedByVersion string) {
-	srcAdv := advisory(src.GetAdvisory())
+func mergeFixFields(dst, src *storage.EmbeddedVulnerability, pkgFixedByVersion string) {
 	c := cmp.Or(
-		compareAdvisories(srcAdv, dst.GetAdvisory()),
-		compareFixVersions(src.GetFixedInVersion(), dst.GetFixedBy(), pkgFixedByVersion),
+		compareAdvisories(src.GetAdvisory(), dst.GetAdvisory()),
+		compareFixVersions(src.GetFixedBy(), dst.GetFixedBy(), pkgFixedByVersion),
 	)
 	if c > 0 {
-		applyFixFields(dst, src, srcAdv, envOS)
+		applyFixFields(dst, src)
 	}
 }
 
@@ -695,16 +695,11 @@ func compareFixVersions(a, b, pkgFixedBy string) int {
 }
 
 // applyFixFields overwrites fix-related fields on dst from src.
-func applyFixFields(dst *storage.EmbeddedVulnerability, src *v4.VulnerabilityReport_Vulnerability, srcAdv *storage.Advisory, envOS string) {
-	dst.Advisory = srcAdv
-	dst.Datasource = vulnDataSource(src, envOS)
-	dst.FixAvailableTimestamp = src.GetFixedDate()
-	dst.SetFixedBy = nil
-	if fix := src.GetFixedInVersion(); fix != "" {
-		dst.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
-			FixedBy: fix,
-		}
-	}
+func applyFixFields(dst, src *storage.EmbeddedVulnerability) {
+	dst.Advisory = src.Advisory
+	dst.Datasource = src.Datasource
+	dst.FixAvailableTimestamp = src.FixAvailableTimestamp
+	dst.SetFixedBy = src.SetFixedBy
 }
 
 // compareNumericSegments compares two strings by extracting their numeric
@@ -729,31 +724,27 @@ func splitVersionNumbers(v string) []int {
 // mergeScoringFields overwrites scoring-related fields on dst when src has more
 // complete or higher-severity scoring data. Priority: more CVSS metrics, higher
 // severity, higher CVSS base score.
-func mergeScoringFields(dst *storage.EmbeddedVulnerability, src *v4.VulnerabilityReport_Vulnerability) {
+func mergeScoringFields(dst, src *storage.EmbeddedVulnerability) {
 	c := cmp.Or(
 		cmp.Compare(len(src.GetCvssMetrics()), len(dst.GetCvssMetrics())),
-		cmp.Compare(normalizedSeverity(src.GetNormalizedSeverity()), dst.GetSeverity()),
-		cmp.Compare(v4BaseScore(src.GetCvssMetrics()), dst.GetCvss()),
+		cmp.Compare(src.GetSeverity(), dst.GetSeverity()),
+		cmp.Compare(src.GetCvss(), dst.GetCvss()),
 	)
 	if c <= 0 {
 		return
 	}
 
-	dst.Summary = src.GetDescription()
-	dst.Severity = normalizedSeverity(src.GetNormalizedSeverity())
-	dst.CvssV2 = nil
-	dst.CvssV3 = nil
-	dst.Cvss = 0
-	dst.ScoreVersion = 0
-	dst.CvssMetrics = nil
-	dst.NvdCvss = 0
-	dst.Link = link(src.GetLink())
-	dst.PublishedOn = src.GetIssued()
-	if err := setScoresAndScoreVersions(dst, src.GetCvssMetrics()); err != nil {
-		utils.Should(err)
-	}
-	maybeOverwriteSeverity(dst)
-	dst.Epss = epss(src.GetEpssMetrics())
+	dst.Summary = src.Summary
+	dst.Severity = src.Severity
+	dst.CvssV2 = src.CvssV2
+	dst.CvssV3 = src.CvssV3
+	dst.Cvss = src.Cvss
+	dst.ScoreVersion = src.ScoreVersion
+	dst.CvssMetrics = src.CvssMetrics
+	dst.NvdCvss = src.NvdCvss
+	dst.Link = src.Link
+	dst.PublishedOn = src.PublishedOn
+	dst.Epss = src.Epss
 }
 
 // compareAdvisories compares two advisories by their numeric segments.
@@ -769,21 +760,4 @@ func compareAdvisories(a, b *storage.Advisory) int {
 		return 1
 	}
 	return compareNumericSegments(a.GetName(), b.GetName())
-}
-
-// v4BaseScore returns the base score from the preferred CVSS metric entry.
-// The preferred entry is always at index 0 — this ordering is guaranteed by
-// the mapper that builds the v4 proto (see baseScore in mappers.go).
-func v4BaseScore(metrics []*v4.VulnerabilityReport_Vulnerability_CVSS) float32 {
-	if len(metrics) == 0 {
-		return 0
-	}
-	m := metrics[0]
-	if v3 := m.GetV3(); v3 != nil {
-		return v3.GetBaseScore()
-	}
-	if v2 := m.GetV2(); v2 != nil {
-		return v2.GetBaseScore()
-	}
-	return 0
 }
