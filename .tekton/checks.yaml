@@ -13,7 +13,7 @@ metadata:
       (event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")) ||
       (event == "pull_request" && body.action != "ready_for_review")
   labels:
-    appstudio.openshift.io/application: acs
+    appstudio.openshift.io/application: acs-4-11
   name: checks
   namespace: rh-acs-tenant
 
