@@ -330,7 +330,7 @@ func validateStructTagsOnTypeHelper(ty reflect.Type, visited map[reflect.Type]st
 		fieldTag := field.Tag
 		switch fieldTag.Get(scrubStructTag) {
 		case scrubTagAlways:
-			if fieldType.Kind() != reflect.String || fieldType != reflect.TypeOf("") {
+			if fieldType.Kind() != reflect.String || fieldType != reflect.TypeFor[string]() {
 				return errors.Errorf("%s:%s is not allowed on type %s",
 					scrubStructTag, scrubTagAlways, fieldType)
 			}
@@ -370,38 +370,38 @@ func TestNonStringPanic(t *testing.T) {
 }
 
 func TestValidateScrubTagTypes(t *testing.T) {
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ImageIntegration{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ClairifyConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.DockerConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.QuayConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ECRConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.GoogleConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ClairConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.IBMRegistryConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.AzureConfig{})))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.ImageIntegration]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.ClairifyConfig]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.DockerConfig]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.QuayConfig]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.ECRConfig]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.GoogleConfig]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.ClairConfig]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.IBMRegistryConfig]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.AzureConfig]()))
 
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Notifier{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Jira{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Email{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.CSCC{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Splunk{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.PagerDuty{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Generic{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.SumoLogic{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.AWSSecurityHub{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.MicrosoftSentinel{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Syslog{})))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.Notifier]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.Jira]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.Email]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.CSCC]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.Splunk]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.PagerDuty]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.Generic]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.SumoLogic]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.AWSSecurityHub]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.MicrosoftSentinel]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.Syslog]()))
 
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(v1.ExchangeTokenRequest{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.HTTPEndpointConfig{})))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[v1.ExchangeTokenRequest]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.HTTPEndpointConfig]()))
 
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(v1.CloudSource{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.CloudSource{})))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[v1.CloudSource]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.CloudSource]()))
 
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.AuthProvider{})))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.AuthProvider]()))
 
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.S3Config{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.S3Compatible{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.GCSConfig{})))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.S3Config]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.S3Compatible]()))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeFor[storage.GCSConfig]()))
 
 }

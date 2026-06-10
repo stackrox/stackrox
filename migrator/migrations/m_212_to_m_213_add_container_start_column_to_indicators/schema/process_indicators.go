@@ -23,7 +23,7 @@ var (
 
 	// ProcessIndicatorsSchema is the go schema for table `process_indicators`.
 	ProcessIndicatorsSchema = func() *walker.Schema {
-		schema := walker.Walk(reflect.TypeOf((*storage.ProcessIndicator)(nil)), "process_indicators")
+		schema := walker.Walk(reflect.TypeFor[*storage.ProcessIndicator](), "process_indicators")
 
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_INDICATORS, "processindicator", (*storage.ProcessIndicator)(nil)))
 		schema.ScopingResource = resources.DeploymentExtension

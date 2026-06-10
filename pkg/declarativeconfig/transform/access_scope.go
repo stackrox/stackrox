@@ -38,7 +38,7 @@ func (a *accessScopeTransform) Transform(configuration declarativeconfig.Configu
 	}
 
 	return map[reflect.Type][]protocompat.Message{
-		reflect.TypeOf((*storage.SimpleAccessScope)(nil)): {scopeProto},
+		reflect.TypeFor[*storage.SimpleAccessScope](): {scopeProto},
 	}, nil
 }
 

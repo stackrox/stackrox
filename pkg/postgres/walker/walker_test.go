@@ -37,7 +37,7 @@ type TestStorageWithExplicitChildTable struct {
 // One can specify a custom SQL type for the structure field
 func TestClusterGetter(t *testing.T) {
 	IDField := Field{SQLType: ""}
-	schema := Walk(reflect.TypeOf(&TestStorageType{}), "test_table")
+	schema := Walk(reflect.TypeFor[*TestStorageType](), "test_table")
 
 	for _, f := range schema.Fields {
 		if f.Name == "ID" {

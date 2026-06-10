@@ -295,55 +295,55 @@ func TestVulnReqDatastore(t testing.TB, testDB *pgtest.TestPostgres) (vulnReqDat
 }
 
 func registerImageLoader(_ testing.TB, ds imageDS.DataStore, view imagesView.ImageView) {
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.Image{}), func() interface{} {
+	loaders.RegisterTypeFactory(reflect.TypeFor[storage.Image](), func() interface{} {
 		return loaders.NewImageLoader(ds, view)
 	})
 }
 
 func registerImageV2Loader(_ testing.TB, ds imageV2DS.DataStore, view imagesView.ImageView) {
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.ImageV2{}), func() interface{} {
+	loaders.RegisterTypeFactory(reflect.TypeFor[storage.ImageV2](), func() interface{} {
 		return loaders.NewImageV2Loader(ds, view)
 	})
 }
 
 func registerImageComponentV2Loader(_ testing.TB, ds imageComponentV2DS.DataStore) {
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.ImageComponentV2{}), func() interface{} {
+	loaders.RegisterTypeFactory(reflect.TypeFor[storage.ImageComponentV2](), func() interface{} {
 		return loaders.NewComponentV2Loader(ds)
 	})
 }
 
 func registerImageCveV2Loader(_ testing.TB, ds imageCVEV2DS.DataStore) {
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.ImageCVEV2{}), func() interface{} {
+	loaders.RegisterTypeFactory(reflect.TypeFor[storage.ImageCVEV2](), func() interface{} {
 		return loaders.NewImageCVEV2Loader(ds)
 	})
 }
 
 func registerClusterCveLoader(_ testing.TB, ds clusterCVEDataStore.DataStore) {
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.ClusterCVE{}), func() interface{} {
+	loaders.RegisterTypeFactory(reflect.TypeFor[storage.ClusterCVE](), func() interface{} {
 		return loaders.NewClusterCVELoader(ds)
 	})
 }
 
 func registerNodeLoader(_ testing.TB, ds nodeDS.DataStore) {
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.Node{}), func() interface{} {
+	loaders.RegisterTypeFactory(reflect.TypeFor[storage.Node](), func() interface{} {
 		return loaders.NewNodeLoader(ds)
 	})
 }
 
 func registerNodeComponentLoader(_ testing.TB, ds nodeComponentDataStore.DataStore) {
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.NodeComponent{}), func() interface{} {
+	loaders.RegisterTypeFactory(reflect.TypeFor[storage.NodeComponent](), func() interface{} {
 		return loaders.NewNodeComponentLoader(ds)
 	})
 }
 
 func registerNodeCVELoader(_ testing.TB, ds nodeCVEDataStore.DataStore) {
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.NodeCVE{}), func() interface{} {
+	loaders.RegisterTypeFactory(reflect.TypeFor[storage.NodeCVE](), func() interface{} {
 		return loaders.NewNodeCVELoader(ds)
 	})
 }
 
 func registerDeploymentLoader(_ testing.TB, ds deploymentDatastore.DataStore, view deploymentsView.DeploymentView) {
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.Deployment{}), func() interface{} {
+	loaders.RegisterTypeFactory(reflect.TypeFor[storage.Deployment](), func() interface{} {
 		return loaders.NewDeploymentLoader(ds, view)
 	})
 }

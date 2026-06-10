@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	stringTy = reflect.TypeOf("")
+	stringTy = reflect.TypeFor[string]()
 
-	testingTTy = reflect.TypeOf((*assert.TestingT)(nil)).Elem()
+	testingTTy = reflect.TypeFor[assert.TestingT]()
 )
 
 type predMatcher struct {

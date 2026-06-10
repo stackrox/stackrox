@@ -14,10 +14,10 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var imageLoaderType = reflect.TypeOf(storage.Image{})
+var imageLoaderType = reflect.TypeFor[storage.Image]()
 
 func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.Image{}), func() interface{} {
+	RegisterTypeFactory(reflect.TypeFor[storage.Image](), func() interface{} {
 		return NewImageLoader(datastore.Singleton(), imagesView.Singleton())
 	})
 }

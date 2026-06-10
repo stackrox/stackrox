@@ -13,10 +13,10 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var policyLoaderType = reflect.TypeOf(storage.Policy{})
+var policyLoaderType = reflect.TypeFor[storage.Policy]()
 
 func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.Policy{}), func() interface{} {
+	RegisterTypeFactory(reflect.TypeFor[storage.Policy](), func() interface{} {
 		return NewPolicyLoader(policyDataStore.Singleton())
 	})
 }

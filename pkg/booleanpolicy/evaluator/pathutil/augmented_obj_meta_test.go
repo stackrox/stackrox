@@ -43,10 +43,10 @@ func TestAugmentedObjMeta(t *testing.T) {
 			desc:    "plain object, unaugmented",
 			objMeta: NewAugmentedObjMeta((*topLevel)(nil)),
 			expectedFieldMap: map[string]MetaPath{
-				"a": {{FieldName: "A", Type: reflect.TypeOf(0), StructFieldIndex: []int{0}}},
+				"a": {{FieldName: "A", Type: reflect.TypeFor[int](), StructFieldIndex: []int{0}}},
 				"b": {
-					{FieldName: "Nested", Type: reflect.TypeOf(([]nested)(nil)), StructFieldIndex: []int{1}},
-					{FieldName: "B", Type: reflect.TypeOf(""), StructFieldIndex: []int{0}},
+					{FieldName: "Nested", Type: reflect.TypeFor[[]nested](), StructFieldIndex: []int{1}},
+					{FieldName: "B", Type: reflect.TypeFor[string](), StructFieldIndex: []int{0}},
 				},
 			},
 		},
@@ -55,14 +55,14 @@ func TestAugmentedObjMeta(t *testing.T) {
 			objMeta: NewAugmentedObjMeta((*topLevel)(nil)).
 				AddPlainObjectAt([]string{"IntObj"}, (*objWithInt)(nil)),
 			expectedFieldMap: map[string]MetaPath{
-				"a": {{FieldName: "A", Type: reflect.TypeOf(0), StructFieldIndex: []int{0}}},
+				"a": {{FieldName: "A", Type: reflect.TypeFor[int](), StructFieldIndex: []int{0}}},
 				"b": {
-					{FieldName: "Nested", Type: reflect.TypeOf(([]nested)(nil)), StructFieldIndex: []int{1}},
-					{FieldName: "B", Type: reflect.TypeOf(""), StructFieldIndex: []int{0}},
+					{FieldName: "Nested", Type: reflect.TypeFor[[]nested](), StructFieldIndex: []int{1}},
+					{FieldName: "B", Type: reflect.TypeFor[string](), StructFieldIndex: []int{0}},
 				},
 				"augmentedint": {
-					{FieldName: "IntObj", Type: reflect.TypeOf((*objWithInt)(nil))},
-					{FieldName: "AugmentedVal", Type: reflect.TypeOf(0), StructFieldIndex: []int{0}},
+					{FieldName: "IntObj", Type: reflect.TypeFor[*objWithInt]()},
+					{FieldName: "AugmentedVal", Type: reflect.TypeFor[int](), StructFieldIndex: []int{0}},
 				},
 			},
 		},
@@ -71,15 +71,15 @@ func TestAugmentedObjMeta(t *testing.T) {
 			objMeta: NewAugmentedObjMeta((*topLevel)(nil)).
 				AddPlainObjectAt([]string{"Nested", "IntObj"}, (*objWithInt)(nil)),
 			expectedFieldMap: map[string]MetaPath{
-				"a": {{FieldName: "A", Type: reflect.TypeOf(0), StructFieldIndex: []int{0}}},
+				"a": {{FieldName: "A", Type: reflect.TypeFor[int](), StructFieldIndex: []int{0}}},
 				"b": {
-					{FieldName: "Nested", Type: reflect.TypeOf(([]nested)(nil)), StructFieldIndex: []int{1}},
-					{FieldName: "B", Type: reflect.TypeOf(""), StructFieldIndex: []int{0}},
+					{FieldName: "Nested", Type: reflect.TypeFor[[]nested](), StructFieldIndex: []int{1}},
+					{FieldName: "B", Type: reflect.TypeFor[string](), StructFieldIndex: []int{0}},
 				},
 				"augmentedint": {
-					{FieldName: "Nested", Type: reflect.TypeOf(([]nested)(nil)), StructFieldIndex: []int{1}},
-					{FieldName: "IntObj", Type: reflect.TypeOf((*objWithInt)(nil))},
-					{FieldName: "AugmentedVal", Type: reflect.TypeOf(0), StructFieldIndex: []int{0}},
+					{FieldName: "Nested", Type: reflect.TypeFor[[]nested](), StructFieldIndex: []int{1}},
+					{FieldName: "IntObj", Type: reflect.TypeFor[*objWithInt]()},
+					{FieldName: "AugmentedVal", Type: reflect.TypeFor[int](), StructFieldIndex: []int{0}},
 				},
 			},
 		},
@@ -89,19 +89,19 @@ func TestAugmentedObjMeta(t *testing.T) {
 				AddPlainObjectAt([]string{"Nested", "IntObj"}, (*objWithInt)(nil)).
 				AddPlainObjectAt([]string{"StringObj"}, (*objWithString)(nil)),
 			expectedFieldMap: map[string]MetaPath{
-				"a": {{FieldName: "A", Type: reflect.TypeOf(0), StructFieldIndex: []int{0}}},
+				"a": {{FieldName: "A", Type: reflect.TypeFor[int](), StructFieldIndex: []int{0}}},
 				"b": {
-					{FieldName: "Nested", Type: reflect.TypeOf(([]nested)(nil)), StructFieldIndex: []int{1}},
-					{FieldName: "B", Type: reflect.TypeOf(""), StructFieldIndex: []int{0}},
+					{FieldName: "Nested", Type: reflect.TypeFor[[]nested](), StructFieldIndex: []int{1}},
+					{FieldName: "B", Type: reflect.TypeFor[string](), StructFieldIndex: []int{0}},
 				},
 				"augmentedint": {
-					{FieldName: "Nested", Type: reflect.TypeOf(([]nested)(nil)), StructFieldIndex: []int{1}},
-					{FieldName: "IntObj", Type: reflect.TypeOf((*objWithInt)(nil))},
-					{FieldName: "AugmentedVal", Type: reflect.TypeOf(0), StructFieldIndex: []int{0}},
+					{FieldName: "Nested", Type: reflect.TypeFor[[]nested](), StructFieldIndex: []int{1}},
+					{FieldName: "IntObj", Type: reflect.TypeFor[*objWithInt]()},
+					{FieldName: "AugmentedVal", Type: reflect.TypeFor[int](), StructFieldIndex: []int{0}},
 				},
 				"augmentedstr": {
-					{FieldName: "StringObj", Type: reflect.TypeOf((*objWithString)(nil))},
-					{FieldName: "AugmentedVal", Type: reflect.TypeOf(""), StructFieldIndex: []int{0}},
+					{FieldName: "StringObj", Type: reflect.TypeFor[*objWithString]()},
+					{FieldName: "AugmentedVal", Type: reflect.TypeFor[string](), StructFieldIndex: []int{0}},
 				},
 			},
 		},
@@ -114,21 +114,21 @@ func TestAugmentedObjMeta(t *testing.T) {
 						AddPlainObjectAt([]string{"StringObj"}, (*objWithString)(nil)),
 				),
 			expectedFieldMap: map[string]MetaPath{
-				"a": {{FieldName: "A", Type: reflect.TypeOf(0), StructFieldIndex: []int{0}}},
+				"a": {{FieldName: "A", Type: reflect.TypeFor[int](), StructFieldIndex: []int{0}}},
 				"b": {
-					{FieldName: "Nested", Type: reflect.TypeOf(([]nested)(nil)), StructFieldIndex: []int{1}},
-					{FieldName: "B", Type: reflect.TypeOf(""), StructFieldIndex: []int{0}},
+					{FieldName: "Nested", Type: reflect.TypeFor[[]nested](), StructFieldIndex: []int{1}},
+					{FieldName: "B", Type: reflect.TypeFor[string](), StructFieldIndex: []int{0}},
 				},
 				"augmentedint": {
-					{FieldName: "Nested", Type: reflect.TypeOf(([]nested)(nil)), StructFieldIndex: []int{1}},
-					{FieldName: "IntObj", Type: reflect.TypeOf((*objWithInt)(nil))},
-					{FieldName: "AugmentedVal", Type: reflect.TypeOf(0), StructFieldIndex: []int{0}},
+					{FieldName: "Nested", Type: reflect.TypeFor[[]nested](), StructFieldIndex: []int{1}},
+					{FieldName: "IntObj", Type: reflect.TypeFor[*objWithInt]()},
+					{FieldName: "AugmentedVal", Type: reflect.TypeFor[int](), StructFieldIndex: []int{0}},
 				},
 				"augmentedstr": {
-					{FieldName: "Nested", Type: reflect.TypeOf(([]nested)(nil)), StructFieldIndex: []int{1}},
-					{FieldName: "IntObj", Type: reflect.TypeOf((*objWithInt)(nil))},
-					{FieldName: "StringObj", Type: reflect.TypeOf((*objWithString)(nil))},
-					{FieldName: "AugmentedVal", Type: reflect.TypeOf(""), StructFieldIndex: []int{0}},
+					{FieldName: "Nested", Type: reflect.TypeFor[[]nested](), StructFieldIndex: []int{1}},
+					{FieldName: "IntObj", Type: reflect.TypeFor[*objWithInt]()},
+					{FieldName: "StringObj", Type: reflect.TypeFor[*objWithString]()},
+					{FieldName: "AugmentedVal", Type: reflect.TypeFor[string](), StructFieldIndex: []int{0}},
 				},
 			},
 		},
@@ -137,10 +137,10 @@ func TestAugmentedObjMeta(t *testing.T) {
 			objMeta: NewAugmentedObjMeta((*topLevel)(nil)).
 				AddPlainObjectAt([]string{"Nested"}, (*objWithInt)(nil)),
 			expectedFieldMap: map[string]MetaPath{
-				"a": {{FieldName: "A", Type: reflect.TypeOf(0), StructFieldIndex: []int{0}}},
+				"a": {{FieldName: "A", Type: reflect.TypeFor[int](), StructFieldIndex: []int{0}}},
 				"augmentedint": {
-					{FieldName: "Nested", Type: reflect.TypeOf((*objWithInt)(nil))},
-					{FieldName: "AugmentedVal", Type: reflect.TypeOf(0), StructFieldIndex: []int{0}},
+					{FieldName: "Nested", Type: reflect.TypeFor[*objWithInt]()},
+					{FieldName: "AugmentedVal", Type: reflect.TypeFor[int](), StructFieldIndex: []int{0}},
 				},
 			},
 		},

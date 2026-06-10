@@ -129,7 +129,7 @@ func (a *accessScopeCmd) Validate() error {
 	if err != nil {
 		return errors.Wrap(err, "transforming access scope")
 	}
-	accessScopeType := reflect.TypeOf((*storage.SimpleAccessScope)(nil))
+	accessScopeType := reflect.TypeFor[*storage.SimpleAccessScope]()
 	if len(protos[accessScopeType]) != 1 {
 		return errox.InvalidArgs.Newf("expected a single access scope after transformation, but was %d",
 			len(protos[accessScopeType]))
