@@ -5,7 +5,7 @@ package manager
 import (
 	"context"
 	"fmt"
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 	"testing"
 	"time"
 
