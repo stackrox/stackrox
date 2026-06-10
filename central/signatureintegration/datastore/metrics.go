@@ -9,7 +9,7 @@ var (
 	watcherUpsertTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "key_bundle_watcher_upsert_total",
+		Name:      "key_bundle_watcher_upserts_total",
 		Help:      "Total number of key bundle upsert attempts by the watcher, labeled by result",
 	}, []string{"result"})
 
