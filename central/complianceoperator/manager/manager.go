@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -167,13 +168,14 @@ func (m *managerImpl) AddProfile(profile *storage.ComplianceOperatorProfile) err
 }
 
 func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfile) error {
-	var existingProfiles []*storage.ComplianceOperatorProfile
+	existingProfiles := []*storage.ComplianceOperatorProfile{profile}
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorV1ProfileName, profile.GetName()).
+		ProtoQuery()
 	walkFn := func() error {
-		existingProfiles = []*storage.ComplianceOperatorProfile{
-			profile,
-		}
-		return m.profiles.Walk(allAccessCtx, func(existingProfile *storage.ComplianceOperatorProfile) error {
-			if existingProfile.GetClusterId() != profile.GetClusterId() && existingProfile.GetName() == profile.GetName() {
+		existingProfiles = []*storage.ComplianceOperatorProfile{profile}
+		return m.profiles.WalkByQuery(allAccessCtx, q, func(existingProfile *storage.ComplianceOperatorProfile) error {
+			if existingProfile.GetClusterId() != profile.GetClusterId() {
 				existingProfiles = append(existingProfiles, existingProfile)
 			}
 			return nil
@@ -274,8 +276,11 @@ func (m *managerImpl) DeleteProfile(deletedProfile *storage.ComplianceOperatorPr
 
 	var found bool
 	rulesFound := set.NewStringSet()
-	err := m.profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
-		if deletedProfile.GetId() != profile.GetId() && deletedProfile.GetName() == profile.GetName() {
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorV1ProfileName, deletedProfile.GetName()).
+		ProtoQuery()
+	err := m.profiles.WalkByQuery(allAccessCtx, q, func(profile *storage.ComplianceOperatorProfile) error {
+		if deletedProfile.GetId() != profile.GetId() {
 			found = true
 			for _, rule := range profile.GetRules() {
 				rulesFound.Add(rule.GetName())
@@ -405,10 +410,13 @@ func (m *managerImpl) getRule(name string) (*storage.ComplianceOperatorRule, err
 
 func (m *managerImpl) GetMachineConfigs(clusterID string) (map[string][]string, error) {
 	profileIDsToNames := make(map[string]string)
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorV1ProfileClusterID, clusterID).
+		ProtoQuery()
 	walkFn := func() error {
 		profileIDsToNames = make(map[string]string)
-		return m.profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
-			if profile.GetClusterId() == clusterID && profile.GetAnnotations()[v1alpha1.ProductTypeAnnotation] == string(v1alpha1.ScanTypeNode) {
+		return m.profiles.WalkByQuery(allAccessCtx, q, func(profile *storage.ComplianceOperatorProfile) error {
+			if profile.GetAnnotations()[v1alpha1.ProductTypeAnnotation] == string(v1alpha1.ScanTypeNode) {
 				profileIDsToNames[profile.GetProfileId()] = profile.GetName()
 			}
 			return nil

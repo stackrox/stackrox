@@ -50,6 +50,9 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
+	// Deprecated: use GetByQueryFn instead
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
@@ -97,10 +100,12 @@ func insertIntoComplianceOperatorProfiles(batch *pgx.Batch, obj *storage.Complia
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
+		obj.GetName(),
+		obj.GetClusterId(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_profiles (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_profiles (Id, Name, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -108,6 +113,8 @@ func insertIntoComplianceOperatorProfiles(batch *pgx.Batch, obj *storage.Complia
 
 var copyColsComplianceOperatorProfiles = []string{
 	"id",
+	"name",
+	"clusterid",
 	"serialized",
 }
 
@@ -143,6 +150,8 @@ func copyFromComplianceOperatorProfiles(ctx context.Context, s pgSearch.Deleter,
 
 		return []interface{}{
 			obj.GetId(),
+			obj.GetName(),
+			obj.GetClusterId(),
 			serialized,
 		}, nil
 	})

@@ -199,8 +199,8 @@ type ComplianceOperatorProfile struct {
 	state         protoimpl.MessageState            `protogen:"open.v1"`
 	Id            string                            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
 	ProfileId     string                            `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"`
-	Name          string                            `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	ClusterId     string                            `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Name          string                            `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Operator V1 Profile Name,hidden"`                            // @gotags: search:"Compliance Operator V1 Profile Name,hidden"
+	ClusterId     string                            `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Compliance Operator V1 Profile Cluster ID,hidden"` // @gotags: search:"Compliance Operator V1 Profile Cluster ID,hidden"
 	Labels        map[string]string                 `protobuf:"bytes,5,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Annotations   map[string]string                 `protobuf:"bytes,6,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Description   string                            `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`

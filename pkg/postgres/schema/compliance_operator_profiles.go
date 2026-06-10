@@ -5,10 +5,13 @@ package schema
 import (
 	"reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -25,8 +28,10 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorProfile)(nil)), "compliance_operator_profiles")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory(201), "complianceoperatorprofile", (*storage.ComplianceOperatorProfile)(nil)))
 		schema.ScopingResource = resources.ComplianceOperator
 		RegisterTable(schema, CreateTableComplianceOperatorProfilesStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory(201), schema)
 		return schema
 	}()
 )
@@ -39,5 +44,7 @@ const (
 // ComplianceOperatorProfiles holds the Gorm model for Postgres table `compliance_operator_profiles`.
 type ComplianceOperatorProfiles struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
+	Name       string `gorm:"column:name;type:varchar"`
+	ClusterID  string `gorm:"column:clusterid;type:varchar"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	store "github.com/stackrox/rox/central/complianceoperator/profiles/store"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -19,6 +20,7 @@ var (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Walk(ctx context.Context, fn func(result *storage.ComplianceOperatorProfile) error) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(result *storage.ComplianceOperatorProfile) error) error
 	Upsert(ctx context.Context, result *storage.ComplianceOperatorProfile) error
 	Delete(ctx context.Context, id string) error
 }
@@ -40,6 +42,15 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(result *storage.Compli
 	}
 	// Postgres retry in caller.
 	return d.store.Walk(ctx, fn)
+}
+
+func (d *datastoreImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn func(result *storage.ComplianceOperatorProfile) error) error {
+	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator profiles read")
+	}
+	return d.store.WalkByQuery(ctx, query, fn)
 }
 
 func (d *datastoreImpl) Upsert(ctx context.Context, result *storage.ComplianceOperatorProfile) error {

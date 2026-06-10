@@ -32,8 +32,8 @@ message ComplianceOperatorCheckResult {
 message ComplianceOperatorProfile {
   string id = 1; // @gotags: sql:"pk"
   string profile_id = 2;
-  string name = 3;
-  string cluster_id = 4;
+  string name = 3; // @gotags: search:"Compliance Operator V1 Profile Name,hidden"
+  string cluster_id = 4; // @gotags: search:"Compliance Operator V1 Profile Cluster ID,hidden"
   map<string, string> labels = 5;
   map<string, string> annotations = 6;
   string description = 7;

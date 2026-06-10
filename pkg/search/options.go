@@ -566,6 +566,10 @@ var (
 	TestNoSerClusterID = newFieldLabel("Test NoSer Cluster ID")
 	TestNoSerTags      = newFieldLabel("Test NoSer Tags")
 
+	// Compliance Operator V1
+	ComplianceOperatorV1ProfileName      = newFieldLabel("Compliance Operator V1 Profile Name")
+	ComplianceOperatorV1ProfileClusterID = newFieldLabel("Compliance Operator V1 Profile Cluster ID")
+
 	// Derived test fields
 	// The derived fields depending of fields with map and scalar data type array data structures are unsupported.
 	TestGrandparentCount        = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)

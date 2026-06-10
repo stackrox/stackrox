@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -81,4 +82,18 @@ func (m *MockDataStore) Walk(ctx context.Context, fn func(*storage.ComplianceOpe
 func (mr *MockDataStoreMockRecorder) Walk(ctx, fn any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockDataStore)(nil).Walk), ctx, fn)
+}
+
+// WalkByQuery mocks base method.
+func (m *MockDataStore) WalkByQuery(ctx context.Context, query *v1.Query, fn func(*storage.ComplianceOperatorProfile) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkByQuery", ctx, query, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkByQuery indicates an expected call of WalkByQuery.
+func (mr *MockDataStoreMockRecorder) WalkByQuery(ctx, query, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkByQuery", reflect.TypeOf((*MockDataStore)(nil).WalkByQuery), ctx, query, fn)
 }
