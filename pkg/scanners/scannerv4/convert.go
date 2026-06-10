@@ -689,7 +689,13 @@ func compareFixVersions(a, b, pkgFixedBy string) int {
 	// sources to report different fix versions for the same CVE. Use a
 	// deterministic numeric comparison so the result is stable across runs.
 	if a != b {
-		return compareNumericSegments(a, b)
+		c := compareNumericSegments(a, b)
+		winner := a
+		if c < 0 {
+			winner = b
+		}
+		log.Debugf("fix version mismatch during dedup: %q vs %q, picking %q via numeric comparison", a, b, winner)
+		return c
 	}
 	return 0
 }
