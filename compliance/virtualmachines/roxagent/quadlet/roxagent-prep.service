@@ -1,7 +1,9 @@
 [Unit]
-Description=Prepare RPM database for StackRox VM Agent
+Description=Prepare RPM database and container image for StackRox VM Agent
 # Copy the RPM database to a writable location because SQLite WAL mode
-# requires write access even for read-only queries
+# requires write access even for read-only queries.
+# Pre-pull the container image so the main service start does not block
+# on a potentially slow image download.
 
 [Service]
 Type=oneshot
@@ -10,3 +12,4 @@ ExecStartPre=/bin/mkdir -p /run/lock/roxagent
 ExecStart=/bin/rm -rf /tmp/roxagent-rpm
 ExecStart=/bin/cp -a /var/lib/rpm /tmp/roxagent-rpm
 ExecStart=/bin/chmod -R 755 /tmp/roxagent-rpm
+ExecStart=/bin/bash -c 'podman pull --quiet "$(grep ^Image= /etc/containers/systemd/roxagent.container | cut -d= -f2-)"'
