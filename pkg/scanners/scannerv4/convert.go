@@ -55,10 +55,7 @@ func componentsWithLayerMap(metadata *storage.ImageMetadata, report *v4.Vulnerab
 			pkgs[pkg.GetId()] = pkg
 		}
 	}
-	// Filter out non-binary packages that should not become user-facing components:
-	// - "ancestry" packages carry VEX suppression metadata only.
-	// - "source" packages already referenced by a binary are redundant since the
-	//   binary's vulnerability findings are a superset of its source's.
+	// Filter out packages that should not become user-facing components.
 	// Unreferenced source packages are kept defensively.
 	dedupe := features.ScannerV4Dedupe.Enabled()
 	var referencedSourceIDs set.StringSet
