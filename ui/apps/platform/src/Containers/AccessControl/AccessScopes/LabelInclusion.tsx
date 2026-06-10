@@ -62,34 +62,30 @@ function LabelInclusion({
                     }
                 />
             </Tabs>
-            <TabContent
-                eventKey="clusterLabelSelectors"
-                id="clusterLabelSelectors"
-                hidden={activeKeyTab !== 'clusterLabelSelectors'}
-            >
-                <LabelSelectorCards
-                    labelSelectors={clusterLabelSelectors}
-                    labelSelectorsKey="clusterLabelSelectors"
-                    hasAction={hasAction}
-                    labelSelectorsEditingState={labelSelectorsEditingState}
-                    setLabelSelectorsEditingState={setLabelSelectorsEditingState}
-                    handleLabelSelectorsChange={handleLabelSelectorsChange}
-                />
-            </TabContent>
-            <TabContent
-                eventKey="namespaceLabelSelectors"
-                id="namespaceLabelSelectors"
-                hidden={activeKeyTab !== 'namespaceLabelSelectors'}
-            >
-                <LabelSelectorCards
-                    labelSelectors={namespaceLabelSelectors}
-                    labelSelectorsKey="namespaceLabelSelectors"
-                    hasAction={hasAction}
-                    labelSelectorsEditingState={labelSelectorsEditingState}
-                    setLabelSelectorsEditingState={setLabelSelectorsEditingState}
-                    handleLabelSelectorsChange={handleLabelSelectorsChange}
-                />
-            </TabContent>
+            {activeKeyTab === 'clusterLabelSelectors' && (
+                <TabContent eventKey="clusterLabelSelectors" id="clusterLabelSelectors">
+                    <LabelSelectorCards
+                        labelSelectors={clusterLabelSelectors}
+                        labelSelectorsKey="clusterLabelSelectors"
+                        hasAction={hasAction}
+                        labelSelectorsEditingState={labelSelectorsEditingState}
+                        setLabelSelectorsEditingState={setLabelSelectorsEditingState}
+                        handleLabelSelectorsChange={handleLabelSelectorsChange}
+                    />
+                </TabContent>
+            )}
+            {activeKeyTab === 'namespaceLabelSelectors' && (
+                <TabContent eventKey="namespaceLabelSelectors" id="namespaceLabelSelectors">
+                    <LabelSelectorCards
+                        labelSelectors={namespaceLabelSelectors}
+                        labelSelectorsKey="namespaceLabelSelectors"
+                        hasAction={hasAction}
+                        labelSelectorsEditingState={labelSelectorsEditingState}
+                        setLabelSelectorsEditingState={setLabelSelectorsEditingState}
+                        handleLabelSelectorsChange={handleLabelSelectorsChange}
+                    />
+                </TabContent>
+            )}
         </>
     );
 }
