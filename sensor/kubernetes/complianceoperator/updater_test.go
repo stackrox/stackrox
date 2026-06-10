@@ -3,6 +3,7 @@ package complianceoperator
 import (
 	"context"
 	"fmt"
+	"maps"
 	"testing"
 	"time"
 
@@ -240,9 +241,7 @@ func (s *UpdaterTestSuite) TestCheckRequiredComplianceCRDsExist() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			modifiedDetectedKinds := make(map[string]bool)
-			for kind, value := range detectedKinds {
-				modifiedDetectedKinds[kind] = value
-			}
+			maps.Copy(modifiedDetectedKinds, detectedKinds)
 
 			tc.modifyDetectedKinds(modifiedDetectedKinds)
 
