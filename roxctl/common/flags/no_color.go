@@ -1,6 +1,8 @@
 package flags
 
 import (
+	"slices"
+
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/env"
 )
@@ -22,10 +24,8 @@ func AddNoColor(c *cobra.Command) {
 
 // HasNoColor returns true is passed args contain noColorFlag
 func HasNoColor(args []string) bool {
-	for _, arg := range args {
-		if arg == noColorFlag {
-			return true
-		}
+	if slices.Contains(args, noColorFlag) {
+		return true
 	}
 	if env.NoColorEnv.BooleanSetting() != env.NoColorEnv.DefaultBooleanSetting() {
 		return env.NoColorEnv.BooleanSetting()

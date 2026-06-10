@@ -12,6 +12,7 @@ import (
 	"math"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -1156,11 +1157,9 @@ func waitUntilCentralSensorConnectionIs(t *testing.T, ctx context.Context, statu
 		}
 
 		clusterStatus := cluster.GetHealthStatus().GetSensorHealthStatus()
-		for _, status := range statuses {
-			if clusterStatus == status {
-				logf(t, "Central-sensor connection now in state %q.", clusterStatus)
-				return nil
-			}
+		if slices.Contains(statuses, clusterStatus) {
+			logf(t, "Central-sensor connection now in state %q.", clusterStatus)
+			return nil
 		}
 		return fmt.Errorf("encountered cluster status %q", clusterStatus.String())
 	}

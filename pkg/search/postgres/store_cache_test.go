@@ -956,10 +956,7 @@ func insertIntoTestSingleKeyStructsWithCache(batch *pgx.Batch, obj *storage.Test
 
 // copied from tools/generate-helpers/pg-table-bindings/test/postgres/store.go
 func copyFromTestSingleKeyStructsWithCache(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...*storage.TestSingleKeyStruct) error {
-	batchSize := MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
+	batchSize := min(len(objs), MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy, so first we must delete the rows and re-add them

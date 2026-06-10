@@ -1,6 +1,7 @@
 package sac
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -159,12 +160,6 @@ func (c *testScopeCheckerCore) Allowed() bool {
 	}
 	// Drill down to namespace level.
 	namespace := c.path[3].String()
-	namespaceAllowed := false
-	for _, allowedNamespace := range clusterScope.Namespaces {
-		if namespace == allowedNamespace {
-			namespaceAllowed = true
-			break
-		}
-	}
+	namespaceAllowed := slices.Contains(clusterScope.Namespaces, namespace)
 	return namespaceAllowed
 }

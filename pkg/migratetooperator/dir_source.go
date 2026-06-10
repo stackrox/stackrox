@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -136,10 +137,8 @@ func (s *dirSource) walkYAML(match func(doc []byte) bool) error {
 		if splitErr != nil {
 			return errors.Wrapf(splitErr, "parsing YAML in %q", path)
 		}
-		for _, doc := range docs {
-			if match(doc) {
-				return filepath.SkipAll
-			}
+		if slices.ContainsFunc(docs, match) {
+			return filepath.SkipAll
 		}
 		return nil
 	}), "walking directory tree")

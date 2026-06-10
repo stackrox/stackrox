@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"context"
+	"slices"
 
 	"github.com/pkg/errors"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
@@ -129,10 +130,5 @@ func hasIngress(types []storage.NetworkPolicyType) bool {
 }
 
 func hasPolicyType(types []storage.NetworkPolicyType, t storage.NetworkPolicyType) bool {
-	for _, pType := range types {
-		if pType == t {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(types, t)
 }

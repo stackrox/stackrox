@@ -1,6 +1,8 @@
 package alert
 
 import (
+	"slices"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -18,12 +20,7 @@ func IsAttemptedAlert(alert *storage.Alert) bool {
 
 // AnyAttemptedAlert indicates whether any alert is an attempted alert.
 func AnyAttemptedAlert(alerts ...*storage.Alert) bool {
-	for _, alert := range alerts {
-		if IsAttemptedAlert(alert) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(alerts, IsAttemptedAlert)
 }
 
 // IsRuntimeAlertResult returns whether or not the passed results are from a runtime policy

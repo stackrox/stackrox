@@ -1,6 +1,8 @@
 package enrichment
 
 import (
+	"slices"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	"github.com/stackrox/rox/generated/storage"
@@ -34,12 +36,7 @@ type managerImpl struct {
 // isNodeIntegration returns "true" if the image integration is also a node integration.
 // It loops through the categories, which is a very small slice.
 func isNodeIntegration(integration *storage.ImageIntegration) bool {
-	for _, category := range integration.GetCategories() {
-		if category == storage.ImageIntegrationCategory_NODE_SCANNER {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(integration.GetCategories(), storage.ImageIntegrationCategory_NODE_SCANNER)
 }
 
 // ImageIntegrationToNodeIntegration converts the given image integration into a node integration.

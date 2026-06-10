@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"slices"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -264,13 +265,7 @@ func (s *serviceImpl) batchComponentScanCounts(ctx context.Context, vmIDs []stri
 		}
 		for _, comp := range comps {
 			counts.Total++
-			scanned := true
-			for _, n := range comp.GetNotes() {
-				if n == storage.VirtualMachineComponentV2_UNSCANNED {
-					scanned = false
-					break
-				}
-			}
+			scanned := !slices.Contains(comp.GetNotes(), storage.VirtualMachineComponentV2_UNSCANNED)
 			if scanned {
 				counts.Scanned++
 			}

@@ -1,6 +1,10 @@
 package graph
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"slices"
+
+	"github.com/stackrox/rox/generated/storage"
+)
 
 func hasEgress(types []storage.NetworkPolicyType) bool {
 	return hasPolicyType(types, storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE)
@@ -14,10 +18,5 @@ func hasIngress(types []storage.NetworkPolicyType) bool {
 }
 
 func hasPolicyType(types []storage.NetworkPolicyType, t storage.NetworkPolicyType) bool {
-	for _, pType := range types {
-		if pType == t {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(types, t)
 }

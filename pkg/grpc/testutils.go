@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"runtime/pprof"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -114,12 +115,7 @@ func testPrintSocketInfo(t *testing.T, ports ...uint64) error {
 
 func testPrintSocketInfoFromProcFile(t *testing.T, fName string, ports ...uint64) (err error) {
 	shouldPrintPort := func(port uint64, ports ...uint64) bool {
-		for _, p := range ports {
-			if p == port {
-				return true
-			}
-		}
-		return false
+		return slices.Contains(ports, port)
 	}
 	getStateString := func(code uint64) string {
 		codeToState := map[uint64]string{

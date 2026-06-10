@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"slices"
 
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,11 +29,9 @@ func CheckNotifierInUseByCluster(ctx framework.ComplianceContext) {
 			continue
 		}
 
-		for _, notifierID := range policy.GetNotifiers() {
-			if notifiers.Contains(notifierID) {
-				framework.Pass(ctx, "At least one enabled policy has a notifier configured.")
-				return
-			}
+		if slices.ContainsFunc(policy.GetNotifiers(), notifiers.Contains) {
+			framework.Pass(ctx, "At least one enabled policy has a notifier configured.")
+			return
 		}
 	}
 
@@ -106,13 +105,7 @@ func CheckAnyPolicyInLifecycleStageEnforced(ctx framework.ComplianceContext, lif
 
 // PolicyIsInLifecycleStage returns whether the given policy is in the given lifecycle stage.
 func PolicyIsInLifecycleStage(policy *storage.Policy, targetStage storage.LifecycleStage) bool {
-	for _, policyStage := range policy.GetLifecycleStages() {
-		if policyStage == targetStage {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(policy.GetLifecycleStages(), targetStage)
 }
 
 // AnyPoliciesEnforced checks if any policy in the given set is being enforced.
@@ -333,12 +326,7 @@ func deploymentHasSpecifiedNetworkPolicy(policyType storage.NetworkPolicyType, d
 }
 
 func policyIsOfType(spec *storage.NetworkPolicySpec, policyType storage.NetworkPolicyType) bool {
-	for _, ty := range spec.GetPolicyTypes() {
-		if ty == policyType {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(spec.GetPolicyTypes(), policyType)
 }
 
 func isKubeSystem(deployment *storage.Deployment) bool {

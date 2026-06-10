@@ -30,10 +30,7 @@ func (r *chunkReader) Read(buf []byte) (int, error) {
 		}
 	}
 
-	n := len(r.currChunk)
-	if n > len(buf) {
-		n = len(buf)
-	}
+	n := min(len(r.currChunk), len(buf))
 	copy(buf, r.currChunk[:n])
 	r.currChunk = r.currChunk[n:]
 	return n, nil

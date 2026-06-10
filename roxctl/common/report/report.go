@@ -2,6 +2,7 @@ package report
 
 import (
 	"io"
+	"slices"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -120,12 +121,7 @@ func Pretty(output io.Writer, alerts []*storage.Alert, enforcementStage storage.
 // function.
 func EnforcementFailedBuild(enforcementAction storage.EnforcementAction) func(policy *storage.Policy) bool {
 	return func(policy *storage.Policy) bool {
-		for _, action := range policy.GetEnforcementActions() {
-			if action == enforcementAction {
-				return true
-			}
-		}
-		return false
+		return slices.Contains(policy.GetEnforcementActions(), enforcementAction)
 	}
 }
 

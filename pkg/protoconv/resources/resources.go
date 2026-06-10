@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"slices"
 
 	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
@@ -67,10 +68,8 @@ func NewDeploymentFromStaticResource(obj interface{}, deploymentType, clusterID,
 	kind := deploymentType
 
 	// Ignore resources that are owned by another tracked resource.
-	for _, ref := range objMeta.GetOwnerReferences() {
-		if IsTrackedOwnerReference(ref) {
-			return nil, nil
-		}
+	if slices.ContainsFunc(objMeta.GetOwnerReferences(), IsTrackedOwnerReference) {
+		return nil, nil
 	}
 
 	// This only applies to OpenShift

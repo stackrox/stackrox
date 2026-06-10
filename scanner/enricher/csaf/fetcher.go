@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -393,13 +394,7 @@ func (e *Enricher) processChanges(ctx context.Context, w io.Writer, fp *fingerpr
 // acceptable http status codes. The error returned will attempt to include
 // some content from the server's response.
 func checkResponse(resp *http.Response, acceptableCodes ...int) error {
-	acceptable := false
-	for _, code := range acceptableCodes {
-		if resp.StatusCode == code {
-			acceptable = true
-			break
-		}
-	}
+	acceptable := slices.Contains(acceptableCodes, resp.StatusCode)
 	if !acceptable {
 		limitBody, err := io.ReadAll(io.LimitReader(resp.Body, 256))
 		if err == nil {

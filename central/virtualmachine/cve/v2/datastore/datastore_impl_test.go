@@ -5,6 +5,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 
 	componentStore "github.com/stackrox/rox/central/virtualmachine/component/v2/datastore/store/postgres"
@@ -330,13 +331,7 @@ func (s *vmCVEV2DataStoreTestSuite) TestSACNamespaceScopedAccess() {
 			// Test Exists for a CVE in cluster1 namespaceA
 			exists, err := s.datastore.Exists(ctx, cve1.GetId())
 			s.NoError(err)
-			expectedExists := false
-			for _, id := range tc.expectedIDs {
-				if id == cve1.GetId() {
-					expectedExists = true
-					break
-				}
-			}
+			expectedExists := slices.Contains(tc.expectedIDs, cve1.GetId())
 			s.Equal(expectedExists, exists)
 
 			// Test Get for a CVE in cluster1 namespaceA

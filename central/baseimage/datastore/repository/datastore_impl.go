@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	repoStore "github.com/stackrox/rox/central/baseimage/store/repository/postgres"
@@ -215,10 +216,5 @@ func (d *datastoreImpl) DeleteRepository(ctx context.Context, id string) error {
 }
 
 func statusMatches(current storage.BaseImageRepository_Status, allowed []storage.BaseImageRepository_Status) bool {
-	for _, s := range allowed {
-		if current == s {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(allowed, current)
 }

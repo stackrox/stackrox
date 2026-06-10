@@ -3,6 +3,7 @@ package m2m
 import (
 	"context"
 	"regexp"
+	"slices"
 
 	"github.com/pkg/errors"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
@@ -73,10 +74,5 @@ func resolveRolesForClaims(ctx context.Context, claims map[string][]string, role
 }
 
 func valuesMatch(expr *regexp.Regexp, claimValues []string) bool {
-	for _, claimValue := range claimValues {
-		if expr.MatchString(claimValue) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(claimValues, expr.MatchString)
 }
