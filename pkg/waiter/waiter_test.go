@@ -134,7 +134,7 @@ func TestCloseManagerMany(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		wg.Add(1)
 		w, err := wm.NewWaiter()
 		require.NoError(t, err)

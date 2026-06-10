@@ -225,7 +225,7 @@ func TestQueryFromFieldValuesMaxParametersExceeded(t *testing.T) {
 	// Large value sets no longer panic — combineDisjunction handles them
 	// by switching to = ANY($1::text[]) when the count exceeds the threshold.
 	excessiveValues := make([]string, MaxQueryParameters+1)
-	for i := 0; i < len(excessiveValues); i++ {
+	for i := range excessiveValues {
 		excessiveValues[i] = fmt.Sprintf("value%d", i)
 	}
 

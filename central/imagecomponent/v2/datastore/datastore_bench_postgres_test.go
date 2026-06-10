@@ -41,7 +41,7 @@ func BenchmarkInitializeRankers(b *testing.B) {
 
 	// Insert test components with realistic serialized blob sizes.
 	numComponents := 500
-	for i := 0; i < numComponents; i++ {
+	for i := range numComponents {
 		component := &storage.ImageComponentV2{
 			Id:              fmt.Sprintf("component-%d", i),
 			Name:            fmt.Sprintf("pkg-%d", i),

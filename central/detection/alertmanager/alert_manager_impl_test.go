@@ -482,7 +482,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	alerts := getResourceAlerts()
 	newAlert := alerts[0].CloneVT()
 	newAlert.Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
-	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
+	for i := range maxRunTimeViolationsPerAlert {
 		newAlert.Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("new-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
 	}
 
@@ -519,7 +519,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	alerts := getResourceAlerts()
 	newAlert := alerts[0].CloneVT()
 	newAlert.Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
-	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
+	for i := range maxRunTimeViolationsPerAlert {
 		newAlert.Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("new-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
 	}
 
@@ -551,7 +551,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolations() {
 	alerts := getResourceAlerts()
 	alerts[0].Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
-	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
+	for i := range maxRunTimeViolationsPerAlert {
 		alerts[0].Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("old-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
 	}
 	newAlert := alerts[0].CloneVT()
@@ -585,7 +585,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 	suite.T().Setenv("NOTIFY_EVERY_RUNTIME_EVENT", "false")
 	alerts := getResourceAlerts()
 	alerts[0].Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
-	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
+	for i := range maxRunTimeViolationsPerAlert {
 		alerts[0].Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("old-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
 	}
 	newAlert := alerts[0].CloneVT()
@@ -830,14 +830,14 @@ func TestMergeFileAccessAlerts(t *testing.T) {
 			desc: "New has many that exceed max",
 			old: func() *storage.Alert {
 				accesses := make([]*storage.FileAccess, 30)
-				for i := 0; i < 30; i++ {
+				for i := range 30 {
 					accesses[i] = getFileAccess(twoDaysAgo.Add(time.Duration(i) * time.Minute))
 				}
 				return getFakeFileAccessAlert(accesses...)
 			}(),
 			new: func() *storage.Alert {
 				accesses := make([]*storage.FileAccess, 20)
-				for i := 0; i < 20; i++ {
+				for i := range 20 {
 					accesses[i] = getFileAccess(yesterday.Add(time.Duration(i) * time.Minute))
 				}
 				return getFakeFileAccessAlert(accesses...)
@@ -849,11 +849,11 @@ func TestMergeFileAccessAlerts(t *testing.T) {
 				// This is old[10:30] (20 old accesses) + new[0:20] (20 new accesses)
 				accesses := make([]*storage.FileAccess, maxRunTimeViolationsPerAlert)
 				// 20 from old (indices 10-29, the most recent old ones)
-				for i := 0; i < 20; i++ {
+				for i := range 20 {
 					accesses[i] = getFileAccess(twoDaysAgo.Add(time.Duration(10+i) * time.Minute))
 				}
 				// All 20 from new
-				for i := 0; i < 20; i++ {
+				for i := range 20 {
 					accesses[20+i] = getFileAccess(yesterday.Add(time.Duration(i) * time.Minute))
 				}
 				return getFakeFileAccessAlert(accesses...)
@@ -864,7 +864,7 @@ func TestMergeFileAccessAlerts(t *testing.T) {
 			desc: "Old at max; new access",
 			old: func() *storage.Alert {
 				accesses := make([]*storage.FileAccess, maxRunTimeViolationsPerAlert)
-				for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
+				for i := range maxRunTimeViolationsPerAlert {
 					accesses[i] = getFileAccess(twoDaysAgo.Add(time.Duration(i) * time.Minute))
 				}
 				return getFakeFileAccessAlert(accesses...)

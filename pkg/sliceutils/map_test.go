@@ -32,7 +32,7 @@ func TestMap(t *testing.T) {
 		[]int{1, 2},
 		func(val int) []string {
 			out := make([]string, 0, val)
-			for i := 0; i < val; i++ {
+			for i := range val {
 				out = append(out, strconv.Itoa(i))
 			}
 			return out

@@ -142,9 +142,9 @@ func buildBenchImage(numComponents, vulnsPerComponent, cvePoolSize int) *storage
 	stride := max(1, cvePoolSize/numComponents)
 
 	components := make([]*storage.EmbeddedImageScanComponent, 0, numComponents)
-	for i := 0; i < numComponents; i++ {
+	for i := range numComponents {
 		vulns := make([]*storage.EmbeddedVulnerability, 0, vulnsPerComponent)
-		for j := 0; j < vulnsPerComponent; j++ {
+		for j := range vulnsPerComponent {
 			cveIdx := (i*stride + j) % cvePoolSize
 			ts := now.Add(-time.Duration(cveIdx) * time.Hour)
 			vulns = append(vulns, &storage.EmbeddedVulnerability{

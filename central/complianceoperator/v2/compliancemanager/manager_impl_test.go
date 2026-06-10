@@ -666,7 +666,7 @@ func getTestProfile(profileName string, version string, platform string, product
 
 	if ruleCount > 0 {
 		rules = make([]*storage.ComplianceOperatorProfileV2_Rule, 0, ruleCount)
-		for i := 0; i < ruleCount; i++ {
+		for i := range ruleCount {
 			rules = append(rules, &storage.ComplianceOperatorProfileV2_Rule{
 				RuleName: fmt.Sprintf("name-%d", i),
 			})
@@ -699,7 +699,7 @@ func getTestProfileWithKind(profileName string, version string, platform string,
 
 func getTestScans(scanConfigName string, clusterID string, profileID string, count int) []*storage.ComplianceOperatorScanV2 {
 	scans := make([]*storage.ComplianceOperatorScanV2, 0, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		scanName := fmt.Sprintf("scan-%s-%s-%s-%d", scanConfigName, clusterID, profileID, i)
 
 		scans = append(scans, &storage.ComplianceOperatorScanV2{

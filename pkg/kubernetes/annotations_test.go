@@ -50,9 +50,9 @@ func TestTrimAnnotationsRace(t *testing.T) {
 	TrimAnnotations(&obj)
 	assert.Equal(t, expectedTrimmedAnnotations, obj.GetAnnotations())
 
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		go func() {
-			for i := 0; i < numIterations; i++ {
+			for range numIterations {
 				TrimAnnotations(&obj)
 				assert.Equal(t, expectedTrimmedAnnotations, obj.GetAnnotations())
 			}
