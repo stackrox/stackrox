@@ -15,6 +15,7 @@ settings=(
     --set clusterName=perf-test
     --set enableOpenShiftMonitoring=true
     --set exposeMonitoring=true
+    --set processIndicators.noPersistence=true
     --set processIndicators.excludeOpenshiftNs=true
 )
 
