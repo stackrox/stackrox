@@ -27,6 +27,26 @@ type keyBundleEntry struct {
 	PEM  string `json:"pem"`
 }
 
+func (kb *keyBundle) toDefaultSignatureIntegration() *storage.SignatureIntegration {
+	publicKeys := make([]*storage.CosignPublicKeyVerification_PublicKey, 0, len(kb.Keys))
+	for _, entry := range kb.Keys {
+		publicKeys = append(publicKeys, &storage.CosignPublicKeyVerification_PublicKey{
+			Name:            entry.Name,
+			PublicKeyPemEnc: entry.PEM,
+		})
+	}
+	return &storage.SignatureIntegration{
+		Id:   signatures.DefaultRedHatSignatureIntegration.GetId(),
+		Name: signatures.DefaultRedHatSignatureIntegration.GetName(),
+		Cosign: &storage.CosignPublicKeyVerification{
+			PublicKeys: publicKeys,
+		},
+		Traits: &storage.Traits{
+			Origin: storage.Traits_DEFAULT,
+		},
+	}
+}
+
 func parseKeyBundle(data []byte) (*keyBundle, error) {
 	var bundle keyBundle
 	if err := json.Unmarshal(data, &bundle); err != nil {
@@ -56,24 +76,4 @@ func parseKeyBundle(data []byte) (*keyBundle, error) {
 		entry.PEM = string(pem.EncodeToMemory(keyBlock))
 	}
 	return &bundle, nil
-}
-
-func (kb *keyBundle) toDefaultSignatureIntegration() *storage.SignatureIntegration {
-	publicKeys := make([]*storage.CosignPublicKeyVerification_PublicKey, 0, len(kb.Keys))
-	for _, entry := range kb.Keys {
-		publicKeys = append(publicKeys, &storage.CosignPublicKeyVerification_PublicKey{
-			Name:            entry.Name,
-			PublicKeyPemEnc: entry.PEM,
-		})
-	}
-	return &storage.SignatureIntegration{
-		Id:   signatures.DefaultRedHatSignatureIntegration.GetId(),
-		Name: signatures.DefaultRedHatSignatureIntegration.GetName(),
-		Cosign: &storage.CosignPublicKeyVerification{
-			PublicKeys: publicKeys,
-		},
-		Traits: &storage.Traits{
-			Origin: storage.Traits_DEFAULT,
-		},
-	}
 }
