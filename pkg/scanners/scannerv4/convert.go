@@ -651,12 +651,12 @@ func notes(report *v4.VulnerabilityReport) []storage.ImageScan_Note {
 }
 
 // mergeFixFields overwrites fix-related fields on dst when src has more
-// recent or more complete fix data. Priority: later advisory, has fix over
+// recent or more complete fix data. Priority: later fix date, has fix over
 // doesn't, matches package-level fix version, higher version by numeric
 // comparison.
 func mergeFixFields(dst, src *storage.EmbeddedVulnerability, pkgFixedByVersion string) {
 	c := cmp.Or(
-		compareAdvisories(src.GetAdvisory(), dst.GetAdvisory()),
+		protocompat.CompareTimestamps(src.GetFixAvailableTimestamp(), dst.GetFixAvailableTimestamp()),
 		compareFixVersions(src.GetFixedBy(), dst.GetFixedBy(), pkgFixedByVersion),
 	)
 	if c > 0 {
@@ -751,19 +751,4 @@ func mergeScoringFields(dst, src *storage.EmbeddedVulnerability) {
 	dst.Link = src.Link
 	dst.PublishedOn = src.PublishedOn
 	dst.Epss = src.Epss
-}
-
-// compareAdvisories compares two advisories by their numeric segments.
-// Nil is less than non-nil.
-func compareAdvisories(a, b *storage.Advisory) int {
-	if a == nil && b == nil {
-		return 0
-	}
-	if a == nil {
-		return -1
-	}
-	if b == nil {
-		return 1
-	}
-	return compareNumericSegments(a.GetName(), b.GetName())
 }

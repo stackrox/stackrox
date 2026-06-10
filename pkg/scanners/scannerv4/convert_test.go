@@ -2538,49 +2538,28 @@ func TestVulnerabilities_DedupByCVEName(t *testing.T) {
 		assert.Equal(t, "2.0.0", got[0].GetFixedBy())
 	})
 
-	t.Run("advisory wins with no fix version", func(t *testing.T) {
+	t.Run("later fix date wins with no fix version", func(t *testing.T) {
+		earlier := protocompat.GetProtoTimestampFromSeconds(1700000000)
+		later := protocompat.GetProtoTimestampFromSeconds(1710000000)
 		vulnMap := map[string]*v4.VulnerabilityReport_Vulnerability{
 			"a": {
 				Id: "a", Name: "CVE-2024-1",
 				Advisory:       &v4.VulnerabilityReport_Advisory{Name: "RHSA-2024:100"},
 				FixedInVersion: "1.0.0",
+				FixedDate:      earlier,
 			},
 			"b": {
 				Id: "b", Name: "CVE-2024-1",
-				Advisory: &v4.VulnerabilityReport_Advisory{Name: "RHSA-2024:200"},
+				Advisory:  &v4.VulnerabilityReport_Advisory{Name: "RHSA-2024:200"},
+				FixedDate: later,
 			},
 		}
 		got := vulnerabilities(vulnMap, []string{"a", "b"}, "", "")
 		require.Len(t, got, 1)
-		// "b" wins on advisory — fix version is empty from "b".
+		// "b" wins on fix date — fix version is empty from "b".
 		assert.Equal(t, "RHSA-2024:200", got[0].GetAdvisory().GetName())
 		assert.Equal(t, "", got[0].GetFixedBy())
 	})
-}
-
-func TestCompareAdvisories(t *testing.T) {
-	testcases := map[string]struct {
-		a, b     *storage.Advisory
-		expected int
-	}{
-		"both nil":                    {nil, nil, 0},
-		"a nil":                       {nil, &storage.Advisory{Name: "RHSA-2024:100"}, -1},
-		"b nil":                       {&storage.Advisory{Name: "RHSA-2024:100"}, nil, 1},
-		"same":                        {&storage.Advisory{Name: "RHSA-2024:100"}, &storage.Advisory{Name: "RHSA-2024:100"}, 0},
-		"same year different number":  {&storage.Advisory{Name: "RHSA-2024:100"}, &storage.Advisory{Name: "RHSA-2024:200"}, -1},
-		"same year numeric not lex":   {&storage.Advisory{Name: "RHSA-2024:100"}, &storage.Advisory{Name: "RHSA-2024:90"}, 1},
-		"different years":             {&storage.Advisory{Name: "RHSA-2023:500"}, &storage.Advisory{Name: "RHSA-2024:100"}, -1},
-		"parseable year over not":     {&storage.Advisory{Name: "RHSA-2024:100"}, &storage.Advisory{Name: "some-advisory"}, 1},
-		"neither parseable lex order": {&storage.Advisory{Name: "AAA-advisory"}, &storage.Advisory{Name: "ZZZ-advisory"}, -1},
-	}
-	for name, tt := range testcases {
-		t.Run(name, func(t *testing.T) {
-			got := compareAdvisories(tt.a, tt.b)
-			assert.Equal(t, tt.expected, got)
-			reverse := compareAdvisories(tt.b, tt.a)
-			assert.Equal(t, -tt.expected, reverse)
-		})
-	}
 }
 
 func TestCompareNumericSegments(t *testing.T) {
