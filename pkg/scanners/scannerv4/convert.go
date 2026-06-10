@@ -699,10 +699,10 @@ func compareFixVersions(a, b, pkgFixedBy string) int {
 
 // applyFixFields overwrites fix-related fields on dst from src.
 func applyFixFields(dst, src *storage.EmbeddedVulnerability) {
-	dst.Advisory = src.Advisory
-	dst.Datasource = src.Datasource
-	dst.FixAvailableTimestamp = src.FixAvailableTimestamp
-	dst.SetFixedBy = src.SetFixedBy
+	dst.Advisory = src.GetAdvisory()
+	dst.Datasource = src.GetDatasource()
+	dst.FixAvailableTimestamp = src.GetFixAvailableTimestamp()
+	dst.SetFixedBy = src.GetSetFixedBy()
 }
 
 // compareNumericSegments compares two strings by extracting their numeric
@@ -737,15 +737,15 @@ func mergeScoringFields(dst, src *storage.EmbeddedVulnerability) {
 		return
 	}
 
-	dst.Summary = src.Summary
-	dst.Severity = src.Severity
-	dst.CvssV2 = src.CvssV2
-	dst.CvssV3 = src.CvssV3
-	dst.Cvss = src.Cvss
-	dst.ScoreVersion = src.ScoreVersion
-	dst.CvssMetrics = src.CvssMetrics
-	dst.NvdCvss = src.NvdCvss
-	dst.Link = src.Link
-	dst.PublishedOn = src.PublishedOn
-	dst.Epss = src.Epss
+	dst.Summary = src.GetSummary()
+	dst.Severity = src.GetSeverity()
+	dst.CvssV2 = src.GetCvssV2()
+	dst.CvssV3 = src.GetCvssV3()
+	dst.Cvss = src.GetCvss()
+	dst.ScoreVersion = src.GetScoreVersion()
+	dst.CvssMetrics = src.GetCvssMetrics()
+	dst.NvdCvss = src.GetNvdCvss()
+	dst.Link = src.GetLink()
+	dst.PublishedOn = src.GetPublishedOn()
+	dst.Epss = src.GetEpss()
 }
