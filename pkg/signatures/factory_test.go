@@ -163,7 +163,7 @@ func createSignatureIntegration(numberOfIntegrations int, verifyBundle bool) []*
 
 	integrations := make([]*storage.SignatureIntegration, 0, numberOfIntegrations)
 
-	for i := 0; i < numberOfIntegrations; i++ {
+	for i := range numberOfIntegrations {
 		var cosignConfig *storage.CosignPublicKeyVerification
 		if i%2 == 0 {
 			cosignConfig = successfulCosignConfig

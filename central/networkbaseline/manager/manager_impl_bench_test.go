@@ -23,7 +23,7 @@ import (
 
 func generateBaselines(b *testing.B) []*storage.NetworkBaseline {
 	var networkBaselines []*storage.NetworkBaseline
-	for i := 0; i < 2000; i++ {
+	for range 2000 {
 		networkBaseline := &storage.NetworkBaseline{}
 		require.NoError(b, testutils.FullInit(networkBaseline, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkBaseline.Peers = nil
@@ -56,7 +56,7 @@ func BenchmarkInitFromStore(b *testing.B) {
 	// load it up
 	require.NoError(b, nbStore.UpsertNetworkBaselines(ctx, generateBaselines(b)))
 
-	for i := 0; i < 2000; i++ {
+	for range 2000 {
 		networkPolicy := &storage.NetworkPolicy{}
 		require.NoError(b, testutils.FullInit(networkPolicy, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		require.NoError(b, npStore.UpsertNetworkPolicy(ctx, networkPolicy))

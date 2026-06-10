@@ -27,7 +27,7 @@ func BenchmarkNodes(b *testing.B) {
 
 	fakeNode := fixtures.GetNodeWithUniqueComponents(100, 100)
 	nodes := make([]*storage.Node, 100)
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		fakeNode.Id = uuid.NewV4().String()
 		fakeNode.ClusterId = fakeNode.GetId()
 		fakeNode.ClusterName = fmt.Sprintf("c-%d", i)

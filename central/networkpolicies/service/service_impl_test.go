@@ -601,7 +601,7 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 	// Prepare deployment001 - deployment004
 	numDeployments := 4
 	deps := make([]*storage.Deployment, 0, numDeployments)
-	for i := 0; i < numDeployments; i++ {
+	for i := range numDeployments {
 		deps = append(deps, &storage.Deployment{
 			Id:        fmt.Sprintf("deployment%03d", i),
 			Name:      fmt.Sprintf("deployment%03d", i),

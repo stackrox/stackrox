@@ -101,7 +101,7 @@ func TestAysncCheckTLS(t *testing.T) {
 func runAsyncTLSChecks(cache Cache, regs []string) {
 	var wg sync.WaitGroup
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		for _, reg := range regs {
 			wg.Add(1)
 			go func(reg string) {

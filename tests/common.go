@@ -312,7 +312,7 @@ func waitForDeploymentInCentral(t testutils.T, deploymentName string) {
 func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlertsRequest, desired int) {
 	var alerts []*storage.ListAlert
 	// Retry until desired alert count is reached when sensor(s) resync
-	for i := 0; i < 45; i++ {
+	for range 45 {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		resp, err := service.ListAlerts(ctx, req)
 		cancel()

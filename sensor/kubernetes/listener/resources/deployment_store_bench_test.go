@@ -37,7 +37,7 @@ func BenchmarkBuildDeployments_NoChange(b *testing.B) {
 		benchStore.addOrUpdateDeployment(deployment1)
 		exposureInfo := generateExposureInfos(5, 5)
 		b.StartTimer()
-		for i := 0; i < 100; i++ {
+		for range 100 {
 			d, _, err := benchStore.BuildDeploymentWithDependencies(deployment1.GetId(), store.Dependencies{
 				PermissionLevel: storage.PermissionLevel_NONE,
 				Exposures:       exposureInfo,
@@ -62,7 +62,7 @@ func BenchmarkBuildDeployments_Change(b *testing.B) {
 			storage.PermissionLevel_NONE, storage.PermissionLevel_ELEVATED_IN_NAMESPACE,
 		}
 		b.StartTimer()
-		for i := 0; i < 100; i++ {
+		for i := range 100 {
 
 			d, _, err := benchStore.BuildDeploymentWithDependencies(deployment1.GetId(), store.Dependencies{
 				PermissionLevel: permLevles[i%2],
@@ -80,7 +80,7 @@ func BenchmarkDeleteAllDeployments(b *testing.B) {
 			for b.Loop() {
 				b.StopTimer()
 				benchStore = newDeploymentStore()
-				for i := 0; i < 1000; i++ {
+				for range 1000 {
 					benchStore.addOrUpdateDeployment(createDeploymentWrap())
 				}
 				b.StartTimer()
@@ -94,19 +94,19 @@ func BenchmarkFindDeploymentIDsByLabels(b *testing.B) {
 	for b.Loop() {
 		b.StopTimer()
 		benchStore = newDeploymentStore()
-		for i := 0; i < 1000; i++ {
+		for range 1000 {
 			benchStore.addOrUpdateDeployment(createDeploymentWrap())
 		}
 
 		b.StartTimer()
 		// These should match
-		for j := 0; j < 1000; j++ {
+		for range 1000 {
 			nsAndSel := namespaceSelectorPoll[rand.Intn(len(namespaceSelectorPoll))]
 			benchStore.FindDeploymentIDsByLabels(nsAndSel.namespace, nsAndSel.selector)
 		}
 
 		// These should not match
-		for j := 0; j < 1000; j++ {
+		for range 1000 {
 			benchStore.FindDeploymentIDsByLabels("no-match-ns", selector.CreateSelector(map[string]string{"no": "match"}))
 		}
 	}
@@ -190,9 +190,9 @@ func BenchmarkGetAll(b *testing.B) {
 func generateExposureInfos(numMaps, numExposureInfos int) []map[service.PortRef][]*storage.PortConfig_ExposureInfo {
 	result := make([]map[service.PortRef][]*storage.PortConfig_ExposureInfo, numMaps)
 
-	for m := 0; m < numMaps; m++ {
+	for m := range numMaps {
 		result[m] = map[service.PortRef][]*storage.PortConfig_ExposureInfo{}
-		for i := 0; i < numExposureInfos; i++ {
+		for i := range numExposureInfos {
 			result[m][service.PortRef{
 				Port:     intstr.FromInt32(8080 + int32(i)),
 				Protocol: "TCP",

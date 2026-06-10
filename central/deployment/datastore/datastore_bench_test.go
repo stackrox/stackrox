@@ -23,7 +23,7 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 
 	deploymentPrototype := fixtures.GetDeployment().CloneVT()
 	const numDeployments = 1000
-	for i := 0; i < numDeployments; i++ {
+	for i := range numDeployments {
 		if i > 0 && i%100 == 0 {
 			fmt.Println("Added", i, "deployments")
 		}

@@ -24,7 +24,7 @@ func TestPipeListener_Connections(t *testing.T) {
 
 	var clientSum atomic.Uint32
 	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
@@ -51,7 +51,7 @@ func TestPipeListener_Connections(t *testing.T) {
 	}
 
 	var serverSum atomic.Uint32
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		conn, err := lis.Accept()
 		require.NoError(t, err)
 

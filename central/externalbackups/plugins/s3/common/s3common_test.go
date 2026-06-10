@@ -157,7 +157,7 @@ func TestNewS3Client(t *testing.T) {
 func TestPruneBackupsIfNecessary(t *testing.T) {
 	var keys []string
 	var objects []types.Object
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		key := fmt.Sprintf("Backup %d", i+1)
 		var lastModified *time.Time
 		if i == 1 {

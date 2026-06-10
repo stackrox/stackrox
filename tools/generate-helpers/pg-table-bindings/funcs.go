@@ -104,7 +104,7 @@ func upperCamelCase(s string) string {
 
 func valueExpansion(size int) string {
 	var all []string
-	for i := 0; i < size; i++ {
+	for i := range size {
 		all = append(all, fmt.Sprintf("$%d", i+1))
 	}
 	return strings.Join(all, ", ")

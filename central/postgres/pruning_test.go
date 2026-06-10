@@ -511,7 +511,7 @@ func (s *PostgresPruningSuite) TestPruneAPITokens() {
 // Helper functions.
 
 func (s *PostgresPruningSuite) addSomePods(podDS podStore.DataStore, clusterID string, numberPods int) {
-	for i := 0; i < numberPods; i++ {
+	for range numberPods {
 		pod := &storage.Pod{
 			Id:        uuid.NewV4().String(),
 			ClusterId: clusterID,

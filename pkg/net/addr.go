@@ -89,7 +89,7 @@ func (d ipv6data) isLoopback() bool {
 	if d[15] != 1 {
 		return false
 	}
-	for i := 0; i < 15; i++ {
+	for i := range 15 {
 		if d[i] != 0 {
 			return false
 		}

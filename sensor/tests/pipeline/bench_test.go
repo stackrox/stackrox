@@ -40,12 +40,12 @@ var (
 
 func init() {
 	serviceAccounts = make([]string, 1000)
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		serviceAccounts[i] = randString(5)
 	}
 
 	appNames = make([]string, 1000)
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		appNames[i] = randString(5)
 	}
 }
@@ -118,7 +118,7 @@ func Benchmark_Pipeline(b *testing.B) {
 			"service":    {},
 		}
 
-		for i := 0; i < 100; i++ {
+		for range 100 {
 			roleName := randString(10)
 			createRole(fakeClient, testNamespace, roleName)
 			bindingName := randString(10)
@@ -127,13 +127,13 @@ func Benchmark_Pipeline(b *testing.B) {
 			deletion["binding"] = append(deletion["binding"], bindingName)
 		}
 
-		for i := 0; i < 100; i++ {
+		for range 100 {
 			serviceName := randString(10)
 			createService(fakeClient, testNamespace, serviceName)
 			deletion["service"] = append(deletion["service"], serviceName)
 		}
 
-		for i := 0; i < 1000; i++ {
+		for i := range 1000 {
 			deploymentName := randString(10)
 			createDeployment(fakeClient, testNamespace, deploymentName, appNames[i], serviceAccounts[i])
 			deletion["deployment"] = append(deletion["deployment"], deploymentName)

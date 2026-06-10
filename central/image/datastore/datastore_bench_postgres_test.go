@@ -38,7 +38,7 @@ func BenchmarkImageGetMany(b *testing.B) {
 
 	ids := make([]string, 0, 100)
 	images := make([]*storage.Image, 0, 100)
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		img := fixtures.GetImageWithUniqueComponents(5)
 		id := fmt.Sprintf("%d", i)
 		ids = append(ids, id)
@@ -80,7 +80,7 @@ func BenchmarkImageUpsert(b *testing.B) {
 	datastore := NewWithPostgres(pgStoreV2.New(db, false, keyfence.ImageKeyFenceSingleton()), mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	images := make([]*storage.Image, 0, 100)
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		img := fixtures.GetImageWithUniqueComponents(50)
 		data := make([]byte, 10)
 		if _, err := rand.Read(data); err == nil {

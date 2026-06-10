@@ -46,7 +46,7 @@ func (s *migrationTestSuite) TestMigration() {
 	// Add some process indicators
 	var convertedProcessIndicators []oldSchema.ProcessIndicators
 	numIndicators := 3000
-	for i := 0; i < numIndicators; i++ {
+	for range numIndicators {
 		processIndicator := &storage.ProcessIndicator{}
 		s.Require().NoError(testutils.FullInit(processIndicator, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		processIndicator.Id = uuid.NewV4().String()

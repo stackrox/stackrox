@@ -305,8 +305,8 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverSavesFileStates() {
 	// Now pass in a few messages and wait for the state to get updated asynchronously
 	expectedFileStates := make(map[string]*storage.AuditLogFileState)
 	startTime := time.Now()
-	for node := 0; node < 2; node++ {
-		for i := 0; i < 2; i++ {
+	for node := range 2 {
+		for i := range 2 {
 			nodeName := fmt.Sprintf("node-%d", node)
 			msgTime := startTime.Add(time.Duration(i*10) * time.Minute)
 			msg := s.getMsgFromCompliance(nodeName, msgTime)
@@ -340,8 +340,8 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverDoesNotSaveIfMsgHasNo
 
 	// Now pass in a few messages and wait for the state to get updated asynchronously
 	startTime := time.Now()
-	for node := 0; node < 2; node++ {
-		for i := 0; i < 2; i++ {
+	for node := range 2 {
+		for range 2 {
 			msg := &sensor.MsgFromCompliance{
 				Node: fmt.Sprintf("node-%d", node),
 				Msg: &sensor.MsgFromCompliance_AuditEvents{
@@ -488,7 +488,7 @@ func (s *AuditLogCollectionManagerTestSuite) getUpdaterStatusMsg(updater updater
 	timer := time.NewTimer(updateTimeout)
 
 	var status *central.AuditLogStatusInfo
-	for i := 0; i < times; i++ {
+	for range times {
 		select {
 		case response := <-updater.ResponsesC():
 			status = response.Msg.(*central.MsgFromSensor_AuditLogStatusInfo).AuditLogStatusInfo

@@ -61,7 +61,7 @@ func (s *migrationTestSuite) TestMigration() {
 		var convertedClusters []oldSchema.Clusters
 
 		log.Info("Building base indicators")
-		for i := 0; i < len(clusters); i++ {
+		for i := range clusters {
 			cluster := &storage.Cluster{}
 			s.NoError(testutils.FullInit(cluster, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 			cluster.Id = clusters[i]
@@ -71,7 +71,7 @@ func (s *migrationTestSuite) TestMigration() {
 		}
 		s.Require().NoError(dbs.GormDB.CreateInBatches(convertedClusters, batchSize).Error)
 
-		for i := 0; i < numIndicators; i++ {
+		for range numIndicators {
 			processIndicator := &storage.ProcessIndicator{}
 			s.NoError(testutils.FullInit(processIndicator, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 			indicators = append(indicators, processIndicator)

@@ -10,7 +10,7 @@ import (
 
 func getVulnsPerComponent(componentIndex int, numVulns int, cveType storage.EmbeddedVulnerability_VulnerabilityType) []*storage.EmbeddedVulnerability {
 	vulnsPerComponent := make([]*storage.EmbeddedVulnerability, 0, numVulns)
-	for i := 0; i < numVulns; i++ {
+	for i := range numVulns {
 		cveName := fmt.Sprintf("CVE-2014-62%d%d", componentIndex, i)
 		vulnsPerComponent = append(vulnsPerComponent, &storage.EmbeddedVulnerability{
 			Cve:               cveName,
@@ -31,7 +31,7 @@ func getVulnsPerComponent(componentIndex int, numVulns int, cveType storage.Embe
 func GetImage() *storage.Image {
 	numComponentsPerImage := 50
 	componentsPerImage := make([]*storage.EmbeddedImageScanComponent, 0, numComponentsPerImage)
-	for i := 0; i < numComponentsPerImage; i++ {
+	for i := range numComponentsPerImage {
 		componentsPerImage = append(componentsPerImage, &storage.EmbeddedImageScanComponent{
 			Name:    "name",
 			Version: "1.2.3.4",
@@ -44,7 +44,7 @@ func GetImage() *storage.Image {
 func GetImagewithDulicateVulnerabilities() *storage.Image {
 	numComponentsPerImage := 50
 	componentsPerImage := make([]*storage.EmbeddedImageScanComponent, 0, numComponentsPerImage)
-	for i := 0; i < numComponentsPerImage; i++ {
+	for i := range numComponentsPerImage {
 		componentsPerImage = append(componentsPerImage, &storage.EmbeddedImageScanComponent{
 			Name:    "name",
 			Version: "1.2.3.4",
@@ -72,7 +72,7 @@ func GetImagewithDulicateVulnerabilities() *storage.Image {
 // GetImageWithUniqueComponents returns a Mock Image where each component is unique
 func GetImageWithUniqueComponents(numComponents int) *storage.Image {
 	componentsPerImage := make([]*storage.EmbeddedImageScanComponent, 0, numComponents)
-	for i := 0; i < numComponents; i++ {
+	for i := range numComponents {
 		componentsPerImage = append(componentsPerImage, &storage.EmbeddedImageScanComponent{
 			Name:    fmt.Sprintf("name-%d", i),
 			Version: fmt.Sprintf("%d.2.3.4", i),

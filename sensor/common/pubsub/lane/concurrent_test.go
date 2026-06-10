@@ -147,12 +147,12 @@ func TestPublish(t *testing.T) {
 			return nil
 		}))
 		// Publish multiple events - they should not block even though consumer is slow
-		for i := 0; i < numEvents; i++ {
+		for range numEvents {
 			require.NoError(t, lane.Publish(&concurrentTestEvent{data: "event"}))
 		}
 		unblockSig.Signal()
 		// Wait for all events to be processed
-		for i := 0; i < numEvents; i++ {
+		for i := range numEvents {
 			select {
 			case <-doneCh:
 			case <-time.After(1 * time.Second):
@@ -218,11 +218,11 @@ func TestPublish(t *testing.T) {
 		startSignal := concurrency.NewSignal()
 
 		// Spawn multiple publisher goroutines
-		for i := 0; i < numPublishers; i++ {
+		for i := range numPublishers {
 			publisherID := i
 			go func() {
 				<-startSignal.Done()
-				for j := 0; j < eventsPerPublisher; j++ {
+				for j := range eventsPerPublisher {
 					event := &concurrentTestEvent{
 						data: fmt.Sprintf("publisher_%d_event_%d", publisherID, j),
 					}

@@ -18,7 +18,7 @@ func TestComponentCountScore(t *testing.T) {
 	// We need 14 components added for the count to be 15
 	image := multipliers.GetMockImages()[0]
 	components := image.GetScan().GetComponents()
-	for i := 0; i < 14; i++ {
+	for i := range 14 {
 		components = append(components, &storage.EmbeddedImageScanComponent{
 			Name:    strconv.Itoa(i),
 			Version: "1.0",
@@ -44,7 +44,7 @@ func TestComponentCountScoreV2(t *testing.T) {
 	// The image already has one unique component. So we need 14 components added for the count to be 15.
 	image := multipliers.GetMockImagesV2()[0]
 	components := image.GetScan().GetComponents()
-	for i := 0; i < 14; i++ {
+	for i := range 14 {
 		components = append(components, &storage.EmbeddedImageScanComponent{
 			Name:    strconv.Itoa(i),
 			Version: "1.0",

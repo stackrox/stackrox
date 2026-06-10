@@ -397,12 +397,12 @@ func getMockedIntegration(t *testing.T) *mocksComplianceIntegrationDS.MockDataSt
 func getScanConfigResults(numSuccessfulClusters, numFailedClusters, numMissingClusters, numScansPerCluster int, err error) *ScanConfigWatcherResults {
 	scanResults := make(map[string]*ScanWatcherResults)
 	var clusters []*storage.ComplianceOperatorScanConfigurationV2_Cluster
-	for i := 0; i < numSuccessfulClusters; i++ {
+	for i := range numSuccessfulClusters {
 		id := fmt.Sprintf("cluster-%d", i)
 		clusters = append(clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{
 			ClusterId: id,
 		})
-		for j := 0; j < numScansPerCluster; j++ {
+		for j := range numScansPerCluster {
 			resultsID := fmt.Sprintf("%s:scan-%d", id, j)
 			scanResults[resultsID] = &ScanWatcherResults{
 				Scan: &storage.ComplianceOperatorScanV2{
@@ -416,7 +416,7 @@ func getScanConfigResults(numSuccessfulClusters, numFailedClusters, numMissingCl
 		clusters = append(clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{
 			ClusterId: id,
 		})
-		for j := 0; j < numScansPerCluster; j++ {
+		for j := range numScansPerCluster {
 			resultsID := fmt.Sprintf("%s:scan-%d", id, j)
 			scanResults[resultsID] = &ScanWatcherResults{
 				Scan: &storage.ComplianceOperatorScanV2{
@@ -453,7 +453,7 @@ func getFailedClusters(idx, numFailedClusters, numMissingClusters, numScans int)
 		}
 		ret[id] = failedCluster
 		var reasons []string
-		for j := 0; j < numScans; j++ {
+		for range numScans {
 			reasons = append(reasons, report.INTERNAL_ERROR)
 			failedCluster.FailedScans = append(failedCluster.FailedScans, &storage.ComplianceOperatorScanV2{
 				ClusterId: id,

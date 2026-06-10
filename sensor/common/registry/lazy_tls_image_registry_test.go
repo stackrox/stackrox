@@ -218,7 +218,7 @@ func TestAttemptToTriggerRace(t *testing.T) {
 	require.NoError(t, err)
 
 	wg := sync.WaitGroup{}
-	for i := 0; i < 100000; i++ {
+	for i := range 100000 {
 		wg.Add(1)
 		go func(i int) {
 			if i%2 == 0 {

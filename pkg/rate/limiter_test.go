@@ -399,7 +399,7 @@ func TestOnClientDisconnect(t *testing.T) {
 	limiter.getOrCreateLimiter("client-2")
 
 	// Exhaust client-1's burst
-	for i := 0; i < 50; i++ {
+	for range 50 {
 		allowed, _ := limiter.TryConsume("client-1", nil)
 		assert.True(t, allowed)
 	}

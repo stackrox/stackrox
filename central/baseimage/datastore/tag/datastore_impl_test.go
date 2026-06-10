@@ -176,7 +176,7 @@ func (s *TagDataStoreIntegrationSuite) TestUpsertMany_BatchOperation() {
 
 	// Create 100 tags
 	tags := make([]*storage.BaseImageTag, 100)
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		tags[i] = &storage.BaseImageTag{
 			Id:                    uuid.NewV4().String(),
 			BaseImageRepositoryId: repo.GetId(),
@@ -255,7 +255,7 @@ func (s *TagDataStoreIntegrationSuite) TestDeleteMany_BatchOperation() {
 	// Create 10 tags
 	tags := make([]*storage.BaseImageTag, 10)
 	tagIDs := make([]string, 10)
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		tagID := uuid.NewV4().String()
 		tags[i] = &storage.BaseImageTag{
 			Id:                    tagID,

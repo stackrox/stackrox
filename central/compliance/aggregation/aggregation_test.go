@@ -29,7 +29,7 @@ const registeredStandardID = "standard1"
 
 func mockStandardsRepo(t require.TestingT) standards.Repository {
 	controls := make([]metadata.Control, 0, 8)
-	for i := 0; i < 9; i++ {
+	for i := range 9 {
 		controls = append(controls, metadata.Control{
 			ID: fmt.Sprintf("control%d", i),
 		})
@@ -544,11 +544,11 @@ func TestIsValidCheck(t *testing.T) {
 func mockBenchmarkRunResult() *storage.ComplianceRunResults {
 	deploymentResults := make(map[string]*storage.ComplianceRunResults_EntityResults)
 	deployments := make(map[string]*storage.ComplianceDomain_Deployment)
-	for i := 0; i < 10000; i++ {
+	for range 10000 {
 		results := &storage.ComplianceRunResults_EntityResults{
 			ControlResults: make(map[string]*storage.ComplianceResultValue),
 		}
-		for i := 0; i < 50; i++ {
+		for i := range 50 {
 			results.ControlResults[fmt.Sprintf("%s:control%d", registeredStandardID, i)] = &storage.ComplianceResultValue{
 				OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 			}

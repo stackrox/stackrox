@@ -62,11 +62,11 @@ func BenchmarkBuildIndicatorFilterMemory(b *testing.B) {
 	for b.Loop() {
 		filter := NewFilter(1000, 10000, []int{100, 50, 25, 10, 5})
 
-		for i := 0; i < NumDeployments; i++ {
+		for i := range NumDeployments {
 			deploymentID := fmt.Sprintf("deployment-%d", i)
-			for j := 0; j < NumPodsPerDeployment; j++ {
+			for j := range NumPodsPerDeployment {
 				containerID := fmt.Sprintf("container-%d-%d", i, j)
-				for k := 0; k < NumProcessesPerPod; k++ {
+				for k := range NumProcessesPerPod {
 					pi := &storage.ProcessIndicator{
 						DeploymentId:  deploymentID,
 						ContainerName: "container",

@@ -412,7 +412,7 @@ func compareStringSlice(t *testing.T, actual []string, expected []string) bool {
 		t.Logf("Expected slice %v but got %v", expected, actual)
 		return false
 	}
-	for i := 0; i < len(actual); i++ {
+	for i := range actual {
 		if strings.Compare(actual[i], expected[i]) != 0 {
 			t.Logf("Expected slice %v but got %v", expected, actual)
 			return false

@@ -102,7 +102,7 @@ func (s *migrationTestSuite) addFlows(ctx context.Context, store store.FlowStore
 	flows := make([]*storage.NetworkFlow, 0, count)
 	zeroTs := timestamp.MicroTS(0)
 
-	for i := 0; i < count; i++ {
+	for range count {
 		flow := &storage.NetworkFlow{}
 		s.NoError(testutils.FullInit(flow, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		flow.ClusterId = clusterID

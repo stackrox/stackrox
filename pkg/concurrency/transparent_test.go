@@ -23,7 +23,7 @@ func TestTransparentMutexConcurrently(t *testing.T) {
 
 	var successCount atomic.Int32
 	var wg sync.WaitGroup
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		wg.Go(func() {
 			time.Sleep(time.Duration(rand.Int()%10) * time.Millisecond)
 			succeeded := lock.MaybeLock()
@@ -42,7 +42,7 @@ func TestTransparentMutexIsResilientToRaces(t *testing.T) {
 
 	var successCount atomic.Int32
 	var wg sync.WaitGroup
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		wg.Go(func() {
 			time.Sleep(time.Duration(rand.Int()%100) * time.Millisecond)
 			succeeded := lock.MaybeLock()
