@@ -254,6 +254,7 @@ func TestToUnstructuredVMI(t *testing.T) {
 	}
 }
 
+//go:fix inline
 func pointerToUint32(val uint32) *uint32 {
-	return &val
+	return new(val)
 }

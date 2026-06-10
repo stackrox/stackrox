@@ -25,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -1044,16 +1043,16 @@ func (s *ImageCVEViewTestSuite) compileExpected(images []testImage, filter *filt
 				if val == nil {
 					val = &imageCVECoreResponse{
 						CVE:                     vuln.GetCveBaseInfo().GetCve(),
-						TopCVSS:                 pointers.Float32(vuln.GetCvss()),
+						TopCVSS:                 new(vuln.GetCvss()),
 						FirstDiscoveredInSystem: &vulnTime,
 						Published:               &vulnPublishDate,
 					}
 					for _, metric := range vuln.GetCveBaseInfo().GetCvssMetrics() {
 						if metric.GetSource() == storage.Source_SOURCE_NVD {
 							if metric.GetCvssv2() != nil {
-								val.TopNVDCVSS = pointers.Float32(metric.GetCvssv2().GetScore())
+								val.TopNVDCVSS = new(metric.GetCvssv2().GetScore())
 							} else {
-								val.TopNVDCVSS = pointers.Float32(metric.GetCvssv3().GetScore())
+								val.TopNVDCVSS = new(metric.GetCvssv3().GetScore())
 							}
 						}
 					}
@@ -1070,7 +1069,7 @@ func (s *ImageCVEViewTestSuite) compileExpected(images []testImage, filter *filt
 					val.CVEIDs = append(val.CVEIDs, id)
 				}
 
-				val.TopCVSS = pointers.Float32(max(val.GetTopCVSS(), vuln.GetCvss()))
+				val.TopCVSS = new(max(val.GetTopCVSS(), vuln.GetCvss()))
 
 				if val.GetFirstDiscoveredInSystem().After(vulnTime) {
 					val.FirstDiscoveredInSystem = &vulnTime

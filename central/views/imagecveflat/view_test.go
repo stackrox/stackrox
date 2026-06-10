@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
@@ -864,21 +863,21 @@ func (s *ImageCVEFlatViewTestSuite) compileExpected(images []testImage, filter *
 				if val == nil {
 					val = &imageCVEFlatResponse{
 						CVE:                     vuln.GetCveBaseInfo().GetCve(),
-						TopCVSS:                 pointers.Float32(vuln.GetCvss()),
+						TopCVSS:                 new(vuln.GetCvss()),
 						FirstDiscoveredInSystem: &vulnTime,
 						Published:               &vulnPublishDate,
 						Severity:                vuln.GetSeverity().Enum(),
 						FirstImageOccurrence:    &vulnImageOccurrence,
-						State:                   pointers.Pointer(vuln.GetState()),
-						ImpactScore:             pointers.Float32(impactScore),
-						EpssProbability:         pointers.Float32(vuln.GetCveBaseInfo().GetEpss().GetEpssProbability()),
+						State:                   new(vuln.GetState()),
+						ImpactScore:             new(impactScore),
+						EpssProbability:         new(vuln.GetCveBaseInfo().GetEpss().GetEpssProbability()),
 					}
 					for _, metric := range vuln.GetCveBaseInfo().GetCvssMetrics() {
 						if metric.GetSource() == storage.Source_SOURCE_NVD {
 							if metric.GetCvssv2() != nil {
-								val.TopNVDCVSS = pointers.Float32(metric.GetCvssv2().GetScore())
+								val.TopNVDCVSS = new(metric.GetCvssv2().GetScore())
 							} else {
-								val.TopNVDCVSS = pointers.Float32(metric.GetCvssv3().GetScore())
+								val.TopNVDCVSS = new(metric.GetCvssv3().GetScore())
 							}
 						}
 					}
@@ -895,11 +894,11 @@ func (s *ImageCVEFlatViewTestSuite) compileExpected(images []testImage, filter *
 					val.CVEIDs = append(val.CVEIDs, id)
 				}
 
-				val.TopCVSS = pointers.Float32(max(val.GetTopCVSS(), vuln.GetCvss()))
-				val.ImpactScore = pointers.Float32(max(*val.ImpactScore, impactScore))
-				val.EpssProbability = pointers.Float32(max(*val.EpssProbability, vuln.GetCveBaseInfo().GetEpss().GetEpssProbability()))
+				val.TopCVSS = new(max(val.GetTopCVSS(), vuln.GetCvss()))
+				val.ImpactScore = new(max(*val.ImpactScore, impactScore))
+				val.EpssProbability = new(max(*val.EpssProbability, vuln.GetCveBaseInfo().GetEpss().GetEpssProbability()))
 				if vuln.GetSeverity().Number() > val.GetSeverity().Number() {
-					val.Severity = pointers.Pointer(vuln.GetSeverity())
+					val.Severity = new(vuln.GetSeverity())
 				}
 
 				if val.GetFirstDiscoveredInSystem().After(vulnTime) {

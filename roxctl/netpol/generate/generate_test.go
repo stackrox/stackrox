@@ -97,7 +97,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 		},
 		"should report bad port name": {
 			inputFolderPath: "testdata/minimal",
-			dnsPort:         ptrFromString("bad@chars"),
+			dnsPort:         new("bad@chars"),
 
 			expectedValidationError: errox.InvalidArgs,
 			expectedWarnings:        []string{},
@@ -105,7 +105,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 		},
 		"should report empty string as bad port name": {
 			inputFolderPath: "testdata/minimal",
-			dnsPort:         ptrFromString(""),
+			dnsPort:         new(""),
 
 			expectedValidationError: errox.InvalidArgs,
 			expectedWarnings:        []string{},
@@ -113,7 +113,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 		},
 		"should report bad port number": {
 			inputFolderPath: "testdata/minimal",
-			dnsPort:         ptrFromString("100000"),
+			dnsPort:         new("100000"),
 
 			expectedValidationError: errox.InvalidArgs,
 			expectedWarnings:        []string{},
@@ -121,7 +121,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 		},
 		"should report 0 as a bad port number": {
 			inputFolderPath: "testdata/minimal",
-			dnsPort:         ptrFromString("0"),
+			dnsPort:         new("0"),
 
 			expectedValidationError: errox.InvalidArgs,
 			expectedWarnings:        []string{},
@@ -129,7 +129,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 		},
 		"should report a negative port as a bad port number": {
 			inputFolderPath: "testdata/minimal",
-			dnsPort:         ptrFromString("-17"),
+			dnsPort:         new("-17"),
 
 			expectedValidationError: errox.InvalidArgs,
 			expectedWarnings:        []string{},
@@ -187,6 +187,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 	}
 }
 
+//go:fix inline
 func ptrFromString(s string) *string {
-	return &s
+	return new(s)
 }

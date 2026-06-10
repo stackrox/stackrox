@@ -229,28 +229,28 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 
 	// Name
 	if beforePolicy.GetName() != afterPolicy.GetName() {
-		updates.Name = strPtr(afterPolicy.GetName())
+		updates.Name = new(afterPolicy.GetName())
 	}
 	beforePolicy.Name = ""
 	afterPolicy.Name = ""
 
 	// Description
 	if beforePolicy.GetDescription() != afterPolicy.GetDescription() {
-		updates.Description = strPtr(afterPolicy.GetDescription())
+		updates.Description = new(afterPolicy.GetDescription())
 	}
 	beforePolicy.Description = ""
 	afterPolicy.Description = ""
 
 	// Rationale
 	if beforePolicy.GetRationale() != afterPolicy.GetRationale() {
-		updates.Rationale = strPtr(afterPolicy.GetRationale())
+		updates.Rationale = new(afterPolicy.GetRationale())
 	}
 	beforePolicy.Rationale = ""
 	afterPolicy.Rationale = ""
 
 	// Remediation
 	if beforePolicy.GetRemediation() != afterPolicy.GetRemediation() {
-		updates.Remediation = strPtr(afterPolicy.GetRemediation())
+		updates.Remediation = new(afterPolicy.GetRemediation())
 	}
 	beforePolicy.Remediation = ""
 	afterPolicy.Remediation = ""
@@ -264,7 +264,7 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 
 	// Enable/Disable
 	if beforePolicy.GetDisabled() != afterPolicy.GetDisabled() {
-		updates.Disable = boolPtr(afterPolicy.GetDisabled())
+		updates.Disable = new(afterPolicy.GetDisabled())
 	}
 	beforePolicy.Disabled = false
 	afterPolicy.Disabled = false
@@ -333,10 +333,12 @@ func checkIfPoliciesMatch(fieldsToCompare []FieldComparator, first *storage.Poli
 	return true
 }
 
+//go:fix inline
 func strPtr(s string) *string {
-	return &s
+	return new(s)
 }
 
+//go:fix inline
 func boolPtr(b bool) *bool {
-	return &b
+	return new(b)
 }

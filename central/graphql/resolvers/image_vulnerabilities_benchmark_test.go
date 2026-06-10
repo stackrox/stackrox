@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -55,7 +54,7 @@ func BenchmarkImageVulnerabilities(b *testing.B) {
 
 	paginatedQuery := PaginatedQuery{
 		Pagination: &inputtypes.Pagination{
-			Limit: pointers.Int32(20000),
+			Limit: new(20000),
 		},
 	}
 

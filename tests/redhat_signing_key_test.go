@@ -13,7 +13,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/namespaces"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -214,7 +213,7 @@ func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 			Labels:    map[string]string{"app": deploymentName},
 		},
 		Spec: appsV1.DeploymentSpec{
-			Replicas: pointers.Int32(1),
+			Replicas: new(1),
 			Selector: &metaV1.LabelSelector{
 				MatchLabels: map[string]string{"app": deploymentName},
 			},

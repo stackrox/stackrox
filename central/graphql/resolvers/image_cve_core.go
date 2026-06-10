@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/utils"
@@ -167,7 +166,7 @@ func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, args stru
 
 	depQ := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentIDs...).Query()
 	return resolver.root.Deployments(ctx, PaginatedQuery{
-		Query:      pointers.String(depQ),
+		Query:      new(depQ),
 		Pagination: args.Pagination,
 	})
 }
@@ -288,7 +287,7 @@ func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ P
 	}
 	imageQ := search.NewQueryBuilder().AddExactMatches(searchField, imageIDs...).Query()
 	return resolver.root.Images(ctx, PaginatedQuery{
-		Query:      pointers.String(imageQ),
+		Query:      new(imageQ),
 		Pagination: args.Pagination,
 	})
 }

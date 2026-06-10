@@ -4,14 +4,13 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestEndpointAndPlaintextSetting(t *testing.T) {
-	endpointChanged = pointers.Bool(false)
-	plaintextSet = pointers.Bool(false)
+	endpointChanged = new(false)
+	plaintextSet = new(false)
 
 	testCases := []struct {
 		givenEndpoint    string
@@ -165,7 +164,7 @@ func TestEndpointWasExplicitlyProvided(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Reset state
-			endpointChanged = pointers.Bool(tc.endpointFlag)
+			endpointChanged = new(tc.endpointFlag)
 			useKubeContext = tc.kubeContextFlag
 
 			// Clear and optionally set environment variables

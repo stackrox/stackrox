@@ -470,7 +470,7 @@ func TestPopulateContainersInitContainerFieldsPopulated(t *testing.T) {
 				Command: []string{"sh", "-c", "echo init"},
 				Args:    []string{"arg1"},
 				SecurityContext: &v1.SecurityContext{
-					Privileged: boolPtr(true),
+					Privileged: new(true),
 				},
 				LivenessProbe: &v1.Probe{TimeoutSeconds: 5},
 			},
@@ -496,6 +496,7 @@ func TestPopulateContainersInitContainerFieldsPopulated(t *testing.T) {
 	assert.True(t, initContainer.GetLivenessProbe().GetDefined())
 }
 
+//go:fix inline
 func boolPtr(b bool) *bool {
-	return &b
+	return new(b)
 }

@@ -13,7 +13,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/suite"
@@ -82,7 +81,7 @@ func (s *InitContainerSuite) createDeploymentWithInitContainers(name, namespace 
 			Labels:    map[string]string{"app": name},
 		},
 		Spec: appsV1.DeploymentSpec{
-			Replicas: pointers.Int32(1),
+			Replicas: new(1),
 			Selector: &metaV1.LabelSelector{
 				MatchLabels: map[string]string{"app": name},
 			},
@@ -211,7 +210,7 @@ func (s *InitContainerSuite) TestInitContainerExtraction() {
 			Labels:    map[string]string{"app": deployName},
 		},
 		Spec: appsV1.DeploymentSpec{
-			Replicas: pointers.Int32(1),
+			Replicas: new(1),
 			Selector: &metaV1.LabelSelector{
 				MatchLabels: map[string]string{"app": deployName},
 			},
@@ -240,7 +239,7 @@ func (s *InitContainerSuite) TestInitContainerExtraction() {
 								},
 							},
 							SecurityContext: &coreV1.SecurityContext{
-								ReadOnlyRootFilesystem: pointers.Bool(true),
+								ReadOnlyRootFilesystem: new(true),
 							},
 							VolumeMounts: []coreV1.VolumeMount{
 								{Name: "shared-data", MountPath: "/work"},

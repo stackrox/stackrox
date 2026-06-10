@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/sync"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -148,7 +147,7 @@ func (w *WorkloadManager) getDeployment(workload DeploymentWorkload, idx int, de
 			Annotations: createRandMap(16, 3),
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: pointers.Int32(int32(workload.PodWorkload.NumPods)),
+			Replicas: new(int32(workload.PodWorkload.NumPods)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -194,9 +193,9 @@ func (w *WorkloadManager) getDeployment(workload DeploymentWorkload, idx int, de
 						},
 					},
 					Containers:                   containers,
-					AutomountServiceAccountToken: pointers.Bool(true),
+					AutomountServiceAccountToken: new(true),
 					SecurityContext: &corev1.PodSecurityContext{
-						RunAsNonRoot: pointers.Bool(true),
+						RunAsNonRoot: new(true),
 					},
 					ServiceAccountName: serviceAccount,
 				},

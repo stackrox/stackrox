@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -208,7 +207,7 @@ func TestReconcileDBPassword(t *testing.T) {
 			Spec: v1alpha1.CentralSpec{
 				Central: &v1alpha1.CentralComponentSpec{
 					DB: &v1alpha1.CentralDBSpec{
-						ConnectionStringOverride: pointers.String("foo"),
+						ConnectionStringOverride: new("foo"),
 						PasswordSecret: &v1alpha1.LocalSecretReference{
 							Name: customPWSecretName,
 						},
@@ -221,7 +220,7 @@ func TestReconcileDBPassword(t *testing.T) {
 			Spec: v1alpha1.CentralSpec{
 				Central: &v1alpha1.CentralComponentSpec{
 					DB: &v1alpha1.CentralDBSpec{
-						ConnectionStringOverride: pointers.String("foo"),
+						ConnectionStringOverride: new("foo"),
 					},
 				},
 			},

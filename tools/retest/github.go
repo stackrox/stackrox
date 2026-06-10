@@ -33,8 +33,8 @@ func commentsForPrByUser(ctx context.Context, client *github.Client, prNumber in
 	nextPage := 0
 	for {
 		comments, resp, err := client.Issues.ListComments(ctx, s, s, prNumber, &github.IssueListCommentsOptions{
-			Sort:        github.String("created"),
-			Direction:   github.String("asc"),
+			Sort:        new("created"),
+			Direction:   new("asc"),
 			ListOptions: github.ListOptions{Page: nextPage},
 		})
 		if err != nil {

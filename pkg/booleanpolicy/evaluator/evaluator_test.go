@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timeutil"
@@ -1138,7 +1137,7 @@ func TestDifferentBaseTypes(t *testing.T) {
 			desc: "base ptr, null query, non-nil",
 			obj: &TopLevel{
 				Base: Base{
-					ValBasePtr: pointers.String("anything")},
+					ValBasePtr: new("anything")},
 			},
 			q: &query.Query{
 				FieldQueries: []*query.FieldQuery{
@@ -1150,7 +1149,7 @@ func TestDifferentBaseTypes(t *testing.T) {
 			desc: "base ptr, not null query, non-nil",
 			obj: &TopLevel{
 				Base: Base{
-					ValBasePtr: pointers.String("anything")},
+					ValBasePtr: new("anything")},
 			},
 			q: &query.Query{
 				FieldQueries: []*query.FieldQuery{
@@ -1163,7 +1162,7 @@ func TestDifferentBaseTypes(t *testing.T) {
 			desc: "base ptr, regular string query, matches",
 			obj: &TopLevel{
 				Base: Base{
-					ValBasePtr: pointers.String("happy")},
+					ValBasePtr: new("happy")},
 			},
 			q: &query.Query{
 				FieldQueries: []*query.FieldQuery{
@@ -1176,7 +1175,7 @@ func TestDifferentBaseTypes(t *testing.T) {
 			desc: "base ptr, regular string query, does not match",
 			obj: &TopLevel{
 				Base: Base{
-					ValBasePtr: pointers.String("nothappy")},
+					ValBasePtr: new("nothappy")},
 			},
 			q: &query.Query{
 				FieldQueries: []*query.FieldQuery{
@@ -1650,7 +1649,7 @@ func TestDifferentBaseTypesMatchAll(t *testing.T) {
 			obj: &TopLevel{
 				NestedSlice: []Nested{{NestedValA: "A0"}},
 				Base: Base{
-					ValBasePtr: pointers.String("anything")},
+					ValBasePtr: new("anything")},
 			},
 			q: &query.Query{
 				FieldQueries: []*query.FieldQuery{

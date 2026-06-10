@@ -3,7 +3,6 @@ package migratetooperator
 import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/pkg/pointers"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -79,13 +78,13 @@ func setCentralDBSpec(src Source, cr *platform.Central) error {
 		// rejects these fields for pre-existing ("BYO") PVCs.
 		db.Persistence = &platform.DBPersistence{
 			PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
-				ClaimName: pointers.String(diskVolume.PersistentVolumeClaim.ClaimName),
+				ClaimName: new(diskVolume.PersistentVolumeClaim.ClaimName),
 			},
 		}
 	case diskVolume.HostPath != nil:
 		db.Persistence = &platform.DBPersistence{
 			HostPath: &platform.HostPathSpec{
-				Path: pointers.String(diskVolume.HostPath.Path),
+				Path: new(diskVolume.HostPath.Path),
 			},
 		}
 	default:
@@ -103,7 +102,7 @@ func setCentralMonitoring(centralDep *appsv1.Deployment, cr *platform.Central) {
 	if isOpenShift && !envVarIsTrue(centralDep, "ROX_ENABLE_SECURE_METRICS") {
 		cr.Spec.Monitoring = &platform.GlobalMonitoring{
 			OpenShiftMonitoring: &platform.OpenShiftMonitoring{
-				Enabled: pointers.Bool(false),
+				Enabled: new(false),
 			},
 		}
 	}
@@ -123,13 +122,13 @@ func setCentralExposure(src Source, cr *platform.Central) error {
 		if svc != nil {
 			switch svc.Spec.Type {
 			case corev1.ServiceTypeLoadBalancer:
-				exposure.LoadBalancer = &platform.ExposureLoadBalancer{Enabled: pointers.Bool(true)}
+				exposure.LoadBalancer = &platform.ExposureLoadBalancer{Enabled: new(true)}
 			case corev1.ServiceTypeNodePort:
-				exposure.NodePort = &platform.ExposureNodePort{Enabled: pointers.Bool(true)}
+				exposure.NodePort = &platform.ExposureNodePort{Enabled: new(true)}
 			}
 		}
 		if route != nil {
-			exposure.Route = &platform.ExposureRoute{Enabled: pointers.Bool(true)}
+			exposure.Route = &platform.ExposureRoute{Enabled: new(true)}
 		}
 		cr.Spec.Central.Exposure = exposure
 	}
@@ -166,7 +165,7 @@ func setCentralDeclarativeConfig(centralDep *appsv1.Deployment, cr *platform.Cen
 func setCentralTelemetry(centralDep *appsv1.Deployment, cr *platform.Central) {
 	if envVarValue(centralDep, "ROX_TELEMETRY_STORAGE_KEY_V1") == "DISABLED" {
 		cr.Spec.Central.Telemetry = &platform.Telemetry{
-			Enabled: pointers.Bool(false),
+			Enabled: new(false),
 		}
 	}
 }

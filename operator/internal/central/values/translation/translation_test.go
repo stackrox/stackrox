@@ -22,7 +22,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/utils/pointer"
-	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	fkClient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -321,7 +320,7 @@ func TestTranslate(t *testing.T) {
 						},
 						Monitoring: &platform.GlobalMonitoring{
 							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
-								Enabled: ptr.To(true),
+								Enabled: new(true),
 							},
 						},
 						Central: &platform.CentralComponentSpec{

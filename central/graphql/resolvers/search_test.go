@@ -40,7 +40,6 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
@@ -116,7 +115,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		{
 			desc: "simple query",
 			arg: PaginatedQuery{
-				Query: pointers.String("CVE:abc"),
+				Query: new("CVE:abc"),
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").
 				WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery(),
@@ -124,7 +123,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		{
 			desc: "simple query w/ plus in value",
 			arg: PaginatedQuery{
-				Query: pointers.String("CVE:ab+c"),
+				Query: new("CVE:ab+c"),
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "ab+c").
 				WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery(),
@@ -132,7 +131,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		{
 			desc: "exact query",
 			arg: PaginatedQuery{
-				Query: pointers.String("CVE:\"abc\""),
+				Query: new("CVE:\"abc\""),
 			},
 			expectedQ: search.NewQueryBuilder().AddExactMatches(search.CVE, "abc").
 				WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery(),
@@ -140,7 +139,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		{
 			desc: "exact query w/ plus in value",
 			arg: PaginatedQuery{
-				Query: pointers.String("CVE:\"ab+c\""),
+				Query: new("CVE:\"ab+c\""),
 			},
 			expectedQ: search.NewQueryBuilder().AddExactMatches(search.CVE, "ab+c").
 				WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery(),
@@ -148,7 +147,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		{
 			desc: "conjunction query",
 			arg: PaginatedQuery{
-				Query: pointers.String("CVE:abc+Image:xyz"),
+				Query: new("CVE:abc+Image:xyz"),
 			},
 			expectedQ: search.NewQueryBuilder().
 				AddStrings(search.CVE, "abc").AddStrings(search.ImageName, "xyz").
@@ -157,7 +156,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		{
 			desc: "disjunction query",
 			arg: PaginatedQuery{
-				Query: pointers.String("CVE:abc,xyz"),
+				Query: new("CVE:abc,xyz"),
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc", "xyz").
 				WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery(),
@@ -165,7 +164,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		{
 			desc: "conjunction & disjunctions",
 			arg: PaginatedQuery{
-				Query: pointers.String("CVE:abc,xyz+Image:img1,img2"),
+				Query: new("CVE:abc,xyz+Image:img1,img2"),
 			},
 			expectedQ: search.NewQueryBuilder().
 				AddStrings(search.CVE, "abc", "xyz").AddStrings(search.ImageName, "img1", "img2").
@@ -174,10 +173,10 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		{
 			desc: "query + sort",
 			arg: PaginatedQuery{
-				Query: pointers.String("CVE:abc"),
+				Query: new("CVE:abc"),
 				Pagination: &inputtypes.Pagination{
 					SortOption: &inputtypes.SortOption{
-						Field: pointers.String("Image"),
+						Field: new("Image"),
 					},
 				},
 			},
@@ -188,12 +187,12 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		{
 			desc: "query + sort + limit",
 			arg: PaginatedQuery{
-				Query: pointers.String("CVE:abc"),
+				Query: new("CVE:abc"),
 				Pagination: &inputtypes.Pagination{
 					SortOption: &inputtypes.SortOption{
-						Field: pointers.String("Image"),
+						Field: new("Image"),
 					},
-					Limit: pointers.Int32(10),
+					Limit: new(10),
 				},
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").WithPagination(
@@ -203,15 +202,15 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		{
 			desc: "query + sort + aggregate + limit",
 			arg: PaginatedQuery{
-				Query: pointers.String("CVE:abc"),
+				Query: new("CVE:abc"),
 				Pagination: &inputtypes.Pagination{
 					SortOption: &inputtypes.SortOption{
-						Field: pointers.String("Image"),
+						Field: new("Image"),
 						AggregateBy: &inputtypes.AggregateBy{
-							AggregateFunc: pointers.String("count"),
+							AggregateFunc: new("count"),
 						},
 					},
-					Limit: pointers.Int32(10),
+					Limit: new(10),
 				},
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").WithPagination(
@@ -223,17 +222,17 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		{
 			desc: "query + primary sort + secondary sort + limit",
 			arg: PaginatedQuery{
-				Query: pointers.String("CVE:abc"),
+				Query: new("CVE:abc"),
 				Pagination: &inputtypes.Pagination{
 					SortOptions: &[]*inputtypes.SortOption{
 						{
-							Field: pointers.String("Image"),
+							Field: new("Image"),
 						},
 						{
-							Field: pointers.String("Component"),
+							Field: new("Component"),
 						},
 					},
-					Limit: pointers.Int32(10),
+					Limit: new(10),
 				},
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").WithPagination(
@@ -246,20 +245,20 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		{
 			desc: "query + primary sort w/ aggregate + secondary sort  + limit",
 			arg: PaginatedQuery{
-				Query: pointers.String("CVE:abc"),
+				Query: new("CVE:abc"),
 				Pagination: &inputtypes.Pagination{
 					SortOptions: &[]*inputtypes.SortOption{
 						{
-							Field: pointers.String("Image"),
+							Field: new("Image"),
 							AggregateBy: &inputtypes.AggregateBy{
-								AggregateFunc: pointers.String("count"),
+								AggregateFunc: new("count"),
 							},
 						},
 						{
-							Field: pointers.String("Component"),
+							Field: new("Component"),
 						},
 					},
-					Limit: pointers.Int32(10),
+					Limit: new(10),
 				},
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").WithPagination(
@@ -272,20 +271,20 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		{
 			desc: "query + primary sort + secondary sort  w/ aggregate + limit",
 			arg: PaginatedQuery{
-				Query: pointers.String("CVE:abc"),
+				Query: new("CVE:abc"),
 				Pagination: &inputtypes.Pagination{
 					SortOptions: &[]*inputtypes.SortOption{
 						{
-							Field: pointers.String("Image"),
+							Field: new("Image"),
 						},
 						{
-							Field: pointers.String("Component"),
+							Field: new("Component"),
 							AggregateBy: &inputtypes.AggregateBy{
-								AggregateFunc: pointers.String("count"),
+								AggregateFunc: new("count"),
 							},
 						},
 					},
-					Limit: pointers.Int32(10),
+					Limit: new(10),
 				},
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").WithPagination(
@@ -298,7 +297,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		{
 			desc: "query + nil sort",
 			arg: PaginatedQuery{
-				Query: pointers.String("CVE:abc"),
+				Query: new("CVE:abc"),
 				Pagination: &inputtypes.Pagination{
 					SortOptions: &[]*inputtypes.SortOption{nil},
 				},
@@ -309,7 +308,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		{
 			desc: "query + empty sorts",
 			arg: PaginatedQuery{
-				Query: pointers.String("CVE:abc"),
+				Query: new("CVE:abc"),
 				Pagination: &inputtypes.Pagination{
 					SortOptions: &[]*inputtypes.SortOption{
 						{},
@@ -326,20 +325,20 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 		{
 			desc: "query + primary sort + secondary sort w/ invalid aggregate + limit",
 			arg: PaginatedQuery{
-				Query: pointers.String("CVE:abc"),
+				Query: new("CVE:abc"),
 				Pagination: &inputtypes.Pagination{
 					SortOptions: &[]*inputtypes.SortOption{
 						{
-							Field: pointers.String("Image"),
+							Field: new("Image"),
 						},
 						{
-							Field: pointers.String("Component"),
+							Field: new("Component"),
 							AggregateBy: &inputtypes.AggregateBy{
-								AggregateFunc: pointers.String("trinity"),
+								AggregateFunc: new("trinity"),
 							},
 						},
 					},
-					Limit: pointers.Int32(10),
+					Limit: new(10),
 				},
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").WithPagination(

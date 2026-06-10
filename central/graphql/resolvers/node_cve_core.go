@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/views/nodecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/utils"
@@ -91,7 +90,7 @@ func (resolver *nodeCVECoreResolver) DistroTuples(ctx context.Context) ([]NodeVu
 	// obtained via SQF. So, the auto removal of snoozed CVEs is unintentional here. Hence, we add explicit filter with
 	// CVESuppressed == true OR false
 	q := PaginatedQuery{
-		Query: pointers.String(search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEIDs()...).
+		Query: new(search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEIDs()...).
 			AddBools(search.CVESuppressed, true, false).
 			Query()),
 	}

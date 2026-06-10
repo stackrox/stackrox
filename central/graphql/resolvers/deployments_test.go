@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
@@ -108,7 +107,7 @@ func (s *DeploymentResolversTestSuite) TestDeployments() {
 		},
 		{
 			desc: "filter by namespace",
-			q:    PaginatedQuery{Query: pointers.String("Namespace:namespace1name")},
+			q:    PaginatedQuery{Query: new("Namespace:namespace1name")},
 			deploymentFiler: func(d *storage.Deployment) bool {
 				return strings.HasPrefix(d.GetNamespace(), "namespace1name")
 			},
@@ -117,7 +116,7 @@ func (s *DeploymentResolversTestSuite) TestDeployments() {
 		},
 		{
 			desc:            "filter by image",
-			q:               PaginatedQuery{Query: pointers.String("Image:reg1/img1")},
+			q:               PaginatedQuery{Query: new("Image:reg1/img1")},
 			deploymentFiler: func(d *storage.Deployment) bool { return true },
 			imageFilter: func(img *storage.Image) bool {
 				return strings.HasPrefix(img.GetName().GetFullName(), "reg1/img1")
@@ -126,7 +125,7 @@ func (s *DeploymentResolversTestSuite) TestDeployments() {
 		},
 		{
 			desc:            "filter by cve",
-			q:               PaginatedQuery{Query: pointers.String("CVE:cve-2019-2")},
+			q:               PaginatedQuery{Query: new("CVE:cve-2019-2")},
 			deploymentFiler: func(d *storage.Deployment) bool { return true },
 			imageFilter: func(img *storage.Image) bool {
 				for _, component := range img.GetScan().GetComponents() {
@@ -144,7 +143,7 @@ func (s *DeploymentResolversTestSuite) TestDeployments() {
 		},
 		{
 			desc: "filter by deployment+cve",
-			q:    PaginatedQuery{Query: pointers.String("Deployment:dep2name+CVE:cve-2019-2")},
+			q:    PaginatedQuery{Query: new("Deployment:dep2name+CVE:cve-2019-2")},
 			deploymentFiler: func(d *storage.Deployment) bool {
 				return strings.HasPrefix(d.GetName(), "dep2name")
 			},
@@ -164,7 +163,7 @@ func (s *DeploymentResolversTestSuite) TestDeployments() {
 		},
 		{
 			desc:            "filter by severity",
-			q:               PaginatedQuery{Query: pointers.String("Severity:CRITICAL_VULNERABILITY_SEVERITY")},
+			q:               PaginatedQuery{Query: new("Severity:CRITICAL_VULNERABILITY_SEVERITY")},
 			deploymentFiler: func(d *storage.Deployment) bool { return true },
 			imageFilter: func(img *storage.Image) bool {
 				for _, component := range img.GetScan().GetComponents() {
@@ -182,7 +181,7 @@ func (s *DeploymentResolversTestSuite) TestDeployments() {
 		},
 		{
 			desc:            "filter by severity+fixable",
-			q:               PaginatedQuery{Query: pointers.String("Severity:UNSET_VULNERABILITY_SEVERITY+Fixable:true")},
+			q:               PaginatedQuery{Query: new("Severity:UNSET_VULNERABILITY_SEVERITY+Fixable:true")},
 			deploymentFiler: func(d *storage.Deployment) bool { return true },
 			imageFilter: func(img *storage.Image) bool {
 				for _, component := range img.GetScan().GetComponents() {

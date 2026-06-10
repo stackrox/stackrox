@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -121,7 +120,7 @@ func convertCentralRequestToScanSetting(namespace string, request *central.Apply
 			Schedule:               cron,
 		},
 		ComplianceScanSettings: v1alpha1.ComplianceScanSettings{
-			StrictNodeScan:    pointers.Bool(false),
+			StrictNodeScan:    new(false),
 			ShowNotApplicable: false,
 			Timeout:           env.ComplianceScanTimeout.Setting(),
 			MaxRetryOnTimeout: env.ComplianceScanRetries.IntegerSetting(),
@@ -161,7 +160,7 @@ func updateScanSettingFromCentralRequest(scanSetting *v1alpha1.ScanSetting, requ
 		Schedule:               request.GetCron(),
 	}
 	scanSetting.ComplianceScanSettings = v1alpha1.ComplianceScanSettings{
-		StrictNodeScan:    pointers.Bool(false),
+		StrictNodeScan:    new(false),
 		ShowNotApplicable: false,
 		Timeout:           env.ComplianceScanTimeout.Setting(),
 		MaxRetryOnTimeout: env.ComplianceScanRetries.IntegerSetting(),
