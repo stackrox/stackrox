@@ -70,7 +70,6 @@ import io.fabric8.kubernetes.api.model.apps.DaemonSetBuilder
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
 import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder
 import io.fabric8.kubernetes.api.model.apps.DeploymentList
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec
 import io.fabric8.kubernetes.api.model.apps.StatefulSet as K8sStatefulSet
@@ -631,69 +630,6 @@ class Kubernetes {
                             .endSpec()
                             .build()
                 }
-    }
-
-    void updateDeploymentEnv(String ns, String name, String containerName, String key, String value) {
-        log.debug "Update env var in ${ns}/${name}/${containerName}: ${key} = ${value}"
-        withRetry(2, 3) {
-            client.apps().deployments().inNamespace(ns).withName(name)
-                    .edit { d ->
-                        List<Container> containers = d.spec.template.spec.containers
-                        int containerIndex = containers.findIndexOf { it.name == containerName }
-                        if (containerIndex == -1) {
-                            throw new RuntimeException(
-                                    "Could not update env var." +
-                                    " No container named ${containerName} in ${ns}/${name}")
-                        }
-                        List<EnvVar> envVars = containers.get(containerIndex).env ?: []
-                        int index = envVars.findIndexOf { EnvVar e -> e.name == key }
-                        if (index > -1) {
-                            envVars.get(index).value = value
-                        } else {
-                            envVars.add(new EnvVarBuilder().withName(key).withValue(value).build())
-                        }
-                        new DeploymentBuilder(d)
-                                .editSpec()
-                                .editTemplate()
-                                .editSpec()
-                                .editContainer(containerIndex)
-                                .withEnv(envVars)
-                                .endContainer()
-                                .endSpec()
-                                .endTemplate()
-                                .endSpec()
-                                .build()
-                    }
-        }
-    }
-
-    void removeDeploymentEnv(String ns, String name, String containerName, String key) {
-        log.debug "Remove env var from deployment ${ns}/${name}/${containerName}: ${key}"
-        withRetry(2, 3) {
-            client.apps().deployments().inNamespace(ns).withName(name)
-                    .edit { d ->
-                        List<Container> containers = d.spec.template.spec.containers
-                        int containerIndex = containers.findIndexOf { it.name == containerName }
-                        if (containerIndex == -1) {
-                            throw new RuntimeException(
-                                    "Could not remove env var. No container named " +
-                                    "${containerName} in deployment ${ns}/${name}")
-                        }
-                        List<EnvVar> envVars = containers.get(containerIndex).env ?: []
-                        envVars.removeIf { EnvVar e -> e.name == key }
-                        new DeploymentBuilder(d)
-                                .editSpec()
-                                .editTemplate()
-                                .editSpec()
-                                .editContainer(containerIndex)
-                                .withEnv(envVars)
-                                .endContainer()
-                                .endSpec()
-                                .endTemplate()
-                                .endSpec()
-                                .build()
-                    }
-        }
     }
 
     boolean deploymentReady(String ns, String name) {
