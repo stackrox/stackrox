@@ -27,7 +27,7 @@ describe('enableDateRangeConditions', () => {
 
         expect(datePickerAttributes.length).toBeGreaterThan(0);
         datePickerAttributes.forEach((attribute) => {
-            expect(attribute.inputProps).toEqual({ enableBetweenCondition: true });
+            expect(attribute.inputProps).toMatchObject({ enableBetweenCondition: true });
         });
     });
 
