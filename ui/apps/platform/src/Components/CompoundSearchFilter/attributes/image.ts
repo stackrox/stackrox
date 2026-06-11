@@ -37,4 +37,11 @@ export const Registry: CompoundSearchFilterAttribute = {
     inputType: 'autocomplete',
 };
 
-export const imageAttributes = [Label, Name, OperatingSystem, Registry, Tag];
+export const CreatedTime: CompoundSearchFilterAttribute = {
+    displayName: 'Created time',
+    filterChipLabel: 'Image created time',
+    searchTerm: 'Image Created Time',
+    inputType: 'date-picker',
+};
+
+export const imageAttributes = [CreatedTime, Label, Name, OperatingSystem, Registry, Tag];
