@@ -297,7 +297,7 @@ if [[ ! -s "$BASE_RESULTS" ]] || [[ ! -s "$HEAD_RESULTS" ]]; then
     die "One or both benchmark result files are empty. Cannot compare."
 fi
 
-benchstat "$BASE_RESULTS" "$HEAD_RESULTS" | tee "$COMPARISON"
+benchstat base="$BASE_RESULTS" head="$HEAD_RESULTS" | tee "$COMPARISON"
 
 echo ""
 if "$KEEP_RESULTS"; then
