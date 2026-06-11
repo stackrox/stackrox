@@ -73,6 +73,15 @@ func VerifyRoxagentInstalled(ctx context.Context, virt Virtctl, namespace, vm st
 
 // RunRoxagentOnce runs roxagent on the guest with the given repo2cpe URL.
 // It retries up to roxagentMaxAttempts times before giving up.
+//
+// This is the application-level retry loop: it retries when SSH transport
+// succeeded but roxagent itself exited non-zero (e.g., Scanner temporarily
+// unavailable, VSOCK relay not yet ready). Terminal vsock errors (missing
+// /dev/vsock) are not retried.
+//
+// SSH transport failures (banner timeout, network unreachable, websocket EOF)
+// are handled separately by runSSHCommandWithFramework's inner retry loop
+// before this layer ever sees the error.
 func RunRoxagentOnce(ctx context.Context, virt Virtctl, namespace, vm, repo2cpeURL string) error {
 	envAssignment := fmt.Sprintf("ROXAGENT_REPO2CPE_URL=%s", repo2cpeURL)
 
