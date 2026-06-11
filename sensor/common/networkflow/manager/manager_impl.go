@@ -187,10 +187,14 @@ func NewManager(
 	mgr.sensorUpdates = make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.NetworkFlowBufferSize))
 
 	if features.SensorInternalPubSub.Enabled() {
-		if err := pubSubDispatcher.RegisterConsumer(
+		if err := pubSubDispatcher.RegisterConsumerToLane(
 			pubsub.NetworkFlowManagerConsumer,
 			pubsub.ResourceSyncFinishedTopic,
+			pubsub.ResourceSyncFinishedLane,
 			func(e pubsub.Event) error {
+				if v, ok := e.(interface{ IsExpired() bool }); ok && v.IsExpired() {
+					return nil
+				}
 				select {
 				case <-mgr.stopper.Flow().StopRequested():
 					return nil

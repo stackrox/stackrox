@@ -44,22 +44,24 @@ func (f *fakeCentralComm) Stop() {
 
 func (f *fakeCentralComm) Stopped() concurrency.ReadOnlyErrorSignal { return &f.stopped }
 
-// capturingSensorDispatcher captures the first RegisterConsumer call so tests
-// can inspect the wiring and invoke the callback directly.
+// capturingSensorDispatcher captures the first RegisterConsumerToLane call so
+// tests can inspect the wiring and invoke the callback directly.
 type capturingSensorDispatcher struct {
 	callback   pubsub.EventCallback
 	consumerID pubsub.ConsumerID
 	topic      pubsub.Topic
+	laneID     pubsub.LaneID
 }
 
-func (c *capturingSensorDispatcher) RegisterConsumer(id pubsub.ConsumerID, t pubsub.Topic, cb pubsub.EventCallback) error {
-	c.consumerID = id
-	c.topic = t
-	c.callback = cb
+func (c *capturingSensorDispatcher) RegisterConsumer(_ pubsub.ConsumerID, _ pubsub.Topic, _ pubsub.EventCallback) error {
 	return nil
 }
 
-func (c *capturingSensorDispatcher) RegisterConsumerToLane(_ pubsub.ConsumerID, _ pubsub.Topic, _ pubsub.LaneID, _ pubsub.EventCallback) error {
+func (c *capturingSensorDispatcher) RegisterConsumerToLane(id pubsub.ConsumerID, t pubsub.Topic, l pubsub.LaneID, cb pubsub.EventCallback) error {
+	c.consumerID = id
+	c.topic = t
+	c.laneID = l
+	c.callback = cb
 	return nil
 }
 
@@ -72,7 +74,10 @@ func (c *capturingSensorDispatcher) Stop()                        {}
 // the SensorInternalPubSub feature flag is enabled. It must be kept in sync
 // with the production code in sensor.go.
 func softRestartCallback(s *Sensor) pubsub.EventCallback {
-	return func(_ pubsub.Event) error {
+	return func(e pubsub.Event) error {
+		if v, ok := e.(interface{ IsExpired() bool }); ok && v.IsExpired() {
+			return nil
+		}
 		s.centralCommunicationLock.Lock()
 		defer s.centralCommunicationLock.Unlock()
 		if s.centralCommunication == nil {
@@ -123,16 +128,40 @@ func TestSensor_PubSubEnabled_SoftRestartConsumerRegistration(t *testing.T) {
 	s.centralCommunication = fakeCC
 
 	// Simulate the call Start() makes when the flag is on.
-	require.NoError(t, s.pubSubDispatcher.RegisterConsumer(
+	require.NoError(t, s.pubSubDispatcher.RegisterConsumerToLane(
 		pubsub.CoreSensorConsumer,
 		pubsub.SoftRestartTopic,
+		pubsub.SoftRestartLane,
 		softRestartCallback(s),
 	))
 
 	assert.Equal(t, pubsub.CoreSensorConsumer, capturing.consumerID)
 	assert.Equal(t, pubsub.SoftRestartTopic, capturing.topic)
+	assert.Equal(t, pubsub.SoftRestartLane, capturing.laneID)
 	require.NotNil(t, capturing.callback)
 
-	require.NoError(t, capturing.callback(nil))
+	require.NoError(t, capturing.callback(&stubSoftRestartEvent{}))
 	assert.Equal(t, 1, fakeCC.stopCount, "callback must call Stop() on centralCommunication")
+}
+
+// stubSoftRestartEvent is a minimal non-expired event.
+type stubSoftRestartEvent struct{}
+
+func (s *stubSoftRestartEvent) Topic() pubsub.Topic { return pubsub.SoftRestartTopic }
+func (s *stubSoftRestartEvent) Lane() pubsub.LaneID { return pubsub.SoftRestartLane }
+
+// expiredSoftRestartEvent simulates a stale event whose validity has expired.
+type expiredSoftRestartEvent struct{ stubSoftRestartEvent }
+
+func (e *expiredSoftRestartEvent) IsExpired() bool { return true }
+
+// TestSoftRestartCallback_SkipsExpiredEvent verifies that the callback does
+// not call Stop() when the event's validity context has been cancelled.
+func TestSoftRestartCallback_SkipsExpiredEvent(t *testing.T) {
+	s := sensorForCallbackTest()
+	fakeCC := &fakeCentralComm{}
+	s.centralCommunication = fakeCC
+
+	require.NoError(t, softRestartCallback(s)(&expiredSoftRestartEvent{}))
+	assert.Equal(t, 0, fakeCC.stopCount, "Stop() must not be called for an expired event")
 }
