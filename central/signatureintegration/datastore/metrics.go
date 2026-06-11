@@ -34,10 +34,10 @@ var (
 		Help:      "Unix timestamp of the last successful key bundle upsert by the watcher",
 	})
 
-	updaterDownloadTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	updaterDownloadsTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "key_bundle_updater_download_total",
+		Name:      "key_bundle_updater_downloads_total",
 		Help:      "Total number of key bundle download attempts by the updater, labeled by result",
 	}, []string{"result"})
 
