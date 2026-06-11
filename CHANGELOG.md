@@ -20,6 +20,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 
+- ROX-35006: Bare (unbracketed) IPv6 addresses are no longer accepted in TLS check endpoints. Use the bracketed `[IPv6]:port` format instead (RFC 2732).
+
 ## [4.11.0]
 
 
