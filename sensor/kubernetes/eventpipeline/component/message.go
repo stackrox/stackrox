@@ -85,6 +85,12 @@ func NewEventWithTopicAndLane(topic pubsub.Topic, lane pubsub.LaneID, msg ...*ce
 	}
 }
 
+// SetTopicAndLane sets the topic and lane on an existing event, avoiding a new allocation.
+func (e *ResourceEvent) SetTopicAndLane(topic pubsub.Topic, lane pubsub.LaneID) {
+	e.topic = &topic
+	e.lane = &lane
+}
+
 func (e *ResourceEvent) Topic() pubsub.Topic {
 	if e.topic == nil {
 		return pubsub.KubernetesDispatcherEventTopic
