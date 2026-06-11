@@ -130,7 +130,7 @@ tasks.withType<Test>().configureEach {
         if (desc.parent == null && result.testCount == 0L) {
             throw GradleException(
                 "No tests were executed in task '${name}'. " +
-                "This likely means test classes were not found (NO-SOURCE). " +
+                "This likely means test classes were no tests matched the configured filters (tags/excludes). " +
                 "Check that testClassesDirs and classpath are wired correctly."
             )
         }
