@@ -16,8 +16,12 @@ import (
 
 func TestRawListQueryNamespaceAndName(t *testing.T) {
 	q := rawListQueryNamespaceAndName("stackrox", "vm-rhel9")
-	require.Contains(t, q, "Namespace:stackrox")
-	require.Contains(t, q, "Virtual Machine Name:vm-rhel9")
+	require.Contains(t, q, `Namespace:"stackrox"`)
+	require.Contains(t, q, `Virtual Machine Name:"vm-rhel9"`)
+
+	q = rawListQueryNamespaceAndName("stack rox", "vm:special+name")
+	require.Contains(t, q, `Namespace:"stack rox"`)
+	require.Contains(t, q, `Virtual Machine Name:"vm:special+name"`)
 }
 
 type stubVirtualMachineClient struct {
@@ -57,7 +61,7 @@ func TestWaitForVMPresentInCentral_UsesListVirtualMachines(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "id-1", vm.GetId())
 	require.NotEmpty(t, sawQuery)
-	require.Contains(t, sawQuery, "Namespace:ns1")
+	require.Contains(t, sawQuery, `Namespace:"ns1"`)
 }
 
 func TestWaitForVMScanTimestamp(t *testing.T) {
