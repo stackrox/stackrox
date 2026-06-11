@@ -54,12 +54,17 @@ function SearchFilterDateRange({
 
     function onApply() {
         const end = dateParse(endDateString);
-        if (isValidDate(startDate) && isValidDate(end) && startDate.getTime() <= end.getTime()) {
+        if (!isValidDate(startDate) || !isValidDate(end)) {
+            return;
+        }
+        // null when the start date falls after the end date
+        const value = serializeAbsoluteDateRange(startDate.getTime(), end.getTime());
+        if (value !== null) {
             onSearch([
                 {
                     action: 'APPEND',
                     category,
-                    value: serializeAbsoluteDateRange(startDate.getTime(), end.getTime()),
+                    value,
                 },
             ]);
             setStartDateString('');
