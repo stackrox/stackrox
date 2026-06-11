@@ -171,13 +171,12 @@ func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfil
 	existingProfiles := []*storage.ComplianceOperatorProfile{profile}
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorV1ProfileName, profile.GetName()).
+		AddStrings(search.ComplianceOperatorV1ProfileClusterID, search.NegateQueryString(search.ExactMatchString(profile.GetClusterId()))).
 		ProtoQuery()
 	walkFn := func() error {
 		existingProfiles = []*storage.ComplianceOperatorProfile{profile}
 		return m.profiles.WalkByQuery(allAccessCtx, q, func(existingProfile *storage.ComplianceOperatorProfile) error {
-			if existingProfile.GetClusterId() != profile.GetClusterId() {
-				existingProfiles = append(existingProfiles, existingProfile)
-			}
+			existingProfiles = append(existingProfiles, existingProfile)
 			return nil
 		})
 	}
