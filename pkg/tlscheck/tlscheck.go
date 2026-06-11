@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
@@ -19,15 +18,19 @@ const (
 	timeout = 2 * time.Second
 )
 
-// addrValid validates the URL.
-// It returns an error if addr contains scheme prefix.
 func addrValid(addr string) error {
 	if strings.Contains(addr, "://") {
 		return fmt.Errorf("URL %q should not contain scheme prefix", addr)
 	}
-	// url.Parse requires scheme to trigger the correct variant of parsing (it has two)
-	_, err := url.Parse("https://" + addr)
-	return err
+	if strings.ContainsAny(addr, " \t\n\r") {
+		return fmt.Errorf("URL %q contains illegal whitespace characters", addr)
+	}
+	// Bare IPv6 addresses must use bracketed format [IPv6]:port (RFC 2732).
+	hostPart := strings.SplitN(addr, "/", 2)[0]
+	if !strings.HasPrefix(hostPart, "[") && strings.Count(hostPart, ":") > 1 {
+		return fmt.Errorf("bare IPv6 address in %q: use [IPv6]:port format", hostPart)
+	}
+	return nil
 }
 
 // CheckTLS checks if the address is using TLS

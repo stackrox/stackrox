@@ -23,6 +23,11 @@ func Test_addrValid(t *testing.T) {
 		" example.com",
 		"example.com ",
 		"exam ple.com/abc",
+		// Bare IPv6 must use bracketed [IPv6]:port format (RFC 2732).
+		"1::",
+		"1::/path",
+		"2001:0db8:0000:0000:0000:ff00:0042:8329",
+		"2001:0db8:0000:0000:0000:ff00:0042:8329:61273",
 	}
 
 	for _, addr := range badAddrs {
@@ -35,16 +40,9 @@ func Test_addrValid(t *testing.T) {
 		"example.com:80/abc",
 		"127.0.0.1:8080",
 		"example.com/repo/path",
-		"1::",
-		"1::/path",
 		"[1::]:80",
 		"[1::]:80/path",
-		"2001:0db8:0000:0000:0000:ff00:0042:8329",
 		"[2001:0db8:0000:0000:0000:ff00:0042:8329]:61273",
-		// RFC2732 says we MAY use the format with `[IPv6addr]:port`,
-		// but it does not explicitly define the following as invalid.
-		// For the sake of simplicity (in using url.Parse), we treat the following as valid.
-		"2001:0db8:0000:0000:0000:ff00:0042:8329:61273",
 	}
 
 	for _, addr := range goodAddrs {
