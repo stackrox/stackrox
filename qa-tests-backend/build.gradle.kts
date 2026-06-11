@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.kotlin.dsl.KotlinClosure2
 import java.time.Duration
 
 plugins {
@@ -120,6 +121,20 @@ tasks.withType<Test>().configureEach {
     val testSourceSet = project.sourceSets["test"]
     testClassesDirs = testSourceSet.output.classesDirs
     classpath = testSourceSet.runtimeClasspath
+
+    // Safety net: fail loudly if a test task completes without executing any tests.
+    // Gradle exits 0 when tasks are skipped due to NO-SOURCE, which silently
+    // breaks CI. failOnNoMatchingTests does not help because it only triggers
+    // during test discovery, not when the task is skipped entirely.
+    afterSuite(KotlinClosure2<TestDescriptor, TestResult, Unit>({ desc, result ->
+        if (desc.parent == null && result.testCount == 0L) {
+            throw GradleException(
+                "No tests were executed in task '${name}'. " +
+                "This likely means test classes were not found (NO-SOURCE). " +
+                "Check that testClassesDirs and classpath are wired correctly."
+            )
+        }
+    }))
 }
 
 tasks.register<Test>("testBegin") {
@@ -245,6 +260,20 @@ tasks.register<Test>("testPZDebug") {
 tasks.register<Test>("testDeploymentCheck") {
     useJUnitPlatform {
         includeTags("DeploymentCheck")
+    }
+}
+
+// Fail the build if any Test task is skipped with NO-SOURCE. Gradle exits 0
+// in this case, silently producing no test results. afterSuite/doFirst/doLast
+// callbacks don't fire for NO-SOURCE tasks, so this project-level hook is
+// the only reliable way to detect it.
+// https://discuss.gradle.org/t/copy-task-how-to-fail-on-no-source/25581
+gradle.taskGraph.afterTask {
+    if (this is Test && state.noSource) {
+        throw GradleException(
+            "Test task '${path}' was skipped with NO-SOURCE. " +
+            "Check that testClassesDirs and classpath are wired correctly."
+        )
     }
 }
 
