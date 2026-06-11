@@ -263,7 +263,7 @@ jobs:
           "origin/${{ github.base_ref }}" \
           HEAD \
           --count 10 \
-          --benchtime 1s \
+          --benchtime 100ms \
           --keep \
           --output bench-results
 
