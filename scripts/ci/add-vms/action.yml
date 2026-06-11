@@ -1,0 +1,147 @@
+name: "Add VMs to ACS Cluster"
+description: "Install OpenShift Virtualization, deploy VMs, and install roxagent on an Infra-managed cluster"
+
+inputs:
+  cluster-name:
+    description: "Infra cluster name (from `infractl list`)"
+    required: true
+  num-vms:
+    description: "Number of VMs to deploy"
+    required: false
+    default: "1"
+  vm-os:
+    description: "VM OS: rhel9 or rhel10"
+    required: false
+    default: "rhel9"
+  ssh-public-key:
+    description: "Optional SSH public key to add for human access to all target VMs"
+    required: false
+    default: ""
+  infra-token:
+    description: "Infra API token"
+    required: true
+  quay-username:
+    description: "Quay.io username for pulling VM images"
+    required: true
+  quay-password:
+    description: "Quay.io password for pulling VM images"
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install infractl
+      uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
+
+    - name: Fetch cluster artifacts
+      shell: bash
+      env:
+        INFRA_TOKEN: ${{ inputs.infra-token }}
+      run: |
+        infractl artifacts "${{ inputs.cluster-name }}" --download-dir "${{ github.workspace }}/artifacts" >/dev/null
+        echo "KUBECONFIG=${{ github.workspace }}/artifacts/kubeconfig" >> "$GITHUB_ENV"
+        echo "ARTIFACTS_DIR=${{ github.workspace }}/artifacts" >> "$GITHUB_ENV"
+
+    - name: Verify cluster access
+      shell: bash
+      run: |
+        kubectl cluster-info
+        kubectl get nodes
+
+    - name: Install sshpass
+      shell: bash
+      run: |
+        if ! command -v sshpass &>/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq sshpass
+        fi
+
+    - name: Install virt operator (before virtctl)
+      shell: bash
+      run: |
+        "${{ github.workspace }}/scripts/ci/add-vms/install-virt-operator.sh"
+
+    - name: Install virtctl from cluster
+      shell: bash
+      run: |
+        fetch_cluster_ingress_ca() {
+            local ca_bundle
+            ca_bundle="$(mktemp)"
+            if kubectl get configmap -n openshift-config-managed default-ingress-cert \
+                    -o jsonpath='{.data.ca-bundle\.crt}' > "$ca_bundle" 2>/dev/null \
+               && [[ -s "$ca_bundle" ]]; then
+                echo "Using ingress CA from default-ingress-cert configmap" >&2
+            elif kubectl get secret -n openshift-ingress-operator router-ca \
+                    -o jsonpath='{.data.tls\.crt}' 2>/dev/null | base64 -d > "$ca_bundle" \
+                 && [[ -s "$ca_bundle" ]]; then
+                echo "Using ingress CA from router-ca secret" >&2
+            else
+                rm -f "$ca_bundle"
+                return 1
+            fi
+            printf '%s\n' "$ca_bundle"
+        }
+
+        download_and_install_virtctl() {
+            local download_url
+            download_url="$(kubectl get consoleclidownload virtctl-clidownloads-kubevirt-hyperconverged \
+                -o jsonpath='{.spec.links[?(@.text=="Download virtctl for Linux for x86_64")].href}' 2>/dev/null || true)"
+
+            if [[ -z "$download_url" ]]; then
+                echo "ERROR: ConsoleCLIDownload not available after virt operator install."
+                return 1
+            fi
+
+            echo "Downloading virtctl from $download_url..."
+            curl -fsSL "$@" "$download_url" | tar xz -C /usr/local/bin virtctl
+
+            if [[ ! -f /usr/local/bin/virtctl ]]; then
+                echo "ERROR: Downloaded archive does not contain virtctl."
+                return 1
+            fi
+
+            chmod +x /usr/local/bin/virtctl
+            echo "virtctl installed."
+        }
+
+        ca_bundle=""
+        cleanup() {
+            rm -f "${ca_bundle:-}"
+        }
+        trap cleanup EXIT
+
+        if ca_bundle="$(fetch_cluster_ingress_ca)" && download_and_install_virtctl --cacert "$ca_bundle"; then
+            :
+        else
+            echo "WARNING: Verified virtctl download failed; falling back to insecure curl -k in CI." >&2
+            # SECURITY RISK ACCEPTANCE:
+            # - TLS verification is intentionally disabled in this fallback path.
+            # - This is only used in CI after the verified download path fails.
+            # - The download URL still comes from the cluster-managed ConsoleCLIDownload resource.
+            download_and_install_virtctl -k
+        fi
+
+    - name: Prepare user SSH key
+      if: inputs.ssh-public-key != ''
+      shell: bash
+      run: |
+        echo "${{ inputs.ssh-public-key }}" > "${{ runner.temp }}/user-ssh-key.pub"
+        echo "USER_SSH_KEY_PATH=${{ runner.temp }}/user-ssh-key.pub" >> "$GITHUB_ENV"
+
+    - name: Run add-vms (virt operator already installed)
+      shell: bash
+      env:
+        QUAY_RHACS_ENG_RO_USERNAME: ${{ inputs.quay-username }}
+        QUAY_RHACS_ENG_RO_PASSWORD: ${{ inputs.quay-password }}
+        SKIP_VIRT_OPERATOR: "true"
+      run: |
+        ARGS=(
+            --num-vms "${{ inputs.num-vms }}"
+            --os "${{ inputs.vm-os }}"
+            --artifacts-dir "$ARTIFACTS_DIR"
+        )
+
+        if [[ -n "${USER_SSH_KEY_PATH:-}" ]]; then
+            ARGS+=(--ssh-key "$USER_SSH_KEY_PATH")
+        fi
+
+        "${{ github.workspace }}/scripts/ci/add-vms/add-vms.sh" "${ARGS[@]}"
