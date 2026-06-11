@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -374,8 +375,11 @@ func doWithTimeout(ctx context.Context, timeout time.Duration, f func(context.Co
 // This function writes to the stopC channel to indicate when it has terminated gracefully.
 func profileForever(service, svcAddr string, cli *http.Client, dir string, stopC chan any) {
 	// Replace whatever port with the pprof default port.
-	parts := strings.SplitN(svcAddr, ":", 1)
-	pprofAddr := fmt.Sprintf("%s:%s", parts[0], ":9443")
+	host, _, _ := net.SplitHostPort(svcAddr)
+	if host == "" {
+		host = svcAddr
+	}
+	pprofAddr := net.JoinHostPort(host, "9443")
 
 	log.Printf("profiling %s: %s", service, pprofAddr)
 	heapReq, heapErr := http.NewRequest(http.MethodGet, fmt.Sprintf("https://%s/debug/heap", pprofAddr), nil)
