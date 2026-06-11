@@ -718,7 +718,6 @@ image_prefetcher_start_set() {
         --version="${image_prefetcher_version}" \
         --k8s-flavor="$flavor" \
         --secret=stackrox \
-        --collect-metrics \
         --namespace="$ns" \
         "$name" > "$manifest"
 
@@ -813,27 +812,13 @@ _image_prefetcher_system_await() {
 image_prefetcher_await_set() {
     local ns="prefetch-images"
     local name="$1"
-    local extra_fields='{"build_id": "'"${BUILD_ID:-}"'", "job_name": "'"${JOB_NAME:-}"'", "orchestrator": "'"${ORCHESTRATOR_FLAVOR:-}"'", "build_tag": "'"${STACKROX_BUILD_TAG:-}"'"}'
 
     info "Waiting for image prefetcher set ${name} to complete..."
     if kubectl rollout status daemonset "$name" -n "$ns" --timeout 15m; then
         info "All images in the set are now pre-fetched."
     else
         info "WARNING: Pre-fetching failed to complete in time."
-        info "To investigate closer, go to https://console.cloud.google.com/bigquery and run a query such as:"
-        local query
-        query=$(mktemp)
-        cat > "${query}" <<- EOM
-
-            SELECT started_at, duration_ms, image, error
-            FROM \`acs-san-stackroxci.ci_metrics.stackrox_image_prefetches\`
-            WHERE error IS NOT NULL AND
-            $(echo "${extra_fields}" | jq -r '[to_entries | .[] | select(.value != "") | (.key + "=\"" + .value + "\"")] | join(" AND ")')
-            ORDER BY started_at DESC LIMIT 1000
-
-EOM
-        cat "${query}"
-        info "Note: The data is imported into the table periodically: https://github.com/stackrox/stackrox/actions/workflows/batch-load-test-metrics.yml"
+        info "To investigate closer, see prefetcher logs in 'Additional StackRox e2e artifacts'."
 
         if [[ -n ${ARTIFACT_DIR:-} ]]; then
             local prefetcher_help="$ARTIFACT_DIR/image-pre-fetcher-${name}-failure-summary.html"
@@ -850,66 +835,12 @@ EOM
                 <body>
 
                 Waiting for image prefetcher set ${name} to complete timed out.<br>
-                To investigate closer, go to <a target="_blank" href="https://console.cloud.google.com/bigquery">BigQuery</a> and run a query such as the following:
-                <br>
-                <pre>
-EOM
-            cat >> "${prefetcher_help}" "${query}"
-            cat >> "${prefetcher_help}" <<- EOM
-                </pre>
-                Note: The data is imported into the table <a target="_blank" href="https://github.com/stackrox/stackrox/actions/workflows/batch-load-test-metrics.yml">periodically</a>.
-                <br><br>
+                To investigate closer, see prefetcher logs in 'Additional StackRox e2e artifacts'.
                 </body>
                 </html>
 EOM
         fi
-        rm -f "${query}"
     fi
-    info "Now retrieving prefetcher metrics..."
-    local attempt=0
-    local service="service/${name}-metrics"
-    while [[ -z $(kubectl -n "${ns}" get "${service}" -o jsonpath="{.status.loadBalancer.ingress}" 2>/dev/null) ]]; do
-        if [ "$attempt" -lt "60" ]; then
-            info "Waiting for ${service} to obtain endpoint ..."
-            ((attempt++))
-            sleep 10
-        else
-            info "Something is wrong with the ${service} service. See the following 'describe' output."
-            kubectl -n "${ns}" describe "${service}" || true
-            die "Timeout waiting for ${service} to obtain endpoint!"
-        fi
-    done
-    local endpoint
-    endpoint="$(kubectl -n "${ns}" get "${service}" -o json | service_get_endpoint)"
-    local fetcher_metrics
-    fetcher_metrics="$(mktemp --suffix=.csv)"
-    local fetcher_metrics_json
-    fetcher_metrics_json="$(mktemp --suffix=.json)"
-    local metrics_url="http://${endpoint}:8080/metrics"
-    if ! curl --silent --show-error --fail --retry 3 --retry-connrefused "${metrics_url}" > "${fetcher_metrics_json}"; then
-        die "Failed to fetch prefetcher metrics from ${metrics_url}"
-    fi
-    # See the stackrox_image_prefetches table definition in https://github.com/stackrox/automation-iac/blob/main/resources/testing/stackrox-ci/metrics.tf
-    # for the order of columns.
-    if ! jq --raw-output \
-      --argjson cols '["attempt_id", "started_at", "image", "duration_ms", "node", "size_bytes", "error", "build_id", "job_name", "orchestrator", "build_tag"]' \
-      --argjson extra "${extra_fields}" \
-      'map(.started_at = (.started_at | todate) | ($extra+.) as $row | $cols | map($row[.])) as $rows | $cols, $rows[] | @csv' \
-      "${fetcher_metrics_json}" > "${fetcher_metrics}"; then
-        info "WARNING: Failed to convert image prefetcher metrics to CSV with extra fields ${extra_fields}"
-        info "Dumping the input JSON file:"
-        jq . < "${fetcher_metrics_json}"
-        die "Failed to convert image prefetcher metrics to CSV, aborting."
-    fi
-    rm -f "${fetcher_metrics_json}"
-
-    setup_gcp
-    if save_image_prefetches_metrics "${fetcher_metrics}"; then
-        info "Image pre-fetcher metrics retrieved and saved."
-    else
-        info "WARNING: failed to save image pre-fetcher metrics."
-    fi
-    rm -f "${fetcher_metrics}"
 }
 
 service_get_endpoint() {
