@@ -13,7 +13,7 @@ import {
 } from 'utils/chartUtils';
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
 import type { SearchFilter } from 'types/search';
-import { vulnManagementImagesPath } from 'routePaths';
+import { vulnerabilitiesAllImagesPath } from 'routePaths';
 import { getQueryString } from 'utils/queryStringUtils';
 import isResourceScoped from '../utils';
 
@@ -42,16 +42,28 @@ export function getTimeFilterOption(ageRange: number, nextAgeRange?: number) {
     return typeof nextAgeRange === 'number' ? `${ageRange}d-${nextAgeRange}d` : `>${ageRange}d`;
 }
 
-function linkForAgingImages(searchFilter: SearchFilter, ageRange: number, nextAgeRange?: number) {
-    const timeFilter = getTimeFilterOption(ageRange, nextAgeRange);
+/**
+ * Builds a link to the VM 2.0 images list view, sorted by image age (oldest first).
+ */
+export function getAgingImagesListLink(searchFilter: SearchFilter) {
     const queryString = getQueryString({
-        s: {
-            ...searchFilter,
-            'Image Created Time': timeFilter,
-        },
-        sort: [{ id: 'Image Created Time', desc: 'false' }],
+        s: searchFilter,
+        sortOption: { field: 'Image Created Time', direction: 'asc' },
+        entityTab: 'Image',
     });
-    return `${vulnManagementImagesPath}${queryString}`;
+    return `${vulnerabilitiesAllImagesPath}${queryString}`;
+}
+
+function linkForAgingImages(
+    searchFilter: SearchFilter,
+    ageRange: number,
+    nextAgeRange: number | undefined
+) {
+    const timeFilter = getTimeFilterOption(ageRange, nextAgeRange);
+    return getAgingImagesListLink({
+        ...searchFilter,
+        'Image Created Time': timeFilter,
+    });
 }
 
 function yAxisTitle(searchFilter: SearchFilter) {

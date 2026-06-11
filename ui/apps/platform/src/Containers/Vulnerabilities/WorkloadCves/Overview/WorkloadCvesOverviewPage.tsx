@@ -216,10 +216,7 @@ function WorkloadCvesOverviewPage() {
         );
     }
 
-    function onEntityTabChange(entityTab: WorkloadEntityTab) {
-        pagination.setPage(1);
-        sort.setSortOption(getDefaultSortOption(entityTab, searchFilter));
-
+    function trackEntityTabViewed(entityTab: WorkloadEntityTab) {
         analyticsTrack({
             event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
             properties: {
@@ -227,6 +224,12 @@ function WorkloadCvesOverviewPage() {
                 page: 'Overview',
             },
         });
+    }
+
+    function onEntityTabChange(entityTab: WorkloadEntityTab) {
+        pagination.setPage(1);
+        sort.setSortOption(getDefaultSortOption(entityTab, searchFilter));
+        trackEntityTabViewed(entityTab);
     }
 
     function onVulnerabilityStateChange(vulnerabilityState: VulnerabilityState) {
@@ -246,13 +249,17 @@ function WorkloadCvesOverviewPage() {
         setSearchFilter(localStorageValue.preferences.defaultFilters);
     }
 
-    // Track the current entity tab when the page is initially visited.
+    // Track the current entity tab when the page is initially visited. Only emit the
+    // analytics event here -- do NOT reset sort or pagination on mount, otherwise a
+    // deep link that carries a sortOption or page (e.g. the Aging Images dashboard
+    // widget linking with `Image Created Time` sort) would have it overwritten by the
+    // entity default before the table renders.
     /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
-        onEntityTabChange(activeEntityTabKey);
+        trackEntityTabViewed(activeEntityTabKey);
     }, []);
     // activeEntityTabKey
-    // onEntityTabChange
+    // trackEntityTabViewed
     /* eslint-enable react-hooks/exhaustive-deps */
 
     // When the page is initially visited and no local filters are applied, apply the default filters.
