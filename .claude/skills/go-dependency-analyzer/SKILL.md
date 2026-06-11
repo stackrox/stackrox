@@ -1,6 +1,7 @@
 ---
 name: go-dependency-analyzer
 description: Analyzes Go dependencies to determine usage in production code, what functionality is used, and where it's located. Use when user asks "verify where we use [dependency]", "is [dependency] used in production", "analyze dependency [name]", "what uses [package]", "dependency analysis", mentions CVE numbers, security vulnerabilities, or needs to understand dependency impact for triage, upgrades, or removal decisions.
+disable-model-invocation: true
 ---
 
 # Go Dependency Analyzer
