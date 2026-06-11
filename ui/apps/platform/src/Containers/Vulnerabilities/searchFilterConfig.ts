@@ -236,12 +236,7 @@ export const searchFilterConfigForImageVulnerabilityReport = [
             ({ searchTerm }) => searchTerm !== 'CVE Created Time'
         ),
     },
-    {
-        ...imageSearchFilterConfig,
-        attributes: imageSearchFilterConfig.attributes.filter(
-            ({ searchTerm }) => searchTerm !== 'Image Created Time'
-        ),
-    },
+    imageSearchFilterConfig,
     imageComponentSearchFilterConfig,
 ];
 
