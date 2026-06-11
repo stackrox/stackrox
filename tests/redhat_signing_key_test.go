@@ -278,6 +278,7 @@ func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 
 	s.logf("Setting %s, %s, and %s on central", bundleURLEnv, updateIntervalEnv, watchIntervalEnv)
 	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", bundleURLEnv, bundleURL)
+	// The interval gets clamped to 5m minimum, but the first download runs immediately on startup.
 	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", updateIntervalEnv, "10s")
 	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
 	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")

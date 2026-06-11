@@ -101,7 +101,11 @@ func (d *Downloader) run() {
 	defer cancel()
 
 	if err := os.MkdirAll(filepath.Dir(d.filePath), 0700); err != nil {
-		log.Errorf("Failed to create directory for %q, downloader will not run: %v", d.filePath, err)
+		mkdirErr := fmt.Errorf("creating directory for %q: %w", d.filePath, err)
+		log.Errorf("Downloader will not run: %v", mkdirErr)
+		if d.onComplete != nil {
+			d.onComplete(mkdirErr, 0)
+		}
 		return
 	}
 
