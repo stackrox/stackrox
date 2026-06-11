@@ -247,12 +247,13 @@ func (m *managerImpl) flushIndicatorQueue() {
 
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "FlushingIndicatorQueue")
 
-	// Map copiedQueue to slice
 	indicatorSlice := make([]*storage.ProcessIndicator, 0, len(copiedQueue))
 	for _, indicator := range copiedQueue {
 		if m.deletedDeploymentsCache.Contains(indicator.GetDeploymentId()) {
 			continue
 		}
+
+		metrics.RecordProcessIndicatorReceived(indicator)
 
 		match, err := m.clusterDataStore.MatchProcessIndicator(lifecycleMgrCtx, indicator)
 
