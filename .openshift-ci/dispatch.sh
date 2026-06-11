@@ -34,6 +34,11 @@ if [[ -f "${SHARED_DIR:-}/shared_env" ]]; then
     source "${SHARED_DIR:-}/shared_env"
 fi
 
+# Enable Scanner V4 by default for all e2e jobs. openshift/release currently
+# hardcodes ROX_SCANNER_V4=false; this override can be removed once that is
+# dropped. Individual job scripts can opt out via os.environ["ROX_SCANNER_V4"].
+export ROX_SCANNER_V4=true
+
 openshift_ci_mods
 openshift_ci_import_creds
 create_exit_trap
