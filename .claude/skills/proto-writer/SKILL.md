@@ -1,6 +1,7 @@
 ---
 name: proto-writer
 description: Guide the creation or modification of StackRox protobuf definitions and Postgres store generation. Use when creating new storage types, adding fields to existing protos, setting up gen.go files, or making architectural decisions about data modeling (embedded vs FK relationships, search scope, API/storage separation).
+disable-model-invocation: true
 ---
 
 # Proto Writer
@@ -52,7 +53,7 @@ When adding a field, walk through these questions with the user. Refer to `proto
    - Should it cascade delete? (default yes) If restrict -> add `,restrict-delete` (use sparingly)
 
 4. **Should this field be indexed?**
-   - Yes -> `sql:"index=btree"` (default), or `hash` for equality-only, `brin` for time-series, `gin` for arrays
+   - Yes -> `sql:"index=btree"` (default), `brin` for time-series, `gin` for arrays. `hash` indexes have been observed to be expensive; prefer btree unless the user explicitly requests a hash index.
    - Part of a composite unique index? -> `sql:"index=name:my_index;category:unique"` (same name on all fields)
 
 5. **Should this field be a policy criteria?**
