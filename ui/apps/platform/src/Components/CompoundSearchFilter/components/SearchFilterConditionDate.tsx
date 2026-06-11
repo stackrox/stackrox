@@ -25,7 +25,7 @@ function SearchFilterConditionDate({
     const { searchTerm: category } = attribute;
     const isBetweenEnabled = attribute.inputProps?.enableBetweenCondition ?? false;
 
-    const [conditionExternal, setConditionExternal] = useState<DateCondition>(dateConditions[1]);
+    const [conditionExternal, setConditionExternal] = useState<DateCondition>('On');
 
     const conditions: DateCondition[] = isBetweenEnabled
         ? [...dateConditions, dateRangeCondition]

@@ -19,15 +19,11 @@ export function dateParse(date: string): Date {
     if (split.length !== 3) {
         return new Date('Invalid Date');
     }
-    const month = split[0];
-    const day = split[1];
-    const year = split[2];
+    const [month, day, year] = split;
     if (month.length !== 2 || day.length !== 2 || year.length !== 4) {
         return new Date('Invalid Date');
     }
-    return new Date(
-        `${year.padStart(4, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00`
-    );
+    return new Date(`${year}-${month}-${day}T00:00:00`);
 }
 
 /**
