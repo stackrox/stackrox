@@ -126,18 +126,26 @@ func (k *listenerImpl) handleAllEvents() {
 	// Create informer factories for needed orchestrators.
 	var osAppsFactory osAppsExtVersions.SharedInformerFactory
 	if k.client.OpenshiftApps() != nil {
-		osAppsFactory = osAppsExtVersions.NewSharedInformerFactory(k.client.OpenshiftApps(), noResyncPeriod)
-		concurrency.WithLock(&k.sifLock, func() {
-			k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, osAppsFactory)
-		})
+		if resourceList, err := listenerUtils.ServerResourcesForGroup(k.client, osAppsGroupVersion); err != nil {
+			log.Errorf("Checking API resources for group %q: %v", osAppsGroupVersion, err)
+		} else if listenerUtils.ResourceExists(resourceList, osDeploymentConfigsResourceName, osAppsGroupVersion) {
+			osAppsFactory = osAppsExtVersions.NewSharedInformerFactory(k.client.OpenshiftApps(), noResyncPeriod)
+			concurrency.WithLock(&k.sifLock, func() {
+				k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, osAppsFactory)
+			})
+		}
 	}
 
 	var osRouteFactory osRouteExtVersions.SharedInformerFactory
 	if k.client.OpenshiftRoute() != nil {
-		osRouteFactory = osRouteExtVersions.NewSharedInformerFactory(k.client.OpenshiftRoute(), noResyncPeriod)
-		concurrency.WithLock(&k.sifLock, func() {
-			k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, osRouteFactory)
-		})
+		if resourceList, err := listenerUtils.ServerResourcesForGroup(k.client, osRouteGroupVersion); err != nil {
+			log.Errorf("Checking API resources for group %q: %v", osRouteGroupVersion, err)
+		} else if listenerUtils.ResourceExists(resourceList, osRoutesResourceName, osRouteGroupVersion) {
+			osRouteFactory = osRouteExtVersions.NewSharedInformerFactory(k.client.OpenshiftRoute(), noResyncPeriod)
+			concurrency.WithLock(&k.sifLock, func() {
+				k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, osRouteFactory)
+			})
+		}
 	}
 
 	// We want creates to be treated as updates while existing objects are loaded.
