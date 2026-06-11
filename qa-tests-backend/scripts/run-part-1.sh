@@ -160,20 +160,8 @@ test_part_1() {
     rm -f FAIL
     remove_qa_test_results
 
-    local test_target
-    if is_openshift_CI_rehearse_PR; then
-        info "On an openshift rehearse PR, running BAT tests only..."
-        test_target="bat-test"
-    elif is_in_PR_context && pr_has_label ci-all-qa-tests; then
-        info "ci-all-qa-tests label was specified, so running all QA tests..."
-        test_target="test"
-    elif is_in_PR_context; then
-        info "In a PR context without ci-all-qa-tests, running BAT tests only..."
-        test_target="bat-test"
-    else
-        info "Running all QA tests by default..."
-        test_target="test"
-    fi
+    # TODO: revert this override before merging
+    local test_target="test"
 
     setup_gcp
     set_ci_shared_export "test_target" "${test_target}"
