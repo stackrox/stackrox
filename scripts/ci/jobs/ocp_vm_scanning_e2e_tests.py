@@ -23,7 +23,6 @@ os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "true"
 os.environ["SENSOR_HELM_MANAGED"] = "true"
 os.environ["INSTALL_CNV_OPERATOR"] = "true"
 os.environ["ROX_VIRTUAL_MACHINES"] = "true"
-os.environ["ROX_SCANNER_V4"] = "true"
 # Selectively enable vulnerability bundles to prevent timeouts of matcher not being ready in 40 minutes.
 # The rhel-vex bundle alone has ~3M records and can take >30 min to import.
 # Drops alpine, aws, debian, oracle, osv, photon, suse, ubuntu (unused for RHEL guests).
