@@ -29,14 +29,18 @@ function SearchFilterDateRange({
     function onStartDateChange(value: string) {
         setStartDateString(value);
         const datePicked = dateParse(value);
-        if (isValidDate(datePicked)) {
-            // Default the end date to the day after the start date (PatternFly date-range pattern).
-            const dayAfterStart = new Date(datePicked);
-            dayAfterStart.setDate(dayAfterStart.getDate() + 1);
-            setEndDateString(dateFormat(dayAfterStart));
-        } else {
-            setEndDateString('');
+        if (!isValidDate(datePicked)) {
+            return;
         }
+        const endDate = dateParse(endDateString);
+        if (isValidDate(endDate) && endDate.getTime() >= datePicked.getTime()) {
+            // Keep a user-chosen end date that is still on or after the new start date.
+            return;
+        }
+        // Default the end date to the day after the start date (PatternFly date-range pattern).
+        const dayAfterStart = new Date(datePicked);
+        dayAfterStart.setDate(dayAfterStart.getDate() + 1);
+        setEndDateString(dateFormat(dayAfterStart));
     }
 
     function endDateValidator(date: Date): string {
@@ -49,14 +53,13 @@ function SearchFilterDateRange({
     }
 
     function onApply() {
-        const start = dateParse(startDateString);
         const end = dateParse(endDateString);
-        if (isValidDate(start) && isValidDate(end) && start.getTime() <= end.getTime()) {
+        if (isValidDate(startDate) && isValidDate(end) && startDate.getTime() <= end.getTime()) {
             onSearch([
                 {
                     action: 'APPEND',
                     category,
-                    value: serializeAbsoluteDateRange(start.getTime(), end.getTime()),
+                    value: serializeAbsoluteDateRange(startDate.getTime(), end.getTime()),
                 },
             ]);
             setStartDateString('');

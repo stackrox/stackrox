@@ -115,6 +115,34 @@ describe(Cypress.spec.relative, () => {
             cy.get(selectors.endDateInput).should('have.value', '01/16/2034');
         });
 
+        it('should keep a chosen end date when the start date changes to an earlier date', () => {
+            setup({ isBetweenEnabled: true });
+
+            selectCondition('Between');
+
+            cy.get(selectors.startDateInput).type('01/15/2034');
+            cy.get(selectors.endDateInput).clear();
+            cy.get(selectors.endDateInput).type('03/20/2034');
+
+            cy.get(selectors.startDateInput).clear();
+            cy.get(selectors.startDateInput).type('01/10/2034');
+
+            cy.get(selectors.endDateInput).should('have.value', '03/20/2034');
+        });
+
+        it('should re-default the end date when the start date moves past it', () => {
+            setup({ isBetweenEnabled: true });
+
+            selectCondition('Between');
+
+            cy.get(selectors.startDateInput).type('01/15/2034');
+            // End date defaults to 01/16/2034, which is before the new start date below.
+            cy.get(selectors.startDateInput).clear();
+            cy.get(selectors.startDateInput).type('02/01/2034');
+
+            cy.get(selectors.endDateInput).should('have.value', '02/02/2034');
+        });
+
         it('should apply a valid range as a tr/<startMs>-<endMs> value and clear the inputs', () => {
             setup({ isBetweenEnabled: true });
 
