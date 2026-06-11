@@ -93,8 +93,16 @@ func validateWaitOptions(desc string, opts WaitOptions) error {
 	return nil
 }
 
-// pollUntil runs poll until it returns done==true or ctx deadline/opts.Timeout elapses.
-// detail is included in timeout errors for targeted diagnostics.
+// pollUntil is the poll loop for Central gRPC scan-lifecycle waits.
+// Use this instead of k8s wait.PollUntilContextCancel when you need:
+//   - auth-expiry fail-fast: aborts immediately on expired kubeconfig tokens
+//     instead of burning the full timeout,
+//   - structured diagnostics: each poll returns a detail string so timeout
+//     errors report exactly which stage was stuck.
+//
+// For K8s resource polling (namespace deletion, service account readiness,
+// VMI conditions) where errors are terminal-or-transient and auth is handled
+// at the call site, prefer wait.PollUntilContextCancel directly.
 func pollUntil(ctx context.Context, opts WaitOptions, desc string, poll func(ctx context.Context) (done bool, detail string, err error)) error {
 	if err := validateWaitOptions(desc, opts); err != nil {
 		return err
