@@ -378,7 +378,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	if !buildinfo.ReleaseBuild {
 		flags.AddHelmChartDebugSetting(c)
 	}
-	c.PersistentFlags().BoolVar(&centralGenerateCmd.rendererConfig.EnablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).")
+	c.PersistentFlags().BoolVar(&centralGenerateCmd.rendererConfig.EnablePodSecurityPolicies, "enable-pod-security-policies", false, "Deprecated: Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).")
+	utils.Must(c.PersistentFlags().MarkDeprecated("enable-pod-security-policies", "PodSecurityPolicy support is deprecated and will be removed in a future release."))
 
 	c.AddCommand(centralGenerateCmd.interactive())
 	c.AddCommand(k8s(cliEnvironment))

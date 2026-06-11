@@ -71,6 +71,9 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - Plaintext (non-TLS) Central endpoints, configured via the `ROX_PLAINTEXT_ENDPOINTS` environment
   variable, are deprecated and will be removed in a future release. Modern load balancers and
   ingress controllers support TLS passthrough, making plaintext endpoints unnecessary.
+- ROX-35032: PodSecurityPolicy support is deprecated. The `--enable-pod-security-policies` roxctl
+  flag and the `system.enablePodSecurityPolicies` Helm value now emit deprecation warnings.
+  PSPs were removed from Kubernetes in v1.25 and will be removed from ACS in a future release.
 
 ### Technical Changes
 

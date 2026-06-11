@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -94,7 +95,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().StringVar(&scannerGenerateCmd.apiParams.ScannerV4DBImage, flags.FlagNameScannerV4DBImage, "", "Scanner V4 DB image to use (leave blank to use server default).")
 	c.Flags().StringVar(&scannerGenerateCmd.apiParams.IstioVersion, istioSupportArg, "",
 		"Istio version when deploying into an Istio-enabled cluster (has no effect; ACS now automatically prevents Istio sidecar injection).")
-	c.PersistentFlags().BoolVar(&scannerGenerateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).")
+	c.PersistentFlags().BoolVar(&scannerGenerateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Deprecated: Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).")
+	utils.Must(c.PersistentFlags().MarkDeprecated("enable-pod-security-policies", "PodSecurityPolicy support is deprecated and will be removed in a future release."))
 
 	flags.AddTimeout(c)
 	flags.AddRetryTimeout(c)

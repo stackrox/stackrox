@@ -41,4 +41,4 @@ scanner:
     generate: null # bool
   exposeMonitoring: null # bool
 system:
-  enablePodSecurityPolicies: null # bool
+  enablePodSecurityPolicies: null # bool # DEPRECATED: PodSecurityPolicy support is deprecated and will be removed in a future release.
