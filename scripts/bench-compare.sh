@@ -250,6 +250,7 @@ run_benchmarks() {
         export MUTEX_WATCHDOG_TIMEOUT_SECS=30
 
         # shellcheck disable=SC2086
+        timeout "$TIMEOUT" \
         go test \
             $parallel_flag \
             -tags "$go_tags" \
@@ -261,7 +262,7 @@ run_benchmarks() {
             -count "$BENCHCOUNT" \
             "${valid_pkgs[@]}" \
             2>&1 | tee "${output_file}.raw"
-    ) || warn "[$label] Some benchmarks failed. Results may be partial."
+    ) || warn "[$label] Some benchmarks failed or timed out. Results may be partial."
 
     # Filter to benchstat-parseable lines only (Benchmark lines + header lines)
     grep -E '^(Benchmark|goos:|goarch:|pkg:|cpu:|PASS|ok )' "${output_file}.raw" > "$output_file" || true
