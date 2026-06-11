@@ -2627,19 +2627,20 @@ _record_cluster_info() {
     # Assumes (a) there is a single cluster under test (cut_*) and (b) all nodes
     # in the cluster are homogeneous.
 
-    # Product version. Currently used for OpenShift version. Could cover cloud
-    # provider versions for example.
-    local oc_version
-    oc_version="$(oc version -o json 2>&1 || true)"
-    local openshiftVersion
-    openshiftVersion=$(jq -r <<<"$oc_version" '.openshiftVersion')
-    set_ci_shared_export "cut_product_version" "$openshiftVersion"
+    # Product version. Currently used for OpenShift version.
+    if command -v oc &>/dev/null; then
+        local oc_version
+        oc_version="$(oc version -o json 2>/dev/null || true)"
+        local openshiftVersion
+        openshiftVersion=$(jq -r <<<"$oc_version" '.openshiftVersion // empty')
+        set_ci_shared_export "cut_product_version" "$openshiftVersion"
+    fi
 
     # K8s version.
     local kubectl_version
-    kubectl_version="$(kubectl version -o json 2>&1 || true)"
+    kubectl_version="$(kubectl version -o json 2>/dev/null || true)"
     local serverGitVersion
-    serverGitVersion=$(jq -r <<<"$kubectl_version" '.serverVersion.gitVersion')
+    serverGitVersion=$(jq -r <<<"$kubectl_version" '.serverVersion.gitVersion // empty')
     set_ci_shared_export "cut_k8s_version" "$serverGitVersion"
 
     # Node info: OS, Kernel & Container Runtime.
