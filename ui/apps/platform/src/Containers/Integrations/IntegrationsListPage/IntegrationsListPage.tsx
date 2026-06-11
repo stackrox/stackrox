@@ -33,6 +33,7 @@ import { getIntegrationLabel } from '../utils/integrationsList';
 import {
     getIsAPIToken,
     getIsCloudSource,
+    getIsGCR,
     getIsMachineAccessConfig,
     getIsScannerV4,
     getIsSignatureIntegration,
@@ -67,6 +68,7 @@ function IntegrationsListPage({ source, type }: IntegrationsListPageProps): Reac
     const isMachineAccessConfig = getIsMachineAccessConfig(source, type);
     const isSignatureIntegration = getIsSignatureIntegration(source);
     const isScannerV4 = getIsScannerV4(source, type);
+    const isGCR = getIsGCR(source, type);
     const isCloudSource = getIsCloudSource(source);
 
     // There is currently nothing relevant in Tech Preview.
@@ -152,6 +154,7 @@ function IntegrationsListPage({ source, type }: IntegrationsListPageProps): Reac
                     onDeleteIntegrations={onDeleteIntegrations}
                     onTriggerBackup={onTriggerBackup}
                     isReadOnly={isScannerV4}
+                    isCreationDisabled={isGCR}
                     source={source}
                     type={type}
                 />

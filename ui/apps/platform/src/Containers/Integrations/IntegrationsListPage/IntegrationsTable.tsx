@@ -34,6 +34,7 @@ type IntegrationsTableProps = {
     onDeleteIntegrations: (integration) => void;
     onTriggerBackup: (integrationId) => void;
     isReadOnly?: boolean;
+    isCreationDisabled?: boolean;
     source: IntegrationSource;
     type: IntegrationType;
 };
@@ -44,6 +45,7 @@ function IntegrationsTable({
     onDeleteIntegrations,
     onTriggerBackup,
     isReadOnly,
+    isCreationDisabled,
     source,
     type,
 }: IntegrationsTableProps): ReactElement {
@@ -107,7 +109,7 @@ function IntegrationsTable({
                                         </Button>
                                     </FlexItem>
                                 )}
-                            {hasWritePermission && !isReadOnly && (
+                            {hasWritePermission && !isReadOnly && !isCreationDisabled && (
                                 <FlexItem>
                                     <Button
                                         variant="primary"
