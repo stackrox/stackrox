@@ -94,6 +94,7 @@ git rev-parse --verify "${BASE_REF}^{commit}" >/dev/null 2>&1 \
 git rev-parse --verify "${HEAD_REF}^{commit}" >/dev/null 2>&1 \
     || die "Invalid head ref: $HEAD_REF"
 
+export PATH="$(go env GOPATH)/bin:$PATH"
 if ! command -v benchstat &>/dev/null; then
     info "Installing benchstat..."
     go install golang.org/x/perf/cmd/benchstat@latest
