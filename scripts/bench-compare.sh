@@ -260,8 +260,11 @@ run_benchmarks() {
             -timeout "$TIMEOUT" \
             -count "$BENCHCOUNT" \
             "${valid_pkgs[@]}" \
-            2>&1 | tee "$output_file"
+            2>&1 | tee "${output_file}.raw"
     ) || warn "[$label] Some benchmarks failed. Results may be partial."
+
+    # Filter to benchstat-parseable lines only (Benchmark lines + header lines)
+    grep -E '^(Benchmark|goos:|goarch:|pkg:|cpu:|PASS|ok )' "${output_file}.raw" > "$output_file" || true
 }
 
 # ── Run benchmarks on base ref ───────────────────────────────────
