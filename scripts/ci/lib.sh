@@ -28,7 +28,18 @@ ci_export() {
     local env_name="$1"
     local env_value="$2"
 
-    if command -v cci-export >/dev/null; then
+    if is_GITHUB_ACTIONS; then
+        export "${env_name}"="${env_value}"
+        if [[ -z "${GITHUB_ENV:-}" ]]; then
+            die "GITHUB_ENV is unset in the environment even though GITHUB_ACTION is set"
+        fi
+        if [[ "$env_value" == *$'\n'* ]]; then
+            local delimiter="EOF_${env_name}_$$"
+            printf '%s<<%s\n%s\n%s\n' "$env_name" "$delimiter" "$env_value" "$delimiter" >> "$GITHUB_ENV"
+        else
+            echo "${env_name}=${env_value}" >> "$GITHUB_ENV"
+        fi
+    elif command -v cci-export >/dev/null; then
         cci-export "$env_name" "$env_value"
     else
         export "$env_name"="$env_value"
