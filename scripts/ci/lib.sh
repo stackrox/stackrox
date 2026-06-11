@@ -637,14 +637,15 @@ _image_prefetcher_prebuilt_start() {
 }
 
 # Override imagePullPolicy for quay.io images to prefer prefetched images.
-# On providers with kubelet credential plugin integration (GKE), use Never
-# to enforce that the prefetch list stays complete — any missing image fails
-# loudly. On providers without credential plugin integration (OCP, EKS, AKS),
-# use IfNotPresent instead, because Kubernetes 1.35+ enforces credential
-# provenance checks with Never policy: the kubelet rejects pre-pulled images
-# unless the pod's credentials match a recorded pull (KEP-2535). The prefetcher
-# pulls images using its own credentials, so the test pod's credentials don't
-# match, causing ErrImageNeverPull even though the image is on the node.
+# Unfortunately https://github.com/kubernetes/kubernetes/issues/138175 broke
+# this for a handful of images that are also pulled from another registry
+# (but have the same content digest).
+# On GKE, we worked this around with kubelet credential plugin integration in the image
+# prefetcher, so in this case we can use `Never` to enforce that the prefetch list stays
+# complete — any image missing from prefetch list fails loudly.
+# On providers (OCP, EKS, AKS) that do not have credential plugin integration (yet),
+# use IfNotPresent instead.
+# TODO(ROX-35031): set this unconditionally to Never when a proper fix is available in all supported OCP versions
 _set_quay_pull_policy() {
     local policy="Never"
     if [[ "${KUBERNETES_PROVIDER}" != "gke" ]]; then
