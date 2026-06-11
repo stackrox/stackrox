@@ -1,5 +1,5 @@
 name: "Add VMs to Cluster"
-run-name: "Add VMs to ${{ inputs.cluster-name }}"
+run-name: "Add ${{ inputs.num-vms }} ${{ inputs.vm-os }} VMs to ${{ inputs.cluster-name }}"
 
 on:
   workflow_dispatch:
