@@ -67,9 +67,7 @@ func New(url, filePath string, interval time.Duration, opts ...Option) *Download
 		interval = minInterval
 	}
 	retryClient := retryablehttp.NewClient()
-	retryClient.RetryMax = 3
-	retryClient.RetryWaitMin = 500 * time.Millisecond
-	retryClient.RetryWaitMax = 2 * time.Second
+	retryClient.RetryWaitMin = 10 * time.Second
 	retryClient.Logger = pkgRetryableHTTP.NewDebugLogger(log)
 	retryClient.HTTPClient.Transport = proxy.RoundTripper()
 

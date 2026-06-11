@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -63,19 +64,20 @@ func seedRedHatDefaultSignatureIntegration(siStore store.SignatureIntegrationSto
 }
 
 func startKeyBundleUpdater() {
-	url := env.RedHatSigningKeyBundleURL.Setting()
-	if url == "" {
+	rawURL := env.RedHatSigningKeyBundleURL.Setting()
+	if rawURL == "" {
 		log.Info("ROX_REDHAT_SIGNING_KEY_BUNDLE_URL not set, key bundle updater will not start")
 		return
 	}
+	bundleURL := urlfmt.FormatURL(rawURL, urlfmt.HTTPS, urlfmt.HonorInputSlash)
 
 	interval := env.RedHatSigningKeyUpdateInterval.DurationSetting()
 
-	u := filedownloader.New(url, redHatKeyBundlePath, interval,
+	u := filedownloader.New(bundleURL, redHatKeyBundlePath, interval,
 		filedownloader.WithOnComplete(func(err error, duration time.Duration) {
 			updaterDownloadDuration.Observe(duration.Seconds())
 			if err != nil {
-				log.Warnf("Failed to download Red Hat signing key bundle from %q: %v", url, err)
+				log.Warnf("Failed to download Red Hat signing key bundle from %q: %v", bundleURL, err)
 				updaterDownloadsTotal.WithLabelValues("error").Inc()
 			} else {
 				updaterDownloadsTotal.WithLabelValues("success").Inc()
