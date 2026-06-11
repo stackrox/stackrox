@@ -3,6 +3,7 @@ package sensor
 import (
 	"context"
 	"crypto/x509"
+	"fmt"
 	"net/http"
 	"strconv"
 	"sync/atomic"
@@ -311,17 +312,25 @@ func (s *Sensor) Start() {
 	log.Info("All components have started")
 
 	if features.SensorInternalPubSub.Enabled() {
-		if err := s.pubSubDispatcher.RegisterConsumer(
+		if err := s.pubSubDispatcher.RegisterConsumerToLane(
 			pubsub.CoreSensorConsumer,
 			pubsub.SoftRestartTopic,
+			pubsub.SoftRestartLane,
 			func(e pubsub.Event) error {
+				if v, ok := e.(interface{ IsExpired() bool }); ok && v.IsExpired() {
+					return nil
+				}
 				s.centralCommunicationLock.Lock()
 				defer s.centralCommunicationLock.Unlock()
 				if s.centralCommunication == nil {
 					log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
 					return nil
 				}
-				log.Infof("Connection restart requested")
+				if str, ok := e.(fmt.Stringer); ok {
+					log.Infof("Connection restart requested: %s", str)
+				} else {
+					log.Infof("Connection restart requested")
+				}
 				s.centralCommunication.Stop()
 				return nil
 			},

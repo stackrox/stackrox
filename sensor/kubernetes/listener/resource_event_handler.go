@@ -522,11 +522,9 @@ func (k *listenerImpl) handleAllEvents() {
 		k.outputQueue.Send(syncedEvent)
 	}
 	if features.SensorInternalPubSub.Enabled() {
-		if err := k.pubSubDispatcher.Publish(&ResourceSyncFinishedEvent{
+		utils.Should(k.pubSubDispatcher.Publish(&ResourceSyncFinishedEvent{
 			Text: "Finished the k8s resource sync", Validity: k.context,
-		}); err != nil {
-			log.Errorf("unable to publish ResourceSyncFinishedEvent: %v", err)
-		}
+		}))
 	} else {
 		utils.Should(k.pubSub.Publish(&internalmessage.SensorInternalMessage{
 			Kind:     internalmessage.SensorMessageResourceSyncFinished,
