@@ -27,6 +27,7 @@ func Test_addrValid(t *testing.T) {
 		"1::",
 		"1::/path",
 		"2001:0db8:0000:0000:0000:ff00:0042:8329",
+		"2001:0db8:0000:0000:0000:ff00:0042:8329:61273",
 	}
 
 	for _, addr := range badAddrs {
