@@ -262,7 +262,8 @@ jobs:
         scripts/bench-compare.sh \
           "origin/${{ github.base_ref }}" \
           HEAD \
-          --count 6 \
+          --count 10 \
+          --benchtime 3x \
           --keep \
           --output bench-results
 
