@@ -94,6 +94,7 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				require.NoError(t, err, "rescan should produce a newer scan_time than %v", beforeTime.AsTime())
 			})
 			if rescan == nil {
+				t.Log("skipping remaining subtests: rescan did not produce a newer scan_time")
 				return
 			}
 

@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -663,39 +662,19 @@ func (s *VMScanningSuite) mustGetVM(id string) *v2.VirtualMachine {
 	return resp
 }
 
-// waitForScannerV4Initialized blocks until the Scanner V4 matcher has finished
-// loading its vulnerability database. It polls Central's GetVulnDefinitionsInfo API
-// (which internally calls GetMatcherMetadata on the matcher) until a non-zero
-// last-updated timestamp is returned, meaning the vuln store is ready.
+// waitForScannerV4Initialized blocks until the Scanner V4 matcher deployment
+// is K8s-ready. When SCANNER_V4_MATCHER_READINESS=vulnerability (the default
+// in CI via lib.sh), the K8s readiness probe already gates on the vuln DB
+// being loaded, so no additional API polling is needed.
 //
 // Called once (guarded by scannerV4Checked) right before the first roxagent invocation
 // so that the matcher initialization happens in parallel with VM boot and SSH readiness.
 func (s *VMScanningSuite) waitForScannerV4Initialized() error {
 	s.logf("Scanner V4: waiting for matcher deployment to be K8s-ready")
 	s.waitUntilK8sDeploymentReady(s.ctx, namespaces.StackRox, "scanner-v4-matcher")
-
-	s.logf("Scanner V4: polling Central for matcher vuln DB initialization")
-	healthClient := v1.NewIntegrationHealthServiceClient(s.conn)
-
-	ctx, cancel := context.WithTimeout(s.ctx, 20*time.Minute)
-	defer cancel()
-
-	return wait.PollUntilContextCancel(ctx, 15*time.Second, true, func(ctx context.Context) (bool, error) {
-		info, err := healthClient.GetVulnDefinitionsInfo(ctx, &v1.VulnDefinitionsInfoRequest{
-			Component: v1.VulnDefinitionsInfoRequest_SCANNER_V4,
-		})
-		if err != nil {
-			s.logf("Scanner V4: matcher not yet initialized: %v", err)
-			return false, nil
-		}
-		ts := info.GetLastUpdatedTimestamp().AsTime()
-		if ts.IsZero() {
-			s.logf("Scanner V4: vuln definitions timestamp is zero, still loading")
-			return false, nil
-		}
-		s.logf("Scanner V4: matcher initialized (vuln defs last updated: %v)", ts)
-		return true, nil
-	})
+	s.logf("Scanner V4: matcher deployment is ready")
+	s.scannerV4Checked = true
+	return nil
 }
 
 // ensureCanonicalScan runs a single guest-side roxagent invocation.
@@ -709,7 +688,6 @@ func (s *VMScanningSuite) ensureCanonicalScan(ctx context.Context, vm *VMHandle)
 		if err := s.waitForScannerV4Initialized(); err != nil {
 			return fmt.Errorf("Scanner V4 matcher did not initialize within timeout: %w", err)
 		}
-		s.scannerV4Checked = true
 	}
 	virt := s.virtctlForVM(*vm)
 	return vmhelpers.RunRoxagentOnce(ctx, virt, vm.Namespace, vm.Name, s.cfg.Repo2CPEURL)

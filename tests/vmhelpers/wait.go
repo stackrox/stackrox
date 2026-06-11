@@ -51,6 +51,14 @@ var ErrAuthenticationExpired = errors.New("authentication expired — kubeconfig
 // credential. It checks for wrapped ErrAuthenticationExpired sentinels (so
 // callers that already tagged an error can re-check without false negatives),
 // gRPC Unauthenticated status codes, and Kubernetes API Unauthorized errors.
+//
+// We use string matching in addition to structured checks because errors in
+// the e2e test context arrive from heterogeneous sources — gRPC (Central API),
+// Kubernetes API server, and virtctl/SSH subprocesses — each with different
+// error types. apierrors.IsUnauthorized only covers k8s API errors; gRPC
+// Unauthenticated is handled above; the substring fallback catches plain-text
+// errors from virtctl, HTTP 401 responses, and wrapped k8s errors that lost
+// their type information.
 func IsAuthenticationExpired(err error) bool {
 	if err == nil {
 		return false

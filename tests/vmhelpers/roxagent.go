@@ -52,10 +52,6 @@ func CopyRoxagentBinary(ctx context.Context, virt Virtctl, namespace, vm, hostBi
 		if err != nil {
 			return fmt.Errorf("install roxagent binary on guest: %w: %s", err, strings.TrimSpace(stderr))
 		}
-		_, _, _ = runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
-			description:            "cleanup staged roxagent binary",
-			transportRetryAttempts: 1,
-		}, "rm", "-f", roxagentStagingPath)
 		return nil
 	})
 }

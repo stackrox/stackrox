@@ -100,8 +100,11 @@ func WaitForVMScanTimestamp(ctx context.Context, client v2.VirtualMachineService
 func WaitForScanTimestampAfter(ctx context.Context, client v2.VirtualMachineServiceClient, opts WaitOptions, id string, after time.Time) (*v2.VirtualMachine, error) {
 	return waitForVMCondition(ctx, client, opts, id, fmt.Sprintf("scan timestamp after %v (id=%q)", after.Format(time.RFC3339), id), func(vm *v2.VirtualMachine) (bool, string) {
 		sc := vm.GetScan()
-		if sc == nil || sc.GetScanTime() == nil {
-			return false, "scan_time not set yet"
+		if sc == nil {
+			return false, "scan is nil"
+		}
+		if sc.GetScanTime() == nil {
+			return false, "scan_time is nil"
 		}
 		ts := sc.GetScanTime().AsTime()
 		if !ts.After(after) {
@@ -146,8 +149,8 @@ func WaitForScanReady(ctx context.Context, client v2.VirtualMachineServiceClient
 		// in a later update. Report it but never block on it.
 		if os := scan.GetOperatingSystem(); os != "" {
 			ready = append(ready, fmt.Sprintf("os=%q", os))
-		} else if len(pending) == 0 {
-			ready = append(ready, "os=<not reported>")
+		} else {
+			pending = append(pending, "os")
 		}
 
 		detail := fmt.Sprintf("ready:[%s] waiting:[%s]", strings.Join(ready, ","), strings.Join(pending, ","))
@@ -160,7 +163,7 @@ const listVMPageSize = int32(1000)
 
 // rawListQueryNamespaceAndName builds a Central raw search query matching namespace and VM name.
 func rawListQueryNamespaceAndName(namespace, name string) string {
-	return fmt.Sprintf("%s:%s+%s:%s", search.Namespace, namespace, search.VirtualMachineName, name)
+	return fmt.Sprintf("%s:%q+%s:%q", search.Namespace, namespace, search.VirtualMachineName, name)
 }
 
 // ListVMByNamespaceName returns the first VirtualMachine in Central whose namespace and name

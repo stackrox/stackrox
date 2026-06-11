@@ -54,9 +54,14 @@ func TestPollUntil_TimesOutWithDetail(t *testing.T) {
 
 func TestPollUntil_RejectsInvalidOptions(t *testing.T) {
 	ctx := context.Background()
+
 	err := pollUntil(ctx, WaitOptions{Timeout: -1, PollInterval: 1 * time.Millisecond}, "bad", nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "Timeout must be positive")
+
+	err = pollUntil(ctx, WaitOptions{Timeout: 1 * time.Second, PollInterval: -1}, "bad", nil)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "PollInterval must be positive")
 }
 
 func TestIsAuthenticationExpired(t *testing.T) {
