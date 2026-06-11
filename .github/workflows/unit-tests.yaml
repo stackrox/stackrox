@@ -73,9 +73,12 @@ jobs:
     - name: Go Unit Tests (no -coverprofile — testing cache hypothesis)
       run: |
         set -o pipefail
+        # Same as make go-unit-tests but without -coverprofile
         ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=${{ matrix.gotags }},test \
           scripts/go-test.sh -timeout 25m -race -cover -v \
-          $(git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list | grep -v '^github.com/stackrox/rox/tests$' | grep -Ev 'integration') \
+          $(git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list \
+            | grep -v '^github.com/stackrox/rox/tests$' \
+            | grep -Ev 'stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests') \
           2>&1 | tee /tmp/go-test-output.txt
 
     - name: Cache and CPU diagnostics
