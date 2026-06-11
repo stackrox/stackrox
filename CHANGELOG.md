@@ -20,7 +20,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 
-- ROX-34804: The machine access configuration for `config-controller` now validates the audience of the service account token. All audience values are allowed if other role bindings have been added to the machine access configuration.
+- ROX-34804: The machine access configuration for `config-controller` now validates the audience (`aud` claim) of the service account token. The expected audience is `central.stackrox.io`. When users have added their own role bindings to this machine access configuration, the audience check is not enforced by default to keep backwards compatibility. It is recommended to set the expected audience to `central.stackrox.io` after ensuring that all exchange tokens are being created with this audience claim.
 
 ## [4.11.0]
 

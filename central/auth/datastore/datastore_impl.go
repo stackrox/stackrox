@@ -290,9 +290,10 @@ func (d *datastoreImpl) configureConfigControllerAccess(kubeSAConfig *storage.Au
 		})
 	}
 
-	// Only set the audience on upgraded configs when no other mappings exist.
-	// If users added their own mappings, their tokens won't carry the custom
-	// audience, so enforcing it would break their setup.
+	// Above we ensure that the config-controller mapping is always present.
+	// But we only set the audience on upgraded configs when the config-controller
+	// mapping is the only mapping. If users added their own mappings, their tokens
+	// may not carry the custom audience, so enforcing it could break their setup.
 	if kubeSAConfig.GetAudience() == "" && len(kubeSAConfig.GetMappings()) == 1 {
 		kubeSAConfig.Audience = configControllerM2MAudience
 	}
