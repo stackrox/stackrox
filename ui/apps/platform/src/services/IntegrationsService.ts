@@ -65,13 +65,9 @@ export type IntegrationOptions = {
 /*
  * Fetch list of registered integrations based on source.
  */
-export function fetchIntegration(
-    source: IntegrationSource
-): Promise<{ response: Record<string, unknown> }> {
+export function fetchIntegration(source: IntegrationSource): Promise<Record<string, unknown>> {
     const path = getPath(source);
-    return axios.get(path).then((response) => ({
-        response: response.data,
-    }));
+    return axios.get<Record<string, unknown>>(path).then((response) => response.data);
 }
 
 /*

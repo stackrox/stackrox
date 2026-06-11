@@ -72,7 +72,7 @@ type DeploymentWithProcessMatcher interface {
 
 // A KubeEventMatcher matches kubernetes event against a policy.
 type KubeEventMatcher interface {
-	MatchKubeEvent(cache *CacheReceptacle, kubeEvent *storage.KubernetesEvent, kubeResource interface{}) (Violations, error)
+	MatchKubeEvent(cache *CacheReceptacle, kubeEvent *storage.KubernetesEvent, enhancedDeployment EnhancedDeployment) (Violations, error)
 }
 
 // An AuditLogEventMatcher matches audit log event against a policy.

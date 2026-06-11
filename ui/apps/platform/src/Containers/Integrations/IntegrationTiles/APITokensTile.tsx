@@ -14,7 +14,7 @@ const { Logo, label, type } = descriptor;
 
 function APITokensTile(): ReactElement {
     const { data } = useRestQuery(fetchAPITokens);
-    const integrations = data?.response?.tokens ?? [];
+    const integrations = data?.tokens ?? [];
 
     return (
         <IntegrationTile

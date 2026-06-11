@@ -50,11 +50,7 @@ function SecureClusterPage(): ReactElement {
                     mountOnEnter
                     unmountOnExit
                 >
-                    <Tab
-                        eventKey={operatorTab}
-                        title={<TabTitleText>{operatorTab}</TabTitleText>}
-                        tabContentId={operatorTab}
-                    >
+                    <Tab eventKey={operatorTab} title={<TabTitleText>{operatorTab}</TabTitleText>}>
                         <PageSection>
                             <SecureClusterUsingOperator headingLevel={headingLevel} />
                         </PageSection>
@@ -62,7 +58,6 @@ function SecureClusterPage(): ReactElement {
                     <Tab
                         eventKey={helmChartTab}
                         title={<TabTitleText>Helm chart (deprecated)</TabTitleText>}
-                        tabContentId={helmChartTab}
                     >
                         <PageSection>
                             <SecureClusterUsingHelmChart headingLevel={headingLevel} />
