@@ -3,8 +3,10 @@ package m226tom227
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
@@ -39,6 +41,9 @@ func updatePolicies(db postgres.DB) error {
 		var serialized []byte
 		err := db.QueryRow(ctx, "SELECT serialized FROM policies WHERE id = $1", id).Scan(&serialized)
 		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, false, nil
+			}
 			return nil, false, err
 		}
 		policy := &storage.Policy{}
