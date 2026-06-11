@@ -45,7 +45,7 @@ func DeleteOldResultsFromMissingScans(ctx context.Context, results *ScanConfigWa
 	if scans.Cardinality() == 0 {
 		return nil
 	}
-	log.Infof("Deleting old check results from %d scans that did not report results for scan config %s (missing: %v)",
+	log.Warnf("Deleting old check results from %d scans that did not report results for scan config %s (missing: %v)",
 		scans.Cardinality(), results.ScanConfig.GetScanConfigName(), scans.AsSlice())
 	errList := errorhelpers.NewErrorList("delete old CheckResults from missing scans")
 	for scanWatcherID := range scans {
@@ -63,7 +63,7 @@ func DeleteOldResultsFromMissingScans(ctx context.Context, results *ScanConfigWa
 			errList.AddError(errors.Errorf("unable to find Scan with ID %q", parts[1]))
 			continue
 		}
-		log.Infof("Deleting all check results for missing scan %s (scanRefId: %s, cluster: %s)",
+		log.Warnf("Deleting all check results for missing scan %s (scanRefId: %s, cluster: %s)",
 			scan.GetScanName(), scan.GetScanRefId(), parts[0])
 		if err := resultsDataStore.DeleteOldResults(ctx, scan.GetLastStartedTime(), scan.GetScanRefId(), true); err != nil {
 			errList.AddError(err)
