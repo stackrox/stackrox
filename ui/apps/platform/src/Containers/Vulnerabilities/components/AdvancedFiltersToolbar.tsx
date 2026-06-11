@@ -66,13 +66,9 @@ function AdvancedFiltersToolbar({
 
     // The Between date condition is opted in here, at the vulnerability layer, so that
     // non-vulnerability surfaces sharing the same attribute constants are unaffected.
-    const config = useMemo(
-        () =>
-            isDateRangeFilterEnabled
-                ? enableDateRangeConditions(searchFilterConfig)
-                : searchFilterConfig,
-        [isDateRangeFilterEnabled, searchFilterConfig]
-    );
+    const config = isDateRangeFilterEnabled
+        ? enableDateRangeConditions(searchFilterConfig)
+        : searchFilterConfig;
 
     const attributesSeparateFromConfig: CompoundSearchFilterAttribute[] = [attributeForSnoozed];
     if (includeCveSeverityFilters) {
