@@ -88,24 +88,26 @@ describe('utils', () => {
             );
         });
 
-        it('throws when either input is not a valid date', () => {
+        it('returns null when either input is not a valid date', () => {
             const validMs = new Date(2025, 0, 1).getTime();
-            expect(() => serializeAbsoluteDateRange(NaN, validMs)).toThrow();
-            expect(() => serializeAbsoluteDateRange(validMs, NaN)).toThrow();
+            expect(serializeAbsoluteDateRange(NaN, validMs)).toBeNull();
+            expect(serializeAbsoluteDateRange(validMs, NaN)).toBeNull();
         });
 
-        it('throws when start date is after end date', () => {
+        it('returns null when start date is after end date', () => {
             const startMs = new Date(2025, 2, 31).getTime();
             const endMs = new Date(2025, 0, 1).getTime();
-            expect(() => serializeAbsoluteDateRange(startMs, endMs)).toThrow();
+            expect(serializeAbsoluteDateRange(startMs, endMs)).toBeNull();
         });
 
         it('round-trips through convertFromInternalToExternalDatePicker', () => {
             const startMs = new Date(2025, 0, 1).getTime();
             const endMs = new Date(2025, 2, 31).getTime();
-            expect(
-                convertFromInternalToExternalDatePicker(serializeAbsoluteDateRange(startMs, endMs))
-            ).toEqual('Between Jan 01, 2025 and Mar 31, 2025');
+            const serialized = serializeAbsoluteDateRange(startMs, endMs);
+            expect(serialized).not.toBeNull();
+            expect(convertFromInternalToExternalDatePicker(serialized as string)).toEqual(
+                'Between Jan 01, 2025 and Mar 31, 2025'
+            );
         });
     });
 });

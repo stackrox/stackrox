@@ -49,12 +49,12 @@ const relativeDateOlderThanRegex = /^>(\d+)d$/;
  * (local time) so the range covers the full calendar days the user selected.
  * @param startMs - Epoch ms within the first day of the range
  * @param endMs - Epoch ms within the last day of the range
- * @returns Value like "tr/1735689600000-1743465599999"
- * @throws If either input is not a valid date or the start date falls after the end date
+ * @returns Value like "tr/1735689600000-1743465599999", or null if either input is not
+ * a valid date or the start date falls after the end date
  */
-export function serializeAbsoluteDateRange(startMs: number, endMs: number): string {
+export function serializeAbsoluteDateRange(startMs: number, endMs: number): string | null {
     if (Number.isNaN(startMs) || Number.isNaN(endMs)) {
-        throw new Error('Date range start and end must be valid dates');
+        return null;
     }
 
     const start = new Date(startMs);
@@ -63,7 +63,7 @@ export function serializeAbsoluteDateRange(startMs: number, endMs: number): stri
     end.setHours(23, 59, 59, 999);
 
     if (start.getTime() > end.getTime()) {
-        throw new Error('Start date of a date range must not be after the end date');
+        return null;
     }
 
     return `tr/${start.getTime()}-${end.getTime()}`;
