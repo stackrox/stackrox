@@ -167,8 +167,6 @@ describe('Auth Sagas', () => {
         delete window.location;
         window.location = { assign: vi.fn() };
         const token = 'my-token';
-        const requestedLocation = '/my-location';
-        const storeAccessTokenMock = vi.fn();
         const callbackURL = 'http://localhost:8080/';
         const serverState = `provider-id:2ed17ca6-4b3c-4279-8317-f26f8ba01c52#${callbackURL}`;
 
@@ -180,13 +178,10 @@ describe('Auth Sagas', () => {
                     call(authServiceExchangeAuthToken, `#id_token=${token}`, 'oidc', serverState),
                     { token, clientState: callbackURL },
                 ],
-                [call(authServiceStoreAccessToken, token), dynamic(storeAccessTokenMock)],
-                [call(authServiceGetAndClearRequestedLocation), requestedLocation],
                 [call(authServiceLogout), null],
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(authServiceFetchAvailableProviderTypes), { response: [] }],
             ])
-            .put(push(requestedLocation))
             .dispatch(
                 createLocationChange(
                     '/auth/response/oidc',
@@ -222,6 +217,7 @@ describe('Auth Sagas', () => {
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(authServiceFetchAvailableProviderTypes), { response: [] }],
             ])
+            .put(push('/login'))
             .dispatch(
                 createLocationChange(
                     '/auth/response/oidc',
@@ -235,12 +231,11 @@ describe('Auth Sagas', () => {
             });
     });
 
-    it('should reject roxctl callback URL with javascript: protocol', () => {
+    it('should reject roxctl callback URL with non-http protocol', () => {
         delete window.location;
         window.location = { assign: vi.fn() };
         const token = 'my-token';
-        // eslint-disable-next-line no-script-url
-        const maliciousURL = 'javascript://localhost/%0aalert(1)';
+        const maliciousURL = 'ftp://localhost/exfiltrate';
         const serverState = `provider-id:2ed17ca6-4b3c-4279-8317-f26f8ba01c52#${maliciousURL}`;
 
         return expectSaga(saga)
@@ -256,6 +251,7 @@ describe('Auth Sagas', () => {
                 [call(fetchUserRolePermissions), { response: {} }],
                 [call(authServiceFetchAvailableProviderTypes), { response: [] }],
             ])
+            .put(push('/login'))
             .dispatch(
                 createLocationChange(
                     '/auth/response/oidc',
