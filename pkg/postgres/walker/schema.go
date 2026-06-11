@@ -146,6 +146,10 @@ type Schema struct {
 	// NoSerialized indicates this schema should not include a serialized bytea column.
 	// When true, all proto fields are stored as individual DB columns.
 	NoSerialized bool
+
+	// SubMessages maps setter paths (e.g., "Metadata") to Go type strings (e.g., "storage.TestNoSerialized_Metadata")
+	// for sub-messages that need initialization before scanning individual columns.
+	SubMessages map[string]string
 }
 
 // TableFieldsGroup is the group of table fields. A slice of this struct can be used where the table order is essential,

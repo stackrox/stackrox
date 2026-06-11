@@ -269,6 +269,8 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
         pgutils.EmptyOrMap({{$field.Getter "obj"}}),
     {{- else if and (eq $field.DataType "string") ($field.Options.Reference) ($field.Options.Reference.Nullable) }}
         pgutils.NilOrString({{$field.Getter "obj"}}),
+    {{- else if isMessageBytes $field }}
+        pgutils.MustMarshalRepeatedMessages({{$field.Getter "obj"}}),
     {{- else }}
         {{$field.Getter "obj"}},{{end}}
 {{- end}}
@@ -394,7 +396,12 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
 // region No-serialized scan functions
 
 func scanRow(row pgx.Row) (*storeType, error) {
-    var obj storeType
+    obj := &storeType{}
+
+    // Initialize sub-messages before scanning
+    {{- range $init := subMessageInits .Schema }}
+    {{$init.SetterPath}} = &{{$init.GoType}}{}
+    {{- end }}
 
     // Declare intermediate scan variables for types needing conversion
     {{- range $field := .Schema.DBColumnFields }}
@@ -441,10 +448,18 @@ func scanRow(row pgx.Row) (*storeType, error) {
     if col_{{$field.ColumnName}} != nil {
         {{$field.Setter "obj"}} = *col_{{$field.ColumnName}}
     }
+    {{- else if isMessageBytes $field }}
+    if col_{{$field.ColumnName}} != nil {
+        unmarshaled, unmarshalErr := pgutils.UnmarshalRepeatedMessages(col_{{$field.ColumnName}}, func() {{messageBytesElemType $field}} { return new({{messageBytesElemType $field | trimPrefix "*"}}) })
+        if unmarshalErr != nil {
+            return nil, unmarshalErr
+        }
+        {{$field.Setter "obj"}} = unmarshaled
+    }
     {{- end }}
     {{- end }}
 
-    return &obj, nil
+    return obj, nil
 }
 
 func scanRows(rows pgx.Rows) ([]*storeType, error) {

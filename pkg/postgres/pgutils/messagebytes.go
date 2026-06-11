@@ -27,6 +27,15 @@ func MarshalRepeatedMessages[T proto.Message](msgs []T) ([]byte, error) {
 	return buf, nil
 }
 
+// MustMarshalRepeatedMessages is like MarshalRepeatedMessages but panics on error.
+func MustMarshalRepeatedMessages[T proto.Message](msgs []T) []byte {
+	data, err := MarshalRepeatedMessages(msgs)
+	if err != nil {
+		panic(err)
+	}
+	return data
+}
+
 // UnmarshalRepeatedMessages deserializes a bytea produced by MarshalRepeatedMessages
 // back into a slice of proto messages.
 func UnmarshalRepeatedMessages[T proto.Message](data []byte, newMsg func() T) ([]T, error) {
