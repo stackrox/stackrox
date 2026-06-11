@@ -63,7 +63,7 @@ func init() {
 		watcherFileErrorTotal,
 		watcherKeyCount,
 		watcherLastSuccessTimestamp,
-		updaterDownloadTotal,
+		updaterDownloadsTotal,
 		updaterLastSuccessTimestamp,
 		updaterDownloadDuration,
 	)

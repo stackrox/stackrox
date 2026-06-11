@@ -9,9 +9,11 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgRetryableHTTP "github.com/stackrox/rox/pkg/retryablehttp"
 )
 
 const (
@@ -64,13 +66,18 @@ func New(url, filePath string, interval time.Duration, opts ...Option) *Download
 		log.Warnf("Download interval %v is below minimum %v, clamping", interval, minInterval)
 		interval = minInterval
 	}
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = 3
+	retryClient.RetryWaitMin = 500 * time.Millisecond
+	retryClient.RetryWaitMax = 2 * time.Second
+	retryClient.Logger = pkgRetryableHTTP.NewDebugLogger(log)
+	retryClient.HTTPClient.Transport = proxy.RoundTripper()
+
 	d := &Downloader{
-		url:      url,
-		filePath: filePath,
-		interval: interval,
-		client: &http.Client{
-			Transport: proxy.RoundTripper(),
-		},
+		url:            url,
+		filePath:       filePath,
+		interval:       interval,
+		client:         retryClient.StandardClient(),
 		maxSize:        defaultMaxSize,
 		requestTimeout: defaultRequestTimeout,
 		stopSig:        concurrency.NewSignal(),
@@ -125,6 +132,9 @@ func (d *Downloader) run() {
 }
 
 func (d *Downloader) download(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, d.requestTimeout)
+	defer cancel()
+
 	start := time.Now()
 	err := d.doDownload(ctx)
 	duration := time.Since(start)
@@ -138,9 +148,6 @@ func (d *Downloader) download(ctx context.Context) {
 // doDownload performs a single download attempt with atomic file write.
 func (d *Downloader) doDownload(ctx context.Context) error {
 	log.Debugf("Downloading %q", d.url)
-
-	ctx, cancel := context.WithTimeout(ctx, d.requestTimeout)
-	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, d.url, nil)
 	if err != nil {

@@ -76,9 +76,9 @@ func startKeyBundleUpdater() {
 			updaterDownloadDuration.Observe(duration.Seconds())
 			if err != nil {
 				log.Warnf("Failed to download Red Hat signing key bundle from %q: %v", url, err)
-				updaterDownloadTotal.WithLabelValues("error").Inc()
+				updaterDownloadsTotal.WithLabelValues("error").Inc()
 			} else {
-				updaterDownloadTotal.WithLabelValues("success").Inc()
+				updaterDownloadsTotal.WithLabelValues("success").Inc()
 				updaterLastSuccessTimestamp.SetToCurrentTime()
 			}
 		}),
