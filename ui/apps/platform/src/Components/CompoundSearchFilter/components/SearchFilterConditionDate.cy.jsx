@@ -9,11 +9,6 @@ const attribute = {
     inputType: 'date-picker',
 };
 
-const attributeWithBetween = {
-    ...attribute,
-    inputProps: { enableBetweenCondition: true },
-};
-
 const selectors = {
     conditionSelectToggle: 'button[aria-label="Condition selector toggle"]',
     conditionSelectItems: '[aria-label="Condition selector menu"] li',
@@ -25,16 +20,13 @@ const selectors = {
 
 const endBeforeStartErrorText = 'The end date must be on or after the start date';
 
-function setup({ isBetweenEnabled = false } = {}) {
+function setup() {
     const onSearch = cy.stub().as('onSearch');
 
     cy.mount(
         <Toolbar>
             <ToolbarContent>
-                <SearchFilterConditionDate
-                    attribute={isBetweenEnabled ? attributeWithBetween : attribute}
-                    onSearch={onSearch}
-                />
+                <SearchFilterConditionDate attribute={attribute} onSearch={onSearch} />
             </ToolbarContent>
         </Toolbar>
     );
@@ -50,172 +42,160 @@ function selectCondition(condition) {
 }
 
 describe(Cypress.spec.relative, () => {
-    describe('without enableBetweenCondition on the attribute', () => {
-        it('should not include Between in the condition selector', () => {
-            setup({ isBetweenEnabled: false });
+    it('should include Between in the condition selector after Before/On/After', () => {
+        setup();
 
-            cy.get(selectors.conditionSelectToggle).click();
+        cy.get(selectors.conditionSelectToggle).click();
 
-            cy.get(selectors.conditionSelectItems).should('have.length', 3);
-            cy.get(selectors.conditionSelectItems).eq(0).should('have.text', 'Before');
-            cy.get(selectors.conditionSelectItems).eq(1).should('have.text', 'On');
-            cy.get(selectors.conditionSelectItems).eq(2).should('have.text', 'After');
-        });
+        cy.get(selectors.conditionSelectItems).should('have.length', 4);
+        cy.get(selectors.conditionSelectItems).eq(0).should('have.text', 'Before');
+        cy.get(selectors.conditionSelectItems).eq(1).should('have.text', 'On');
+        cy.get(selectors.conditionSelectItems).eq(2).should('have.text', 'After');
+        cy.get(selectors.conditionSelectItems).eq(3).should('have.text', 'Between');
     });
 
-    describe('with enableBetweenCondition on the attribute', () => {
-        it('should include Between in the condition selector after Before/On/After', () => {
-            setup({ isBetweenEnabled: true });
+    it('should keep single-date apply behavior for the After condition', () => {
+        setup();
 
-            cy.get(selectors.conditionSelectToggle).click();
+        selectCondition('After');
 
-            cy.get(selectors.conditionSelectItems).should('have.length', 4);
-            cy.get(selectors.conditionSelectItems).eq(3).should('have.text', 'Between');
-        });
+        cy.get(selectors.singleDateInput).type('01/15/2034');
+        cy.get(selectors.applyButton).click();
 
-        it('should keep single-date apply behavior for the After condition', () => {
-            setup({ isBetweenEnabled: true });
+        cy.get('@onSearch').should('have.been.calledWithExactly', [
+            {
+                action: 'APPEND',
+                category: 'CVE Created Time',
+                value: '>01/15/2034',
+            },
+        ]);
+        cy.get(selectors.singleDateInput).should('have.value', '');
+    });
 
-            selectCondition('After');
+    it('should reveal start and end date inputs when Between is selected', () => {
+        setup();
 
-            cy.get(selectors.singleDateInput).type('01/15/2034');
-            cy.get(selectors.applyButton).click();
+        selectCondition('Between');
 
-            cy.get('@onSearch').should('have.been.calledWithExactly', [
-                {
-                    action: 'APPEND',
-                    category: 'CVE Created Time',
-                    value: '>01/15/2034',
-                },
-            ]);
-            cy.get(selectors.singleDateInput).should('have.value', '');
-        });
+        cy.get(selectors.singleDateInput).should('not.exist');
+        cy.get(selectors.startDateInput).should('exist');
+        cy.get(selectors.endDateInput).should('exist');
+    });
 
-        it('should reveal start and end date inputs when Between is selected', () => {
-            setup({ isBetweenEnabled: true });
+    it('should disable the end date input until the start date is valid', () => {
+        setup();
 
-            selectCondition('Between');
+        selectCondition('Between');
 
-            cy.get(selectors.singleDateInput).should('not.exist');
-            cy.get(selectors.startDateInput).should('exist');
-            cy.get(selectors.endDateInput).should('exist');
-        });
+        cy.get(selectors.endDateInput).should('be.disabled');
 
-        it('should disable the end date input until the start date is valid', () => {
-            setup({ isBetweenEnabled: true });
+        cy.get(selectors.startDateInput).type('01/15/2034');
 
-            selectCondition('Between');
+        cy.get(selectors.endDateInput).should('be.enabled');
+        // End date defaults to the day after the start date.
+        cy.get(selectors.endDateInput).should('have.value', '01/16/2034');
+    });
 
-            cy.get(selectors.endDateInput).should('be.disabled');
+    it('should keep a chosen end date when the start date changes to an earlier date', () => {
+        setup();
 
-            cy.get(selectors.startDateInput).type('01/15/2034');
+        selectCondition('Between');
 
-            cy.get(selectors.endDateInput).should('be.enabled');
-            // End date defaults to the day after the start date.
-            cy.get(selectors.endDateInput).should('have.value', '01/16/2034');
-        });
+        cy.get(selectors.startDateInput).type('01/15/2034');
+        cy.get(selectors.endDateInput).clear();
+        cy.get(selectors.endDateInput).type('03/20/2034');
 
-        it('should keep a chosen end date when the start date changes to an earlier date', () => {
-            setup({ isBetweenEnabled: true });
+        cy.get(selectors.startDateInput).clear();
+        cy.get(selectors.startDateInput).type('01/10/2034');
 
-            selectCondition('Between');
+        cy.get(selectors.endDateInput).should('have.value', '03/20/2034');
+    });
 
-            cy.get(selectors.startDateInput).type('01/15/2034');
-            cy.get(selectors.endDateInput).clear();
-            cy.get(selectors.endDateInput).type('03/20/2034');
+    it('should re-default the end date when the start date moves past it', () => {
+        setup();
 
-            cy.get(selectors.startDateInput).clear();
-            cy.get(selectors.startDateInput).type('01/10/2034');
+        selectCondition('Between');
 
-            cy.get(selectors.endDateInput).should('have.value', '03/20/2034');
-        });
+        cy.get(selectors.startDateInput).type('01/15/2034');
+        // End date defaults to 01/16/2034, which is before the new start date below.
+        cy.get(selectors.startDateInput).clear();
+        cy.get(selectors.startDateInput).type('02/01/2034');
 
-        it('should re-default the end date when the start date moves past it', () => {
-            setup({ isBetweenEnabled: true });
+        cy.get(selectors.endDateInput).should('have.value', '02/02/2034');
+    });
 
-            selectCondition('Between');
+    it('should apply a valid range as a tr/<startMs>-<endMs> value and clear the inputs', () => {
+        setup();
 
-            cy.get(selectors.startDateInput).type('01/15/2034');
-            // End date defaults to 01/16/2034, which is before the new start date below.
-            cy.get(selectors.startDateInput).clear();
-            cy.get(selectors.startDateInput).type('02/01/2034');
+        selectCondition('Between');
 
-            cy.get(selectors.endDateInput).should('have.value', '02/02/2034');
-        });
+        cy.get(selectors.startDateInput).type('01/15/2034');
+        cy.get(selectors.endDateInput).clear();
+        cy.get(selectors.endDateInput).type('01/20/2034');
 
-        it('should apply a valid range as a tr/<startMs>-<endMs> value and clear the inputs', () => {
-            setup({ isBetweenEnabled: true });
+        cy.get(selectors.applyButton).click();
 
-            selectCondition('Between');
+        const startMs = new Date(2034, 0, 15, 0, 0, 0, 0).getTime();
+        const endMs = new Date(2034, 0, 20, 23, 59, 59, 999).getTime();
+        cy.get('@onSearch').should('have.been.calledWithExactly', [
+            {
+                action: 'APPEND',
+                category: 'CVE Created Time',
+                value: `tr/${startMs}-${endMs}`,
+            },
+        ]);
+        cy.get(selectors.startDateInput).should('have.value', '');
+        cy.get(selectors.endDateInput).should('have.value', '');
+    });
 
-            cy.get(selectors.startDateInput).type('01/15/2034');
-            cy.get(selectors.endDateInput).clear();
-            cy.get(selectors.endDateInput).type('01/20/2034');
+    it('should apply a same-day range', () => {
+        setup();
 
-            cy.get(selectors.applyButton).click();
+        selectCondition('Between');
 
-            const startMs = new Date(2034, 0, 15, 0, 0, 0, 0).getTime();
-            const endMs = new Date(2034, 0, 20, 23, 59, 59, 999).getTime();
-            cy.get('@onSearch').should('have.been.calledWithExactly', [
-                {
-                    action: 'APPEND',
-                    category: 'CVE Created Time',
-                    value: `tr/${startMs}-${endMs}`,
-                },
-            ]);
-            cy.get(selectors.startDateInput).should('have.value', '');
-            cy.get(selectors.endDateInput).should('have.value', '');
-        });
+        cy.get(selectors.startDateInput).type('01/15/2034');
+        cy.get(selectors.endDateInput).clear();
+        cy.get(selectors.endDateInput).type('01/15/2034');
 
-        it('should apply a same-day range', () => {
-            setup({ isBetweenEnabled: true });
+        cy.get(selectors.applyButton).click();
 
-            selectCondition('Between');
+        const startMs = new Date(2034, 0, 15, 0, 0, 0, 0).getTime();
+        const endMs = new Date(2034, 0, 15, 23, 59, 59, 999).getTime();
+        cy.get('@onSearch').should('have.been.calledWithExactly', [
+            {
+                action: 'APPEND',
+                category: 'CVE Created Time',
+                value: `tr/${startMs}-${endMs}`,
+            },
+        ]);
+    });
 
-            cy.get(selectors.startDateInput).type('01/15/2034');
-            cy.get(selectors.endDateInput).clear();
-            cy.get(selectors.endDateInput).type('01/15/2034');
+    it('should show an inline error and not emit when the end date is before the start date', () => {
+        setup();
 
-            cy.get(selectors.applyButton).click();
+        selectCondition('Between');
 
-            const startMs = new Date(2034, 0, 15, 0, 0, 0, 0).getTime();
-            const endMs = new Date(2034, 0, 15, 23, 59, 59, 999).getTime();
-            cy.get('@onSearch').should('have.been.calledWithExactly', [
-                {
-                    action: 'APPEND',
-                    category: 'CVE Created Time',
-                    value: `tr/${startMs}-${endMs}`,
-                },
-            ]);
-        });
+        cy.get(selectors.startDateInput).type('01/15/2034');
+        cy.get(selectors.endDateInput).clear();
+        cy.get(selectors.endDateInput).type('01/10/2034');
 
-        it('should show an inline error and not emit when the end date is before the start date', () => {
-            setup({ isBetweenEnabled: true });
+        cy.contains(endBeforeStartErrorText).should('exist');
 
-            selectCondition('Between');
+        cy.get(selectors.applyButton).click();
 
-            cy.get(selectors.startDateInput).type('01/15/2034');
-            cy.get(selectors.endDateInput).clear();
-            cy.get(selectors.endDateInput).type('01/10/2034');
+        cy.get('@onSearch').should('not.have.been.called');
+    });
 
-            cy.contains(endBeforeStartErrorText).should('exist');
+    it('should not emit when the end date is empty', () => {
+        setup();
 
-            cy.get(selectors.applyButton).click();
+        selectCondition('Between');
 
-            cy.get('@onSearch').should('not.have.been.called');
-        });
+        cy.get(selectors.startDateInput).type('01/15/2034');
+        cy.get(selectors.endDateInput).clear();
 
-        it('should not emit when the end date is empty', () => {
-            setup({ isBetweenEnabled: true });
+        cy.get(selectors.applyButton).click();
 
-            selectCondition('Between');
-
-            cy.get(selectors.startDateInput).type('01/15/2034');
-            cy.get(selectors.endDateInput).clear();
-
-            cy.get(selectors.applyButton).click();
-
-            cy.get('@onSearch').should('not.have.been.called');
-        });
+        cy.get('@onSearch').should('not.have.been.called');
     });
 });

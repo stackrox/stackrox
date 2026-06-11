@@ -369,49 +369,6 @@ describe(Cypress.spec.relative, () => {
         cy.get('input[aria-label="Filter by date"]').should('have.value', '');
     });
 
-    it('should not include the Between date condition when the attribute does not enable it', () => {
-        const config = [imageCVESearchFilterConfig];
-        const onSearch = cy.stub().as('onSearch');
-        const searchFilter = {};
-
-        setup(config, searchFilter, onSearch);
-
-        cy.get(selectors.attributeSelectToggle).click();
-        cy.get(selectors.attributeSelectItem('Discovered time')).click();
-
-        cy.get('button[aria-label="Condition selector toggle"]').click();
-
-        cy.get('[aria-label="Condition selector menu"] li').should('have.length', 3);
-        cy.get('[aria-label="Condition selector menu"] li button:contains("Between")').should(
-            'not.exist'
-        );
-    });
-
-    it('should include the Between date condition when the attribute enables it', () => {
-        const config = [
-            {
-                ...imageCVESearchFilterConfig,
-                attributes: imageCVESearchFilterConfig.attributes.map((attribute) =>
-                    attribute.inputType === 'date-picker'
-                        ? { ...attribute, inputProps: { enableBetweenCondition: true } }
-                        : attribute
-                ),
-            },
-        ];
-        const onSearch = cy.stub().as('onSearch');
-        const searchFilter = {};
-
-        setup(config, searchFilter, onSearch);
-
-        cy.get(selectors.attributeSelectToggle).click();
-        cy.get(selectors.attributeSelectItem('Discovered time')).click();
-
-        cy.get('button[aria-label="Condition selector toggle"]').click();
-
-        cy.get('[aria-label="Condition selector menu"] li').should('have.length', 4);
-        cy.get('[aria-label="Condition selector menu"] li').eq(3).should('have.text', 'Between');
-    });
-
     it('should display the condition-number input and correctly search for image cvss', () => {
         const config = [imageCVESearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');

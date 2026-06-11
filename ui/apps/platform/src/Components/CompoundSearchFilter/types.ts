@@ -6,11 +6,10 @@ import type { ConditionTextInputProps } from './components/SearchFilterCondition
 
 // Compound search filter types
 
-export type BaseInputType = 'autocomplete' | 'text' | 'condition-number';
+export type BaseInputType = 'autocomplete' | 'text' | 'date-picker' | 'condition-number';
 export type InputType =
     | BaseInputType
     | 'condition-text'
-    | 'date-picker'
     | 'select'
     | 'select-exclusive-double'
     | 'select-exclusive-single';
@@ -47,15 +46,6 @@ export type ConditionTextFilterAttribute = {
     inputProps: ConditionTextInputProps;
 } & BaseSearchFilterAttribute;
 
-export type DatePickerInputProps = {
-    enableBetweenCondition?: boolean;
-};
-
-export type DatePickerSearchFilterAttribute = {
-    inputType: 'date-picker';
-    inputProps?: DatePickerInputProps;
-} & BaseSearchFilterAttribute;
-
 export type SelectSearchFilterAttribute = {
     inputType: 'select';
     inputProps: SelectSearchFilterOptions | SelectSearchFilterGroupedOptions;
@@ -82,7 +72,6 @@ export type SelectExclusiveDoubleSearchFilterOption = {
 
 export type CompoundSearchFilterAttribute =
     | ConditionTextFilterAttribute
-    | DatePickerSearchFilterAttribute
     | GenericSearchFilterAttribute
     | SelectSearchFilterAttribute
     | SelectExclusiveDoubleSearchFilterAttribute

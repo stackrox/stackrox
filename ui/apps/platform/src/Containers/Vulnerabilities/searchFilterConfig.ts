@@ -9,7 +9,6 @@
  */
 
 import type {
-    CompoundSearchFilterConfig,
     CompoundSearchFilterEntity,
     SelectExclusiveSingleSearchFilterAttribute,
     SelectSearchFilterAttribute,
@@ -147,31 +146,6 @@ export const virtualMachinesNamespaceSearchFilterConfig: CompoundSearchFilterEnt
     searchCategory: 'SEARCH_UNSET', // virtual machine pipeline doesn't add namespace
     attributes: [namespaceName],
 };
-
-/**
- * Returns a copy of the config with the Between date range condition enabled on
- * every date-picker attribute. Entities and date-picker attributes are spread-copied
- * because attribute objects are shared module constants and must not be mutated.
- * Applied only behind ROX_VULN_MGMT_DATE_RANGE_FILTER so non-vulnerability surfaces
- * that reuse the same attributes keep the Before/On/After conditions only.
- * @param config - Compound search filter config to copy
- * @returns Config copy with enableBetweenCondition set on date-picker attributes
- */
-export function enableDateRangeConditions(
-    config: CompoundSearchFilterConfig
-): CompoundSearchFilterConfig {
-    return config.map((entity) => ({
-        ...entity,
-        attributes: entity.attributes.map((attribute) =>
-            attribute.inputType === 'date-picker'
-                ? {
-                      ...attribute,
-                      inputProps: { ...attribute.inputProps, enableBetweenCondition: true },
-                  }
-                : attribute
-        ),
-    }));
-}
 
 // attributes for separate search filter elements in AdvancedFiltersToolbar.tsx file
 
