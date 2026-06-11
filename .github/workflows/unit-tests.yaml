@@ -236,6 +236,71 @@ jobs:
     # Do not create junit report for bench tests:
     # https://github.com/jstemmer/go-junit-report/issues/174
 
+  go-bench-compare:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      pull-requests: write
+    env:
+      BUILD_TAG: 0.0.0
+      SHORTCOMMIT: "0000000"
+    steps:
+    - name: Checkout
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Install benchstat
+      run: go install golang.org/x/perf/cmd/benchstat@latest
+
+    - name: Compare benchmarks
+      run: |
+        scripts/bench-compare.sh \
+          "origin/${{ github.base_ref }}" \
+          HEAD \
+          --count 6 \
+          --keep \
+          --output bench-results
+
+    - name: Comment on PR
+      if: always()
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        if [ ! -s bench-results/comparison.txt ]; then
+          echo "No benchmark comparison to post."
+          exit 0
+        fi
+
+        marker='<!-- bench-compare -->'
+        {
+          echo "${marker}"
+          echo "## Benchmark Comparison"
+          echo ""
+          echo '```'
+          cat bench-results/comparison.txt
+          echo '```'
+        } > bench-results/comment.md
+
+        # Update existing comment or create a new one
+        existing=$(gh api \
+          "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+          --jq ".[] | select(.body | contains(\"${marker}\")) | .id" \
+          | head -1)
+
+        if [ -n "$existing" ]; then
+          gh api \
+            --method PATCH \
+            "repos/${{ github.repository }}/issues/comments/${existing}" \
+            -F body=@bench-results/comment.md
+        else
+          gh pr comment "${{ github.event.pull_request.number }}" -F bench-results/comment.md
+        fi
+
   ui:
     needs: detect-changes
     if: >-
