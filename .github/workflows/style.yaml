@@ -11,7 +11,6 @@ on:
     - opened
     - reopened
     - synchronize
-
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 
