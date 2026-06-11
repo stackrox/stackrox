@@ -33,7 +33,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"k8s.io/utils/strings/slices"
+	"slices"
 )
 
 type ManagerTestSuite struct {
@@ -721,16 +721,7 @@ func (m *ManagerTestSuite) setupExpectCallsFromFinishAllScans(sc *storage.Compli
 		}
 		expectedCalls = append(expectedCalls, calls...)
 	}
-	allScans := getTestScansFromScanConfig(sc, timestamp)
 	calls := []any{
-		// Delete Old Results of Missing Clusters
-		m.profileDataStore.EXPECT().
-			SearchProfiles(gomock.Any(), gomock.Any()).
-			Times(1).
-			Return([]*storage.ComplianceOperatorProfileV2{{}}, nil),
-		m.scanDataStore.EXPECT().
-			SearchScans(gomock.Any(), gomock.Any()).
-			Times(1).Return(allScans, nil),
 		m.scanDataStore.EXPECT().
 			SearchScans(gomock.Any(), gomock.Any()).
 			Times(len(sc.GetClusters())*numSnapshots).
@@ -753,16 +744,7 @@ func (m *ManagerTestSuite) setupExpectCallsFromFailAllScans(sc *storage.Complian
 		}
 		expectedCalls = append(expectedCalls, calls...)
 	}
-	allScans := getTestScansFromScanConfig(sc, timestamp)
 	calls := []any{
-		// Delete Old Results of Missing Clusters
-		m.profileDataStore.EXPECT().
-			SearchProfiles(gomock.Any(), gomock.Any()).
-			Times(1).
-			Return([]*storage.ComplianceOperatorProfileV2{{}}, nil),
-		m.scanDataStore.EXPECT().
-			SearchScans(gomock.Any(), gomock.Any()).
-			Times(1).Return(allScans, nil),
 		// Validate Results
 		m.complianceIntegrationDataStore.EXPECT().
 			GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).
@@ -810,6 +792,8 @@ func (m *ManagerTestSuite) setupExpectCallsFromFinishScan(scan *storage.Complian
 			UpsertSnapshot(gomock.Any(), gomock.Any()).
 			Times(1).Return(nil))
 	}
+	// GetScansFromScanConfiguration is called inside handleScanResults
+	// when the scan config watcher receives its first result.
 	calls = append(calls, []any{
 		m.profileDataStore.EXPECT().
 			SearchProfiles(gomock.Any(), gomock.Any()).
