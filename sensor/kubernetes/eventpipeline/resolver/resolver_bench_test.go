@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
 	mocksStore "github.com/stackrox/rox/sensor/common/store/mocks"
@@ -87,6 +88,7 @@ func BenchmarkProcessDeploymentReferences(b *testing.B) {
 					doneSignal.Wait()
 					b.StopTimer()
 					res.Stop()
+					b.StartTimer()
 				}
 			})
 		}
@@ -111,6 +113,7 @@ func BenchmarkProcessRandomDeploymentReferences(b *testing.B) {
 					doneSignal.Wait()
 					b.StopTimer()
 					res.Stop()
+					b.StartTimer()
 				}
 			})
 		}
@@ -146,6 +149,18 @@ func setupMocks(b *testing.B, doneSignal *concurrency.Signal, pubsubEnabled bool
 	// Set up the EXPECT
 	if pubsubEnabled {
 		mockPubSubDispatcher.EXPECT().RegisterConsumerToLane(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(nil)
+		mockPubSubDispatcher.EXPECT().Publish(gomock.Any()).AnyTimes().DoAndReturn(func(event pubsub.Event) error {
+			resourceEvent, ok := event.(*component.ResourceEvent)
+			if !ok {
+				return nil
+			}
+			for _, m := range resourceEvent.ForwardMessages {
+				if m.GetDeployment().GetId() == lastDeploymentID {
+					doneSignal.Signal()
+				}
+			}
+			return nil
+		})
 	}
 	mockOutput.EXPECT().Send(gomock.Any()).AnyTimes().DoAndReturn(func(resourceEvent *component.ResourceEvent) {
 		for _, m := range resourceEvent.ForwardMessages {

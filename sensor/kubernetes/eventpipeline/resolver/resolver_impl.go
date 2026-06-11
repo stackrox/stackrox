@@ -266,10 +266,8 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 	}
 
 	if features.SensorInternalPubSub.Enabled() {
-		forwardMsg := component.NewEventWithTopicAndLane(pubsub.ResolvedResourceEventTopic, pubsub.ResolvedResourceEventLane)
-		forwardMsg.Context = msg.Context
-		forwardMsg.MergeResourceEvent(msg)
-		if err := r.pubsubDispatcher.Publish(forwardMsg); err != nil {
+		msg.SetTopicAndLane(pubsub.ResolvedResourceEventTopic, pubsub.ResolvedResourceEventLane)
+		if err := r.pubsubDispatcher.Publish(msg); err != nil {
 			log.Errorf("failed to publish resolved resource event to output queue: %v", err)
 		}
 		return

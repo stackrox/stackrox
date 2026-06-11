@@ -32,14 +32,14 @@ func buildConcurrentLane(id pubsub.LaneID, bufferEnv *env.IntegerSetting) pubsub
 	)
 }
 
-func buildPubSubDispatcher() (common.PubSubDispatcher, error) {
+func buildPubSubDispatcher(eventPipelineQueueSize int) (common.PubSubDispatcher, error) {
 	dispatcher, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(
 		[]pubsub.LaneConfig{
 			lane.NewBlockingLane(pubsub.KubernetesDispatcherEventLane),
 			lane.NewBlockingLane(pubsub.FromCentralResolverEventLane),
 			lane.NewBlockingLane(pubsub.EnrichedProcessIndicatorLane),
 			lane.NewBlockingLane(pubsub.UnenrichedProcessIndicatorLane),
-			lane.NewBlockingLane(pubsub.ResolvedResourceEventLane),
+			lane.NewBlockingLane(pubsub.ResolvedResourceEventLane, lane.WithBlockingLaneSize(eventPipelineQueueSize)),
 			buildConcurrentLane(pubsub.DetectorProcessIndicatorLane, env.DetectorProcessIndicatorBufferSize),
 			buildConcurrentLane(pubsub.DetectorNetworkFlowLane, env.DetectorNetworkFlowBufferSize),
 			buildConcurrentLane(pubsub.DetectorFileAccessLane, env.DetectorFileAccessBufferSize),
