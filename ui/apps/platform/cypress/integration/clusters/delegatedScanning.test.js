@@ -1,10 +1,9 @@
-import withAuth from '../../helpers/basicAuth';
+import withAuth, { setAuth } from '../../helpers/basicAuth';
 
 import { getInputByLabel } from '../../helpers/formHelpers';
-import { visitWithStaticResponseForPermissions } from '../../helpers/visit';
+import { visit } from '../../helpers/visit';
 
 import {
-    clustersPath,
     delegatedScanningPath,
     // saveDelegatedRegistryConfig,
     visitClusters,
@@ -99,38 +98,21 @@ describe('Delegated Image Scanning', () => {
         */
     });
 
-    describe('when user does not have permission to see page', () => {
-        it(`should not show the page`, () => {
-            cy.fixture('auth/mypermissionsNoAdminAccess.json').then(({ resourceToAccess }) => {
-                const staticResponseForPermissions = {
-                    body: {
-                        resourceToAccess: { ...resourceToAccess },
-                    },
-                };
+    it('should not show the page when user does not have Administration permission', () => {
+        setAuth('Analyst');
 
-                visitWithStaticResponseForPermissions(
-                    delegatedScanningPath,
-                    staticResponseForPermissions
-                );
+        visit(delegatedScanningPath);
 
-                // make sure page does not load
-                cy.get('h1:contains("Delegated image scanning")').should('not.exist');
-            });
-        });
+        // make sure page does not load
+        cy.get('h1:contains("Delegated image scanning")').should('not.exist');
+    });
 
-        it(`should not have a link on the Clusters page`, () => {
-            cy.fixture('auth/mypermissionsNoAdminAccess.json').then(({ resourceToAccess }) => {
-                const staticResponseForPermissions = {
-                    body: {
-                        resourceToAccess: { ...resourceToAccess },
-                    },
-                };
+    it('should not have a link on the Clusters page when user does not have Administration permission', () => {
+        setAuth('Analyst');
 
-                visitWithStaticResponseForPermissions(clustersPath, staticResponseForPermissions);
+        visitClusters();
 
-                // make sure link is not present
-                cy.get('a:contains("Delegated image scanning")').should('not.exist');
-            });
-        });
+        // make sure link is not present
+        cy.get('a:contains("Delegated image scanning")').should('not.exist');
     });
 });

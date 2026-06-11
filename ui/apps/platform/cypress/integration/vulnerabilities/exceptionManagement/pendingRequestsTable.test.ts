@@ -263,7 +263,11 @@ describe('Exception Management Pending Requests Page', () => {
 
             visitPendingRequestsTab();
 
-            typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'ui_tests');
+            typeAndEnterCustomSearchFilterValue(
+                'Exception',
+                'Requester User Name',
+                'cypress_ui_tests_Admin'
+            );
             cy.get('table td[data-label="Request name"] a').should('exist');
             cy.get(vulnSelectors.clearFiltersButton).click();
             typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'BLAH');

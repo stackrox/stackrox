@@ -20,19 +20,19 @@ curl_cfg() { # Use built-in echo to not expose $2 in the process list.
 }
 
 if [[ -n "$ROX_USERNAME" && -n "$ROX_ADMIN_PASSWORD" ]]; then
-  rox_auth_token="$(
-  curl -sk --config <(curl_cfg user "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}") \
+  response="$(
+  curl -sSk --config <(curl_cfg user "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}") \
     "${api_endpoint}/v1/apitokens/generate" \
     -X POST \
-    -d "{\"name\": \"${api_token_name}\", \"role\": \"${api_token_role}\"}" \
-    | jq -r '.token // ""')"
+    -d "{\"name\": \"${api_token_name}\", \"role\": \"${api_token_role}\"}")"
+  rox_auth_token="$(echo "$response" | jq -r '.token // ""')"
 else
   echo >&2 "Expected ROX_USERNAME and ROX_ADMIN_PASSWORD env vars for basic auth creds"
   exit 1
 fi
 
 if [[ -z "$rox_auth_token" ]]; then
-  echo >&2 "Could not issue an auth token"
+  echo >&2 "Could not issue auth token (name=${api_token_name}, role=${api_token_role}): $response"
   exit 1
 fi
 
