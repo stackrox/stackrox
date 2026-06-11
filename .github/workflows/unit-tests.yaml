@@ -136,12 +136,12 @@ jobs:
         echo "**Go version:** $(go version)" >> "$GITHUB_STEP_SUMMARY"
 
     - name: Generate junit report
-      if: always()
+      if: false
       run: make generate-junit-reports
 
     - name: Publish Test Report
+      if: false
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
       with:
         paths: 'junit-reports/report.xml'
 
@@ -210,12 +210,12 @@ jobs:
         flags: go-unit-tests
 
     - name: Generate junit report
-      if: always()
+      if: false
       run: make generate-junit-reports
 
     - name: Publish Test Report
+      if: false
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
       with:
         paths: 'junit-reports/report.xml'
 
@@ -264,12 +264,12 @@ jobs:
       run: make go-postgres-bench-tests
 
     - name: Generate junit report
-      if: always()
+      if: false
       run: make generate-junit-reports
 
     - name: Publish Test Report
+      if: false
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
       with:
         paths: 'junit-reports/report.xml'
 
@@ -544,12 +544,12 @@ jobs:
       run: make sensor-integration-test
 
     - name: Generate junit report
-      if: always()
+      if: false
       run: make generate-junit-reports
 
     - name: Publish Test Report
+      if: false
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
-      if: always()
       with:
         paths: 'junit-reports/report.xml'
 
