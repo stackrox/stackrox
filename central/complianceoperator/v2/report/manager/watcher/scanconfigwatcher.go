@@ -187,6 +187,13 @@ func (w *scanConfigWatcherImpl) Finished() concurrency.ReadOnlySignal {
 	return w.stopped
 }
 
+func (w *scanConfigWatcherImpl) scanConfigName() string {
+	if w.scanConfigResults.ScanConfig != nil {
+		return w.scanConfigResults.ScanConfig.GetScanConfigName()
+	}
+	return w.scanConfigResults.WatcherID
+}
+
 func (w *scanConfigWatcherImpl) run(timer Timer) {
 	defer func() {
 		w.stopped.Signal()
@@ -198,7 +205,7 @@ func (w *scanConfigWatcherImpl) run(timer Timer) {
 		case <-w.ctx.Done():
 			concurrency.WithLock(&w.resultsLock, func() {
 				log.Infof("Stopping scan config watcher for %s. Received %d/%d scan results (watcher id: %s)",
-					w.scanConfigResults.ScanConfig.GetScanConfigName(), len(w.scanConfigResults.ScanResults), w.totalResults, w.scanConfigResults.WatcherID)
+					w.scanConfigName(), len(w.scanConfigResults.ScanResults), w.totalResults, w.scanConfigResults.WatcherID)
 				w.scanConfigResults.Error = ErrScanConfigContextCancelled
 				w.readyQueue.Push(w.scanConfigResults)
 			})
@@ -206,7 +213,7 @@ func (w *scanConfigWatcherImpl) run(timer Timer) {
 		case <-timer.C():
 			concurrency.WithLock(&w.resultsLock, func() {
 				log.Warnf("Timeout waiting for the ScanConfiguration %s's scans to finish. Received %d/%d scan results (watcher id: %s, pending: %v)",
-					w.scanConfigResults.ScanConfig.GetScanConfigName(), len(w.scanConfigResults.ScanResults), w.totalResults, w.scanConfigResults.WatcherID, w.scansToWait.AsSlice())
+					w.scanConfigName(), len(w.scanConfigResults.ScanResults), w.totalResults, w.scanConfigResults.WatcherID, w.scansToWait.AsSlice())
 				w.scanConfigResults.Error = ErrScanConfigTimeout
 				w.readyQueue.Push(w.scanConfigResults)
 			})
@@ -242,7 +249,7 @@ func (w *scanConfigWatcherImpl) handleScanResults(result *ScanWatcherResults) er
 		}
 		w.scansToWait = scans
 		w.totalResults = len(w.scansToWait)
-		log.Debugf("Scan config %s needs to wait for %d scans", w.scanConfigResults.ScanConfig.GetScanConfigName(), w.totalResults)
+		log.Debugf("Scan config %s needs to wait for %d scans", w.scanConfigName(), w.totalResults)
 	}
 	log.Debugf("Scan to handle %s with id %s", result.Scan.GetScanName(), result.Scan.GetId())
 	scanResultKey := fmt.Sprintf("%s:%s", result.Scan.GetClusterId(), result.Scan.GetId())
