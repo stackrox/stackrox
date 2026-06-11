@@ -184,10 +184,8 @@ func ListVMByNamespaceName(ctx context.Context, client v2.VirtualMachineServiceC
 		if err != nil {
 			return nil, err
 		}
-		for _, vm := range resp.GetVirtualMachines() {
-			if vm.GetNamespace() == namespace && vm.GetName() == name {
-				return vm, nil
-			}
+		if vms := resp.GetVirtualMachines(); len(vms) > 0 {
+			return vms[0], nil
 		}
 		if int32(len(resp.GetVirtualMachines())) < listVMPageSize {
 			return nil, nil
