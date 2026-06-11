@@ -31,6 +31,8 @@ USER_SSH_KEY_PATH=""
 NAMESPACE="openshift-cnv"
 VM_PREFIX=""
 ARTIFACTS_DIR=""
+NATIVE_AGENT_READY_VMS=()
+NATIVE_AGENT_FAILED_VMS=()
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
@@ -131,6 +133,81 @@ print_summary() {
     echo "  kubectl get vm,vmi -n $NAMESPACE"
     echo ""
     echo "==========================================="
+
+    write_github_summary
+}
+
+append_summary_list() {
+    local heading="$1"
+    shift
+
+    if [[ $# -eq 0 ]]; then
+        return 0
+    fi
+
+    {
+        echo "$heading"
+        local item
+        for item in "$@"; do
+            echo "- \`$item\`"
+        done
+        echo ""
+    } >> "$GITHUB_STEP_SUMMARY"
+}
+
+write_github_summary() {
+    if [[ -z "${GITHUB_STEP_SUMMARY:-}" ]]; then
+        return 0
+    fi
+
+    {
+        echo "## Add VMs to Cluster"
+        echo ""
+        echo "- Namespace: \`$NAMESPACE\`"
+        echo "- VM OS: \`$VM_OS\`"
+        echo "- VM prefix: \`$VM_PREFIX\`"
+        echo "- Agent type: \`native\`"
+        echo "- Requested VMs: \`$NUM_VMS\`"
+        echo ""
+    } >> "$GITHUB_STEP_SUMMARY"
+
+    append_summary_list "### Managed VMs (automation key access)" "${MANAGED_VMS[@]}"
+    append_summary_list "### Adopted VMs (password fallback, key now injected)" "${ADOPTED_VMS[@]}"
+    append_summary_list "### Skipped VMs (inaccessible)" "${SKIPPED_VMS[@]}"
+
+    {
+        echo "### Native agent service verification"
+        echo ""
+    } >> "$GITHUB_STEP_SUMMARY"
+    append_summary_list "Successfully started on:" "${NATIVE_AGENT_READY_VMS[@]}"
+    append_summary_list "Needs attention:" "${NATIVE_AGENT_FAILED_VMS[@]}"
+
+    {
+        echo "### SSH access"
+        echo ""
+        echo "Download the automation private key:"
+        echo ""
+        echo '```bash'
+        echo "kubectl get secret ${AUTOMATION_SSH_SECRET:-acs-vm-automation-ssh} -n $NAMESPACE \\"
+        echo "  -o jsonpath='{.data.id_ed25519}' | base64 -d > ./add-vms-id_ed25519"
+        echo "chmod 600 ./add-vms-id_ed25519"
+        echo '```'
+        echo ""
+        echo "SSH into a VM:"
+        echo ""
+        echo '```bash'
+        echo "virtctl ssh -n $NAMESPACE --identity-file ./add-vms-id_ed25519 ${SSH_USER:-cloud-user}@vmi/${VM_PREFIX}-1"
+        echo '```'
+        echo ""
+        echo "Check VM status:"
+        echo ""
+        echo '```bash'
+        echo "kubectl get vm,vmi -n $NAMESPACE"
+        echo '```'
+        echo ""
+    } >> "$GITHUB_STEP_SUMMARY"
+
+    echo "::notice title=VM action summary::See the job summary for VM access, key download, and native service verification."
 }
 
 cleanup() {
@@ -192,4 +269,6 @@ main() {
     print_summary
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

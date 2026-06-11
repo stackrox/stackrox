@@ -15,6 +15,8 @@ ROXAGENT_SRC="${STACKROX_REPO}/compliance/virtualmachines/roxagent"
 NAMESPACE="${NAMESPACE:-openshift-cnv}"
 SSH_USER="${SSH_USER:-cloud-user}"
 AUTOMATION_SSH_PRIVKEY="${AUTOMATION_SSH_PRIVKEY:-}"
+NATIVE_AGENT_READY_VMS=()
+NATIVE_AGENT_FAILED_VMS=()
 
 NATIVE_MOUNT_CANDIDATES=(
     /etc/os-release
@@ -110,6 +112,31 @@ WantedBy=timers.target
 EOF
 }
 
+native_agent_service_verified() {
+    local vm_name="$1"
+    local ssh_opts=(
+        --namespace "$NAMESPACE"
+        --identity-file "$AUTOMATION_SSH_PRIVKEY"
+        --local-ssh-opts="-o StrictHostKeyChecking=no"
+        --local-ssh-opts="-o UserKnownHostsFile=/dev/null"
+        --local-ssh-opts="-o ConnectTimeout=10"
+    )
+
+    local status_output
+    status_output="$(virtctl ssh "${ssh_opts[@]}" \
+        --command "service_result=\"\$(systemctl show roxagent.service -p Result --value 2>/dev/null || true)\";
+timer_enabled=\"\$(systemctl is-enabled roxagent.timer 2>/dev/null || true)\";
+timer_active=\"\$(systemctl is-active roxagent.timer 2>/dev/null || true)\";
+printf \"%s\\n%s\\n%s\\n\" \"\$service_result\" \"\$timer_enabled\" \"\$timer_active\"" \
+        "${SSH_USER}@vmi/${vm_name}" 2>/dev/null || true)"
+
+    mapfile -t status_lines <<< "$status_output"
+
+    [[ "${status_lines[0]:-}" == "success" &&
+        "${status_lines[1]:-}" == "enabled" &&
+        "${status_lines[2]:-}" == "active" ]]
+}
+
 install_on_vm() {
     local vm_name="$1" binary_path="$2"
 
@@ -181,9 +208,17 @@ echo "NATIVE_INSTALL_OK"' \
 
     echo "  Installed on $vm_name."
     echo "  Verifying agent status on $vm_name..."
-    virtctl ssh "${ssh_opts[@]}" \
+    local verify_output
+    verify_output="$(virtctl ssh "${ssh_opts[@]}" \
         --command 'sudo systemctl start roxagent.service; echo "---"; sudo systemctl status roxagent.timer --no-pager; echo "---"; sudo journalctl -u roxagent.service --no-pager -n 20' \
-        "${SSH_USER}@vmi/${vm_name}" || true
+        "${SSH_USER}@vmi/${vm_name}" 2>&1 || true)"
+    printf '%s\n' "$verify_output"
+
+    if native_agent_service_verified "$vm_name"; then
+        NATIVE_AGENT_READY_VMS+=("$vm_name")
+    else
+        NATIVE_AGENT_FAILED_VMS+=("$vm_name")
+    fi
 }
 
 install_agent_native() {
