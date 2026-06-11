@@ -187,11 +187,11 @@ done
 # ── Setup results directory ──────────────────────────────────────
 
 if [[ -n "$OUTPUT_DIR" ]]; then
-    RESULTS_DIR="$OUTPUT_DIR"
+    mkdir -p "$OUTPUT_DIR"
+    RESULTS_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 else
     RESULTS_DIR="$(mktemp -d "${TMPDIR:-/tmp}/bench-compare-XXXXXX")"
 fi
-mkdir -p "$RESULTS_DIR"
 
 BASE_RESULTS="$RESULTS_DIR/base.txt"
 HEAD_RESULTS="$RESULTS_DIR/head.txt"
