@@ -71,6 +71,19 @@ func TestEndpointAndPlaintextSetting(t *testing.T) {
 			givenEndpoint:    "host:port",
 			expectedEndpoint: "host:port",
 		},
+		{
+			givenEndpoint:    "https://[2001:db8::1]",
+			expectedEndpoint: "[2001:db8::1]:443",
+		},
+		{
+			givenEndpoint:    "https://[::1]:8443",
+			expectedEndpoint: "[::1]:8443",
+		},
+		{
+			givenEndpoint:    "http://[::1]",
+			expectedEndpoint: "[::1]:80",
+			usePlaintext:     true,
+		},
 	}
 
 	for _, tc := range testCases {
