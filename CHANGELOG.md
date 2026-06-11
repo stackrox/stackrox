@@ -19,7 +19,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Deprecated Features
 
 ### Technical Changes
-- ROX-35006: Go runtime upgraded to 1.26. Unbracketed IPv6 addresses (e.g. `2001:db8::1`) are no longer accepted in TLS endpoint checks; use bracketed format instead (e.g. `[2001:db8::1]:443`).
+- ROX-35006: Go runtime upgraded to 1.26. Unbracketed IPv6 addresses (e.g. `2001:db8::1`) are no longer accepted; use bracketed format instead (e.g. `[2001:db8::1]:443`).
 
 ## [4.11.0]
 
