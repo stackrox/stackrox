@@ -70,8 +70,13 @@ jobs:
           2>&1 | grep testcache >> "$GITHUB_STEP_SUMMARY" || true
         echo '```' >> "$GITHUB_STEP_SUMMARY"
 
-    - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/go-test-output.txt
+    - name: Go Unit Tests (no -coverprofile — testing cache hypothesis)
+      run: |
+        set -o pipefail
+        ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=${{ matrix.gotags }},test \
+          scripts/go-test.sh -timeout 25m -race -cover -v \
+          $(git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list | grep -v '^github.com/stackrox/rox/tests$' | grep -Ev 'integration') \
+          2>&1 | tee /tmp/go-test-output.txt
 
     - name: Cache and CPU diagnostics
       if: always()

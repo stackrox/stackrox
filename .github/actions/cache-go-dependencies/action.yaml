@@ -37,9 +37,9 @@ runs:
           go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
           go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
-    - name: Cache Go Build (restore+save for experiment)
+    - name: Cache Go Build (restore)
       if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
+      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache/restore@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
@@ -51,10 +51,16 @@ runs:
       run: |
         gocache="${{ steps.cache-paths.outputs.GOCACHE }}"
         if [[ -d "$gocache" ]]; then
-          # EXPERIMENT: skip backdate+trim to test if it's deleting coverage
-          # profile entries and causing test cache misses.
-          echo "Skipping GOCACHE backdate (experiment — testing trim impact)"
-          echo "GOCACHE size: $(du -sm "$gocache" 2>/dev/null | cut -f1)MB"
+          # Backdate all cache entries to year 2000. During the build/test,
+          # Go's markUsed() updates mtimes of accessed entries to "now"
+          # (it always updates when mtime is >1 hour old). The post-step
+          # below trims entries still at year 2000 before cache save.
+          timeout 120 find "$gocache" -type f -exec touch -t 200001010000 {} + || true
+          # Protect trim.txt: if backdated, Go's built-in Trim() sees
+          # "last trim was in year 2000" and deletes ALL backdated entries
+          # before the build starts. Setting it to now prevents this.
+          echo "$(date +%s)" > "$gocache/trim.txt"
+          echo "Marked GOCACHE entries for stale detection"
         fi
       shell: bash
 
