@@ -117,7 +117,7 @@ jobs:
       shell: bash
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/go-test-output.txt
+      run: GODEBUG=gocachetest=1 ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/go-test-output.txt
 
     - name: Cache debug — post-test diagnostics
       if: always()
