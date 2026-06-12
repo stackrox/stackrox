@@ -532,6 +532,7 @@ func TestGCRCreationBlocked(t *testing.T) {
 	}
 
 	_, err := s.PostImageIntegration(context.Background(), ii)
+	assert.ErrorIs(t, err, errox.InvalidArgs)
 	assert.ErrorContains(t, err, "Google Container Registry")
 	assert.ErrorContains(t, err, "deprecated")
 }
