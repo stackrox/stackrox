@@ -52,7 +52,9 @@ describe('Exception Management - Approved Deferrals Table', () => {
             viewCvesByObservationState('Deferred');
 
             // Verify correct CVE filter
-            cy.get('td[data-label="Request details"] a:contains("View")').click();
+            cy.get(
+                `tr:has(td[data-label="CVE"]:contains("${cveName}")) td[data-label="Request details"] a:contains("View")`
+            ).click();
             cy.get(workloadSelectors.filterLabelGroupItem('CVE', cveName));
 
             // Verify a link in the table containing the request
