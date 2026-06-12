@@ -18,10 +18,13 @@ concurrency:
 
 env:
   # Stable version ldflags for test caching: Go's test cache keys include
-  # link ActionID which includes -X ldflags. Fixed BUILD_TAG/SHORTCOMMIT
-  # prevent per-commit cache misses.
+  # link ActionID which includes -X ldflags. ALL version vars from status.sh
+  # must be fixed or the test binary identity changes on every commit.
   BUILD_TAG: 0.0.0
   SHORTCOMMIT: "0000000"
+  STABLE_COLLECTOR_VERSION: 0.0.0
+  STABLE_FACT_VERSION: 0.0.0
+  STABLE_SCANNER_VERSION: 0.0.0
 
 jobs:
   detect-changes:
