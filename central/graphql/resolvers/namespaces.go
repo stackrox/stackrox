@@ -27,7 +27,6 @@ func init() {
 		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddExtraResolvers("Namespace", []string{
 			"cluster: Cluster!",
-			"complianceResults(query: String): [ControlResult!]!",
 			"deploymentCount(query: String): Int!",
 			"deployments(query: String, pagination: Pagination): [Deployment!]!",
 			"failingPolicyCounter(query: String): PolicyCounter",
@@ -160,25 +159,6 @@ func (resolver *Resolver) NamespaceCount(ctx context.Context, args RawQuery) (in
 		return 0, err
 	}
 	return int32(count), nil
-}
-
-func (resolver *namespaceResolver) ComplianceResults(ctx context.Context, args RawQuery) ([]*controlResultResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ComplianceResults")
-	if err := readCompliance(ctx); err != nil {
-		return nil, err
-	}
-
-	runResults, err := resolver.root.ComplianceAggregator.GetResultsWithEvidence(ctx, args.String())
-	if err != nil {
-		return nil, err
-	}
-	output := newBulkControlResults()
-	nsID := resolver.data.GetMetadata().GetId()
-	output.addDeploymentData(resolver.root, runResults, func(d *storage.ComplianceDomain_Deployment, _ *v1.ComplianceControl) bool {
-		return d.GetNamespaceId() == nsID
-	})
-
-	return *output, nil
 }
 
 // SubjectCount returns the count of Subjects which have any permission on this namespace or the cluster it belongs to

@@ -131,7 +131,6 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 		v1.SearchCategory_SECRETS:                  resolver.SecretsDataStore,
 		v1.SearchCategory_NAMESPACES:               resolver.NamespaceDataStore,
 		v1.SearchCategory_NODES:                    resolver.NodeDataStore,
-		v1.SearchCategory_COMPLIANCE:               resolver.ComplianceAggregator,
 		v1.SearchCategory_SERVICE_ACCOUNTS:         resolver.ServiceAccountsDataStore,
 		v1.SearchCategory_ROLES:                    resolver.K8sRoleStore,
 		v1.SearchCategory_ROLEBINDINGS:             resolver.K8sRoleBindingStore,

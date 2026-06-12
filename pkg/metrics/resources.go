@@ -18,7 +18,7 @@ const (
 	Node
 	NodeInventory
 	ProviderMetadata
-	ComplianceReturn
+	ComplianceReturn // Deprecated: v1 compliance removed
 	ImageIntegration
 	ServiceAccount
 	PermissionSet

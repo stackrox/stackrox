@@ -7,7 +7,6 @@ package central
 import (
 	fmt "fmt"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
-	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -676,12 +675,6 @@ func (m *ScrapeCommand) CloneVT() *ScrapeCommand {
 		return (*ScrapeCommand)(nil)
 	}
 	r := new(ScrapeCommand)
-	r.ScrapeId = m.ScrapeId
-	if m.Command != nil {
-		r.Command = m.Command.(interface {
-			CloneVT() isScrapeCommand_Command
-		}).CloneVT()
-	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -693,22 +686,20 @@ func (m *ScrapeCommand) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *ScrapeCommand_StartScrape) CloneVT() isScrapeCommand_Command {
+func (m *ScrapeUpdate) CloneVT() *ScrapeUpdate {
 	if m == nil {
-		return (*ScrapeCommand_StartScrape)(nil)
+		return (*ScrapeUpdate)(nil)
 	}
-	r := new(ScrapeCommand_StartScrape)
-	r.StartScrape = m.StartScrape.CloneVT()
+	r := new(ScrapeUpdate)
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
 	return r
 }
 
-func (m *ScrapeCommand_KillScrape) CloneVT() isScrapeCommand_Command {
-	if m == nil {
-		return (*ScrapeCommand_KillScrape)(nil)
-	}
-	r := new(ScrapeCommand_KillScrape)
-	r.KillScrape = m.KillScrape.CloneVT()
-	return r
+func (m *ScrapeUpdate) CloneMessageVT() proto.Message {
+	return m.CloneVT()
 }
 
 func (m *StartScrape) CloneVT() *StartScrape {
@@ -716,16 +707,6 @@ func (m *StartScrape) CloneVT() *StartScrape {
 		return (*StartScrape)(nil)
 	}
 	r := new(StartScrape)
-	if rhs := m.Hostnames; rhs != nil {
-		tmpContainer := make([]string, len(rhs))
-		copy(tmpContainer, rhs)
-		r.Hostnames = tmpContainer
-	}
-	if rhs := m.Standards; rhs != nil {
-		tmpContainer := make([]string, len(rhs))
-		copy(tmpContainer, rhs)
-		r.Standards = tmpContainer
-	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -753,67 +734,11 @@ func (m *KillScrape) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *ScrapeUpdate) CloneVT() *ScrapeUpdate {
-	if m == nil {
-		return (*ScrapeUpdate)(nil)
-	}
-	r := new(ScrapeUpdate)
-	r.ScrapeId = m.ScrapeId
-	if m.Update != nil {
-		r.Update = m.Update.(interface{ CloneVT() isScrapeUpdate_Update }).CloneVT()
-	}
-	if len(m.unknownFields) > 0 {
-		r.unknownFields = make([]byte, len(m.unknownFields))
-		copy(r.unknownFields, m.unknownFields)
-	}
-	return r
-}
-
-func (m *ScrapeUpdate) CloneMessageVT() proto.Message {
-	return m.CloneVT()
-}
-
-func (m *ScrapeUpdate_ComplianceReturn) CloneVT() isScrapeUpdate_Update {
-	if m == nil {
-		return (*ScrapeUpdate_ComplianceReturn)(nil)
-	}
-	r := new(ScrapeUpdate_ComplianceReturn)
-	if rhs := m.ComplianceReturn; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
-			CloneVT() *compliance.ComplianceReturn
-		}); ok {
-			r.ComplianceReturn = vtpb.CloneVT()
-		} else {
-			r.ComplianceReturn = proto.Clone(rhs).(*compliance.ComplianceReturn)
-		}
-	}
-	return r
-}
-
-func (m *ScrapeUpdate_ScrapeStarted) CloneVT() isScrapeUpdate_Update {
-	if m == nil {
-		return (*ScrapeUpdate_ScrapeStarted)(nil)
-	}
-	r := new(ScrapeUpdate_ScrapeStarted)
-	r.ScrapeStarted = m.ScrapeStarted.CloneVT()
-	return r
-}
-
-func (m *ScrapeUpdate_ScrapeKilled) CloneVT() isScrapeUpdate_Update {
-	if m == nil {
-		return (*ScrapeUpdate_ScrapeKilled)(nil)
-	}
-	r := new(ScrapeUpdate_ScrapeKilled)
-	r.ScrapeKilled = m.ScrapeKilled.CloneVT()
-	return r
-}
-
 func (m *ScrapeStarted) CloneVT() *ScrapeStarted {
 	if m == nil {
 		return (*ScrapeStarted)(nil)
 	}
 	r := new(ScrapeStarted)
-	r.ErrorMessage = m.ErrorMessage
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -830,7 +755,6 @@ func (m *ScrapeKilled) CloneVT() *ScrapeKilled {
 		return (*ScrapeKilled)(nil)
 	}
 	r := new(ScrapeKilled)
-	r.ErrorMessage = m.ErrorMessage
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -2260,21 +2184,6 @@ func (this *ScrapeCommand) EqualVT(that *ScrapeCommand) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Command == nil && that.Command != nil {
-		return false
-	} else if this.Command != nil {
-		if that.Command == nil {
-			return false
-		}
-		if !this.Command.(interface {
-			EqualVT(isScrapeCommand_Command) bool
-		}).EqualVT(that.Command) {
-			return false
-		}
-	}
-	if this.ScrapeId != that.ScrapeId {
-		return false
-	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -2285,79 +2194,27 @@ func (this *ScrapeCommand) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *ScrapeCommand_StartScrape) EqualVT(thatIface isScrapeCommand_Command) bool {
-	that, ok := thatIface.(*ScrapeCommand_StartScrape)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if p, q := this.StartScrape, that.StartScrape; p != q {
-		if p == nil {
-			p = &StartScrape{}
-		}
-		if q == nil {
-			q = &StartScrape{}
-		}
-		if !p.EqualVT(q) {
-			return false
-		}
-	}
-	return true
-}
-
-func (this *ScrapeCommand_KillScrape) EqualVT(thatIface isScrapeCommand_Command) bool {
-	that, ok := thatIface.(*ScrapeCommand_KillScrape)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if p, q := this.KillScrape, that.KillScrape; p != q {
-		if p == nil {
-			p = &KillScrape{}
-		}
-		if q == nil {
-			q = &KillScrape{}
-		}
-		if !p.EqualVT(q) {
-			return false
-		}
-	}
-	return true
-}
-
-func (this *StartScrape) EqualVT(that *StartScrape) bool {
+func (this *ScrapeUpdate) EqualVT(that *ScrapeUpdate) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if len(this.Hostnames) != len(that.Hostnames) {
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *ScrapeUpdate) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ScrapeUpdate)
+	if !ok {
 		return false
 	}
-	for i, vx := range this.Hostnames {
-		vy := that.Hostnames[i]
-		if vx != vy {
-			return false
-		}
-	}
-	if len(this.Standards) != len(that.Standards) {
+	return this.EqualVT(that)
+}
+func (this *StartScrape) EqualVT(that *StartScrape) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
 		return false
-	}
-	for i, vx := range this.Standards {
-		vy := that.Standards[i]
-		if vx != vy {
-			return false
-		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -2385,125 +2242,10 @@ func (this *KillScrape) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *ScrapeUpdate) EqualVT(that *ScrapeUpdate) bool {
-	if this == that {
-		return true
-	} else if this == nil || that == nil {
-		return false
-	}
-	if this.Update == nil && that.Update != nil {
-		return false
-	} else if this.Update != nil {
-		if that.Update == nil {
-			return false
-		}
-		if !this.Update.(interface {
-			EqualVT(isScrapeUpdate_Update) bool
-		}).EqualVT(that.Update) {
-			return false
-		}
-	}
-	if this.ScrapeId != that.ScrapeId {
-		return false
-	}
-	return string(this.unknownFields) == string(that.unknownFields)
-}
-
-func (this *ScrapeUpdate) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ScrapeUpdate)
-	if !ok {
-		return false
-	}
-	return this.EqualVT(that)
-}
-func (this *ScrapeUpdate_ComplianceReturn) EqualVT(thatIface isScrapeUpdate_Update) bool {
-	that, ok := thatIface.(*ScrapeUpdate_ComplianceReturn)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if p, q := this.ComplianceReturn, that.ComplianceReturn; p != q {
-		if p == nil {
-			p = &compliance.ComplianceReturn{}
-		}
-		if q == nil {
-			q = &compliance.ComplianceReturn{}
-		}
-		if equal, ok := interface{}(p).(interface {
-			EqualVT(*compliance.ComplianceReturn) bool
-		}); ok {
-			if !equal.EqualVT(q) {
-				return false
-			}
-		} else if !proto.Equal(p, q) {
-			return false
-		}
-	}
-	return true
-}
-
-func (this *ScrapeUpdate_ScrapeStarted) EqualVT(thatIface isScrapeUpdate_Update) bool {
-	that, ok := thatIface.(*ScrapeUpdate_ScrapeStarted)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if p, q := this.ScrapeStarted, that.ScrapeStarted; p != q {
-		if p == nil {
-			p = &ScrapeStarted{}
-		}
-		if q == nil {
-			q = &ScrapeStarted{}
-		}
-		if !p.EqualVT(q) {
-			return false
-		}
-	}
-	return true
-}
-
-func (this *ScrapeUpdate_ScrapeKilled) EqualVT(thatIface isScrapeUpdate_Update) bool {
-	that, ok := thatIface.(*ScrapeUpdate_ScrapeKilled)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if p, q := this.ScrapeKilled, that.ScrapeKilled; p != q {
-		if p == nil {
-			p = &ScrapeKilled{}
-		}
-		if q == nil {
-			q = &ScrapeKilled{}
-		}
-		if !p.EqualVT(q) {
-			return false
-		}
-	}
-	return true
-}
-
 func (this *ScrapeStarted) EqualVT(that *ScrapeStarted) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
-		return false
-	}
-	if this.ErrorMessage != that.ErrorMessage {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2520,9 +2262,6 @@ func (this *ScrapeKilled) EqualVT(that *ScrapeKilled) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
-		return false
-	}
-	if this.ErrorMessage != that.ErrorMessage {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -4408,71 +4147,42 @@ func (m *ScrapeCommand) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if vtmsg, ok := m.Command.(interface {
-		MarshalToSizedBufferVT([]byte) (int, error)
-	}); ok {
-		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-	}
-	if len(m.ScrapeId) > 0 {
-		i -= len(m.ScrapeId)
-		copy(dAtA[i:], m.ScrapeId)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ScrapeId)))
-		i--
-		dAtA[i] = 0xa
-	}
 	return len(dAtA) - i, nil
 }
 
-func (m *ScrapeCommand_StartScrape) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ScrapeUpdate) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ScrapeUpdate) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ScrapeCommand_StartScrape) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ScrapeUpdate) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
 	i := len(dAtA)
-	if m.StartScrape != nil {
-		size, err := m.StartScrape.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x12
-	} else {
-		i = protohelpers.EncodeVarint(dAtA, i, 0)
-		i--
-		dAtA[i] = 0x12
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
 	}
 	return len(dAtA) - i, nil
-}
-func (m *ScrapeCommand_KillScrape) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ScrapeCommand_KillScrape) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.KillScrape != nil {
-		size, err := m.KillScrape.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x1a
-	} else {
-		i = protohelpers.EncodeVarint(dAtA, i, 0)
-		i--
-		dAtA[i] = 0x1a
-	}
-	return len(dAtA) - i, nil
-}
 func (m *StartScrape) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -4502,24 +4212,6 @@ func (m *StartScrape) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
-	}
-	if len(m.Standards) > 0 {
-		for iNdEx := len(m.Standards) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Standards[iNdEx])
-			copy(dAtA[i:], m.Standards[iNdEx])
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Standards[iNdEx])))
-			i--
-			dAtA[i] = 0x12
-		}
-	}
-	if len(m.Hostnames) > 0 {
-		for iNdEx := len(m.Hostnames) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Hostnames[iNdEx])
-			copy(dAtA[i:], m.Hostnames[iNdEx])
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Hostnames[iNdEx])))
-			i--
-			dAtA[i] = 0xa
-		}
 	}
 	return len(dAtA) - i, nil
 }
@@ -4557,136 +4249,6 @@ func (m *KillScrape) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ScrapeUpdate) MarshalVT() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ScrapeUpdate) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ScrapeUpdate) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
-	if vtmsg, ok := m.Update.(interface {
-		MarshalToSizedBufferVT([]byte) (int, error)
-	}); ok {
-		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-	}
-	if len(m.ScrapeId) > 0 {
-		i -= len(m.ScrapeId)
-		copy(dAtA[i:], m.ScrapeId)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ScrapeId)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *ScrapeUpdate_ComplianceReturn) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ScrapeUpdate_ComplianceReturn) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.ComplianceReturn != nil {
-		if vtmsg, ok := interface{}(m.ComplianceReturn).(interface {
-			MarshalToSizedBufferVT([]byte) (int, error)
-		}); ok {
-			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		} else {
-			encoded, err := proto.Marshal(m.ComplianceReturn)
-			if err != nil {
-				return 0, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
-		}
-		i--
-		dAtA[i] = 0x12
-	} else {
-		i = protohelpers.EncodeVarint(dAtA, i, 0)
-		i--
-		dAtA[i] = 0x12
-	}
-	return len(dAtA) - i, nil
-}
-func (m *ScrapeUpdate_ScrapeStarted) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ScrapeUpdate_ScrapeStarted) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.ScrapeStarted != nil {
-		size, err := m.ScrapeStarted.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x1a
-	} else {
-		i = protohelpers.EncodeVarint(dAtA, i, 0)
-		i--
-		dAtA[i] = 0x1a
-	}
-	return len(dAtA) - i, nil
-}
-func (m *ScrapeUpdate_ScrapeKilled) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ScrapeUpdate_ScrapeKilled) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.ScrapeKilled != nil {
-		size, err := m.ScrapeKilled.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x22
-	} else {
-		i = protohelpers.EncodeVarint(dAtA, i, 0)
-		i--
-		dAtA[i] = 0x22
-	}
-	return len(dAtA) - i, nil
-}
 func (m *ScrapeStarted) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -4716,13 +4278,6 @@ func (m *ScrapeStarted) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
-	}
-	if len(m.ErrorMessage) > 0 {
-		i -= len(m.ErrorMessage)
-		copy(dAtA[i:], m.ErrorMessage)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ErrorMessage)))
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -4756,13 +4311,6 @@ func (m *ScrapeKilled) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
-	}
-	if len(m.ErrorMessage) > 0 {
-		i -= len(m.ErrorMessage)
-		copy(dAtA[i:], m.ErrorMessage)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ErrorMessage)))
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -5981,63 +5529,26 @@ func (m *ScrapeCommand) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.ScrapeId)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if vtmsg, ok := m.Command.(interface{ SizeVT() int }); ok {
-		n += vtmsg.SizeVT()
-	}
 	n += len(m.unknownFields)
 	return n
 }
 
-func (m *ScrapeCommand_StartScrape) SizeVT() (n int) {
+func (m *ScrapeUpdate) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.StartScrape != nil {
-		l = m.StartScrape.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	} else {
-		n += 2
-	}
+	n += len(m.unknownFields)
 	return n
 }
-func (m *ScrapeCommand_KillScrape) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.KillScrape != nil {
-		l = m.KillScrape.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	} else {
-		n += 2
-	}
-	return n
-}
+
 func (m *StartScrape) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if len(m.Hostnames) > 0 {
-		for _, s := range m.Hostnames {
-			l = len(s)
-			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-		}
-	}
-	if len(m.Standards) > 0 {
-		for _, s := range m.Standards {
-			l = len(s)
-			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-		}
-	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -6052,81 +5563,12 @@ func (m *KillScrape) SizeVT() (n int) {
 	return n
 }
 
-func (m *ScrapeUpdate) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.ScrapeId)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	if vtmsg, ok := m.Update.(interface{ SizeVT() int }); ok {
-		n += vtmsg.SizeVT()
-	}
-	n += len(m.unknownFields)
-	return n
-}
-
-func (m *ScrapeUpdate_ComplianceReturn) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.ComplianceReturn != nil {
-		if size, ok := interface{}(m.ComplianceReturn).(interface {
-			SizeVT() int
-		}); ok {
-			l = size.SizeVT()
-		} else {
-			l = proto.Size(m.ComplianceReturn)
-		}
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	} else {
-		n += 2
-	}
-	return n
-}
-func (m *ScrapeUpdate_ScrapeStarted) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.ScrapeStarted != nil {
-		l = m.ScrapeStarted.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	} else {
-		n += 2
-	}
-	return n
-}
-func (m *ScrapeUpdate_ScrapeKilled) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.ScrapeKilled != nil {
-		l = m.ScrapeKilled.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	} else {
-		n += 2
-	}
-	return n
-}
 func (m *ScrapeStarted) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.ErrorMessage)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -6137,10 +5579,6 @@ func (m *ScrapeKilled) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.ErrorMessage)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -9137,120 +8575,57 @@ func (m *ScrapeCommand) UnmarshalVT(dAtA []byte) error {
 			return fmt.Errorf("proto: ScrapeCommand: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScrapeId", wireType)
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
 			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return protohelpers.ErrInvalidLength
 			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
+			if (iNdEx + skippy) > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ScrapeId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StartScrape", wireType)
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ScrapeUpdate) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
 			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
+			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Command.(*ScrapeCommand_StartScrape); ok {
-				if err := oneof.StartScrape.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &StartScrape{}
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Command = &ScrapeCommand_StartScrape{StartScrape: v}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
 			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field KillScrape", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Command.(*ScrapeCommand_KillScrape); ok {
-				if err := oneof.KillScrape.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &KillScrape{}
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Command = &ScrapeCommand_KillScrape{KillScrape: v}
-			}
-			iNdEx = postIndex
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ScrapeUpdate: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ScrapeUpdate: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -9302,70 +8677,6 @@ func (m *StartScrape) UnmarshalVT(dAtA []byte) error {
 			return fmt.Errorf("proto: StartScrape: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Hostnames", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Hostnames = append(m.Hostnames, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Standards", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Standards = append(m.Standards, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -9439,228 +8750,6 @@ func (m *KillScrape) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ScrapeUpdate) UnmarshalVT(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return protohelpers.ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ScrapeUpdate: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ScrapeUpdate: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScrapeId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ScrapeId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ComplianceReturn", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Update.(*ScrapeUpdate_ComplianceReturn); ok {
-				if unmarshal, ok := interface{}(oneof.ComplianceReturn).(interface {
-					UnmarshalVT([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.ComplianceReturn); err != nil {
-						return err
-					}
-				}
-			} else {
-				v := &compliance.ComplianceReturn{}
-				if unmarshal, ok := interface{}(v).(interface {
-					UnmarshalVT([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
-						return err
-					}
-				}
-				m.Update = &ScrapeUpdate_ComplianceReturn{ComplianceReturn: v}
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScrapeStarted", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Update.(*ScrapeUpdate_ScrapeStarted); ok {
-				if err := oneof.ScrapeStarted.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &ScrapeStarted{}
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Update = &ScrapeUpdate_ScrapeStarted{ScrapeStarted: v}
-			}
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScrapeKilled", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Update.(*ScrapeUpdate_ScrapeKilled); ok {
-				if err := oneof.ScrapeKilled.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &ScrapeKilled{}
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Update = &ScrapeUpdate_ScrapeKilled{ScrapeKilled: v}
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *ScrapeStarted) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -9690,38 +8779,6 @@ func (m *ScrapeStarted) UnmarshalVT(dAtA []byte) error {
 			return fmt.Errorf("proto: ScrapeStarted: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ErrorMessage", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ErrorMessage = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -9773,38 +8830,6 @@ func (m *ScrapeKilled) UnmarshalVT(dAtA []byte) error {
 			return fmt.Errorf("proto: ScrapeKilled: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ErrorMessage", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ErrorMessage = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -13481,124 +12506,57 @@ func (m *ScrapeCommand) UnmarshalVTUnsafe(dAtA []byte) error {
 			return fmt.Errorf("proto: ScrapeCommand: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScrapeId", wireType)
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
 			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
 				return protohelpers.ErrInvalidLength
 			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
+			if (iNdEx + skippy) > l {
 				return io.ErrUnexpectedEOF
 			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ScrapeUpdate) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
 			}
-			m.ScrapeId = stringValue
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StartScrape", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
+			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Command.(*ScrapeCommand_StartScrape); ok {
-				if err := oneof.StartScrape.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &StartScrape{}
-				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Command = &ScrapeCommand_StartScrape{StartScrape: v}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
 			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field KillScrape", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Command.(*ScrapeCommand_KillScrape); ok {
-				if err := oneof.KillScrape.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &KillScrape{}
-				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Command = &ScrapeCommand_KillScrape{KillScrape: v}
-			}
-			iNdEx = postIndex
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ScrapeUpdate: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ScrapeUpdate: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -13650,78 +12608,6 @@ func (m *StartScrape) UnmarshalVTUnsafe(dAtA []byte) error {
 			return fmt.Errorf("proto: StartScrape: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Hostnames", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.Hostnames = append(m.Hostnames, stringValue)
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Standards", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.Standards = append(m.Standards, stringValue)
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -13795,232 +12681,6 @@ func (m *KillScrape) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ScrapeUpdate) UnmarshalVTUnsafe(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return protohelpers.ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ScrapeUpdate: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ScrapeUpdate: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScrapeId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.ScrapeId = stringValue
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ComplianceReturn", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Update.(*ScrapeUpdate_ComplianceReturn); ok {
-				if unmarshal, ok := interface{}(oneof.ComplianceReturn).(interface {
-					UnmarshalVTUnsafe([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.ComplianceReturn); err != nil {
-						return err
-					}
-				}
-			} else {
-				v := &compliance.ComplianceReturn{}
-				if unmarshal, ok := interface{}(v).(interface {
-					UnmarshalVTUnsafe([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
-						return err
-					}
-				}
-				m.Update = &ScrapeUpdate_ComplianceReturn{ComplianceReturn: v}
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScrapeStarted", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Update.(*ScrapeUpdate_ScrapeStarted); ok {
-				if err := oneof.ScrapeStarted.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &ScrapeStarted{}
-				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Update = &ScrapeUpdate_ScrapeStarted{ScrapeStarted: v}
-			}
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScrapeKilled", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Update.(*ScrapeUpdate_ScrapeKilled); ok {
-				if err := oneof.ScrapeKilled.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &ScrapeKilled{}
-				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Update = &ScrapeUpdate_ScrapeKilled{ScrapeKilled: v}
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *ScrapeStarted) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -14050,42 +12710,6 @@ func (m *ScrapeStarted) UnmarshalVTUnsafe(dAtA []byte) error {
 			return fmt.Errorf("proto: ScrapeStarted: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ErrorMessage", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.ErrorMessage = stringValue
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -14137,42 +12761,6 @@ func (m *ScrapeKilled) UnmarshalVTUnsafe(dAtA []byte) error {
 			return fmt.Errorf("proto: ScrapeKilled: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ErrorMessage", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.ErrorMessage = stringValue
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

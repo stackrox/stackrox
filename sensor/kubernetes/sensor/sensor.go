@@ -152,8 +152,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
 
 	imageService := image.NewService(clusterID, imageCache, storeProvider.Registries(), storeProvider.RegistryMirrors())
-	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
-
 	// Create Process Pipeline
 	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
 	processPipeline, err := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector, internalMessageDispatcher)
@@ -183,7 +181,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		clusterstatus.NewUpdater(cfg.k8sClient),
 		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
 		clustermetrics.New(clusterID, cfg.k8sClient.Kubernetes()),
-		complianceCommandHandler,
 		processSignals,
 		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes(), storeProvider),
 		externalsrcs.Singleton(),

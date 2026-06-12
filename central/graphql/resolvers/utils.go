@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"github.com/graph-gophers/graphql-go"
-	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -90,21 +89,6 @@ func wrapPermissions(values map[string]map[string]set.StringSet) []*scopedPermis
 	return output
 }
 
-func getStandardIDs(ctx context.Context, cs complianceStandards.Repository) ([]string, error) {
-	if err := readCompliance(ctx); err != nil {
-		return nil, err
-	}
-	standards, err := cs.Standards()
-	if err != nil {
-		return nil, err
-	}
-	result := make([]string, 0, len(standards))
-	for _, s := range standards {
-		result = append(result, s.GetId())
-	}
-	return result, nil
-}
-
 func (resolver *clusterResolver) getRoleBindings(ctx context.Context, q *v1.Query) ([]*storage.K8SRoleBinding, error) {
 	if err := readK8sRoleBindings(ctx); err != nil {
 		return nil, err
@@ -161,61 +145,6 @@ func (resolver *namespaceResolver) getSubjects(ctx context.Context, baseQuery *v
 	}
 	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
 	return subjects, nil
-}
-
-func (resolver *complianceControlResolver) getClusterIDs(ctx context.Context) ([]string, error) {
-	clusters, err := resolver.root.ClusterDataStore.GetClusters(ctx)
-	if err != nil {
-		return nil, err
-	}
-	var clusterIDs []string
-	for _, cluster := range clusters {
-		clusterIDs = append(clusterIDs, cluster.GetId())
-	}
-	return clusterIDs, nil
-}
-
-// ControlStatus can be pass/fail, or N/A is neither passing or failing
-type ControlStatus int32
-
-const (
-	fail ControlStatus = iota
-	pass
-	na
-)
-
-func (c ControlStatus) String() string {
-	return []string{"FAIL", "PASS", "N/A"}[c]
-}
-
-func getControlStatusFromAggregationResult(result *storage.ComplianceAggregation_Result) string {
-	return getControlStatus(result.GetNumFailing(), result.GetNumPassing())
-}
-
-func getControlStatus(failing, passing int32) string {
-	var cs ControlStatus
-	if passing == 0 && failing == 0 {
-		cs = na
-	} else if failing != 0 {
-		cs = fail
-	} else {
-		cs = pass
-	}
-	return cs.String()
-}
-
-func getComplianceControlNodeCountFromAggregationResults(results []*storage.ComplianceAggregation_Result) *complianceControlNodeCountResolver {
-	ret := &complianceControlNodeCountResolver{}
-	for _, r := range results {
-		if r.GetNumFailing() != 0 {
-			ret.failingCount++
-		} else if r.GetNumPassing() != 0 {
-			ret.passingCount++
-		} else {
-			ret.unknownCount++
-		}
-	}
-	return ret
 }
 
 // K8sCVEInfoResolver holds CVE and fixable count for a cluster
