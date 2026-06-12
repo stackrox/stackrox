@@ -99,11 +99,12 @@ numNamespaces: 3
 ./local-sensor.sh --test
 ```
 
-These steps will generate six output files located in `tools/local-sensor/out`:
+These steps will generate five output files in `tools/local-sensor/out`:
 
 - `trace.jsonl`: Contains the recorded k8s events.
 - `time.txt`: Contains the results of the *time* command executed in the test run.
-- `local-sensor-metrics-<date>.prom`: Contains a pre-shutdown snapshot of Sensor's Prometheus metrics, captured immediately before teardown begins.
 - `local-sensor-cpu-<date>.prof`: Contains the CPU profile of the test run.
 - `local-sensor-mem-<date>.prof`: Contains the Memory profile of the test run.
 - `sensor_events_dump.json`: Contains information of all the events sent from sensor.
+
+They will also generate `local-sensor-metrics-<date>.prom`, a pre-shutdown snapshot of Sensor's Prometheus metrics. By default, `local-sensor` writes that file relative to the current working directory unless `-metrics-snapshot-out` is set explicitly.
