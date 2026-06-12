@@ -560,7 +560,7 @@ func (s *resolverSuite) Test_ToEvent_InitContainerFiltering() {
 // wg.Done() is called once per expected invocation.
 func (s *resolverSuite) expectOutputSend(pubSubEnabled bool, matcher gomock.Matcher, times int, wg *sync.WaitGroup) {
 	if pubSubEnabled {
-		s.mockPubSubDispatcher.EXPECT().Publish(gomock.Any()).Times(times).Return(nil).
+		s.mockPubSubDispatcher.EXPECT().Publish(matcher).Times(times).Return(nil).
 			Do(func(_ interface{}) { wg.Done() })
 	} else {
 		s.mockOutput.EXPECT().Send(matcher).Times(times).
