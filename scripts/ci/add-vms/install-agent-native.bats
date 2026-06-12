@@ -7,8 +7,8 @@ function setup() {
     source "${BATS_TEST_DIRNAME}/install-agent-native.sh"
 }
 
-@test "create_native_prep_service_file prepares the curated roxroot tree" {
-    run create_native_prep_service_file
+@test "roxagent-prep.service prepares the curated roxroot tree" {
+    run cat "$SYSTEMD_DIR/roxagent-prep.service"
 
     assert_success
     assert_output --partial "ExecStartPre=/bin/rm -rf /tmp/roxroot"
