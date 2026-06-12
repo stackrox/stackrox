@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"path"
 	"runtime"
 	"runtime/pprof"
+	"strings"
 	"syscall"
 	"time"
 
@@ -44,6 +46,11 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 	"k8s.io/apimachinery/pkg/util/validation"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+)
+
+const (
+	metricsSnapshotTimeout = 15 * time.Second
+	runLabelTimeLayout     = "2006-01-02T15.04.05Z"
 )
 
 // local-sensor is an application that allows you to run sensor on your host machine for testing and
@@ -206,14 +213,56 @@ func writeMemoryProfile(runLabel string) {
 	log.Printf("Wrote memory profile to %s", name)
 }
 
-func writeMetricsSnapshot(filePath string) error {
+func makeRunLabel(name string, now time.Time) string {
+	sanitized := sanitizeFilenameLabel(name)
+	if sanitized != "" {
+		return sanitized
+	}
+	return now.UTC().Format(runLabelTimeLayout)
+}
+
+func sanitizeFilenameLabel(label string) string {
+	label = strings.TrimSpace(label)
+	if label == "" {
+		return ""
+	}
+
+	var builder strings.Builder
+	builder.Grow(len(label))
+
+	lastWasSeparator := false
+	for _, r := range label {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
+			builder.WriteRune(r)
+			lastWasSeparator = false
+		default:
+			if builder.Len() == 0 || lastWasSeparator {
+				continue
+			}
+			builder.WriteByte('-')
+			lastWasSeparator = true
+		}
+	}
+
+	return strings.Trim(builder.String(), "-")
+}
+
+func writeMetricsSnapshot(parent context.Context, filePath string) error {
+	return writeMetricsSnapshotWithExporter(parent, filePath, prometheusutil.ExportText)
+}
+
+func writeMetricsSnapshotWithExporter(parent context.Context, filePath string, exportMetrics func(context.Context, io.Writer) error) error {
 	f, err := os.Create(filePath)
 	if err != nil {
 		return errors.Wrapf(err, "could not create metrics snapshot %q", filePath)
 	}
 	defer utils.IgnoreError(f.Close)
 
-	if err := prometheusutil.ExportText(context.Background(), f); err != nil {
+	snapshotCtx, cancel := context.WithTimeout(parent, metricsSnapshotTimeout)
+	defer cancel()
+
+	if err := exportMetrics(snapshotCtx, f); err != nil {
 		return errors.Wrapf(err, "could not write metrics snapshot %q", filePath)
 	}
 
@@ -314,10 +363,7 @@ func main() {
 		utils.CrashOnError(err)
 	}
 
-	runLabel := localConfig.Name
-	if runLabel == "" {
-		runLabel = time.Now().UTC().Format(time.RFC3339)
-	}
+	runLabel := makeRunLabel(localConfig.Name, time.Now())
 
 	if !localConfig.NoCPUProfile {
 		f, err := os.Create(fmt.Sprintf("local-sensor-cpu-%s.prof", runLabel))
@@ -503,7 +549,7 @@ func main() {
 		if metricsSnapshotOut == "" {
 			metricsSnapshotOut = fmt.Sprintf("local-sensor-metrics-%s.prom", runLabel)
 		}
-		if err := writeMetricsSnapshot(metricsSnapshotOut); err != nil {
+		if err := writeMetricsSnapshot(ctx, metricsSnapshotOut); err != nil {
 			log.Printf("warning: %v", err)
 		}
 	}
