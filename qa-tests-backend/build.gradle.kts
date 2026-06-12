@@ -1,5 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
-import org.gradle.kotlin.dsl.KotlinClosure2
+import org.gradle.api.tasks.testing.TestListener
 import java.time.Duration
 
 plugins {
@@ -117,15 +117,20 @@ tasks.withType<Test>().configureEach {
     // Gradle exits 0 when tasks are skipped due to NO-SOURCE, which silently
     // breaks CI. failOnNoMatchingTests does not help because it only triggers
     // during test discovery, not when the task is skipped entirely.
-    afterSuite(KotlinClosure2<TestDescriptor, TestResult, Unit>({ desc, result ->
-        if (desc.parent == null && result.testCount == 0L) {
-            throw GradleException(
-                "No tests were executed in task '${name}'. " +
-                "This likely means test classes were no tests matched the configured filters (tags/excludes). " +
-                "Check that testClassesDirs and classpath are wired correctly."
-            )
+    addTestListener(object : TestListener {
+        override fun beforeSuite(suite: TestDescriptor) {}
+        override fun beforeTest(testDescriptor: TestDescriptor) {}
+        override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {}
+        override fun afterSuite(suite: TestDescriptor, result: TestResult) {
+            if (suite.parent == null && result.testCount == 0L) {
+                throw GradleException(
+                    "No tests were executed in task '${name}'. " +
+                    "This likely means test classes were no tests matched the configured filters (tags/excludes). " +
+                    "Check that testClassesDirs and classpath are wired correctly."
+                )
+            }
         }
-    }))
+    })
 }
 
 tasks.register<Test>("testBegin") {
@@ -259,6 +264,8 @@ tasks.register<Test>("testDeploymentCheck") {
 // callbacks don't fire for NO-SOURCE tasks, so this project-level hook is
 // the only reliable way to detect it.
 // https://discuss.gradle.org/t/copy-task-how-to-fail-on-no-source/25581
+// https://github.com/gradle/gradle/issues/36700
+@Suppress("DEPRECATION")
 gradle.taskGraph.afterTask {
     if (this is Test && state.noSource) {
         throw GradleException(
