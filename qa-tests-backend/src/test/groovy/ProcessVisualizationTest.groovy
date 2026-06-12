@@ -90,6 +90,7 @@ class ProcessVisualizationTest extends BaseSpecification {
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
+        orchestrator.deleteNamespace(NO_PERSISTENCE_NS)
     }
 
     @Tag("BAT")
