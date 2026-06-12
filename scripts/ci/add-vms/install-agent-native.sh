@@ -32,6 +32,16 @@ NATIVE_MOUNT_CANDIDATES=(
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
+build_ssh_opts() {
+    _ssh_opts=(
+        --namespace "$NAMESPACE"
+        --identity-file "$AUTOMATION_SSH_PRIVKEY"
+        --local-ssh-opts="-o StrictHostKeyChecking=no"
+        --local-ssh-opts="-o UserKnownHostsFile=/dev/null"
+        --local-ssh-opts="-o ConnectTimeout=10"
+    )
+}
+
 build_agent() {
     echo "=== Building roxagent binary ===" >&2
 
@@ -114,16 +124,10 @@ EOF
 
 native_agent_service_verified() {
     local vm_name="$1"
-    local ssh_opts=(
-        --namespace "$NAMESPACE"
-        --identity-file "$AUTOMATION_SSH_PRIVKEY"
-        --local-ssh-opts="-o StrictHostKeyChecking=no"
-        --local-ssh-opts="-o UserKnownHostsFile=/dev/null"
-        --local-ssh-opts="-o ConnectTimeout=10"
-    )
+    build_ssh_opts
 
     local status_output
-    status_output="$(virtctl ssh "${ssh_opts[@]}" \
+    status_output="$(virtctl ssh "${_ssh_opts[@]}" \
         --command "service_result=\"\$(systemctl show roxagent.service -p Result --value 2>/dev/null || true)\";
 timer_enabled=\"\$(systemctl is-enabled roxagent.timer 2>/dev/null || true)\";
 timer_active=\"\$(systemctl is-active roxagent.timer 2>/dev/null || true)\";
@@ -142,13 +146,7 @@ install_on_vm() {
 
     echo "--- Installing roxagent (native) on $vm_name ---"
 
-    local ssh_opts=(
-        --namespace "$NAMESPACE"
-        --identity-file "$AUTOMATION_SSH_PRIVKEY"
-        --local-ssh-opts="-o StrictHostKeyChecking=no"
-        --local-ssh-opts="-o UserKnownHostsFile=/dev/null"
-        --local-ssh-opts="-o ConnectTimeout=10"
-    )
+    build_ssh_opts
 
     echo "  Probing host inputs for curated roxroot mount set..."
     local probe_cmd mount_path
@@ -162,13 +160,13 @@ install_on_vm() {
     while IFS= read -r mount_path; do
         [[ -n "$mount_path" ]] && available_mounts+=("$mount_path")
     done < <(
-        virtctl ssh "${ssh_opts[@]}" \
+        virtctl ssh "${_ssh_opts[@]}" \
             --command "$probe_cmd" \
             "${SSH_USER}@vmi/${vm_name}" 2>/dev/null || true
     )
 
     echo "  Copying binary..."
-    virtctl scp "${ssh_opts[@]}" \
+    virtctl scp "${_ssh_opts[@]}" \
         "$binary_path" \
         "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent"
 
@@ -181,18 +179,18 @@ install_on_vm() {
     create_native_service_file "${available_mounts[@]}" > "$service_file"
     create_native_timer_file > "$timer_file"
 
-    virtctl scp "${ssh_opts[@]}" \
+    virtctl scp "${_ssh_opts[@]}" \
         "$prep_service_file" \
         "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent-prep.service"
-    virtctl scp "${ssh_opts[@]}" \
+    virtctl scp "${_ssh_opts[@]}" \
         "$service_file" \
         "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent.service"
-    virtctl scp "${ssh_opts[@]}" \
+    virtctl scp "${_ssh_opts[@]}" \
         "$timer_file" \
         "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent.timer"
     rm -f "$prep_service_file" "$service_file" "$timer_file"
 
-    virtctl ssh "${ssh_opts[@]}" \
+    virtctl ssh "${_ssh_opts[@]}" \
         --command 'set -e
 sudo install -m 0755 /tmp/roxagent /usr/local/bin/roxagent
 sudo restorecon -v /usr/local/bin/roxagent 2>/dev/null || true
@@ -209,7 +207,7 @@ echo "NATIVE_INSTALL_OK"' \
     echo "  Installed on $vm_name."
     echo "  Verifying agent status on $vm_name..."
     local verify_output
-    verify_output="$(virtctl ssh "${ssh_opts[@]}" \
+    verify_output="$(virtctl ssh "${_ssh_opts[@]}" \
         --command 'sudo systemctl start roxagent.service; echo "---"; sudo systemctl status roxagent.timer --no-pager; echo "---"; sudo journalctl -u roxagent.service --no-pager -n 20' \
         "${SSH_USER}@vmi/${vm_name}" 2>&1 || true)"
     printf '%s\n' "$verify_output"
