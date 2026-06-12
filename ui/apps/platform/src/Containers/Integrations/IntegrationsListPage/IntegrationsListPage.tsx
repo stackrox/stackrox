@@ -147,6 +147,28 @@ function IntegrationsListPage({ source, type }: IntegrationsListPageProps): Reac
                     </Title>
                 )}
             </PageSection>
+            {isGCR && (
+                <PageSection>
+                    <Alert
+                        title="Deprecation notice"
+                        component="p"
+                        variant="warning"
+                        isInline
+                    >
+                        Google Container Registry has been deprecated by Google. New
+                        integrations cannot be created. Use Google Artifact Registry instead.
+                        See the{' '}
+                        <a
+                            href="https://cloud.google.com/container-registry/docs/deprecations/container-registry-deprecation"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Container Registry deprecation notice
+                        </a>{' '}
+                        for more information.
+                    </Alert>
+                </PageSection>
+            )}
             <PageSection>
                 <IntegrationsTable
                     tableState={tableState}
