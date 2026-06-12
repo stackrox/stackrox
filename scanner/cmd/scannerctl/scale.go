@@ -373,13 +373,16 @@ func doWithTimeout(ctx context.Context, timeout time.Duration, f func(context.Co
 // The stopC channel signals the profiler should terminate gracefully.
 //
 // This function writes to the stopC channel to indicate when it has terminated gracefully.
-func profileForever(service, svcAddr string, cli *http.Client, dir string, stopC chan any) {
-	// Replace whatever port with the pprof default port.
-	host, _, _ := net.SplitHostPort(svcAddr)
-	if host == "" {
-		host = svcAddr
+func pprofAddr(svcAddr string) string {
+	host := svcAddr
+	if h, _, err := net.SplitHostPort(svcAddr); err == nil {
+		host = h
 	}
-	pprofAddr := net.JoinHostPort(host, "9443")
+	return net.JoinHostPort(host, "9443")
+}
+
+func profileForever(service, svcAddr string, cli *http.Client, dir string, stopC chan any) {
+	pprofAddr := pprofAddr(svcAddr)
 
 	log.Printf("profiling %s: %s", service, pprofAddr)
 	heapReq, heapErr := http.NewRequest(http.MethodGet, fmt.Sprintf("https://%s/debug/heap", pprofAddr), nil)
