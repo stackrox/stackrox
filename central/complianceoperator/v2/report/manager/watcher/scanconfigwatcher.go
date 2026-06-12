@@ -42,6 +42,11 @@ func DeleteOldResultsFromMissingScans(ctx context.Context, results *ScanConfigWa
 	for _, scanResults := range results.ScanResults {
 		scans.Remove(fmt.Sprintf("%s:%s", scanResults.Scan.GetClusterId(), scanResults.Scan.GetId()))
 	}
+	if scans.Cardinality() == 0 {
+		return nil
+	}
+	log.Warnf("Deleting old check results from %d scans that did not report results for scan config %s (missing: %v)",
+		scans.Cardinality(), results.ScanConfig.GetScanConfigName(), scans.AsSlice())
 	errList := errorhelpers.NewErrorList("delete old CheckResults from missing scans")
 	for scanWatcherID := range scans {
 		parts := strings.Split(scanWatcherID, ":")
@@ -58,6 +63,8 @@ func DeleteOldResultsFromMissingScans(ctx context.Context, results *ScanConfigWa
 			errList.AddError(errors.Errorf("unable to find Scan with ID %q", parts[1]))
 			continue
 		}
+		log.Warnf("Deleting all check results for missing scan %s (scanRefId: %s, cluster: %s)",
+			scan.GetScanName(), scan.GetScanRefId(), parts[0])
 		if err := resultsDataStore.DeleteOldResults(ctx, scan.GetLastStartedTime(), scan.GetScanRefId(), true); err != nil {
 			errList.AddError(err)
 		}
@@ -180,6 +187,13 @@ func (w *scanConfigWatcherImpl) Finished() concurrency.ReadOnlySignal {
 	return w.stopped
 }
 
+func (w *scanConfigWatcherImpl) scanConfigName() string {
+	if w.scanConfigResults.ScanConfig != nil {
+		return w.scanConfigResults.ScanConfig.GetScanConfigName()
+	}
+	return w.scanConfigResults.WatcherID
+}
+
 func (w *scanConfigWatcherImpl) run(timer Timer) {
 	defer func() {
 		w.stopped.Signal()
@@ -189,15 +203,17 @@ func (w *scanConfigWatcherImpl) run(timer Timer) {
 	for {
 		select {
 		case <-w.ctx.Done():
-			log.Infof("Stopping scan config watcher")
 			concurrency.WithLock(&w.resultsLock, func() {
+				log.Infof("Stopping scan config watcher for %s. Received %d/%d scan results (watcher id: %s)",
+					w.scanConfigName(), len(w.scanConfigResults.ScanResults), w.totalResults, w.scanConfigResults.WatcherID)
 				w.scanConfigResults.Error = ErrScanConfigContextCancelled
 				w.readyQueue.Push(w.scanConfigResults)
 			})
 			return
 		case <-timer.C():
 			concurrency.WithLock(&w.resultsLock, func() {
-				log.Warnf("Timeout waiting for the ScanConfiguration %s's scans to finish", w.scanConfigResults.ScanConfig.GetScanConfigName())
+				log.Warnf("Timeout waiting for the ScanConfiguration %s's scans to finish. Received %d/%d scan results (watcher id: %s, pending: %v)",
+					w.scanConfigName(), len(w.scanConfigResults.ScanResults), w.totalResults, w.scanConfigResults.WatcherID, w.scansToWait.AsSlice())
 				w.scanConfigResults.Error = ErrScanConfigTimeout
 				w.readyQueue.Push(w.scanConfigResults)
 			})
@@ -233,7 +249,7 @@ func (w *scanConfigWatcherImpl) handleScanResults(result *ScanWatcherResults) er
 		}
 		w.scansToWait = scans
 		w.totalResults = len(w.scansToWait)
-		log.Debugf("Scan config %s needs to wait for %d scans", w.scanConfigResults.ScanConfig.GetScanConfigName(), w.totalResults)
+		log.Debugf("Scan config %s needs to wait for %d scans", w.scanConfigName(), w.totalResults)
 	}
 	log.Debugf("Scan to handle %s with id %s", result.Scan.GetScanName(), result.Scan.GetId())
 	scanResultKey := fmt.Sprintf("%s:%s", result.Scan.GetClusterId(), result.Scan.GetId())
