@@ -227,14 +227,25 @@ function* handleAuthorizeRoxctlLoginResponse(result) {
         errorDescription: result?.error_description || null,
         token: result?.token || null,
     };
-    // Verify that the callback URL is pointing to localhost.
+    // Verify that the callback URL is pointing to localhost with an allowed protocol.
     const parsedCallbackURL = new URL(result.clientState);
-    if (parsedCallbackURL.hostname !== 'localhost' && parsedCallbackURL.hostname !== '127.0.0.1') {
-        yield call(
-            handleErrAuthResponse,
-            result,
-            'Invalid callback URL given for roxctl authorization. Only localhost is allowed as callback'
+    if (parsedCallbackURL.protocol !== 'http:' && parsedCallbackURL.protocol !== 'https:') {
+        yield put(
+            actions.handleIdpError({
+                error: 'Invalid callback URL protocol for roxctl authorization. Only http and https are allowed',
+            })
         );
+        yield put(push(loginPath));
+        return;
+    }
+    if (parsedCallbackURL.hostname !== 'localhost' && parsedCallbackURL.hostname !== '127.0.0.1') {
+        yield put(
+            actions.handleIdpError({
+                error: 'Invalid callback URL given for roxctl authorization. Only localhost is allowed as callback',
+            })
+        );
+        yield put(push(loginPath));
+        return;
     }
     // Redirect to the callback URL (i.e. the server opened by roxctl central login) with the token as query parameter
     // or any error that may have occurred.
@@ -262,6 +273,7 @@ function* dispatchAuthResponse(type, location) {
         yield call(handleTestLoginAuthResponse, location, type, result);
     } else if (result?.authorizeRoxctl === true || result?.authorizeRoxctl === 'true') {
         yield call(handleAuthorizeRoxctlLoginResponse, result);
+        return;
     } else if (result?.token) {
         yield call(authServiceStoreAccessToken, result.token);
 
