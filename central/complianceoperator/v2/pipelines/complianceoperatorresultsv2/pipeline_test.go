@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/pkg/errors"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	v2ResultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	reportMgrMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/mocks"
@@ -132,6 +133,43 @@ func (suite *PipelineTestSuite) TestRunDelete() {
 						Rationale:    "test rationale",
 						ValuesUsed:   []string{"var1", "var2"},
 						Warnings:     []string{"warning1", "warning2"},
+					},
+				},
+			},
+		},
+	}
+
+	err := pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
+	suite.NoError(err)
+}
+
+func (suite *PipelineTestSuite) TestRunCreateUpsertsPersistsWhenReportManagerFails() {
+	ctx := context.Background()
+
+	suite.clusterDS.EXPECT().GetClusterName(ctx, fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
+	suite.reportMgr.EXPECT().HandleResult(gomock.Any(), gomock.Any()).Return(errors.New("annotation not found")).Times(1)
+	suite.v2ResultDS.EXPECT().UpsertResult(ctx, gomock.Any()).Return(nil).Times(1)
+	pipeline := NewPipeline(suite.v2ResultDS, suite.clusterDS, suite.reportMgr)
+
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     id,
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_ComplianceOperatorResultV2{
+					ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{
+						Id:           id,
+						CheckId:      checkID,
+						CheckName:    mockCheckRuleName,
+						ClusterId:    fixtureconsts.Cluster1,
+						Status:       central.ComplianceOperatorCheckResultV2_FAIL,
+						Severity:     central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY,
+						Description:  "this is a test",
+						Instructions: "this is a test",
+						Annotations:  nil,
+						CreatedTime:  createdTime,
+						ScanName:     mockScanName,
+						SuiteName:    mockSuiteName,
 					},
 				},
 			},

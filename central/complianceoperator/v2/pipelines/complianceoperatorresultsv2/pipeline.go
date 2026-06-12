@@ -86,7 +86,6 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		result := internaltov2storage.ComplianceOperatorCheckResult(checkResult, clusterID, clusterName)
 		if err := s.reportMgr.HandleResult(ctx, result); err != nil {
 			log.Errorf("unable to handle the check result in the report manager: %v", err)
-			return err
 		}
 		return s.v2Datastore.UpsertResult(ctx, result)
 	}
