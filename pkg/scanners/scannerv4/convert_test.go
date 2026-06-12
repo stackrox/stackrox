@@ -7,8 +7,10 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -312,6 +314,7 @@ func TestConvert(t *testing.T) {
 func TestComponents(t *testing.T) {
 	testcases := []struct {
 		name     string
+		dedupe   bool
 		metadata *storage.ImageMetadata
 		report   *v4.VulnerabilityReport
 		expected []*storage.EmbeddedImageScanComponent
@@ -554,9 +557,220 @@ func TestComponents(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:   "RHCC source+binary+ancestry kept without dedupe feature flag",
+			dedupe: false,
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{Digest: "d"},
+			},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"src-1": {
+							Id:      "src-1",
+							Name:    "ubi9/ubi-micro",
+							Version: "1779858857",
+							Kind:    "source",
+						},
+						"bin-1": {
+							Id:      "bin-1",
+							Name:    "ubi9/ubi-micro",
+							Version: "1779858857",
+							Kind:    "binary",
+							Source:  &v4.Package{Id: "src-1", Name: "ubi9/ubi-micro", Kind: "source"},
+						},
+						"anc-1": {
+							Id:      "anc-1",
+							Name:    "ubi9/ubi-micro",
+							Version: "1779858857",
+							Kind:    "ancestry",
+							Source:  &v4.Package{Id: "src-1", Name: "ubi9/ubi-micro", Kind: "source"},
+						},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"bin-1": {Environments: []*v4.Environment{{PackageDb: "root/buildinfo/labels.json"}}},
+						"src-1": {Environments: []*v4.Environment{{PackageDb: "root/buildinfo/labels.json"}}},
+						"anc-1": {Environments: []*v4.Environment{{PackageDb: "root/buildinfo/labels.json"}}},
+					},
+				},
+			},
+			expected: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:     "ubi9/ubi-micro",
+					Version:  "1779858857",
+					Source:   storage.SourceType_OS,
+					Location: "root/buildinfo/labels.json",
+				},
+				{
+					Name:     "ubi9/ubi-micro",
+					Version:  "1779858857",
+					Source:   storage.SourceType_OS,
+					Location: "root/buildinfo/labels.json",
+				},
+				{
+					Name:     "ubi9/ubi-micro",
+					Version:  "1779858857",
+					Source:   storage.SourceType_OS,
+					Location: "root/buildinfo/labels.json",
+				},
+			},
+		},
+		{
+			name:   "RHCC source+binary+ancestry only keeps binary",
+			dedupe: true,
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{Digest: "d"},
+			},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"src-1": {
+							Id:      "src-1",
+							Name:    "ubi9/ubi-micro",
+							Version: "1779858857",
+							Kind:    "source",
+						},
+						"bin-1": {
+							Id:      "bin-1",
+							Name:    "ubi9/ubi-micro",
+							Version: "1779858857",
+							Kind:    "binary",
+							Source:  &v4.Package{Id: "src-1", Name: "ubi9/ubi-micro", Kind: "source"},
+						},
+						"anc-1": {
+							Id:      "anc-1",
+							Name:    "ubi9/ubi-micro",
+							Version: "1779858857",
+							Kind:    "ancestry",
+							Source:  &v4.Package{Id: "src-1", Name: "ubi9/ubi-micro", Kind: "source"},
+						},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"bin-1": {Environments: []*v4.Environment{{PackageDb: "root/buildinfo/labels.json"}}},
+						"src-1": {Environments: []*v4.Environment{{PackageDb: "root/buildinfo/labels.json"}}},
+						"anc-1": {Environments: []*v4.Environment{{PackageDb: "root/buildinfo/labels.json"}}},
+					},
+				},
+			},
+			expected: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:     "ubi9/ubi-micro",
+					Version:  "1779858857",
+					Source:   storage.SourceType_OS,
+					Location: "root/buildinfo/labels.json",
+				},
+			},
+		},
+		{
+			name:   "source with different name from binary is still filtered",
+			dedupe: true,
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{Digest: "d"},
+			},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"src-1": {
+							Id:      "src-1",
+							Name:    "rhel-els-container",
+							Version: "9.4-847",
+							Kind:    "source",
+						},
+						"bin-1": {
+							Id:      "bin-1",
+							Name:    "rhel-els",
+							Version: "9.4-847",
+							Kind:    "binary",
+							Source:  &v4.Package{Id: "src-1", Name: "rhel-els-container", Kind: "source"},
+						},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"bin-1": {Environments: []*v4.Environment{{PackageDb: "root/buildinfo/Dockerfile-rhel-els"}}},
+						"src-1": {Environments: []*v4.Environment{{PackageDb: "root/buildinfo/Dockerfile-rhel-els"}}},
+					},
+				},
+			},
+			expected: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:     "rhel-els",
+					Version:  "9.4-847",
+					Source:   storage.SourceType_OS,
+					Location: "root/buildinfo/Dockerfile-rhel-els",
+				},
+			},
+		},
+		{
+			name:   "source+ancestry without binary retains source",
+			dedupe: true,
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{Digest: "d"},
+			},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"src-1": {
+							Id:      "src-1",
+							Name:    "ubi9/ubi-micro",
+							Version: "1779858857",
+							Kind:    "source",
+						},
+						"anc-1": {
+							Id:      "anc-1",
+							Name:    "ubi9/ubi-micro",
+							Version: "1779858857",
+							Kind:    "ancestry",
+							Source:  &v4.Package{Id: "src-1", Name: "ubi9/ubi-micro", Kind: "source"},
+						},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"src-1": {Environments: []*v4.Environment{{PackageDb: "root/buildinfo/labels.json"}}},
+						"anc-1": {Environments: []*v4.Environment{{PackageDb: "root/buildinfo/labels.json"}}},
+					},
+				},
+			},
+			expected: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:     "ubi9/ubi-micro",
+					Version:  "1779858857",
+					Source:   storage.SourceType_OS,
+					Location: "root/buildinfo/labels.json",
+				},
+			},
+		},
+		{
+			name:   "standalone source package not referenced by binary is kept",
+			dedupe: true,
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{Digest: "d"},
+			},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"src-1": {
+							Id:      "src-1",
+							Name:    "standalone-src",
+							Version: "1.0",
+							Kind:    "source",
+						},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"src-1": {Environments: []*v4.Environment{{PackageDb: "sqlite:var/lib/rpm"}}},
+					},
+				},
+			},
+			expected: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:     "standalone-src",
+					Version:  "1.0",
+					Source:   storage.SourceType_OS,
+					Location: "var/lib/rpm",
+				},
+			},
+		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
+			testutils.MustUpdateFeature(t, features.ScannerV4Dedupe, tc.dedupe)
 			got := components(tc.metadata, tc.report)
 			protoassert.SlicesEqual(t, tc.expected, got, fmt.Sprintf("expected: %+#v\ngot: %+#v", tc.expected, got))
 		})
@@ -1625,6 +1839,351 @@ func TestVulnDataSource(t *testing.T) {
 		t.Run(testcase.expected, func(t *testing.T) {
 			name := vulnDataSource(testcase.ccVuln, testcase.os)
 			assert.Equal(t, testcase.expected, name)
+		})
+	}
+}
+
+func TestVulnerabilities_DedupByCVEName(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.ScannerV4Dedupe, true)
+
+	t.Run("duplicate CVEs are merged with highest severity", func(t *testing.T) {
+		vulnMap := map[string]*v4.VulnerabilityReport_Vulnerability{
+			"a": {
+				Id: "a", Name: "CVE-2024-1", Description: "short",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+				FixedInVersion:     "1.0.0",
+			},
+			"b": {
+				Id: "b", Name: "CVE-2024-1", Description: "a much longer description",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
+				FixedInVersion:     "2.0.0",
+			},
+		}
+		got := vulnerabilities(vulnMap, []string{"a", "b"}, "", "")
+		require.Len(t, got, 1)
+		assert.Equal(t, "CVE-2024-1", got[0].GetCve())
+		// Fix primary is "b" (higher fix version by best-effort comparison): fix fields from "b".
+		assert.Equal(t, "2.0.0", got[0].GetFixedBy())
+		// Advisories are the same (both nil), so summary comes from scoring
+		// primary ("b" — higher severity).
+		assert.Equal(t, "a much longer description", got[0].GetSummary())
+		assert.Equal(t, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, got[0].GetSeverity())
+	})
+
+	t.Run("RHSA merge: newer advisory wins fix fields, same scoring", func(t *testing.T) {
+		vulnMap := map[string]*v4.VulnerabilityReport_Vulnerability{
+			"a": {
+				Id: "a", Name: "CVE-2024-8176", Description: "stack overflow in libexpat",
+				Advisory:           &v4.VulnerabilityReport_Advisory{Name: "RHSA-2025:3531", Link: "https://access.redhat.com/errata/RHSA-2025:3531"},
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				FixedInVersion:     "0:2.5.0-3.el9_5.3",
+				Link:               "https://access.redhat.com/security/cve/CVE-2024-8176",
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+						Url:    "https://access.redhat.com/security/cve/CVE-2024-8176",
+						V3:     &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 7.5, Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"},
+					},
+				},
+			},
+			"b": {
+				Id: "b", Name: "CVE-2024-8176", Description: "stack overflow in libexpat",
+				Advisory:           &v4.VulnerabilityReport_Advisory{Name: "RHSA-2025:7444", Link: "https://access.redhat.com/errata/RHSA-2025:7444"},
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				FixedInVersion:     "0:2.5.0-5.el9_6",
+				Link:               "https://access.redhat.com/security/cve/CVE-2024-8176",
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+						Url:    "https://access.redhat.com/security/cve/CVE-2024-8176",
+						V3:     &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 7.5, Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"},
+					},
+				},
+			},
+		}
+		got := vulnerabilities(vulnMap, []string{"a", "b"}, "", "")
+		require.Len(t, got, 1)
+		assert.Equal(t, "CVE-2024-8176", got[0].GetCve())
+		assert.Equal(t, "RHSA-2025:7444", got[0].GetAdvisory().GetName())
+		assert.Equal(t, "0:2.5.0-5.el9_6", got[0].GetFixedBy())
+	})
+
+	t.Run("no advisory: more CVSS metrics wins scoring", func(t *testing.T) {
+		vulnMap := map[string]*v4.VulnerabilityReport_Vulnerability{
+			"a": {
+				Id: "a", Name: "CVE-2026-33997", Description: "Off-by-one error",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				Link:               "https://osv.dev/vulnerability/GHSA-pxq6-2prw-chj9",
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV,
+						Url:    "https://osv.dev/vulnerability/GHSA-pxq6-2prw-chj9",
+						V3:     &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 6.8, Vector: "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:N"},
+					},
+					{
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-2026-33997",
+						V3:     &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 8.1, Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:N"},
+					},
+				},
+			},
+			"b": {
+				Id: "b", Name: "CVE-2026-33997", Description: "Off-by-one error in github.com/docker/docker",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				Link:               "https://nvd.nist.gov/vuln/detail/CVE-2026-33997",
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-2026-33997",
+						V3:     &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 8.1, Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:N"},
+					},
+				},
+			},
+		}
+		got := vulnerabilities(vulnMap, []string{"a", "b"}, "", "")
+		require.Len(t, got, 1)
+		assert.Equal(t, "CVE-2026-33997", got[0].GetCve())
+		// A wins scoring (2 metrics > 1): summary, severity from A.
+		assert.Equal(t, "Off-by-one error", got[0].GetSummary())
+		assert.Len(t, got[0].GetCvssMetrics(), 2)
+	})
+
+	t.Run("no advisory: entry with fix wins over entry without", func(t *testing.T) {
+		vulnMap := map[string]*v4.VulnerabilityReport_Vulnerability{
+			"a": {
+				Id: "a", Name: "CVE-2026-34040", Description: "AuthZ plugin bypass",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				FixedInVersion:     "29.3.1",
+				Link:               "https://osv.dev/vulnerability/GHSA-x744-4wpc-v9h2",
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV,
+						Url:    "https://osv.dev/vulnerability/GHSA-x744-4wpc-v9h2",
+						V3:     &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 8.8, Vector: "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H"},
+					},
+					{
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-2026-34040",
+						V3:     &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 7.8, Vector: "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H"},
+					},
+				},
+			},
+			"b": {
+				Id: "b", Name: "CVE-2026-34040", Description: "AuthZ plugin bypass in github.com/docker/docker",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				Link:               "https://nvd.nist.gov/vuln/detail/CVE-2026-34040",
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-2026-34040",
+						V3:     &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 7.8, Vector: "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H"},
+					},
+				},
+			},
+		}
+		got := vulnerabilities(vulnMap, []string{"a", "b"}, "", "")
+		require.Len(t, got, 1)
+		assert.Equal(t, "CVE-2026-34040", got[0].GetCve())
+		assert.Equal(t, "29.3.1", got[0].GetFixedBy())
+		// A wins scoring (2 metrics > 1).
+		assert.Equal(t, "AuthZ plugin bypass", got[0].GetSummary())
+		assert.Len(t, got[0].GetCvssMetrics(), 2)
+	})
+
+	t.Run("no advisory: same metric count and severity, higher CVSS base score wins", func(t *testing.T) {
+		// Same number of CVSS metrics, same severity — the higher base
+		// score breaks the tie and its scoring fields are selected.
+		vulnMap := map[string]*v4.VulnerabilityReport_Vulnerability{
+			"a": {
+				Id: "a", Name: "CVE-2024-9999", Description: "lower score entry",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				FixedInVersion:     "1.0.0",
+				Link:               "https://example.com/low",
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-2024-9999",
+						V3:     &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 5.9, Vector: "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"},
+					},
+				},
+			},
+			"b": {
+				Id: "b", Name: "CVE-2024-9999", Description: "higher score entry",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				FixedInVersion:     "1.0.0",
+				Link:               "https://example.com/high",
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-2024-9999",
+						V3:     &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 7.5, Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"},
+					},
+				},
+			},
+		}
+		got := vulnerabilities(vulnMap, []string{"a", "b"}, "", "")
+		require.Len(t, got, 1)
+		assert.Equal(t, "CVE-2024-9999", got[0].GetCve())
+		// B wins scoring (higher base score: 7.5 > 5.9).
+		assert.Equal(t, "higher score entry", got[0].GetSummary())
+		assert.InDelta(t, 7.5, got[0].GetCvss(), 0.01)
+	})
+
+	t.Run("duplicate RHSA names are deduped", func(t *testing.T) {
+		vulnMap := map[string]*v4.VulnerabilityReport_Vulnerability{
+			"a": {Id: "a", Name: "RHSA-2024:100"},
+			"b": {Id: "b", Name: "RHSA-2024:100"},
+		}
+		got := vulnerabilities(vulnMap, []string{"a", "b"}, "", "")
+		assert.Len(t, got, 1)
+	})
+
+	t.Run("no duplicates passes through", func(t *testing.T) {
+		vulnMap := map[string]*v4.VulnerabilityReport_Vulnerability{
+			"a": {Id: "a", Name: "CVE-2024-1"},
+			"b": {Id: "b", Name: "CVE-2024-2"},
+		}
+		got := vulnerabilities(vulnMap, []string{"a", "b"}, "", "")
+		assert.Len(t, got, 2)
+	})
+
+	t.Run("feature flag off disables dedupe", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.ScannerV4Dedupe, false)
+		vulnMap := map[string]*v4.VulnerabilityReport_Vulnerability{
+			"a": {Id: "a", Name: "CVE-2024-1"},
+			"b": {Id: "b", Name: "CVE-2024-1"},
+		}
+		got := vulnerabilities(vulnMap, []string{"a", "b"}, "", "")
+		assert.Len(t, got, 2)
+	})
+
+	t.Run("higher fix version wins when all else equal", func(t *testing.T) {
+		vulnMap := map[string]*v4.VulnerabilityReport_Vulnerability{
+			"a": {
+				Id: "a", Name: "CVE-2024-1",
+				FixedInVersion: "1.2.3",
+			},
+			"b": {
+				Id: "b", Name: "CVE-2024-1",
+				FixedInVersion: "1.2.5",
+			},
+		}
+		got := vulnerabilities(vulnMap, []string{"a", "b"}, "", "")
+		require.Len(t, got, 1)
+		assert.Equal(t, "1.2.5", got[0].GetFixedBy())
+	})
+
+	t.Run("three duplicates merge rolling", func(t *testing.T) {
+		vulnMap := map[string]*v4.VulnerabilityReport_Vulnerability{
+			"a": {
+				Id: "a", Name: "CVE-2024-1",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+				FixedInVersion:     "1.0.0",
+			},
+			"b": {
+				Id: "b", Name: "CVE-2024-1",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
+				FixedInVersion:     "2.0.0",
+			},
+			"c": {
+				Id: "c", Name: "CVE-2024-1",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+				FixedInVersion:     "3.0.0",
+			},
+		}
+		got := vulnerabilities(vulnMap, []string{"a", "b", "c"}, "", "")
+		require.Len(t, got, 1)
+		// Scoring: "b" wins (CRITICAL > MODERATE > LOW).
+		assert.Equal(t, storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, got[0].GetSeverity())
+		// Fix: "c" wins (3.0.0 > 2.0.0 > 1.0.0 by best-effort compare).
+		assert.Equal(t, "3.0.0", got[0].GetFixedBy())
+	})
+
+	t.Run("equal scoring keeps first-seen", func(t *testing.T) {
+		vulnMap := map[string]*v4.VulnerabilityReport_Vulnerability{
+			"a": {
+				Id: "a", Name: "CVE-2024-1", Description: "first",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+			},
+			"b": {
+				Id: "b", Name: "CVE-2024-1", Description: "second",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+			},
+		}
+		got := vulnerabilities(vulnMap, []string{"a", "b"}, "", "")
+		require.Len(t, got, 1)
+		// Equal scoring — first-seen ("a") keeps its summary.
+		assert.Equal(t, "first", got[0].GetSummary())
+	})
+
+	t.Run("dst fix matches pkgFixedBy, src fix does not", func(t *testing.T) {
+		vulnMap := map[string]*v4.VulnerabilityReport_Vulnerability{
+			"a": {
+				Id: "a", Name: "CVE-2024-1",
+				FixedInVersion: "2.0.0",
+			},
+			"b": {
+				Id: "b", Name: "CVE-2024-1",
+				FixedInVersion: "1.5.0",
+			},
+		}
+		// "a" matches pkgFixedBy, "b" does not — "a" keeps its fix.
+		got := vulnerabilities(vulnMap, []string{"a", "b"}, "", "2.0.0")
+		require.Len(t, got, 1)
+		assert.Equal(t, "2.0.0", got[0].GetFixedBy())
+	})
+
+	t.Run("later fix date wins with no fix version", func(t *testing.T) {
+		earlier := protocompat.GetProtoTimestampFromSeconds(1700000000)
+		later := protocompat.GetProtoTimestampFromSeconds(1710000000)
+		vulnMap := map[string]*v4.VulnerabilityReport_Vulnerability{
+			"a": {
+				Id: "a", Name: "CVE-2024-1",
+				Advisory:       &v4.VulnerabilityReport_Advisory{Name: "RHSA-2024:100"},
+				FixedInVersion: "1.0.0",
+				FixedDate:      earlier,
+			},
+			"b": {
+				Id: "b", Name: "CVE-2024-1",
+				Advisory:  &v4.VulnerabilityReport_Advisory{Name: "RHSA-2024:200"},
+				FixedDate: later,
+			},
+		}
+		got := vulnerabilities(vulnMap, []string{"a", "b"}, "", "")
+		require.Len(t, got, 1)
+		// "b" wins on fix date — fix version is empty from "b".
+		assert.Equal(t, "RHSA-2024:200", got[0].GetAdvisory().GetName())
+		assert.Equal(t, "", got[0].GetFixedBy())
+	})
+}
+
+func TestCompareNumericSegments(t *testing.T) {
+	testcases := map[string]struct {
+		a, b     string
+		expected int
+	}{
+		"equal":                            {"1.2.3", "1.2.3", 0},
+		"semver less":                      {"1.2.3", "1.2.5", -1},
+		"semver greater":                   {"2.0.0", "1.9.9", 1},
+		"major differs":                    {"1.0.0", "2.0.0", -1},
+		"rpm style":                        {"0:1.2.3-4.el8", "0:1.2.3-5.el8", -1},
+		"rpm epoch differs":                {"0:1.2.3-4.el8", "1:1.2.3-4.el8", -1},
+		"longer version wins":              {"1.2.3", "1.2.3.1", -1},
+		"shorter version loses":            {"1.2.3.1", "1.2.3", 1},
+		"debian style":                     {"1.2.3-4ubuntu5", "1.2.3-4ubuntu6", -1},
+		"same numeric diff suffix":         {"1.2.3-alpha", "1.2.3-beta", -1},
+		"more segments but smaller values": {"0.0.0.0.1", "1.0.0", -1},
+		"fewer segments but larger values": {"2.0", "1.9.9.9.9", 1},
+		"empty equal":                      {"", "", 0},
+	}
+	for name, tt := range testcases {
+		t.Run(name, func(t *testing.T) {
+			got := compareNumericSegments(tt.a, tt.b)
+			assert.Equal(t, tt.expected, got)
+			if tt.expected != 0 {
+				reverse := compareNumericSegments(tt.b, tt.a)
+				assert.Equal(t, -tt.expected, reverse)
+			}
 		})
 	}
 }
