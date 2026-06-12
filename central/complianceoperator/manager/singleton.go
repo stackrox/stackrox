@@ -1,8 +1,6 @@
 package manager
 
 import (
-	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
-	"github.com/stackrox/rox/central/compliance/standards"
 	checkResultsDatastore "github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/profiles/datastore"
 	rulesDatastore "github.com/stackrox/rox/central/complianceoperator/rules/datastore"
@@ -21,7 +19,7 @@ var (
 func Singleton() Manager {
 	once.Do(func() {
 		var err error
-		manager, err = NewManager(standards.RegistrySingleton(), profileDatastore.Singleton(), scansDatastore.Singleton(), scanSettingBindingDatastore.Singleton(), rulesDatastore.Singleton(), checkResultsDatastore.Singleton(), complianceDatastore.Singleton())
+		manager, err = NewManager(profileDatastore.Singleton(), scansDatastore.Singleton(), scanSettingBindingDatastore.Singleton(), rulesDatastore.Singleton(), checkResultsDatastore.Singleton())
 		utils.Must(err)
 	})
 	return manager

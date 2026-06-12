@@ -10,7 +10,6 @@
 package mocks
 
 import (
-	context "context"
 	reflect "reflect"
 
 	storage "github.com/stackrox/rox/generated/storage"
@@ -138,46 +137,4 @@ func (m *MockManager) GetMachineConfigs(clusterID string) (map[string][]string, 
 func (mr *MockManagerMockRecorder) GetMachineConfigs(clusterID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMachineConfigs", reflect.TypeOf((*MockManager)(nil).GetMachineConfigs), clusterID)
-}
-
-// IsStandardActive mocks base method.
-func (m *MockManager) IsStandardActive(standardID string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsStandardActive", standardID)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsStandardActive indicates an expected call of IsStandardActive.
-func (mr *MockManagerMockRecorder) IsStandardActive(standardID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsStandardActive", reflect.TypeOf((*MockManager)(nil).IsStandardActive), standardID)
-}
-
-// IsStandardActiveForCluster mocks base method.
-func (m *MockManager) IsStandardActiveForCluster(standardID, clusterID string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsStandardActiveForCluster", standardID, clusterID)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsStandardActiveForCluster indicates an expected call of IsStandardActiveForCluster.
-func (mr *MockManagerMockRecorder) IsStandardActiveForCluster(standardID, clusterID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsStandardActiveForCluster", reflect.TypeOf((*MockManager)(nil).IsStandardActiveForCluster), standardID, clusterID)
-}
-
-// IsStandardHidden mocks base method.
-func (m *MockManager) IsStandardHidden(ctx context.Context, standardID string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsStandardHidden", ctx, standardID)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsStandardHidden indicates an expected call of IsStandardHidden.
-func (mr *MockManagerMockRecorder) IsStandardHidden(ctx, standardID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsStandardHidden", reflect.TypeOf((*MockManager)(nil).IsStandardHidden), ctx, standardID)
 }

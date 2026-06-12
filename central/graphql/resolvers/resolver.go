@@ -12,12 +12,6 @@ import (
 	"github.com/stackrox/rox/central/audit"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
-	"github.com/stackrox/rox/central/compliance/aggregation"
-	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
-	complianceManager "github.com/stackrox/rox/central/compliance/manager"
-	"github.com/stackrox/rox/central/compliance/manager/service"
-	complianceService "github.com/stackrox/rox/central/compliance/service"
-	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	complianceOperatorManager "github.com/stackrox/rox/central/complianceoperator/manager"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
@@ -59,28 +53,24 @@ import (
 	"github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/querymgr"
 	"github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	auditPkg "github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	mitreDataStore "github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
+var log = logging.LoggerForModule()
+
 // Resolver is the root GraphQL resolver
 type Resolver struct {
-	ComplianceAggregator          aggregation.Aggregator
 	APITokenBackend               backend.Backend
 	ClusterDataStore              clusterDatastore.DataStore
 	ClusterCVEDataStore           clusterCVEDataStore.DataStore
-	ComplianceDataStore           complianceDS.DataStore
-	ComplianceStandardStore       complianceStandards.Repository
-	ComplianceService             v1.ComplianceServiceServer
-	ComplianceManagementService   v1.ComplianceManagementServiceServer
-	ComplianceManager             complianceManager.ComplianceManager
 	ClusterCVEEdgeDataStore       clusterCVEEdgeDataStore.DataStore
 	NodeCVEDataStore              nodeCVEDataStore.DataStore
 	DeploymentDataStore           deploymentDatastore.DataStore
@@ -130,13 +120,7 @@ type Resolver struct {
 // New returns a Resolver wired into the relevant data stores
 func New() *Resolver {
 	resolver := &Resolver{
-		ComplianceAggregator:          aggregation.Singleton(),
 		APITokenBackend:               backend.Singleton(),
-		ComplianceDataStore:           complianceDS.Singleton(),
-		ComplianceStandardStore:       complianceStandards.RegistrySingleton(),
-		ComplianceManagementService:   service.Singleton(),
-		ComplianceManager:             complianceManager.Singleton(),
-		ComplianceService:             complianceService.Singleton(),
 		ClusterDataStore:              clusterDatastore.Singleton(),
 		ClusterCVEEdgeDataStore:       clusterCVEEdgeDataStore.Singleton(),
 		DeploymentDataStore:           deploymentDatastore.Singleton(),

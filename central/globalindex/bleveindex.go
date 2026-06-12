@@ -1,7 +1,6 @@
 package globalindex
 
 import (
-	complianceMapping "github.com/stackrox/rox/central/compliance/search"
 	"github.com/stackrox/rox/central/globalindex/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
@@ -11,9 +10,7 @@ var (
 
 	// SearchOptionsMap includes options maps that are not required for document mapping
 	SearchOptionsMap = func() map[v1.SearchCategory][]search.FieldLabel {
-		var searchMap = map[v1.SearchCategory][]search.FieldLabel{
-			v1.SearchCategory_COMPLIANCE: complianceMapping.Options,
-		}
+		searchMap := make(map[v1.SearchCategory][]search.FieldLabel)
 		entityOptions := mapping.GetEntityOptionsMap()
 		for k, v := range entityOptions {
 			searchMap[k] = optionsMapToSlice(v)

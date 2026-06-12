@@ -2,7 +2,6 @@ package mapping
 
 import (
 	alertMapping "github.com/stackrox/rox/central/alert/mappings"
-	"github.com/stackrox/rox/central/compliance/standards/index"
 	subjectMapping "github.com/stackrox/rox/central/rbac/service/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
@@ -59,8 +58,6 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_CLUSTER_VULN_EDGE:       clusterToVulnerabilitySearchOptions,
 		v1.SearchCategory_CLUSTER_VULNERABILITIES: clusterToVulnerabilitySearchOptions,
 		v1.SearchCategory_CLUSTERS:                schema.ClustersSchema.OptionsMap,
-		v1.SearchCategory_COMPLIANCE_STANDARD:     index.StandardOptions,
-		v1.SearchCategory_COMPLIANCE_CONTROL:      index.ControlOptions,
 		v1.SearchCategory_DEPLOYMENTS:             deploymentsCustomSearchOptions,
 		v1.SearchCategory_IMAGE_INTEGRATIONS:      schema.ImageIntegrationsSchema.OptionsMap,
 		v1.SearchCategory_NAMESPACES:              schema.NamespacesSchema.OptionsMap,

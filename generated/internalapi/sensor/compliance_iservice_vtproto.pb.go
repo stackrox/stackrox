@@ -7,7 +7,6 @@ package sensor
 import (
 	fmt "fmt"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
-	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	storage "github.com/stackrox/rox/generated/storage"
 	proto "google.golang.org/protobuf/proto"
@@ -90,23 +89,6 @@ func (m *MsgFromCompliance) CloneVT() *MsgFromCompliance {
 
 func (m *MsgFromCompliance) CloneMessageVT() proto.Message {
 	return m.CloneVT()
-}
-
-func (m *MsgFromCompliance_Return) CloneVT() isMsgFromCompliance_Msg {
-	if m == nil {
-		return (*MsgFromCompliance_Return)(nil)
-	}
-	r := new(MsgFromCompliance_Return)
-	if rhs := m.Return; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
-			CloneVT() *compliance.ComplianceReturn
-		}); ok {
-			r.Return = vtpb.CloneVT()
-		} else {
-			r.Return = proto.Clone(rhs).(*compliance.ComplianceReturn)
-		}
-	}
-	return r
 }
 
 func (m *MsgFromCompliance_AuditEvents) CloneVT() isMsgFromCompliance_Msg {
@@ -335,15 +317,6 @@ func (m *MsgToCompliance_Config) CloneVT() isMsgToCompliance_Msg {
 	return r
 }
 
-func (m *MsgToCompliance_Trigger) CloneVT() isMsgToCompliance_Msg {
-	if m == nil {
-		return (*MsgToCompliance_Trigger)(nil)
-	}
-	r := new(MsgToCompliance_Trigger)
-	r.Trigger = m.Trigger.CloneVT()
-	return r
-}
-
 func (m *MsgToCompliance_AuditLogCollectionRequest_) CloneVT() isMsgToCompliance_Msg {
 	if m == nil {
 		return (*MsgToCompliance_AuditLogCollectionRequest_)(nil)
@@ -463,37 +436,6 @@ func (this *MsgFromCompliance) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *MsgFromCompliance_Return) EqualVT(thatIface isMsgFromCompliance_Msg) bool {
-	that, ok := thatIface.(*MsgFromCompliance_Return)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if p, q := this.Return, that.Return; p != q {
-		if p == nil {
-			p = &compliance.ComplianceReturn{}
-		}
-		if q == nil {
-			q = &compliance.ComplianceReturn{}
-		}
-		if equal, ok := interface{}(p).(interface {
-			EqualVT(*compliance.ComplianceReturn) bool
-		}); ok {
-			if !equal.EqualVT(q) {
-				return false
-			}
-		} else if !proto.Equal(p, q) {
-			return false
-		}
-	}
-	return true
-}
-
 func (this *MsgFromCompliance_AuditEvents) EqualVT(thatIface isMsgFromCompliance_Msg) bool {
 	that, ok := thatIface.(*MsgFromCompliance_AuditEvents)
 	if !ok {
@@ -854,31 +796,6 @@ func (this *MsgToCompliance_Config) EqualVT(thatIface isMsgToCompliance_Msg) boo
 	return true
 }
 
-func (this *MsgToCompliance_Trigger) EqualVT(thatIface isMsgToCompliance_Msg) bool {
-	that, ok := thatIface.(*MsgToCompliance_Trigger)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if p, q := this.Trigger, that.Trigger; p != q {
-		if p == nil {
-			p = &MsgToCompliance_TriggerRun{}
-		}
-		if q == nil {
-			q = &MsgToCompliance_TriggerRun{}
-		}
-		if !p.EqualVT(q) {
-			return false
-		}
-	}
-	return true
-}
-
 func (this *MsgToCompliance_AuditLogCollectionRequest_) EqualVT(thatIface isMsgToCompliance_Msg) bool {
 	that, ok := thatIface.(*MsgToCompliance_AuditLogCollectionRequest_)
 	if !ok {
@@ -1107,41 +1024,6 @@ func (m *MsgFromCompliance) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgFromCompliance_Return) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *MsgFromCompliance_Return) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.Return != nil {
-		if vtmsg, ok := interface{}(m.Return).(interface {
-			MarshalToSizedBufferVT([]byte) (int, error)
-		}); ok {
-			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		} else {
-			encoded, err := proto.Marshal(m.Return)
-			if err != nil {
-				return 0, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
-		}
-		i--
-		dAtA[i] = 0x12
-	} else {
-		i = protohelpers.EncodeVarint(dAtA, i, 0)
-		i--
-		dAtA[i] = 0x12
-	}
-	return len(dAtA) - i, nil
-}
 func (m *MsgFromCompliance_AuditEvents) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
@@ -1680,29 +1562,6 @@ func (m *MsgToCompliance_Config) MarshalToSizedBufferVT(dAtA []byte) (int, error
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToCompliance_Trigger) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *MsgToCompliance_Trigger) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.Trigger != nil {
-		size, err := m.Trigger.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x12
-	} else {
-		i = protohelpers.EncodeVarint(dAtA, i, 0)
-		i--
-		dAtA[i] = 0x12
-	}
-	return len(dAtA) - i, nil
-}
 func (m *MsgToCompliance_AuditLogCollectionRequest_) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
@@ -1829,26 +1688,6 @@ func (m *MsgFromCompliance) SizeVT() (n int) {
 	return n
 }
 
-func (m *MsgFromCompliance_Return) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Return != nil {
-		if size, ok := interface{}(m.Return).(interface {
-			SizeVT() int
-		}); ok {
-			l = size.SizeVT()
-		} else {
-			l = proto.Size(m.Return)
-		}
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	} else {
-		n += 2
-	}
-	return n
-}
 func (m *MsgFromCompliance_AuditEvents) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -2075,20 +1914,6 @@ func (m *MsgToCompliance_Config) SizeVT() (n int) {
 	_ = l
 	if m.Config != nil {
 		l = m.Config.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	} else {
-		n += 2
-	}
-	return n
-}
-func (m *MsgToCompliance_Trigger) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Trigger != nil {
-		l = m.Trigger.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 2
@@ -2405,63 +2230,6 @@ func (m *MsgFromCompliance) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Node = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Return", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Msg.(*MsgFromCompliance_Return); ok {
-				if unmarshal, ok := interface{}(oneof.Return).(interface {
-					UnmarshalVT([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Return); err != nil {
-						return err
-					}
-				}
-			} else {
-				v := &compliance.ComplianceReturn{}
-				if unmarshal, ok := interface{}(v).(interface {
-					UnmarshalVT([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
-						return err
-					}
-				}
-				m.Msg = &MsgFromCompliance_Return{Return: v}
-			}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -3468,47 +3236,6 @@ func (m *MsgToCompliance) UnmarshalVT(dAtA []byte) error {
 				m.Msg = &MsgToCompliance_Config{Config: v}
 			}
 			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Trigger", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Msg.(*MsgToCompliance_Trigger); ok {
-				if err := oneof.Trigger.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &MsgToCompliance_TriggerRun{}
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Msg = &MsgToCompliance_Trigger{Trigger: v}
-			}
-			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AuditLogCollectionRequest", wireType)
@@ -3934,63 +3661,6 @@ func (m *MsgFromCompliance) UnmarshalVTUnsafe(dAtA []byte) error {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.Node = stringValue
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Return", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Msg.(*MsgFromCompliance_Return); ok {
-				if unmarshal, ok := interface{}(oneof.Return).(interface {
-					UnmarshalVTUnsafe([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.Return); err != nil {
-						return err
-					}
-				}
-			} else {
-				v := &compliance.ComplianceReturn{}
-				if unmarshal, ok := interface{}(v).(interface {
-					UnmarshalVTUnsafe([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
-						return err
-					}
-				}
-				m.Msg = &MsgFromCompliance_Return{Return: v}
-			}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -5015,47 +4685,6 @@ func (m *MsgToCompliance) UnmarshalVTUnsafe(dAtA []byte) error {
 					return err
 				}
 				m.Msg = &MsgToCompliance_Config{Config: v}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Trigger", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Msg.(*MsgToCompliance_Trigger); ok {
-				if err := oneof.Trigger.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &MsgToCompliance_TriggerRun{}
-				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Msg = &MsgToCompliance_Trigger{Trigger: v}
 			}
 			iNdEx = postIndex
 		case 3:

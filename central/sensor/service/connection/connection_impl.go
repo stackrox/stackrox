@@ -13,7 +13,6 @@ import (
 	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
-	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/securedclustercertgen"
 	"github.com/stackrox/rox/central/sensor/networkentities"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
@@ -59,7 +58,6 @@ type sensorConnection struct {
 
 	sendC chan *central.MsgToSensor
 
-	scrapeCtrl          scrape.Controller
 	networkPoliciesCtrl networkpolicies.Controller
 	networkEntitiesCtrl networkentities.Controller
 	telemetryCtrl       telemetry.Controller
@@ -143,7 +141,6 @@ func newConnection(ctx context.Context,
 
 	conn.hashDeduper = deduper
 	conn.sensorEventHandler = newSensorEventHandler(cluster, sensorHello.GetSensorVersion(), eventPipeline, conn, &conn.stopSig, deduper, initSyncMgr)
-	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
 	conn.networkEntitiesCtrl = networkentities.NewController(cluster.GetId(), networkEntityMgr, graph.Singleton(), conn, &conn.stopSig)
 	conn.telemetryCtrl = telemetry.NewController(conn.capabilities, conn, &conn.stopSig)
@@ -308,10 +305,6 @@ func (c *sensorConnection) runSend(server central.SensorService_CommunicateServe
 	}
 }
 
-func (c *sensorConnection) Scrapes() scrape.Controller {
-	return c.scrapeCtrl
-}
-
 func (c *sensorConnection) InjectMessageIntoQueue(msg *central.MsgFromSensor) {
 	c.multiplexedPush(sac.WithAllAccess(WithConnection(context.Background(), c)), msg, nil)
 }
@@ -346,8 +339,6 @@ func (c *sensorConnection) InjectMessage(ctx concurrency.Waitable, msg *central.
 
 func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFromSensor) error {
 	switch m := msg.GetMsg().(type) {
-	case *central.MsgFromSensor_ScrapeUpdate:
-		return c.scrapeCtrl.ProcessScrapeUpdate(m.ScrapeUpdate)
 	case *central.MsgFromSensor_NetworkPoliciesResponse:
 		return c.networkPoliciesCtrl.ProcessNetworkPoliciesResponse(m.NetworkPoliciesResponse)
 	case *central.MsgFromSensor_TelemetryDataResponse:
