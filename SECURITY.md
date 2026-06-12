@@ -25,6 +25,11 @@ following in your report:
 We aim to provide an initial acknowledgement of your report within 10 business
 days. All confirmed security vulnerabilities and incidents will be addressed
 according to severity level and impact on the project.
+## **Contact Information**
+
+Direct all security questions and vulnerability reports to:
+
+- **Email**: secalert@redhat.com  
 
 ## Supported Versions
 
