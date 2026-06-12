@@ -49,8 +49,11 @@ function PolicyFiltersForm() {
     const { values, setFieldValue } = useFormikContext<ClientPolicy>();
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    const showContainerFilters = isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT');
-    const showImageLayerFilters = isFeatureFlagEnabled('ROX_POLICY_FILTERS_UI');
+    const evaluationFilterEnabled = isFeatureFlagEnabled('ROX_EVALUATION_FILTER');
+    const showContainerFilters =
+        evaluationFilterEnabled && isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT');
+    const showImageLayerFilters =
+        evaluationFilterEnabled && isFeatureFlagEnabled('ROX_POLICY_FILTERS_UI');
 
     const skipContainerTypes = values.evaluationFilter?.skipContainerTypes ?? [];
     const skipImageLayers = values.evaluationFilter?.skipImageLayers ?? 'SKIP_NONE';

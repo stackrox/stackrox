@@ -48,13 +48,17 @@ function getImageLayerLabel(evaluationFilter: EvaluationFilter | null): string |
 function PolicyFiltersSection({ evaluationFilter, lifecycleStages }: PolicyFiltersSectionProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    const containerTypeLabel = isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT')
-        ? getContainerTypeLabel(evaluationFilter, lifecycleStages)
-        : null;
+    const evaluationFilterEnabled = isFeatureFlagEnabled('ROX_EVALUATION_FILTER');
 
-    const imageLayerLabel = isFeatureFlagEnabled('ROX_POLICY_FILTERS_UI')
-        ? getImageLayerLabel(evaluationFilter)
-        : null;
+    const containerTypeLabel =
+        evaluationFilterEnabled && isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT')
+            ? getContainerTypeLabel(evaluationFilter, lifecycleStages)
+            : null;
+
+    const imageLayerLabel =
+        evaluationFilterEnabled && isFeatureFlagEnabled('ROX_POLICY_FILTERS_UI')
+            ? getImageLayerLabel(evaluationFilter)
+            : null;
 
     if (!containerTypeLabel && !imageLayerLabel) {
         return null;

@@ -14,7 +14,7 @@ function PolicyEvaluationFilterLabels({
 }: PolicyEvaluationFilterLabelsProps): ReactElement | null {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    if (!evaluationFilter) {
+    if (!evaluationFilter || !isFeatureFlagEnabled('ROX_EVALUATION_FILTER')) {
         return null;
     }
 
