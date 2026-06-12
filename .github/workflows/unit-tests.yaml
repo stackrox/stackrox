@@ -122,24 +122,17 @@ jobs:
     - name: Cache debug — post-test diagnostics
       if: always()
       run: |
-        echo "::group::Post-test cache state"
+        set +e
         gocache="$(go env GOCACHE)"
-        echo "GOCACHE size after tests: $(du -sm "$gocache" 2>/dev/null | cut -f1)MB"
-        echo "Entry count after tests: $(find "$gocache" -type f ! -name trim.txt ! -name README | wc -l | tr -d ' ')"
-        echo "trim.txt now: $(cat "$gocache/trim.txt" 2>/dev/null)"
-
-        # Count cached vs non-cached from test output
+        echo "GOCACHE after tests: $(du -sm "$gocache" 2>/dev/null | cut -f1)MB"
+        echo "Entry count: $(find "$gocache" -type f 2>/dev/null | wc -l | tr -d ' ')"
+        echo "trim.txt: $(cat "$gocache/trim.txt" 2>/dev/null)"
         if [[ -f /tmp/go-test-output.txt ]]; then
           cached=$(grep -c '(cached)' /tmp/go-test-output.txt || true)
           total=$(grep -cE 'ok\s+github\.com/stackrox' /tmp/go-test-output.txt || true)
           echo "Test results: $cached/$total cached"
-
-          # Show first 10 non-cached packages
-          echo ""
-          echo "First 10 non-cached:"
-          grep -E 'ok\s+github\.com/stackrox' /tmp/go-test-output.txt | grep -v '(cached)' | head -10
         fi
-        echo "::endgroup::"
+        exit 0
       shell: bash
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
