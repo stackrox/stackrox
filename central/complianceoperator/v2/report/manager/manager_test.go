@@ -433,6 +433,188 @@ func (m *ManagerTestSuite) TestHandleScan() {
 	})
 }
 
+func (m *ManagerTestSuite) TestCompletedScansBlocksWatcherWithinTTL() {
+	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorScanConfigurationV2{{Id: "scan-config-id"}}, nil)
+	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
+
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+	impl := manager.(*managerImpl)
+
+	scan := &storage.ComplianceOperatorScanV2{
+		Id:              "scan-id",
+		ClusterId:       "cluster-id",
+		LastStartedTime: protocompat.TimestampNow(),
+	}
+
+	// Create and verify the first watcher exists.
+	err := manager.HandleScan(context.Background(), scan)
+	m.Require().NoError(err)
+	id, err := watcher.GetWatcherIDFromScan(context.Background(), scan, m.snapshotDataStore, m.scanConfigDataStore, nil)
+	m.Require().NoError(err)
+
+	concurrency.WithLock(&impl.watchingScansLock, func() {
+		m.Require().Contains(impl.watchingScans, id)
+	})
+
+	// Simulate watcher completion: remove from watchingScans, add to completedScans.
+	concurrency.WithLock(&impl.watchingScansLock, func() {
+		w := impl.watchingScans[id]
+		w.Stop(nil)
+		<-w.Finished().Done()
+		delete(impl.watchingScans, id)
+		impl.completedScans[id] = time.Now()
+	})
+
+	// Attempting to create a watcher for the same ID should be blocked.
+	err = manager.HandleScan(context.Background(), scan)
+	m.Require().NoError(err)
+	concurrency.WithLock(&impl.watchingScansLock, func() {
+		_, found := impl.watchingScans[id]
+		m.Assert().False(found, "watcher should NOT be created while completedScans entry is within TTL")
+	})
+}
+
+func (m *ManagerTestSuite) TestCompletedScansAllowsWatcherAfterTTL() {
+	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorScanConfigurationV2{{Id: "scan-config-id"}}, nil)
+	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
+
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+	impl := manager.(*managerImpl)
+
+	scan := &storage.ComplianceOperatorScanV2{
+		Id:              "scan-id",
+		ClusterId:       "cluster-id",
+		LastStartedTime: protocompat.TimestampNow(),
+	}
+
+	id, err := watcher.GetWatcherIDFromScan(context.Background(), scan, m.snapshotDataStore, m.scanConfigDataStore, nil)
+	m.Require().NoError(err)
+
+	// Simulate a completion entry that is already expired.
+	concurrency.WithLock(&impl.watchingScansLock, func() {
+		impl.completedScans[id] = time.Now().Add(-completedScansTTL - time.Second)
+	})
+
+	// A new watcher should be created because the entry has expired.
+	err = manager.HandleScan(context.Background(), scan)
+	m.Require().NoError(err)
+	concurrency.WithLock(&impl.watchingScansLock, func() {
+		w, found := impl.watchingScans[id]
+		m.Assert().True(found, "watcher should be created after completedScans entry expires")
+		m.Assert().NotNil(w)
+		// Clean up watcher
+		w.Stop(nil)
+		<-w.Finished().Done()
+		delete(impl.watchingScans, id)
+	})
+}
+
+// TestScanWatcherLifecycleAcrossCycles verifies that a scan watcher is created
+// for a second scan cycle that reuses the same scan K8s UID, after the first
+// cycle's watcher completes and the completedScans TTL expires. This is the
+// exact scenario that the completedScans TTL guards against: the Compliance
+// Operator reuses ComplianceScan objects (same UID) across cycles, and without
+// TTL-bounded expiry the completedScans set would permanently block all
+// subsequent cycles.
+func (m *ManagerTestSuite) TestScanWatcherLifecycleAcrossCycles() {
+	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorScanConfigurationV2{{Id: "scan-config-id"}}, nil)
+	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
+
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+	impl := manager.(*managerImpl)
+
+	scanID := "ocp4-cis-uid-abc"
+	clusterID := "cluster-1"
+	scan := &storage.ComplianceOperatorScanV2{
+		Id:              scanID,
+		ClusterId:       clusterID,
+		LastStartedTime: protocompat.TimestampNow(),
+		ScanConfigName:  "test-scan",
+	}
+	watcherID := fmt.Sprintf("%s:%s", clusterID, scanID)
+
+	// --- Cycle 1: Create watcher, push scan, simulate completion ---
+
+	m.Require().NoError(manager.HandleScan(context.Background(), scan))
+	concurrency.WithLock(&impl.watchingScansLock, func() {
+		w, found := impl.watchingScans[watcherID]
+		m.Require().True(found, "cycle 1: watcher must be created")
+		m.Require().NotNil(w)
+	})
+
+	// Simulate the watcher completing: stop it, remove from watchingScans,
+	// add to completedScans — this mirrors what handleReadyScan does.
+	concurrency.WithLock(&impl.watchingScansLock, func() {
+		w := impl.watchingScans[watcherID]
+		w.Stop(nil)
+		<-w.Finished().Done()
+		delete(impl.watchingScans, watcherID)
+		impl.completedScans[watcherID] = time.Now()
+	})
+
+	// Verify the watcher is blocked immediately after completion.
+	m.Require().NoError(manager.HandleScan(context.Background(), scan))
+	concurrency.WithLock(&impl.watchingScansLock, func() {
+		_, found := impl.watchingScans[watcherID]
+		m.Assert().False(found, "watcher should be blocked by completedScans within TTL")
+	})
+
+	// --- Cycle 2: Same UID, after TTL expires ---
+
+	// Simulate TTL expiry by backdating the completedScans entry.
+	concurrency.WithLock(&impl.watchingScansLock, func() {
+		impl.completedScans[watcherID] = time.Now().Add(-completedScansTTL - time.Second)
+	})
+
+	// The same scan UID should now be allowed to create a new watcher.
+	m.Require().NoError(manager.HandleScan(context.Background(), scan))
+	concurrency.WithLock(&impl.watchingScansLock, func() {
+		w, found := impl.watchingScans[watcherID]
+		m.Assert().True(found, "cycle 2: watcher must be created after TTL expires")
+		m.Assert().NotNil(w)
+		// Verify the expired entry was cleaned up.
+		_, stillInCompleted := impl.completedScans[watcherID]
+		m.Assert().False(stillInCompleted, "expired entry should be purged by lazy cleanup")
+		// Clean up
+		w.Stop(nil)
+		<-w.Finished().Done()
+		delete(impl.watchingScans, watcherID)
+	})
+}
+
+func (m *ManagerTestSuite) TestHandleScanRemoveCleanupCompletedScans() {
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+	impl := manager.(*managerImpl)
+
+	scan := &storage.ComplianceOperatorScanV2{
+		Id:              "scan-1",
+		ClusterId:       "cluster-id",
+		LastStartedTime: protocompat.TimestampNow(),
+	}
+	id := fmt.Sprintf("%s:%s", scan.GetClusterId(), scan.GetId())
+
+	// Seed a completedScans entry.
+	concurrency.WithLock(&impl.watchingScansLock, func() {
+		impl.completedScans[id] = time.Now()
+	})
+
+	m.scanDataStore.EXPECT().GetScan(gomock.Any(), gomock.Any()).Times(1).Return(scan, true, nil)
+
+	err := manager.HandleScanRemove("scan-1")
+	m.Require().NoError(err)
+
+	concurrency.WithLock(&impl.watchingScansLock, func() {
+		_, found := impl.completedScans[id]
+		m.Assert().False(found, "HandleScanRemove should clear completedScans entry")
+	})
+}
+
 func (m *ManagerTestSuite) TestHandleScanRemove() {
 	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)
