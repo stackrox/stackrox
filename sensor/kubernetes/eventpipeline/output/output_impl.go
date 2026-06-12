@@ -45,6 +45,7 @@ func (q *outputQueueImpl) Start() error {
 func (q *outputQueueImpl) Stop() {
 	if features.SensorInternalPubSub.Enabled() {
 		// No goroutine was started; signal stopped so the Wait below returns immediately.
+		// TODO(ROX-34880): Remove stopper usage once ResponsesC is migrated to PubSub.
 		q.stopper.Flow().ReportStopped()
 	}
 	if !q.stopper.Client().Stopped().IsDone() {
@@ -67,6 +68,11 @@ func (q *outputQueueImpl) ProcessResourceEvent(event pubsub.Event) error {
 	if !ok {
 		return errors.New("unable to convert event to *component.ResourceEvent")
 	}
+	q.processMsg(msg)
+	return nil
+}
+
+func (q *outputQueueImpl) processMsg(msg *component.ResourceEvent) (stopped bool) {
 	if msg.Context == nil {
 		msg.Context = context.Background()
 	}
@@ -76,15 +82,17 @@ func (q *outputQueueImpl) ProcessResourceEvent(event pubsub.Event) error {
 			select {
 			case q.forwardQueue <- expiringMessage:
 			case <-q.stopper.Flow().StopRequested():
-				return nil
+				return true
 			}
 		}
 	}
+	// The order here is important. We rely on ReprocessDeployments being called
+	// before ProcessDeployment to remove the deployments from the deduper.
 	q.detector.ReprocessDeployments(msg.ReprocessDeployments...)
 	for _, detectorRequest := range msg.DetectorMessages {
 		q.detector.ProcessDeployment(msg.Context, detectorRequest.Object, detectorRequest.Action)
 	}
-	return nil
+	return false
 }
 
 func wrapSensorEvent(update *central.SensorEvent) *central.MsgFromSensor {
@@ -107,26 +115,8 @@ func (q *outputQueueImpl) runOutputQueue() {
 			if !more {
 				return
 			}
-
-			if msg.Context == nil {
-				msg.Context = context.Background()
-			}
-
-			for _, resourceUpdates := range msg.ForwardMessages {
-				expiringMessage := message.NewExpiring(msg.Context, wrapSensorEvent(resourceUpdates))
-				if !expiringMessage.IsExpired() {
-					select {
-					case q.forwardQueue <- expiringMessage:
-					case <-q.stopper.Flow().StopRequested():
-						return
-					}
-				}
-			}
-
-			// The order here is important. We rely on the ReprocessDeployment being called before ProcessDeployment to remove the deployments from the deduper.
-			q.detector.ReprocessDeployments(msg.ReprocessDeployments...)
-			for _, detectorRequest := range msg.DetectorMessages {
-				q.detector.ProcessDeployment(msg.Context, detectorRequest.Object, detectorRequest.Action)
+			if q.processMsg(msg) {
+				return
 			}
 			metrics.DecOutputChannelSize()
 		}
