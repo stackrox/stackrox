@@ -22,8 +22,7 @@ func TestEndpointValidation(t *testing.T) {
 		{endpoint: "1.1.1.1:8000", errExpected: false},
 		{endpoint: "docker.io/localhost", errExpected: false},
 		{endpoint: "[2001:db8::1]:5000", errExpected: false},
-		// NOTE: [::1] is IPv6 localhost but validate() only checks "127.0.0.1" and "localhost"
-		{endpoint: "[::1]:5000", errExpected: false},
+		{endpoint: "[::1]:5000", errExpected: true},
 	}
 
 	for _, c := range testCases {
