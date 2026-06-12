@@ -60,64 +60,8 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
-    - name: Cache debug — pre-test diagnostics
-      run: |
-        set +e
-        gocache="$(go env GOCACHE)"
-        echo "=== GOCACHE state after restore + aging ==="
-        echo "GOCACHE path: $gocache"
-        echo "GOCACHE size: $(du -sm "$gocache" 2>/dev/null | cut -f1)MB"
-        echo "Entry count: $(find "$gocache" -type f 2>/dev/null | wc -l | tr -d ' ')"
-        echo "trim.txt content: $(cat "$gocache/trim.txt" 2>/dev/null)"
-        echo "trim.txt age: $(( ($(date +%s) - $(cat "$gocache/trim.txt" 2>/dev/null || echo 0)) / 3600 ))h"
-
-        echo ""
-        echo "=== Sample entry mtimes (are they 6d old?) ==="
-        find "$gocache" -type f ! -name trim.txt ! -name README 2>/dev/null | head -3 | xargs stat -c '%Y %n' 2>/dev/null || true
-
-        echo ""
-        echo "=== Source file mtimes (should be 978332400 = 2001-01-01) ==="
-        stat -c '%Y %n' go.mod go.sum pkg/set/set.go Makefile 2>/dev/null || true
-
-        echo ""
-        echo "=== status.sh output (ldflags source) ==="
-        ./status.sh 2>/dev/null || echo "status.sh failed"
-
-        echo ""
-        echo "=== Test binary buildID: direct go test vs go-test.sh ==="
-        ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 GOTAGS=${{ matrix.gotags }},test \
-          go test -race -cover -c -o /tmp/canary-direct.bin \
-          github.com/stackrox/rox/pkg/set 2>/dev/null
-        ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 GOTAGS=${{ matrix.gotags }},test \
-          bash scripts/go-test.sh -race -cover -c -o /tmp/canary-gotest.bin \
-          github.com/stackrox/rox/pkg/set 2>/dev/null
-        bid_direct=$(go tool buildid /tmp/canary-direct.bin 2>/dev/null || echo "FAILED")
-        bid_gotest=$(go tool buildid /tmp/canary-gotest.bin 2>/dev/null || echo "FAILED")
-        echo "direct:     $bid_direct"
-        echo "go-test.sh: $bid_gotest"
-        if [[ "$bid_direct" = "$bid_gotest" ]]; then
-          echo "MATCH"
-        else
-          echo "DIFFER — go-test.sh ldflags change the binary!"
-        fi
-        rm -f /tmp/canary-direct.bin /tmp/canary-gotest.bin
-
-        echo ""
-        echo "=== GODEBUG: cache trace for pkg/set via go-test.sh ==="
-        GODEBUG=gocachetest=1 ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 \
-          GOTAGS=${{ matrix.gotags }},test \
-          bash scripts/go-test.sh -race -cover -coverprofile /dev/null \
-          github.com/stackrox/rox/pkg/set 2>&1 | grep -E 'testcache:|ok\s|cached|cover' || true
-
-        echo ""
-        echo "=== Post-debug: trim.txt and entry count ==="
-        echo "trim.txt: $(cat "$gocache/trim.txt" 2>/dev/null)"
-        echo "Entries: $(find "$gocache" -type f 2>/dev/null | wc -l | tr -d ' ')"
-        exit 0
-      shell: bash
-
     - name: Go Unit Tests
-      run: GODEBUG=gocachetest=1 ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/go-test-output.txt
+      run: ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/go-test-output.txt
 
     - name: Cache debug — post-test diagnostics
       if: always()
