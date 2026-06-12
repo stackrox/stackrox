@@ -1,93 +1,108 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-import { useSelector } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
-import { selectors } from 'reducers';
+import { useCallback, useMemo } from 'react';
+
+import useRestQuery from 'hooks/useRestQuery';
+import { fetchIntegration, isServiceIntegrationSource } from 'services/IntegrationsService';
+import { fetchAPITokens } from 'services/APITokensService';
+import { fetchMachineAccessConfigs } from 'services/MachineAccessService';
+import { fetchCloudSources } from 'services/CloudSourceService';
 
 import { ensureExhaustive } from 'utils/type.utils';
 
 import type { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SelectIntegrationsState = Record<string, any[]>;
-
-const selectIntegrations = createStructuredSelector<SelectIntegrationsState>({
-    apiTokens: selectors.getAPITokens,
-    machineAccessConfigs: selectors.getMachineAccessConfigs,
-    notifiers: selectors.getNotifiers,
-    imageIntegrations: selectors.getImageIntegrations,
-    backups: selectors.getBackups,
-    signatureIntegrations: selectors.getSignatureIntegrations,
-    cloudSources: selectors.getCloudSources,
-});
-
-export type UseIntegrations = {
+export type UseIntegrationsParams = {
     source: IntegrationSource;
     type: IntegrationType;
 };
 
-export type UseIntegrationsResponse = Integration[];
+export type UseIntegrationsReturn = {
+    integrations: Integration[];
+    isLoading: boolean;
+    error: Error | undefined;
+    refetch: () => void;
+};
 
-const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResponse => {
-    const {
-        apiTokens,
-        machineAccessConfigs,
-        notifiers,
-        backups,
-        imageIntegrations,
-        signatureIntegrations,
-        cloudSources,
-    } = useSelector(selectIntegrations);
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+function extractIntegrations(
+    source: IntegrationSource,
+    type: IntegrationType,
+    // TODO Clean up response types with generics here to avoid `any`
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: Record<string, any>
+): Integration[] {
+    const typeLowerMatches = (integration: Integration) =>
+        integration.type.toLowerCase() === type.toLowerCase();
 
-    function findIntegrations() {
-        const typeLowerMatches = (integration: Integration) =>
-            integration.type.toLowerCase() === type.toLowerCase();
+    switch (source) {
+        case 'authProviders': {
+            if (type === 'apitoken') {
+                return data.tokens ?? [];
+            }
+            if (type === 'machineAccess') {
+                return data.configs ?? [];
+            }
+            return [];
+        }
+        case 'notifiers':
+            return (data.notifiers ?? []).filter(typeLowerMatches);
+        case 'backups':
+            return (data.externalBackups ?? []).filter(typeLowerMatches);
+        case 'imageIntegrations':
+            return (data.integrations ?? []).filter(typeLowerMatches);
+        case 'signatureIntegrations':
+            return data.integrations ?? [];
+        case 'cloudSources': {
+            const cloudSources = data.cloudSources ?? [];
+            if (type === 'paladinCloud') {
+                return cloudSources.filter(
+                    (integration) => (integration as { type: string }).type === 'TYPE_PALADIN_CLOUD'
+                );
+            }
+            if (type === 'ocm') {
+                return cloudSources.filter(
+                    (integration) => (integration as { type: string }).type === 'TYPE_OCM'
+                );
+            }
+            return cloudSources;
+        }
+        case 'apiClients':
+            return [];
+        default:
+            return ensureExhaustive(source);
+    }
+}
+/* eslint-enable @typescript-eslint/no-unsafe-return */
 
-        switch (source) {
-            case 'authProviders': {
-                // Integrations Authentication Tokens differ from Access Control Auth providers.
-                if (type === 'apitoken') {
-                    return apiTokens;
-                }
-                if (type === 'machineAccess') {
-                    return machineAccessConfigs;
-                }
-                return [];
+const useIntegrations = ({ source, type }: UseIntegrationsParams): UseIntegrationsReturn => {
+    const fetchFn = useCallback(() => {
+        if (source === 'authProviders') {
+            if (type === 'apitoken') {
+                return fetchAPITokens();
             }
-            case 'notifiers': {
-                return notifiers.filter(typeLowerMatches);
-            }
-            case 'backups': {
-                return backups.filter(typeLowerMatches);
-            }
-            case 'imageIntegrations': {
-                return imageIntegrations.filter(typeLowerMatches);
-            }
-            case 'signatureIntegrations': {
-                return signatureIntegrations;
-            }
-            case 'cloudSources': {
-                if (type === 'paladinCloud') {
-                    return cloudSources.filter(
-                        (integration) => integration.type === 'TYPE_PALADIN_CLOUD'
-                    );
-                }
-                if (type === 'ocm') {
-                    return cloudSources.filter((integration) => integration.type === 'TYPE_OCM');
-                }
-                return cloudSources;
-            }
-            case 'apiClients': {
-                return []; // source does not use hook because it does not have any integrations
-            }
-            default: {
-                return ensureExhaustive(source);
+            if (type === 'machineAccess') {
+                return fetchMachineAccessConfigs();
             }
         }
-    }
+        if (source === 'cloudSources') {
+            return fetchCloudSources();
+        }
+        if (source === 'apiClients') {
+            return Promise.resolve<Record<string, unknown>>({});
+        }
+        if (isServiceIntegrationSource(source)) {
+            return fetchIntegration(source);
+        }
+        return ensureExhaustive(source);
+    }, [source, type]);
 
-    const integrations = findIntegrations();
+    const { data, isLoading, error, refetch } = useRestQuery(fetchFn);
 
-    return integrations;
+    const integrations = useMemo(
+        () => (data ? extractIntegrations(source, type, data) : []),
+        [source, type, data]
+    );
+
+    return { integrations, isLoading, error, refetch };
 };
 
 export default useIntegrations;

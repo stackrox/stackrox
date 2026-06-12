@@ -16,7 +16,7 @@ apply(from = "protobuf.gradle")
 
 // Assign all Java source dirs to Groovy, as the groovy compiler should take care of them.
 project.sourceSets.forEach { sourceSet ->
-    sourceSet.groovy.srcDirs += sourceSet.java.srcDirs
+    sourceSet.java.srcDirs.forEach { dir -> sourceSet.groovy.srcDir(dir) }
     sourceSet.java.setSrcDirs(emptyList<File>())
 }
 
@@ -36,6 +36,8 @@ dependencies {
     implementation(platform(libs.spock.bom))
     implementation(libs.spock.core)
     implementation(libs.spock.junit4)
+    // Gradle 9 requires the JUnit Platform launcher explicitly.
+    runtimeOnly("org.junit.platform:junit-platform-launcher")
     implementation(libs.rest.assured)
     testImplementation(libs.snakeyaml)
     implementation(libs.logback.classic)
@@ -86,6 +88,10 @@ dependencies {
     implementation(projects.annotations)
 }
 
+tasks.withType<GroovyCompile>().configureEach {
+    groovyOptions.forkOptions.memoryMaximumSize = "4g"
+}
+
 // Apply some base attributes to all the test tasks.
 tasks.withType<Test>().configureEach {
     testLogging {
@@ -107,6 +113,13 @@ tasks.withType<Test>().configureEach {
     }
 
     useJUnitPlatform();
+
+    // Gradle 9: registered Test tasks (testBAT, testSMOKE, etc.) don't
+    // inherit testClassesDirs from the test source set. Wire explicitly
+    // so test discovery finds compiled classes.
+    val testSourceSet = project.sourceSets["test"]
+    testClassesDirs = testSourceSet.output.classesDirs
+    classpath = testSourceSet.runtimeClasspath
 }
 
 tasks.register<Test>("testBegin") {
@@ -238,7 +251,8 @@ tasks.register<Test>("testDeploymentCheck") {
 allprojects {
     apply(plugin = "java")
     java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
     }
 }

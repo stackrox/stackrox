@@ -29,7 +29,6 @@ import { triggerBackup } from 'services/BackupIntegrationsService';
 
 import TechnologyPreviewLabel from 'Components/PatternFly/PreviewLabel/TechnologyPreviewLabel';
 import useIntegrations from '../hooks/useIntegrations';
-import useFetchIntegrations from '../hooks/useFetchIntegrations';
 import { getIntegrationLabel } from '../utils/integrationsList';
 import {
     getIsAPIToken,
@@ -52,15 +51,14 @@ export type IntegrationsListPageProps = {
 };
 
 function IntegrationsListPage({ source, type }: IntegrationsListPageProps): ReactElement {
-    const integrations = useIntegrations({ source, type });
-    const fetchIntegrations = useFetchIntegrations(source);
+    const { integrations, isLoading, error, refetch } = useIntegrations({ source, type });
     const [deletingIntegrationIds, setDeletingIntegrationIds] = useState<string[]>([]);
     const { toasts, addToast, removeToast } = useToasts();
 
     const tableState = getTableUIState({
-        isLoading: false,
+        isLoading,
         data: integrations,
-        error: undefined,
+        error,
         searchFilter: {},
     });
 
@@ -95,7 +93,7 @@ function IntegrationsListPage({ source, type }: IntegrationsListPageProps): Reac
                 const count = deletingIntegrationIds.length;
                 addToast(`Successfully deleted ${pluralize(count, 'integration')}`, 'success');
                 setDeletingIntegrationIds([]);
-                fetchIntegrations();
+                refetch();
             },
         }
     );

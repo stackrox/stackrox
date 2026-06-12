@@ -443,89 +443,88 @@ function NetworkPolicySimulatorSidePanel({
                 </Tabs>
             </StackItem>
             <StackItem isFilled style={{ overflow: 'auto' }}>
-                <TabContent
-                    eventKey={tabs.SIMULATE_NETWORK_POLICIES}
-                    id="Simulate_network_policies"
-                    hidden={activeKeyTab !== tabs.SIMULATE_NETWORK_POLICIES}
-                >
-                    <div className="pf-v6-u-p-lg pf-v6-u-h-100">
-                        <Stack hasGutter>
-                            <StackItem>
-                                <Stack hasGutter>
-                                    <StackItem>
-                                        <Title headingLevel="h3">
-                                            Generate network policies from the traffic
-                                        </Title>
-                                    </StackItem>
-                                    <StackItem>
-                                        <Content component="p">
-                                            Generate a set of recommended network policies based on
-                                            your cluster&apos;s traffic. Only deployments that are
-                                            part of the current scope will be included in generated
-                                            policies.
-                                        </Content>
-                                    </StackItem>
-                                    <StackItem>
-                                        <Checkbox
-                                            label="Exclude ports & protocols"
-                                            isChecked={isExcludingPortsAndProtocols}
-                                            onChange={(_event, val) =>
-                                                setIsExcludingPortsAndProtocols(val)
-                                            }
-                                            id="controlled-check-1"
-                                            name="check1"
-                                        />
-                                    </StackItem>
-                                    <StackItem>
-                                        <Button
-                                            variant="secondary"
-                                            onClick={generateNetworkPolicies}
-                                        >
-                                            Generate and simulate network policies
-                                        </Button>
-                                    </StackItem>
-                                </Stack>
-                            </StackItem>
-                            <StackItem>
-                                <Divider component="div" />
-                            </StackItem>
-                            <StackItem>
-                                <Stack hasGutter>
-                                    <StackItem>
-                                        <Title headingLevel="h3">
-                                            Upload a network policy YAML
-                                        </Title>
-                                    </StackItem>
-                                    <StackItem>
-                                        <Content component="p">
-                                            Upload your network policies to quickly preview your
-                                            environment under different policy configurations and
-                                            time windows. When ready, apply the network policies
-                                            directly or share them with your team.
-                                        </Content>
-                                    </StackItem>
-                                    <StackItem>
-                                        <UploadYAMLButton
-                                            onFileInputChange={handleFileInputChange}
-                                        />
-                                    </StackItem>
-                                </Stack>
-                            </StackItem>
-                        </Stack>
-                    </div>
-                </TabContent>
-                <TabContent
-                    eventKey={tabs.VIEW_ACTIVE_YAMLS}
-                    id="View_active_YAMLS"
-                    hidden={activeKeyTab !== tabs.VIEW_ACTIVE_YAMLS}
-                >
-                    <ViewActiveYAMLs
-                        networkPolicies={currentNetworkPolicies ?? []}
-                        generateNetworkPolicies={generateNetworkPolicies}
-                        undoNetworkPolicies={undoNetworkPolicies}
-                        onFileInputChange={handleFileInputChange}
-                    />
-                </TabContent>
+                {activeKeyTab === tabs.SIMULATE_NETWORK_POLICIES && (
+                    <TabContent
+                        eventKey={tabs.SIMULATE_NETWORK_POLICIES}
+                        id="Simulate_network_policies"
+                    >
+                        <div className="pf-v6-u-p-lg pf-v6-u-h-100">
+                            <Stack hasGutter>
+                                <StackItem>
+                                    <Stack hasGutter>
+                                        <StackItem>
+                                            <Title headingLevel="h3">
+                                                Generate network policies from the traffic
+                                            </Title>
+                                        </StackItem>
+                                        <StackItem>
+                                            <Content component="p">
+                                                Generate a set of recommended network policies based
+                                                on your cluster&apos;s traffic. Only deployments
+                                                that are part of the current scope will be included
+                                                in generated policies.
+                                            </Content>
+                                        </StackItem>
+                                        <StackItem>
+                                            <Checkbox
+                                                label="Exclude ports & protocols"
+                                                isChecked={isExcludingPortsAndProtocols}
+                                                onChange={(_event, val) =>
+                                                    setIsExcludingPortsAndProtocols(val)
+                                                }
+                                                id="controlled-check-1"
+                                                name="check1"
+                                            />
+                                        </StackItem>
+                                        <StackItem>
+                                            <Button
+                                                variant="secondary"
+                                                onClick={generateNetworkPolicies}
+                                            >
+                                                Generate and simulate network policies
+                                            </Button>
+                                        </StackItem>
+                                    </Stack>
+                                </StackItem>
+                                <StackItem>
+                                    <Divider component="div" />
+                                </StackItem>
+                                <StackItem>
+                                    <Stack hasGutter>
+                                        <StackItem>
+                                            <Title headingLevel="h3">
+                                                Upload a network policy YAML
+                                            </Title>
+                                        </StackItem>
+                                        <StackItem>
+                                            <Content component="p">
+                                                Upload your network policies to quickly preview your
+                                                environment under different policy configurations
+                                                and time windows. When ready, apply the network
+                                                policies directly or share them with your team.
+                                            </Content>
+                                        </StackItem>
+                                        <StackItem>
+                                            <UploadYAMLButton
+                                                onFileInputChange={handleFileInputChange}
+                                            />
+                                        </StackItem>
+                                    </Stack>
+                                </StackItem>
+                            </Stack>
+                        </div>
+                    </TabContent>
+                )}
+                {activeKeyTab === tabs.VIEW_ACTIVE_YAMLS && (
+                    <TabContent eventKey={tabs.VIEW_ACTIVE_YAMLS} id="View_active_YAMLS">
+                        <ViewActiveYAMLs
+                            networkPolicies={currentNetworkPolicies ?? []}
+                            generateNetworkPolicies={generateNetworkPolicies}
+                            undoNetworkPolicies={undoNetworkPolicies}
+                            onFileInputChange={handleFileInputChange}
+                        />
+                    </TabContent>
+                )}
             </StackItem>
         </Stack>
     );

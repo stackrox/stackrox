@@ -2,8 +2,10 @@ package saml
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -23,12 +25,14 @@ import (
 var (
 	log = logging.LoggerForModule(events.EnableAdministrationEvents())
 
-	errAssertionExpired = errox.NotAuthorized.New("SAML assertion expired or not yet valid")
+	errAssertionExpired          = errox.NotAuthorized.New("SAML assertion expired or not yet valid")
+	errAssertionAudienceMismatch = errox.NotAuthorized.New("SAML assertion audience mismatch")
 )
 
 // All configuration keys the auth provider exposes within the auth provider config map.
 const (
 	SpIssuerConfigKey        = "sp_issuer"
+	SpAudienceConfigKey      = "sp_audience"
 	IDPMetadataURLConfigKey  = "idp_metadata_url"
 	IDPIssuerConfigKey       = "idp_issuer"
 	IDPCertPemConfigKey      = "idp_cert_pem"
@@ -37,11 +41,12 @@ const (
 )
 
 type backendImpl struct {
-	factory    *factory
-	acsURLPath string
-	sp         saml2.SAMLServiceProvider
-	id         string
-	provider   authproviders.Provider
+	factory            *factory
+	acsURLPath         string
+	sp                 saml2.SAMLServiceProvider
+	id                 string
+	provider           authproviders.Provider
+	audienceConfigured bool
 
 	config map[string]string
 }
@@ -88,9 +93,17 @@ func newBackend(ctx context.Context, acsURLPath string, id string, uiEndpoints [
 		return nil, errors.New("no ServiceProvider issuer specified")
 	}
 	p.sp.ServiceProviderIssuer = spIssuer
+	p.sp.AudienceURI = spIssuer
+	if config[SpAudienceConfigKey] != "" {
+		p.sp.AudienceURI = config[SpAudienceConfigKey]
+		p.audienceConfigured = true
+	}
 
 	effectiveConfig := map[string]string{
 		SpIssuerConfigKey: spIssuer,
+	}
+	if p.audienceConfigured {
+		effectiveConfig[SpAudienceConfigKey] = config[SpAudienceConfigKey]
 	}
 
 	if config[IDPMetadataURLConfigKey] != "" {
@@ -123,18 +136,60 @@ func (p *backendImpl) Config() map[string]string {
 	return p.config
 }
 
+func validateAssertionWarnings(warningInfo *saml2.WarningInfo) error {
+	if warningInfo == nil {
+		return nil
+	}
+	if warningInfo.InvalidTime {
+		return errAssertionExpired
+	}
+	if warningInfo.NotInAudience {
+		return errAssertionAudienceMismatch
+	}
+	return nil
+}
+
 func (p *backendImpl) consumeSAMLResponse(samlResponse string) (*authproviders.AuthResponse, error) {
 	ai, err := p.sp.RetrieveAssertionInfo(samlResponse)
 	if err != nil {
 		return nil, errors.Wrap(err, "error in saml response")
 	}
 
-	if ai.WarningInfo != nil && ai.WarningInfo.InvalidTime {
-		log.Warnw("SAML assertion expired or not yet valid, rejecting authentication.",
-			logging.ErrCode(codes.SAMLAssertionExpired),
+	if err := validateAssertionWarnings(ai.WarningInfo); err != nil {
+		// Assertion expirations get special handling (warn + reject).
+		if errors.Is(err, errAssertionExpired) {
+			log.Warnw("SAML assertion expired or not yet valid, rejecting authentication.",
+				logging.ErrCode(codes.SAMLAssertionExpired),
+				logging.AuthProviderName(p.provider.Name()),
+			)
+			return nil, err
+		}
+		// Propagate other non-audience errors.
+		if !errors.Is(err, errAssertionAudienceMismatch) {
+			return nil, err
+		}
+		// Audience mismatches get special handling (warn or reject based on config).
+		receivedAudiences := assertionAudiences(ai)
+		// If the expected audience is not, accept any audience - but emit a warning
+		// if the audience set by the identity provider does not match the service provider
+		// issuer (as per the usual SAML convention).
+		msg := "SAML assertion audience does not match service provider issuer. " +
+			"Configure sp_audience to enforce audience validation."
+		expected := p.sp.ServiceProviderIssuer
+		if p.audienceConfigured {
+			msg = "SAML assertion audience mismatch, rejecting authentication."
+			expected = p.sp.AudienceURI
+		}
+		log.Warnw(msg,
+			logging.ErrCode(codes.SAMLAudienceMismatch),
 			logging.AuthProviderName(p.provider.Name()),
+			logging.String("expected_audience", expected),
+			logging.String("received_audiences", receivedAudiences),
 		)
-		return nil, errAssertionExpired
+		if p.audienceConfigured {
+			return nil, errors.Wrapf(err, "expected audience %q, got %s",
+				p.sp.AudienceURI, receivedAudiences)
+		}
 	}
 
 	var expiry time.Time
@@ -179,6 +234,24 @@ func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) (
 
 func (p *backendImpl) Validate(_ context.Context, _ *tokens.Claims) error {
 	return nil
+}
+
+func assertionAudiences(ai *saml2.AssertionInfo) string {
+	var audiences []string
+	for _, assertion := range ai.Assertions {
+		if assertion.Conditions == nil {
+			continue
+		}
+		for _, restriction := range assertion.Conditions.AudienceRestrictions {
+			for _, audience := range restriction.Audiences {
+				audiences = append(audiences, fmt.Sprintf("%q", audience.Value))
+			}
+		}
+	}
+	if len(audiences) == 0 {
+		return "[]"
+	}
+	return "[" + strings.Join(audiences, ", ") + "]"
 }
 
 // Helpers

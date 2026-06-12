@@ -85,6 +85,12 @@ message AuthMachineToMachineConfig {
   string issuer = 5;
 
   Traits traits = 6;
+
+  // The expected audience (aud claim) of the ID token.
+  // When set, the OIDC token verifier validates that the token's aud claim contains this value,
+  // rejecting tokens intended for other recipients (RFC 7519 Section 4.1.3).
+  // When empty, the audience check is skipped for backward compatibility.
+  string audience = 7;
 }
 
 message ListAuthMachineToMachineConfigResponse {

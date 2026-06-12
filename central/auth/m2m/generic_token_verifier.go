@@ -8,21 +8,22 @@ import (
 
 type genericTokenVerifier struct {
 	provider *oidc.Provider
+	audience string
 }
 
 var _ tokenVerifier = (*genericTokenVerifier)(nil)
 
 func (g *genericTokenVerifier) VerifyIDToken(ctx context.Context, rawIDToken string) (*IDToken, error) {
-	verifier := g.provider.Verifier(&oidc.Config{
-		// We currently provide no config to expose the client ID that's associated with the ID token.
-		// The reason for this is the following:
-		// - A magnitude of client IDs would have to be configured (i.e. in the case of GitHub actions, this would be
-		// all repository URLs including their potential customizations).
-		// - Client IDs (i.e. the "sub" claim) _may_ be part for the mappings within the
-		// config. So, essentially the client ID check is deferred to a latter point, as the mappings _may_ be used
-		// for mapping, but it currently isn't a requirement.
-		SkipClientIDCheck: true,
-	})
+	// When an expected audience is configured, validate the token's aud claim via the go-oidc
+	// ClientID check. Otherwise skip it for backward compatibility: a single client ID cannot
+	// cover all cases (e.g. GitHub Actions tokens use per-repository audience values), and the
+	// audience may still be verified indirectly through claim mappings.
+	oidcConfig := &oidc.Config{SkipClientIDCheck: true}
+	if g.audience != "" {
+		oidcConfig.ClientID = g.audience
+		oidcConfig.SkipClientIDCheck = false
+	}
+	verifier := g.provider.Verifier(oidcConfig)
 
 	token, err := verifier.Verify(ctx, rawIDToken)
 	if err != nil {

@@ -392,7 +392,7 @@ func (Comparator) EnumDescriptor() ([]byte, []int) {
 	return file_storage_policy_proto_rawDescGZIP(), []int{6}
 }
 
-// Next tag: 28
+// Next tag: 29
 type Policy struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Policy ID,hidden" sql:"pk,index=btree" crYaml:"-"` // @gotags: search:"Policy ID,hidden" sql:"pk,index=btree" crYaml:"-"
@@ -440,10 +440,12 @@ type Policy struct {
 	// Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only.
 	MitreVectorsLocked bool `protobuf:"varint,25,opt,name=mitre_vectors_locked,json=mitreVectorsLocked,proto3" json:"mitre_vectors_locked,omitempty" crYaml:"mitreVectorsLocked"` // @gotags: crYaml:"mitreVectorsLocked"
 	// Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
-	IsDefault     bool         `protobuf:"varint,26,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty" crYaml:"isDefault"`    // @gotags: crYaml:"isDefault"
-	Source        PolicySource `protobuf:"varint,27,opt,name=source,proto3,enum=storage.PolicySource" json:"source,omitempty" crYaml:"-"` // @gotags: crYaml:"-"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	IsDefault bool         `protobuf:"varint,26,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty" crYaml:"isDefault"`    // @gotags: crYaml:"isDefault"
+	Source    PolicySource `protobuf:"varint,27,opt,name=source,proto3,enum=storage.PolicySource" json:"source,omitempty" crYaml:"-"` // @gotags: crYaml:"-"
+	// Pre-filters which entities the policy evaluates.
+	EvaluationFilter *EvaluationFilter `protobuf:"bytes,28,opt,name=evaluation_filter,json=evaluationFilter,proto3" json:"evaluation_filter,omitempty" crYaml:"evaluationFilter,omitempty"` // @gotags: crYaml:"evaluationFilter,omitempty"
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Policy) Reset() {
@@ -649,6 +651,13 @@ func (x *Policy) GetSource() PolicySource {
 		return x.Source
 	}
 	return PolicySource_IMPERATIVE
+}
+
+func (x *Policy) GetEvaluationFilter() *EvaluationFilter {
+	if x != nil {
+		return x.EvaluationFilter
+	}
+	return nil
 }
 
 type PolicySection struct {
@@ -865,20 +874,21 @@ func (x *PolicyList) GetPolicies() []*Policy {
 }
 
 type ListPolicy struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Description     string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	Severity        Severity               `protobuf:"varint,4,opt,name=severity,proto3,enum=storage.Severity" json:"severity,omitempty"`
-	Disabled        bool                   `protobuf:"varint,5,opt,name=disabled,proto3" json:"disabled,omitempty"`
-	LifecycleStages []LifecycleStage       `protobuf:"varint,6,rep,packed,name=lifecycle_stages,json=lifecycleStages,proto3,enum=storage.LifecycleStage" json:"lifecycle_stages,omitempty"`
-	Notifiers       []string               `protobuf:"bytes,7,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
-	LastUpdated     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
-	EventSource     EventSource            `protobuf:"varint,9,opt,name=event_source,json=eventSource,proto3,enum=storage.EventSource" json:"event_source,omitempty"`
-	IsDefault       bool                   `protobuf:"varint,10,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
-	Source          PolicySource           `protobuf:"varint,11,opt,name=source,proto3,enum=storage.PolicySource" json:"source,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name             string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Description      string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Severity         Severity               `protobuf:"varint,4,opt,name=severity,proto3,enum=storage.Severity" json:"severity,omitempty"`
+	Disabled         bool                   `protobuf:"varint,5,opt,name=disabled,proto3" json:"disabled,omitempty"`
+	LifecycleStages  []LifecycleStage       `protobuf:"varint,6,rep,packed,name=lifecycle_stages,json=lifecycleStages,proto3,enum=storage.LifecycleStage" json:"lifecycle_stages,omitempty"`
+	Notifiers        []string               `protobuf:"bytes,7,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	LastUpdated      *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	EventSource      EventSource            `protobuf:"varint,9,opt,name=event_source,json=eventSource,proto3,enum=storage.EventSource" json:"event_source,omitempty"`
+	IsDefault        bool                   `protobuf:"varint,10,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
+	Source           PolicySource           `protobuf:"varint,11,opt,name=source,proto3,enum=storage.PolicySource" json:"source,omitempty"`
+	EvaluationFilter *EvaluationFilter      `protobuf:"bytes,12,opt,name=evaluation_filter,json=evaluationFilter,proto3" json:"evaluation_filter,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ListPolicy) Reset() {
@@ -988,6 +998,58 @@ func (x *ListPolicy) GetSource() PolicySource {
 	return PolicySource_IMPERATIVE
 }
 
+func (x *ListPolicy) GetEvaluationFilter() *EvaluationFilter {
+	if x != nil {
+		return x.EvaluationFilter
+	}
+	return nil
+}
+
+// EvaluationFilter pre-filters which entities a policy evaluates.
+type EvaluationFilter struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	SkipContainerTypes []ContainerType        `protobuf:"varint,1,rep,packed,name=skip_container_types,json=skipContainerTypes,proto3,enum=storage.ContainerType" json:"skip_container_types,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *EvaluationFilter) Reset() {
+	*x = EvaluationFilter{}
+	mi := &file_storage_policy_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EvaluationFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EvaluationFilter) ProtoMessage() {}
+
+func (x *EvaluationFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_policy_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EvaluationFilter.ProtoReflect.Descriptor instead.
+func (*EvaluationFilter) Descriptor() ([]byte, []int) {
+	return file_storage_policy_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *EvaluationFilter) GetSkipContainerTypes() []ContainerType {
+	if x != nil {
+		return x.SkipContainerTypes
+	}
+	return nil
+}
+
 type Exclusion struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" crYaml:",omitempty"`             // @gotags: crYaml:",omitempty"
@@ -1000,7 +1062,7 @@ type Exclusion struct {
 
 func (x *Exclusion) Reset() {
 	*x = Exclusion{}
-	mi := &file_storage_policy_proto_msgTypes[6]
+	mi := &file_storage_policy_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1012,7 +1074,7 @@ func (x *Exclusion) String() string {
 func (*Exclusion) ProtoMessage() {}
 
 func (x *Exclusion) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_policy_proto_msgTypes[6]
+	mi := &file_storage_policy_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1025,7 +1087,7 @@ func (x *Exclusion) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Exclusion.ProtoReflect.Descriptor instead.
 func (*Exclusion) Descriptor() ([]byte, []int) {
-	return file_storage_policy_proto_rawDescGZIP(), []int{6}
+	return file_storage_policy_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Exclusion) GetName() string {
@@ -1067,7 +1129,7 @@ type ExportPoliciesResponse struct {
 
 func (x *ExportPoliciesResponse) Reset() {
 	*x = ExportPoliciesResponse{}
-	mi := &file_storage_policy_proto_msgTypes[7]
+	mi := &file_storage_policy_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1079,7 +1141,7 @@ func (x *ExportPoliciesResponse) String() string {
 func (*ExportPoliciesResponse) ProtoMessage() {}
 
 func (x *ExportPoliciesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_policy_proto_msgTypes[7]
+	mi := &file_storage_policy_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1092,7 +1154,7 @@ func (x *ExportPoliciesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportPoliciesResponse.ProtoReflect.Descriptor instead.
 func (*ExportPoliciesResponse) Descriptor() ([]byte, []int) {
-	return file_storage_policy_proto_rawDescGZIP(), []int{7}
+	return file_storage_policy_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ExportPoliciesResponse) GetPolicies() []*Policy {
@@ -1112,7 +1174,7 @@ type Policy_MitreAttackVectors struct {
 
 func (x *Policy_MitreAttackVectors) Reset() {
 	*x = Policy_MitreAttackVectors{}
-	mi := &file_storage_policy_proto_msgTypes[8]
+	mi := &file_storage_policy_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1124,7 +1186,7 @@ func (x *Policy_MitreAttackVectors) String() string {
 func (*Policy_MitreAttackVectors) ProtoMessage() {}
 
 func (x *Policy_MitreAttackVectors) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_policy_proto_msgTypes[8]
+	mi := &file_storage_policy_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1163,7 +1225,7 @@ type Exclusion_Container struct {
 
 func (x *Exclusion_Container) Reset() {
 	*x = Exclusion_Container{}
-	mi := &file_storage_policy_proto_msgTypes[9]
+	mi := &file_storage_policy_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1175,7 +1237,7 @@ func (x *Exclusion_Container) String() string {
 func (*Exclusion_Container) ProtoMessage() {}
 
 func (x *Exclusion_Container) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_policy_proto_msgTypes[9]
+	mi := &file_storage_policy_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1188,7 +1250,7 @@ func (x *Exclusion_Container) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Exclusion_Container.ProtoReflect.Descriptor instead.
 func (*Exclusion_Container) Descriptor() ([]byte, []int) {
-	return file_storage_policy_proto_rawDescGZIP(), []int{6, 0}
+	return file_storage_policy_proto_rawDescGZIP(), []int{7, 0}
 }
 
 func (x *Exclusion_Container) GetImageName() *ImageName {
@@ -1208,7 +1270,7 @@ type Exclusion_Deployment struct {
 
 func (x *Exclusion_Deployment) Reset() {
 	*x = Exclusion_Deployment{}
-	mi := &file_storage_policy_proto_msgTypes[10]
+	mi := &file_storage_policy_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1220,7 +1282,7 @@ func (x *Exclusion_Deployment) String() string {
 func (*Exclusion_Deployment) ProtoMessage() {}
 
 func (x *Exclusion_Deployment) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_policy_proto_msgTypes[10]
+	mi := &file_storage_policy_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1233,7 +1295,7 @@ func (x *Exclusion_Deployment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Exclusion_Deployment.ProtoReflect.Descriptor instead.
 func (*Exclusion_Deployment) Descriptor() ([]byte, []int) {
-	return file_storage_policy_proto_rawDescGZIP(), []int{6, 1}
+	return file_storage_policy_proto_rawDescGZIP(), []int{7, 1}
 }
 
 func (x *Exclusion_Deployment) GetName() string {
@@ -1259,7 +1321,7 @@ type Exclusion_Image struct {
 
 func (x *Exclusion_Image) Reset() {
 	*x = Exclusion_Image{}
-	mi := &file_storage_policy_proto_msgTypes[11]
+	mi := &file_storage_policy_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1271,7 +1333,7 @@ func (x *Exclusion_Image) String() string {
 func (*Exclusion_Image) ProtoMessage() {}
 
 func (x *Exclusion_Image) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_policy_proto_msgTypes[11]
+	mi := &file_storage_policy_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1284,7 +1346,7 @@ func (x *Exclusion_Image) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Exclusion_Image.ProtoReflect.Descriptor instead.
 func (*Exclusion_Image) Descriptor() ([]byte, []int) {
-	return file_storage_policy_proto_rawDescGZIP(), []int{6, 2}
+	return file_storage_policy_proto_rawDescGZIP(), []int{7, 2}
 }
 
 func (x *Exclusion_Image) GetName() string {
@@ -1298,7 +1360,7 @@ var File_storage_policy_proto protoreflect.FileDescriptor
 
 const file_storage_policy_proto_rawDesc = "" +
 	"\n" +
-	"\x14storage/policy.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13storage/image.proto\x1a\x13storage/scope.proto\"\xb4\t\n" +
+	"\x14storage/policy.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x13storage/image.proto\x1a\x13storage/scope.proto\"\xfc\t\n" +
 	"\x06Policy\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -1329,7 +1391,8 @@ const file_storage_policy_proto_rawDesc = "" +
 	"\x14mitre_vectors_locked\x18\x19 \x01(\bR\x12mitreVectorsLocked\x12\x1d\n" +
 	"\n" +
 	"is_default\x18\x1a \x01(\bR\tisDefault\x12-\n" +
-	"\x06source\x18\x1b \x01(\x0e2\x15.storage.PolicySourceR\x06source\x1aL\n" +
+	"\x06source\x18\x1b \x01(\x0e2\x15.storage.PolicySourceR\x06source\x12F\n" +
+	"\x11evaluation_filter\x18\x1c \x01(\v2\x19.storage.EvaluationFilterR\x10evaluationFilter\x1aL\n" +
 	"\x12MitreAttackVectors\x12\x16\n" +
 	"\x06tactic\x18\x01 \x01(\tR\x06tactic\x12\x1e\n" +
 	"\n" +
@@ -1349,7 +1412,7 @@ const file_storage_policy_proto_rawDesc = "" +
 	"\x05value\x18\x01 \x01(\tR\x05value\"9\n" +
 	"\n" +
 	"PolicyList\x12+\n" +
-	"\bpolicies\x18\x01 \x03(\v2\x0f.storage.PolicyR\bpolicies\"\xc5\x03\n" +
+	"\bpolicies\x18\x01 \x03(\v2\x0f.storage.PolicyR\bpolicies\"\x8d\x04\n" +
 	"\n" +
 	"ListPolicy\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -1364,7 +1427,10 @@ const file_storage_policy_proto_rawDesc = "" +
 	"\n" +
 	"is_default\x18\n" +
 	" \x01(\bR\tisDefault\x12-\n" +
-	"\x06source\x18\v \x01(\x0e2\x15.storage.PolicySourceR\x06source\"\xf5\x02\n" +
+	"\x06source\x18\v \x01(\x0e2\x15.storage.PolicySourceR\x06source\x12F\n" +
+	"\x11evaluation_filter\x18\f \x01(\v2\x19.storage.EvaluationFilterR\x10evaluationFilter\"\\\n" +
+	"\x10EvaluationFilter\x12H\n" +
+	"\x14skip_container_types\x18\x01 \x03(\x0e2\x16.storage.ContainerTypeR\x12skipContainerTypes\"\xf5\x02\n" +
 	"\tExclusion\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12=\n" +
 	"\n" +
@@ -1441,7 +1507,7 @@ func file_storage_policy_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_policy_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
-var file_storage_policy_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_storage_policy_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_storage_policy_proto_goTypes = []any{
 	(PolicySource)(0),                 // 0: storage.PolicySource
 	(EventSource)(0),                  // 1: storage.EventSource
@@ -1456,47 +1522,52 @@ var file_storage_policy_proto_goTypes = []any{
 	(*PolicyValue)(nil),               // 10: storage.PolicyValue
 	(*PolicyList)(nil),                // 11: storage.PolicyList
 	(*ListPolicy)(nil),                // 12: storage.ListPolicy
-	(*Exclusion)(nil),                 // 13: storage.Exclusion
-	(*ExportPoliciesResponse)(nil),    // 14: storage.ExportPoliciesResponse
-	(*Policy_MitreAttackVectors)(nil), // 15: storage.Policy.MitreAttackVectors
-	(*Exclusion_Container)(nil),       // 16: storage.Exclusion.Container
-	(*Exclusion_Deployment)(nil),      // 17: storage.Exclusion.Deployment
-	(*Exclusion_Image)(nil),           // 18: storage.Exclusion.Image
-	(*Scope)(nil),                     // 19: storage.Scope
-	(*timestamppb.Timestamp)(nil),     // 20: google.protobuf.Timestamp
-	(*ImageName)(nil),                 // 21: storage.ImageName
+	(*EvaluationFilter)(nil),          // 13: storage.EvaluationFilter
+	(*Exclusion)(nil),                 // 14: storage.Exclusion
+	(*ExportPoliciesResponse)(nil),    // 15: storage.ExportPoliciesResponse
+	(*Policy_MitreAttackVectors)(nil), // 16: storage.Policy.MitreAttackVectors
+	(*Exclusion_Container)(nil),       // 17: storage.Exclusion.Container
+	(*Exclusion_Deployment)(nil),      // 18: storage.Exclusion.Deployment
+	(*Exclusion_Image)(nil),           // 19: storage.Exclusion.Image
+	(*Scope)(nil),                     // 20: storage.Scope
+	(*timestamppb.Timestamp)(nil),     // 21: google.protobuf.Timestamp
+	(ContainerType)(0),                // 22: storage.ContainerType
+	(*ImageName)(nil),                 // 23: storage.ImageName
 }
 var file_storage_policy_proto_depIdxs = []int32{
 	5,  // 0: storage.Policy.lifecycle_stages:type_name -> storage.LifecycleStage
 	1,  // 1: storage.Policy.event_source:type_name -> storage.EventSource
-	13, // 2: storage.Policy.exclusions:type_name -> storage.Exclusion
-	19, // 3: storage.Policy.scope:type_name -> storage.Scope
+	14, // 2: storage.Policy.exclusions:type_name -> storage.Exclusion
+	20, // 3: storage.Policy.scope:type_name -> storage.Scope
 	4,  // 4: storage.Policy.severity:type_name -> storage.Severity
 	3,  // 5: storage.Policy.enforcement_actions:type_name -> storage.EnforcementAction
-	20, // 6: storage.Policy.last_updated:type_name -> google.protobuf.Timestamp
+	21, // 6: storage.Policy.last_updated:type_name -> google.protobuf.Timestamp
 	8,  // 7: storage.Policy.policy_sections:type_name -> storage.PolicySection
-	15, // 8: storage.Policy.mitre_attack_vectors:type_name -> storage.Policy.MitreAttackVectors
+	16, // 8: storage.Policy.mitre_attack_vectors:type_name -> storage.Policy.MitreAttackVectors
 	0,  // 9: storage.Policy.source:type_name -> storage.PolicySource
-	9,  // 10: storage.PolicySection.policy_groups:type_name -> storage.PolicyGroup
-	2,  // 11: storage.PolicyGroup.boolean_operator:type_name -> storage.BooleanOperator
-	10, // 12: storage.PolicyGroup.values:type_name -> storage.PolicyValue
-	7,  // 13: storage.PolicyList.policies:type_name -> storage.Policy
-	4,  // 14: storage.ListPolicy.severity:type_name -> storage.Severity
-	5,  // 15: storage.ListPolicy.lifecycle_stages:type_name -> storage.LifecycleStage
-	20, // 16: storage.ListPolicy.last_updated:type_name -> google.protobuf.Timestamp
-	1,  // 17: storage.ListPolicy.event_source:type_name -> storage.EventSource
-	0,  // 18: storage.ListPolicy.source:type_name -> storage.PolicySource
-	17, // 19: storage.Exclusion.deployment:type_name -> storage.Exclusion.Deployment
-	18, // 20: storage.Exclusion.image:type_name -> storage.Exclusion.Image
-	20, // 21: storage.Exclusion.expiration:type_name -> google.protobuf.Timestamp
-	7,  // 22: storage.ExportPoliciesResponse.policies:type_name -> storage.Policy
-	21, // 23: storage.Exclusion.Container.image_name:type_name -> storage.ImageName
-	19, // 24: storage.Exclusion.Deployment.scope:type_name -> storage.Scope
-	25, // [25:25] is the sub-list for method output_type
-	25, // [25:25] is the sub-list for method input_type
-	25, // [25:25] is the sub-list for extension type_name
-	25, // [25:25] is the sub-list for extension extendee
-	0,  // [0:25] is the sub-list for field type_name
+	13, // 10: storage.Policy.evaluation_filter:type_name -> storage.EvaluationFilter
+	9,  // 11: storage.PolicySection.policy_groups:type_name -> storage.PolicyGroup
+	2,  // 12: storage.PolicyGroup.boolean_operator:type_name -> storage.BooleanOperator
+	10, // 13: storage.PolicyGroup.values:type_name -> storage.PolicyValue
+	7,  // 14: storage.PolicyList.policies:type_name -> storage.Policy
+	4,  // 15: storage.ListPolicy.severity:type_name -> storage.Severity
+	5,  // 16: storage.ListPolicy.lifecycle_stages:type_name -> storage.LifecycleStage
+	21, // 17: storage.ListPolicy.last_updated:type_name -> google.protobuf.Timestamp
+	1,  // 18: storage.ListPolicy.event_source:type_name -> storage.EventSource
+	0,  // 19: storage.ListPolicy.source:type_name -> storage.PolicySource
+	13, // 20: storage.ListPolicy.evaluation_filter:type_name -> storage.EvaluationFilter
+	22, // 21: storage.EvaluationFilter.skip_container_types:type_name -> storage.ContainerType
+	18, // 22: storage.Exclusion.deployment:type_name -> storage.Exclusion.Deployment
+	19, // 23: storage.Exclusion.image:type_name -> storage.Exclusion.Image
+	21, // 24: storage.Exclusion.expiration:type_name -> google.protobuf.Timestamp
+	7,  // 25: storage.ExportPoliciesResponse.policies:type_name -> storage.Policy
+	23, // 26: storage.Exclusion.Container.image_name:type_name -> storage.ImageName
+	20, // 27: storage.Exclusion.Deployment.scope:type_name -> storage.Scope
+	28, // [28:28] is the sub-list for method output_type
+	28, // [28:28] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_storage_policy_proto_init() }
@@ -1504,6 +1575,7 @@ func file_storage_policy_proto_init() {
 	if File_storage_policy_proto != nil {
 		return
 	}
+	file_storage_deployment_proto_init()
 	file_storage_image_proto_init()
 	file_storage_scope_proto_init()
 	type x struct{}
@@ -1512,7 +1584,7 @@ func file_storage_policy_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_policy_proto_rawDesc), len(file_storage_policy_proto_rawDesc)),
 			NumEnums:      7,
-			NumMessages:   12,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
