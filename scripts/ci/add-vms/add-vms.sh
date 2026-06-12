@@ -36,6 +36,7 @@ NATIVE_AGENT_FAILED_VMS=()
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
+# Prints the usage block from the file header comments and exits.
 usage() {
     sed -n '2,/^$/s/^# //p' "${BASH_SOURCE[0]}" >&2
     exit 1
@@ -64,6 +65,9 @@ parse_args() {
     [[ "$VM_OS" =~ ^rhel(9|10)$ ]] || die "--os must be rhel9 or rhel10"
 }
 
+# Sets KUBECONFIG: either fetches it from infractl for the given cluster
+# name, or expects it to be pre-set in the environment.
+# Validates that kubectl can reach the cluster before returning.
 resolve_kubeconfig() {
     if [[ -n "$CLUSTER_NAME" ]]; then
         command -v infractl &>/dev/null || die "infractl required when --cluster is used"
@@ -137,6 +141,8 @@ print_summary() {
     write_github_summary
 }
 
+# Appends a markdown heading + bullet list to GITHUB_STEP_SUMMARY.
+# No-op when the list is empty. Args: heading, items...
 append_summary_list() {
     local heading="$1"
     shift
@@ -155,6 +161,9 @@ append_summary_list() {
     } >> "$GITHUB_STEP_SUMMARY"
 }
 
+# Writes the GitHub Actions job summary (markdown) with run configuration,
+# VM categories, agent health, and SSH access instructions.
+# No-op when GITHUB_STEP_SUMMARY is unset (i.e. local runs).
 write_github_summary() {
     if [[ -z "${GITHUB_STEP_SUMMARY:-}" ]]; then
         return 0

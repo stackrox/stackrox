@@ -32,6 +32,10 @@ die() { echo "ERROR: $*" >&2; exit 1; }
 
 # --- SSH keypair management ---
 
+# Loads or creates the automation SSH keypair used for all VM access.
+# If the k8s secret already exists, downloads the key from it.
+# Otherwise generates a new ed25519 pair and stores it in the secret.
+# Sets globals: AUTOMATION_SSH_PRIVKEY, AUTOMATION_SSH_PUBKEY (temp file paths).
 ensure_automation_ssh_key() {
     echo "=== Ensuring automation SSH keypair ==="
 
@@ -90,6 +94,9 @@ get_vm_status() {
     kubectl get vm "$1" -n "$NAMESPACE" -o jsonpath='{.status.printableStatus}' 2>/dev/null || echo "Unknown"
 }
 
+# Prints a KubeVirt VirtualMachine YAML manifest to stdout.
+# Embeds the automation (and optional user) SSH public keys via cloud-init
+# so the VM is SSH-accessible immediately after boot.
 build_vm_manifest() {
     local vm_name="$1"
     local ssh_keys_yaml=""
@@ -165,6 +172,8 @@ ${ssh_keys_yaml}
 EOF
 }
 
+# Creates or restarts a single VM. Idempotent: skips if running, restarts
+# if stopped, creates if absent. Returns 1 only on creation failure.
 create_vm() {
     local vm_name="$1" vm_index="$2"
     echo "[${vm_index}/${NUM_VMS}] VM: $vm_name"
@@ -205,6 +214,8 @@ deploy_all_vms() {
 
 # --- Wait for VMI + SSH ---
 
+# Polls until the KubeVirt VirtualMachineInstance reports condition=Ready.
+# Timeout: ~5 min (30 retries * 10s). Returns 1 on timeout.
 wait_for_vmi_ready() {
     local vm_name="$1" max_retries=30 i=0
     echo "  Waiting for VMI $vm_name to be ready..."
@@ -224,6 +235,8 @@ wait_for_vmi_ready() {
     return 1
 }
 
+# Single non-interactive SSH attempt using the automation key.
+# Returns 0 if the VM is reachable, 1 otherwise.
 ssh_probe_with_key() {
     local vm_name="$1"
     virtctl ssh \
@@ -237,6 +250,10 @@ ssh_probe_with_key() {
         "${SSH_USER}@vmi/${vm_name}" 2>/dev/null | grep -q "SSH_PROBE_OK"
 }
 
+# Extracts the VM password from the infractl artifacts directory.
+# Pre-existing infra clusters ship a vm-access.md with a password that
+# we can use as a fallback when the automation key is not yet injected.
+# Prints the password to stdout; returns 1 if unavailable.
 parse_vm_password() {
     if [[ -z "$ARTIFACTS_DIR" ]]; then
         return 1
@@ -248,6 +265,10 @@ parse_vm_password() {
     grep -oP '(?<=Password:\s).*' "$vm_access_file" 2>/dev/null | head -1
 }
 
+# "Adopts" a pre-existing VM by logging in with its password (via sshpass)
+# and injecting the automation SSH public key into authorized_keys.
+# After this succeeds, all further access uses key-based auth.
+# The public key is base64-encoded in transit to avoid shell injection.
 adopt_vm_with_password() {
     local vm_name="$1"
     local password
@@ -282,6 +303,9 @@ adopt_vm_with_password() {
     return 1
 }
 
+# Appends the caller's personal SSH public key (if provided) to the VM's
+# authorized_keys. This is a convenience for developer SSH access and is
+# separate from the automation key used by CI.
 ensure_user_key_on_vm() {
     local vm_name="$1"
     if [[ -z "$USER_SSH_PUBLIC_KEY" ]]; then
@@ -300,6 +324,12 @@ ensure_user_key_on_vm() {
         "${SSH_USER}@vmi/${vm_name}" 2>/dev/null || true
 }
 
+# Retry loop (~15 min) that waits for SSH access on a VM.
+# Tries key-based auth first; every 10 attempts falls back to password
+# adoption for pre-existing VMs. Classifies the VM into one of:
+#   MANAGED_VMS  — automation key worked (newly created VM)
+#   ADOPTED_VMS  — password fallback succeeded, key now injected
+#   SKIPPED_VMS  — all attempts failed, VM is inaccessible
 wait_for_ssh_and_adopt() {
     local vm_name="$1"
     local max_retries=90 i=0

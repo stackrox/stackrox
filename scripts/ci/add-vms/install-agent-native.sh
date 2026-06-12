@@ -32,6 +32,8 @@ NATIVE_MOUNT_CANDIDATES=(
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
+# Populates the _ssh_opts array with common virtctl ssh/scp flags.
+# Callers use: build_ssh_opts; virtctl ssh "${_ssh_opts[@]}" ...
 build_ssh_opts() {
     _ssh_opts=(
         --namespace "$NAMESPACE"
@@ -42,6 +44,8 @@ build_ssh_opts() {
     )
 }
 
+# Cross-compiles the roxagent binary for linux/amd64.
+# Prints the path to the built binary on stdout.
 build_agent() {
     echo "=== Building roxagent binary ===" >&2
 
@@ -58,6 +62,9 @@ build_agent() {
     echo "$output"
 }
 
+# Prints a systemd unit (to stdout) that prepares the sandbox directory
+# tree roxagent needs: /tmp/roxroot/{etc,var} and a writable RPM DB copy.
+# Runs as a oneshot dependency before the main roxagent service.
 create_native_prep_service_file() {
     cat <<'EOF'
 [Unit]
@@ -80,6 +87,10 @@ ExecStart=/bin/chmod -R 755 /tmp/roxagent-rpm
 EOF
 }
 
+# Prints a systemd unit (to stdout) for the main roxagent service.
+# Args: host paths that exist on the VM (from NATIVE_MOUNT_CANDIDATES).
+# Each path is bind-mounted read-only into the /tmp/roxroot sandbox so
+# roxagent can inspect host OS metadata without full root access.
 create_native_service_file() {
     local mount_path
 
@@ -122,6 +133,9 @@ WantedBy=timers.target
 EOF
 }
 
+# Checks whether roxagent is healthy on $1 (vm_name) by SSHing in and
+# querying systemd. Returns 0 only if the last service run succeeded,
+# the timer is enabled, and the timer is active.
 native_agent_service_verified() {
     local vm_name="$1"
     build_ssh_opts
@@ -141,6 +155,10 @@ printf \"%s\\n%s\\n%s\\n\" \"\$service_result\" \"\$timer_enabled\" \"\$timer_ac
         "${status_lines[2]:-}" == "active" ]]
 }
 
+# Deploys roxagent onto a single VM ($1) using the pre-built binary ($2).
+# Steps: probe which host paths exist -> scp binary + systemd units ->
+# install and enable via SSH -> run once and verify health.
+# Appends the VM name to NATIVE_AGENT_READY_VMS or NATIVE_AGENT_FAILED_VMS.
 install_on_vm() {
     local vm_name="$1" binary_path="$2"
 
@@ -219,6 +237,7 @@ echo "NATIVE_INSTALL_OK"' \
     fi
 }
 
+# Top-level entry point: builds the agent once, installs on each VM.
 install_agent_native() {
     local vm_names=("$@")
 
