@@ -129,7 +129,6 @@ func ApplyAllStartupIndexes(ctx context.Context, db postgres.DB) error {
 
 // ApplyAllBackgroundIndexes creates indexes with Background: true using CREATE INDEX CONCURRENTLY.
 // Called by the background migration runner after Central is serving traffic.
-// Uses raw postgres.DB because CREATE INDEX CONCURRENTLY cannot run inside a transaction.
 func ApplyAllBackgroundIndexes(ctx context.Context, db postgres.DB) error {
 	return applyIndexes(ctx, db, true, env.BackgroundIndexTimeout.DurationSetting())
 }
