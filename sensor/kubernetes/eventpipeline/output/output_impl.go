@@ -45,7 +45,7 @@ func (q *outputQueueImpl) Start() error {
 func (q *outputQueueImpl) Stop() {
 	if features.SensorInternalPubSub.Enabled() {
 		// No goroutine was started; signal stopped so the Wait below returns immediately.
-		// TODO(ROX-34880): Remove stopper usage once ResponsesC is migrated to PubSub.
+		// TODO(ROX-35054): Remove stopper usage once ResponsesC is migrated to PubSub.
 		q.stopper.Flow().ReportStopped()
 	}
 	if !q.stopper.Client().Stopped().IsDone() {
