@@ -695,6 +695,11 @@ deploy_sensor_via_operator() {
         customize_envVars+=$'\n    - name: ROX_VIRTUAL_MACHINES'
         customize_envVars+=$'\n      value: "true"'
     fi
+    # For VM e2e tests that may send multiple index reports per minute.
+    if [[ -n "${ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE:-}" ]]; then
+        customize_envVars+=$'\n    - name: ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE'
+        customize_envVars+=$'\n      value: "'"${ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE}"'"'
+    fi
     if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_NETFLOW_BATCHING'
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_BATCHING}"'"'
