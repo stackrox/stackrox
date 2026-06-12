@@ -19,6 +19,10 @@ var (
 	CreateTableProcessBaselinesStmt = &postgres.CreateStmts{
 		GormModel: (*ProcessBaselines)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "processbaselines_key_deploymentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processbaselines_key_deploymentid ON process_baselines USING btree (key_deploymentid)", Background: false},
+			{Name: "processbaselines_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processbaselines_sac_filter ON process_baselines USING btree (key_clusterid, key_namespace)", Background: false},
+		},
 	}
 
 	// ProcessBaselinesSchema is the go schema for table `process_baselines`.
@@ -44,8 +48,8 @@ const (
 // ProcessBaselines holds the Gorm model for Postgres table `process_baselines`.
 type ProcessBaselines struct {
 	ID              string `gorm:"column:id;type:varchar;primaryKey"`
-	KeyDeploymentID string `gorm:"column:key_deploymentid;type:uuid;index:processbaselines_key_deploymentid,type:btree"`
-	KeyClusterID    string `gorm:"column:key_clusterid;type:uuid;index:processbaselines_sac_filter,type:btree"`
-	KeyNamespace    string `gorm:"column:key_namespace;type:varchar;index:processbaselines_sac_filter,type:btree"`
+	KeyDeploymentID string `gorm:"column:key_deploymentid;type:uuid"`
+	KeyClusterID    string `gorm:"column:key_clusterid;type:uuid"`
+	KeyNamespace    string `gorm:"column:key_namespace;type:varchar"`
 	Serialized      []byte `gorm:"column:serialized;type:bytea"`
 }

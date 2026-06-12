@@ -19,6 +19,9 @@ var (
 	CreateTableVirtualMachinesStmt = &postgres.CreateStmts{
 		GormModel: (*VirtualMachines)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "virtualmachines_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachines_sac_filter ON virtual_machines USING btree (namespace, clusterid)", Background: false},
+		},
 	}
 
 	// VirtualMachinesSchema is the go schema for table `virtual_machines`.
@@ -44,9 +47,9 @@ const (
 // VirtualMachines holds the Gorm model for Postgres table `virtual_machines`.
 type VirtualMachines struct {
 	ID          string `gorm:"column:id;type:uuid;primaryKey"`
-	Namespace   string `gorm:"column:namespace;type:varchar;index:virtualmachines_sac_filter,type:btree"`
+	Namespace   string `gorm:"column:namespace;type:varchar"`
 	Name        string `gorm:"column:name;type:varchar"`
-	ClusterID   string `gorm:"column:clusterid;type:uuid;index:virtualmachines_sac_filter,type:btree"`
+	ClusterID   string `gorm:"column:clusterid;type:uuid"`
 	ClusterName string `gorm:"column:clustername;type:varchar"`
 	Serialized  []byte `gorm:"column:serialized;type:bytea"`
 }

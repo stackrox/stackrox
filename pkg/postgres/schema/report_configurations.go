@@ -23,6 +23,9 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*ReportConfigurationsNotifiers)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "reportconfigurationsnotifiers_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS reportconfigurationsnotifiers_idx ON report_configurations_notifiers USING btree (idx)", Background: false},
+				},
 			},
 		},
 	}
@@ -73,7 +76,7 @@ type ReportConfigurations struct {
 // ReportConfigurationsNotifiers holds the Gorm model for Postgres table `report_configurations_notifiers`.
 type ReportConfigurationsNotifiers struct {
 	ReportConfigurationsID  string               `gorm:"column:report_configurations_id;type:varchar;primaryKey"`
-	Idx                     int                  `gorm:"column:idx;type:integer;primaryKey;index:reportconfigurationsnotifiers_idx,type:btree"`
+	Idx                     int                  `gorm:"column:idx;type:integer;primaryKey"`
 	ID                      string               `gorm:"column:id;type:varchar"`
 	ReportConfigurationsRef ReportConfigurations `gorm:"foreignKey:report_configurations_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	NotifiersRef            Notifiers            `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:RESTRICT"`

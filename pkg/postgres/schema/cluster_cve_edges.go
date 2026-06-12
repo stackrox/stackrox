@@ -20,6 +20,9 @@ var (
 	CreateTableClusterCveEdgesStmt = &postgres.CreateStmts{
 		GormModel: (*ClusterCveEdges)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "clustercveedges_cveid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS clustercveedges_cveid ON cluster_cve_edges USING hash (cveid)", Background: false},
+		},
 	}
 
 	// ClusterCveEdgesSchema is the go schema for table `cluster_cve_edges`.
@@ -61,7 +64,7 @@ type ClusterCveEdges struct {
 	IsFixable   bool     `gorm:"column:isfixable;type:bool"`
 	FixedBy     string   `gorm:"column:fixedby;type:varchar"`
 	ClusterID   string   `gorm:"column:clusterid;type:uuid"`
-	CveID       string   `gorm:"column:cveid;type:varchar;index:clustercveedges_cveid,type:hash"`
+	CveID       string   `gorm:"column:cveid;type:varchar"`
 	Serialized  []byte   `gorm:"column:serialized;type:bytea"`
 	ClustersRef Clusters `gorm:"foreignKey:clusterid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

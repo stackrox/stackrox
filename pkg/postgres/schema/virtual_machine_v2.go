@@ -20,6 +20,10 @@ var (
 	CreateTableVirtualMachineV2Stmt = &postgres.CreateStmts{
 		GormModel: (*VirtualMachineV2)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "virtualmachinev2_guestos", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinev2_guestos ON virtual_machine_v2 USING btree (guestos)", Background: false},
+			{Name: "virtualmachinev2_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinev2_sac_filter ON virtual_machine_v2 USING btree (namespace, clusterid)", Background: false},
+		},
 	}
 
 	// VirtualMachineV2Schema is the go schema for table `virtual_machine_v2`.
@@ -54,10 +58,10 @@ const (
 type VirtualMachineV2 struct {
 	ID          string                         `gorm:"column:id;type:uuid;primaryKey"`
 	Name        string                         `gorm:"column:name;type:varchar"`
-	Namespace   string                         `gorm:"column:namespace;type:varchar;index:virtualmachinev2_sac_filter,type:btree"`
-	ClusterID   string                         `gorm:"column:clusterid;type:uuid;index:virtualmachinev2_sac_filter,type:btree"`
+	Namespace   string                         `gorm:"column:namespace;type:varchar"`
+	ClusterID   string                         `gorm:"column:clusterid;type:uuid"`
 	ClusterName string                         `gorm:"column:clustername;type:varchar"`
-	GuestOs     string                         `gorm:"column:guestos;type:varchar;index:virtualmachinev2_guestos,type:btree"`
+	GuestOs     string                         `gorm:"column:guestos;type:varchar"`
 	State       storage.VirtualMachineV2_State `gorm:"column:state;type:integer"`
 	LastUpdated *time.Time                     `gorm:"column:lastupdated;type:timestamptz"`
 	Serialized  []byte                         `gorm:"column:serialized;type:bytea"`

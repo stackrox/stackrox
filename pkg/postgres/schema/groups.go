@@ -16,6 +16,9 @@ var (
 	CreateTableGroupsStmt = &postgres.CreateStmts{
 		GormModel: (*Groups)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "groups_unique_indicator", CreateSQL: "CREATE UNIQUE INDEX IF NOT EXISTS groups_unique_indicator ON groups USING btree (props_authproviderid, props_key, props_value, rolename)", Background: false},
+		},
 	}
 
 	// GroupsSchema is the go schema for table `groups`.
@@ -39,9 +42,9 @@ const (
 // Groups holds the Gorm model for Postgres table `groups`.
 type Groups struct {
 	PropsID             string `gorm:"column:props_id;type:varchar;primaryKey"`
-	PropsAuthProviderID string `gorm:"column:props_authproviderid;type:varchar;uniqueIndex:groups_unique_indicator"`
-	PropsKey            string `gorm:"column:props_key;type:varchar;uniqueIndex:groups_unique_indicator"`
-	PropsValue          string `gorm:"column:props_value;type:varchar;uniqueIndex:groups_unique_indicator"`
-	RoleName            string `gorm:"column:rolename;type:varchar;uniqueIndex:groups_unique_indicator"`
+	PropsAuthProviderID string `gorm:"column:props_authproviderid;type:varchar"`
+	PropsKey            string `gorm:"column:props_key;type:varchar"`
+	PropsValue          string `gorm:"column:props_value;type:varchar"`
+	RoleName            string `gorm:"column:rolename;type:varchar"`
 	Serialized          []byte `gorm:"column:serialized;type:bytea"`
 }

@@ -19,6 +19,9 @@ var (
 	CreateTableServiceAccountsStmt = &postgres.CreateStmts{
 		GormModel: (*ServiceAccounts)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "serviceaccounts_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS serviceaccounts_sac_filter ON service_accounts USING btree (namespace, clusterid)", Background: false},
+		},
 	}
 
 	// ServiceAccountsSchema is the go schema for table `service_accounts`.
@@ -45,9 +48,9 @@ const (
 type ServiceAccounts struct {
 	ID          string            `gorm:"column:id;type:uuid;primaryKey"`
 	Name        string            `gorm:"column:name;type:varchar"`
-	Namespace   string            `gorm:"column:namespace;type:varchar;index:serviceaccounts_sac_filter,type:btree"`
+	Namespace   string            `gorm:"column:namespace;type:varchar"`
 	ClusterName string            `gorm:"column:clustername;type:varchar"`
-	ClusterID   string            `gorm:"column:clusterid;type:uuid;index:serviceaccounts_sac_filter,type:btree"`
+	ClusterID   string            `gorm:"column:clusterid;type:uuid"`
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
 	Serialized  []byte            `gorm:"column:serialized;type:bytea"`

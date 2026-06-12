@@ -24,7 +24,13 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*NodesTaints)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "nodestaints_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodestaints_idx ON nodes_taints USING btree (idx)", Background: false},
+				},
 			},
+		},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "nodes_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodes_sac_filter ON nodes USING hash (clusterid)", Background: false},
 		},
 	}
 
@@ -69,7 +75,7 @@ const (
 type Nodes struct {
 	ID                      string            `gorm:"column:id;type:uuid;primaryKey"`
 	Name                    string            `gorm:"column:name;type:varchar"`
-	ClusterID               string            `gorm:"column:clusterid;type:uuid;index:nodes_sac_filter,type:hash"`
+	ClusterID               string            `gorm:"column:clusterid;type:uuid"`
 	ClusterName             string            `gorm:"column:clustername;type:varchar"`
 	Labels                  map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations             map[string]string `gorm:"column:annotations;type:jsonb"`
@@ -90,7 +96,7 @@ type Nodes struct {
 // NodesTaints holds the Gorm model for Postgres table `nodes_taints`.
 type NodesTaints struct {
 	NodesID     string              `gorm:"column:nodes_id;type:uuid;primaryKey"`
-	Idx         int                 `gorm:"column:idx;type:integer;primaryKey;index:nodestaints_idx,type:btree"`
+	Idx         int                 `gorm:"column:idx;type:integer;primaryKey"`
 	Key         string              `gorm:"column:key;type:varchar"`
 	Value       string              `gorm:"column:value;type:varchar"`
 	TaintEffect storage.TaintEffect `gorm:"column:tainteffect;type:integer"`

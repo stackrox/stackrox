@@ -20,6 +20,9 @@ var (
 	CreateTableTestSingleKeyStructsStmt = &postgres.CreateStmts{
 		GormModel: (*TestSingleKeyStructs)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "testsinglekeystructs_key", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS testsinglekeystructs_key ON test_single_key_structs USING hash (key)", Background: false},
+		},
 	}
 
 	// TestSingleKeyStructsSchema is the go schema for table `test_single_key_structs`.
@@ -38,7 +41,7 @@ const (
 
 // TestSingleKeyStructs holds the Gorm model for Postgres table `test_single_key_structs`.
 type TestSingleKeyStructs struct {
-	Key         string                           `gorm:"column:key;type:varchar;primaryKey;index:testsinglekeystructs_key,type:hash"`
+	Key         string                           `gorm:"column:key;type:varchar;primaryKey"`
 	Name        string                           `gorm:"column:name;type:varchar;unique"`
 	StringSlice *pq.StringArray                  `gorm:"column:stringslice;type:text[]"`
 	Bool        bool                             `gorm:"column:bool;type:bool"`

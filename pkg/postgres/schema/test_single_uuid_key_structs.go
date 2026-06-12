@@ -21,6 +21,9 @@ var (
 	CreateTableTestSingleUUIDKeyStructsStmt = &postgres.CreateStmts{
 		GormModel: (*TestSingleUUIDKeyStructs)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "testsingleuuidkeystructs_key", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS testsingleuuidkeystructs_key ON test_single_uuid_key_structs USING hash (key)", Background: false},
+		},
 	}
 
 	// TestSingleUUIDKeyStructsSchema is the go schema for table `test_single_uuid_key_structs`.
@@ -45,7 +48,7 @@ const (
 
 // TestSingleUUIDKeyStructs holds the Gorm model for Postgres table `test_single_uuid_key_structs`.
 type TestSingleUUIDKeyStructs struct {
-	Key          string                               `gorm:"column:key;type:uuid;primaryKey;index:testsingleuuidkeystructs_key,type:hash"`
+	Key          string                               `gorm:"column:key;type:uuid;primaryKey"`
 	Name         string                               `gorm:"column:name;type:varchar;unique"`
 	StringSlice  *pq.StringArray                      `gorm:"column:stringslice;type:text[]"`
 	Bool         bool                                 `gorm:"column:bool;type:bool"`

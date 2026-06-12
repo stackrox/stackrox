@@ -19,6 +19,9 @@ var (
 	CreateTableImageIntegrationsStmt = &postgres.CreateStmts{
 		GormModel: (*ImageIntegrations)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "imageintegrations_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imageintegrations_sac_filter ON image_integrations USING btree (clusterid)", Background: false},
+		},
 	}
 
 	// ImageIntegrationsSchema is the go schema for table `image_integrations`.
@@ -45,6 +48,6 @@ const (
 type ImageIntegrations struct {
 	ID         string `gorm:"column:id;type:uuid;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`
-	ClusterID  string `gorm:"column:clusterid;type:uuid;index:imageintegrations_sac_filter,type:btree"`
+	ClusterID  string `gorm:"column:clusterid;type:uuid"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

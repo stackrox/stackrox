@@ -22,6 +22,9 @@ var (
 	CreateTableComplianceOperatorClusterScanConfigStatusesStmt = &postgres.CreateStmts{
 		GormModel: (*ComplianceOperatorClusterScanConfigStatuses)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "complianceoperatorclusterscanconfigstatuses_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorclusterscanconfigstatuses_sac_filter ON compliance_operator_cluster_scan_config_statuses USING hash (clusterid)", Background: false},
+		},
 	}
 
 	// ComplianceOperatorClusterScanConfigStatusesSchema is the go schema for table `compliance_operator_cluster_scan_config_statuses`.
@@ -55,7 +58,7 @@ const (
 // ComplianceOperatorClusterScanConfigStatuses holds the Gorm model for Postgres table `compliance_operator_cluster_scan_config_statuses`.
 type ComplianceOperatorClusterScanConfigStatuses struct {
 	ID              string     `gorm:"column:id;type:uuid;primaryKey"`
-	ClusterID       string     `gorm:"column:clusterid;type:uuid;index:complianceoperatorclusterscanconfigstatuses_sac_filter,type:hash"`
+	ClusterID       string     `gorm:"column:clusterid;type:uuid"`
 	ScanConfigID    string     `gorm:"column:scanconfigid;type:uuid"`
 	LastUpdatedTime *time.Time `gorm:"column:lastupdatedtime;type:timestamp"`
 	Serialized      []byte     `gorm:"column:serialized;type:bytea"`

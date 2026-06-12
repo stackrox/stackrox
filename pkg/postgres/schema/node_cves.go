@@ -20,6 +20,9 @@ var (
 	CreateTableNodeCvesStmt = &postgres.CreateStmts{
 		GormModel: (*NodeCves)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "nodecves_cvebaseinfo_cve", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodecves_cvebaseinfo_cve ON node_cves USING btree (cvebaseinfo_cve)", Background: false},
+		},
 	}
 
 	// NodeCvesSchema is the go schema for table `node_cves`.
@@ -53,7 +56,7 @@ const (
 // NodeCves holds the Gorm model for Postgres table `node_cves`.
 type NodeCves struct {
 	ID                             string                        `gorm:"column:id;type:varchar;primaryKey"`
-	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:nodecves_cvebaseinfo_cve,type:btree"`
+	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar"`
 	CveBaseInfoPublishedOn         *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
 	CveBaseInfoCreatedAt           *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
 	CveBaseInfoEpssEpssProbability float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`

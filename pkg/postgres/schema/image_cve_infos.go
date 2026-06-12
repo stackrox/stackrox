@@ -20,6 +20,9 @@ var (
 	CreateTableImageCveInfosStmt = &postgres.CreateStmts{
 		GormModel: (*ImageCveInfos)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "imagecveinfos_cve", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecveinfos_cve ON image_cve_infos USING btree (cve)", Background: false},
+		},
 	}
 
 	// ImageCveInfosSchema is the go schema for table `image_cve_infos`.
@@ -47,6 +50,6 @@ type ImageCveInfos struct {
 	ID                    string     `gorm:"column:id;type:varchar;primaryKey"`
 	FixAvailableTimestamp *time.Time `gorm:"column:fixavailabletimestamp;type:timestamp"`
 	FirstSystemOccurrence *time.Time `gorm:"column:firstsystemoccurrence;type:timestamp"`
-	Cve                   string     `gorm:"column:cve;type:varchar;index:imagecveinfos_cve,type:btree"`
+	Cve                   string     `gorm:"column:cve;type:varchar"`
 	Serialized            []byte     `gorm:"column:serialized;type:bytea"`
 }

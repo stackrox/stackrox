@@ -25,6 +25,9 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*ComplianceOperatorReportSnapshotV2Scans)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "complianceoperatorreportsnapshotv2scans_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorreportsnapshotv2scans_idx ON compliance_operator_report_snapshot_v2_scans USING btree (idx)", Background: false},
+				},
 			},
 		},
 	}
@@ -78,7 +81,7 @@ type ComplianceOperatorReportSnapshotV2 struct {
 // ComplianceOperatorReportSnapshotV2Scans holds the Gorm model for Postgres table `compliance_operator_report_snapshot_v2_scans`.
 type ComplianceOperatorReportSnapshotV2Scans struct {
 	ComplianceOperatorReportSnapshotV2ReportID string                             `gorm:"column:compliance_operator_report_snapshot_v2_reportid;type:uuid;primaryKey"`
-	Idx                                        int                                `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorreportsnapshotv2scans_idx,type:btree"`
+	Idx                                        int                                `gorm:"column:idx;type:integer;primaryKey"`
 	ScanRefID                                  string                             `gorm:"column:scanrefid;type:varchar"`
 	LastStartedTime                            *time.Time                         `gorm:"column:laststartedtime;type:timestamp"`
 	ComplianceOperatorReportSnapshotV2Ref      ComplianceOperatorReportSnapshotV2 `gorm:"foreignKey:compliance_operator_report_snapshot_v2_reportid;references:reportid;belongsTo;constraint:OnDelete:CASCADE"`

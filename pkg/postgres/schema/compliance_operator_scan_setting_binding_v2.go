@@ -21,6 +21,9 @@ var (
 	CreateTableComplianceOperatorScanSettingBindingV2Stmt = &postgres.CreateStmts{
 		GormModel: (*ComplianceOperatorScanSettingBindingV2)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "complianceoperatorscansettingbindingv2_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorscansettingbindingv2_sac_filter ON compliance_operator_scan_setting_binding_v2 USING hash (clusterid)", Background: false},
+		},
 	}
 
 	// ComplianceOperatorScanSettingBindingV2Schema is the go schema for table `compliance_operator_scan_setting_binding_v2`.
@@ -54,7 +57,7 @@ const (
 type ComplianceOperatorScanSettingBindingV2 struct {
 	ID              string `gorm:"column:id;type:varchar;primaryKey"`
 	Name            string `gorm:"column:name;type:varchar"`
-	ClusterID       string `gorm:"column:clusterid;type:uuid;index:complianceoperatorscansettingbindingv2_sac_filter,type:hash"`
+	ClusterID       string `gorm:"column:clusterid;type:uuid"`
 	ScanSettingName string `gorm:"column:scansettingname;type:varchar"`
 	Serialized      []byte `gorm:"column:serialized;type:bytea"`
 }

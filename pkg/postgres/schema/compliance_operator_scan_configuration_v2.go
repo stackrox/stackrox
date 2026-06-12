@@ -24,14 +24,24 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*ComplianceOperatorScanConfigurationV2Profiles)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "complianceoperatorscanconfigurationv2profiles_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorscanconfigurationv2profiles_idx ON compliance_operator_scan_configuration_v2_profiles USING btree (idx)", Background: false},
+				},
 			},
 			&postgres.CreateStmts{
 				GormModel: (*ComplianceOperatorScanConfigurationV2Clusters)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "complianceoperatorscanconfigurationv2clusters_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorscanconfigurationv2clusters_idx ON compliance_operator_scan_configuration_v2_clusters USING btree (idx)", Background: false},
+					{Name: "complianceoperatorscanconfigurationv2clusters_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorscanconfigurationv2clusters_sac_filter ON compliance_operator_scan_configuration_v2_clusters USING hash (clusterid)", Background: false},
+				},
 			},
 			&postgres.CreateStmts{
 				GormModel: (*ComplianceOperatorScanConfigurationV2Notifiers)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "complianceoperatorscanconfigurationv2notifiers_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorscanconfigurationv2notifiers_idx ON compliance_operator_scan_configuration_v2_notifiers USING btree (idx)", Background: false},
+				},
 			},
 		},
 	}
@@ -85,7 +95,7 @@ type ComplianceOperatorScanConfigurationV2 struct {
 // ComplianceOperatorScanConfigurationV2Profiles holds the Gorm model for Postgres table `compliance_operator_scan_configuration_v2_profiles`.
 type ComplianceOperatorScanConfigurationV2Profiles struct {
 	ComplianceOperatorScanConfigurationV2ID  string                                `gorm:"column:compliance_operator_scan_configuration_v2_id;type:uuid;primaryKey"`
-	Idx                                      int                                   `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorscanconfigurationv2profiles_idx,type:btree"`
+	Idx                                      int                                   `gorm:"column:idx;type:integer;primaryKey"`
 	ProfileName                              string                                `gorm:"column:profilename;type:varchar"`
 	ComplianceOperatorScanConfigurationV2Ref ComplianceOperatorScanConfigurationV2 `gorm:"foreignKey:compliance_operator_scan_configuration_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
@@ -93,15 +103,15 @@ type ComplianceOperatorScanConfigurationV2Profiles struct {
 // ComplianceOperatorScanConfigurationV2Clusters holds the Gorm model for Postgres table `compliance_operator_scan_configuration_v2_clusters`.
 type ComplianceOperatorScanConfigurationV2Clusters struct {
 	ComplianceOperatorScanConfigurationV2ID  string                                `gorm:"column:compliance_operator_scan_configuration_v2_id;type:uuid;primaryKey"`
-	Idx                                      int                                   `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorscanconfigurationv2clusters_idx,type:btree"`
-	ClusterID                                string                                `gorm:"column:clusterid;type:uuid;index:complianceoperatorscanconfigurationv2clusters_sac_filter,type:hash"`
+	Idx                                      int                                   `gorm:"column:idx;type:integer;primaryKey"`
+	ClusterID                                string                                `gorm:"column:clusterid;type:uuid"`
 	ComplianceOperatorScanConfigurationV2Ref ComplianceOperatorScanConfigurationV2 `gorm:"foreignKey:compliance_operator_scan_configuration_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
 // ComplianceOperatorScanConfigurationV2Notifiers holds the Gorm model for Postgres table `compliance_operator_scan_configuration_v2_notifiers`.
 type ComplianceOperatorScanConfigurationV2Notifiers struct {
 	ComplianceOperatorScanConfigurationV2ID  string                                `gorm:"column:compliance_operator_scan_configuration_v2_id;type:uuid;primaryKey"`
-	Idx                                      int                                   `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorscanconfigurationv2notifiers_idx,type:btree"`
+	Idx                                      int                                   `gorm:"column:idx;type:integer;primaryKey"`
 	ID                                       string                                `gorm:"column:id;type:varchar"`
 	ComplianceOperatorScanConfigurationV2Ref ComplianceOperatorScanConfigurationV2 `gorm:"foreignKey:compliance_operator_scan_configuration_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	NotifiersRef                             Notifiers                             `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:RESTRICT"`

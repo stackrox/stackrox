@@ -21,6 +21,9 @@ var (
 	CreateTableComplianceOperatorSuiteV2Stmt = &postgres.CreateStmts{
 		GormModel: (*ComplianceOperatorSuiteV2)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "complianceoperatorsuitev2_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorsuitev2_sac_filter ON compliance_operator_suite_v2 USING hash (clusterid)", Background: false},
+		},
 	}
 
 	// ComplianceOperatorSuiteV2Schema is the go schema for table `compliance_operator_suite_v2`.
@@ -54,6 +57,6 @@ const (
 type ComplianceOperatorSuiteV2 struct {
 	ID         string `gorm:"column:id;type:uuid;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar"`
-	ClusterID  string `gorm:"column:clusterid;type:uuid;index:complianceoperatorsuitev2_sac_filter,type:hash"`
+	ClusterID  string `gorm:"column:clusterid;type:uuid"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

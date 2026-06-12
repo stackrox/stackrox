@@ -26,11 +26,12 @@ import (
 {{- define "createTableStmt" }}
 {{- $singleton := .Singleton }}
 {{- $schema := .Schema }}
+{{- $obj := .Obj }}
 &postgres.CreateStmts{
     GormModel: (*{{$schema.Table|upperCamelCase}})(nil),
     Children: []*postgres.CreateStmts{
      {{- range $index, $child := $schema.Children }}
-        {{- template "createTableStmt" dict "Schema" $child "Singleton" $singleton }},
+        {{- template "createTableStmt" dict "Schema" $child "Singleton" $singleton "Obj" $obj }},
     {{- end }}
     },
     {{- if $singleton }}
@@ -38,12 +39,20 @@ import (
         "ALTER TABLE {{$schema.Table|lowerCase}} REPLICA IDENTITY FULL",
     },
     {{- end }}
+    {{- $indexes := collectIndexes $schema $obj }}
+    {{- if $indexes }}
+    Indexes: []*postgres.IndexDefinition{
+        {{- range $idx := $indexes }}
+        {Name: "{{$idx.Name}}", CreateSQL: "{{$idx.CreateSQL}}", Background: {{$idx.Background}} },
+        {{- end }}
+    },
+    {{- end }}
 }
 {{- end}}
 
 var (
     // {{template "createTableStmtVar" .Schema }} holds the create statement for table `{{.Schema.Table|lowerCase}}`.
-    {{template "createTableStmtVar" .Schema }} = {{template "createTableStmt" dict "Schema" .Schema "Singleton" .Singleton }}
+    {{template "createTableStmtVar" .Schema }} = {{template "createTableStmt" dict "Schema" .Schema "Singleton" .Singleton "Obj" .Obj }}
 
     // {{template "schemaVar" .Schema.Table}} is the go schema for table `{{.Schema.Table|lowerCase}}`.
     {{template "schemaVar" .Schema.Table}} = func() *walker.Schema {
@@ -99,16 +108,6 @@ var (
         {{$field.ColumnName|upperCamelCase}} {{$field.ModelType}} `gorm:"{{- /**/ -}}
         column:{{$field.ColumnName|lowerCase}};{{- /**/ -}}
         type:{{$field.SQLType}}{{if $field.Options.Unique}};unique{{end}}{{if $field.Options.PrimaryKey}};primaryKey{{end}}{{- /**/ -}}
-        {{if $field.Options.Index}}
-            {{- range $subindex, $indexconfig := $field.Options.Index -}};{{- /**/ -}}
-                {{- if eq $indexconfig.IndexCategory "unique"}}uniqueIndex{{else}}index{{end -}}:{{- /**/ -}}
-                    {{if gt (len $indexconfig.IndexName) 0}}{{$indexconfig.IndexName}}{{else}}{{$schema.Table|lowerCamelCase|lowerCase}}_{{$field.ColumnName|lowerCase}}{{end}}{{- /**/ -}}
-                {{- if ne $indexconfig.IndexCategory "unique"}},type:{{$indexconfig.IndexType}}{{end -}}{{- /**/ -}}
-            {{- end -}}
-        {{end}}{{- /**/ -}}
-        {{if $field|isSacScoping }};{{- /**/ -}}
-            index:{{$schema.Table|lowerCamelCase|lowerCase}}_sac_filter,type:{{- if $obj.IsClusterScope }}hash{{else}}btree{{end}}{{- /**/ -}}
-        {{end}}{{- /**/ -}}
         "`
     {{- end}}
     {{- range $index, $rel := $schema.RelationshipsToDefineAsForeignKeys }}

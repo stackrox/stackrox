@@ -174,15 +174,16 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 		switch {
 		case field == "-":
 			opts.Ignored = true
-		case strings.HasPrefix(field, "index"):
+		case strings.HasPrefix(field, "background-index"), strings.HasPrefix(field, "index"):
 			if ignoreIndex {
 				continue
 			}
+			background := strings.HasPrefix(field, "background-index")
 			if strings.Contains(field, "=") {
 				indexConfig := stringutils.GetAfter(field, "=")
 				if strings.Contains(indexConfig, ":") {
 					indexConfigData := strings.Split(indexConfig, ";")
-					indexOptions := &PostgresIndexOptions{}
+					indexOptions := &PostgresIndexOptions{Background: background}
 					for _, configElem := range indexConfigData {
 						configKeyValuePair := strings.Split(configElem, ":")
 						if len(configKeyValuePair) < 2 {
@@ -204,13 +205,15 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 					opts.Index = append(opts.Index, indexOptions)
 				} else {
 					indexOptions := &PostgresIndexOptions{
-						IndexType: indexConfig,
+						IndexType:  indexConfig,
+						Background: background,
 					}
 					opts.Index = append(opts.Index, indexOptions)
 				}
 			} else {
 				indexOptions := &PostgresIndexOptions{
-					IndexType: defaultIndex,
+					IndexType:  defaultIndex,
+					Background: background,
 				}
 				opts.Index = append(opts.Index, indexOptions)
 			}

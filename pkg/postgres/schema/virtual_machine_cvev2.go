@@ -21,6 +21,13 @@ var (
 	CreateTableVirtualMachineCvev2Stmt = &postgres.CreateStmts{
 		GormModel: (*VirtualMachineCvev2)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "virtualmachinecvev2_vmv2id", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecvev2_vmv2id ON virtual_machine_cvev2 USING btree (vmv2id)", Background: false},
+			{Name: "virtualmachinecvev2_vmcomponentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecvev2_vmcomponentid ON virtual_machine_cvev2 USING btree (vmcomponentid)", Background: false},
+			{Name: "virtualmachinecvev2_cvebaseinfo_cve", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecvev2_cvebaseinfo_cve ON virtual_machine_cvev2 USING btree (cvebaseinfo_cve)", Background: false},
+			{Name: "virtualmachinecvev2_severity", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecvev2_severity ON virtual_machine_cvev2 USING btree (severity)", Background: false},
+			{Name: "virtualmachinecvev2_isfixable", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecvev2_isfixable ON virtual_machine_cvev2 USING btree (isfixable)", Background: false},
+		},
 	}
 
 	// VirtualMachineCvev2Schema is the go schema for table `virtual_machine_cvev2`.
@@ -62,17 +69,17 @@ const (
 // VirtualMachineCvev2 holds the Gorm model for Postgres table `virtual_machine_cvev2`.
 type VirtualMachineCvev2 struct {
 	ID                             string                        `gorm:"column:id;type:uuid;primaryKey"`
-	VmV2ID                         string                        `gorm:"column:vmv2id;type:uuid;index:virtualmachinecvev2_vmv2id,type:btree"`
-	VmComponentID                  string                        `gorm:"column:vmcomponentid;type:uuid;index:virtualmachinecvev2_vmcomponentid,type:btree"`
-	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:virtualmachinecvev2_cvebaseinfo_cve,type:btree"`
+	VmV2ID                         string                        `gorm:"column:vmv2id;type:uuid"`
+	VmComponentID                  string                        `gorm:"column:vmcomponentid;type:uuid"`
+	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar"`
 	CveBaseInfoPublishedOn         *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
 	CveBaseInfoCreatedAt           *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
 	CveBaseInfoEpssEpssProbability float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`
 	PreferredCvss                  float32                       `gorm:"column:preferredcvss;type:numeric"`
-	Severity                       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer;index:virtualmachinecvev2_severity,type:btree"`
+	Severity                       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
 	ImpactScore                    float32                       `gorm:"column:impactscore;type:numeric"`
 	Nvdcvss                        float32                       `gorm:"column:nvdcvss;type:numeric"`
-	IsFixable                      bool                          `gorm:"column:isfixable;type:bool;index:virtualmachinecvev2_isfixable,type:btree"`
+	IsFixable                      bool                          `gorm:"column:isfixable;type:bool"`
 	FixedBy                        string                        `gorm:"column:fixedby;type:varchar"`
 	EpssProbability                float32                       `gorm:"column:epssprobability;type:numeric"`
 	AdvisoryName                   string                        `gorm:"column:advisory_name;type:varchar"`

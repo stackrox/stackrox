@@ -20,6 +20,10 @@ var (
 	CreateTableNodeComponentEdgesStmt = &postgres.CreateStmts{
 		GormModel: (*NodeComponentEdges)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "nodecomponentedges_nodeid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodecomponentedges_nodeid ON node_component_edges USING hash (nodeid)", Background: false},
+			{Name: "nodecomponentedges_nodecomponentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodecomponentedges_nodecomponentid ON node_component_edges USING hash (nodecomponentid)", Background: false},
+		},
 	}
 
 	// NodeComponentEdgesSchema is the go schema for table `node_component_edges`.
@@ -61,8 +65,8 @@ const (
 // NodeComponentEdges holds the Gorm model for Postgres table `node_component_edges`.
 type NodeComponentEdges struct {
 	ID              string `gorm:"column:id;type:varchar;primaryKey"`
-	NodeID          string `gorm:"column:nodeid;type:uuid;index:nodecomponentedges_nodeid,type:hash"`
-	NodeComponentID string `gorm:"column:nodecomponentid;type:varchar;index:nodecomponentedges_nodecomponentid,type:hash"`
+	NodeID          string `gorm:"column:nodeid;type:uuid"`
+	NodeComponentID string `gorm:"column:nodecomponentid;type:varchar"`
 	Serialized      []byte `gorm:"column:serialized;type:bytea"`
 	NodesRef        Nodes  `gorm:"foreignKey:nodeid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

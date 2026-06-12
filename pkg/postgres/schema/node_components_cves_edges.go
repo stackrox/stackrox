@@ -20,6 +20,10 @@ var (
 	CreateTableNodeComponentsCvesEdgesStmt = &postgres.CreateStmts{
 		GormModel: (*NodeComponentsCvesEdges)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "nodecomponentscvesedges_nodecomponentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodecomponentscvesedges_nodecomponentid ON node_components_cves_edges USING hash (nodecomponentid)", Background: false},
+			{Name: "nodecomponentscvesedges_nodecveid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodecomponentscvesedges_nodecveid ON node_components_cves_edges USING hash (nodecveid)", Background: false},
+		},
 	}
 
 	// NodeComponentsCvesEdgesSchema is the go schema for table `node_components_cves_edges`.
@@ -63,8 +67,8 @@ type NodeComponentsCvesEdges struct {
 	ID                string         `gorm:"column:id;type:varchar;primaryKey"`
 	IsFixable         bool           `gorm:"column:isfixable;type:bool"`
 	FixedBy           string         `gorm:"column:fixedby;type:varchar"`
-	NodeComponentID   string         `gorm:"column:nodecomponentid;type:varchar;index:nodecomponentscvesedges_nodecomponentid,type:hash"`
-	NodeCveID         string         `gorm:"column:nodecveid;type:varchar;index:nodecomponentscvesedges_nodecveid,type:hash"`
+	NodeComponentID   string         `gorm:"column:nodecomponentid;type:varchar"`
+	NodeCveID         string         `gorm:"column:nodecveid;type:varchar"`
 	Serialized        []byte         `gorm:"column:serialized;type:bytea"`
 	NodeComponentsRef NodeComponents `gorm:"foreignKey:nodecomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

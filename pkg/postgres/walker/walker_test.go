@@ -221,3 +221,64 @@ func TestFieldNeedsSubMessageInit(t *testing.T) {
 		})
 	}
 }
+
+func TestGetPostgresOptions_IndexParsing(t *testing.T) {
+	cases := map[string]struct {
+		tag      string
+		expected []*PostgresIndexOptions
+	}{
+		"bare index": {
+			tag: "index",
+			expected: []*PostgresIndexOptions{
+				{IndexType: "btree"},
+			},
+		},
+		"index with type": {
+			tag: "index=hash",
+			expected: []*PostgresIndexOptions{
+				{IndexType: "hash"},
+			},
+		},
+		"index with full config": {
+			tag: "index=name:my_idx;type:btree;category:unique;priority:1",
+			expected: []*PostgresIndexOptions{
+				{IndexName: "my_idx", IndexType: "btree", IndexCategory: "unique", IndexPriority: "1"},
+			},
+		},
+		"background-index bare": {
+			tag: "background-index",
+			expected: []*PostgresIndexOptions{
+				{IndexType: "btree", Background: true},
+			},
+		},
+		"background-index with type": {
+			tag: "background-index=hash",
+			expected: []*PostgresIndexOptions{
+				{IndexType: "hash", Background: true},
+			},
+		},
+		"background-index with full config": {
+			tag: "background-index=name:my_bg_idx;type:btree",
+			expected: []*PostgresIndexOptions{
+				{IndexName: "my_bg_idx", IndexType: "btree", Background: true},
+			},
+		},
+		"index with other fields": {
+			tag: "index=btree,type(uuid)",
+			expected: []*PostgresIndexOptions{
+				{IndexType: "btree"},
+			},
+		},
+		"ignored when ignoreIndex": {
+			tag: "index=btree",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			ignoreIndex := name == "ignored when ignoreIndex"
+			opts := getPostgresOptions(tc.tag, true, false, false, false, ignoreIndex)
+			assert.Equal(t, tc.expected, opts.Index)
+		})
+	}
+}

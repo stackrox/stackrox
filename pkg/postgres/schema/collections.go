@@ -22,6 +22,9 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*CollectionsEmbeddedCollections)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "collectionsembeddedcollections_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS collectionsembeddedcollections_idx ON collections_embedded_collections USING btree (idx)", Background: false},
+				},
 			},
 		},
 	}
@@ -60,7 +63,7 @@ type Collections struct {
 // CollectionsEmbeddedCollections holds the Gorm model for Postgres table `collections_embedded_collections`.
 type CollectionsEmbeddedCollections struct {
 	CollectionsID       string      `gorm:"column:collections_id;type:varchar;primaryKey"`
-	Idx                 int         `gorm:"column:idx;type:integer;primaryKey;index:collectionsembeddedcollections_idx,type:btree"`
+	Idx                 int         `gorm:"column:idx;type:integer;primaryKey"`
 	ID                  string      `gorm:"column:id;type:varchar"`
 	CollectionsRef      Collections `gorm:"foreignKey:collections_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	CollectionsCycleRef Collections `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:RESTRICT"`

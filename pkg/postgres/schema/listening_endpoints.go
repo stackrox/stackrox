@@ -21,6 +21,13 @@ var (
 	CreateTableListeningEndpointsStmt = &postgres.CreateStmts{
 		GormModel: (*ListeningEndpoints)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "listeningendpoints_processindicatorid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS listeningendpoints_processindicatorid ON listening_endpoints USING btree (processindicatorid)", Background: false},
+			{Name: "listeningendpoints_closed", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS listeningendpoints_closed ON listening_endpoints USING btree (closed)", Background: false},
+			{Name: "listeningendpoints_deploymentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS listeningendpoints_deploymentid ON listening_endpoints USING btree (deploymentid)", Background: false},
+			{Name: "listeningendpoints_poduid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS listeningendpoints_poduid ON listening_endpoints USING btree (poduid)", Background: false},
+			{Name: "listeningendpoints_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS listeningendpoints_sac_filter ON listening_endpoints USING btree (clusterid, namespace)", Background: false},
+		},
 	}
 
 	// ListeningEndpointsSchema is the go schema for table `listening_endpoints`.
@@ -58,11 +65,11 @@ type ListeningEndpoints struct {
 	Port               uint32             `gorm:"column:port;type:bigint"`
 	Protocol           storage.L4Protocol `gorm:"column:protocol;type:integer"`
 	CloseTimestamp     *time.Time         `gorm:"column:closetimestamp;type:timestamp"`
-	ProcessIndicatorID string             `gorm:"column:processindicatorid;type:uuid;index:listeningendpoints_processindicatorid,type:btree"`
-	Closed             bool               `gorm:"column:closed;type:bool;index:listeningendpoints_closed,type:btree"`
-	DeploymentID       string             `gorm:"column:deploymentid;type:uuid;index:listeningendpoints_deploymentid,type:btree"`
-	PodUID             string             `gorm:"column:poduid;type:uuid;index:listeningendpoints_poduid,type:btree"`
-	ClusterID          string             `gorm:"column:clusterid;type:uuid;index:listeningendpoints_sac_filter,type:btree"`
-	Namespace          string             `gorm:"column:namespace;type:varchar;index:listeningendpoints_sac_filter,type:btree"`
+	ProcessIndicatorID string             `gorm:"column:processindicatorid;type:uuid"`
+	Closed             bool               `gorm:"column:closed;type:bool"`
+	DeploymentID       string             `gorm:"column:deploymentid;type:uuid"`
+	PodUID             string             `gorm:"column:poduid;type:uuid"`
+	ClusterID          string             `gorm:"column:clusterid;type:uuid"`
+	Namespace          string             `gorm:"column:namespace;type:varchar"`
 	Serialized         []byte             `gorm:"column:serialized;type:bytea"`
 }

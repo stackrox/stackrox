@@ -24,6 +24,9 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*ImagesLayers)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "imageslayers_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imageslayers_idx ON images_layers USING btree (idx)", Background: false},
+				},
 			},
 		},
 	}
@@ -86,7 +89,7 @@ type Images struct {
 // ImagesLayers holds the Gorm model for Postgres table `images_layers`.
 type ImagesLayers struct {
 	ImagesID    string `gorm:"column:images_id;type:varchar;primaryKey"`
-	Idx         int    `gorm:"column:idx;type:integer;primaryKey;index:imageslayers_idx,type:btree"`
+	Idx         int    `gorm:"column:idx;type:integer;primaryKey"`
 	Instruction string `gorm:"column:instruction;type:varchar"`
 	Value       string `gorm:"column:value;type:varchar"`
 	ImagesRef   Images `gorm:"foreignKey:images_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`

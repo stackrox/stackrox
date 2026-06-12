@@ -22,7 +22,13 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*RoleBindingsSubjects)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "rolebindingssubjects_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS rolebindingssubjects_idx ON role_bindings_subjects USING btree (idx)", Background: false},
+				},
 			},
+		},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "rolebindings_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS rolebindings_sac_filter ON role_bindings USING btree (namespace, clusterid)", Background: false},
 		},
 	}
 
@@ -52,8 +58,8 @@ const (
 type RoleBindings struct {
 	ID          string            `gorm:"column:id;type:uuid;primaryKey"`
 	Name        string            `gorm:"column:name;type:varchar"`
-	Namespace   string            `gorm:"column:namespace;type:varchar;index:rolebindings_sac_filter,type:btree"`
-	ClusterID   string            `gorm:"column:clusterid;type:uuid;index:rolebindings_sac_filter,type:btree"`
+	Namespace   string            `gorm:"column:namespace;type:varchar"`
+	ClusterID   string            `gorm:"column:clusterid;type:uuid"`
 	ClusterName string            `gorm:"column:clustername;type:varchar"`
 	ClusterRole bool              `gorm:"column:clusterrole;type:bool"`
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
@@ -65,7 +71,7 @@ type RoleBindings struct {
 // RoleBindingsSubjects holds the Gorm model for Postgres table `role_bindings_subjects`.
 type RoleBindingsSubjects struct {
 	RoleBindingsID  string              `gorm:"column:role_bindings_id;type:uuid;primaryKey"`
-	Idx             int                 `gorm:"column:idx;type:integer;primaryKey;index:rolebindingssubjects_idx,type:btree"`
+	Idx             int                 `gorm:"column:idx;type:integer;primaryKey"`
 	Kind            storage.SubjectKind `gorm:"column:kind;type:integer"`
 	Name            string              `gorm:"column:name;type:varchar"`
 	RoleBindingsRef RoleBindings        `gorm:"foreignKey:role_bindings_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
