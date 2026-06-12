@@ -1,0 +1,22 @@
+{
+    "data": {
+        "deployments": [
+            {
+                "id": "mock-deployment-001",
+                "name": "cypress-test-deployment",
+                "type": "Deployment",
+                "imageCVECountBySeverity": {
+                    "critical": { "total": 2 },
+                    "important": { "total": 0 },
+                    "moderate": { "total": 0 },
+                    "low": { "total": 0 },
+                    "unknown": { "total": 0 }
+                },
+                "clusterName": "remote",
+                "namespace": "stackrox",
+                "imageCount": 1,
+                "created": "2024-01-15T10:30:00Z"
+            }
+        ]
+    }
+}

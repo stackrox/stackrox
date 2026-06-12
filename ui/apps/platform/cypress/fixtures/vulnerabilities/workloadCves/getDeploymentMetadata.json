@@ -1,0 +1,13 @@
+{
+    "data": {
+        "deployment": {
+            "id": "mock-deployment-001",
+            "name": "cypress-test-deployment",
+            "namespace": "stackrox",
+            "clusterName": "remote",
+            "created": "2024-01-15T10:30:00Z",
+            "imageCount": 1,
+            "__typename": "Deployment"
+        }
+    }
+}

@@ -50,6 +50,9 @@ describe('Exception Management - Denied Requests Table', () => {
         denyRequest();
         visitDeniedRequestsTab();
 
+        // Sort by Requested to ensure the most recent request is the first one
+        cy.get(selectors.tableSortColumn('Requested')).click();
+
         // the false positive request should be denied
         cy.get(
             'table tr:nth(1) td[data-label="Requested action"]:contains("False positive")'

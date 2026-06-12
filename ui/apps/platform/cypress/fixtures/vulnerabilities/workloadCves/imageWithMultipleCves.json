@@ -6,6 +6,7 @@
                 "registry": "docker.io",
                 "remote": "cypress-test/image",
                 "tag": "v0.0.1",
+                "fullName": "docker.io/cypress-test/image:v0.0.1",
                 "__typename": "ImageName"
             },
             "deploymentCount": 1,
@@ -22,8 +23,8 @@
                 "__typename": "DataSource"
             },
             "scanTime": "2024-12-02T13:51:19.876935617Z",
-            "scanNotes": ["OS_CVES_STALE"],
-            "notes": ["MISSING_SIGNATURE", "MISSING_SIGNATURE_VERIFICATION_DATA"],
+            "scanNotes": [],
+            "notes": [],
             "__typename": "Image"
         }
     }
