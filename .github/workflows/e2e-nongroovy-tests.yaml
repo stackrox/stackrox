@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repo
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -47,11 +47,6 @@ jobs:
 
   gke-nongroovy-e2e-tests:
     needs: [ wait-for-images ]
-    if: >-
-      !github.event.pull_request.head.repo.fork && (
-        github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'e2e-nongroovy-tests')
-      )
     runs-on: ubuntu-latest
     env:
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
@@ -70,7 +65,7 @@ jobs:
     steps:
 
     - name: Checkout repo
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}

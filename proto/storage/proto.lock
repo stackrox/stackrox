@@ -13926,6 +13926,11 @@
                 "id": 27,
                 "name": "source",
                 "type": "PolicySource"
+              },
+              {
+                "id": 28,
+                "name": "evaluation_filter",
+                "type": "EvaluationFilter"
               }
             ],
             "reserved_ids": [
@@ -14073,6 +14078,22 @@
                 "id": 11,
                 "name": "source",
                 "type": "PolicySource"
+              },
+              {
+                "id": 12,
+                "name": "evaluation_filter",
+                "type": "EvaluationFilter"
+              }
+            ]
+          },
+          {
+            "name": "EvaluationFilter",
+            "fields": [
+              {
+                "id": 1,
+                "name": "skip_container_types",
+                "type": "ContainerType",
+                "is_repeated": true
               }
             ]
           },
@@ -14156,6 +14177,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/deployment.proto"
           },
           {
             "path": "storage/image.proto"

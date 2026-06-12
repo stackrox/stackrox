@@ -141,12 +141,25 @@ type Schema struct {
 	SearchScope map[v1.SearchCategory]struct{}
 
 	ScopingResource permissions.ResourceMetadata
+
+	// NoSerialized indicates this schema should not include a serialized bytea column.
+	// When true, all proto fields are stored as individual DB columns.
+	NoSerialized bool
 }
 
 // TableFieldsGroup is the group of table fields. A slice of this struct can be used where the table order is essential,
 type TableFieldsGroup struct {
 	Table  string
 	Fields []Field
+}
+
+// Root returns the root schema (the one with no parent).
+func (s *Schema) Root() *Schema {
+	curr := s
+	for curr.Parent != nil {
+		curr = curr.Parent
+	}
+	return curr
 }
 
 // SetOptionsMap sets options map for the schema.
@@ -457,6 +470,10 @@ type PostgresOptions struct {
 	// IgnoreChildIndexes is an option used to tell the walker that
 	// index options of children of this field should be ignored.
 	IgnoreChildIndexes bool
+
+	// RepeatedStrategy overrides how a repeated message field is stored.
+	// Valid values: "" (default, child table), "bytea" (inline as MessageBytes).
+	RepeatedStrategy string
 }
 
 type foreignKeyRef struct {
@@ -548,5 +565,8 @@ func (f Field) Getter(prefix string) string {
 
 // Include returns if the field should be included in the schema
 func (f Field) Include() bool {
-	return f.Options.PrimaryKey || f.Options.Unique || f.Search.Enabled || f.ColumnName == "serialized" || f.Options.Reference != nil
+	if f.Schema != nil && f.Schema.Root().NoSerialized {
+		return f.ColumnName != "serialized"
+	}
+	return f.Options.PrimaryKey || f.Options.Unique || f.Search.Enabled || f.ColumnName == "serialized" || f.Options.Reference != nil || f.Options.RepeatedStrategy != ""
 }

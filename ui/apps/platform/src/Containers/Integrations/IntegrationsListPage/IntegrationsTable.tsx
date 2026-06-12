@@ -18,6 +18,8 @@ import { getIsAPIToken } from '../utils/integrationUtils';
 import type { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
 
+const emptyIntegrations: Integration[] = [];
+
 function getNewButtonText(type) {
     if (type === 'apitoken') {
         return 'Generate token';
@@ -51,7 +53,7 @@ function IntegrationsTable({
     const { hasReadWriteAccess } = usePermissions();
     const hasWritePermission = hasReadWriteAccess('Integration');
     const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();
-    const integrations = tableState?.type === 'COMPLETE' ? tableState.data : [];
+    const integrations = tableState?.type === 'COMPLETE' ? tableState.data : emptyIntegrations;
     const {
         selected,
         allRowsSelected,

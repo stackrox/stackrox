@@ -53,7 +53,7 @@ function DiscoveredClustersPage(): ReactElement {
     useEffect(() => {
         if (hasReadAccessForIntegration) {
             fetchCloudSources()
-                .then(({ response: { cloudSources } }) => {
+                .then(({ cloudSources }) => {
                     setSourceNameMap(new Map(cloudSources.map(({ id, name }) => [id, name])));
                 })
                 .catch(() => {

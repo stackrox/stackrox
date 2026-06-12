@@ -66,7 +66,7 @@ type kubeEventMatcherImpl struct {
 	matcherImpl
 }
 
-func (m *kubeEventMatcherImpl) MatchKubeEvent(cache *CacheReceptacle, event *storage.KubernetesEvent, kubeResource interface{}) (Violations, error) {
+func (m *kubeEventMatcherImpl) MatchKubeEvent(cache *CacheReceptacle, event *storage.KubernetesEvent, enhancedDeployment EnhancedDeployment) (Violations, error) {
 	if cache == nil || cache.augmentedObj == nil {
 		if matched, err := m.checkWhetherKubeEventMatches(cache, event); err != nil || !matched {
 			return Violations{}, err
@@ -74,7 +74,11 @@ func (m *kubeEventMatcherImpl) MatchKubeEvent(cache *CacheReceptacle, event *sto
 	}
 
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructKubeResourceWithEvent(kubeResource, event)
+		augmentedDeploy, err := augmentedobjs.ConstructDeployment(enhancedDeployment.Deployment, enhancedDeployment.Images, enhancedDeployment.NetworkPoliciesApplied)
+		if err != nil {
+			return nil, err
+		}
+		return augmentedobjs.ConstructKubeResourceWithEvent(augmentedDeploy, event)
 	}, nil, event, nil, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err

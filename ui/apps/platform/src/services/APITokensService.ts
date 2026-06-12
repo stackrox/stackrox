@@ -14,9 +14,9 @@ type GetAPITokensResponse = {
  * Fetches list of (unrevoked) API tokens.
  */
 export function fetchAPITokens() {
-    return axios.get<GetAPITokensResponse>(`${url}?revoked=false`).then((response) => ({
-        response: response.data,
-    }));
+    return axios
+        .get<GetAPITokensResponse>(`${url}?revoked=false`)
+        .then((response) => response.data);
 }
 
 type ListAllowedTokenRolesResponse = {
