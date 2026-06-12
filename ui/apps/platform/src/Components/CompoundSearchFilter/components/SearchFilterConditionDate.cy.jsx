@@ -135,7 +135,8 @@ describe(Cypress.spec.relative, () => {
         selectCondition('Between');
 
         cy.get(selectors.startDateInput).type('01/15/2034');
-        // End date defaults to 01/16/2034, which is before the new start date below.
+        // The defaulted end date is before the new start date below.
+        cy.get(selectors.endDateInput).should('have.value', '01/16/2034');
         cy.get(selectors.startDateInput).clear();
         cy.get(selectors.startDateInput).type('02/01/2034');
 
