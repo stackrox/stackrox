@@ -85,21 +85,10 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 	pubSubDispatcher common.PubSubDispatcher) Detector {
 	detectorStopper := concurrency.NewStopper()
 
-	deploymentQueueSize := 0
-	if env.DetectorDeploymentBufferSize.IntegerSetting() > 0 {
-		deploymentQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorDeploymentBufferSize)
-	}
-	// We only need the SimpleQueue since the deploymentQueue will not be paused/resumed
-	deploymentQueue := queue.NewSimpleQueue[*queue.DeploymentQueueItem](
-		"DeploymentQueue",
-		deploymentQueueSize,
-		detectorMetrics.DetectorDeploymentQueueOperations,
-		detectorMetrics.DetectorDeploymentDroppedCount,
-	)
-
 	var piQueue *queue.Queue[*detectorEvents.IndicatorEvent]
 	var netFlowQueue *queue.Queue[*detectorEvents.NetworkFlowEvent]
 	var fileAccessQueue *queue.Queue[*detectorEvents.FileAccessEvent]
+	var deploymentQueue queue.SimpleQueue[*detectorEvents.DeploymentEvent]
 	if !features.SensorInternalPubSub.Enabled() || pubSubDispatcher == nil {
 		piQueue = queue.NewQueue[*detectorEvents.IndicatorEvent](
 			detectorStopper,
@@ -122,6 +111,18 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 			detectorMetrics.DetectorFileAccessQueueOperations,
 			detectorMetrics.DetectorFileAccessDroppedCount,
 		)
+		deploymentQueueSize := 0
+		if env.DetectorDeploymentBufferSize.IntegerSetting() > 0 {
+			deploymentQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorDeploymentBufferSize)
+		}
+		// We only need the SimpleQueue since the deploymentQueue will not be paused/resumed
+		deploymentQueue = queue.NewSimpleQueue[*detectorEvents.DeploymentEvent](
+			"DeploymentQueue",
+			deploymentQueueSize,
+			detectorMetrics.DetectorDeploymentQueueOperations,
+			detectorMetrics.DetectorDeploymentDroppedCount,
+		)
+
 	}
 
 	return &detectorImpl{
@@ -202,7 +203,7 @@ type detectorImpl struct {
 
 	networkFlowsQueue *queue.Queue[*detectorEvents.NetworkFlowEvent]
 	indicatorsQueue   *queue.Queue[*detectorEvents.IndicatorEvent]
-	deploymentsQueue  queue.SimpleQueue[*queue.DeploymentQueueItem]
+	deploymentsQueue  queue.SimpleQueue[*detectorEvents.DeploymentEvent]
 	fileAccessQueue   *queue.Queue[*detectorEvents.FileAccessEvent]
 
 	pubSubDispatcher common.PubSubDispatcher
@@ -251,13 +252,21 @@ func (d *detectorImpl) Start() error {
 		); err != nil {
 			return errors.Wrap(err, "failed to register detector audit log consumer")
 		}
+		if err := d.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.DetectorDeploymentConsumer,
+			pubsub.DetectorDeploymentTopic,
+			pubsub.DetectorDeploymentLane,
+			d.handleDeploymentEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register detector deployment consumer")
+		}
 	}
 
 	go d.runDetector()
 	go d.serializeDeployTimeOutput()
-	go d.processDeployment()
 
 	if !d.pubSubEnabled() {
+		go d.processDeployment()
 		go d.runAuditLogEventDetector()
 		go d.processIndicator()
 		go d.processAlertsForFlowOnEntity()
@@ -594,12 +603,23 @@ func (d *detectorImpl) markDeploymentForProcessing(id string) {
 }
 
 func (d *detectorImpl) ProcessDeployment(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction) {
-	// Don't  process the deployment if the context has already expired
+	// Don't process the deployment if the context has already expired
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		d.deploymentsQueue.Push(&queue.DeploymentQueueItem{
+	}
+
+	if d.pubSubEnabled() {
+		if err := d.pubSubDispatcher.Publish(&detectorEvents.DeploymentEvent{
+			Ctx:        ctx,
+			Deployment: deployment,
+			Action:     action,
+		}); err != nil {
+			log.Errorf("Failed to publish deployment event: %v", err)
+		}
+	} else {
+		d.deploymentsQueue.Push(&detectorEvents.DeploymentEvent{
 			Ctx:        ctx,
 			Deployment: deployment,
 			Action:     action,
@@ -614,6 +634,17 @@ func (d *detectorImpl) processDeployment() {
 			d.processDeploymentNoLock(item.Ctx, item.Deployment, item.Action)
 		})
 	}
+}
+
+func (d *detectorImpl) handleDeploymentEvent(event pubsub.Event) error {
+	deploymentEvent, ok := event.(*detectorEvents.DeploymentEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	concurrency.WithLock(&d.deploymentDetectionLock, func() {
+		d.processDeploymentNoLock(deploymentEvent.Ctx, deploymentEvent.Deployment, deploymentEvent.Action)
+	})
+	return nil
 }
 
 func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
