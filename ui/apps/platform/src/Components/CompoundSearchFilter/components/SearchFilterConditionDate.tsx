@@ -1,32 +1,16 @@
 import { useState } from 'react';
-import { Button, DatePicker, SelectOption, ToolbarItem } from '@patternfly/react-core';
-import { ArrowRightIcon } from '@patternfly/react-icons';
-import { format } from 'date-fns';
+import { SelectOption, ToolbarItem } from '@patternfly/react-core';
 
-import { dateConditionMap, dateConditions } from '../utils/utils';
+import { dateConditionMap, dateConditions, dateRangeCondition } from '../utils/utils';
 import type { GenericSearchFilterAttribute, OnSearchCallback } from '../types';
 
+import SearchFilterDateRange from './SearchFilterDateRange';
+import SearchFilterDateSingle from './SearchFilterDateSingle';
 import SimpleSelect from './SimpleSelect';
 
-function dateFormat(date: Date): string {
-    return format(date, 'MM/DD/YYYY');
-}
+type DateCondition = (typeof dateConditions)[number] | typeof dateRangeCondition;
 
-function dateParse(date: string): Date {
-    const split = date.split('/');
-    if (split.length !== 3) {
-        return new Date('Invalid Date');
-    }
-    const month = split[0];
-    const day = split[1];
-    const year = split[2];
-    if (month.length !== 2 || day.length !== 2 || year.length !== 4) {
-        return new Date('Invalid Date');
-    }
-    return new Date(
-        `${year.padStart(4, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00`
-    );
-}
+const conditions: DateCondition[] = [...dateConditions, dateRangeCondition];
 
 export type SearchFilterConditionDateProps = {
     attribute: GenericSearchFilterAttribute;
@@ -42,8 +26,7 @@ function SearchFilterConditionDate({
 }: SearchFilterConditionDateProps) {
     const { searchTerm: category } = attribute;
 
-    const [conditionExternal, setConditionExternal] = useState(dateConditions[1]);
-    const [dateString, setDateString] = useState('');
+    const [conditionExternal, setConditionExternal] = useState<DateCondition>('On');
 
     return (
         <>
@@ -52,12 +35,12 @@ function SearchFilterConditionDate({
                     isDisabled={isDisabled}
                     value={conditionExternal}
                     onChange={(conditionSelected) =>
-                        setConditionExternal(conditionSelected as (typeof dateConditions)[number])
+                        setConditionExternal(conditionSelected as DateCondition)
                     }
                     ariaLabelMenu="Condition selector menu"
                     ariaLabelToggle="Condition selector toggle"
                 >
-                    {dateConditions.map((condition) => {
+                    {conditions.map((condition) => {
                         return (
                             <SelectOption key={condition} value={condition}>
                                 {condition}
@@ -66,42 +49,20 @@ function SearchFilterConditionDate({
                     })}
                 </SimpleSelect>
             </ToolbarItem>
-            <ToolbarItem>
-                <DatePicker
-                    aria-label="Filter by date"
-                    buttonAriaLabel="Filter by date toggle"
+            {conditionExternal === dateRangeCondition ? (
+                <SearchFilterDateRange
+                    category={category}
                     isDisabled={isDisabled}
-                    value={dateString}
-                    onChange={(_, datePicked) => {
-                        setDateString(datePicked);
-                    }}
-                    dateFormat={dateFormat}
-                    dateParse={dateParse}
-                    placeholder="MM/DD/YYYY"
-                    invalidFormatText="Enter valid date: MM/DD/YYYY"
+                    onSearch={onSearch}
                 />
-            </ToolbarItem>
-            <ToolbarItem>
-                <Button
-                    icon={<ArrowRightIcon />}
-                    variant="control"
-                    aria-label="Apply condition and date input to search"
-                    onClick={() => {
-                        const dateConditionInternal = dateConditionMap[conditionExternal];
-                        const date = dateParse(dateString);
-                        if (dateConditionInternal && !Number.isNaN(date.getTime())) {
-                            onSearch([
-                                {
-                                    action: 'APPEND',
-                                    category,
-                                    value: `${dateConditionInternal}${dateString}`,
-                                },
-                            ]);
-                            setDateString('');
-                        }
-                    }}
-                ></Button>
-            </ToolbarItem>
+            ) : (
+                <SearchFilterDateSingle
+                    conditionPrefix={dateConditionMap[conditionExternal]}
+                    category={category}
+                    isDisabled={isDisabled}
+                    onSearch={onSearch}
+                />
+            )}
         </>
     );
 }
