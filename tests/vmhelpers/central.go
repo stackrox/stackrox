@@ -144,11 +144,13 @@ func WaitForScanReady(ctx context.Context, client v2.VirtualMachineServiceClient
 			pending = append(pending, "all-scanned")
 		}
 
-		// OS is informational: it arrives in the same message as components,
-		// so if components are present and fully scanned, the OS won't appear
-		// in a later update. Report it but never block on it.
+		// OS is informational — report it but never block on it alone.
+		// When other conditions are still pending, include OS in the
+		// pending list for visibility; otherwise mark it as "not reported".
 		if os := scan.GetOperatingSystem(); os != "" {
 			ready = append(ready, fmt.Sprintf("os=%q", os))
+		} else if len(pending) == 0 {
+			ready = append(ready, "os=<not reported>")
 		} else {
 			pending = append(pending, "os")
 		}
@@ -158,37 +160,24 @@ func WaitForScanReady(ctx context.Context, client v2.VirtualMachineServiceClient
 	})
 }
 
-// listVMPageSize is the page size used when iterating ListVirtualMachines pages.
-const listVMPageSize = int32(1000)
-
 // rawListQueryNamespaceAndName builds a Central raw search query matching namespace and VM name.
 func rawListQueryNamespaceAndName(namespace, name string) string {
 	return fmt.Sprintf("%s:%q+%s:%q", search.Namespace, namespace, search.VirtualMachineName, name)
 }
 
 // ListVMByNamespaceName returns the first VirtualMachine in Central whose namespace and name
-// exactly match the given values, paging through all results. Returns (nil, nil) when no
-// match is found.
+// match the given values. Returns (nil, nil) when no match is found.
 func ListVMByNamespaceName(ctx context.Context, client v2.VirtualMachineServiceClient, namespace, name string) (*v2.VirtualMachine, error) {
-	baseQuery := rawListQueryNamespaceAndName(namespace, name)
-	for offset := int32(0); ; offset += listVMPageSize {
-		resp, err := client.ListVirtualMachines(ctx, &v2.ListVirtualMachinesRequest{
-			Query: &v2.RawQuery{
-				Query: baseQuery,
-				Pagination: &v2.Pagination{
-					Limit:  listVMPageSize,
-					Offset: offset,
-				},
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
-		if vms := resp.GetVirtualMachines(); len(vms) > 0 {
-			return vms[0], nil
-		}
-		if int32(len(resp.GetVirtualMachines())) < listVMPageSize {
-			return nil, nil
-		}
+	resp, err := client.ListVirtualMachines(ctx, &v2.ListVirtualMachinesRequest{
+		Query: &v2.RawQuery{
+			Query: rawListQueryNamespaceAndName(namespace, name),
+		},
+	})
+	if err != nil {
+		return nil, err
 	}
+	if vms := resp.GetVirtualMachines(); len(vms) > 0 {
+		return vms[0], nil
+	}
+	return nil, nil
 }

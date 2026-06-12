@@ -667,9 +667,11 @@ func (s *VMScanningSuite) mustGetVM(id string) *v2.VirtualMachine {
 // in CI via lib.sh), the K8s readiness probe already gates on the vuln DB
 // being loaded, so no additional API polling is needed.
 //
-// Called once (guarded by scannerV4Checked) right before the first roxagent invocation
-// so that the matcher initialization happens in parallel with VM boot and SSH readiness.
+// Idempotent: subsequent calls return nil immediately after the first success.
 func (s *VMScanningSuite) waitForScannerV4Initialized() error {
+	if s.scannerV4Checked {
+		return nil
+	}
 	s.logf("Scanner V4: waiting for matcher deployment to be K8s-ready")
 	s.waitUntilK8sDeploymentReady(s.ctx, namespaces.StackRox, "scanner-v4-matcher")
 	s.logf("Scanner V4: matcher deployment is ready")
@@ -684,10 +686,8 @@ func (s *VMScanningSuite) ensureCanonicalScan(ctx context.Context, vm *VMHandle)
 		return errors.New("ensureCanonicalScan: nil VM handle")
 	}
 	s.mustVerifyVirtualMachinesFeatureEnabled()
-	if !s.scannerV4Checked {
-		if err := s.waitForScannerV4Initialized(); err != nil {
-			return fmt.Errorf("Scanner V4 matcher did not initialize within timeout: %w", err)
-		}
+	if err := s.waitForScannerV4Initialized(); err != nil {
+		return fmt.Errorf("Scanner V4 matcher did not initialize within timeout: %w", err)
 	}
 	virt := s.virtctlForVM(*vm)
 	return vmhelpers.RunRoxagentOnce(ctx, virt, vm.Namespace, vm.Name, s.cfg.Repo2CPEURL)
