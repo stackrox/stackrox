@@ -62,31 +62,6 @@ build_agent() {
     echo "$output"
 }
 
-# Prints a systemd unit (to stdout) that prepares the sandbox directory
-# tree roxagent needs: /tmp/roxroot/{etc,var} and a writable RPM DB copy.
-# Runs as a oneshot dependency before the main roxagent service.
-create_native_prep_service_file() {
-    cat <<'EOF'
-[Unit]
-Description=Prepare native StackRox VM Agent inputs
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStartPre=/bin/rm -rf /tmp/roxroot
-ExecStartPre=/bin/mkdir -p /tmp/roxroot/etc/pki /tmp/roxroot/etc/pki/entitlement
-ExecStartPre=/bin/mkdir -p /tmp/roxroot/etc/yum.repos.d /tmp/roxroot/etc/yum/repos.d /tmp/roxroot/etc/distro.repos.d
-ExecStartPre=/bin/mkdir -p /tmp/roxroot/var/lib /tmp/roxroot/var/lib/dnf
-ExecStartPre=/bin/mkdir -p /tmp/roxroot/var/cache /tmp/roxroot/var/cache/dnf
-ExecStartPre=/bin/mkdir -p /run/lock/roxagent
-ExecStartPre=/bin/touch /tmp/roxroot/etc/os-release /tmp/roxroot/etc/redhat-release /tmp/roxroot/etc/system-release-cpe
-
-ExecStart=/bin/rm -rf /tmp/roxagent-rpm
-ExecStart=/bin/cp -a /var/lib/rpm /tmp/roxagent-rpm
-ExecStart=/bin/chmod -R 755 /tmp/roxagent-rpm
-EOF
-}
-
 # Prints a systemd unit (to stdout) for the main roxagent service.
 # Args: host paths that exist on the VM (from NATIVE_MOUNT_CANDIDATES).
 # Each path is bind-mounted read-only into the /tmp/roxroot sandbox so
@@ -117,21 +92,7 @@ StandardError=journal
 EOF
 }
 
-create_native_timer_file() {
-    cat <<'EOF'
-[Unit]
-Description=Run StackRox VM Agent periodically
-
-[Timer]
-OnBootSec=5min
-OnUnitActiveSec=3h40m
-RandomizedDelaySec=40min
-Persistent=true
-
-[Install]
-WantedBy=timers.target
-EOF
-}
+SYSTEMD_DIR="$SCRIPT_DIR/systemd"
 
 # Checks whether roxagent is healthy on $1 (vm_name) by SSHing in and
 # querying systemd. Returns 0 only if the last service run succeeded,
@@ -191,11 +152,9 @@ install_on_vm() {
     echo "  Installing systemd units..."
     local service_file prep_service_file timer_file
     service_file="$(mktemp)"
-    prep_service_file="$(mktemp)"
-    timer_file="$(mktemp)"
-    create_native_prep_service_file > "$prep_service_file"
     create_native_service_file "${available_mounts[@]}" > "$service_file"
-    create_native_timer_file > "$timer_file"
+    prep_service_file="$SYSTEMD_DIR/roxagent-prep.service"
+    timer_file="$SYSTEMD_DIR/roxagent.timer"
 
     virtctl scp "${_ssh_opts[@]}" \
         "$prep_service_file" \
@@ -206,7 +165,7 @@ install_on_vm() {
     virtctl scp "${_ssh_opts[@]}" \
         "$timer_file" \
         "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent.timer"
-    rm -f "$prep_service_file" "$service_file" "$timer_file"
+    rm -f "$service_file"
 
     virtctl ssh "${_ssh_opts[@]}" \
         --command 'set -e
