@@ -90,7 +90,7 @@ require (
 	github.com/np-guard/netpol-analyzer v1.4.4
 	github.com/nxadm/tail v1.4.11
 	github.com/olekukonko/tablewriter v1.1.4
-	github.com/onsi/ginkgo/v2 v2.29.0
+	github.com/onsi/ginkgo/v2 v2.30.0
 	github.com/onsi/gomega v1.41.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
@@ -150,7 +150,7 @@ require (
 	golang.org/x/term v0.44.0
 	golang.org/x/text v0.38.0
 	golang.org/x/time v0.15.0
-	golang.org/x/tools v0.45.0
+	golang.org/x/tools v0.46.0
 	golang.stackrox.io/grpc-http1 v0.5.1
 	google.golang.org/api v0.283.0
 	google.golang.org/genproto v0.0.0-20260319201613-d00831a3d3e7

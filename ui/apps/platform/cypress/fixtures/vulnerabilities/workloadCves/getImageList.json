@@ -1,0 +1,30 @@
+{
+    "data": {
+        "images": [
+            {
+                "id": "sha256:abcxyz",
+                "digest": "sha256:abcxyz",
+                "name": {
+                    "registry": "docker.io",
+                    "remote": "cypress-test/image",
+                    "tag": "v0.0.1",
+                    "fullName": "docker.io/cypress-test/image:v0.0.1"
+                },
+                "imageCVECountBySeverity": {
+                    "critical": { "total": 2 },
+                    "important": { "total": 0 },
+                    "moderate": { "total": 0 },
+                    "low": { "total": 0 },
+                    "unknown": { "total": 0 }
+                },
+                "operatingSystem": "debian:11",
+                "deploymentCount": 1,
+                "watchStatus": "NOT_WATCHED",
+                "metadata": { "v1": { "created": "2024-01-15T10:30:00Z" } },
+                "scanTime": "2024-06-01T12:00:00Z",
+                "scanNotes": [],
+                "notes": []
+            }
+        ]
+    }
+}
