@@ -34,11 +34,7 @@ function setup() {
 
 function selectCondition(condition) {
     cy.get(selectors.conditionSelectToggle).click();
-    cy.get(`${selectors.conditionSelectItems} button:contains("${condition}")`)
-        .filter((_, element) => {
-            return Cypress.$(element).text().trim() === condition;
-        })
-        .click();
+    cy.get(`${selectors.conditionSelectItems} button:contains("${condition}")`).click();
 }
 
 describe(Cypress.spec.relative, () => {
