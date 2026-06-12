@@ -4,6 +4,7 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OLM_NAMESPACE="openshift-cnv"
 HCO_NAME="kubevirt-hyperconverged"
 SUBSCRIPTION_NAME="kubevirt-hyperconverged"
@@ -43,33 +44,7 @@ install_virt_operator() {
     fi
 
     echo "Installing namespace, OperatorGroup, and Subscription..."
-    kubectl apply -f - <<'EOF'
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: openshift-cnv
----
-apiVersion: operators.coreos.com/v1
-kind: OperatorGroup
-metadata:
-  name: openshift-cnv
-  namespace: openshift-cnv
-spec:
-  targetNamespaces:
-  - openshift-cnv
----
-apiVersion: operators.coreos.com/v1alpha1
-kind: Subscription
-metadata:
-  name: kubevirt-hyperconverged
-  namespace: openshift-cnv
-spec:
-  channel: stable
-  name: kubevirt-hyperconverged
-  source: redhat-operators
-  sourceNamespace: openshift-marketplace
-  installPlanApproval: Automatic
-EOF
+    kubectl apply -f "$SCRIPT_DIR/manifests/cnv-subscription.yaml"
 
     # Wait for installedCSV (up to 5 min)
     echo "Waiting for Subscription to report installedCSV..."
