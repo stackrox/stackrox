@@ -135,6 +135,16 @@ mkdir -p "${BUILD_INDEX_DIR}"
 # With "--binary-image", we are setting the exact base image version. By default, "latest" would be used.
 "${OPM}" generate dockerfile --binary-image "quay.io/operator-framework/opm:v${OPM_VERSION}" "${BUILD_INDEX_DIR}"
 
+# Add cache-building step to Dockerfile for multi-platform compatibility
+# Pre-building the cache ensures ARM/other platforms don't need to pull amd64-only bundles at runtime
+cat >> "${BUILD_INDEX_DIR}.Dockerfile" <<'DOCKERFILE_APPEND'
+
+# Build the cache such that we can use this image as the target for a standalone CatalogSource.
+# This is critical for multi-platform support - without pre-building the cache, OLM would try to
+# pull the bundle image at runtime on each platform, which fails when bundles are single-platform.
+RUN ["/bin/opm", "serve", "/configs", "--cache-dir=/tmp/cache", "--cache-only"]
+DOCKERFILE_APPEND
+
 BUNDLE_VERSION="${BUNDLE_TAG##*:v}"
 
 if [[ "${SINGLE_BUNDLE}" = "true" ]]; then
