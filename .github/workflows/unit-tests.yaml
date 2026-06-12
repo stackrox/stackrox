@@ -57,8 +57,106 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
+    - name: Cache debug — pre-test diagnostics
+      run: |
+        echo "::group::GOCACHE state after restore + aging"
+        gocache="$(go env GOCACHE)"
+        echo "GOCACHE path: $gocache"
+        echo "GOCACHE size: $(du -sm "$gocache" 2>/dev/null | cut -f1)MB"
+        echo "Entry count: $(find "$gocache" -type f ! -name trim.txt ! -name README | wc -l | tr -d ' ')"
+        echo "trim.txt content: $(cat "$gocache/trim.txt" 2>/dev/null)"
+        echo "trim.txt age: $(( ($(date +%s) - $(cat "$gocache/trim.txt" 2>/dev/null || echo 0)) / 3600 ))h"
+        echo ""
+
+        # Sample entry mtimes — are they at 6d ago as expected?
+        echo "Sample entry mtimes (first 5):"
+        find "$gocache" -type f ! -name trim.txt ! -name README -print | head -5 | while read f; do
+          echo "  $(stat -c '%Y %n' "$f" 2>/dev/null || stat -f '%m %N' "$f" 2>/dev/null)"
+        done
+        echo ""
+
+        # Source file mtimes — are they stable at 200101010000?
+        echo "Source mtime samples:"
+        for f in go.mod go.sum pkg/set/set.go Makefile; do
+          echo "  $(stat -c '%Y %n' "$f" 2>/dev/null || stat -f '%m %N' "$f" 2>/dev/null)"
+        done
+        echo "::endgroup::"
+
+        echo "::group::Test binary buildID + ldflags for canary package"
+        # Build a test binary the same way go-test.sh would, check its buildID
+        echo "status.sh output:"
+        ./status.sh 2>/dev/null || true
+        echo ""
+
+        # Build test binary for pkg/set using go-test.sh's invoke_go path
+        ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 GOTAGS=${{ matrix.gotags }},test \
+          go test -race -cover -c -o /tmp/canary-test.bin \
+          github.com/stackrox/rox/pkg/set 2>/dev/null || true
+        if [[ -f /tmp/canary-test.bin ]]; then
+          echo "pkg/set test binary buildID: $(go tool buildid /tmp/canary-test.bin)"
+        else
+          echo "FAILED to build canary test binary"
+        fi
+
+        # Now build it via go-test.sh (which adds -ldflags from status.sh)
+        ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 GOTAGS=${{ matrix.gotags }},test \
+          bash scripts/go-test.sh -race -cover -c -o /tmp/canary-gotest.bin \
+          github.com/stackrox/rox/pkg/set 2>/dev/null || true
+        if [[ -f /tmp/canary-gotest.bin ]]; then
+          echo "pkg/set via go-test.sh buildID: $(go tool buildid /tmp/canary-gotest.bin)"
+        else
+          echo "FAILED to build canary via go-test.sh"
+        fi
+
+        # Compare — if they differ, go-test.sh's ldflags change the binary
+        if [[ -f /tmp/canary-test.bin && -f /tmp/canary-gotest.bin ]]; then
+          bid1=$(go tool buildid /tmp/canary-test.bin | cut -d/ -f1)
+          bid2=$(go tool buildid /tmp/canary-gotest.bin | cut -d/ -f1)
+          if [[ "$bid1" = "$bid2" ]]; then
+            echo "BuildIDs MATCH — go-test.sh ldflags don't change the binary"
+          else
+            echo "BuildIDs DIFFER — go-test.sh ldflags ARE changing the binary!"
+            echo "  direct:     $bid1"
+            echo "  go-test.sh: $bid2"
+          fi
+        fi
+        rm -f /tmp/canary-test.bin /tmp/canary-gotest.bin
+        echo "::endgroup::"
+
+        echo "::group::GODEBUG cache trace for pkg/set"
+        # Run ONE package with GODEBUG to see cache decision
+        GODEBUG=gocachetest=1 ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 \
+          GOTAGS=${{ matrix.gotags }},test \
+          bash scripts/go-test.sh -race -cover -coverprofile /dev/null \
+          github.com/stackrox/rox/pkg/set 2>&1 | grep -E 'testcache:|ok\s|cached' || true
+        echo "::endgroup::"
+      shell: bash
+
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/go-test-output.txt
+
+    - name: Cache debug — post-test diagnostics
+      if: always()
+      run: |
+        echo "::group::Post-test cache state"
+        gocache="$(go env GOCACHE)"
+        echo "GOCACHE size after tests: $(du -sm "$gocache" 2>/dev/null | cut -f1)MB"
+        echo "Entry count after tests: $(find "$gocache" -type f ! -name trim.txt ! -name README | wc -l | tr -d ' ')"
+        echo "trim.txt now: $(cat "$gocache/trim.txt" 2>/dev/null)"
+
+        # Count cached vs non-cached from test output
+        if [[ -f /tmp/go-test-output.txt ]]; then
+          cached=$(grep -c '(cached)' /tmp/go-test-output.txt || true)
+          total=$(grep -cE 'ok\s+github\.com/stackrox' /tmp/go-test-output.txt || true)
+          echo "Test results: $cached/$total cached"
+
+          # Show first 10 non-cached packages
+          echo ""
+          echo "First 10 non-cached:"
+          grep -E 'ok\s+github\.com/stackrox' /tmp/go-test-output.txt | grep -v '(cached)' | head -10
+        fi
+        echo "::endgroup::"
+      shell: bash
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
       with:
