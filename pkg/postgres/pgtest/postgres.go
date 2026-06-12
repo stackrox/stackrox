@@ -102,6 +102,7 @@ func ForT(t testing.TB) *TestPostgres {
 
 	// initialize pool to be used
 	pool := ForTCustomPool(t, database)
+	pkgSchema.ApplyAllIndexes(context.Background(), pool)
 
 	testPg := &TestPostgres{
 		DB:       pool,

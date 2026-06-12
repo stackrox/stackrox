@@ -24,7 +24,14 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*BaseImagesLayers)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "baseimageslayers_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS baseimageslayers_idx ON base_images_layers USING btree (idx)", Background: false},
+					{Name: "base_image_id_layer", CreateSQL: "CREATE UNIQUE INDEX IF NOT EXISTS base_image_id_layer ON base_images_layers USING btree (layerdigest)", Background: false},
+				},
 			},
+		},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "baseimages_firstlayerdigest", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS baseimages_firstlayerdigest ON base_images USING btree (firstlayerdigest)", Background: false},
 		},
 	}
 
@@ -76,7 +83,7 @@ type BaseImages struct {
 	ManifestDigest           string                `gorm:"column:manifestdigest;type:varchar"`
 	DiscoveredAt             *time.Time            `gorm:"column:discoveredat;type:timestamp"`
 	Active                   bool                  `gorm:"column:active;type:bool"`
-	FirstLayerDigest         string                `gorm:"column:firstlayerdigest;type:varchar;index:baseimages_firstlayerdigest,type:btree"`
+	FirstLayerDigest         string                `gorm:"column:firstlayerdigest;type:varchar"`
 	Serialized               []byte                `gorm:"column:serialized;type:bytea"`
 	BaseImageRepositoriesRef BaseImageRepositories `gorm:"foreignKey:baseimagerepositoryid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

@@ -22,6 +22,9 @@ var (
 	CreateTableComplianceOperatorScanV2Stmt = &postgres.CreateStmts{
 		GormModel: (*ComplianceOperatorScanV2)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "complianceoperatorscanv2_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorscanv2_sac_filter ON compliance_operator_scan_v2 USING hash (clusterid)", Background: false},
+		},
 	}
 
 	// ComplianceOperatorScanV2Schema is the go schema for table `compliance_operator_scan_v2`.
@@ -56,7 +59,7 @@ const (
 type ComplianceOperatorScanV2 struct {
 	ID                  string     `gorm:"column:id;type:varchar;primaryKey"`
 	ScanConfigName      string     `gorm:"column:scanconfigname;type:varchar"`
-	ClusterID           string     `gorm:"column:clusterid;type:uuid;index:complianceoperatorscanv2_sac_filter,type:hash"`
+	ClusterID           string     `gorm:"column:clusterid;type:uuid"`
 	ProfileProfileRefID string     `gorm:"column:profile_profilerefid;type:uuid"`
 	StatusResult        string     `gorm:"column:status_result;type:varchar"`
 	LastExecutedTime    *time.Time `gorm:"column:lastexecutedtime;type:timestamp"`

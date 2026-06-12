@@ -95,6 +95,9 @@ func upgradeWithLock(ctx context.Context, pgPool postgres.DB, gormDB *gorm.DB, d
 	if ver.SeqNum == 0 && ver.MainVersion == "0" {
 		log.WriteToStderr("Fresh install of the database. There is no data to migrate...")
 		pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
+		if err := pkgSchema.ApplyAllStartupIndexes(context.Background(), pgPool); err != nil {
+			return errors.Wrap(err, "failed to create startup indexes")
+		}
 		migVer.SetCurrentVersion(ctx, gormDB)
 		return nil
 	}
@@ -110,5 +113,8 @@ func upgradeWithLock(ctx context.Context, pgPool postgres.DB, gormDB *gorm.DB, d
 	}
 
 	pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
+	if err := pkgSchema.ApplyAllStartupIndexes(context.Background(), pgPool); err != nil {
+		return errors.Wrap(err, "failed to create startup indexes")
+	}
 	return nil
 }

@@ -20,6 +20,9 @@ var (
 	CreateTableComplianceRunMetadataStmt = &postgres.CreateStmts{
 		GormModel: (*ComplianceRunMetadata)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "compliancerunmetadata_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS compliancerunmetadata_sac_filter ON compliance_run_metadata USING hash (clusterid)", Background: false},
+		},
 	}
 
 	// ComplianceRunMetadataSchema is the go schema for table `compliance_run_metadata`.
@@ -46,7 +49,7 @@ const (
 type ComplianceRunMetadata struct {
 	RunID           string     `gorm:"column:runid;type:varchar;primaryKey"`
 	StandardID      string     `gorm:"column:standardid;type:varchar"`
-	ClusterID       string     `gorm:"column:clusterid;type:uuid;index:compliancerunmetadata_sac_filter,type:hash"`
+	ClusterID       string     `gorm:"column:clusterid;type:uuid"`
 	FinishTimestamp *time.Time `gorm:"column:finishtimestamp;type:timestamp"`
 	Serialized      []byte     `gorm:"column:serialized;type:bytea"`
 }

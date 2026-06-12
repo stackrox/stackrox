@@ -19,6 +19,9 @@ var (
 	CreateTableNetworkBaselinesStmt = &postgres.CreateStmts{
 		GormModel: (*NetworkBaselines)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "networkbaselines_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS networkbaselines_sac_filter ON network_baselines USING btree (clusterid, namespace)", Background: false},
+		},
 	}
 
 	// NetworkBaselinesSchema is the go schema for table `network_baselines`.
@@ -44,7 +47,7 @@ const (
 // NetworkBaselines holds the Gorm model for Postgres table `network_baselines`.
 type NetworkBaselines struct {
 	DeploymentID string `gorm:"column:deploymentid;type:uuid;primaryKey"`
-	ClusterID    string `gorm:"column:clusterid;type:uuid;index:networkbaselines_sac_filter,type:btree"`
-	Namespace    string `gorm:"column:namespace;type:varchar;index:networkbaselines_sac_filter,type:btree"`
+	ClusterID    string `gorm:"column:clusterid;type:uuid"`
+	Namespace    string `gorm:"column:namespace;type:varchar"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }

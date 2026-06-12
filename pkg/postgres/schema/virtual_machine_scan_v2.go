@@ -21,6 +21,10 @@ var (
 	CreateTableVirtualMachineScanV2Stmt = &postgres.CreateStmts{
 		GormModel: (*VirtualMachineScanV2)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "virtualmachinescanv2_vmv2id", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinescanv2_vmv2id ON virtual_machine_scan_v2 USING btree (vmv2id)", Background: false},
+			{Name: "virtualmachinescanv2_scantime", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinescanv2_scantime ON virtual_machine_scan_v2 USING btree (scantime)", Background: false},
+		},
 	}
 
 	// VirtualMachineScanV2Schema is the go schema for table `virtual_machine_scan_v2`.
@@ -61,9 +65,9 @@ const (
 // VirtualMachineScanV2 holds the Gorm model for Postgres table `virtual_machine_scan_v2`.
 type VirtualMachineScanV2 struct {
 	ID                  string           `gorm:"column:id;type:uuid;primaryKey"`
-	VmV2ID              string           `gorm:"column:vmv2id;type:uuid;index:virtualmachinescanv2_vmv2id,type:btree"`
+	VmV2ID              string           `gorm:"column:vmv2id;type:uuid"`
 	ScanOs              string           `gorm:"column:scanos;type:varchar"`
-	ScanTime            *time.Time       `gorm:"column:scantime;type:timestamptz;index:virtualmachinescanv2_scantime,type:btree"`
+	ScanTime            *time.Time       `gorm:"column:scantime;type:timestamptz"`
 	TopCvss             float32          `gorm:"column:topcvss;type:numeric"`
 	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
 	VirtualMachineV2Ref VirtualMachineV2 `gorm:"foreignKey:vmv2id;references:id;belongsTo;constraint:OnDelete:CASCADE"`

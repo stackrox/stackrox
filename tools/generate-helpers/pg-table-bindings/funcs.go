@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"text/template"
 	"unicode"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -158,6 +160,145 @@ func messageBytesElemType(f walker.Field) string {
 	return t
 }
 
+// IndexInfo holds the data needed to render a postgres.IndexDefinition literal in the template.
+type IndexInfo struct {
+	Name       string
+	CreateSQL  string
+	Background bool
+}
+
+var safeIdentifier = regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
+
+// indexBuilder accumulates columns for a single index (which may span multiple fields
+// in the case of composite indexes) and produces the final IndexInfo.
+type indexBuilder struct {
+	name       string
+	table      string
+	columns    []string
+	indexType  string
+	unique     bool
+	background bool
+}
+
+func (b *indexBuilder) addColumn(col string) {
+	if !safeIdentifier.MatchString(col) {
+		log.Fatalf("column name %q in index %q contains unsafe characters", col, b.name)
+	}
+	b.columns = append(b.columns, col)
+}
+
+func (b *indexBuilder) build() IndexInfo {
+	if b.unique && b.background {
+		log.Fatalf("index %q is both unique and background — unique indexes require an exclusive lock and cannot use CREATE INDEX CONCURRENTLY", b.name)
+	}
+
+	cols := strings.Join(b.columns, ", ")
+	var createSQL string
+	if b.unique {
+		createSQL = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS %s ON %s USING %s (%s)", b.name, b.table, b.indexType, cols)
+	} else {
+		createSQL = fmt.Sprintf("CREATE INDEX CONCURRENTLY IF NOT EXISTS %s ON %s USING %s (%s)", b.name, b.table, b.indexType, cols)
+	}
+
+	return IndexInfo{
+		Name:       b.name,
+		CreateSQL:  createSQL,
+		Background: b.background,
+	}
+}
+
+// collectIndexes extracts all index definitions from a schema, grouping fields by index name
+// to handle composite indexes. It also generates SAC filter indexes for tables with
+// ClusterID or Namespace search fields.
+func collectIndexes(schema *walker.Schema, obj object) []IndexInfo {
+	tablePrefix := strings.ToLower(lowerCamelCase(schema.Table))
+	table := strings.ToLower(schema.Table)
+
+	idxNameToBuilder := make(map[string]*indexBuilder)
+	// idxBuildOrder is used to consistently iterator of idxNameToBuilder
+	var idxBuildOrder []string
+	hasBackgroundIndex := false
+
+	for _, field := range schema.DBColumnFields() {
+		col := strings.ToLower(field.ColumnName)
+
+		for _, idx := range field.Options.Index {
+			name := idx.IndexName
+			if name == "" {
+				name = tablePrefix + "_" + col
+			}
+			if !safeIdentifier.MatchString(name) {
+				log.Fatalf("index name %q contains unsafe characters — must match [a-z_][a-z0-9_]*", name)
+			}
+
+			if idx.Background {
+				hasBackgroundIndex = true
+			}
+
+			if b, ok := idxNameToBuilder[name]; ok {
+				if b.background != idx.Background {
+					log.Fatalf("composite index %q has conflicting Background flags across fields", name)
+				}
+				b.addColumn(col)
+			} else {
+				indexType := idx.IndexType
+				if indexType == "" {
+					indexType = "btree"
+				}
+				b = &indexBuilder{
+					name:       name,
+					table:      table,
+					indexType:  indexType,
+					unique:     idx.IndexCategory == "unique",
+					background: idx.Background,
+				}
+				b.addColumn(col)
+				idxNameToBuilder[name] = b
+				idxBuildOrder = append(idxBuildOrder, name)
+			}
+		}
+	}
+
+	if sacBuilder := buildSACFilterIndex(schema, obj, tablePrefix, table, hasBackgroundIndex); sacBuilder != nil {
+		idxNameToBuilder[sacBuilder.name] = sacBuilder
+		idxBuildOrder = append(idxBuildOrder, sacBuilder.name)
+	}
+
+	result := make([]IndexInfo, 0, len(idxBuildOrder))
+	for _, name := range idxBuildOrder {
+		result = append(result, idxNameToBuilder[name].build())
+	}
+	return result
+}
+
+// buildSACFilterIndex creates a composite index on ClusterID/Namespace fields for
+// scope-based access control filtering. Returns nil if no SAC fields are present.
+func buildSACFilterIndex(schema *walker.Schema, obj object, tablePrefix, table string, background bool) *indexBuilder {
+	b := &indexBuilder{
+		name:       tablePrefix + "_sac_filter",
+		table:      table,
+		indexType:  "btree",
+		background: background,
+	}
+	if obj.IsClusterScope() {
+		b.indexType = "hash"
+	}
+
+	for _, field := range schema.DBColumnFields() {
+		if field.Options.PrimaryKey {
+			continue
+		}
+		if field.Search.FieldName == search.ClusterID.String() || field.Search.FieldName == search.Namespace.String() {
+			b.addColumn(strings.ToLower(field.ColumnName))
+		}
+	}
+
+	if len(b.columns) == 0 {
+		return nil
+	}
+	return b
+}
+
 var funcMap = template.FuncMap{
 	"arr":                          arr,
 	"lowerCamelCase":               lowerCamelCase,
@@ -171,6 +312,7 @@ var funcMap = template.FuncMap{
 	"messageBytesElemType":         messageBytesElemType,
 	"subMessageInits":              subMessageInits,
 	"trimPrefix":                   func(prefix, s string) string { return strings.TrimPrefix(s, prefix) },
+	"collectIndexes":               collectIndexes,
 	"dict":                         dict,
 	"pluralType": func(s string) string {
 		if s[len(s)-1] == 'y' {

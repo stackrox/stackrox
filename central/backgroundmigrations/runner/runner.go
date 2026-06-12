@@ -227,9 +227,15 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 		log.Infof("completed migration %d, now at seq num %d", seqNum, migration.VersionAfterSeqNum)
 	}
 
+	log.Infof("all numbered migrations complete, at seq num %d. Reconciling background indexes...", r.targetSeqNum)
+
+	if err := schema.ApplyAllBackgroundIndexes(ctx, r.db); err != nil {
+		return errors.Wrap(err, "creating background indexes")
+	}
+
 	bgMigrationCompleteGauge.Set(1)
 
-	log.Infof("all migrations complete, at seq num %d", r.targetSeqNum)
+	log.Infof("background migrations and index reconciliation complete")
 	return nil
 }
 

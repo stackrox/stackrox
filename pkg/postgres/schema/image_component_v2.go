@@ -20,6 +20,10 @@ var (
 	CreateTableImageComponentV2Stmt = &postgres.CreateStmts{
 		GormModel: (*ImageComponentV2)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "imagecomponentv2_imageid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecomponentv2_imageid ON image_component_v2 USING btree (imageid)", Background: false},
+			{Name: "imagecomponentv2_imageidv2", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecomponentv2_imageidv2 ON image_component_v2 USING btree (imageidv2)", Background: false},
+		},
 	}
 
 	// ImageComponentV2Schema is the go schema for table `image_component_v2`.
@@ -69,9 +73,9 @@ type ImageComponentV2 struct {
 	RiskScore       float32            `gorm:"column:riskscore;type:numeric"`
 	TopCvss         float32            `gorm:"column:topcvss;type:numeric"`
 	OperatingSystem string             `gorm:"column:operatingsystem;type:varchar"`
-	ImageID         string             `gorm:"column:imageid;type:varchar;index:imagecomponentv2_imageid,type:btree"`
+	ImageID         string             `gorm:"column:imageid;type:varchar"`
 	Location        string             `gorm:"column:location;type:varchar"`
-	ImageIDV2       string             `gorm:"column:imageidv2;type:varchar;index:imagecomponentv2_imageidv2,type:btree"`
+	ImageIDV2       string             `gorm:"column:imageidv2;type:varchar"`
 	LayerType       storage.LayerType  `gorm:"column:layertype;type:integer"`
 	Serialized      []byte             `gorm:"column:serialized;type:bytea"`
 	ImagesRef       Images             `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

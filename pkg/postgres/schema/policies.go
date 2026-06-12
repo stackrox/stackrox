@@ -21,6 +21,9 @@ var (
 	CreateTablePoliciesStmt = &postgres.CreateStmts{
 		GormModel: (*Policies)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "policies_id", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS policies_id ON policies USING btree (id)", Background: false},
+		},
 	}
 
 	// PoliciesSchema is the go schema for table `policies`.
@@ -45,7 +48,7 @@ const (
 
 // Policies holds the Gorm model for Postgres table `policies`.
 type Policies struct {
-	ID                 string           `gorm:"column:id;type:varchar;primaryKey;index:policies_id,type:btree"`
+	ID                 string           `gorm:"column:id;type:varchar;primaryKey"`
 	Name               string           `gorm:"column:name;type:varchar;unique"`
 	Description        string           `gorm:"column:description;type:varchar"`
 	Disabled           bool             `gorm:"column:disabled;type:bool"`

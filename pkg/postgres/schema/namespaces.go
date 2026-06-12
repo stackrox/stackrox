@@ -20,6 +20,9 @@ var (
 	CreateTableNamespacesStmt = &postgres.CreateStmts{
 		GormModel: (*Namespaces)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "namespaces_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS namespaces_sac_filter ON namespaces USING btree (name, clusterid)", Background: false},
+		},
 	}
 
 	// NamespacesSchema is the go schema for table `namespaces`.
@@ -60,8 +63,8 @@ const (
 // Namespaces holds the Gorm model for Postgres table `namespaces`.
 type Namespaces struct {
 	ID          string            `gorm:"column:id;type:uuid;primaryKey"`
-	Name        string            `gorm:"column:name;type:varchar;index:namespaces_sac_filter,type:btree"`
-	ClusterID   string            `gorm:"column:clusterid;type:uuid;index:namespaces_sac_filter,type:btree"`
+	Name        string            `gorm:"column:name;type:varchar"`
+	ClusterID   string            `gorm:"column:clusterid;type:uuid"`
 	ClusterName string            `gorm:"column:clustername;type:varchar"`
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`

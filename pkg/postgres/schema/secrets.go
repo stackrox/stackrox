@@ -26,9 +26,18 @@ var (
 					&postgres.CreateStmts{
 						GormModel: (*SecretsFilesRegistries)(nil),
 						Children:  []*postgres.CreateStmts{},
+						Indexes: []*postgres.IndexDefinition{
+							{Name: "secretsfilesregistries_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS secretsfilesregistries_idx ON secrets_files_registries USING btree (idx)", Background: false},
+						},
 					},
 				},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "secretsfiles_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS secretsfiles_idx ON secrets_files USING btree (idx)", Background: false},
+				},
 			},
+		},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "secrets_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS secrets_sac_filter ON secrets USING btree (clusterid, namespace)", Background: false},
 		},
 	}
 
@@ -60,9 +69,9 @@ const (
 type Secrets struct {
 	ID          string     `gorm:"column:id;type:uuid;primaryKey"`
 	Name        string     `gorm:"column:name;type:varchar"`
-	ClusterID   string     `gorm:"column:clusterid;type:uuid;index:secrets_sac_filter,type:btree"`
+	ClusterID   string     `gorm:"column:clusterid;type:uuid"`
 	ClusterName string     `gorm:"column:clustername;type:varchar"`
-	Namespace   string     `gorm:"column:namespace;type:varchar;index:secrets_sac_filter,type:btree"`
+	Namespace   string     `gorm:"column:namespace;type:varchar"`
 	CreatedAt   *time.Time `gorm:"column:createdat;type:timestamp"`
 	Serialized  []byte     `gorm:"column:serialized;type:bytea"`
 }

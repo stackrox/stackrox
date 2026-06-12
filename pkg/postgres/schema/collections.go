@@ -22,6 +22,9 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*CollectionsEmbeddedCollections)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "collectionsembeddedcollections_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS collectionsembeddedcollections_idx ON collections_embedded_collections USING btree (idx)", Background: false},
+				},
 			},
 		},
 	}

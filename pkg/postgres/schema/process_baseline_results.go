@@ -19,6 +19,9 @@ var (
 	CreateTableProcessBaselineResultsStmt = &postgres.CreateStmts{
 		GormModel: (*ProcessBaselineResults)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "processbaselineresults_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processbaselineresults_sac_filter ON process_baseline_results USING btree (clusterid, namespace)", Background: false},
+		},
 	}
 
 	// ProcessBaselineResultsSchema is the go schema for table `process_baseline_results`.
@@ -44,7 +47,7 @@ const (
 // ProcessBaselineResults holds the Gorm model for Postgres table `process_baseline_results`.
 type ProcessBaselineResults struct {
 	DeploymentID string `gorm:"column:deploymentid;type:uuid;primaryKey"`
-	ClusterID    string `gorm:"column:clusterid;type:uuid;index:processbaselineresults_sac_filter,type:btree"`
-	Namespace    string `gorm:"column:namespace;type:varchar;index:processbaselineresults_sac_filter,type:btree"`
+	ClusterID    string `gorm:"column:clusterid;type:uuid"`
+	Namespace    string `gorm:"column:namespace;type:varchar"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }

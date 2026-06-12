@@ -19,6 +19,9 @@ var (
 	CreateTableNetworkpoliciesStmt = &postgres.CreateStmts{
 		GormModel: (*Networkpolicies)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "networkpolicies_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS networkpolicies_sac_filter ON networkpolicies USING btree (clusterid, namespace)", Background: false},
+		},
 	}
 
 	// NetworkpoliciesSchema is the go schema for table `networkpolicies`.
@@ -44,7 +47,7 @@ const (
 // Networkpolicies holds the Gorm model for Postgres table `networkpolicies`.
 type Networkpolicies struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
-	ClusterID  string `gorm:"column:clusterid;type:uuid;index:networkpolicies_sac_filter,type:btree"`
-	Namespace  string `gorm:"column:namespace;type:varchar;index:networkpolicies_sac_filter,type:btree"`
+	ClusterID  string `gorm:"column:clusterid;type:uuid"`
+	Namespace  string `gorm:"column:namespace;type:varchar"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

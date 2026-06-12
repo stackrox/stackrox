@@ -20,6 +20,12 @@ var (
 	CreateTableVirtualMachineComponentV2Stmt = &postgres.CreateStmts{
 		GormModel: (*VirtualMachineComponentV2)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "virtualmachinecomponentv2_vmscanid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecomponentv2_vmscanid ON virtual_machine_component_v2 USING btree (vmscanid)", Background: false},
+			{Name: "virtualmachinecomponentv2_name", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecomponentv2_name ON virtual_machine_component_v2 USING btree (name)", Background: false},
+			{Name: "virtualmachinecomponentv2_operatingsystem", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecomponentv2_operatingsystem ON virtual_machine_component_v2 USING btree (operatingsystem)", Background: false},
+			{Name: "virtualmachinecomponentv2_topcvss", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecomponentv2_topcvss ON virtual_machine_component_v2 USING btree (topcvss)", Background: false},
+		},
 	}
 
 	// VirtualMachineComponentV2Schema is the go schema for table `virtual_machine_component_v2`.
@@ -60,12 +66,12 @@ const (
 // VirtualMachineComponentV2 holds the Gorm model for Postgres table `virtual_machine_component_v2`.
 type VirtualMachineComponentV2 struct {
 	ID                      string               `gorm:"column:id;type:uuid;primaryKey"`
-	VmScanID                string               `gorm:"column:vmscanid;type:uuid;index:virtualmachinecomponentv2_vmscanid,type:btree"`
-	Name                    string               `gorm:"column:name;type:varchar;index:virtualmachinecomponentv2_name,type:btree"`
+	VmScanID                string               `gorm:"column:vmscanid;type:uuid"`
+	Name                    string               `gorm:"column:name;type:varchar"`
 	Version                 string               `gorm:"column:version;type:varchar"`
 	Source                  storage.SourceType   `gorm:"column:source;type:integer"`
-	OperatingSystem         string               `gorm:"column:operatingsystem;type:varchar;index:virtualmachinecomponentv2_operatingsystem,type:btree"`
-	TopCvss                 float32              `gorm:"column:topcvss;type:numeric;index:virtualmachinecomponentv2_topcvss,type:btree"`
+	OperatingSystem         string               `gorm:"column:operatingsystem;type:varchar"`
+	TopCvss                 float32              `gorm:"column:topcvss;type:numeric"`
 	Serialized              []byte               `gorm:"column:serialized;type:bytea"`
 	VirtualMachineScanV2Ref VirtualMachineScanV2 `gorm:"foreignKey:vmscanid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

@@ -23,7 +23,13 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*PodsLiveInstances)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "podsliveinstances_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS podsliveinstances_idx ON pods_live_instances USING btree (idx)", Background: false},
+				},
 			},
+		},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "pods_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS pods_sac_filter ON pods USING btree (namespace, clusterid)", Background: false},
 		},
 	}
 
@@ -61,8 +67,8 @@ type Pods struct {
 	ID           string `gorm:"column:id;type:uuid;primaryKey"`
 	Name         string `gorm:"column:name;type:varchar"`
 	DeploymentID string `gorm:"column:deploymentid;type:uuid"`
-	Namespace    string `gorm:"column:namespace;type:varchar;index:pods_sac_filter,type:btree"`
-	ClusterID    string `gorm:"column:clusterid;type:uuid;index:pods_sac_filter,type:btree"`
+	Namespace    string `gorm:"column:namespace;type:varchar"`
+	ClusterID    string `gorm:"column:clusterid;type:uuid"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }
 

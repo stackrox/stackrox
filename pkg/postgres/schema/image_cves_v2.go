@@ -21,6 +21,14 @@ var (
 	CreateTableImageCvesV2Stmt = &postgres.CreateStmts{
 		GormModel: (*ImageCvesV2)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "imagecvesv2_imageid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecvesv2_imageid ON image_cves_v2 USING btree (imageid)", Background: false},
+			{Name: "imagecvesv2_cvebaseinfo_cve", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecvesv2_cvebaseinfo_cve ON image_cves_v2 USING btree (cvebaseinfo_cve)", Background: false},
+			{Name: "imagecvesv2_severity", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecvesv2_severity ON image_cves_v2 USING btree (severity)", Background: false},
+			{Name: "imagecvesv2_state", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecvesv2_state ON image_cves_v2 USING btree (state)", Background: false},
+			{Name: "imagecvesv2_componentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecvesv2_componentid ON image_cves_v2 USING btree (componentid)", Background: false},
+			{Name: "imagecvesv2_imageidv2", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecvesv2_imageidv2 ON image_cves_v2 USING btree (imageidv2)", Background: false},
+		},
 	}
 
 	// ImageCvesV2Schema is the go schema for table `image_cves_v2`.
@@ -64,23 +72,23 @@ const (
 // ImageCvesV2 holds the Gorm model for Postgres table `image_cves_v2`.
 type ImageCvesV2 struct {
 	ID                             string                        `gorm:"column:id;type:varchar;primaryKey"`
-	ImageID                        string                        `gorm:"column:imageid;type:varchar;index:imagecvesv2_imageid,type:btree"`
-	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:imagecvesv2_cvebaseinfo_cve,type:btree"`
+	ImageID                        string                        `gorm:"column:imageid;type:varchar"`
+	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar"`
 	CveBaseInfoPublishedOn         *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
 	CveBaseInfoCreatedAt           *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
 	CveBaseInfoEpssEpssProbability float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`
 	Cvss                           float32                       `gorm:"column:cvss;type:numeric"`
-	Severity                       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer;index:imagecvesv2_severity,type:btree"`
+	Severity                       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
 	ImpactScore                    float32                       `gorm:"column:impactscore;type:numeric"`
 	Nvdcvss                        float32                       `gorm:"column:nvdcvss;type:numeric"`
 	FirstImageOccurrence           *time.Time                    `gorm:"column:firstimageoccurrence;type:timestamp"`
-	State                          storage.VulnerabilityState    `gorm:"column:state;type:integer;index:imagecvesv2_state,type:btree"`
+	State                          storage.VulnerabilityState    `gorm:"column:state;type:integer"`
 	IsFixable                      bool                          `gorm:"column:isfixable;type:bool"`
 	FixedBy                        string                        `gorm:"column:fixedby;type:varchar"`
-	ComponentID                    string                        `gorm:"column:componentid;type:varchar;index:imagecvesv2_componentid,type:btree"`
+	ComponentID                    string                        `gorm:"column:componentid;type:varchar"`
 	AdvisoryName                   string                        `gorm:"column:advisory_name;type:varchar"`
 	AdvisoryLink                   string                        `gorm:"column:advisory_link;type:varchar"`
-	ImageIDV2                      string                        `gorm:"column:imageidv2;type:varchar;index:imagecvesv2_imageidv2,type:btree"`
+	ImageIDV2                      string                        `gorm:"column:imageidv2;type:varchar"`
 	FixAvailableTimestamp          *time.Time                    `gorm:"column:fixavailabletimestamp;type:timestamp"`
 	Serialized                     []byte                        `gorm:"column:serialized;type:bytea"`
 	ImagesRef                      Images                        `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

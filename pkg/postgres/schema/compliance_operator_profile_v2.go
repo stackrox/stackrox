@@ -24,7 +24,13 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*ComplianceOperatorProfileV2Rules)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "complianceoperatorprofilev2rules_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorprofilev2rules_idx ON compliance_operator_profile_v2_rules USING btree (idx)", Background: false},
+				},
 			},
+		},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "complianceoperatorprofilev2_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorprofilev2_sac_filter ON compliance_operator_profile_v2 USING hash (clusterid)", Background: false},
 		},
 	}
 
@@ -65,7 +71,7 @@ type ComplianceOperatorProfileV2 struct {
 	ProfileVersion string                                           `gorm:"column:profileversion;type:varchar"`
 	ProductType    string                                           `gorm:"column:producttype;type:varchar"`
 	Standard       string                                           `gorm:"column:standard;type:varchar"`
-	ClusterID      string                                           `gorm:"column:clusterid;type:uuid;index:complianceoperatorprofilev2_sac_filter,type:hash"`
+	ClusterID      string                                           `gorm:"column:clusterid;type:uuid"`
 	ProfileRefID   string                                           `gorm:"column:profilerefid;type:uuid"`
 	OperatorKind   storage.ComplianceOperatorProfileV2_OperatorKind `gorm:"column:operatorkind;type:integer"`
 	Serialized     []byte                                           `gorm:"column:serialized;type:bytea"`

@@ -7,4 +7,5 @@ type CreateStmts struct {
 	PostStmts       []string
 	Partition       bool
 	PartitionCreate string
+	Indexes         []*IndexDefinition
 }

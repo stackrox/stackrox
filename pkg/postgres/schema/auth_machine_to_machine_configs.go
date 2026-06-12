@@ -20,6 +20,9 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*AuthMachineToMachineConfigsMappings)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "authmachinetomachineconfigsmappings_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS authmachinetomachineconfigsmappings_idx ON auth_machine_to_machine_configs_mappings USING btree (idx)", Background: false},
+				},
 			},
 		},
 	}

@@ -23,6 +23,9 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*ReportConfigurationsNotifiers)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "reportconfigurationsnotifiers_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS reportconfigurationsnotifiers_idx ON report_configurations_notifiers USING btree (idx)", Background: false},
+				},
 			},
 		},
 	}

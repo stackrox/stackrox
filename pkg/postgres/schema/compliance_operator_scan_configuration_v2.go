@@ -24,14 +24,24 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*ComplianceOperatorScanConfigurationV2Profiles)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "complianceoperatorscanconfigurationv2profiles_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorscanconfigurationv2profiles_idx ON compliance_operator_scan_configuration_v2_profiles USING btree (idx)", Background: false},
+				},
 			},
 			&postgres.CreateStmts{
 				GormModel: (*ComplianceOperatorScanConfigurationV2Clusters)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "complianceoperatorscanconfigurationv2clusters_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorscanconfigurationv2clusters_idx ON compliance_operator_scan_configuration_v2_clusters USING btree (idx)", Background: false},
+					{Name: "complianceoperatorscanconfigurationv2clusters_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorscanconfigurationv2clusters_sac_filter ON compliance_operator_scan_configuration_v2_clusters USING hash (clusterid)", Background: false},
+				},
 			},
 			&postgres.CreateStmts{
 				GormModel: (*ComplianceOperatorScanConfigurationV2Notifiers)(nil),
 				Children:  []*postgres.CreateStmts{},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "complianceoperatorscanconfigurationv2notifiers_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorscanconfigurationv2notifiers_idx ON compliance_operator_scan_configuration_v2_notifiers USING btree (idx)", Background: false},
+				},
 			},
 		},
 	}

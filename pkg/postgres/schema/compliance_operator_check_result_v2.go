@@ -22,6 +22,9 @@ var (
 	CreateTableComplianceOperatorCheckResultV2Stmt = &postgres.CreateStmts{
 		GormModel: (*ComplianceOperatorCheckResultV2)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "complianceoperatorcheckresultv2_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorcheckresultv2_sac_filter ON compliance_operator_check_result_v2 USING hash (clusterid)", Background: false},
+		},
 	}
 
 	// ComplianceOperatorCheckResultV2Schema is the go schema for table `compliance_operator_check_result_v2`.
@@ -60,7 +63,7 @@ type ComplianceOperatorCheckResultV2 struct {
 	ID              string                                              `gorm:"column:id;type:varchar;primaryKey"`
 	CheckID         string                                              `gorm:"column:checkid;type:varchar"`
 	CheckName       string                                              `gorm:"column:checkname;type:varchar"`
-	ClusterID       string                                              `gorm:"column:clusterid;type:uuid;index:complianceoperatorcheckresultv2_sac_filter,type:hash"`
+	ClusterID       string                                              `gorm:"column:clusterid;type:uuid"`
 	Status          storage.ComplianceOperatorCheckResultV2_CheckStatus `gorm:"column:status;type:integer"`
 	Severity        storage.RuleSeverity                                `gorm:"column:severity;type:integer"`
 	CreatedTime     *time.Time                                          `gorm:"column:createdtime;type:timestamp"`
