@@ -9,7 +9,6 @@ on:
     types:
     - opened
     - reopened
-    - labeled
     - synchronize
 
 defaults:
@@ -19,10 +18,8 @@ defaults:
 jobs:
   wait-for-images:
     if: >-
-      !github.event.pull_request.head.repo.fork && (
-        github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'e2e-nongroovy-tests')
-      )
+      !github.event.pull_request.head.repo.fork ||
+      github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repo
