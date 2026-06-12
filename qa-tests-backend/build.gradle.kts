@@ -37,8 +37,6 @@ dependencies {
     implementation(platform(libs.spock.bom))
     implementation(libs.spock.core)
     implementation(libs.spock.junit4)
-    // Gradle 9 requires the JUnit Platform launcher explicitly.
-    runtimeOnly("org.junit.platform:junit-platform-launcher")
     implementation(libs.rest.assured)
     testImplementation(libs.snakeyaml)
     implementation(libs.logback.classic)
@@ -114,13 +112,6 @@ tasks.withType<Test>().configureEach {
     }
 
     useJUnitPlatform();
-
-    // Gradle 9: registered Test tasks (testBAT, testSMOKE, etc.) don't
-    // inherit testClassesDirs from the test source set. Wire explicitly
-    // so test discovery finds compiled classes.
-    val testSourceSet = project.sourceSets["test"]
-    testClassesDirs = testSourceSet.output.classesDirs
-    classpath = testSourceSet.runtimeClasspath
 
     // Safety net: fail loudly if a test task completes without executing any tests.
     // Gradle exits 0 when tasks are skipped due to NO-SOURCE, which silently
