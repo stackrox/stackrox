@@ -181,11 +181,6 @@ func (s *serviceImpl) ListReportConfigurations(ctx context.Context, query *apiV2
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	filteredQ := common.WithoutV1ReportConfigs(parsedQuery)
-	// This filter removes report configs with empty collection.
-	// This scenario can happen after downgrade from a future release(4.11 and above) with more resource scope to 4.10.
-	filteredQ = search.ConjunctionQuery(
-		filteredQ,
-		search.NewQueryBuilder().AddStrings(search.CollectionID, search.NegateQueryString(search.ExactMatchString(""))).ProtoQuery())
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(filteredQ, query.GetPagination(), maxPaginationLimit)
