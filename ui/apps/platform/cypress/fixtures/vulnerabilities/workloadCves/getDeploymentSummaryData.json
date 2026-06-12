@@ -1,0 +1,36 @@
+{
+    "data": {
+        "deployment": {
+            "id": "mock-deployment-001",
+            "imageCVECountBySeverity": {
+                "unknown": {
+                    "total": 0,
+                    "fixable": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "low": {
+                    "total": 0,
+                    "fixable": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "moderate": {
+                    "total": 0,
+                    "fixable": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "important": {
+                    "total": 1,
+                    "fixable": 1,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "critical": {
+                    "total": 0,
+                    "fixable": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "__typename": "ResourceCountByCVESeverity"
+            },
+            "__typename": "Deployment"
+        }
+    }
+}
