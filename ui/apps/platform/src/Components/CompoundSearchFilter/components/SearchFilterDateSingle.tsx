@@ -26,7 +26,7 @@ function SearchFilterDateSingle({
 
     function onApply() {
         const date = dateParse(dateString);
-        if (conditionPrefix && isValidDate(date)) {
+        if (conditionPrefix !== undefined && isValidDate(date)) {
             onSearch([
                 {
                     action: 'APPEND',

@@ -72,6 +72,24 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.singleDateInput).should('have.value', '');
     });
 
+    it('should apply the On condition as a bare date with no prefix', () => {
+        setup();
+
+        selectCondition('On');
+
+        cy.get(selectors.singleDateInput).type('01/15/2034');
+        cy.get(selectors.applyButton).click();
+
+        cy.get('@onSearch').should('have.been.calledWithExactly', [
+            {
+                action: 'APPEND',
+                category: 'CVE Created Time',
+                value: '01/15/2034',
+            },
+        ]);
+        cy.get(selectors.singleDateInput).should('have.value', '');
+    });
+
     it('should reveal start and end date inputs when Between is selected', () => {
         setup();
 
