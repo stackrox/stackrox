@@ -2,9 +2,11 @@
 
 Please do not report security vulnerabilities or security incidents via public
 channels such as GitHub Issues or Pull Requests. To ensure coordinated
-disclosure, contact Red Hat's Product Security team.
+disclosure, direct all security questions and vulnerability reports to:
 
-Details at https://access.redhat.com/security/team/contact
+- **Email**: secalert@redhat.com
+
+Further details at https://access.redhat.com/security/team/contact
 
 ## Submission Guidelines
 
@@ -25,11 +27,6 @@ following in your report:
 We aim to provide an initial acknowledgement of your report within 10 business
 days. All confirmed security vulnerabilities and incidents will be addressed
 according to severity level and impact on the project.
-## **Contact Information**
-
-Direct all security questions and vulnerability reports to:
-
-- **Email**: secalert@redhat.com  
 
 ## Supported Versions
 
