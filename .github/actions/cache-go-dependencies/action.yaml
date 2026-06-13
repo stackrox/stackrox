@@ -53,28 +53,25 @@ runs:
         gocache="${{ steps.cache-paths.outputs.GOCACHE }}"
         if [[ -d "$gocache" ]]; then
           before=$(du -sm "$gocache" 2>/dev/null | cut -f1)
-          # Age entries beyond Go's 5-day trimLimit so its built-in Trim()
-          # cleans them at cache.Close(). Go's markUsed() refreshes accessed
-          # entries to "now" during compilation and test execution — including
-          # coverage profile entries (via GetFile → markUsed). Trim() runs
-          # AFTER markUsed inside the same process, so it correctly preserves
-          # everything the current run accessed.
+          # Age entries to 4 days — UNDER Go's 5-day trimLimit so they
+          # survive the initial Trim() at cache.Open(). Go's markUsed()
+          # then refreshes accessed entries to "now" during compilation
+          # and test execution. At cache.Close(), Trim() runs again but
+          # all accessed entries are fresh; only genuinely unused entries
+          # (still at 4 days) survive this run's Close() trim but will
+          # be deleted on the NEXT run when they're 4+N days old.
           #
-          # The previous approach (backdate to year 2000 + custom post-step
-          # trim) ran the trim in a SEPARATE process after go test exited.
-          # While markUsed() did persist mtimes to disk via os.Chtimes(),
-          # the custom trim also deleted coverage profile entries and old
-          # dependency compile entries that stale PRs needed, causing 0%
-          # test cache hits on CI.
-          six_days_ago=$(date -u -d '6 days ago' +%Y%m%d%H%M.00 2>/dev/null \
-            || date -u -v-6d +%Y%m%d%H%M.00)
+          # Why not 6 days (beyond trimLimit)? Go trims at Open() too —
+          # entries >5d+1h get deleted BEFORE markUsed() can rescue them.
+          # 4 days gives 1 day of headroom under the 5-day limit.
+          four_days_ago=$(date -u -d '4 days ago' +%Y%m%d%H%M.00 2>/dev/null \
+            || date -u -v-4d +%Y%m%d%H%M.00)
           timeout 120 find "$gocache" -type f ! -name 'trim.txt' \
-            -exec touch -t "$six_days_ago" {} + || true
-          # Set trim.txt to >24h ago to force Go's Trim() to run.
-          # Go skips Trim() if last trim was <24h ago (trimInterval).
+            -exec touch -t "$four_days_ago" {} + || true
+          # Set trim.txt to >24h ago to force Go's Trim() to run at Close().
           echo "$(date -u -d '2 days ago' +%s 2>/dev/null \
             || date -u -v-2d +%s)" > "$gocache/trim.txt"
-          echo "GOCACHE: ${before:-0}MB, prepared for Go trim (entries aged to 6d)"
+          echo "GOCACHE: ${before:-0}MB, prepared for Go trim (entries aged to 4d)"
         fi
       shell: bash
 
