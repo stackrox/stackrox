@@ -60,6 +60,59 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
+    - name: Cache debug — pre-test diagnostics
+      run: |
+        set +e
+        gocache="$(go env GOCACHE)"
+
+        echo "::group::GOCACHE state before tests"
+        echo "GOCACHE size: $(du -sm "$gocache" 2>/dev/null | cut -f1)MB"
+        echo "Entry count: $(find "$gocache" -type f 2>/dev/null | wc -l | tr -d ' ')"
+        echo "trim.txt: $(cat "$gocache/trim.txt" 2>/dev/null)"
+        echo "Sample entry mtimes:"
+        find "$gocache" -type f -name '*-a' 2>/dev/null | head -5 | while read f; do
+          stat -c '%Y %n' "$f" 2>/dev/null
+        done
+        echo "::endgroup::"
+
+        echo "::group::status.sh output"
+        ./status.sh 2>/dev/null
+        echo "::endgroup::"
+
+        echo "::group::Build test binary for pkg/set and compare buildID"
+        # Build via go-test.sh (same as make go-unit-tests) and capture buildID
+        ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 \
+          scripts/go-test.sh -c -o /tmp/test-set-gotest.test ./pkg/set 2>&1 || true
+        gotest_bid=$(go tool buildid /tmp/test-set-gotest.test 2>/dev/null || echo "FAILED")
+        echo "go-test.sh buildID: $gotest_bid"
+
+        # Build via direct go test (no ldflags)
+        go test -c -o /tmp/test-set-direct.test ./pkg/set 2>&1 || true
+        direct_bid=$(go tool buildid /tmp/test-set-direct.test 2>/dev/null || echo "FAILED")
+        echo "direct buildID:     $direct_bid"
+
+        echo "BuildIDs match: $([ "$gotest_bid" = "$direct_bid" ] && echo YES || echo NO)"
+        echo "::endgroup::"
+
+        echo "::group::GODEBUG testcache trace for pkg/set"
+        GODEBUG=gocachetest=1 ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 \
+          scripts/go-test.sh -timeout 2m -race -cover -coverprofile /dev/null \
+          ./pkg/set 2>&1 | grep -E 'testcache:|cached|^ok' | head -20
+        echo "::endgroup::"
+
+        echo "::group::Check if GOCACHE has entries for pkg/set test binary"
+        # The testID is part of the buildID — check if any matching entries exist
+        test_id=$(echo "$gotest_bid" | cut -d/ -f1)
+        echo "test binary action prefix: $test_id"
+        # Search for the result entry
+        result_hash=$(echo -n "$test_id" | sha256sum | cut -c1-64)
+        prefix="${result_hash:0:2}"
+        echo "Expected cache dir: $gocache/$prefix/"
+        ls -la "$gocache/$prefix/" 2>/dev/null | head -10
+        echo "::endgroup::"
+        exit 0
+      shell: bash
+
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/go-test-output.txt
 
