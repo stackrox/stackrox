@@ -48,7 +48,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
-    - uses: davdhacs/speedracer@817d41f # ratchet:davdhacs/speedracer@v0.1.0
+    - uses: davdhacs/speedracer@817d41f9ac77f153383bc3f6255f56a7d1cdacd6 # ratchet:davdhacs/speedracer@v0.1.0
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -136,7 +136,7 @@ jobs:
         sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
         sudo systemctl start postgresql.service
 
-    - uses: davdhacs/speedracer@817d41f # ratchet:davdhacs/speedracer@v0.1.0
+    - uses: davdhacs/speedracer@817d41f9ac77f153383bc3f6255f56a7d1cdacd6 # ratchet:davdhacs/speedracer@v0.1.0
 
     - name: Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
