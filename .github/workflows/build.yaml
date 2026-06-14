@@ -306,7 +306,7 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
-      - uses: stackrox/actions/speculative-run-matrix@f5810b1c8efd8d9dbba6196d11e624ea6623336b
+      - uses: stackrox/actions/speculative-run-matrix@d7540090a982c15f711aba4af089c15d9038f7fd
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -657,7 +657,7 @@ jobs:
             echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
           fi
 
-      - uses: stackrox/actions/speculative-run-matrix@f5810b1c8efd8d9dbba6196d11e624ea6623336b
+      - uses: stackrox/actions/speculative-run-matrix@d7540090a982c15f711aba4af089c15d9038f7fd
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -947,7 +947,7 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
-      - uses: stackrox/actions/speculative-run-matrix@f5810b1c8efd8d9dbba6196d11e624ea6623336b
+      - uses: stackrox/actions/speculative-run-matrix@d7540090a982c15f711aba4af089c15d9038f7fd
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -1064,7 +1064,7 @@ jobs:
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
     steps:
-      - uses: stackrox/actions/speculative-run-matrix@f5810b1c8efd8d9dbba6196d11e624ea6623336b
+      - uses: stackrox/actions/speculative-run-matrix@d7540090a982c15f711aba4af089c15d9038f7fd
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
