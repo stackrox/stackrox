@@ -8,7 +8,7 @@ import {
 } from '@patternfly/react-core';
 
 import ReactSelect, { Creatable } from 'Components/ReactSelect';
-import ToggleSwitch from 'Components/ToggleSwitch';
+import ToggleSwitch from './ToggleSwitch';
 
 const severityOptions = [
     {
