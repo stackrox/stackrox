@@ -134,9 +134,9 @@ func ApplyAllBackgroundIndexes(ctx context.Context, db postgres.DB) error {
 }
 
 func applyIndexes(ctx context.Context, db postgres.DB, background bool, timeout time.Duration) error {
-	invalidIndexes, err := getInvalidIndexNames(ctx, db)
+	existing, err := getExistingIndexes(ctx, db)
 	if err != nil {
-		return fmt.Errorf("checking for invalid indexes: %w", err)
+		return fmt.Errorf("querying existing indexes: %w", err)
 	}
 
 	label := "startup"
@@ -144,34 +144,42 @@ func applyIndexes(ctx context.Context, db postgres.DB, background bool, timeout 
 		label = "background"
 	}
 
-	var firstErr error
+	var desired []*postgres.IndexDefinition
 	for _, idx := range GetAllIndexDefinitions() {
-		if idx.Background != background {
-			continue
-		}
-
-		if invalidIndexes[idx.Name] {
-			if err := dropInvalidIndex(ctx, db, idx.Name); err != nil {
-				log.Errorf("Failed to drop invalid index %s: %v", idx.Name, err)
-				if firstErr == nil {
-					firstErr = err
-				}
-				continue
-			}
-		}
-
-		log.Infof("Creating %s index: %s", label, idx.Name)
-		stmtCtx, cancel := context.WithTimeout(ctx, timeout)
-		_, execErr := db.Exec(stmtCtx, idx.CreateSQL)
-		cancel()
-		if execErr != nil {
-			log.Errorf("Failed to create %s index %s: %v", label, idx.Name, execErr)
-			if firstErr == nil {
-				firstErr = execErr
-			}
+		if idx.Background == background {
+			desired = append(desired, idx)
 		}
 	}
-	return firstErr
+
+	var toDrop, toCreate []*postgres.IndexDefinition
+	for _, idx := range desired {
+		if existing.invalid.Contains(idx.Name) {
+			toDrop = append(toDrop, idx)
+			toCreate = append(toCreate, idx)
+		} else if !existing.valid.Contains(idx.Name) {
+			toCreate = append(toCreate, idx)
+		}
+	}
+
+	log.Infof("Reconciling %d %s indexes: %d exist, %d invalid, %d to create",
+		len(desired), label, len(desired)-len(toCreate), len(toDrop), len(toCreate))
+
+	for _, idx := range toDrop {
+		if err := dropInvalidIndex(ctx, db, idx.Name); err != nil {
+			return fmt.Errorf("dropping invalid index %s: %w", idx.Name, err)
+		}
+	}
+
+	for _, idx := range toCreate {
+		log.Infof("Creating %s index: %s", label, idx.Name)
+		stmtCtx, cancel := context.WithTimeout(ctx, timeout)
+		_, err := db.Exec(stmtCtx, idx.CreateSQL)
+		cancel()
+		if err != nil {
+			return fmt.Errorf("creating %s index %s: %w", label, idx.Name, err)
+		}
+	}
+	return nil
 }
 
 // ApplyAllIndexes creates ALL indexes immediately.
@@ -205,29 +213,45 @@ func flattenIndexes(stmt *postgres.CreateStmts) []*postgres.IndexDefinition {
 	return result
 }
 
-func getInvalidIndexNames(ctx context.Context, db postgres.DB) (map[string]bool, error) {
+type indexState struct {
+	valid   set.StringSet
+	invalid set.StringSet
+}
+
+func getExistingIndexes(ctx context.Context, db postgres.DB) (*indexState, error) {
 	conn, err := db.Acquire(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("acquiring connection: %w", err)
 	}
 	defer conn.Release()
 
 	rows, err := conn.Query(ctx,
-		"SELECT c.relname FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid WHERE NOT i.indisvalid")
+		"SELECT c.relname, i.indisvalid FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("querying pg_index: %w", err)
 	}
 	defer rows.Close()
 
-	result := make(map[string]bool)
+	state := &indexState{
+		valid:   set.NewStringSet(),
+		invalid: set.NewStringSet(),
+	}
 	for rows.Next() {
 		var name string
-		if err := rows.Scan(&name); err != nil {
-			return nil, err
+		var valid bool
+		if err := rows.Scan(&name, &valid); err != nil {
+			return nil, fmt.Errorf("scanning index row: %w", err)
 		}
-		result[name] = true
+		if valid {
+			state.valid.Add(name)
+		} else {
+			state.invalid.Add(name)
+		}
 	}
-	return result, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating index rows: %w", err)
+	}
+	return state, nil
 }
 
 func dropInvalidIndex(ctx context.Context, db postgres.DB, name string) error {
