@@ -117,6 +117,8 @@ func (h Headers) Match(patterns GlobMap) (bool, Headers) {
 		}
 		for k, v := range matching {
 			if existing, ok := result[k]; ok {
+				// Append appends nil instead of an empty array. That's why the
+				// else clause is needed.
 				result[k] = append(existing, v...)
 			} else {
 				result[k] = v

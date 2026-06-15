@@ -6,6 +6,8 @@ import (
 
 // Interceptor is a function which will be called on every API call if none of
 // the previous interceptors in the chain returned false.
+// An Interceptor function may add custom properties to the props map so that
+// they appear in the event.
 type Interceptor func(rp *RequestParams, props map[string]any) bool
 
 func (c *Client) track(rp *RequestParams) {

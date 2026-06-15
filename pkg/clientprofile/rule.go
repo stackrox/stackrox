@@ -80,6 +80,8 @@ func (rs RuleSet) CountMatched(rp *requestinterceptor.RequestParams, f func(cc *
 
 // Codes creates a rule that matches requests with any of the provided response
 // codes.
+// If called with no arguments, the resulting rule does not restrict by response
+// code.
 func Codes(codes ...int32) *Rule {
 	return &Rule{Codes: codes}
 }
@@ -97,7 +99,8 @@ func PathPattern(pattern glob.Pattern) *Rule {
 }
 
 // HeaderPattern builds a rule that matches request headers against the provided
-// glob patterns.
+// glob patterns. The returned rule's Headers map contains exactly one entry:
+// the header name pattern mapped to a value pattern.
 func HeaderPattern(header glob.Pattern, pattern glob.Pattern) *Rule {
 	return &Rule{
 		Headers: GlobMap{
