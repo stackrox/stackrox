@@ -40,6 +40,8 @@ FROM (
       AND NOT CONTAINS_SUBSTR(JobName, "-release-")
       AND NOT CONTAINS_SUBSTR(JobName, "-interop-")
       AND Classname NOT LIKE "CVE-%"
+      -- PR builds use "PR_NUMBER/merge@SHA" tags; only track master/periodic runs
+      AND BuildTag NOT LIKE "%/merge@%"
   )
 )
 WHERE Status = "failed"
