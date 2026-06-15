@@ -697,5 +697,6 @@ func (s *stubScanConfigWatcher) Stop() {}
 
 func (s *stubScanConfigWatcher) Finished() concurrency.ReadOnlySignal {
 	sig := concurrency.NewSignal()
+	sig.Signal()
 	return &sig
 }
