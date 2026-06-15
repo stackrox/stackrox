@@ -10,7 +10,7 @@ Shared principles for all UI tests. For specific patterns for individual testing
 
 | Type | Framework | Location | Purpose |
 |------|-----------|----------|---------|
-| Unit | Vitest | `src/**/*.test.ts` | Pure functions, data transforms, validators — no DOM, no React |
+| Unit | Vitest | `src/**/*.test.ts` (new tests) | Pure functions, data transforms, validators — no DOM, no React |
 | Component | Cypress | `src/**/*.cy.{jsx,tsx}` | Complex components with real DOM rendering |
 | E2E | Cypress | `cypress/integration/**/*.test.{js,ts}` | Full user flows against a running app, UI focused integration flows |
 | E2E (OCP) | Cypress | `cypress/integration-ocp/**/*.test.ts` | OCP console plugin flows against a running OpenShift cluster |
@@ -45,11 +45,11 @@ Not everything needs a dedicated test file. Use the "What Belongs Here" and "Wha
 
 ### `console.error` fails unit tests
 
-`setupTests.js` spies on `console.error` and fails any test that triggers one — even if the test's own assertions pass. The most common cause is an unmocked API call. If you hit this, check the console output for `ECONNREFUSED` errors indicating which service call needs mocking.
+`src/setupTests.js` spies on `console.error` and fails any test that triggers one — even if the test's own assertions pass. The most common cause is an unmocked API call. If you hit this, check the console output for `ECONNREFUSED` errors indicating which service call needs mocking.
 
 ### testing-library in Vitest
 
-Avoid `@testing-library/react` (`render`, `screen`, `userEvent`) in Vitest test files. Component rendering and interaction testing belongs in Cypress component tests. Vitest tests should only cover pure logic.
+Avoid `@testing-library/react` (`render`, `screen`, `userEvent`) in new Vitest test files. Component rendering and interaction testing belongs in Cypress component tests. Vitest tests should only cover pure logic. Some existing `.test.jsx`/`.test.tsx` files still use testing-library — follow this rule for new tests and migrate existing ones opportunistically.
 
 ### Hardcoded waits
 

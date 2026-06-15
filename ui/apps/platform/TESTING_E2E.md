@@ -118,6 +118,8 @@ This sets `localStorage.access_token` from the `ROX_AUTH_TOKEN` env var in `befo
 
 Tests that depend on a feature flag should skip when the flag is not enabled. The test runner scripts (`scripts/cypress.sh`) fetch flags from the deployment API and export them as `CYPRESS_ROX_*` env vars.
 
+For individual tests, skip inside the `it` block:
+
 ```javascript
 import { hasFeatureFlag } from '../helpers/features';
 
@@ -126,6 +128,21 @@ it('should show the new widget', function () {
         this.skip();
     }
     // ... test body
+});
+```
+
+To skip an entire `describe` block, use a `before` hook — this is the more common pattern in the codebase:
+
+```javascript
+describe('New Widget', function () {
+    before(function () {
+        if (!hasFeatureFlag('ROX_NEW_WIDGET')) {
+            this.skip();
+        }
+    });
+
+    it('should render', () => { ... });
+    it('should update on click', () => { ... });
 });
 ```
 
@@ -333,7 +350,8 @@ A key OCP-specific concern is verifying that the `acs-auth-namespace-scope` head
 |--------|---------|-------------|
 | `helpers/ocpAuth.ts` | OCP session authentication | `withOcpAuth` |
 | `helpers/ocpConsole.ts` | OCP console interactions | `selectProject`, `filterByField` |
-| `helpers/nav.ts` | OCP console navigation | `visitFromConsoleLeftNavExpandable`, `visitConsoleMainDashboard` |
+| `helpers/main.js` | Console dashboard navigation | `visitConsoleMainDashboard` |
+| `helpers/nav.ts` | OCP console navigation | `visitFromConsoleLeftNavExpandable` |
 | `integration-ocp/routes.ts` | Route matchers and auth headers | `acsAuthNamespaceHeader`, route matcher constants |
 
 ### Running OCP Tests

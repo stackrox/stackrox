@@ -42,7 +42,7 @@ Always pass `{ shouldAdvanceTime: true }` to `vi.useFakeTimers()` — without it
 
 ### `console.error` spy
 
-`setupTests.js` spies on `console.error` and fails any test that triggers one. The most common cause is an unmocked API call — look for `ECONNREFUSED` errors in the output to identify which service function needs mocking.
+`src/setupTests.js` spies on `console.error` and fails any test that triggers one. The most common cause is an unmocked API call — look for `ECONNREFUSED` errors in the output to identify which service function needs mocking.
 
 ## Canonical Examples
 

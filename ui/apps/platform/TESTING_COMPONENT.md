@@ -132,4 +132,4 @@ npm run test-component           # Headless, all tests
 |---------|------|
 | Simple component | `src/Components/CodeViewer.cy.jsx` |
 | Component with providers + GraphQL | `src/Containers/Dashboard/ScopeBar.cy.jsx` |
-| Complex interactions + stubs | `src/Containers/Vulnerabilities/components/CompoundSearchFilter.cy.jsx` |
+| Complex interactions + stubs | `src/Components/CompoundSearchFilter/components/CompoundSearchFilter.cy.jsx` |
