@@ -11,11 +11,11 @@ func init() {
 	prometheus.MustRegister(
 		processFilterCounter,
 		processIndicatorsNotPersisted,
-		processUpsertedArgsSizeHistogram,
-		processUpsertedArgsSizeTotal,
-		processUpsertedCount,
-		processUpsertedLineageSizeHistogram,
-		processUpsertedLineageSizeTotal,
+		processReceivedArgsSizeHistogram,
+		processReceivedArgsSizeTotal,
+		processReceivedCount,
+		processReceivedLineageSizeHistogram,
+		processReceivedLineageSizeTotal,
 	)
 }
 
@@ -34,41 +34,41 @@ var (
 		Help:      "Number of process indicators filtered out and not persisted",
 	})
 
-	processUpsertedArgsSizeHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+	processReceivedArgsSizeHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: pkgMetrics.PrometheusNamespace,
 		Subsystem: pkgMetrics.CentralSubsystem.String(),
-		Name:      "process_upserted_args_size",
-		Help:      "Distribution of process argument sizes in bytes for upserted indicators",
+		Name:      "process_received_args_size",
+		Help:      "Distribution of process argument sizes in bytes for received indicators",
 		Buckets:   []float64{0, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536},
 	})
 
-	processUpsertedArgsSizeTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	processReceivedArgsSizeTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: pkgMetrics.PrometheusNamespace,
 		Subsystem: pkgMetrics.CentralSubsystem.String(),
-		Name:      "process_upserted_args_size_total",
-		Help:      "Total upserted process argument sizes in bytes by cluster and namespace",
+		Name:      "process_received_args_size_total",
+		Help:      "Total received process argument sizes in bytes by cluster and namespace",
 	}, []string{"cluster", "namespace"})
 
-	processUpsertedCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+	processReceivedCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: pkgMetrics.PrometheusNamespace,
 		Subsystem: pkgMetrics.CentralSubsystem.String(),
-		Name:      "process_upserted_count",
-		Help:      "Number of process indicators upserted by cluster and namespace",
+		Name:      "process_received_count",
+		Help:      "Number of process indicators received by cluster and namespace",
 	}, []string{"cluster", "namespace"})
 
-	processUpsertedLineageSizeHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+	processReceivedLineageSizeHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: pkgMetrics.PrometheusNamespace,
 		Subsystem: pkgMetrics.CentralSubsystem.String(),
-		Name:      "process_upserted_lineage_size",
-		Help:      "Distribution of process lineage sizes in bytes for upserted indicators",
+		Name:      "process_received_lineage_size",
+		Help:      "Distribution of process lineage sizes in bytes for received indicators",
 		Buckets:   []float64{0, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536},
 	})
 
-	processUpsertedLineageSizeTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	processReceivedLineageSizeTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: pkgMetrics.PrometheusNamespace,
 		Subsystem: pkgMetrics.CentralSubsystem.String(),
-		Name:      "process_upserted_lineage_size_total",
-		Help:      "Total upserted process lineage sizes in bytes by cluster and namespace",
+		Name:      "process_received_lineage_size_total",
+		Help:      "Total received process lineage sizes in bytes by cluster and namespace",
 	}, []string{"cluster", "namespace"})
 )
 
@@ -117,9 +117,9 @@ func RecordProcessIndicatorReceived(indicator *storage.ProcessIndicator) {
 	clusterID := indicator.GetClusterId()
 	namespace := indicator.GetNamespace()
 
-	processUpsertedArgsSizeHistogram.Observe(float64(argsSizeBytes))
-	processUpsertedArgsSizeTotal.WithLabelValues(clusterID, namespace).Add(float64(argsSizeBytes))
-	processUpsertedCount.WithLabelValues(clusterID, namespace).Inc()
-	processUpsertedLineageSizeHistogram.Observe(float64(lineageSizeBytes))
-	processUpsertedLineageSizeTotal.WithLabelValues(clusterID, namespace).Add(float64(lineageSizeBytes))
+	processReceivedArgsSizeHistogram.Observe(float64(argsSizeBytes))
+	processReceivedArgsSizeTotal.WithLabelValues(clusterID, namespace).Add(float64(argsSizeBytes))
+	processReceivedCount.WithLabelValues(clusterID, namespace).Inc()
+	processReceivedLineageSizeHistogram.Observe(float64(lineageSizeBytes))
+	processReceivedLineageSizeTotal.WithLabelValues(clusterID, namespace).Add(float64(lineageSizeBytes))
 }
