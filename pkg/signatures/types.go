@@ -12,34 +12,49 @@ const (
 	//
 	//	"io.stackrox.signatureintegration.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
 	SignatureIntegrationIDPrefix = "io.stackrox.signatureintegration."
+
+	defaultRedHatIntegrationID   = SignatureIntegrationIDPrefix + "12a37a37-760e-4388-9e79-d62726c075b2"
+	defaultRedHatIntegrationName = "Red Hat"
 )
 
-// TODO(ROX-29936): Implement dynamic fetching to handle key rotations
-// The file below was downloaded from https://access.redhat.com/security/team/key
+// bundle.json is the canonical key bundle containing Red Hat signing keys.
+// It is the single source of truth: the same file is published to GCS for
+// runtime updates and embedded here for the first-install seed.
 //
-//go:embed "release-key-3.pub.txt"
-var releaseKey3PublicKey string
+//go:embed "bundle.json"
+var embeddedKeyBundleJSON []byte
 
-var DefaultRedHatSignatureIntegration = &storage.SignatureIntegration{
-	// PLEASE DON'T CHANGE THIS ID!! A migration may be needed if this is changed.
-	Id:   SignatureIntegrationIDPrefix + "12a37a37-760e-4388-9e79-d62726c075b2",
-	Name: "Red Hat",
-	Cosign: &storage.CosignPublicKeyVerification{
-		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
-			{
-				Name:            "Red Hat Release Key 3",
-				PublicKeyPemEnc: releaseKey3PublicKey,
-			},
+// DefaultRedHatSignatureIntegration is the seed integration created on first
+// install. Its keys come from the embedded bundle.json.
+// PLEASE DON'T CHANGE THE ID!! A migration may be needed if this is changed.
+var DefaultRedHatSignatureIntegration = mustParseEmbeddedBundle(embeddedKeyBundleJSON)
+
+// BundleToSignatureIntegration converts a parsed KeyBundle into the default
+// Red Hat SignatureIntegration, using the well-known ID and name.
+func BundleToSignatureIntegration(kb *KeyBundle) *storage.SignatureIntegration {
+	publicKeys := make([]*storage.CosignPublicKeyVerification_PublicKey, 0, len(kb.Keys))
+	for _, entry := range kb.Keys {
+		publicKeys = append(publicKeys, &storage.CosignPublicKeyVerification_PublicKey{
+			Name:            entry.Name,
+			PublicKeyPemEnc: entry.PEM,
+		})
+	}
+	return &storage.SignatureIntegration{
+		Id:   defaultRedHatIntegrationID,
+		Name: defaultRedHatIntegrationName,
+		Cosign: &storage.CosignPublicKeyVerification{
+			PublicKeys: publicKeys,
 		},
-	},
-	CosignCertificates: nil,
-	TransparencyLog: &storage.TransparencyLogVerification{
-		Enabled:         false,
-		Url:             "",
-		ValidateOffline: false,
-		PublicKeyPemEnc: "",
-	},
-	Traits: &storage.Traits{
-		Origin: storage.Traits_DEFAULT,
-	},
+		Traits: &storage.Traits{
+			Origin: storage.Traits_DEFAULT,
+		},
+	}
+}
+
+func mustParseEmbeddedBundle(data []byte) *storage.SignatureIntegration {
+	bundle, err := ParseKeyBundle(data)
+	if err != nil {
+		panic("embedded key bundle is invalid: " + err.Error())
+	}
+	return BundleToSignatureIntegration(bundle)
 }

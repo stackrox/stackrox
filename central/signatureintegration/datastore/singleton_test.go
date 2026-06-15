@@ -5,6 +5,7 @@ import (
 
 	storeMocks "github.com/stackrox/rox/central/signatureintegration/store/mocks"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -16,7 +17,10 @@ func TestSeedFirstInstall(t *testing.T) {
 
 	id := signatures.DefaultRedHatSignatureIntegration.GetId()
 	mockStore.EXPECT().Get(gomock.Any(), id).Return(nil, false, nil).Times(1)
-	mockStore.EXPECT().Upsert(gomock.Any(), signatures.DefaultRedHatSignatureIntegration).Return(nil).Times(1)
+	mockStore.EXPECT().Upsert(gomock.Any(), gomock.Cond(func(x any) bool {
+		si, ok := x.(*storage.SignatureIntegration)
+		return ok && si.GetId() == id
+	})).Return(nil).Times(1)
 
 	seedRedHatDefaultSignatureIntegration(mockStore)
 }

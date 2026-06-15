@@ -47,63 +47,63 @@ func TestParseKeyBundle(t *testing.T) {
 		},
 		"empty keys array": {
 			input:   `{"keys": []}`,
-			wantErr: errKeyBundleEmpty,
+			wantErr: signatures.ErrKeyBundleEmpty,
 		},
 		"missing keys field": {
 			input:   `{}`,
-			wantErr: errKeyBundleEmpty,
+			wantErr: signatures.ErrKeyBundleEmpty,
 		},
 		"empty name": {
 			input:   `{"keys": [{"name": "", "pem": "` + testKeyPEMJSON + `"}]}`,
-			wantErr: errKeyNameEmpty,
+			wantErr: signatures.ErrKeyNameEmpty,
 		},
 		"whitespace-only name": {
 			input:   `{"keys": [{"name": "  \t ", "pem": "` + testKeyPEMJSON + `"}]}`,
-			wantErr: errKeyNameEmpty,
+			wantErr: signatures.ErrKeyNameEmpty,
 		},
 		"name with forward slash": {
 			input:   `{"keys": [{"name": "foo/bar", "pem": "` + testKeyPEMJSON + `"}]}`,
-			wantErr: errKeyNamePathSeparator,
+			wantErr: signatures.ErrKeyNamePathSeparator,
 		},
 		"name with backslash": {
 			input:   `{"keys": [{"name": "foo\\bar", "pem": "` + testKeyPEMJSON + `"}]}`,
-			wantErr: errKeyNamePathSeparator,
+			wantErr: signatures.ErrKeyNamePathSeparator,
 		},
 		"invalid PEM": {
 			input:   `{"keys": [{"name": "bad-key", "pem": "not-a-pem"}]}`,
-			wantErr: errKeyInvalidPEM,
+			wantErr: signatures.ErrKeyInvalidPEM,
 		},
 		"whitespace-only PEM": {
 			input:   `{"keys": [{"name": "bad-key", "pem": "   \t\n  "}]}`,
-			wantErr: errKeyInvalidPEM,
+			wantErr: signatures.ErrKeyInvalidPEM,
 		},
 		"wrong PEM type": { //nolint:gosec // G101: test data, not real credentials
 			input:   `{"keys": [{"name": "bad-key", "pem": "-----BEGIN RSA PRIVATE KEY-----\nMIIBogIBAAJB\n-----END RSA PRIVATE KEY-----\n"}]}`,
-			wantErr: errKeyInvalidPEM,
+			wantErr: signatures.ErrKeyInvalidPEM,
 		},
 		"valid + invalid key rejects entire bundle": {
 			input: `{"keys": [
 				{"name": "good", "pem": "` + testKeyPEMJSON + `"},
 				{"name": "bad", "pem": "not-a-pem"}
 			]}`,
-			wantErr: errKeyInvalidPEM,
+			wantErr: signatures.ErrKeyInvalidPEM,
 		},
 		"trailing PEM data": {
 			input:   `{"keys": [{"name": "key-1", "pem": "` + jsonEscapePEM(testPublicKeyPEM+"extra") + `"}]}`,
-			wantErr: errKeyInvalidPEM,
+			wantErr: signatures.ErrKeyInvalidPEM,
 		},
 		"duplicate key names": {
 			input: `{"keys": [
 				{"name": "key-1", "pem": "` + testKeyPEMJSON + `"},
 				{"name": "key-1", "pem": "` + testKeyPEMJSON2 + `"}
 			]}`,
-			wantErr: errKeyNameDuplicate,
+			wantErr: signatures.ErrKeyNameDuplicate,
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			bundle, err := parseKeyBundle([]byte(tc.input))
+			bundle, err := signatures.ParseKeyBundle([]byte(tc.input))
 			if tc.wantErr != nil {
 				assert.ErrorIs(t, err, tc.wantErr)
 				assert.Nil(t, bundle)
@@ -116,7 +116,7 @@ func TestParseKeyBundle(t *testing.T) {
 }
 
 func TestParseKeyBundleMalformedJSON(t *testing.T) {
-	bundle, err := parseKeyBundle([]byte(`{not json`))
+	bundle, err := signatures.ParseKeyBundle([]byte(`{not json`))
 	assert.ErrorContains(t, err, "unmarshalling key bundle JSON")
 	assert.Nil(t, bundle)
 }
@@ -125,7 +125,7 @@ func TestParseKeyBundlePEMCanonicalization(t *testing.T) {
 	pemWithExtraNewlines := testPublicKeyPEM + "\n\n\n"
 	input := `{"keys": [{"name": "key-1", "pem": "` + jsonEscapePEM(pemWithExtraNewlines) + `"}]}`
 
-	bundle, err := parseKeyBundle([]byte(input))
+	bundle, err := signatures.ParseKeyBundle([]byte(input))
 	require.NoError(t, err)
 	require.Len(t, bundle.Keys, 1)
 
@@ -133,15 +133,15 @@ func TestParseKeyBundlePEMCanonicalization(t *testing.T) {
 	assert.NotRegexp(t, `\n\n$`, bundle.Keys[0].PEM)
 }
 
-func TestToDefaultSignatureIntegration(t *testing.T) {
-	bundle := &keyBundle{
-		Keys: []keyBundleEntry{
+func TestBundleToSignatureIntegration(t *testing.T) {
+	bundle := &signatures.KeyBundle{
+		Keys: []signatures.KeyBundleEntry{
 			{Name: "key-1", PEM: testPublicKeyPEM},
 			{Name: "key-2", PEM: testPublicKeyPEM2},
 		},
 	}
 
-	si := bundle.toDefaultSignatureIntegration()
+	si := signatures.BundleToSignatureIntegration(bundle)
 
 	assert.Equal(t, signatures.DefaultRedHatSignatureIntegration.GetId(), si.GetId())
 	assert.Equal(t, "Red Hat", si.GetName())
