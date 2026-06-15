@@ -13,6 +13,7 @@ import {
 } from '@patternfly/react-core';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import PageTitle from 'Components/PageTitle';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useRestMutation from 'hooks/useRestMutation';
@@ -33,6 +34,7 @@ import { getIntegrationLabel } from '../utils/integrationsList';
 import {
     getIsAPIToken,
     getIsCloudSource,
+    getIsGCR,
     getIsMachineAccessConfig,
     getIsScannerV4,
     getIsSignatureIntegration,
@@ -67,6 +69,7 @@ function IntegrationsListPage({ source, type }: IntegrationsListPageProps): Reac
     const isMachineAccessConfig = getIsMachineAccessConfig(source, type);
     const isSignatureIntegration = getIsSignatureIntegration(source);
     const isScannerV4 = getIsScannerV4(source, type);
+    const isGCR = getIsGCR(source, type);
     const isCloudSource = getIsCloudSource(source);
 
     // There is currently nothing relevant in Tech Preview.
@@ -145,6 +148,24 @@ function IntegrationsListPage({ source, type }: IntegrationsListPageProps): Reac
                     </Title>
                 )}
             </PageSection>
+            {isGCR && (
+                <PageSection>
+                    <Alert title="Deprecation notice" component="p" variant="warning" isInline>
+                        Google Container Registry has been deprecated by Google. New integrations
+                        cannot be created. Use Google Artifact Registry instead. See the{' '}
+                        <ExternalLink>
+                            <a
+                                href="https://cloud.google.com/container-registry/docs/deprecations/container-registry-deprecation"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Container Registry deprecation notice
+                            </a>
+                        </ExternalLink>{' '}
+                        for more information.
+                    </Alert>
+                </PageSection>
+            )}
             <PageSection>
                 <IntegrationsTable
                     tableState={tableState}
@@ -152,6 +173,7 @@ function IntegrationsListPage({ source, type }: IntegrationsListPageProps): Reac
                     onDeleteIntegrations={onDeleteIntegrations}
                     onTriggerBackup={onTriggerBackup}
                     isReadOnly={isScannerV4}
+                    isCreationDisabled={isGCR}
                     source={source}
                     type={type}
                 />

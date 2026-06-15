@@ -162,6 +162,12 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 		return nil, errors.Wrap(errox.InvalidArgs, "scanner V4 integration cannot be manually created")
 	}
 
+	if request.GetType() == types.GoogleType {
+		return nil, errors.Wrap(errox.InvalidArgs,
+			"Google Container Registry (GCR) has been deprecated by Google and new integrations cannot be created. "+
+				"Use Google Artifact Registry instead")
+	}
+
 	if err := s.validateTestAndNormalize(ctx, request); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
