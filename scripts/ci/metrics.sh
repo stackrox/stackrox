@@ -350,11 +350,11 @@ LIMIT
     echo "::endgroup::"
 }
 
-slack_job_failure_streaks() {
+slack_test_failure_streaks() {
     local min_streak="${1:-5}"
     local days="${2:-10}"
     local limit="${3:-10}"
-    local subject="${4:-Jobs with 5+ consecutive failures in last 10 days}"
+    local subject="${4:-Tests with 5+ consecutive failures in last 10 days}"
     local is_test="${5:-false}"
 
     echo "::group::${subject}"
@@ -362,97 +362,42 @@ slack_job_failure_streaks() {
     local sql
     # shellcheck disable=SC2016
     sql='
-WITH ordered_jobs AS (
-  SELECT
-    name,
-    started_at,
-    CASE
-      WHEN branch LIKE "%.x-nightly-%" THEN REGEXP_EXTRACT(branch, r"^(.+\.x-nightly)-\d+$")
-      ELSE branch
-    END as branch_group,
-    CASE
-      WHEN outcome IN ("failed", "failure", "Failed") THEN "FAILED"
-      WHEN outcome IN ("passed", "success", "Succeeded") THEN "SUCCESS"
-      ELSE "OTHER"
-    END as normalized_outcome,
-    ROW_NUMBER() OVER (PARTITION BY name ORDER BY started_at) as run_number
-  FROM `acs-san-stackroxci.ci_metrics.stackrox_jobs`
-  WHERE outcome IS NOT NULL
-    AND stopped_at IS NOT NULL
-    AND repo = "stackrox/stackrox"
-    AND (branch LIKE "%.x-nightly-%" OR branch = "nightlies" OR branch = "master")
-    AND started_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)
-),
-jobs_with_prev AS (
-  SELECT
-    name,
-    started_at,
-    branch_group,
-    normalized_outcome,
-    run_number,
-    LAG(normalized_outcome) OVER (PARTITION BY name ORDER BY started_at) AS prev_outcome,
-    LAG(run_number) OVER (PARTITION BY name ORDER BY started_at) AS prev_run_number
-  FROM ordered_jobs
-),
-streak_starts AS (
-  SELECT
-    name,
-    started_at,
-    branch_group,
-    normalized_outcome,
-    CASE
-      WHEN prev_outcome IS NULL THEN 1
-      WHEN normalized_outcome != prev_outcome THEN 1
-      WHEN run_number != prev_run_number + 1 THEN 1
-      ELSE 0
-    END as is_streak_start
-  FROM jobs_with_prev
-),
-streak_groups AS (
-  SELECT
-    name,
-    started_at,
-    branch_group,
-    normalized_outcome,
-    SUM(is_streak_start) OVER (PARTITION BY name ORDER BY started_at) as streak_id
-  FROM streak_starts
-),
-consecutive_failures AS (
-  SELECT
-    name,
-    branch_group,
-    normalized_outcome,
-    COUNT(*) as consecutive_count,
-    MIN(started_at) as first_failure_at,
-    MAX(started_at) as last_failure_at
-  FROM streak_groups
-  GROUP BY name, branch_group, streak_id, normalized_outcome
-  HAVING normalized_outcome = "FAILED" AND COUNT(*) > @min_streak
-),
-trimmed_names AS (
-  SELECT
-    REGEXP_REPLACE(name,
-      r"^(periodic-ci-stackrox-stackrox-master-|branch-ci-stackrox-stackrox-(nightlies|master)-)",
-      "") AS trimmed_name,
-    branch_group,
-    consecutive_count,
-    first_failure_at,
-    last_failure_at
-  FROM consecutive_failures
-)
 SELECT
-  IF(LENGTH(trimmed_name) > 60, CONCAT(RPAD(trimmed_name, 57), "..."), trimmed_name) AS name,
-  branch_group,
-  consecutive_count,
-  TIMESTAMP_DIFF(last_failure_at, first_failure_at, DAY) as duration_days
-FROM trimmed_names
-ORDER BY consecutive_count DESC, last_failure_at DESC
+  IF(LENGTH(Name) > 50, CONCAT(RPAD(Name, 47), "..."), Name) AS test_name,
+  IF(LENGTH(REPLACE(Classname, "github.com/stackrox/rox/", "")) > 30,
+     CONCAT(RPAD(REPLACE(Classname, "github.com/stackrox/rox/", ""), 27), "..."),
+     REPLACE(Classname, "github.com/stackrox/rox/", "")) AS suite,
+  REGEXP_REPLACE(JobName,
+    r"^(periodic-ci-stackrox-stackrox-master-|branch-ci-stackrox-stackrox-(nightlies|master)-)",
+    "") AS job,
+  COUNT(*) as consecutive_count,
+  DATE_DIFF(DATE(MAX(Timestamp)), DATE(MIN(Timestamp)), DAY) + 1 as duration_days
+FROM (
+  SELECT *,
+    MIN(IF(Status = "passed", rn, NULL)) OVER (PARTITION BY Name, Classname, JobName) as break_at
+  FROM (
+    SELECT Name, Classname, JobName, Status, Timestamp,
+      ROW_NUMBER() OVER (PARTITION BY Name, Classname, JobName ORDER BY Timestamp DESC) as rn
+    FROM `acs-san-stackroxci.ci_metrics.stackrox_tests`
+    WHERE Timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)
+      AND Status IN ("passed", "failed")
+      AND NOT STARTS_WITH(JobName, "rehearse-")
+      AND NOT STARTS_WITH(JobName, "pull-")
+      AND Classname NOT LIKE "CVE-%"
+  )
+)
+WHERE Status = "failed"
+  AND rn < COALESCE(break_at, 999999)
+GROUP BY Name, Classname, JobName
+HAVING COUNT(*) > @min_streak
+  AND DATE(MAX(Timestamp)) = CURRENT_DATE()
+ORDER BY consecutive_count DESC, duration_days DESC
 LIMIT @limit
 '
 
     local data_file
     data_file="$(mktemp)"
-    echo "Running query for job failure streaks (min_streak=${min_streak}, days=${days})"
+    echo "Running query for test failure streaks (min_streak=${min_streak}, days=${days})"
     bq --quiet --format=json query \
         --use_legacy_sql=false \
         --parameter="min_streak:INTEGER:${min_streak}" \
@@ -475,22 +420,25 @@ LIMIT @limit
                     "rows": (
                         [
                             [
-                                {"type": "raw_text", "text": "Job Name"},
-                                {"type": "raw_text", "text": "Branch"},
-                                {"type": "raw_text", "text": "Failures"},
+                                {"type": "raw_text", "text": "Test"},
+                                {"type": "raw_text", "text": "Suite"},
+                                {"type": "raw_text", "text": "Job"},
+                                {"type": "raw_text", "text": "Streak"},
                                 {"type": "raw_text", "text": "Days"}
                             ]
                         ] +
                         [.[] | [
-                            {"type": "raw_text", "text": .name},
-                            {"type": "raw_text", "text": .branch_group},
+                            {"type": "raw_text", "text": .test_name},
+                            {"type": "raw_text", "text": .suite},
+                            {"type": "raw_text", "text": .job},
                             {"type": "raw_text", "text": .consecutive_count},
                             {"type": "raw_text", "text": .duration_days}
                         ]]
                     ),
                     "column_settings": [
                         {"align": "left", "is_wrapped": true},
-                        {"align": "center", "is_wrapped": false},
+                        {"align": "left", "is_wrapped": true},
+                        {"align": "left", "is_wrapped": true},
                         {"align": "right", "is_wrapped": false},
                         {"align": "right", "is_wrapped": false}
                     ]
