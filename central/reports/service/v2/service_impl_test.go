@@ -244,8 +244,8 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 			query: &apiV2.RawQuery{Query: ""},
 			expectedQ: func() *v1.Query {
 				query := search.ConjunctionQuery(
-					search.EmptyQuery(),
-					withoutV1ConfigsQuery)
+					common.WithoutV1ReportConfigs(search.EmptyQuery()),
+					search.NewQueryBuilder().AddStrings(search.CollectionID, search.NegateQueryString(search.ExactMatchString(""))).ProtoQuery())
 				query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 				return query
 			}(),
@@ -255,8 +255,8 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 			query: &apiV2.RawQuery{Query: "Report Name:name"},
 			expectedQ: func() *v1.Query {
 				query := search.ConjunctionQuery(
-					search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
-					withoutV1ConfigsQuery)
+					common.WithoutV1ReportConfigs(search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery()),
+					search.NewQueryBuilder().AddStrings(search.CollectionID, search.NegateQueryString(search.ExactMatchString(""))).ProtoQuery())
 				query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 				return query
 			}(),
@@ -269,8 +269,8 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 			},
 			expectedQ: func() *v1.Query {
 				query := search.ConjunctionQuery(
-					search.EmptyQuery(),
-					withoutV1ConfigsQuery)
+					common.WithoutV1ReportConfigs(search.EmptyQuery()),
+					search.NewQueryBuilder().AddStrings(search.CollectionID, search.NegateQueryString(search.ExactMatchString(""))).ProtoQuery())
 				query.Pagination = &v1.QueryPagination{Limit: 25}
 				return query
 			}(),
