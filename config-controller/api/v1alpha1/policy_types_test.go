@@ -228,3 +228,54 @@ func TestConditionUpdates(t *testing.T) {
 	// Ensure the length of the conditions array is still 3
 	assert.Equal(t, 3, len(policy.Status.Conditions))
 }
+
+func TestToProtobufEvaluationFilter(t *testing.T) {
+	tests := map[string]struct {
+		filter         *EvaluationFilter
+		expectedTypes  []storage.ContainerType
+		expectNilProto bool
+	}{
+		"skip init containers": {
+			filter:        &EvaluationFilter{SkipContainerTypes: []ContainerType{"INIT"}},
+			expectedTypes: []storage.ContainerType{storage.ContainerType_INIT},
+		},
+		"nil filter": {
+			filter:         nil,
+			expectNilProto: true,
+		},
+		"empty filter": {
+			filter:         &EvaluationFilter{},
+			expectNilProto: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			spec := SecurityPolicySpec{
+				PolicyName:      "test-policy",
+				Severity:        "HIGH_SEVERITY",
+				Categories:      []string{"Test"},
+				LifecycleStages: []LifecycleStage{"DEPLOY"},
+				PolicySections: []PolicySection{{
+					PolicyGroups: []PolicyGroup{{
+						FieldName: "Image Tag",
+						Values:    []PolicyValue{{Value: "latest"}},
+					}},
+				}},
+				EvaluationFilter: tc.filter,
+			}
+
+			proto, err := spec.ToProtobuf(map[CacheType]map[string]string{
+				Notifier: {},
+				Cluster:  {},
+			})
+			assert.NoError(t, err)
+
+			if tc.expectNilProto {
+				assert.Nil(t, proto.GetEvaluationFilter())
+			} else {
+				assert.Equal(t, tc.expectedTypes, proto.GetEvaluationFilter().GetSkipContainerTypes())
+			}
+		})
+	}
+}
