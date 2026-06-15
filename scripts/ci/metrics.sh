@@ -352,21 +352,19 @@ LIMIT
 
 slack_test_failure_streaks() {
     local min_streak="${1:-5}"
-    local days="${2:-10}"
-    local limit="${3:-10}"
-    local subject="${4:-Tests with 5+ consecutive failures in last 10 days}"
-    local is_test="${5:-false}"
+    local limit="${2:-10}"
+    local subject="${3:-Tests with 5+ consecutive failures}"
+    local is_test="${4:-false}"
 
     echo "::group::${subject}"
 
     local data_file
     data_file="$(mktemp)"
     local sql_file="$ROOT/scripts/ci/sql/test_failure_streaks.sql"
-    echo "Running query for test failure streaks (min_streak=${min_streak}, days=${days})"
+    echo "Running query for test failure streaks (min_streak=${min_streak})"
     bq --quiet --format=json query \
         --use_legacy_sql=false \
         --parameter="min_streak:INTEGER:${min_streak}" \
-        --parameter="days:INTEGER:${days}" \
         --parameter="limit:INTEGER:${limit}" \
         < "${sql_file}" > "${data_file}" || {
         echo >&2 -e "Cannot run query:\n$(cat "${sql_file}")\nresponse:\n$(jq < "${data_file}")"

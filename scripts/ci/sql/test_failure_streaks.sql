@@ -12,9 +12,10 @@
 --    that never passed are included.
 --
 -- Parameters (BigQuery @-syntax):
---   @days        — lookback window in days
 --   @min_streak  — minimum consecutive failures to report
 --   @limit       — max rows to return
+--
+-- Lookback window is derived from @min_streak + 3 (weekends + safety margin).
 
 SELECT
   IF(LENGTH(Name) > 50, CONCAT(RPAD(Name, 47), "..."), Name) AS test_name,
@@ -33,7 +34,7 @@ FROM (
     SELECT Name, Classname, JobName, Status, Timestamp,
       ROW_NUMBER() OVER (PARTITION BY Name, Classname, JobName ORDER BY Timestamp DESC) as rn
     FROM `acs-san-stackroxci.ci_metrics.stackrox_tests`
-    WHERE Timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)
+    WHERE Timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @min_streak + 3 DAY)
       AND Status IN ("passed", "failed")
       AND NOT STARTS_WITH(JobName, "rehearse-")
       AND NOT STARTS_WITH(JobName, "pull-")
