@@ -106,8 +106,15 @@ function NodesTable({
                 renderer={({ data }) => (
                     <Tbody>
                         {data.map((node) => {
-                            const { id, name, nodeCVECountBySeverity, topCvss, cluster, osImage, scanTime } =
-                                node;
+                            const {
+                                id,
+                                name,
+                                nodeCVECountBySeverity,
+                                topCvss,
+                                cluster,
+                                osImage,
+                                scanTime,
+                            } = node;
                             return (
                                 <Tr key={id}>
                                     <Td dataLabel="Node" modifier="nowrap">
@@ -115,25 +122,33 @@ function NodesTable({
                                             <Truncate position="middle" content={name} />
                                         </Link>
                                     </Td>
-                                    {isSimplifiedSeverity ? (
-                                        <Td dataLabel="Top severity">
-                                            {topCvss !== undefined && <TopSeverityLabel cvss={topCvss} />}
-                                        </Td>
-                                    ) : (
-                                        <Td dataLabel="CVEs by severity">
-                                            {nodeCVECountBySeverity && (
-                                                <SeverityCountLabels
-                                                    criticalCount={nodeCVECountBySeverity.critical.total}
-                                                    importantCount={nodeCVECountBySeverity.important.total}
-                                                    moderateCount={nodeCVECountBySeverity.moderate.total}
-                                                    lowCount={nodeCVECountBySeverity.low.total}
-                                                    unknownCount={nodeCVECountBySeverity.unknown.total}
-                                                    filteredSeverities={filteredSeverities}
-                                                    entity={'node'}
-                                                />
-                                            )}
-                                        </Td>
-                                    )}
+                                    <Td
+                                        dataLabel={
+                                            isSimplifiedSeverity
+                                                ? 'Top severity'
+                                                : 'CVEs by severity'
+                                        }
+                                    >
+                                        {isSimplifiedSeverity && topCvss !== undefined ? (
+                                            <TopSeverityLabel cvss={topCvss} />
+                                        ) : nodeCVECountBySeverity ? (
+                                            <SeverityCountLabels
+                                                criticalCount={
+                                                    nodeCVECountBySeverity.critical.total
+                                                }
+                                                importantCount={
+                                                    nodeCVECountBySeverity.important.total
+                                                }
+                                                moderateCount={
+                                                    nodeCVECountBySeverity.moderate.total
+                                                }
+                                                lowCount={nodeCVECountBySeverity.low.total}
+                                                unknownCount={nodeCVECountBySeverity.unknown.total}
+                                                filteredSeverities={filteredSeverities}
+                                                entity={'node'}
+                                            />
+                                        ) : null}
+                                    </Td>
                                     <Td dataLabel="Cluster" modifier="nowrap">
                                         <Truncate position="middle" content={cluster.name} />
                                     </Td>

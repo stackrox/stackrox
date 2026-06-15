@@ -320,27 +320,23 @@ function ImageOverviewTable({
                     <Th className={getVisibilityClass('image')} sort={getSortParams('Image')}>
                         Image
                     </Th>
-                    {isSimplifiedSeverity ? (
-                        <TooltipTh
-                            className={getVisibilityClass('cvesBySeverity')}
-                            sort={getSortParams('CVSS')}
-                            tooltip="Highest CVE severity across this image"
-                        >
-                            Top CVE severity
-                        </TooltipTh>
-                    ) : (
-                        <TooltipTh
-                            className={getVisibilityClass('cvesBySeverity')}
-                            tooltip="CVEs by severity across this image"
-                            sort={getSortParams(
-                                'CVEs By Severity',
-                                getSeveritySortOptions(filteredSeverities)
-                            )}
-                        >
-                            CVEs by severity
-                            {isFiltered && <DynamicColumnIcon />}
-                        </TooltipTh>
-                    )}
+                    <TooltipTh
+                        className={getVisibilityClass('cvesBySeverity')}
+                        tooltip={
+                            isSimplifiedSeverity
+                                ? 'Highest CVE severity across this image'
+                                : 'CVEs by severity across this image'
+                        }
+                        sort={getSortParams(
+                            isSimplifiedSeverity ? 'CVSS' : 'CVEs By Severity',
+                            isSimplifiedSeverity
+                                ? undefined
+                                : getSeveritySortOptions(filteredSeverities)
+                        )}
+                    >
+                        CVEs by severity
+                        {isFiltered && <DynamicColumnIcon />}
+                    </TooltipTh>
                     <Th
                         className={getVisibilityClass('operatingSystem')}
                         sort={getSortParams('Image OS')}
@@ -494,11 +490,7 @@ function ImageOverviewTable({
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('cvesBySeverity')}
-                                        dataLabel={
-                                            isSimplifiedSeverity
-                                                ? 'Top CVE severity'
-                                                : 'CVEs by severity'
-                                        }
+                                        dataLabel="CVEs by severity"
                                     >
                                         {isSimplifiedSeverity && topCvss !== undefined ? (
                                             <TopSeverityLabel cvss={topCvss} />

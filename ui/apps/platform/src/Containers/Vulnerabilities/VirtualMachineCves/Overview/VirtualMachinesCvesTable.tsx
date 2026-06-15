@@ -149,7 +149,7 @@ function VirtualMachinesCvesTable() {
                                 Virtual machine
                             </Th>
                             <Th className={getVisibilityClass('cvesBySeverity')}>
-                                {isSimplifiedSeverity ? 'Top CVSS score' : 'CVEs by severity'}
+                                CVEs by severity
                             </Th>
                             <Th className={getVisibilityClass('cluster')}>Cluster</Th>
                             <Th className={getVisibilityClass('namespace')}>Namespace</Th>
@@ -193,10 +193,14 @@ function VirtualMachinesCvesTable() {
                                             </Td>
                                             <Td
                                                 className={getVisibilityClass('cvesBySeverity')}
-                                                dataLabel={isSimplifiedSeverity ? 'Top CVSS score' : 'CVEs by severity'}
+                                                dataLabel="CVEs by severity"
                                             >
                                                 {isSimplifiedSeverity ? (
-                                                    <TopSeverityLabel cvss={getVirtualMachineTopCvss(virtualMachine)} />
+                                                    <TopSeverityLabel
+                                                        cvss={getVirtualMachineTopCvss(
+                                                            virtualMachine
+                                                        )}
+                                                    />
                                                 ) : (
                                                     <SeverityCountLabels
                                                         criticalCount={

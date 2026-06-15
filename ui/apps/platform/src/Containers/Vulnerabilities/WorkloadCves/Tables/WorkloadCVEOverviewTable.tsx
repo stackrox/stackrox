@@ -283,27 +283,23 @@ function WorkloadCVEOverviewTable({
                         selectedCves={selectedCves}
                     />
                     <Th sort={getSortParams('CVE')}>CVE</Th>
-                    {isSimplifiedSeverity ? (
-                        <TooltipTh
-                            className={getVisibilityClass('imagesBySeverity')}
-                            sort={getSortParams('CVSS', aggregateByCVSS)}
-                            tooltip="Highest severity of this CVE across images"
-                        >
-                            Top severity
-                        </TooltipTh>
-                    ) : (
-                        <TooltipTh
-                            className={getVisibilityClass('imagesBySeverity')}
-                            sort={getSortParams(
-                                'Images By Severity',
-                                getSeveritySortOptions(filteredSeverities)
-                            )}
-                            tooltip="Severity of this CVE across images"
-                        >
-                            Images by severity
-                            {isFiltered && <DynamicColumnIcon />}
-                        </TooltipTh>
-                    )}
+                    <TooltipTh
+                        className={getVisibilityClass('imagesBySeverity')}
+                        sort={getSortParams(
+                            isSimplifiedSeverity ? 'CVSS' : 'Images By Severity',
+                            isSimplifiedSeverity
+                                ? aggregateByCVSS
+                                : getSeveritySortOptions(filteredSeverities)
+                        )}
+                        tooltip={
+                            isSimplifiedSeverity
+                                ? 'Highest severity of this CVE across images'
+                                : 'Severity of this CVE across images'
+                        }
+                    >
+                        Images by severity
+                        {isFiltered && <DynamicColumnIcon />}
+                    </TooltipTh>
                     <TooltipTh
                         className={getVisibilityClass('topCvss')}
                         sort={getSortParams('CVSS', aggregateByCVSS)}
@@ -381,15 +377,12 @@ function WorkloadCVEOverviewTable({
                             rowIndex
                         ) => {
                             const isExpanded = expandedRowSet.has(cve);
-                            const criticalCount =
-                                affectedImageCountBySeverity?.critical.total ?? 0;
+                            const criticalCount = affectedImageCountBySeverity?.critical.total ?? 0;
                             const importantCount =
                                 affectedImageCountBySeverity?.important.total ?? 0;
-                            const moderateCount =
-                                affectedImageCountBySeverity?.moderate.total ?? 0;
+                            const moderateCount = affectedImageCountBySeverity?.moderate.total ?? 0;
                             const lowCount = affectedImageCountBySeverity?.low.total ?? 0;
-                            const unknownCount =
-                                affectedImageCountBySeverity?.unknown.total ?? 0;
+                            const unknownCount = affectedImageCountBySeverity?.unknown.total ?? 0;
 
                             const prioritizedDistros = sortCveDistroList(distroTuples);
                             const scoreVersions = getScoreVersionsForTopCVSS(topCVSS, distroTuples);
@@ -469,11 +462,7 @@ function WorkloadCVEOverviewTable({
                                             </Link>
                                         </Td>
                                         <Td
-                                            dataLabel={
-                                                isSimplifiedSeverity
-                                                    ? 'Top severity'
-                                                    : 'Images by severity'
-                                            }
+                                            dataLabel="Images by severity"
                                             className={getVisibilityClass('imagesBySeverity')}
                                         >
                                             {isSimplifiedSeverity && topSeverity ? (

@@ -196,25 +196,35 @@ function CVEsTable({
                                     <Td dataLabel="CVE" modifier="nowrap">
                                         <Link to={getNodeEntityPagePath('CVE', cve)}>{cve}</Link>
                                     </Td>
-                                    {isSimplifiedSeverity ? (
-                                        <Td dataLabel="Top severity">
-                                            {topSeverity && <TopSeverityLabel severity={topSeverity} />}
-                                        </Td>
-                                    ) : (
-                                        <Td dataLabel="Nodes by severity">
-                                            {affectedNodeCountBySeverity && (
-                                                <SeverityCountLabels
-                                                    criticalCount={affectedNodeCountBySeverity.critical.total}
-                                                    importantCount={affectedNodeCountBySeverity.important.total}
-                                                    moderateCount={affectedNodeCountBySeverity.moderate.total}
-                                                    lowCount={affectedNodeCountBySeverity.low.total}
-                                                    unknownCount={affectedNodeCountBySeverity.unknown.total}
-                                                    filteredSeverities={filteredSeverities}
-                                                    entity={'node'}
-                                                />
-                                            )}
-                                        </Td>
-                                    )}
+                                    <Td
+                                        dataLabel={
+                                            isSimplifiedSeverity
+                                                ? 'Top severity'
+                                                : 'Nodes by severity'
+                                        }
+                                    >
+                                        {isSimplifiedSeverity && topSeverity ? (
+                                            <TopSeverityLabel severity={topSeverity} />
+                                        ) : affectedNodeCountBySeverity ? (
+                                            <SeverityCountLabels
+                                                criticalCount={
+                                                    affectedNodeCountBySeverity.critical.total
+                                                }
+                                                importantCount={
+                                                    affectedNodeCountBySeverity.important.total
+                                                }
+                                                moderateCount={
+                                                    affectedNodeCountBySeverity.moderate.total
+                                                }
+                                                lowCount={affectedNodeCountBySeverity.low.total}
+                                                unknownCount={
+                                                    affectedNodeCountBySeverity.unknown.total
+                                                }
+                                                filteredSeverities={filteredSeverities}
+                                                entity={'node'}
+                                            />
+                                        ) : null}
+                                    </Td>
                                     <Td dataLabel="Top CVSS">
                                         <CvssFormatted
                                             cvss={topCVSS}

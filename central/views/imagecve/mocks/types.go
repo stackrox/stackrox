@@ -130,20 +130,6 @@ func (mr *MockCveCoreMockRecorder) GetPublishDate() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublishDate", reflect.TypeOf((*MockCveCore)(nil).GetPublishDate))
 }
 
-// GetTopSeverity mocks base method.
-func (m *MockCveCore) GetTopSeverity() storage.VulnerabilitySeverity {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTopSeverity")
-	ret0, _ := ret[0].(storage.VulnerabilitySeverity)
-	return ret0
-}
-
-// GetTopSeverity indicates an expected call of GetTopSeverity.
-func (mr *MockCveCoreMockRecorder) GetTopSeverity() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopSeverity", reflect.TypeOf((*MockCveCore)(nil).GetTopSeverity))
-}
-
 // GetTopCVSS mocks base method.
 func (m *MockCveCore) GetTopCVSS() float32 {
 	m.ctrl.T.Helper()
@@ -170,6 +156,20 @@ func (m *MockCveCore) GetTopNVDCVSS() float32 {
 func (mr *MockCveCoreMockRecorder) GetTopNVDCVSS() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopNVDCVSS", reflect.TypeOf((*MockCveCore)(nil).GetTopNVDCVSS))
+}
+
+// GetTopSeverity mocks base method.
+func (m *MockCveCore) GetTopSeverity() storage.VulnerabilitySeverity {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTopSeverity")
+	ret0, _ := ret[0].(storage.VulnerabilitySeverity)
+	return ret0
+}
+
+// GetTopSeverity indicates an expected call of GetTopSeverity.
+func (mr *MockCveCoreMockRecorder) GetTopSeverity() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopSeverity", reflect.TypeOf((*MockCveCore)(nil).GetTopSeverity))
 }
 
 // MockCveView is a mock of CveView interface.

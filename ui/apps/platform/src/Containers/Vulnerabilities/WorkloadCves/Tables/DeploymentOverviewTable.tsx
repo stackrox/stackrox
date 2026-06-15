@@ -149,27 +149,23 @@ function DeploymentOverviewTable({
                     >
                         Deployment
                     </Th>
-                    {isSimplifiedSeverity ? (
-                        <TooltipTh
-                            className={getVisibilityClass('cvesBySeverity')}
-                            sort={getSortParams('CVSS')}
-                            tooltip="Highest CVE severity across this deployment"
-                        >
-                            Top CVE severity
-                        </TooltipTh>
-                    ) : (
-                        <TooltipTh
-                            className={getVisibilityClass('cvesBySeverity')}
-                            tooltip="CVEs by severity across this deployment"
-                            sort={getSortParams(
-                                'CVEs By Severity',
-                                getSeveritySortOptions(filteredSeverities)
-                            )}
-                        >
-                            CVEs by severity
-                            {isFiltered && <DynamicColumnIcon />}
-                        </TooltipTh>
-                    )}
+                    <TooltipTh
+                        className={getVisibilityClass('cvesBySeverity')}
+                        tooltip={
+                            isSimplifiedSeverity
+                                ? 'Highest CVE severity across this deployment'
+                                : 'CVEs by severity across this deployment'
+                        }
+                        sort={getSortParams(
+                            isSimplifiedSeverity ? 'CVSS' : 'CVEs By Severity',
+                            isSimplifiedSeverity
+                                ? undefined
+                                : getSeveritySortOptions(filteredSeverities)
+                        )}
+                    >
+                        CVEs by severity
+                        {isFiltered && <DynamicColumnIcon />}
+                    </TooltipTh>
                     <Th className={getVisibilityClass('cluster')} sort={getSortParams('Cluster')}>
                         Cluster
                     </Th>
@@ -231,11 +227,7 @@ function DeploymentOverviewTable({
                                         </Link>
                                     </Td>
                                     <Td
-                                        dataLabel={
-                                            isSimplifiedSeverity
-                                                ? 'Top CVE severity'
-                                                : 'CVEs by severity'
-                                        }
+                                        dataLabel="CVEs by severity"
                                         className={getVisibilityClass('cvesBySeverity')}
                                     >
                                         {isSimplifiedSeverity && topCvss !== undefined ? (

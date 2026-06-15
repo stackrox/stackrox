@@ -2,8 +2,8 @@ import { Label } from '@patternfly/react-core';
 
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 
-import type { VulnerabilitySeverityLabel } from '../types';
 import { isVulnerabilitySeverityLabel } from '../types';
+import type { VulnerabilitySeverityLabel } from '../types';
 import { severityLabelToSeverity } from '../utils/searchUtils';
 
 export function severityLabelFromCvss(cvss: number): VulnerabilitySeverityLabel {

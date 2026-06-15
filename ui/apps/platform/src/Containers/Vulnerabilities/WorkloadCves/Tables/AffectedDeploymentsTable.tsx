@@ -164,7 +164,7 @@ function AffectedDeploymentsTable({
                         Deployment
                     </Th>
                     <Th className={getVisibilityClass('imagesBySeverity')}>
-                        {isSimplifiedSeverity ? 'Top severity' : 'Images by severity'}
+                        Images by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th className={getVisibilityClass('cluster')} sort={getSortParams('Cluster')}>
@@ -244,11 +244,9 @@ function AffectedDeploymentsTable({
                                     <Td
                                         className={getVisibilityClass('imagesBySeverity')}
                                         modifier="nowrap"
-                                        dataLabel={
-                                            isSimplifiedSeverity ? 'Top severity' : 'Images by severity'
-                                        }
+                                        dataLabel="Images by severity"
                                     >
-                                        {isSimplifiedSeverity ? (
+                                        {isSimplifiedSeverity && topCvss !== undefined ? (
                                             <TopSeverityLabel cvss={topCvss} />
                                         ) : (
                                             <SeverityCountLabels
