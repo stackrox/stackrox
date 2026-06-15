@@ -36,14 +36,8 @@ func Key(q Query) string {
 func Parse(text string, queries []Query) map[string]Value {
 	out := make(map[string]Value, len(queries))
 	for _, q := range queries {
-		k := Key(q)
-		if q.LabelFilter == "" {
-			v, ok := parseCounter(text, q.Name)
-			out[k] = Value{Val: v, Found: ok}
-		} else {
-			v, ok := parseCounterWithLabel(text, q.Name, q.LabelFilter)
-			out[k] = Value{Val: v, Found: ok}
-		}
+		v, ok := findCounter(text, q.Name, q.LabelFilter)
+		out[Key(q)] = Value{Val: v, Found: ok}
 	}
 	return out
 }
@@ -120,33 +114,7 @@ func PollUntilStable(ctx context.Context, cfg StableConfig, scrapeFn ScrapeFunc)
 	return prev
 }
 
-func parseCounter(body, metricPrefix string) (float64, bool) {
-	for _, line := range strings.Split(body, "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		if !strings.HasPrefix(line, metricPrefix) {
-			continue
-		}
-		rest := line[len(metricPrefix):]
-		if len(rest) > 0 && rest[0] != '{' && rest[0] != ' ' {
-			continue
-		}
-		fields := strings.Fields(line)
-		if len(fields) < 2 {
-			continue
-		}
-		val, err := strconv.ParseFloat(fields[len(fields)-1], 64)
-		if err != nil {
-			continue
-		}
-		return val, true
-	}
-	return 0, false
-}
-
-func parseCounterWithLabel(body, metricName, labelSubstring string) (float64, bool) {
+func findCounter(body, metricName, labelSubstring string) (float64, bool) {
 	for _, line := range strings.Split(body, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
@@ -155,7 +123,11 @@ func parseCounterWithLabel(body, metricName, labelSubstring string) (float64, bo
 		if !strings.HasPrefix(line, metricName) {
 			continue
 		}
-		if !strings.Contains(line, labelSubstring) {
+		rest := line[len(metricName):]
+		if len(rest) > 0 && rest[0] != '{' && rest[0] != ' ' {
+			continue
+		}
+		if labelSubstring != "" && !strings.Contains(line, labelSubstring) {
 			continue
 		}
 		fields := strings.Fields(line)
