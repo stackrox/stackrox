@@ -2,15 +2,19 @@ package datastore
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	pgStore "github.com/stackrox/rox/central/signatureintegration/store/postgres"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/filedownloader"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -23,8 +27,16 @@ var (
 	once     sync.Once
 	instance DataStore
 
+	bundleUpdater Stoppable
 	bundleWatcher Stoppable
 )
+
+// KeyBundleUpdater returns the key bundle updater for shutdown registration.
+// Returns nil if the updater was not started (e.g. no URL configured).
+// Must only be called after Singleton().
+func KeyBundleUpdater() Stoppable {
+	return bundleUpdater
+}
 
 // KeyBundleWatcher returns the key bundle watcher for shutdown registration.
 // Must only be called after Singleton().
@@ -51,6 +63,32 @@ func seedRedHatDefaultSignatureIntegration(siStore store.SignatureIntegrationSto
 	utils.Should(errors.Wrap(err, "seeding default Red Hat signature integration"))
 }
 
+func startKeyBundleUpdater() {
+	rawURL := env.RedHatSigningKeyBundleURL.Setting()
+	if rawURL == "" {
+		log.Info("ROX_REDHAT_SIGNING_KEY_BUNDLE_URL not set, key bundle updater will not start")
+		return
+	}
+	bundleURL := urlfmt.FormatURL(rawURL, urlfmt.HTTPS, urlfmt.HonorInputSlash)
+
+	interval := env.RedHatSigningKeyUpdateInterval.DurationSetting()
+
+	u := filedownloader.New(bundleURL, redHatKeyBundlePath, interval,
+		filedownloader.WithOnComplete(func(err error, duration time.Duration) {
+			updaterDownloadDuration.Observe(duration.Seconds())
+			if err != nil {
+				log.Warnf("Failed to download Red Hat signing key bundle from %q: %v", bundleURL, err)
+				updaterDownloadsTotal.WithLabelValues("error").Inc()
+			} else {
+				updaterDownloadsTotal.WithLabelValues("success").Inc()
+				updaterLastSuccessTimestamp.SetToCurrentTime()
+			}
+		}),
+	)
+	u.Start()
+	bundleUpdater = u
+}
+
 // Singleton returns the sole instance of the DataStore service.
 func Singleton() DataStore {
 	once.Do(func() {
@@ -58,6 +96,7 @@ func Singleton() DataStore {
 		seedRedHatDefaultSignatureIntegration(storage) // must run before watcher; bundle file takes precedence on first tick
 		instance = New(storage, policyDataStore.Singleton())
 		startKeyBundleWatcher(storage)
+		startKeyBundleUpdater()
 	})
 	return instance
 }
