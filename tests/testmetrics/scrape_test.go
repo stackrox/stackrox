@@ -14,9 +14,9 @@ import (
 func TestScrapePodViaProxy_Validation(t *testing.T) {
 	ctx := context.Background()
 	cs := fake.NewSimpleClientset()
-	_, err := ScrapePodViaProxy(ctx, cs, PodScrapeOptions{Namespace: "ns"})
+	_, err := ScrapePodViaProxy(ctx, cs, "ns", "", 0, "")
 	require.Error(t, err)
-	_, err = ScrapePodViaProxy(ctx, cs, PodScrapeOptions{PodName: "p"})
+	_, err = ScrapePodViaProxy(ctx, cs, "", "p", 0, "")
 	require.Error(t, err)
 }
 

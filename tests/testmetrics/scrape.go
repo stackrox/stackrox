@@ -31,14 +31,6 @@ type PodSnapshot struct {
 	Err     error
 }
 
-// PodScrapeOptions configures ScrapePodViaProxy (Kubernetes pods/proxy subresource).
-type PodScrapeOptions struct {
-	Namespace   string
-	PodName     string
-	Port        int
-	MetricsPath string
-}
-
 // PodCollectOptions scrapes metrics from every pod matching LabelSelector.
 type PodCollectOptions struct {
 	Namespace     string
@@ -61,21 +53,21 @@ type ScrapeTarget struct {
 }
 
 // ScrapePodViaProxy scrapes Prometheus text from a pod via GET .../pods/{name}[:port]/proxy/{path}.
-func ScrapePodViaProxy(ctx context.Context, clientset kubernetes.Interface, opts PodScrapeOptions) ([]byte, error) {
-	if opts.Namespace == "" || opts.PodName == "" {
+func ScrapePodViaProxy(ctx context.Context, clientset kubernetes.Interface, namespace, podName string, port int, metricsPath string) ([]byte, error) {
+	if namespace == "" || podName == "" {
 		return nil, errors.New("testmetrics: ScrapePodViaProxy: namespace and pod name are required")
 	}
-	path := strings.Trim(opts.MetricsPath, "/")
+	path := strings.Trim(metricsPath, "/")
 	if path == "" {
 		path = "metrics"
 	}
 	segments := strings.Split(path, "/")
-	podSubresourceName := opts.PodName
-	if opts.Port > 0 {
-		podSubresourceName = fmt.Sprintf("%s:%d", opts.PodName, opts.Port)
+	podSubresourceName := podName
+	if port > 0 {
+		podSubresourceName = fmt.Sprintf("%s:%d", podName, port)
 	}
 	req := clientset.CoreV1().RESTClient().Get().
-		Namespace(opts.Namespace).
+		Namespace(namespace).
 		Resource("pods").
 		Name(podSubresourceName).
 		SubResource("proxy")
@@ -188,12 +180,7 @@ func scrapePod(ctx context.Context, clientset kubernetes.Interface, opts PodColl
 		}
 		return ScrapePodViaPortForward(ctx, clientset, opts.RestConfig, opts.Namespace, podName, opts.Port, path)
 	case TransportProxy:
-		return ScrapePodViaProxy(ctx, clientset, PodScrapeOptions{
-			Namespace:   opts.Namespace,
-			PodName:     podName,
-			Port:        opts.Port,
-			MetricsPath: path,
-		})
+		return ScrapePodViaProxy(ctx, clientset, opts.Namespace, podName, opts.Port, path)
 	default:
 		return nil, fmt.Errorf("testmetrics: unsupported metrics transport %q", transport)
 	}
