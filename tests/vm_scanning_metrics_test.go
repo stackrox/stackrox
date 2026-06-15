@@ -78,10 +78,6 @@ func (s *VMScanningSuite) collectStableMetrics(ctx context.Context, vmNodeName s
 
 	compTarget := s.complianceTarget(vmNodeName)
 	senTarget := s.sensorTarget()
-	// ponytail: empty transport defaults to proxy in scrapePod.
-	// Switch back to testmetrics.TransportPortForward (with s.restCfg) if proxy proves unreliable.
-	transport := testmetrics.TransportProxy
-	restCfg := s.restCfg
 
 	stableCfg := testmetrics.StableConfig{
 		PollInterval: metricsPollWait,
@@ -92,13 +88,13 @@ func (s *VMScanningSuite) collectStableMetrics(ctx context.Context, vmNodeName s
 	compCtx, compCancel := context.WithTimeout(ctx, metricsTimeout)
 	defer compCancel()
 	compliance = testmetrics.PollUntilStable(compCtx, stableCfg, func(ctx context.Context) (map[string]testmetrics.Value, error) {
-		return testmetrics.ScrapeComponent(ctx, s.k8sClient, compTarget, transport, restCfg, compQ)
+		return testmetrics.ScrapeComponent(ctx, s.k8sClient, compTarget, compQ)
 	})
 
 	senCtx, senCancel := context.WithTimeout(ctx, metricsTimeout)
 	defer senCancel()
 	sensor = testmetrics.PollUntilStable(senCtx, stableCfg, func(ctx context.Context) (map[string]testmetrics.Value, error) {
-		return testmetrics.ScrapeComponent(ctx, s.k8sClient, senTarget, transport, restCfg, senQ)
+		return testmetrics.ScrapeComponent(ctx, s.k8sClient, senTarget, senQ)
 	})
 
 	return compliance, sensor
@@ -124,18 +120,14 @@ func (s *VMScanningSuite) assertPipelineMetrics(ctx context.Context, t require.T
 	sq := sensorQueries()
 	comp, sen := s.collectStableMetrics(ctx, vmNodeName, cq, sq)
 
-	get := func(src map[string]testmetrics.Value, q testmetrics.Query) testmetrics.Value {
-		return src[testmetrics.Key(q)]
-	}
-
 	requirePositive := func(src map[string]testmetrics.Value, q testmetrics.Query, label string) {
-		v := get(src, q)
+		v := src[testmetrics.Key(q)]
 		require.Truef(t, v.Found, "%s should be present in scraped metrics, but was not found", label)
 		require.Greaterf(t, v.Val, float64(0), "%s should be > 0, but got %.0f", label, v.Val)
 	}
 
 	requireZero := func(src map[string]testmetrics.Value, q testmetrics.Query, label string) {
-		v := get(src, q)
+		v := src[testmetrics.Key(q)]
 		if !v.Found {
 			return
 		}
