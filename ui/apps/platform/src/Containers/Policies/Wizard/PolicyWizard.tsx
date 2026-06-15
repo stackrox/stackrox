@@ -237,8 +237,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                     <PolicyScopeForm />
                                 </WizardStep>,
                                 ...(isFeatureFlagEnabled('ROX_EVALUATION_FILTER') &&
-                                (isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT') ||
-                                    isFeatureFlagEnabled('ROX_POLICY_FILTERS_UI'))
+                                isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT')
                                     ? [
                                           <WizardStep
                                               name="Filters"
