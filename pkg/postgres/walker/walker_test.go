@@ -167,3 +167,57 @@ func TestExplicitChildTableStrategy(t *testing.T) {
 	require.Len(t, schema.Children, 1)
 	assert.Contains(t, schema.Children[0].Table, "as_child")
 }
+
+func TestFieldSetter(t *testing.T) {
+	cases := map[string]struct {
+		getter   string
+		variable bool
+		expected string
+	}{
+		"top-level field": {
+			getter:   "GetId()",
+			expected: "obj.Id",
+		},
+		"nested field": {
+			getter:   "GetSignal().GetName()",
+			expected: "obj.Signal.Name",
+		},
+		"variable field": {
+			getter:   "parentId",
+			variable: true,
+			expected: "parentId",
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			f := Field{ObjectGetter: ObjectGetter{value: tc.getter, variable: tc.variable}}
+			assert.Equal(t, tc.expected, f.Setter("obj"))
+		})
+	}
+}
+
+func TestFieldNeedsSubMessageInit(t *testing.T) {
+	cases := map[string]struct {
+		getter   string
+		expected string
+	}{
+		"top-level field needs no init": {
+			getter:   "GetId()",
+			expected: "",
+		},
+		"nested field needs init": {
+			getter:   "GetSignal().GetName()",
+			expected: "obj.Signal",
+		},
+		"deeply nested": {
+			getter:   "GetA().GetB().GetC()",
+			expected: "obj.A.B",
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			f := Field{ObjectGetter: ObjectGetter{value: tc.getter}}
+			assert.Equal(t, tc.expected, f.NeedsSubMessageInit("obj"))
+		})
+	}
+}

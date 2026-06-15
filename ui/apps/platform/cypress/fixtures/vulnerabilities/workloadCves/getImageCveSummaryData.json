@@ -1,0 +1,40 @@
+{
+    "data": {
+        "totalImageCount": 1,
+        "imageCount": 1,
+        "deploymentCount": 1,
+        "imageCVE": {
+            "cve": "MOCK-2023-123456",
+            "affectedImageCount": 1,
+            "affectedImageCountBySeverity": {
+                "unknown": {
+                    "total": 0,
+                    "fixable": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "low": {
+                    "total": 0,
+                    "fixable": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "moderate": {
+                    "total": 0,
+                    "fixable": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "important": {
+                    "total": 1,
+                    "fixable": 1,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "critical": {
+                    "total": 0,
+                    "fixable": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "__typename": "ResourceCountByCVESeverity"
+            },
+            "__typename": "ImageCVE"
+        }
+    }
+}

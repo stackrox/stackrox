@@ -1,0 +1,25 @@
+{
+    "data": {
+        "deployment": {
+            "id": "mock-deployment-001",
+            "imageCount": 1,
+            "images": [
+                {
+                    "id": "sha256:abcxyz",
+                    "digest": "sha256:abcxyz",
+                    "name": {
+                        "registry": "docker.io",
+                        "remote": "cypress-test/image",
+                        "tag": "v0.0.1",
+                        "__typename": "ImageName"
+                    },
+                    "deploymentCount": 1,
+                    "operatingSystem": "debian:11",
+                    "scanTime": "2024-03-01T17:45:32.757812569Z",
+                    "__typename": "Image"
+                }
+            ],
+            "__typename": "Deployment"
+        }
+    }
+}

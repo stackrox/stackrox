@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -185,7 +184,7 @@ func getUniqueEndpoints(endpoints ...string) ([]string, error) {
 		if port == "" {
 			port = "443"
 		}
-		hostnameAndPort := fmt.Sprintf("%s:%s", u.Hostname(), port)
+		hostnameAndPort := net.JoinHostPort(u.Hostname(), port)
 		uniqueHostnamesAndPorts.Add(hostnameAndPort)
 	}
 	return uniqueHostnamesAndPorts.AsSlice(), nil

@@ -268,13 +268,13 @@ function ImageOverviewTable({
                     </Th>
                     <Th
                         className={getVisibilityClass('age')}
-                        sort={getSortParams('Image created time')}
+                        sort={getSortParams('Image Created Time')}
                     >
                         Age
                     </Th>
                     <Th
                         className={getVisibilityClass('scanTime')}
-                        sort={getSortParams('Image scan time')}
+                        sort={getSortParams('Image Scan Time')}
                     >
                         Scan time
                     </Th>

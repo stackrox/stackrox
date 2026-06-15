@@ -54,7 +54,8 @@ func (kb *keyBundle) toDefaultSignatureIntegration() *storage.SignatureIntegrati
 	}
 }
 
-// redHatKeyBundlePath is the well-known path where the key bundle file is read from.
+// redHatKeyBundlePath is the well-known path where the key bundle file is stored.
+// The file downloader writes the bundle here; the file watcher reads it.
 var redHatKeyBundlePath = filepath.Join(os.TempDir(), "redhat-signing-keys", "bundle.json")
 
 func keyBundleHandler(siStore store.SignatureIntegrationStore) filewatcher.Handler {
