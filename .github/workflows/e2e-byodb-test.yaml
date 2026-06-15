@@ -58,9 +58,10 @@ jobs:
       KUBERNETES_PROVIDER: gke
       POSTGRES_VERSION: "17"
       LONGTERM_LICENSE: "unused"
+      BYODB_TEST: "true"
       ROX_RISK_REPROCESSING_INTERVAL: "15s"
       ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL: "30s"
-    timeout-minutes: 120
+    timeout-minutes: 150
     steps:
 
     - name: Checkout repo
@@ -137,6 +138,8 @@ jobs:
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        AWS_S3_BACKUP_TEST_BUCKET_NAME: ${{ secrets.AWS_S3_BACKUP_TEST_BUCKET_NAME }}
+        AWS_S3_BACKUP_TEST_BUCKET_REGION: ${{ secrets.AWS_S3_BACKUP_TEST_BUCKET_REGION || 'us-east-2' }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_ECR_REGISTRY_REGION: ${{ secrets.AWS_ECR_REGISTRY_REGION }}
@@ -150,15 +153,18 @@ jobs:
         GOOGLE_CREDENTIALS_GCR_SCANNER_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_SCANNER_V2 }}
         GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2 }}
         GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2: ${{ secrets.GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2 }}
+        GHCR_REGISTRY_USER: ${{ secrets.GHCR_REGISTRY_USER }}
+        GHCR_REGISTRY_PASSWORD: ${{ secrets.GHCR_REGISTRY_PASSWORD }}
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
         SLACK_MAIN_WEBHOOK: ${{ secrets.SLACK_MAIN_WEBHOOK }}
+        SLACK_ALT_WEBHOOK: ${{ secrets.SLACK_ALT_WEBHOOK }}
         OCM_OFFLINE_TOKEN: ${{ secrets.OCM_OFFLINE_TOKEN }}
         CLOUD_SOURCES_TEST_OCM_CLIENT_ID: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_ID }}
         CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET }}
         BUILD_ID: ${{ github.run_id }}
-      timeout-minutes: 90
+      timeout-minutes: 110
       run: tests/byodb/run.sh /tmp/byodb-test-logs
 
     - name: Persist env vars for post-test
