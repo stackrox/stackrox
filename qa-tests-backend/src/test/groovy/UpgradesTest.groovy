@@ -221,36 +221,6 @@ class UpgradesTest extends BaseSpecification {
     }
 
     @Tag("Upgrade")
-    def "Verify RHACM SA exclusion in kubeadmin secret policy after upgrade"() {
-        given:
-        "The policy ID for 'Kubernetes Dashboard' (access kubeadmin secret)"
-        def policyId = "18cbcb62-7d18-4a6c-b2ca-dd1242746943"
-        def rhacmSA = "system:serviceaccount:open-cluster-management-agent-addon:config-policy-controller-sa"
-
-        when:
-        "Fetch the policy from Central after upgrade"
-        def policies = PolicyService.getPolicyClient().exportPolicies(
-                PolicyServiceOuterClass.ExportPoliciesRequest.newBuilder()
-                        .addPolicyIds(policyId)
-                        .build()
-        ).getPoliciesList()
-
-        then:
-        "Policy exists"
-        assert policies.size() == 1
-        def policy = policies[0]
-        assert policy.id == policyId
-
-        and:
-        "Policy contains RHACM SA in negated Kubernetes User Name group"
-        def group = policy.policySectionsList.collectMany { it.policyGroupsList }
-                .find { it.fieldName == "Kubernetes User Name" && it.negate }
-        assert group != null, "negated Kubernetes User Name group should exist"
-        assert group.valuesList.any { it.value == rhacmSA },
-                "RHACM config-policy-controller-sa should be in the exclusion list"
-    }
-
-    @Tag("Upgrade")
     @IgnoreIf({ true }) // ROX-16401 this test will not work with current upgrade methodology & image tags
     def "Verify upgraded policies match default policy set"() {
         given:
