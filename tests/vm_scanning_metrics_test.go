@@ -65,14 +65,10 @@ func sensorQueries() []testmetrics.Query {
 // collectStableMetrics scrapes compliance and sensor metrics until values stabilize.
 // It returns two maps keyed by testmetrics.Key.
 //
-// We use TransportPortForward instead of TransportProxy because the StackRox Helm
-// chart deploys a "collector-no-ingress" NetworkPolicy that denies ALL ingress to
-// collector pods when exposeMonitoring is false (the operator default). The test
-// creates a permissive "collector-monitoring" NetworkPolicy, but port-forward
-// provides an additional safety net: it tunnels through the kubelet CRI directly
-// into the container's network namespace, bypassing NetworkPolicies entirely.
-// The same applies to sensor, whose NetworkPolicy restricts ingress to specific
-// StackRox components and does not include the metrics port (9090) by default.
+// Scraping uses the Kubernetes pods/proxy subresource which routes through the
+// API server directly to the pod, bypassing Services and NetworkPolicies.
+// The test still creates permissive NetworkPolicies and a compliance-metrics
+// Service in ensureComplianceMetricsExposed as defence-in-depth.
 func (s *VMScanningSuite) collectStableMetrics(ctx context.Context, vmNodeName string, compQ, senQ []testmetrics.Query) (compliance, sensor map[string]testmetrics.Value) {
 	const (
 		metricsTimeout  = 2 * time.Minute
@@ -82,7 +78,10 @@ func (s *VMScanningSuite) collectStableMetrics(ctx context.Context, vmNodeName s
 
 	compTarget := s.complianceTarget(vmNodeName)
 	senTarget := s.sensorTarget()
-	transport := testmetrics.TransportPortForward
+	// ponytail: empty transport defaults to proxy in scrapePod.
+	// Switch back to testmetrics.TransportPortForward (with s.restCfg) if proxy proves unreliable.
+	transport := testmetrics.TransportProxy
+	restCfg := s.restCfg
 
 	stableCfg := testmetrics.StableConfig{
 		PollInterval: metricsPollWait,
@@ -93,13 +92,13 @@ func (s *VMScanningSuite) collectStableMetrics(ctx context.Context, vmNodeName s
 	compCtx, compCancel := context.WithTimeout(ctx, metricsTimeout)
 	defer compCancel()
 	compliance = testmetrics.PollUntilStable(compCtx, stableCfg, func(ctx context.Context) (map[string]testmetrics.Value, error) {
-		return testmetrics.ScrapeComponent(ctx, s.k8sClient, compTarget, transport, s.restCfg, compQ)
+		return testmetrics.ScrapeComponent(ctx, s.k8sClient, compTarget, transport, restCfg, compQ)
 	})
 
 	senCtx, senCancel := context.WithTimeout(ctx, metricsTimeout)
 	defer senCancel()
 	sensor = testmetrics.PollUntilStable(senCtx, stableCfg, func(ctx context.Context) (map[string]testmetrics.Value, error) {
-		return testmetrics.ScrapeComponent(ctx, s.k8sClient, senTarget, transport, s.restCfg, senQ)
+		return testmetrics.ScrapeComponent(ctx, s.k8sClient, senTarget, transport, restCfg, senQ)
 	})
 
 	return compliance, sensor

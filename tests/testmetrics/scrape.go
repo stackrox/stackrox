@@ -20,7 +20,7 @@ import (
 type Transport string
 
 const (
-	transportProxy       Transport = "proxy"
+	TransportProxy       Transport = "proxy"
 	TransportPortForward Transport = "portforward"
 )
 
@@ -164,7 +164,7 @@ func scrapePodViaPortForward(ctx context.Context, clientset kubernetes.Interface
 func scrapePod(ctx context.Context, clientset kubernetes.Interface, opts podCollectOptions, podName string) ([]byte, error) {
 	transport := opts.transport
 	if transport == "" {
-		transport = transportProxy
+		transport = TransportProxy
 	}
 	switch transport {
 	case TransportPortForward:
@@ -175,7 +175,7 @@ func scrapePod(ctx context.Context, clientset kubernetes.Interface, opts podColl
 			return nil, errors.New("testmetrics: podCollectOptions.port must be set for port-forward transport")
 		}
 		return scrapePodViaPortForward(ctx, clientset, opts.restConfig, opts.namespace, podName, opts.port, opts.metricsPath)
-	case transportProxy:
+	case TransportProxy:
 		return scrapePodViaProxy(ctx, clientset, opts.namespace, podName, opts.port, opts.metricsPath)
 	default:
 		return nil, fmt.Errorf("testmetrics: unsupported metrics transport %q", transport)
