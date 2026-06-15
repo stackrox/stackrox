@@ -359,54 +359,17 @@ slack_test_failure_streaks() {
 
     echo "::group::${subject}"
 
-    local sql
-    # shellcheck disable=SC2016
-    sql='
-SELECT
-  IF(LENGTH(Name) > 50, CONCAT(RPAD(Name, 47), "..."), Name) AS test_name,
-  IF(LENGTH(REPLACE(Classname, "github.com/stackrox/rox/", "")) > 30,
-     CONCAT(RPAD(REPLACE(Classname, "github.com/stackrox/rox/", ""), 27), "..."),
-     REPLACE(Classname, "github.com/stackrox/rox/", "")) AS suite,
-  REGEXP_REPLACE(JobName,
-    r"^(periodic-ci-stackrox-stackrox-master-|branch-ci-stackrox-stackrox-(nightlies|master)-)",
-    "") AS job,
-  COUNT(*) as consecutive_count,
-  DATE_DIFF(DATE(MAX(Timestamp)), DATE(MIN(Timestamp)), DAY) + 1 as duration_days
-FROM (
-  SELECT *,
-    MIN(IF(Status = "passed", rn, NULL)) OVER (PARTITION BY Name, Classname, JobName) as break_at
-  FROM (
-    SELECT Name, Classname, JobName, Status, Timestamp,
-      ROW_NUMBER() OVER (PARTITION BY Name, Classname, JobName ORDER BY Timestamp DESC) as rn
-    FROM `acs-san-stackroxci.ci_metrics.stackrox_tests`
-    WHERE Timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)
-      AND Status IN ("passed", "failed")
-      AND NOT STARTS_WITH(JobName, "rehearse-")
-      AND NOT STARTS_WITH(JobName, "pull-")
-      AND NOT CONTAINS_SUBSTR(JobName, "-release-")
-      AND NOT CONTAINS_SUBSTR(JobName, "-interop-")
-      AND Classname NOT LIKE "CVE-%"
-  )
-)
-WHERE Status = "failed"
-  AND rn < COALESCE(break_at, 999999)
-GROUP BY Name, Classname, JobName
-HAVING COUNT(*) >= @min_streak
-  AND DATE(MAX(Timestamp)) = CURRENT_DATE()
-ORDER BY consecutive_count DESC, duration_days DESC
-LIMIT @limit
-'
-
     local data_file
     data_file="$(mktemp)"
+    local sql_file="$ROOT/scripts/ci/sql/test_failure_streaks.sql"
     echo "Running query for test failure streaks (min_streak=${min_streak}, days=${days})"
     bq --quiet --format=json query \
         --use_legacy_sql=false \
         --parameter="min_streak:INTEGER:${min_streak}" \
         --parameter="days:INTEGER:${days}" \
         --parameter="limit:INTEGER:${limit}" \
-        "$sql" > "${data_file}" || {
-        echo >&2 -e "Cannot run query:\n${sql}\nresponse:\n$(jq < "${data_file}")"
+        < "${sql_file}" > "${data_file}" || {
+        echo >&2 -e "Cannot run query:\n$(cat "${sql_file}")\nresponse:\n$(jq < "${data_file}")"
         exit 1
     }
 
