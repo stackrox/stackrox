@@ -4,13 +4,10 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/require"
 )
 
 func TestConstructDeploymentIncludesInitContainers(t *testing.T) {
-	t.Setenv(features.InitContainerSupport.EnvVar(), "true")
-
 	deployment := &storage.Deployment{
 		Name:      "test-deploy",
 		Namespace: "default",
@@ -74,8 +71,6 @@ func TestConstructDeploymentWithProcessIncludesInitContainers(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Setenv(features.InitContainerSupport.EnvVar(), "true")
-
 			deployment := &storage.Deployment{
 				Id:         "deploy-1",
 				Name:       "test-deploy",

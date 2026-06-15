@@ -220,7 +220,7 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 	return obj, err
 }
 
-// constructDeployment is the internal implementation that also returns the filtered deployment,
+// constructDeployment is the internal implementation that also returns the deployment,
 // allowing callers like ConstructDeploymentWithProcess to use it for index lookups.
 func constructDeployment(deployment *storage.Deployment, images []*storage.Image, applied *NetworkPoliciesApplied) (*pathutil.AugmentedObj, *storage.Deployment, error) {
 	obj := pathutil.NewAugmentedObj(deployment)
