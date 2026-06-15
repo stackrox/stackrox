@@ -204,8 +204,12 @@ function WorkloadCvesOverviewPage() {
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const sort = useURLSort({
-        sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey),
-        defaultSortOption: getDefaultSortOption(activeEntityTabKey, searchFilter),
+        sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey, isSimplifiedSeverity),
+        defaultSortOption: getDefaultSortOption(
+            activeEntityTabKey,
+            searchFilter,
+            isSimplifiedSeverity
+        ),
         onSort: () => pagination.setPage(1),
     });
 

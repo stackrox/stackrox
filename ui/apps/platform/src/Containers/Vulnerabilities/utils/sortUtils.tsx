@@ -35,19 +35,22 @@ export const aggregateByCreatedTime: SortAggregate = {
  * @returns The available sort fields
  */
 export function getWorkloadCveOverviewSortFields(
-    entityTab: WorkloadEntityTab
+    entityTab: WorkloadEntityTab,
+    isSimplifiedSeverity?: boolean
 ): (string | string[])[] {
     switch (entityTab) {
         case 'CVE':
             return [
                 'CVE',
-                [
-                    'Critical Severity Count',
-                    'Important Severity Count',
-                    'Moderate Severity Count',
-                    'Low Severity Count',
-                    'Unknown Severity Count',
-                ],
+                isSimplifiedSeverity
+                    ? 'Severity'
+                    : [
+                          'Critical Severity Count',
+                          'Important Severity Count',
+                          'Moderate Severity Count',
+                          'Low Severity Count',
+                          'Unknown Severity Count',
+                      ],
                 'CVSS',
                 'Image Sha',
                 'CVE Created Time',
@@ -93,7 +96,8 @@ export function getWorkloadCveOverviewSortFields(
  */
 export function getWorkloadCveOverviewDefaultSortOption(
     entityTab: WorkloadEntityTab,
-    searchFilter?: SearchFilter
+    searchFilter?: SearchFilter,
+    isSimplifiedSeverity?: boolean
 ): SortOption | NonEmptyArray<SortOption> {
     // Array.prototype.map does not currently retain the arity of an input tuple, so
     // we need to cast the return value to a NonEmptyArray<SortOption>. This may be fixed
@@ -104,7 +108,9 @@ export function getWorkloadCveOverviewDefaultSortOption(
 
     switch (entityTab) {
         case 'CVE':
-            return appliedSeveritySortOptions;
+            return isSimplifiedSeverity
+                ? { field: 'Severity', direction: 'desc' }
+                : appliedSeveritySortOptions;
         case 'Deployment':
             return { field: 'Deployment', direction: 'asc' };
         case 'Image':
