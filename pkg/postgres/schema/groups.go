@@ -17,7 +17,7 @@ var (
 		GormModel: (*Groups)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "groups_unique_indicator", CreateSQL: "CREATE UNIQUE INDEX IF NOT EXISTS groups_unique_indicator ON groups USING btree (props_authproviderid, props_key, props_value, rolename)", Background: false},
+			{Name: "groups_unique_indicator", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS groups_unique_indicator ON groups USING btree (props_authproviderid, props_key, props_value, rolename)", Background: false},
 		},
 	}
 

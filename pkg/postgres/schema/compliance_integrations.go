@@ -21,7 +21,7 @@ var (
 		GormModel: (*ComplianceIntegrations)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "compliance_unique_indicator", CreateSQL: "CREATE UNIQUE INDEX IF NOT EXISTS compliance_unique_indicator ON compliance_integrations USING btree (clusterid)", Background: false},
+			{Name: "compliance_unique_indicator", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS compliance_unique_indicator ON compliance_integrations USING btree (clusterid)", Background: false},
 			{Name: "complianceintegrations_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceintegrations_sac_filter ON compliance_integrations USING hash (clusterid)", Background: false},
 		},
 	}

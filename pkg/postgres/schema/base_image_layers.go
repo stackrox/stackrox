@@ -21,7 +21,7 @@ var (
 		GormModel: (*BaseImageLayers)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "base_image_id_layer", CreateSQL: "CREATE UNIQUE INDEX IF NOT EXISTS base_image_id_layer ON base_image_layers USING btree (layerdigest)", Background: false},
+			{Name: "base_image_id_layer", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS base_image_id_layer ON base_image_layers USING btree (layerdigest)", Background: false},
 		},
 	}
 

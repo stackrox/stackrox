@@ -170,7 +170,7 @@ func (s *SchemaTestSuite) registerTestIndexTable() {
 		Indexes: []*pkgPostgres.IndexDefinition{
 			{Name: "idxtestapply_col_a", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_col_a ON idx_test_apply USING btree (col_a)", Background: false},
 			{Name: "idxtestapply_composite", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_composite ON idx_test_apply USING btree (col_a, col_b)", Background: false},
-			{Name: "idxtestapply_unique_col", CreateSQL: "CREATE UNIQUE INDEX IF NOT EXISTS idxtestapply_unique_col ON idx_test_apply USING btree (unique_col)", Background: false},
+			{Name: "idxtestapply_unique_col", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_unique_col ON idx_test_apply USING btree (unique_col)", Background: false},
 			{Name: "idxtestapply_bg_col", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_bg_col ON idx_test_apply USING btree (bg_col)", Background: true},
 		},
 	}

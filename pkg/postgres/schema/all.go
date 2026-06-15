@@ -121,8 +121,7 @@ func ApplySchemaForTable(ctx context.Context, gormDB *gorm.DB, table string) {
 }
 
 // ApplyAllStartupIndexes creates indexes with Background: false before Central serves traffic.
-// Unique indexes use blocking CREATE INDEX. All others use CREATE INDEX CONCURRENTLY.
-// The SQL variant is pre-generated in CreateSQL at codegen time.
+// All indexes use CREATE INDEX CONCURRENTLY. The SQL is pre-generated in CreateSQL at codegen time.
 func ApplyAllStartupIndexes(ctx context.Context, db postgres.DB) error {
 	return applyIndexes(ctx, db, false, env.PostgresDefaultMigrationStatementTimeout.DurationSetting())
 }

@@ -18,7 +18,7 @@ var (
 		GormModel: (*BaseImageTags)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "base_image_tags_repo_tag", CreateSQL: "CREATE UNIQUE INDEX IF NOT EXISTS base_image_tags_repo_tag ON base_image_tags USING btree (baseimagerepositoryid, tag)", Background: false},
+			{Name: "base_image_tags_repo_tag", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS base_image_tags_repo_tag ON base_image_tags USING btree (baseimagerepositoryid, tag)", Background: false},
 		},
 	}
 
