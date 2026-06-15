@@ -4,11 +4,13 @@ package tests
 
 import (
 	"context"
+	"testing"
 	"time"
 
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/tests/testmetrics"
 	"github.com/stackrox/rox/tests/vmhelpers"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -38,71 +40,18 @@ func (s *VMScanningSuite) sensorTarget() testmetrics.ScrapeTarget {
 	}
 }
 
-// complianceQueries returns the Query set for the compliance relay.
-func complianceQueries() []testmetrics.Query {
-	return []testmetrics.Query{
-		{Name: vmhelpers.MetricComplianceRelayConnectionsAcceptedTotal},
-		{Name: vmhelpers.MetricComplianceRelayIndexReportsReceivedTotal},
-		{Name: vmhelpers.MetricComplianceRelayIndexReportsSentTotal, LabelFilter: `failed="false"`},
-		{Name: vmhelpers.MetricComplianceRelayIndexReportsSentTotal, LabelFilter: `failed="true"`},
-		{Name: vmhelpers.MetricComplianceRelayIndexReportsMismatchingVsockTotal},
-		{Name: vmhelpers.MetricComplianceRelayIndexReportAcksReceivedTotal},
-	}
-}
+const (
+	metricsTimeout = 2 * time.Minute
+	metricsPoll    = 10 * time.Second
+)
 
-// sensorQueries returns the Query set for the sensor VM index pipeline.
-func sensorQueries() []testmetrics.Query {
-	return []testmetrics.Query{
-		{Name: vmhelpers.MetricSensorVMIndexReportsReceivedTotal},
-		{Name: vmhelpers.MetricSensorVMIndexReportsSentTotal, LabelFilter: `status="` + vmhelpers.SensorIndexReportStatusSuccess + `"`},
-		{Name: vmhelpers.MetricSensorVMIndexReportsSentTotal, LabelFilter: `status="` + vmhelpers.SensorIndexReportStatusError + `"`},
-		{Name: vmhelpers.MetricSensorVMIndexReportsSentTotal, LabelFilter: `status="` + vmhelpers.SensorIndexReportStatusCentralNotReady + `"`},
-		{Name: vmhelpers.MetricSensorVMIndexReportAcksReceivedTotal, LabelFilter: `action="ACK"`},
-		{Name: vmhelpers.MetricSensorVMIndexReportEnqueueBlockedTotal},
-	}
-}
-
-// collectStableMetrics scrapes compliance and sensor metrics until values stabilize.
-// It returns two maps keyed by testmetrics.Key.
-//
-// Scraping uses the Kubernetes pods/proxy subresource which routes through the
-// API server directly to the pod, bypassing Services and NetworkPolicies.
-// The test still creates permissive NetworkPolicies and a compliance-metrics
-// Service in ensureComplianceMetricsExposed as defence-in-depth.
-func (s *VMScanningSuite) collectStableMetrics(ctx context.Context, vmNodeName string, compQ, senQ []testmetrics.Query) (compliance, sensor map[string]testmetrics.Value) {
-	const (
-		metricsTimeout  = 2 * time.Minute
-		metricsPollWait = 10 * time.Second
-		stableRounds    = 3
-	)
-
-	compTarget := s.complianceTarget(vmNodeName)
-	senTarget := s.sensorTarget()
-
-	stableCfg := testmetrics.StableConfig{
-		PollInterval: metricsPollWait,
-		StableRounds: stableRounds,
-		Logf:         s.logf,
-	}
-
-	compCtx, compCancel := context.WithTimeout(ctx, metricsTimeout)
-	defer compCancel()
-	compliance = testmetrics.PollUntilStable(compCtx, stableCfg, func(ctx context.Context) (map[string]testmetrics.Value, error) {
-		return testmetrics.ScrapeComponent(ctx, s.k8sClient, compTarget, compQ)
-	})
-
-	senCtx, senCancel := context.WithTimeout(ctx, metricsTimeout)
-	defer senCancel()
-	sensor = testmetrics.PollUntilStable(senCtx, stableCfg, func(ctx context.Context) (map[string]testmetrics.Value, error) {
-		return testmetrics.ScrapeComponent(ctx, s.k8sClient, senTarget, senQ)
-	})
-
-	return compliance, sensor
-}
-
-// assertPipelineMetrics collects stable metrics and asserts their values.
+// assertPipelineMetrics scrapes compliance and sensor metrics, retrying until
+// all pipeline assertions pass or the timeout expires.
 // vmNodeName must be non-empty so compliance metrics are scoped to the VM's local collector pod.
 func (s *VMScanningSuite) assertPipelineMetrics(ctx context.Context, t require.TestingT, vmNodeName string) {
+	tt, ok := t.(*testing.T)
+	require.True(t, ok, "assertPipelineMetrics requires *testing.T")
+
 	require.NotEmpty(t, vmNodeName,
 		"VM node name must be known before asserting pipeline metrics; "+
 			"cluster-wide collector scraping is not supported because it conflates metrics from unrelated VMs")
@@ -116,37 +65,56 @@ func (s *VMScanningSuite) assertPipelineMetrics(ctx context.Context, t require.T
 		"collector Service should expose compliance metrics port %d; the deployment may be missing the metrics port definition",
 		compTarget.MetricsPort)
 
-	cq := complianceQueries()
-	sq := sensorQueries()
-	comp, sen := s.collectStableMetrics(ctx, vmNodeName, cq, sq)
+	senTarget := s.sensorTarget()
 
-	requirePositive := func(src map[string]testmetrics.Value, q testmetrics.Query, label string) {
-		v := src[testmetrics.Key(q)]
-		require.Truef(t, v.Found, "%s should be present in scraped metrics, but was not found", label)
-		require.Greaterf(t, v.Val, float64(0), "%s should be > 0, but got %.0f", label, v.Val)
-	}
-
-	requireZero := func(src map[string]testmetrics.Value, q testmetrics.Query, label string) {
-		v := src[testmetrics.Key(q)]
-		if !v.Found {
+	assert.EventuallyWithT(tt, func(ct *assert.CollectT) {
+		comp, err := testmetrics.ScrapeComponent(ctx, s.k8sClient, compTarget)
+		if !assert.NoError(ct, err, "scrape compliance") {
 			return
 		}
-		require.Equalf(t, float64(0), v.Val, "%s should be 0, but got %.0f", label, v.Val)
+		sen, err := testmetrics.ScrapeComponent(ctx, s.k8sClient, senTarget)
+		if !assert.NoError(ct, err, "scrape sensor") {
+			return
+		}
+		assertPipeline(ct, comp, sen)
+	}, metricsTimeout, metricsPoll)
+}
+
+func assertPipeline(t *assert.CollectT, comp, sen testmetrics.Metrics) {
+	positive := func(m testmetrics.Metrics, name string, labels ...string) float64 {
+		val, found := m.GetValue(name, labels...)
+		assert.Truef(t, found, "%s should be present", name)
+		assert.Greaterf(t, val, float64(0), "%s should be > 0", name)
+		return val
 	}
 
-	// Compliance relay assertions.
-	requirePositive(comp, cq[0], "compliance relay connections_accepted")
-	requirePositive(comp, cq[1], "compliance relay index_reports_received")
-	requirePositive(comp, cq[2], "compliance relay index_reports_sent (failed=false)")
-	requireZero(comp, cq[3], "compliance relay index_reports_sent (failed=true)")
-	requireZero(comp, cq[4], "compliance relay vsock CID mismatches")
-	requirePositive(comp, cq[5], "compliance relay acks_received")
+	zero := func(m testmetrics.Metrics, name string, labels ...string) {
+		val, found := m.GetValue(name, labels...)
+		if !found {
+			return
+		}
+		assert.Equalf(t, float64(0), val, "%s should be 0", name)
+	}
 
-	// Sensor assertions.
-	requirePositive(sen, sq[0], "sensor index_reports_received")
-	requirePositive(sen, sq[1], "sensor index_reports_sent (success)")
-	requireZero(sen, sq[2], "sensor index_reports_sent (error)")
-	requireZero(sen, sq[3], "sensor index_reports_sent (central not ready)")
-	requirePositive(sen, sq[4], "sensor index_report_acks_received (ACK)")
-	requireZero(sen, sq[5], "sensor enqueue_blocked")
+	// Compliance relay: full receive → send → ack cycle.
+	compReceived := positive(comp, vmhelpers.MetricComplianceRelayIndexReportsReceivedTotal)
+	compSentOK := positive(comp, vmhelpers.MetricComplianceRelayIndexReportsSentTotal, "failed", "false")
+	positive(comp, vmhelpers.MetricComplianceRelayConnectionsAcceptedTotal)
+	positive(comp, vmhelpers.MetricComplianceRelayIndexReportAcksReceivedTotal)
+	zero(comp, vmhelpers.MetricComplianceRelayIndexReportsSentTotal, "failed", "true")
+	zero(comp, vmhelpers.MetricComplianceRelayIndexReportsMismatchingVsockTotal)
+
+	// Sensor: full receive → send → ack cycle.
+	senReceived := positive(sen, vmhelpers.MetricSensorVMIndexReportsReceivedTotal)
+	senSentOK := positive(sen, vmhelpers.MetricSensorVMIndexReportsSentTotal, "status", vmhelpers.SensorIndexReportStatusSuccess)
+	positive(sen, vmhelpers.MetricSensorVMIndexReportAcksReceivedTotal, "action", "ACK")
+	zero(sen, vmhelpers.MetricSensorVMIndexReportsSentTotal, "status", vmhelpers.SensorIndexReportStatusError)
+	zero(sen, vmhelpers.MetricSensorVMIndexReportsSentTotal, "status", vmhelpers.SensorIndexReportStatusCentralNotReady)
+	zero(sen, vmhelpers.MetricSensorVMIndexReportEnqueueBlockedTotal)
+
+	// Relational invariants: can't send more than received.
+	assert.GreaterOrEqualf(t, compReceived, compSentOK,
+		"compliance: received (%.0f) should be >= sent_ok (%.0f)", compReceived, compSentOK)
+	assert.GreaterOrEqualf(t, senReceived, senSentOK,
+		"sensor: received (%.0f) should be >= sent_ok (%.0f)", senReceived, senSentOK)
 }

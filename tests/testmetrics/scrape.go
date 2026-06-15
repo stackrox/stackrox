@@ -79,15 +79,15 @@ func collectFromPods(ctx context.Context, clientset kubernetes.Interface, target
 	return out, nil
 }
 
-// ScrapeComponent scrapes pods of a single component and parses the requested counters.
+// ScrapeComponent scrapes pods of a single component and parses the collected metrics.
 // Pods that fail to serve metrics are skipped; an error is returned only when no pod yields valid data.
-func ScrapeComponent(ctx context.Context, clientset kubernetes.Interface, target ScrapeTarget, queries []Query) (map[string]Value, error) {
+func ScrapeComponent(ctx context.Context, clientset kubernetes.Interface, target ScrapeTarget) (Metrics, error) {
 	snaps, err := collectFromPods(ctx, clientset, target)
 	if err != nil {
-		return nil, fmt.Errorf("scrape %s: %w", target.ComponentName, err)
+		return Metrics{}, fmt.Errorf("scrape %s: %w", target.ComponentName, err)
 	}
 	if len(snaps) == 0 {
-		return nil, fmt.Errorf("scrape %s: no pods found (selector=%q field=%q)",
+		return Metrics{}, fmt.Errorf("scrape %s: no pods found (selector=%q field=%q)",
 			target.ComponentName, target.LabelSelector, target.FieldSelector)
 	}
 	var b strings.Builder
@@ -102,10 +102,10 @@ func ScrapeComponent(ctx context.Context, clientset kubernetes.Interface, target
 		fmt.Fprintf(&b, "%s\n", s.body)
 	}
 	if okPods == 0 {
-		return nil, fmt.Errorf("scrape %s: all %d pod(s) failed to serve metrics; errors: %s",
+		return Metrics{}, fmt.Errorf("scrape %s: all %d pod(s) failed to serve metrics; errors: %s",
 			target.ComponentName, len(snaps), strings.Join(podErrors, "; "))
 	}
-	return parse(b.String(), queries), nil
+	return Parse(b.String()), nil
 }
 
 // FindServicePort checks whether any Service in the given namespace whose selector
