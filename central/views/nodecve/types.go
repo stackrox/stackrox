@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // CveCore is an interface to get node CVE properties.
@@ -15,6 +16,7 @@ type CveCore interface {
 	GetCVE() string
 	GetCVEIDs() []string
 	GetTopCVSS() float32
+	GetTopSeverity() storage.VulnerabilitySeverity
 	GetNodeCount() int
 	GetNodeCountBySeverity() common.ResourceCountByCVESeverity
 	GetNodeIDs() []string

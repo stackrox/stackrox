@@ -17,6 +17,7 @@ import type { TableUIState } from 'utils/getTableUIState';
 import { ACTION_COLUMN_POPPER_PROPS } from 'constants/tables';
 import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
 import type { ManagedColumns } from 'hooks/useManagedColumns';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
 import type { GenerateSbomImageParams } from 'services/ImageSbomService';
@@ -25,6 +26,7 @@ import GenerateSbomModal, {
 } from '../../components/GenerateSbomModal';
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
+import TopSeverityLabel from '../../components/TopSeverityLabel';
 import type {
     SignatureVerificationResult,
     VulnerabilitySeverityLabel,
@@ -174,6 +176,76 @@ export const imageV2ListQuery = gql`
     }
 `;
 
+export const simplifiedImageListQuery = gql`
+    query getImageListSimplified($query: String, $pagination: Pagination) {
+        images(query: $query, pagination: $pagination) {
+            id
+            digest: id
+            name {
+                registry
+                remote
+                tag
+                fullName
+            }
+            topCvss
+            operatingSystem
+            deploymentCount(query: $query)
+            watchStatus
+            metadata {
+                v1 {
+                    created
+                }
+            }
+            scanTime
+            scanNotes
+            notes
+            signatureVerificationData {
+                results {
+                    status
+                    verifiedImageReferences
+                    verifierId
+                    verifierName
+                }
+            }
+        }
+    }
+`;
+
+export const simplifiedImageV2ListQuery = gql`
+    query getImageListSimplified($query: String, $pagination: Pagination) {
+        images: imageV2s(query: $query, pagination: $pagination) {
+            id
+            digest
+            name {
+                registry
+                remote
+                tag
+                fullName
+            }
+            topCvss
+            operatingSystem
+            deploymentCount(query: $query)
+            watchStatus
+            metadata {
+                v1 {
+                    created
+                }
+            }
+            scanTime
+            scanNotes
+            notes
+            signatureVerificationData {
+                results {
+                    status
+                    verifiedImageReferences
+                    verifierId
+                    verifierName
+                }
+            }
+        }
+    }
+`;
+
 export type Image = {
     id: string; // UUID for linking
     digest?: string; // For ImageV2, the actual SHA digest for display
@@ -183,7 +255,8 @@ export type Image = {
         tag: string;
         fullName: string;
     } | null;
-    imageCVECountBySeverity: {
+    topCvss?: number;
+    imageCVECountBySeverity?: {
         critical: { total: number };
         important: { total: number };
         moderate: { total: number };
@@ -229,6 +302,8 @@ function ImageOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: ImageOverviewTableProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSimplifiedSeverity = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
     const isScannerV4Enabled = useIsScannerV4Enabled();
@@ -245,17 +320,27 @@ function ImageOverviewTable({
                     <Th className={getVisibilityClass('image')} sort={getSortParams('Image')}>
                         Image
                     </Th>
-                    <TooltipTh
-                        className={getVisibilityClass('cvesBySeverity')}
-                        tooltip="CVEs by severity across this image"
-                        sort={getSortParams(
-                            'CVEs By Severity',
-                            getSeveritySortOptions(filteredSeverities)
-                        )}
-                    >
-                        CVEs by severity
-                        {isFiltered && <DynamicColumnIcon />}
-                    </TooltipTh>
+                    {isSimplifiedSeverity ? (
+                        <TooltipTh
+                            className={getVisibilityClass('cvesBySeverity')}
+                            sort={getSortParams('CVSS')}
+                            tooltip="Highest CVE severity across this image"
+                        >
+                            Top CVE severity
+                        </TooltipTh>
+                    ) : (
+                        <TooltipTh
+                            className={getVisibilityClass('cvesBySeverity')}
+                            tooltip="CVEs by severity across this image"
+                            sort={getSortParams(
+                                'CVEs By Severity',
+                                getSeveritySortOptions(filteredSeverities)
+                            )}
+                        >
+                            CVEs by severity
+                            {isFiltered && <DynamicColumnIcon />}
+                        </TooltipTh>
+                    )}
                     <Th
                         className={getVisibilityClass('operatingSystem')}
                         sort={getSortParams('Image OS')}
@@ -294,6 +379,7 @@ function ImageOverviewTable({
                         const {
                             id,
                             name,
+                            topCvss,
                             imageCVECountBySeverity,
                             operatingSystem,
                             deploymentCount,
@@ -304,11 +390,11 @@ function ImageOverviewTable({
                             notes,
                             signatureVerificationData,
                         } = image;
-                        const criticalCount = imageCVECountBySeverity.critical.total;
-                        const importantCount = imageCVECountBySeverity.important.total;
-                        const moderateCount = imageCVECountBySeverity.moderate.total;
-                        const lowCount = imageCVECountBySeverity.low.total;
-                        const unknownCount = imageCVECountBySeverity.unknown.total;
+                        const criticalCount = imageCVECountBySeverity?.critical.total ?? 0;
+                        const importantCount = imageCVECountBySeverity?.important.total ?? 0;
+                        const moderateCount = imageCVECountBySeverity?.moderate.total ?? 0;
+                        const lowCount = imageCVECountBySeverity?.low.total ?? 0;
+                        const unknownCount = imageCVECountBySeverity?.unknown.total ?? 0;
 
                         const isWatchedImage = watchStatus === 'WATCHED';
                         const watchImageMenuText = isWatchedImage ? 'Unwatch image' : 'Watch image';
@@ -408,17 +494,25 @@ function ImageOverviewTable({
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('cvesBySeverity')}
-                                        dataLabel="CVEs by severity"
+                                        dataLabel={
+                                            isSimplifiedSeverity
+                                                ? 'Top CVE severity'
+                                                : 'CVEs by severity'
+                                        }
                                     >
-                                        <SeverityCountLabels
-                                            criticalCount={criticalCount}
-                                            importantCount={importantCount}
-                                            moderateCount={moderateCount}
-                                            lowCount={lowCount}
-                                            unknownCount={unknownCount}
-                                            entity="image"
-                                            filteredSeverities={filteredSeverities}
-                                        />
+                                        {isSimplifiedSeverity && topCvss !== undefined ? (
+                                            <TopSeverityLabel cvss={topCvss} />
+                                        ) : (
+                                            <SeverityCountLabels
+                                                criticalCount={criticalCount}
+                                                importantCount={importantCount}
+                                                moderateCount={moderateCount}
+                                                lowCount={lowCount}
+                                                unknownCount={unknownCount}
+                                                entity="image"
+                                                filteredSeverities={filteredSeverities}
+                                            />
+                                        )}
                                     </Td>
                                     <Td
                                         dataLabel="Operating system"

@@ -21,6 +21,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
 import type { Pagination as PaginationParam } from 'services/types';
 
@@ -59,6 +60,7 @@ import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import type { VulnerabilitySeverityLabel, WorkloadEntityTab } from '../../types';
 import AffectedDeploymentsTable, {
     deploymentsForCveFragment,
+    deploymentsForCveSimplifiedFragment,
     tableId as affectedDeploymentsTableId,
     defaultColumns as affectedDeploymentsDefaultColumns,
 } from '../Tables/AffectedDeploymentsTable';
@@ -142,6 +144,20 @@ export const imageCveAffectedDeploymentsQuery = gql`
     }
 `;
 
+export const imageCveAffectedDeploymentsSimplifiedQuery = gql`
+    ${deploymentsForCveSimplifiedFragment}
+    # by default, query must include the CVE id
+    query getDeploymentsForCVESimplified(
+        $query: String
+        $pagination: Pagination
+        $statusesForExceptionCount: [String!]
+    ) {
+        deployments(query: $query, pagination: $pagination) {
+            ...DeploymentsForCVESimplified
+        }
+    }
+`;
+
 const imageSortFields = ['Image', 'Severity', 'Operating System'];
 const imageDefaultSort = { field: 'Severity', direction: 'desc' } as const;
 
@@ -189,6 +205,8 @@ function ImageCvePage({
 }: ImageCvePageProps) {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSimplifiedSeverity = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
 
     const { urlBuilder, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
 
@@ -266,27 +284,46 @@ function ImageCvePage({
         { deploymentCount: number; deployments: DeploymentForCve[] },
         {
             query: string;
-            unknownImageCountQuery: string;
-            lowImageCountQuery: string;
-            moderateImageCountQuery: string;
-            importantImageCountQuery: string;
-            criticalImageCountQuery: string;
+            unknownImageCountQuery?: string;
+            lowImageCountQuery?: string;
+            moderateImageCountQuery?: string;
+            importantImageCountQuery?: string;
+            criticalImageCountQuery?: string;
             pagination: PaginationParam;
             statusesForExceptionCount: string[];
         }
-    >(imageCveAffectedDeploymentsQuery, {
-        variables: {
-            query: getDeploymentSearchQuery(),
-            unknownImageCountQuery: getDeploymentSearchQuery('UNKNOWN_VULNERABILITY_SEVERITY'),
-            lowImageCountQuery: getDeploymentSearchQuery('LOW_VULNERABILITY_SEVERITY'),
-            moderateImageCountQuery: getDeploymentSearchQuery('MODERATE_VULNERABILITY_SEVERITY'),
-            importantImageCountQuery: getDeploymentSearchQuery('IMPORTANT_VULNERABILITY_SEVERITY'),
-            criticalImageCountQuery: getDeploymentSearchQuery('CRITICAL_VULNERABILITY_SEVERITY'),
-            pagination: getPaginationParams({ page, perPage, sortOption }),
-            statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
-        },
-        skip: entityTab !== 'Deployment',
-    });
+    >(
+        isSimplifiedSeverity
+            ? imageCveAffectedDeploymentsSimplifiedQuery
+            : imageCveAffectedDeploymentsQuery,
+        {
+            variables: isSimplifiedSeverity
+                ? {
+                      query: getDeploymentSearchQuery(),
+                      pagination: getPaginationParams({ page, perPage, sortOption }),
+                      statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
+                  }
+                : {
+                      query: getDeploymentSearchQuery(),
+                      unknownImageCountQuery: getDeploymentSearchQuery(
+                          'UNKNOWN_VULNERABILITY_SEVERITY'
+                      ),
+                      lowImageCountQuery: getDeploymentSearchQuery('LOW_VULNERABILITY_SEVERITY'),
+                      moderateImageCountQuery: getDeploymentSearchQuery(
+                          'MODERATE_VULNERABILITY_SEVERITY'
+                      ),
+                      importantImageCountQuery: getDeploymentSearchQuery(
+                          'IMPORTANT_VULNERABILITY_SEVERITY'
+                      ),
+                      criticalImageCountQuery: getDeploymentSearchQuery(
+                          'CRITICAL_VULNERABILITY_SEVERITY'
+                      ),
+                      pagination: getPaginationParams({ page, perPage, sortOption }),
+                      statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
+                  },
+            skip: entityTab !== 'Deployment',
+        }
+    );
 
     const imageTableManagedState = useManagedColumns(
         affectedImagesTableId,

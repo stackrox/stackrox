@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
@@ -89,12 +90,15 @@ func withSelectQuery(q *v1.Query) *v1.Query {
 		search.NewQuerySelect(search.CVE).Proto(),
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
 		search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto(),
+		search.NewQuerySelect(search.Severity).AggrFunc(aggregatefunc.Max).Proto(),
 		search.NewQuerySelect(search.NodeID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 		search.NewQuerySelect(search.CVECreatedTime).AggrFunc(aggregatefunc.Min).Proto(),
 		search.NewQuerySelect(search.OperatingSystem).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 		search.NewQuerySelect(search.NodeID).Distinct().Proto(),
 	}
-	cloned.Selects = append(cloned.Selects, common.WithCountBySeverityAndFixabilityQuery(q, search.NodeID).GetSelects()...)
+	if !features.VulnMgmtUnifiedCVEView.Enabled() {
+		cloned.Selects = append(cloned.Selects, common.WithCountBySeverityAndFixabilityQuery(q, search.NodeID).GetSelects()...)
+	}
 
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},

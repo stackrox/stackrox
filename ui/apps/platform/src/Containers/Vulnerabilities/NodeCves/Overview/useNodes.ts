@@ -1,6 +1,7 @@
 import { gql, useQuery } from '@apollo/client';
 import { getPaginationParams } from 'utils/searchUtils';
 import type { ClientPagination } from 'services/types';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getRegexScopedQueryString } from '../../utils/searchUtils';
 import type { QuerySearchFilter } from '../../types';
 
@@ -35,10 +36,25 @@ const nodeListQuery = gql`
     }
 `;
 
+const simplifiedNodeListQuery = gql`
+    query getNodesSimplified($query: String, $pagination: Pagination) {
+        nodes(query: $query, pagination: $pagination) {
+            id
+            name
+            topCvss
+            cluster {
+                name
+            }
+            osImage
+            scanTime
+        }
+    }
+`;
+
 type Node = {
     id: string;
     name: string;
-    nodeCVECountBySeverity: {
+    nodeCVECountBySeverity?: {
         critical: {
             total: number;
         };
@@ -55,6 +71,7 @@ type Node = {
             total: number;
         };
     };
+    topCvss?: number;
     cluster: {
         name: string;
     };
@@ -66,7 +83,12 @@ export default function useNodes({
     querySearchFilter,
     ...pagination
 }: { querySearchFilter: QuerySearchFilter } & ClientPagination) {
-    return useQuery<{ nodes: Node[] }>(nodeListQuery, {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSimplifiedSeverity = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
+
+    const query = isSimplifiedSeverity ? simplifiedNodeListQuery : nodeListQuery;
+
+    return useQuery<{ nodes: Node[] }>(query, {
         variables: {
             query: getRegexScopedQueryString(querySearchFilter),
             pagination: getPaginationParams(pagination),

@@ -225,6 +225,7 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	if !options.SkipGetTopCVSS {
 		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto())
 	}
+	cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.Severity).AggrFunc(aggregatefunc.Max).Proto())
 	if !options.SkipGetAffectedImages {
 		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(searchField).AggrFunc(aggregatefunc.Count).Distinct().Proto())
 	}

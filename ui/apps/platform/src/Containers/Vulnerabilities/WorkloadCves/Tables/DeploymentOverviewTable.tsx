@@ -12,7 +12,9 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { TableUIState } from 'utils/getTableUIState';
 import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
 import type { ManagedColumns } from 'hooks/useManagedColumns';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
+import TopSeverityLabel from '../../components/TopSeverityLabel';
 import type { VulnerabilitySeverityLabel } from '../../types';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
@@ -79,11 +81,27 @@ export const deploymentListQuery = gql`
     }
 `;
 
+export const simplifiedDeploymentListQuery = gql`
+    query getDeploymentListSimplified($query: String, $pagination: Pagination) {
+        deployments(query: $query, pagination: $pagination) {
+            id
+            name
+            type
+            topCvss
+            clusterName
+            namespace
+            imageCount(query: $query)
+            created
+        }
+    }
+`;
+
 export type Deployment = {
     id: string;
     name: string;
     type: string;
-    imageCVECountBySeverity: {
+    topCvss?: number;
+    imageCVECountBySeverity?: {
         critical: { total: number };
         important: { total: number };
         moderate: { total: number };
@@ -113,6 +131,8 @@ function DeploymentOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: DeploymentOverviewTableProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSimplifiedSeverity = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
     const { urlBuilder } = useWorkloadCveViewContext();
     const vulnerabilityState = useVulnerabilityState();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
@@ -129,17 +149,27 @@ function DeploymentOverviewTable({
                     >
                         Deployment
                     </Th>
-                    <TooltipTh
-                        className={getVisibilityClass('cvesBySeverity')}
-                        tooltip="CVEs by severity across this deployment"
-                        sort={getSortParams(
-                            'CVEs By Severity',
-                            getSeveritySortOptions(filteredSeverities)
-                        )}
-                    >
-                        CVEs by severity
-                        {isFiltered && <DynamicColumnIcon />}
-                    </TooltipTh>
+                    {isSimplifiedSeverity ? (
+                        <TooltipTh
+                            className={getVisibilityClass('cvesBySeverity')}
+                            sort={getSortParams('CVSS')}
+                            tooltip="Highest CVE severity across this deployment"
+                        >
+                            Top CVE severity
+                        </TooltipTh>
+                    ) : (
+                        <TooltipTh
+                            className={getVisibilityClass('cvesBySeverity')}
+                            tooltip="CVEs by severity across this deployment"
+                            sort={getSortParams(
+                                'CVEs By Severity',
+                                getSeveritySortOptions(filteredSeverities)
+                            )}
+                        >
+                            CVEs by severity
+                            {isFiltered && <DynamicColumnIcon />}
+                        </TooltipTh>
+                    )}
                     <Th className={getVisibilityClass('cluster')} sort={getSortParams('Cluster')}>
                         Cluster
                     </Th>
@@ -172,17 +202,18 @@ function DeploymentOverviewTable({
                             id,
                             name,
                             type,
+                            topCvss,
                             imageCVECountBySeverity,
                             clusterName,
                             namespace,
                             imageCount,
                             created,
                         } = deployment;
-                        const criticalCount = imageCVECountBySeverity.critical.total;
-                        const importantCount = imageCVECountBySeverity.important.total;
-                        const moderateCount = imageCVECountBySeverity.moderate.total;
-                        const lowCount = imageCVECountBySeverity.low.total;
-                        const unknownCount = imageCVECountBySeverity.unknown.total;
+                        const criticalCount = imageCVECountBySeverity?.critical.total ?? 0;
+                        const importantCount = imageCVECountBySeverity?.important.total ?? 0;
+                        const moderateCount = imageCVECountBySeverity?.moderate.total ?? 0;
+                        const lowCount = imageCVECountBySeverity?.low.total ?? 0;
+                        const unknownCount = imageCVECountBySeverity?.unknown.total ?? 0;
                         return (
                             <Tbody key={id}>
                                 <Tr>
@@ -200,18 +231,26 @@ function DeploymentOverviewTable({
                                         </Link>
                                     </Td>
                                     <Td
-                                        dataLabel="CVEs by severity"
+                                        dataLabel={
+                                            isSimplifiedSeverity
+                                                ? 'Top CVE severity'
+                                                : 'CVEs by severity'
+                                        }
                                         className={getVisibilityClass('cvesBySeverity')}
                                     >
-                                        <SeverityCountLabels
-                                            criticalCount={criticalCount}
-                                            importantCount={importantCount}
-                                            moderateCount={moderateCount}
-                                            lowCount={lowCount}
-                                            unknownCount={unknownCount}
-                                            entity="deployment"
-                                            filteredSeverities={filteredSeverities}
-                                        />
+                                        {isSimplifiedSeverity && topCvss !== undefined ? (
+                                            <TopSeverityLabel cvss={topCvss} />
+                                        ) : (
+                                            <SeverityCountLabels
+                                                criticalCount={criticalCount}
+                                                importantCount={importantCount}
+                                                moderateCount={moderateCount}
+                                                lowCount={lowCount}
+                                                unknownCount={unknownCount}
+                                                entity="deployment"
+                                                filteredSeverities={filteredSeverities}
+                                            />
+                                        )}
                                     </Td>
                                     <Td
                                         dataLabel="Cluster"

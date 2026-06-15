@@ -5,7 +5,12 @@ import { getPaginationParams } from 'utils/searchUtils';
 import type { ApiSortOption } from 'types/search';
 import type useURLPagination from 'hooks/useURLPagination';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { imageListQuery, imageV2ListQuery } from '../Tables/ImageOverviewTable';
+import {
+    imageListQuery,
+    imageV2ListQuery,
+    simplifiedImageListQuery,
+    simplifiedImageV2ListQuery,
+} from '../Tables/ImageOverviewTable';
 import type { Image } from '../Tables/ImageOverviewTable';
 
 export function useImages({
@@ -21,10 +26,21 @@ export function useImages({
 }) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
+    const isSimplifiedSeverity = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
     const { page, perPage } = pagination;
+
+    let gqlQuery;
+    if (isSimplifiedSeverity) {
+        gqlQuery = isNewImageDataModelEnabled
+            ? simplifiedImageV2ListQuery
+            : simplifiedImageListQuery;
+    } else {
+        gqlQuery = isNewImageDataModelEnabled ? imageV2ListQuery : imageListQuery;
+    }
+
     return useQuery<{
         images: Image[];
-    }>(isNewImageDataModelEnabled ? imageV2ListQuery : imageListQuery, {
+    }>(gqlQuery, {
         variables: {
             query,
             pagination: getPaginationParams({ page, perPage, sortOption }),

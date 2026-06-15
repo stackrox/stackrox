@@ -11,6 +11,7 @@ import {
     getHiddenColumnCount,
     useManagedColumns,
 } from 'hooks/useManagedColumns';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
@@ -21,9 +22,11 @@ import { getTableUIState } from 'utils/getTableUIState';
 import {
     getVirtualMachineScannedComponentsCount,
     getVirtualMachineSeveritiesCount,
+    getVirtualMachineTopCvss,
 } from '../aggregateUtils';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
+import TopSeverityLabel from '../../components/TopSeverityLabel';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import {
     virtualMachinesClusterSearchFilterConfig,
@@ -72,6 +75,8 @@ export const defaultColumns = {
 } as const;
 
 function VirtualMachinesCvesTable() {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSimplifiedSeverity = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
     const managedColumnState = useManagedColumns('VirtualMachinesCvesTable', defaultColumns);
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -144,7 +149,7 @@ function VirtualMachinesCvesTable() {
                                 Virtual machine
                             </Th>
                             <Th className={getVisibilityClass('cvesBySeverity')}>
-                                CVEs by severity
+                                {isSimplifiedSeverity ? 'Top CVSS score' : 'CVEs by severity'}
                             </Th>
                             <Th className={getVisibilityClass('cluster')}>Cluster</Th>
                             <Th className={getVisibilityClass('namespace')}>Namespace</Th>
@@ -188,26 +193,30 @@ function VirtualMachinesCvesTable() {
                                             </Td>
                                             <Td
                                                 className={getVisibilityClass('cvesBySeverity')}
-                                                dataLabel="CVEs by severity"
+                                                dataLabel={isSimplifiedSeverity ? 'Top CVSS score' : 'CVEs by severity'}
                                             >
-                                                <SeverityCountLabels
-                                                    criticalCount={
-                                                        virtualMachineSeverityCounts.CRITICAL_VULNERABILITY_SEVERITY
-                                                    }
-                                                    importantCount={
-                                                        virtualMachineSeverityCounts.IMPORTANT_VULNERABILITY_SEVERITY
-                                                    }
-                                                    moderateCount={
-                                                        virtualMachineSeverityCounts.MODERATE_VULNERABILITY_SEVERITY
-                                                    }
-                                                    lowCount={
-                                                        virtualMachineSeverityCounts.LOW_VULNERABILITY_SEVERITY
-                                                    }
-                                                    unknownCount={
-                                                        virtualMachineSeverityCounts.UNKNOWN_VULNERABILITY_SEVERITY
-                                                    }
-                                                    entity="virtual machine"
-                                                />
+                                                {isSimplifiedSeverity ? (
+                                                    <TopSeverityLabel cvss={getVirtualMachineTopCvss(virtualMachine)} />
+                                                ) : (
+                                                    <SeverityCountLabels
+                                                        criticalCount={
+                                                            virtualMachineSeverityCounts.CRITICAL_VULNERABILITY_SEVERITY
+                                                        }
+                                                        importantCount={
+                                                            virtualMachineSeverityCounts.IMPORTANT_VULNERABILITY_SEVERITY
+                                                        }
+                                                        moderateCount={
+                                                            virtualMachineSeverityCounts.MODERATE_VULNERABILITY_SEVERITY
+                                                        }
+                                                        lowCount={
+                                                            virtualMachineSeverityCounts.LOW_VULNERABILITY_SEVERITY
+                                                        }
+                                                        unknownCount={
+                                                            virtualMachineSeverityCounts.UNKNOWN_VULNERABILITY_SEVERITY
+                                                        }
+                                                        entity="virtual machine"
+                                                    />
+                                                )}
                                             </Td>
                                             <Td
                                                 className={getVisibilityClass('cluster')}

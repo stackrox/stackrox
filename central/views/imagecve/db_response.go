@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/views/common"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 )
 
@@ -21,6 +22,7 @@ type imageCVECoreResponse struct {
 	ImagesWithUnknownSeverity          int        `db:"unknown_severity_count"`
 	FixableImagesWithUnknownSeverity   int        `db:"fixable_unknown_severity_count"`
 	TopCVSS                            *float32   `db:"cvss_max"`
+	TopSeverity                        *int32     `db:"severity_max"`
 	AffectedImageCount                 int        `db:"image_sha_count"`
 	FirstDiscoveredInSystem            *time.Time `db:"cve_created_time_min"`
 	Published                          *time.Time `db:"cve_published_on_min"`
@@ -56,6 +58,13 @@ func (c *imageCVECoreResponse) GetTopCVSS() float32 {
 		return 0.0
 	}
 	return *c.TopCVSS
+}
+
+func (c *imageCVECoreResponse) GetTopSeverity() storage.VulnerabilitySeverity {
+	if c.TopSeverity == nil {
+		return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+	}
+	return storage.VulnerabilitySeverity(*c.TopSeverity)
 }
 
 func (c *imageCVECoreResponse) GetTopNVDCVSS() float32 {

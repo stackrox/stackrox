@@ -4,6 +4,7 @@ import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternf
 import { gql } from '@apollo/client';
 
 import useSet from 'hooks/useSet';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import type { VulnerabilityState } from 'types/cve.proto';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
@@ -22,6 +23,7 @@ import type {
     ImageMetadataContext,
 } from './DeploymentComponentVulnerabilitiesTable';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
+import TopSeverityLabel from '../../components/TopSeverityLabel';
 import type { VulnerabilitySeverityLabel } from '../../types';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
@@ -66,11 +68,12 @@ export type DeploymentForCve = {
     type: string;
     clusterName: string;
     created: string | null;
-    unknownImageCount: number;
-    lowImageCount: number;
-    moderateImageCount: number;
-    importantImageCount: number;
-    criticalImageCount: number;
+    unknownImageCount?: number;
+    lowImageCount?: number;
+    moderateImageCount?: number;
+    importantImageCount?: number;
+    criticalImageCount?: number;
+    topCvss?: number;
     images: (ImageMetadataContext & { imageComponents: DeploymentComponentVulnerability[] })[];
 };
 
@@ -89,6 +92,26 @@ export const deploymentsForCveFragment = gql`
         moderateImageCount: imageCount(query: $moderateImageCountQuery)
         importantImageCount: imageCount(query: $importantImageCountQuery)
         criticalImageCount: imageCount(query: $criticalImageCountQuery)
+        images(query: $query) {
+            ...ImageMetadataContext
+            imageComponents(query: $query) {
+                ...DeploymentComponentVulnerabilities
+            }
+        }
+    }
+`;
+
+export const deploymentsForCveSimplifiedFragment = gql`
+    ${imageMetadataContextFragment}
+    ${deploymentComponentVulnerabilitiesFragment}
+    fragment DeploymentsForCVESimplified on Deployment {
+        id
+        name
+        namespace
+        type
+        clusterName
+        created
+        topCvss
         images(query: $query) {
             ...ImageMetadataContext
             imageComponents(query: $query) {
@@ -120,6 +143,8 @@ function AffectedDeploymentsTable({
     tableConfig,
 }: AffectedDeploymentsTableProps) {
     const { urlBuilder } = useWorkloadCveViewContext();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSimplifiedSeverity = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
@@ -139,7 +164,7 @@ function AffectedDeploymentsTable({
                         Deployment
                     </Th>
                     <Th className={getVisibilityClass('imagesBySeverity')}>
-                        Images by severity
+                        {isSimplifiedSeverity ? 'Top severity' : 'Images by severity'}
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th className={getVisibilityClass('cluster')} sort={getSortParams('Cluster')}>
@@ -176,6 +201,7 @@ function AffectedDeploymentsTable({
                             moderateImageCount,
                             importantImageCount,
                             criticalImageCount,
+                            topCvss,
                             created,
                             images,
                         } = deployment;
@@ -218,16 +244,22 @@ function AffectedDeploymentsTable({
                                     <Td
                                         className={getVisibilityClass('imagesBySeverity')}
                                         modifier="nowrap"
-                                        dataLabel="Images by severity"
+                                        dataLabel={
+                                            isSimplifiedSeverity ? 'Top severity' : 'Images by severity'
+                                        }
                                     >
-                                        <SeverityCountLabels
-                                            criticalCount={criticalImageCount}
-                                            importantCount={importantImageCount}
-                                            moderateCount={moderateImageCount}
-                                            lowCount={lowImageCount}
-                                            unknownCount={unknownImageCount}
-                                            filteredSeverities={filteredSeverities}
-                                        />
+                                        {isSimplifiedSeverity ? (
+                                            <TopSeverityLabel cvss={topCvss} />
+                                        ) : (
+                                            <SeverityCountLabels
+                                                criticalCount={criticalImageCount ?? 0}
+                                                importantCount={importantImageCount ?? 0}
+                                                moderateCount={moderateImageCount ?? 0}
+                                                lowCount={lowImageCount ?? 0}
+                                                unknownCount={unknownImageCount ?? 0}
+                                                filteredSeverities={filteredSeverities}
+                                            />
+                                        )}
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('cluster')}

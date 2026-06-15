@@ -4,12 +4,14 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/views/common"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type nodeCVECoreResponse struct {
 	CVE                               string     `db:"cve"`
 	CVEIDs                            []string   `db:"cve_id"`
 	TopCVSS                           float32    `db:"cvss_max"`
+	TopSeverity                       *int32     `db:"severity_max"`
 	NodeCount                         int        `db:"node_id_count"`
 	NodesWithCriticalSeverity         int        `db:"critical_severity_count"`
 	FixableNodesWithCriticalSeverity  int        `db:"fixable_critical_severity_count"`
@@ -39,6 +41,14 @@ func (c *nodeCVECoreResponse) GetCVEIDs() []string {
 // GetTopCVSS returns the maximum CVSS score of the node CVE
 func (c *nodeCVECoreResponse) GetTopCVSS() float32 {
 	return c.TopCVSS
+}
+
+// GetTopSeverity returns the highest stored severity of the node CVE
+func (c *nodeCVECoreResponse) GetTopSeverity() storage.VulnerabilitySeverity {
+	if c.TopSeverity == nil {
+		return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+	}
+	return storage.VulnerabilitySeverity(*c.TopSeverity)
 }
 
 // GetNodeCount returns the number of nodes affected by the node CVE

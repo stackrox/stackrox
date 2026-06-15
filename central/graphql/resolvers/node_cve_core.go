@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/views/nodecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/cvss"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
@@ -36,6 +37,7 @@ func init() {
 				"nodes(pagination: Pagination): [Node!]!",
 				"operatingSystemCount: Int!",
 				"topCVSS: Float!",
+				"topSeverity: String!",
 			}),
 		schema.AddQuery("nodeCVECount(query: String): Int!"),
 		schema.AddQuery("nodeCVEs(query: String, pagination: Pagination): [NodeCVECore!]!"),
@@ -132,6 +134,10 @@ func (resolver *nodeCVECoreResolver) OperatingSystemCount(_ context.Context) int
 
 func (resolver *nodeCVECoreResolver) TopCVSS(_ context.Context) float64 {
 	return float64(resolver.data.GetTopCVSS())
+}
+
+func (resolver *nodeCVECoreResolver) TopSeverity(_ context.Context) string {
+	return cvss.FormatSeverity(resolver.data.GetTopSeverity())
 }
 
 // NodeCVE returns graphQL resolver for specified node cve.
