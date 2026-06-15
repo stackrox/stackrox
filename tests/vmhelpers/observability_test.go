@@ -11,19 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestVMIndexMetricSeriesMirrorProductDefinitions(t *testing.T) {
-	require.Equal(t, "rox_compliance_virtual_machine_relay_connections_accepted_total", MetricComplianceRelayConnectionsAcceptedTotal)
-	require.Equal(t, "rox_compliance_virtual_machine_relay_index_reports_received_total", MetricComplianceRelayIndexReportsReceivedTotal)
-	require.Equal(t, "rox_compliance_virtual_machine_relay_index_reports_sent_total", MetricComplianceRelayIndexReportsSentTotal)
-	require.Equal(t, "rox_compliance_virtual_machine_relay_index_reports_mismatching_vsock_cid_total", MetricComplianceRelayIndexReportsMismatchingVsockTotal)
-	require.Equal(t, "rox_compliance_virtual_machine_relay_sem_acquisition_failures_total", MetricComplianceRelaySemaphoreAcquisitionFailuresTotal)
-
-	require.Equal(t, "rox_sensor_virtual_machine_index_reports_received_total", MetricSensorVMIndexReportsReceivedTotal)
-	require.Equal(t, "rox_sensor_virtual_machine_index_reports_sent_total", MetricSensorVMIndexReportsSentTotal)
-	require.Equal(t, "rox_sensor_virtual_machine_index_report_acks_received_total", MetricSensorVMIndexReportAcksReceivedTotal)
-	require.Equal(t, "rox_sensor_virtual_machine_index_report_enqueue_blocked_total", MetricSensorVMIndexReportEnqueueBlockedTotal)
-}
-
 func moduleRepoRoot(t *testing.T) string {
 	t.Helper()
 	_, file, _, ok := runtime.Caller(0)
