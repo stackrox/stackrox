@@ -122,7 +122,7 @@ func TestMultiBundleUpdate(t *testing.T) {
 		},
 	}
 
-	// Successful initial update (GC skipped on first load).
+	// Successful update.
 	metadataStore.EXPECT().
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now.Add(-time.Minute), nil)
@@ -132,6 +132,9 @@ func TestMultiBundleUpdate(t *testing.T) {
 	metadataStore.EXPECT().
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now, nil)
+	store.EXPECT().
+		GC(gomock.Any(), gomock.Any()).
+		Return(int64(0), nil)
 	store.EXPECT().
 		Distributions(gomock.Any()).
 		Return(dists, nil)

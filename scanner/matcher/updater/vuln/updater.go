@@ -36,7 +36,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -406,8 +405,6 @@ func (u *Updater) notifyCentralReady(ctx context.Context) {
 //
 // Note: periodic full GC will not be started.
 func (u *Updater) Update(ctx context.Context) error {
-	wasInitialized := u.initialized.Load()
-
 	var (
 		updated bool
 		err     error
@@ -419,14 +416,10 @@ func (u *Updater) Update(ctx context.Context) error {
 
 	// Only bother running the GC when it's not disabled
 	// and when the vulnerabilities have been updated.
-	// Skip GC on the initial load — the DB has no old update
-	// operations to collect, so GC is pure overhead.
-	if !u.skipGC && updated && wasInitialized {
+	if !u.skipGC && updated {
 		gcStart := time.Now()
 		u.runGC(ctx)
 		slog.InfoContext(ctx, "post-update GC completed", "duration", time.Since(gcStart))
-	} else if !u.skipGC && updated && !wasInitialized {
-		slog.InfoContext(ctx, "skipping post-update GC on initial load")
 	} else if !u.skipGC {
 		slog.InfoContext(ctx, "no vulnerability updates: skipping GC")
 	}
@@ -476,8 +469,7 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 		return false, err
 	}
 
-	// Collect allowed bundles, then import them in parallel.
-	var allowed []*zip.File
+	// Iterate through each vulnerability bundle in the .zip archive
 	names := make([]string, 0, len(zipReader.File))
 	for i := range zipReader.File {
 		bundleF := zipReader.File[i]
@@ -486,27 +478,14 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 			continue
 		}
 		names = append(names, bundleF.Name)
-		allowed = append(allowed, bundleF)
-	}
-	slog.InfoContext(ctx, "importing bundles", "count", len(allowed), "concurrency", 3)
-
-	g, gCtx := errgroup.WithContext(ctx)
-	g.SetLimit(3)
-	for _, bundleF := range allowed {
-		g.Go(func() error {
-			bundleCtx := log.With(gCtx, "bundle", bundleF.Name)
-			bundleStart := time.Now()
-			slog.InfoContext(bundleCtx, "starting bundle update")
-			if err := u.updateBundle(bundleCtx, bundleF, zipTime, prevTime); err != nil {
-				slog.ErrorContext(bundleCtx, "updating bundle failed", "reason", err)
-				return fmt.Errorf("updating bundle %s: %w", bundleF.Name, err)
-			}
-			slog.InfoContext(bundleCtx, "completed bundle update", "duration", time.Since(bundleStart))
-			return nil
-		})
-	}
-	if err := g.Wait(); err != nil {
-		return false, err
+		bundleCtx := log.With(ctx, "bundle", bundleF.Name)
+		bundleStart := time.Now()
+		slog.InfoContext(bundleCtx, "starting bundle update")
+		if err := u.updateBundle(bundleCtx, bundleF, zipTime, prevTime); err != nil {
+			slog.ErrorContext(bundleCtx, "updating bundle failed", "reason", err)
+			return false, fmt.Errorf("updating bundle %s: %w", bundleF.Name, err)
+		}
+		slog.InfoContext(bundleCtx, "completed bundle update", "duration", time.Since(bundleStart))
 	}
 
 	// Clean updaters that were deleted (not in the zip and older than this update).
