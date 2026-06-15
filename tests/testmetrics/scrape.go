@@ -52,15 +52,21 @@ type ScrapeTarget struct {
 	MetricsPath   string
 }
 
+// cleanMetricsPath returns a slash-trimmed path, defaulting to "metrics".
+func cleanMetricsPath(path string) string {
+	path = strings.Trim(path, "/")
+	if path == "" {
+		return "metrics"
+	}
+	return path
+}
+
 // ScrapePodViaProxy scrapes Prometheus text from a pod via GET .../pods/{name}[:port]/proxy/{path}.
 func ScrapePodViaProxy(ctx context.Context, clientset kubernetes.Interface, namespace, podName string, port int, metricsPath string) ([]byte, error) {
 	if namespace == "" || podName == "" {
 		return nil, errors.New("testmetrics: ScrapePodViaProxy: namespace and pod name are required")
 	}
-	path := strings.Trim(metricsPath, "/")
-	if path == "" {
-		path = "metrics"
-	}
+	path := cleanMetricsPath(metricsPath)
 	segments := strings.Split(path, "/")
 	podSubresourceName := podName
 	if port > 0 {
@@ -91,13 +97,7 @@ func ScrapePodViaPortForward(ctx context.Context, clientset kubernetes.Interface
 	if remotePort <= 0 {
 		return nil, errors.New("testmetrics: ScrapePodViaPortForward: remote metrics port must be positive")
 	}
-	path := metricsPath
-	if path == "" {
-		path = "/metrics"
-	}
-	if !strings.HasPrefix(path, "/") {
-		path = "/" + path
-	}
+	path := "/" + cleanMetricsPath(metricsPath)
 
 	req := clientset.CoreV1().RESTClient().Post().
 		Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward")
@@ -166,10 +166,6 @@ func scrapePod(ctx context.Context, clientset kubernetes.Interface, opts PodColl
 	if transport == "" {
 		transport = TransportProxy
 	}
-	path := opts.MetricsPath
-	if path == "" {
-		path = "metrics"
-	}
 	switch transport {
 	case TransportPortForward:
 		if opts.RestConfig == nil {
@@ -178,9 +174,9 @@ func scrapePod(ctx context.Context, clientset kubernetes.Interface, opts PodColl
 		if opts.Port <= 0 {
 			return nil, errors.New("testmetrics: PodCollectOptions.Port must be set for port-forward transport")
 		}
-		return ScrapePodViaPortForward(ctx, clientset, opts.RestConfig, opts.Namespace, podName, opts.Port, path)
+		return ScrapePodViaPortForward(ctx, clientset, opts.RestConfig, opts.Namespace, podName, opts.Port, opts.MetricsPath)
 	case TransportProxy:
-		return ScrapePodViaProxy(ctx, clientset, opts.Namespace, podName, opts.Port, path)
+		return ScrapePodViaProxy(ctx, clientset, opts.Namespace, podName, opts.Port, opts.MetricsPath)
 	default:
 		return nil, fmt.Errorf("testmetrics: unsupported metrics transport %q", transport)
 	}
