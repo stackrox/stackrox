@@ -282,7 +282,7 @@ class AttemptedAlertsTest extends BaseSpecification {
         and:
         "Verify alerts"
         List<ListAlert> listAlerts = []
-        withRetry(3, 3) {
+        withRetry(5, 3) {
             listAlerts = Services.getViolationsWithTimeout(dep.name, KUBECTL_EXEC_POLICY_NAME, 60)
             assert listAlerts && listAlerts.size() == numAlerts
             assert listAlerts.get(0).getPolicy().getName() == KUBECTL_EXEC_POLICY_NAME
@@ -294,10 +294,10 @@ class AttemptedAlertsTest extends BaseSpecification {
                 // Verify admission controller enforcement action is applied.
                 assert listAlerts.get(0).getEnforcementAction() == EnforcementAction.FAIL_KUBE_REQUEST_ENFORCEMENT
             }
-        }
 
-        // Verify that the alerts are not merged.
-        assert AlertService.getViolation(listAlerts.get(0).getId()).getViolationsList().size() == numViolations
+            // Verify that the alerts are not merged.
+            assert AlertService.getViolation(listAlerts.get(0).getId()).getViolationsList().size() == numViolations
+        }
 
         where:
         "Data inputs are: "

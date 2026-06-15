@@ -80,13 +80,10 @@ func NewManager(registry *standards.Registry, profiles profileDatastore.DataStor
 		rules:               rules,
 		results:             results,
 	}
-	// Postgres retries in addProfileNoLock(...)
-	err := profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
-		return mgr.addProfileNoLock(profile)
-	})
-	if err != nil {
-		return nil, err
-	}
+	// The registry starts empty and is populated as sensors reconnect and push
+	// profiles through AddProfile. Sensors always re-send all compliance data
+	// on reconnect (compliance types skip deduping), so the registry will be
+	// fully populated once all sensors have reconnected.
 	return mgr, nil
 }
 

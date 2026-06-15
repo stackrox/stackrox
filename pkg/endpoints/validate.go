@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"fmt"
+	"net"
 	"net/url"
 	"reflect"
 
@@ -72,10 +73,18 @@ func visitStructTags(value reflect.Value, visitor func(field reflect.Value, tag 
 }
 
 func validate(hostname string) error {
-	if hostname == "127.0.0.1" || hostname == "localhost" {
+	if hostname == "localhost" {
 		return errors.New("endpoint cannot reference localhost")
 	}
-	if hostname == "169.254.169.254" || hostname == "metadata.google.internal" {
+	if ip := net.ParseIP(hostname); ip != nil {
+		if ip.IsLoopback() {
+			return errors.New("endpoint cannot reference localhost")
+		}
+		if ip.Equal(net.ParseIP("169.254.169.254")) {
+			return errors.New("endpoint cannot reference the cluster metadata service")
+		}
+	}
+	if hostname == "metadata.google.internal" {
 		return errors.New("endpoint cannot reference the cluster metadata service")
 	}
 	return nil

@@ -18,11 +18,11 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Deprecated Features
 
+- ROX-26281: block creation of new GCR integrations. Users are directed to use Google Artifact Registry instead.
+
 ### Technical Changes
 
 ## [4.11.0]
-
-
 
 ### Added Features
 - The config-controller now periodically reconciles SecurityPolicy CRs (default: every 30 minutes), detecting drift if policies are modified or deleted directly in Central. The interval is configurable via the `ROX_CONFIG_CONTROLLER_RECONCILE_INTERVAL` environment variable.

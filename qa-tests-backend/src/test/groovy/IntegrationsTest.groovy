@@ -14,10 +14,10 @@ import objects.ClairScannerIntegration
 import objects.Deployment
 import objects.ECRRegistryIntegration
 import objects.EmailNotifier
-import objects.GHCRImageIntegration
-import objects.GoogleArtifactRegistry
 import objects.GCRImageIntegration
+import objects.GHCRImageIntegration
 import objects.GenericNotifier
+import objects.GoogleArtifactRegistry
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Notifier
@@ -746,9 +746,6 @@ class IntegrationsTest extends BaseSpecification {
         new GoogleArtifactRegistry()     | [:]                | "default config"
         new GoogleArtifactRegistry()     | [wifEnabled: true]
                                                               | "requires workload identity"
-        new GCRImageIntegration()        | [:]                | "default config"
-        new GCRImageIntegration()        | [includeScanner: false, wifEnabled: true]
-                                                              | "requires workload identity"
         new AzureRegistryIntegration()   | [configSchema: "AzureConfig"]
                                                               | "default config with AzureConfig"
         new AzureRegistryIntegration()   | [configSchema: "DockerConfig"]
@@ -831,14 +828,20 @@ class IntegrationsTest extends BaseSpecification {
         /invalid endpoint: endpoint cannot reference the cluster metadata service/ | "invalid endpoint"
         new QuayImageIntegration()      | { [oauthToken: "EnFzYsRVC4TIBjRenrKt9193KSz9o7vkoWiIGX86",]
         }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "incorrect token"
-        new GCRImageIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
-        }       | StatusRuntimeException |
-        /invalid endpoint: endpoint cannot reference localhost/ |
-        "invalid endpoint"
-        new GCRImageIntegration() | { [serviceAccount: Env.mustGetGCRNoAccessServiceAccount(),]
-        }       | StatusRuntimeException | /PermissionDenied/ | "account without access"
-        new GCRImageIntegration() | { [project: "not-a-project",]
-        }       | StatusRuntimeException | /PermissionDenied/ | "incorrect project"
+    }
+
+    @Tag("Integration")
+    def "Verify GCR integration creation is blocked due to deprecation"() {
+        when:
+        "attempting to create a GCR integration"
+        ImageIntegrationService.getImageIntegrationClient().postImageIntegration(
+                GCRImageIntegration.getCustomBuilder([skipTestIntegration: true]).build()
+        )
+
+        then:
+        "creation is rejected"
+        def error = thrown(StatusRuntimeException)
+        error.message =~ /deprecated/
     }
 
     @Tag("Integration")

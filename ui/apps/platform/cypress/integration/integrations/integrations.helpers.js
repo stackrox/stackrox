@@ -167,23 +167,6 @@ const routeMatcherMapForIntegrationsTab = {
     },
 };
 
-const routeMatcherMapForIntegrationsDashboard = Object.fromEntries(
-    [
-        ['authProviders', 'apitoken'],
-        ['authProviders', 'machineAccess'],
-        ['imageIntegrations'],
-        ['signatureIntegrations'],
-        ['notifiers'],
-        ['backups'],
-    ].map((args) => [
-        getIntegrationsEndpointAlias(...args),
-        {
-            method: 'GET',
-            url: getIntegrationsEndpointAddressForGET(...args),
-        },
-    ])
-);
-
 // page title
 
 const integrationsTitle = 'Integrations';
@@ -270,7 +253,7 @@ export function assertIntegrationsTable(integrationSource, integrationType) {
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visitIntegrationsDashboard(staticResponseMap) {
-    visit(basePath, routeMatcherMapForIntegrationsDashboard, staticResponseMap);
+    visit(basePath, routeMatcherMapForIntegrationsTab.imageIntegrations, staticResponseMap);
 
     cy.get(`h1:contains("${integrationsTitle}")`);
     cy.get(`.pf-v6-c-nav__link.pf-m-current:contains("${integrationsTitle}")`);
@@ -283,7 +266,7 @@ export function visitIntegrationsDashboardFromLeftNav(staticResponseMap) {
     visitFromLeftNavExpandable(
         'Platform Configuration',
         integrationsTitle,
-        routeMatcherMapForIntegrationsDashboard,
+        routeMatcherMapForIntegrationsTab.imageIntegrations,
         staticResponseMap
     );
 
@@ -314,9 +297,16 @@ export function visitIntegrationsTab(integrationSource, staticResponseMap) {
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visitIntegrationsTable(integrationSource, integrationType, staticResponseMap) {
+    const routeMatcherMap = {
+        [getIntegrationsEndpointAlias(integrationSource, integrationType)]: {
+            method: 'GET',
+            url: getIntegrationsEndpointAddressForGET(integrationSource, integrationType),
+        },
+    };
+
     visit(
         getIntegrationsPath(integrationSource, integrationType),
-        routeMatcherMapForIntegrationsDashboard,
+        routeMatcherMap,
         staticResponseMap
     );
 
@@ -466,16 +456,10 @@ export function generateCreatedAuthProvidersIntegrationInForm(
             : integrationsEndpointAddress;
     const aliasForPOST = `POST_${urlForPOST.replace('/v1/', '')}`;
 
-    const aliasForGET = getIntegrationsEndpointAlias(integrationSource, integrationType);
-
     const routeMatcherMap = {
         [aliasForPOST]: {
             method: 'POST',
             url: urlForPOST,
-        },
-        [aliasForGET]: {
-            method: 'GET',
-            url: getIntegrationsEndpointAddressForGET(integrationSource, integrationType),
         },
     };
 

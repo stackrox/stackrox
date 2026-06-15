@@ -43,6 +43,7 @@ setup_gcp_workload_identities() {
     retry 5 true \
         gcloud iam service-accounts add-iam-policy-binding "${service_account}" \
         --member="principal://iam.googleapis.com/projects/${project}/locations/global/workloadIdentityPools/${cluster}/subject/${subject_central}" \
+        --condition=None \
         --role=roles/iam.workloadIdentityUser
 
     # Apply STS configuration.
@@ -61,5 +62,6 @@ cleanup_gcp_workload_identities() {
     retry 5 true \
         gcloud iam service-accounts remove-iam-policy-binding "${service_account}" \
         --member="principal://iam.googleapis.com/projects/${project}/locations/global/workloadIdentityPools/${cluster}/subject/${subject_central}" \
+        --condition=None \
         --role=roles/iam.workloadIdentityUser
 }

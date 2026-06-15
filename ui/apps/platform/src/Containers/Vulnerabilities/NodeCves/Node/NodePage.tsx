@@ -25,9 +25,6 @@ import type { NodeMetadata } from './NodePageHeader';
 import NodePageVulnerabilities from './NodePageVulnerabilities';
 import NodePageDetails from './NodePageDetails';
 
-const idDetails = 'NodePageDetails';
-const idVulnerabilities = 'NodePageVulnerabilities';
-
 const nodeCveOverviewPath = getOverviewPagePath('Node', {
     entityTab: 'Node',
 });
@@ -95,18 +92,10 @@ function NodePage() {
                             mountOnEnter
                             unmountOnExit
                         >
-                            <Tab
-                                eventKey={vulnTabKey}
-                                tabContentId={idVulnerabilities}
-                                title={vulnTabKey}
-                            >
+                            <Tab eventKey={vulnTabKey} title={vulnTabKey}>
                                 <NodePageVulnerabilities nodeId={nodeId} />
                             </Tab>
-                            <Tab
-                                eventKey={detailTabKey}
-                                tabContentId={idDetails}
-                                title={detailTabKey}
-                            >
+                            <Tab eventKey={detailTabKey} title={detailTabKey}>
                                 <NodePageDetails nodeId={nodeId} />
                             </Tab>
                         </Tabs>

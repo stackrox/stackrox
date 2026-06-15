@@ -612,31 +612,19 @@ _image_prefetcher_prebuilt_start() {
     case "$CI_JOB_NAME" in
     *qa-e2e-tests)
         image_prefetcher_start_set qa-e2e
-        # Override the default image pull policy for containers with quay.io
-        # images to rely on prefetched images. This helps ensure that the static
-        # prefect list stays up to date with additions.
-        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
+        _set_quay_pull_policy
         ;;
     *nongroovy-e2e-tests)
         image_prefetcher_start_set qa-nongroovy-e2e
-        # Override the default image pull policy for containers with quay.io
-        # images to rely on prefetched images. This helps ensure that the static
-        # prefect list stays up to date with additions.
-        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
+        _set_quay_pull_policy
         ;;
     *nongroovy-compatibility-tests)
         image_prefetcher_start_set nongroovy-compatibility
-        # Override the default image pull policy for containers with quay.io
-        # images to rely on prefetched images. This helps ensure that the static
-        # prefect list stays up to date with additions.
-        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
+        _set_quay_pull_policy
         ;;
     *compatibility-tests)
         image_prefetcher_start_set compatibility
-        # Override the default image pull policy for containers with quay.io
-        # images to rely on prefetched images. This helps ensure that the static
-        # prefect list stays up to date with additions.
-        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
+        _set_quay_pull_policy
         ;;
     *-operator-e2e-tests)
         image_prefetcher_start_set operator-e2e
@@ -646,6 +634,24 @@ _image_prefetcher_prebuilt_start() {
         info "No pre-built image prefetching is currently performed for: ${CI_JOB_NAME}."
         ;;
     esac
+}
+
+# Override imagePullPolicy for quay.io images to prefer prefetched images.
+# Unfortunately https://github.com/kubernetes/kubernetes/issues/138175 broke
+# this for a handful of images that are also pulled from another registry
+# (but have the same content digest).
+# On GKE, we worked this around with kubelet credential plugin integration in the image
+# prefetcher, so in this case we can use `Never` to enforce that the prefetch list stays
+# complete — any image missing from prefetch list fails loudly.
+# On providers (OCP, EKS, AKS) that do not have credential plugin integration (yet),
+# use IfNotPresent instead.
+# TODO(ROX-35031): set this unconditionally to Never when a proper fix is available in all supported OCP versions
+_set_quay_pull_policy() {
+    local policy="Never"
+    if [[ "${KUBERNETES_PROVIDER}" != "gke" ]]; then
+        policy="IfNotPresent"
+    fi
+    ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "$policy"
 }
 
 _image_prefetcher_system_start() {

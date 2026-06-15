@@ -17,6 +17,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -101,6 +102,9 @@ func (h httpHandler) saveAsCustomResources(ctx context.Context, request *apipara
 	writer.Header().Set("Content-Type", "application/zip")
 	names := set.NewStringSet()
 	for _, policy := range policyList {
+		if !features.EvaluationFilter.Enabled() {
+			policy.EvaluationFilter = nil
+		}
 		cr := customresource.ConvertPolicyToCustomResource(policy)
 		// Switch notifier IDs to names
 		notifierNames := make([]string, 0, len(cr.SecurityPolicySpec.Notifiers))

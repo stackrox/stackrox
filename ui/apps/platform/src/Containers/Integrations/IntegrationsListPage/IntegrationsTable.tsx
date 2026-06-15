@@ -18,6 +18,8 @@ import { getIsAPIToken } from '../utils/integrationUtils';
 import type { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
 
+const emptyIntegrations: Integration[] = [];
+
 function getNewButtonText(type) {
     if (type === 'apitoken') {
         return 'Generate token';
@@ -34,6 +36,7 @@ type IntegrationsTableProps = {
     onDeleteIntegrations: (integration) => void;
     onTriggerBackup: (integrationId) => void;
     isReadOnly?: boolean;
+    isCreationDisabled?: boolean;
     source: IntegrationSource;
     type: IntegrationType;
 };
@@ -44,6 +47,7 @@ function IntegrationsTable({
     onDeleteIntegrations,
     onTriggerBackup,
     isReadOnly,
+    isCreationDisabled,
     source,
     type,
 }: IntegrationsTableProps): ReactElement {
@@ -51,7 +55,7 @@ function IntegrationsTable({
     const { hasReadWriteAccess } = usePermissions();
     const hasWritePermission = hasReadWriteAccess('Integration');
     const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();
-    const integrations = tableState?.type === 'COMPLETE' ? tableState.data : [];
+    const integrations = tableState?.type === 'COMPLETE' ? tableState.data : emptyIntegrations;
     const {
         selected,
         allRowsSelected,
@@ -107,7 +111,7 @@ function IntegrationsTable({
                                         </Button>
                                     </FlexItem>
                                 )}
-                            {hasWritePermission && !isReadOnly && (
+                            {hasWritePermission && !isReadOnly && !isCreationDisabled && (
                                 <FlexItem>
                                     <Button
                                         variant="primary"

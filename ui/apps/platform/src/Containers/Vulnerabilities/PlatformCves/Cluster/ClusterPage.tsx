@@ -25,9 +25,6 @@ import type { ClusterMetadata } from './ClusterPageHeader';
 import ClusterPageDetails from './ClusterPageDetails';
 import ClusterPageVulnerabilities from './ClusterPageVulnerabilities';
 
-const idDetails = 'ClusterPageDetails';
-const idVulnerabilities = 'ClusterPageVulnerabilities';
-
 const platformCvesClusterOverviewPath = getOverviewPagePath('Platform', {
     entityTab: 'Cluster',
 });
@@ -100,18 +97,10 @@ function ClusterPage() {
                             mountOnEnter
                             unmountOnExit
                         >
-                            <Tab
-                                eventKey={vulnTabKey}
-                                tabContentId={idVulnerabilities}
-                                title={vulnTabKey}
-                            >
+                            <Tab eventKey={vulnTabKey} title={vulnTabKey}>
                                 <ClusterPageVulnerabilities clusterId={clusterId} />
                             </Tab>
-                            <Tab
-                                eventKey={detailTabKey}
-                                tabContentId={idDetails}
-                                title={detailTabKey}
-                            >
+                            <Tab eventKey={detailTabKey} title={detailTabKey}>
                                 <ClusterPageDetails clusterId={clusterId} />
                             </Tab>
                         </Tabs>
