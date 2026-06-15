@@ -361,6 +361,7 @@ func (m *ManagerTestSuite) TestHandleReadyScanDeleteOldResultsGate() {
 			suiteStore := suiteDS.NewMockDataStore(ctrl)
 			bindingsStore := bindingsDS.NewMockDataStore(ctrl)
 			generator := reportGen.NewMockComplianceReportGenerator(ctrl)
+			generator.EXPECT().Stop().Times(1)
 
 			manager := New(scanConfigDS, scanDS, profileDS, snapshotDS, integrationDS, suiteStore, bindingsStore, checkResultDS, generator)
 			manager.Start()
