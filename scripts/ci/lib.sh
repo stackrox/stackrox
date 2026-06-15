@@ -1660,6 +1660,19 @@ store_test_results() {
 
     mkdir -p "$dest"
     cp -a "$from" "$dest" || true # (best effort)
+    strip_junit_system_output "$dest"
+}
+
+# LP interop jobs merge all JUnit XMLs and store the result in a Kubernetes
+# Secret (SHARED_DIR) which has a 1 MiB size limit. The <system-out> content
+# from Gradle/Go tests easily exceeds that. Strip it from the ARTIFACT_DIR
+# copies — the same output is available in Gradle reports and spec-logs.
+strip_junit_system_output() {
+    local dir="$1"
+    local f
+    while IFS= read -r -d '' f; do
+        sed -i '/<system-out>/,/<\/system-out>/d; /<system-err>/,/<\/system-err>/d' "$f"
+    done < <(find "$dir" -name '*.xml' -type f -print0)
 }
 
 post_process_test_results() {
