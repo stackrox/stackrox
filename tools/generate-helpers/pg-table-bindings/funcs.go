@@ -188,17 +188,12 @@ func (b *indexBuilder) addColumn(col string) {
 }
 
 func (b *indexBuilder) build() IndexInfo {
-	if b.unique && b.background {
-		log.Fatalf("index %q is both unique and background — unique indexes require an exclusive lock and cannot use CREATE INDEX CONCURRENTLY", b.name)
-	}
-
 	cols := strings.Join(b.columns, ", ")
-	var createSQL string
+	unique := ""
 	if b.unique {
-		createSQL = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS %s ON %s USING %s (%s)", b.name, b.table, b.indexType, cols)
-	} else {
-		createSQL = fmt.Sprintf("CREATE INDEX CONCURRENTLY IF NOT EXISTS %s ON %s USING %s (%s)", b.name, b.table, b.indexType, cols)
+		unique = "UNIQUE "
 	}
+	createSQL := fmt.Sprintf("CREATE %sINDEX CONCURRENTLY IF NOT EXISTS %s ON %s USING %s (%s)", unique, b.name, b.table, b.indexType, cols)
 
 	return IndexInfo{
 		Name:       b.name,

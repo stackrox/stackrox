@@ -56,7 +56,7 @@ func TestCollectIndexes(t *testing.T) {
 			},
 			obj: object{storageType: "storage.Group"},
 			expected: []IndexInfo{
-				{Name: "groups_unique", CreateSQL: "CREATE UNIQUE INDEX IF NOT EXISTS groups_unique ON groups USING btree (authproviderid)", Background: false},
+				{Name: "groups_unique", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS groups_unique ON groups USING btree (authproviderid)", Background: false},
 			},
 		},
 		"background index": {
@@ -210,7 +210,7 @@ func TestCollectIndexes(t *testing.T) {
 			},
 			obj: object{storageType: "storage.Deployment"},
 			expected: []IndexInfo{
-				{Name: "my_idx", CreateSQL: "CREATE UNIQUE INDEX IF NOT EXISTS my_idx ON test_table USING btree (col1)", Background: false},
+				{Name: "my_idx", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS my_idx ON test_table USING btree (col1)", Background: false},
 			},
 		},
 	}
