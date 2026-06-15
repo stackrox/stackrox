@@ -428,15 +428,15 @@ func (m *managerImpl) HandleScanRemove(scanID string) error {
 	return nil
 }
 
+// getWatcher returns an existing ScanWatcher or creates a new one. A new
+// watcher is only created when numChecks == 0, which means the scan's
+// check-count annotation is not yet set (i.e., the scan is starting, not
+// finished). This prevents creating watchers for completed scans whose events
+// are replayed during sensor reconnections.
 func (m *managerImpl) getWatcher(sensorCtx context.Context, id string, numChecks int) watcher.ScanWatcher {
 	var scanWatcher watcher.ScanWatcher
 	concurrency.WithLock(&m.watchingScansLock, func() {
 		var found bool
-		// The check for `numChecks == 0` is here to prevent starting a watcher twice per scan.
-		// It may happen that additional status updates (e.g., state) from CO arrive
-		// after the watcher is removed from the watchingScans (i.e., we have all the checks).
-		// Not checking that would cause a new watcher to be created here and in some circumstances
-		// (when no e-mail is provided for notification), the watcher would time-out and delete the data from DB.
 		if scanWatcher, found = m.watchingScans[id]; !found && numChecks == 0 {
 			scanWatcher = watcher.NewScanWatcher(m.automaticReportingCtx, sensorCtx, id, m.readyQueue)
 			m.watchingScans[id] = scanWatcher
@@ -447,7 +447,12 @@ func (m *managerImpl) getWatcher(sensorCtx context.Context, id string, numChecks
 	return scanWatcher
 }
 
-// HandleResult starts a new ScanWatcher if needed and pushes the checkResult to it
+// HandleResult pushes the checkResult to an existing ScanWatcher. Unlike
+// HandleScan, this method never creates a new watcher. Watchers are only
+// created by HandleScan which carries the check-count annotation needed to
+// determine completion. This prevents phantom watcher creation from replayed
+// check results during sensor reconnections, which previously triggered a
+// cascade leading to cross-cluster data deletion.
 func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
 	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
 		return nil
@@ -468,12 +473,20 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 		}
 		return err
 	}
-	w := m.getWatcher(sensorCtx, id, 0)
+	w := m.getExistingWatcher(id)
 	if w != nil {
 		return w.PushCheckResult(result)
 	}
-	log.Debugf("Received check result update after removing the watcher %+v", result)
+	log.Debugf("Received check result update but no watcher exists for %s", id)
 	return nil
+}
+
+// getExistingWatcher returns an existing ScanWatcher for the given id, or nil
+// if none exists. It never creates a new watcher.
+func (m *managerImpl) getExistingWatcher(id string) watcher.ScanWatcher {
+	return concurrency.WithLock1(&m.watchingScansLock, func() watcher.ScanWatcher {
+		return m.watchingScans[id]
+	})
 }
 
 // handleReadyScan pulls scans that are ready to be reported

@@ -506,81 +506,108 @@ func (m *ManagerTestSuite) TestHandleScanRemove() {
 	})
 }
 
-func (m *ManagerTestSuite) TestHandleResult() {
+func (m *ManagerTestSuite) TestHandleResultDoesNotCreateWatcher() {
 	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
-	managerImplementation, ok := manager.(*managerImpl)
-	require.True(m.T(), ok)
+	impl := manager.(*managerImpl)
+
 	timeNow := time.Now()
-	pastTime := timeNow.Add(-10 * time.Second)
-	futureTime := timeNow.Add(10 * time.Second)
-	timeNowProto, err := protocompat.ConvertTimeToTimestampOrError(timeNow)
-	require.NoError(m.T(), err)
-	nowRFCFormat := timeNow.Format(time.RFC3339Nano)
-	pastRFCFormat := pastTime.Format(time.RFC3339Nano)
-	futureRFCFormat := futureTime.Format(time.RFC3339Nano)
-	result := &storage.ComplianceOperatorCheckResultV2{
-		Annotations: map[string]string{
-			"compliance.openshift.io/last-scanned-timestamp": pastRFCFormat,
-		},
-	}
+	nowRFC := timeNow.Format(time.RFC3339Nano)
 	scan := &storage.ComplianceOperatorScanV2{
 		ClusterId: "cluster-id",
 		Id:        "scan-id",
 	}
-	m.scanDataStore.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(2).
-		Return([]*storage.ComplianceOperatorScanV2{scan}, nil)
-	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
-		Return(
-			[]*storage.ComplianceOperatorScanConfigurationV2{
-				{
-					Id: "scan-config-id",
-				},
-			}, nil,
-		)
-	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
-		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
-	id, err := watcher.GetWatcherIDFromCheckResult(context.Background(), result, m.scanDataStore, m.snapshotDataStore, m.scanConfigDataStore)
-	require.NoError(m.T(), err)
-	err = manager.HandleResult(context.Background(), result.CloneVT())
-	assert.NoError(m.T(), err)
-	concurrency.WithLock(&managerImplementation.watchingScansLock, func() {
-		w, ok := managerImplementation.watchingScans[id]
-		assert.True(m.T(), ok)
-		assert.NotNil(m.T(), w)
-		delete(managerImplementation.watchingScans, id)
-	})
+	result := &storage.ComplianceOperatorCheckResultV2{
+		Annotations: map[string]string{
+			watcher.LastScannedAnnotationKey: nowRFC,
+		},
+	}
 
-	scan.LastStartedTime = timeNowProto
 	m.scanDataStore.EXPECT().SearchScans(gomock.Any(), gomock.Any()).AnyTimes().
 		Return([]*storage.ComplianceOperatorScanV2{scan}, nil)
+	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorScanConfigurationV2{{Id: "sc-id"}}, nil)
+	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
 
-	err = manager.HandleResult(context.Background(), result.CloneVT())
-	assert.Error(m.T(), err)
-	concurrency.WithLock(&managerImplementation.watchingScansLock, func() {
-		assert.Len(m.T(), managerImplementation.watchingScans, 0)
+	// HandleResult with no existing watcher should NOT create one.
+	err := manager.HandleResult(context.Background(), result.CloneVT())
+	m.Require().NoError(err)
+	concurrency.WithLock(&impl.watchingScansLock, func() {
+		m.Assert().Empty(impl.watchingScans, "HandleResult must not create a watcher")
+	})
+}
+
+func (m *ManagerTestSuite) TestHandleResultPushesToExistingWatcher() {
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+	impl := manager.(*managerImpl)
+
+	timestamp := protocompat.TimestampNow()
+	timestampRFC := timestamp.AsTime().Format(time.RFC3339Nano)
+	scan := &storage.ComplianceOperatorScanV2{
+		ClusterId:       "cluster-id",
+		Id:              "scan-id",
+		LastStartedTime: timestamp,
+	}
+	result := &storage.ComplianceOperatorCheckResultV2{
+		Annotations: map[string]string{
+			watcher.LastScannedAnnotationKey: timestampRFC,
+		},
+	}
+
+	m.scanDataStore.EXPECT().SearchScans(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorScanV2{scan}, nil)
+	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorScanConfigurationV2{{Id: "sc-id"}}, nil)
+	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
+
+	// Create a watcher via HandleScan first.
+	err := manager.HandleScan(context.Background(), scan)
+	m.Require().NoError(err)
+
+	id, err := watcher.GetWatcherIDFromScan(context.Background(), scan, m.snapshotDataStore, m.scanConfigDataStore, nil)
+	m.Require().NoError(err)
+	concurrency.WithLock(&impl.watchingScansLock, func() {
+		m.Require().Contains(impl.watchingScans, id, "HandleScan should have created the watcher")
 	})
 
-	result.Annotations["compliance.openshift.io/last-scanned-timestamp"] = nowRFCFormat
+	// HandleResult should push to the existing watcher without error.
 	err = manager.HandleResult(context.Background(), result.CloneVT())
-	assert.NoError(m.T(), err)
-	id, err = watcher.GetWatcherIDFromCheckResult(context.Background(), result, m.scanDataStore, m.snapshotDataStore, m.scanConfigDataStore)
-	require.NoError(m.T(), err)
-	concurrency.WithLock(&managerImplementation.watchingScansLock, func() {
-		w, ok := managerImplementation.watchingScans[id]
-		assert.True(m.T(), ok)
-		assert.NotNil(m.T(), w)
-		delete(managerImplementation.watchingScans, id)
-	})
-	result.Annotations["compliance.openshift.io/last-scanned-timestamp"] = futureRFCFormat
+	m.Assert().NoError(err)
+}
+
+func (m *ManagerTestSuite) TestHandleResultRejectsOldCheckResult() {
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+	impl := manager.(*managerImpl)
+
+	timeNow := time.Now()
+	pastRFC := timeNow.Add(-10 * time.Second).Format(time.RFC3339Nano)
+	timeNowProto, err := protocompat.ConvertTimeToTimestampOrError(timeNow)
+	m.Require().NoError(err)
+
+	scan := &storage.ComplianceOperatorScanV2{
+		ClusterId:       "cluster-id",
+		Id:              "scan-id",
+		LastStartedTime: timeNowProto,
+	}
+	result := &storage.ComplianceOperatorCheckResultV2{
+		Annotations: map[string]string{
+			watcher.LastScannedAnnotationKey: pastRFC,
+		},
+	}
+
+	m.scanDataStore.EXPECT().SearchScans(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorScanV2{scan}, nil)
+	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorScanConfigurationV2{{Id: "sc-id"}}, nil)
+	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
+
+	// Check result older than the scan should be rejected.
 	err = manager.HandleResult(context.Background(), result.CloneVT())
-	assert.NoError(m.T(), err)
-	id, err = watcher.GetWatcherIDFromCheckResult(context.Background(), result, m.scanDataStore, m.snapshotDataStore, m.scanConfigDataStore)
-	require.NoError(m.T(), err)
-	concurrency.WithLock(&managerImplementation.watchingScansLock, func() {
-		w, ok := managerImplementation.watchingScans[id]
-		assert.True(m.T(), ok)
-		assert.NotNil(m.T(), w)
-		delete(managerImplementation.watchingScans, id)
+	m.Assert().Error(err)
+	concurrency.WithLock(&impl.watchingScansLock, func() {
+		m.Assert().Empty(impl.watchingScans, "no watcher should be created for old result")
 	})
 }
 
