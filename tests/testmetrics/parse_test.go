@@ -93,3 +93,14 @@ func TestParse_PrefixDoesNotFalseMatch(t *testing.T) {
 	v = m[Key(Query{Name: "rox_scan_connections"})]
 	require.False(t, v.Found, "rox_scan_connections should NOT match rox_scan_connections_total")
 }
+
+func TestParse_LabelFilterMatchesExactLabelName(t *testing.T) {
+	text := `labeled_total{my_status="ok"} 7`
+
+	m := parse(text, []Query{
+		{Name: "labeled_total", LabelFilter: `status="ok"`},
+	})
+
+	v := m[Key(Query{Name: "labeled_total", LabelFilter: `status="ok"`})]
+	require.False(t, v.Found, `status="ok" should NOT match my_status="ok"`)
+}

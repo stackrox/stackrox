@@ -114,7 +114,7 @@ func PollUntilStable(ctx context.Context, cfg StableConfig, scrapeFn scrapeFunc)
 	return prev
 }
 
-func findCounter(body, metricName, labelSubstring string) (float64, bool) {
+func findCounter(body, metricName, labelFilter string) (float64, bool) {
 	for _, line := range strings.Split(body, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
@@ -127,7 +127,7 @@ func findCounter(body, metricName, labelSubstring string) (float64, bool) {
 		if len(rest) > 0 && rest[0] != '{' && rest[0] != ' ' {
 			continue
 		}
-		if labelSubstring != "" && !strings.Contains(line, labelSubstring) {
+		if !labelFilterMatchesLine(line, labelFilter) {
 			continue
 		}
 		fields := strings.Fields(line)
@@ -141,4 +141,33 @@ func findCounter(body, metricName, labelSubstring string) (float64, bool) {
 		return val, true
 	}
 	return 0, false
+}
+
+func labelFilterMatchesLine(line, labelFilter string) bool {
+	if strings.TrimSpace(labelFilter) == "" {
+		return true
+	}
+	open := strings.IndexByte(line, '{')
+	if open < 0 {
+		return false
+	}
+	close := strings.IndexByte(line[open+1:], '}')
+	if close < 0 {
+		return false
+	}
+	labels := line[open+1 : open+1+close]
+	for start := 0; start <= len(labels); start++ {
+		idx := strings.Index(labels[start:], labelFilter)
+		if idx < 0 {
+			return false
+		}
+		idx += start
+		before := strings.TrimSpace(labels[:idx])
+		after := strings.TrimSpace(labels[idx+len(labelFilter):])
+		if (before == "" || before[len(before)-1] == ',') && (after == "" || after[0] == ',') {
+			return true
+		}
+		start = idx
+	}
+	return false
 }
