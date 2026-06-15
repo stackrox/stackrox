@@ -280,7 +280,7 @@ func (s *NoSerializedIntegrationSuite) TestGetWithOptions_DefaultBehavior() {
 }
 
 func (s *NoSerializedIntegrationSuite) TestGetWithOptions_NotFound() {
-	got, exists, err := s.store.GetWithOptions(s.ctx, "nonexistent-id", pgSearch.WithoutChildren())
+	got, exists, err := s.store.GetWithOptions(s.ctx, uuid.NewV4().String(), pgSearch.WithoutChildren())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(got)
