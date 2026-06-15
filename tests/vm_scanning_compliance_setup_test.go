@@ -5,7 +5,6 @@ package tests
 import (
 	"context"
 	"fmt"
-	"maps"
 	"time"
 
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -22,22 +21,25 @@ import (
 
 // ensureComplianceMetricsExposed guarantees that the collector compliance container
 // serves Prometheus metrics on port 9091, that a headless Service routes to it, and
-// that NetworkPolicies allow ingress to both collector and sensor metrics ports.
+// that dedicated test-owned NetworkPolicies allow ingress to the collector and
+// sensor metrics ports used by the VM scanning E2E assertions.
 //
 // The StackRox Helm chart sets ROX_METRICS_PORT=disabled and deploys a
 // "collector-no-ingress" NetworkPolicy (deny-all) when exposeMonitoring is false
 // (the operator default). There is no SecuredCluster CR field to set
-// exposeMonitoring for collector/sensor, so the test creates the equivalent
-// resources: env patch, Service, and permissive NetworkPolicies matching what
-// the chart would produce with exposeMonitoring=true.
+// exposeMonitoring for collector/sensor, so the test enables the compliance
+// metrics port and creates focused, test-owned monitoring policies instead of
+// mutating any chart-managed monitoring policies that may already exist.
 func (s *VMScanningSuite) ensureComplianceMetricsExposed() {
 	ns := namespaces.StackRox
 	const (
-		svcName       = "compliance-metrics"
-		dsName        = "collector"
-		containerName = "compliance"
-		metricsEnv    = "ROX_METRICS_PORT"
-		metricsValue  = ":9091"
+		svcName                    = "compliance-metrics"
+		dsName                     = "collector"
+		containerName              = "compliance"
+		metricsEnv                 = "ROX_METRICS_PORT"
+		metricsValue               = ":9091"
+		collectorMetricsPolicyName = "collector-monitoring-vm-scanning-e2e"
+		sensorMetricsPolicyName    = "sensor-monitoring-vm-scanning-e2e"
 	)
 	metricsPort := int32(9091)
 
@@ -46,8 +48,8 @@ func (s *VMScanningSuite) ensureComplianceMetricsExposed() {
 
 	s.ensureComplianceMetricsEnv(ctx, ns, dsName, containerName, metricsEnv, metricsValue)
 	s.ensureComplianceMetricsService(ctx, ns, svcName, metricsPort)
-	s.ensureMonitoringNetworkPolicy(ctx, ns, "collector-monitoring", "collector", []int32{9090, 9091})
-	s.ensureMonitoringNetworkPolicy(ctx, ns, "sensor-monitoring", "sensor", []int32{9090})
+	s.ensureMonitoringNetworkPolicy(ctx, ns, collectorMetricsPolicyName, "collector", []int32{9090, 9091})
+	s.ensureMonitoringNetworkPolicy(ctx, ns, sensorMetricsPolicyName, "sensor", []int32{9090})
 }
 
 func (s *VMScanningSuite) ensureComplianceMetricsEnv(ctx context.Context, ns, dsName, containerName, envName, envValue string) {
@@ -162,9 +164,8 @@ func serviceExposesPort(svc *coreV1.Service, port int32) bool {
 	return false
 }
 
-// ensureMonitoringNetworkPolicy creates an ingress-allow NetworkPolicy for the
-// given app label and TCP ports. This mirrors what the Helm chart creates when
-// exposeMonitoring is true (e.g. "collector-monitoring" or "sensor-monitoring").
+// ensureMonitoringNetworkPolicy creates or updates a dedicated test-owned
+// ingress-allow NetworkPolicy for the given app label and TCP ports.
 func (s *VMScanningSuite) ensureMonitoringNetworkPolicy(ctx context.Context, ns, name, appLabel string, ports []int32) {
 	t := s.T()
 	tcp := coreV1.ProtocolTCP
@@ -196,24 +197,19 @@ func (s *VMScanningSuite) ensureMonitoringNetworkPolicy(ctx context.Context, ns,
 	}
 
 	existing, err := s.k8sClient.NetworkingV1().NetworkPolicies(ns).Get(ctx, name, metaV1.GetOptions{})
-	if err == nil {
-		if networkPolicyMatches(existing, appLabel, ports) {
-			s.logf("VM scanning setup: NetworkPolicy %s/%s already allows ports %v", ns, name, ports)
-			return
-		}
-		s.logf("VM scanning setup: NetworkPolicy %s/%s exists but ports differ, updating", ns, name)
+	switch {
+	case err == nil:
+		s.logf("VM scanning setup: updating dedicated NetworkPolicy %s/%s (app=%s, ports=%v)", ns, name, appLabel, ports)
 		desired.ResourceVersion = existing.ResourceVersion
 		_, err = s.k8sClient.NetworkingV1().NetworkPolicies(ns).Update(ctx, desired, metaV1.UpdateOptions{})
 		require.NoError(t, err, "updating NetworkPolicy %s/%s", ns, name)
-		return
-	}
-	if !apierrors.IsNotFound(err) {
+	case apierrors.IsNotFound(err):
+		s.logf("VM scanning setup: creating dedicated NetworkPolicy %s/%s (app=%s, ports=%v)", ns, name, appLabel, ports)
+		_, err = s.k8sClient.NetworkingV1().NetworkPolicies(ns).Create(ctx, desired, metaV1.CreateOptions{})
+		require.NoError(t, err, "creating NetworkPolicy %s/%s", ns, name)
+	default:
 		require.NoError(t, err, "getting NetworkPolicy %s/%s", ns, name)
 	}
-
-	s.logf("VM scanning setup: creating NetworkPolicy %s/%s (app=%s, ports=%v)", ns, name, appLabel, ports)
-	_, err = s.k8sClient.NetworkingV1().NetworkPolicies(ns).Create(ctx, desired, metaV1.CreateOptions{})
-	require.NoError(t, err, "creating NetworkPolicy %s/%s", ns, name)
 }
 
 func ensureDaemonSetContainerEnv(ds *appsV1.DaemonSet, containerName, envName, envValue string) (bool, error) {
@@ -237,29 +233,4 @@ func ensureDaemonSetContainerEnv(ds *appsV1.DaemonSet, containerName, envName, e
 		return true, nil
 	}
 	return false, fmt.Errorf("container %q not found in DaemonSet %s/%s", containerName, ds.Namespace, ds.Name)
-}
-
-func networkPolicyMatches(np *networkingV1.NetworkPolicy, appLabel string, wantPorts []int32) bool {
-	if !maps.Equal(np.Spec.PodSelector.MatchLabels, map[string]string{"app": appLabel}) {
-		return false
-	}
-	if len(np.Spec.PolicyTypes) != 1 || np.Spec.PolicyTypes[0] != networkingV1.PolicyTypeIngress {
-		return false
-	}
-	if len(np.Spec.Ingress) != 1 {
-		return false
-	}
-	have := make(map[int32]bool)
-	for _, p := range np.Spec.Ingress[0].Ports {
-		if p.Port == nil || p.Port.Type != intstr.Int || p.Protocol == nil || *p.Protocol != coreV1.ProtocolTCP {
-			return false
-		}
-		have[p.Port.IntVal] = true
-	}
-	for _, p := range wantPorts {
-		if !have[p] {
-			return false
-		}
-	}
-	return len(have) == len(wantPorts)
 }

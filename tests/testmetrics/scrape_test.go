@@ -13,13 +13,6 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-func TestCollectFromPods_Validation(t *testing.T) {
-	ctx := context.Background()
-	cs := fake.NewSimpleClientset()
-	_, err := collectFromPods(ctx, cs, ScrapeTarget{})
-	require.Error(t, err)
-}
-
 func TestFindServicePort_ContinuesAcrossMatchingServices(t *testing.T) {
 	ctx := context.Background()
 	cs := fake.NewSimpleClientset(

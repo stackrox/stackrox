@@ -20,43 +20,6 @@ import (
 	k8stesting "k8s.io/client-go/testing"
 )
 
-func TestEnsureMonitoringNetworkPolicy_ReconcilesSelectorDrift(t *testing.T) {
-	tcp := coreV1.ProtocolTCP
-	existing := &networkingV1.NetworkPolicy{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "collector-monitoring",
-			Namespace: "stackrox",
-		},
-		Spec: networkingV1.NetworkPolicySpec{
-			PodSelector: metaV1.LabelSelector{
-				MatchLabels: map[string]string{"app": "wrong"},
-			},
-			Ingress: []networkingV1.NetworkPolicyIngressRule{{
-				Ports: []networkingV1.NetworkPolicyPort{
-					{
-						Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 9090},
-						Protocol: &tcp,
-					},
-					{
-						Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 9091},
-						Protocol: &tcp,
-					},
-				},
-			}},
-			PolicyTypes: []networkingV1.PolicyType{networkingV1.PolicyTypeIngress},
-		},
-	}
-	cs := fake.NewSimpleClientset(existing)
-	s := &VMScanningSuite{k8sClient: cs}
-	s.SetT(t)
-
-	s.ensureMonitoringNetworkPolicy(context.Background(), "stackrox", "collector-monitoring", "collector", []int32{9090, 9091})
-
-	got, err := cs.NetworkingV1().NetworkPolicies("stackrox").Get(context.Background(), "collector-monitoring", metaV1.GetOptions{})
-	require.NoError(t, err)
-	require.Equal(t, map[string]string{"app": "collector"}, got.Spec.PodSelector.MatchLabels)
-}
-
 func TestEnsureComplianceMetricsEnv_RetriesOnConflict(t *testing.T) {
 	ds := &appsV1.DaemonSet{
 		ObjectMeta: metaV1.ObjectMeta{
