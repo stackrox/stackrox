@@ -937,7 +937,6 @@ module.exports = [
     },
     {
         files: ['cypress/**/*.{js,ts}', 'src/**/*.{js,jsx,ts,tsx}'],
-        // /*
         ignores: [
             'cypress/constants/**',
             'cypress/integration/clusters/**', // delete obsolete tests
@@ -967,7 +966,6 @@ module.exports = [
             'src/Containers/VulnMgmt/**', // deprecated
             'src/css/trumps.css', // delete or replace
         ],
-        // */
 
         // languageOptions from previous configuration object
 
