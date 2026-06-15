@@ -48,4 +48,4 @@ jobs:
         slack_top_n_failures ${n} "ui-e2e" ":computer: Top ${n} UI E2E Test failures in this and previous week" "${is_test}"
         slack_top_n_failures ${n} "nongroovy-e2e" ":go: Top ${n} NonGroovy E2E Test failures in this and previous week" "${is_test}"
         slack_top_n_failures ${n} "go" ":github: Top ${n} unit test failures in this and previous week" "${is_test}"
-        slack_test_failure_streaks 2 30 ${n} ":fire: Top ${n} tests with >2 consecutive failures in last 30 days" "${is_test}"
+        slack_test_failure_streaks 3 30 ${n} ":fire: Top ${n} tests with 3+ consecutive failures in last 30 days" "${is_test}"

@@ -301,7 +301,7 @@ LIMIT
         --use_legacy_sql=false \
         --parameter="job_name_match::${job_name_match}" \
         --parameter="limit:INTEGER:${n}" \
-        "$sql" > "${data_file}" 2>/dev/null || {
+        "$sql" > "${data_file}" || {
         echo >&2 -e "Cannot run query:\n${sql}\nresponse:\n$(jq < "${data_file}")"
         exit 1
     }
@@ -312,7 +312,7 @@ LIMIT
         # shellcheck disable=SC2016
         body='{
             "blocks": [
-                {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
+                {"type": "header", "text": {"type": "plain_text", "text": $subject, "emoji": true}},
                 {
                     "type": "table",
                     "rows": (
@@ -339,13 +339,13 @@ LIMIT
         }'
     else
         body='{"blocks":[
-            {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
+            {"type": "header", "text": {"type": "plain_text", "text": $subject, "emoji": true}},
             {"type": "section", "text": {"type": "plain_text", "text": "No failures! :success-kid:", "emoji": true}}]}'
         echo "No failures found!"
     fi
 
     echo "Posting data to slack"
-    _post_to_slack "$body" "${data_file}" "$(_get_slack_webhook_url "${is_test}")"
+    _post_to_slack "${subject}" "$body" "${data_file}" "$(_get_slack_webhook_url "${is_test}")"
     rm -f "${data_file}"
     echo "::endgroup::"
 }
@@ -383,13 +383,15 @@ FROM (
       AND Status IN ("passed", "failed")
       AND NOT STARTS_WITH(JobName, "rehearse-")
       AND NOT STARTS_WITH(JobName, "pull-")
+      AND NOT CONTAINS_SUBSTR(JobName, "-release-")
+      AND NOT CONTAINS_SUBSTR(JobName, "-interop-")
       AND Classname NOT LIKE "CVE-%"
   )
 )
 WHERE Status = "failed"
   AND rn < COALESCE(break_at, 999999)
 GROUP BY Name, Classname, JobName
-HAVING COUNT(*) > @min_streak
+HAVING COUNT(*) >= @min_streak
   AND DATE(MAX(Timestamp)) = CURRENT_DATE()
 ORDER BY consecutive_count DESC, duration_days DESC
 LIMIT @limit
@@ -403,7 +405,7 @@ LIMIT @limit
         --parameter="min_streak:INTEGER:${min_streak}" \
         --parameter="days:INTEGER:${days}" \
         --parameter="limit:INTEGER:${limit}" \
-        "$sql" > "${data_file}" 2>/dev/null || {
+        "$sql" > "${data_file}" || {
         echo >&2 -e "Cannot run query:\n${sql}\nresponse:\n$(jq < "${data_file}")"
         exit 1
     }
@@ -414,7 +416,7 @@ LIMIT @limit
         # shellcheck disable=SC2016
         body='{
             "blocks": [
-                {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
+                {"type": "header", "text": {"type": "plain_text", "text": $subject, "emoji": true}},
                 {
                     "type": "table",
                     "rows": (
@@ -447,13 +449,13 @@ LIMIT @limit
         }'
     else
         body='{"blocks":[
-            {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
+            {"type": "header", "text": {"type": "plain_text", "text": $subject, "emoji": true}},
             {"type": "section", "text": {"type": "plain_text", "text": "No long failure streaks! :success-kid:", "emoji": true}}]}'
         echo "No failure streaks found!"
     fi
 
     echo "Posting data to slack"
-    _post_to_slack "$body" "${data_file}" "$(_get_slack_webhook_url "${is_test}")"
+    _post_to_slack "${subject}" "$body" "${data_file}" "$(_get_slack_webhook_url "${is_test}")"
     rm -f "${data_file}"
     echo "::endgroup::"
 }
@@ -477,12 +479,12 @@ _get_slack_webhook_url() {
     fi
 }
 
-# Helper to post JSON data to Slack via webhook
 _post_to_slack() {
-    local body="$1"
-    local data_file="$2"
-    local webhook_url="$3"
-    jq "$body" "${data_file}" | curl --fail -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+    local subject="$1"
+    local body="$2"
+    local data_file="$3"
+    local webhook_url="$4"
+    jq --arg subject "${subject}" "$body" "${data_file}" | curl --fail -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
 _CENTRAL_STORAGE_DIR="central-metrics"
 
