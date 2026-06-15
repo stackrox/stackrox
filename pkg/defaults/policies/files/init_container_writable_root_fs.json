@@ -1,0 +1,38 @@
+{
+  "id":  "43392eff-8ff9-484e-a666-515724897e20",
+  "name":  "Init Container: Writable Root Filesystem",
+  "description":  "Alert on deployments with init containers that do not have a read-only root filesystem",
+  "rationale":  "Init containers with writable root filesystems can be exploited to persist malicious changes that affect main containers. A read-only root filesystem limits the attack surface during pod initialization.",
+  "remediation":  "Set readOnlyRootFilesystem to true in the init container's security context. Use volume mounts for any directories that require write access.",
+  "disabled":  true,
+  "categories":  [
+    "Privileges"
+  ],
+  "lifecycleStages":  [
+    "DEPLOY"
+  ],
+  "severity":  "LOW_SEVERITY",
+  "policyVersion":  "1.1",
+  "policySections":  [
+    {
+      "policyGroups":  [
+        {
+          "fieldName":  "Read-Only Root Filesystem",
+          "values":  [
+            {
+              "value":  "false"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked":  true,
+  "mitreVectorsLocked":  true,
+  "isDefault":  true,
+  "evaluationFilter":  {
+    "skipContainerTypes":  [
+      "REGULAR"
+    ]
+  }
+}

@@ -20,7 +20,12 @@ func Test_DefaultPolicies_FilterByFeatureFlag(t *testing.T) {
 
 	// This is required here to be able to check if the policy is present in the final list of default policies
 	// since the feature flag filtering is done by filename other than policy name.
-	fileToPolicyName := map[string]string{}
+	fileToPolicyName := map[string]string{
+		"init_container_latest_tag.json":       "Init Container: Latest tag",
+		"init_container_cvss_7.json":           "Init Container: Fixable CVSS >= 7",
+		"init_container_privileged.json":       "Init Container: Privileged",
+		"init_container_writable_root_fs.json": "Init Container: Writable Root Filesystem",
+	}
 
 	for filename, ff := range featureFlagFileGuard {
 		t.Setenv(ff.EnvVar(), "false")

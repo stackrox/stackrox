@@ -1,0 +1,47 @@
+{
+  "id":  "0fedb887-4178-43de-a386-191b84044cf8",
+  "name":  "Init Container: Fixable CVSS >= 7",
+  "description":  "Alert on deployments with init container images containing fixable vulnerabilities with a CVSS score of 7 or higher",
+  "rationale":  "Init containers with known fixable vulnerabilities can be exploited during pod startup to compromise the pod before main containers begin running.",
+  "remediation":  "Update the init container image to a version that addresses the identified vulnerabilities.",
+  "disabled":  true,
+  "categories":  [
+    "Vulnerability Management"
+  ],
+  "lifecycleStages":  [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "severity":  "MEDIUM_SEVERITY",
+  "policyVersion":  "1.1",
+  "policySections":  [
+    {
+      "policyGroups":  [
+        {
+          "fieldName":  "Fixed By",
+          "values":  [
+            {
+              "value":  ".*"
+            }
+          ]
+        },
+        {
+          "fieldName":  "CVSS",
+          "values":  [
+            {
+              "value":  ">= 7.000000"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked":  true,
+  "mitreVectorsLocked":  true,
+  "isDefault":  true,
+  "evaluationFilter":  {
+    "skipContainerTypes":  [
+      "REGULAR"
+    ]
+  }
+}

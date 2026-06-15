@@ -1,0 +1,40 @@
+{
+  "id":  "25628531-a28c-448c-b4e9-04ee9b165fa5",
+  "name":  "Init Container: Latest tag",
+  "description":  "Alert on deployments with init containers using image tag 'latest'",
+  "rationale":  "Init containers using the 'latest' tag can introduce unpredictable behavior during pod initialization. Pinning init container images to specific versions ensures reproducible and auditable startup sequences.",
+  "remediation":  "Use a specific image tag or digest for init container images instead of 'latest'.",
+  "disabled":  true,
+  "categories":  [
+    "DevOps Best Practices",
+    "Supply Chain Security"
+  ],
+  "lifecycleStages":  [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "severity":  "LOW_SEVERITY",
+  "policyVersion":  "1.1",
+  "policySections":  [
+    {
+      "policyGroups":  [
+        {
+          "fieldName":  "Image Tag",
+          "values":  [
+            {
+              "value":  "latest"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked":  true,
+  "mitreVectorsLocked":  true,
+  "isDefault":  true,
+  "evaluationFilter":  {
+    "skipContainerTypes":  [
+      "REGULAR"
+    ]
+  }
+}

@@ -24,7 +24,12 @@ var (
 	policiesFS embed.FS
 
 	// featureFlagFileGuard is a map indexed by file name that ignores files if the feature flag is not enabled.
-	featureFlagFileGuard = map[string]features.FeatureFlag{}
+	featureFlagFileGuard = map[string]features.FeatureFlag{
+		"init_container_latest_tag.json":       features.InitContainerSupport,
+		"init_container_cvss_7.json":           features.InitContainerSupport,
+		"init_container_privileged.json":       features.InitContainerSupport,
+		"init_container_writable_root_fs.json": features.InitContainerSupport,
+	}
 )
 
 // DefaultPolicies returns a slice of the default policies.

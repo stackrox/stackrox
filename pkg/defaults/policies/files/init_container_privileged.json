@@ -1,0 +1,38 @@
+{
+  "id":  "a778bd1e-c81b-4d7f-8d13-147a9bedcaf2",
+  "name":  "Init Container: Privileged",
+  "description":  "Alert on deployments with init containers running in privileged mode",
+  "rationale":  "A privileged init container has full access to host devices and can compromise the node before main containers start. Since init containers run with elevated trust during pod setup, a compromised privileged init container can weaken the security posture of the entire pod.",
+  "remediation":  "Verify that privileged mode is required for the init container and cannot be replaced with specific capabilities.",
+  "disabled":  true,
+  "categories":  [
+    "Privileges"
+  ],
+  "lifecycleStages":  [
+    "DEPLOY"
+  ],
+  "severity":  "MEDIUM_SEVERITY",
+  "policyVersion":  "1.1",
+  "policySections":  [
+    {
+      "policyGroups":  [
+        {
+          "fieldName":  "Privileged Container",
+          "values":  [
+            {
+              "value":  "true"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked":  true,
+  "mitreVectorsLocked":  true,
+  "isDefault":  true,
+  "evaluationFilter":  {
+    "skipContainerTypes":  [
+      "REGULAR"
+    ]
+  }
+}
