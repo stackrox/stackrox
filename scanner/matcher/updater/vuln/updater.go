@@ -234,7 +234,6 @@ func (u *Updater) Import(ctx context.Context, in io.Reader) (err error) {
 				return true
 			}
 		}
-		importStart := time.Now()
 		slog.InfoContext(ctx, "importing update", "updater", op.Updater, "kind", string(op.Kind))
 		var ref uuid.UUID
 		count := 0
@@ -270,7 +269,7 @@ func (u *Updater) Import(ctx context.Context, in io.Reader) (err error) {
 			err = fmt.Errorf("updating %s: %w", op.Kind, err)
 			return false
 		}
-		slog.InfoContext(ctx, "update imported", "updater", op.Updater, "kind", string(op.Kind), "ref", ref.String(), "count", count, "duration", time.Since(importStart))
+		slog.InfoContext(ctx, "update imported", "updater", op.Updater, "kind", string(op.Kind), "ref", ref.String(), "count", count)
 		return true
 	})
 	if err := iterErr(); err != nil {
@@ -322,11 +321,9 @@ func (u *Updater) Start() error {
 		go u.runGCFullPeriodic()
 	}
 
-	distStart := time.Now()
 	if err := u.distManager.update(ctx); err != nil {
 		slog.WarnContext(ctx, "failed to initialize known-distributions", "reason", err)
 	}
-	slog.InfoContext(ctx, "known-distributions initialized", "duration", time.Since(distStart))
 
 	// Start immediately, all matchers will compete to update each vulnerability
 	// bundle if multi-bundle mode is on, or the single bundle.
@@ -337,12 +334,11 @@ func (u *Updater) Start() error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-timer.C:
-			updateStart := time.Now()
 			slog.InfoContext(ctx, "starting update")
 			if err := u.Update(ctx); err != nil {
 				slog.ErrorContext(ctx, "errors encountered during updater run", "reason", err)
 			}
-			slog.InfoContext(ctx, "completed update", "duration", time.Since(updateStart))
+			slog.InfoContext(ctx, "completed update")
 
 			// Skip jitter when vulns have never been loaded, so that
 			// failed initial attempts (e.g. Central not yet ready at startup)
@@ -417,9 +413,7 @@ func (u *Updater) Update(ctx context.Context) error {
 	// Only bother running the GC when it's not disabled
 	// and when the vulnerabilities have been updated.
 	if !u.skipGC && updated {
-		gcStart := time.Now()
 		u.runGC(ctx)
-		slog.InfoContext(ctx, "post-update GC completed", "duration", time.Since(gcStart))
 	} else if !u.skipGC {
 		slog.InfoContext(ctx, "no vulnerability updates: skipping GC")
 	}
@@ -441,16 +435,15 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	}
 	slog.InfoContext(ctx, "previous vuln update", "timestamp", prevTime)
 
-	fetchStart := time.Now()
 	zipFile, zipTime, err := u.fetch(ctx, prevTime)
 	if err != nil {
 		return false, err
 	}
 	if zipFile == nil {
-		slog.InfoContext(ctx, "no new vulnerability update", "fetch_duration", time.Since(fetchStart))
+		// Nothing to update at this time.
+		slog.InfoContext(ctx, "no new vulnerability update")
 		return false, nil
 	}
-	slog.InfoContext(ctx, "vulnerability bundle fetched", "duration", time.Since(fetchStart))
 	defer func() {
 		if err := zipFile.Close(); err != nil {
 			slog.ErrorContext(ctx, "closing temp update file", "reason", err)
@@ -479,30 +472,25 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 		}
 		names = append(names, bundleF.Name)
 		bundleCtx := log.With(ctx, "bundle", bundleF.Name)
-		bundleStart := time.Now()
 		slog.InfoContext(bundleCtx, "starting bundle update")
 		if err := u.updateBundle(bundleCtx, bundleF, zipTime, prevTime); err != nil {
 			slog.ErrorContext(bundleCtx, "updating bundle failed", "reason", err)
 			return false, fmt.Errorf("updating bundle %s: %w", bundleF.Name, err)
 		}
-		slog.InfoContext(bundleCtx, "completed bundle update", "duration", time.Since(bundleStart))
+		slog.InfoContext(bundleCtx, "completed bundle update")
 	}
 
 	// Clean updaters that were deleted (not in the zip and older than this update).
 	// Safe to be run concurrently.
-	gcUpdatesStart := time.Now()
 	err = u.metadataStore.GCVulnerabilityUpdates(ctx, names, zipTime)
 	if err != nil {
 		return false, fmt.Errorf("cleaning vuln updates: %w", err)
 	}
-	slog.InfoContext(ctx, "vulnerability updates GC completed", "duration", time.Since(gcUpdatesStart))
 
-	distStart := time.Now()
 	err = u.distManager.update(ctx)
 	if err != nil {
 		return false, fmt.Errorf("updating known-distributions: %w", err)
 	}
-	slog.InfoContext(ctx, "known-distributions updated", "duration", time.Since(distStart))
 
 	_ = u.Initialized(ctx)
 

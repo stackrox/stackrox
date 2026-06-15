@@ -19,7 +19,6 @@ const (
 //
 // At this time, this function does 30 attempts with a 10-second interval between attempts.
 func Connect(ctx context.Context, connString string, applicationName string) (*pgxpool.Pool, error) {
-	start := time.Now()
 	// ClairCore's postgres.Connect uses pgxpool.New (pgx v5), which does not
 	// eagerly establish connections.
 	pool, err := postgres.Connect(ctx, connString, applicationName)
@@ -41,6 +40,5 @@ func Connect(ctx context.Context, connString string, applicationName string) (*p
 		pool.Close()
 		return nil, err
 	}
-	slog.InfoContext(ctx, "postgres connection established", "application", applicationName, "duration", time.Since(start))
 	return pool, nil
 }

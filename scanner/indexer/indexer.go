@@ -176,24 +176,20 @@ type localIndexer struct {
 func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) {
 	var success bool
 
-	start := time.Now()
 	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libindex")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for indexer: %w", err)
 	}
-	slog.InfoContext(ctx, "indexer postgres connected", "duration", time.Since(start))
 	defer func() {
 		if !success {
 			pool.Close()
 		}
 	}()
 
-	start = time.Now()
 	store, err := ccpostgres.InitPostgresIndexerStore(ctx, pool, true)
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres indexer store: %w", err)
 	}
-	slog.InfoContext(ctx, "indexer store initialized", "duration", time.Since(start))
 	defer func() {
 		if !success {
 			_ = store.Close(ctx)
@@ -244,12 +240,10 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		Transport: t,
 	}
 
-	start = time.Now()
 	indexer, err := newLibindex(ctx, cfg, client, root, store, locker)
 	if err != nil {
 		return nil, err
 	}
-	slog.InfoContext(ctx, "libindex created", "duration", time.Since(start))
 
 	// Use indexer.Ecosystems instead of the ecosystems we pass to libindex.New
 	// in case libindex.New adds any ecosystems (which it does).
@@ -266,14 +260,12 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		// TODO(ROX-26957): Consider moving this elsewhere so we do not block initialization.
 		// TODO(ROX-26995): Consider updating the immediate purge condition.
 		// It may be possible we want to purge all manifests upon startup for other reasons.
-		start = time.Now()
 		err = manifestManager.MigrateManifests(ctx, time.Now())
 		if err != nil {
 			// TODO(ROX-26958): Consider just logging this instead once we start deleting entries
 			// missing from the metadata table, too.
 			return nil, fmt.Errorf("migrating manifests to metadata store: %w", err)
 		}
-		slog.InfoContext(ctx, "manifest migration completed", "duration", time.Since(start))
 		// Start the manifest GC.
 		go func() {
 			if err := manifestManager.StartGC(); err != nil {
@@ -295,13 +287,11 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 
 	var repo2cpeFetcher *RepositoryToCPEFetcher
 	if cfg.RepositoryToCPEURL != "" {
-		start = time.Now()
 		var err error
 		repo2cpeFetcher, err = NewRepositoryToCPEFetcher(client, cfg.RepositoryToCPEURL, cfg.RepositoryToCPEFile)
 		if err != nil {
 			return nil, fmt.Errorf("creating repository-to-CPE fetcher: %w", err)
 		}
-		slog.InfoContext(ctx, "repository-to-CPE fetcher created", "duration", time.Since(start))
 	} else if features.SBOMScanning.Enabled() {
 		slog.ErrorContext(ctx, "unconfigured repository_to_cpe_url may lead to inaccurate SBOM scanning results")
 	}
