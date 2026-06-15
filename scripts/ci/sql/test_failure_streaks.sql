@@ -25,8 +25,7 @@ SELECT
   REGEXP_REPLACE(JobName,
     r"^(periodic-ci-stackrox-stackrox-master-|branch-ci-stackrox-stackrox-(nightlies|master)-)",
     "") AS job,
-  COUNT(*) as consecutive_count,
-  DATE_DIFF(DATE(MAX(Timestamp)), DATE(MIN(Timestamp)), DAY) + 1 as duration_days
+  COUNT(*) as consecutive_count
 FROM (
   SELECT *,
     MIN(IF(Status = "passed", rn, NULL)) OVER (PARTITION BY Name, Classname, JobName) as break_at
@@ -50,5 +49,5 @@ WHERE Status = "failed"
 GROUP BY Name, Classname, JobName
 HAVING COUNT(*) >= @min_streak
   AND DATE(MAX(Timestamp)) = CURRENT_DATE()
-ORDER BY consecutive_count DESC, duration_days DESC
+ORDER BY consecutive_count DESC
 LIMIT @limit

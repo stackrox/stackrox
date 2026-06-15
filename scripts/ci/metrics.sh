@@ -385,25 +385,19 @@ slack_test_failure_streaks() {
                             [
                                 {"type": "raw_text", "text": "Test"},
                                 {"type": "raw_text", "text": "Suite"},
-                                {"type": "raw_text", "text": "Job"},
-                                {"type": "raw_text", "text": "Streak"},
-                                {"type": "raw_text", "text": "Days"}
+                                {"type": "raw_text", "text": "Job"}
                             ]
                         ] +
                         [.[] | [
                             {"type": "raw_text", "text": .test_name},
                             {"type": "raw_text", "text": .suite},
-                            {"type": "raw_text", "text": .job},
-                            {"type": "raw_text", "text": .consecutive_count},
-                            {"type": "raw_text", "text": .duration_days}
+                            {"type": "raw_text", "text": .job}
                         ]]
                     ),
                     "column_settings": [
                         {"align": "left", "is_wrapped": true},
                         {"align": "left", "is_wrapped": true},
-                        {"align": "left", "is_wrapped": true},
-                        {"align": "right", "is_wrapped": false},
-                        {"align": "right", "is_wrapped": false}
+                        {"align": "left", "is_wrapped": true}
                     ]
                 }
             ]
