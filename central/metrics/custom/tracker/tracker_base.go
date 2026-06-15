@@ -64,6 +64,7 @@ type Tracker interface {
 	Reconfigure(*Configuration)
 }
 
+// Registration is a helper structure for the runner to use this tracker.
 type Registration = struct {
 	Tracker
 	// GetGroupConfig returns the storage configuration associated to the
