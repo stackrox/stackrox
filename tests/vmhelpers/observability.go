@@ -13,20 +13,15 @@ const (
 	MetricComplianceRelayIndexReportsReceivedTotal         = prometheusNamespace + "_compliance_virtual_machine_relay_index_reports_received_total"
 	MetricComplianceRelayIndexReportsSentTotal             = prometheusNamespace + "_compliance_virtual_machine_relay_index_reports_sent_total"
 	MetricComplianceRelayIndexReportsMismatchingVsockTotal = prometheusNamespace + "_compliance_virtual_machine_relay_index_reports_mismatching_vsock_cid_total"
-	MetricComplianceRelaySemaphoreAcquisitionFailuresTotal = prometheusNamespace + "_compliance_virtual_machine_relay_sem_acquisition_failures_total"
-
-	MetricComplianceRelayIndexReportAcksReceivedTotal = prometheusNamespace + "_compliance_virtual_machine_relay_acks_received_total"
+	MetricComplianceRelayIndexReportAcksReceivedTotal      = prometheusNamespace + "_compliance_virtual_machine_relay_acks_received_total"
 )
 
 // Sensor VM index series (subsystem "sensor").
 const (
-	MetricSensorVMIndexReportsReceivedTotal          = prometheusNamespace + "_sensor_virtual_machine_index_reports_received_total"
-	MetricSensorVMIndexReportsSentTotal              = prometheusNamespace + "_sensor_virtual_machine_index_reports_sent_total"
-	MetricSensorVMIndexReportAcksReceivedTotal       = prometheusNamespace + "_sensor_virtual_machine_index_report_acks_received_total"
-	MetricSensorVMIndexReportEnqueueBlockedTotal     = prometheusNamespace + "_sensor_virtual_machine_index_report_enqueue_blocked_total"
-	MetricSensorVMIndexReportBlockingEnqueueDuration = prometheusNamespace + "_sensor_virtual_machine_index_report_blocking_enqueue_duration_milliseconds"
-	MetricSensorVMIndexReportHandlingDuration        = prometheusNamespace + "_sensor_virtual_machine_index_report_handling_duration_milliseconds"
-	MetricSensorVMIndexReportProcessingDuration      = prometheusNamespace + "_sensor_virtual_machine_index_report_processing_duration_milliseconds"
+	MetricSensorVMIndexReportsReceivedTotal      = prometheusNamespace + "_sensor_virtual_machine_index_reports_received_total"
+	MetricSensorVMIndexReportsSentTotal          = prometheusNamespace + "_sensor_virtual_machine_index_reports_sent_total"
+	MetricSensorVMIndexReportAcksReceivedTotal   = prometheusNamespace + "_sensor_virtual_machine_index_report_acks_received_total"
+	MetricSensorVMIndexReportEnqueueBlockedTotal = prometheusNamespace + "_sensor_virtual_machine_index_report_enqueue_blocked_total"
 )
 
 // Sensor IndexReportsSent status label values from sensor/common/virtualmachine/metrics/metrics.go
