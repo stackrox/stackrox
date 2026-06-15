@@ -48,6 +48,8 @@ func (s *TestNoSerializedsStoreSuite) TestStore() {
 
 	testNoSerialized := &storage.TestNoSerialized{}
 	s.NoError(testutils.FullInit(testNoSerialized, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	testutils.NormalizeTimestampsToMicros(testNoSerialized)
+	testNoSerialized.Labels = nil
 
 	foundTestNoSerialized, exists, err := store.Get(ctx, testNoSerialized.GetId())
 	s.NoError(err)
@@ -87,6 +89,8 @@ func (s *TestNoSerializedsStoreSuite) TestStore() {
 	for i := 0; i < 200; i++ {
 		testNoSerialized := &storage.TestNoSerialized{}
 		s.NoError(testutils.FullInit(testNoSerialized, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		testutils.NormalizeTimestampsToMicros(testNoSerialized)
+		testNoSerialized.Labels = nil
 		testNoSerializeds = append(testNoSerializeds, testNoSerialized)
 		testNoSerializedIDs = append(testNoSerializedIDs, testNoSerialized.GetId())
 	}
