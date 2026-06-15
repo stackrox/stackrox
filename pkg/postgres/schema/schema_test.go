@@ -110,7 +110,7 @@ func (s *SchemaTestSuite) TestApplyAllIndexes() {
 	ApplyAllSchemas(s.ctx, s.gormDB)
 	ApplyAllIndexes(s.ctx, s.pool)
 
-	created := s.getIndexNames("idx_test_apply")
+	created := s.getIndexNames("idx_test_applies")
 	s.Contains(created, "idxtestapply_col_a")
 	s.Contains(created, "idxtestapply_composite")
 	s.Contains(created, "idxtestapply_unique_col")
@@ -123,7 +123,7 @@ func (s *SchemaTestSuite) TestApplyAllStartupIndexes() {
 	err := ApplyAllStartupIndexes(s.ctx, s.pool)
 	s.Require().NoError(err)
 
-	created := s.getIndexNames("idx_test_apply")
+	created := s.getIndexNames("idx_test_applies")
 	s.Contains(created, "idxtestapply_col_a", "non-unique startup index should be created")
 	s.Contains(created, "idxtestapply_composite", "composite startup index should be created")
 	s.Contains(created, "idxtestapply_unique_col", "unique startup index should be created")
@@ -136,7 +136,7 @@ func (s *SchemaTestSuite) TestApplyAllBackgroundIndexes() {
 	err := ApplyAllBackgroundIndexes(s.ctx, s.pool)
 	s.Require().NoError(err)
 
-	created := s.getIndexNames("idx_test_apply")
+	created := s.getIndexNames("idx_test_applies")
 	s.Contains(created, "idxtestapply_bg_col", "background index should be created")
 	s.NotContains(created, "idxtestapply_col_a", "startup index should not be created by background apply")
 }
@@ -157,7 +157,7 @@ type IdxTestApply struct {
 }
 
 func (s *SchemaTestSuite) registerTestIndexTable() {
-	const tableName = "idx_test_apply"
+	const tableName = "idx_test_applies"
 	if _, exists := registeredTables[tableName]; exists {
 		return
 	}
@@ -168,10 +168,10 @@ func (s *SchemaTestSuite) registerTestIndexTable() {
 	stmt := &pkgPostgres.CreateStmts{
 		GormModel: (*IdxTestApply)(nil),
 		Indexes: []*pkgPostgres.IndexDefinition{
-			{Name: "idxtestapply_col_a", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_col_a ON idx_test_apply USING btree (col_a)", Background: false},
-			{Name: "idxtestapply_composite", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_composite ON idx_test_apply USING btree (col_a, col_b)", Background: false},
-			{Name: "idxtestapply_unique_col", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_unique_col ON idx_test_apply USING btree (unique_col)", Background: false},
-			{Name: "idxtestapply_bg_col", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_bg_col ON idx_test_apply USING btree (bg_col)", Background: true},
+			{Name: "idxtestapply_col_a", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_col_a ON idx_test_applies USING btree (col_a)", Background: false},
+			{Name: "idxtestapply_composite", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_composite ON idx_test_applies USING btree (col_a, col_b)", Background: false},
+			{Name: "idxtestapply_unique_col", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_unique_col ON idx_test_applies USING btree (unique_col)", Background: false},
+			{Name: "idxtestapply_bg_col", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_bg_col ON idx_test_applies USING btree (bg_col)", Background: true},
 		},
 	}
 	registeredTables[tableName] = &registeredTable{
