@@ -48,7 +48,7 @@ func (s *requestDetailsTestSuite) TestGrpcRequestInfo() {
 	ctx, err := rih.UpdateContextForGRPC(metadata.NewIncomingContext(ctx, md))
 	s.NoError(err)
 
-	rp := GetGRPCRequestDetails(ctx, err, testRP.Path, "request")
+	rp := getGRPCRequestDetails(ctx, err, testRP.Path, "request")
 	s.Equal(testRP.Path, rp.Path)
 	s.Equal(testRP.Code, rp.Code)
 	s.Nil(rp.UserID)
@@ -74,7 +74,7 @@ func (s *requestDetailsTestSuite) TestGrpcWithHTTPRequestInfo() {
 	ctx, err := rih.UpdateContextForGRPC(metadata.NewIncomingContext(ctx, md))
 	s.NoError(err)
 
-	rp := GetGRPCRequestDetails(ctx, err, "ignored grpc method", "request")
+	rp := getGRPCRequestDetails(ctx, err, "ignored grpc method", "request")
 	s.Equal(http.StatusOK, rp.Code)
 	// Original HTTP User-Agent + gRPC transport agent merged under one key.
 	s.Equal([]string{"user", "gateway"}, rp.Headers.Values(userAgentHeaderKey))
@@ -124,7 +124,7 @@ func (s *requestDetailsTestSuite) TestGrpcWithHTTPRequestInfo_UserAgentVariants(
 			ctx, err := rih.UpdateContextForGRPC(metadata.NewIncomingContext(ctx, md))
 			s.NoError(err)
 
-			rp := GetGRPCRequestDetails(ctx, err, "ignored", "request")
+			rp := getGRPCRequestDetails(ctx, err, "ignored", "request")
 			s.Equal(tc.expected, rp.Headers.Values(userAgentHeaderKey))
 		})
 	}
@@ -141,21 +141,21 @@ type testBodyI interface {
 func (s *requestDetailsTestSuite) TestHttpWithBody() {
 	body := "{ \"n\": 42 }"
 	req, _ := http.NewRequest(http.MethodPost, "/http/body", bytes.NewReader([]byte(body)))
-	rp := GetHTTPRequestDetails(context.Background(), req, 0)
+	rp := getHTTPRequestDetails(context.Background(), req, 0)
 
 	rb := GetGRPCRequestBody(testBodyI.getTestBody, rp)
 	s.Nil(rb, "body is not captured for HTTP requests")
 }
 
 func (s *requestDetailsTestSuite) TestGrpcWithBody() {
-	rp := GetGRPCRequestDetails(context.Background(), nil, "/grpc/body", &testBody{N: 42})
+	rp := getGRPCRequestDetails(context.Background(), nil, "/grpc/body", &testBody{N: 42})
 
 	rb := GetGRPCRequestBody(testBodyI.getTestBody, rp)
 	if s.NotNil(rb) {
 		s.Equal(42, rb.N)
 	}
 
-	rp = GetGRPCRequestDetails(context.Background(), nil, "/grpc/body", nil)
+	rp = getGRPCRequestDetails(context.Background(), nil, "/grpc/body", nil)
 
 	rb = GetGRPCRequestBody(testBodyI.getTestBody, rp)
 	s.Nil(rb)
@@ -175,7 +175,7 @@ func (s *requestDetailsTestSuite) TestHttpRequestInfo() {
 	req.Header.Add(userAgentHeaderKey, testRP.Headers.Get(userAgentHeaderKey))
 
 	ctx := authn.ContextWithIdentity(context.Background(), testRP.UserID, nil)
-	rp := GetHTTPRequestDetails(ctx, req, 200)
+	rp := getHTTPRequestDetails(ctx, req, 200)
 	s.Equal(testRP.Path, rp.Path)
 	s.Equal(testRP.Code, rp.Code)
 	s.Equal(mockID, rp.UserID)

@@ -68,7 +68,7 @@ func (ri *RequestInterceptor) UnaryServerInterceptor() grpc.UnaryServerIntercept
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		resp, err := handler(ctx, req)
 		if ri.hasHandlers() {
-			rp := GetGRPCRequestDetails(ctx, err, info.FullMethod, req)
+			rp := getGRPCRequestDetails(ctx, err, info.FullMethod, req)
 			ri.dispatch(rp)
 		}
 		return resp, err
@@ -80,7 +80,7 @@ func (ri *RequestInterceptor) StreamServerInterceptor() grpc.StreamServerInterce
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		err := handler(srv, ss)
 		if ri.hasHandlers() {
-			rp := GetGRPCRequestDetails(ss.Context(), err, info.FullMethod, nil)
+			rp := getGRPCRequestDetails(ss.Context(), err, info.FullMethod, nil)
 			ri.dispatch(rp)
 		}
 		return err
@@ -98,20 +98,20 @@ func (ri *RequestInterceptor) HTTPInterceptor() httputil.HTTPInterceptor {
 				if sptr := wrappedWriter.GetStatusCode(); sptr != nil {
 					status = *sptr
 				}
-				rp := GetHTTPRequestDetails(r.Context(), r, status)
+				rp := getHTTPRequestDetails(r.Context(), r, status)
 				ri.dispatch(rp)
 			}
 		})
 	}
 }
 
-// GetGRPCRequestDetails constructs a RequestParams for a gRPC invocation.
+// getGRPCRequestDetails constructs a RequestParams for a gRPC invocation.
 // For grpc-gateway requests it uses the HTTP method, path, status code, and
 // headers, merging User-Agent values from both gRPC metadata and the HTTP
 // request. For pure gRPC calls it uses the full method name as both Method
 // and Path, derives the code from erroxGRPC.RoxErrorToGRPCCode, and builds
 // Headers from gRPC metadata.
-func GetGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string, req any) *RequestParams {
+func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string, req any) *RequestParams {
 	id, iderr := authn.IdentityFromContext(ctx)
 	if iderr != nil && grpcFullMethod != v1.PingService_Ping_FullMethodName {
 		log.Debugf("Cannot identify user from context for method call %q: %v", grpcFullMethod, iderr)
@@ -152,9 +152,8 @@ func GetGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 	}
 }
 
-// GetHTTPRequestDetails extracts the authenticated user (if any) from ctx and constructs
-// a RequestParams describing the given HTTP request and response status.
-func GetHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *RequestParams {
+// getHTTPRequestDetails constructs a RequestParams for an HTTP request.
+func getHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *RequestParams {
 	id, iderr := authn.IdentityFromContext(ctx)
 	if iderr != nil {
 		log.Debug("Cannot identify user from context: ", iderr)
