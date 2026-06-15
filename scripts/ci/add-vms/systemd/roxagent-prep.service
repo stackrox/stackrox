@@ -5,10 +5,10 @@ Description=Prepare native StackRox VM Agent inputs
 Type=oneshot
 RemainAfterExit=yes
 ExecStartPre=/bin/rm -rf /tmp/roxroot
-ExecStartPre=/bin/mkdir -p /tmp/roxroot/etc/pki /tmp/roxroot/etc/pki/entitlement
+ExecStartPre=/bin/mkdir -p /tmp/roxroot/etc/pki/entitlement
 ExecStartPre=/bin/mkdir -p /tmp/roxroot/etc/yum.repos.d /tmp/roxroot/etc/yum/repos.d /tmp/roxroot/etc/distro.repos.d
-ExecStartPre=/bin/mkdir -p /tmp/roxroot/var/lib /tmp/roxroot/var/lib/dnf
-ExecStartPre=/bin/mkdir -p /tmp/roxroot/var/cache /tmp/roxroot/var/cache/dnf
+ExecStartPre=/bin/mkdir -p /tmp/roxroot/var/lib/dnf
+ExecStartPre=/bin/mkdir -p /tmp/roxroot/var/cache/dnf
 ExecStartPre=/bin/mkdir -p /run/lock/roxagent
 ExecStartPre=/bin/touch /tmp/roxroot/etc/os-release /tmp/roxroot/etc/redhat-release /tmp/roxroot/etc/system-release-cpe
 

@@ -11,8 +11,8 @@ on:
       num-vms:
         description: "Number of VMs to deploy"
         required: false
-        default: "1"
-        type: string
+        default: 1
+        type: number
       vm-os:
         description: "VM OS"
         required: false

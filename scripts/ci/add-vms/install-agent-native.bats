@@ -12,9 +12,9 @@ function setup() {
 
     assert_success
     assert_output --partial "ExecStartPre=/bin/rm -rf /tmp/roxroot"
-    assert_output --partial "ExecStartPre=/bin/mkdir -p /tmp/roxroot/etc/pki"
-    assert_output --partial "ExecStartPre=/bin/mkdir -p /tmp/roxroot/var/lib /tmp/roxroot/var/lib/dnf"
-    assert_output --partial "ExecStartPre=/bin/mkdir -p /tmp/roxroot/var/cache /tmp/roxroot/var/cache/dnf"
+    assert_output --partial "ExecStartPre=/bin/mkdir -p /tmp/roxroot/etc/pki/entitlement"
+    assert_output --partial "ExecStartPre=/bin/mkdir -p /tmp/roxroot/var/lib/dnf"
+    assert_output --partial "ExecStartPre=/bin/mkdir -p /tmp/roxroot/var/cache/dnf"
     assert_output --partial "ExecStartPre=/bin/mkdir -p /run/lock/roxagent"
     assert_output --partial "ExecStart=/bin/rm -rf /tmp/roxagent-rpm"
     assert_output --partial "ExecStart=/bin/cp -a /var/lib/rpm /tmp/roxagent-rpm"

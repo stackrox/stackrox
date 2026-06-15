@@ -38,9 +38,9 @@ runs:
       env:
         INFRA_TOKEN: ${{ inputs.infra-token }}
       run: |
-        infractl artifacts "${{ inputs.cluster-name }}" --download-dir "${{ github.workspace }}/artifacts" >/dev/null
-        echo "KUBECONFIG=${{ github.workspace }}/artifacts/kubeconfig" >> "$GITHUB_ENV"
-        echo "ARTIFACTS_DIR=${{ github.workspace }}/artifacts" >> "$GITHUB_ENV"
+        infractl artifacts "${{ inputs.cluster-name }}" --download-dir "${{ runner.temp }}/artifacts" >/dev/null
+        echo "KUBECONFIG=${{ runner.temp }}/artifacts/kubeconfig" >> "$GITHUB_ENV"
+        echo "ARTIFACTS_DIR=${{ runner.temp }}/artifacts" >> "$GITHUB_ENV"
 
     - name: Verify cluster access
       shell: bash
@@ -92,7 +92,7 @@ runs:
             fi
 
             echo "Downloading virtctl from $download_url..."
-            curl -fsSL "$@" "$download_url" | tar xz -C /usr/local/bin virtctl
+            curl -fsSL --retry 5 --retry-delay 5 "$@" "$download_url" | tar xz -C /usr/local/bin virtctl
 
             if [[ ! -f /usr/local/bin/virtctl ]]; then
                 echo "ERROR: Downloaded archive does not contain virtctl."
@@ -123,8 +123,10 @@ runs:
     - name: Prepare user SSH key
       if: inputs.ssh-public-key != ''
       shell: bash
+      env:
+        SSH_PUBLIC_KEY: ${{ inputs.ssh-public-key }}
       run: |
-        echo "${{ inputs.ssh-public-key }}" > "${{ runner.temp }}/user-ssh-key.pub"
+        printf '%s\n' "$SSH_PUBLIC_KEY" > "${{ runner.temp }}/user-ssh-key.pub"
         echo "USER_SSH_KEY_PATH=${{ runner.temp }}/user-ssh-key.pub" >> "$GITHUB_ENV"
 
     - name: Run add-vms (virt operator already installed)

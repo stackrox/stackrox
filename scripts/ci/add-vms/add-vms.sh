@@ -59,6 +59,8 @@ parse_args() {
 
     VM_PREFIX="${VM_PREFIX:-${VM_OS}}"
 
+    # The workflow uses type: number, but gh CLI and the API still accept
+    # arbitrary strings, so we validate here as well.
     if ! [[ "$NUM_VMS" =~ ^[0-9]+$ ]] || (( NUM_VMS < 1 )); then
         die "--num-vms must be a positive integer"
     fi
