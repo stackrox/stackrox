@@ -22,6 +22,52 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type FileXattrChange_Operation int32
+
+const (
+	FileXattrChange_SET    FileXattrChange_Operation = 0
+	FileXattrChange_REMOVE FileXattrChange_Operation = 1
+)
+
+// Enum value maps for FileXattrChange_Operation.
+var (
+	FileXattrChange_Operation_name = map[int32]string{
+		0: "SET",
+		1: "REMOVE",
+	}
+	FileXattrChange_Operation_value = map[string]int32{
+		"SET":    0,
+		"REMOVE": 1,
+	}
+)
+
+func (x FileXattrChange_Operation) Enum() *FileXattrChange_Operation {
+	p := new(FileXattrChange_Operation)
+	*p = x
+	return p
+}
+
+func (x FileXattrChange_Operation) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (FileXattrChange_Operation) Descriptor() protoreflect.EnumDescriptor {
+	return file_internalapi_sensor_sfa_proto_enumTypes[0].Descriptor()
+}
+
+func (FileXattrChange_Operation) Type() protoreflect.EnumType {
+	return &file_internalapi_sensor_sfa_proto_enumTypes[0]
+}
+
+func (x FileXattrChange_Operation) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use FileXattrChange_Operation.Descriptor instead.
+func (FileXattrChange_Operation) EnumDescriptor() ([]byte, []int) {
+	return file_internalapi_sensor_sfa_proto_rawDescGZIP(), []int{8, 0}
+}
+
 type FileActivityBase struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -430,6 +476,66 @@ func (x *FileOpen) GetActivity() *FileActivityBase {
 	return nil
 }
 
+type FileXattrChange struct {
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	Activity      *FileActivityBase         `protobuf:"bytes,1,opt,name=activity,proto3" json:"activity,omitempty"`
+	XattrName     string                    `protobuf:"bytes,2,opt,name=xattr_name,json=xattrName,proto3" json:"xattr_name,omitempty"`
+	Operation     FileXattrChange_Operation `protobuf:"varint,3,opt,name=operation,proto3,enum=sensor.FileXattrChange_Operation" json:"operation,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FileXattrChange) Reset() {
+	*x = FileXattrChange{}
+	mi := &file_internalapi_sensor_sfa_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FileXattrChange) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileXattrChange) ProtoMessage() {}
+
+func (x *FileXattrChange) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_sensor_sfa_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileXattrChange.ProtoReflect.Descriptor instead.
+func (*FileXattrChange) Descriptor() ([]byte, []int) {
+	return file_internalapi_sensor_sfa_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *FileXattrChange) GetActivity() *FileActivityBase {
+	if x != nil {
+		return x.Activity
+	}
+	return nil
+}
+
+func (x *FileXattrChange) GetXattrName() string {
+	if x != nil {
+		return x.XattrName
+	}
+	return ""
+}
+
+func (x *FileXattrChange) GetOperation() FileXattrChange_Operation {
+	if x != nil {
+		return x.Operation
+	}
+	return FileXattrChange_SET
+}
+
 type FileActivity struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
@@ -443,6 +549,7 @@ type FileActivity struct {
 	//	*FileActivity_Ownership
 	//	*FileActivity_Open
 	//	*FileActivity_Write
+	//	*FileActivity_Xattr
 	File isFileActivity_File `protobuf_oneof:"file"`
 	// The hostname/name of the node where the file activity occurred
 	Hostname      string `protobuf:"bytes,10,opt,name=hostname,proto3" json:"hostname,omitempty"`
@@ -452,7 +559,7 @@ type FileActivity struct {
 
 func (x *FileActivity) Reset() {
 	*x = FileActivity{}
-	mi := &file_internalapi_sensor_sfa_proto_msgTypes[8]
+	mi := &file_internalapi_sensor_sfa_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -464,7 +571,7 @@ func (x *FileActivity) String() string {
 func (*FileActivity) ProtoMessage() {}
 
 func (x *FileActivity) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_sensor_sfa_proto_msgTypes[8]
+	mi := &file_internalapi_sensor_sfa_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -477,7 +584,7 @@ func (x *FileActivity) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileActivity.ProtoReflect.Descriptor instead.
 func (*FileActivity) Descriptor() ([]byte, []int) {
-	return file_internalapi_sensor_sfa_proto_rawDescGZIP(), []int{8}
+	return file_internalapi_sensor_sfa_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *FileActivity) GetTimestamp() *timestamppb.Timestamp {
@@ -564,6 +671,15 @@ func (x *FileActivity) GetWrite() *FileWrite {
 	return nil
 }
 
+func (x *FileActivity) GetXattr() *FileXattrChange {
+	if x != nil {
+		if x, ok := x.File.(*FileActivity_Xattr); ok {
+			return x.Xattr
+		}
+	}
+	return nil
+}
+
 func (x *FileActivity) GetHostname() string {
 	if x != nil {
 		return x.Hostname
@@ -603,6 +719,10 @@ type FileActivity_Write struct {
 	Write *FileWrite `protobuf:"bytes,9,opt,name=write,proto3,oneof"`
 }
 
+type FileActivity_Xattr struct {
+	Xattr *FileXattrChange `protobuf:"bytes,11,opt,name=xattr,proto3,oneof"`
+}
+
 func (*FileActivity_Creation) isFileActivity_File() {}
 
 func (*FileActivity_Unlink) isFileActivity_File() {}
@@ -616,6 +736,8 @@ func (*FileActivity_Ownership) isFileActivity_File() {}
 func (*FileActivity_Open) isFileActivity_File() {}
 
 func (*FileActivity_Write) isFileActivity_File() {}
+
+func (*FileActivity_Xattr) isFileActivity_File() {}
 
 var File_internalapi_sensor_sfa_proto protoreflect.FileDescriptor
 
@@ -646,7 +768,16 @@ const file_internalapi_sensor_sfa_proto_rawDesc = "" +
 	"\tFileWrite\x124\n" +
 	"\bactivity\x18\x01 \x01(\v2\x18.sensor.FileActivityBaseR\bactivity\"@\n" +
 	"\bFileOpen\x124\n" +
-	"\bactivity\x18\x01 \x01(\v2\x18.sensor.FileActivityBaseR\bactivity\"\xfd\x03\n" +
+	"\bactivity\x18\x01 \x01(\v2\x18.sensor.FileActivityBaseR\bactivity\"\xc9\x01\n" +
+	"\x0fFileXattrChange\x124\n" +
+	"\bactivity\x18\x01 \x01(\v2\x18.sensor.FileActivityBaseR\bactivity\x12\x1d\n" +
+	"\n" +
+	"xattr_name\x18\x02 \x01(\tR\txattrName\x12?\n" +
+	"\toperation\x18\x03 \x01(\x0e2!.sensor.FileXattrChange.OperationR\toperation\" \n" +
+	"\tOperation\x12\a\n" +
+	"\x03SET\x10\x00\x12\n" +
+	"\n" +
+	"\x06REMOVE\x10\x01\"\xae\x04\n" +
 	"\fFileActivity\x128\n" +
 	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12/\n" +
 	"\aprocess\x18\x02 \x01(\v2\x15.sensor.ProcessSignalR\aprocess\x122\n" +
@@ -658,7 +789,8 @@ const file_internalapi_sensor_sfa_proto_rawDesc = "" +
 	"permission\x12;\n" +
 	"\townership\x18\a \x01(\v2\x1b.sensor.FileOwnershipChangeH\x00R\townership\x12&\n" +
 	"\x04open\x18\b \x01(\v2\x10.sensor.FileOpenH\x00R\x04open\x12)\n" +
-	"\x05write\x18\t \x01(\v2\x11.sensor.FileWriteH\x00R\x05write\x12\x1a\n" +
+	"\x05write\x18\t \x01(\v2\x11.sensor.FileWriteH\x00R\x05write\x12/\n" +
+	"\x05xattr\x18\v \x01(\v2\x17.sensor.FileXattrChangeH\x00R\x05xattr\x12\x1a\n" +
 	"\bhostname\x18\n" +
 	" \x01(\tR\bhostnameB\x06\n" +
 	"\x04fileB Z\x1b./internalapi/sensor;sensor\xf8\x01\x01b\x06proto3"
@@ -675,43 +807,49 @@ func file_internalapi_sensor_sfa_proto_rawDescGZIP() []byte {
 	return file_internalapi_sensor_sfa_proto_rawDescData
 }
 
-var file_internalapi_sensor_sfa_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_internalapi_sensor_sfa_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_internalapi_sensor_sfa_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_internalapi_sensor_sfa_proto_goTypes = []any{
-	(*FileActivityBase)(nil),      // 0: sensor.FileActivityBase
-	(*FileCreation)(nil),          // 1: sensor.FileCreation
-	(*FileUnlink)(nil),            // 2: sensor.FileUnlink
-	(*FileRename)(nil),            // 3: sensor.FileRename
-	(*FilePermissionChange)(nil),  // 4: sensor.FilePermissionChange
-	(*FileOwnershipChange)(nil),   // 5: sensor.FileOwnershipChange
-	(*FileWrite)(nil),             // 6: sensor.FileWrite
-	(*FileOpen)(nil),              // 7: sensor.FileOpen
-	(*FileActivity)(nil),          // 8: sensor.FileActivity
-	(*timestamppb.Timestamp)(nil), // 9: google.protobuf.Timestamp
-	(*ProcessSignal)(nil),         // 10: sensor.ProcessSignal
+	(FileXattrChange_Operation)(0), // 0: sensor.FileXattrChange.Operation
+	(*FileActivityBase)(nil),       // 1: sensor.FileActivityBase
+	(*FileCreation)(nil),           // 2: sensor.FileCreation
+	(*FileUnlink)(nil),             // 3: sensor.FileUnlink
+	(*FileRename)(nil),             // 4: sensor.FileRename
+	(*FilePermissionChange)(nil),   // 5: sensor.FilePermissionChange
+	(*FileOwnershipChange)(nil),    // 6: sensor.FileOwnershipChange
+	(*FileWrite)(nil),              // 7: sensor.FileWrite
+	(*FileOpen)(nil),               // 8: sensor.FileOpen
+	(*FileXattrChange)(nil),        // 9: sensor.FileXattrChange
+	(*FileActivity)(nil),           // 10: sensor.FileActivity
+	(*timestamppb.Timestamp)(nil),  // 11: google.protobuf.Timestamp
+	(*ProcessSignal)(nil),          // 12: sensor.ProcessSignal
 }
 var file_internalapi_sensor_sfa_proto_depIdxs = []int32{
-	0,  // 0: sensor.FileCreation.activity:type_name -> sensor.FileActivityBase
-	0,  // 1: sensor.FileUnlink.activity:type_name -> sensor.FileActivityBase
-	0,  // 2: sensor.FileRename.old:type_name -> sensor.FileActivityBase
-	0,  // 3: sensor.FileRename.new:type_name -> sensor.FileActivityBase
-	0,  // 4: sensor.FilePermissionChange.activity:type_name -> sensor.FileActivityBase
-	0,  // 5: sensor.FileOwnershipChange.activity:type_name -> sensor.FileActivityBase
-	0,  // 6: sensor.FileWrite.activity:type_name -> sensor.FileActivityBase
-	0,  // 7: sensor.FileOpen.activity:type_name -> sensor.FileActivityBase
-	9,  // 8: sensor.FileActivity.timestamp:type_name -> google.protobuf.Timestamp
-	10, // 9: sensor.FileActivity.process:type_name -> sensor.ProcessSignal
-	1,  // 10: sensor.FileActivity.creation:type_name -> sensor.FileCreation
-	2,  // 11: sensor.FileActivity.unlink:type_name -> sensor.FileUnlink
-	3,  // 12: sensor.FileActivity.rename:type_name -> sensor.FileRename
-	4,  // 13: sensor.FileActivity.permission:type_name -> sensor.FilePermissionChange
-	5,  // 14: sensor.FileActivity.ownership:type_name -> sensor.FileOwnershipChange
-	7,  // 15: sensor.FileActivity.open:type_name -> sensor.FileOpen
-	6,  // 16: sensor.FileActivity.write:type_name -> sensor.FileWrite
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	1,  // 0: sensor.FileCreation.activity:type_name -> sensor.FileActivityBase
+	1,  // 1: sensor.FileUnlink.activity:type_name -> sensor.FileActivityBase
+	1,  // 2: sensor.FileRename.old:type_name -> sensor.FileActivityBase
+	1,  // 3: sensor.FileRename.new:type_name -> sensor.FileActivityBase
+	1,  // 4: sensor.FilePermissionChange.activity:type_name -> sensor.FileActivityBase
+	1,  // 5: sensor.FileOwnershipChange.activity:type_name -> sensor.FileActivityBase
+	1,  // 6: sensor.FileWrite.activity:type_name -> sensor.FileActivityBase
+	1,  // 7: sensor.FileOpen.activity:type_name -> sensor.FileActivityBase
+	1,  // 8: sensor.FileXattrChange.activity:type_name -> sensor.FileActivityBase
+	0,  // 9: sensor.FileXattrChange.operation:type_name -> sensor.FileXattrChange.Operation
+	11, // 10: sensor.FileActivity.timestamp:type_name -> google.protobuf.Timestamp
+	12, // 11: sensor.FileActivity.process:type_name -> sensor.ProcessSignal
+	2,  // 12: sensor.FileActivity.creation:type_name -> sensor.FileCreation
+	3,  // 13: sensor.FileActivity.unlink:type_name -> sensor.FileUnlink
+	4,  // 14: sensor.FileActivity.rename:type_name -> sensor.FileRename
+	5,  // 15: sensor.FileActivity.permission:type_name -> sensor.FilePermissionChange
+	6,  // 16: sensor.FileActivity.ownership:type_name -> sensor.FileOwnershipChange
+	8,  // 17: sensor.FileActivity.open:type_name -> sensor.FileOpen
+	7,  // 18: sensor.FileActivity.write:type_name -> sensor.FileWrite
+	9,  // 19: sensor.FileActivity.xattr:type_name -> sensor.FileXattrChange
+	20, // [20:20] is the sub-list for method output_type
+	20, // [20:20] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_sensor_sfa_proto_init() }
@@ -720,7 +858,7 @@ func file_internalapi_sensor_sfa_proto_init() {
 		return
 	}
 	file_internalapi_sensor_collector_proto_init()
-	file_internalapi_sensor_sfa_proto_msgTypes[8].OneofWrappers = []any{
+	file_internalapi_sensor_sfa_proto_msgTypes[9].OneofWrappers = []any{
 		(*FileActivity_Creation)(nil),
 		(*FileActivity_Unlink)(nil),
 		(*FileActivity_Rename)(nil),
@@ -728,19 +866,21 @@ func file_internalapi_sensor_sfa_proto_init() {
 		(*FileActivity_Ownership)(nil),
 		(*FileActivity_Open)(nil),
 		(*FileActivity_Write)(nil),
+		(*FileActivity_Xattr)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_sensor_sfa_proto_rawDesc), len(file_internalapi_sensor_sfa_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   9,
+			NumEnums:      1,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_internalapi_sensor_sfa_proto_goTypes,
 		DependencyIndexes: file_internalapi_sensor_sfa_proto_depIdxs,
+		EnumInfos:         file_internalapi_sensor_sfa_proto_enumTypes,
 		MessageInfos:      file_internalapi_sensor_sfa_proto_msgTypes,
 	}.Build()
 	File_internalapi_sensor_sfa_proto = out.File

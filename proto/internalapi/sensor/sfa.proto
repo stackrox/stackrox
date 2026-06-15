@@ -47,6 +47,16 @@ message FileOpen {
   FileActivityBase activity = 1;
 }
 
+message FileXattrChange {
+  FileActivityBase activity = 1;
+  string xattr_name = 2;
+  enum Operation {
+    SET = 0;
+    REMOVE = 1;
+  }
+  Operation operation = 3;
+}
+
 message FileActivity {
   google.protobuf.Timestamp timestamp = 1;
   ProcessSignal process = 2;
@@ -58,6 +68,7 @@ message FileActivity {
     FileOwnershipChange ownership = 7;
     FileOpen open = 8;
     FileWrite write = 9;
+    FileXattrChange xattr = 11;
   }
   // The hostname/name of the node where the file activity occurred
   string hostname = 10;
