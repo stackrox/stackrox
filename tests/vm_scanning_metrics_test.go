@@ -73,7 +73,7 @@ func sensorQueries() []testmetrics.Query {
 // into the container's network namespace, bypassing NetworkPolicies entirely.
 // The same applies to sensor, whose NetworkPolicy restricts ingress to specific
 // StackRox components and does not include the metrics port (9090) by default.
-func (s *VMScanningSuite) collectStableMetrics(ctx context.Context, vmNodeName string) (compliance, sensor map[string]testmetrics.Value) {
+func (s *VMScanningSuite) collectStableMetrics(ctx context.Context, vmNodeName string, compQ, senQ []testmetrics.Query) (compliance, sensor map[string]testmetrics.Value) {
 	const (
 		metricsTimeout  = 2 * time.Minute
 		metricsPollWait = 10 * time.Second
@@ -82,8 +82,6 @@ func (s *VMScanningSuite) collectStableMetrics(ctx context.Context, vmNodeName s
 
 	compTarget := s.complianceTarget(vmNodeName)
 	senTarget := s.sensorTarget()
-	compQ := complianceQueries()
-	senQ := sensorQueries()
 	transport := testmetrics.TransportPortForward
 
 	stableCfg := testmetrics.StableConfig{
@@ -123,7 +121,9 @@ func (s *VMScanningSuite) assertPipelineMetrics(ctx context.Context, t require.T
 		"collector Service should expose compliance metrics port %d; the deployment may be missing the metrics port definition",
 		compTarget.MetricsPort)
 
-	comp, sen := s.collectStableMetrics(ctx, vmNodeName)
+	cq := complianceQueries()
+	sq := sensorQueries()
+	comp, sen := s.collectStableMetrics(ctx, vmNodeName, cq, sq)
 
 	get := func(src map[string]testmetrics.Value, q testmetrics.Query) testmetrics.Value {
 		return src[testmetrics.Key(q)]
@@ -144,7 +144,6 @@ func (s *VMScanningSuite) assertPipelineMetrics(ctx context.Context, t require.T
 	}
 
 	// Compliance relay assertions.
-	cq := complianceQueries()
 	requirePositive(comp, cq[0], "compliance relay connections_accepted")
 	requirePositive(comp, cq[1], "compliance relay index_reports_received")
 	requirePositive(comp, cq[2], "compliance relay index_reports_sent (failed=false)")
@@ -153,7 +152,6 @@ func (s *VMScanningSuite) assertPipelineMetrics(ctx context.Context, t require.T
 	requirePositive(comp, cq[5], "compliance relay acks_received")
 
 	// Sensor assertions.
-	sq := sensorQueries()
 	requirePositive(sen, sq[0], "sensor index_reports_received")
 	requirePositive(sen, sq[1], "sensor index_reports_sent (success)")
 	requireZero(sen, sq[2], "sensor index_reports_sent (error)")
