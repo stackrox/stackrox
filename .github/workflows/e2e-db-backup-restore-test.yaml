@@ -2,6 +2,8 @@ name: e2e-db-backup-restore-test
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "30 5 * * *"
   push:
     branches:
     - master
@@ -9,7 +11,6 @@ on:
     types:
     - opened
     - reopened
-    - labeled
     - synchronize
 
 defaults:
@@ -19,10 +20,7 @@ defaults:
 jobs:
   wait-for-images:
     if: >-
-      !github.event.pull_request.head.repo.fork && (
-        github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'e2e-db-backup-restore-test')
-      )
+      github.event_name == 'push' || !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repo
