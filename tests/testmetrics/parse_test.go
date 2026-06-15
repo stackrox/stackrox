@@ -23,7 +23,7 @@ func TestParse_FoundAndMissing(t *testing.T) {
 		{Name: "labeled_total", LabelFilter: `status="err"`},
 		{Name: "absent_total"},
 	}
-	m := Parse(text, queries)
+	m := parse(text, queries)
 
 	assertFound := func(q Query, expected float64) {
 		t.Helper()
@@ -55,7 +55,7 @@ func TestParse_PrefixDoesNotFalseMatch(t *testing.T) {
 		{Name: "rox_scan_connections_errors_total"},
 		{Name: "rox_scan_connections"},
 	}
-	m := Parse(text, queries)
+	m := parse(text, queries)
 
 	v := m[Key(queries[0])]
 	require.True(t, v.Found)
@@ -74,7 +74,7 @@ func TestParse_EmptyInput(t *testing.T) {
 		{Name: "foo_total"},
 		{Name: "bar_total"},
 	}
-	m := Parse("", queries)
+	m := parse("", queries)
 
 	for _, q := range queries {
 		v := m[Key(q)]
@@ -91,11 +91,11 @@ func TestKey(t *testing.T) {
 func TestValuesEqual(t *testing.T) {
 	a := map[string]Value{"x": {Val: 1, Found: true}}
 	b := map[string]Value{"x": {Val: 1, Found: true}}
-	require.True(t, ValuesEqual(a, b))
+	require.True(t, valuesEqual(a, b))
 
 	c := map[string]Value{"x": {Val: 2, Found: true}}
-	require.False(t, ValuesEqual(a, c))
+	require.False(t, valuesEqual(a, c))
 
 	d := map[string]Value{"y": {Val: 1, Found: true}}
-	require.False(t, ValuesEqual(a, d))
+	require.False(t, valuesEqual(a, d))
 }

@@ -14,21 +14,21 @@ import (
 func TestScrapePodViaProxy_Validation(t *testing.T) {
 	ctx := context.Background()
 	cs := fake.NewSimpleClientset()
-	_, err := ScrapePodViaProxy(ctx, cs, "ns", "", 0, "")
+	_, err := scrapePodViaProxy(ctx, cs, "ns", "", 0, "")
 	require.Error(t, err)
-	_, err = ScrapePodViaProxy(ctx, cs, "", "p", 0, "")
+	_, err = scrapePodViaProxy(ctx, cs, "", "p", 0, "")
 	require.Error(t, err)
 }
 
 func TestCollectFromPods_Validation(t *testing.T) {
 	ctx := context.Background()
 	cs := fake.NewSimpleClientset()
-	_, err := CollectFromPods(ctx, cs, PodCollectOptions{})
+	_, err := collectFromPods(ctx, cs, podCollectOptions{})
 	require.Error(t, err)
-	_, err = CollectFromPods(ctx, cs, PodCollectOptions{
-		Namespace:     "ns",
-		Transport:     TransportPortForward,
-		LabelSelector: "app=x",
+	_, err = collectFromPods(ctx, cs, podCollectOptions{
+		namespace:     "ns",
+		transport:     TransportPortForward,
+		labelSelector: "app=x",
 	})
 	require.Error(t, err)
 }
@@ -36,10 +36,10 @@ func TestCollectFromPods_Validation(t *testing.T) {
 func TestScrapePodViaPortForward_Validation(t *testing.T) {
 	ctx := context.Background()
 	cs := fake.NewSimpleClientset()
-	_, err := ScrapePodViaPortForward(ctx, cs, nil, "ns", "pod", 9090, "/metrics")
+	_, err := scrapePodViaPortForward(ctx, cs, nil, "ns", "pod", 9090, "/metrics")
 	require.Error(t, err)
-	_, err = ScrapePodViaPortForward(ctx, cs, &rest.Config{}, "", "pod", 9090, "")
+	_, err = scrapePodViaPortForward(ctx, cs, &rest.Config{}, "", "pod", 9090, "")
 	require.Error(t, err)
-	_, err = ScrapePodViaPortForward(ctx, cs, &rest.Config{}, "ns", "pod", 0, "")
+	_, err = scrapePodViaPortForward(ctx, cs, &rest.Config{}, "ns", "pod", 0, "")
 	require.Error(t, err)
 }

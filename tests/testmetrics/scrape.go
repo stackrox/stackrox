@@ -20,26 +20,26 @@ import (
 type Transport string
 
 const (
-	TransportProxy       Transport = "proxy"
+	transportProxy       Transport = "proxy"
 	TransportPortForward Transport = "portforward"
 )
 
-// PodSnapshot is a single /metrics (or custom path) scrape from one pod.
-type PodSnapshot struct {
-	PodName string
-	Body    string
-	Err     error
+// podSnapshot is a single /metrics (or custom path) scrape from one pod.
+type podSnapshot struct {
+	podName string
+	body    string
+	err     error
 }
 
-// PodCollectOptions scrapes metrics from every pod matching LabelSelector.
-type PodCollectOptions struct {
-	Namespace     string
-	LabelSelector string
-	FieldSelector string
-	Port          int
-	MetricsPath   string
-	Transport     Transport
-	RestConfig    *rest.Config
+// podCollectOptions scrapes metrics from every pod matching LabelSelector.
+type podCollectOptions struct {
+	namespace     string
+	labelSelector string
+	fieldSelector string
+	port          int
+	metricsPath   string
+	transport     Transport
+	restConfig    *rest.Config
 }
 
 // ScrapeTarget describes how to collect metrics for one Kubernetes component.
@@ -61,10 +61,10 @@ func cleanMetricsPath(path string) string {
 	return path
 }
 
-// ScrapePodViaProxy scrapes Prometheus text from a pod via GET .../pods/{name}[:port]/proxy/{path}.
-func ScrapePodViaProxy(ctx context.Context, clientset kubernetes.Interface, namespace, podName string, port int, metricsPath string) ([]byte, error) {
+// scrapePodViaProxy scrapes Prometheus text from a pod via GET .../pods/{name}[:port]/proxy/{path}.
+func scrapePodViaProxy(ctx context.Context, clientset kubernetes.Interface, namespace, podName string, port int, metricsPath string) ([]byte, error) {
 	if namespace == "" || podName == "" {
-		return nil, errors.New("testmetrics: ScrapePodViaProxy: namespace and pod name are required")
+		return nil, errors.New("testmetrics: scrapePodViaProxy: namespace and pod name are required")
 	}
 	path := cleanMetricsPath(metricsPath)
 	segments := strings.Split(path, "/")
@@ -85,17 +85,17 @@ func ScrapePodViaProxy(ctx context.Context, clientset kubernetes.Interface, name
 	return req.Do(ctx).Raw()
 }
 
-// ScrapePodViaPortForward opens an ephemeral port-forward to remotePort on the pod
+// scrapePodViaPortForward opens an ephemeral port-forward to remotePort on the pod
 // and GETs metricsPath on localhost.
-func ScrapePodViaPortForward(ctx context.Context, clientset kubernetes.Interface, restCfg *rest.Config, namespace, podName string, remotePort int, metricsPath string) ([]byte, error) {
+func scrapePodViaPortForward(ctx context.Context, clientset kubernetes.Interface, restCfg *rest.Config, namespace, podName string, remotePort int, metricsPath string) ([]byte, error) {
 	if restCfg == nil {
-		return nil, errors.New("testmetrics: ScrapePodViaPortForward: rest.Config is required")
+		return nil, errors.New("testmetrics: scrapePodViaPortForward: rest.Config is required")
 	}
 	if namespace == "" || podName == "" {
-		return nil, errors.New("testmetrics: ScrapePodViaPortForward: namespace and pod name are required")
+		return nil, errors.New("testmetrics: scrapePodViaPortForward: namespace and pod name are required")
 	}
 	if remotePort <= 0 {
-		return nil, errors.New("testmetrics: ScrapePodViaPortForward: remote metrics port must be positive")
+		return nil, errors.New("testmetrics: scrapePodViaPortForward: remote metrics port must be positive")
 	}
 	path := "/" + cleanMetricsPath(metricsPath)
 
@@ -161,52 +161,52 @@ func ScrapePodViaPortForward(ctx context.Context, clientset kubernetes.Interface
 	return body, nil
 }
 
-func scrapePod(ctx context.Context, clientset kubernetes.Interface, opts PodCollectOptions, podName string) ([]byte, error) {
-	transport := opts.Transport
+func scrapePod(ctx context.Context, clientset kubernetes.Interface, opts podCollectOptions, podName string) ([]byte, error) {
+	transport := opts.transport
 	if transport == "" {
-		transport = TransportProxy
+		transport = transportProxy
 	}
 	switch transport {
 	case TransportPortForward:
-		if opts.RestConfig == nil {
-			return nil, errors.New("testmetrics: PodCollectOptions.RestConfig is required for port-forward transport")
+		if opts.restConfig == nil {
+			return nil, errors.New("testmetrics: podCollectOptions.restConfig is required for port-forward transport")
 		}
-		if opts.Port <= 0 {
-			return nil, errors.New("testmetrics: PodCollectOptions.Port must be set for port-forward transport")
+		if opts.port <= 0 {
+			return nil, errors.New("testmetrics: podCollectOptions.port must be set for port-forward transport")
 		}
-		return ScrapePodViaPortForward(ctx, clientset, opts.RestConfig, opts.Namespace, podName, opts.Port, opts.MetricsPath)
-	case TransportProxy:
-		return ScrapePodViaProxy(ctx, clientset, opts.Namespace, podName, opts.Port, opts.MetricsPath)
+		return scrapePodViaPortForward(ctx, clientset, opts.restConfig, opts.namespace, podName, opts.port, opts.metricsPath)
+	case transportProxy:
+		return scrapePodViaProxy(ctx, clientset, opts.namespace, podName, opts.port, opts.metricsPath)
 	default:
 		return nil, fmt.Errorf("testmetrics: unsupported metrics transport %q", transport)
 	}
 }
 
-// CollectFromPods lists pods matching LabelSelector/FieldSelector and scrapes metrics
+// collectFromPods lists pods matching labelSelector/fieldSelector and scrapes metrics
 // from each (same port/path/transport).
-func CollectFromPods(ctx context.Context, clientset kubernetes.Interface, opts PodCollectOptions) ([]PodSnapshot, error) {
-	if opts.Namespace == "" {
-		return nil, errors.New("testmetrics: CollectFromPods: namespace is required")
+func collectFromPods(ctx context.Context, clientset kubernetes.Interface, opts podCollectOptions) ([]podSnapshot, error) {
+	if opts.namespace == "" {
+		return nil, errors.New("testmetrics: collectFromPods: namespace is required")
 	}
-	if opts.Transport == TransportPortForward && opts.RestConfig == nil {
-		return nil, errors.New("testmetrics: CollectFromPods: RestConfig required for port-forward")
+	if opts.transport == TransportPortForward && opts.restConfig == nil {
+		return nil, errors.New("testmetrics: collectFromPods: restConfig required for port-forward")
 	}
-	list, err := clientset.CoreV1().Pods(opts.Namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: opts.LabelSelector,
-		FieldSelector: opts.FieldSelector,
+	list, err := clientset.CoreV1().Pods(opts.namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: opts.labelSelector,
+		FieldSelector: opts.fieldSelector,
 	})
 	if err != nil {
 		return nil, err
 	}
-	out := make([]PodSnapshot, 0, len(list.Items))
+	out := make([]podSnapshot, 0, len(list.Items))
 	for i := range list.Items {
 		name := list.Items[i].Name
 		body, err := scrapePod(ctx, clientset, opts, name)
-		snap := PodSnapshot{PodName: name}
+		snap := podSnapshot{podName: name}
 		if err != nil {
-			snap.Err = err
+			snap.err = err
 		} else {
-			snap.Body = string(body)
+			snap.body = string(body)
 		}
 		out = append(out, snap)
 	}
@@ -215,16 +215,15 @@ func CollectFromPods(ctx context.Context, clientset kubernetes.Interface, opts P
 
 // ScrapeComponent scrapes pods of a single component and parses the requested counters.
 // Pods that fail to serve metrics are skipped; an error is returned only when no pod yields valid data.
-// restCfg is required when transport is TransportPortForward; it may be nil for TransportProxy.
 func ScrapeComponent(ctx context.Context, clientset kubernetes.Interface, target ScrapeTarget, transport Transport, restCfg *rest.Config, queries []Query) (map[string]Value, error) {
-	snaps, err := CollectFromPods(ctx, clientset, PodCollectOptions{
-		Namespace:     target.Namespace,
-		LabelSelector: target.LabelSelector,
-		FieldSelector: target.FieldSelector,
-		Port:          target.MetricsPort,
-		MetricsPath:   target.MetricsPath,
-		Transport:     transport,
-		RestConfig:    restCfg,
+	snaps, err := collectFromPods(ctx, clientset, podCollectOptions{
+		namespace:     target.Namespace,
+		labelSelector: target.LabelSelector,
+		fieldSelector: target.FieldSelector,
+		port:          target.MetricsPort,
+		metricsPath:   target.MetricsPath,
+		transport:     transport,
+		restConfig:    restCfg,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("scrape %s: %w", target.ComponentName, err)
@@ -237,18 +236,18 @@ func ScrapeComponent(ctx context.Context, clientset kubernetes.Interface, target
 	okPods := 0
 	var podErrors []string
 	for _, s := range snaps {
-		if s.Err != nil {
-			podErrors = append(podErrors, fmt.Sprintf("pod %s: %v", s.PodName, s.Err))
+		if s.err != nil {
+			podErrors = append(podErrors, fmt.Sprintf("pod %s: %v", s.podName, s.err))
 			continue
 		}
 		okPods++
-		fmt.Fprintf(&b, "%s\n", s.Body)
+		fmt.Fprintf(&b, "%s\n", s.body)
 	}
 	if okPods == 0 {
 		return nil, fmt.Errorf("scrape %s: all %d pod(s) failed to serve metrics; errors: %s",
 			target.ComponentName, len(snaps), strings.Join(podErrors, "; "))
 	}
-	return Parse(b.String(), queries), nil
+	return parse(b.String(), queries), nil
 }
 
 // FindServicePort checks whether any Service in the given namespace whose selector

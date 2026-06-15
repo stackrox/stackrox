@@ -31,9 +31,9 @@ func Key(q Query) string {
 	return q.Name + "{" + q.LabelFilter + "}"
 }
 
-// Parse extracts the requested counters from raw Prometheus exposition text.
+// parse extracts the requested counters from raw Prometheus exposition text.
 // The returned map is keyed by Key(query).
-func Parse(text string, queries []Query) map[string]Value {
+func parse(text string, queries []Query) map[string]Value {
 	out := make(map[string]Value, len(queries))
 	for _, q := range queries {
 		v, ok := findCounter(text, q.Name, q.LabelFilter)
@@ -42,8 +42,8 @@ func Parse(text string, queries []Query) map[string]Value {
 	return out
 }
 
-// ValuesEqual returns true when both maps have the same keys with identical Found/Val.
-func ValuesEqual(a, b map[string]Value) bool {
+// valuesEqual returns true when both maps have the same keys with identical Found/Val.
+func valuesEqual(a, b map[string]Value) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -63,14 +63,14 @@ type StableConfig struct {
 	Logf         func(string, ...any)
 }
 
-// ScrapeFunc fetches metrics for one poll iteration. Returning an error signals a
+// scrapeFunc fetches metrics for one poll iteration. Returning an error signals a
 // retryable failure (e.g. pod not ready); the poll continues until the context expires.
-type ScrapeFunc func(ctx context.Context) (map[string]Value, error)
+type scrapeFunc func(ctx context.Context) (map[string]Value, error)
 
 // PollUntilStable polls scrapeFn until the returned values are identical across
 // stableRounds consecutive successful scrapes, or the context expires.
 // On timeout it returns the last successful result (assertions should catch the real issue).
-func PollUntilStable(ctx context.Context, cfg StableConfig, scrapeFn ScrapeFunc) map[string]Value {
+func PollUntilStable(ctx context.Context, cfg StableConfig, scrapeFn scrapeFunc) map[string]Value {
 	interval := cfg.PollInterval
 	if interval <= 0 {
 		interval = 10 * time.Second
@@ -95,7 +95,7 @@ func PollUntilStable(ctx context.Context, cfg StableConfig, scrapeFn ScrapeFunc)
 			return false, nil
 		}
 
-		if prev != nil && ValuesEqual(prev, cur) {
+		if prev != nil && valuesEqual(prev, cur) {
 			consecutiveStable++
 		} else {
 			consecutiveStable = 1
