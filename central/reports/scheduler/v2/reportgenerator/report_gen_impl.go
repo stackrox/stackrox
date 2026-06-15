@@ -143,14 +143,10 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(ctx context.Context, req 
 	var err error
 	var reportData *ReportData
 	if req.ReportSnapshot.GetVulnReportFilters() != nil {
-		log.Infof("Starting report query for config '%s'", req.ReportSnapshot.GetName())
 		reportData, err = rg.getReportDataSQF(ctx, req.ReportSnapshot, req.Collection, req.DataStartTime)
-		log.Infof("Report query finished for config '%s', err=%v, ctx.Err=%v", req.ReportSnapshot.GetName(), err, ctx.Err())
 	}
 	if req.ReportSnapshot.GetViewBasedVulnReportFilters() != nil {
-		log.Infof("Starting report query for config '%s'", req.ReportSnapshot.GetName())
 		reportData, err = rg.getReportDataViewBased(ctx, req.ReportSnapshot)
-		log.Infof("Report query finished for config '%s', err=%v, ctx.Err=%v", req.ReportSnapshot.GetName(), err, ctx.Err())
 	}
 	if err != nil {
 		return err
@@ -275,16 +271,6 @@ func (rg *reportGeneratorImpl) getReportDataSQF(ctx context.Context, snap *stora
 	numDeployedImageResults := 0
 	var cveResponses []*ImageCVEQueryResponse
 	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
-		// TODO(surakuma): Remove this sleep after manual testing of report cancellation.
-		log.Info("[SQF] Sleeping 20s before deployed images query to allow cancellation testing...")
-		select {
-		case <-time.After(20 * time.Second):
-			log.Info("[SQF] Sleep completed, executing deployed images query")
-		case <-ctx.Done():
-			log.Infof("[SQF] Context cancelled during sleep: %v", context.Cause(ctx))
-			return nil, ctx.Err()
-		}
-
 		query := search.ConjunctionQuery(rQuery.DeploymentsQuery, cveFilterQuery)
 		query.Pagination = deployedImagesQueryParts.Pagination
 		query.Selects = deployedImagesQueryParts.Selects
@@ -351,16 +337,6 @@ func (rg *reportGeneratorImpl) getReportDataViewBased(ctx context.Context, snap 
 
 	numDeployedImageResults := 0
 	var cveResponses []*ImageCVEQueryResponse
-
-	// TODO(surakuma): Remove this sleep after manual testing of report cancellation.
-	log.Info("[ViewBased] Sleeping 20s before deployed images query to allow cancellation testing...")
-	select {
-	case <-time.After(20 * time.Second):
-		log.Info("[ViewBased] Sleep completed, executing deployed images query")
-	case <-ctx.Done():
-		log.Infof("[ViewBased] Context cancelled during sleep: %v", context.Cause(ctx))
-		return nil, ctx.Err()
-	}
 
 	query.DeployedImagesQuery.Pagination = deployedImagesQueryParts.Pagination
 	query.DeployedImagesQuery.Selects = deployedImagesQueryParts.Selects
