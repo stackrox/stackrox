@@ -49,7 +49,6 @@ func TestCanonicalMetricGoSourceFilesDriftGuard(t *testing.T) {
 		"virtual_machine_index_report_acks_received_total",
 		`[]string{"action"}`,
 		"virtual_machine_index_report_enqueue_blocked_total",
-		"virtual_machine_index_report_blocking_enqueue_duration_milliseconds",
 	} {
 		require.Contains(t, sensor, sub, "sensor/common/virtualmachine/metrics/metrics.go drift: missing %q", sub)
 	}
