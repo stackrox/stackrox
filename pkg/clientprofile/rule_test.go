@@ -1,38 +1,45 @@
-package phonehome
+package clientprofile
 
 import (
 	"maps"
+	"net/http"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/glob"
+	"github.com/stackrox/rox/pkg/grpc/common/requestinterceptor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func withUserAgent(ua string) Headers {
-	return Headers{userAgentHeaderKey: {ua}}
+const userAgentHeaderKey = "User-Agent"
+
+func withUserAgent(ua string) http.Header {
+	return http.Header{userAgentHeaderKey: {ua}}
 }
 
-func TestCampaignFulfilled(t *testing.T) {
-	doNothing := func(*APICallCampaignCriterion, Headers) {}
-	captureFulfilled := func(fcc *APICallCampaign) func(*APICallCampaignCriterion, Headers) {
-		return func(cc *APICallCampaignCriterion, _ Headers) {
+// RequestParams holds intercepted call parameters.
+type RequestParams = requestinterceptor.RequestParams
+
+func TestRuleSet_CountMatched(t *testing.T) {
+	doNothing := func(*Rule, Headers) {}
+	captureFulfilled := func(fcc *RuleSet) func(*Rule, Headers) {
+		return func(cc *Rule, _ Headers) {
 			*fcc = append(*fcc, cc)
 		}
 	}
-	t.Run("Empty campaign", func(t *testing.T) {
-		campaign := APICallCampaign{}
+	t.Run("Empty rule set", func(t *testing.T) {
+		ruleset := RuleSet{}
 		rp := &RequestParams{
 			Headers: withUserAgent("some test user-agent"),
 			Method:  "GeT",
 			Path:    "/some/test/path",
 			Code:    202,
 		}
-		assert.Zero(t, campaign.CountFulfilled(rp, doNothing))
+		assert.Zero(t, ruleset.CountMatched(rp, doNothing))
 	})
 	t.Run("Empty criterion", func(t *testing.T) {
-		campaign := APICallCampaign{
-			&APICallCampaignCriterion{},
+		ruleset := RuleSet{
+			&Rule{},
 		}
 		rp := &RequestParams{
 			Headers: withUserAgent("some test user-agent"),
@@ -40,13 +47,13 @@ func TestCampaignFulfilled(t *testing.T) {
 			Path:    "/some/test/path",
 			Code:    202,
 		}
-		var fulfilled APICallCampaign
-		if assert.Equal(t, 1, campaign.CountFulfilled(rp, captureFulfilled(&fulfilled))) {
-			assert.Same(t, campaign[0], fulfilled[0])
+		var fulfilled RuleSet
+		if assert.Equal(t, 1, ruleset.CountMatched(rp, captureFulfilled(&fulfilled))) {
+			assert.Same(t, ruleset[0], fulfilled[0])
 		}
 	})
 	t.Run("Nil criterion", func(t *testing.T) {
-		campaign := APICallCampaign{
+		ruleset := RuleSet{
 			nil,
 		}
 		rp := &RequestParams{
@@ -55,11 +62,11 @@ func TestCampaignFulfilled(t *testing.T) {
 			Path:    "/some/test/path",
 			Code:    202,
 		}
-		assert.Zero(t, campaign.CountFulfilled(rp, doNothing))
+		assert.Zero(t, ruleset.CountMatched(rp, doNothing))
 	})
 
-	t.Run("Single criterion", func(t *testing.T) {
-		campaigns := map[string]APICallCampaign{
+	t.Run("Single rule", func(t *testing.T) {
+		rulesets := map[string]RuleSet{
 			"Code":         {(Codes(202))},
 			"Codes":        {Codes(100, 202, 400)},
 			"Method":       {MethodPattern("GET")},
@@ -80,10 +87,10 @@ func TestCampaignFulfilled(t *testing.T) {
 				Path:    "/some/test/path",
 				Code:    202,
 			}
-			for name, campaign := range campaigns {
+			for name, ruleset := range rulesets {
 				t.Run(name, func(t *testing.T) {
-					require.NoError(t, campaign.Compile())
-					assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
+					require.NoError(t, ruleset.Compile())
+					assert.Equal(t, 1, ruleset.CountMatched(rp, doNothing))
 				})
 			}
 		})
@@ -95,9 +102,9 @@ func TestCampaignFulfilled(t *testing.T) {
 				Path:    "/test/path",
 				Code:    305,
 			}
-			for name, campaign := range campaigns {
+			for name, ruleset := range rulesets {
 				t.Run(name, func(t *testing.T) {
-					assert.Zero(t, campaign.CountFulfilled(rp, doNothing))
+					assert.Zero(t, ruleset.CountMatched(rp, doNothing))
 				})
 			}
 		})
@@ -105,7 +112,7 @@ func TestCampaignFulfilled(t *testing.T) {
 
 	t.Run("Test the list of fulfilled criteria", func(t *testing.T) {
 		rp := &RequestParams{
-			Headers: Headers{
+			Headers: http.Header{
 				userAgentHeaderKey: {"some test user-agent"},
 				"X-Header-1":       {"value 1", "value 2"},
 				"X-Header-2":       {"value 1", "value 2"},
@@ -115,7 +122,7 @@ func TestCampaignFulfilled(t *testing.T) {
 			Path:   "/some/test/path",
 			Code:   202,
 		}
-		campaign := APICallCampaign{
+		ruleset := RuleSet{
 			HeaderPattern(userAgentHeaderKey, "CI"),     // 0 - no
 			HeaderPattern(userAgentHeaderKey, "*test*"), // 1 - yes
 			MethodPattern("GET"),                        // 2 - yes
@@ -136,18 +143,18 @@ func TestCampaignFulfilled(t *testing.T) {
 				Headers: GlobMap{"X-Header-3": NoHeaderOrAnyValue},
 			},
 		}
-		expected := APICallCampaign{campaign[1], campaign[2], campaign[5]}
+		expected := RuleSet{ruleset[1], ruleset[2], ruleset[5]}
 		expectedHeaders := Headers{
 			userAgentHeaderKey: rp.Headers[userAgentHeaderKey],
 			"X-Header-1":       {"value 2"}, // "value 1" is not matched
 			"X-Header-2":       {"value 1", "value 2"},
 		}
 
-		var fulfilled APICallCampaign
+		var fulfilled RuleSet
 		matchedHeaders := Headers{}
 
-		assert.Equal(t, len(expected), campaign.CountFulfilled(rp,
-			func(cc *APICallCampaignCriterion, h Headers) {
+		assert.Equal(t, len(expected), ruleset.CountMatched(rp,
+			func(cc *Rule, h Headers) {
 				fulfilled = append(fulfilled, cc)
 				maps.Copy(matchedHeaders, h)
 			}))
@@ -156,7 +163,7 @@ func TestCampaignFulfilled(t *testing.T) {
 	})
 
 	t.Run("Missing headers", func(t *testing.T) {
-		campaign := APICallCampaign{
+		ruleset := RuleSet{
 			HeaderPattern("X-Header", NoHeaderOrAnyValue),
 		}
 		rp := &RequestParams{
@@ -165,7 +172,7 @@ func TestCampaignFulfilled(t *testing.T) {
 			Path:    "/test/path",
 			Code:    305,
 		}
-		assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
+		assert.Equal(t, 1, ruleset.CountMatched(rp, doNothing))
 	})
 
 	t.Run("Test mutiple fulfilled", func(t *testing.T) {
@@ -175,7 +182,7 @@ func TestCampaignFulfilled(t *testing.T) {
 			Path:    "/v1/test/path",
 			Code:    202,
 		}
-		campaign := APICallCampaign{
+		ruleset := RuleSet{
 			{
 				Path: glob.Pattern("/v1/test*").Ptr(),
 			},
@@ -183,15 +190,15 @@ func TestCampaignFulfilled(t *testing.T) {
 				Method: glob.Pattern("GET").Ptr(),
 			},
 		}
-		require.NoError(t, campaign.Compile())
-		var fulfilled APICallCampaign
-		if assert.Equal(t, 2, campaign.CountFulfilled(rp, captureFulfilled(&fulfilled))) {
-			assert.Same(t, campaign[0], fulfilled[0])
-			assert.Same(t, campaign[1], fulfilled[1])
+		require.NoError(t, ruleset.Compile())
+		var fulfilled RuleSet
+		if assert.Equal(t, 2, ruleset.CountMatched(rp, captureFulfilled(&fulfilled))) {
+			assert.Same(t, ruleset[0], fulfilled[0])
+			assert.Same(t, ruleset[1], fulfilled[1])
 		}
 	})
 	t.Run("Header name and value globs", func(t *testing.T) {
-		headers := Headers{
+		headers := http.Header{
 			"X-Custom-One": {"alpha"},
 			"X-Custom-Two": {"beta"},
 			"X-Other":      {"gamma"},
@@ -204,39 +211,39 @@ func TestCampaignFulfilled(t *testing.T) {
 		}
 
 		t.Run("Glob header name matches", func(t *testing.T) {
-			campaign := APICallCampaign{
+			campaign := RuleSet{
 				HeaderPattern("X-Custom-*", "*"),
 			}
 			require.NoError(t, campaign.Compile())
-			assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
+			assert.Equal(t, 1, campaign.CountMatched(rp, doNothing))
 		})
 
 		t.Run("Glob header name and value match", func(t *testing.T) {
-			campaign := APICallCampaign{
+			campaign := RuleSet{
 				HeaderPattern("X-Custom-*", "al*"),
 			}
 			require.NoError(t, campaign.Compile())
-			assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
+			assert.Equal(t, 1, campaign.CountMatched(rp, doNothing))
 		})
 
 		t.Run("Glob header name matches but value does not", func(t *testing.T) {
-			campaign := APICallCampaign{
+			campaign := RuleSet{
 				HeaderPattern("X-Custom-*", "zzz*"),
 			}
 			require.NoError(t, campaign.Compile())
-			assert.Zero(t, campaign.CountFulfilled(rp, doNothing))
+			assert.Zero(t, campaign.CountMatched(rp, doNothing))
 		})
 
 		t.Run("Glob header name does not match", func(t *testing.T) {
-			campaign := APICallCampaign{
+			campaign := RuleSet{
 				HeaderPattern("X-Missing-*", "*"),
 			}
 			require.NoError(t, campaign.Compile())
-			assert.Zero(t, campaign.CountFulfilled(rp, doNothing))
+			assert.Zero(t, campaign.CountMatched(rp, doNothing))
 		})
 
 		t.Run("Multiple glob header criteria", func(t *testing.T) {
-			campaign := APICallCampaign{
+			campaign := RuleSet{
 				{
 					Headers: GlobMap{
 						"X-Custom-*": "al*",
@@ -245,18 +252,18 @@ func TestCampaignFulfilled(t *testing.T) {
 				},
 			}
 			require.NoError(t, campaign.Compile())
-			assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
+			assert.Equal(t, 1, campaign.CountMatched(rp, doNothing))
 		})
 
 		t.Run("Method match captures all X- headers", func(t *testing.T) {
-			campaign := APICallCampaign{
+			campaign := RuleSet{
 				{
 					Method:  glob.Pattern("GET").Ptr(),
 					Headers: GlobMap{"X-*": "*"},
 				},
 			}
 			require.NoError(t, campaign.Compile())
-			assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
+			assert.Equal(t, 1, campaign.CountMatched(rp, doNothing))
 
 			rpPost := &RequestParams{
 				Headers: headers,
@@ -264,26 +271,26 @@ func TestCampaignFulfilled(t *testing.T) {
 				Path:    "/test",
 				Code:    200,
 			}
-			assert.Zero(t, campaign.CountFulfilled(rpPost, doNothing))
+			assert.Zero(t, campaign.CountMatched(rpPost, doNothing))
 		})
 
 		t.Run("Capture by method with missing glob header pattern", func(t *testing.T) {
-			campaign := APICallCampaign{
+			campaign := RuleSet{
 				{
 					Method:  glob.Pattern("GET").Ptr(),
 					Headers: GlobMap{"X-*": NoHeaderOrAnyValue},
 				},
 			}
 			require.NoError(t, campaign.Compile())
-			assert.Equal(t, 1, campaign.CountFulfilled(rp, doNothing))
+			assert.Equal(t, 1, campaign.CountMatched(rp, doNothing))
 
 			campaign[0].Method = glob.Pattern("POST").Ptr()
-			assert.Zero(t, campaign.CountFulfilled(rp, doNothing))
+			assert.Zero(t, campaign.CountMatched(rp, doNothing))
 		})
 	})
 
-	t.Run("All criteria", func(t *testing.T) {
-		campaign := APICallCampaign{
+	t.Run("All matchers", func(t *testing.T) {
+		ruleset := RuleSet{
 			{
 				Codes:   []int32{200, 400},
 				Method:  glob.Pattern("{GET,POST}").Ptr(),
@@ -312,7 +319,7 @@ func TestCampaignFulfilled(t *testing.T) {
 				},
 			},
 		}
-		require.NoError(t, campaign.Compile())
+		require.NoError(t, ruleset.Compile())
 		t.Run("All pass", func(t *testing.T) {
 			rps := []RequestParams{
 				{
@@ -343,14 +350,14 @@ func TestCampaignFulfilled(t *testing.T) {
 					Method: "PUT",
 					Code:   100,
 					Path:   "/v5/test",
-					Headers: Headers{
+					Headers: http.Header{
 						userAgentHeaderKey: {"some another user-agent"},
 						"Header":           {"value"},
 					},
 				},
 			}
 			for _, rp := range rps {
-				assert.Equal(t, 1, campaign.CountFulfilled(&rp, doNothing), rp.Headers.Get(userAgentHeaderKey))
+				assert.Equal(t, 1, ruleset.CountMatched(&rp, doNothing), rp.Headers.Get(userAgentHeaderKey))
 			}
 		})
 
@@ -384,14 +391,14 @@ func TestCampaignFulfilled(t *testing.T) {
 					Method: "PUT",
 					Path:   "/v5/test/path",
 					Code:   100,
-					Headers: Headers{
+					Headers: http.Header{
 						userAgentHeaderKey: {"some another user-agent 5"},
 						"h":                {"---"},
 					},
 				},
 			}
 			for _, rp := range rps {
-				assert.Zero(t, campaign.CountFulfilled(&rp, doNothing), rp.Headers.Get(userAgentHeaderKey))
+				assert.Zero(t, ruleset.CountMatched(&rp, doNothing), rp.Headers.Get(userAgentHeaderKey))
 			}
 		})
 	})
@@ -399,22 +406,22 @@ func TestCampaignFulfilled(t *testing.T) {
 
 func TestCompile(t *testing.T) {
 	cases := []struct {
-		criterion    APICallCampaignCriterion
+		rule         Rule
 		errorMessage string
 	}{
 		{
-			criterion:    APICallCampaignCriterion{},
+			rule:         Rule{},
 			errorMessage: "",
 		},
 		{
-			criterion:    *PathPattern("[b-a]"),
+			rule:         *PathPattern("[b-a]"),
 			errorMessage: `error parsing path pattern: failed to compile "[b-a]": hi character 'a' should be greater than lo 'b'`,
 		},
 	}
 
 	for _, test := range cases {
 		t.Run(test.errorMessage, func(t *testing.T) {
-			err := test.criterion.Compile()
+			err := test.rule.Compile()
 			if err == nil {
 				assert.Empty(t, test.errorMessage)
 			} else {
@@ -423,8 +430,8 @@ func TestCompile(t *testing.T) {
 		})
 	}
 
-	t.Run("nil campaign", func(t *testing.T) {
-		var campaign APICallCampaign
-		assert.NoError(t, campaign.Compile())
+	t.Run("nil ruleset", func(t *testing.T) {
+		var ruleset RuleSet
+		assert.NoError(t, ruleset.Compile())
 	})
 }

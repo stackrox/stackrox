@@ -1,8 +1,10 @@
 package centralclient
 
 import (
+	"net/http"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/clientprofile"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,8 +14,8 @@ import (
 // See https://github.com/stackrox/service-now/blob/9d1df943f5f0b3052df97c6272814e2303f17685/52616ff6938a1a50c52a72856aba10fd/update/sys_script_include_2b362bbe938a1a50c52a72856aba10b3.xml#L80.
 const snowIntegrationHeader = "Rh-Servicenow-Integration"
 
-func withUserAgent(ua string) phonehome.Headers {
-	return phonehome.Headers{userAgentHeaderKey: {ua}}
+func withUserAgent(ua string) http.Header {
+	return http.Header{userAgentHeaderKey: {ua}}
 }
 
 func Test_apiCall(t *testing.T) {
@@ -85,7 +87,7 @@ func Test_apiCall(t *testing.T) {
 		},
 		"ServiceNow from integration": {
 			rp: &phonehome.RequestParams{
-				Headers: phonehome.Headers{
+				Headers: http.Header{
 					snowIntegrationHeader: {"v1.0.3"},
 					"User-Agent":          {"RHACS Integration ServiceNow client"},
 				},
@@ -135,9 +137,9 @@ func Test_apiCall(t *testing.T) {
 		},
 	}
 	require.NoError(t, permanentTelemetryCampaign.Compile())
-	anyTestEndpoint := phonehome.PathPattern("*test*")
+	anyTestEndpoint := clientprofile.PathPattern("*test*")
 	c := newCentralClient("test-id")
-	c.appendRuntimeCampaign(phonehome.APICallCampaign{anyTestEndpoint})
+	c.appendRuntimeCampaign(clientprofile.RuleSet{anyTestEndpoint})
 	apiCallInterceptor := c.apiCallInterceptor()
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {

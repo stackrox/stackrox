@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/clientprofile"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -71,9 +72,9 @@ func Test_getRuntimeConfig_Campaign(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, &RuntimeConfig{
 		Key: remoteKey,
-		APICallCampaign: APICallCampaign{
-			MethodPattern("{put,delete}"),
-			HeaderPattern("Accept-Encoding", "*json*"),
+		APICallCampaign: clientprofile.RuleSet{
+			clientprofile.MethodPattern("{put,delete}"),
+			clientprofile.HeaderPattern("Accept-Encoding", "*json*"),
 		},
 	}, cfg)
 }
