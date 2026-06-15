@@ -164,8 +164,7 @@ function RequestCVEsTable({
                                     affectedImageCountBySeverity?.important.total ?? 0;
                                 const moderateCount =
                                     affectedImageCountBySeverity?.moderate.total ?? 0;
-                                const lowCount =
-                                    affectedImageCountBySeverity?.low.total ?? 0;
+                                const lowCount = affectedImageCountBySeverity?.low.total ?? 0;
                                 const unknownCount =
                                     affectedImageCountBySeverity?.unknown.total ?? 0;
                                 const filteredSeverities: VulnerabilitySeverityLabel[] = [

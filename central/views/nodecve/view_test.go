@@ -795,6 +795,10 @@ func (s *NodeCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []Cve
 				if core.GetTopCVSS() < v.GetCvss() {
 					core.TopCVSS = v.GetCvss()
 				}
+				if v.GetSeverity() > core.GetTopSeverity() {
+					sev := int32(v.GetSeverity())
+					core.TopSeverity = &sev
+				}
 				core.NodeIDs = append(core.NodeIDs, n.GetId())
 				if core.GetFirstDiscoveredInSystem().Compare(cveCreatedTime) > 0 {
 					core.FirstDiscoveredInSystem = &cveCreatedTime

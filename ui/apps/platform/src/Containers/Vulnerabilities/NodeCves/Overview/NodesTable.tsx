@@ -85,14 +85,16 @@ function NodesTable({
             <Thead noWrap>
                 <Tr>
                     <Th sort={getSortParams(NODE_SORT_FIELD)}>Node</Th>
-                    {isSimplifiedSeverity ? (
-                        <Th>Top severity</Th>
-                    ) : (
-                        <Th>
-                            CVEs by severity
-                            {isFiltered && <DynamicColumnIcon />}
-                        </Th>
-                    )}
+                    <Th>
+                        {isSimplifiedSeverity ? (
+                            'Top severity'
+                        ) : (
+                            <>
+                                CVEs by severity
+                                {isFiltered && <DynamicColumnIcon />}
+                            </>
+                        )}
+                    </Th>
                     <Th sort={getSortParams(CLUSTER_SORT_FIELD)}>Cluster</Th>
                     <Th sort={getSortParams(OPERATING_SYSTEM_SORT_FIELD)}>Operating system</Th>
                     <Th sort={getSortParams(NODE_SCAN_TIME_SORT_FIELD)}>Scan time</Th>

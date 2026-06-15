@@ -129,14 +129,22 @@ function CVEsTable({
                     <ExpandRowTh />
                     {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
-                    {isSimplifiedSeverity ? (
-                        <Th>Top severity</Th>
-                    ) : (
-                        <TooltipTh tooltip="The number of nodes affected by this CVE, grouped by the severity of the CVE on each node">
-                            Nodes by severity
-                            {isFiltered && <DynamicColumnIcon />}
-                        </TooltipTh>
-                    )}
+                    <TooltipTh
+                        tooltip={
+                            isSimplifiedSeverity
+                                ? 'Highest severity of this CVE across nodes'
+                                : 'The number of nodes affected by this CVE, grouped by the severity of the CVE on each node'
+                        }
+                    >
+                        {isSimplifiedSeverity ? (
+                            'Top severity'
+                        ) : (
+                            <>
+                                Nodes by severity
+                                {isFiltered && <DynamicColumnIcon />}
+                            </>
+                        )}
+                    </TooltipTh>
                     <Th sort={getSortParams(NODE_TOP_CVSS_SORT_FIELD, aggregateByCVSS)}>
                         Top CVSS
                     </Th>
