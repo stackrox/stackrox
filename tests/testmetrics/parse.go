@@ -134,7 +134,7 @@ func findCounter(body, metricName, labelSubstring string) (float64, bool) {
 		if len(fields) < 2 {
 			continue
 		}
-		val, err := strconv.ParseFloat(fields[len(fields)-1], 64)
+		val, err := strconv.ParseFloat(fields[1], 64)
 		if err != nil {
 			continue
 		}

@@ -4,16 +4,20 @@ package tests
 
 import (
 	"context"
+	"fmt"
+	"maps"
 	"time"
 
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stretchr/testify/require"
+	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
 	networkingV1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 )
 
 // ensureComplianceMetricsExposed guarantees that the collector compliance container
@@ -51,37 +55,29 @@ func (s *VMScanningSuite) ensureComplianceMetricsEnv(ctx context.Context, ns, ds
 	ds, err := s.k8sClient.AppsV1().DaemonSets(ns).Get(ctx, dsName, metaV1.GetOptions{})
 	require.NoError(t, err, "getting DaemonSet %s/%s", ns, dsName)
 
-	var container *coreV1.Container
-	for i := range ds.Spec.Template.Spec.Containers {
-		if ds.Spec.Template.Spec.Containers[i].Name == containerName {
-			container = &ds.Spec.Template.Spec.Containers[i]
-			break
-		}
-	}
-	require.NotNil(t, container, "container %q not found in DaemonSet %s/%s", containerName, ns, dsName)
-
-	for _, e := range container.Env {
-		if e.Name == envName && e.Value == envValue {
-			s.logf("VM scanning setup: DaemonSet %s/%s container %q already has %s=%s", ns, dsName, containerName, envName, envValue)
-			return
-		}
+	changed, err := ensureDaemonSetContainerEnv(ds, containerName, envName, envValue)
+	require.NoError(t, err, "preparing DaemonSet %s/%s container %q for %s=%s", ns, dsName, containerName, envName, envValue)
+	if !changed {
+		s.logf("VM scanning setup: DaemonSet %s/%s container %q already has %s=%s", ns, dsName, containerName, envName, envValue)
+		return
 	}
 
 	s.logf("VM scanning setup: patching DaemonSet %s/%s container %q: setting %s=%s", ns, dsName, containerName, envName, envValue)
-	updated := false
-	for i, e := range container.Env {
-		if e.Name == envName {
-			container.Env[i].Value = envValue
-			container.Env[i].ValueFrom = nil
-			updated = true
-			break
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		current, getErr := s.k8sClient.AppsV1().DaemonSets(ns).Get(ctx, dsName, metaV1.GetOptions{})
+		if getErr != nil {
+			return getErr
 		}
-	}
-	if !updated {
-		container.Env = append(container.Env, coreV1.EnvVar{Name: envName, Value: envValue})
-	}
-
-	_, err = s.k8sClient.AppsV1().DaemonSets(ns).Update(ctx, ds, metaV1.UpdateOptions{})
+		needsUpdate, setErr := ensureDaemonSetContainerEnv(current, containerName, envName, envValue)
+		if setErr != nil {
+			return setErr
+		}
+		if !needsUpdate {
+			return nil
+		}
+		_, updateErr := s.k8sClient.AppsV1().DaemonSets(ns).Update(ctx, current, metaV1.UpdateOptions{})
+		return updateErr
+	})
 	require.NoError(t, err, "updating DaemonSet %s/%s to set %s=%s", ns, dsName, envName, envValue)
 
 	s.logf("VM scanning setup: waiting for DaemonSet %s/%s rollout", ns, dsName)
@@ -201,7 +197,7 @@ func (s *VMScanningSuite) ensureMonitoringNetworkPolicy(ctx context.Context, ns,
 
 	existing, err := s.k8sClient.NetworkingV1().NetworkPolicies(ns).Get(ctx, name, metaV1.GetOptions{})
 	if err == nil {
-		if networkPolicyMatchesPorts(existing, ports) {
+		if networkPolicyMatches(existing, appLabel, ports) {
 			s.logf("VM scanning setup: NetworkPolicy %s/%s already allows ports %v", ns, name, ports)
 			return
 		}
@@ -220,15 +216,45 @@ func (s *VMScanningSuite) ensureMonitoringNetworkPolicy(ctx context.Context, ns,
 	require.NoError(t, err, "creating NetworkPolicy %s/%s", ns, name)
 }
 
-func networkPolicyMatchesPorts(np *networkingV1.NetworkPolicy, wantPorts []int32) bool {
+func ensureDaemonSetContainerEnv(ds *appsV1.DaemonSet, containerName, envName, envValue string) (bool, error) {
+	for i := range ds.Spec.Template.Spec.Containers {
+		container := &ds.Spec.Template.Spec.Containers[i]
+		if container.Name != containerName {
+			continue
+		}
+		for j := range container.Env {
+			if container.Env[j].Name != envName {
+				continue
+			}
+			if container.Env[j].Value == envValue && container.Env[j].ValueFrom == nil {
+				return false, nil
+			}
+			container.Env[j].Value = envValue
+			container.Env[j].ValueFrom = nil
+			return true, nil
+		}
+		container.Env = append(container.Env, coreV1.EnvVar{Name: envName, Value: envValue})
+		return true, nil
+	}
+	return false, fmt.Errorf("container %q not found in DaemonSet %s/%s", containerName, ds.Namespace, ds.Name)
+}
+
+func networkPolicyMatches(np *networkingV1.NetworkPolicy, appLabel string, wantPorts []int32) bool {
+	if !maps.Equal(np.Spec.PodSelector.MatchLabels, map[string]string{"app": appLabel}) {
+		return false
+	}
+	if len(np.Spec.PolicyTypes) != 1 || np.Spec.PolicyTypes[0] != networkingV1.PolicyTypeIngress {
+		return false
+	}
 	if len(np.Spec.Ingress) != 1 {
 		return false
 	}
 	have := make(map[int32]bool)
 	for _, p := range np.Spec.Ingress[0].Ports {
-		if p.Port != nil {
-			have[p.Port.IntVal] = true
+		if p.Port == nil || p.Port.Type != intstr.Int || p.Protocol == nil || *p.Protocol != coreV1.ProtocolTCP {
+			return false
 		}
+		have[p.Port.IntVal] = true
 	}
 	for _, p := range wantPorts {
 		if !have[p] {

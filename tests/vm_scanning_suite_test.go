@@ -445,11 +445,8 @@ func (s *VMScanningSuite) provisionVMs(specs []vmSpec) {
 		vmCancel()
 
 		nodeName, err := vmhelpers.GetVMINodeName(ctx, s.dynamicClient, vm.Namespace, vm.Name)
-		if err != nil {
-			s.logf("provision VMs: could not determine node for %s/%s: %v", vm.Namespace, vm.Name, err)
-		} else {
-			vm.NodeName = nodeName
-		}
+		require.NoError(s.T(), err, "GetVMINodeName %s/%s", vm.Namespace, vm.Name)
+		vm.NodeName = nodeName
 	}
 
 	s.logf("VM placement:\n%s", s.vmPlacementSummary(ctx))

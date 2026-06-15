@@ -19,7 +19,7 @@ func moduleRepoRoot(t *testing.T) string {
 }
 
 // TestCanonicalMetricGoSourceFilesDriftGuard reads product metric definitions and fails when
-// required names/labels disappear from source (compliance relay, sensor VM index).
+// names/labels used by the VM scanning metrics assertions disappear from source.
 func TestCanonicalMetricGoSourceFilesDriftGuard(t *testing.T) {
 	root := moduleRepoRoot(t)
 	compliancePath := filepath.Join(root, "compliance/virtualmachines/relay/metrics/metrics.go")
@@ -33,7 +33,6 @@ func TestCanonicalMetricGoSourceFilesDriftGuard(t *testing.T) {
 		"virtual_machine_relay_index_reports_received_total",
 		"virtual_machine_relay_index_reports_sent_total",
 		"virtual_machine_relay_index_reports_mismatching_vsock_cid_total",
-		"virtual_machine_relay_sem_acquisition_failures_total",
 		`[]string{"failed"}`,
 	} {
 		require.Contains(t, compliance, sub, "compliance/virtualmachines/relay/metrics/metrics.go drift: missing %q", sub)

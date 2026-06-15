@@ -44,6 +44,22 @@ func TestParse_FoundAndMissing(t *testing.T) {
 	assertMissing(queries[4])
 }
 
+func TestParse_UsesValueBeforeOptionalTimestamp(t *testing.T) {
+	text := strings.Join([]string{
+		"some_counter_total 2 1718462400000",
+		`labeled_total{status="ok"} 7 1718462400001`,
+	}, "\n")
+
+	queries := []Query{
+		{Name: "some_counter_total"},
+		{Name: "labeled_total", LabelFilter: `status="ok"`},
+	}
+	m := parse(text, queries)
+
+	require.Equal(t, Value{Val: 2, Found: true}, m[Key(queries[0])])
+	require.Equal(t, Value{Val: 7, Found: true}, m[Key(queries[1])])
+}
+
 func TestParse_PrefixDoesNotFalseMatch(t *testing.T) {
 	text := strings.Join([]string{
 		"rox_scan_connections_total 5",
