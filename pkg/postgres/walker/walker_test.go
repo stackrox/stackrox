@@ -196,6 +196,52 @@ func TestFieldSetter(t *testing.T) {
 	}
 }
 
+func TestShallowCopyWithoutChildren(t *testing.T) {
+	child1 := &Schema{Table: "child1"}
+	child2 := &Schema{Table: "child2"}
+	parent := &Schema{
+		Table:    "parent",
+		Children: []*Schema{child1, child2},
+		Fields: []Field{
+			{Name: "id", ColumnName: "id", Options: PostgresOptions{PrimaryKey: true}},
+			{Name: "name", ColumnName: "name"},
+		},
+		Type:     "storage.Parent",
+		TypeName: "Parent",
+	}
+
+	cp := parent.ShallowCopyWithoutChildren()
+
+	t.Run("children are nil on copy", func(t *testing.T) {
+		assert.Nil(t, cp.Children)
+	})
+
+	t.Run("original children are unchanged", func(t *testing.T) {
+		require.Len(t, parent.Children, 2)
+		assert.Equal(t, "child1", parent.Children[0].Table)
+		assert.Equal(t, "child2", parent.Children[1].Table)
+	})
+
+	t.Run("copy shares parent-level fields", func(t *testing.T) {
+		assert.Equal(t, parent.Table, cp.Table)
+		assert.Equal(t, parent.Type, cp.Type)
+		assert.Equal(t, parent.TypeName, cp.TypeName)
+		assert.Equal(t, len(parent.Fields), len(cp.Fields))
+	})
+
+	t.Run("copy is a distinct pointer", func(t *testing.T) {
+		assert.NotSame(t, parent, cp)
+	})
+
+	t.Run("schema with no children returns empty copy", func(t *testing.T) {
+		leaf := &Schema{Table: "leaf"}
+		leafCp := leaf.ShallowCopyWithoutChildren()
+		assert.Nil(t, leafCp.Children)
+		assert.Equal(t, "leaf", leafCp.Table)
+		assert.NotSame(t, leaf, leafCp)
+	})
+}
+
 func TestFieldNeedsSubMessageInit(t *testing.T) {
 	cases := map[string]struct {
 		getter   string
