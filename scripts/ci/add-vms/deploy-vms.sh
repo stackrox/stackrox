@@ -215,24 +215,58 @@ deploy_all_vms() {
 # --- Wait for VMI + SSH ---
 
 # Polls until the KubeVirt VirtualMachineInstance reports condition=Ready.
-# Timeout: ~5 min (30 retries * 10s). Returns 1 on timeout.
+# Timeout: ~10 min (20 retries * 30s). Returns 1 on timeout.
+#
+# Each iteration uses a short fixed kubectl wait timeout (30s) instead of
+# a dynamic one, so we get regular progress updates and can print
+# diagnostics between attempts. The previous dynamic timeout
+# ((max-i)*10s) caused individual kubectl wait calls to block for
+# minutes, hiding the actual VM state from the CI log.
 wait_for_vmi_ready() {
-    local vm_name="$1" max_retries=30 i=0
+    local vm_name="$1" max_retries=20 i=0
     echo "  Waiting for VMI $vm_name to be ready..."
     while (( i < max_retries )); do
         if kubectl get "vmi/$vm_name" -n "$NAMESPACE" &>/dev/null; then
             if kubectl wait --for=condition=Ready "vmi/$vm_name" -n "$NAMESPACE" \
-                    --timeout="$(( (max_retries - i) * 10 ))s" &>/dev/null; then
+                    --timeout=30s &>/dev/null; then
                 echo "  VMI $vm_name is ready."
                 return 0
             fi
         fi
         i=$((i + 1))
-        (( i % 5 == 0 )) && echo "    Still waiting for VMI... (${i}/${max_retries})"
-        sleep 10
+        if (( i % 3 == 0 )); then
+            echo "    Still waiting for VMI... (${i}/${max_retries})"
+            dump_vmi_status "$vm_name"
+        fi
     done
     echo "  VMI $vm_name did not become ready in time."
+    dump_vmi_status "$vm_name"
     return 1
+}
+
+# Prints a short diagnostic for a VMI that isn't ready yet.
+# Shows the VMI status/conditions and recent pod events to help
+# identify scheduling failures, image pull errors, etc.
+dump_vmi_status() {
+    local vm_name="$1"
+    echo "    --- VMI diagnostic for $vm_name ---"
+    kubectl get "vmi/$vm_name" -n "$NAMESPACE" \
+        -o jsonpath='    Status: {.status.phase}{"\n"}' 2>/dev/null || true
+    kubectl get "vmi/$vm_name" -n "$NAMESPACE" \
+        -o jsonpath='    Conditions: {.status.conditions[*].type}={.status.conditions[*].status}{"\n"}' 2>/dev/null || true
+    # Show recent events for the launcher pod — surfaces image pull
+    # errors, scheduling failures, and other infrastructure issues.
+    local pod
+    pod="$(kubectl get pods -n "$NAMESPACE" -l "kubevirt.io/domain=${vm_name}" \
+        -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+    if [[ -n "$pod" ]]; then
+        echo "    Pod: $pod"
+        kubectl get events -n "$NAMESPACE" --field-selector "involvedObject.name=$pod" \
+            --sort-by='.lastTimestamp' 2>/dev/null | tail -5 | sed 's/^/    /' || true
+    else
+        echo "    No launcher pod found yet."
+    fi
+    echo "    ---"
 }
 
 # Single non-interactive SSH attempt using the automation key.
