@@ -29,13 +29,6 @@ const (
 	MetricSensorVMIndexReportProcessingDuration      = prometheusNamespace + "_sensor_virtual_machine_index_report_processing_duration_milliseconds"
 )
 
-// Prometheus label keys used in scrape text for the above vectors (must match registration).
-const (
-	LabelFailed = "failed"
-	LabelStatus = "status"
-	LabelAction = "action"
-)
-
 // Sensor IndexReportsSent status label values from sensor/common/virtualmachine/metrics/metrics.go
 const (
 	SensorIndexReportStatusCentralNotReady = "central not ready"
