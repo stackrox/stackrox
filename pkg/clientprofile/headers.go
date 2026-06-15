@@ -3,8 +3,8 @@ package clientprofile
 import (
 	"net/http"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/stackrox/rox/pkg/glob"
+	"google.golang.org/grpc/metadata"
 )
 
 // NoHeaderOrAnyValue pattern allows no header or a header with any value.
