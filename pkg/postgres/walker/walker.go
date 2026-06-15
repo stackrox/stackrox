@@ -81,20 +81,11 @@ func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
 			s.Fields = append(s.Fields, getSerializedField(s))
 		}
 	} else {
-		// Collect additional fields separately so we can put them in front of the field list
-		// (since these are primary keys, that is cleaner).
+		// Child table: add parent FK fields and idx column.
 		var additionalFields []Field
-		// Child tables represent tables that are stored in an array inside the parent.
-		// Rows in the child table do not have an id of their own.
-		// Instead, they are identified by their parent's primary key, and an index column (which
-		// represents the index of this specific child among the parent's children).
 		for _, parentPrimaryKey := range parentPrimaryKeys {
 			var columnNameInChild string
 			var columnNameInChildForCodeVariables string
-			// If a column in a child table references a column "X" in the parent table, we
-			// name the column in the child "parent_table_name_X".
-			// We keep this name even in the grandchild, and do not continuously add prefixes in front.
-			// This is accomplished by only prefixing the table name if the column is not already a reference.
 			if parentPrimaryKey.Options.Reference == nil {
 				columnNameInChild = fmt.Sprintf("%s_%s", parentPrimaryKey.Schema.Table, parentPrimaryKey.ColumnName)
 			} else {
@@ -135,7 +126,11 @@ func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
 }
 
 func postProcessSchema(s *Schema) {
-	removeTablesWithNoSearchableFields(s)
+	// NoSerialized schemas need all child tables since there's no serialized blob
+	// to fall back on — the child table IS the data for repeated message fields.
+	if !s.NoSerialized {
+		removeTablesWithNoSearchableFields(s)
+	}
 	addCommonFields(s)
 }
 
@@ -418,6 +413,13 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 				}
 				schema.AddFieldWithType(field, dt, opts)
 				continue
+			}
+			if schema.NoSerialized {
+				setterPath := getterToSetter(ctx.Getter(field.Name))
+				if schema.SubMessages == nil {
+					schema.SubMessages = make(map[string]string)
+				}
+				schema.SubMessages[setterPath] = structField.Type.Elem().String()
 			}
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts), schema, structField.Type.Elem())
 		case reflect.Slice:
