@@ -106,7 +106,7 @@ func TestCollectIndexes(t *testing.T) {
 				{Name: "deployments_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_sac_filter ON deployments USING btree (clusterid, namespace)", Background: false},
 			},
 		},
-		"SAC filter inherits background": {
+		"SAC filter does not inherit background": {
 			schema: &walker.Schema{
 				Table: "process_indicators",
 				Fields: []walker.Field{
@@ -122,7 +122,7 @@ func TestCollectIndexes(t *testing.T) {
 			obj: object{storageType: "storage.ProcessIndicator"},
 			expected: []IndexInfo{
 				{Name: "processindicators_deploymentid", Background: true},
-				{Name: "processindicators_sac_filter", Background: true},
+				{Name: "processindicators_sac_filter", Background: false},
 			},
 		},
 		"SAC filter cluster scope uses hash": {
