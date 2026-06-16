@@ -21,6 +21,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-26281: block creation of new GCR integrations. Users are directed to use Google Artifact Registry instead.
 
 ### Technical Changes
+- ROX-35006: Go runtime upgraded to 1.26. Unbracketed IPv6 addresses (e.g. `2001:db8::1`) are no longer accepted; use bracketed format instead (e.g. `[2001:db8::1]:443`).
 
 ## [4.11.0]
 
