@@ -36,6 +36,7 @@ import (
 
 var (
 	withoutV1ConfigsQuery = search.NewQueryBuilder().AddExactMatches(search.EmbeddedCollectionID, "").ProtoQuery()
+	withoutEmptyScope     = search.NewQueryBuilder().AddStrings(search.CollectionID, search.NegateQueryString(search.ExactMatchString(""))).ProtoQuery()
 )
 
 type upsertTestCase struct {
@@ -240,12 +241,12 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 		expectedQ *v1.Query
 	}{
 		{
-			desc:  "Empty query",
+			desc:  "Query with empty query",
 			query: &apiV2.RawQuery{Query: ""},
 			expectedQ: func() *v1.Query {
 				query := search.ConjunctionQuery(
 					common.WithoutV1ReportConfigs(search.EmptyQuery()),
-					search.NewQueryBuilder().AddStrings(search.CollectionID, search.NegateQueryString(search.ExactMatchString(""))).ProtoQuery())
+					withoutEmptyScope)
 				query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 				return query
 			}(),
@@ -256,7 +257,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 			expectedQ: func() *v1.Query {
 				query := search.ConjunctionQuery(
 					common.WithoutV1ReportConfigs(search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery()),
-					search.NewQueryBuilder().AddStrings(search.CollectionID, search.NegateQueryString(search.ExactMatchString(""))).ProtoQuery())
+					withoutEmptyScope)
 				query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 				return query
 			}(),
@@ -270,7 +271,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 			expectedQ: func() *v1.Query {
 				query := search.ConjunctionQuery(
 					common.WithoutV1ReportConfigs(search.EmptyQuery()),
-					search.NewQueryBuilder().AddStrings(search.CollectionID, search.NegateQueryString(search.ExactMatchString(""))).ProtoQuery())
+					withoutEmptyScope)
 				query.Pagination = &v1.QueryPagination{Limit: 25}
 				return query
 			}(),
