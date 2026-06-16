@@ -9,7 +9,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/tests/testmetrics"
-	"github.com/stackrox/rox/tests/vmhelpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -92,20 +91,20 @@ func assertPipeline(t *assert.CollectT, comp, sen testmetrics.Metrics) {
 	}
 
 	// Compliance relay: full receive → send → ack cycle.
-	compReceived := positive(comp, vmhelpers.MetricComplianceRelayIndexReportsReceivedTotal)
-	compSentOK := positive(comp, vmhelpers.MetricComplianceRelayIndexReportsSentTotal, "failed", "false")
-	positive(comp, vmhelpers.MetricComplianceRelayConnectionsAcceptedTotal)
-	positive(comp, vmhelpers.MetricComplianceRelayIndexReportAcksReceivedTotal)
-	zero(comp, vmhelpers.MetricComplianceRelayIndexReportsSentTotal, "failed", "true")
-	zero(comp, vmhelpers.MetricComplianceRelayIndexReportsMismatchingVsockTotal)
+	compReceived := positive(comp, "rox_compliance_virtual_machine_relay_index_reports_received_total")
+	compSentOK := positive(comp, "rox_compliance_virtual_machine_relay_index_reports_sent_total", "failed", "false")
+	positive(comp, "rox_compliance_virtual_machine_relay_connections_accepted_total")
+	positive(comp, "rox_compliance_virtual_machine_relay_acks_received_total")
+	zero(comp, "rox_compliance_virtual_machine_relay_index_reports_sent_total", "failed", "true")
+	zero(comp, "rox_compliance_virtual_machine_relay_index_reports_mismatching_vsock_cid_total")
 
 	// Sensor: full receive → send → ack cycle.
-	senReceived := positive(sen, vmhelpers.MetricSensorVMIndexReportsReceivedTotal)
-	senSentOK := positive(sen, vmhelpers.MetricSensorVMIndexReportsSentTotal, "status", vmhelpers.SensorIndexReportStatusSuccess)
-	positive(sen, vmhelpers.MetricSensorVMIndexReportAcksReceivedTotal, "action", "ACK")
-	zero(sen, vmhelpers.MetricSensorVMIndexReportsSentTotal, "status", vmhelpers.SensorIndexReportStatusError)
-	zero(sen, vmhelpers.MetricSensorVMIndexReportsSentTotal, "status", vmhelpers.SensorIndexReportStatusCentralNotReady)
-	zero(sen, vmhelpers.MetricSensorVMIndexReportEnqueueBlockedTotal)
+	senReceived := positive(sen, "rox_sensor_virtual_machine_index_reports_received_total")
+	senSentOK := positive(sen, "rox_sensor_virtual_machine_index_reports_sent_total", "status", "success")
+	positive(sen, "rox_sensor_virtual_machine_index_report_acks_received_total", "action", "ACK")
+	zero(sen, "rox_sensor_virtual_machine_index_reports_sent_total", "status", "error")
+	zero(sen, "rox_sensor_virtual_machine_index_reports_sent_total", "status", "central not ready")
+	zero(sen, "rox_sensor_virtual_machine_index_report_enqueue_blocked_total")
 
 	// Relational invariants: can't send more than received.
 	assert.GreaterOrEqualf(t, compReceived, compSentOK,
