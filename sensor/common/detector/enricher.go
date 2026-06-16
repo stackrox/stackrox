@@ -21,8 +21,10 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	detectorEvents "github.com/stackrox/rox/sensor/common/detector/events"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/image/cache"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -34,22 +36,18 @@ var (
 	scanTimeout = env.ScanTimeout.DurationSetting()
 )
 
-type scanResult struct {
-	context                context.Context
-	action                 central.ResourceAction
-	deployment             *storage.Deployment
-	images                 []*storage.Image
-	networkPoliciesApplied *augmentedobjs.NetworkPoliciesApplied
-}
-
 type imageChanResult struct {
 	image        *storage.Image
 	containerIdx int
 }
 
+type scanResultPublisher interface {
+	Publish(pubsub.Event) error
+}
+
 type enricher struct {
 	imageSvc       v1.ImageServiceClient
-	scanResultChan chan scanResult
+	scanResultChan chan *detectorEvents.ScanResultEvent
 
 	serviceAccountStore store.ServiceAccountStore
 	localScan           *scan.LocalScan
@@ -57,6 +55,7 @@ type enricher struct {
 	stopSig             concurrency.Signal
 	regStore            *registry.Store
 	clusterID           clusterIDPeekWaiter
+	pubSubDispatcher    scanResultPublisher
 }
 
 type clusterIDPeekWaiter interface {
@@ -260,15 +259,16 @@ func (c *cacheValue) updateImageNoLock(image *storage.Image) {
 	c.image.Names = protoutils.SliceUnique(append(c.image.GetNames(), existingNames...))
 }
 
-func newEnricher(clusterID clusterIDPeekWaiter, cache cache.Image, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
+func newEnricher(clusterID clusterIDPeekWaiter, cache cache.Image, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan, pubSubDispatcher scanResultPublisher) *enricher {
 	return &enricher{
-		scanResultChan:      make(chan scanResult),
+		scanResultChan:      make(chan *detectorEvents.ScanResultEvent),
 		serviceAccountStore: serviceAccountStore,
 		imageCache:          cache,
 		stopSig:             concurrency.NewSignal(),
 		localScan:           localScan,
 		regStore:            registryStore,
 		clusterID:           clusterID,
+		pubSubDispatcher:    pubSubDispatcher,
 	}
 }
 
@@ -410,22 +410,37 @@ func (e *enricher) getPullSecrets(deployment *storage.Deployment) []string {
 }
 
 func (e *enricher) blockingScan(ctx context.Context, deployment *storage.Deployment, netpolApplied *augmentedobjs.NetworkPoliciesApplied, action central.ResourceAction) {
+	// We pass the expiring message context to getImages here.
+	// This will allow us to cancel the scanWithRetries call if sensor disconnects.
+	images := e.getImages(ctx, deployment)
+
+	if e.pubSubDispatcher != nil {
+		if err := e.pubSubDispatcher.Publish(&detectorEvents.ScanResultEvent{
+			Context:                ctx,
+			Action:                 action,
+			Deployment:             deployment,
+			Images:                 images,
+			NetworkPoliciesApplied: netpolApplied,
+		}); err != nil {
+			log.Errorf("Failed to publish scan result event: %v", err)
+		}
+		return
+	}
+
 	select {
 	case <-e.stopSig.Done():
 		return
-	case e.scanResultChan <- scanResult{
-		context:    ctx,
-		action:     action,
-		deployment: deployment,
-		// We pass the expiring message context to getImages here.
-		// This will allow us to cancel the scanWithRetries call if sensor disconnects.
-		images:                 e.getImages(ctx, deployment),
-		networkPoliciesApplied: netpolApplied,
+	case e.scanResultChan <- &detectorEvents.ScanResultEvent{
+		Context:                ctx,
+		Action:                 action,
+		Deployment:             deployment,
+		Images:                 images,
+		NetworkPoliciesApplied: netpolApplied,
 	}:
 	}
 }
 
-func (e *enricher) outputChan() <-chan scanResult {
+func (e *enricher) outputChan() <-chan *detectorEvents.ScanResultEvent {
 	return e.scanResultChan
 }
 
