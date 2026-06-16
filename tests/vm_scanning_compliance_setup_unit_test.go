@@ -78,7 +78,7 @@ func TestEnsureComplianceMetricsExposed_RetriesOnConflict(t *testing.T) {
 	}
 	cs := fake.NewSimpleClientset(ds)
 	updateAttempts := 0
-	cs.Fake.PrependReactor("update", "daemonsets", func(action k8stesting.Action) (bool, runtime.Object, error) {
+	cs.PrependReactor("update", "daemonsets", func(action k8stesting.Action) (bool, runtime.Object, error) {
 		updateAttempts++
 		if updateAttempts == 1 {
 			return true, nil, apierrors.NewConflict(
