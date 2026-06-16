@@ -179,7 +179,7 @@ func (m *managerImpl) Start() {
 
 func (m *managerImpl) Stop() {
 	m.metricsTicker.Stop()
-	if m.isStarted.Load() {
+	if !m.isStarted.Load() {
 		log.Error("Compliance report manager not started")
 		return
 	}
