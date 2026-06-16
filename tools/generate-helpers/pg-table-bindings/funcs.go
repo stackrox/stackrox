@@ -212,8 +212,6 @@ func collectIndexes(schema *walker.Schema, obj object) []IndexInfo {
 	idxNameToBuilder := make(map[string]*indexBuilder)
 	// idxBuildOrder is used to consistently iterator of idxNameToBuilder
 	var idxBuildOrder []string
-	hasBackgroundIndex := false
-
 	for _, field := range schema.DBColumnFields() {
 		col := strings.ToLower(field.ColumnName)
 
@@ -224,10 +222,6 @@ func collectIndexes(schema *walker.Schema, obj object) []IndexInfo {
 			}
 			if !safeIdentifier.MatchString(name) {
 				log.Fatalf("index name %q contains unsafe characters — must match [a-z_][a-z0-9_]*", name)
-			}
-
-			if idx.Background {
-				hasBackgroundIndex = true
 			}
 
 			if b, ok := idxNameToBuilder[name]; ok {
@@ -254,7 +248,7 @@ func collectIndexes(schema *walker.Schema, obj object) []IndexInfo {
 		}
 	}
 
-	if sacBuilder := buildSACFilterIndex(schema, obj, tablePrefix, table, hasBackgroundIndex); sacBuilder != nil {
+	if sacBuilder := buildSACFilterIndex(schema, obj, tablePrefix, table); sacBuilder != nil {
 		idxNameToBuilder[sacBuilder.name] = sacBuilder
 		idxBuildOrder = append(idxBuildOrder, sacBuilder.name)
 	}
@@ -268,12 +262,11 @@ func collectIndexes(schema *walker.Schema, obj object) []IndexInfo {
 
 // buildSACFilterIndex creates a composite index on ClusterID/Namespace fields for
 // scope-based access control filtering. Returns nil if no SAC fields are present.
-func buildSACFilterIndex(schema *walker.Schema, obj object, tablePrefix, table string, background bool) *indexBuilder {
+func buildSACFilterIndex(schema *walker.Schema, obj object, tablePrefix, table string) *indexBuilder {
 	b := &indexBuilder{
-		name:       tablePrefix + "_sac_filter",
-		table:      table,
-		indexType:  "btree",
-		background: background,
+		name:      tablePrefix + "_sac_filter",
+		table:     table,
+		indexType: "btree",
 	}
 	if obj.IsClusterScope() {
 		b.indexType = "hash"

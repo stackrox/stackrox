@@ -61,6 +61,8 @@ func (s *SchemaTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	_, err = s.pool.Exec(s.ctx, "CREATE SCHEMA public")
 	s.Require().NoError(err)
+
+	ApplyAllSchemas(s.ctx, s.gormDB)
 }
 
 func (s *SchemaTestSuite) TearDownSuite() {
@@ -105,9 +107,15 @@ func (s *SchemaTestSuite) TestReentry() {
 	ApplyAllSchemas(s.ctx, s.gormDB)
 }
 
-func (s *SchemaTestSuite) TestApplyAllIndexes() {
+func (s *SchemaTestSuite) resetTestIndexTable() {
 	s.registerTestIndexTable()
-	ApplyAllSchemas(s.ctx, s.gormDB)
+	_, err := s.pool.Exec(s.ctx, "DROP TABLE IF EXISTS idx_test_applies CASCADE")
+	s.Require().NoError(err)
+	ApplySchemaForTable(s.ctx, s.gormDB, "idx_test_applies")
+}
+
+func (s *SchemaTestSuite) TestApplyAllIndexes() {
+	s.resetTestIndexTable()
 	ApplyAllIndexes(s.ctx, s.pool)
 
 	created := s.getIndexNames("idx_test_applies")
@@ -118,8 +126,7 @@ func (s *SchemaTestSuite) TestApplyAllIndexes() {
 }
 
 func (s *SchemaTestSuite) TestApplyAllStartupIndexes() {
-	s.registerTestIndexTable()
-	ApplyAllSchemas(s.ctx, s.gormDB)
+	s.resetTestIndexTable()
 	err := ApplyAllStartupIndexes(s.ctx, s.pool)
 	s.Require().NoError(err)
 
@@ -131,8 +138,7 @@ func (s *SchemaTestSuite) TestApplyAllStartupIndexes() {
 }
 
 func (s *SchemaTestSuite) TestApplyAllBackgroundIndexes() {
-	s.registerTestIndexTable()
-	ApplyAllSchemas(s.ctx, s.gormDB)
+	s.resetTestIndexTable()
 	err := ApplyAllBackgroundIndexes(s.ctx, s.pool)
 	s.Require().NoError(err)
 
@@ -142,8 +148,7 @@ func (s *SchemaTestSuite) TestApplyAllBackgroundIndexes() {
 }
 
 func (s *SchemaTestSuite) TestApplyIndexesIdempotent() {
-	s.registerTestIndexTable()
-	ApplyAllSchemas(s.ctx, s.gormDB)
+	s.resetTestIndexTable()
 	ApplyAllIndexes(s.ctx, s.pool)
 	ApplyAllIndexes(s.ctx, s.pool)
 }
@@ -179,6 +184,9 @@ func (s *SchemaTestSuite) registerTestIndexTable() {
 		CreateStmt:         stmt,
 		FeatureEnabledFunc: func() bool { return true },
 	}
+	s.T().Cleanup(func() {
+		delete(registeredTables, tableName)
+	})
 }
 
 func (s *SchemaTestSuite) getIndexNames(table string) set.StringSet {
