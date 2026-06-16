@@ -53,6 +53,12 @@ func TestParse_GetValue(t *testing.T) {
 			name:  "foo_total",
 			found: false,
 		},
+		"should not match label name that is a substring of another": {
+			text:   `labeled_total{my_status="ok"} 7` + "\n",
+			name:   "labeled_total",
+			labels: []string{"status", "ok"},
+			found:  false,
+		},
 	}
 
 	for name, tc := range testCases {
@@ -85,13 +91,4 @@ func TestParse_PrefixDoesNotFalseMatch(t *testing.T) {
 
 	_, found = m.GetValue("rox_scan_connections")
 	require.False(t, found, "rox_scan_connections should NOT match rox_scan_connections_total")
-}
-
-func TestParse_LabelFilterMatchesExactLabelName(t *testing.T) {
-	text := `labeled_total{my_status="ok"} 7`
-
-	m := Parse(text)
-
-	_, found := m.GetValue("labeled_total", "status", "ok")
-	require.False(t, found, `status="ok" should NOT match my_status="ok"`)
 }

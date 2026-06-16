@@ -50,6 +50,7 @@ func (m Metrics) GetValue(name string, labels ...string) (float64, bool) {
 	return 0, false
 }
 
+// pairLabels converts alternating key, value strings into a label map.
 func pairLabels(kv []string) map[string]string {
 	if len(kv) == 0 {
 		return nil
@@ -61,6 +62,7 @@ func pairLabels(kv []string) map[string]string {
 	return out
 }
 
+// labelsMatch returns true if the metric's labels contain all wanted pairs.
 func labelsMatch(have []*dto.LabelPair, want map[string]string) bool {
 	if len(want) == 0 {
 		return true
@@ -77,6 +79,7 @@ func labelsMatch(have []*dto.LabelPair, want map[string]string) bool {
 	return true
 }
 
+// metricValue extracts the numeric value from a metric based on its family type.
 func metricValue(typ dto.MetricType, m *dto.Metric) (float64, bool) {
 	switch typ {
 	case dto.MetricType_COUNTER:
