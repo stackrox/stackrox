@@ -31,6 +31,13 @@ func TestFormatURL(t *testing.T) {
 
 	val = FormatURL("http://server.smtp:8080/////", HTTPS, NoTrailingSlash)
 	assert.Equal(t, "http://server.smtp:8080", val)
+
+	// IPv6 with brackets
+	val = FormatURL("[2001:db8::1]:5000", HTTPS, NoTrailingSlash)
+	assert.Equal(t, "https://[2001:db8::1]:5000", val)
+
+	val = FormatURL("[::1]:5000", NONE, NoTrailingSlash)
+	assert.Equal(t, "[::1]:5000", val)
 }
 
 func TestGetServerFromURL(t *testing.T) {

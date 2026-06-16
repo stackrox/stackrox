@@ -67,6 +67,12 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	{{- if .Cycle}}
 	{{$name}}.{{.EmbeddedFK}} = nil
 	{{- end}}
+	{{- if .NoSerialized}}
+	testutils.NormalizeTimestampsToMicros({{$name}})
+	{{- range .Schema.Children}}
+	{{$name}}.{{trimSuffix "()" (trimPrefix "Get" .ObjectGetter)}} = nil
+	{{- end}}
+	{{- end}}
 
 	found{{.TrimmedType|upperCamelCase}}, exists, err := store.Get(ctx, {{$paramList}})
 	s.NoError(err)
@@ -114,6 +120,12 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 		s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		{{- if .Cycle}}
 		{{$name}}.{{.EmbeddedFK}} = nil
+		{{- end}}
+		{{- if $.NoSerialized}}
+		testutils.NormalizeTimestampsToMicros({{$name}})
+		{{- range $.Schema.Children}}
+		{{$name}}.{{trimSuffix "()" (trimPrefix "Get" .ObjectGetter)}} = nil
+		{{- end}}
 		{{- end}}
 		{{$name}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
 		{{$name}}IDs = append({{$name}}IDs, {{$paramList}})
@@ -166,9 +178,21 @@ type testCase struct {
 func (s *{{$namePrefix}}StoreSuite) getTestData(access ...storage.Access) (*{{.Type}}, *{{.Type}}, map[string]testCase) {
 	objA := &{{.Type}}{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	{{- if .NoSerialized}}
+	testutils.NormalizeTimestampsToMicros(objA)
+	{{- range .Schema.Children}}
+	objA.{{trimSuffix "()" (trimPrefix "Get" .ObjectGetter)}} = nil
+	{{- end}}
+	{{- end}}
 
 	objB := &{{.Type}}{}
 	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	{{- if .NoSerialized}}
+	testutils.NormalizeTimestampsToMicros(objB)
+	{{- range .Schema.Children}}
+	objB.{{trimSuffix "()" (trimPrefix "Get" .ObjectGetter)}} = nil
+	{{- end}}
+	{{- end}}
 
 	testCases := map[string]testCase{
 		withAllAccess: {

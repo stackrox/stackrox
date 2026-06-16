@@ -2,6 +2,7 @@ package netutil
 
 import (
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -78,8 +79,5 @@ func FormatEndpoint(host, zone, port string) string {
 	if port == "" {
 		return hostZone
 	}
-	if strings.ContainsRune(hostZone, ':') {
-		hostZone = fmt.Sprintf("[%s]", hostZone)
-	}
-	return fmt.Sprintf("%s:%s", hostZone, port)
+	return net.JoinHostPort(hostZone, port)
 }

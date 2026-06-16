@@ -23,7 +23,7 @@ import io.stackrox.proto.storage.RiskOuterClass.Risk.Result
 
 import common.Constants
 import objects.Deployment
-import objects.GCRImageIntegration
+import objects.GoogleArtifactRegistry
 import objects.Service
 import services.AlertService
 import services.DeploymentService
@@ -128,7 +128,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private Integer VIOLATION_CLEARED_TIMEOUT = WAIT_FOR_VIOLATION_TIMEOUT
 
     @Shared
-    private String gcrId
+    private String garId
     @Shared
     private String anyFixedPolicyId
 
@@ -151,8 +151,8 @@ class DefaultPoliciesTest extends BaseSpecification {
         anyFixedPolicyId = PolicyService.createNewPolicy(anyFixedPolicy)
         assert anyFixedPolicyId
 
-        gcrId = GCRImageIntegration.createDefaultIntegration()
-        assert gcrId != ""
+        garId = GoogleArtifactRegistry.createDefaultIntegration()
+        assert garId != ""
 
         ImageService.clearImageCaches()
         for (Deployment deployment : DEPLOYMENTS) {
@@ -192,7 +192,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
-        assert ImageIntegrationService.deleteImageIntegration(gcrId)
+        assert ImageIntegrationService.deleteImageIntegration(garId)
         if (anyFixedPolicyId) {
             PolicyService.deletePolicy(anyFixedPolicyId)
         }

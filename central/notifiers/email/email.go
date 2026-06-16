@@ -128,7 +128,7 @@ type smtpServer struct {
 }
 
 func (s *smtpServer) endpoint() string {
-	return fmt.Sprintf("%v:%v", s.host, s.port)
+	return net.JoinHostPort(s.host, strconv.Itoa(s.port))
 }
 
 // Validate Email notifier
