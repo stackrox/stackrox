@@ -36,7 +36,7 @@ import common.Constants
 import objects.Control
 import objects.CsvRow
 import objects.Deployment
-import objects.GCRImageIntegration
+import objects.GoogleArtifactRegistry
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Service
@@ -75,7 +75,7 @@ class ComplianceTest extends BaseSpecification {
     @Shared
     private String clusterId
     @Shared
-    private gcrId = ""
+    private garId = ""
     @Shared
     private Map<String, String> standardsByName = [:]
     static final private String COMPLIANCETOKEN = "stackrox-compliance"
@@ -87,9 +87,8 @@ class ComplianceTest extends BaseSpecification {
         clusterId = ClusterService.getClusterId()
         assert clusterId
 
-        // Clear image cache and add gcr
         ImageService.clearImageCaches()
-        gcrId = GCRImageIntegration.createDefaultIntegration()
+        garId = GoogleArtifactRegistry.createDefaultIntegration()
 
         // Get compliance metadata
         standardsByName = ComplianceService.getComplianceStandards().collectEntries {
@@ -109,7 +108,7 @@ class ComplianceTest extends BaseSpecification {
 
     def cleanupSpec() {
         BaseService.useBasicAuth()
-        ImageIntegrationService.deleteImageIntegration(gcrId)
+        ImageIntegrationService.deleteImageIntegration(garId)
         ImageService.clearImageCaches()
 
         // Wait for compliance daemonset to be deleted
@@ -632,7 +631,7 @@ class ComplianceTest extends BaseSpecification {
 
         and:
         "remove image integrations"
-        def gcrRemoved = ImageIntegrationService.deleteImageIntegration(gcrId)
+        def garRemoved = ImageIntegrationService.deleteImageIntegration(garId)
         ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
 
         and:
@@ -675,8 +674,8 @@ class ComplianceTest extends BaseSpecification {
 
         cleanup:
         "re-add image integrations"
-        if (gcrRemoved) {
-            gcrId = GCRImageIntegration.createDefaultIntegration()
+        if (garRemoved) {
+            garId = GoogleArtifactRegistry.createDefaultIntegration()
         }
         notifier.deleteNotifier()
         Services.updatePolicy(originalUbuntuPackageManagementPolicy)

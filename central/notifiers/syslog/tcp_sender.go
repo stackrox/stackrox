@@ -87,7 +87,7 @@ func validateRemoteConfig(endpointConfig *storage.Syslog_TCPConfig) (string, err
 		return "", errors.Errorf("invalid port number %d must be between 1 and 65535", port)
 	}
 
-	hostName := fmt.Sprintf("%s:%d", endpointConfig.GetHostname(), endpointConfig.GetPort())
+	hostName := net.JoinHostPort(endpointConfig.GetHostname(), strconv.Itoa(int(endpointConfig.GetPort())))
 
 	sysURL := fmt.Sprintf("tcp://%s", hostName)
 

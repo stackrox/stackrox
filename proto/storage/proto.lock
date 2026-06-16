@@ -13926,6 +13926,11 @@
                 "id": 27,
                 "name": "source",
                 "type": "PolicySource"
+              },
+              {
+                "id": 28,
+                "name": "evaluation_filter",
+                "type": "EvaluationFilter"
               }
             ],
             "reserved_ids": [
@@ -14073,6 +14078,22 @@
                 "id": 11,
                 "name": "source",
                 "type": "PolicySource"
+              },
+              {
+                "id": 12,
+                "name": "evaluation_filter",
+                "type": "EvaluationFilter"
+              }
+            ]
+          },
+          {
+            "name": "EvaluationFilter",
+            "fields": [
+              {
+                "id": 1,
+                "name": "skip_container_types",
+                "type": "ContainerType",
+                "is_repeated": true
               }
             ]
           },
@@ -14156,6 +14177,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/deployment.proto"
           },
           {
             "path": "storage/image.proto"
@@ -18004,6 +18028,30 @@
                 "integer": 2
               }
             ]
+          },
+          {
+            "name": "TestNoSerialized.Priority",
+            "enum_fields": [
+              {
+                "name": "UNSET_PRIORITY"
+              },
+              {
+                "name": "LOW_PRIORITY",
+                "integer": 1
+              },
+              {
+                "name": "MEDIUM_PRIORITY",
+                "integer": 2
+              },
+              {
+                "name": "HIGH_PRIORITY",
+                "integer": 3
+              },
+              {
+                "name": "CRITICAL_PRIORITY",
+                "integer": 4
+              }
+            ]
           }
         ],
         "messages": [
@@ -18908,6 +18956,146 @@
                 "id": 3,
                 "name": "g2_grandchild_id",
                 "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "TestNoSerialized",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "description",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "int32_val",
+                "type": "int32"
+              },
+              {
+                "id": 5,
+                "name": "int64_val",
+                "type": "int64"
+              },
+              {
+                "id": 6,
+                "name": "uint64_val",
+                "type": "uint64"
+              },
+              {
+                "id": 7,
+                "name": "bool_val",
+                "type": "bool"
+              },
+              {
+                "id": 8,
+                "name": "float_val",
+                "type": "float"
+              },
+              {
+                "id": 9,
+                "name": "double_val",
+                "type": "double"
+              },
+              {
+                "id": 10,
+                "name": "priority",
+                "type": "Priority"
+              },
+              {
+                "id": 11,
+                "name": "created_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 12,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 13,
+                "name": "tags",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 14,
+                "name": "metadata",
+                "type": "Metadata"
+              },
+              {
+                "id": 15,
+                "name": "labels",
+                "type": "Label",
+                "is_repeated": true
+              },
+              {
+                "id": 16,
+                "name": "annotations",
+                "type": "Annotation",
+                "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "Metadata",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "author",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "version",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "revision",
+                    "type": "int32"
+                  }
+                ]
+              },
+              {
+                "name": "Label",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "key",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "value",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "name": "Annotation",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "key",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "value",
+                    "type": "string"
+                  }
+                ]
               }
             ]
           }

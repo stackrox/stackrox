@@ -169,6 +169,61 @@ func (TestStruct_Enum) EnumDescriptor() ([]byte, []int) {
 	return file_storage_test_proto_rawDescGZIP(), []int{2, 0}
 }
 
+type TestNoSerialized_Priority int32
+
+const (
+	TestNoSerialized_UNSET_PRIORITY    TestNoSerialized_Priority = 0
+	TestNoSerialized_LOW_PRIORITY      TestNoSerialized_Priority = 1
+	TestNoSerialized_MEDIUM_PRIORITY   TestNoSerialized_Priority = 2
+	TestNoSerialized_HIGH_PRIORITY     TestNoSerialized_Priority = 3
+	TestNoSerialized_CRITICAL_PRIORITY TestNoSerialized_Priority = 4
+)
+
+// Enum value maps for TestNoSerialized_Priority.
+var (
+	TestNoSerialized_Priority_name = map[int32]string{
+		0: "UNSET_PRIORITY",
+		1: "LOW_PRIORITY",
+		2: "MEDIUM_PRIORITY",
+		3: "HIGH_PRIORITY",
+		4: "CRITICAL_PRIORITY",
+	}
+	TestNoSerialized_Priority_value = map[string]int32{
+		"UNSET_PRIORITY":    0,
+		"LOW_PRIORITY":      1,
+		"MEDIUM_PRIORITY":   2,
+		"HIGH_PRIORITY":     3,
+		"CRITICAL_PRIORITY": 4,
+	}
+)
+
+func (x TestNoSerialized_Priority) Enum() *TestNoSerialized_Priority {
+	p := new(TestNoSerialized_Priority)
+	*p = x
+	return p
+}
+
+func (x TestNoSerialized_Priority) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TestNoSerialized_Priority) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_test_proto_enumTypes[3].Descriptor()
+}
+
+func (TestNoSerialized_Priority) Type() protoreflect.EnumType {
+	return &file_storage_test_proto_enumTypes[3]
+}
+
+func (x TestNoSerialized_Priority) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TestNoSerialized_Priority.Descriptor instead.
+func (TestNoSerialized_Priority) EnumDescriptor() ([]byte, []int) {
+	return file_storage_test_proto_rawDescGZIP(), []int{16, 0}
+}
+
 type TestSingleKeyStruct struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
 	Key         string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty" sql:"pk,index=hash" search:"Test Key"`                                    // @gotags: sql:"pk,index=hash" search:"Test Key"
@@ -1677,6 +1732,172 @@ func (x *TestShortCircuit) GetG2GrandchildId() string {
 	return ""
 }
 
+// TestNoSerialized is a synthetic message for testing no-serialized store generation.
+// It covers scalar types, timestamps, enums, nested messages, and repeated strings.
+type TestNoSerialized struct {
+	state         protoimpl.MessageState         `protogen:"open.v1"`
+	Id            string                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Test NoSer ID,hidden" sql:"pk,type(uuid)"`     // @gotags: search:"Test NoSer ID,hidden" sql:"pk,type(uuid)"
+	Name          string                         `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Test NoSer Name"` // @gotags: search:"Test NoSer Name"
+	Description   string                         `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Int32Val      int32                          `protobuf:"varint,4,opt,name=int32_val,json=int32Val,proto3" json:"int32_val,omitempty"`
+	Int64Val      int64                          `protobuf:"varint,5,opt,name=int64_val,json=int64Val,proto3" json:"int64_val,omitempty"`
+	Uint64Val     uint64                         `protobuf:"varint,6,opt,name=uint64_val,json=uint64Val,proto3" json:"uint64_val,omitempty"`
+	BoolVal       bool                           `protobuf:"varint,7,opt,name=bool_val,json=boolVal,proto3" json:"bool_val,omitempty"`
+	FloatVal      float32                        `protobuf:"fixed32,8,opt,name=float_val,json=floatVal,proto3" json:"float_val,omitempty"`
+	DoubleVal     float64                        `protobuf:"fixed64,9,opt,name=double_val,json=doubleVal,proto3" json:"double_val,omitempty"`
+	Priority      TestNoSerialized_Priority      `protobuf:"varint,10,opt,name=priority,proto3,enum=storage.TestNoSerialized_Priority" json:"priority,omitempty" search:"Test NoSer Priority"` // @gotags: search:"Test NoSer Priority"
+	CreatedAt     *timestamppb.Timestamp         `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Test NoSer Created At"`                      // @gotags: search:"Test NoSer Created At"
+	ClusterId     string                         `protobuf:"bytes,12,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Test NoSer Cluster ID" sql:"type(uuid)"`                      // @gotags: search:"Test NoSer Cluster ID" sql:"type(uuid)"
+	Tags          []string                       `protobuf:"bytes,13,rep,name=tags,proto3" json:"tags,omitempty" search:"Test NoSer Tags"`                                                 // @gotags: search:"Test NoSer Tags"
+	Metadata      *TestNoSerialized_Metadata     `protobuf:"bytes,14,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	Labels        []*TestNoSerialized_Label      `protobuf:"bytes,15,rep,name=labels,proto3" json:"labels,omitempty"`
+	Annotations   []*TestNoSerialized_Annotation `protobuf:"bytes,16,rep,name=annotations,proto3" json:"annotations,omitempty" sql:"strategy(bytea)"` // @gotags: sql:"strategy(bytea)"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TestNoSerialized) Reset() {
+	*x = TestNoSerialized{}
+	mi := &file_storage_test_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TestNoSerialized) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestNoSerialized) ProtoMessage() {}
+
+func (x *TestNoSerialized) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_test_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestNoSerialized.ProtoReflect.Descriptor instead.
+func (*TestNoSerialized) Descriptor() ([]byte, []int) {
+	return file_storage_test_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *TestNoSerialized) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *TestNoSerialized) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *TestNoSerialized) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *TestNoSerialized) GetInt32Val() int32 {
+	if x != nil {
+		return x.Int32Val
+	}
+	return 0
+}
+
+func (x *TestNoSerialized) GetInt64Val() int64 {
+	if x != nil {
+		return x.Int64Val
+	}
+	return 0
+}
+
+func (x *TestNoSerialized) GetUint64Val() uint64 {
+	if x != nil {
+		return x.Uint64Val
+	}
+	return 0
+}
+
+func (x *TestNoSerialized) GetBoolVal() bool {
+	if x != nil {
+		return x.BoolVal
+	}
+	return false
+}
+
+func (x *TestNoSerialized) GetFloatVal() float32 {
+	if x != nil {
+		return x.FloatVal
+	}
+	return 0
+}
+
+func (x *TestNoSerialized) GetDoubleVal() float64 {
+	if x != nil {
+		return x.DoubleVal
+	}
+	return 0
+}
+
+func (x *TestNoSerialized) GetPriority() TestNoSerialized_Priority {
+	if x != nil {
+		return x.Priority
+	}
+	return TestNoSerialized_UNSET_PRIORITY
+}
+
+func (x *TestNoSerialized) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *TestNoSerialized) GetClusterId() string {
+	if x != nil {
+		return x.ClusterId
+	}
+	return ""
+}
+
+func (x *TestNoSerialized) GetTags() []string {
+	if x != nil {
+		return x.Tags
+	}
+	return nil
+}
+
+func (x *TestNoSerialized) GetMetadata() *TestNoSerialized_Metadata {
+	if x != nil {
+		return x.Metadata
+	}
+	return nil
+}
+
+func (x *TestNoSerialized) GetLabels() []*TestNoSerialized_Label {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
+func (x *TestNoSerialized) GetAnnotations() []*TestNoSerialized_Annotation {
+	if x != nil {
+		return x.Annotations
+	}
+	return nil
+}
+
 type TestSingleKeyStruct_Embedded struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Embedded      string                 `protobuf:"bytes,1,opt,name=embedded,proto3" json:"embedded,omitempty"`
@@ -1686,7 +1907,7 @@ type TestSingleKeyStruct_Embedded struct {
 
 func (x *TestSingleKeyStruct_Embedded) Reset() {
 	*x = TestSingleKeyStruct_Embedded{}
-	mi := &file_storage_test_proto_msgTypes[17]
+	mi := &file_storage_test_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1698,7 +1919,7 @@ func (x *TestSingleKeyStruct_Embedded) String() string {
 func (*TestSingleKeyStruct_Embedded) ProtoMessage() {}
 
 func (x *TestSingleKeyStruct_Embedded) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[17]
+	mi := &file_storage_test_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1731,7 +1952,7 @@ type TestSingleKeyStruct_Nested struct {
 
 func (x *TestSingleKeyStruct_Nested) Reset() {
 	*x = TestSingleKeyStruct_Nested{}
-	mi := &file_storage_test_proto_msgTypes[18]
+	mi := &file_storage_test_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1743,7 +1964,7 @@ func (x *TestSingleKeyStruct_Nested) String() string {
 func (*TestSingleKeyStruct_Nested) ProtoMessage() {}
 
 func (x *TestSingleKeyStruct_Nested) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[18]
+	mi := &file_storage_test_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1783,7 +2004,7 @@ type TestSingleKeyStruct_OneOfNested struct {
 
 func (x *TestSingleKeyStruct_OneOfNested) Reset() {
 	*x = TestSingleKeyStruct_OneOfNested{}
-	mi := &file_storage_test_proto_msgTypes[19]
+	mi := &file_storage_test_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1795,7 +2016,7 @@ func (x *TestSingleKeyStruct_OneOfNested) String() string {
 func (*TestSingleKeyStruct_OneOfNested) ProtoMessage() {}
 
 func (x *TestSingleKeyStruct_OneOfNested) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[19]
+	mi := &file_storage_test_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1834,7 +2055,7 @@ type TestSingleKeyStruct_Embedded_Embedded2 struct {
 
 func (x *TestSingleKeyStruct_Embedded_Embedded2) Reset() {
 	*x = TestSingleKeyStruct_Embedded_Embedded2{}
-	mi := &file_storage_test_proto_msgTypes[20]
+	mi := &file_storage_test_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1846,7 +2067,7 @@ func (x *TestSingleKeyStruct_Embedded_Embedded2) String() string {
 func (*TestSingleKeyStruct_Embedded_Embedded2) ProtoMessage() {}
 
 func (x *TestSingleKeyStruct_Embedded_Embedded2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[20]
+	mi := &file_storage_test_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1878,7 +2099,7 @@ type TestSingleKeyStruct_Nested_Nested2 struct {
 
 func (x *TestSingleKeyStruct_Nested_Nested2) Reset() {
 	*x = TestSingleKeyStruct_Nested_Nested2{}
-	mi := &file_storage_test_proto_msgTypes[21]
+	mi := &file_storage_test_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1890,7 +2111,7 @@ func (x *TestSingleKeyStruct_Nested_Nested2) String() string {
 func (*TestSingleKeyStruct_Nested_Nested2) ProtoMessage() {}
 
 func (x *TestSingleKeyStruct_Nested_Nested2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[21]
+	mi := &file_storage_test_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1922,7 +2143,7 @@ type TestSingleKeyStruct_OneOfNested_Nested2 struct {
 
 func (x *TestSingleKeyStruct_OneOfNested_Nested2) Reset() {
 	*x = TestSingleKeyStruct_OneOfNested_Nested2{}
-	mi := &file_storage_test_proto_msgTypes[22]
+	mi := &file_storage_test_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1934,7 +2155,7 @@ func (x *TestSingleKeyStruct_OneOfNested_Nested2) String() string {
 func (*TestSingleKeyStruct_OneOfNested_Nested2) ProtoMessage() {}
 
 func (x *TestSingleKeyStruct_OneOfNested_Nested2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[22]
+	mi := &file_storage_test_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1966,7 +2187,7 @@ type TestSingleUUIDKeyStruct_Embedded struct {
 
 func (x *TestSingleUUIDKeyStruct_Embedded) Reset() {
 	*x = TestSingleUUIDKeyStruct_Embedded{}
-	mi := &file_storage_test_proto_msgTypes[24]
+	mi := &file_storage_test_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1978,7 +2199,7 @@ func (x *TestSingleUUIDKeyStruct_Embedded) String() string {
 func (*TestSingleUUIDKeyStruct_Embedded) ProtoMessage() {}
 
 func (x *TestSingleUUIDKeyStruct_Embedded) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[24]
+	mi := &file_storage_test_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2011,7 +2232,7 @@ type TestSingleUUIDKeyStruct_Nested struct {
 
 func (x *TestSingleUUIDKeyStruct_Nested) Reset() {
 	*x = TestSingleUUIDKeyStruct_Nested{}
-	mi := &file_storage_test_proto_msgTypes[25]
+	mi := &file_storage_test_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2023,7 +2244,7 @@ func (x *TestSingleUUIDKeyStruct_Nested) String() string {
 func (*TestSingleUUIDKeyStruct_Nested) ProtoMessage() {}
 
 func (x *TestSingleUUIDKeyStruct_Nested) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[25]
+	mi := &file_storage_test_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2063,7 +2284,7 @@ type TestSingleUUIDKeyStruct_OneOfNested struct {
 
 func (x *TestSingleUUIDKeyStruct_OneOfNested) Reset() {
 	*x = TestSingleUUIDKeyStruct_OneOfNested{}
-	mi := &file_storage_test_proto_msgTypes[26]
+	mi := &file_storage_test_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2075,7 +2296,7 @@ func (x *TestSingleUUIDKeyStruct_OneOfNested) String() string {
 func (*TestSingleUUIDKeyStruct_OneOfNested) ProtoMessage() {}
 
 func (x *TestSingleUUIDKeyStruct_OneOfNested) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[26]
+	mi := &file_storage_test_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2114,7 +2335,7 @@ type TestSingleUUIDKeyStruct_Embedded_Embedded2 struct {
 
 func (x *TestSingleUUIDKeyStruct_Embedded_Embedded2) Reset() {
 	*x = TestSingleUUIDKeyStruct_Embedded_Embedded2{}
-	mi := &file_storage_test_proto_msgTypes[27]
+	mi := &file_storage_test_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2126,7 +2347,7 @@ func (x *TestSingleUUIDKeyStruct_Embedded_Embedded2) String() string {
 func (*TestSingleUUIDKeyStruct_Embedded_Embedded2) ProtoMessage() {}
 
 func (x *TestSingleUUIDKeyStruct_Embedded_Embedded2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[27]
+	mi := &file_storage_test_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2158,7 +2379,7 @@ type TestSingleUUIDKeyStruct_Nested_Nested2 struct {
 
 func (x *TestSingleUUIDKeyStruct_Nested_Nested2) Reset() {
 	*x = TestSingleUUIDKeyStruct_Nested_Nested2{}
-	mi := &file_storage_test_proto_msgTypes[28]
+	mi := &file_storage_test_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2170,7 +2391,7 @@ func (x *TestSingleUUIDKeyStruct_Nested_Nested2) String() string {
 func (*TestSingleUUIDKeyStruct_Nested_Nested2) ProtoMessage() {}
 
 func (x *TestSingleUUIDKeyStruct_Nested_Nested2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[28]
+	mi := &file_storage_test_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2202,7 +2423,7 @@ type TestSingleUUIDKeyStruct_OneOfNested_Nested2 struct {
 
 func (x *TestSingleUUIDKeyStruct_OneOfNested_Nested2) Reset() {
 	*x = TestSingleUUIDKeyStruct_OneOfNested_Nested2{}
-	mi := &file_storage_test_proto_msgTypes[29]
+	mi := &file_storage_test_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2214,7 +2435,7 @@ func (x *TestSingleUUIDKeyStruct_OneOfNested_Nested2) String() string {
 func (*TestSingleUUIDKeyStruct_OneOfNested_Nested2) ProtoMessage() {}
 
 func (x *TestSingleUUIDKeyStruct_OneOfNested_Nested2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[29]
+	mi := &file_storage_test_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2246,7 +2467,7 @@ type TestStruct_Embedded struct {
 
 func (x *TestStruct_Embedded) Reset() {
 	*x = TestStruct_Embedded{}
-	mi := &file_storage_test_proto_msgTypes[31]
+	mi := &file_storage_test_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2258,7 +2479,7 @@ func (x *TestStruct_Embedded) String() string {
 func (*TestStruct_Embedded) ProtoMessage() {}
 
 func (x *TestStruct_Embedded) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[31]
+	mi := &file_storage_test_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2293,7 +2514,7 @@ type TestStruct_Nested struct {
 
 func (x *TestStruct_Nested) Reset() {
 	*x = TestStruct_Nested{}
-	mi := &file_storage_test_proto_msgTypes[32]
+	mi := &file_storage_test_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2305,7 +2526,7 @@ func (x *TestStruct_Nested) String() string {
 func (*TestStruct_Nested) ProtoMessage() {}
 
 func (x *TestStruct_Nested) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[32]
+	mi := &file_storage_test_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2358,7 +2579,7 @@ type TestStruct_OneOfNested struct {
 
 func (x *TestStruct_OneOfNested) Reset() {
 	*x = TestStruct_OneOfNested{}
-	mi := &file_storage_test_proto_msgTypes[33]
+	mi := &file_storage_test_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2370,7 +2591,7 @@ func (x *TestStruct_OneOfNested) String() string {
 func (*TestStruct_OneOfNested) ProtoMessage() {}
 
 func (x *TestStruct_OneOfNested) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[33]
+	mi := &file_storage_test_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2402,7 +2623,7 @@ type TestStruct_Embedded_Embedded2 struct {
 
 func (x *TestStruct_Embedded_Embedded2) Reset() {
 	*x = TestStruct_Embedded_Embedded2{}
-	mi := &file_storage_test_proto_msgTypes[34]
+	mi := &file_storage_test_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2414,7 +2635,7 @@ func (x *TestStruct_Embedded_Embedded2) String() string {
 func (*TestStruct_Embedded_Embedded2) ProtoMessage() {}
 
 func (x *TestStruct_Embedded_Embedded2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[34]
+	mi := &file_storage_test_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2448,7 +2669,7 @@ type TestStruct_Nested_Nested2 struct {
 
 func (x *TestStruct_Nested_Nested2) Reset() {
 	*x = TestStruct_Nested_Nested2{}
-	mi := &file_storage_test_proto_msgTypes[35]
+	mi := &file_storage_test_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2460,7 +2681,7 @@ func (x *TestStruct_Nested_Nested2) String() string {
 func (*TestStruct_Nested_Nested2) ProtoMessage() {}
 
 func (x *TestStruct_Nested_Nested2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[35]
+	mi := &file_storage_test_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2506,7 +2727,7 @@ type TestStruct_OneOfNested_Nested2 struct {
 
 func (x *TestStruct_OneOfNested_Nested2) Reset() {
 	*x = TestStruct_OneOfNested_Nested2{}
-	mi := &file_storage_test_proto_msgTypes[36]
+	mi := &file_storage_test_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2518,7 +2739,7 @@ func (x *TestStruct_OneOfNested_Nested2) String() string {
 func (*TestStruct_OneOfNested_Nested2) ProtoMessage() {}
 
 func (x *TestStruct_OneOfNested_Nested2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[36]
+	mi := &file_storage_test_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2551,7 +2772,7 @@ type TestGrandparent_Embedded struct {
 
 func (x *TestGrandparent_Embedded) Reset() {
 	*x = TestGrandparent_Embedded{}
-	mi := &file_storage_test_proto_msgTypes[37]
+	mi := &file_storage_test_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2563,7 +2784,7 @@ func (x *TestGrandparent_Embedded) String() string {
 func (*TestGrandparent_Embedded) ProtoMessage() {}
 
 func (x *TestGrandparent_Embedded) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[37]
+	mi := &file_storage_test_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2602,7 +2823,7 @@ type TestGrandparent_Embedded_Embedded2 struct {
 
 func (x *TestGrandparent_Embedded_Embedded2) Reset() {
 	*x = TestGrandparent_Embedded_Embedded2{}
-	mi := &file_storage_test_proto_msgTypes[38]
+	mi := &file_storage_test_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2614,7 +2835,7 @@ func (x *TestGrandparent_Embedded_Embedded2) String() string {
 func (*TestGrandparent_Embedded_Embedded2) ProtoMessage() {}
 
 func (x *TestGrandparent_Embedded_Embedded2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[38]
+	mi := &file_storage_test_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2646,7 +2867,7 @@ type TestParent1_Child1Ref struct {
 
 func (x *TestParent1_Child1Ref) Reset() {
 	*x = TestParent1_Child1Ref{}
-	mi := &file_storage_test_proto_msgTypes[39]
+	mi := &file_storage_test_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2658,7 +2879,7 @@ func (x *TestParent1_Child1Ref) String() string {
 func (*TestParent1_Child1Ref) ProtoMessage() {}
 
 func (x *TestParent1_Child1Ref) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_test_proto_msgTypes[39]
+	mi := &file_storage_test_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2677,6 +2898,172 @@ func (*TestParent1_Child1Ref) Descriptor() ([]byte, []int) {
 func (x *TestParent1_Child1Ref) GetChildId() string {
 	if x != nil {
 		return x.ChildId
+	}
+	return ""
+}
+
+type TestNoSerialized_Metadata struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Author        string                 `protobuf:"bytes,1,opt,name=author,proto3" json:"author,omitempty"`
+	Version       string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	Revision      int32                  `protobuf:"varint,3,opt,name=revision,proto3" json:"revision,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TestNoSerialized_Metadata) Reset() {
+	*x = TestNoSerialized_Metadata{}
+	mi := &file_storage_test_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TestNoSerialized_Metadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestNoSerialized_Metadata) ProtoMessage() {}
+
+func (x *TestNoSerialized_Metadata) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_test_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestNoSerialized_Metadata.ProtoReflect.Descriptor instead.
+func (*TestNoSerialized_Metadata) Descriptor() ([]byte, []int) {
+	return file_storage_test_proto_rawDescGZIP(), []int{16, 0}
+}
+
+func (x *TestNoSerialized_Metadata) GetAuthor() string {
+	if x != nil {
+		return x.Author
+	}
+	return ""
+}
+
+func (x *TestNoSerialized_Metadata) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *TestNoSerialized_Metadata) GetRevision() int32 {
+	if x != nil {
+		return x.Revision
+	}
+	return 0
+}
+
+// Repeated message → child table (default strategy)
+type TestNoSerialized_Label struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TestNoSerialized_Label) Reset() {
+	*x = TestNoSerialized_Label{}
+	mi := &file_storage_test_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TestNoSerialized_Label) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestNoSerialized_Label) ProtoMessage() {}
+
+func (x *TestNoSerialized_Label) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_test_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestNoSerialized_Label.ProtoReflect.Descriptor instead.
+func (*TestNoSerialized_Label) Descriptor() ([]byte, []int) {
+	return file_storage_test_proto_rawDescGZIP(), []int{16, 1}
+}
+
+func (x *TestNoSerialized_Label) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *TestNoSerialized_Label) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+// Repeated message → inlined as bytea (strategy(bytea))
+type TestNoSerialized_Annotation struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TestNoSerialized_Annotation) Reset() {
+	*x = TestNoSerialized_Annotation{}
+	mi := &file_storage_test_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TestNoSerialized_Annotation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestNoSerialized_Annotation) ProtoMessage() {}
+
+func (x *TestNoSerialized_Annotation) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_test_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestNoSerialized_Annotation.ProtoReflect.Descriptor instead.
+func (*TestNoSerialized_Annotation) Descriptor() ([]byte, []int) {
+	return file_storage_test_proto_rawDescGZIP(), []int{16, 2}
+}
+
+func (x *TestNoSerialized_Annotation) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *TestNoSerialized_Annotation) GetValue() string {
+	if x != nil {
+		return x.Value
 	}
 	return ""
 }
@@ -2885,7 +3272,46 @@ const file_storage_test_proto_rawDesc = "" +
 	"\x10TestShortCircuit\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\bchild_id\x18\x02 \x01(\tR\achildId\x12(\n" +
-	"\x10g2_grandchild_id\x18\x03 \x01(\tR\x0eg2GrandchildIdB1\n" +
+	"\x10g2_grandchild_id\x18\x03 \x01(\tR\x0eg2GrandchildId\"\xa9\a\n" +
+	"\x10TestNoSerialized\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x1b\n" +
+	"\tint32_val\x18\x04 \x01(\x05R\bint32Val\x12\x1b\n" +
+	"\tint64_val\x18\x05 \x01(\x03R\bint64Val\x12\x1d\n" +
+	"\n" +
+	"uint64_val\x18\x06 \x01(\x04R\tuint64Val\x12\x19\n" +
+	"\bbool_val\x18\a \x01(\bR\aboolVal\x12\x1b\n" +
+	"\tfloat_val\x18\b \x01(\x02R\bfloatVal\x12\x1d\n" +
+	"\n" +
+	"double_val\x18\t \x01(\x01R\tdoubleVal\x12>\n" +
+	"\bpriority\x18\n" +
+	" \x01(\x0e2\".storage.TestNoSerialized.PriorityR\bpriority\x129\n" +
+	"\n" +
+	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"cluster_id\x18\f \x01(\tR\tclusterId\x12\x12\n" +
+	"\x04tags\x18\r \x03(\tR\x04tags\x12>\n" +
+	"\bmetadata\x18\x0e \x01(\v2\".storage.TestNoSerialized.MetadataR\bmetadata\x127\n" +
+	"\x06labels\x18\x0f \x03(\v2\x1f.storage.TestNoSerialized.LabelR\x06labels\x12F\n" +
+	"\vannotations\x18\x10 \x03(\v2$.storage.TestNoSerialized.AnnotationR\vannotations\x1aX\n" +
+	"\bMetadata\x12\x16\n" +
+	"\x06author\x18\x01 \x01(\tR\x06author\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1a\n" +
+	"\brevision\x18\x03 \x01(\x05R\brevision\x1a/\n" +
+	"\x05Label\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\x1a4\n" +
+	"\n" +
+	"Annotation\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\"o\n" +
+	"\bPriority\x12\x12\n" +
+	"\x0eUNSET_PRIORITY\x10\x00\x12\x10\n" +
+	"\fLOW_PRIORITY\x10\x01\x12\x13\n" +
+	"\x0fMEDIUM_PRIORITY\x10\x02\x12\x11\n" +
+	"\rHIGH_PRIORITY\x10\x03\x12\x15\n" +
+	"\x11CRITICAL_PRIORITY\x10\x04B1\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storage\xf8\x01\x01b\x06proto3"
 
 var (
@@ -2900,91 +3326,101 @@ func file_storage_test_proto_rawDescGZIP() []byte {
 	return file_storage_test_proto_rawDescData
 }
 
-var file_storage_test_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_storage_test_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
+var file_storage_test_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_storage_test_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
 var file_storage_test_proto_goTypes = []any{
 	(TestSingleKeyStruct_Enum)(0),                   // 0: storage.TestSingleKeyStruct.Enum
 	(TestSingleUUIDKeyStruct_Enum)(0),               // 1: storage.TestSingleUUIDKeyStruct.Enum
 	(TestStruct_Enum)(0),                            // 2: storage.TestStruct.Enum
-	(*TestSingleKeyStruct)(nil),                     // 3: storage.TestSingleKeyStruct
-	(*TestSingleUUIDKeyStruct)(nil),                 // 4: storage.TestSingleUUIDKeyStruct
-	(*TestStruct)(nil),                              // 5: storage.TestStruct
-	(*TestGrandparent)(nil),                         // 6: storage.TestGrandparent
-	(*TestParent1)(nil),                             // 7: storage.TestParent1
-	(*TestChild1)(nil),                              // 8: storage.TestChild1
-	(*TestGrandChild1)(nil),                         // 9: storage.TestGrandChild1
-	(*TestGGrandChild1)(nil),                        // 10: storage.TestGGrandChild1
-	(*TestG2GrandChild1)(nil),                       // 11: storage.TestG2GrandChild1
-	(*TestG3GrandChild1)(nil),                       // 12: storage.TestG3GrandChild1
-	(*TestParent2)(nil),                             // 13: storage.TestParent2
-	(*TestChild2)(nil),                              // 14: storage.TestChild2
-	(*TestParent3)(nil),                             // 15: storage.TestParent3
-	(*TestParent4)(nil),                             // 16: storage.TestParent4
-	(*TestChild1P4)(nil),                            // 17: storage.TestChild1P4
-	(*TestShortCircuit)(nil),                        // 18: storage.TestShortCircuit
-	nil,                                             // 19: storage.TestSingleKeyStruct.LabelsEntry
-	(*TestSingleKeyStruct_Embedded)(nil),            // 20: storage.TestSingleKeyStruct.Embedded
-	(*TestSingleKeyStruct_Nested)(nil),              // 21: storage.TestSingleKeyStruct.Nested
-	(*TestSingleKeyStruct_OneOfNested)(nil),         // 22: storage.TestSingleKeyStruct.OneOfNested
-	(*TestSingleKeyStruct_Embedded_Embedded2)(nil),  // 23: storage.TestSingleKeyStruct.Embedded.Embedded2
-	(*TestSingleKeyStruct_Nested_Nested2)(nil),      // 24: storage.TestSingleKeyStruct.Nested.Nested2
-	(*TestSingleKeyStruct_OneOfNested_Nested2)(nil), // 25: storage.TestSingleKeyStruct.OneOfNested.Nested2
-	nil,                                      // 26: storage.TestSingleUUIDKeyStruct.LabelsEntry
-	(*TestSingleUUIDKeyStruct_Embedded)(nil), // 27: storage.TestSingleUUIDKeyStruct.Embedded
-	(*TestSingleUUIDKeyStruct_Nested)(nil),   // 28: storage.TestSingleUUIDKeyStruct.Nested
-	(*TestSingleUUIDKeyStruct_OneOfNested)(nil),         // 29: storage.TestSingleUUIDKeyStruct.OneOfNested
-	(*TestSingleUUIDKeyStruct_Embedded_Embedded2)(nil),  // 30: storage.TestSingleUUIDKeyStruct.Embedded.Embedded2
-	(*TestSingleUUIDKeyStruct_Nested_Nested2)(nil),      // 31: storage.TestSingleUUIDKeyStruct.Nested.Nested2
-	(*TestSingleUUIDKeyStruct_OneOfNested_Nested2)(nil), // 32: storage.TestSingleUUIDKeyStruct.OneOfNested.Nested2
-	nil,                                        // 33: storage.TestStruct.LabelsEntry
-	(*TestStruct_Embedded)(nil),                // 34: storage.TestStruct.Embedded
-	(*TestStruct_Nested)(nil),                  // 35: storage.TestStruct.Nested
-	(*TestStruct_OneOfNested)(nil),             // 36: storage.TestStruct.OneOfNested
-	(*TestStruct_Embedded_Embedded2)(nil),      // 37: storage.TestStruct.Embedded.Embedded2
-	(*TestStruct_Nested_Nested2)(nil),          // 38: storage.TestStruct.Nested.Nested2
-	(*TestStruct_OneOfNested_Nested2)(nil),     // 39: storage.TestStruct.OneOfNested.Nested2
-	(*TestGrandparent_Embedded)(nil),           // 40: storage.TestGrandparent.Embedded
-	(*TestGrandparent_Embedded_Embedded2)(nil), // 41: storage.TestGrandparent.Embedded.Embedded2
-	(*TestParent1_Child1Ref)(nil),              // 42: storage.TestParent1.Child1Ref
-	(*timestamppb.Timestamp)(nil),              // 43: google.protobuf.Timestamp
+	(TestNoSerialized_Priority)(0),                  // 3: storage.TestNoSerialized.Priority
+	(*TestSingleKeyStruct)(nil),                     // 4: storage.TestSingleKeyStruct
+	(*TestSingleUUIDKeyStruct)(nil),                 // 5: storage.TestSingleUUIDKeyStruct
+	(*TestStruct)(nil),                              // 6: storage.TestStruct
+	(*TestGrandparent)(nil),                         // 7: storage.TestGrandparent
+	(*TestParent1)(nil),                             // 8: storage.TestParent1
+	(*TestChild1)(nil),                              // 9: storage.TestChild1
+	(*TestGrandChild1)(nil),                         // 10: storage.TestGrandChild1
+	(*TestGGrandChild1)(nil),                        // 11: storage.TestGGrandChild1
+	(*TestG2GrandChild1)(nil),                       // 12: storage.TestG2GrandChild1
+	(*TestG3GrandChild1)(nil),                       // 13: storage.TestG3GrandChild1
+	(*TestParent2)(nil),                             // 14: storage.TestParent2
+	(*TestChild2)(nil),                              // 15: storage.TestChild2
+	(*TestParent3)(nil),                             // 16: storage.TestParent3
+	(*TestParent4)(nil),                             // 17: storage.TestParent4
+	(*TestChild1P4)(nil),                            // 18: storage.TestChild1P4
+	(*TestShortCircuit)(nil),                        // 19: storage.TestShortCircuit
+	(*TestNoSerialized)(nil),                        // 20: storage.TestNoSerialized
+	nil,                                             // 21: storage.TestSingleKeyStruct.LabelsEntry
+	(*TestSingleKeyStruct_Embedded)(nil),            // 22: storage.TestSingleKeyStruct.Embedded
+	(*TestSingleKeyStruct_Nested)(nil),              // 23: storage.TestSingleKeyStruct.Nested
+	(*TestSingleKeyStruct_OneOfNested)(nil),         // 24: storage.TestSingleKeyStruct.OneOfNested
+	(*TestSingleKeyStruct_Embedded_Embedded2)(nil),  // 25: storage.TestSingleKeyStruct.Embedded.Embedded2
+	(*TestSingleKeyStruct_Nested_Nested2)(nil),      // 26: storage.TestSingleKeyStruct.Nested.Nested2
+	(*TestSingleKeyStruct_OneOfNested_Nested2)(nil), // 27: storage.TestSingleKeyStruct.OneOfNested.Nested2
+	nil,                                      // 28: storage.TestSingleUUIDKeyStruct.LabelsEntry
+	(*TestSingleUUIDKeyStruct_Embedded)(nil), // 29: storage.TestSingleUUIDKeyStruct.Embedded
+	(*TestSingleUUIDKeyStruct_Nested)(nil),   // 30: storage.TestSingleUUIDKeyStruct.Nested
+	(*TestSingleUUIDKeyStruct_OneOfNested)(nil),         // 31: storage.TestSingleUUIDKeyStruct.OneOfNested
+	(*TestSingleUUIDKeyStruct_Embedded_Embedded2)(nil),  // 32: storage.TestSingleUUIDKeyStruct.Embedded.Embedded2
+	(*TestSingleUUIDKeyStruct_Nested_Nested2)(nil),      // 33: storage.TestSingleUUIDKeyStruct.Nested.Nested2
+	(*TestSingleUUIDKeyStruct_OneOfNested_Nested2)(nil), // 34: storage.TestSingleUUIDKeyStruct.OneOfNested.Nested2
+	nil,                                        // 35: storage.TestStruct.LabelsEntry
+	(*TestStruct_Embedded)(nil),                // 36: storage.TestStruct.Embedded
+	(*TestStruct_Nested)(nil),                  // 37: storage.TestStruct.Nested
+	(*TestStruct_OneOfNested)(nil),             // 38: storage.TestStruct.OneOfNested
+	(*TestStruct_Embedded_Embedded2)(nil),      // 39: storage.TestStruct.Embedded.Embedded2
+	(*TestStruct_Nested_Nested2)(nil),          // 40: storage.TestStruct.Nested.Nested2
+	(*TestStruct_OneOfNested_Nested2)(nil),     // 41: storage.TestStruct.OneOfNested.Nested2
+	(*TestGrandparent_Embedded)(nil),           // 42: storage.TestGrandparent.Embedded
+	(*TestGrandparent_Embedded_Embedded2)(nil), // 43: storage.TestGrandparent.Embedded.Embedded2
+	(*TestParent1_Child1Ref)(nil),              // 44: storage.TestParent1.Child1Ref
+	(*TestNoSerialized_Metadata)(nil),          // 45: storage.TestNoSerialized.Metadata
+	(*TestNoSerialized_Label)(nil),             // 46: storage.TestNoSerialized.Label
+	(*TestNoSerialized_Annotation)(nil),        // 47: storage.TestNoSerialized.Annotation
+	(*timestamppb.Timestamp)(nil),              // 48: google.protobuf.Timestamp
 }
 var file_storage_test_proto_depIdxs = []int32{
-	19, // 0: storage.TestSingleKeyStruct.labels:type_name -> storage.TestSingleKeyStruct.LabelsEntry
-	43, // 1: storage.TestSingleKeyStruct.timestamp:type_name -> google.protobuf.Timestamp
+	21, // 0: storage.TestSingleKeyStruct.labels:type_name -> storage.TestSingleKeyStruct.LabelsEntry
+	48, // 1: storage.TestSingleKeyStruct.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 2: storage.TestSingleKeyStruct.enum:type_name -> storage.TestSingleKeyStruct.Enum
 	0,  // 3: storage.TestSingleKeyStruct.enums:type_name -> storage.TestSingleKeyStruct.Enum
-	20, // 4: storage.TestSingleKeyStruct.embedded:type_name -> storage.TestSingleKeyStruct.Embedded
-	21, // 5: storage.TestSingleKeyStruct.nested:type_name -> storage.TestSingleKeyStruct.Nested
-	22, // 6: storage.TestSingleKeyStruct.oneofnested:type_name -> storage.TestSingleKeyStruct.OneOfNested
-	43, // 7: storage.TestSingleKeyStruct.timestamptz:type_name -> google.protobuf.Timestamp
-	26, // 8: storage.TestSingleUUIDKeyStruct.labels:type_name -> storage.TestSingleUUIDKeyStruct.LabelsEntry
-	43, // 9: storage.TestSingleUUIDKeyStruct.timestamp:type_name -> google.protobuf.Timestamp
+	22, // 4: storage.TestSingleKeyStruct.embedded:type_name -> storage.TestSingleKeyStruct.Embedded
+	23, // 5: storage.TestSingleKeyStruct.nested:type_name -> storage.TestSingleKeyStruct.Nested
+	24, // 6: storage.TestSingleKeyStruct.oneofnested:type_name -> storage.TestSingleKeyStruct.OneOfNested
+	48, // 7: storage.TestSingleKeyStruct.timestamptz:type_name -> google.protobuf.Timestamp
+	28, // 8: storage.TestSingleUUIDKeyStruct.labels:type_name -> storage.TestSingleUUIDKeyStruct.LabelsEntry
+	48, // 9: storage.TestSingleUUIDKeyStruct.timestamp:type_name -> google.protobuf.Timestamp
 	1,  // 10: storage.TestSingleUUIDKeyStruct.enum:type_name -> storage.TestSingleUUIDKeyStruct.Enum
 	1,  // 11: storage.TestSingleUUIDKeyStruct.enums:type_name -> storage.TestSingleUUIDKeyStruct.Enum
-	27, // 12: storage.TestSingleUUIDKeyStruct.embedded:type_name -> storage.TestSingleUUIDKeyStruct.Embedded
-	28, // 13: storage.TestSingleUUIDKeyStruct.nested:type_name -> storage.TestSingleUUIDKeyStruct.Nested
-	29, // 14: storage.TestSingleUUIDKeyStruct.oneofnested:type_name -> storage.TestSingleUUIDKeyStruct.OneOfNested
-	33, // 15: storage.TestStruct.labels:type_name -> storage.TestStruct.LabelsEntry
-	43, // 16: storage.TestStruct.timestamp:type_name -> google.protobuf.Timestamp
+	29, // 12: storage.TestSingleUUIDKeyStruct.embedded:type_name -> storage.TestSingleUUIDKeyStruct.Embedded
+	30, // 13: storage.TestSingleUUIDKeyStruct.nested:type_name -> storage.TestSingleUUIDKeyStruct.Nested
+	31, // 14: storage.TestSingleUUIDKeyStruct.oneofnested:type_name -> storage.TestSingleUUIDKeyStruct.OneOfNested
+	35, // 15: storage.TestStruct.labels:type_name -> storage.TestStruct.LabelsEntry
+	48, // 16: storage.TestStruct.timestamp:type_name -> google.protobuf.Timestamp
 	2,  // 17: storage.TestStruct.enum:type_name -> storage.TestStruct.Enum
 	2,  // 18: storage.TestStruct.enums:type_name -> storage.TestStruct.Enum
-	43, // 19: storage.TestStruct.timestamptz:type_name -> google.protobuf.Timestamp
-	34, // 20: storage.TestStruct.embedded:type_name -> storage.TestStruct.Embedded
-	35, // 21: storage.TestStruct.nested:type_name -> storage.TestStruct.Nested
-	36, // 22: storage.TestStruct.oneofnested:type_name -> storage.TestStruct.OneOfNested
-	40, // 23: storage.TestGrandparent.embedded:type_name -> storage.TestGrandparent.Embedded
-	42, // 24: storage.TestParent1.children:type_name -> storage.TestParent1.Child1Ref
-	24, // 25: storage.TestSingleKeyStruct.Nested.nested2:type_name -> storage.TestSingleKeyStruct.Nested.Nested2
-	25, // 26: storage.TestSingleKeyStruct.OneOfNested.nested2:type_name -> storage.TestSingleKeyStruct.OneOfNested.Nested2
-	31, // 27: storage.TestSingleUUIDKeyStruct.Nested.nested2:type_name -> storage.TestSingleUUIDKeyStruct.Nested.Nested2
-	32, // 28: storage.TestSingleUUIDKeyStruct.OneOfNested.nested2:type_name -> storage.TestSingleUUIDKeyStruct.OneOfNested.Nested2
-	38, // 29: storage.TestStruct.Nested.nested2:type_name -> storage.TestStruct.Nested.Nested2
-	41, // 30: storage.TestGrandparent.Embedded.embedded2:type_name -> storage.TestGrandparent.Embedded.Embedded2
-	31, // [31:31] is the sub-list for method output_type
-	31, // [31:31] is the sub-list for method input_type
-	31, // [31:31] is the sub-list for extension type_name
-	31, // [31:31] is the sub-list for extension extendee
-	0,  // [0:31] is the sub-list for field type_name
+	48, // 19: storage.TestStruct.timestamptz:type_name -> google.protobuf.Timestamp
+	36, // 20: storage.TestStruct.embedded:type_name -> storage.TestStruct.Embedded
+	37, // 21: storage.TestStruct.nested:type_name -> storage.TestStruct.Nested
+	38, // 22: storage.TestStruct.oneofnested:type_name -> storage.TestStruct.OneOfNested
+	42, // 23: storage.TestGrandparent.embedded:type_name -> storage.TestGrandparent.Embedded
+	44, // 24: storage.TestParent1.children:type_name -> storage.TestParent1.Child1Ref
+	3,  // 25: storage.TestNoSerialized.priority:type_name -> storage.TestNoSerialized.Priority
+	48, // 26: storage.TestNoSerialized.created_at:type_name -> google.protobuf.Timestamp
+	45, // 27: storage.TestNoSerialized.metadata:type_name -> storage.TestNoSerialized.Metadata
+	46, // 28: storage.TestNoSerialized.labels:type_name -> storage.TestNoSerialized.Label
+	47, // 29: storage.TestNoSerialized.annotations:type_name -> storage.TestNoSerialized.Annotation
+	26, // 30: storage.TestSingleKeyStruct.Nested.nested2:type_name -> storage.TestSingleKeyStruct.Nested.Nested2
+	27, // 31: storage.TestSingleKeyStruct.OneOfNested.nested2:type_name -> storage.TestSingleKeyStruct.OneOfNested.Nested2
+	33, // 32: storage.TestSingleUUIDKeyStruct.Nested.nested2:type_name -> storage.TestSingleUUIDKeyStruct.Nested.Nested2
+	34, // 33: storage.TestSingleUUIDKeyStruct.OneOfNested.nested2:type_name -> storage.TestSingleUUIDKeyStruct.OneOfNested.Nested2
+	40, // 34: storage.TestStruct.Nested.nested2:type_name -> storage.TestStruct.Nested.Nested2
+	43, // 35: storage.TestGrandparent.Embedded.embedded2:type_name -> storage.TestGrandparent.Embedded.Embedded2
+	36, // [36:36] is the sub-list for method output_type
+	36, // [36:36] is the sub-list for method input_type
+	36, // [36:36] is the sub-list for extension type_name
+	36, // [36:36] is the sub-list for extension extendee
+	0,  // [0:36] is the sub-list for field type_name
 }
 
 func init() { file_storage_test_proto_init() }
@@ -3011,8 +3447,8 @@ func file_storage_test_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_test_proto_rawDesc), len(file_storage_test_proto_rawDesc)),
-			NumEnums:      3,
-			NumMessages:   40,
+			NumEnums:      4,
+			NumMessages:   44,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

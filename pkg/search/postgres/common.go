@@ -225,6 +225,13 @@ func (q *query) getPortionBeforeFromClause() string {
 		}
 		return fmt.Sprintf("select count(%s)", countOn)
 	case GET:
+		if q.Schema.NoSerialized {
+			var colPaths []string
+			for _, f := range q.Schema.DBColumnFields() {
+				colPaths = append(colPaths, qualifyColumn(q.Schema.Table, f.ColumnName, ""))
+			}
+			return "select " + strings.Join(colPaths, ", ")
+		}
 		// For GET queries with joins, we use GROUP BY for distinctness, so no need for DISTINCT ON
 		return fmt.Sprintf("select %s.serialized", q.From)
 	case SEARCH:
@@ -329,10 +336,20 @@ func (q *query) AsSQL() string {
 			}
 		}
 
-		// Add serialized column to GROUP BY (required since we're selecting it)
-		serializedPath := fmt.Sprintf("%s.serialized", q.From)
-		if groupByFields.Add(serializedPath) {
-			groupByParts = append(groupByParts, serializedPath)
+		if q.Schema.NoSerialized {
+			// Add all selected columns to GROUP BY
+			for _, f := range q.Schema.DBColumnFields() {
+				colPath := qualifyColumn(q.Schema.Table, f.ColumnName, "")
+				if groupByFields.Add(colPath) {
+					groupByParts = append(groupByParts, colPath)
+				}
+			}
+		} else {
+			// Add serialized column to GROUP BY (required since we're selecting it)
+			serializedPath := fmt.Sprintf("%s.serialized", q.From)
+			if groupByFields.Add(serializedPath) {
+				groupByParts = append(groupByParts, serializedPath)
+			}
 		}
 
 		// Add ordering fields from the primary table to GROUP BY (they're identical for same PK)

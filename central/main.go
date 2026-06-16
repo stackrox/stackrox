@@ -1057,6 +1057,13 @@ func waitForTerminationSignal() {
 			stoppableWithName{backgroundmigrations.Singleton(), "background migrations"})
 	}
 
+	if w := signatureIntegrationDS.KeyBundleWatcher(); w != nil {
+		stoppables = append(stoppables, stoppableWithName{w, "Red Hat signing key bundle watcher"})
+	}
+	if u := signatureIntegrationDS.KeyBundleUpdater(); u != nil {
+		stoppables = append(stoppables, stoppableWithName{u, "Red Hat signing key bundle updater"})
+	}
+
 	var wg sync.WaitGroup
 	for _, stoppable := range stoppables {
 		wg.Add(1)

@@ -1,8 +1,8 @@
 import withAuth from '../../helpers/basicAuth';
+import { visit } from '../../helpers/visit';
 import {
     interactAndWaitForCveList,
     selectSingleCveForException,
-    visitWorkloadCveOverview,
 } from '../vulnerabilities/workloadCves/WorkloadCves.helpers';
 import {
     resetExceptionConfig,
@@ -109,7 +109,7 @@ describe('Vulnerabilities Exception Configuration', () => {
         // Mock the CVE list response on the Workload CVE page to prevent flakiness when no CVEs are reported
         interactAndWaitForCveList(() => {
             // Visit the Workload CVE page, open a deferral modal, and verify that the specified options are available
-            visitWorkloadCveOverview();
+            visit('/main/vulnerabilities/platform/');
             selectSingleCveForException('DEFERRAL');
             cy.get('button:contains("Options")').click();
 
@@ -136,7 +136,7 @@ describe('Vulnerabilities Exception Configuration', () => {
             cy.get('.pf-v6-c-alert:contains("The configuration was updated successfully")');
 
             // Revisit Workload CVEs and verify that the updated options are available
-            visitWorkloadCveOverview();
+            visit('/main/vulnerabilities/platform/');
             selectSingleCveForException('DEFERRAL');
             cy.get('button:contains("Options")').click();
 

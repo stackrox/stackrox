@@ -800,9 +800,13 @@
         },
         "source": {
           "$ref": "#/definitions/storagePolicySource"
+        },
+        "evaluationFilter": {
+          "$ref": "#/definitions/storageEvaluationFilter",
+          "description": "Pre-filters which entities the policy evaluates."
         }
       },
-      "title": "Next tag: 28"
+      "title": "Next tag: 29"
     },
     "googleRpcStatus": {
       "type": "object",
@@ -842,6 +846,14 @@
       ],
       "default": "OR"
     },
+    "storageContainerType": {
+      "type": "string",
+      "enum": [
+        "REGULAR",
+        "INIT"
+      ],
+      "default": "REGULAR"
+    },
     "storageEnforcementAction": {
       "type": "string",
       "enum": [
@@ -856,6 +868,18 @@
       ],
       "default": "UNSET_ENFORCEMENT",
       "description": " - FAIL_KUBE_REQUEST_ENFORCEMENT: FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\n - FAIL_DEPLOYMENT_CREATE_ENFORCEMENT: FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates.\n - FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT: FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates."
+    },
+    "storageEvaluationFilter": {
+      "type": "object",
+      "properties": {
+        "skipContainerTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageContainerType"
+          }
+        }
+      },
+      "description": "EvaluationFilter pre-filters which entities a policy evaluates."
     },
     "storageEventSource": {
       "type": "string",
@@ -949,6 +973,9 @@
         },
         "source": {
           "$ref": "#/definitions/storagePolicySource"
+        },
+        "evaluationFilter": {
+          "$ref": "#/definitions/storageEvaluationFilter"
         }
       }
     },
@@ -1120,9 +1147,13 @@
         },
         "source": {
           "$ref": "#/definitions/storagePolicySource"
+        },
+        "evaluationFilter": {
+          "$ref": "#/definitions/storageEvaluationFilter",
+          "description": "Pre-filters which entities the policy evaluates."
         }
       },
-      "title": "Next tag: 28"
+      "title": "Next tag: 29"
     },
     "storagePolicyGroup": {
       "type": "object",

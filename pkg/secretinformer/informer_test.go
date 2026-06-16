@@ -22,14 +22,15 @@ const (
 
 func TestSecretInformer(t *testing.T) {
 	cases := map[string]struct {
-		setupFn             func(k8sClient *fake.Clientset) error
+		preCreateSecret     bool
+		setupFn             func(t *testing.T, k8sClient *fake.Clientset)
 		expectedOnAddCnt    int
 		expectedOnUpdateCnt int
 		expectedOnDeleteCnt int
 		expectedData        string
 	}{
 		"secret added": {
-			setupFn: func(k8sClient *fake.Clientset) error {
+			setupFn: func(t *testing.T, k8sClient *fake.Clientset) {
 				_, err := k8sClient.CoreV1().Secrets(namespace).Create(
 					context.Background(),
 					&v1.Secret{
@@ -40,13 +41,13 @@ func TestSecretInformer(t *testing.T) {
 					},
 					metav1.CreateOptions{},
 				)
-				return err
+				require.NoError(t, err)
 			},
 			expectedOnAddCnt: 1,
 			expectedData:     secretData,
 		},
 		"secret updated": {
-			setupFn: func(k8sClient *fake.Clientset) error {
+			setupFn: func(t *testing.T, k8sClient *fake.Clientset) {
 				_, err := k8sClient.CoreV1().Secrets(namespace).Create(
 					context.Background(),
 					&v1.Secret{
@@ -57,9 +58,7 @@ func TestSecretInformer(t *testing.T) {
 					},
 					metav1.CreateOptions{},
 				)
-				if err != nil {
-					return err
-				}
+				require.NoError(t, err)
 				_, err = k8sClient.CoreV1().Secrets(namespace).Update(
 					context.Background(),
 					&v1.Secret{
@@ -70,14 +69,35 @@ func TestSecretInformer(t *testing.T) {
 					},
 					metav1.UpdateOptions{},
 				)
-				return err
+				require.NoError(t, err)
 			},
 			expectedOnAddCnt:    1,
 			expectedOnUpdateCnt: 1,
 			expectedData:        secretData,
 		},
 		"secret deleted": {
-			setupFn: func(k8sClient *fake.Clientset) error {
+			preCreateSecret: true,
+			setupFn: func(t *testing.T, k8sClient *fake.Clientset) {
+				err := k8sClient.CoreV1().Secrets(namespace).Delete(
+					context.Background(), secretName, metav1.DeleteOptions{},
+				)
+				require.NoError(t, err)
+			},
+			expectedOnAddCnt:    1,
+			expectedOnDeleteCnt: 1,
+			expectedData:        secretData,
+		},
+		"no secret": {
+			setupFn: func(_ *testing.T, _ *fake.Clientset) {},
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			var onAddCnt, onUpdateCnt, onDeleteCnt atomic.Int32
+
+			k8sClient := fake.NewClientset()
+			if c.preCreateSecret {
 				_, err := k8sClient.CoreV1().Secrets(namespace).Create(
 					context.Background(),
 					&v1.Secret{
@@ -88,30 +108,9 @@ func TestSecretInformer(t *testing.T) {
 					},
 					metav1.CreateOptions{},
 				)
-				if err != nil {
-					return err
-				}
-				err = k8sClient.CoreV1().Secrets(namespace).Delete(
-					context.Background(), secretName, metav1.DeleteOptions{},
-				)
-				return err
-			},
-			expectedOnAddCnt:    1,
-			expectedOnDeleteCnt: 1,
-			expectedData:        secretData,
-		},
-		"no secret": {
-			setupFn: func(k8sClient *fake.Clientset) error {
-				return nil
-			},
-		},
-	}
+				require.NoError(t, err)
+			}
 
-	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			var onAddCnt, onUpdateCnt, onDeleteCnt atomic.Int32
-
-			k8sClient := fake.NewClientset()
 			informer := NewSecretInformer(
 				namespace,
 				secretName,
@@ -133,13 +132,20 @@ func TestSecretInformer(t *testing.T) {
 			defer informer.Stop()
 			require.Eventually(t, informer.HasSynced, 30*time.Second, 100*time.Millisecond)
 
-			require.NoError(t, c.setupFn(k8sClient))
+			if c.preCreateSecret {
+				require.Eventually(t, func() bool {
+					return onAddCnt.Load() > 0
+				}, 30*time.Second, 50*time.Millisecond,
+					"add callback not invoked for pre-created secret")
+			}
+
+			c.setupFn(t, k8sClient)
 
 			assert.Eventually(t, func() bool {
 				return onAddCnt.Load() == int32(c.expectedOnAddCnt) &&
 					onUpdateCnt.Load() == int32(c.expectedOnUpdateCnt) &&
 					onDeleteCnt.Load() == int32(c.expectedOnDeleteCnt)
-			}, 10*time.Second, 50*time.Millisecond,
+			}, 30*time.Second, 50*time.Millisecond,
 				"callbacks not invoked as expected (add: %d/%d, update: %d/%d, delete: %d/%d)",
 				onAddCnt.Load(), c.expectedOnAddCnt, onUpdateCnt.Load(), c.expectedOnUpdateCnt,
 				onDeleteCnt.Load(), c.expectedOnDeleteCnt)

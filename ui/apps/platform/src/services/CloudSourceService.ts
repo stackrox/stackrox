@@ -33,12 +33,10 @@ export type UpdateCloudSourceRequest = {
 
 const cloudSourcesURL = `/v1/cloud-sources`;
 
-export function fetchCloudSources(): Promise<{
-    response: { cloudSources: CloudSourceIntegration[] };
-}> {
-    return axios.get(cloudSourcesURL).then((response) => ({
-        response: response.data,
-    }));
+export function fetchCloudSources(): Promise<{ cloudSources: CloudSourceIntegration[] }> {
+    return axios
+        .get<{ cloudSources: CloudSourceIntegration[] }>(cloudSourcesURL)
+        .then((response) => response.data);
 }
 
 export function updateCloudSource(request: UpdateCloudSourceRequest): Promise<Empty> {

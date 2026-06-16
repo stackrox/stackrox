@@ -14,6 +14,7 @@ instructions: |-
 kind: ComplianceCheckResult
 metadata:
   annotations:
+    compliance.openshift.io/last-scanned-timestamp: "2021-06-22T18:20:00Z"
     compliance.openshift.io/rule: audit-rules-dac-modification-chmod
   creationTimestamp: "2021-06-22T18:22:09Z"
   generation: 1
