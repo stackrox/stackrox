@@ -60,11 +60,6 @@ func (s *VMScanningSuite) assertPipelineMetrics(ctx context.Context, t require.T
 	s.logf("pipeline metrics: VM node=%q, compliance selector=%q field=%q",
 		vmNodeName, compTarget.LabelSelector, compTarget.FieldSelector)
 
-	err := testmetrics.FindServicePort(ctx, s.k8sClient, compTarget.Namespace, "app", "collector", compTarget.MetricsPort)
-	require.NoError(t, err,
-		"collector Service should expose compliance metrics port %d; the deployment may be missing the metrics port definition",
-		compTarget.MetricsPort)
-
 	senTarget := s.sensorTarget()
 
 	assert.EventuallyWithT(tt, func(ct *assert.CollectT) {

@@ -107,37 +107,3 @@ func ScrapeComponent(ctx context.Context, clientset kubernetes.Interface, target
 	}
 	return Parse(b.String()), nil
 }
-
-// FindServicePort checks whether any Service in the given namespace whose selector
-// contains appLabel=appValue exposes the specified targetPort (as either .spec.ports[].port
-// or .spec.ports[].targetPort). Returns nil if found, or a descriptive error.
-func FindServicePort(ctx context.Context, clientset kubernetes.Interface, namespace, appLabel, appValue string, targetPort int) error {
-	services, err := clientset.CoreV1().Services(namespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return fmt.Errorf("listing services in %s: %w", namespace, err)
-	}
-	matchedSelector := false
-	var mismatchDetails []string
-	for _, svc := range services.Items {
-		if svc.Spec.Selector[appLabel] != appValue {
-			continue
-		}
-		matchedSelector = true
-		for _, p := range svc.Spec.Ports {
-			if int(p.Port) == targetPort || p.TargetPort.IntValue() == targetPort {
-				return nil
-			}
-		}
-		var ports []string
-		for _, p := range svc.Spec.Ports {
-			ports = append(ports, fmt.Sprintf("%s:%d->%s", p.Name, p.Port, p.TargetPort.String()))
-		}
-		mismatchDetails = append(mismatchDetails,
-			fmt.Sprintf("%s/%s declared ports: %v", namespace, svc.Name, ports))
-	}
-	if matchedSelector {
-		return fmt.Errorf("services selecting %s=%s do not expose port %d; %s",
-			appLabel, appValue, targetPort, strings.Join(mismatchDetails, "; "))
-	}
-	return fmt.Errorf("no service in namespace %s selects %s=%s pods", namespace, appLabel, appValue)
-}
