@@ -2,6 +2,11 @@ package datastore
 
 import (
 	"context"
+	"encoding/json"
+	"encoding/pem"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -63,6 +68,52 @@ func seedRedHatDefaultSignatureIntegration(siStore store.SignatureIntegrationSto
 	utils.Should(errors.Wrap(err, "seeding default Red Hat signature integration"))
 }
 
+// seedKeyBundleFile writes the embedded key data to the bundle file path if the
+// file does not already exist. This gives the watcher something to poll from the
+// start and provides offline-mode users with a template they can inspect and replace.
+func seedKeyBundleFile() {
+	bundlePath := redHatKeyBundlePath()
+	if _, err := os.Stat(bundlePath); err == nil {
+		log.Debugf("Key bundle file %q already exists, skipping seed", bundlePath)
+		return
+	} else if !errors.Is(err, os.ErrNotExist) {
+		log.Warnf("Cannot stat key bundle path %q (read-only mount?): %v, skipping seed", bundlePath, err)
+		return
+	}
+
+	si := signatures.DefaultRedHatSignatureIntegration
+	bundle := keyBundle{
+		Keys: make([]keyBundleEntry, 0, len(si.GetCosign().GetPublicKeys())),
+	}
+	for _, key := range si.GetCosign().GetPublicKeys() {
+		pemStr := key.GetPublicKeyPemEnc()
+		if block, _ := pem.Decode([]byte(strings.TrimSpace(pemStr))); block != nil {
+			pemStr = string(pem.EncodeToMemory(block))
+		}
+		bundle.Keys = append(bundle.Keys, keyBundleEntry{
+			Name: key.GetName(),
+			PEM:  pemStr,
+		})
+	}
+
+	data, err := json.MarshalIndent(bundle, "", "  ")
+	if err != nil {
+		log.Errorf("Failed to marshal embedded key bundle: %v", err)
+		return
+	}
+	data = append(data, '\n')
+
+	if err := os.MkdirAll(filepath.Dir(bundlePath), 0700); err != nil {
+		log.Errorf("Failed to create key bundle directory: %v", err)
+		return
+	}
+	if err := os.WriteFile(bundlePath, data, 0600); err != nil {
+		log.Errorf("Failed to write key bundle file %q: %v", bundlePath, err)
+		return
+	}
+	log.Infof("Seeded key bundle file %q with %d embedded key(s)", bundlePath, len(bundle.Keys))
+}
+
 func startKeyBundleUpdater() {
 	if env.OfflineModeEnv.BooleanSetting() {
 		log.Infof("Offline mode detected: The Red Hat signing key bundle will not be downloaded automatically. "+
@@ -101,6 +152,7 @@ func Singleton() DataStore {
 	once.Do(func() {
 		storage := pgStore.New(globaldb.GetPostgres())
 		seedRedHatDefaultSignatureIntegration(storage) // must run before watcher; bundle file takes precedence on first tick
+		seedKeyBundleFile()
 		instance = New(storage, policyDataStore.Singleton())
 		startKeyBundleWatcher(storage)
 		startKeyBundleUpdater()
