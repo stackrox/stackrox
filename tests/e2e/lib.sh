@@ -144,7 +144,10 @@ deploy_stackrox_with_roxie() {
     # - wait_for_api (implicit)
     local roxie_envrc; roxie_envrc="$(mktemp)"
 
+    # Note, we use early-readiness=false here so that roxie waits until all workloads are ready.
+    # For Scanner V2 this means that it will also wait until vulnerabilities are loaded into the DB.
     roxie deploy \
+        --early-readiness=false --central-wait=40m --secured-cluster-wait=40m \
         --envrc "$roxie_envrc" \
         --config "$config_file"
 
@@ -165,17 +168,6 @@ deploy_stackrox_with_roxie() {
         ci_export "$var_name" "${!var_name}"
     done < <(grep '^export ' "$roxie_envrc")
     record_build_info "${central_namespace}"
-
-    # This implements something between roxie's (upcoming) `--early-readiness=true` and `--early-readiness=false`.
-    # It just waits for sensor and collector workloads to be up and running.
-    # We use the same mechanism here instead of `--early-readiness=false`, because the latter
-    # would also wait for scanner (v2), which takes an enormous amount of time to be properly initialized
-    # and we don't want to slow down this deployment path using roxie.
-    sensor_wait "$securedcluster_namespace"
-    wait_for_collectors_to_be_operational "$securedcluster_namespace"
-    if retrying_kubectl </dev/null -n "$central_namespace" get deployment scanner-v4-indexer >/dev/null 2>&1; then
-        wait_for_scanner_V4 "$central_namespace"
-    fi
 
     touch "${STATE_DEPLOYED}"
     rm -f "$roxie_envrc"
