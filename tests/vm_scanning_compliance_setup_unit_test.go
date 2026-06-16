@@ -3,6 +3,7 @@
 package tests
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -56,7 +57,7 @@ func TestSetContainerEnv(t *testing.T) {
 	}
 }
 
-func TestEnsureComplianceMetricsExposed_RetriesOnConflict(t *testing.T) {
+func TestEnsureComplianceMetricsEnv_RetriesOnConflict(t *testing.T) {
 	ds := &appsV1.DaemonSet{
 		ObjectMeta: metaV1.ObjectMeta{Name: "collector", Namespace: "stackrox"},
 		Spec: appsV1.DaemonSetSpec{
@@ -94,9 +95,9 @@ func TestEnsureComplianceMetricsExposed_RetriesOnConflict(t *testing.T) {
 	s.SetT(t)
 	s.ctx = t.Context()
 
-	s.ensureComplianceMetricsExposed()
+	s.ensureComplianceMetricsEnv(t.Context(), "stackrox", "collector", "compliance", "ROX_METRICS_PORT", ":9091")
 
-	got, err := cs.AppsV1().DaemonSets("stackrox").Get(t.Context(), "collector", metaV1.GetOptions{})
+	got, err := cs.AppsV1().DaemonSets("stackrox").Get(context.Background(), "collector", metaV1.GetOptions{})
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, updateAttempts, 2)
 	require.Equal(t, ":9091", got.Spec.Template.Spec.Containers[0].Env[0].Value)
