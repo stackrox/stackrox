@@ -567,6 +567,7 @@ index-build: bundle-post-process yq ## Build Index (a.k.a. Catalog) image with t
 		--index-tag "$(INDEX_IMG)" \
 		--bundle-tag "$(BUNDLE_IMG)" \
 		--replaced-version "$${replaced_version}" \
+		--single-bundle \
 		--clean-output-dir
 
 ##@ Push images
