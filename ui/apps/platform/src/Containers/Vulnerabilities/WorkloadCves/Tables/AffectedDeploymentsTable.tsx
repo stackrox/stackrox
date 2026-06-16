@@ -25,6 +25,7 @@ import type {
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import TopSeverityLabel from '../../components/TopSeverityLabel';
 import type { VulnerabilitySeverityLabel } from '../../types';
+import { getTopSeverityFromCounts } from '../../utils/vulnerabilityUtils';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const tableId = 'WorkloadCvesAffectedDeploymentsTable';
@@ -73,7 +74,6 @@ export type DeploymentForCve = {
     moderateImageCount?: number;
     importantImageCount?: number;
     criticalImageCount?: number;
-    topCvss?: number;
     images: (ImageMetadataContext & { imageComponents: DeploymentComponentVulnerability[] })[];
 };
 
@@ -92,26 +92,6 @@ export const deploymentsForCveFragment = gql`
         moderateImageCount: imageCount(query: $moderateImageCountQuery)
         importantImageCount: imageCount(query: $importantImageCountQuery)
         criticalImageCount: imageCount(query: $criticalImageCountQuery)
-        images(query: $query) {
-            ...ImageMetadataContext
-            imageComponents(query: $query) {
-                ...DeploymentComponentVulnerabilities
-            }
-        }
-    }
-`;
-
-export const deploymentsForCveSimplifiedFragment = gql`
-    ${imageMetadataContextFragment}
-    ${deploymentComponentVulnerabilitiesFragment}
-    fragment DeploymentsForCVESimplified on Deployment {
-        id
-        name
-        namespace
-        type
-        clusterName
-        created
-        topCvss
         images(query: $query) {
             ...ImageMetadataContext
             imageComponents(query: $query) {
@@ -164,8 +144,14 @@ function AffectedDeploymentsTable({
                         Deployment
                     </Th>
                     <Th className={getVisibilityClass('imagesBySeverity')}>
-                        Images by severity
-                        {isFiltered && <DynamicColumnIcon />}
+                        {isSimplifiedSeverity ? (
+                            'Top deployment severity'
+                        ) : (
+                            <>
+                                Images by severity
+                                {isFiltered && <DynamicColumnIcon />}
+                            </>
+                        )}
                     </Th>
                     <Th className={getVisibilityClass('cluster')} sort={getSortParams('Cluster')}>
                         Cluster
@@ -201,7 +187,6 @@ function AffectedDeploymentsTable({
                             moderateImageCount,
                             importantImageCount,
                             criticalImageCount,
-                            topCvss,
                             created,
                             images,
                         } = deployment;
@@ -244,10 +229,30 @@ function AffectedDeploymentsTable({
                                     <Td
                                         className={getVisibilityClass('imagesBySeverity')}
                                         modifier="nowrap"
-                                        dataLabel="Images by severity"
+                                        dataLabel={
+                                            isSimplifiedSeverity
+                                                ? 'Top deployment severity'
+                                                : 'Images by severity'
+                                        }
                                     >
-                                        {isSimplifiedSeverity && topCvss !== undefined ? (
-                                            <TopSeverityLabel cvss={topCvss} />
+                                        {isSimplifiedSeverity ? (
+                                            <TopSeverityLabel
+                                                severity={getTopSeverityFromCounts({
+                                                    critical: {
+                                                        total: criticalImageCount ?? 0,
+                                                    },
+                                                    important: {
+                                                        total: importantImageCount ?? 0,
+                                                    },
+                                                    moderate: {
+                                                        total: moderateImageCount ?? 0,
+                                                    },
+                                                    low: { total: lowImageCount ?? 0 },
+                                                    unknown: {
+                                                        total: unknownImageCount ?? 0,
+                                                    },
+                                                })}
+                                            />
                                         ) : (
                                             <SeverityCountLabels
                                                 criticalCount={criticalImageCount ?? 0}

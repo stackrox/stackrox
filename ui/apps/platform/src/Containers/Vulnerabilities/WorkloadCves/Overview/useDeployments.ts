@@ -4,11 +4,7 @@ import type { QueryHookOptions } from '@apollo/client';
 import { getPaginationParams } from 'utils/searchUtils';
 import type { ApiSortOption } from 'types/search';
 import type useURLPagination from 'hooks/useURLPagination';
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import {
-    deploymentListQuery,
-    simplifiedDeploymentListQuery,
-} from '../Tables/DeploymentOverviewTable';
+import { deploymentListQuery } from '../Tables/DeploymentOverviewTable';
 import type { Deployment } from '../Tables/DeploymentOverviewTable';
 
 export function useDeployments({
@@ -23,13 +19,10 @@ export function useDeployments({
     options?: Omit<QueryHookOptions<{ deployments: Deployment[] }>, 'variables'>;
 }) {
     const { page, perPage } = pagination;
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isSimplifiedSeverity = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
-    const gqlQuery = isSimplifiedSeverity ? simplifiedDeploymentListQuery : deploymentListQuery;
 
     return useQuery<{
         deployments: Deployment[];
-    }>(gqlQuery, {
+    }>(deploymentListQuery, {
         variables: {
             query,
             pagination: getPaginationParams({ page, perPage, sortOption }),

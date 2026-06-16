@@ -32,6 +32,7 @@ import type {
     VulnerabilitySeverityLabel,
     WatchStatus,
 } from '../../types';
+import { getTopSeverityFromCounts } from '../../utils/vulnerabilityUtils';
 import ImageScanningIncompleteLabel from '../components/ImageScanningIncompleteLabel';
 import VerifiedSignatureLabel, {
     getVerifiedSignatureInResults,
@@ -176,76 +177,6 @@ export const imageV2ListQuery = gql`
     }
 `;
 
-export const simplifiedImageListQuery = gql`
-    query getImageListSimplified($query: String, $pagination: Pagination) {
-        images(query: $query, pagination: $pagination) {
-            id
-            digest: id
-            name {
-                registry
-                remote
-                tag
-                fullName
-            }
-            topCvss
-            operatingSystem
-            deploymentCount(query: $query)
-            watchStatus
-            metadata {
-                v1 {
-                    created
-                }
-            }
-            scanTime
-            scanNotes
-            notes
-            signatureVerificationData {
-                results {
-                    status
-                    verifiedImageReferences
-                    verifierId
-                    verifierName
-                }
-            }
-        }
-    }
-`;
-
-export const simplifiedImageV2ListQuery = gql`
-    query getImageListSimplified($query: String, $pagination: Pagination) {
-        images: imageV2s(query: $query, pagination: $pagination) {
-            id
-            digest
-            name {
-                registry
-                remote
-                tag
-                fullName
-            }
-            topCvss
-            operatingSystem
-            deploymentCount(query: $query)
-            watchStatus
-            metadata {
-                v1 {
-                    created
-                }
-            }
-            scanTime
-            scanNotes
-            notes
-            signatureVerificationData {
-                results {
-                    status
-                    verifiedImageReferences
-                    verifierId
-                    verifierName
-                }
-            }
-        }
-    }
-`;
-
 export type Image = {
     id: string; // UUID for linking
     digest?: string; // For ImageV2, the actual SHA digest for display
@@ -255,8 +186,7 @@ export type Image = {
         tag: string;
         fullName: string;
     } | null;
-    topCvss?: number;
-    imageCVECountBySeverity?: {
+    imageCVECountBySeverity: {
         critical: { total: number };
         important: { total: number };
         moderate: { total: number };
@@ -327,15 +257,23 @@ function ImageOverviewTable({
                                 ? 'Highest CVE severity across this image'
                                 : 'CVEs by severity across this image'
                         }
-                        sort={getSortParams(
-                            isSimplifiedSeverity ? 'CVSS' : 'CVEs By Severity',
+                        sort={
                             isSimplifiedSeverity
                                 ? undefined
-                                : getSeveritySortOptions(filteredSeverities)
-                        )}
+                                : getSortParams(
+                                      'CVEs By Severity',
+                                      getSeveritySortOptions(filteredSeverities)
+                                  )
+                        }
                     >
-                        CVEs by severity
-                        {isFiltered && <DynamicColumnIcon />}
+                        {isSimplifiedSeverity ? (
+                            'Top severity'
+                        ) : (
+                            <>
+                                CVEs by severity
+                                {isFiltered && <DynamicColumnIcon />}
+                            </>
+                        )}
                     </TooltipTh>
                     <Th
                         className={getVisibilityClass('operatingSystem')}
@@ -375,7 +313,6 @@ function ImageOverviewTable({
                         const {
                             id,
                             name,
-                            topCvss,
                             imageCVECountBySeverity,
                             operatingSystem,
                             deploymentCount,
@@ -386,11 +323,11 @@ function ImageOverviewTable({
                             notes,
                             signatureVerificationData,
                         } = image;
-                        const criticalCount = imageCVECountBySeverity?.critical.total ?? 0;
-                        const importantCount = imageCVECountBySeverity?.important.total ?? 0;
-                        const moderateCount = imageCVECountBySeverity?.moderate.total ?? 0;
-                        const lowCount = imageCVECountBySeverity?.low.total ?? 0;
-                        const unknownCount = imageCVECountBySeverity?.unknown.total ?? 0;
+                        const criticalCount = imageCVECountBySeverity.critical.total;
+                        const importantCount = imageCVECountBySeverity.important.total;
+                        const moderateCount = imageCVECountBySeverity.moderate.total;
+                        const lowCount = imageCVECountBySeverity.low.total;
+                        const unknownCount = imageCVECountBySeverity.unknown.total;
 
                         const isWatchedImage = watchStatus === 'WATCHED';
                         const watchImageMenuText = isWatchedImage ? 'Unwatch image' : 'Watch image';
@@ -490,10 +427,18 @@ function ImageOverviewTable({
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('cvesBySeverity')}
-                                        dataLabel="CVEs by severity"
+                                        dataLabel={
+                                            isSimplifiedSeverity
+                                                ? 'Top severity'
+                                                : 'CVEs by severity'
+                                        }
                                     >
-                                        {isSimplifiedSeverity && topCvss !== undefined ? (
-                                            <TopSeverityLabel cvss={topCvss} />
+                                        {isSimplifiedSeverity ? (
+                                            <TopSeverityLabel
+                                                severity={getTopSeverityFromCounts(
+                                                    imageCVECountBySeverity
+                                                )}
+                                            />
                                         ) : (
                                             <SeverityCountLabels
                                                 criticalCount={criticalCount}
