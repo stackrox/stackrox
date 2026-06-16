@@ -68,7 +68,7 @@ func (s *VMScanningSuite) ensureComplianceMetricsExposed() {
 	err = wait.PollUntilContextCancel(ctx, 10*time.Second, false, func(pollCtx context.Context) (bool, error) {
 		current, getErr := s.k8sClient.AppsV1().DaemonSets(ns).Get(pollCtx, dsName, metaV1.GetOptions{})
 		if getErr != nil {
-			return false, nil
+			return false, getErr
 		}
 		ready := current.Status.DesiredNumberScheduled > 0 &&
 			current.Status.UpdatedNumberScheduled == current.Status.DesiredNumberScheduled &&

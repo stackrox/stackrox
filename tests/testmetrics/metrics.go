@@ -27,11 +27,13 @@ func Parse(text string) Metrics {
 	return Metrics{families: families}
 }
 
-// GetValue looks up a single metric value by name and optional label matchers.
+// GetValue looks up a metric value by name and optional label matchers.
 // Labels are specified as alternating key, value pairs:
 //
 //	m.GetValue("http_total", "method", "GET", "code", "200")
 //
+// When multiple series match (e.g. metrics scraped from several pods),
+// their values are summed.
 // Returns (value, true) on match, or (0, false) if not found.
 func (m Metrics) GetValue(name string, labels ...string) (float64, bool) {
 	fam, ok := m.families[name]
@@ -39,15 +41,18 @@ func (m Metrics) GetValue(name string, labels ...string) (float64, bool) {
 		return 0, false
 	}
 	want := pairLabels(labels)
+	total := 0.0
+	found := false
 	for _, met := range fam.GetMetric() {
 		if !labelsMatch(met.GetLabel(), want) {
 			continue
 		}
 		if val, ok := metricValue(fam.GetType(), met); ok {
-			return val, true
+			total += val
+			found = true
 		}
 	}
-	return 0, false
+	return total, found
 }
 
 // pairLabels converts alternating key, value strings into a label map.
