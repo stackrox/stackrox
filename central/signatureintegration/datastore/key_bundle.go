@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/pem"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -54,9 +52,9 @@ func (kb *keyBundle) toDefaultSignatureIntegration() *storage.SignatureIntegrati
 	}
 }
 
-// redHatKeyBundlePath is the well-known path where the key bundle file is stored.
-// The file downloader writes the bundle here; the file watcher reads it.
-var redHatKeyBundlePath = filepath.Join(os.TempDir(), "redhat-signing-keys", "bundle.json")
+func redHatKeyBundlePath() string {
+	return env.RedHatSigningKeyBundleFilePath.Setting()
+}
 
 func keyBundleHandler(siStore store.SignatureIntegrationStore) filewatcher.Handler {
 	return func(data []byte) error {
@@ -96,7 +94,7 @@ func startKeyBundleWatcher(siStore store.SignatureIntegrationStore) {
 		return
 	}
 
-	w := filewatcher.New(redHatKeyBundlePath, interval, keyBundleHandler(siStore),
+	w := filewatcher.New(redHatKeyBundlePath(), interval, keyBundleHandler(siStore),
 		filewatcher.WithOnError(func(_ error) {
 			watcherFileErrorTotal.Inc()
 		}),

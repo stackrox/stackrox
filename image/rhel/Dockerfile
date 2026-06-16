@@ -76,6 +76,7 @@ RUN \
     mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
     mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
     mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
+    mkdir -p /run/stackrox.io/redhat-signing-keys && chown -R 4000:4000 /run/stackrox.io/redhat-signing-keys && \
     chown -R 4000:4000 /tmp
 
 COPY --from=stackrox_data /stackrox-data /stackrox/static-data

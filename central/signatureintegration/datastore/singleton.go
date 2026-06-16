@@ -65,7 +65,9 @@ func seedRedHatDefaultSignatureIntegration(siStore store.SignatureIntegrationSto
 
 func startKeyBundleUpdater() {
 	if env.OfflineModeEnv.BooleanSetting() {
-		log.Infof("Offline mode detected: The Red Hat signing key bundle will not be downloaded automatically. Manual updates are possible by mounting the bundle to %q", redHatKeyBundlePath)
+		log.Infof("Offline mode detected: The Red Hat signing key bundle will not be downloaded automatically. "+
+			"Manual updates are possible by mounting the bundle to %q (configurable via %s)",
+			redHatKeyBundlePath(), env.RedHatSigningKeyBundleFilePath.EnvVar())
 		return
 	}
 
@@ -78,7 +80,7 @@ func startKeyBundleUpdater() {
 
 	interval := env.RedHatSigningKeyUpdateInterval.DurationSetting()
 
-	u := filedownloader.New(bundleURL, redHatKeyBundlePath, interval,
+	u := filedownloader.New(bundleURL, redHatKeyBundlePath(), interval,
 		filedownloader.WithOnComplete(func(err error, duration time.Duration) {
 			updaterDownloadDuration.Observe(duration.Seconds())
 			if err != nil {

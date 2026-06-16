@@ -10,6 +10,12 @@ var (
 	// If empty, the key bundle updater does not start.
 	RedHatSigningKeyBundleURL = RegisterSetting("ROX_REDHAT_SIGNING_KEY_BUNDLE_URL", AllowEmpty())
 
+	// RedHatSigningKeyBundleFilePath is the local file path where the key bundle is stored.
+	// The updater writes downloaded bundles here; the watcher polls it for changes.
+	// In offline mode, users can mount a bundle at this path for manual key updates.
+	RedHatSigningKeyBundleFilePath = RegisterSetting("ROX_REDHAT_SIGNING_KEY_BUNDLE_FILE_PATH",
+		WithDefault("/run/stackrox.io/redhat-signing-keys/bundle.json"))
+
 	// RedHatSigningKeyUpdateInterval controls how often the updater re-downloads the bundle.
 	RedHatSigningKeyUpdateInterval = registerDurationSetting("ROX_REDHAT_SIGNING_KEY_UPDATE_INTERVAL", 4*time.Hour)
 
