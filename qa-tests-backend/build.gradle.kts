@@ -122,19 +122,14 @@ tasks.withType<Test>().configureEach {
     testClassesDirs = testSourceSet.output.classesDirs
     classpath = testSourceSet.runtimeClasspath
 
-    // Safety net: fail loudly if a test task completes without executing any tests.
-    // Gradle exits 0 when tasks are skipped due to NO-SOURCE, which silently
-    // breaks CI. failOnNoMatchingTests does not help because it only triggers
-    // during test discovery, not when the task is skipped entirely.
+    // Catches the case when tag filters match nothing: the task runs but
+    // zero tests execute. The afterTask hook below only handles NO-SOURCE.
     addTestListener(object : TestListener {
-        override fun beforeSuite(suite: TestDescriptor) {}
-        override fun beforeTest(testDescriptor: TestDescriptor) {}
-        override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {}
         override fun afterSuite(suite: TestDescriptor, result: TestResult) {
             if (suite.parent == null && result.testCount == 0L) {
                 throw GradleException(
                     "No tests were executed in task '${name}'. " +
-                    "This likely means test classes were no tests matched the configured filters (tags/excludes). " +
+                    "This likely means no tests matched the configured filters (tags/excludes). " +
                     "Check that testClassesDirs and classpath are wired correctly."
                 )
             }
@@ -274,11 +269,16 @@ tasks.register<Test>("testDeploymentCheck") {
 // the only reliable way to detect it.
 // https://discuss.gradle.org/t/copy-task-how-to-fail-on-no-source/25581
 // https://github.com/gradle/gradle/issues/36700
+//
+// afterTask is deprecated since Gradle 8.3 and incompatible with configuration
+// cache (explicitly disabled in gradle.properties). No replacement exists for
+// detecting NO-SOURCE skips — tracked in gradle/gradle#36700.
 @Suppress("DEPRECATION")
 gradle.taskGraph.afterTask {
-    if (this is Test && state.noSource) {
+    val task = this
+    if (task is Test && task.state.noSource) {
         throw GradleException(
-            "Test task '${path}' was skipped with NO-SOURCE. " +
+            "Test task '${task.path}' was skipped with NO-SOURCE. " +
             "Check that testClassesDirs and classpath are wired correctly."
         )
     }
