@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/ci-failures-report.yml'
       - 'scripts/ci/metrics.sh'
+      - 'scripts/ci/sql/test_failure_streaks.sql'
   workflow_dispatch:
     inputs:
       test:
