@@ -1,12 +1,6 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  labels:
-    operatorframework.io/os.linux: supported
-    operatorframework.io/arch.amd64: supported
-    operatorframework.io/arch.arm64: supported
-    operatorframework.io/arch.ppc64le: supported
-    operatorframework.io/arch.s390x: supported
   annotations:
     alm-examples: |-
       [

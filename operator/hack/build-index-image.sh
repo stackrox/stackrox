@@ -132,9 +132,6 @@ export BUILDKIT_PROGRESS="plain"
 BUILD_INDEX_DIR="${BASE_DIR}/build/index/rhacs-operator-index"
 mkdir -p "${BUILD_INDEX_DIR}"
 
-# Use custom Dockerfile instead of opm-generated one for multi-platform support.
-# The custom Dockerfile uses a newer OPM version (v1.48.0) that supports --cache-dir,
-# and includes the cache-building step needed for ARM/ppc64le/s390x compatibility.
 cp "${SCRIPT_DIR}/index.Dockerfile" "${BUILD_INDEX_DIR}.Dockerfile"
 
 BUNDLE_VERSION="${BUNDLE_TAG##*:v}"
