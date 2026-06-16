@@ -74,7 +74,7 @@ jobs:
       shell: bash
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
-      if: hashFiles('test-output/coverage.out') != ''
+      if: always()
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
