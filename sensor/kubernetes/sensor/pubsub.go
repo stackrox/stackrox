@@ -45,6 +45,7 @@ func buildPubSubDispatcher() (common.PubSubDispatcher, error) {
 			lane.NewBlockingLane(pubsub.DetectorAuditLogLane),
 			buildConcurrentLane(pubsub.DetectorDeploymentLane, env.DetectorDeploymentBufferSize),
 			lane.NewBlockingLane(pubsub.DetectorScanResultLane),
+			lane.NewBlockingLane(pubsub.DetectorDeployAlertOutputLane),
 		},
 	))
 	if err != nil {

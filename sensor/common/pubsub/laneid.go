@@ -14,6 +14,7 @@ const (
 	DetectorAuditLogLane
 	DetectorDeploymentLane
 	DetectorScanResultLane
+	DetectorDeployAlertOutputLane
 )
 
 var (
@@ -29,6 +30,7 @@ var (
 		DetectorAuditLogLane:           "DetectorAuditLog",
 		DetectorDeploymentLane:         "DetectorDeployment",
 		DetectorScanResultLane:         "DetectorScanResult",
+		DetectorDeployAlertOutputLane:  "DetectorDeployAlertOutput",
 	}
 )
 

@@ -130,7 +130,7 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 
 		output:                    make(chan *message.ExpiringMessage),
 		auditEventsChan:           auditLogEvents,
-		deploymentAlertOutputChan: make(chan outputResult),
+		deploymentAlertOutputChan: make(chan *detectorEvents.DeployAlertOutputEvent),
 		deploymentProcessingMap:   make(map[string]int64),
 
 		enricher:            newEnricher(clusterID, cache, serviceAccountStore, registryStore, localScan, pubSubDispatcher),
@@ -169,7 +169,7 @@ type detectorImpl struct {
 
 	output                    chan *message.ExpiringMessage
 	auditEventsChan           chan *sensor.AuditEvents
-	deploymentAlertOutputChan chan outputResult
+	deploymentAlertOutputChan chan *detectorEvents.DeployAlertOutputEvent
 
 	deploymentProcessingMap  map[string]int64
 	deploymentProcessingLock sync.RWMutex
@@ -268,11 +268,18 @@ func (d *detectorImpl) Start() error {
 		); err != nil {
 			return errors.Wrap(err, "failed to register detector scan result consumer")
 		}
+		if err := d.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.DetectorDeployAlertOutputConsumer,
+			pubsub.DetectorDeployAlertOutputTopic,
+			pubsub.DetectorDeployAlertOutputLane,
+			d.handleDeployAlertOutputEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register detector deploy alert output consumer")
+		}
 	}
 
-	go d.serializeDeployTimeOutput()
-
 	if !d.pubSubEnabled() {
+		go d.serializeDeployTimeOutput()
 		go d.runDetector()
 		go d.processDeployment()
 		go d.runAuditLogEventDetector()
@@ -287,13 +294,6 @@ func (d *detectorImpl) Start() error {
 	return nil
 }
 
-type outputResult struct {
-	results   *central.AlertResults
-	timestamp int64
-	action    central.ResourceAction
-	context   context.Context
-}
-
 // serializeDeployTimeOutput serializes all messages that are going to be output. This allows us to guarantee the ordering
 // of the messages. e.g. an alert update is not sent once the alert removal msg has been sent and alerts generated
 // from an older version of a deployment
@@ -304,50 +304,87 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 		case <-d.serializerStopper.Flow().StopRequested():
 			return
 		case result := <-d.deploymentAlertOutputChan:
-			alertResults := result.results
-
-			switch result.action {
-			case central.ResourceAction_REMOVE_RESOURCE:
-				// Remove the deployment from being processed
-				concurrency.WithLock(&d.deploymentProcessingLock, func() {
-					delete(d.deploymentProcessingMap, alertResults.GetDeploymentId())
-				})
-			case central.ResourceAction_CREATE_RESOURCE:
-				// Regardless if an UPDATE was processed before the create, we should try to enforce on the CREATE
-				d.enforcer.ProcessAlertResults(result.action, storage.LifecycleStage_DEPLOY, alertResults)
-				fallthrough
-			case central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
-				isMostRecentUpdate := concurrency.WithRLock1(&d.deploymentProcessingLock, func() bool {
-					value, exists := d.deploymentProcessingMap[alertResults.GetDeploymentId()]
-					if !exists {
-						// CREATE and UPDATE actions write a 0 timestamp into the map to signify that it is being processed
-						// whereas a REMOVE deletes the deployment ID entry. Once we have processed a REMOVE, we cannot send
-						// more deploytime alerts that are active as those alerts will not be cleaned up
-						// instead, mark the states of all alerts as RESOLVED
-						for _, alert := range alertResults.GetAlerts() {
-							alert.State = storage.ViolationState_RESOLVED
-						}
-						return true
-					}
-					isMostRecentUpdate := result.timestamp >= value
-					if isMostRecentUpdate {
-						d.deploymentProcessingMap[alertResults.GetDeploymentId()] = result.timestamp
-					}
-					return isMostRecentUpdate
-				})
-				// If the deployment is not being marked as being processed, then it was already removed and don't push to the channel
-				// If the timestamp of the deployment is older than one that has already been processed then also ignore
-				if !isMostRecentUpdate {
-					continue
-				}
+			if !d.serializeDeployAlertOutput(result) {
+				continue
 			}
 			select {
 			case <-d.serializerStopper.Flow().StopRequested():
 				return
-			case d.output <- createAlertResultsMsg(result.context, result.action, alertResults):
+			case d.output <- createAlertResultsMsg(result.Context, result.Action, result.Results):
 			}
 		}
 	}
+}
+
+func (d *detectorImpl) sendDeployAlertOutput(result *detectorEvents.DeployAlertOutputEvent) {
+	if d.pubSubEnabled() {
+		if err := d.pubSubDispatcher.Publish(result); err != nil {
+			log.Errorf("Failed to publish deploy alert output event: %v", err)
+		}
+		return
+	}
+	select {
+	case <-d.alertStopSig.Done():
+	case d.deploymentAlertOutputChan <- result:
+	}
+}
+
+// serializeDeployAlertOutput processes the deploy alert result through the
+// serializer logic (timestamp tracking, dedup, enforcer). Returns true if the
+// result should be sent to output, false if it was filtered out.
+func (d *detectorImpl) serializeDeployAlertOutput(result *detectorEvents.DeployAlertOutputEvent) bool {
+	alertResults := result.Results
+
+	switch result.Action {
+	case central.ResourceAction_REMOVE_RESOURCE:
+		// Remove the deployment from being processed
+		concurrency.WithLock(&d.deploymentProcessingLock, func() {
+			delete(d.deploymentProcessingMap, alertResults.GetDeploymentId())
+		})
+	case central.ResourceAction_CREATE_RESOURCE:
+		// Regardless if an UPDATE was processed before the create, we should try to enforce on the CREATE
+		d.enforcer.ProcessAlertResults(result.Action, storage.LifecycleStage_DEPLOY, alertResults)
+		fallthrough
+	case central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
+		isMostRecentUpdate := concurrency.WithRLock1(&d.deploymentProcessingLock, func() bool {
+			value, exists := d.deploymentProcessingMap[alertResults.GetDeploymentId()]
+			if !exists {
+				// CREATE and UPDATE actions write a 0 timestamp into the map to signify that it is being processed
+				// whereas a REMOVE deletes the deployment ID entry. Once we have processed a REMOVE, we cannot send
+				// more deploytime alerts that are active as those alerts will not be cleaned up
+				// instead, mark the states of all alerts as RESOLVED
+				for _, alert := range alertResults.GetAlerts() {
+					alert.State = storage.ViolationState_RESOLVED
+				}
+				return true
+			}
+			isMostRecentUpdate := result.Timestamp >= value
+			if isMostRecentUpdate {
+				d.deploymentProcessingMap[alertResults.GetDeploymentId()] = result.Timestamp
+			}
+			return isMostRecentUpdate
+		})
+		// If the deployment is not being marked as being processed, then it was already removed and don't push to the channel
+		// If the timestamp of the deployment is older than one that has already been processed then also ignore
+		if !isMostRecentUpdate {
+			return false
+		}
+	}
+	return true
+}
+
+func (d *detectorImpl) handleDeployAlertOutputEvent(event pubsub.Event) error {
+	e, ok := event.(*detectorEvents.DeployAlertOutputEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	if d.serializeDeployAlertOutput(e) {
+		select {
+		case d.output <- createAlertResultsMsg(e.Context, e.Action, e.Results):
+		case <-d.alertStopSig.Done():
+		}
+	}
+	return nil
 }
 
 func (d *detectorImpl) Stop() {
@@ -363,8 +400,8 @@ func (d *detectorImpl) Stop() {
 	if !d.pubSubEnabled() {
 		_ = d.detectorStopper.Client().Stopped().Wait()
 		_ = d.auditStopper.Client().Stopped().Wait()
+		_ = d.serializerStopper.Client().Stopped().Wait()
 	}
-	_ = d.serializerStopper.Client().Stopped().Wait()
 }
 
 func (d *detectorImpl) Notify(e common.SensorComponentEvent) {
@@ -510,19 +547,15 @@ func (d *detectorImpl) detectDeploymentFromScanResult(ctx context.Context, deplo
 		return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
 	})
 
-	select {
-	case <-d.detectorStopper.Flow().StopRequested():
-	case <-d.serializerStopper.Flow().StopRequested():
-	case d.deploymentAlertOutputChan <- outputResult{
-		results: &central.AlertResults{
+	d.sendDeployAlertOutput(&detectorEvents.DeployAlertOutputEvent{
+		Results: &central.AlertResults{
 			DeploymentId: deployment.GetId(),
 			Alerts:       alerts,
 		},
-		timestamp: deployment.GetStateTimestamp(),
-		action:    action,
-		context:   ctx,
-	}:
-	}
+		Timestamp: deployment.GetStateTimestamp(),
+		Action:    action,
+		Context:   ctx,
+	})
 }
 
 func (d *detectorImpl) runDetector() {
@@ -686,18 +719,14 @@ func (d *detectorImpl) processDeploymentNoLock(ctx context.Context, deployment *
 		d.baselineEval.RemoveDeployment(deployment.GetId())
 		d.deduper.removeDeployment(deployment.GetId())
 
+		// Push an empty AlertResults object to mark deploytime alerts as stale.
+		// This allows us to not worry about synchronizing alert msgs with deployment msgs.
 		go func() {
-			// Push an empty AlertResults object to the channel which will mark deploytime alerts as stale
-			// This allows us to not worry about synchronizing alert msgs with deployment msgs
-			select {
-			case <-d.alertStopSig.Done():
-				return
-			case d.deploymentAlertOutputChan <- outputResult{
-				context: ctx,
-				results: &central.AlertResults{DeploymentId: deployment.GetId()},
-				action:  action,
-			}:
-			}
+			d.sendDeployAlertOutput(&detectorEvents.DeployAlertOutputEvent{
+				Context: ctx,
+				Results: &central.AlertResults{DeploymentId: deployment.GetId()},
+				Action:  action,
+			})
 		}()
 	case central.ResourceAction_CREATE_RESOURCE:
 		d.deduper.addDeployment(deployment)
