@@ -12,10 +12,9 @@ on:
     - reopened
     - synchronize
 
-# concurrency disabled for cache simulation — each run must complete and save
-# concurrency:
-#   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-#   cancel-in-progress: true
+concurrency:
+  group: cache-sim-${{ github.run_id }}
+  cancel-in-progress: false
 
 env:
   # Stable version ldflags for test caching: Go's test cache keys include
