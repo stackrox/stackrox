@@ -121,8 +121,8 @@ type Updater struct {
 
 	vulnBundleAllowlist set.FrozenSet[string]
 
-	centralEndpoint  string
-	notifiedCentral  atomic.Bool
+	centralEndpoint string
+	notifiedCentral atomic.Bool
 
 	distManager *distManager
 }
