@@ -3,7 +3,6 @@
 package tests
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -18,21 +17,54 @@ import (
 	k8stesting "k8s.io/client-go/testing"
 )
 
-func TestEnsureComplianceMetricsEnv_RetriesOnConflict(t *testing.T) {
-	ds := &appsV1.DaemonSet{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      "collector",
-			Namespace: "stackrox",
+func TestSetContainerEnv(t *testing.T) {
+	testCases := map[string]struct {
+		envBefore string
+		envAfter  string
+		changed   bool
+	}{
+		"should update when value differs": {
+			envBefore: "disabled",
+			envAfter:  ":9091",
+			changed:   true,
 		},
+		"should be no-op when value matches": {
+			envBefore: ":9091",
+			envAfter:  ":9091",
+			changed:   false,
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			ds := &appsV1.DaemonSet{
+				Spec: appsV1.DaemonSetSpec{
+					Template: coreV1.PodTemplateSpec{
+						Spec: coreV1.PodSpec{
+							Containers: []coreV1.Container{{
+								Name: "compliance",
+								Env:  []coreV1.EnvVar{{Name: "ROX_METRICS_PORT", Value: tc.envBefore}},
+							}},
+						},
+					},
+				},
+			}
+			changed, err := setContainerEnv(ds, "compliance", "ROX_METRICS_PORT", tc.envAfter)
+			require.NoError(t, err)
+			require.Equal(t, tc.changed, changed)
+			require.Equal(t, tc.envAfter, ds.Spec.Template.Spec.Containers[0].Env[0].Value)
+		})
+	}
+}
+
+func TestEnsureComplianceMetricsExposed_RetriesOnConflict(t *testing.T) {
+	ds := &appsV1.DaemonSet{
+		ObjectMeta: metaV1.ObjectMeta{Name: "collector", Namespace: "stackrox"},
 		Spec: appsV1.DaemonSetSpec{
 			Template: coreV1.PodTemplateSpec{
 				Spec: coreV1.PodSpec{
 					Containers: []coreV1.Container{{
 						Name: "compliance",
-						Env: []coreV1.EnvVar{{
-							Name:  "ROX_METRICS_PORT",
-							Value: "disabled",
-						}},
+						Env:  []coreV1.EnvVar{{Name: "ROX_METRICS_PORT", Value: "disabled"}},
 					}},
 				},
 			},
@@ -60,10 +92,11 @@ func TestEnsureComplianceMetricsEnv_RetriesOnConflict(t *testing.T) {
 
 	s := &VMScanningSuite{k8sClient: cs}
 	s.SetT(t)
+	s.ctx = t.Context()
 
-	s.ensureComplianceMetricsEnv(context.Background(), "stackrox", "collector", "compliance", "ROX_METRICS_PORT", ":9091")
+	s.ensureComplianceMetricsExposed()
 
-	got, err := cs.AppsV1().DaemonSets("stackrox").Get(context.Background(), "collector", metaV1.GetOptions{})
+	got, err := cs.AppsV1().DaemonSets("stackrox").Get(t.Context(), "collector", metaV1.GetOptions{})
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, updateAttempts, 2)
 	require.Equal(t, ":9091", got.Spec.Template.Spec.Containers[0].Env[0].Value)
