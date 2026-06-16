@@ -141,14 +141,12 @@ function DeploymentOverviewTable({
                                 ? 'Highest CVE severity across this deployment'
                                 : 'CVEs by severity across this deployment'
                         }
-                        sort={
+                        sort={getSortParams(
+                            isSimplifiedSeverity ? 'Severity' : 'CVEs By Severity',
                             isSimplifiedSeverity
                                 ? undefined
-                                : getSortParams(
-                                      'CVEs By Severity',
-                                      getSeveritySortOptions(filteredSeverities)
-                                  )
-                        }
+                                : getSeveritySortOptions(filteredSeverities)
+                        )}
                     >
                         {isSimplifiedSeverity ? (
                             'Top deployment severity'

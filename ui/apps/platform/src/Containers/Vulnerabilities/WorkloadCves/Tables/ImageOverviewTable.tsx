@@ -257,14 +257,12 @@ function ImageOverviewTable({
                                 ? 'Highest CVE severity across this image'
                                 : 'CVEs by severity across this image'
                         }
-                        sort={
+                        sort={getSortParams(
+                            isSimplifiedSeverity ? 'Severity' : 'CVEs By Severity',
                             isSimplifiedSeverity
                                 ? undefined
-                                : getSortParams(
-                                      'CVEs By Severity',
-                                      getSeveritySortOptions(filteredSeverities)
-                                  )
-                        }
+                                : getSeveritySortOptions(filteredSeverities)
+                        )}
                     >
                         {isSimplifiedSeverity ? (
                             'Top severity'

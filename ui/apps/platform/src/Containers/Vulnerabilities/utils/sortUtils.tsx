@@ -58,13 +58,15 @@ export function getWorkloadCveOverviewSortFields(
         case 'Image':
             return [
                 'Image',
-                [
-                    'Critical Severity Count',
-                    'Important Severity Count',
-                    'Moderate Severity Count',
-                    'Low Severity Count',
-                    'Unknown Severity Count',
-                ],
+                isSimplifiedSeverity
+                    ? 'Severity'
+                    : [
+                          'Critical Severity Count',
+                          'Important Severity Count',
+                          'Moderate Severity Count',
+                          'Low Severity Count',
+                          'Unknown Severity Count',
+                      ],
                 'Image OS',
                 'Image Created Time',
                 'Image Scan Time',
@@ -72,13 +74,15 @@ export function getWorkloadCveOverviewSortFields(
         case 'Deployment':
             return [
                 'Deployment',
-                [
-                    'Critical Severity Count',
-                    'Important Severity Count',
-                    'Moderate Severity Count',
-                    'Low Severity Count',
-                    'Unknown Severity Count',
-                ],
+                isSimplifiedSeverity
+                    ? 'Severity'
+                    : [
+                          'Critical Severity Count',
+                          'Important Severity Count',
+                          'Moderate Severity Count',
+                          'Low Severity Count',
+                          'Unknown Severity Count',
+                      ],
                 'Cluster',
                 'Namespace',
                 'Created',
@@ -114,7 +118,9 @@ export function getWorkloadCveOverviewDefaultSortOption(
         case 'Deployment':
             return { field: 'Deployment', direction: 'asc' };
         case 'Image':
-            return appliedSeveritySortOptions;
+            return isSimplifiedSeverity
+                ? { field: 'Severity', direction: 'desc' }
+                : appliedSeveritySortOptions;
         default:
             return ensureExhaustive(entityTab);
     }
