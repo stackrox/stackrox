@@ -1671,7 +1671,7 @@ strip_junit_system_output() {
     local dir="$1"
     local f
     while IFS= read -r -d '' f; do
-        sed -i '/<system-out>/,/<\/system-out>/d; /<system-err>/,/<\/system-err>/d' "$f"
+        sed -i '/<system-out>.*<\/system-out>/d; /<system-out>/,/<\/system-out>/d; /<system-err>.*<\/system-err>/d; /<system-err>/,/<\/system-err>/d' "$f"
     done < <(find "$dir" -name '*.xml' -type f -print0)
 }
 
