@@ -48,15 +48,10 @@ install_virt_operator() {
 
     # Wait for installedCSV (up to 5 min)
     echo "Waiting for Subscription to report installedCSV..."
-    local elapsed=0
-    until kubectl -n "$OLM_NAMESPACE" get sub "$SUBSCRIPTION_NAME" \
-            -o jsonpath='{.status.installedCSV}' 2>/dev/null | grep -q .; do
-        sleep 5; elapsed=$((elapsed + 5))
-        if (( elapsed >= 300 )); then
-            die "Timeout waiting for installedCSV after ${elapsed}s"
-        fi
-        (( elapsed % 30 == 0 )) && echo "  Still waiting... (${elapsed}s)"
-    done
+    if ! kubectl wait -n "$OLM_NAMESPACE" "sub/$SUBSCRIPTION_NAME" \
+            --for=jsonpath='{.status.installedCSV}' --timeout=300s 2>/dev/null; then
+        die "Timeout waiting for installedCSV after 300s"
+    fi
 
     local csv
     csv="$(kubectl -n "$OLM_NAMESPACE" get sub "$SUBSCRIPTION_NAME" -o jsonpath='{.status.installedCSV}')"
@@ -64,20 +59,13 @@ install_virt_operator() {
 
     # Wait for CSV to reach Succeeded (up to 15 min)
     echo "Waiting for CSV to reach Succeeded..."
-    elapsed=0
-    while true; do
+    if ! kubectl wait -n "$OLM_NAMESPACE" "csv/$csv" \
+            --for=jsonpath='{.status.phase}'=Succeeded --timeout=900s 2>/dev/null; then
         local phase
         phase="$(kubectl -n "$OLM_NAMESPACE" get csv "$csv" -o jsonpath='{.status.phase}' 2>/dev/null || true)"
-        if [[ "$phase" == "Succeeded" ]]; then
-            echo "CSV is Succeeded"
-            break
-        fi
-        sleep 5; elapsed=$((elapsed + 5))
-        if (( elapsed >= 900 )); then
-            die "CSV did not reach Succeeded after ${elapsed}s (current: ${phase:-Unknown})"
-        fi
-        (( elapsed % 60 == 0 )) && echo "  CSV phase: ${phase:-Unknown} (${elapsed}s)"
-    done
+        die "CSV did not reach Succeeded after 900s (current: ${phase:-Unknown})"
+    fi
+    echo "CSV is Succeeded"
 
     # Create HyperConverged CR (without VSOCK initially — added separately if needed)
     echo "Creating HyperConverged CR..."
@@ -91,8 +79,11 @@ spec: {}
 EOF
 
     # Wait for HCO healthy (up to 30 min)
+    # Not using kubectl wait: health requires three conditions simultaneously
+    # (Available=True, Progressing=False, Degraded=False) and we print all
+    # three every 60s to diagnose stalls during the long bootstrap window.
     echo "Waiting for HyperConverged to become healthy..."
-    elapsed=0
+    local elapsed=0
     while true; do
         if hco_is_healthy; then
             echo "HyperConverged is healthy"
@@ -117,6 +108,8 @@ EOF
         kubectl annotate hyperconverged "$HCO_NAME" -n "$OLM_NAMESPACE" --overwrite \
             "kubevirt.kubevirt.io/jsonpatch=${vsock_patch}"
 
+        # Not using kubectl wait: the condition is substring containment within
+        # an array field, which kubectl wait --for=jsonpath cannot express.
         echo "Waiting for VSOCK to appear in KubeVirt CR feature gates..."
         local vsock_elapsed=0
         while (( vsock_elapsed < 300 )); do

@@ -217,6 +217,11 @@ deploy_all_vms() {
 # Polls until the KubeVirt VirtualMachineInstance reports condition=Ready.
 # Timeout: ~10 min (20 retries * 30s). Returns 1 on timeout.
 #
+# Not using a single kubectl wait: the VMI resource may not exist yet when
+# this is called, and we need periodic dump_vmi_status diagnostics (VMI
+# phase, conditions, launcher pod events) to identify scheduling or image
+# pull failures in CI.
+#
 # Each iteration uses a short fixed kubectl wait timeout (30s) instead of
 # a dynamic one, so we get regular progress updates and can print
 # diagnostics between attempts. The previous dynamic timeout
