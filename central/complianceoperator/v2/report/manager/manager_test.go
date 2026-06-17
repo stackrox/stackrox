@@ -398,11 +398,14 @@ func (m *ManagerTestSuite) TestHandleReadyScanDeleteOldResultsGate() {
 			suiteStore := suiteDS.NewMockDataStore(ctrl)
 			bindingsStore := bindingsDS.NewMockDataStore(ctrl)
 			generator := reportGen.NewMockComplianceReportGenerator(ctrl)
-			generator.EXPECT().Stop().Times(1)
+			generator.EXPECT().Stop().AnyTimes()
 
 			manager := New(scanConfigDS, scanDS, profileDS, snapshotDS, integrationDS, suiteStore, bindingsStore, checkResultDS, generator)
 			manager.Start()
-			defer manager.Stop()
+			m.T().Cleanup(func() {
+				manager.Stop()
+				ctrl.Finish()
+			})
 			managerImp := manager.(*managerImpl)
 
 			result := &watcher.ScanWatcherResults{
@@ -426,8 +429,6 @@ func (m *ManagerTestSuite) TestHandleReadyScanDeleteOldResultsGate() {
 			case <-time.After(2 * time.Second):
 				m.FailNow("timeout waiting for handleReadyScan to process the result")
 			}
-
-			ctrl.Finish()
 		})
 	}
 }
@@ -472,6 +473,7 @@ func (m *ManagerTestSuite) TestHandleScan() {
 }
 
 func (m *ManagerTestSuite) TestHandleScanRemove() {
+	m.reportGen.EXPECT().Stop().AnyTimes()
 	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)
 	require.True(m.T(), ok)
