@@ -113,18 +113,18 @@ ARG BUILD_TAG
 
 LABEL com.redhat.component=rhacs-main-container
 LABEL com.redhat.license_terms=https://www.redhat.com/agreements
-LABEL description=Main Image for Red Hat Advanced Cluster Security for Kubernetes
+LABEL description="Main Image for Red Hat Advanced Cluster Security for Kubernetes"
 LABEL distribution-scope=public
-LABEL io.k8s.description=Main Image for Red Hat Advanced Cluster Security for Kubernetes
+LABEL io.k8s.description="Main Image for Red Hat Advanced Cluster Security for Kubernetes"
 LABEL io.k8s.display-name=main
 LABEL io.openshift.tags=rhacs,main,stackrox
-LABEL maintainer=Red Hat, Inc.
+LABEL maintainer="Red Hat, Inc."
 LABEL name=advanced-cluster-security/rhacs-main-rhel9
 # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
 LABEL source-location=https://github.com/stackrox/stackrox
-LABEL summary=Main Image for Red Hat Advanced Cluster Security for Kubernetes
+LABEL summary="Main Image for Red Hat Advanced Cluster Security for Kubernetes"
 LABEL url=https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c
-LABEL vendor=Red Hat, Inc.
+LABEL vendor="Red Hat, Inc."
 # We must set version label to prevent inheriting value set in the base stage.
 LABEL version=${BUILD_TAG}
 # Release label is required by EC although has no practical semantics.
