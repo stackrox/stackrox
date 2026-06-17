@@ -7,7 +7,7 @@ inputs:
   cluster-name:
     description: Unique cluster identifier (used as GKE cluster name suffix)
     required: true
-  num-nodes:
+  nodes:
     description: Number of GKE nodes
     default: "3"
   machine-type:
@@ -42,7 +42,7 @@ runs:
         USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
         CLUSTER_ID: ${{ inputs.cluster-name }}
         MACHINE_TYPE: ${{ inputs.machine-type }}
-        NUM_NODES: ${{ inputs.num-nodes }}
+        NUM_NODES: ${{ inputs.nodes }}
         GKE_SPOT: ${{ inputs.spot }}
       run: |
         source scripts/ci/gke.sh
