@@ -101,4 +101,3 @@ runs:
           --docker-username="${{ inputs.quay-user }}" \
           --docker-password="${{ inputs.quay-pass }}" 2>/dev/null || true
         set -x
-
