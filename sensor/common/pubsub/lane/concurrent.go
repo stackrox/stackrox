@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub/metrics"
 )
 
-type ConcurrentConfig struct {
+type concurrentConfig struct {
 	Config[*concurrentLane]
 }
 
@@ -32,8 +32,8 @@ func WithConcurrentLaneConsumer(consumer pubsub.NewConsumer) pubsub.LaneOption[*
 	}
 }
 
-func NewConcurrentLane(id pubsub.LaneID, opts ...pubsub.LaneOption[*concurrentLane]) *ConcurrentConfig {
-	return &ConcurrentConfig{
+func NewConcurrentLane(id pubsub.LaneID, opts ...pubsub.LaneOption[*concurrentLane]) *concurrentConfig {
+	return &concurrentConfig{
 		Config: Config[*concurrentLane]{
 			id:          id,
 			opts:        opts,
@@ -42,7 +42,7 @@ func NewConcurrentLane(id pubsub.LaneID, opts ...pubsub.LaneOption[*concurrentLa
 	}
 }
 
-func (c *ConcurrentConfig) NewLane() pubsub.Lane {
+func (c *concurrentConfig) NewLane() pubsub.Lane {
 	lane := &concurrentLane{
 		Lane: Lane{
 			id:            c.Config.LaneID(),

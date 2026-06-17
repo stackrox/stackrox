@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub/metrics"
 )
 
-type BlockingConfig struct {
+type blockingConfig struct {
 	Config[*blockingLane]
 }
 
@@ -34,8 +34,8 @@ func WithBlockingLaneConsumer(consumer pubsub.NewConsumer) pubsub.LaneOption[*bl
 	}
 }
 
-func NewBlockingLane(id pubsub.LaneID, opts ...pubsub.LaneOption[*blockingLane]) *BlockingConfig {
-	return &BlockingConfig{
+func NewBlockingLane(id pubsub.LaneID, opts ...pubsub.LaneOption[*blockingLane]) *blockingConfig {
+	return &blockingConfig{
 		Config: Config[*blockingLane]{
 			id:          id,
 			opts:        opts,
@@ -44,7 +44,7 @@ func NewBlockingLane(id pubsub.LaneID, opts ...pubsub.LaneOption[*blockingLane])
 	}
 }
 
-func (c *BlockingConfig) NewLane() pubsub.Lane {
+func (c *blockingConfig) NewLane() pubsub.Lane {
 	lane := &blockingLane{
 		Lane: Lane{
 			id:            c.Config.LaneID(),
