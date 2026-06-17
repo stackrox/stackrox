@@ -55,6 +55,10 @@ const titleSelectors = {
     title: '[data-ouia-component-type="PF6/Title"]',
 } as const;
 
+const switchSelectors = {
+    switch: '[data-ouia-component-type="PF6/Switch"]',
+} as const;
+
 const wizardSelectors = {
     wizardNavItem: '[data-ouia-component-type="PF6/WizardNavItem"]',
 } as const;
@@ -69,6 +73,7 @@ export default {
     ...navSelectors,
     ...pageHeaderSelectors,
     ...selectSelectors,
+    ...switchSelectors,
     ...tabsSelectors,
     ...titleSelectors,
     ...wizardSelectors,

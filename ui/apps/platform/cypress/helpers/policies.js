@@ -50,8 +50,6 @@ export function visitPolicy(policyId, staticResponseMap) {
 
 // Actions on policy table
 
-export function createPolicy() {}
-
 export function doPolicyRowAction(trSelector, titleOfActionItem) {
     cy.get(`${trSelector} ${selectors.table.actionsToggleButton}`).click();
     cy.get(`${pf6.dropdownItem}:contains("${titleOfActionItem}")`).click();
@@ -117,8 +115,6 @@ export function doPolicyPageAction(titleOfActionItem) {
     cy.get(`${pf6.dropdownItem}:contains("${titleOfActionItem}")`).click();
 }
 
-export function clonePolicy() {}
-
 export function editPolicy() {
     cy.get(selectors.page.editPolicyButton).click();
 }
@@ -128,8 +124,6 @@ export function editPolicy() {
 export function goToStep3() {
     cy.get(selectors.wizardBtns.step3).click();
 }
-
-export function savePolicy() {}
 
 export function importPolicyFromFixture(fileName, contentsInterceptor = (c) => c) {
     return cy.fixture(fileName).then((originalContents) => {
