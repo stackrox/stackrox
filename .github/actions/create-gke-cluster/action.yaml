@@ -88,3 +88,15 @@ runs:
           --docker-username="${{ inputs.quay-user }}" \
           --docker-password="${{ inputs.quay-pass }}" 2>/dev/null || true
         set -x
+
+    - name: Register GKE cluster cleanup
+      uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
+      with:
+        shell: bash
+        run: echo "GKE cluster cleanup registered"
+        post: >
+          gcloud container clusters delete
+          "${{ steps.create.outputs.cluster-name }}"
+          --zone "${{ steps.create.outputs.zone }}"
+          --project acs-san-stackroxci
+          --quiet --async || true;
