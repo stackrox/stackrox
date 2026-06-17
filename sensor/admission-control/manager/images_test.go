@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/coalescer"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
 	"github.com/stretchr/testify/require"
@@ -402,22 +401,17 @@ func (s *ImageCacheTestSuite) TestClearImageCacheGen() {
 
 func (s *ImageCacheTestSuite) TestGetAvailableImagesInitContainerHandling() {
 	cases := map[string]struct {
-		flagEnabled    bool
 		containers     []*storage.Container
 		expectedImages []string
-		skippedIndexes []int // indexes where init containers should get placeholder (no scan)
 	}{
-		"flag on, single init + single regular": {
-			flagEnabled: true,
+		"single init + single regular": {
 			containers: []*storage.Container{
 				{Name: "init", Type: storage.ContainerType_INIT, Image: &storage.ContainerImage{Id: "sha256:init123", Name: &storage.ImageName{FullName: "docker.io/library/busybox:1.36"}}},
 				{Name: "main", Type: storage.ContainerType_REGULAR, Image: &storage.ContainerImage{Id: "sha256:main456", Name: &storage.ImageName{FullName: "docker.io/library/nginx:1.25"}}},
 			},
 			expectedImages: []string{"docker.io/library/busybox:1.36", "docker.io/library/nginx:1.25"},
-			skippedIndexes: []int{0},
 		},
-		"flag on, multiple init + multiple regular": {
-			flagEnabled: true,
+		"multiple init + multiple regular": {
 			containers: []*storage.Container{
 				{Name: "init-db", Type: storage.ContainerType_INIT, Image: &storage.ContainerImage{Id: "sha256:initdb123", Name: &storage.ImageName{FullName: "docker.io/library/busybox:1.36"}}},
 				{Name: "init-config", Type: storage.ContainerType_INIT, Image: &storage.ContainerImage{Id: "sha256:initcfg456", Name: &storage.ImageName{FullName: "docker.io/library/alpine:3.18"}}},
@@ -425,27 +419,11 @@ func (s *ImageCacheTestSuite) TestGetAvailableImagesInitContainerHandling() {
 				{Name: "sidecar", Type: storage.ContainerType_REGULAR, Image: &storage.ContainerImage{Id: "sha256:side012", Name: &storage.ImageName{FullName: "docker.io/library/redis:7.2"}}},
 			},
 			expectedImages: []string{"docker.io/library/busybox:1.36", "docker.io/library/alpine:3.18", "docker.io/library/nginx:1.25", "docker.io/library/redis:7.2"},
-			skippedIndexes: []int{0, 1},
-		},
-		"flag off, init containers not skipped": {
-			flagEnabled: false,
-			containers: []*storage.Container{
-				{Name: "init", Type: storage.ContainerType_INIT, Image: &storage.ContainerImage{Id: "sha256:init123", Name: &storage.ImageName{FullName: "docker.io/library/busybox:1.36"}}},
-				{Name: "main", Type: storage.ContainerType_REGULAR, Image: &storage.ContainerImage{Id: "sha256:main456", Name: &storage.ImageName{FullName: "docker.io/library/nginx:1.25"}}},
-			},
-			expectedImages: []string{"docker.io/library/busybox:1.36", "docker.io/library/nginx:1.25"},
-			skippedIndexes: nil,
 		},
 	}
 
 	for name, tc := range cases {
 		s.Run(name, func() {
-			if tc.flagEnabled {
-				s.T().Setenv(features.InitContainerSupport.EnvVar(), "true")
-			} else {
-				s.T().Setenv(features.InitContainerSupport.EnvVar(), "false")
-			}
-
 			st := createTestState(false)
 			st.ClusterConfig = &storage.DynamicClusterConfig{
 				AdmissionControllerConfig: &storage.AdmissionControllerConfig{
@@ -467,16 +445,6 @@ func (s *ImageCacheTestSuite) TestGetAvailableImagesInitContainerHandling() {
 			s.Require().Len(images, len(tc.expectedImages))
 			for i, expected := range tc.expectedImages {
 				s.Equal(expected, images[i].GetName().GetFullName())
-			}
-
-			skipped := make(map[int]bool)
-			for _, idx := range tc.skippedIndexes {
-				skipped[idx] = true
-			}
-			for i := range images {
-				if skipped[i] {
-					s.Empty(images[i].GetScan(), "init container at index %d should have no scan", i)
-				}
 			}
 		})
 	}
