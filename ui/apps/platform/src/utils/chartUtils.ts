@@ -4,7 +4,6 @@ import type { ChartBarProps, ChartLabelProps } from '@patternfly/react-charts/vi
 import merge from 'lodash/merge';
 
 import { policySeverityColorMap } from 'constants/severityColors';
-import type { ValueOf } from './type.utils';
 
 export const solidBlueChartColor = 'var(--pf-t--color--blue--40)';
 
@@ -48,30 +47,25 @@ export const patternflySeverityTheme = {
 };
 
 type ChartEventProp = NonNullable<ChartBarProps['events']>[number];
-type ChartEventHandler = ValueOf<ChartEventProp['eventHandlers']>;
 
 /**
  * A helper function to generate a chart onClick event that initiates navigation to another page.
  */
 export function navigateOnClickEvent(
     navigate: NavigateFunction,
-    /** A function that generates the link to navigate to when the entity is clicked */
-    linkWith: (props: ChartLabelProps) => string,
-    /** An array of Victory onClick event handlers that will be called before navigation is initiated */
-    defaultOnClicks: ChartEventHandler[] = []
+    linkWith: (props: ChartLabelProps) => string
 ): ChartEventProp {
-    const navigateEventHandler = {
-        mutation: (props) => {
-            const link = linkWith(props);
-            navigate(link);
-            return null;
-        },
-    };
-
     return {
         target: 'data',
         eventHandlers: {
-            onClick: () => [...defaultOnClicks, navigateEventHandler],
+            onClick: () => [
+                {
+                    mutation: (props) => {
+                        navigate(linkWith(props));
+                        return null;
+                    },
+                },
+            ],
         },
     };
 }
