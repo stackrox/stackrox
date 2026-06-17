@@ -58,7 +58,7 @@ jobs:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/go-test-output.txt
+      run: ${{ matrix.gotags }} make go-unit-tests 2>/tmp/go-test-stderr.txt | tee /tmp/go-test-output.txt
 
 
     - name: Cache diagnostics
@@ -69,29 +69,28 @@ jobs:
           total=$(grep -cE 'ok\s+github\.com/stackrox' /tmp/go-test-output.txt || true)
           echo "Test cache: $cached/$total cached"
         fi
+        if [[ -f /tmp/go-test-stderr.txt ]]; then
+          echo ""
+          echo "=== testcache Phase 1 misses (input list not found) ==="
+          grep -c 'input list not found' /tmp/go-test-stderr.txt || echo 0
+          echo ""
+          echo "=== testcache Phase 2 misses (cover profile missing) ==="
+          grep -c 'cover profile missing' /tmp/go-test-stderr.txt || echo 0
+          echo ""
+          echo "=== testcache expired ==="
+          grep -c 'expired' /tmp/go-test-stderr.txt || echo 0
+          echo ""
+          echo "=== testcache saves ==="
+          grep -c 'save test ID' /tmp/go-test-stderr.txt || echo 0
+          echo ""
+          echo "=== Sample Phase 1 misses ==="
+          grep 'input list not found' /tmp/go-test-stderr.txt | head -5
+          echo ""
+          echo "=== Sample Phase 2 misses ==="
+          grep -E 'cover profile missing|input file.*changed' /tmp/go-test-stderr.txt | head -5
+        fi
       shell: bash
 
-    - name: GODEBUG trace for pkg/set
-      if: always()
-      run: |
-        set +e
-        echo "=== testexpire.txt ==="
-        cat "$(go env GOCACHE)/testexpire.txt" 2>/dev/null || echo "not found"
-        echo "=== GODEBUG trace (exact same flags as make go-unit-tests) ==="
-        GODEBUG=gocachehash=1,gocachetest=1 \
-          ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 \
-          scripts/go-test.sh -timeout 25m -race -cover -coverprofile test-output/coverage.out \
-          ./pkg/set 2>/tmp/godebug-set.txt 1>/dev/null || true
-        echo "=== testResult ==="
-        grep 'HASH.testResult.' /tmp/godebug-set.txt | head -5
-        echo "=== testInputs ==="
-        grep 'HASH.testInputs.' /tmp/godebug-set.txt | head -5
-        echo "=== testcache ==="
-        grep 'testcache:' /tmp/godebug-set.txt | head -10
-        echo "=== coverprofile subkeys ==="
-        grep 'coverprofile' /tmp/godebug-set.txt | head -5
-        exit 0
-      shell: bash
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
