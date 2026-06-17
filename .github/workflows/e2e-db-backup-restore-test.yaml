@@ -67,8 +67,7 @@ jobs:
       id: gke
       uses: ./.github/actions/create-gke-cluster
       with:
-        cluster-name: e2e-dbbr
-        tag: placeholder
+        cluster-name: db-backup-restore
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}

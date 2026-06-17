@@ -8,12 +8,6 @@ inputs:
   cluster-name:
     description: Unique cluster identifier (used as GKE cluster name suffix)
     required: true
-  tag:
-    description: Main image tag
-    required: true
-  registry:
-    description: Image registry
-    default: quay.io/stackrox-io
   num-nodes:
     description: Number of GKE nodes
     default: "3"
