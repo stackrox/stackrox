@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/pkg/errors"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	v2ResultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	reportMgrMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/mocks"
@@ -65,42 +66,42 @@ func (suite *PipelineTestSuite) TearDownTest() {
 func (suite *PipelineTestSuite) TestRunCreate() {
 	ctx := context.Background()
 
-	suite.clusterDS.EXPECT().GetClusterName(ctx, fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
-	suite.v2ResultDS.EXPECT().UpsertResult(ctx, getTestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
-	suite.reportMgr.EXPECT().HandleResult(gomock.Any(), gomock.Any()).Times(1)
+	gomock.InOrder(
+		suite.clusterDS.EXPECT().GetClusterName(ctx, fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1),
+		suite.v2ResultDS.EXPECT().UpsertResult(ctx, getTestRec(fixtureconsts.Cluster1)).Return(nil).Times(1),
+		suite.reportMgr.EXPECT().HandleResult(gomock.Any(), gomock.Any()).Return(nil).Times(1),
+	)
 	pipeline := NewPipeline(suite.v2ResultDS, suite.clusterDS, suite.reportMgr)
 
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     id,
-				Action: central.ResourceAction_CREATE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorResultV2{
-					ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{
-						Id:           id,
-						CheckId:      checkID,
-						CheckName:    mockCheckRuleName,
-						ClusterId:    fixtureconsts.Cluster1,
-						Status:       central.ComplianceOperatorCheckResultV2_FAIL,
-						Severity:     central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY,
-						Description:  "this is a test",
-						Instructions: "this is a test",
-						Labels:       nil,
-						Annotations:  nil,
-						CreatedTime:  createdTime,
-						ScanName:     mockScanName,
-						SuiteName:    mockSuiteName,
-						Rationale:    "test rationale",
-						ValuesUsed:   []string{"var1", "var2"},
-						Warnings:     []string{"warning1", "warning2"},
-					},
-				},
-			},
-		},
-	}
-
-	err := pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
+	err := pipeline.Run(ctx, fixtureconsts.Cluster1, getCreateMsg(), nil)
 	suite.NoError(err)
+}
+
+func (suite *PipelineTestSuite) TestRunCreate_HandleResultError() {
+	ctx := context.Background()
+
+	gomock.InOrder(
+		suite.clusterDS.EXPECT().GetClusterName(ctx, fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1),
+		suite.v2ResultDS.EXPECT().UpsertResult(ctx, getTestRec(fixtureconsts.Cluster1)).Return(nil).Times(1),
+		suite.reportMgr.EXPECT().HandleResult(gomock.Any(), gomock.Any()).Return(errors.New("watcher error")).Times(1),
+	)
+	pipeline := NewPipeline(suite.v2ResultDS, suite.clusterDS, suite.reportMgr)
+
+	err := pipeline.Run(ctx, fixtureconsts.Cluster1, getCreateMsg(), nil)
+	suite.Error(err)
+	suite.Contains(err.Error(), "watcher error")
+}
+
+func (suite *PipelineTestSuite) TestRunCreate_UpsertError() {
+	ctx := context.Background()
+
+	suite.clusterDS.EXPECT().GetClusterName(ctx, fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
+	suite.v2ResultDS.EXPECT().UpsertResult(ctx, getTestRec(fixtureconsts.Cluster1)).Return(errors.New("db error")).Times(1)
+	pipeline := NewPipeline(suite.v2ResultDS, suite.clusterDS, suite.reportMgr)
+
+	err := pipeline.Run(ctx, fixtureconsts.Cluster1, getCreateMsg(), nil)
+	suite.Error(err)
+	suite.Contains(err.Error(), "db error")
 }
 
 func (suite *PipelineTestSuite) TestRunDelete() {
@@ -140,6 +141,37 @@ func (suite *PipelineTestSuite) TestRunDelete() {
 
 	err := pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
 	suite.NoError(err)
+}
+
+func getCreateMsg() *central.MsgFromSensor {
+	return &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     id,
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_ComplianceOperatorResultV2{
+					ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{
+						Id:           id,
+						CheckId:      checkID,
+						CheckName:    mockCheckRuleName,
+						ClusterId:    fixtureconsts.Cluster1,
+						Status:       central.ComplianceOperatorCheckResultV2_FAIL,
+						Severity:     central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY,
+						Description:  "this is a test",
+						Instructions: "this is a test",
+						Labels:       nil,
+						Annotations:  nil,
+						CreatedTime:  createdTime,
+						ScanName:     mockScanName,
+						SuiteName:    mockSuiteName,
+						Rationale:    "test rationale",
+						ValuesUsed:   []string{"var1", "var2"},
+						Warnings:     []string{"warning1", "warning2"},
+					},
+				},
+			},
+		},
+	}
 }
 
 func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {

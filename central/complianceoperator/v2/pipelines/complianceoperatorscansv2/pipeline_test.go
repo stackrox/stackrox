@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/pkg/errors"
 	reportMgrMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/mocks"
 	v2ScanMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
 	"github.com/stackrox/rox/central/convert/testutils"
@@ -51,8 +52,10 @@ func (s *PipelineTestSuite) TearDownTest() {
 func (s *PipelineTestSuite) TestRunCreate() {
 	ctx := context.Background()
 
-	s.v2ScanDS.EXPECT().UpsertScan(ctx, testutils.GetScanV2Storage(s.T())).Return(nil).Times(1)
-	s.reportMgr.EXPECT().HandleScan(gomock.Any(), gomock.Any()).Times(1)
+	gomock.InOrder(
+		s.v2ScanDS.EXPECT().UpsertScan(ctx, testutils.GetScanV2Storage(s.T())).Return(nil).Times(1),
+		s.reportMgr.EXPECT().HandleScan(gomock.Any(), gomock.Any()).Return(nil).Times(1),
+	)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -68,6 +71,53 @@ func (s *PipelineTestSuite) TestRunCreate() {
 
 	err := s.pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
 	s.NoError(err)
+}
+
+func (s *PipelineTestSuite) TestRunCreate_HandleScanError() {
+	ctx := context.Background()
+
+	gomock.InOrder(
+		s.v2ScanDS.EXPECT().UpsertScan(ctx, testutils.GetScanV2Storage(s.T())).Return(nil).Times(1),
+		s.reportMgr.EXPECT().HandleScan(gomock.Any(), gomock.Any()).Return(errors.New("watcher error")).Times(1),
+	)
+
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     testutils.ScanUID,
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_ComplianceOperatorScanV2{
+					ComplianceOperatorScanV2: testutils.GetScanV2SensorMsg(s.T()),
+				},
+			},
+		},
+	}
+
+	err := s.pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
+	s.Error(err)
+	s.Contains(err.Error(), "watcher error")
+}
+
+func (s *PipelineTestSuite) TestRunCreate_UpsertError() {
+	ctx := context.Background()
+
+	s.v2ScanDS.EXPECT().UpsertScan(ctx, testutils.GetScanV2Storage(s.T())).Return(errors.New("db error")).Times(1)
+
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     testutils.ScanUID,
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_ComplianceOperatorScanV2{
+					ComplianceOperatorScanV2: testutils.GetScanV2SensorMsg(s.T()),
+				},
+			},
+		},
+	}
+
+	err := s.pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
+	s.Error(err)
+	s.Contains(err.Error(), "db error")
 }
 
 func (s *PipelineTestSuite) TestRunDelete() {
