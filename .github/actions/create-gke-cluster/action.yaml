@@ -1,8 +1,7 @@
 name: Create GKE cluster
 description: >
-  Creates a GKE cluster via scripts/ci/gke.sh with image pull secrets.
-  Supports spot VMs for cost savings. Use with deploy-stackrox action
-  for a complete StackRox deployment.
+  Creates a GKE cluster via scripts/ci/gke.sh.
+  Supports spot VMs for cost savings.
 
 inputs:
   cluster-name:
@@ -16,12 +15,6 @@ inputs:
     default: e2-standard-8
   gcp-account:
     description: GCP service account JSON
-    required: true
-  quay-user:
-    description: Quay.io username (for image pull secrets)
-    required: true
-  quay-pass:
-    description: Quay.io password
     required: true
   spot:
     description: Use spot (preemptible) VMs for cost savings
@@ -55,14 +48,13 @@ runs:
       shell: bash
       env:
         USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
+        CLUSTER_ID: ${{ inputs.cluster-name }}
         MACHINE_TYPE: ${{ inputs.machine-type }}
         NUM_NODES: ${{ inputs.num-nodes }}
         GKE_SPOT: ${{ inputs.spot }}
       run: |
         source scripts/ci/gke.sh
-        provision_gke_cluster "${{ inputs.cluster-name }}"
-        echo "CLUSTER_NAME=${CLUSTER_NAME}" >> "$GITHUB_ENV"
-        echo "ZONE=${ZONE}" >> "$GITHUB_ENV"
+        provision_gke_cluster "${CLUSTER_ID}"
         echo "cluster-name=${CLUSTER_NAME}" >> "$GITHUB_OUTPUT"
         echo "zone=${ZONE}" >> "$GITHUB_OUTPUT"
 
@@ -90,14 +82,3 @@ runs:
       run: |
         kubectl cluster-info
         kubectl get nodes
-
-    - name: Create image pull secret
-      shell: bash
-      run: |
-        set +x
-        kubectl create namespace stackrox 2>/dev/null || true
-        kubectl -n stackrox create secret docker-registry quay-pull-secret \
-          --docker-server=quay.io \
-          --docker-username="${{ inputs.quay-user }}" \
-          --docker-password="${{ inputs.quay-pass }}" 2>/dev/null || true
-        set -x

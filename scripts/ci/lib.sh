@@ -33,6 +33,10 @@ ci_export() {
     else
         export "$env_name"="$env_value"
     fi
+
+    if [[ -n "${GITHUB_ENV:-}" ]]; then
+        printf '%s=%q\n' "${env_name}" "${env_value}" >> "$GITHUB_ENV"
+    fi
 }
 
 # set_ci_shared_export() - for openshift-ci and GHA this is state shared between steps.
