@@ -22,11 +22,6 @@ defaults:
     shell: bash
 
 jobs:
-  fail-for-retest-verification:
-    runs-on: ubuntu-latest
-    steps:
-    - run: exit 1
-
   wait-for-images:
     if: >-
       github.event_name == 'push' || !github.event.pull_request.head.repo.fork
