@@ -40,24 +40,23 @@ FROM ubi-micro-base
 
 ARG BUILD_TAG
 
-LABEL \
-    com.redhat.component="rhacs-scanner-v4-container" \
-    com.redhat.license_terms="https://www.redhat.com/agreements" \
-    description="This image supports image scanning v4 for Red Hat Advanced Cluster Security for Kubernetes" \
-    io.k8s.description="This image supports image scanning v4 for Red Hat Advanced Cluster Security for Kubernetes" \
-    io.k8s.display-name="scanner-v4" \
-    io.openshift.tags="rhacs,scanner-v4,stackrox" \
-    maintainer="Red Hat, Inc." \
-    name="advanced-cluster-security/rhacs-scanner-v4-rhel9" \
-    # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
-    source-location="https://github.com/stackrox/stackrox" \
-    summary="The image scanner v4 for Red Hat Advanced Cluster Security for Kubernetes" \
-    url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
-    # We must set version label to prevent inheriting value set in the base stage.
-    version="${BUILD_TAG}" \
-    # Release label is required by EC although has no practical semantics.
-    # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
-    release="1"
+LABEL com.redhat.component=rhacs-scanner-v4-container
+LABEL com.redhat.license_terms=https://www.redhat.com/agreements
+LABEL description=This image supports image scanning v4 for Red Hat Advanced Cluster Security for Kubernetes
+LABEL io.k8s.description=This image supports image scanning v4 for Red Hat Advanced Cluster Security for Kubernetes
+LABEL io.k8s.display-name=scanner-v4
+LABEL io.openshift.tags=rhacs,scanner-v4,stackrox
+LABEL maintainer=Red Hat, Inc.
+LABEL name=advanced-cluster-security/rhacs-scanner-v4-rhel9
+# Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
+LABEL source-location=https://github.com/stackrox/stackrox
+LABEL summary=The image scanner v4 for Red Hat Advanced Cluster Security for Kubernetes
+LABEL url=https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c
+# We must set version label to prevent inheriting value set in the base stage.
+LABEL version=${BUILD_TAG}
+# Release label is required by EC although has no practical semantics.
+# We also set it to not inherit one from a base stage in case it's RHEL or UBI.
+LABEL release=1
 
 COPY --from=package_installer /out/ /
 

@@ -6,24 +6,23 @@ USER root
 ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
 
-LABEL \
-    com.redhat.component="rhacs-central-db-container" \
-    com.redhat.license_terms="https://www.redhat.com/agreements" \
-    description="Central Database Image for Red Hat Advanced Cluster Security for Kubernetes" \
-    io.k8s.description="Central Database Image for Red Hat Advanced Cluster Security for Kubernetes" \
-    io.k8s.display-name="central-db" \
-    io.openshift.tags="rhacs,central-db,stackrox" \
-    maintainer="Red Hat, Inc." \
-    name="advanced-cluster-security/rhacs-central-db-rhel9" \
-    # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
-    source-location="https://github.com/stackrox/stackrox" \
-    summary="Central DB for Red Hat Advanced Cluster Security for Kubernetes" \
-    url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
-    # We must set version label to prevent inheriting value set in the base stage.
-    version="${BUILD_TAG}" \
-    # Release label is required by EC although has no practical semantics.
-    # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
-    release="1"
+LABEL com.redhat.component=rhacs-central-db-container
+LABEL com.redhat.license_terms=https://www.redhat.com/agreements
+LABEL description=Central Database Image for Red Hat Advanced Cluster Security for Kubernetes
+LABEL io.k8s.description=Central Database Image for Red Hat Advanced Cluster Security for Kubernetes
+LABEL io.k8s.display-name=central-db
+LABEL io.openshift.tags=rhacs,central-db,stackrox
+LABEL maintainer=Red Hat, Inc.
+LABEL name=advanced-cluster-security/rhacs-central-db-rhel9
+# Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
+LABEL source-location=https://github.com/stackrox/stackrox
+LABEL summary=Central DB for Red Hat Advanced Cluster Security for Kubernetes
+LABEL url=https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c
+# We must set version label to prevent inheriting value set in the base stage.
+LABEL version=${BUILD_TAG}
+# Release label is required by EC although has no practical semantics.
+# We also set it to not inherit one from a base stage in case it's RHEL or UBI.
+LABEL release=1
 
 RUN localedef -f UTF-8 -i en_US en_US.UTF-8 && \
     mkdir -p /var/lib/postgresql && \
