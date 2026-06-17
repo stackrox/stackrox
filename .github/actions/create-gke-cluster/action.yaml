@@ -20,14 +20,6 @@ inputs:
     description: Use spot (preemptible) VMs for cost savings
     default: "true"
 
-outputs:
-  cluster-name:
-    description: Actual GKE cluster name (may be truncated from input)
-    value: ${{ steps.create.outputs.cluster-name }}
-  zone:
-    description: GKE zone where cluster was created
-    value: ${{ steps.create.outputs.zone }}
-
 runs:
   using: composite
   steps:
@@ -55,8 +47,6 @@ runs:
       run: |
         source scripts/ci/gke.sh
         provision_gke_cluster "${CLUSTER_ID}"
-        echo "cluster-name=${CLUSTER_NAME}" >> "$GITHUB_OUTPUT"
-        echo "zone=${ZONE}" >> "$GITHUB_OUTPUT"
 
     - name: Register GKE cluster cleanup
       if: always()
