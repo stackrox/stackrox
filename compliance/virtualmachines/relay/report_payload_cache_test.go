@@ -75,7 +75,7 @@ func TestReportPayloadCache_Upsert_StoresClone(t *testing.T) {
 	require.Truef(t, got.EqualVT(expected), "expected cached payload to match the pre-mutation clone, but it did not")
 }
 
-func TestReportPayloadCache_Get_ReturnsCachedReference(t *testing.T) {
+func TestReportPayloadCache_Get_ReturnsSharedReference_CallerCanMutate(t *testing.T) {
 	t.Parallel()
 
 	c := newReportPayloadCache(4, time.Hour)

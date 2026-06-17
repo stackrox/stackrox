@@ -80,7 +80,6 @@ func (r *Relay) evictStaleEntries(now time.Time, threshold time.Duration) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	// Remove cache entries for VMs that have not sent a report within the given threshold.
 	for vsockID, metadata := range r.cache {
 		if now.Sub(metadata.updatedAt) > threshold {
 			delete(r.cache, vsockID)

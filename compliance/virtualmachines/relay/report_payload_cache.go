@@ -12,6 +12,7 @@ import (
 // the LRU front during a single Upsert call. A bounded sweep keeps per-upsert
 // latency predictable while still making steady progress on expired entries
 // without relying solely on the periodic SweepExpired path.
+// Chosen 16 to bound latency while still making steady progress.
 const upsertExpiredEvictionPerInsert = 16
 
 // reportPayloadCache stores VM reports keyed by resource ID with bounded capacity.
@@ -122,9 +123,15 @@ func (c *reportPayloadCache) evictExpiredFromFrontNoLock(now time.Time, budget i
 	if budget <= 0 {
 		return nil
 	}
+	front := c.lruList.Front()
+	if front == nil {
+		return nil
+	}
+	if now.Before(front.Value.(*reportPayloadEntry).updatedAt.Add(c.ttl)) {
+		return nil
+	}
 	out := make([]payloadEviction, 0, min(budget, len(c.byID)))
 	for range budget {
-		front := c.lruList.Front()
 		if front == nil {
 			break
 		}
@@ -134,6 +141,7 @@ func (c *reportPayloadCache) evictExpiredFromFrontNoLock(now time.Time, budget i
 		}
 		out = append(out, evictionForEntry(ent, now))
 		c.removeElementNoLock(front)
+		front = c.lruList.Front()
 	}
 	return out
 }
@@ -195,6 +203,7 @@ func (c *reportPayloadCache) Len() int {
 
 // Capacity returns the configured maxSlots (see newReportPayloadCache).
 func (c *reportPayloadCache) Capacity() int {
+	// No locking as maxSlots is immutable after construction.
 	return c.maxSlots
 }
 

@@ -24,6 +24,9 @@ func TestRelay(t *testing.T) {
 	suite.Run(t, new(relayTestSuite))
 }
 
+// relayTestSuite must NOT run its test methods in parallel: several tests assert
+// deltas on global Prometheus counters/histograms registered in the default
+// registry. Concurrent execution would race on those shared metrics.
 type relayTestSuite struct {
 	suite.Suite
 	ctx context.Context
@@ -671,7 +674,16 @@ func (s *relayTestSuite) TestRelay_RetryCommand_CacheHit_Resends() {
 	hitBefore := testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("hit"))
 
 	umh.retryCh <- "100"
-	time.Sleep(300 * time.Millisecond)
+
+	// Wait for the relay goroutine to finish processing the retry command
+	// instead of using time.Sleep. ObserveSending is the last side effect in
+	// handleRetryCommand's hit path, so once sends reaches 2 all prior
+	// effects (Send, metrics) are settled.
+	s.Eventually(func() bool {
+		var n int
+		concurrency.WithLock(&umh.mu, func() { n = len(umh.sends) })
+		return n >= 2
+	}, 2*time.Second, 10*time.Millisecond, "retry ObserveSending should fire")
 
 	var sentMessages []*v1.VMReport
 	concurrency.WithLock(&mockSender.mu, func() {
@@ -715,11 +727,19 @@ func (s *relayTestSuite) TestRelay_RetryCommand_CacheMiss_IncrementsMissAndDoesN
 		errCh <- relay.Run(ctx)
 	}()
 
-	time.Sleep(50 * time.Millisecond)
+	// retryCh is buffered (cap 1), so the send below never blocks even if the
+	// relay goroutine hasn't entered its select loop yet.
 	missBefore := testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("miss"))
 
 	umh.retryCh <- "not-cached"
-	time.Sleep(200 * time.Millisecond)
+
+	// Wait for the relay goroutine to finish processing the retry command
+	// instead of using time.Sleep. The miss metric increment is the last side
+	// effect in handleRetryCommand's miss path; once it changes all prior
+	// effects are settled.
+	s.Eventually(func() bool {
+		return testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("miss")) > missBefore
+	}, 2*time.Second, 10*time.Millisecond, "cache miss metric should increment")
 
 	missDelta := testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("miss")) - missBefore
 	s.Equal(1.0, missDelta)
@@ -835,12 +855,18 @@ func (s *relayTestSuite) TestRelay_ACK_RemovesPayloadCacheEntry() {
 
 	missBefore := testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("miss"))
 
+	// HandleACK calls markAcked synchronously, so the payload cache removal
+	// and metric update are complete when this returns -- no sleep needed.
 	umh.HandleACK("100")
-	time.Sleep(100 * time.Millisecond)
 	s.Equal(slotsBase+0.0, testutil.ToFloat64(metrics.IndexReportCacheSlotsUsed))
 
 	umh.retryCh <- "100"
-	time.Sleep(200 * time.Millisecond)
+
+	// Wait for the relay goroutine to finish processing the retry command
+	// instead of using time.Sleep.
+	s.Eventually(func() bool {
+		return testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("miss")) > missBefore
+	}, 2*time.Second, 10*time.Millisecond, "cache miss metric should increment after ACK removal")
 
 	missDelta := testutil.ToFloat64(metrics.IndexReportCacheLookupsTotal.WithLabelValues("miss")) - missBefore
 	s.Equal(1.0, missDelta)
