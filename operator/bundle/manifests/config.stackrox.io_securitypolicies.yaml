@@ -78,6 +78,18 @@ spec:
                   - FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT
                   type: string
                 type: array
+              evaluationFilter:
+                description: EvaluationFilter pre-filters which entities the policy
+                  evaluates.
+                properties:
+                  skipContainerTypes:
+                    items:
+                      enum:
+                      - REGULAR
+                      - INIT
+                      type: string
+                    type: array
+                type: object
               eventSource:
                 description: EventSource describes which events should trigger execution
                   of this policy
