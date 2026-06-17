@@ -62,11 +62,20 @@ jobs:
       run: |
         echo "=== testexpire.txt ==="
         cat "$(go env GOCACHE)/testexpire.txt" 2>/dev/null || echo "not found"
-        echo ""
-        echo "=== GODEBUG=gocachehash=1 on pkg/set ==="
-        GODEBUG=gocachehash=1 ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 \
-          scripts/go-test.sh -timeout 1m -race -cover -coverprofile /dev/null \
-          ./pkg/set 2>&1 | grep -E 'HASH|testcache:|^ok' | head -30
+        echo "=== GOCACHE entry count ==="
+        find "$(go env GOCACHE)" -type f 2>/dev/null | wc -l
+        echo "=== GODEBUG trace ==="
+        GODEBUG=gocachehash=1,gocachetest=1 ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2           scripts/go-test.sh -timeout 1m -race -cover -coverprofile /dev/null           ./pkg/set 2>/tmp/godebug-set.txt; true
+        echo "=== testResult hash ==="
+        grep 'HASH\[testResult\]' /tmp/godebug-set.txt || echo "not found"
+        echo "=== testInputs hash ==="
+        grep 'HASH\[testInputs\]' /tmp/godebug-set.txt || echo "not found"
+        echo "=== testcache decisions ==="
+        grep 'testcache:' /tmp/godebug-set.txt || echo "not found"
+        echo "=== subkey lines ==="
+        grep 'HASH subkey' /tmp/godebug-set.txt | head -10
+        echo "=== test result ==="
+        grep '^ok' /tmp/godebug-set.txt || grep 'FAIL' /tmp/godebug-set.txt || echo "unknown"
       shell: bash
 
     - name: Go Unit Tests
@@ -190,11 +199,20 @@ jobs:
       run: |
         echo "=== testexpire.txt ==="
         cat "$(go env GOCACHE)/testexpire.txt" 2>/dev/null || echo "not found"
-        echo ""
-        echo "=== GODEBUG=gocachehash=1 on pkg/set ==="
-        GODEBUG=gocachehash=1 ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 \
-          scripts/go-test.sh -timeout 1m -race -cover -coverprofile /dev/null \
-          ./pkg/set 2>&1 | grep -E 'HASH|testcache:|^ok' | head -30
+        echo "=== GOCACHE entry count ==="
+        find "$(go env GOCACHE)" -type f 2>/dev/null | wc -l
+        echo "=== GODEBUG trace ==="
+        GODEBUG=gocachehash=1,gocachetest=1 ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2           scripts/go-test.sh -timeout 1m -race -cover -coverprofile /dev/null           ./pkg/set 2>/tmp/godebug-set.txt; true
+        echo "=== testResult hash ==="
+        grep 'HASH\[testResult\]' /tmp/godebug-set.txt || echo "not found"
+        echo "=== testInputs hash ==="
+        grep 'HASH\[testInputs\]' /tmp/godebug-set.txt || echo "not found"
+        echo "=== testcache decisions ==="
+        grep 'testcache:' /tmp/godebug-set.txt || echo "not found"
+        echo "=== subkey lines ==="
+        grep 'HASH subkey' /tmp/godebug-set.txt | head -10
+        echo "=== test result ==="
+        grep '^ok' /tmp/godebug-set.txt || grep 'FAIL' /tmp/godebug-set.txt || echo "unknown"
       shell: bash
 
     - name: Go Unit Tests
