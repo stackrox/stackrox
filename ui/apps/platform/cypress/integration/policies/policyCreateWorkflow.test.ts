@@ -1,8 +1,8 @@
-import { selectors } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
 import { getInputByLabel } from '../../helpers/formHelpers';
-import { deletePolicyIfExists, visitPolicies } from '../../helpers/policies';
+import { deletePolicyIfExists, visitPolicies } from './Policies.helpers';
+import { selectors } from './Policies.selectors';
 import {
     addExclusionWithDeployment,
     addInclusionWithNamespace,
@@ -17,7 +17,7 @@ import {
     startPolicyWizard,
     verifyPolicyDetails,
     verifyPolicyInTable,
-} from '../../helpers/policyWizardHelpers';
+} from './policyWizard.helpers';
 
 // Exact criteria categories for each policy type
 const CRITERIA_CATEGORIES = {

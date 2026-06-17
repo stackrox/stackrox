@@ -1,8 +1,8 @@
-import * as api from '../constants/apiEndpoints';
-import { selectors, url as policiesUrl } from '../constants/PoliciesPage';
-import { visitFromLeftNavExpandable } from './nav';
-import { visit } from './visit';
-import pf6 from '../selectors/pf6';
+import * as api from '../../constants/apiEndpoints';
+import { selectors, url as policiesUrl } from './Policies.selectors';
+import { visitFromLeftNavExpandable } from '../../helpers/nav';
+import { visit } from '../../helpers/visit';
+import pf6 from '../../selectors/pf6';
 
 // Navigation
 

@@ -1,15 +1,15 @@
-import { selectors } from '../../constants/PoliciesPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 import {
     cloneFirstPolicyFromTable,
     doPolicyRowAction,
     editFirstPolicyFromTable,
     goToStep3,
     visitPolicies,
-} from '../../helpers/policies';
-import { dragFieldIntoSection, expandCriteriaCategory } from '../../helpers/policyWizardHelpers';
-import { hasFeatureFlag } from '../../helpers/features';
+} from './Policies.helpers';
+import { selectors } from './Policies.selectors';
+import { dragFieldIntoSection, expandCriteriaCategory } from './policyWizard.helpers';
 
 function addPolicyFieldCard(index) {
     dragFieldIntoSection(`${selectors.step3.policyCriteria.key}:eq(${index})`);

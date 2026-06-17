@@ -1,5 +1,5 @@
-import { selectors } from '../constants/PoliciesPage';
-import DndSimulatorDataTransfer from './dndSimulatorDataTransfer';
+import { selectors } from './Policies.selectors';
+import DndSimulatorDataTransfer from '../../helpers/dndSimulatorDataTransfer';
 
 // --- Form Interaction ---
 

@@ -1,4 +1,4 @@
-import scopeSelectors from '../helpers/scopeSelectors';
+import scopeSelectors from '../../helpers/scopeSelectors';
 
 export const url = '/main/policy-management/policies';
 
