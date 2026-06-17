@@ -19,36 +19,38 @@ import {
     verifyPolicyInTable,
 } from './policyWizard.helpers';
 
-// Exact criteria categories for each policy type
-const CRITERIA_CATEGORIES = {
-    build: ['Image registry', 'Image contents', 'Image scanning'],
-    deploy: [
-        'Image registry',
-        'Image contents',
-        'Image scanning',
-        'Container configuration',
-        'Deployment metadata',
-        'Storage',
-        'Networking',
-        'Access control',
-    ],
-    runtimeDeployment: [
-        'Image registry',
-        'Image contents',
-        'Image scanning',
-        'Container configuration',
-        'Deployment metadata',
-        'Storage',
-        'Networking',
-        'Access control',
-        'Process activity',
-        'Baseline deviation',
-        'User issued container commands',
-        'File activity',
-    ],
-    runtimeAuditLog: ['Resource operation (Required)', 'Resource attributes'],
-    runtimeNode: ['File activity', 'Process activity'],
-};
+function getCriteriaCategories() {
+    const hasSFA = hasFeatureFlag('ROX_SENSITIVE_FILE_ACTIVITY');
+    return {
+        build: ['Image registry', 'Image contents', 'Image scanning'],
+        deploy: [
+            'Image registry',
+            'Image contents',
+            'Image scanning',
+            'Container configuration',
+            'Deployment metadata',
+            'Storage',
+            'Networking',
+            'Access control',
+        ],
+        runtimeDeployment: [
+            'Image registry',
+            'Image contents',
+            'Image scanning',
+            'Container configuration',
+            'Deployment metadata',
+            'Storage',
+            'Networking',
+            'Access control',
+            'Process activity',
+            'Baseline deviation',
+            'User issued container commands',
+            ...(hasSFA ? ['File activity'] : []),
+        ],
+        runtimeAuditLog: ['Resource operation (Required)', 'Resource attributes'],
+        runtimeNode: [...(hasSFA ? ['File activity'] : []), 'Process activity'],
+    };
+}
 
 const POLICY_NAMES = {
     build: 'CYPRESS_TEST_BUILD_POLICY',
@@ -88,7 +90,7 @@ describe('Policy creation workflow', () => {
 
         // Step 3 — Rules
         assertStepHeading('Rules');
-        assertCriteriaCategories(CRITERIA_CATEGORIES.build);
+        assertCriteriaCategories(getCriteriaCategories().build);
         expandCriteriaCategory('Image scanning');
         dragFieldIntoSection(`${selectors.step3.policyCriteria.key}:contains("NVD CVSS")`);
 
@@ -156,7 +158,7 @@ describe('Policy creation workflow', () => {
 
         // Step 3 — Rules
         assertStepHeading('Rules');
-        assertCriteriaCategories(CRITERIA_CATEGORIES.deploy);
+        assertCriteriaCategories(getCriteriaCategories().deploy);
         expandCriteriaCategory('Container configuration');
         dragFieldIntoSection(`${selectors.step3.policyCriteria.key}:contains("Privileged")`);
         cy.get(selectors.step3.policyCriteria.groupCards).should('have.length.gte', 1);
@@ -219,7 +221,7 @@ describe('Policy creation workflow', () => {
 
         // Step 3 — Rules
         assertStepHeading('Rules');
-        assertCriteriaCategories(CRITERIA_CATEGORIES.runtimeDeployment);
+        assertCriteriaCategories(getCriteriaCategories().runtimeDeployment);
         expandCriteriaCategory('Process activity');
         dragFieldIntoSection(`${selectors.step3.policyCriteria.key}:contains("Process name")`);
         cy.get(selectors.step3.policyCriteria.value.textInput).type('apt-get');
@@ -277,7 +279,7 @@ describe('Policy creation workflow', () => {
 
         // Step 3 — Rules (audit log requires both API verb and resource type)
         assertStepHeading('Rules');
-        assertCriteriaCategories(CRITERIA_CATEGORIES.runtimeAuditLog);
+        assertCriteriaCategories(getCriteriaCategories().runtimeAuditLog);
         expandCriteriaCategory('Resource operation (Required)');
         dragFieldIntoSection(
             `${selectors.step3.policyCriteria.key}:contains("Kubernetes API verb")`
@@ -348,7 +350,7 @@ describe('Policy creation workflow', () => {
 
         // Step 3 — Rules
         assertStepHeading('Rules');
-        assertCriteriaCategories(CRITERIA_CATEGORIES.runtimeNode);
+        assertCriteriaCategories(getCriteriaCategories().runtimeNode);
         expandCriteriaCategory('File activity');
         dragFieldIntoSection(`${selectors.step3.policyCriteria.key}:contains("File path")`);
         cy.get(selectors.step3.policyCriteria.value.textInput).type('/etc/passwd');
