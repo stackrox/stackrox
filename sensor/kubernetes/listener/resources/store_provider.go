@@ -134,8 +134,13 @@ func (p *StoreProvider) EndpointManager() store.EndpointManager {
 	return p.endpointManager
 }
 
-// Registries returns the Registry store public interface
-func (p *StoreProvider) Registries() *registry.Store {
+// Registries returns the Registry store read-only interface.
+func (p *StoreProvider) Registries() registry.Provider {
+	return p.registryStore
+}
+
+// RegistryStore returns the concrete registry store for write operations.
+func (p *StoreProvider) RegistryStore() *registry.Store {
 	return p.registryStore
 }
 
@@ -159,8 +164,13 @@ func (p *StoreProvider) VirtualMachines() *vmStore.VirtualMachineStore {
 	return p.vmStore
 }
 
-// ClusterLabels returns the cluster labels store
-func (p *StoreProvider) ClusterLabels() *clusterlabels.Store {
+// ClusterLabels returns the cluster labels read-only interface.
+func (p *StoreProvider) ClusterLabels() scopecomp.ClusterLabelProvider {
+	return p.clusterLabelsStore
+}
+
+// ClusterLabelsStore returns the concrete cluster labels store for write operations.
+func (p *StoreProvider) ClusterLabelsStore() *clusterlabels.Store {
 	return p.clusterLabelsStore
 }
 

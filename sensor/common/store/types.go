@@ -88,7 +88,7 @@ type Provider interface {
 	RBAC() RBACStore
 	ServiceAccounts() ServiceAccountStore
 	EndpointManager() EndpointManager
-	Registries() *registry.Store
+	Registries() registry.Provider
 	Entities() *clusterentities.Store
 }
 

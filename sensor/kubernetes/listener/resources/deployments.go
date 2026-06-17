@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
-	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -80,7 +79,6 @@ type deploymentHandler struct {
 	hierarchy              references.ParentHierarchy
 	rbac                   rbac.Store
 	orchestratorNamespaces *orchestratornamespaces.OrchestratorNamespaces
-	registryStore          *registry.Store
 
 	clusterID string
 }
@@ -98,7 +96,6 @@ func newDeploymentHandler(
 	processFilter filter.Filter,
 	config config.Handler,
 	namespaces *orchestratornamespaces.OrchestratorNamespaces,
-	registryStore *registry.Store,
 	credentialsManager awscredentials.RegistryCredentialsManager,
 ) *deploymentHandler {
 	return &deploymentHandler{
@@ -113,7 +110,6 @@ func newDeploymentHandler(
 		hierarchy:              references.NewParentHierarchy(),
 		rbac:                   rbac,
 		orchestratorNamespaces: namespaces,
-		registryStore:          registryStore,
 		clusterID:              clusterID,
 		credentialsManager:     credentialsManager,
 	}

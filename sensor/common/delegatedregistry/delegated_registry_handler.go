@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -15,7 +16,6 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	detectormetrics "github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/message"
-	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/trace"
 	"google.golang.org/grpc"
@@ -40,8 +40,14 @@ type clusterIDPeeker interface {
 	GetNoWait() string
 }
 
+type registryConfigStore interface {
+	SetDelegatedRegistryConfig(*central.DelegatedRegistryConfig)
+	UpsertCentralRegistryIntegrations([]*storage.ImageIntegration, bool)
+	DeleteCentralRegistryIntegrations([]string)
+}
+
 type delegatedRegistryImpl struct {
-	registryStore *registry.Store
+	registryStore registryConfigStore
 	stopSig       concurrency.Signal
 	localScan     *scan.LocalScan
 	imageSvc      v1.ImageServiceClient
@@ -53,7 +59,7 @@ func (d *delegatedRegistryImpl) Name() string {
 }
 
 // NewHandler returns a new instance of Handler.
-func NewHandler(clusterID clusterIDPeeker, registryStore *registry.Store, localScan *scan.LocalScan) Handler {
+func NewHandler(clusterID clusterIDPeeker, registryStore registryConfigStore, localScan *scan.LocalScan) Handler {
 	return &delegatedRegistryImpl{
 		registryStore: registryStore,
 		stopSig:       concurrency.NewSignal(),

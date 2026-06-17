@@ -20,6 +20,8 @@ var (
 )
 
 // Enforcer implements the interface to apply enforcement to a sensor cluster
+//
+//go:generate mockgen-wrapper
 type Enforcer interface {
 	common.SensorComponent
 	ProcessAlertResults(action central.ResourceAction, stage storage.LifecycleStage, alertResults *central.AlertResults)

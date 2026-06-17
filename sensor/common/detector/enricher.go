@@ -55,12 +55,15 @@ type enricher struct {
 	localScan           *scan.LocalScan
 	imageCache          cache.Image
 	stopSig             concurrency.Signal
-	regStore            *registry.Store
-	clusterID           clusterIDPeekWaiter
+	regStore            registry.Provider
+	clusterID           ClusterIDProvider
 }
 
-type clusterIDPeekWaiter interface {
+// ClusterIDProvider provides cluster ID access.
+type ClusterIDProvider interface {
+	// Get blocks until the cluster ID is available.
 	Get() string
+	// GetNoWait returns an empty string if the ID is not yet available.
 	GetNoWait() string
 }
 
@@ -69,7 +72,7 @@ type cacheValue struct {
 	signal    concurrency.Signal
 	image     *storage.Image
 	localScan *scan.LocalScan
-	regStore  *registry.Store
+	regStore  registry.Provider
 }
 
 func (c *cacheValue) WaitAndGet() *storage.Image {
@@ -260,7 +263,7 @@ func (c *cacheValue) updateImageNoLock(image *storage.Image) {
 	c.image.Names = protoutils.SliceUnique(append(c.image.GetNames(), existingNames...))
 }
 
-func newEnricher(clusterID clusterIDPeekWaiter, cache cache.Image, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
+func newEnricher(clusterID ClusterIDProvider, cache cache.Image, serviceAccountStore store.ServiceAccountStore, registryStore registry.Provider, localScan *scan.LocalScan) *enricher {
 	return &enricher{
 		scanResultChan:      make(chan scanResult),
 		serviceAccountStore: serviceAccountStore,
