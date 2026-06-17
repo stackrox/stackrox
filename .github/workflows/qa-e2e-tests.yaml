@@ -1,0 +1,754 @@
+name: qa-e2e-tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - labeled
+    - synchronize
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # ── KinD shards: self-contained, one cluster per shard ──────────────
+  kind-qa-e2e:
+    if: >-
+      !github.event.pull_request.head.repo.fork &&
+      contains(github.event.pull_request.labels.*.name, 'qa-e2e-tests')
+    name: "QA ${{ matrix.name }} (kind)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Mirrors GKE shard split — one cluster per shard, scanner v2 unless noted
+          - name: policy-config
+            scanner: v2
+            tests: "--tests PolicyConfigurationTest"
+          - name: enforcement
+            scanner: v2
+            tests: "--tests Enforcement"
+          - name: secrets
+            scanner: v2
+            tests: "--tests SecretsTest"
+          - name: policy-fields
+            scanner: v2
+            tests: "--tests PolicyFieldsTest"
+          - name: compliance
+            scanner: v2
+            tests: "--tests ComplianceTest"
+          - name: network-flow
+            scanner: v2
+            tests: "--tests NetworkFlowTest"
+          - name: global-search
+            scanner: v2
+            tests: "--tests GlobalSearch"
+          - name: integrations
+            scanner: v2
+            tests: "--tests IntegrationsTest"
+          - name: csv
+            scanner: v2
+            tests: "--tests CSVTest"
+          - name: admission
+            scanner: v2
+            tests: "--tests AdmissionControllerTest --tests AdmissionControllerNoImageScanTest"
+          - name: builtin-policy
+            scanner: v2
+            tests: "--tests BuiltinPoliciesTest"
+          - name: deployment
+            scanner: v2
+            tests: "--tests DeploymentCheck --tests DeploymentTest"
+          - name: attempted-alerts
+            scanner: v2
+            tests: "--tests AttemptedAlertsTest"
+          - name: auth
+            scanner: v2
+            tests: "--tests AuthServiceTest --tests CertRotationTest --tests ClientCertAuthTest --tests K8sRbacTest --tests ServiceAccountTest"
+          - name: runtime-lifecycle
+            scanner: v2
+            tests: "--tests RuntimePolicyTest --tests RuntimeViolationLifecycleTest --tests AuditLogAlertsTest"
+          - name: runtime-process
+            scanner: v2
+            tests: "--tests AuditScrubbingTest --tests FileActivityTest --tests ProcessBaselinesTest --tests ProcessVisualizationTest"
+          - name: vuln-scan
+            scanner: v2
+            tests: "--tests DefaultPoliciesTest --tests ImageManagementTest --tests ImageScanningTest --tests VulnScanPermissionTest --tests VulnReportingTest"
+          - name: network-misc
+            scanner: v2
+            tests: "--tests NetworkSimulator --tests K8sEventDetectionTest --tests DeclarativeConfigTest"
+          - name: graphql-pagination
+            scanner: v2
+            tests: "--tests PaginationTest --tests AutocompleteTest --tests GraphQLResourcePaginationTest"
+
+
+    env:
+      CLUSTER_NAME: qa-e2e-kind-${{ github.run_id }}-${{ strategy.job-index }}
+      TAG: 4.11.x-879-g846c8632d9
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 1
+
+    - name: Create KinD cluster (background)
+      uses: ./.github/actions/create-kind-cluster
+      with:
+        cluster-name: ${{ env.CLUSTER_NAME }}
+        tag: ${{ env.TAG }}
+        quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+    - name: Deploy StackRox (background)
+      uses: ./.github/actions/deploy-stackrox
+      with:
+        tag: ${{ env.TAG }}
+        github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+        scanner: ${{ matrix.scanner }}
+        background: "true"
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 21
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+
+    - name: Wait for Central API
+      run: |
+        for _ in $(seq 1 300); do
+          [ -s /tmp/rox-auth-token ] && break
+          sleep 2
+        done
+        if [ ! -s /tmp/rox-auth-token ]; then
+          echo "::error::Auth token not generated after 10 minutes"
+          echo "--- deploy.log (last 80 lines) ---"
+          tail -80 /tmp/deploy-stackrox.log 2>/dev/null || echo "(no log)"
+          echo "--- pods ---"
+          kubectl -n stackrox get pods --no-headers 2>/dev/null || true
+          exit 1
+        fi
+        echo "Central API ready"
+
+
+    - name: Add registry integration + pull secrets
+      env:
+        QUAY_USER: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        QUAY_PASS: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      run: |
+        set +x
+        ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+
+        for attempt in 1 2 3; do
+          result=$(curl -sk --retry 3 --retry-delay 5 -u "admin:${ROX_ADMIN_PASSWORD}" \
+            "https://localhost:8443/v1/imageintegrations" \
+            -X POST -d "{
+              \"name\": \"quay-ci\",
+              \"type\": \"docker\",
+              \"categories\": [\"REGISTRY\"],
+              \"docker\": {
+                \"endpoint\": \"https://quay.io\",
+                \"username\": \"${QUAY_USER}\",
+                \"password\": \"${QUAY_PASS}\"
+              }
+            }" 2>/dev/null) && break
+          sleep 5
+        done
+        echo "$result" | jq -r '.id // .error'
+
+        for ns in qa default; do
+          kubectl create namespace "$ns" 2>/dev/null || true
+          kubectl -n "$ns" create secret docker-registry quay-pull-secret \
+            --docker-server=quay.io \
+            --docker-username="${QUAY_USER}" \
+            --docker-password="${QUAY_PASS}" 2>/dev/null || true
+          kubectl -n "$ns" patch serviceaccount default \
+            -p '{"imagePullSecrets":[{"name":"quay-pull-secret"}]}' 2>/dev/null || true
+        done
+        set -x
+
+    - name: Setup TLS client certs
+      run: |
+        source scripts/ci/lib.sh
+        source tests/scripts/setup-certs.sh
+        CERT_DIR="/tmp/client-tls-certs"
+        setup_client_TLS_certs "$CERT_DIR"
+        echo "CLIENT_CA_PATH=${CLIENT_CA_PATH:-${CERT_DIR}/ca.crt}" >> "$GITHUB_ENV"
+        echo "KEYSTORE_PATH=${KEYSTORE_PATH:-${CERT_DIR}/keystore.p12}" >> "$GITHUB_ENV"
+
+        # Build PKCS12 trust store with Central's CA for HTTPS connections.
+        # Tests load trust store with empty password via KeyStore.getInstance("PKCS12").
+        # openssl pkcs12 doesn't create Java-compatible TrustedCertificateEntry and
+        # keytool requires non-empty password, so use Java directly.
+        kubectl -n stackrox get secret central-tls -o jsonpath='{.data.ca\.pem}' | base64 -d > /tmp/central-ca.crt
+        cat > /tmp/CreateTrustStore.java <<'JAVA'
+        import java.io.*; import java.security.*; import java.security.cert.*;
+        class CreateTrustStore { public static void main(String[] a) throws Exception {
+            var ks = KeyStore.getInstance("PKCS12");
+            ks.load(null, "".toCharArray());
+            var cf = CertificateFactory.getInstance("X.509");
+            ks.setCertificateEntry("ca", cf.generateCertificate(new FileInputStream(a[0])));
+            ks.store(new FileOutputStream(a[1]), "".toCharArray());
+        }}
+        JAVA
+        java /tmp/CreateTrustStore.java /tmp/central-ca.crt /tmp/truststore.p12
+        echo "TRUSTSTORE_PATH=/tmp/truststore.p12" >> "$GITHUB_ENV"
+
+    - name: Deploy webhook server
+      continue-on-error: true
+      run: |
+        certs_dir="/tmp/webhook-certs"
+        mkdir -p "$certs_dir"
+        tests/scripts/setup-certs.sh "$certs_dir" webhookserver.stackrox "Webhook Server CA"
+        mkdir -p webhookserver/chart/certs
+        cp "$certs_dir/tls.crt" "$certs_dir/tls.key" webhookserver/chart/certs/
+        helm -n stackrox upgrade --install webhookserver webhookserver/chart/
+        kubectl -n stackrox rollout status deploy/webhookserver --timeout=2m
+        kubectl -n stackrox port-forward svc/webhookserver 8080:8080 &
+
+    - name: Export webhook server CA
+      if: always()
+      run: |
+        if [ -f /tmp/webhook-certs/ca.crt ]; then
+          {
+            echo "GENERIC_WEBHOOK_SERVER_CA_CONTENTS<<CERT_EOF"
+            cat /tmp/webhook-certs/ca.crt
+            echo "CERT_EOF"
+          } >> "$GITHUB_ENV"
+        fi
+
+    - name: Restore Gradle cache
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+          qa-tests-backend/.gradle
+          qa-tests-backend/build/classes
+          qa-tests-backend/build/generated
+          qa-tests-backend/build/resources
+          qa-tests-backend/build/tmp
+        key: gradle-qa-${{ github.sha }}
+        restore-keys: gradle-qa-
+
+    - name: Compile QA tests
+      working-directory: qa-tests-backend
+      run: |
+        go mod download github.com/stackrox/scanner
+        scripts/copy_scanner_protos.sh
+        make compile
+
+    - name: Save Gradle cache
+      uses: actions/cache/save@v4
+      if: always()
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: gradle-qa-${{ hashFiles('qa-tests-backend/**/*.gradle*', 'qa-tests-backend/gradle/wrapper/gradle-wrapper.properties') }}
+
+    - name: "Run QA tests: ${{ matrix.name }}"
+      working-directory: qa-tests-backend
+      env:
+        ROX_USERNAME: admin
+        API_HOSTNAME: localhost
+        API_PORT: "8443"
+        ROX_ADMIN_PASSWORD_FILE: /tmp/rox-admin-password
+        CLUSTER: K8S
+        POD_SECURITY_POLICIES: "false"
+        REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        GOOGLE_CREDENTIALS_GCR_SCANNER_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_SCANNER_V2 }}
+        GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2 }}
+        GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2: ${{ secrets.GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2 }}
+        GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2: ${{ secrets.GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2 }}
+        QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_S3_BACKUP_TEST_BUCKET_NAME: ${{ secrets.AWS_S3_BACKUP_TEST_BUCKET_NAME }}
+        AWS_S3_BACKUP_TEST_BUCKET_REGION: ${{ secrets.AWS_S3_BACKUP_TEST_BUCKET_REGION }}
+        AWS_ECR_REGISTRY_NAME: ${{ secrets.AWS_ECR_REGISTRY_NAME }}
+        AWS_ECR_REGISTRY_REGION: ${{ secrets.AWS_ECR_REGISTRY_REGION }}
+        AWS_ASSUME_ROLE_ACCESS_KEY_ID: ${{ secrets.AWS_ASSUME_ROLE_ACCESS_KEY_ID }}
+        AWS_ASSUME_ROLE_SECRET_ACCESS_KEY: ${{ secrets.AWS_ASSUME_ROLE_SECRET_ACCESS_KEY }}
+        AWS_ASSUME_ROLE_ROLE_ID: ${{ secrets.AWS_ASSUME_ROLE_ROLE_ID }}
+        AWS_ASSUME_ROLE_EXTERNAL_ID: ${{ secrets.AWS_ASSUME_ROLE_EXTERNAL_ID }}
+        AWS_ASSUME_ROLE_TEST_CONDITION_ID: ${{ secrets.AWS_ASSUME_ROLE_TEST_CONDITION_ID }}
+        REMOTE_CLUSTER_ARCH: multi-arch
+        REDHAT_USERNAME: ""
+        REDHAT_PASSWORD: ""
+        SLACK_MAIN_WEBHOOK: "https://hooks.slack.com/services/disabled"
+        SLACK_ALT_WEBHOOK: "https://hooks.slack.com/services/disabled"
+        SLACK_FIXABLE_VULNS_CHANNEL: "https://hooks.slack.com/services/disabled"
+      run: |
+        set +x
+        export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
+        set -x
+        ./gradlew testBAT ${{ matrix.tests }}
+
+    - name: Collect logs
+      if: always()
+      run: |
+        mkdir -p /tmp/test-artifacts
+        cp /tmp/deploy-stackrox.log /tmp/test-artifacts/ 2>/dev/null || true
+        cp /tmp/roxie-override.yaml /tmp/test-artifacts/ 2>/dev/null || true
+        free -h > /tmp/test-artifacts/memory.txt 2>/dev/null || true
+        docker stats --no-stream >> /tmp/test-artifacts/memory.txt 2>/dev/null || true
+        for ns in stackrox qa default; do
+          kubectl -n "$ns" get pods -o wide >> /tmp/test-artifacts/pods.txt 2>/dev/null || true
+          kubectl -n "$ns" get events --sort-by=.lastTimestamp >> /tmp/test-artifacts/events.txt 2>/dev/null || true
+        done
+        kubectl top nodes >> /tmp/test-artifacts/resources.txt 2>/dev/null || true
+        kubectl top pods -A >> /tmp/test-artifacts/resources.txt 2>/dev/null || true
+        for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null); do
+          kubectl -n stackrox logs "$(basename "$pod")" --all-containers 2>&1 \
+            | sed -E 's/(password|token|secret|credential|bearer)[=: ]*[^ "]+/\1=REDACTED/gi' \
+            > "/tmp/test-artifacts/$(basename "$pod").log" || true
+        done
+        cp -r qa-tests-backend/build/reports/ /tmp/test-artifacts/reports/ 2>/dev/null || true
+        cp -r qa-tests-backend/build/test-results/ /tmp/test-artifacts/test-results/ 2>/dev/null || true
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+      if: always()
+      with:
+        name: qa-e2e-${{ matrix.name }}-kind-${{ github.run_id }}
+        path: /tmp/test-artifacts
+        retention-days: 7
+
+    - name: Cleanup
+      if: always()
+      run: kind delete cluster --name "$CLUSTER_NAME" 2>/dev/null || true
+
+  # ── GKE: single shared cluster, all shards test against it ──────────
+  provision-gke:
+    if: >-
+      !github.event.pull_request.head.repo.fork &&
+      contains(github.event.pull_request.labels.*.name, 'e2e-gke')
+    name: "Provision GKE + deploy"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      cluster-name: ${{ steps.cluster.outputs.cluster-name }}
+      gke-zone: ${{ steps.cluster.outputs.zone }}
+    env:
+      CLUSTER_NAME: qa-e2e-gke-${{ github.run_id }}
+      TAG: 4.11.x-879-g846c8632d9
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 1
+
+    - name: Create GKE cluster
+      id: cluster
+      uses: ./.github/actions/create-gke-cluster
+      with:
+        cluster-name: ${{ env.CLUSTER_NAME }}
+        tag: ${{ env.TAG }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+    - name: Deploy StackRox (foreground)
+      id: deploy
+      uses: ./.github/actions/deploy-stackrox
+      with:
+        tag: ${{ env.TAG }}
+        background: "false"
+        exposure: loadbalancer
+        github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+        registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+
+    - name: Add registry integration + pull secrets
+      env:
+        QUAY_USER: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        QUAY_PASS: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      run: |
+        set +x
+        ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+        # API_ENDPOINT is set via GITHUB_ENV by deploy-stackrox
+
+        curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" \
+          "https://${API_ENDPOINT}/v1/imageintegrations" \
+          -X POST -d "{
+            \"name\": \"quay-ci\",
+            \"type\": \"docker\",
+            \"categories\": [\"REGISTRY\"],
+            \"docker\": {
+              \"endpoint\": \"https://quay.io\",
+              \"username\": \"${QUAY_USER}\",
+              \"password\": \"${QUAY_PASS}\"
+            }
+          }" | jq -r '.id // .error'
+
+        for ns in qa default; do
+          kubectl create namespace "$ns" 2>/dev/null || true
+          kubectl -n "$ns" create secret docker-registry quay-pull-secret \
+            --docker-server=quay.io \
+            --docker-username="${QUAY_USER}" \
+            --docker-password="${QUAY_PASS}" 2>/dev/null || true
+          kubectl -n "$ns" patch serviceaccount default \
+            -p '{"imagePullSecrets":[{"name":"quay-pull-secret"}]}' 2>/dev/null || true
+        done
+        set -x
+
+    - name: Upload credentials for shard jobs
+      uses: actions/upload-artifact@v4
+      with:
+        name: gke-credentials
+        path: |
+          /tmp/rox-admin-password
+          /tmp/rox-auth-token
+          /tmp/rox-api-endpoint
+        retention-days: 1
+        if-no-files-found: error
+
+    - name: Collect deploy logs
+      if: always()
+      run: |
+        mkdir -p /tmp/provision-artifacts
+        cp /tmp/deploy-stackrox.log /tmp/provision-artifacts/ 2>/dev/null || true
+        cp /tmp/roxie-override.yaml /tmp/provision-artifacts/ 2>/dev/null || true
+        kubectl -n stackrox get pods -o wide > /tmp/provision-artifacts/pods.txt 2>/dev/null || true
+        for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null); do
+          kubectl -n stackrox logs "$(basename "$pod")" --all-containers 2>&1 \
+            | sed -E 's/(password|token|secret|credential|bearer)[=: ]*[^ "]+/\1=REDACTED/gi' \
+            > "/tmp/provision-artifacts/$(basename "$pod").log" || true
+        done
+
+    - name: Upload provision artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: provision-gke-${{ github.run_id }}
+        path: /tmp/provision-artifacts
+        retention-days: 7
+
+  gke-qa-e2e:
+    if: >-
+      !github.event.pull_request.head.repo.fork &&
+      contains(github.event.pull_request.labels.*.name, 'e2e-gke')
+    needs: provision-gke
+    name: "QA ${{ matrix.name }} (gke)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        # 19 shards — every medium+ class (>2m) gets its own shard.
+        # Short classes grouped. Measured optimal: ~11m wall-clock.
+        include:
+          - name: policy-config
+            tests: "--tests PolicyConfigurationTest"
+          - name: enforcement
+            tests: "--tests Enforcement"
+          - name: secrets
+            tests: "--tests SecretsTest"
+          - name: policy-fields
+            tests: "--tests PolicyFieldsTest"
+          - name: compliance
+            tests: "--tests ComplianceTest"
+          - name: network-flow
+            tests: "--tests NetworkFlowTest"
+          - name: global-search
+            tests: "--tests GlobalSearch"
+          - name: integrations
+            tests: "--tests IntegrationsTest"
+          - name: csv
+            tests: "--tests CSVTest"
+          - name: admission
+            tests: "--tests AdmissionControllerTest --tests AdmissionControllerNoImageScanTest"
+          - name: builtin-policy
+            tests: "--tests BuiltinPoliciesTest"
+          - name: deployment
+            tests: "--tests DeploymentCheck --tests DeploymentTest"
+          - name: attempted-alerts
+            tests: "--tests AttemptedAlertsTest"
+          - name: auth
+            tests: "--tests AuthServiceTest --tests CertRotationTest --tests ClientCertAuthTest --tests K8sRbacTest --tests ServiceAccountTest"
+          - name: runtime-lifecycle
+            tests: "--tests RuntimePolicyTest --tests RuntimeViolationLifecycleTest --tests AuditLogAlertsTest"
+          - name: runtime-process
+            tests: "--tests AuditScrubbingTest --tests FileActivityTest --tests ProcessBaselinesTest --tests ProcessVisualizationTest"
+          - name: vuln-scan
+            tests: "--tests DefaultPoliciesTest --tests ImageManagementTest --tests ImageScanningTest --tests VulnScanPermissionTest --tests VulnReportingTest"
+          - name: network-misc
+            tests: "--tests NetworkSimulator --tests K8sEventDetectionTest --tests DeclarativeConfigTest"
+          - name: graphql-pagination
+            tests: "--tests PaginationTest --tests AutocompleteTest --tests GraphQLResourcePaginationTest"
+
+    env:
+      TAG: 4.11.x-879-g846c8632d9
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
+
+    - name: Authenticate to GCP
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Setup gcloud CLI
+      uses: google-github-actions/setup-gcloud@v3
+      with:
+        install_components: "gke-gcloud-auth-plugin,beta"
+
+    - name: Connect to shared GKE cluster
+      run: |
+        gcloud container clusters get-credentials \
+          "${{ needs.provision-gke.outputs.cluster-name }}" \
+          --zone "${{ needs.provision-gke.outputs.gke-zone }}" \
+          --project acs-san-stackroxci
+        kubectl cluster-info
+
+    - name: Download credentials
+      uses: actions/download-artifact@v4
+      with:
+        name: gke-credentials
+        path: /tmp
+
+    - name: Set Central credentials
+      run: |
+        set +x
+        AUTH_TOKEN="$(cat /tmp/rox-auth-token)"
+        ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+        echo "::add-mask::${AUTH_TOKEN}"
+        echo "::add-mask::${ADMIN_PASSWORD}"
+        echo "ROX_AUTH_TOKEN=${AUTH_TOKEN}" >> "$GITHUB_ENV"
+        set -x
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 21
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+
+    - name: Setup TLS client certs
+      run: |
+        source scripts/ci/lib.sh
+        source tests/scripts/setup-certs.sh
+        CERT_DIR="/tmp/client-tls-certs"
+        setup_client_TLS_certs "$CERT_DIR"
+        echo "CLIENT_CA_PATH=${CLIENT_CA_PATH:-${CERT_DIR}/ca.crt}" >> "$GITHUB_ENV"
+        echo "KEYSTORE_PATH=${KEYSTORE_PATH:-${CERT_DIR}/keystore.p12}" >> "$GITHUB_ENV"
+
+        # Build PKCS12 trust store with Central's CA for HTTPS connections.
+        # Tests load trust store with empty password via KeyStore.getInstance("PKCS12").
+        # openssl pkcs12 doesn't create Java-compatible TrustedCertificateEntry and
+        # keytool requires non-empty password, so use Java directly.
+        kubectl -n stackrox get secret central-tls -o jsonpath='{.data.ca\.pem}' | base64 -d > /tmp/central-ca.crt
+        cat > /tmp/CreateTrustStore.java <<'JAVA'
+        import java.io.*; import java.security.*; import java.security.cert.*;
+        class CreateTrustStore { public static void main(String[] a) throws Exception {
+            var ks = KeyStore.getInstance("PKCS12");
+            ks.load(null, "".toCharArray());
+            var cf = CertificateFactory.getInstance("X.509");
+            ks.setCertificateEntry("ca", cf.generateCertificate(new FileInputStream(a[0])));
+            ks.store(new FileOutputStream(a[1]), "".toCharArray());
+        }}
+        JAVA
+        java /tmp/CreateTrustStore.java /tmp/central-ca.crt /tmp/truststore.p12
+        echo "TRUSTSTORE_PATH=/tmp/truststore.p12" >> "$GITHUB_ENV"
+
+    - name: Deploy webhook server
+      continue-on-error: true
+      run: |
+        certs_dir="/tmp/webhook-certs"
+        mkdir -p "$certs_dir"
+        tests/scripts/setup-certs.sh "$certs_dir" webhookserver.stackrox "Webhook Server CA"
+        mkdir -p webhookserver/chart/certs
+        cp "$certs_dir/tls.crt" "$certs_dir/tls.key" webhookserver/chart/certs/
+        helm -n stackrox upgrade --install webhookserver webhookserver/chart/
+        kubectl -n stackrox rollout status deploy/webhookserver --timeout=2m
+        kubectl -n stackrox port-forward svc/webhookserver 8080:8080 &
+
+    - name: Export webhook server CA
+      if: always()
+      run: |
+        if [ -f /tmp/webhook-certs/ca.crt ]; then
+          {
+            echo "GENERIC_WEBHOOK_SERVER_CA_CONTENTS<<CERT_EOF"
+            cat /tmp/webhook-certs/ca.crt
+            echo "CERT_EOF"
+          } >> "$GITHUB_ENV"
+        fi
+
+    - name: Restore Gradle cache
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+          qa-tests-backend/.gradle
+          qa-tests-backend/build/classes
+          qa-tests-backend/build/generated
+          qa-tests-backend/build/resources
+          qa-tests-backend/build/tmp
+        key: gradle-qa-${{ github.sha }}
+        restore-keys: gradle-qa-
+
+    - name: Compile QA tests
+      working-directory: qa-tests-backend
+      run: |
+        go mod download github.com/stackrox/scanner
+        scripts/copy_scanner_protos.sh
+        make compile
+
+    - name: Save Gradle cache
+      uses: actions/cache/save@v4
+      if: always()
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: gradle-qa-${{ hashFiles('qa-tests-backend/**/*.gradle*', 'qa-tests-backend/gradle/wrapper/gradle-wrapper.properties') }}
+
+    - name: Parse API endpoint
+      run: |
+        ENDPOINT="$(cat /tmp/rox-api-endpoint)"
+        if [[ "$ENDPOINT" == *:* ]]; then
+          echo "API_HOSTNAME=${ENDPOINT%%:*}" >> "$GITHUB_ENV"
+          echo "API_PORT=${ENDPOINT##*:}" >> "$GITHUB_ENV"
+        else
+          echo "API_HOSTNAME=${ENDPOINT}" >> "$GITHUB_ENV"
+          echo "API_PORT=443" >> "$GITHUB_ENV"
+        fi
+        echo "Central endpoint: ${ENDPOINT}"
+
+    - name: "Run QA tests: ${{ matrix.name }}"
+      working-directory: qa-tests-backend
+      env:
+        ROX_USERNAME: admin
+        API_HOSTNAME: ${{ env.API_HOSTNAME }}
+        API_PORT: ${{ env.API_PORT }}
+        ROX_ADMIN_PASSWORD_FILE: /tmp/rox-admin-password
+        CLUSTER: K8S
+        POD_SECURITY_POLICIES: "false"
+        REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        GOOGLE_CREDENTIALS_GCR_SCANNER_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_SCANNER_V2 }}
+        GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2 }}
+        GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2: ${{ secrets.GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2 }}
+        GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2: ${{ secrets.GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2 }}
+        QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_S3_BACKUP_TEST_BUCKET_NAME: ${{ secrets.AWS_S3_BACKUP_TEST_BUCKET_NAME }}
+        AWS_S3_BACKUP_TEST_BUCKET_REGION: ${{ secrets.AWS_S3_BACKUP_TEST_BUCKET_REGION }}
+        AWS_ECR_REGISTRY_NAME: ${{ secrets.AWS_ECR_REGISTRY_NAME }}
+        AWS_ECR_REGISTRY_REGION: ${{ secrets.AWS_ECR_REGISTRY_REGION }}
+        AWS_ASSUME_ROLE_ACCESS_KEY_ID: ${{ secrets.AWS_ASSUME_ROLE_ACCESS_KEY_ID }}
+        AWS_ASSUME_ROLE_SECRET_ACCESS_KEY: ${{ secrets.AWS_ASSUME_ROLE_SECRET_ACCESS_KEY }}
+        AWS_ASSUME_ROLE_ROLE_ID: ${{ secrets.AWS_ASSUME_ROLE_ROLE_ID }}
+        AWS_ASSUME_ROLE_EXTERNAL_ID: ${{ secrets.AWS_ASSUME_ROLE_EXTERNAL_ID }}
+        AWS_ASSUME_ROLE_TEST_CONDITION_ID: ${{ secrets.AWS_ASSUME_ROLE_TEST_CONDITION_ID }}
+        REMOTE_CLUSTER_ARCH: multi-arch
+        REDHAT_USERNAME: ""
+        REDHAT_PASSWORD: ""
+        SLACK_MAIN_WEBHOOK: "https://hooks.slack.com/services/disabled"
+        SLACK_ALT_WEBHOOK: "https://hooks.slack.com/services/disabled"
+        SLACK_FIXABLE_VULNS_CHANNEL: "https://hooks.slack.com/services/disabled"
+      run: |
+        set +x
+        export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
+        set -x
+        ./gradlew testBAT ${{ matrix.tests }}
+
+    - name: Collect logs
+      if: always()
+      run: |
+        mkdir -p /tmp/test-artifacts
+        for ns in stackrox qa default; do
+          kubectl -n "$ns" get pods -o wide >> /tmp/test-artifacts/pods.txt 2>/dev/null || true
+          kubectl -n "$ns" get events --sort-by=.lastTimestamp >> /tmp/test-artifacts/events.txt 2>/dev/null || true
+        done
+        for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null); do
+          kubectl -n stackrox logs "$(basename "$pod")" --all-containers 2>&1 \
+            | sed -E 's/(password|token|secret|credential|bearer)[=: ]*[^ "]+/\1=REDACTED/gi' \
+            > "/tmp/test-artifacts/$(basename "$pod").log" || true
+        done
+        cp -r qa-tests-backend/build/reports/ /tmp/test-artifacts/reports/ 2>/dev/null || true
+        cp -r qa-tests-backend/build/test-results/ /tmp/test-artifacts/test-results/ 2>/dev/null || true
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+      if: always()
+      with:
+        name: qa-e2e-${{ matrix.name }}-gke-${{ github.run_id }}
+        path: /tmp/test-artifacts
+        retention-days: 7
+
+  # ── GKE cleanup: always runs after all GKE shards complete ──────────
+  cleanup-gke:
+    if: always() && needs.provision-gke.result != 'skipped'
+    needs: [provision-gke, gke-qa-e2e]
+    name: "Cleanup GKE"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - name: Authenticate to GCP
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Setup gcloud CLI
+      uses: google-github-actions/setup-gcloud@v3
+      with:
+        install_components: "gke-gcloud-auth-plugin"
+
+    - name: Cluster health check
+      run: |
+        gcloud container clusters get-credentials \
+          "${{ needs.provision-gke.outputs.cluster-name }}" \
+          --zone "${{ needs.provision-gke.outputs.gke-zone }}" \
+          --project acs-san-stackroxci 2>/dev/null || exit 0
+
+        echo "## StackRox Pod Health" >> "$GITHUB_STEP_SUMMARY"
+        echo '```' >> "$GITHUB_STEP_SUMMARY"
+        kubectl -n stackrox get pods -o custom-columns=\
+        'NAME:.metadata.name,STATUS:.status.phase,RESTARTS:.status.containerStatuses[0].restartCount,READY:.status.containerStatuses[0].ready' \
+          2>/dev/null >> "$GITHUB_STEP_SUMMARY" || echo "(cluster unavailable)" >> "$GITHUB_STEP_SUMMARY"
+        echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+        restarts=$(kubectl -n stackrox get pods -o jsonpath='{range .items[*]}{.status.containerStatuses[0].restartCount}{"\n"}{end}' 2>/dev/null | awk '{s+=$1} END {print s+0}')
+        echo "Total pod restarts: ${restarts}"
+        if [ "${restarts:-0}" -gt 0 ]; then
+          echo "::warning::${restarts} pod restart(s) detected during test run"
+        fi
+
+    - name: Delete GKE cluster
+      run: |
+        gcloud container clusters delete \
+          "${{ needs.provision-gke.outputs.cluster-name }}" \
+          --zone "${{ needs.provision-gke.outputs.gke-zone }}" \
+          --project acs-san-stackroxci \
+          --async --quiet || true
+        echo "Cluster deletion initiated (async)"

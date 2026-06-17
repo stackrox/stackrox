@@ -119,7 +119,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             .setCommand(["sleep", "600"]),
         new Deployment()
             .setName(UNSIGNED_REDHAT)
-            .setImage("registry.redhat.io/redhat/community-operator-index:v4.19")
+            .setImage("registry.access.redhat.com/ubi9/ubi-minimal:latest")
             .addLabel("app", "test")
             .setCommand(["sleep", "600"]),
     ]
