@@ -20,6 +20,7 @@ type CveCore interface {
 	GetTopCVSS() float32
 	GetTopNVDCVSS() float32
 	GetTopSeverity() storage.VulnerabilitySeverity
+	GetTopEPSSProbability() *float32
 	GetAffectedImageCount() int
 	GetFirstDiscoveredInSystem() *time.Time
 	GetPublishDate() *time.Time

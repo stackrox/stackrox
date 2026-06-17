@@ -43,6 +43,7 @@ func init() {
 				"images(pagination: Pagination): [Image!]!",
 				"topCVSS: Float!",
 				"topSeverity: String!",
+				"topEpssProbability: Float",
 				"publishedOn: Time",
 				"topNvdCVSS: Float!",
 			}),
@@ -305,6 +306,15 @@ func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {
 
 func (resolver *imageCVECoreResolver) TopSeverity(_ context.Context) string {
 	return cvss.FormatSeverity(resolver.data.GetTopSeverity())
+}
+
+func (resolver *imageCVECoreResolver) TopEpssProbability(_ context.Context) *float64 {
+	v := resolver.data.GetTopEPSSProbability()
+	if v == nil {
+		return nil
+	}
+	f := float64(*v)
+	return &f
 }
 
 func (resolver *imageCVECoreResolver) TopNVDCVSS(_ context.Context) float64 {

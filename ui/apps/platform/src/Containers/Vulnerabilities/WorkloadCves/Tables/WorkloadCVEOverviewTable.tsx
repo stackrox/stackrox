@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
-import { gql } from '@apollo/client';
+import { gql, useQuery } from '@apollo/client';
 import {
     ActionsColumn,
     ExpandableRowContent,
@@ -171,24 +171,23 @@ export const simplifiedCveListQuery = gql`
             cve
             topSeverity
             topCVSS
+            topEpssProbability
             affectedImageCount
             firstDiscoveredInSystem
             publishedOn
             topNvdCVSS
+            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+        }
+    }
+`;
+
+export const cveSummaryQuery = gql`
+    query getCVESummary($cve: String!, $subfieldScopeQuery: String) {
+        imageCVE(cve: $cve, subfieldScopeQuery: $subfieldScopeQuery) {
             distroTuples {
                 summary
                 operatingSystem
-                cvss
-                scoreVersion
-                nvdCvss
-                nvdScoreVersion
-                cveBaseInfo {
-                    epss {
-                        epssProbability
-                    }
-                }
             }
-            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
     }
 `;
@@ -220,11 +219,12 @@ export type ImageCVE = {
         unknown: { total: number };
     };
     topCVSS: number;
+    topEpssProbability?: number | null;
     affectedImageCount: number;
     firstDiscoveredInSystem: string | null;
     publishedOn: string | null;
     topNvdCVSS: number;
-    distroTuples: {
+    distroTuples?: {
         summary: string;
         operatingSystem: string;
         cvss: number;
@@ -252,6 +252,24 @@ export type WorkloadCVEOverviewTableProps = {
     onClearFilters: () => void;
     columnVisibilityState: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
+
+function CVESummaryContent({ cve, scopeQuery }: { cve: string; scopeQuery?: string }) {
+    const { data, loading } = useQuery<{
+        imageCVE: { distroTuples: { summary: string; operatingSystem: string }[] } | null;
+    }>(cveSummaryQuery, {
+        variables: { cve, subfieldScopeQuery: scopeQuery },
+    });
+
+    if (loading) {
+        return <Content component="p">Loading…</Content>;
+    }
+
+    const distros = data?.imageCVE?.distroTuples ?? [];
+    const sorted = sortCveDistroList(distros);
+    const summary = sorted.length > 0 ? sorted[0].summary : '';
+
+    return summary ? <Content component="p">{summary}</Content> : <PartialCVEDataAlert />;
+}
 
 function WorkloadCVEOverviewTable({
     tableState,
@@ -373,6 +391,7 @@ function WorkloadCVEOverviewTable({
                                 topSeverity,
                                 affectedImageCountBySeverity,
                                 topCVSS,
+                                topEpssProbability,
                                 topNvdCVSS,
                                 affectedImageCount,
                                 firstDiscoveredInSystem,
@@ -390,14 +409,17 @@ function WorkloadCVEOverviewTable({
                             const lowCount = affectedImageCountBySeverity?.low.total ?? 0;
                             const unknownCount = affectedImageCountBySeverity?.unknown.total ?? 0;
 
-                            const prioritizedDistros = sortCveDistroList(distroTuples);
-                            const scoreVersions = getScoreVersionsForTopCVSS(topCVSS, distroTuples);
-                            const nvdScoreVersions = getScoreVersionsForTopNvdCVSS(
-                                topNvdCVSS,
-                                distroTuples
-                            );
-                            const cveBaseInfo = getCveBaseInfoFromDistroTuples(distroTuples);
-                            const epssProbability = cveBaseInfo?.epss?.epssProbability;
+                            const prioritizedDistros = sortCveDistroList(distroTuples ?? []);
+                            const scoreVersions = isSimplifiedSeverity
+                                ? []
+                                : getScoreVersionsForTopCVSS(topCVSS, distroTuples ?? []);
+                            const nvdScoreVersions = isSimplifiedSeverity
+                                ? []
+                                : getScoreVersionsForTopNvdCVSS(topNvdCVSS, distroTuples ?? []);
+                            const cveBaseInfo = getCveBaseInfoFromDistroTuples(distroTuples ?? []);
+                            const epssProbability = isSimplifiedSeverity
+                                ? (topEpssProbability ?? undefined)
+                                : cveBaseInfo?.epss?.epssProbability;
                             const summary =
                                 prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
 
@@ -585,7 +607,9 @@ function WorkloadCVEOverviewTable({
                                         <Td />
                                         <Td colSpan={colSpan - 1}>
                                             <ExpandableRowContent>
-                                                {summary ? (
+                                                {isSimplifiedSeverity ? (
+                                                    isExpanded && <CVESummaryContent cve={cve} />
+                                                ) : summary ? (
                                                     <Content component="p">{summary}</Content>
                                                 ) : (
                                                     <PartialCVEDataAlert />

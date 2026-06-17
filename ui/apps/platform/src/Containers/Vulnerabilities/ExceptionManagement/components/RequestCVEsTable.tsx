@@ -174,10 +174,10 @@ function RequestCVEsTable({
                                     'Low',
                                     'Unknown',
                                 ];
-                                const prioritizedDistros = sortCveDistroList(distroTuples);
+                                const prioritizedDistros = sortCveDistroList(distroTuples ?? []);
                                 const scoreVersions = getScoreVersionsForTopCVSS(
                                     topCVSS,
-                                    distroTuples
+                                    distroTuples ?? []
                                 );
                                 const summary =
                                     prioritizedDistros.length > 0

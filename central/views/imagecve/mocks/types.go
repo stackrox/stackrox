@@ -144,6 +144,20 @@ func (mr *MockCveCoreMockRecorder) GetTopCVSS() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopCVSS", reflect.TypeOf((*MockCveCore)(nil).GetTopCVSS))
 }
 
+// GetTopEPSSProbability mocks base method.
+func (m *MockCveCore) GetTopEPSSProbability() *float32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTopEPSSProbability")
+	ret0, _ := ret[0].(*float32)
+	return ret0
+}
+
+// GetTopEPSSProbability indicates an expected call of GetTopEPSSProbability.
+func (mr *MockCveCoreMockRecorder) GetTopEPSSProbability() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopEPSSProbability", reflect.TypeOf((*MockCveCore)(nil).GetTopEPSSProbability))
+}
+
 // GetTopNVDCVSS mocks base method.
 func (m *MockCveCore) GetTopNVDCVSS() float32 {
 	m.ctrl.T.Helper()

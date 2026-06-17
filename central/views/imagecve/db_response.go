@@ -27,6 +27,7 @@ type imageCVECoreResponse struct {
 	FirstDiscoveredInSystem            *time.Time `db:"cve_created_time_min"`
 	Published                          *time.Time `db:"cve_published_on_min"`
 	TopNVDCVSS                         *float32   `db:"nvd_cvss_max"`
+	TopEPSSProbability                 *float32   `db:"epss_probability_max"`
 	AffectedImageCountV2               int        `db:"image_id_count"`
 }
 
@@ -72,6 +73,10 @@ func (c *imageCVECoreResponse) GetTopNVDCVSS() float32 {
 		return 0.0
 	}
 	return *c.TopNVDCVSS
+}
+
+func (c *imageCVECoreResponse) GetTopEPSSProbability() *float32 {
+	return c.TopEPSSProbability
 }
 
 func (c *imageCVECoreResponse) GetAffectedImageCount() int {
