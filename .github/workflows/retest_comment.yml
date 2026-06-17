@@ -1,0 +1,34 @@
+name: /retest for GitHub Actions
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  rerun-failed:
+    if: >-
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/retest')
+    runs-on: ubuntu-latest
+    steps:
+    - name: Fetch PR head SHA
+      id: pr
+      env:
+        GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+      run: |
+        sha=$(gh api "${{ github.event.issue.pull_request.url }}" --jq '.head.sha')
+        echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+    - name: Rerun failed workflows
+      env:
+        GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+      run: |
+        failed_runs=$(gh api "repos/${{ github.repository }}/actions/runs?head_sha=${{ steps.pr.outputs.sha }}&event=pull_request&status=failure" --jq '.workflow_runs[].id')
+        if [ -z "$failed_runs" ]; then
+          echo "No failed workflow runs found"
+          exit 0
+        fi
+        for run_id in $failed_runs; do
+          echo "Rerunning failed jobs for run $run_id"
+          gh api --method POST "repos/${{ github.repository }}/actions/runs/${run_id}/rerun-failed-jobs" || echo "Failed to rerun $run_id"
+        done
