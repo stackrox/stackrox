@@ -1,25 +1,27 @@
 # Background Migrations Guide
 
-Background migrations run **after** Central is fully started and serving traffic. They are
-designed for operations on high-cardinality tables where the processing time would cause
-unacceptable upgrade downtime if run as a startup migration.
+Background migrations run **after** Central is fully started and serving traffic.
+They are the **preferred default** for all data backfills and transformations because
+they do not add upgrade downtime. Use a startup migration only when a nwe Central version cannot
+function correctly without the migrated data AND the table is not on the
+[high-cardinality list](../../migrator/README.md#high-cardinality-tables-always-use-background-migrations).
 
-For an overview of both migration types and when to choose which, see
+For an overview of both migration types and the decision flowchart, see
 [README.md](../../migrator/README.md).
 
 ## When to use background migrations
 
-- Backfilling columns on tables with > 100k rows (see the
-  [high-cardinality table list](../../migrator/README.md#high-cardinality-tables-always-use-background-migrations))
-- Creating ad-hoc indexes on large tables (partial indexes, expression indexes — standard
-  indexes are handled by proto tags and the background migration runner's index reconciliation)
-- Any data transformation that would take minutes or hours on production data
+- Any data backfill or data transformation where Central can tolerate partially migrated
+  state (some rows backfilled, some not) while the migration runs
+- All operations on [high-cardinality tables](../../migrator/README.md#high-cardinality-tables-always-use-background-migrations), don't use a startup data migrations on these tables
+- Creating indexes not covered by the code generator (e.g., partial indexes, expression
+  indexes). Standard indexes are handled by proto tags (`sql:"index"` or
+  `sql:"background-index"`) and the background migration runner's index reconciliation.
 
 **Do NOT use background migrations** for:
 - Schema-only changes (GORM AutoMigrate handles these)
 - Standard index creation (use `sql:"index"` or `sql:"background-index"` proto tags instead)
-- Setting column defaults (use a startup migration with `ALTER COLUMN SET DEFAULT`)
-- Small table backfills (< 100k rows — use a startup migration instead)
+- Setting static column defaults, use a startup migration with `ALTER COLUMN SET DEFAULT` because PSQL optimizes for that use case
 
 ## How it works
 
@@ -43,14 +45,10 @@ Read current seq num from background_migration_versions table
         ▼
 For each migration from current to target:
   ├── Run migration.Run(ctx, db)
-  ├── Update seq num in DB (checkpoint)
-  └── Update Prometheus metric
+  └── Update seq num in DB (checkpoint)
         │
         ▼
-Reconcile background indexes (CREATE INDEX CONCURRENTLY, ROX_BACKGROUND_INDEX_TIMEOUT per statement, default 2h)
-        │
-        ▼
-Set bg_migration_complete metric to 1
+Reconcile background indexes (CREATE INDEX CONCURRENTLY)
 ```
 
 The rollout checker ensures old-version Central pods are fully terminated before
@@ -63,6 +61,8 @@ mid-migration, the next startup resumes from the last checkpoint.
 ## Getting started
 
 ### 1. Create the migration package
+
+**The part of creating the migration manually is going to be replaced with [ROX-35101](https://redhat.atlassian.net/browse/ROX-35101)**
 
 Unlike startup migrations, there is no `make bootstrap_migration` tool for background
 migrations. Create the package manually.
@@ -133,52 +133,52 @@ const CurrentBgMigrationSeqNum = 1  // was 0
 Your `Run` function must satisfy these requirements:
 
 1. **Idempotent**: Safe to re-run after a crash, rollback, or manual override. Previously
-   migrated rows must produce the same result when processed again.
-
+   migrated rows must be processed again on re-run and must produce a consistent result with the serialized field.
 2. **Context-aware**: Check `ctx.Done()` between units of work (e.g., between batches) for
    graceful shutdown. When cancelled, return `ctx.Err()`.
-
 3. **Conflict-free with Central**: Central is live and processing events. Your migration
    must not conflict with concurrent reads and writes. See
    [Concurrency with Central](#concurrency-with-central) below.
-
-4. **Resumable**: Use WHERE clauses that filter out already-processed rows so that restarts
-   don't repeat work unnecessarily.
+4. **Efficient on re-run**: On crash, rollback, or retry the migration starts from the
+   beginning. Iterate by primary key and only write rows that actually need a change --
+   already-migrated rows are read but not written, making re-runs fast. Avoid filtering
+   by `WHERE new_column IS NULL` as the sole pagination mechanism unless there is an
+   index on that column; without an index every batch scan is expensive.
 
 ## Concurrency with Central
 
 This is the most critical aspect of background migrations. Central is actively receiving
-sensor data, API calls, and processing events while your migration runs.
+sensor data, API calls, and processing events while your migration runs. You cannot
+control what events arrive, so the migration must account for concurrent writes.
 
-### Design principle: partition work between migration and application
+### Use `SELECT ... FOR UPDATE SKIP LOCKED`
 
-The safest pattern is to ensure the migration and Central operate on disjoint sets of rows:
-
-- **Migration processes**: Existing rows where the new column is NULL (not yet backfilled)
-- **Central processes**: New rows arriving after the migration started (application code
-  already populates the new column)
-
-This means:
-1. The application code (datastore, store) must be updated to populate the new column on
-   INSERT and UPDATE **before** the background migration ships.
-2. The migration's WHERE clause filters to `new_column IS NULL`, so it only touches rows
-   that pre-date the application code change.
-
-### When disjoint partitioning isn't possible
-
-If the migration must update rows that Central also writes to, use row-level locking:
+The standard pattern is to iterate by primary key in batches, locking rows for update
+while skipping any rows currently locked by Central. See
+[Example 1](#example-1-backfill-a-column-from-a-serialized-proto) for a complete
+implementation.
 
 ```go
 rows, err := conn.Query(ctx, `
     SELECT id, serialized FROM my_table
-    WHERE id > $1 AND new_column IS NULL
+    WHERE id > $1
     ORDER BY id
     LIMIT $2
     FOR UPDATE SKIP LOCKED`, lastID, batchSize)
 ```
 
-`FOR UPDATE SKIP LOCKED` acquires row locks but skips rows currently locked by Central,
-preventing deadlocks while ensuring forward progress.
+- **`FOR UPDATE`** acquires row-level locks, preventing Central from modifying those
+  rows while the migration processes them.
+- **`SKIP LOCKED`** skips rows currently locked by Central rather than blocking. This
+  assumes locked rows are being written by the new Central version and are already
+  consistently writing the field.
+- **Primary key iteration** (`id > $1 ORDER BY id`) uses the primary key index for
+  efficient pagination. The full table scan happens once; writes are far more expensive
+  than the read pass, so this is less of a bottleneck.
+
+Within each batch, only update rows that actually need a change (e.g., where the target
+column is still NULL or differs from the expected value). This avoids unnecessary writes
+and accelerates migration progress on re-runs.
 
 ### What the application code must handle
 
@@ -194,9 +194,10 @@ if row.NewColumn != "" {
 }
 ```
 
-Once the migration completes (check via `background_migration_complete` Prometheus metric
-or by verifying all rows are populated), the fallback code can be removed in a subsequent
-release.
+The application code must also populate the new column on INSERT and UPDATE so that
+new rows written by Central are already in the post-migration format.
+
+When using stores this is handled by the code generation automatically.
 
 ## Example 1: Backfill a column from a serialized proto
 
@@ -207,7 +208,7 @@ the serialized protobuf blob. The table has millions of rows in production.
 
 1. The proto field already exists in `storage.ProcessIndicator`
 2. The column is already added to the GORM schema (GORM AutoMigrate creates it on startup)
-3. The application datastore code already populates `signal_hostname` on new inserts
+3. The application datastore code already populates `signal_hostname` on new inserts and updates
 
 ### Migration implementation
 
@@ -240,6 +241,12 @@ func init() {
     })
 }
 
+type indicatorRow struct {
+    id               string
+    serialized       []byte
+    signalHostname   *string
+}
+
 func run(ctx context.Context, db postgres.DB) error {
     conn, err := db.Acquire(ctx)
     if err != nil {
@@ -251,99 +258,100 @@ func run(ctx context.Context, db postgres.DB) error {
     lastID := ""
 
     for {
-        // Check for graceful shutdown between batches.
         if ctx.Err() != nil {
-            log.Infof("shutdown requested after %d rows, will resume on next start", totalUpdated)
+            log.Infof("shutdown requested after %d rows, will restart on next start", totalUpdated)
             return ctx.Err()
         }
 
-        updated, newLastID, err := migrateBatch(ctx, conn, lastID)
+        rows, err := fetchBatch(ctx, conn, lastID)
         if err != nil {
-            return fmt.Errorf("batch after id %s: %w", lastID, err)
+            return fmt.Errorf("fetching batch after id %s: %w", lastID, err)
         }
-        if newLastID == "" {
+        if len(rows) == 0 {
             break
         }
 
-        lastID = newLastID
-        totalUpdated += updated
-
-        if totalUpdated%50000 == 0 {
-            log.Infof("progress: %d rows backfilled", totalUpdated)
+        batch, err := buildBatchUpdates(rows)
+        if err != nil {
+            return err
         }
+
+        if batch.Len() > 0 {
+            if err := sendBatch(ctx, conn, batch); err != nil {
+                return err
+            }
+        }
+
+        lastID = rows[len(rows)-1].id
+        totalUpdated += batch.Len()
     }
 
     log.Infof("backfill complete: %d rows updated", totalUpdated)
     return nil
 }
 
-func migrateBatch(ctx context.Context, conn *postgres.Conn, lastID string) (int, string, error) {
-    // Only select rows where the new column hasn't been populated yet.
-    // This makes the migration:
-    //   - Idempotent (re-runs skip already-processed rows)
-    //   - Conflict-free (new rows inserted by Central already have this column set)
-    //   - Resumable (restarts continue from where they left off)
+func fetchBatch(ctx context.Context, conn *postgres.Conn, lastID string) ([]indicatorRow, error) {
     rows, err := conn.Query(ctx, `
-        SELECT id, serialized
+        SELECT id, serialized, signal_hostname
         FROM process_indicators
-        WHERE id > $1 AND signal_hostname IS NULL
+        WHERE id > $1
         ORDER BY id
-        LIMIT $2`, lastID, batchSize)
+        LIMIT $2
+        FOR UPDATE SKIP LOCKED`, lastID, batchSize)
     if err != nil {
-        return 0, "", fmt.Errorf("querying batch: %w", err)
+        return nil, fmt.Errorf("querying batch: %w", err)
     }
     defer rows.Close()
 
-    batch := &pgx.Batch{}
-    var rowLastID string
-    count := 0
-
+    result := make([]indicatorRow, 0, batchSize)
     for rows.Next() {
-        var id string
-        var serialized []byte
-        if err := rows.Scan(&id, &serialized); err != nil {
-            return 0, "", fmt.Errorf("scanning row: %w", err)
+        var r indicatorRow
+        if err := rows.Scan(&r.id, &r.serialized, &r.signalHostname); err != nil {
+            return nil, fmt.Errorf("scanning row: %w", err)
         }
+        result = append(result, r)
+    }
+    if err := rows.Err(); err != nil {
+        return nil, fmt.Errorf("iterating rows: %w", err)
+    }
+    return result, nil
+}
 
+func buildBatchUpdates(rows []indicatorRow) (*pgx.Batch, error) {
+    batch := &pgx.Batch{}
+    for _, r := range rows {
         indicator := &storage.ProcessIndicator{}
-        if err := indicator.UnmarshalVT(serialized); err != nil {
-            log.Warnf("skipping row %s: unmarshal failed: %v", id, err)
-            rowLastID = id
-            count++
-            continue
+        if err := indicator.UnmarshalVT(r.serialized); err != nil {
+            return nil, fmt.Errorf("unmarshal row %s: %w", r.id, err)
         }
 
         hostname := indicator.GetSignal().GetHostname()
+
+        // Only write if the column value differs from what the serialized
+        // blob says it should be. The serialized blob is the source of truth
+        // and may have changed (e.g. after a rollback), so we cannot skip
+        // rows just because the column is non-NULL.
+        if r.signalHostname != nil && *r.signalHostname == hostname {
+            continue
+        }
+
         batch.Queue(
-            "UPDATE process_indicators SET signal_hostname = $1 WHERE id = $2 AND signal_hostname IS NULL",
-            hostname, id,
+            "UPDATE process_indicators SET signal_hostname = $1 WHERE id = $2",
+            hostname, r.id,
         )
-
-        rowLastID = id
-        count++
     }
+    return batch, nil
+}
 
-    if err := rows.Err(); err != nil {
-        return 0, "", fmt.Errorf("iterating rows: %w", err)
-    }
-
-    if batch.Len() == 0 {
-        return count, rowLastID, nil
-    }
-
-    // Execute all updates in one round-trip.
+func sendBatch(ctx context.Context, conn *postgres.Conn, batch *pgx.Batch) error {
     results := conn.SendBatch(ctx, batch)
     for i := 0; i < batch.Len(); i++ {
         if _, err := results.Exec(); err != nil {
             _ = results.Close()
-            return 0, "", fmt.Errorf("executing update %d: %w", i, err)
+            return fmt.Errorf("batch exec statement %d: %w", i, err)
         }
     }
-    if err := results.Close(); err != nil {
-        return 0, "", fmt.Errorf("closing batch: %w", err)
-    }
-
-    return count, rowLastID, nil
+    return results.Close()
 }
 ```
 
@@ -351,12 +359,11 @@ func migrateBatch(ctx context.Context, conn *postgres.Conn, lastID string) (int,
 
 | Decision | Rationale |
 |---|---|
-| `WHERE signal_hostname IS NULL` | Only processes rows that haven't been backfilled. New rows from Central already have this set. Makes the migration idempotent and conflict-free. |
-| `WHERE ... AND signal_hostname IS NULL` in UPDATE | Double-check in the UPDATE prevents overwriting a value that Central set between the SELECT and UPDATE. |
-| `ctx.Err()` check per batch | Allows graceful shutdown. The next startup resumes from the last processed ID. |
+| `FOR UPDATE SKIP LOCKED` | Locks rows to prevent conflicts with Central. Skips rows currently locked by Central. |
+| Primary key iteration (`id > $1 ORDER BY id`) | Uses the primary key index for efficient pagination. |
+| Skip rows where column already matches serialized blob | Avoids unnecessary writes. |
+| `ctx.Err()` check per batch | Allows graceful shutdown. |
 | `pgx.Batch` for writes | Sends all updates in a single round-trip, reducing network overhead. |
-| Keyset pagination (`id > $1 ORDER BY id`) | Consistent forward progress. No offset drift from concurrent inserts/deletes. |
-| `log.Warnf` on unmarshal failure | Don't fail the entire migration for a single corrupt row. Log and continue. |
 
 ## Example 2: Batched SQL JOIN backfill
 
@@ -398,38 +405,38 @@ func run(ctx context.Context, db postgres.DB) error {
 }
 
 func backfillBatch(ctx context.Context, conn *postgres.Conn, lastID string) (int, string, error) {
-    // Batched UPDATE ... FROM with LIMIT via a CTE.
-    // Only touches rows where the column hasn't been set yet (idempotent, conflict-free).
+    // Iterate by primary key, join to get the value, only update rows that need it.
+    // FOR UPDATE SKIP LOCKED on the CTE prevents conflicts with Central.
     tag, err := conn.Exec(ctx, `
         WITH batch AS (
             SELECT a.id
             FROM alerts a
-            WHERE a.id > $1 AND a.deployment_type IS NULL
+            WHERE a.id > $1
             ORDER BY a.id
             LIMIT $2
+            FOR UPDATE SKIP LOCKED
         )
         UPDATE alerts a
         SET deployment_type = d.type
         FROM batch
         JOIN deployments d ON a.deployment_id = d.id
-        WHERE a.id = batch.id`, lastID, batchSize)
+        WHERE a.id = batch.id
+          AND (a.deployment_type IS NULL OR a.deployment_type != d.type)`,
+        lastID, batchSize)
     if err != nil {
         return 0, "", fmt.Errorf("updating batch: %w", err)
     }
 
-    if tag.RowsAffected() == 0 {
-        return 0, "", nil
-    }
-
-    // Get the last ID processed for keyset pagination.
+    // Get the last ID in the batch for keyset pagination.
     var newLastID string
     err = conn.QueryRow(ctx, `
         SELECT id FROM alerts
-        WHERE id > $1 AND deployment_type IS NOT NULL
-        ORDER BY id DESC
-        LIMIT 1`, lastID).Scan(&newLastID)
+        WHERE id > $1
+        ORDER BY id
+        LIMIT 1 OFFSET $2 - 1`, lastID, batchSize).Scan(&newLastID)
     if err != nil {
-        return 0, "", fmt.Errorf("getting last id: %w", err)
+        // No more rows to process.
+        return int(tag.RowsAffected()), "", nil
     }
 
     return int(tag.RowsAffected()), newLastID, nil
@@ -438,90 +445,6 @@ func backfillBatch(ctx context.Context, conn *postgres.Conn, lastID string) (int
 
 This avoids holding locks on the entire table — each batch locks only its subset of rows
 and commits before the next batch begins.
-
-## Example 3: Create an index concurrently (one-off)
-
-> **Note:** Standard indexes should be added via proto tags (`sql:"index=btree"` or
-> `sql:"background-index=btree"`) and the code generator. The background migration runner
-> handles `CREATE INDEX CONCURRENTLY` automatically for `background-index` fields after all
-> numbered migrations complete. This example is only for ad-hoc indexes not covered by the
-> generator (e.g., partial indexes, expression indexes, or indexes on hand-written schemas).
-
-Creating an index on a large table with a regular `CREATE INDEX` acquires an exclusive lock,
-blocking all writes for the duration. `CREATE INDEX CONCURRENTLY` avoids this by building the
-index without holding an exclusive lock.
-
-```go
-package m001tom002
-
-import (
-    "context"
-    "fmt"
-
-    "github.com/stackrox/rox/central/backgroundmigrations/migrations"
-    "github.com/stackrox/rox/central/backgroundmigrations/types"
-    "github.com/stackrox/rox/pkg/logging"
-    "github.com/stackrox/rox/pkg/postgres"
-)
-
-var log = logging.LoggerForModule()
-
-func init() {
-    migrations.MustRegister(types.BackgroundMigration{
-        StartingSeqNum:     1,
-        VersionAfterSeqNum: 2,
-        Description:        "Create index on process_indicators.signal_hostname",
-        Run:                run,
-    })
-}
-
-func run(ctx context.Context, db postgres.DB) error {
-    conn, err := db.Acquire(ctx)
-    if err != nil {
-        return fmt.Errorf("acquiring connection: %w", err)
-    }
-    defer conn.Release()
-
-    // CREATE INDEX CONCURRENTLY:
-    // - Does NOT hold an exclusive lock (Central continues reading/writing normally)
-    // - Cannot run inside a transaction (Postgres requirement)
-    // - IF NOT EXISTS makes it idempotent (safe to re-run after failure or rollback)
-    //
-    // If a previous attempt failed partway, Postgres may leave an INVALID index behind.
-    // The IF NOT EXISTS clause will see the invalid index and skip creation, which is wrong.
-    // So we first drop any invalid index with the same name, then create it.
-    log.Info("dropping any invalid index from a previous failed attempt")
-    _, err = conn.Exec(ctx, `
-        DROP INDEX CONCURRENTLY IF EXISTS processindicators_signal_hostname`)
-    if err != nil {
-        return fmt.Errorf("dropping invalid index: %w", err)
-    }
-
-    log.Info("creating index processindicators_signal_hostname concurrently")
-    _, err = conn.Exec(ctx, `
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_signal_hostname
-        ON process_indicators USING btree (signal_hostname)`)
-    if err != nil {
-        return fmt.Errorf("creating index: %w", err)
-    }
-
-    log.Info("index creation complete")
-    return nil
-}
-```
-
-### Key points
-
-- **`CREATE INDEX CONCURRENTLY`** builds the index without blocking writes. It takes longer
-  than a regular `CREATE INDEX` but doesn't cause downtime.
-- **Cannot run inside a transaction.** The background migration runner does not wrap
-  migrations in transactions, so this works out of the box.
-- **Handles failed previous attempts.** A failed `CREATE INDEX CONCURRENTLY` leaves an
-  INVALID index. We drop it first, then recreate. The `IF NOT EXISTS` on the CREATE handles
-  the case where the index already exists and is valid.
-- **No `ctx.Done()` check needed.** Index creation is a single Postgres statement. If the
-  context is cancelled, Postgres cancels the statement. On the next run, the DROP + CREATE
-  pattern handles cleanup.
 
 ## Operations
 
@@ -551,7 +474,7 @@ override on subsequent pod restarts. To trigger another re-run, change the tag v
 
 This is useful when:
 - A migration completed but produced incorrect results that were fixed in a code update
-- A rollback occurred and you need to re-run migrations from a specific point
+- A rollback to a version unaware of background migration occured, since that version does not automatically reset the background migrations sequence number
 - Debugging a migration in a test environment
 
 ### Monitoring
@@ -563,16 +486,14 @@ Two Prometheus metrics track background migration progress:
 | `rox_central_background_migration_seq_num` | Current completed seq num |
 | `rox_central_background_migration_complete` | `1` when all migrations are done, `0` otherwise |
 
-Use the `_complete` metric to gate features or alerts that depend on migration completion.
-
 ### Rollback behavior
 
 When Central is rolled back to a previous version:
 
 1. The old binary has a lower `CurrentBgMigrationSeqNum`
 2. The runner detects `dbSeqNum > targetSeqNum` (rollback)
-3. The runner resets the DB seq num to the target
-4. On the next roll-forward, migrations re-run from the reset point
+3. The runner resets the background DB seq num to the target
+4. On the next roll-forward, background migrations re-run from the reset point
 
 This is why idempotency is critical — migrations will be re-executed after rollback + upgrade.
 
@@ -584,118 +505,25 @@ The flag is checked in `central/main.go` before starting the runner.
 
 ## Testing
 
-Background migrations should be tested with the same patterns as startup migrations:
-
-```go
-//go:build sql_integration
-
-package m000tom001
-
-import (
-    "context"
-    "fmt"
-    "testing"
-    "time"
-
-    pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
-    "github.com/stackrox/rox/pkg/sac"
-    "github.com/stretchr/testify/suite"
-)
-
-type migrationTestSuite struct {
-    suite.Suite
-    db  *pghelper.TestPostgres
-    ctx context.Context
-}
-
-func TestMigration(t *testing.T) {
-    suite.Run(t, new(migrationTestSuite))
-}
-
-func (s *migrationTestSuite) SetupSuite() {
-    s.ctx = sac.WithAllAccess(context.Background())
-    s.db = pghelper.ForT(s.T(), false)
-    // Create table schema
-    s.Require().NoError(s.createSchema())
-}
-
-func (s *migrationTestSuite) TearDownSuite() {
-    s.db.Teardown(s.T())
-}
-
-func (s *migrationTestSuite) TestBackfillNewRows() {
-    // Insert rows WITHOUT the new column populated (pre-migration state)
-    s.insertRow("id-1", "hostname-1", nil)  // signal_hostname is NULL
-    s.insertRow("id-2", "hostname-2", nil)
-
-    // Run migration
-    s.Require().NoError(run(s.ctx, s.db.DB))
-
-    // Verify backfill
-    s.Equal("hostname-1", s.getHostname("id-1"))
-    s.Equal("hostname-2", s.getHostname("id-2"))
-}
-
-func (s *migrationTestSuite) TestIdempotency() {
-    s.insertRow("id-3", "hostname-3", nil)
-
-    // Run twice
-    s.Require().NoError(run(s.ctx, s.db.DB))
-    s.Require().NoError(run(s.ctx, s.db.DB))
-
-    s.Equal("hostname-3", s.getHostname("id-3"))
-}
-
-func (s *migrationTestSuite) TestSkipsAlreadyPopulatedRows() {
-    // Simulate a row that Central already populated
-    existing := "already-set"
-    s.insertRow("id-4", "hostname-4", &existing)
-
-    s.Require().NoError(run(s.ctx, s.db.DB))
-
-    // Should not be overwritten
-    s.Equal("already-set", s.getHostname("id-4"))
-}
-
-func (s *migrationTestSuite) TestGracefulShutdown() {
-    // Insert enough rows to span multiple batches
-    for i := 0; i < 100; i++ {
-        s.insertRow(fmt.Sprintf("id-%03d", i), fmt.Sprintf("host-%d", i), nil)
-    }
-
-    // Run with a context that cancels after a short time
-    ctx, cancel := context.WithTimeout(s.ctx, 1*time.Millisecond)
-    defer cancel()
-
-    batchSize = 10
-    err := run(ctx, s.db.DB)
-    // Should return context error, not a migration error
-    s.ErrorIs(err, context.DeadlineExceeded)
-
-    // Run again with full context — should complete remaining rows
-    s.Require().NoError(run(s.ctx, s.db.DB))
-
-    // All rows should be populated
-    for i := 0; i < 100; i++ {
-        s.NotEmpty(s.getHostname(fmt.Sprintf("id-%03d", i)))
-    }
-}
-```
+Use the same test patterns as startup migrations (see
+[STARTUP_MIGRATIONS.md](../../migrator/STARTUP_MIGRATIONS.md#testing)). Tests require
+the `//go:build sql_integration` tag and a running PostgreSQL instance.
 
 ### What to test
 
 - **Backfill correctness**: new column gets the right value from the serialized blob
 - **Idempotency**: running twice produces the same result
 - **Conflict-free with existing data**: rows already populated by Central are not overwritten
-- **Graceful shutdown**: cancellation mid-migration doesn't corrupt data; resumption completes
+- **Graceful shutdown**: cancellation mid-migration doesn't corrupt data; re-run completes
 - **Batch boundaries**: test with small batch sizes to exercise pagination logic
 
 ## Checklist
 
 - [ ] Migration is idempotent (safe to re-run after rollback or crash)
 - [ ] `ctx.Done()` is checked between batches for graceful shutdown
-- [ ] WHERE clause filters already-processed rows (`new_column IS NULL`)
-- [ ] UPDATE statement includes a guard condition to avoid overwriting concurrent Central writes
+- [ ] Iterates by primary key (not by `WHERE new_column IS NULL`) for efficient pagination
+- [ ] Uses `FOR UPDATE SKIP LOCKED` to handle concurrent Central writes
+- [ ] Only updates rows where the column value differs from the serialized source of truth
 - [ ] Application code already populates the new column on INSERT/UPDATE
 - [ ] Application code tolerates partial migration state (some rows backfilled, some not)
 - [ ] Registered in `central/backgroundmigrations/runner/all.go`
