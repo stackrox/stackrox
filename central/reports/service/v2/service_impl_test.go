@@ -367,14 +367,16 @@ func (s *ReportServiceTestSuite) TestCountReportConfigurations() {
 			query: &apiV2.RawQuery{Query: ""},
 			expectedQ: search.ConjunctionQuery(
 				search.NewQueryBuilder().ProtoQuery(),
-				withoutV1ConfigsQuery),
+				withoutV1ConfigsQuery,
+				withoutEmptyScope),
 		},
 		{
 			desc:  "Query with search field",
 			query: &apiV2.RawQuery{Query: "Report Name:name"},
 			expectedQ: search.ConjunctionQuery(
 				search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
-				withoutV1ConfigsQuery),
+				withoutV1ConfigsQuery,
+				withoutEmptyScope),
 		},
 	}
 
