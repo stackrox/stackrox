@@ -72,12 +72,6 @@ jobs:
         echo "GOCACHE size: $(du -sm "$gocache" 2>/dev/null | cut -f1)MB"
       shell: bash
 
-    - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
-      if: always()
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        flags: go-unit-tests
-
     - name: Generate junit report
       if: always()
       run: make generate-junit-reports
@@ -177,11 +171,6 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
 
-    - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        flags: go-unit-tests
-
     - name: Generate junit report
       if: always()
       run: make generate-junit-reports
@@ -202,6 +191,33 @@ jobs:
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
+
+  # Coverage collection runs separately from the main test jobs so that
+  # -coverprofile doesn't break Go's test cache (coverage profile entries
+  # are not updated by markUsed(), causing our backdate+trim to delete them).
+  # Uses -count=1 to skip caching entirely — this job is not on the critical path.
+  go-coverage:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Go Coverage
+      run: |
+        CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 GOTAGS=test \
+          scripts/go-test.sh -count=1 -timeout 30m -race -cover -coverprofile test-output/coverage.out \
+          $(git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list \
+            | grep -v '^github.com/stackrox/rox/tests$' | grep -Ev 'stackrox/rox/sensor/tests|stackrox/rox/operator/tests')
+
+    - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
+      if: always()
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: go-unit-tests
 
   # Benchmarks run each bench function once (-benchtime=1x -count=1) to verify
   # they compile and execute without errors. A single postgres version is
