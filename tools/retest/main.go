@@ -16,7 +16,10 @@ import (
 
 // allowedCheckFailures defines a set of PR checks that should not prevent the retest job starting
 var allowedCheckFailures = map[string]struct{}{
-	"codecov/patch": {},
+	"codecov/patch":              {},
+	"e2e-byodb-test":             {},
+	"e2e-nongroovy-tests":        {},
+	"e2e-db-backup-restore-test": {},
 }
 
 const s = "stackrox"
