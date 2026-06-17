@@ -57,6 +57,18 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
+
+    - name: Cache hash debug for pkg/set
+      run: |
+        echo "=== testexpire.txt ==="
+        cat "$(go env GOCACHE)/testexpire.txt" 2>/dev/null || echo "not found"
+        echo ""
+        echo "=== GODEBUG=gocachehash=1 on pkg/set ==="
+        GODEBUG=gocachehash=1 ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 \
+          scripts/go-test.sh -timeout 1m -race -cover -coverprofile /dev/null \
+          ./pkg/set 2>&1 | grep -E 'HASH|testcache:|^ok' | head -30
+      shell: bash
+
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/go-test-output.txt
 
@@ -172,6 +184,18 @@ jobs:
           timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' \
             || { docker logs postgres; exit 1; }
         fi
+
+
+    - name: Cache hash debug for pkg/set
+      run: |
+        echo "=== testexpire.txt ==="
+        cat "$(go env GOCACHE)/testexpire.txt" 2>/dev/null || echo "not found"
+        echo ""
+        echo "=== GODEBUG=gocachehash=1 on pkg/set ==="
+        GODEBUG=gocachehash=1 ${{ matrix.gotags }} CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 \
+          scripts/go-test.sh -timeout 1m -race -cover -coverprofile /dev/null \
+          ./pkg/set 2>&1 | grep -E 'HASH|testcache:|^ok' | head -30
+      shell: bash
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
