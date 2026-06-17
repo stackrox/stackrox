@@ -127,7 +127,7 @@ func (t *ClientTestSuite) TestAuthenticatedHTTPTransport_WebSocket() {
 				t.NoError(err)
 			} else {
 				errEndpoint := `"https://` + testcase.scheme + `:%2F%2Fcentral.stackrox.svc:443/hello/howdy?file=rhelv2%2Frepository-to-cpe.json&uuid=f81dbc6b-5899-433b-bc86-9127219a9d89"`
-				errString := `parse ` + errEndpoint + `: invalid URL escape "%2F"`
+				errString := `parse ` + errEndpoint + `: invalid port ":%2F%2Fcentral.stackrox.svc:443" after host`
 				t.EqualError(err, errString)
 				return
 			}
