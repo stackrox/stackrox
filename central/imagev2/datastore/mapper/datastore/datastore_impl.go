@@ -115,7 +115,11 @@ func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Ima
 	if len(images) == 0 {
 		return nil, false, nil
 	}
-	return imageUtils.ConvertToV1(images[0]), true, nil
+	allNames, err := ds.imageV2DataStore.GetImageNames(ctx, sha)
+	if err != nil {
+		return imageUtils.ConvertToV1(images[0]), true, nil
+	}
+	return imageUtils.ConvertToV1(images[0], allNames...), true, nil
 }
 
 func (ds *datastoreImpl) GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error) {
