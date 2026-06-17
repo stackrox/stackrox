@@ -17,6 +17,13 @@ defaults:
     shell: bash
 
 jobs:
+  fail-for-retest-verification:
+    # TODO: Remove this job — temporary failure to verify auto-retest GHA support
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deliberate failure
+      run: exit 1
+
   wait-for-images:
     if: >-
       !github.event.pull_request.head.repo.fork && (
