@@ -195,7 +195,8 @@ jobs:
   # Coverage collection runs separately from the main test jobs so that
   # -coverprofile doesn't break Go's test cache (coverage profile entries
   # are not updated by markUsed(), causing our backdate+trim to delete them).
-  # Uses -count=1 to skip caching entirely — this job is not on the critical path.
+  # Uses -count=1 to skip test caching, but restores the compile cache
+  # (save: false) to avoid recompiling all packages from scratch.
   go-coverage:
     runs-on: ubuntu-latest
     steps:
@@ -205,6 +206,11 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: 'false'
 
     - name: Go Coverage
       run: |
