@@ -401,7 +401,7 @@ class AdmissionControllerTest extends BaseSpecification {
                 .setImagePrefetcherAffinity()
                 .setImage(BUSYBOX_TAGGED_IMAGE)
                 .addLabel("app", "test")
-                .addInitContainer("init-0", BUSYBOX_LATEST_TAG_IMAGE)
+                .addInitContainer("init-0", BUSYBOX_TAGGED_IMAGE)
                 .addInitContainer("init-1", BUSYBOX_TAGGED_IMAGE)
 
         def created = orchestrator.createDeploymentNoWait(deployment)
