@@ -377,10 +377,44 @@ func Test_commentsToCreate(t *testing.T) {
 	}
 }
 
+func Test_allowedCheckFailures(t *testing.T) {
+	expectedAllowed := []string{
+		"codecov/patch",
+		"e2e-byodb-test",
+		"e2e-nongroovy-tests",
+		"e2e-db-backup-restore-test",
+	}
+	for _, name := range expectedAllowed {
+		t.Run("allowed_"+name, func(t *testing.T) {
+			_, ok := allowedCheckFailures[name]
+			assert.True(t, ok, "expected %q to be in allowedCheckFailures", name)
+		})
+	}
+
+	notAllowed := []string{
+		"e2e-upgrade-tests",
+		"e2e-groovy-tests",
+		"unit-tests",
+		"",
+		"codecov/project",
+	}
+	for _, name := range notAllowed {
+		t.Run("not_allowed_"+name, func(t *testing.T) {
+			_, ok := allowedCheckFailures[name]
+			assert.False(t, ok, "expected %q to NOT be in allowedCheckFailures", name)
+		})
+	}
+}
+
+func Test_allowedCheckFailuresExactCount(t *testing.T) {
+	assert.Len(t, allowedCheckFailures, 4,
+		"allowedCheckFailures should contain exactly 4 entries: codecov/patch, e2e-byodb-test, e2e-nongroovy-tests, e2e-db-backup-restore-test")
+}
+
 func Test_splitMultilineComment(t *testing.T) {
 	tests := []struct {
 		comment string
-		want    []string
+
 	}{
 		{
 			comment: "",

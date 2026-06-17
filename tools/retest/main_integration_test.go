@@ -208,6 +208,122 @@ func TestIntegration(t *testing.T) {
 
 }
 
+func TestAllowedCheckFailuresDoNotBlockRetest(t *testing.T) {
+	// This test verifies that PRs with failing checks listed in allowedCheckFailures
+	// are still processed (not skipped). Specifically it covers the three new entries:
+	// "e2e-byodb-test", "e2e-nongroovy-tests", "e2e-db-backup-restore-test".
+	for _, allowedFailure := range []string{
+		"e2e-byodb-test",
+		"e2e-nongroovy-tests",
+		"e2e-db-backup-restore-test",
+	} {
+		allowedFailure := allowedFailure
+		t.Run(allowedFailure, func(t *testing.T) {
+			commentCreated := false
+			var server *httptest.Server
+			handler := func(w http.ResponseWriter, r *http.Request) {
+				t.Logf("%s %s", r.Method, r.RequestURI)
+				if r.Method == http.MethodPost {
+					// A comment being posted means the PR was NOT skipped.
+					switch r.RequestURI {
+					case "/repos/stackrox/stackrox/issues/1/comments":
+						commentCreated = true
+						_, err := w.Write([]byte(`{"html_url": "some url"}`))
+						assert.NoError(t, err)
+					default:
+						assert.Failf(t, "unexpected POST", r.RequestURI)
+					}
+					return
+				}
+				switch r.RequestURI {
+				case `/search/issues?q=repo%3Astackrox%2Fstackrox+label%3Aauto-retest+state%3Aopen+type%3Apr`:
+					_, err := w.Write([]byte(`{"total_count":1,"incomplete_results":false,"items":[{"number":1,"html_url":"https://github.com/stackrox/stackrox/pull/1"}]}`))
+					assert.NoError(t, err)
+				case "/user":
+					_, err := w.Write([]byte(`{"login":"bot","id":99,"html_url":"https://github.com/bot"}`))
+					assert.NoError(t, err)
+				case "/repos/stackrox/stackrox/pulls/1":
+					_, err := w.Write([]byte(`{"number":1,"head":{"sha":"abc123"},"statuses_url":"` + server.URL + `/statuses/abc123"}`))
+					assert.NoError(t, err)
+				case "/repos/stackrox/stackrox/issues/1/comments?direction=asc&sort=created":
+					// No prior comments — bot has not retested yet.
+					_, err := w.Write([]byte(`[]`))
+					assert.NoError(t, err)
+				case `/repos/stackrox/stackrox/commits/abc123/check-runs?filter=latest&status=completed`:
+					// The PR has one failing check that is in allowedCheckFailures.
+					_, err := w.Write([]byte(`{"total_count":1,"check_runs":[{"name":"` + allowedFailure + `","status":"completed","conclusion":"failure"}]}`))
+					assert.NoError(t, err)
+				case "/statuses/abc123":
+					// One failing CI status so shouldRetest returns true and a /retest comment is created.
+					_, err := w.Write([]byte(`[{"context":"ci/prow/some-test","state":"failure","updated_at":"2024-01-01T00:00:00Z"}]`))
+					assert.NoError(t, err)
+				default:
+					assert.Failf(t, "unexpected call", r.RequestURI)
+					w.WriteHeader(http.StatusNotFound)
+				}
+			}
+			server = httptest.NewServer(http.HandlerFunc(handler))
+			t.Cleanup(server.Close)
+
+			client := github.NewClient(server.Client())
+			parse, err := url.Parse(server.URL + "/")
+			assert.NoError(t, err)
+			client.BaseURL = parse
+
+			err = run(context.Background(), client)
+			assert.NoError(t, err)
+			assert.True(t, commentCreated, "expected a comment to be posted for PR with allowed failing check %q", allowedFailure)
+		})
+	}
+}
+
+func TestNonAllowedCheckFailureBlocksRetest(t *testing.T) {
+	// Verifies that a PR with a non-allowed failing check is skipped (no comment posted).
+	commentCreated := false
+	var server *httptest.Server
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		t.Logf("%s %s", r.Method, r.RequestURI)
+		if r.Method == http.MethodPost {
+			commentCreated = true
+			_, err := w.Write([]byte(`{"html_url": "some url"}`))
+			assert.NoError(t, err)
+			return
+		}
+		switch r.RequestURI {
+		case `/search/issues?q=repo%3Astackrox%2Fstackrox+label%3Aauto-retest+state%3Aopen+type%3Apr`:
+			_, err := w.Write([]byte(`{"total_count":1,"incomplete_results":false,"items":[{"number":1,"html_url":"https://github.com/stackrox/stackrox/pull/1"}]}`))
+			assert.NoError(t, err)
+		case "/user":
+			_, err := w.Write([]byte(`{"login":"bot","id":99,"html_url":"https://github.com/bot"}`))
+			assert.NoError(t, err)
+		case "/repos/stackrox/stackrox/pulls/1":
+			_, err := w.Write([]byte(`{"number":1,"head":{"sha":"abc123"},"statuses_url":"` + server.URL + `/statuses/abc123"}`))
+			assert.NoError(t, err)
+		case "/repos/stackrox/stackrox/issues/1/comments?direction=asc&sort=created":
+			_, err := w.Write([]byte(`[]`))
+			assert.NoError(t, err)
+		case `/repos/stackrox/stackrox/commits/abc123/check-runs?filter=latest&status=completed`:
+			// Non-allowed failing check — should cause the PR to be skipped.
+			_, err := w.Write([]byte(`{"total_count":1,"check_runs":[{"name":"unit-tests","status":"completed","conclusion":"failure"}]}`))
+			assert.NoError(t, err)
+		default:
+			assert.Failf(t, "unexpected call", r.RequestURI)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}
+	server = httptest.NewServer(http.HandlerFunc(handler))
+	t.Cleanup(server.Close)
+
+	client := github.NewClient(server.Client())
+	parse, err := url.Parse(server.URL + "/")
+	assert.NoError(t, err)
+	client.BaseURL = parse
+
+	err = run(context.Background(), client)
+	assert.NoError(t, err)
+	assert.False(t, commentCreated, "expected no comment when PR has a non-allowed failing check")
+}
+
 //go:embed testdata/statuses.json
 var statusesResponse []byte
 
