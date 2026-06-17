@@ -13,8 +13,8 @@ on:
     - synchronize
 
 concurrency:
-  group: cache-sim-${{ github.run_id }}
-  cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 env:
   # Stable version ldflags for test caching: Go's test cache keys include
@@ -58,19 +58,7 @@ jobs:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/go-test-output.txt
-
-    - name: Cache diagnostics
-      if: always()
-      run: |
-        if [[ -f /tmp/go-test-output.txt ]]; then
-          cached=$(grep -c '(cached)' /tmp/go-test-output.txt || true)
-          total=$(grep -cE 'ok\s+github\.com/stackrox' /tmp/go-test-output.txt || true)
-          echo "Test cache: $cached/$total cached"
-        fi
-        gocache="$(go env GOCACHE)"
-        echo "GOCACHE size: $(du -sm "$gocache" 2>/dev/null | cut -f1)MB"
-      shell: bash
+      run: ${{ matrix.gotags }} make go-unit-tests
 
     - name: Generate junit report
       if: always()
@@ -193,9 +181,10 @@ jobs:
         directory: 'junit-reports'
 
   # Coverage collection runs separately from the main test jobs so that
-  # -coverprofile doesn't break Go's test cache (coverage profile entries
-  # are not updated by markUsed(), causing our backdate+trim to delete them).
-  # Uses -count=1 to skip test caching, but restores the compile cache
+  # -coverprofile doesn't break Go's test cache. Go's markUsed() does not
+  # update disk mtimes for coverage profile cache entries, causing the
+  # backdate+trim to delete them — resulting in 0% test cache hits.
+  # This job uses -count=1 (no test caching) but restores the compile cache
   # (save: false) to avoid recompiling all packages from scratch.
   go-coverage:
     runs-on: ubuntu-latest
