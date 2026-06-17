@@ -377,6 +377,82 @@ func Test_commentsToCreate(t *testing.T) {
 	}
 }
 
+func Test_ghaRunsToRerun(t *testing.T) {
+	tests := map[string]struct {
+		failedRuns  []failedWorkflowRun
+		botComments []string
+		want        []failedWorkflowRun
+	}{
+		"nil": {
+			want: nil,
+		},
+		"no prior reruns": {
+			failedRuns: []failedWorkflowRun{
+				{ID: 100, Name: "build"},
+			},
+			want: []failedWorkflowRun{
+				{ID: 100, Name: "build"},
+			},
+		},
+		"one prior rerun, still under limit": {
+			failedRuns: []failedWorkflowRun{
+				{ID: 100, Name: "build"},
+			},
+			botComments: []string{
+				":arrows_counterclockwise: Rerunning failed GitHub Actions workflow: build (run 100)",
+			},
+			want: []failedWorkflowRun{
+				{ID: 100, Name: "build"},
+			},
+		},
+		"at max retries": {
+			failedRuns: []failedWorkflowRun{
+				{ID: 100, Name: "build"},
+			},
+			botComments: []string{
+				":arrows_counterclockwise: Rerunning failed GitHub Actions workflow: build (run 100)",
+				":arrows_counterclockwise: Rerunning failed GitHub Actions workflow: build (run 100)",
+				":arrows_counterclockwise: Rerunning failed GitHub Actions workflow: build (run 100)",
+			},
+			want: nil,
+		},
+		"mixed runs, one exhausted": {
+			failedRuns: []failedWorkflowRun{
+				{ID: 100, Name: "build"},
+				{ID: 200, Name: "unit-tests"},
+			},
+			botComments: []string{
+				":arrows_counterclockwise: Rerunning failed GitHub Actions workflow: build (run 100)",
+				":arrows_counterclockwise: Rerunning failed GitHub Actions workflow: build (run 100)",
+				":arrows_counterclockwise: Rerunning failed GitHub Actions workflow: build (run 100)",
+				":arrows_counterclockwise: Rerunning failed GitHub Actions workflow: unit-tests (run 200)",
+			},
+			want: []failedWorkflowRun{
+				{ID: 200, Name: "unit-tests"},
+			},
+		},
+		"unrelated comments ignored": {
+			failedRuns: []failedWorkflowRun{
+				{ID: 100, Name: "build"},
+			},
+			botComments: []string{
+				"/retest",
+				"/test some-prow-job",
+				"some random comment",
+			},
+			want: []failedWorkflowRun{
+				{ID: 100, Name: "build"},
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := ghaRunsToRerun(tt.failedRuns, tt.botComments)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func Test_splitMultilineComment(t *testing.T) {
 	tests := []struct {
 		comment string

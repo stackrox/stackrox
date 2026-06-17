@@ -16,7 +16,10 @@ import (
 
 // allowedCheckFailures defines a set of PR checks that should not prevent the retest job starting
 var allowedCheckFailures = map[string]struct{}{
-	"codecov/patch": {},
+	"codecov/patch":              {},
+	"e2e-byodb-test":             {},
+	"e2e-nongroovy-tests":        {},
+	"e2e-db-backup-restore-test": {},
 }
 
 const s = "stackrox"
@@ -95,13 +98,30 @@ issues:
 		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
 		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetestFailedStatuses(statuses, userComments))
 		createComment(ctx, client, prNumber, strings.Join(newComments, "\n"))
+
+		failedRuns, err := failedGHAWorkflowRuns(ctx, client, prDetails.GetHead().GetSHA())
+		if err != nil {
+			log.Printf("#%d could not get GHA workflow runs: %v", prNumber, err)
+			continue
+		}
+		runsToRerun := ghaRunsToRerun(failedRuns, userComments)
+		if len(runsToRerun) > 0 {
+			rerunFailedWorkflows(ctx, client, prNumber, runsToRerun)
+			var rerunComments []string
+			for _, run := range runsToRerun {
+				rerunComments = append(rerunComments,
+					fmt.Sprintf(":arrows_counterclockwise: Rerunning failed GitHub Actions workflow: %s (run %d)", run.Name, run.ID))
+			}
+			createComment(ctx, client, prNumber, strings.Join(rerunComments, "\n"))
+		}
 	}
 	return nil
 }
 
 var (
-	restestNTimes = regexp.MustCompile(`/retest-times\s+(\d+)\s+(.*)`)
-	testJob       = regexp.MustCompile(`/test\s+(.*)`)
+	restestNTimes   = regexp.MustCompile(`/retest-times\s+(\d+)\s+(.*)`)
+	testJob         = regexp.MustCompile(`/test\s+(.*)`)
+	ghaRerunComment = regexp.MustCompile(`:arrows_counterclockwise: Rerunning failed GitHub Actions workflow: .+ \(run (\d+)\)`)
 )
 
 func commentsToCreate(statuses map[string]string, jobsToRetest []string, shouldRetest bool) []string {
@@ -172,7 +192,34 @@ func jobsToRetestFromComments(userComments, allComments []string) ([]string, err
 	return missingTests, nil
 }
 
-const retestComment = "/retest"
+const (
+	retestComment = "/retest"
+	maxGHARetries = 3
+)
+
+func ghaRunsToRerun(failedRuns []failedWorkflowRun, botComments []string) []failedWorkflowRun {
+	rerunCounts := map[int64]int{}
+	for _, c := range botComments {
+		match := ghaRerunComment.FindStringSubmatch(c)
+		if len(match) == 2 {
+			runID, err := strconv.ParseInt(match[1], 10, 64)
+			if err != nil {
+				continue
+			}
+			rerunCounts[runID]++
+		}
+	}
+
+	var result []failedWorkflowRun
+	for _, run := range failedRuns {
+		if rerunCounts[run.ID] >= maxGHARetries {
+			log.Printf("GHA workflow %q (run %d) already rerun %d times, skipping", run.Name, run.ID, rerunCounts[run.ID])
+			continue
+		}
+		result = append(result, run)
+	}
+	return result
+}
 
 func shouldRetestFailedStatuses(statuses map[string]string, comments []string) bool {
 	retested := 0

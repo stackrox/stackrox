@@ -164,6 +164,9 @@ func TestIntegration(t *testing.T) {
 			assert.NoError(t, err)
 		case "/repos/stackrox/stackrox/pulls/404":
 			http.NotFound(w, r)
+		case `/repos/stackrox/stackrox/actions/runs?event=pull_request&head_sha=6dcb09b5b57875f334f61aebed695e2e4193db5e`:
+			_, err := w.Write([]byte(`{"total_count": 0, "workflow_runs": []}`))
+			assert.NoError(t, err)
 		case `/repos/stackrox/stackrox/commits/6dcb09b5b57875f334f61aebed695e2e4193db5e/check-runs?filter=latest&status=completed`:
 			_, err := w.Write([]byte(`{
  "total_count": 2,
@@ -206,6 +209,67 @@ func TestIntegration(t *testing.T) {
 	err = run(context.Background(), client)
 	assert.NoError(t, err)
 
+}
+
+func TestIntegrationGHARerun(t *testing.T) {
+	rerunCalled := false
+	var server *httptest.Server
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		t.Logf("%s %s", r.Method, r.RequestURI)
+		if r.Method == http.MethodPost {
+			switch r.RequestURI {
+			case "/repos/stackrox/stackrox/actions/runs/12345/rerun-failed-jobs":
+				rerunCalled = true
+				w.WriteHeader(http.StatusCreated)
+			case "/repos/stackrox/stackrox/issues/10/comments":
+				b, err := io.ReadAll(r.Body)
+				assert.NoError(t, err)
+				assert.JSONEq(t, `{"body":":arrows_counterclockwise: Rerunning failed GitHub Actions workflow: build (run 12345)"}`, string(b))
+				_, err = w.Write([]byte(`{"html_url": "some url"}`))
+				assert.NoError(t, err)
+			default:
+				assert.Failf(t, "unexpected POST", r.RequestURI)
+			}
+			return
+		}
+		switch r.RequestURI {
+		case `/search/issues?q=repo%3Astackrox%2Fstackrox+label%3Aauto-retest+state%3Aopen+type%3Apr`:
+			_, err := w.Write([]byte(`{"total_count": 1, "items": [{"number": 10, "html_url": "https://github.com/stackrox/stackrox/pull/10"}]}`))
+			assert.NoError(t, err)
+		case "/user":
+			_, err := w.Write([]byte(`{"login": "bot", "html_url": "https://github.com/bot"}`))
+			assert.NoError(t, err)
+		case "/repos/stackrox/stackrox/pulls/10":
+			_, err := w.Write([]byte(`{"number": 10, "head": {"sha": "abc123"}, "statuses_url": "` + server.URL + `/repos/stackrox/stackrox/statuses/abc123"}`))
+			assert.NoError(t, err)
+		case "/repos/stackrox/stackrox/issues/10/comments?direction=asc&sort=created":
+			_, err := w.Write([]byte(`[]`))
+			assert.NoError(t, err)
+		case `/repos/stackrox/stackrox/commits/abc123/check-runs?filter=latest&status=completed`:
+			_, err := w.Write([]byte(`{"total_count": 0, "check_runs": []}`))
+			assert.NoError(t, err)
+		case `/repos/stackrox/stackrox/statuses/abc123`:
+			_, err := w.Write([]byte(`[]`))
+			assert.NoError(t, err)
+		case `/repos/stackrox/stackrox/actions/runs?event=pull_request&head_sha=abc123`:
+			_, err := w.Write([]byte(`{"total_count": 1, "workflow_runs": [{"id": 12345, "name": "build", "status": "completed", "conclusion": "failure"}]}`))
+			assert.NoError(t, err)
+		default:
+			assert.Failf(t, "unexpected GET", r.RequestURI)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}
+	server = httptest.NewServer(http.HandlerFunc(handler))
+	t.Cleanup(server.Close)
+
+	client := github.NewClient(server.Client())
+	baseURL, err := url.Parse(server.URL + "/")
+	assert.NoError(t, err)
+	client.BaseURL = baseURL
+
+	err = run(context.Background(), client)
+	assert.NoError(t, err)
+	assert.True(t, rerunCalled, "RerunFailedJobsByID should have been called")
 }
 
 //go:embed testdata/statuses.json

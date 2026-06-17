@@ -85,6 +85,42 @@ func checksForCommit(ctx context.Context, client *github.Client, lastCommit stri
 	return result, nil
 }
 
+type failedWorkflowRun struct {
+	ID   int64
+	Name string
+}
+
+func failedGHAWorkflowRuns(ctx context.Context, client *github.Client, headSHA string) ([]failedWorkflowRun, error) {
+	runs, _, err := client.Actions.ListRepositoryWorkflowRuns(ctx, s, s, &github.ListWorkflowRunsOptions{
+		HeadSHA: headSHA,
+		Event:   "pull_request",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var failed []failedWorkflowRun
+	for _, run := range runs.WorkflowRuns {
+		if run.GetStatus() == "completed" && run.GetConclusion() == "failure" {
+			failed = append(failed, failedWorkflowRun{
+				ID:   run.GetID(),
+				Name: run.GetName(),
+			})
+		}
+	}
+	return failed, nil
+}
+
+func rerunFailedWorkflows(ctx context.Context, client *github.Client, prNumber int, runs []failedWorkflowRun) {
+	for _, run := range runs {
+		log.Printf("#%d rerunning failed GHA workflow %q (run %d)", prNumber, run.Name, run.ID)
+		_, err := client.Actions.RerunFailedJobsByID(ctx, s, s, run.ID)
+		if err != nil {
+			log.Printf("#%d could not rerun workflow %q: %v", prNumber, run.Name, err)
+		}
+	}
+}
+
 type Status struct {
 	Context   string    `json:"context"`
 	State     string    `json:"state"`
