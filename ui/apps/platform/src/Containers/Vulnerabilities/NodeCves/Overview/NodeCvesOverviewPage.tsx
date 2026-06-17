@@ -10,6 +10,11 @@ import {
 } from '@patternfly/react-core';
 import { useApolloClient } from '@apollo/client';
 
+import SelectExclusiveSingleTabs from 'Components/CompoundSearchFilter/components/SelectExclusiveSingleTabs';
+import {
+    getSearchFilterConfigWithFeatureFlagDependency,
+    updateSearchFilter,
+} from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
@@ -30,17 +35,13 @@ import { getVersionedDocs } from 'utils/versioning';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 
 import {
-    clusterSearchFilterConfig,
-    nodeCVESearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-    nodeSearchFilterConfig,
+    attributeForSnoozed,
+    searchFilterConfigForNodeVulnerabilityResultsAndViewBasedReport,
 } from '../../searchFilterConfig';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
-import SnoozedCveToggleButton from '../../components/SnoozedCveToggleButton';
 import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
 import useSnoozeCveModal from '../../components/SnoozeCvesModal/useSnoozeCveModal';
 import useHasLegacySnoozeAbility from '../../hooks/useHasLegacySnoozeAbility';
-import useSnoozedCveCount from '../../hooks/useSnoozedCveCount';
 import TableEntityToolbar from '../../components/TableEntityToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import { nodeEntityTabValues } from '../../types';
@@ -56,13 +57,6 @@ import NodesTable, {
     sortFields as nodeSortFields,
 } from './NodesTable';
 import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
-
-const searchFilterConfig = [
-    clusterSearchFilterConfig,
-    nodeCVESearchFilterConfig,
-    nodeSearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-];
 
 function NodeCvesOverviewPage() {
     const apolloClient = useApolloClient();
@@ -82,14 +76,17 @@ function NodeCvesOverviewPage() {
         onSort: () => pagination.setPage(1),
     });
 
-    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    // Default to Observed tab in UI and corresponding search filter in API when unspecified.
+    const querySearchFilter = parseQuerySearchFilter({
+        [attributeForSnoozed.searchTerm]: attributeForSnoozed.inputProps.options[0].value,
+        ...searchFilter,
+    });
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const isViewingSnoozedCves = querySearchFilter['CVE Snoozed']?.[0] === 'true';
     const hasLegacySnoozeAbility = useHasLegacySnoozeAbility();
     const selectedCves = useMap<string, { cve: string }>();
     const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();
-    const snoozedCveCount = useSnoozedCveCount('Node');
     const { version } = useMetadata();
 
     function onEntityTabChange(entityTab: 'CVE' | 'Node') {
@@ -119,12 +116,27 @@ function NodeCvesOverviewPage() {
         pagination.setPage(1);
     }
 
+    function onSelectValueForSnoozed(value: string) {
+        setSearchFilter(
+            updateSearchFilter(searchFilter, [
+                { action: 'SELECT_EXCLUSIVE', category: attributeForSnoozed.searchTerm, value },
+            ])
+        );
+        pagination.setPage(1);
+    }
+
     const { data } = useNodeCveEntityCounts(querySearchFilter);
 
     const entityCounts = {
         CVE: data?.nodeCVECount ?? 0,
         Node: data?.nodeCount ?? 0,
     };
+
+    // Keep getSearchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4.
+    const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        searchFilterConfigForNodeVulnerabilityResultsAndViewBasedReport
+    );
 
     const filterToolbar = (
         <AdvancedFiltersToolbar
@@ -175,13 +187,6 @@ function NodeCvesOverviewPage() {
                         <Title headingLevel="h1">Node CVEs</Title>
                         <FlexItem>Prioritize and manage scanned CVEs across nodes</FlexItem>
                     </Flex>
-                    <FlexItem>
-                        <SnoozedCveToggleButton
-                            searchFilter={searchFilter}
-                            setSearchFilter={setSearchFilter}
-                            snoozedCveCount={snoozedCveCount}
-                        />
-                    </FlexItem>
                 </Flex>
             </PageSection>
             {scannerV4NodeScanResultsPossible && (
@@ -208,6 +213,14 @@ function NodeCvesOverviewPage() {
                     </Alert>
                 </PageSection>
             )}
+            <PageSection type="tabs">
+                <SelectExclusiveSingleTabs
+                    attribute={attributeForSnoozed}
+                    onSelectValue={onSelectValueForSnoozed}
+                    searchFilter={searchFilter}
+                    tabContentId="TODO"
+                />
+            </PageSection>
             <PageSection isCenterAligned>
                 <TableEntityToolbar
                     filterToolbar={filterToolbar}
