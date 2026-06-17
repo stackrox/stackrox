@@ -31,7 +31,7 @@ inputs:
     required: true
   spot:
     description: Use spot (preemptible) VMs for cost savings
-    default: "false"
+    default: "true"
 
 outputs:
   cluster-name:
