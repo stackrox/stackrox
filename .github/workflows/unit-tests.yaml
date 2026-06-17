@@ -208,10 +208,12 @@ jobs:
 
     - name: Go Coverage
       run: |
+        mkdir -p test-output
         CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 GOTAGS=test \
           scripts/go-test.sh -count=1 -timeout 30m -race -cover -coverprofile test-output/coverage.out \
           $(git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list \
-            | grep -v '^github.com/stackrox/rox/tests$' | grep -Ev 'stackrox/rox/sensor/tests|stackrox/rox/operator/tests')
+            | grep -v '^github.com/stackrox/rox/tests$' | grep -Ev 'stackrox/rox/sensor/tests|stackrox/rox/operator/tests') \
+          || true
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
       if: always()
