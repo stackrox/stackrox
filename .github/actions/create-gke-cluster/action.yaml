@@ -72,9 +72,9 @@ runs:
       with:
         shell: bash
         run: echo "GKE cluster cleanup registered for ${CLUSTER_NAME:-<pending>} in ${ZONE:-<pending>}"
-        post: >
+        post: >-
           if [ -z "${CLUSTER_NAME:-}" ]; then echo "No CLUSTER_NAME set — cluster was never created"; exit 0; fi;
-          ZONE="${ZONE:-$(gcloud container clusters list --project acs-san-stackroxci --filter="name=${CLUSTER_NAME}" --format="value(zone)" 2>/dev/null)}";
+          ZONE="${ZONE:-$(gcloud container clusters list --project acs-san-stackroxci --filter=name=${CLUSTER_NAME} --format=value(zone) 2>/dev/null)}";
           if [ -z "${ZONE}" ]; then echo "Cluster ${CLUSTER_NAME} not found in GCP — nothing to delete"; exit 0; fi;
           echo "Deleting GKE cluster ${CLUSTER_NAME} in ${ZONE}";
           gcloud container clusters delete "${CLUSTER_NAME}" --zone "${ZONE}" --project acs-san-stackroxci --quiet --async || true;
