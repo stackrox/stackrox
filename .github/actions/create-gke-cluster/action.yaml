@@ -72,6 +72,12 @@ runs:
         source scripts/ci/gke.sh
         wait_for_cluster
 
+    - name: Verify kubectl access
+      shell: bash
+      run: |
+        kubectl cluster-info
+        kubectl get nodes
+
     - name: Create image pull secret
       shell: bash
       run: |
