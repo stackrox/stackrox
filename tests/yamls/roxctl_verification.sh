@@ -72,10 +72,10 @@ for yaml_file in "${!TEST_CASES[@]}"; do
     done
 
     # Get alerts from roxctl
-    alerts_json="$(roxctl "${extra_args[@]}" -e "$API_ENDPOINT" deployment check --file "$yaml_path" --output json 2>/dev/null)"
+    alerts_json="$(roxctl "${extra_args[@]}" -e "$API_ENDPOINT" deployment check --file "$yaml_path" --output json)"
 
     # Extract matching policy names (new format uses .results[].violatedPolicies[])
-    matching_policies="$(echo "$alerts_json" | jq -r ".results[].violatedPolicies[].name | select($jq_filter)" 2>/dev/null || echo "")"
+    matching_policies="$(echo "$alerts_json" | jq -r ".results[].violatedPolicies[].name | select($jq_filter)" || echo "")"
     actual_count="$(echo "$matching_policies" | grep -c . || echo "0")"
 
     if [[ "$actual_count" != "$expected_count" ]]; then
