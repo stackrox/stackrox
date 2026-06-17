@@ -66,6 +66,28 @@ runs:
         echo "cluster-name=${CLUSTER_NAME}" >> "$GITHUB_OUTPUT"
         echo "zone=${ZONE}" >> "$GITHUB_OUTPUT"
 
+    - name: Register GKE cluster cleanup
+      if: always()
+      uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
+      with:
+        shell: bash
+        run: echo "GKE cluster cleanup registered for ${CLUSTER_NAME} in ${ZONE}"
+        post: >
+          if [ -z "${CLUSTER_NAME:-}" ]; then
+            echo "No CLUSTER_NAME set — cluster was never created";
+            exit 0;
+          fi;
+          ZONE="${ZONE:-$(gcloud container clusters list --project acs-san-stackroxci --filter="name=${CLUSTER_NAME}" --format="value(zone)" 2>/dev/null)}";
+          if [ -z "${ZONE}" ]; then
+            echo "Cluster ${CLUSTER_NAME} not found in GCP — nothing to delete";
+            exit 0;
+          fi;
+          echo "Deleting GKE cluster ${CLUSTER_NAME} in ${ZONE}";
+          gcloud container clusters delete "${CLUSTER_NAME}"
+          --zone "${ZONE}"
+          --project acs-san-stackroxci
+          --quiet --async || true;
+
     - name: Wait for cluster
       shell: bash
       run: |
@@ -89,18 +111,3 @@ runs:
           --docker-password="${{ inputs.quay-pass }}" 2>/dev/null || true
         set -x
 
-    - name: Register GKE cluster cleanup
-      uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
-      with:
-        shell: bash
-        run: >
-          echo "Post-step will run: gcloud container clusters delete
-          ${{ steps.create.outputs.cluster-name }}
-          --zone ${{ steps.create.outputs.zone }}
-          --project acs-san-stackroxci --quiet --async"
-        post: >
-          gcloud container clusters delete
-          "${{ steps.create.outputs.cluster-name }}"
-          --zone "${{ steps.create.outputs.zone }}"
-          --project acs-san-stackroxci
-          --quiet --async || true;
