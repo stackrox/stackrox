@@ -11,7 +11,11 @@ import {
 } from '@patternfly/react-core';
 import { useApolloClient } from '@apollo/client';
 
-import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
+import SelectExclusiveSingleTabs from 'Components/CompoundSearchFilter/components/SelectExclusiveSingleTabs';
+import {
+    getSearchFilterConfigWithFeatureFlagDependency,
+    updateSearchFilter,
+} from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
@@ -33,14 +37,15 @@ import { getVersionedDocs } from 'utils/versioning';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import { vulnerabilityNodeViewBasedJobsPath } from 'routePaths';
 
-import { searchFilterConfigForNodeVulnerabilityResultsAndViewBasedReport } from '../../searchFilterConfig';
+import {
+    attributeForSnoozed,
+    searchFilterConfigForNodeVulnerabilityResultsAndViewBasedReport,
+} from '../../searchFilterConfig';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import CreateViewBasedReportModal from '../../components/CreateViewBasedReportModal';
-import SnoozedCveToggleButton from '../../components/SnoozedCveToggleButton';
 import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
 import useSnoozeCveModal from '../../components/SnoozeCvesModal/useSnoozeCveModal';
 import useHasLegacySnoozeAbility from '../../hooks/useHasLegacySnoozeAbility';
-import useSnoozedCveCount from '../../hooks/useSnoozedCveCount';
 import TableEntityToolbar from '../../components/TableEntityToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import { createScheduledReportForNodeVulnerabilitiesURL } from '../../Reports/NodeVulnerabilityReports/nodeVulnerabilityReports.utils';
@@ -79,14 +84,17 @@ function NodeCvesOverviewPage() {
         onSort: () => pagination.setPage(1),
     });
 
-    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+    // Default to Observed tab in UI and corresponding search filter in API when unspecified.
+    const querySearchFilter = parseQuerySearchFilter({
+        [attributeForSnoozed.searchTerm]: attributeForSnoozed.inputProps.options[0].value,
+        ...searchFilter,
+    });
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const isViewingSnoozedCves = querySearchFilter['CVE Snoozed']?.[0] === 'true';
     const hasLegacySnoozeAbility = useHasLegacySnoozeAbility();
     const selectedCves = useMap<string, { cve: string }>();
     const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();
-    const snoozedCveCount = useSnoozedCveCount('Node');
     const { version } = useMetadata();
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
     const navigate = useNavigate();
@@ -118,6 +126,15 @@ function NodeCvesOverviewPage() {
 
     function onClearFilters() {
         setSearchFilter({});
+        pagination.setPage(1);
+    }
+
+    function onSelectValueForSnoozed(value: string) {
+        setSearchFilter(
+            updateSearchFilter(searchFilter, [
+                { action: 'SELECT_EXCLUSIVE', category: attributeForSnoozed.searchTerm, value },
+            ])
+        );
         pagination.setPage(1);
     }
 
@@ -194,13 +211,6 @@ function NodeCvesOverviewPage() {
                         <Title headingLevel="h1">Node CVEs</Title>
                         <FlexItem>Prioritize and manage scanned CVEs across nodes</FlexItem>
                     </Flex>
-                    <FlexItem>
-                        <SnoozedCveToggleButton
-                            searchFilter={searchFilter}
-                            setSearchFilter={setSearchFilter}
-                            snoozedCveCount={snoozedCveCount}
-                        />
-                    </FlexItem>
                 </Flex>
             </PageSection>
             {showScannerV4NodeScannerInfoAlert && (
@@ -227,6 +237,14 @@ function NodeCvesOverviewPage() {
                     </Alert>
                 </PageSection>
             )}
+            <PageSection type="tabs">
+                <SelectExclusiveSingleTabs
+                    attribute={attributeForSnoozed}
+                    onSelectValue={onSelectValueForSnoozed}
+                    searchFilter={searchFilter}
+                    tabContentId="TODO"
+                />
+            </PageSection>
             <PageSection isCenterAligned>
                 <TableEntityToolbar
                     filterToolbar={filterToolbar}
