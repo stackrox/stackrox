@@ -157,13 +157,13 @@ function ImagePage({
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
-    const hasWorkflowAdminAccess = hasReadAccess('WorkflowAdministration');
     const isScannerV4Enabled = useIsScannerV4Enabled();
     const [sbomTargetImage, setSbomTargetImage] = useState<GenerateSbomImageParams>();
 
     // Report-specific functionality
     const isViewBasedReportsEnabled =
-        hasWorkflowAdminAccess &&
+        hasReadAccess('Image') &&
+        hasReadAccess('Deployment') &&
         (viewContext === 'User workloads' ||
             viewContext === 'Platform' ||
             viewContext === 'All vulnerable images' ||

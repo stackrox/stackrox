@@ -129,7 +129,6 @@ function WorkloadCvesOverviewPage() {
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
     const hasReadAccessForNamespaces = hasReadAccess('Namespace');
     const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
-    const hasWorkflowAdminAccess = hasReadAccess('WorkflowAdministration');
 
     const { analyticsTrack } = useAnalytics();
 
@@ -290,7 +289,8 @@ function WorkloadCvesOverviewPage() {
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
 
     const isViewBasedReportsEnabled =
-        hasWorkflowAdminAccess &&
+        hasReadAccess('Image') &&
+        hasReadAccess('Deployment') &&
         (viewContext === 'User workloads' ||
             viewContext === 'Platform' ||
             viewContext === 'All vulnerable images' ||
