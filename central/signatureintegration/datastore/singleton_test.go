@@ -1,22 +1,43 @@
 package datastore
 
 import (
+	"fmt"
+	"os"
 	"testing"
 
 	storeMocks "github.com/stackrox/rox/central/signatureintegration/store/mocks"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
+func writeTempBundle(t *testing.T) {
+	t.Helper()
+	bundleData := fmt.Sprintf(`{"keys": [{"name": "test-key", "pem": %q}]}`, testPublicKeyPEM)
+	dir := t.TempDir()
+	bundlePath := dir + "/bundle.json"
+	if err := os.WriteFile(bundlePath, []byte(bundleData), 0600); err != nil {
+		t.Fatalf("failed to write temp bundle: %v", err)
+	}
+	old := signatures.RedHatKeyBundlePath
+	signatures.RedHatKeyBundlePath = bundlePath
+	t.Cleanup(func() { signatures.RedHatKeyBundlePath = old })
+}
+
 func TestSeedFirstInstall(t *testing.T) {
+	writeTempBundle(t)
+
 	ctrl := gomock.NewController(t)
 	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
 
-	id := signatures.DefaultRedHatSignatureIntegration.GetId()
+	id := signatures.DefaultRedHatIntegrationID
 	mockStore.EXPECT().Get(gomock.Any(), id).Return(nil, false, nil).Times(1)
-	mockStore.EXPECT().Upsert(gomock.Any(), signatures.DefaultRedHatSignatureIntegration).Return(nil).Times(1)
+	mockStore.EXPECT().Upsert(gomock.Any(), gomock.Cond(func(x any) bool {
+		si, ok := x.(*storage.SignatureIntegration)
+		return ok && si.GetId() == id
+	})).Return(nil).Times(1)
 
 	seedRedHatDefaultSignatureIntegration(mockStore)
 }
@@ -25,8 +46,8 @@ func TestSeedSubsequentStartup(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
 
-	id := signatures.DefaultRedHatSignatureIntegration.GetId()
-	mockStore.EXPECT().Get(gomock.Any(), id).Return(signatures.DefaultRedHatSignatureIntegration, true, nil).Times(1)
+	id := signatures.DefaultRedHatIntegrationID
+	mockStore.EXPECT().Get(gomock.Any(), id).Return(&storage.SignatureIntegration{Id: id}, true, nil).Times(1)
 
 	seedRedHatDefaultSignatureIntegration(mockStore)
 }

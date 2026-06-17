@@ -78,6 +78,9 @@ RUN \
     mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
     chown -R 4000:4000 /tmp
 
+COPY redhat-signing-keys/bundle.json /run/stackrox.io/redhat-signing-keys/bundle.json
+RUN chown -R 4000:4000 /run/stackrox.io/redhat-signing-keys
+
 COPY --from=stackrox_data /stackrox-data /stackrox/static-data
 COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
 COPY ./docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json

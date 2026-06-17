@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -47,7 +48,7 @@ func KeyBundleWatcher() Stoppable {
 func seedRedHatDefaultSignatureIntegration(siStore store.SignatureIntegrationStore) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 
-	id := signatures.DefaultRedHatSignatureIntegration.GetId()
+	id := signatures.DefaultRedHatIntegrationID
 	_, exists, err := siStore.Get(ctx, id)
 	if err != nil {
 		utils.Should(errors.Wrap(err, "checking for default Red Hat signature integration"))
@@ -58,14 +59,27 @@ func seedRedHatDefaultSignatureIntegration(siStore store.SignatureIntegrationSto
 		return
 	}
 
-	log.Infof("Seeding default Red Hat signature integration %q", id)
-	err = siStore.Upsert(ctx, signatures.DefaultRedHatSignatureIntegration)
+	data, err := os.ReadFile(signatures.RedHatKeyBundlePath)
+	if err != nil {
+		utils.Should(errors.Wrapf(err, "reading key bundle file %q for initial seed", signatures.RedHatKeyBundlePath))
+		return
+	}
+	bundle, err := signatures.ParseKeyBundle(data)
+	if err != nil {
+		utils.Should(errors.Wrapf(err, "parsing key bundle file %q for initial seed", signatures.RedHatKeyBundlePath))
+		return
+	}
+
+	si := signatures.BundleToSignatureIntegration(bundle)
+	log.Infof("Seeding default Red Hat signature integration %q with %d key(s)", id, len(bundle.Keys))
+	err = siStore.Upsert(ctx, si)
 	utils.Should(errors.Wrap(err, "seeding default Red Hat signature integration"))
 }
 
 func startKeyBundleUpdater() {
 	if env.OfflineModeEnv.BooleanSetting() {
-		log.Infof("Offline mode detected: The Red Hat signing key bundle will not be downloaded automatically. Manual updates are possible by mounting the bundle to %q", redHatKeyBundlePath)
+		log.Infof("Offline mode detected: The Red Hat signing key bundle will not be downloaded automatically. "+
+			"Manual updates are possible by mounting the bundle to %q", signatures.RedHatKeyBundlePath)
 		return
 	}
 
@@ -78,7 +92,7 @@ func startKeyBundleUpdater() {
 
 	interval := env.RedHatSigningKeyUpdateInterval.DurationSetting()
 
-	u := filedownloader.New(bundleURL, redHatKeyBundlePath, interval,
+	u := filedownloader.New(bundleURL, signatures.RedHatKeyBundlePath, interval,
 		filedownloader.WithOnComplete(func(err error, duration time.Duration) {
 			updaterDownloadDuration.Observe(duration.Seconds())
 			if err != nil {

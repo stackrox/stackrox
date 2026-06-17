@@ -146,11 +146,14 @@ COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/docs/api/v
 
 COPY LICENSE /licenses/LICENSE
 
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/redhat-signing-keys/bundle.json /run/stackrox.io/redhat-signing-keys/bundle.json
+
 # The following paths are written to in Central.
 RUN chown -R 4000:4000 /etc/pki/ca-trust && save-dir-contents /etc/pki/ca-trust/source && \
     mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
     mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
     mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
+    chown -R 4000:4000 /run/stackrox.io/redhat-signing-keys && \
     chown -R 4000:4000 /tmp
 
 USER 4000:4000
