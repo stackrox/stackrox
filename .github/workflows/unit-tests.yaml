@@ -180,12 +180,15 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
-  # Coverage collection runs separately from the main test jobs so that
-  # -coverprofile doesn't break Go's test cache. Go's markUsed() does not
-  # update disk mtimes for coverage profile cache entries, causing the
-  # backdate+trim to delete them — resulting in 0% test cache hits.
-  # This job uses -count=1 (no test caching) but restores the compile cache
-  # (save: false) to avoid recompiling all packages from scratch.
+  # Coverage collection runs separately so -coverprofile doesn't break
+  # Go's test cache. With -coverprofile, Go validates cached results
+  # against a covMeta hash derived from BuildActionIDs of all covered
+  # packages. When the GOCACHE is restored from a different commit,
+  # recompilation differences change covMeta and all coverage-instrumented
+  # cache lookups fail (11% hit rate vs 75% without -coverprofile).
+  # Confirmed by 10-branch parallel A/B test (PRs #21199-#21215).
+  # This job uses -count=1 (no test caching) but restores the compile
+  # cache (save: false) to avoid recompiling from scratch.
   go-coverage:
     runs-on: ubuntu-latest
     steps:
