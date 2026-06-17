@@ -35,8 +35,7 @@ import (
 )
 
 var (
-	withoutV1ConfigsQuery = search.NewQueryBuilder().AddExactMatches(search.EmbeddedCollectionID, "").ProtoQuery()
-	withoutEmptyScope     = search.NewQueryBuilder().AddStrings(search.CollectionID, search.NegateQueryString(search.ExactMatchString(""))).ProtoQuery()
+	withoutEmptyScope = search.NewQueryBuilder().AddStrings(search.CollectionID, search.NegateQueryString(search.ExactMatchString(""))).ProtoQuery()
 )
 
 type upsertTestCase struct {
@@ -366,17 +365,19 @@ func (s *ReportServiceTestSuite) TestCountReportConfigurations() {
 			desc:  "Empty query",
 			query: &apiV2.RawQuery{Query: ""},
 			expectedQ: search.ConjunctionQuery(
-				search.NewQueryBuilder().ProtoQuery(),
-				withoutV1ConfigsQuery,
-				withoutEmptyScope),
+				common.WithoutV1ReportConfigs(search.EmptyQuery()), // or parsed query variant
+				withoutEmptyScope,
+			),
 		},
 		{
 			desc:  "Query with search field",
 			query: &apiV2.RawQuery{Query: "Report Name:name"},
 			expectedQ: search.ConjunctionQuery(
-				search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
-				withoutV1ConfigsQuery,
-				withoutEmptyScope),
+				common.WithoutV1ReportConfigs(
+					search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
+				),
+				withoutEmptyScope,
+			),
 		},
 	}
 
