@@ -51,9 +51,6 @@ func (s *NoSerializedIntegrationSuite) TestRoundTrip() {
 	s.Require().NoError(err)
 	s.True(exists)
 
-	// Child table fields (Labels) are not auto-fetched in no-serialized stores.
-	// Compare parent fields only. Child fetch is handled by PR 4 (ROX-34907).
-	obj.Labels = nil
 	protoassert.Equal(s.T(), obj, got)
 }
 
@@ -196,10 +193,12 @@ func (s *NoSerializedIntegrationSuite) TestRepeatedFieldStrategies() {
 	s.Equal("tier", got.GetAnnotations()[1].GetKey())
 	s.Equal("1", got.GetAnnotations()[1].GetValue())
 
-	// Repeated message → child table (default strategy) — not auto-fetched on Get.
-	// Child table data is written correctly (verified by DB query) but requires
-	// explicit child fetch (ROX-34907) to reconstruct on read.
-	s.Nil(got.GetLabels())
+	// Repeated message → child table (default strategy) — auto-fetched via childFetcher.
+	s.Require().Len(got.GetLabels(), 2)
+	s.Equal("env", got.GetLabels()[0].GetKey())
+	s.Equal("prod", got.GetLabels()[0].GetValue())
+	s.Equal("team", got.GetLabels()[1].GetKey())
+	s.Equal("platform", got.GetLabels()[1].GetValue())
 }
 
 func (s *NoSerializedIntegrationSuite) TestChildTableWriteVerification() {
@@ -265,6 +264,12 @@ func (s *NoSerializedIntegrationSuite) TestGetWithOptions_WithChildren() {
 
 	s.Equal(obj.GetId(), got.GetId())
 	s.Equal(obj.GetName(), got.GetName())
+	// Child table data (Labels) should be fetched with WithChildren.
+	s.Require().Len(got.GetLabels(), 2)
+	s.Equal("env", got.GetLabels()[0].GetKey())
+	s.Equal("prod", got.GetLabels()[0].GetValue())
+	s.Equal("team", got.GetLabels()[1].GetKey())
+	s.Equal("platform", got.GetLabels()[1].GetValue())
 }
 
 func (s *NoSerializedIntegrationSuite) TestGetWithOptions_DefaultBehavior() {
@@ -315,13 +320,17 @@ func (s *NoSerializedIntegrationSuite) TestWalkByQueryWithOptions_WithChildren()
 	}
 	s.Require().NoError(s.store.UpsertMany(s.ctx, objs))
 
-	var walked int
-	err := s.store.WalkByQueryWithOptions(s.ctx, search.EmptyQuery(), func(_ *storage.TestNoSerialized) error {
-		walked++
+	var walked []*storage.TestNoSerialized
+	err := s.store.WalkByQueryWithOptions(s.ctx, search.EmptyQuery(), func(obj *storage.TestNoSerialized) error {
+		walked = append(walked, obj)
 		return nil
 	}, pgSearch.WithChildren())
 	s.Require().NoError(err)
-	s.Equal(3, walked)
+	s.Len(walked, 3)
+
+	for _, w := range walked {
+		s.Len(w.GetLabels(), 2, "child table data should be fetched with WithChildren")
+	}
 }
 
 func (s *NoSerializedIntegrationSuite) TestWalkByQueryWithOptions_EmptyResult() {
