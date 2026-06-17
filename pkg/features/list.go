@@ -196,5 +196,5 @@ var (
 	ScannerV4RedHatVEXNotAffected = registerFeature("Scanner V4 will filter image vulnerabilities using Red Hat VEX known_not_affected assertions", "ROX_SCANNER_V4_RED_HAT_VEX_NOT_AFFECTED")
 
 	// ScannerV4Dedupe de-duplicates packages and vulnerabilities from appearing in scan results.
-	ScannerV4Dedupe = registerFeature("Deduplicate packages and vulnerabilities found in Scanner V4 results.", "ROX_SCANNER_V4_DEDUPE")
+	ScannerV4Dedupe = registerFeature("Deduplicate packages and vulnerabilities found in Scanner V4 results.", "ROX_SCANNER_V4_DEDUPE", enabled)
 )
