@@ -13,8 +13,8 @@ on:
     - synchronize
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+  group: cache-test-e-${{ github.run_id }}
+  cancel-in-progress: false
 
 env:
   # Stable version ldflags for test caching: Go's test cache keys include
@@ -58,8 +58,20 @@ jobs:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: ${{ matrix.gotags }} make go-unit-tests 2>&1 | tee /tmp/go-test-output.txt
 
+
+    - name: Cache diagnostics
+      if: always()
+      run: |
+        if [[ -f /tmp/go-test-output.txt ]]; then
+          cached=$(grep -c '(cached)' /tmp/go-test-output.txt || true)
+          total=$(grep -cE 'ok\s+github\.com/stackrox' /tmp/go-test-output.txt || true)
+          echo "Test cache: $cached/$total cached"
+        fi
+        gocache="$(go env GOCACHE)"
+        echo "GOCACHE size: $(du -sm "$gocache" 2>/dev/null | cut -f1)MB"
+      shell: bash
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}

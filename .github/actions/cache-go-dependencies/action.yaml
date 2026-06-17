@@ -32,18 +32,22 @@ runs:
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
+        key: go-build-v2-e-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
         restore-keys: |
-          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
-          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
+          go-build-v2-e-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
+          go-build-v2-e-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Cache Go Build (restore)
       if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
-      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache/restore@v5
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
+        key: go-build-v2-e-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
         restore-keys: |
+          go-build-v2-e-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
+          go-build-v2-e-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
+          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
+          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
           go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
           go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
@@ -80,16 +84,6 @@ runs:
           find "$gocache" -mindepth 1 -type d -empty -delete 2>/dev/null || true;
           after=$(du -sm "$gocache" 2>/dev/null | cut -f1);
           echo "GOCACHE trimmed: ${before:-0}MB -> ${after:-0}MB (removed $((${before:-0} - ${after:-0}))MB)"
-
-    - name: Clear test cache on non-PR runs
-      if: github.event_name != 'pull_request'
-      run: |
-        # Non-PR runs (master, release branches, nightlies) always run tests
-        # from scratch to catch real failures. go clean -testcache removes
-        # cached test results while preserving the compilation cache.
-        go clean -testcache
-        echo "Cleared test cache for fresh run"
-      shell: bash
 
     - name: Stabilize file mtimes for Go test cache
       run: |
