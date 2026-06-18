@@ -162,7 +162,7 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 		if len(g.GetValues()) == 0 {
 			errorList.AddStringf("no values for field %q", g.GetFieldName())
 		}
-		if !seenFields.Add(g.GetFieldName()) {
+		if !seenFields.Add(g.GetFieldName()) && !m.allowMultipleGroups {
 			errorList.AddStringf("field name %q found in multiple groups", g.GetFieldName())
 		}
 		if g.GetNegate() && m.negationForbidden {

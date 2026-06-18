@@ -53,6 +53,7 @@ const (
 	negationForbidden option = iota
 	operatorsForbidden
 	imageEnrichmentRequired
+	allowMultipleGroups
 )
 
 // RuntimeFieldType is the type of a runtime policy criteria field
@@ -87,6 +88,7 @@ type metadataAndQB struct {
 	operatorsForbidden      bool
 	negationForbidden       bool
 	imageEnrichmentRequired bool
+	allowMultipleGroups     bool
 	qb                      querybuilders.QueryBuilder
 	validator               valueValidatorFunc
 	contextFields           violationmessages.ContextQueryFields
@@ -211,6 +213,8 @@ func newFieldMetadata(qb querybuilders.QueryBuilder, contextFields violationmess
 			m.operatorsForbidden = true
 		case imageEnrichmentRequired:
 			m.imageEnrichmentRequired = true
+		case allowMultipleGroups:
+			m.allowMultipleGroups = true
 		}
 	}
 
@@ -1004,7 +1008,7 @@ func initializeFieldMetadata() FieldMetadata {
 				return true, nil
 			},
 			[]storage.EventSource{storage.EventSource_NODE_EVENT, storage.EventSource_DEPLOYMENT_EVENT},
-			[]RuntimeFieldType{FileAccess}, negationForbidden,
+			[]RuntimeFieldType{FileAccess}, allowMultipleGroups,
 		)
 
 		f.registerFieldMetadataRegex(fieldnames.FileOperation,

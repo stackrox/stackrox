@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/scopecomp"
 	"github.com/stackrox/rox/pkg/set"
@@ -95,6 +96,7 @@ func (s *policyValidator) internalValidate(policy *storage.Policy, additionalVal
 	errorList.AddError(s.validateExclusions(policy))
 	errorList.AddError(s.validateCapabilities(policy))
 	errorList.AddError(s.validateEventSource(policy))
+	errorList.AddError(s.validateFilePathNegation(policy))
 	errorList.AddError(s.validateEnforcement(policy))
 
 	for _, validator := range additionalValidators {
@@ -450,6 +452,51 @@ func (s *policyValidator) isAuditEventPolicy(policy *storage.Policy) bool {
 
 func (s *policyValidator) isNodeEventPolicy(policy *storage.Policy) bool {
 	return policy.GetEventSource() == storage.EventSource_NODE_EVENT
+}
+
+func (s *policyValidator) validateFilePathNegation(policy *storage.Policy) error {
+	if !features.SensitiveFileActivity.Enabled() {
+		return nil
+	}
+
+	for _, section := range policy.GetPolicySections() {
+		var capturingPaths []string
+		var negatedPaths []string
+
+		for _, group := range section.GetPolicyGroups() {
+			if group.GetFieldName() != fieldnames.FilePath {
+				continue
+			}
+
+			for _, value := range group.GetValues() {
+				path := value.GetValue()
+				if group.GetNegate() {
+					negatedPaths = append(negatedPaths, path)
+				} else {
+					capturingPaths = append(capturingPaths, path)
+				}
+			}
+		}
+
+		if len(negatedPaths) == 0 {
+			continue
+		}
+
+		if len(capturingPaths) == 0 {
+			return errors.New("negated file paths require at least one non-negated file path in the same section")
+		}
+
+		validator, err := glob.NewGlobValidator(capturingPaths...)
+		if err != nil {
+			return errors.Wrap(err, "failed to validate file path patterns")
+		}
+
+		if err := validator.ValidateExceptions(negatedPaths...); err != nil {
+			return errors.Wrap(err, "negated file paths must overlap with capturing patterns")
+		}
+	}
+
+	return nil
 }
 
 func (s *policyValidator) validateEnforcement(policy *storage.Policy) error {
