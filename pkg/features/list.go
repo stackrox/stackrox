@@ -145,9 +145,6 @@ var (
 
 	// EvaluationFilter enables evaluation filtering in policy evaluation.
 	EvaluationFilter = registerFeature("Enable evaluation filtering in policy evaluation", "ROX_EVALUATION_FILTER")
-
-	// VulnMgmtDateRangeFilter enables date/time range filtering conditions in Vulnerability Management 2.0 advanced filters
-	VulnMgmtDateRangeFilter = registerFeature("Enables date/time range filtering in Vulnerability Management 2.0", "ROX_VULN_MGMT_DATE_RANGE_FILTER")
 )
 
 // The following feature flags are related to Scanner V4.
