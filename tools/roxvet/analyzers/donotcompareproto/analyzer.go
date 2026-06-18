@@ -180,8 +180,7 @@ func checkStruct(styp *types.Struct, seenTypes set.StringSet) {
 	if wasNotInSet := seenTypes.Add(styp.String()); !wasNotInSet {
 		return
 	}
-	for i := 0; i < styp.NumFields(); i++ {
-		field := styp.Field(i)
+	for field := range styp.Fields() {
 		t, ok := parseStruct(field.Type())
 		if !ok {
 			seenTypes.Add(field.Type().Underlying().String())

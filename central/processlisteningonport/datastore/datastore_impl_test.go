@@ -2738,8 +2738,14 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUID() {
 func (suite *PLOPDataStoreTestSuite) addTooMany(plops []*storage.ProcessListeningOnPortFromSensor) {
 	batchSize := 30000
 
+	// Use an explicit context timeout so that ContextWithTimeoutIfNotExists
+	// in the Postgres pool layer sees an existing deadline and skips the
+	// 60-second default per-query timeout, which is too short in some cases.
+	ctx, cancel := context.WithTimeout(suite.hasWriteCtx, 5*time.Minute)
+	defer cancel()
+
 	for plopBatch := range slices.Chunk(plops, batchSize) {
-		err := suite.datastore.AddProcessListeningOnPort(suite.hasWriteCtx, fixtureconsts.Cluster1, plopBatch...)
+		err := suite.datastore.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, plopBatch...)
 		suite.NoError(err)
 	}
 }
