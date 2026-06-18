@@ -11,6 +11,7 @@ import {
 import { useApolloClient } from '@apollo/client';
 
 import SelectExclusiveSingleTabs from 'Components/CompoundSearchFilter/components/SelectExclusiveSingleTabs';
+import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import {
     getSearchFilterConfigWithFeatureFlagDependency,
     updateSearchFilter,
@@ -116,12 +117,8 @@ function NodeCvesOverviewPage() {
         pagination.setPage(1);
     }
 
-    function onSelectValueForSnoozed(value: string) {
-        setSearchFilter(
-            updateSearchFilter(searchFilter, [
-                { action: 'SELECT_EXCLUSIVE', category: attributeForSnoozed.searchTerm, value },
-            ])
-        );
+    function onSelectSnoozedTab(payload: OnSearchPayload) {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
         pagination.setPage(1);
     }
 
@@ -216,7 +213,7 @@ function NodeCvesOverviewPage() {
             <PageSection type="tabs">
                 <SelectExclusiveSingleTabs
                     attribute={attributeForSnoozed}
-                    onSelectValue={onSelectValueForSnoozed}
+                    onSelectTab={onSelectSnoozedTab}
                     searchFilter={searchFilter}
                     tabContentId="TODO"
                 />
