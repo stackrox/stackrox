@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v6"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/metrics"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay/sender"
@@ -59,12 +59,12 @@ func RunWithRetry(ctx context.Context, sensorClient sensor.VirtualMachineIndexRe
 		cfg.operation = makeDefaultOperation(umh)
 	}
 
-	operation := func() error {
+	operation := func() (struct{}, error) {
 		err := cfg.operation(ctx, sensorClient)
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-			return backoff.Permanent(err)
+			return struct{}{}, backoff.Permanent(err)
 		}
-		return err
+		return struct{}{}, err
 	}
 	notification := func(err error, _ time.Duration) {
 		metrics.RetryAttempts.Inc()
@@ -77,15 +77,17 @@ func RunWithRetry(ctx context.Context, sensorClient sensor.VirtualMachineIndexRe
 			err,
 		)
 	}
-	return backoff.RetryNotify(operation, backoff.WithContext(cfg.backOffFactory(), ctx), notification)
+	_, err := backoff.Retry(ctx, operation,
+		backoff.WithBackOff(cfg.backOffFactory()),
+		backoff.WithMaxElapsedTime(0),
+		backoff.WithNotify(notification))
+	return err
 }
 
-// defaultBackOff returns an exponential backoff that retries indefinitely (MaxElapsedTime=0)
-// until the parent context is cancelled at shutdown. The interval is capped at 5 minutes.
 func defaultBackOff() backoff.BackOff {
 	eb := backoff.NewExponentialBackOff()
 	eb.MaxInterval = 5 * time.Minute
-	eb.MaxElapsedTime = 0
+	eb.Reset()
 	return eb
 }
 
