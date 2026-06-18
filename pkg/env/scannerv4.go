@@ -39,4 +39,12 @@ var (
 	// Java packages. The ROX_SCANNER_V4_MAVEN_SEARCH feature flag must be enabled to have any effect.
 	// Default: https://search.maven.org/solrsearch/select
 	ScannerV4MavenSearchURL = RegisterSetting("ROX_SCANNER_V4_MAVEN_SEARCH_URL", WithDefault("https://search.maven.org/solrsearch/select"))
+
+	// ScannerV4CentralIndexerEndpoint overrides the default Scanner V4 indexer endpoint
+	// used by Central's auto-created image integration. Useful for local development outside Kubernetes.
+	ScannerV4CentralIndexerEndpoint = RegisterSetting("ROX_SCANNER_V4_CENTRAL_INDEXER_ENDPOINT")
+
+	// ScannerV4CentralMatcherEndpoint overrides the default Scanner V4 matcher endpoint
+	// used by Central's auto-created image integration. Useful for local development outside Kubernetes.
+	ScannerV4CentralMatcherEndpoint = RegisterSetting("ROX_SCANNER_V4_CENTRAL_MATCHER_ENDPOINT")
 )
