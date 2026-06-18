@@ -1,33 +1,15 @@
 [
     {
-        "comment": "collector initialization restart with download failure",
-        "job": ".*",
-        "logfile": "collector-previous",
-        "logline": "All attempts to download the (kernel module|eBPF probe) have failed."
-    },
-    {
         "comment": "collector restart due to slow sensor start",
         "job": "^(ocp|openshift)",
         "logfile": "collector-previous",
         "logline": "Failed to connect to sensor.stackrox.* port 443: No route to host"
     },
     {
-        "comment": "scanner restart due to slow postgres db start",
-        "job": ".*",
-        "logfile": "scanner-previous",
-        "logline": "Failed to open database despite multiple retries"
-    },
-    {
         "comment": "sensor is up before central in scale-tests",
         "job": "scale-tests",
         "logfile": "sensor-previous",
         "logline": "checking central status over HTTP failed"
-    },
-    {
-        "comment": "collector initialization restart with download failure due to bouncing in upgrade test",
-        "job": "upgrade",
-        "logfile": "collector-previous",
-        "logline": "No suitable kernel object downloaded for kernel"
     },
     {
         "comment": "collector restart due to sensor connection failure (likely slow start)",
@@ -60,14 +42,14 @@
         "logline": "Socket closed"
     },
     {
-        "comment": "Scanner V4 slow to start",
-        "job": "gke-external-pg-17-qa-e2e-tests",
+        "comment": "Scanner V4 slow to start indexer with external DB",
+        "job": "(gke-external-pg-17-qa-e2e-tests|gke-byodb-test)",
         "logfile": "indexer-previous",
         "logline": "panic: migrate: failed to connect to"
     },
     {
-        "comment": "Scanner V4 slow to start matcher",
-        "job": "gke-external-pg-17-qa-e2e-tests",
+        "comment": "Scanner V4 slow to start matcher with external DB",
+        "job": "(gke-external-pg-17-qa-e2e-tests|gke-byodb-test)",
         "logfile": "matcher-previous",
         "logline": "panic: migrate: failed to connect to"
     },
