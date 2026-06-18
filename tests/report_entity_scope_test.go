@@ -40,6 +40,31 @@ func (s *ReportEntityScopeSuite) SetupSuite() {
 	s.ctx, s.cancel = context.WithTimeout(context.Background(), 10*time.Minute)
 	conn := centralgrpc.GRPCConnectionToCentral(s.T())
 	s.service = apiV2.NewReportServiceClient(conn)
+	s.waitForCentralReady()
+}
+
+func (s *ReportEntityScopeSuite) waitForCentralReady() {
+	s.T().Log("Waiting for Central to be ready...")
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+	timer := time.NewTimer(2 * time.Minute)
+	defer timer.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
+			_, err := s.service.CountReportConfigurations(ctx, &apiV2.RawQuery{})
+			cancel()
+			if err == nil {
+				s.T().Log("Central is ready")
+				return
+			}
+			s.T().Logf("Central not ready yet: %v", err)
+		case <-timer.C:
+			s.Require().Fail("Timed out waiting for Central to become ready")
+			return
+		}
+	}
 }
 
 func (s *ReportEntityScopeSuite) TearDownSuite() {
