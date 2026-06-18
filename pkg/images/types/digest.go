@@ -16,9 +16,9 @@ func NewDigest(sha string) *Digest {
 		return nil
 	}
 	var hash, algorithm string
-	if idx := strings.Index(sha, ":"); idx != -1 {
-		algorithm = sha[:idx]
-		hash = sha[idx+1:]
+	if before, after, ok := strings.Cut(sha, ":"); ok {
+		algorithm = before
+		hash = after
 	} else {
 		algorithm = "sha256"
 		hash = sha

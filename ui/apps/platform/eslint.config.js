@@ -936,6 +936,48 @@ module.exports = [
         },
     },
     {
+        files: ['cypress/**/*.{js,ts}', 'src/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'cypress/constants/**',
+            'cypress/integration/clusters/**', // delete obsolete tests
+            'cypress/integration/compliance/**', // deprecated
+            'cypress/integration/configmanagement/**', // deprecated/modernized
+            'cypress/integration/integrations/**', // replace
+            'cypress/integration/networkGraph/**', // replace
+            'cypress/integration/risk/**', // deprecated/modernized
+            'cypress/integration/systemConfig/**', // replace
+            'cypress/integration/vulnmanagement/**', // deprecated
+            'cypress/selectors/**',
+            'src/Components/**', // replace non-deprecated
+            'src/Containers/AccessControl/**', // replace
+            'src/Containers/Clusters/**', // delete obsolete tests
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ConfigManagement/**', // deprecated/modernized
+            'src/Containers/Integrations/**', // replace
+            'src/Containers/Login/**', // replace
+            'src/Containers/MainPage/**', // replace
+            'src/Containers/NetworkGraph/**', // replace
+            'src/Containers/Policies/**', // replace
+            'src/Containers/PolicyCategories/**', // replace
+            'src/Containers/Risk/**', // replace
+            'src/Containers/SystemConfig/**', // replace
+            'src/Containers/SystemHealth/**', // replace
+            'src/Containers/User/**', // replace
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/css/trumps.css', // delete or replace
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-data-testid': 'error',
+        },
+    },
+    {
         files: ['src/**/*.{js,jsx,ts,tsx}'],
         ignores: [
             'src/Components/CheckboxTable.jsx', // deprecated

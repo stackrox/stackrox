@@ -76,6 +76,9 @@ type SecurityPolicySpec struct {
 	PolicySections     []PolicySection      `json:"policySections"`
 	MitreAttackVectors []MitreAttackVectors `json:"mitreAttackVectors,omitempty"`
 
+	// EvaluationFilter pre-filters which entities the policy evaluates.
+	EvaluationFilter *EvaluationFilter `json:"evaluationFilter,omitempty"`
+
 	// +optional
 	// CriteriaLocked is unused and deprecated
 	CriteriaLocked bool `json:"criteriaLocked,omitempty"`
@@ -147,6 +150,13 @@ type PolicyValue struct {
 type MitreAttackVectors struct {
 	Tactic     string   `json:"tactic,omitempty"`
 	Techniques []string `json:"techniques,omitempty"`
+}
+
+// +kubebuilder:validation:Enum=REGULAR;INIT
+type ContainerType string
+
+type EvaluationFilter struct {
+	SkipContainerTypes []ContainerType `json:"skipContainerTypes,omitempty"`
 }
 
 type SecurityPolicyConditionType string
@@ -418,6 +428,17 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 		}
 
 		proto.MitreAttackVectors = append(proto.MitreAttackVectors, protoMitreAttackVetor)
+	}
+
+	if p.EvaluationFilter != nil && len(p.EvaluationFilter.SkipContainerTypes) > 0 {
+		protoFilter := &storage.EvaluationFilter{}
+		for _, ct := range p.EvaluationFilter.SkipContainerTypes {
+			val, found := storage.ContainerType_value[string(ct)]
+			if found {
+				protoFilter.SkipContainerTypes = append(protoFilter.SkipContainerTypes, storage.ContainerType(val))
+			}
+		}
+		proto.EvaluationFilter = protoFilter
 	}
 
 	return &proto, nil

@@ -39,8 +39,8 @@ func valueToStringRegex(value string) string {
 }
 
 func valueToStringContainsRegex(value string) string {
-	if strings.HasPrefix(value, search.RegexPrefix) {
-		return strings.Join([]string{search.RegexPrefix, search.ContainsPrefix, strings.TrimPrefix(value, search.RegexPrefix)}, "")
+	if after, ok := strings.CutPrefix(value, search.RegexPrefix); ok {
+		return strings.Join([]string{search.RegexPrefix, search.ContainsPrefix, after}, "")
 	}
 	return strings.Join([]string{search.RegexPrefix, search.ContainsPrefix, value}, "")
 }

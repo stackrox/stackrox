@@ -33,6 +33,10 @@ ci_export() {
     else
         export "$env_name"="$env_value"
     fi
+
+    if [[ -n "${GITHUB_ENV:-}" ]]; then
+        printf '%s=%q\n' "${env_name}" "${env_value}" >> "$GITHUB_ENV"
+    fi
 }
 
 # set_ci_shared_export() - for openshift-ci and GHA this is state shared between steps.
@@ -1142,10 +1146,10 @@ push_helm_charts() {
     roxctl helm output central-services --image-defaults=opensource --output-dir "${central_services_chart_dir}/opensource"
     roxctl helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
     roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${secured_cluster_services_chart_dir}/opensource"
-    ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh opensource
+    ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh opensource "${tag}"
     mv operator/dist/chart "${operator_chart_dir}/opensource"
     # TODO(ROX-33131): Consider moving the downstream chart build/publishing to konflux.
-    ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh rhacs
+    ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh rhacs "${tag}"
     mv operator/dist/chart "${operator_chart_dir}/rhacs"
     "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}" "${operator_chart_dir}"
 }
