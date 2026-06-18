@@ -64,6 +64,11 @@ func seedRedHatDefaultSignatureIntegration(siStore store.SignatureIntegrationSto
 }
 
 func startKeyBundleUpdater() {
+	if env.OfflineModeEnv.BooleanSetting() {
+		log.Infof("Offline mode detected: The Red Hat signing key bundle will not be downloaded automatically. Manual updates are possible by mounting the bundle to %q", redHatKeyBundlePath)
+		return
+	}
+
 	rawURL := env.RedHatSigningKeyBundleURL.Setting()
 	if rawURL == "" {
 		log.Info("ROX_REDHAT_SIGNING_KEY_BUNDLE_URL not set, key bundle updater will not start")
