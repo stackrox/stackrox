@@ -7,4 +7,4 @@ spec:
   displayName: Compliance Operator Upstream
   publisher: github.com/complianceascode/compliance-operator
   sourceType: grpc
-  image: ghcr.io/complianceascode/compliance-operator-catalog:latest
+  image: ghcr.io/complianceascode/compliance-operator-catalog@sha256:b5ad7b09f3fa12d99821b7768d6af54eba02e9328feb71c5aee7624401d5a3e8
