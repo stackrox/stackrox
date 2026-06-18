@@ -3,11 +3,9 @@
 package testmetrics
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestParse_GetValue(t *testing.T) {
@@ -59,6 +57,11 @@ func TestParse_GetValue(t *testing.T) {
 			labels: []string{"status", "ok"},
 			found:  false,
 		},
+		"should not prefix-match a longer metric name": {
+			text:  "rox_scan_connections_total 5\nrox_scan_connections_errors_total{reason=\"timeout\"} 3\n",
+			name:  "rox_scan_connections",
+			found: false,
+		},
 	}
 
 	for name, tc := range testCases {
@@ -71,24 +74,4 @@ func TestParse_GetValue(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestParse_PrefixDoesNotFalseMatch(t *testing.T) {
-	text := strings.Join([]string{
-		"rox_scan_connections_total 5",
-		`rox_scan_connections_errors_total{reason="timeout"} 3`,
-	}, "\n")
-
-	m := Parse(text)
-
-	val, found := m.GetValue("rox_scan_connections_total")
-	require.True(t, found)
-	require.Equal(t, float64(5), val)
-
-	val, found = m.GetValue("rox_scan_connections_errors_total", "reason", "timeout")
-	require.True(t, found)
-	require.Equal(t, float64(3), val)
-
-	_, found = m.GetValue("rox_scan_connections")
-	require.False(t, found, "rox_scan_connections should NOT match rox_scan_connections_total")
 }
