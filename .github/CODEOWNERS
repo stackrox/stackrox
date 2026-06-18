@@ -31,6 +31,7 @@ pkg/search/**/*                     @stackrox/core-workflows
 */discoveredclusters/**/          @stackrox/sensor-ecosystem
 */signatureintegration/**/*       @stackrox/sensor-ecosystem
 compliance/virtualmachines/**/*   @stackrox/sensor-ecosystem
+scripts/ci/add-vms/**/*           @stackrox/sensor-ecosystem @vikin91
 pkg/features/**/*                 @stackrox/sensor-ecosystem
 pkg/images/defaults/**/*          @stackrox/sensor-ecosystem
 pkg/sac/**/*                      @stackrox/sensor-ecosystem

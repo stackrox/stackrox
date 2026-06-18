@@ -1,0 +1,74 @@
+name: Create GKE cluster
+description: >
+  Creates a GKE cluster via scripts/ci/gke.sh.
+  Supports spot VMs for cost savings.
+
+inputs:
+  cluster-name:
+    description: Unique cluster identifier (used as GKE cluster name suffix)
+    required: true
+  nodes:
+    description: Number of GKE nodes
+    default: "3"
+  machine-type:
+    description: GKE machine type
+    default: e2-standard-8
+  gcp-account:
+    description: GCP service account JSON
+    required: true
+  spot:
+    description: Use spot (preemptible) VMs for cost savings
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Auth gcloud
+      uses: 'google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093' # ratchet:google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ inputs.gcp-account }}
+        export_environment_variables: true
+        create_credentials_file: true
+
+    - name: Setup gcloud CLI
+      uses: 'google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db' # ratchet:google-github-actions/setup-gcloud@v3
+      with:
+        install_components: "gke-gcloud-auth-plugin,beta"
+
+    - name: Create GKE cluster
+      id: create
+      shell: bash
+      env:
+        USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
+        CLUSTER_ID: ${{ inputs.cluster-name }}
+        MACHINE_TYPE: ${{ inputs.machine-type }}
+        NUM_NODES: ${{ inputs.nodes }}
+        GKE_SPOT: ${{ inputs.spot }}
+      run: |
+        source scripts/ci/gke.sh
+        provision_gke_cluster "${CLUSTER_ID}"
+
+    - name: Register GKE cluster cleanup
+      if: always()
+      uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
+      with:
+        shell: bash
+        run: echo "GKE cluster cleanup registered for ${CLUSTER_NAME:-<pending>} in ${ZONE:-<pending>}"
+        post: >-
+          if [ -z "${CLUSTER_NAME:-}" ]; then echo "No CLUSTER_NAME set — cluster was never created"; exit 0; fi;
+          ZONE="${ZONE:-$(gcloud container clusters list --project acs-san-stackroxci --filter=name=${CLUSTER_NAME} --format='value(zone)' 2>/dev/null)}";
+          if [ -z "${ZONE}" ]; then echo "Cluster ${CLUSTER_NAME} not found in GCP — nothing to delete"; exit 0; fi;
+          echo "Deleting GKE cluster ${CLUSTER_NAME} in ${ZONE}";
+          gcloud container clusters delete "${CLUSTER_NAME}" --zone "${ZONE}" --project acs-san-stackroxci --quiet --async || true;
+
+    - name: Wait for cluster
+      shell: bash
+      run: |
+        source scripts/ci/gke.sh
+        wait_for_cluster
+
+    - name: Verify kubectl access
+      shell: bash
+      run: |
+        kubectl cluster-info
+        kubectl get nodes

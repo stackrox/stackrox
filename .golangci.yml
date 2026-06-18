@@ -180,13 +180,7 @@ linters:
         - reflecttypefor
         - slicescontains
         - slicessort
-        - stditerators
-        - stringsbuilder
-        - stringscut
-        - stringscutprefix
-        - stringsseq
         - testingcontext
-        - waitgroup
   exclusions:
     generated: lax
     rules:

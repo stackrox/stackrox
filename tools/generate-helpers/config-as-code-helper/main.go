@@ -70,8 +70,7 @@ func generateTemplateData(t reflect.Type, visited set.StringSet) []ConvertType {
 	needUpdate := false
 	// Iterate over fields and collect information
 	var conversionList []ConvertType
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
+	for field := range t.Fields() {
 		fieldName := field.Name
 		// Skip internal fields
 		if len(fieldName) == 0 || !unicode.IsUpper(rune(fieldName[0])) {

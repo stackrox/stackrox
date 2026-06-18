@@ -45,10 +45,10 @@ func ComplianceOperatorRule(sensorData *central.ComplianceOperatorRuleV2, cluste
 	standards := strings.Split(sensorData.GetAnnotations()[standardsKey], ",")
 	controls := make([]*storage.RuleControls, 0, len(standards))
 	for _, standard := range standards {
-		controlAnnotationValues := strings.Split(sensorData.GetAnnotations()[controlAnnotationBase+standard], ";")
+		controlAnnotationValues := strings.SplitSeq(sensorData.GetAnnotations()[controlAnnotationBase+standard], ";")
 
 		// Add a control entry for each Control + Standard. This data is intentionally denormalized for easier querying.
-		for _, controlValue := range controlAnnotationValues {
+		for controlValue := range controlAnnotationValues {
 			controls = append(controls, &storage.RuleControls{
 				Standard: standard,
 				Control:  controlValue,

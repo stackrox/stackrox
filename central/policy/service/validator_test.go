@@ -1374,3 +1374,55 @@ func (s *PolicyValidatorTestSuite) TestValidateScope() {
 		})
 	}
 }
+
+func (s *PolicyValidatorTestSuite) TestValidateEvaluationFilter() {
+	tests := map[string]struct {
+		lifecycleStages    []storage.LifecycleStage
+		skipContainerTypes []storage.ContainerType
+		expectError        bool
+	}{
+		"build-only with skip init is rejected": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+			expectError:        true,
+		},
+		"deploy with skip init is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+		},
+		"build + deploy with skip init is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+		},
+		"runtime with skip init is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+		},
+		"build-only with no filter is allowed": {
+			lifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+		},
+		"no lifecycle stages with skip init is allowed": {
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+		},
+	}
+
+	for name, tc := range tests {
+		s.Run(name, func() {
+			policy := &storage.Policy{
+				LifecycleStages: tc.lifecycleStages,
+			}
+			if tc.skipContainerTypes != nil {
+				policy.EvaluationFilter = &storage.EvaluationFilter{
+					SkipContainerTypes: tc.skipContainerTypes,
+				}
+			}
+
+			err := s.validator.validateEvaluationFilter(policy)
+			if tc.expectError {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+			}
+		})
+	}
+}
