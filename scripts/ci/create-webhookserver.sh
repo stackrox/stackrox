@@ -34,7 +34,7 @@ create_webhook_server_port_forward() {
     kubectl rollout status deployment webhookserver --namespace stackrox --timeout=5m --watch=true
 
     local log="${ARTIFACT_DIR:-/tmp}/webhook_server_port_forward.log"
-    nohup "${BASH_SOURCE[0]}" restart_webhook_server_port_forward "${pod}" 0<&- &> "${log}" &
+    nohup "${BASH_SOURCE[0]}" restart_webhook_server_port_forward 0<&- &> "${log}" &
     sleep 1
 }
 
