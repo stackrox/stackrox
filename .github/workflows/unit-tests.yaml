@@ -91,9 +91,7 @@ jobs:
       shell: bash
 
     - name: Go Unit Tests
-      env:
-        GODEBUG: gocachetest=1
-      run: ${{ matrix.gotags }} make go-unit-tests 2>/tmp/go-test-stderr.txt | tee /tmp/go-test-output.txt
+      run: ${{ matrix.gotags }} make go-unit-tests | tee /tmp/go-test-output.txt
 
 
     - name: Cache diagnostics
