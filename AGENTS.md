@@ -165,6 +165,7 @@ files in its package directory.
 When working on specific areas, refer to these detailed guides:
 
 **Operator Development:**
+- `operator/ARCHITECTURE.md` - Internal architecture, reconciliation pipeline, and package layout
 - `operator/EXTENDING_CRDS.md` - How to add new fields to CRDs (Central/SecuredCluster)
 - `operator/DEFAULTING.md` - Defaulting mechanisms and best practices for CRD fields
 
@@ -172,6 +173,8 @@ When working on specific areas, refer to these detailed guides:
 - `image/templates/README.md` - Working with Helm charts, testing, and development workflow
 - `image/templates/CHART_TEMPLATING.md` - Meta-templating system, feature flags, and chart instantiation
 - `image/templates/CHANGING_CHARTS.md` - How to add/modify Helm values fields and cluster config
+
+When making code changes, keep this in-code documentation up-to-date.
 
 ## Development
 

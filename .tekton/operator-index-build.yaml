@@ -84,7 +84,7 @@ spec:
         - name: name
           value: slack-webhook-notification
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:14766aebbf6f4739e1b7dde0406dcba2d1e300170d3b084f23df9fb074d87dc3
+          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:d34a3789505f829493636a265eb04790695dba84bbb2bb716a7551a6911f2816
         - name: kind
           value: task
         resolver: bundles
@@ -118,7 +118,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:69dccf80691e60c85b7650a8a5f0382d66a5fff98b46b4986fbf7e2bc47e5b1b
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:9903c1f75c1317b072fa51eb325f95dd8a866975184ea48485d3ba5505983049
         - name: kind
           value: task
         resolver: bundles
@@ -234,7 +234,7 @@ spec:
         - name: name
           value: determine-image-expiration
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:69dccf80691e60c85b7650a8a5f0382d66a5fff98b46b4986fbf7e2bc47e5b1b
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:9903c1f75c1317b072fa51eb325f95dd8a866975184ea48485d3ba5505983049
         - name: kind
           value: task
         resolver: bundles
@@ -250,7 +250,7 @@ spec:
         - name: name
           value: determine-image-tag
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:69dccf80691e60c85b7650a8a5f0382d66a5fff98b46b4986fbf7e2bc47e5b1b
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:9903c1f75c1317b072fa51eb325f95dd8a866975184ea48485d3ba5505983049
         - name: kind
           value: task
         resolver: bundles
@@ -296,7 +296,7 @@ spec:
         - name: name
           value: wait-for-image
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:69dccf80691e60c85b7650a8a5f0382d66a5fff98b46b4986fbf7e2bc47e5b1b
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:9903c1f75c1317b072fa51eb325f95dd8a866975184ea48485d3ba5505983049
         - name: kind
           value: task
         resolver: bundles
@@ -354,7 +354,7 @@ spec:
           - use
           - $(params.SOURCE_ARTIFACT)=/var/workdir/source
         - name: build-index-content
-          image: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25@sha256:977bd041377a1367c8b102a460ae8e63f89905f7cf9d8235484ae658c9b47646
+          image: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:8bca01ace56d684c43f59d9c60c8e9516ee30c46e7d7357c2f9b526369d3fddf
           imagePullPolicy: IfNotPresent
           workingDir: /var/workdir/source/operator
           securityContext:
@@ -427,12 +427,14 @@ spec:
         value: ["$(params.extra-labels[*])"]
       - name: BUILDAH_FORMAT
         value: $(params.buildah-format)
+      - name: IMAGE_APPEND_PLATFORM
+        value: "true"
       taskRef:
         params:
         - name: name
-          value: buildah-oci-ta
+          value: buildah-remote-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.10@sha256:85102e448619f65a1fb7d4512660f8ec05677f99b724f1f838e1964545d7c857
+          value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.10@sha256:3cecab835acd33cc36c3768e7aaba978a9aa78bd444e06324ca9f9908b0f39a4
         - name: kind
           value: task
         resolver: bundles

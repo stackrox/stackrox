@@ -17,8 +17,8 @@ var (
 )
 
 func convertToIntArray(version string) (out []int) {
-	splitVersion := strings.Split(version, ".")
-	for _, v := range splitVersion {
+	splitVersion := strings.SplitSeq(version, ".")
+	for v := range splitVersion {
 		asInt, err := strconv.Atoi(v)
 		if err != nil {
 			log.Errorf("UNEXPECTED: got non-integer portion of version %s: %v", version, err)

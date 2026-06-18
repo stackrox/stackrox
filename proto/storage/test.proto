@@ -342,3 +342,53 @@ message TestShortCircuit {
   string child_id = 2; // @gotags: search:"Test Child1 ID" sql:"fk(TestChild1:id),no-fk-constraint,directional"
   string g2_grandchild_id = 3; // @gotags: search:"Test G2Grandchild1 ID" sql:"fk(TestG2GrandChild1:id),no-fk-constraint,directional"
 }
+
+// TestNoSerialized is a synthetic message for testing no-serialized store generation.
+// It covers scalar types, timestamps, enums, nested messages, and repeated strings.
+message TestNoSerialized {
+  enum Priority {
+    UNSET_PRIORITY = 0;
+    LOW_PRIORITY = 1;
+    MEDIUM_PRIORITY = 2;
+    HIGH_PRIORITY = 3;
+    CRITICAL_PRIORITY = 4;
+  }
+
+  string id = 1; // @gotags: search:"Test NoSer ID,hidden" sql:"pk,type(uuid)"
+  string name = 2; // @gotags: search:"Test NoSer Name"
+  string description = 3;
+  int32 int32_val = 4;
+  int64 int64_val = 5;
+  uint64 uint64_val = 6;
+  bool bool_val = 7;
+  float float_val = 8;
+  double double_val = 9;
+  Priority priority = 10; // @gotags: search:"Test NoSer Priority"
+  google.protobuf.Timestamp created_at = 11; // @gotags: search:"Test NoSer Created At"
+  string cluster_id = 12; // @gotags: search:"Test NoSer Cluster ID" sql:"type(uuid)"
+  repeated string tags = 13; // @gotags: search:"Test NoSer Tags"
+
+  message Metadata {
+    string author = 1;
+    string version = 2;
+    int32 revision = 3;
+  }
+
+  Metadata metadata = 14;
+
+  // Repeated message → child table (default strategy)
+  message Label {
+    string key = 1;
+    string value = 2;
+  }
+
+  repeated Label labels = 15;
+
+  // Repeated message → inlined as bytea (strategy(bytea))
+  message Annotation {
+    string key = 1;
+    string value = 2;
+  }
+
+  repeated Annotation annotations = 16; // @gotags: sql:"strategy(bytea)"
+}

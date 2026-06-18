@@ -104,7 +104,7 @@ func (s *IntegerSetting) mustValidate() *IntegerSetting {
 			panic(fmt.Errorf("programmer error: no values are allowed - allow-list is empty for %q."+
 				"`DisallowAllOther` must be called after `AllowExplicitly`", s.envVar).Error())
 		}
-		panic(fmt.Errorf("programmer error: default value %d is not on allow-list: %q for %q", s.defaultValue,
+		panic(fmt.Errorf("programmer error: default value %d is not on allow-list: %v for %q", s.defaultValue,
 			s.allowList, s.envVar,
 		).Error())
 	}

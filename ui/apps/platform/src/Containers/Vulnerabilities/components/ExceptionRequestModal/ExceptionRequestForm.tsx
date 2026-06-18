@@ -112,50 +112,47 @@ function ExceptionRequestForm({
                     <Tab eventKey="options" title="Options" tabContentId="options" />
                     <Tab eventKey="cves" title="CVE selections" tabContentId="cves" />
                 </Tabs>
-                <TabContent
-                    id="options"
-                    className="pf-v6-u-flex-1"
-                    hidden={activeKeyTab !== 'options'}
-                >
-                    <Flex
-                        direction={{ default: 'column' }}
-                        spaceItems={{ default: 'spaceItemsLg' }}
-                    >
-                        <Content component="p">{formHeaderText}</Content>
-                        {showExpiryField && <ExpiryField formik={formik} />}
-                        {showScopeField && (
-                            <ExceptionScopeField
-                                fieldId="scope"
-                                label="Scope"
-                                formik={formik}
-                                scopeContext={scopeContext}
-                            />
-                        )}
-                        <FormGroup fieldId="comment" label={commentFieldLabel} isRequired>
-                            <TextArea
-                                id="comment"
-                                name="comment"
-                                isRequired
-                                onBlur={handleBlur('comment')}
-                                onChange={(_event, value) => setFieldValue('comment', value)}
-                                validated={touched.comment && errors.comment ? 'error' : 'default'}
-                            />
-                        </FormGroup>
-                    </Flex>
-                </TabContent>
-                <TabContent
-                    id="cves"
-                    className="pf-v6-u-flex-1"
-                    hidden={activeKeyTab !== 'cves'}
-                    style={{ overflowY: 'auto' }}
-                >
-                    <CveSelections
-                        cves={cves}
-                        selectedCVEIds={formik.values.cves}
-                        onAdd={onAddCVE}
-                        onRemove={onRemoveCVE}
-                    />
-                </TabContent>
+                {activeKeyTab === 'options' && (
+                    <TabContent id="options" className="pf-v6-u-flex-1">
+                        <Flex
+                            direction={{ default: 'column' }}
+                            spaceItems={{ default: 'spaceItemsLg' }}
+                        >
+                            <Content component="p">{formHeaderText}</Content>
+                            {showExpiryField && <ExpiryField formik={formik} />}
+                            {showScopeField && (
+                                <ExceptionScopeField
+                                    fieldId="scope"
+                                    label="Scope"
+                                    formik={formik}
+                                    scopeContext={scopeContext}
+                                />
+                            )}
+                            <FormGroup fieldId="comment" label={commentFieldLabel} isRequired>
+                                <TextArea
+                                    id="comment"
+                                    name="comment"
+                                    isRequired
+                                    onBlur={handleBlur('comment')}
+                                    onChange={(_event, value) => setFieldValue('comment', value)}
+                                    validated={
+                                        touched.comment && errors.comment ? 'error' : 'default'
+                                    }
+                                />
+                            </FormGroup>
+                        </Flex>
+                    </TabContent>
+                )}
+                {activeKeyTab === 'cves' && (
+                    <TabContent id="cves" className="pf-v6-u-flex-1" style={{ overflowY: 'auto' }}>
+                        <CveSelections
+                            cves={cves}
+                            selectedCVEIds={formik.values.cves}
+                            onAdd={onAddCVE}
+                            onRemove={onRemoveCVE}
+                        />
+                    </TabContent>
+                )}
                 <Flex>
                     <Button
                         isLoading={isSubmitting}

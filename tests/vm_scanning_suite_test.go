@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	coreV1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -114,6 +115,8 @@ type VMScanningSuite struct {
 	vmSpecs []vmSpec
 	// vms tracks every VM provisioned by the suite; TearDownSuite deletes each.
 	vms []VMHandle
+	// scannerV4Checked is set after the one-time Scanner V4 matcher initialization check.
+	scannerV4Checked bool
 }
 
 // TestVMScanning is the suite entrypoint for VM scanning E2E tests.
@@ -411,11 +414,11 @@ func (s *VMScanningSuite) provisionVMs(specs []vmSpec) {
 						s.namespace, sp.Name, currentImage, sp.Image)
 				}
 				delCtx, delCancel := context.WithTimeout(ctx, s.resourceDeleteTimeout())
+				defer delCancel()
 				require.NoError(s.T(), vmhelpers.DeleteVirtualMachine(delCtx, s.dynamicClient, s.namespace, sp.Name),
 					"DeleteVirtualMachine %s/%s for image mismatch", s.namespace, sp.Name)
 				require.NoError(s.T(), vmhelpers.WaitForVirtualMachineDeleted(s.T(), delCtx, s.dynamicClient, s.namespace, sp.Name),
 					"WaitForVirtualMachineDeleted %s/%s for image mismatch", s.namespace, sp.Name)
-				delCancel()
 				require.NoError(s.T(), vmhelpers.CreateVirtualMachine(ctx, s.dynamicClient, req),
 					"CreateVirtualMachine %s/%s after image mismatch delete", s.namespace, sp.Name)
 				s.logf("provision VMs: recreated VM %s/%s with correct image", s.namespace, sp.Name)
@@ -641,11 +644,111 @@ func (s *VMScanningSuite) vmSpecToRequest(sp vmSpec) vmhelpers.VMRequest {
 	}
 }
 
+func (s *VMScanningSuite) mustListVMByNamespaceAndName(namespace, name string) *v2.VirtualMachine {
+	t := s.T()
+	t.Helper()
+	vm, err := vmhelpers.ListVMByNamespaceName(s.ctx, s.vmClient, namespace, name)
+	require.NoError(t, err)
+	require.NotNil(t, vm, "ListVirtualMachines: no VM for namespace=%q name=%q", namespace, name)
+	return vm
+}
+
+func (s *VMScanningSuite) mustGetVM(id string) *v2.VirtualMachine {
+	t := s.T()
+	t.Helper()
+	resp, err := s.vmClient.GetVirtualMachine(s.ctx, &v2.GetVirtualMachineRequest{Id: id})
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	return resp
+}
+
+// waitForScannerV4Initialized blocks until the Scanner V4 matcher deployment
+// is K8s-ready. When SCANNER_V4_MATCHER_READINESS=vulnerability (the default
+// in CI via lib.sh), the K8s readiness probe already gates on the vuln DB
+// being loaded, so no additional API polling is needed.
+//
+// Idempotent: subsequent calls return nil immediately after the first success.
+func (s *VMScanningSuite) waitForScannerV4Initialized() error {
+	if s.scannerV4Checked {
+		return nil
+	}
+	s.logf("Scanner V4: waiting for matcher deployment to be K8s-ready")
+	s.waitUntilK8sDeploymentReady(s.ctx, namespaces.StackRox, "scanner-v4-matcher")
+	s.logf("Scanner V4: matcher deployment is ready")
+	s.scannerV4Checked = true
+	return nil
+}
+
+// ensureCanonicalScan runs a single guest-side roxagent invocation.
+// It verifies the ROX_VIRTUAL_MACHINES feature flag is enabled before triggering the scan.
+func (s *VMScanningSuite) ensureCanonicalScan(ctx context.Context, vm *VMHandle) error {
+	if vm == nil {
+		return errors.New("ensureCanonicalScan: nil VM handle")
+	}
+	s.mustVerifyVirtualMachinesFeatureEnabled()
+	if err := s.waitForScannerV4Initialized(); err != nil {
+		return fmt.Errorf("Scanner V4 matcher did not initialize within timeout: %w", err)
+	}
+	virt := s.virtctlForVM(*vm)
+	return vmhelpers.RunRoxagentOnce(ctx, virt, vm.Namespace, vm.Name, s.cfg.Repo2CPEURL)
+}
+
+// waitForScan polls Central in order until scan data is visible.
+func (s *VMScanningSuite) waitForScan(ctx context.Context, vm *VMHandle) (*v2.VirtualMachine, error) {
+	if vm == nil {
+		return nil, errors.New("waitForScan: nil VM handle")
+	}
+	s.logf("scan wait %s/%s: start (timeout=%v poll=%v)", vm.Namespace, vm.Name, s.cfg.ScanTimeout, s.cfg.ScanPollInterval)
+	waitCtx, cancel := context.WithTimeout(ctx, s.cfg.ScanTimeout)
+	defer cancel()
+
+	baseOpts := vmhelpers.WaitOptions{
+		Timeout:      s.cfg.ScanTimeout,
+		PollInterval: s.cfg.ScanPollInterval,
+		Logf:         s.logf,
+	}
+
+	present, err := vmhelpers.WaitForVMPresentInCentral(waitCtx, s.vmClient, baseOpts, vm.Namespace, vm.Name)
+	if err != nil {
+		return nil, err
+	}
+	vm.ID = present.GetId()
+
+	s.logf("%s/%s: VM appeared in Central (id=%q), waiting for namespace/name fields to be populated", vm.Namespace, vm.Name, vm.ID)
+	if _, err := vmhelpers.WaitForVMIdentityFields(waitCtx, s.vmClient, baseOpts, present.GetId(), vm.Namespace, vm.Name); err != nil {
+		return nil, err
+	}
+	s.logf("%s/%s: waiting for Central to report VM as Running", vm.Namespace, vm.Name)
+	if _, err := vmhelpers.WaitForVMRunningInCentral(waitCtx, s.vmClient, baseOpts, present.GetId()); err != nil {
+		return nil, err
+	}
+	s.logf("%s/%s: waiting for roxagent scan payload to arrive in Central", vm.Namespace, vm.Name)
+	if _, err := vmhelpers.WaitForVMScanNonNil(waitCtx, s.vmClient, baseOpts, present.GetId()); err != nil {
+		return nil, err
+	}
+	s.logf("%s/%s: waiting for Scanner to assign a scan timestamp", vm.Namespace, vm.Name)
+	if _, err := vmhelpers.WaitForVMScanTimestamp(waitCtx, s.vmClient, baseOpts, present.GetId()); err != nil {
+		return nil, err
+	}
+	s.logf("%s/%s: waiting for all components to be vulnerability-matched (no UNSCANNED)", vm.Namespace, vm.Name)
+	return vmhelpers.WaitForScanReady(waitCtx, s.vmClient, baseOpts, present.GetId())
+}
+
 func (s *VMScanningSuite) resourceDeleteTimeout() time.Duration {
 	if s.cfg != nil && s.cfg.DeleteTimeout > 0 {
 		return s.cfg.DeleteTimeout
 	}
 	return defaultVMDeleteTimeout
+}
+
+func (s *VMScanningSuite) mustGetScanTimestamp(id string) *timestamppb.Timestamp {
+	t := s.T()
+	t.Helper()
+	vm := s.mustGetVM(id)
+	require.NotNil(t, vm.GetScan(), "mustGetScanTimestamp: GetVirtualMachine id=%q returned nil scan", id)
+	ts := vm.GetScan().GetScanTime()
+	require.NotNil(t, ts, "mustGetScanTimestamp: GetVirtualMachine id=%q scan_time is nil", id)
+	return ts
 }
 
 func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {
@@ -678,6 +781,17 @@ func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {
 	}
 	if err := runStep("Verify sudo", "VerifySudoWorks", stepTimeout, func(stepCtx context.Context) error {
 		return vmhelpers.VerifySudoWorks(stepCtx, virt, vm.Namespace, vm.Name)
+	}); err != nil {
+		return err
+	}
+	if err := runStep("Copy roxagent binary", "CopyRoxagentBinary", stepTimeout, func(stepCtx context.Context) error {
+		return vmhelpers.CopyRoxagentBinary(stepCtx, virt, vm.Namespace, vm.Name, s.cfg.RoxagentBinaryPath)
+	}); err != nil {
+		return err
+	}
+	// Runs `roxagent --help` to confirm the binary is present, executable, and in $PATH.
+	if err := runStep("Verify roxagent installed", "VerifyRoxagentInstalled", stepTimeout, func(stepCtx context.Context) error {
+		return vmhelpers.VerifyRoxagentInstalled(stepCtx, virt, vm.Namespace, vm.Name)
 	}); err != nil {
 		return err
 	}

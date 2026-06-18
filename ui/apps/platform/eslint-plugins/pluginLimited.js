@@ -332,6 +332,29 @@ const rules = {
             };
         },
     },
+    'no-data-testid': {
+        // Replace data-testid prop in integration tests with semantic selector.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Replace data-testid prop in integration tests with semantic selector',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXAttribute(node) {
+                    if (node.name?.name === 'data-testid') {
+                        context.report({
+                            node,
+                            message:
+                                'Replace data-testid prop in integration tests with semantic selector',
+                        });
+                    }
+                },
+            };
+        },
+    },
     'no-feather-icons': {
         // Forbid feather icons outside legacy folders.
         // See ignores array in eslint.config.js file.

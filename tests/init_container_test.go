@@ -344,44 +344,44 @@ func (s *InitContainerSuite) TestMultipleInitContainers() {
 	t.Logf("Multiple init containers verified: %d init, %d regular", initCount, regularCount)
 }
 
-func (s *InitContainerSuite) TestPolicyFilteringInitNotViolated() {
+func (s *InitContainerSuite) TestPolicyEvaluatesInitContainers() {
 	t := s.T()
 	ns := fmt.Sprintf("init-test-policy-%d", rand.IntN(10000))
 	createNamespaceWithLabels(t, ns, nil)
 	defer deleteNamespace(t, ns)
 
 	createdPolicy := s.createPolicyWithCleanup(s.newLatestTagPolicy(
-		fmt.Sprintf("Test - Init Not Violated %d", rand.IntN(10000)), ns,
+		fmt.Sprintf("Test - Init Violated %d", rand.IntN(10000)), ns,
 	))
 
-	// Init container uses :latest (should be filtered), regular uses tagged image (no violation)
-	deployName := fmt.Sprintf("init-policy-no-alert-%d", rand.IntN(10000))
+	// Init container uses :latest, regular uses tagged image — init container should trigger violation
+	deployName := fmt.Sprintf("init-policy-alert-%d", rand.IntN(10000))
 	s.createDeploymentWithInitContainers(deployName, ns, []string{busyboxLatest}, nginxTagged)
 	defer teardownDeploymentWithoutCheck(t, deployName, ns)
 
 	s.waitForDeploymentWithContainers(deployName, 2)
 
-	s.waitForViolationAlert(deployName, createdPolicy.GetName(), 0)
-	t.Logf("Verified: init container with :latest tag did not trigger policy violation")
+	s.waitForViolationAlert(deployName, createdPolicy.GetName(), 1)
+	t.Logf("Verified: init container with :latest tag triggered policy violation")
 }
 
-func (s *InitContainerSuite) TestPolicyFilteringRegularStillViolated() {
+func (s *InitContainerSuite) TestPolicyEvaluatesBothContainerTypes() {
 	t := s.T()
 	ns := fmt.Sprintf("init-test-policy-reg-%d", rand.IntN(10000))
 	createNamespaceWithLabels(t, ns, nil)
 	defer deleteNamespace(t, ns)
 
 	createdPolicy := s.createPolicyWithCleanup(s.newLatestTagPolicy(
-		fmt.Sprintf("Test - Regular Still Violated %d", rand.IntN(10000)), ns,
+		fmt.Sprintf("Test - Both Violated %d", rand.IntN(10000)), ns,
 	))
 
-	// Both use :latest — regular should trigger violation, init should be filtered
-	deployName := fmt.Sprintf("init-policy-alert-%d", rand.IntN(10000))
+	// Both use :latest — both should trigger violations
+	deployName := fmt.Sprintf("init-policy-both-%d", rand.IntN(10000))
 	s.createDeploymentWithInitContainers(deployName, ns, []string{busyboxLatest}, nginxLatest)
 	defer teardownDeploymentWithoutCheck(t, deployName, ns)
 
 	s.waitForDeploymentWithContainers(deployName, 2)
 
 	s.waitForViolationAlert(deployName, createdPolicy.GetName(), 1)
-	t.Logf("Verified: regular container with :latest tag triggered policy violation")
+	t.Logf("Verified: both init and regular containers with :latest tag triggered policy violation")
 }

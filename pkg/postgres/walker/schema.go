@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -141,12 +142,29 @@ type Schema struct {
 	SearchScope map[v1.SearchCategory]struct{}
 
 	ScopingResource permissions.ResourceMetadata
+
+	// NoSerialized indicates this schema should not include a serialized bytea column.
+	// When true, all proto fields are stored as individual DB columns.
+	NoSerialized bool
+
+	// SubMessages maps setter paths (e.g., "Metadata") to Go type strings (e.g., "storage.TestNoSerialized_Metadata")
+	// for sub-messages that need initialization before scanning individual columns.
+	SubMessages map[string]string
 }
 
 // TableFieldsGroup is the group of table fields. A slice of this struct can be used where the table order is essential,
 type TableFieldsGroup struct {
 	Table  string
 	Fields []Field
+}
+
+// Root returns the root schema (the one with no parent).
+func (s *Schema) Root() *Schema {
+	curr := s
+	for curr.Parent != nil {
+		curr = curr.Parent
+	}
+	return curr
 }
 
 // SetOptionsMap sets options map for the schema.
@@ -457,6 +475,10 @@ type PostgresOptions struct {
 	// IgnoreChildIndexes is an option used to tell the walker that
 	// index options of children of this field should be ignored.
 	IgnoreChildIndexes bool
+
+	// RepeatedStrategy overrides how a repeated message field is stored.
+	// Valid values: "" (default, child table), "bytea" (inline as MessageBytes).
+	RepeatedStrategy string
 }
 
 type foreignKeyRef struct {
@@ -546,7 +568,52 @@ func (f Field) Getter(prefix string) string {
 	return prefix + "." + value
 }
 
+// Setter returns the settable field path for assignment, e.g. "Id" or "Signal.Name".
+// Converts getter chain "GetFoo().GetBar()" → "Foo.Bar".
+func (f Field) Setter(prefix string) string {
+	if f.ObjectGetter.variable {
+		return f.ObjectGetter.value
+	}
+	return prefix + "." + getterToSetter(f.ObjectGetter.value)
+}
+
+// NeedsSubMessageInit returns the prefix chain of sub-messages that must be initialized
+// before setting this field. Returns empty string for top-level fields.
+// E.g., for getter "GetSignal().GetName()", returns "Signal" — the caller must
+// ensure obj.Signal is non-nil before setting obj.Signal.Name.
+func (f Field) NeedsSubMessageInit(prefix string) string {
+	parts := strings.Split(f.ObjectGetter.value, ".")
+	if len(parts) <= 1 {
+		return ""
+	}
+	// Build init chain for all but the last part
+	var initParts []string
+	for _, p := range parts[:len(parts)-1] {
+		initParts = append(initParts, getterPartToField(p))
+	}
+	return prefix + "." + strings.Join(initParts, ".")
+}
+
+// getterPartToField converts "GetFoo()" → "Foo".
+func getterPartToField(part string) string {
+	part = strings.TrimSuffix(part, "()")
+	part = strings.TrimPrefix(part, "Get")
+	return part
+}
+
+// getterToSetter converts "GetFoo().GetBar()" → "Foo.Bar".
+func getterToSetter(getter string) string {
+	parts := strings.Split(getter, ".")
+	for i, p := range parts {
+		parts[i] = getterPartToField(p)
+	}
+	return strings.Join(parts, ".")
+}
+
 // Include returns if the field should be included in the schema
 func (f Field) Include() bool {
-	return f.Options.PrimaryKey || f.Options.Unique || f.Search.Enabled || f.ColumnName == "serialized" || f.Options.Reference != nil
+	if f.Schema != nil && f.Schema.Root().NoSerialized {
+		return f.ColumnName != "serialized"
+	}
+	return f.Options.PrimaryKey || f.Options.Unique || f.Search.Enabled || f.ColumnName == "serialized" || f.Options.Reference != nil || f.Options.RepeatedStrategy != ""
 }

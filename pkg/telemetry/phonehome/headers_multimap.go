@@ -83,8 +83,9 @@ func (h Headers) GetMatching(canonicalKey glob.Pattern, value glob.Pattern) map[
 	return result
 }
 
-// Set implements the setter interface.
+// Set overrides the current value(s) or deletes the key if no values provided.
 func (h Headers) Set(key string, values ...string) {
+	http.Header(h).Del(key)
 	for i, value := range values {
 		if i == 0 {
 			http.Header(h).Set(key, value)

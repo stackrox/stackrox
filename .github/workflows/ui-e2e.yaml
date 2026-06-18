@@ -406,8 +406,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     outputs:
-      cluster-name: ${{ inputs.infra-cluster-name || steps.infra-name.outputs.name || inputs.gke-cluster-name || steps.cluster.outputs.cluster-name }}
-      gke-zone: ${{ inputs.gke-zone || steps.cluster.outputs.zone }}
+      cluster-name: ${{ inputs.infra-cluster-name || steps.infra-name.outputs.name || inputs.gke-cluster-name || env.CLUSTER_NAME }}
+      gke-zone: ${{ inputs.gke-zone || env.ZONE }}
     env:
       CLUSTER_NAME: ui-e2e-gke-${{ github.run_id }}
 
@@ -432,14 +432,14 @@ jobs:
         lifespan: 4h
         wait: false
 
-    - name: GCP auth (for GKE clusters)
-      if: (inputs.gke-cluster-name || startsWith(inputs.infra-flavor, 'gke')) && !inputs.infra-cluster-name
+    - name: GCP auth (for pre-provisioned GKE)
+      if: inputs.gke-cluster-name && !inputs.infra-cluster-name
       uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Setup gcloud
-      if: (inputs.gke-cluster-name || startsWith(inputs.infra-flavor, 'gke')) && !inputs.infra-cluster-name
+    - name: Setup gcloud (for pre-provisioned GKE)
+      if: inputs.gke-cluster-name && !inputs.infra-cluster-name
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
         install_components: "gke-gcloud-auth-plugin"
@@ -470,15 +470,11 @@ jobs:
 
     - name: Create GKE cluster
       if: "!inputs.gke-cluster-name && !inputs.infra-cluster-name && !inputs.infra-flavor"
-      id: cluster
       uses: ./.github/actions/create-gke-cluster
       with:
         cluster-name: ${{ env.CLUSTER_NAME }}
-        tag: ${{ inputs.tag }}
         spot: "true"
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
     - name: Delete existing StackRox deployment
       if: inputs.force-redeploy && (inputs.gke-cluster-name || inputs.infra-cluster-name)

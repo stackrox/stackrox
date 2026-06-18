@@ -1,14 +1,52 @@
 package vmhelpers
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"strings"
 )
 
-const guestCommandErrorMaxLen = 4096
+const (
+	guestCommandErrorMaxLen = 4096
+	// vsockReadinessMarker is a structured prefix emitted in poll-loop detail strings when
+	// /dev/vsock is confirmed present on the guest. It enables log grep/filtering during
+	// CI triage to distinguish successful vsock checks from VSOCK_MISSING diagnostics.
+	vsockReadinessMarker = "VSOCK_READY"
+)
 
-// formatGuestCommandOutputForError trims guest command output and truncates it for error message inclusion.
-func formatGuestCommandOutputForError(output string) string {
+// checkVsockReadiness tests /dev/vsock presence on the guest.
+func checkVsockReadiness(ctx context.Context, virt Virtctl, namespace, vm string) (ready bool, detail string, err error) {
+	_, _, testErr := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
+		description:            "vsock device check",
+		transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
+	}, "test", "-e", "/dev/vsock")
+	if testErr == nil {
+		return true, vsockReadinessMarker + " /dev/vsock present", nil
+	}
+	if errors.Is(testErr, errSSHTransport) {
+		return false, "", testErr
+	}
+	return false, "VSOCK_MISSING /dev/vsock absent", nil
+}
+
+// EnsureVsockReady retries the virtio-vsock device check until /dev/vsock exists or SSH transport errors are exhausted.
+func EnsureVsockReady(ctx context.Context, virt Virtctl, namespace, vm, stage string) error {
+	return retryOnSSHTransport(ctx, virt.Logf, fmt.Sprintf("vsock precheck before %s", stage), func(ctx context.Context) error {
+		ready, detail, err := checkVsockReadiness(ctx, virt, namespace, vm)
+		if err != nil {
+			return err
+		}
+		if !ready {
+			return fmt.Errorf("vsock precheck before %s on %s/%s: %s", stage, namespace, vm, detail)
+		}
+		virt.Logf("vsock precheck before %s on %s/%s: ready", stage, namespace, vm)
+		return nil
+	})
+}
+
+// FormatGuestCommandOutputForError trims guest command output and truncates it for error message inclusion.
+func FormatGuestCommandOutputForError(output string) string {
 	output = strings.TrimSpace(output)
 	if output == "" {
 		return "<no guest stdout/stderr>"

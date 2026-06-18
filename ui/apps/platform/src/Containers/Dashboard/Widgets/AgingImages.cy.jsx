@@ -99,9 +99,18 @@ describe(Cypress.spec.relative, () => {
 
         cy.findByText(`${result0 + result1 + result2 + result3} Aging images`);
 
+        cy.findByRole('link', { name: 'View all' })
+            .should('have.attr', 'href')
+            .and('include', '/main/vulnerabilities/all-images')
+            .and('include', 'entityTab=Image');
+
         // Check default links
         cy.findByText(`${range0}-${range1} days`).click();
+        cy.url({ decode: true }).should('include', '/main/vulnerabilities/all-images');
+        cy.url({ decode: true }).should('include', 'entityTab=Image');
         cy.url({ decode: true }).should('include', 's[Image Created Time]=30d-90d');
+        cy.url({ decode: true }).should('include', 'sortOption[field]=Image Created Time');
+        cy.url({ decode: true }).should('include', 'sortOption[direction]=asc');
 
         cy.findByText(`${range1}-${range2} days`).click();
         cy.url({ decode: true }).should('include', 's[Image Created Time]=90d-180d');

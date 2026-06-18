@@ -1,20 +1,13 @@
 name: Create GKE cluster
 description: >
-  Creates a GKE cluster via scripts/ci/gke.sh with image pull secrets.
-  Supports spot VMs for cost savings. Use with deploy-stackrox action
-  for a complete StackRox deployment.
+  Creates a GKE cluster via scripts/ci/gke.sh.
+  Supports spot VMs for cost savings.
 
 inputs:
   cluster-name:
     description: Unique cluster identifier (used as GKE cluster name suffix)
     required: true
-  tag:
-    description: Main image tag
-    required: true
-  registry:
-    description: Image registry
-    default: quay.io/stackrox-io
-  num-nodes:
+  nodes:
     description: Number of GKE nodes
     default: "3"
   machine-type:
@@ -23,23 +16,9 @@ inputs:
   gcp-account:
     description: GCP service account JSON
     required: true
-  quay-user:
-    description: Quay.io username (for image pull secrets)
-    required: true
-  quay-pass:
-    description: Quay.io password
-    required: true
   spot:
     description: Use spot (preemptible) VMs for cost savings
-    default: "false"
-
-outputs:
-  cluster-name:
-    description: Actual GKE cluster name (may be truncated from input)
-    value: ${{ steps.create.outputs.cluster-name }}
-  zone:
-    description: GKE zone where cluster was created
-    value: ${{ steps.create.outputs.zone }}
+    default: "true"
 
 runs:
   using: composite
@@ -61,16 +40,26 @@ runs:
       shell: bash
       env:
         USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
+        CLUSTER_ID: ${{ inputs.cluster-name }}
         MACHINE_TYPE: ${{ inputs.machine-type }}
-        NUM_NODES: ${{ inputs.num-nodes }}
+        NUM_NODES: ${{ inputs.nodes }}
         GKE_SPOT: ${{ inputs.spot }}
       run: |
         source scripts/ci/gke.sh
-        provision_gke_cluster "${{ inputs.cluster-name }}"
-        echo "CLUSTER_NAME=${CLUSTER_NAME}" >> "$GITHUB_ENV"
-        echo "ZONE=${ZONE}" >> "$GITHUB_ENV"
-        echo "cluster-name=${CLUSTER_NAME}" >> "$GITHUB_OUTPUT"
-        echo "zone=${ZONE}" >> "$GITHUB_OUTPUT"
+        provision_gke_cluster "${CLUSTER_ID}"
+
+    - name: Register GKE cluster cleanup
+      if: always()
+      uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
+      with:
+        shell: bash
+        run: echo "GKE cluster cleanup registered for ${CLUSTER_NAME:-<pending>} in ${ZONE:-<pending>}"
+        post: >-
+          if [ -z "${CLUSTER_NAME:-}" ]; then echo "No CLUSTER_NAME set — cluster was never created"; exit 0; fi;
+          ZONE="${ZONE:-$(gcloud container clusters list --project acs-san-stackroxci --filter=name=${CLUSTER_NAME} --format='value(zone)' 2>/dev/null)}";
+          if [ -z "${ZONE}" ]; then echo "Cluster ${CLUSTER_NAME} not found in GCP — nothing to delete"; exit 0; fi;
+          echo "Deleting GKE cluster ${CLUSTER_NAME} in ${ZONE}";
+          gcloud container clusters delete "${CLUSTER_NAME}" --zone "${ZONE}" --project acs-san-stackroxci --quiet --async || true;
 
     - name: Wait for cluster
       shell: bash
@@ -78,13 +67,8 @@ runs:
         source scripts/ci/gke.sh
         wait_for_cluster
 
-    - name: Create image pull secret
+    - name: Verify kubectl access
       shell: bash
       run: |
-        set +x
-        kubectl create namespace stackrox 2>/dev/null || true
-        kubectl -n stackrox create secret docker-registry quay-pull-secret \
-          --docker-server=quay.io \
-          --docker-username="${{ inputs.quay-user }}" \
-          --docker-password="${{ inputs.quay-pass }}" 2>/dev/null || true
-        set -x
+        kubectl cluster-info
+        kubectl get nodes

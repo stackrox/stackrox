@@ -6,11 +6,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/fake"
+	k8stesting "k8s.io/client-go/testing"
 )
 
 const (
@@ -112,6 +115,15 @@ func TestSecretInformer(t *testing.T) {
 			var onAddCnt, onUpdateCnt, onDeleteCnt atomic.Int32
 
 			k8sClient := fake.NewClientset()
+
+			watchRegistered := make(chan struct{})
+			var watchOnce sync.Once
+			k8sClient.PrependWatchReactor("secrets", func(action k8stesting.Action) (bool, watch.Interface, error) {
+				w, err := k8sClient.Tracker().Watch(action.GetResource(), action.GetNamespace())
+				watchOnce.Do(func() { close(watchRegistered) })
+				return true, w, err
+			})
+
 			informer := NewSecretInformer(
 				namespace,
 				secretName,
@@ -131,7 +143,19 @@ func TestSecretInformer(t *testing.T) {
 			err := informer.Start()
 			require.NoError(t, err)
 			defer informer.Stop()
+
+			// There is a problem with fake informer. It happens that Go routine that starts informers,
+			// marks HasSynced as a true before watchers are registered. Because of that,
+			// events are never received. There are no watchers that are listening to these events
+			// after HasSynced is true. That's why we need to wait for HasSynced and Watch event.
 			require.Eventually(t, informer.HasSynced, 30*time.Second, 100*time.Millisecond)
+
+			// Wait that watch is executed and events will be properly received.
+			select {
+			case <-watchRegistered:
+			case <-time.After(10 * time.Second):
+				require.FailNow(t, "timed out waiting for watch to be registered")
+			}
 
 			require.NoError(t, c.setupFn(k8sClient))
 

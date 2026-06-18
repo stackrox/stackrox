@@ -15,7 +15,7 @@ export type IntegrationDetailsPageProps = {
 
 function IntegrationDetailsPage({ source, type }: IntegrationDetailsPageProps): ReactElement {
     const { id } = useParams();
-    const integrations = useIntegrations({ source, type });
+    const { integrations } = useIntegrations({ source, type });
     const integration = integrations.find((datum) => datum.id === id);
 
     if (!integration) {

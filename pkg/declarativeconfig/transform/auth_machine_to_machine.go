@@ -42,6 +42,7 @@ func (t authMachineToMachineConfigTransform) Transform(
 		TokenExpirationDuration: authM2MConfig.TokenExpirationDuration,
 		Mappings:                mappings,
 		Issuer:                  authM2MConfig.Issuer,
+		Audience:                authM2MConfig.Audience,
 		Traits:                  &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 	}
 

@@ -22,6 +22,11 @@ var (
 - Clock skew between the identity provider and StackRox Central.
 
 Verify that the system clocks on Central and the identity provider are synchronized. If this occurs during legitimate login attempts, check the identity provider's assertion lifetime configuration.`,
+				codes.SAMLAudienceMismatch: `The SAML assertion audience does not match the expected value. Ensure that:
+- The audience (Entity ID) configured in the identity provider matches the "Service Provider audience" in StackRox.
+- If no audience is configured, the identity provider audience should match the "Service Provider issuer".
+
+When no "Service Provider audience" is set, the mismatch is logged as a warning but authentication is allowed. Set the "Service Provider audience" field in the SAML auth provider configuration to enforce strict validation.`,
 			},
 			adminResources.APIToken: {
 				codes.APITokenCreated: `An API token has been created.`,
