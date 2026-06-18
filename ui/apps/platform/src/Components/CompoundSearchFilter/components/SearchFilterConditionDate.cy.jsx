@@ -16,6 +16,11 @@ const selectors = {
     startDateInput: 'input[aria-label="Filter by start date"]',
     endDateInput: 'input[aria-label="Filter by end date"]',
     applyButton: 'button[aria-label="Apply condition and date input to search"]',
+    relativeDaysInput: 'input[aria-label="Number of days"]',
+    relativeApplyButton: 'button[aria-label="Apply relative date filter"]',
+    relativeMinDaysInput: 'input[aria-label="Minimum days ago"]',
+    relativeMaxDaysInput: 'input[aria-label="Maximum days ago"]',
+    relativeRangeApplyButton: 'button[aria-label="Apply relative date range filter"]',
 };
 
 const endBeforeStartErrorText = 'The end date must be on or after the start date';
@@ -38,16 +43,18 @@ function selectCondition(condition) {
 }
 
 describe(Cypress.spec.relative, () => {
-    it('should include Between in the condition selector after Before/On/After', () => {
+    it('should list all conditions in the expected order', () => {
         setup();
 
         cy.get(selectors.conditionSelectToggle).click();
 
-        cy.get(selectors.conditionSelectItems).should('have.length', 4);
+        cy.get(selectors.conditionSelectItems).should('have.length', 6);
         cy.get(selectors.conditionSelectItems).eq(0).should('have.text', 'Before');
         cy.get(selectors.conditionSelectItems).eq(1).should('have.text', 'On');
         cy.get(selectors.conditionSelectItems).eq(2).should('have.text', 'After');
-        cy.get(selectors.conditionSelectItems).eq(3).should('have.text', 'Between');
+        cy.get(selectors.conditionSelectItems).eq(3).should('have.text', 'More than days ago');
+        cy.get(selectors.conditionSelectItems).eq(4).should('have.text', 'Between');
+        cy.get(selectors.conditionSelectItems).eq(5).should('have.text', 'Between days ago');
     });
 
     it('should keep single-date apply behavior for the After condition', () => {
@@ -210,6 +217,61 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.endDateInput).clear();
 
         cy.get(selectors.applyButton).click();
+
+        cy.get('@onSearch').should('not.have.been.called');
+    });
+
+    it('should apply the "More than days ago" condition as >Nd format and clear the input', () => {
+        setup();
+
+        selectCondition('More than days ago');
+
+        cy.get(selectors.relativeDaysInput).clear();
+        cy.get(selectors.relativeDaysInput).type('365');
+        cy.get(selectors.relativeApplyButton).click();
+
+        cy.get('@onSearch').should('have.been.calledWithExactly', [
+            {
+                action: 'APPEND',
+                category: 'CVE Created Time',
+                value: '>365d',
+            },
+        ]);
+        cy.get(selectors.relativeDaysInput).should('have.value', '0');
+    });
+
+    it('should apply the "Between days ago" condition as Nd-Md format and clear the inputs', () => {
+        setup();
+
+        selectCondition('Between days ago');
+
+        cy.get(selectors.relativeMinDaysInput).clear();
+        cy.get(selectors.relativeMinDaysInput).type('30');
+        cy.get(selectors.relativeMaxDaysInput).clear();
+        cy.get(selectors.relativeMaxDaysInput).type('90');
+        cy.get(selectors.relativeRangeApplyButton).click();
+
+        cy.get('@onSearch').should('have.been.calledWithExactly', [
+            {
+                action: 'APPEND',
+                category: 'CVE Created Time',
+                value: '30d-90d',
+            },
+        ]);
+        cy.get(selectors.relativeMinDaysInput).should('have.value', '0');
+        cy.get(selectors.relativeMaxDaysInput).should('have.value', '0');
+    });
+
+    it('should not emit "Between days ago" when min exceeds max', () => {
+        setup();
+
+        selectCondition('Between days ago');
+
+        cy.get(selectors.relativeMinDaysInput).clear();
+        cy.get(selectors.relativeMinDaysInput).type('90');
+        cy.get(selectors.relativeMaxDaysInput).clear();
+        cy.get(selectors.relativeMaxDaysInput).type('30');
+        cy.get(selectors.relativeRangeApplyButton).click();
 
         cy.get('@onSearch').should('not.have.been.called');
     });

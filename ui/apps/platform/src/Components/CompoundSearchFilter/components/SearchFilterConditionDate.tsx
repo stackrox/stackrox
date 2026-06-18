@@ -1,16 +1,33 @@
 import { useState } from 'react';
 import { SelectOption, ToolbarItem } from '@patternfly/react-core';
 
-import { dateConditionMap, dateConditions, dateRangeCondition } from '../utils/utils';
+import {
+    dateConditionMap,
+    dateConditions,
+    dateRangeCondition,
+    dateRelativeOlderThanCondition,
+    dateRelativeRangeCondition,
+} from '../utils/utils';
 import type { GenericSearchFilterAttribute, OnSearchCallback } from '../types';
 
 import SearchFilterDateRange from './SearchFilterDateRange';
+import SearchFilterDateRelativeOlderThan from './SearchFilterDateRelativeOlderThan';
+import SearchFilterDateRelativeRange from './SearchFilterDateRelativeRange';
 import SearchFilterDateSingle from './SearchFilterDateSingle';
 import SimpleSelect from './SimpleSelect';
 
-type DateCondition = (typeof dateConditions)[number] | typeof dateRangeCondition;
+type DateCondition =
+    | (typeof dateConditions)[number]
+    | typeof dateRelativeOlderThanCondition
+    | typeof dateRangeCondition
+    | typeof dateRelativeRangeCondition;
 
-const conditions: DateCondition[] = [...dateConditions, dateRangeCondition];
+const conditions: DateCondition[] = [
+    ...dateConditions,
+    dateRelativeOlderThanCondition,
+    dateRangeCondition,
+    dateRelativeRangeCondition,
+];
 
 export type SearchFilterConditionDateProps = {
     attribute: GenericSearchFilterAttribute;
@@ -18,6 +35,54 @@ export type SearchFilterConditionDateProps = {
     onSearch: OnSearchCallback;
     // does not depend on searchFilter
 };
+
+function DateConditionInput({
+    condition,
+    category,
+    isDisabled,
+    onSearch,
+}: {
+    condition: DateCondition;
+    category: string;
+    isDisabled: boolean;
+    onSearch: OnSearchCallback;
+}) {
+    switch (condition) {
+        case dateRelativeOlderThanCondition:
+            return (
+                <SearchFilterDateRelativeOlderThan
+                    category={category}
+                    isDisabled={isDisabled}
+                    onSearch={onSearch}
+                />
+            );
+        case dateRangeCondition:
+            return (
+                <SearchFilterDateRange
+                    category={category}
+                    isDisabled={isDisabled}
+                    onSearch={onSearch}
+                />
+            );
+        case dateRelativeRangeCondition:
+            return (
+                <SearchFilterDateRelativeRange
+                    category={category}
+                    isDisabled={isDisabled}
+                    onSearch={onSearch}
+                />
+            );
+        default:
+            return (
+                <SearchFilterDateSingle
+                    conditionPrefix={dateConditionMap[condition]}
+                    category={category}
+                    isDisabled={isDisabled}
+                    onSearch={onSearch}
+                />
+            );
+    }
+}
 
 function SearchFilterConditionDate({
     attribute,
@@ -49,20 +114,12 @@ function SearchFilterConditionDate({
                     })}
                 </SimpleSelect>
             </ToolbarItem>
-            {conditionExternal === dateRangeCondition ? (
-                <SearchFilterDateRange
-                    category={category}
-                    isDisabled={isDisabled}
-                    onSearch={onSearch}
-                />
-            ) : (
-                <SearchFilterDateSingle
-                    conditionPrefix={dateConditionMap[conditionExternal]}
-                    category={category}
-                    isDisabled={isDisabled}
-                    onSearch={onSearch}
-                />
-            )}
+            <DateConditionInput
+                condition={conditionExternal}
+                category={category}
+                isDisabled={isDisabled}
+                onSearch={onSearch}
+            />
         </>
     );
 }
