@@ -475,6 +475,7 @@ jobs:
         cluster-name: ${{ env.CLUSTER_NAME }}
         spot: "true"
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        auto-cleanup: "false"
 
     - name: Delete existing StackRox deployment
       if: inputs.force-redeploy && (inputs.gke-cluster-name || inputs.infra-cluster-name)
