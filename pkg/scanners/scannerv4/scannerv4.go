@@ -112,10 +112,14 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 
 	log.Debugf("Creating Scanner V4 with name [%s] indexer address [%s], matcher address [%s], num concurrent scans [%d]", integration.GetName(), indexerEndpoint, matcherEndpoint, numConcurrentScans)
 	ctx := context.Background()
-	c, err := client.NewGRPCScanner(ctx,
+	opts := []client.Option{
 		client.WithIndexerAddress(indexerEndpoint),
 		client.WithMatcherAddress(matcherEndpoint),
-	)
+	}
+	if env.ScannerV4SkipTLSVerify.BooleanSetting() {
+		opts = append(opts, client.SkipTLSVerification)
+	}
+	c, err := client.NewGRPCScanner(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -450,10 +454,14 @@ func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
 
 	log.Debugf("Creating Scanner V4 with name [%s] indexer address [%s], matcher address [%s], num concurrent scans [%d]", integration.GetName(), indexerEndpoint, matcherEndpoint, numConcurrentScans)
 	ctx := context.Background()
-	c, err := client.NewGRPCScanner(ctx,
+	opts := []client.Option{
 		client.WithIndexerAddress(indexerEndpoint),
 		client.WithMatcherAddress(matcherEndpoint),
-	)
+	}
+	if env.ScannerV4SkipTLSVerify.BooleanSetting() {
+		opts = append(opts, client.SkipTLSVerification)
+	}
+	c, err := client.NewGRPCScanner(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -493,5 +501,9 @@ func newVirtualMachineScanner(clientCreator func(string) (client.Scanner, error)
 }
 
 func getMatcherOnlyScanner(matcherEndpoint string) (client.Scanner, error) {
-	return client.NewGRPCScanner(context.Background(), client.WithMatcherAddress(matcherEndpoint))
+	opts := []client.Option{client.WithMatcherAddress(matcherEndpoint)}
+	if env.ScannerV4SkipTLSVerify.BooleanSetting() {
+		opts = append(opts, client.SkipMatcherTLSVerification)
+	}
+	return client.NewGRPCScanner(context.Background(), opts...)
 }

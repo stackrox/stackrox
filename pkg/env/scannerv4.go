@@ -47,4 +47,8 @@ var (
 	// ScannerV4CentralMatcherEndpoint overrides the default Scanner V4 matcher endpoint
 	// used by Central's auto-created image integration. Useful for local development outside Kubernetes.
 	ScannerV4CentralMatcherEndpoint = RegisterSetting("ROX_SCANNER_V4_CENTRAL_MATCHER_ENDPOINT")
+
+	// ScannerV4SkipTLSVerify disables TLS verification for Scanner V4 gRPC connections.
+	// Useful for local development where Scanner V4 may not have valid certificates.
+	ScannerV4SkipTLSVerify = RegisterBooleanSetting("ROX_SCANNER_V4_SKIP_TLS_VERIFY", false)
 )
