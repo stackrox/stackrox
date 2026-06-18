@@ -58,8 +58,37 @@ jobs:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: |
+        exec 3>&2
+        ${{ matrix.gotags }} make go-unit-tests 2> >(tee /tmp/go-stderr.txt >&3) | tee /tmp/go-test-output.txt
+        exec 3>&-
 
+
+    - name: Cache + testInputs diagnostics
+      if: always()
+      run: |
+        set +e
+        if [[ -f /tmp/go-test-output.txt ]]; then
+          cached=$(grep -c '(cached)' /tmp/go-test-output.txt || true)
+          total=$(grep -cE 'ok\s+github\.com/stackrox' /tmp/go-test-output.txt || true)
+          echo "Test cache: $cached/$total cached"
+        fi
+        echo ""
+        echo "=== Stderr capture ==="
+        if [[ -f /tmp/go-stderr.txt ]]; then
+          echo "Stderr lines: $(wc -l < /tmp/go-stderr.txt)"
+          echo "testInputs lines: $(grep -c 'HASH.testInputs.' /tmp/go-stderr.txt || echo 0)"
+          echo ""
+          echo "=== testInputs for central/audit ==="
+          grep -A5 'HASH.testInputs' /tmp/go-stderr.txt | head -20
+          echo ""
+          echo "=== testResult for central/audit ==="
+          grep 'testResult.*audit\|testResult.*central/audit' /tmp/go-stderr.txt | head -5
+        else
+          echo "No stderr file found"
+        fi
+        exit 0
+      shell: bash
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
