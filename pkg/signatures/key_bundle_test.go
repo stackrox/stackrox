@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -45,7 +46,14 @@ func TestBundleToSignatureIntegration(t *testing.T) {
 	si := BundleToSignatureIntegration(bundle)
 	assert.Equal(t, DefaultRedHatIntegrationID, si.GetId())
 	assert.Equal(t, DefaultRedHatIntegrationName, si.GetName())
-	assert.Len(t, si.GetCosign().GetPublicKeys(), len(bundle.Keys))
+	assert.Equal(t, storage.Traits_DEFAULT, si.GetTraits().GetOrigin())
+
+	keys := si.GetCosign().GetPublicKeys()
+	require.Len(t, keys, len(bundle.Keys))
+	for i, key := range keys {
+		assert.Equal(t, bundle.Keys[i].Name, key.GetName())
+		assert.Equal(t, bundle.Keys[i].PEM, key.GetPublicKeyPemEnc())
+	}
 }
 
 func TestParseKeyBundle(t *testing.T) {
