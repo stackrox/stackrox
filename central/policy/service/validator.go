@@ -96,6 +96,7 @@ func (s *policyValidator) internalValidate(policy *storage.Policy, additionalVal
 	errorList.AddError(s.validateCapabilities(policy))
 	errorList.AddError(s.validateEventSource(policy))
 	errorList.AddError(s.validateEnforcement(policy))
+	errorList.AddError(s.validateEvaluationFilter(policy))
 
 	for _, validator := range additionalValidators {
 		errorList.AddError(validator(policy))
@@ -503,4 +504,14 @@ func (s *policyValidator) eventSourceError() error {
 	}
 
 	return fmt.Errorf("event source must be %s for runtime policies", strings.Join(eventSources, " or "))
+}
+
+func (s *policyValidator) validateEvaluationFilter(policy *storage.Policy) error {
+	if len(policy.GetEvaluationFilter().GetSkipContainerTypes()) == 0 {
+		return nil
+	}
+	if policies.AppliesAtBuildTime(policy) && !policies.AppliesAtDeployTime(policy) && !policies.AppliesAtRunTime(policy) {
+		return errors.New("container type filters in the evaluation filter are not applicable to build-only policies")
+	}
+	return nil
 }
