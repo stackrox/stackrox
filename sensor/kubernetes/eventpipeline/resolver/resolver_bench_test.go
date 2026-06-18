@@ -70,54 +70,46 @@ func dispatchEvent(b *testing.B, event *component.ResourceEvent, resolver compon
 	res.Send(event)
 }
 
-func BenchmarkProcessDeploymentReferences(b *testing.B) {
-	for _, value := range []bool{true, false} {
-		b.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", value))
-		for _, bc := range cases {
-			b.Run(fmt.Sprintf("Benchmark with %d events and %d deployments per event and %q is %t", bc.numEvents, bc.numDeployments, features.SensorInternalPubSub.EnvVar(), value), func(b *testing.B) {
-				for b.Loop() {
-					b.StopTimer()
-					doneSignal := concurrency.NewSignal()
-					setupMocks(b, &doneSignal, value)
-					events := createEvents(false, bc.numEvents, bc.numDeployments)
-					setupResolver(b)
-					b.StartTimer()
-					for _, event := range events {
-						dispatchEvent(b, event, res, value)
-					}
-					doneSignal.Wait()
-					b.StopTimer()
-					res.Stop()
-					b.StartTimer()
+// benchmarkProcessDeploymentReferences runs the resolver benchmark using the
+// currently active feature flag value for SensorInternalPubSub.
+//
+// To compare legacy vs pubsub with benchstat:
+//
+//	ROX_SENSOR_PUBSUB=false go test -run='^$' -bench=BenchmarkProcess -benchmem -count=10 ./sensor/kubernetes/eventpipeline/resolver/ > bench_legacy.txt
+//	ROX_SENSOR_PUBSUB=true  go test -run='^$' -bench=BenchmarkProcess -benchmem -count=10 ./sensor/kubernetes/eventpipeline/resolver/ > bench_pubsub.txt
+//	benchstat bench_legacy.txt bench_pubsub.txt
+func benchmarkProcessDeploymentReferences(b *testing.B, randomIDs bool) {
+	pubsubEnabled := features.SensorInternalPubSub.Enabled()
+	for _, bc := range cases {
+		b.Run(fmt.Sprintf("events=%d/deployments=%d", bc.numEvents, bc.numDeployments), func(b *testing.B) {
+			doneSignal := concurrency.NewSignal()
+			setupMocks(b, &doneSignal, pubsubEnabled)
+
+			for b.Loop() {
+				b.StopTimer()
+				doneSignal.Reset()
+				events := createEvents(randomIDs, bc.numEvents, bc.numDeployments)
+				setupResolver(b)
+				b.StartTimer()
+				for _, event := range events {
+					dispatchEvent(b, event, res, pubsubEnabled)
 				}
-			})
-		}
+				doneSignal.Wait()
+				b.StopTimer()
+				res.Stop()
+				// b.Loop() requires the timer to be running when called.
+				b.StartTimer()
+			}
+		})
 	}
 }
 
+func BenchmarkProcessDeploymentReferences(b *testing.B) {
+	benchmarkProcessDeploymentReferences(b, false)
+}
+
 func BenchmarkProcessRandomDeploymentReferences(b *testing.B) {
-	for _, value := range []bool{true, false} {
-		b.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", value))
-		for _, bc := range cases {
-			b.Run(fmt.Sprintf("Benchmark with %d events and %d random deployments per event and %q is %t", bc.numEvents, bc.numDeployments, features.SensorInternalPubSub.EnvVar(), value), func(b *testing.B) {
-				for b.Loop() {
-					b.StopTimer()
-					doneSignal := concurrency.NewSignal()
-					setupMocks(b, &doneSignal, value)
-					events := createEvents(true, bc.numEvents, bc.numDeployments)
-					setupResolver(b)
-					b.StartTimer()
-					for _, event := range events {
-						dispatchEvent(b, event, res, value)
-					}
-					doneSignal.Wait()
-					b.StopTimer()
-					res.Stop()
-					b.StartTimer()
-				}
-			})
-		}
-	}
+	benchmarkProcessDeploymentReferences(b, true)
 }
 
 func setupResolver(b *testing.B) {
@@ -148,7 +140,7 @@ func setupMocks(b *testing.B, doneSignal *concurrency.Signal, pubsubEnabled bool
 	mockPubSubDispatcher = mocksComponent.NewMockPubSubDispatcher(mockCtrl)
 	// Set up the EXPECT
 	if pubsubEnabled {
-		mockPubSubDispatcher.EXPECT().RegisterConsumerToLane(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(nil)
+		mockPubSubDispatcher.EXPECT().RegisterConsumerToLane(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 		mockPubSubDispatcher.EXPECT().Publish(gomock.Any()).AnyTimes().DoAndReturn(func(event pubsub.Event) error {
 			resourceEvent, ok := event.(*component.ResourceEvent)
 			if !ok {
