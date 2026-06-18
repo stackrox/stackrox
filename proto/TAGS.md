@@ -44,7 +44,7 @@ A column is added in the generated table for each proto field which is tagged as
 
 ## Steps to Generate Postgres Store Layer
 
-Given your dev environment is already set up as described in the [README](https://github.com/stackrox/rox/blob/master/README.md#development):
+Given your dev environment is already set up as described in the [README](https://github.com/stackrox/stackrox/blob/master/README.md#development):
 
 1. Add required [proto tags](#proto-tag-reference) to the proto definition.
 2. Execute `make proto-generated-srcs`.
@@ -236,7 +236,7 @@ These tags do NOT scrub anything. They control what happens when a user submits 
 | Syntax | Description |
 |--------|-------------|
 | `scrub:"always"` | On update, the user's value (empty or `"******"`) is replaced with the existing stored credential. Prevents credential loss on update. |
-| `scrub:"dependent"` | On update, if the user changed this field without providing new credentials (`UpdatePassword: false`), the reconciler rejects the update. Prevents credential exfiltration via endpoint/username redirection. |
+| `scrub:"dependent"` | On update, if this field differs from the stored value while credential fields (`scrub:"always"`) remain empty or scrubbed (`"******"`), the reconciler rejects the update with "credentials required". Prevents credential exfiltration via endpoint/username redirection. |
 | `scrub:"disableDependentIfTrue"` | If this bool field is `true`, `dependent` reconciliation is skipped. Used when authentication is disabled (e.g., `allow_unauthenticated_smtp`), so there are no credentials to protect. |
 
 **Examples:**

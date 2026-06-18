@@ -35,6 +35,10 @@ Ask the user which scenario applies:
 - A `convert.go` bridges them. See `central/reports/service/v2/convert.go` for the pattern.
 - When updating storage protos, ask: "Should I update the v2 API proto and converter too?"
 
+## Fast Path: Simple Field Addition
+
+If the user is adding a plain field to an existing proto that already has a gen.go (no FK, no new search category, no secrets, no policy criteria), skip directly to **Step 6**. Only the proto field and possibly a `search:` or `sql:"index"` tag are needed — the gen.go doesn't need changes, just re-execution.
+
 ## Step 2: Tag Decision Tree
 
 When adding a field, walk through these questions with the user. Refer to `proto/TAGS.md` for full syntax of each tag.
@@ -197,7 +201,7 @@ For new types, these files may need updating:
 make proto-generated-srcs
 
 # 2. Run Postgres bindings generator
-gogen -run pg-table-bindings <path/to/gen.go>
+gogen -run pg-table-bindings <path/to/gen.go>  # gogen is from https://github.com/stackrox/workflow
 
 # 3. Verify generated output
 # - pkg/postgres/schema/<table_name>.go  -- schema definition
