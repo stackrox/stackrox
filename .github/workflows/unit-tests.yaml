@@ -57,6 +57,22 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
+    - name: Pre-test GOCACHE analysis
+      run: |
+        set +e
+        gocache="$(go env GOCACHE)"
+        total=$(find "$gocache" -type f 2>/dev/null | wc -l | tr -d ' ')
+        echo "GOCACHE entries BEFORE test: $total"
+        cov=$(find "$gocache" -type f -name '*-d' -exec sh -c 'head -c 5 "$1" 2>/dev/null | grep -q "mode:" && echo 1' _ {} \; 2>/dev/null | wc -l | tr -d ' ')
+        echo "Coverage profile entries BEFORE test: $cov"
+        gocache="$(go env GOCACHE)"
+        total=$(find "$gocache" -type f 2>/dev/null | wc -l | tr -d ' ')
+        echo "GOCACHE entries AFTER test: $total"
+        cov=$(find "$gocache" -type f -name '*-d' -exec sh -c 'head -c 5 "$1" 2>/dev/null | grep -q "mode:" && echo 1' _ {} \; 2>/dev/null | wc -l | tr -d ' ')
+        echo "Coverage profile entries AFTER test: $cov"
+        exit 0
+      shell: bash
+
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests 2>/tmp/go-test-stderr.txt | tee /tmp/go-test-output.txt
 
@@ -193,6 +209,17 @@ jobs:
           timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' \
             || { docker logs postgres; exit 1; }
         fi
+
+    - name: Pre-test GOCACHE analysis
+      run: |
+        set +e
+        gocache="$(go env GOCACHE)"
+        total=$(find "$gocache" -type f 2>/dev/null | wc -l | tr -d ' ')
+        echo "GOCACHE entries BEFORE test: $total"
+        cov=$(find "$gocache" -type f -name '*-d' -exec sh -c 'head -c 5 "$1" 2>/dev/null | grep -q "mode:" && echo 1' _ {} \; 2>/dev/null | wc -l | tr -d ' ')
+        echo "Coverage profile entries BEFORE test: $cov"
+        exit 0
+      shell: bash
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
