@@ -255,10 +255,11 @@ describe('Node CVEs - Overview Page', () => {
                 visitNodeCveOverviewPage();
                 waitForRequests();
 
+                // Observed tab
                 // filtering by CVE name should only display rows with a matching name
                 filterHelpers.addAutocompleteFilter('CVE', 'Name', 'CVE-2021-1234');
                 waitAndYieldRequestBodyVariables().then(
-                    expectRequestedQuery('CVE:r/CVE-2021-1234')
+                    expectRequestedQuery('CVE Snoozed:false+CVE:r/CVE-2021-1234')
                 );
                 // Do not assert on cell contents as the filter value is mocked
                 filterHelpers.clearFilters();
@@ -312,11 +313,12 @@ describe('Node CVEs - Overview Page', () => {
                 visitEntityTab('Node');
                 waitForRequests();
 
+                // Observed tab
                 // filtering by Node name should only display rows with a matching name
                 const nodeNameFilter = 'a';
                 filterHelpers.addAutocompleteFilter('Node', 'Name', nodeNameFilter);
                 waitAndYieldRequestBodyVariables().then(
-                    expectRequestedQuery(`Node:r/${nodeNameFilter}`)
+                    expectRequestedQuery(`CVE Snoozed:false+Node:r/${nodeNameFilter}`)
                 );
                 assertOnEachRowForColumn('Node', (_, cell) => {
                     expect(cell.innerText).to.match(new RegExp(nodeNameFilter, 'i'));
