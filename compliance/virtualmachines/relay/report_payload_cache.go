@@ -102,6 +102,16 @@ func (c *reportPayloadCache) Upsert(resourceID string, report *v1.VMReport, now 
 	return evictions
 }
 
+// evictElementNoLock removes the given list element and its byID index entry,
+// returning eviction metadata. The caller must hold c.mu.
+func (c *reportPayloadCache) evictElementNoLock(elem *list.Element, now time.Time) payloadEviction {
+	ent := elem.Value.(*reportPayloadEntry)
+	ev := evictionForEntry(ent, now)
+	delete(c.byID, ent.resourceID)
+	c.lruList.Remove(elem)
+	return ev
+}
+
 // evictLRUNoLock removes the least-recently-updated entry and returns its eviction metadata.
 // The caller must hold c.mu.
 func (c *reportPayloadCache) evictLRUNoLock(now time.Time) (payloadEviction, bool) {
@@ -109,10 +119,7 @@ func (c *reportPayloadCache) evictLRUNoLock(now time.Time) (payloadEviction, boo
 	if front == nil {
 		return payloadEviction{}, false
 	}
-	ent := front.Value.(*reportPayloadEntry)
-	ev := evictionForEntry(ent, now)
-	c.removeElementNoLock(front)
-	return ev, true
+	return c.evictElementNoLock(front, now), true
 }
 
 // evictExpiredFromFrontNoLock removes up to budget expired entries from the LRU front.
@@ -139,19 +146,10 @@ func (c *reportPayloadCache) evictExpiredFromFrontNoLock(now time.Time, budget i
 		if now.Before(ent.updatedAt.Add(c.ttl)) {
 			break
 		}
-		out = append(out, evictionForEntry(ent, now))
-		c.removeElementNoLock(front)
+		out = append(out, c.evictElementNoLock(front, now))
 		front = c.lruList.Front()
 	}
 	return out
-}
-
-// removeElementNoLock removes the given list element and its byID index entry.
-// The caller must hold c.mu.
-func (c *reportPayloadCache) removeElementNoLock(elem *list.Element) {
-	ent := elem.Value.(*reportPayloadEntry)
-	delete(c.byID, ent.resourceID)
-	c.lruList.Remove(elem)
 }
 
 // Get returns the cached report reference if present. Get does not enforce TTL and does not
@@ -179,10 +177,7 @@ func (c *reportPayloadCache) Remove(resourceID string, now time.Time) (payloadEv
 	if !ok {
 		return payloadEviction{}, false
 	}
-	ent := elem.Value.(*reportPayloadEntry)
-	ev := evictionForEntry(ent, now)
-	c.removeElementNoLock(elem)
-	return ev, true
+	return c.evictElementNoLock(elem, now), true
 }
 
 // SweepExpired removes every entry whose updatedAt is older than TTL relative to now.

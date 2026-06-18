@@ -95,6 +95,25 @@ func TestReportPayloadCache_Get_ReturnsSharedReference_CallerCanMutate(t *testin
 	require.Equalf(t, changedOsVersion, got, "expected second cached OS version %q, got %q", changedOsVersion, got)
 }
 
+func TestReportPayloadCache_TTLZero_ImmediateExpiryOnSweep(t *testing.T) {
+	t.Parallel()
+
+	c := newReportPayloadCache(4, 0)
+	base := time.Unix(2000, 0)
+	r := relaytest.NewTestVMReport("x")
+	c.Upsert(key1, r, base)
+
+	_, ok := c.Get(key1)
+	require.Truef(t, ok, "expected lookup before sweep to be a hit, but got a miss")
+
+	evictions := c.SweepExpired(base)
+	require.Lenf(t, evictions, 1, "expected zero-TTL sweep to evict 1 entry, got %d", len(evictions))
+	assertEviction(t, evictions[0], key1, 0, 0)
+
+	_, ok = c.Get(key1)
+	require.Falsef(t, ok, "expected zero-TTL entry to be evicted by sweep, but lookup was a hit")
+}
+
 func TestReportPayloadCache_Get_TTLExpiry_DoesNotEvict(t *testing.T) {
 	t.Parallel()
 
