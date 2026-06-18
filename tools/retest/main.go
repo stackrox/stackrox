@@ -14,12 +14,18 @@ import (
 	"github.com/google/go-github/v60/github"
 )
 
-// allowedCheckFailures defines a set of PR checks that should not prevent the retest job starting
-var allowedCheckFailures = map[string]struct{}{
-	"codecov/patch":              {},
-	"e2e-byodb-test":             {},
-	"e2e-nongroovy-tests":        {},
-	"e2e-db-backup-restore-test": {},
+var allowedCheckFailurePrefixes = []string{
+	"codecov/",
+	"e2e-",
+}
+
+func isAllowedCheckFailure(name string) bool {
+	for _, prefix := range allowedCheckFailurePrefixes {
+		if strings.HasPrefix(name, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 const s = "stackrox"
@@ -70,7 +76,7 @@ issues:
 		log.Printf("#%d has %d completed checks", prNumber, len(checks))
 
 		for name, status := range checks {
-			if _, allowedFailure := allowedCheckFailures[name]; !status && !allowedFailure {
+			if !status && !isAllowedCheckFailure(name) {
 				log.Printf("#%d has a failing check (%s), skipping", prNumber, name)
 				continue issues
 			}
