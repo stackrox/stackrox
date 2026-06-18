@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -1440,6 +1441,67 @@ func TestCombineQueryEntries_PostTransformComposition(t *testing.T) {
 				got := result.SelectedFields[0].PostTransform(nil).([]string)
 				assert.ElementsMatch(t, tc.expectedTransform, got)
 			}
+		})
+	}
+}
+
+func TestCombineDisjunctionANYThreshold(t *testing.T) {
+	t.Setenv("ROX_POSTGRES_PARAMETER_THRESHOLD", "3")
+
+	for _, c := range []struct {
+		desc          string
+		q             *v1.Query
+		schema        *walker.Schema
+		queryType     QueryType
+		expectedWhere string
+		expectedData  []interface{}
+		expectedSQL   string
+	}{
+		{
+			desc:          "below threshold uses IN",
+			q:             search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "A", "B").ProtoQuery(),
+			schema:        deploymentBaseSchema,
+			queryType:     SEARCH,
+			expectedWhere: "deployments.Name IN ($$, $$)",
+			expectedData:  []interface{}{"A", "B"},
+		},
+		{
+			desc:          "at threshold uses ANY",
+			q:             search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "A", "B", "C").ProtoQuery(),
+			schema:        deploymentBaseSchema,
+			queryType:     SEARCH,
+			expectedWhere: "deployments.Name = ANY($$)",
+			expectedData:  []interface{}{[]interface{}{"A", "B", "C"}},
+		},
+		{
+			desc:          "above threshold uses ANY",
+			q:             search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "A", "B", "C", "D").ProtoQuery(),
+			schema:        deploymentBaseSchema,
+			queryType:     SEARCH,
+			expectedWhere: "deployments.Name = ANY($$)",
+			expectedData:  []interface{}{[]interface{}{"A", "B", "C", "D"}},
+		},
+		{
+			desc:         "ANY full SQL in count query",
+			q:            search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "X", "Y", "Z").ProtoQuery(),
+			schema:       deploymentBaseSchema,
+			queryType:    COUNT,
+			expectedSQL:  "select count(*) from deployments where deployments.Name = ANY($1)",
+			expectedData: []interface{}{[]interface{}{"X", "Y", "Z"}},
+		},
+	} {
+		t.Run(c.desc, func(t *testing.T) {
+			ctx := sac.WithAllAccess(context.Background())
+			actual, err := standardizeQueryAndPopulatePath(ctx, c.q, c.schema, c.queryType)
+			require.NoError(t, err)
+
+			if c.expectedWhere != "" {
+				assert.Equal(t, c.expectedWhere, actual.Where)
+			}
+			if c.expectedSQL != "" {
+				assert.Equal(t, c.expectedSQL, actual.AsSQL())
+			}
+			assert.Equal(t, c.expectedData, actual.Data)
 		})
 	}
 }

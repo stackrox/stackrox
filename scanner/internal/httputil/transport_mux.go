@@ -108,7 +108,7 @@ func transportMux(defaultTransport http.RoundTripper, o options) (http.RoundTrip
 	if err != nil {
 		return nil, err
 	}
-	sensorHostname, err := hostname(env.SensorEndpoint.Setting(), fmt.Sprintf("sensor.%s.svc", env.Namespace.Setting()))
+	sensorHostname, err := hostname(env.SensorEndpointSetting(), fmt.Sprintf("sensor.%s.svc", env.Namespace.Setting()))
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,6 @@ metadata:
   labels:
     {{- include "srox.labels" (list . "deployment" "admission-control") | nindent 4 }}
     app: admission-control
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "deployment" "admission-control") | nindent 4 }}
 spec:
@@ -189,7 +188,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "service" "admission-control") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "service" "admission-control") | nindent 4 }}
     {{- if ._rox.monitoring.openshift.enabled }}
@@ -224,7 +222,6 @@ metadata:
   name: stackrox
   labels:
     {{- include "srox.labels" (list . "validatingwebhookconfiguration" "stackrox") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "validatingwebhookconfiguration" "stackrox") | nindent 4 }}
 webhooks:

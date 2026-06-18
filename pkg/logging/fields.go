@@ -14,6 +14,7 @@ const (
 
 	alertIDField      = "alert_id"
 	apiTokenIDField   = "api_token_id"
+	authProviderField = "auth_provider"
 	apiTokenNameField = "api_token_name"
 	backupField       = "backup"
 	cloudSourceField  = "cloud_source"
@@ -29,6 +30,7 @@ const (
 var resourceTypeFields = map[string]string{
 	apiTokenIDField:   administrationResources.APIToken,
 	apiTokenNameField: administrationResources.APIToken,
+	authProviderField: administrationResources.AuthProvider,
 	backupField:       administrationResources.Backup,
 	cloudSourceField:  administrationResources.CloudSource,
 	clusterIDField:    administrationResources.Cluster,
@@ -95,6 +97,11 @@ func BackupName(name string) zap.Field {
 // CloudSourceName provides the cloud source name as a structured log field.
 func CloudSourceName(name string) zap.Field {
 	return String(cloudSourceField, name)
+}
+
+// AuthProviderName provides the auth provider name as a structured log field.
+func AuthProviderName(name string) zap.Field {
+	return String(authProviderField, name)
 }
 
 // NotifierName provides the notifier name as a structured log field.
@@ -183,6 +190,7 @@ func getResourceTypeField(field zap.Field) (string, bool) {
 
 func isIDField(fieldName string) bool {
 	return fieldName != apiTokenNameField &&
+		fieldName != authProviderField &&
 		fieldName != backupField &&
 		fieldName != cloudSourceField &&
 		fieldName != imageField &&

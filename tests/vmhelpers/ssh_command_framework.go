@@ -113,6 +113,10 @@ func retryOnSSHTransport(ctx context.Context, logf func(string, ...any), desc st
 }
 
 // runSSHCommandWithFramework runs virt.SSH with transport classification and bounded retries.
+// This is the transport-level retry loop: it retries SSH connectivity failures
+// (banner timeout, network unreachable, websocket EOF, broken pipe, connection
+// reset) but returns immediately when the remote command itself ran and exited
+// non-zero — application-level retries are the caller's responsibility.
 func runSSHCommandWithFramework(ctx context.Context, virt Virtctl, namespace, vm string, opts sshCommandRunOptions, command ...string) (stdout, stderr string, err error) {
 	attempts := opts.transportRetryAttempts
 	if attempts <= 0 {
@@ -147,7 +151,7 @@ func runSSHCommandWithFramework(ctx context.Context, virt Virtctl, namespace, vm
 		}
 
 		virt.Logf("%s on %s/%s: retryable SSH %s condition (attempt %d/%d): %s",
-			description, namespace, vm, category, attempt, attempts, formatGuestCommandOutputForError(stderr))
+			description, namespace, vm, category, attempt, attempts, FormatGuestCommandOutputForError(stderr))
 
 		select {
 		case <-ctx.Done():

@@ -59,8 +59,7 @@ var (
 // A Sensor object configures a StackRox Sensor.
 // Its functions execute common tasks across supported platforms.
 type Sensor struct {
-	centralEndpoint    string
-	advertisedEndpoint string
+	centralEndpoint string
 
 	configHandler config.Handler
 	detector      detector.Detector
@@ -110,9 +109,8 @@ func NewSensor(
 		return nil, errors.Errorf("%q is enabled but the PubSubDispatcher is `nil`", features.SensorInternalPubSub.EnvVar())
 	}
 	return &Sensor{
-		clusterID:          clusterID,
-		centralEndpoint:    env.CentralEndpoint.Setting(),
-		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
+		clusterID:       clusterID,
+		centralEndpoint: env.CentralEndpoint.Setting(),
 
 		pubSub:           pubSub,
 		pubSubDispatcher: pubSubDispatcher,

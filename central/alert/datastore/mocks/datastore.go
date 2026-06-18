@@ -178,6 +178,21 @@ func (mr *MockDataStoreMockRecorder) SearchAlertDeploymentIDs(ctx, q, excludeRes
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchAlertDeploymentIDs", reflect.TypeOf((*MockDataStore)(nil).SearchAlertDeploymentIDs), ctx, q, excludeResolved)
 }
 
+// SearchAlertMatchKeys mocks base method.
+func (m *MockDataStore) SearchAlertMatchKeys(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*views.AlertMatchKey, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchAlertMatchKeys", ctx, q, excludeResolved)
+	ret0, _ := ret[0].([]*views.AlertMatchKey)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchAlertMatchKeys indicates an expected call of SearchAlertMatchKeys.
+func (mr *MockDataStoreMockRecorder) SearchAlertMatchKeys(ctx, q, excludeResolved any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchAlertMatchKeys", reflect.TypeOf((*MockDataStore)(nil).SearchAlertMatchKeys), ctx, q, excludeResolved)
+}
+
 // SearchAlertPolicyGroups mocks base method.
 func (m *MockDataStore) SearchAlertPolicyGroups(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*views.AlertPolicyGroup, error) {
 	m.ctrl.T.Helper()

@@ -15,22 +15,17 @@ export type AuthMachineToMachineConfig = {
     tokenExpirationDuration: string;
     type: MachineConfigType;
     issuer: string;
+    audience: string;
     mappings: MachineConfigMapping[];
     traits?: Traits;
 };
 
 const machineAccessURL = `/v1/auth/m2m`;
 
-export function fetchMachineAccessConfigs(): Promise<{
-    response: { configs: AuthMachineToMachineConfig[] };
-}> {
+export function fetchMachineAccessConfigs(): Promise<{ configs: AuthMachineToMachineConfig[] }> {
     return axios
         .get<{ configs: AuthMachineToMachineConfig[] }>(machineAccessURL)
-        .then((response) => {
-            return {
-                response: response.data ?? { configs: [] },
-            };
-        });
+        .then((response) => response.data);
 }
 
 export function deleteMachineAccessConfig(id: string): Promise<Empty> {

@@ -73,7 +73,7 @@ func (AuthMachineToMachineConfig_Type) EnumDescriptor() ([]byte, []int) {
 // AuthMachineToMachineConfig is the storage representation of auth machine to machine configs in Central.
 //
 // Refer to v1.AuthMachineToMachineConfig for a more detailed doc.
-// Next tag: 7.
+// Next tag: 8.
 type AuthMachineToMachineConfig struct {
 	state                   protoimpl.MessageState                `protogen:"open.v1"`
 	Id                      string                                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
@@ -82,8 +82,13 @@ type AuthMachineToMachineConfig struct {
 	Mappings                []*AuthMachineToMachineConfig_Mapping `protobuf:"bytes,4,rep,name=mappings,proto3" json:"mappings,omitempty"`
 	// The issuer is related to an ID token's issuer.
 	// Spec: https://openid.net/specs/openid-connect-core-1_0.html#IDToken.
-	Issuer        string  `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer,omitempty" sql:"unique"` // @gotags: sql:"unique"
-	Traits        *Traits `protobuf:"bytes,6,opt,name=traits,proto3" json:"traits,omitempty"`
+	Issuer string  `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Traits *Traits `protobuf:"bytes,6,opt,name=traits,proto3" json:"traits,omitempty"`
+	// The expected audience (aud claim) of the ID token.
+	// When set, the OIDC token verifier validates that the token's aud
+	// claim contains this value. When empty, the audience check is skipped
+	// for backward compatibility.
+	Audience      string `protobuf:"bytes,7,opt,name=audience,proto3" json:"audience,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -160,6 +165,13 @@ func (x *AuthMachineToMachineConfig) GetTraits() *Traits {
 	return nil
 }
 
+func (x *AuthMachineToMachineConfig) GetAudience() string {
+	if x != nil {
+		return x.Audience
+	}
+	return ""
+}
+
 type AuthMachineToMachineConfig_Mapping struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Key             string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
@@ -224,14 +236,15 @@ var File_storage_auth_machine_to_machine_proto protoreflect.FileDescriptor
 
 const file_storage_auth_machine_to_machine_proto_rawDesc = "" +
 	"\n" +
-	"%storage/auth_machine_to_machine.proto\x12\astorage\x1a\x14storage/traits.proto\"\xcf\x03\n" +
+	"%storage/auth_machine_to_machine.proto\x12\astorage\x1a\x14storage/traits.proto\"\xeb\x03\n" +
 	"\x1aAuthMachineToMachineConfig\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12<\n" +
 	"\x04type\x18\x02 \x01(\x0e2(.storage.AuthMachineToMachineConfig.TypeR\x04type\x12:\n" +
 	"\x19token_expiration_duration\x18\x03 \x01(\tR\x17tokenExpirationDuration\x12G\n" +
 	"\bmappings\x18\x04 \x03(\v2+.storage.AuthMachineToMachineConfig.MappingR\bmappings\x12\x16\n" +
 	"\x06issuer\x18\x05 \x01(\tR\x06issuer\x12'\n" +
-	"\x06traits\x18\x06 \x01(\v2\x0f.storage.TraitsR\x06traits\x1aZ\n" +
+	"\x06traits\x18\x06 \x01(\v2\x0f.storage.TraitsR\x06traits\x12\x1a\n" +
+	"\baudience\x18\a \x01(\tR\baudience\x1aZ\n" +
 	"\aMapping\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12)\n" +
 	"\x10value_expression\x18\x02 \x01(\tR\x0fvalueExpression\x12\x12\n" +

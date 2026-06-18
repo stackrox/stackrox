@@ -226,68 +226,60 @@ function DeploymentSideBar({
                         </Tabs>
                     </StackItem>
                     <StackItem isFilled style={{ overflow: 'auto' }}>
-                        <TabContent
-                            eventKey={'DETAILS'}
-                            id={'DETAILS'}
-                            hidden={activeTab !== 'DETAILS'}
-                        >
-                            {deployment && (
-                                <DeploymentDetails
-                                    deployment={deployment}
-                                    deploymentId={deploymentId}
-                                    edgeState={edgeState}
-                                    edges={edges}
-                                    listenPorts={listenPorts}
-                                    networkPolicyState={networkPolicyState}
-                                    nodes={nodes}
-                                />
-                            )}
-                        </TabContent>
-                        {hasReadAccessForDeploymentTab(hasReadAccess, 'FLOWS') && (
-                            <TabContent
-                                eventKey={'FLOWS'}
-                                id={'FLOWS'}
-                                hidden={activeTab !== 'FLOWS'}
-                            >
-                                {activeTab === 'FLOWS' && (
-                                    <DeploymentFlows
+                        {activeTab === 'DETAILS' && (
+                            <TabContent eventKey={'DETAILS'} id={'DETAILS'}>
+                                {deployment && (
+                                    <DeploymentDetails
+                                        deployment={deployment}
                                         deploymentId={deploymentId}
                                         edgeState={edgeState}
                                         edges={edges}
+                                        listenPorts={listenPorts}
+                                        networkPolicyState={networkPolicyState}
                                         nodes={nodes}
-                                        onNodeSelect={onNodeSelect}
                                     />
                                 )}
                             </TabContent>
                         )}
-                        {hasReadAccessForDeploymentTab(hasReadAccess, 'BASELINE') && (
-                            <TabContent
-                                eventKey={'BASELINE'}
-                                id={'BASELINE'}
-                                hidden={activeTab !== 'BASELINE'}
-                                className="pf-v6-u-h-100"
-                            >
-                                {activeTab === 'BASELINE' && (
-                                    <DeploymentBaseline
-                                        deployment={deployment}
-                                        deploymentId={deploymentId}
-                                        onNodeSelect={onNodeSelect}
+                        {hasReadAccessForDeploymentTab(hasReadAccess, 'FLOWS') &&
+                            activeTab === 'FLOWS' && (
+                                <TabContent eventKey={'FLOWS'} id={'FLOWS'}>
+                                    {activeTab === 'FLOWS' && (
+                                        <DeploymentFlows
+                                            deploymentId={deploymentId}
+                                            edgeState={edgeState}
+                                            edges={edges}
+                                            nodes={nodes}
+                                            onNodeSelect={onNodeSelect}
+                                        />
+                                    )}
+                                </TabContent>
+                            )}
+                        {hasReadAccessForDeploymentTab(hasReadAccess, 'BASELINE') &&
+                            activeTab === 'BASELINE' && (
+                                <TabContent
+                                    eventKey={'BASELINE'}
+                                    id={'BASELINE'}
+                                    className="pf-v6-u-h-100"
+                                >
+                                    {activeTab === 'BASELINE' && (
+                                        <DeploymentBaseline
+                                            deployment={deployment}
+                                            deploymentId={deploymentId}
+                                            onNodeSelect={onNodeSelect}
+                                        />
+                                    )}
+                                </TabContent>
+                            )}
+                        {hasReadAccessForDeploymentTab(hasReadAccess, 'NETWORK_POLICIES') &&
+                            activeTab === 'NETWORK_POLICIES' && (
+                                <TabContent eventKey={'NETWORK_POLICIES'} id="NETWORK_POLICIES">
+                                    <NetworkPolicies
+                                        entityName={deployment.name}
+                                        policyIds={deploymentPolicyIds}
                                     />
-                                )}
-                            </TabContent>
-                        )}
-                        {hasReadAccessForDeploymentTab(hasReadAccess, 'NETWORK_POLICIES') && (
-                            <TabContent
-                                eventKey={'NETWORK_POLICIES'}
-                                id="NETWORK_POLICIES"
-                                hidden={activeTab !== 'NETWORK_POLICIES'}
-                            >
-                                <NetworkPolicies
-                                    entityName={deployment.name}
-                                    policyIds={deploymentPolicyIds}
-                                />
-                            </TabContent>
-                        )}
+                                </TabContent>
+                            )}
                     </StackItem>
                 </>
             )}

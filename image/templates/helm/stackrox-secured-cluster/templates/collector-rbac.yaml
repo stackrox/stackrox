@@ -7,7 +7,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "serviceaccount" "collector") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "serviceaccount" "collector") | nindent 4 }}
 {{- if or ._rox.collectorImagePullSecrets._names ._rox.mainImagePullSecrets._names }}

@@ -10,7 +10,7 @@ option java_package = "io.stackrox.proto.storage";
 // AuthMachineToMachineConfig is the storage representation of auth machine to machine configs in Central.
 //
 // Refer to v1.AuthMachineToMachineConfig for a more detailed doc.
-// Next tag: 7.
+// Next tag: 8.
 message AuthMachineToMachineConfig {
   string id = 1; // @gotags: sql:"pk,type(uuid)"
 
@@ -35,4 +35,10 @@ message AuthMachineToMachineConfig {
   string issuer = 5; // @gotags: sql:"unique"
 
   Traits traits = 6;
+
+  // The expected audience (aud claim) of the ID token.
+  // When set, the OIDC token verifier validates that the token's aud
+  // claim contains this value. When empty, the audience check is skipped
+  // for backward compatibility.
+  string audience = 7;
 }

@@ -49,6 +49,7 @@ func (m *AuthMachineToMachineConfig) CloneVT() *AuthMachineToMachineConfig {
 	r.TokenExpirationDuration = m.TokenExpirationDuration
 	r.Issuer = m.Issuer
 	r.Traits = m.Traits.CloneVT()
+	r.Audience = m.Audience
 	if rhs := m.Mappings; rhs != nil {
 		tmpContainer := make([]*AuthMachineToMachineConfig_Mapping, len(rhs))
 		for k, v := range rhs {
@@ -128,6 +129,9 @@ func (this *AuthMachineToMachineConfig) EqualVT(that *AuthMachineToMachineConfig
 		return false
 	}
 	if !this.Traits.EqualVT(that.Traits) {
+		return false
+	}
+	if this.Audience != that.Audience {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -223,6 +227,13 @@ func (m *AuthMachineToMachineConfig) MarshalToSizedBufferVT(dAtA []byte) (int, e
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Audience) > 0 {
+		i -= len(m.Audience)
+		copy(dAtA[i:], m.Audience)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Audience)))
+		i--
+		dAtA[i] = 0x3a
 	}
 	if m.Traits != nil {
 		size, err := m.Traits.MarshalToSizedBufferVT(dAtA[:i])
@@ -326,6 +337,10 @@ func (m *AuthMachineToMachineConfig) SizeVT() (n int) {
 	}
 	if m.Traits != nil {
 		l = m.Traits.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.Audience)
+	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -692,6 +707,38 @@ func (m *AuthMachineToMachineConfig) UnmarshalVT(dAtA []byte) error {
 			if err := m.Traits.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Audience", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Audience = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1099,6 +1146,42 @@ func (m *AuthMachineToMachineConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 			if err := m.Traits.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Audience", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Audience = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

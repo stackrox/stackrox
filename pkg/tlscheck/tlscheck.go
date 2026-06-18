@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"net"
 	"net/url"
 	"strings"
 	"time"
@@ -56,7 +57,7 @@ func CheckTLS(ctx context.Context, origAddr string) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	conn, err := proxy.AwareDialContextTLS(ctx, fmt.Sprintf("%s:%s", host, port), nil)
+	conn, err := proxy.AwareDialContextTLS(ctx, net.JoinHostPort(host, port), nil)
 	if err != nil {
 		switch err.(type) {
 		case x509.CertificateInvalidError,

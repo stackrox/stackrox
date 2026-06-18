@@ -70,10 +70,6 @@ func (c *vmCVECoreResponse) GetEPSSProbability() float32 {
 	return *c.EPSSProbabilityMax
 }
 
-type vmCVECoreCount struct {
-	CVECount int `db:"cve_count"`
-}
-
 type vmIDResponse struct {
 	VMID string `db:"virtual_machine_id"`
 }
@@ -188,7 +184,3 @@ func (r *affectedVMResponse) GetIsFixable() bool             { return r.FixableC
 func (r *affectedVMResponse) GetMaxCVSS() float32            { return r.MaxCVSS }
 func (r *affectedVMResponse) GetGuestOS() string             { return r.GuestOS }
 func (r *affectedVMResponse) GetAffectedComponentCount() int { return r.AffectedComponentCount }
-
-type affectedVMCount struct {
-	VMCount int `db:"virtual_machine_id_count"`
-}

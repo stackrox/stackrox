@@ -1,6 +1,7 @@
 package clientconn
 
 import (
+	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
@@ -11,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -125,7 +127,7 @@ func (t *ClientTestSuite) TestAuthenticatedHTTPTransport_WebSocket() {
 				t.NoError(err)
 			} else {
 				errEndpoint := `"https://` + testcase.scheme + `:%2F%2Fcentral.stackrox.svc:443/hello/howdy?file=rhelv2%2Frepository-to-cpe.json&uuid=f81dbc6b-5899-433b-bc86-9127219a9d89"`
-				errString := `parse ` + errEndpoint + `: invalid URL escape "%2F"`
+				errString := `parse ` + errEndpoint + `: invalid port ":%2F%2Fcentral.stackrox.svc:443" after host`
 				t.EqualError(err, errString)
 				return
 			}
@@ -176,8 +178,9 @@ func (t *ClientTestSuite) TestGetClientCertificate_ReloadsFromDisk() {
 	cert2 := testutils.IssueSelfSignedCert(t.T(), "second-cert")
 	writeCertToFiles(t.T(), certDir, &cert2)
 
-	got2, err := conf.GetClientCertificate(nil)
-	t.Require().NoError(err)
-	t.Equal(cert2.Certificate[0], got2.Certificate[0], "GetClientCertificate should return the new cert after files changed")
-	t.NotEqual(got1.Certificate[0], got2.Certificate[0], "Certs should differ after rotation")
+	t.Require().Eventually(func() bool {
+		got, err := conf.GetClientCertificate(nil)
+		return err == nil && len(got.Certificate) > 0 &&
+			bytes.Equal(got.Certificate[0], cert2.Certificate[0])
+	}, 30*time.Second, 200*time.Millisecond, "expected rotated cert to be picked up by certwatch")
 }

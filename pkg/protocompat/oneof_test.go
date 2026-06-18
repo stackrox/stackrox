@@ -43,8 +43,8 @@ func TestGetOneOfTypesByFieldIndex(t *testing.T) {
 		oneOfFieldSubTypes := GetOneOfTypesByFieldIndex(msgType, fieldType.Index[0])
 		for _, subType := range oneOfFieldSubTypes {
 			subTypeElem := subType.Elem()
-			for subTypeFieldIndex := 0; subTypeFieldIndex < subTypeElem.NumField(); subTypeFieldIndex++ {
-				protoFieldName := testHelperGetFieldProtoName(subTypeElem.Field(subTypeFieldIndex))
+			for field := range subTypeElem.Fields() {
+				protoFieldName := testHelperGetFieldProtoName(field)
 
 				assert.True(t, oneOfFieldNamesSet.Contains(protoFieldName), fmt.Sprintf("Field %q is not expected for %q type", protoFieldName, fieldType.Name))
 				oneOfFieldNamesSet.Remove(protoFieldName)
@@ -75,8 +75,8 @@ func TestGetOneOfTypesByInterface(t *testing.T) {
 		oneOfFieldSubTypes := GetOneOfTypesByInterface(msgType, oneOfFieldType)
 		for _, subType := range oneOfFieldSubTypes {
 			subTypeElem := subType.Elem()
-			for subTypeFieldIndex := 0; subTypeFieldIndex < subTypeElem.NumField(); subTypeFieldIndex++ {
-				protoFieldName := testHelperGetFieldProtoName(subTypeElem.Field(subTypeFieldIndex))
+			for field := range subTypeElem.Fields() {
+				protoFieldName := testHelperGetFieldProtoName(field)
 
 				assert.True(t, oneOfFieldNamesSet.Contains(protoFieldName), fmt.Sprintf("Field %q is not expected for %q field interface", protoFieldName, oneOfFieldType.Name()))
 				oneOfFieldNamesSet.Remove(protoFieldName)

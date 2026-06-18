@@ -78,14 +78,14 @@ func NewClient(endpoint string) (*Client, error) {
 	// Moreover, authentication requirements can be tightened in future and thus having an older version
 	// of Sensor authenticating itself will enable backward compatibility with newer Centrals. This has
 	// indeed happened in the past when `/v1/metadata` became authenticated.
-	clientCert, err := mtls.LeafCertificateFromFile()
-	if err != nil {
-		return nil, errors.Wrap(err, "obtaining client certificate")
-	}
 	tlsConf := &tls.Config{
 		InsecureSkipVerify: true,
-		Certificates: []tls.Certificate{
-			clientCert,
+		GetClientCertificate: func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
+			cert := verifier.WatchedLeafCert()
+			if cert == nil {
+				return nil, errors.New("no leaf certificate available")
+			}
+			return cert, nil
 		},
 	}
 	httpClient := &http.Client{
@@ -94,6 +94,17 @@ func NewClient(endpoint string) (*Client, error) {
 			Proxy:           proxy.FromConfig(),
 		},
 		Timeout: requestTimeout,
+	}
+	proxyHost, err := proxy.ProxyHostForURL(endpoint)
+	if err != nil {
+		log.Warnf("Central connection proxy lookup failed for %q: %v", endpoint, err)
+		setProxyToCentralMetric("", true)
+	} else if proxyHost != "" {
+		log.Infof("Central connection uses egress proxy %q", proxyHost)
+		setProxyToCentralMetric(proxyHost, false)
+	} else {
+		log.Infof("Central connection uses direct connection (no proxy)")
+		setProxyToCentralMetric("", false)
 	}
 
 	return &Client{

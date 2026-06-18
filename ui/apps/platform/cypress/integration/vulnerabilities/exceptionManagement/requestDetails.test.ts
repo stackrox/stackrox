@@ -1,4 +1,8 @@
 import withAuth from '../../../helpers/basicAuth';
+import {
+    getRouteMatcherMapForGraphQL,
+    interactAndWaitForResponses,
+} from '../../../helpers/request';
 import { cancelAllCveExceptions } from '../workloadCves/WorkloadCves.helpers';
 import { deferAndVisitRequestDetails } from './ExceptionManagement.helpers';
 import { selectors } from './ExceptionManagement.selectors';
@@ -139,14 +143,28 @@ describe('Exception Management Request Details Page', () => {
 
     it('should be able to navigate to the Workload CVEs CVE Details page by clicking on the "CVE" link', () => {
         deferAndVisitRequestDetails(deferralProps);
+
+        const routeMatcherMap = getRouteMatcherMapForGraphQL(['getImageCveMetadata']);
+        const staticResponseMap = {
+            getImageCveMetadata: {
+                fixture: 'vulnerabilities/workloadCves/getImageCveMetadata.json',
+            },
+        };
+
         cy.get('table td[data-label="CVE"] a')
+            .first()
             .invoke('text')
             .then((cveName) => {
-                cy.get('table td[data-label="CVE"] a').click();
+                interactAndWaitForResponses(
+                    () => {
+                        cy.get('table td[data-label="CVE"] a').first().click();
+                    },
+                    routeMatcherMap,
+                    staticResponseMap
+                );
                 cy.get('h1')
                     .invoke('text')
                     .then((headerText) => {
-                        // page header should be the same CVE we clicked
                         expect(headerText).to.equal(cveName);
                     });
             });

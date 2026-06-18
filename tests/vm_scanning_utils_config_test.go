@@ -21,6 +21,7 @@ func TestLoadVMScanConfig_Defaults(t *testing.T) {
 	t.Setenv("VM_IMAGES", "registry.example.com/rhel9:latest,registry.example.com/rhel10:latest")
 	t.Setenv("VM_USERS", "")
 	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
+	t.Setenv("ROXAGENT_BINARY_PATH", "/bin/true")
 	t.Setenv("VM_SCAN_NAMESPACE_PREFIX", "")
 	cfg, err := loadVMScanConfig()
 	require.NoError(t, err)
@@ -28,6 +29,7 @@ func TestLoadVMScanConfig_Defaults(t *testing.T) {
 	require.Empty(t, cfg.GuestUsers, "no padding; vmSpecs() defaults per-image")
 	require.Equal(t, "vm-scan-e2e", cfg.NamespacePrefix)
 	require.Equal(t, 20*time.Minute, cfg.ScanTimeout)
+	require.Equal(t, 10*time.Second, cfg.ScanPollInterval)
 	require.Equal(t, 5*time.Minute, cfg.DeleteTimeout)
 
 	specs := cfg.vmSpecs()
@@ -40,6 +42,7 @@ func TestLoadVMScanConfig_PartialUsers(t *testing.T) {
 	t.Setenv("VM_IMAGES", "img-a,img-b,img-c")
 	t.Setenv("VM_USERS", "alice")
 	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
+	t.Setenv("ROXAGENT_BINARY_PATH", "/bin/true")
 	cfg, err := loadVMScanConfig()
 	require.NoError(t, err)
 	require.Equal(t, []string{"alice"}, cfg.GuestUsers, "only explicit users; vmSpecs() pads with default")
@@ -48,6 +51,7 @@ func TestLoadVMScanConfig_PartialUsers(t *testing.T) {
 func TestLoadVMScanConfig_InvalidSSHKeyContent(t *testing.T) {
 	t.Setenv("VM_IMAGES", "registry.example.com/rhel9:latest")
 	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
+	t.Setenv("ROXAGENT_BINARY_PATH", "/bin/true")
 
 	tests := map[string]string{
 		"should reject a file path":         "/home/user/.ssh/id_ed25519",

@@ -217,13 +217,14 @@ describe(Cypress.spec.relative, () => {
 
         cy.get(selectors.attributeSelectToggle).click();
 
-        cy.get(selectors.attributeSelectItems).should('have.length', 5);
+        cy.get(selectors.attributeSelectItems).should('have.length', 6);
         // Attributes are in alphabetical order by displayName property.
-        cy.get(selectors.attributeSelectItems).eq(0).should('have.text', 'Label');
-        cy.get(selectors.attributeSelectItems).eq(1).should('have.text', 'Name');
-        cy.get(selectors.attributeSelectItems).eq(2).should('have.text', 'Operating system');
-        cy.get(selectors.attributeSelectItems).eq(3).should('have.text', 'Registry');
-        cy.get(selectors.attributeSelectItems).eq(4).should('have.text', 'Tag');
+        cy.get(selectors.attributeSelectItems).eq(0).should('have.text', 'Created time');
+        cy.get(selectors.attributeSelectItems).eq(1).should('have.text', 'Label');
+        cy.get(selectors.attributeSelectItems).eq(2).should('have.text', 'Name');
+        cy.get(selectors.attributeSelectItems).eq(3).should('have.text', 'Operating system');
+        cy.get(selectors.attributeSelectItems).eq(4).should('have.text', 'Registry');
+        cy.get(selectors.attributeSelectItems).eq(5).should('have.text', 'Tag');
     });
 
     it('should display Deployment attributes in the attribute selector', () => {

@@ -111,6 +111,28 @@ func TestParseEndpoint_Valid(t *testing.T) {
 	}
 }
 
+func TestFormatEndpoint(t *testing.T) {
+	cases := map[string]struct {
+		host     string
+		zone     string
+		port     string
+		expected string
+	}{
+		"hostname with port":    {host: "example.com", port: "80", expected: "example.com:80"},
+		"hostname without port": {host: "example.com", expected: "example.com"},
+		"IPv4 with port":        {host: "127.0.0.1", port: "8080", expected: "127.0.0.1:8080"},
+		"IPv6 with port":        {host: "::1", port: "80", expected: "[::1]:80"},
+		"IPv6 without port":     {host: "::1", expected: "::1"},
+		"IPv6 with zone":        {host: "::1", zone: "lo0", port: "80", expected: "[::1%lo0]:80"},
+		"IPv6 full with port":   {host: "2001:db8::1", port: "443", expected: "[2001:db8::1]:443"},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, FormatEndpoint(tc.host, tc.zone, tc.port))
+		})
+	}
+}
+
 func TestParseEndpoint_Invalid(t *testing.T) {
 	invalidEndpoints := []string{
 		// empty zones

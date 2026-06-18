@@ -280,47 +280,19 @@ func (d *datastoreImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn fun
 }
 
 func (d *datastoreImpl) countByCluster(ctx context.Context, query *v1.Query, field search.FieldLabel) (int, error) {
-	result, err := pgSearch.RunSelectOneForSchema[clusterCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ClusterID))
-	if err != nil {
-		return 0, err
-	}
-	if result == nil {
-		return 0, nil
-	}
-	return result.TotalCount, nil
+	return pgSearch.RunDistinctCountForSchema(ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, query, search.ClusterID)
 }
 
 func (d *datastoreImpl) countByProfile(ctx context.Context, query *v1.Query) (int, error) {
-	result, err := pgSearch.RunSelectOneForSchema[profileCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ComplianceOperatorProfileName))
-	if err != nil {
-		return 0, err
-	}
-	if result == nil {
-		return 0, nil
-	}
-	return result.TotalCount, nil
+	return pgSearch.RunDistinctCountForSchema(ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, query, search.ComplianceOperatorProfileName)
 }
 
 func (d *datastoreImpl) countByCheck(ctx context.Context, query *v1.Query) (int, error) {
-	result, err := pgSearch.RunSelectOneForSchema[complianceCheckCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ComplianceOperatorCheckName))
-	if err != nil {
-		return 0, err
-	}
-	if result == nil {
-		return 0, nil
-	}
-	return result.TotalCount, nil
+	return pgSearch.RunDistinctCountForSchema(ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, query, search.ComplianceOperatorCheckName)
 }
 
 func (d *datastoreImpl) countByConfiguration(ctx context.Context, query *v1.Query) (int, error) {
-	result, err := pgSearch.RunSelectOneForSchema[configurationCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query, search.ComplianceOperatorScanConfigName))
-	if err != nil {
-		return 0, err
-	}
-	if result == nil {
-		return 0, nil
-	}
-	return result.TotalCount, nil
+	return pgSearch.RunDistinctCountForSchema(ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, query, search.ComplianceOperatorScanConfigName)
 }
 
 func (d *datastoreImpl) CountCheckResults(ctx context.Context, q *v1.Query) (int, error) {
@@ -348,14 +320,6 @@ func (d *datastoreImpl) DeleteResultsByScans(ctx context.Context, scanRefIds []s
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, scanRefIds...).ProtoQuery()
 	return d.store.DeleteByQuery(ctx, query)
-}
-
-func withCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
-	cloned := q.CloneVT()
-	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
-	}
-	return cloned
 }
 
 func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {

@@ -232,6 +232,11 @@ Also, you can tear everything down with
 $ kubectl delete ns bundle-test
 ```
 
+## Architecture
+
+For a description of the operator's internal architecture, reconciliation pipeline, and package layout,
+see [ARCHITECTURE.md](./ARCHITECTURE.md).
+
 ## Extending the StackRox Custom Resource Definitions
 
 Instructions and best practices on how to extend the StackRox CRDs is contained in the separate file

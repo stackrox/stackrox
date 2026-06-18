@@ -368,47 +368,13 @@ _Note: At this time https is not supported for local plugin development._
 
 ### Testing
 
-#### Unit Tests
+See [TESTING.md](./TESTING.md) for test strategy, run commands, and shared principles. Level-specific guides:
 
-Use `npm run test` to run all unit tests and show test coverage. To run specific tests,
-use `npm run test -- --testNamePattern="TestName"` or `npm run test -- src/path/to/test.test.ts`.
+- [TESTING_UNIT.md](./TESTING_UNIT.md) — Vitest unit tests
+- [TESTING_COMPONENT.md](./TESTING_COMPONENT.md) — Cypress component tests
+- [TESTING_E2E.md](./TESTING_E2E.md) — Cypress e2e tests (standalone + OCP plugin)
 
-#### End-to-end Tests (Cypress)
-
-To bring up [Cypress](https://www.cypress.io/) UI use `npm run cypress-open`. To
-run all end-to-end tests in a headless mode use `npm run test-e2e-local`. To run
-one test suite specifically in headless mode, use
-`npm run cypress-spec <spec-file>`.
-
-#### End-to-end Tests (Cypress targeting console plugin)
-
-To run Cypress against the OCP console for dynamic plugin tests, there are two scenarios that are supported.
-
-1. Running against a locally deployed version of the development console with bridge authentication off
-
-```sh
-# If necessary, export the target URL
-export OPENSHIFT_CONSOLE_URL=<url-to-web-console-ui>
-# Set ORCHESTRATOR_FLAVOR, which is typically only available in CI
-export ORCHESTRATOR_FLAVOR='openshift'
-# Runs Cypress OCP tests ignoring authentication
-OCP_BRIDGE_AUTH_DISABLED=true npm run cypress-open:ocp
-```
-
-2. Running against a deployed version of the console with username/password credentials
-
-```sh
-# If necessary, export the target URL
-export OPENSHIFT_CONSOLE_URL=<url-to-web-console-ui>
-# Set ORCHESTRATOR_FLAVOR, which is typically only available in CI
-export ORCHESTRATOR_FLAVOR='openshift'
-# export credentials
-export OPENSHIFT_CONSOLE_USERNAME='kubeadmin'
-export OPENSHIFT_CONSOLE_PASSWORD=<password>
-
-# Runs Cypress OCP tests with a session initialization step
-npm run cypress-open:ocp
-```
+For OCP plugin e2e setup (env vars, auth scenarios), see [TESTING_E2E.md — Running OCP Tests](./TESTING_E2E.md#running-ocp-tests).
 
 ### Feature flags
 
@@ -474,30 +440,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
                     )}
                     ```
 
-3. To skip integration tests:
-
-    * Add `import { hasFeatureFlag } from '../…/helpers/features';` in cypress/integration/…/whatever.test.js
-    * And then at the beginning of `describe` block do either or both of the following:
-
-        * To skip **older** tests which are not relevant when feature flag is **enabled**
-
-            ```js
-            before(function beforeHook() {
-                if (hasFeatureFlag('ROX_WHATEVER')) {
-                    this.skip();
-                }
-            });
-            ```
-
-        * Skip **newer** tests which are not relevant when feature flag is **disabled**
-
-            ```js
-            before(function beforeHook() {
-                if (!hasFeatureFlag('ROX_WHATEVER')) {
-                    this.skip();
-                }
-            });
-            ```
+3. To skip integration tests, see [TESTING_E2E.md — Feature Flag Gating](./TESTING_E2E.md#feature-flag-gating)
 
 4. To turn on a feature flag for continuous integration in **branch** and **master** builds:
 
@@ -568,34 +511,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 
                     Replace `{isWhateverEnabled ? (<Whatever />) : (<WhateverItHasBeen />)}` with `<Whatever />`
 
-3. In integration tests:
-
-    * Delete `import { hasFeatureFlag } from '../…/helpers/features';` in cypress/integration/…/whatever.test.js
-    * And then at the beginning of `describe` block do either or both of the following:
-
-        * For **older** tests which were not relevant when feature flag is **enabled**
-
-            Delete obsolete `describe` block (or possibly entire test file) which has the following:
-
-            ```js
-            before(function beforeHook() {
-                if (hasFeatureFlag('ROX_WHATEVER')) {
-                    this.skip();
-                }
-            });
-            ```
-
-        * For **newer** tests which were not relevant when feature flag is **disabled**
-
-            To run tests unconditionally, delete the following:
-
-            ```js
-            before(function beforeHook() {
-                if (!hasFeatureFlag('ROX_WHATEVER')) {
-                    this.skip();
-                }
-            });
-            ```
+3. In integration tests: remove `hasFeatureFlag` guards and obsolete test blocks. See [TESTING_E2E.md — Feature Flag Gating](./TESTING_E2E.md#feature-flag-gating) for the patterns to look for.
 
 4. For continuous integration:
 

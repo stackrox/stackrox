@@ -14,7 +14,7 @@ function PolicyEvaluationFilterLabels({
 }: PolicyEvaluationFilterLabelsProps): ReactElement | null {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    if (!evaluationFilter) {
+    if (!evaluationFilter || !isFeatureFlagEnabled('ROX_EVALUATION_FILTER')) {
         return null;
     }
 
@@ -28,19 +28,6 @@ function PolicyEvaluationFilterLabels({
         evaluationFilter.skipContainerTypes?.includes('SKIP_INIT')
     ) {
         labels.push({ text: 'Skips init', color: 'blue' });
-    }
-
-    if (isFeatureFlagEnabled('ROX_POLICY_FILTERS_UI')) {
-        switch (evaluationFilter.skipImageLayers) {
-            case 'SKIP_BASE':
-                labels.push({ text: 'Skips base', color: 'orange' });
-                break;
-            case 'SKIP_APP':
-                labels.push({ text: 'Skips application', color: 'orange' });
-                break;
-            default:
-                break;
-        }
     }
 
     if (labels.length === 0) {
