@@ -1,0 +1,51 @@
+name: "Add VMs to Cluster"
+run-name: "Add ${{ inputs.num-vms }} ${{ inputs.vm-os }} VMs to ${{ inputs.cluster-name }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      cluster-name:
+        description: "Infra cluster name (from `infractl list`)"
+        required: true
+        type: string
+      num-vms:
+        description: "Number of VMs to deploy"
+        required: false
+        default: 1
+        type: number
+      vm-os:
+        description: "VM OS"
+        required: false
+        default: "rhel9"
+        type: choice
+        options:
+          - rhel9
+          - rhel10
+      ssh-public-key:
+        description: "Optional SSH public key for human access to VMs"
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  add-vms:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Add VMs to cluster
+        uses: ./scripts/ci/add-vms
+        with:
+          cluster-name: ${{ inputs.cluster-name }}
+          num-vms: ${{ inputs.num-vms }}
+          vm-os: ${{ inputs.vm-os }}
+          ssh-public-key: ${{ inputs.ssh-public-key }}
+          infra-token: ${{ secrets.INFRA_TOKEN }}
+          quay-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          quay-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}

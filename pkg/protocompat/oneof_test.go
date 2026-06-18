@@ -14,8 +14,8 @@ import (
 func testHelperGetFieldProtoName(field reflect.StructField) string {
 	tagVal := field.Tag.Get("protobuf")
 	if tagVal != "" {
-		tagParts := strings.Split(tagVal, ",")
-		for _, tagPart := range tagParts {
+		tagParts := strings.SplitSeq(tagVal, ",")
+		for tagPart := range tagParts {
 			if strings.HasPrefix(tagPart, "name=") {
 				return strings.TrimLeft(tagPart, "name=")
 			}

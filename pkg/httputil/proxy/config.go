@@ -175,7 +175,7 @@ func (c *proxyConfig) Compile(envCfg environmentConfig) *compiledConfig {
 		allExcludes = append(allExcludes, defaultExcludes...)
 	}
 
-	for _, elem := range strings.Split(envCfg.NoProxy, ",") {
+	for elem := range strings.SplitSeq(envCfg.NoProxy, ",") {
 		elem = strings.TrimSpace(elem)
 		if elem == "" {
 			continue

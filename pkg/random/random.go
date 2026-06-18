@@ -2,6 +2,7 @@ package random
 
 import (
 	"math/rand/v2"
+	"strings"
 )
 
 // Charset is a string with available characters to use by GenerateString
@@ -23,10 +24,10 @@ func GenerateString(num int, charSet Charset) string {
 	if charSet == "" {
 		return ""
 	}
-	var str string
+	var str strings.Builder
 	for i := 0; i < num; i++ {
 		randInt := rand.IntN(len(charSet))
-		str += string(charSet[randInt])
+		str.WriteString(string(charSet[randInt]))
 	}
-	return str
+	return str.String()
 }
