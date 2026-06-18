@@ -46,16 +46,31 @@ var (
 	log = logging.LoggerForModule()
 
 	// DefaultIndexerEndpoint is the default gRPC endpoint for the indexer.
-	DefaultIndexerEndpoint = fmt.Sprintf("scanner-v4-indexer.%s.svc:8443", env.Namespace.Setting())
+	// Overridable via ROX_SCANNER_V4_CENTRAL_INDEXER_ENDPOINT for local development.
+	DefaultIndexerEndpoint = defaultEndpoint(
+		env.ScannerV4CentralIndexerEndpoint.Setting(),
+		fmt.Sprintf("scanner-v4-indexer.%s.svc:8443", env.Namespace.Setting()),
+	)
 
 	// DefaultMatcherEndpoint is the default gRPC endpoint for the matcher.
-	DefaultMatcherEndpoint = fmt.Sprintf("scanner-v4-matcher.%s.svc:8443", env.Namespace.Setting())
+	// Overridable via ROX_SCANNER_V4_CENTRAL_MATCHER_ENDPOINT for local development.
+	DefaultMatcherEndpoint = defaultEndpoint(
+		env.ScannerV4CentralMatcherEndpoint.Setting(),
+		fmt.Sprintf("scanner-v4-matcher.%s.svc:8443", env.Namespace.Setting()),
+	)
 
 	defaultMaxConcurrentScans = int64(30)
 
 	scanTimeout     = env.ScanTimeout.DurationSetting()
 	metadataTimeout = 1 * time.Minute
 )
+
+func defaultEndpoint(override, fallback string) string {
+	if override != "" {
+		return override
+	}
+	return fallback
+}
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {

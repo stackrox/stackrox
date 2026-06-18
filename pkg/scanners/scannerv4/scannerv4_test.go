@@ -22,6 +22,30 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+func TestDefaultEndpoint(t *testing.T) {
+	tests := map[string]struct {
+		override string
+		fallback string
+		expected string
+	}{
+		"override takes precedence": {
+			override: "localhost:9443",
+			fallback: "scanner-v4-indexer.stackrox.svc:8443",
+			expected: "localhost:9443",
+		},
+		"fallback used when override is empty": {
+			override: "",
+			fallback: "scanner-v4-indexer.stackrox.svc:8443",
+			expected: "scanner-v4-indexer.stackrox.svc:8443",
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, defaultEndpoint(tc.override, tc.fallback))
+		})
+	}
+}
+
 func TestGetVulnDefinitionsInfo(t *testing.T) {
 	errExpected := true
 	var noErr error
