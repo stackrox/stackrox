@@ -172,7 +172,6 @@ func (m *FileXattrChange) CloneVT() *FileXattrChange {
 	r := new(FileXattrChange)
 	r.Activity = m.Activity.CloneVT()
 	r.XattrName = m.XattrName
-	r.Operation = m.Operation
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -269,12 +268,21 @@ func (m *FileActivity_Write) CloneVT() isFileActivity_File {
 	return r
 }
 
-func (m *FileActivity_Xattr) CloneVT() isFileActivity_File {
+func (m *FileActivity_XattrSet) CloneVT() isFileActivity_File {
 	if m == nil {
-		return (*FileActivity_Xattr)(nil)
+		return (*FileActivity_XattrSet)(nil)
 	}
-	r := new(FileActivity_Xattr)
-	r.Xattr = m.Xattr.CloneVT()
+	r := new(FileActivity_XattrSet)
+	r.XattrSet = m.XattrSet.CloneVT()
+	return r
+}
+
+func (m *FileActivity_XattrRemove) CloneVT() isFileActivity_File {
+	if m == nil {
+		return (*FileActivity_XattrRemove)(nil)
+	}
+	r := new(FileActivity_XattrRemove)
+	r.XattrRemove = m.XattrRemove.CloneVT()
 	return r
 }
 
@@ -461,9 +469,6 @@ func (this *FileXattrChange) EqualVT(that *FileXattrChange) bool {
 		return false
 	}
 	if this.XattrName != that.XattrName {
-		return false
-	}
-	if this.Operation != that.Operation {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -688,8 +693,8 @@ func (this *FileActivity_Write) EqualVT(thatIface isFileActivity_File) bool {
 	return true
 }
 
-func (this *FileActivity_Xattr) EqualVT(thatIface isFileActivity_File) bool {
-	that, ok := thatIface.(*FileActivity_Xattr)
+func (this *FileActivity_XattrSet) EqualVT(thatIface isFileActivity_File) bool {
+	that, ok := thatIface.(*FileActivity_XattrSet)
 	if !ok {
 		return false
 	}
@@ -699,7 +704,32 @@ func (this *FileActivity_Xattr) EqualVT(thatIface isFileActivity_File) bool {
 	if this == nil && that != nil || this != nil && that == nil {
 		return false
 	}
-	if p, q := this.Xattr, that.Xattr; p != q {
+	if p, q := this.XattrSet, that.XattrSet; p != q {
+		if p == nil {
+			p = &FileXattrChange{}
+		}
+		if q == nil {
+			q = &FileXattrChange{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *FileActivity_XattrRemove) EqualVT(thatIface isFileActivity_File) bool {
+	that, ok := thatIface.(*FileActivity_XattrRemove)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.XattrRemove, that.XattrRemove; p != q {
 		if p == nil {
 			p = &FileXattrChange{}
 		}
@@ -1130,11 +1160,6 @@ func (m *FileXattrChange) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.Operation != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Operation))
-		i--
-		dAtA[i] = 0x18
-	}
 	if len(m.XattrName) > 0 {
 		i -= len(m.XattrName)
 		copy(dAtA[i:], m.XattrName)
@@ -1385,15 +1410,15 @@ func (m *FileActivity_Write) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *FileActivity_Xattr) MarshalToVT(dAtA []byte) (int, error) {
+func (m *FileActivity_XattrSet) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *FileActivity_Xattr) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *FileActivity_XattrSet) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.Xattr != nil {
-		size, err := m.Xattr.MarshalToSizedBufferVT(dAtA[:i])
+	if m.XattrSet != nil {
+		size, err := m.XattrSet.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -1405,6 +1430,29 @@ func (m *FileActivity_Xattr) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i = protohelpers.EncodeVarint(dAtA, i, 0)
 		i--
 		dAtA[i] = 0x5a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *FileActivity_XattrRemove) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *FileActivity_XattrRemove) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.XattrRemove != nil {
+		size, err := m.XattrRemove.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x62
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x62
 	}
 	return len(dAtA) - i, nil
 }
@@ -1559,9 +1607,6 @@ func (m *FileXattrChange) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.Operation != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.Operation))
-	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1689,14 +1734,28 @@ func (m *FileActivity_Write) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *FileActivity_Xattr) SizeVT() (n int) {
+func (m *FileActivity_XattrSet) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.Xattr != nil {
-		l = m.Xattr.SizeVT()
+	if m.XattrSet != nil {
+		l = m.XattrSet.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 2
+	}
+	return n
+}
+func (m *FileActivity_XattrRemove) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.XattrRemove != nil {
+		l = m.XattrRemove.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 2
@@ -2681,25 +2740,6 @@ func (m *FileXattrChange) UnmarshalVT(dAtA []byte) error {
 			}
 			m.XattrName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Operation", wireType)
-			}
-			m.Operation = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Operation |= FileXattrChange_Operation(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -3144,7 +3184,7 @@ func (m *FileActivity) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 11:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Xattr", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field XattrSet", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -3171,8 +3211,8 @@ func (m *FileActivity) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.File.(*FileActivity_Xattr); ok {
-				if err := oneof.Xattr.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.File.(*FileActivity_XattrSet); ok {
+				if err := oneof.XattrSet.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
@@ -3180,7 +3220,48 @@ func (m *FileActivity) UnmarshalVT(dAtA []byte) error {
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.File = &FileActivity_Xattr{Xattr: v}
+				m.File = &FileActivity_XattrSet{XattrSet: v}
+			}
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field XattrRemove", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.File.(*FileActivity_XattrRemove); ok {
+				if err := oneof.XattrRemove.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &FileXattrChange{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.File = &FileActivity_XattrRemove{XattrRemove: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -4203,25 +4284,6 @@ func (m *FileXattrChange) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.XattrName = stringValue
 			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Operation", wireType)
-			}
-			m.Operation = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Operation |= FileXattrChange_Operation(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -4670,7 +4732,7 @@ func (m *FileActivity) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 11:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Xattr", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field XattrSet", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -4697,8 +4759,8 @@ func (m *FileActivity) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.File.(*FileActivity_Xattr); ok {
-				if err := oneof.Xattr.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.File.(*FileActivity_XattrSet); ok {
+				if err := oneof.XattrSet.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
@@ -4706,7 +4768,48 @@ func (m *FileActivity) UnmarshalVTUnsafe(dAtA []byte) error {
 				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.File = &FileActivity_Xattr{Xattr: v}
+				m.File = &FileActivity_XattrSet{XattrSet: v}
+			}
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field XattrRemove", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.File.(*FileActivity_XattrRemove); ok {
+				if err := oneof.XattrRemove.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &FileXattrChange{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.File = &FileActivity_XattrRemove{XattrRemove: v}
 			}
 			iNdEx = postIndex
 		default:

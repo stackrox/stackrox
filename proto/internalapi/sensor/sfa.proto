@@ -50,11 +50,6 @@ message FileOpen {
 message FileXattrChange {
   FileActivityBase activity = 1;
   string xattr_name = 2;
-  enum Operation {
-    SET = 0;
-    REMOVE = 1;
-  }
-  Operation operation = 3;
 }
 
 message FileActivity {
@@ -68,7 +63,8 @@ message FileActivity {
     FileOwnershipChange ownership = 7;
     FileOpen open = 8;
     FileWrite write = 9;
-    FileXattrChange xattr = 11;
+    FileXattrChange xattr_set = 11;
+    FileXattrChange xattr_remove = 12;
   }
   // The hostname/name of the node where the file activity occurred
   string hostname = 10;
