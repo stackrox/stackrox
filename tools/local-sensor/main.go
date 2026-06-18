@@ -102,7 +102,7 @@ type localSensorConfig struct {
 	FakeWorkloadFile   string
 	WithMetrics        bool
 	MetricsSnapshotOut string
-	Name               string
+	OutputLabel        string
 	NoCPUProfile       bool
 	NoMemProfile       bool
 	PprofServer        bool
@@ -129,7 +129,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 		FakeWorkloadFile:   "",
 		WithMetrics:        false,
 		MetricsSnapshotOut: "",
-		Name:               "",
+		OutputLabel:        "",
 		NoCPUProfile:       false,
 		NoMemProfile:       false,
 		PprofServer:        false,
@@ -155,7 +155,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.StringVar(&sensorConfig.FakeWorkloadFile, "with-fakeworkload", sensorConfig.FakeWorkloadFile, " a file containing a FakeWorkload definition")
 	flag.BoolVar(&sensorConfig.WithMetrics, "with-metrics", sensorConfig.WithMetrics, "enables the metric server")
 	flag.StringVar(&sensorConfig.MetricsSnapshotOut, "metrics-snapshot-out", sensorConfig.MetricsSnapshotOut, "file to store a pre-shutdown Prometheus metrics snapshot when metrics are enabled")
-	flag.StringVar(&sensorConfig.Name, "name", sensorConfig.Name, "label used in all output filenames (cpu/mem profiles, metrics snapshot); defaults to UTC timestamp")
+	flag.StringVar(&sensorConfig.OutputLabel, "output-label", sensorConfig.OutputLabel, "label used in all output filenames (cpu/mem profiles, metrics snapshot); defaults to UTC timestamp")
 	flag.BoolVar(&sensorConfig.PprofServer, "with-pprof-server", sensorConfig.PprofServer, "enables the pprof server on port :6060")
 	flag.StringVar(&sensorConfig.CentralEndpoint, "connect-central", sensorConfig.CentralEndpoint, "connects to a Central instance rather than a fake Central")
 	flag.StringVar(&sensorConfig.Namespace, "namespace", sensorConfig.Namespace, "namespace where sensor is deployed (used for certificate generation when connecting to real Central)")
@@ -165,6 +165,9 @@ func mustGetCommandLineArgs() localSensorConfig {
 
 	sensorConfig.CentralOutput = path.Clean(sensorConfig.CentralOutput)
 	if sensorConfig.MetricsSnapshotOut != "" {
+		if !sensorConfig.WithMetrics {
+			log.Fatalf("-metrics-snapshot-out requires -with-metrics to be enabled")
+		}
 		sensorConfig.MetricsSnapshotOut = path.Clean(sensorConfig.MetricsSnapshotOut)
 	}
 
@@ -248,18 +251,18 @@ func sanitizeFilenameLabel(label string) string {
 	return strings.Trim(builder.String(), "-")
 }
 
-func writeMetricsSnapshot(parent context.Context, filePath string) error {
-	return writeMetricsSnapshotWithExporter(parent, filePath, prometheusutil.ExportText)
+func writeMetricsSnapshot(parentCtx context.Context, filePath string) error {
+	return writeMetricsSnapshotWithExporter(parentCtx, filePath, prometheusutil.ExportText)
 }
 
-func writeMetricsSnapshotWithExporter(parent context.Context, filePath string, exportMetrics func(context.Context, io.Writer) error) error {
+func writeMetricsSnapshotWithExporter(parentCtx context.Context, filePath string, exportMetrics func(context.Context, io.Writer) error) error {
 	f, err := os.Create(filePath)
 	if err != nil {
 		return errors.Wrapf(err, "could not create metrics snapshot %q", filePath)
 	}
 	defer utils.IgnoreError(f.Close)
 
-	snapshotCtx, cancel := context.WithTimeout(parent, metricsSnapshotTimeout)
+	snapshotCtx, cancel := context.WithTimeout(parentCtx, metricsSnapshotTimeout)
 	defer cancel()
 
 	if err := exportMetrics(snapshotCtx, f); err != nil {
@@ -315,14 +318,12 @@ func main() {
 	}
 	localConfig := mustGetCommandLineArgs()
 	var durationC <-chan time.Time
-	var durationDeadline time.Time
-	var durationLogStop chan struct{}
 	if localConfig.Duration > 0 {
-		durationDeadline = time.Now().Add(localConfig.Duration)
+		durationDeadline := time.Now().Add(localConfig.Duration)
 		durationTimer := time.NewTimer(localConfig.Duration)
 		defer durationTimer.Stop()
 		durationC = durationTimer.C
-		durationLogStop = make(chan struct{})
+		durationLogStop := make(chan struct{})
 		durationLogTicker := time.NewTicker(time.Minute)
 		defer durationLogTicker.Stop()
 		defer close(durationLogStop)
@@ -363,7 +364,7 @@ func main() {
 		utils.CrashOnError(err)
 	}
 
-	runLabel := makeRunLabel(localConfig.Name, time.Now())
+	runLabel := makeRunLabel(localConfig.OutputLabel, time.Now())
 
 	if !localConfig.NoCPUProfile {
 		f, err := os.Create(fmt.Sprintf("local-sensor-cpu-%s.prof", runLabel))
@@ -536,7 +537,7 @@ func main() {
 	}
 
 	if !durationExpired {
-		log.Printf("Running scenario for %f minutes\n", localConfig.Duration.Minutes())
+		log.Printf("Running scenario for %.1f minutes\n", localConfig.Duration.Minutes())
 		select {
 		case <-durationC:
 		case <-s.Stopped().Done():

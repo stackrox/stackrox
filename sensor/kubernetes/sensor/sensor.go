@@ -191,7 +191,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		networkFlowManager,
 		networkpolicies.NewCommandHandler(cfg.k8sClient.Kubernetes()),
 		clusterstatus.NewUpdater(cfg.k8sClient),
-		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0, clusterhealth.WithQuietErrors(cfg.localSensor)),
+		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
 		clustermetrics.New(clusterID, cfg.k8sClient.Kubernetes()),
 		complianceCommandHandler,
 		processSignals,
