@@ -31,6 +31,11 @@ func CAFilePath() string {
 	return caFilePathSetting.Setting()
 }
 
+// CAKeyFilePath returns the path where the CA key is stored.
+func CAKeyFilePath() string {
+	return caKeyFilePathSetting.Setting()
+}
+
 // CertFilePath returns the path where the certificate is stored.
 func CertFilePath() string {
 	return certFilePathSetting.Setting()

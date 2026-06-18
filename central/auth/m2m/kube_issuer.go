@@ -5,10 +5,9 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/satoken"
 	"github.com/stackrox/rox/pkg/sync"
 )
-
-const k8sSATokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token" //#nosec G101 -- This is a false positive
 
 var (
 	serviceAccountIssuer      string
@@ -45,5 +44,5 @@ func getKubernetesIssuer() (string, error) {
 }
 
 func readK8sSAToken() ([]byte, error) {
-	return os.ReadFile(k8sSATokenFile)
+	return os.ReadFile(satoken.ServiceAccountTokenJWTPath())
 }

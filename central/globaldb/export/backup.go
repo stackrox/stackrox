@@ -50,7 +50,7 @@ func BackupPostgres(ctx context.Context, postgresDB postgres.DB, backupListener 
 			return listen(errors.Wrap(err, "backing up certificates"))
 		}
 
-		if err := generators.PutStreamInZip(generators.PutFileInStream(pgconfig.DBPasswordFile), filepath.Join(backup.DatabaseBaseFolder, backup.DatabasePassword)).WriteTo(ctx, zipWriter); err != nil {
+		if err := generators.PutStreamInZip(generators.PutFileInStream(pgconfig.DBPasswordFile()), filepath.Join(backup.DatabaseBaseFolder, backup.DatabasePassword)).WriteTo(ctx, zipWriter); err != nil {
 			return listen(errors.Wrap(err, "backing up postgres password"))
 		}
 	}

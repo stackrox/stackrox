@@ -256,8 +256,12 @@ const (
 
 	maxServiceCertTokenLeeway = 1 * time.Minute
 
-	proxyConfigPath = "/run/secrets/stackrox.io/proxy-config"
 	proxyConfigFile = "config.yaml"
+)
+
+var (
+	proxyConfigPathSetting = env.RegisterSetting("ROX_PROXY_CONFIG_DIR",
+		env.WithDefault("/run/secrets/stackrox.io/proxy-config"))
 )
 
 func init() {
@@ -301,7 +305,7 @@ func main() {
 	clientconn.SetUserAgent(clientconn.Central)
 
 	ctx := context.Background()
-	proxy.WatchProxyConfig(ctx, proxyConfigPath, proxyConfigFile, true)
+	proxy.WatchProxyConfig(ctx, proxyConfigPathSetting.Setting(), proxyConfigFile, true)
 
 	devmode.StartOnDevBuilds("central")
 

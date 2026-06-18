@@ -47,9 +47,9 @@ func GetConfig() Config {
 
 func getConfig() (*gormConfig, error) {
 	centralConfig := config.GetConfig()
-	password, err := os.ReadFile(pgconfig.DBPasswordFile)
+	password, err := os.ReadFile(pgconfig.DBPasswordFile())
 	if err != nil {
-		return nil, errors.Wrapf(err, "pgsql: could not load password file %q", pgconfig.DBPasswordFile)
+		return nil, errors.Wrapf(err, "pgsql: could not load password file %q", pgconfig.DBPasswordFile())
 	}
 
 	log.WriteToStderrf("connect to gorm: %q", centralConfig.CentralDB.Source)

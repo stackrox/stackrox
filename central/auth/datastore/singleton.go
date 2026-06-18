@@ -6,11 +6,13 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/jwt"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	once sync.Once
 
 	ds DataStore
@@ -30,7 +32,9 @@ func Singleton() DataStore {
 		// However, we do this in the background since the creation of the token exchanger
 		// will reach out to the OIDC provider's configuration endpoint.
 		go func() {
-			utils.Should(ds.InitializeTokenExchangers())
+			if err := ds.InitializeTokenExchangers(); err != nil {
+				log.Warnf("M2M token exchanger initialization skipped: %v", err)
+			}
 		}()
 	})
 	return ds

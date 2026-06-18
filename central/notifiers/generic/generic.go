@@ -34,11 +34,6 @@ const (
 	alertMessageKey         = "alert"
 	auditMessageKey         = "audit"
 	networkPolicyMessageKey = "networkpolicy"
-
-	// serviceOperatorCAPath points to the secret of the service account, which within an OpenShift environment
-	// also has the service-ca.crt, which includes the CA to verify certificates issued by the service-ca operator.
-	// This could be i.e. the default ingress controller certificate.
-	serviceOperatorCAPath = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
 )
 
 var (
@@ -130,7 +125,7 @@ func newGeneric(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec,
 		}
 	}
 	// Trust local cluster services.
-	if serviceCA, err := os.ReadFile(serviceOperatorCAPath); err == nil {
+	if serviceCA, err := os.ReadFile(notifierUtils.ServiceOperatorCAPath()); err == nil {
 		rootCAs.AppendCertsFromPEM(serviceCA)
 	}
 	extraFieldsJSON, err := getExtraFieldJSON(conf.GetExtraFields())

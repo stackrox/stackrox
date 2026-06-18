@@ -11,15 +11,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/jwt"
 	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/satoken"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 const (
-	namespaceFile = `/run/secrets/kubernetes.io/serviceaccount/namespace`
-	//#nosec G101 -- This is a false positive
-	tokenFile = `/run/secrets/kubernetes.io/serviceaccount/token`
-
 	namespaceClaimKey        = `kubernetes.io/serviceaccount/namespace`
 	serviceAccountIDClaimKey = `kubernetes.io/serviceaccount/service-account.uid`
 
@@ -30,19 +27,20 @@ const (
 // /run/secrets/kubernetes.io/serviceaccount/token, which contains the namespace as well as the UID of the service
 // account objects as a JWT.
 func populateFromServiceAccountTokenFile(out *storage.SensorDeploymentIdentification) error {
-	tokenBytes, err := os.ReadFile(tokenFile)
+	tf := satoken.ServiceAccountTokenJWTPath()
+	tokenBytes, err := os.ReadFile(tf)
 	if err != nil {
-		return errors.Wrapf(err, "reading token from file %s", tokenFile)
+		return errors.Wrapf(err, "reading token from file %s", tf)
 	}
 
 	saToken, err := jwt.ParseSigned(string(bytes.TrimSpace(tokenBytes)))
 	if err != nil {
-		return errors.Wrapf(err, "parsing service account JWT from file %s", tokenFile)
+		return errors.Wrapf(err, "parsing service account JWT from file %s", tf)
 	}
 
 	var claims map[string]interface{}
 	if err := saToken.UnsafeClaimsWithoutVerification(&claims); err != nil {
-		return errors.Wrapf(err, "obtaining claims from service account JWT from file %s", tokenFile)
+		return errors.Wrapf(err, "obtaining claims from service account JWT from file %s", tf)
 	}
 	out.AppNamespace, _ = claims[namespaceClaimKey].(string)
 	out.AppServiceaccountId, _ = claims[serviceAccountIDClaimKey].(string)
@@ -56,9 +54,10 @@ func populateFromServiceAccountNamespaceFile(out *storage.SensorDeploymentIdenti
 		return nil
 	}
 
-	appNamespaceBytes, err := os.ReadFile(namespaceFile)
+	nsFile := satoken.ServiceAccountNamespacePath()
+	appNamespaceBytes, err := os.ReadFile(nsFile)
 	if err != nil {
-		return errors.Wrapf(err, "reading application namespace from file %s", namespaceFile)
+		return errors.Wrapf(err, "reading application namespace from file %s", nsFile)
 	}
 	out.AppNamespace = string(bytes.TrimSpace(appNamespaceBytes))
 	return nil

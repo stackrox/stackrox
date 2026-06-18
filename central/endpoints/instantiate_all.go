@@ -18,12 +18,13 @@ var (
 func loadAllConfigs() ([]EndpointConfig, error) {
 	cfg := &defaultConfig
 
-	if ok, err := fileutils.Exists(endpointsConfigPath); err != nil {
-		log.Errorf("Could not determine if endpoints config file %s exists: %v", endpointsConfigPath, err)
+	cfgPath := endpointsConfigPath()
+	if ok, err := fileutils.Exists(cfgPath); err != nil {
+		log.Errorf("Could not determine if endpoints config file %s exists: %v", cfgPath, err)
 	} else if ok {
-		loadedCfg, err := loadFromFile(endpointsConfigPath)
+		loadedCfg, err := loadFromFile(cfgPath)
 		if err != nil {
-			return nil, errors.Wrapf(err, "could not load endpoints configuration file %s: %v", endpointsConfigPath, err)
+			return nil, errors.Wrapf(err, "could not load endpoints configuration file %s: %v", cfgPath, err)
 		}
 		cfg = loadedCfg
 	}

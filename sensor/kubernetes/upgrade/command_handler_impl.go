@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pods"
@@ -52,9 +53,9 @@ func (h *commandHandler) Name() string {
 
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.
 func NewCommandHandler(clusterID clusterIDWaiter, configHandler config.Handler) (common.SensorComponent, error) {
-	config, err := rest.InClusterConfig()
+	config, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
-		return nil, errors.Wrap(err, "obtaining in-cluster Kubernetes config")
+		return nil, errors.Wrap(err, "obtaining Kubernetes config")
 	}
 
 	k8sClientSet, err := kubernetes.NewForConfig(config)

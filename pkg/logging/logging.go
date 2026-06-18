@@ -53,8 +53,8 @@ const (
 	// Our project prefix. For all subpackages of this, we strip this prefix.
 	projectPrefix = "github.com/stackrox/rox"
 
-	// LoggingPath is the common log file so we can export it.
-	LoggingPath = "/var/log/stackrox/log.txt"
+	// defaultLoggingPath is the default common log file path.
+	defaultLoggingPath = "/var/log/stackrox/log.txt"
 
 	// defaultLevel is the default log level.
 	defaultLevel = zapcore.InfoLevel
@@ -66,6 +66,16 @@ const (
 	// WarnLevel log level
 	WarnLevel = zapcore.WarnLevel
 )
+
+var (
+	loggingPathSetting = env.RegisterSetting("ROX_LOG_FILE",
+		env.WithDefault(defaultLoggingPath))
+)
+
+// LoggingPath returns the path to the log file.
+func LoggingPath() string {
+	return loggingPathSetting.Setting()
+}
 
 var (
 	console = struct {
@@ -182,7 +192,7 @@ func init() {
 	// To the alert reader: While we could theoretically create a zapcore.Core instance and use
 	// the logFile to create a MultiSyncWriter, we stick with using the config-based approach
 	// such that we can easily propagate changes to log levels.
-	addOutput(&config, LoggingPath)
+	addOutput(&config, LoggingPath())
 
 	if buildinfo.ReleaseBuild {
 		config.DisableStacktrace = true

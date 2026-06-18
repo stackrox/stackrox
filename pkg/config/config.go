@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -12,8 +13,10 @@ import (
 )
 
 var (
-	configPath   = "/etc/stackrox/central-config.yaml"
-	dbConfigPath = "/etc/ext-db/central-external-db.yaml"
+	configPathSetting = env.RegisterSetting("ROX_CENTRAL_CONFIG",
+		env.WithDefault("/etc/stackrox/central-config.yaml"))
+	dbConfigPathSetting = env.RegisterSetting("ROX_CENTRAL_DB_CONFIG",
+		env.WithDefault("/etc/ext-db/central-external-db.yaml"))
 )
 
 var (
@@ -159,11 +162,11 @@ func readConfig[T yamlConfig](path string) (*T, error) {
 }
 
 func readConfigs() (*Config, error) {
-	centralConf, err := readConfig[centralConfig](configPath)
+	centralConf, err := readConfig[centralConfig](configPathSetting.Setting())
 	if err != nil {
 		return nil, err
 	}
-	dbConf, err := readConfig[externalDBConfig](dbConfigPath)
+	dbConf, err := readConfig[externalDBConfig](dbConfigPathSetting.Setting())
 	if err != nil {
 		return nil, err
 	}

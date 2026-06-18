@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 const deploymentName = "central"
@@ -25,11 +25,11 @@ type k8sRolloutChecker struct {
 
 // NewCentralRolloutChecker creates a RolloutChecker that queries the K8s API.
 func NewCentralRolloutChecker() RolloutChecker {
-	cfg, err := rest.InClusterConfig()
+	cfg, err := k8sutil.GetK8sInClusterConfig()
 	rc := &k8sRolloutChecker{inCluster: true}
 
 	if err != nil {
-		log.Warnf("failed to get in cluster kubernetes config, assuming not running in a kubernetes cluster: %v", err)
+		log.Warnf("failed to get kubernetes config, assuming not running in a kubernetes cluster: %v", err)
 		rc.inCluster = false
 		return rc
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 var (
@@ -20,16 +21,25 @@ var (
 // It is adjusted to use DNS record instead of raw IP as API host in certain cases.
 // This can be used to more conveniently bypass the proxy.
 func GetK8sInClusterConfig() (*rest.Config, error) {
-	restCfg, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
+	restCfg, inClusterErr := rest.InClusterConfig()
+	if inClusterErr != nil {
+		log.Info("In-cluster config not available, falling back to KUBECONFIG")
+		var err error
+		restCfg, err = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+			clientcmd.NewDefaultClientConfigLoadingRules(),
+			&clientcmd.ConfigOverrides{},
+		).ClientConfig()
+		if err != nil {
+			return nil, err
+		}
 	}
 	restCfg.ContentType = clientContentType
 	restCfg.WarningHandler = NewFilteredWarningHandler()
 
 	// Replacing raw IP address with kubernetes.default.svc
 	// allows for easier proxy configuration.
-	if env.ManagedCentral.BooleanSetting() {
+	// Only applies when running in-cluster.
+	if inClusterErr == nil && env.ManagedCentral.BooleanSetting() {
 		port := os.Getenv("KUBERNETES_SERVICE_PORT")
 		restCfg.Host = "https://" + net.JoinHostPort("kubernetes.default.svc.cluster.local.", port)
 	}

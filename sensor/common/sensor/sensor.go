@@ -45,11 +45,12 @@ const (
 	// The 127.0.0.1 ensures we do not expose it externally and must be port-forwarded to
 	pprofServer = "127.0.0.1:6060"
 
-	publicAPIEndpoint = ":8443"
-
-	publicWebhookEndpoint = ":9443"
-
 	scannerDefinitionsRoute = "/scanner/definitions"
+)
+
+var (
+	publicAPIEndpointSetting     = env.RegisterSetting("ROX_SENSOR_LISTEN_ENDPOINT", env.WithDefault(":8443"))
+	publicWebhookEndpointSetting = env.RegisterSetting("ROX_SENSOR_WEBHOOK_ENDPOINT", env.WithDefault(":9443"))
 )
 
 var (
@@ -272,7 +273,7 @@ func (s *Sensor) Start() {
 		IdentityExtractors: []authn.IdentityExtractor{mtlsServiceIDExtractor},
 		Endpoints: []*pkgGRPC.EndpointConfig{
 			{
-				ListenEndpoint: publicAPIEndpoint,
+				ListenEndpoint: publicAPIEndpointSetting.Setting(),
 				TLS:            verifier.NonCA{},
 				ServeGRPC:      true,
 				ServeHTTP:      true,
@@ -291,7 +292,7 @@ func (s *Sensor) Start() {
 		CustomRoutes: []routes.CustomRoute{legacyAdmissionControllerRoute, readinessRoute},
 		Endpoints: []*pkgGRPC.EndpointConfig{
 			{
-				ListenEndpoint: publicWebhookEndpoint,
+				ListenEndpoint: publicWebhookEndpointSetting.Setting(),
 				TLS:            verifier.NonCA{},
 				ServeHTTP:      true,
 			},

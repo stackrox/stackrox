@@ -64,7 +64,7 @@ func newManager(namespace string) (*managerImpl, error) {
 		internalCerts:            internalCerts,
 	}
 
-	certwatch.WatchCertDir("default TLS", DefaultCertPath, MaybeGetDefaultTLSCertificateFromDirectory, mgr.UpdateDefaultTLSCertificate)
+	certwatch.WatchCertDir("default TLS", DefaultCertPath(), MaybeGetDefaultTLSCertificateFromDirectory, mgr.UpdateDefaultTLSCertificate)
 	certwatch.WatchCertDir("internal service", mtls.CertsPrefix, LoadInternalCertificateFromDirectory, mgr.UpdateInternalCertificate, certwatch.WithVerify(false))
 
 	return mgr, nil

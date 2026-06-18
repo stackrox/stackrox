@@ -10,13 +10,13 @@ import (
 	"github.com/stackrox/rox/pkg/admissioncontrol"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/gziputil"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 var (
@@ -144,7 +144,7 @@ func (w *k8sSettingsWatch) sendSettings(settings *sensor.AdmissionControlSetting
 }
 
 func (w *k8sSettingsWatch) start() error {
-	restConfig, err := rest.InClusterConfig()
+	restConfig, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "could not retrieve Kubernetes config")
 	}
