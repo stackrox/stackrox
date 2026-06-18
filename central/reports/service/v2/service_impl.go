@@ -64,7 +64,8 @@ var (
 			apiV2.ReportService_PostViewBasedReport_FullMethodName,
 			apiV2.ReportService_CancelReport_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image), permissions.View(resources.Deployment)): {
+		// view permissions are enough if user is deleting a job created by the user
+		user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)): {
 			apiV2.ReportService_RunReport_FullMethodName,
 			apiV2.ReportService_DeleteReport_FullMethodName,
 		},
