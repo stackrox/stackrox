@@ -64,6 +64,7 @@ jobs:
     - name: Cache diagnostics
       if: always()
       run: |
+        set +e
         if [[ -f /tmp/go-test-output.txt ]]; then
           cached=$(grep -c '(cached)' /tmp/go-test-output.txt || true)
           total=$(grep -cE 'ok\s+github\.com/stackrox' /tmp/go-test-output.txt || true)
@@ -89,6 +90,7 @@ jobs:
           echo "=== Sample Phase 2 misses ==="
           grep -E 'cover profile missing|input file.*changed' /tmp/go-test-stderr.txt | head -5
         fi
+        exit 0
       shell: bash
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
