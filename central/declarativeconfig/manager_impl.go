@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/declarativeconfig/transform"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/maputil"
@@ -34,10 +35,12 @@ import (
 )
 
 const (
-	declarativeConfigDir = "/run/stackrox.io/declarative-configuration"
-
-	// The number of consecutive errors for a declarative configuration that causes its health status to be UNHEALTHY.
 	consecutiveReconciliationErrorThreshold = 3
+)
+
+var (
+	declarativeConfigDirSetting = env.RegisterSetting("ROX_DECLARATIVE_CONFIG_DIR",
+		env.WithDefault("/run/stackrox.io/declarative-configuration"))
 )
 
 type protoMessagesByType = map[reflect.Type][]protocompat.Message
@@ -110,7 +113,8 @@ func (m *managerImpl) ReconcileDeclarativeConfigurations() {
 		// For each directory within the declarative configuration path, create a watch handler.
 		// The reason we need multiple watch handlers and cannot simply watch the root directory is that
 		// changes to directories are ignored within the watch handler.
-		entries, err := os.ReadDir(declarativeConfigDir)
+		configDir := declarativeConfigDirSetting.Setting()
+		entries, err := os.ReadDir(configDir)
 		if err != nil {
 			if os.IsNotExist(err) {
 				log.Info("Declarative configuration directory does not exist, no reconciliation will be done")
@@ -127,7 +131,7 @@ func (m *managerImpl) ReconcileDeclarativeConfigurations() {
 				continue
 			}
 
-			dirToWatch := path.Join(declarativeConfigDir, entry.Name())
+			dirToWatch := path.Join(configDir, entry.Name())
 			log.Infof("Start watch handler for declarative configuration for path %s",
 				dirToWatch)
 			wh := newWatchHandler(dirToWatch, m)

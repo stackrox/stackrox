@@ -15,7 +15,7 @@ const (
 
 // DBMountPath is the directory path (within a container) where database storage device is mounted.
 func DBMountPath() string {
-	return internal.DBMountPath
+	return internal.DBMountPath()
 }
 
 // GetCurrentClone - returns the current clone

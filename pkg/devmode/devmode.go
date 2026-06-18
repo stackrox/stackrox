@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 )
 
+var debugPortSetting = env.RegisterSetting("ROX_DEBUG_PORT")
+
 const binaryRoot = "/stackrox"
 
 // StartOnDevBuilds start the development mode only if a dev build is enabled.
@@ -29,7 +31,7 @@ func StartOnDevBuilds(binaryPath string) {
 		go startBinaryWatchdog(filepath.Join(binaryRoot, binaryPath))
 	}
 
-	debughandler.MustStartServerAsync("")
+	debughandler.MustStartServerAsync(debugPortSetting.Setting())
 
 	runtime.SetBlockProfileRate(1)
 	runtime.SetMutexProfileFraction(1)

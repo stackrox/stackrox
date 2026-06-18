@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -26,7 +27,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry/gatherers"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 const (
@@ -276,7 +276,7 @@ func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
 	subCtx, cancel := context.WithTimeout(ctx, diagnosticBundleTimeout)
 	defer cancel()
 
-	restCfg, err := rest.InClusterConfig()
+	restCfg, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "could not instantiate Kubernetes REST client config")
 	}

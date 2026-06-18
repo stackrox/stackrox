@@ -4,24 +4,19 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-)
 
-const (
-	caCert      = "/run/secrets/stackrox.io/certs/ca.pem"
-	caKey       = "/run/secrets/stackrox.io/certs/ca-key.pem"
-	jwtKeyInDer = "/run/secrets/stackrox.io/certs/jwt-key.der"
-	jwtKeyInPem = "/run/secrets/stackrox.io/certs/jwt-key.pem"
+	"github.com/stackrox/rox/central/jwt"
+	"github.com/stackrox/rox/pkg/mtls"
 )
 
 // NewCertsBackup returns a generator of certificate backups.
 func NewCertsBackup() *CertsBackup {
-	// Include jwt key in either der or in pem format, preferable in der format.
-	jwtKey := jwtKeyInDer
-	if _, err := os.Stat(jwtKeyInDer); os.IsNotExist(err) {
-		jwtKey = jwtKeyInPem
+	jwtKey := jwt.PrivateKeyDERPath()
+	if _, err := os.Stat(jwtKey); os.IsNotExist(err) {
+		jwtKey = jwt.PrivateKeyPEMPath()
 	}
 	return &CertsBackup{
-		certFiles: []string{caCert, caKey, jwtKey},
+		certFiles: []string{mtls.CAFilePath(), mtls.CAKeyFilePath(), jwtKey},
 	}
 }
 

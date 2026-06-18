@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -24,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	k8sVersion "k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 var (
@@ -118,7 +118,7 @@ func getCentralDeploymentProperties() map[string]any {
 	}
 	// k8s apiserver is not accessible in cloud service environment.
 	v := &k8sVersion.Info{GitVersion: "unknown"}
-	if rc, err := rest.InClusterConfig(); err == nil {
+	if rc, err := k8sutil.GetK8sInClusterConfig(); err == nil {
 		if clientset, err := kubernetes.NewForConfig(rc); err == nil {
 			if serverVersion, err := clientset.ServerVersion(); err == nil {
 				v = serverVersion

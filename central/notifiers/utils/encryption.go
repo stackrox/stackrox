@@ -11,8 +11,9 @@ import (
 	"go.yaml.in/yaml/v3"
 )
 
-const (
-	encryptionKeyChainFile = "/run/secrets/stackrox.io/central-encryption-key-chain/key-chain.yaml"
+var (
+	encryptionKeyChainFileSetting = env.RegisterSetting("ROX_ENCRYPTION_KEY_CHAIN_FILE",
+		env.WithDefault("/run/secrets/stackrox.io/central-encryption-key-chain/key-chain.yaml"))
 )
 
 // KeyChain contains the keychain for notifier crypto
@@ -26,7 +27,7 @@ var keyChainFileReader = os.ReadFile
 // GetActiveNotifierEncryptionKey returns the active key for encrypting/decrypting notifier secrets and the index of
 // the active key in the keychain
 func GetActiveNotifierEncryptionKey() (string, int, error) {
-	data, err := keyChainFileReader(encryptionKeyChainFile)
+	data, err := keyChainFileReader(encryptionKeyChainFileSetting.Setting())
 	if err != nil {
 		return "", 0, errors.Wrap(err, "Could not load notifier encryption keychain")
 	}
@@ -43,7 +44,7 @@ func GetActiveNotifierEncryptionKey() (string, int, error) {
 
 // GetNotifierEncryptionKeyAtIndex returns the key at the given index from the keychain
 func GetNotifierEncryptionKeyAtIndex(idx int) (string, error) {
-	data, err := keyChainFileReader(encryptionKeyChainFile)
+	data, err := keyChainFileReader(encryptionKeyChainFileSetting.Setting())
 	if err != nil {
 		return "", errors.Wrap(err, "Could not load notifier encryption keychain")
 	}

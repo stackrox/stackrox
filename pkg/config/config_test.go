@@ -42,8 +42,8 @@ func TestReadConfig(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.title, func(t *testing.T) {
-			configPath = tc.centralConfigPath
-			dbConfigPath = tc.extDBConfigPath
+			t.Setenv("ROX_CENTRAL_CONFIG", tc.centralConfigPath)
+			t.Setenv("ROX_CENTRAL_DB_CONFIG", tc.extDBConfigPath)
 			conf, err := readConfigs()
 			if tc.isValid {
 				assert.NoError(t, err)

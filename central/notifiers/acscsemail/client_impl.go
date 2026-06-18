@@ -12,16 +12,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers/acscsemail/message"
+	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/satoken"
 	"github.com/stackrox/rox/pkg/utils"
 )
-
-// serviceOperatorCAPath points to the secret of the service account, which within an OpenShift environment
-// also has the service-ca.crt, which includes the CA to verify certificates issued by the service-ca operator.
-// The service-ca operator is used to issue the certificate used by the emailsender service in ACSCS
-const serviceOperatorCAPath = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
 
 const sendMsgPath = "/api/v1/acscsemail"
 
@@ -59,7 +55,7 @@ func ClientSingleton() Client {
 }
 
 func transportWithServiceCA() http.RoundTripper {
-	return transportWithAdditionalCA(serviceOperatorCAPath)
+	return transportWithAdditionalCA(notifierUtils.ServiceOperatorCAPath())
 }
 
 func transportWithAdditionalCA(caFile string) *http.Transport {

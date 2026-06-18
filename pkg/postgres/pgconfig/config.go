@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/size"
@@ -16,14 +17,21 @@ import (
 )
 
 const (
-	// DBPasswordFile is the database password file
-	DBPasswordFile = "/run/secrets/stackrox.io/db-password/password"
-
 	// capacity - Minimum recommended Postgres capacity
 	capacity = 100 * size.GB
 
 	connectTimeout = 15 * time.Second
 )
+
+var (
+	dbPasswordFileSetting = env.RegisterSetting("ROX_DB_PASSWORD_FILE",
+		env.WithDefault("/run/secrets/stackrox.io/db-password/password"))
+)
+
+// DBPasswordFile returns the path to the database password file.
+func DBPasswordFile() string {
+	return dbPasswordFileSetting.Setting()
+}
 
 var (
 	pgConfigMap  map[string]string
@@ -42,9 +50,9 @@ func GetPostgresConfig() (map[string]string, *postgres.Config, error) {
 
 func getPostgresConfig() (map[string]string, *postgres.Config, error) {
 	centralConfig := config.GetConfig()
-	password, err := os.ReadFile(DBPasswordFile)
+	password, err := os.ReadFile(DBPasswordFile())
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "pgsql: could not load password file %q", DBPasswordFile)
+		return nil, nil, errors.Wrapf(err, "pgsql: could not load password file %q", DBPasswordFile())
 	}
 	// Add the password to the source to pass to get the pool config
 	source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)

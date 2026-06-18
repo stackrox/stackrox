@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/auth/m2m"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/sync"
@@ -22,15 +23,28 @@ var (
 	tokenValidator tokens.Validator
 
 	initOnce sync.Once
+
+	privateKeyPathSetting = env.RegisterSetting("ROX_JWT_KEY_DER_FILE",
+		env.WithDefault("/run/secrets/stackrox.io/jwt/jwt-key.der"))
+	privateKeyPathPEMSetting = env.RegisterSetting("ROX_JWT_KEY_PEM_FILE",
+		env.WithDefault("/run/secrets/stackrox.io/jwt/jwt-key.pem"))
 )
 
 const (
-	privateKeyPath    = "/run/secrets/stackrox.io/jwt/jwt-key.der"
-	privateKeyPathPEM = "/run/secrets/stackrox.io/jwt/jwt-key.pem"
-	roxIssuer         = "https://stackrox.io/jwt"
+	roxIssuer = "https://stackrox.io/jwt"
 
 	keyID = "jwtk0"
 )
+
+// PrivateKeyDERPath returns the configured path to the JWT private key in DER format.
+func PrivateKeyDERPath() string {
+	return privateKeyPathSetting.Setting()
+}
+
+// PrivateKeyPEMPath returns the configured path to the JWT private key in PEM format.
+func PrivateKeyPEMPath() string {
+	return privateKeyPathPEMSetting.Setting()
+}
 
 func getBytesFromPem(path string) ([]byte, error) {
 	bytesPemEncoded, err := os.ReadFile(path)
@@ -46,16 +60,18 @@ func getBytesFromPem(path string) ([]byte, error) {
 
 // GetPrivateKeyBytes returns the contents of the file containing the private key.
 func GetPrivateKeyBytes() ([]byte, error) {
-	_, err := os.Stat(privateKeyPath)
+	derPath := PrivateKeyDERPath()
+	_, err := os.Stat(derPath)
 	if err == nil {
-		return os.ReadFile(privateKeyPath)
+		return os.ReadFile(derPath)
 	}
-	_, err = os.Stat(privateKeyPathPEM)
+	pemPath := PrivateKeyPEMPath()
+	_, err = os.Stat(pemPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not load private key")
 	}
 	// Second attempt: Try reading PEM version and convert.
-	return getBytesFromPem(privateKeyPathPEM)
+	return getBytesFromPem(pemPath)
 }
 
 type m2mValidator struct {

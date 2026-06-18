@@ -11,14 +11,16 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/admissioncontrol"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
 
-const (
-	settingsMountPath = `/run/config/stackrox.io/admission-control/config/`
+var (
+	settingsMountPathSetting = env.RegisterSetting("ROX_ADMISSION_CONTROL_CONFIG_DIR",
+		env.WithDefault("/run/config/stackrox.io/admission-control/config/"))
 )
 
 // WatchMountPathForSettingsUpdateAsync watches the config map mount path for updates to admission control settings.
@@ -146,14 +148,15 @@ func (m *mountSettingsWatch) OnStableUpdate(val interface{}, err error) {
 }
 
 func (m *mountSettingsWatch) OnWatchError(err error) {
-	log.Errorf("Error watching config map mount directory %s: %v", settingsMountPath, err)
+	log.Errorf("Error watching config map mount directory %s: %v", settingsMountPathSetting.Setting(), err)
 }
 
 func (m *mountSettingsWatch) start() error {
-	if err := k8scfgwatch.WatchConfigMountDir(m.ctx, settingsMountPath,
+	mountPath := settingsMountPathSetting.Setting()
+	if err := k8scfgwatch.WatchConfigMountDir(m.ctx, mountPath,
 		k8scfgwatch.DeduplicateWatchErrors(m), k8scfgwatch.Options{Force: true}); err != nil {
 		return errors.Wrapf(err,
-			"watching config mount directory %q", settingsMountPath)
+			"watching config mount directory %q", mountPath)
 	}
 	return nil
 }

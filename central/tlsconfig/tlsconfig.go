@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -24,9 +25,17 @@ const (
 	TLSCertFileName = `tls.crt`
 	// TLSKeyFileName is the private key filename.
 	TLSKeyFileName = `tls.key`
-	// DefaultCertPath is the path where the default TLS cert is located.
-	DefaultCertPath = "/run/secrets/stackrox.io/default-tls-cert"
 )
+
+var (
+	defaultCertPathSetting = env.RegisterSetting("ROX_DEFAULT_TLS_CERT_DIR",
+		env.WithDefault("/run/secrets/stackrox.io/default-tls-cert"))
+)
+
+// DefaultCertPath returns the path to the default TLS certificate directory.
+func DefaultCertPath() string {
+	return defaultCertPathSetting.Setting()
+}
 
 // GetAdditionalCAFilePaths returns the list of file paths containing additional CAs.
 func GetAdditionalCAFilePaths() ([]string, error) {
@@ -128,7 +137,7 @@ func GetAdditionalCAs() ([][]byte, error) {
 
 // MaybeGetDefaultCertChain reads and parses default cert chain and returns it in DER encoded format.
 func MaybeGetDefaultCertChain() ([][]byte, error) {
-	cert, err := MaybeGetDefaultTLSCertificateFromDirectory(DefaultCertPath)
+	cert, err := MaybeGetDefaultTLSCertificateFromDirectory(DefaultCertPath())
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +149,7 @@ func MaybeGetDefaultCertChain() ([][]byte, error) {
 
 // MaybeGetDefaultTLSCertificateFromDefaultDirectory loads the default TLS certificate from the default directory.
 func MaybeGetDefaultTLSCertificateFromDefaultDirectory() (*tls.Certificate, error) {
-	return MaybeGetDefaultTLSCertificateFromDirectory(DefaultCertPath)
+	return MaybeGetDefaultTLSCertificateFromDirectory(DefaultCertPath())
 }
 
 // MaybeGetDefaultTLSCertificateFromDirectory loads the default TLS certificate from the given directory.

@@ -20,10 +20,14 @@ import (
 )
 
 const (
-	htpasswdDir  = "/run/secrets/stackrox.io/htpasswd"
 	htpasswdFile = "htpasswd"
 
 	watchInterval = 5 * time.Second
+)
+
+var (
+	htpasswdDirSetting = env.RegisterSetting("ROX_HTPASSWD_DIR",
+		env.WithDefault("/run/secrets/stackrox.io/htpasswd"))
 )
 
 var (
@@ -52,7 +56,7 @@ func CreateManager(store roleDatastore.DataStore) (*basicAuthn.Manager, error) {
 		Force:    true,
 	}
 
-	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), htpasswdDir, k8scfgwatch.DeduplicateWatchErrors(wh), watchOpts)
+	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), htpasswdDirSetting.Setting(), k8scfgwatch.DeduplicateWatchErrors(wh), watchOpts)
 
 	return mgr, nil
 }
@@ -122,7 +126,7 @@ func IdentityExtractorOrPanic(store roleDatastore.DataStore, mgr *basicAuthn.Man
 		Force:    true,
 	}
 
-	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), htpasswdDir, k8scfgwatch.DeduplicateWatchErrors(wh), watchOpts)
+	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), htpasswdDirSetting.Setting(), k8scfgwatch.DeduplicateWatchErrors(wh), watchOpts)
 
 	return extractor
 }
