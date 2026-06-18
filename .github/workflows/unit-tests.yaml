@@ -70,10 +70,29 @@ jobs:
         echo "GOCACHE entries AFTER test: $total"
         cov=$(find "$gocache" -type f -name '*-d' -exec sh -c 'head -c 5 "$1" 2>/dev/null | grep -q "mode:" && echo 1' _ {} \; 2>/dev/null | wc -l | tr -d ' ')
         echo "Coverage profile entries AFTER test: $cov"
+        echo ""
+        echo "=== testcache stderr analysis ==="
+        if [[ -f /tmp/go-test-stderr.txt ]]; then
+          echo "Total testcache lines: $(grep -c 'testcache:' /tmp/go-test-stderr.txt || echo 0)"
+          echo "Phase 1 misses: $(grep -c 'input list not found' /tmp/go-test-stderr.txt || echo 0)"
+          echo "Cover profile missing: $(grep -c 'cover profile missing' /tmp/go-test-stderr.txt || echo 0)"
+          echo "Bad checksum: $(grep -c 'bad checksum' /tmp/go-test-stderr.txt || echo 0)"
+          echo "Saves: $(grep -c 'save test ID' /tmp/go-test-stderr.txt || echo 0)"
+          echo ""
+          echo "Sample cover profile misses:"
+          grep 'cover profile missing' /tmp/go-test-stderr.txt | head -3 || true
+          echo ""
+          echo "Sample Phase 1 misses:"
+          grep 'input list not found' /tmp/go-test-stderr.txt | head -3 || true
+        else
+          echo "stderr file not found"
+        fi
         exit 0
       shell: bash
 
     - name: Go Unit Tests
+      env:
+        GODEBUG: gocachetest=1
       run: ${{ matrix.gotags }} make go-unit-tests 2>/tmp/go-test-stderr.txt | tee /tmp/go-test-output.txt
 
 
