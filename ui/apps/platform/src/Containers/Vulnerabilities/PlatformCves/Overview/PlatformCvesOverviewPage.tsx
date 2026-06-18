@@ -10,6 +10,7 @@ import {
 import { useApolloClient } from '@apollo/client';
 
 import SelectExclusiveSingleTabs from 'Components/CompoundSearchFilter/components/SelectExclusiveSingleTabs';
+import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
@@ -115,12 +116,8 @@ function PlatformCvesOverviewPage() {
         pagination.setPage(1);
     }
 
-    function onSelectValueForSnoozed(value: string) {
-        setSearchFilter(
-            updateSearchFilter(searchFilter, [
-                { action: 'SELECT_EXCLUSIVE', category: attributeForSnoozed.searchTerm, value },
-            ])
-        );
+    function onSelectSnoozedTab(payload: OnSearchPayload) {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
         pagination.setPage(1);
     }
 
@@ -179,7 +176,7 @@ function PlatformCvesOverviewPage() {
             <PageSection type="tabs">
                 <SelectExclusiveSingleTabs
                     attribute={attributeForSnoozed}
-                    onSelectValue={onSelectValueForSnoozed}
+                    onSelectTab={onSelectSnoozedTab}
                     searchFilter={searchFilter}
                     tabContentId="TODO"
                 />
