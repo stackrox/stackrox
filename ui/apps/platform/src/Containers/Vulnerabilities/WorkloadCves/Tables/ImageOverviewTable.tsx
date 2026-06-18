@@ -17,6 +17,7 @@ import type { TableUIState } from 'utils/getTableUIState';
 import { ACTION_COLUMN_POPPER_PROPS } from 'constants/tables';
 import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
 import type { ManagedColumns } from 'hooks/useManagedColumns';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
 import type { GenerateSbomImageParams } from 'services/ImageSbomService';
@@ -25,11 +26,13 @@ import GenerateSbomModal, {
 } from '../../components/GenerateSbomModal';
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
+import TopSeverityLabel from '../../components/TopSeverityLabel';
 import type {
     SignatureVerificationResult,
     VulnerabilitySeverityLabel,
     WatchStatus,
 } from '../../types';
+import { getTopSeverityFromCounts } from '../../utils/vulnerabilityUtils';
 import ImageScanningIncompleteLabel from '../components/ImageScanningIncompleteLabel';
 import VerifiedSignatureLabel, {
     getVerifiedSignatureInResults,
@@ -229,6 +232,8 @@ function ImageOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: ImageOverviewTableProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSimplifiedSeverity = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
     const isScannerV4Enabled = useIsScannerV4Enabled();
@@ -247,14 +252,26 @@ function ImageOverviewTable({
                     </Th>
                     <TooltipTh
                         className={getVisibilityClass('cvesBySeverity')}
-                        tooltip="CVEs by severity across this image"
+                        tooltip={
+                            isSimplifiedSeverity
+                                ? 'Highest CVE severity across this image'
+                                : 'CVEs by severity across this image'
+                        }
                         sort={getSortParams(
-                            'CVEs By Severity',
-                            getSeveritySortOptions(filteredSeverities)
+                            isSimplifiedSeverity ? 'Severity' : 'CVEs By Severity',
+                            isSimplifiedSeverity
+                                ? undefined
+                                : getSeveritySortOptions(filteredSeverities)
                         )}
                     >
-                        CVEs by severity
-                        {isFiltered && <DynamicColumnIcon />}
+                        {isSimplifiedSeverity ? (
+                            'Top severity'
+                        ) : (
+                            <>
+                                CVEs by severity
+                                {isFiltered && <DynamicColumnIcon />}
+                            </>
+                        )}
                     </TooltipTh>
                     <Th
                         className={getVisibilityClass('operatingSystem')}
@@ -408,17 +425,29 @@ function ImageOverviewTable({
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('cvesBySeverity')}
-                                        dataLabel="CVEs by severity"
+                                        dataLabel={
+                                            isSimplifiedSeverity
+                                                ? 'Top severity'
+                                                : 'CVEs by severity'
+                                        }
                                     >
-                                        <SeverityCountLabels
-                                            criticalCount={criticalCount}
-                                            importantCount={importantCount}
-                                            moderateCount={moderateCount}
-                                            lowCount={lowCount}
-                                            unknownCount={unknownCount}
-                                            entity="image"
-                                            filteredSeverities={filteredSeverities}
-                                        />
+                                        {isSimplifiedSeverity ? (
+                                            <TopSeverityLabel
+                                                severity={getTopSeverityFromCounts(
+                                                    imageCVECountBySeverity
+                                                )}
+                                            />
+                                        ) : (
+                                            <SeverityCountLabels
+                                                criticalCount={criticalCount}
+                                                importantCount={importantCount}
+                                                moderateCount={moderateCount}
+                                                lowCount={lowCount}
+                                                unknownCount={unknownCount}
+                                                entity="image"
+                                                filteredSeverities={filteredSeverities}
+                                            />
+                                        )}
                                     </Td>
                                     <Td
                                         dataLabel="Operating system"

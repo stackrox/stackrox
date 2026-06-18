@@ -12,8 +12,11 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { TableUIState } from 'utils/getTableUIState';
 import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
 import type { ManagedColumns } from 'hooks/useManagedColumns';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
+import TopSeverityLabel from '../../components/TopSeverityLabel';
 import type { VulnerabilitySeverityLabel } from '../../types';
+import { getTopSeverityFromCounts } from '../../utils/vulnerabilityUtils';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import { getSeveritySortOptions } from '../../utils/sortUtils';
@@ -113,6 +116,8 @@ function DeploymentOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: DeploymentOverviewTableProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSimplifiedSeverity = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
     const { urlBuilder } = useWorkloadCveViewContext();
     const vulnerabilityState = useVulnerabilityState();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
@@ -131,14 +136,26 @@ function DeploymentOverviewTable({
                     </Th>
                     <TooltipTh
                         className={getVisibilityClass('cvesBySeverity')}
-                        tooltip="CVEs by severity across this deployment"
+                        tooltip={
+                            isSimplifiedSeverity
+                                ? 'Highest CVE severity across this deployment'
+                                : 'CVEs by severity across this deployment'
+                        }
                         sort={getSortParams(
-                            'CVEs By Severity',
-                            getSeveritySortOptions(filteredSeverities)
+                            isSimplifiedSeverity ? 'Severity' : 'CVEs By Severity',
+                            isSimplifiedSeverity
+                                ? undefined
+                                : getSeveritySortOptions(filteredSeverities)
                         )}
                     >
-                        CVEs by severity
-                        {isFiltered && <DynamicColumnIcon />}
+                        {isSimplifiedSeverity ? (
+                            'Top deployment severity'
+                        ) : (
+                            <>
+                                CVEs by severity
+                                {isFiltered && <DynamicColumnIcon />}
+                            </>
+                        )}
                     </TooltipTh>
                     <Th className={getVisibilityClass('cluster')} sort={getSortParams('Cluster')}>
                         Cluster
@@ -200,18 +217,30 @@ function DeploymentOverviewTable({
                                         </Link>
                                     </Td>
                                     <Td
-                                        dataLabel="CVEs by severity"
+                                        dataLabel={
+                                            isSimplifiedSeverity
+                                                ? 'Top deployment severity'
+                                                : 'CVEs by severity'
+                                        }
                                         className={getVisibilityClass('cvesBySeverity')}
                                     >
-                                        <SeverityCountLabels
-                                            criticalCount={criticalCount}
-                                            importantCount={importantCount}
-                                            moderateCount={moderateCount}
-                                            lowCount={lowCount}
-                                            unknownCount={unknownCount}
-                                            entity="deployment"
-                                            filteredSeverities={filteredSeverities}
-                                        />
+                                        {isSimplifiedSeverity ? (
+                                            <TopSeverityLabel
+                                                severity={getTopSeverityFromCounts(
+                                                    imageCVECountBySeverity
+                                                )}
+                                            />
+                                        ) : (
+                                            <SeverityCountLabels
+                                                criticalCount={criticalCount}
+                                                importantCount={importantCount}
+                                                moderateCount={moderateCount}
+                                                lowCount={lowCount}
+                                                unknownCount={unknownCount}
+                                                entity="deployment"
+                                                filteredSeverities={filteredSeverities}
+                                            />
+                                        )}
                                     </Td>
                                     <Td
                                         dataLabel="Cluster"

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/imagecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -41,6 +42,8 @@ func init() {
 				"exceptionCount(requestStatus: [String]): Int!",
 				"images(pagination: Pagination): [Image!]!",
 				"topCVSS: Float!",
+				"topSeverity: String!",
+				"topEpssProbability: Float",
 				"publishedOn: Time",
 				"topNvdCVSS: Float!",
 			}),
@@ -111,7 +114,11 @@ func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*i
 		return nil, err
 	}
 
-	cves, err := resolver.ImageCVEView.Get(ctx, query, views.ReadOptions{})
+	opts := views.ReadOptions{}
+	if features.VulnMgmtUnifiedCVEView.Enabled() {
+		opts.SkipGetImagesBySeverity = true
+	}
+	cves, err := resolver.ImageCVEView.Get(ctx, query, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -295,6 +302,19 @@ func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ P
 
 func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {
 	return float64(resolver.data.GetTopCVSS())
+}
+
+func (resolver *imageCVECoreResolver) TopSeverity(_ context.Context) string {
+	return cvss.FormatSeverity(resolver.data.GetTopSeverity())
+}
+
+func (resolver *imageCVECoreResolver) TopEpssProbability(_ context.Context) *float64 {
+	v := resolver.data.GetTopEPSSProbability()
+	if v == nil {
+		return nil
+	}
+	f := float64(*v)
+	return &f
 }
 
 func (resolver *imageCVECoreResolver) TopNVDCVSS(_ context.Context) float64 {

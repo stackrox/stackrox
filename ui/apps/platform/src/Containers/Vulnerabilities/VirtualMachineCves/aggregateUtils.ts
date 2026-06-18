@@ -41,6 +41,18 @@ export function getVirtualMachineSeveritiesCount(
     return severityCounts;
 }
 
+export function getVirtualMachineTopCvss(virtualMachine: VirtualMachine): number {
+    let topCvss = 0;
+    virtualMachine.scan?.components.forEach((component) => {
+        component.vulns.forEach((vuln) => {
+            if (vuln.cvss > topCvss) {
+                topCvss = vuln.cvss;
+            }
+        });
+    });
+    return topCvss;
+}
+
 export type CveComponentRow = {
     name: ScanComponent['name'];
     sourceType: SourceType;

@@ -22,9 +22,12 @@ export function useImages({
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
     const { page, perPage } = pagination;
+
+    const gqlQuery = isNewImageDataModelEnabled ? imageV2ListQuery : imageListQuery;
+
     return useQuery<{
         images: Image[];
-    }>(isNewImageDataModelEnabled ? imageV2ListQuery : imageListQuery, {
+    }>(gqlQuery, {
         variables: {
             query,
             pagination: getPaginationParams({ page, perPage, sortOption }),

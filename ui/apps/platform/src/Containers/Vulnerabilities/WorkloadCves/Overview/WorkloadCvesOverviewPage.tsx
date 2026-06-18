@@ -119,6 +119,15 @@ export const defaultStorage: VulnMgmtLocalStorage = {
     },
 } as const;
 
+export const emptyDefaultStorage: VulnMgmtLocalStorage = {
+    preferences: {
+        defaultFilters: {
+            Severity: [],
+            Fixable: [],
+        },
+    },
+} as const;
+
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
     const navigate = useNavigate();
@@ -149,9 +158,10 @@ function WorkloadCvesOverviewPage() {
         isViewingWithCves ? 'CVE' : 'Image'
     );
 
+    const isSimplifiedSeverity = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
     const [localStorageValue, setStoredValue] = useLocalStorage(
         'vulnerabilityManagement',
-        defaultStorage,
+        isSimplifiedSeverity ? emptyDefaultStorage : defaultStorage,
         isVulnMgmtLocalStorage,
         normalizeLocalStorageKeys
     );
@@ -194,8 +204,12 @@ function WorkloadCvesOverviewPage() {
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const sort = useURLSort({
-        sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey),
-        defaultSortOption: getDefaultSortOption(activeEntityTabKey, searchFilter),
+        sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey, isSimplifiedSeverity),
+        defaultSortOption: getDefaultSortOption(
+            activeEntityTabKey,
+            searchFilter,
+            isSimplifiedSeverity
+        ),
         onSort: () => pagination.setPage(1),
     });
 

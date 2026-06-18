@@ -11,6 +11,7 @@ import type { ApiSortOption } from 'types/search';
 
 import { vulnerabilitySeverityLabels } from 'messages/common';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import {
     CLUSTER_SORT_FIELD,
@@ -19,6 +20,7 @@ import {
     OPERATING_SYSTEM_SORT_FIELD,
 } from '../../utils/sortFields';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
+import TopSeverityLabel from '../../components/TopSeverityLabel';
 import { getNodeEntityPagePath } from '../../utils/searchUtils';
 import { isVulnerabilitySeverityLabel } from '../../types';
 import type { QuerySearchFilter } from '../../types';
@@ -51,6 +53,8 @@ function NodesTable({
     onClearFilters,
 }: NodesTableProps) {
     const { page, perPage } = pagination;
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSimplifiedSeverity = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
 
     const { data, previousData, loading, error } = useNodes({
         querySearchFilter,
@@ -82,8 +86,14 @@ function NodesTable({
                 <Tr>
                     <Th sort={getSortParams(NODE_SORT_FIELD)}>Node</Th>
                     <Th>
-                        CVEs by severity
-                        {isFiltered && <DynamicColumnIcon />}
+                        {isSimplifiedSeverity ? (
+                            'Top severity'
+                        ) : (
+                            <>
+                                CVEs by severity
+                                {isFiltered && <DynamicColumnIcon />}
+                            </>
+                        )}
                     </Th>
                     <Th sort={getSortParams(CLUSTER_SORT_FIELD)}>Cluster</Th>
                     <Th sort={getSortParams(OPERATING_SYSTEM_SORT_FIELD)}>Operating system</Th>
@@ -98,10 +108,15 @@ function NodesTable({
                 renderer={({ data }) => (
                     <Tbody>
                         {data.map((node) => {
-                            const { id, name, nodeCVECountBySeverity, cluster, osImage, scanTime } =
-                                node;
-                            const { critical, important, moderate, low, unknown } =
-                                nodeCVECountBySeverity;
+                            const {
+                                id,
+                                name,
+                                nodeCVECountBySeverity,
+                                topCvss,
+                                cluster,
+                                osImage,
+                                scanTime,
+                            } = node;
                             return (
                                 <Tr key={id}>
                                     <Td dataLabel="Node" modifier="nowrap">
@@ -109,16 +124,32 @@ function NodesTable({
                                             <Truncate position="middle" content={name} />
                                         </Link>
                                     </Td>
-                                    <Td dataLabel="CVEs by severity">
-                                        <SeverityCountLabels
-                                            criticalCount={critical.total}
-                                            importantCount={important.total}
-                                            moderateCount={moderate.total}
-                                            lowCount={low.total}
-                                            unknownCount={unknown.total}
-                                            filteredSeverities={filteredSeverities}
-                                            entity={'node'}
-                                        />
+                                    <Td
+                                        dataLabel={
+                                            isSimplifiedSeverity
+                                                ? 'Top severity'
+                                                : 'CVEs by severity'
+                                        }
+                                    >
+                                        {isSimplifiedSeverity && topCvss !== undefined ? (
+                                            <TopSeverityLabel cvss={topCvss} />
+                                        ) : nodeCVECountBySeverity ? (
+                                            <SeverityCountLabels
+                                                criticalCount={
+                                                    nodeCVECountBySeverity.critical.total
+                                                }
+                                                importantCount={
+                                                    nodeCVECountBySeverity.important.total
+                                                }
+                                                moderateCount={
+                                                    nodeCVECountBySeverity.moderate.total
+                                                }
+                                                lowCount={nodeCVECountBySeverity.low.total}
+                                                unknownCount={nodeCVECountBySeverity.unknown.total}
+                                                filteredSeverities={filteredSeverities}
+                                                entity={'node'}
+                                            />
+                                        ) : null}
                                     </Td>
                                     <Td dataLabel="Cluster" modifier="nowrap">
                                         <Truncate position="middle" content={cluster.name} />

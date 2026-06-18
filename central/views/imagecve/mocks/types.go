@@ -18,6 +18,7 @@ import (
 	common "github.com/stackrox/rox/central/views/common"
 	imagecve "github.com/stackrox/rox/central/views/imagecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -143,6 +144,20 @@ func (mr *MockCveCoreMockRecorder) GetTopCVSS() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopCVSS", reflect.TypeOf((*MockCveCore)(nil).GetTopCVSS))
 }
 
+// GetTopEPSSProbability mocks base method.
+func (m *MockCveCore) GetTopEPSSProbability() *float32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTopEPSSProbability")
+	ret0, _ := ret[0].(*float32)
+	return ret0
+}
+
+// GetTopEPSSProbability indicates an expected call of GetTopEPSSProbability.
+func (mr *MockCveCoreMockRecorder) GetTopEPSSProbability() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopEPSSProbability", reflect.TypeOf((*MockCveCore)(nil).GetTopEPSSProbability))
+}
+
 // GetTopNVDCVSS mocks base method.
 func (m *MockCveCore) GetTopNVDCVSS() float32 {
 	m.ctrl.T.Helper()
@@ -155,6 +170,20 @@ func (m *MockCveCore) GetTopNVDCVSS() float32 {
 func (mr *MockCveCoreMockRecorder) GetTopNVDCVSS() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopNVDCVSS", reflect.TypeOf((*MockCveCore)(nil).GetTopNVDCVSS))
+}
+
+// GetTopSeverity mocks base method.
+func (m *MockCveCore) GetTopSeverity() storage.VulnerabilitySeverity {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTopSeverity")
+	ret0, _ := ret[0].(storage.VulnerabilitySeverity)
+	return ret0
+}
+
+// GetTopSeverity indicates an expected call of GetTopSeverity.
+func (mr *MockCveCoreMockRecorder) GetTopSeverity() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopSeverity", reflect.TypeOf((*MockCveCore)(nil).GetTopSeverity))
 }
 
 // MockCveView is a mock of CveView interface.

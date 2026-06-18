@@ -35,6 +35,7 @@ func init() {
 			"controls(query: String): [ComplianceControl!]!",
 			"failingControls(query: String): [ComplianceControl!]!",
 			"nodeCVECountBySeverity(query: String): ResourceCountByCVESeverity!",
+			"topCvss: Float!",
 			"nodeComplianceControlCount(query: String) : ComplianceControlCount!",
 			"nodeComponentCount(query: String): Int!",
 			"nodeComponents(query: String, pagination: Pagination): [NodeComponent!]!",
@@ -321,6 +322,11 @@ func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args Raw
 
 func (resolver *nodeResolver) getNodeRawQuery() string {
 	return search.NewQueryBuilder().AddExactMatches(search.NodeID, resolver.data.GetId()).Query()
+}
+
+// TopCvss returns the highest CVSS score of any vulnerability on the node.
+func (resolver *nodeResolver) TopCvss(_ context.Context) float64 {
+	return float64(resolver.data.GetTopCvss())
 }
 
 // NodeCVECountBySeverity returns the count of node cves by severity in the node.

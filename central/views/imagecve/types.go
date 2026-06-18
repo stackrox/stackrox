@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // CveCore is an interface to get image CVE properties.
@@ -18,6 +19,8 @@ type CveCore interface {
 	GetImagesBySeverity() common.ResourceCountByCVESeverity
 	GetTopCVSS() float32
 	GetTopNVDCVSS() float32
+	GetTopSeverity() storage.VulnerabilitySeverity
+	GetTopEPSSProbability() *float32
 	GetAffectedImageCount() int
 	GetFirstDiscoveredInSystem() *time.Time
 	GetPublishDate() *time.Time

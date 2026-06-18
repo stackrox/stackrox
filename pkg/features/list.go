@@ -148,6 +148,9 @@ var (
 
 	// VulnMgmtDateRangeFilter enables date/time range filtering conditions in Vulnerability Management 2.0 advanced filters
 	VulnMgmtDateRangeFilter = registerFeature("Enables date/time range filtering in Vulnerability Management 2.0", "ROX_VULN_MGMT_DATE_RANGE_FILTER")
+
+	// VulnMgmtUnifiedCVEView replaces per-severity count columns with a single top-severity indicator in VM 2.0 CVE tables
+	VulnMgmtUnifiedCVEView = registerFeature("Simplified severity display in Vulnerability Management CVE tables", "ROX_VULN_MGMT_UNIFIED_CVE_VIEW")
 )
 
 // The following feature flags are related to Scanner V4.

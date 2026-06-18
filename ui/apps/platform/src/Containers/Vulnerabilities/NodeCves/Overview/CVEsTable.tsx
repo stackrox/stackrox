@@ -27,6 +27,7 @@ import type { ApiSortOption } from 'types/search';
 
 import ExpandRowTh from 'Components/ExpandRowTh';
 import { vulnerabilitySeverityLabels } from 'messages/common';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import {
     CVE_SORT_FIELD,
     NODE_COUNT_SORT_FIELD,
@@ -43,6 +44,7 @@ import {
     sortCveDistroList,
 } from '../../utils/sortUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
+import TopSeverityLabel from '../../components/TopSeverityLabel';
 import { isVulnerabilitySeverityLabel } from '../../types';
 import type { QuerySearchFilter } from '../../types';
 import useNodeCves from './useNodeCves';
@@ -89,6 +91,8 @@ function CVEsTable({
     onClearFilters,
 }: CVEsTableProps) {
     const { page, perPage } = pagination;
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSimplifiedSeverity = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
 
     const { data, previousData, loading, error } = useNodeCves({
         querySearchFilter,
@@ -125,9 +129,21 @@ function CVEsTable({
                     <ExpandRowTh />
                     {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
-                    <TooltipTh tooltip="The number of nodes affected by this CVE, grouped by the severity of the CVE on each node">
-                        Nodes by severity
-                        {isFiltered && <DynamicColumnIcon />}
+                    <TooltipTh
+                        tooltip={
+                            isSimplifiedSeverity
+                                ? 'Highest severity of this CVE across nodes'
+                                : 'The number of nodes affected by this CVE, grouped by the severity of the CVE on each node'
+                        }
+                    >
+                        {isSimplifiedSeverity ? (
+                            'Top severity'
+                        ) : (
+                            <>
+                                Nodes by severity
+                                {isFiltered && <DynamicColumnIcon />}
+                            </>
+                        )}
                     </TooltipTh>
                     <Th sort={getSortParams(NODE_TOP_CVSS_SORT_FIELD, aggregateByCVSS)}>
                         Top CVSS
@@ -154,13 +170,8 @@ function CVEsTable({
                     data.map((nodeCve, rowIndex) => {
                         const {
                             cve,
-                            affectedNodeCountBySeverity: {
-                                critical,
-                                important,
-                                moderate,
-                                low,
-                                unknown,
-                            },
+                            affectedNodeCountBySeverity,
+                            topSeverity,
                             distroTuples,
                             topCVSS,
                             affectedNodeCount,
@@ -193,16 +204,34 @@ function CVEsTable({
                                     <Td dataLabel="CVE" modifier="nowrap">
                                         <Link to={getNodeEntityPagePath('CVE', cve)}>{cve}</Link>
                                     </Td>
-                                    <Td dataLabel="Nodes by severity">
-                                        <SeverityCountLabels
-                                            criticalCount={critical.total}
-                                            importantCount={important.total}
-                                            moderateCount={moderate.total}
-                                            lowCount={low.total}
-                                            unknownCount={unknown.total}
-                                            filteredSeverities={filteredSeverities}
-                                            entity={'node'}
-                                        />
+                                    <Td
+                                        dataLabel={
+                                            isSimplifiedSeverity
+                                                ? 'Top severity'
+                                                : 'Nodes by severity'
+                                        }
+                                    >
+                                        {isSimplifiedSeverity && topSeverity ? (
+                                            <TopSeverityLabel severity={topSeverity} />
+                                        ) : affectedNodeCountBySeverity ? (
+                                            <SeverityCountLabels
+                                                criticalCount={
+                                                    affectedNodeCountBySeverity.critical.total
+                                                }
+                                                importantCount={
+                                                    affectedNodeCountBySeverity.important.total
+                                                }
+                                                moderateCount={
+                                                    affectedNodeCountBySeverity.moderate.total
+                                                }
+                                                lowCount={affectedNodeCountBySeverity.low.total}
+                                                unknownCount={
+                                                    affectedNodeCountBySeverity.unknown.total
+                                                }
+                                                filteredSeverities={filteredSeverities}
+                                                entity={'node'}
+                                            />
+                                        ) : null}
                                     </Td>
                                     <Td dataLabel="Top CVSS">
                                         <CvssFormatted

@@ -158,11 +158,15 @@ function RequestCVEsTable({
                                 } = imageCVE;
                                 const isExpanded = expandedRowSet.has(cve);
 
-                                const criticalCount = affectedImageCountBySeverity.critical.total;
-                                const importantCount = affectedImageCountBySeverity.important.total;
-                                const moderateCount = affectedImageCountBySeverity.moderate.total;
-                                const lowCount = affectedImageCountBySeverity.low.total;
-                                const unknownCount = affectedImageCountBySeverity.unknown.total;
+                                const criticalCount =
+                                    affectedImageCountBySeverity?.critical.total ?? 0;
+                                const importantCount =
+                                    affectedImageCountBySeverity?.important.total ?? 0;
+                                const moderateCount =
+                                    affectedImageCountBySeverity?.moderate.total ?? 0;
+                                const lowCount = affectedImageCountBySeverity?.low.total ?? 0;
+                                const unknownCount =
+                                    affectedImageCountBySeverity?.unknown.total ?? 0;
                                 const filteredSeverities: VulnerabilitySeverityLabel[] = [
                                     'Critical',
                                     'Important',
@@ -170,10 +174,10 @@ function RequestCVEsTable({
                                     'Low',
                                     'Unknown',
                                 ];
-                                const prioritizedDistros = sortCveDistroList(distroTuples);
+                                const prioritizedDistros = sortCveDistroList(distroTuples ?? []);
                                 const scoreVersions = getScoreVersionsForTopCVSS(
                                     topCVSS,
-                                    distroTuples
+                                    distroTuples ?? []
                                 );
                                 const summary =
                                     prioritizedDistros.length > 0

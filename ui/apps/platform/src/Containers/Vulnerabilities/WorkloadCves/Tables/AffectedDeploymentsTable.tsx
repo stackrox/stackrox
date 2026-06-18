@@ -4,6 +4,7 @@ import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternf
 import { gql } from '@apollo/client';
 
 import useSet from 'hooks/useSet';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import type { VulnerabilityState } from 'types/cve.proto';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
@@ -22,7 +23,9 @@ import type {
     ImageMetadataContext,
 } from './DeploymentComponentVulnerabilitiesTable';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
+import TopSeverityLabel from '../../components/TopSeverityLabel';
 import type { VulnerabilitySeverityLabel } from '../../types';
+import { getTopSeverityFromCounts } from '../../utils/vulnerabilityUtils';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const tableId = 'WorkloadCvesAffectedDeploymentsTable';
@@ -66,11 +69,11 @@ export type DeploymentForCve = {
     type: string;
     clusterName: string;
     created: string | null;
-    unknownImageCount: number;
-    lowImageCount: number;
-    moderateImageCount: number;
-    importantImageCount: number;
-    criticalImageCount: number;
+    unknownImageCount?: number;
+    lowImageCount?: number;
+    moderateImageCount?: number;
+    importantImageCount?: number;
+    criticalImageCount?: number;
     images: (ImageMetadataContext & { imageComponents: DeploymentComponentVulnerability[] })[];
 };
 
@@ -120,6 +123,8 @@ function AffectedDeploymentsTable({
     tableConfig,
 }: AffectedDeploymentsTableProps) {
     const { urlBuilder } = useWorkloadCveViewContext();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSimplifiedSeverity = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
@@ -139,8 +144,14 @@ function AffectedDeploymentsTable({
                         Deployment
                     </Th>
                     <Th className={getVisibilityClass('imagesBySeverity')}>
-                        Images by severity
-                        {isFiltered && <DynamicColumnIcon />}
+                        {isSimplifiedSeverity ? (
+                            'Top deployment severity'
+                        ) : (
+                            <>
+                                Images by severity
+                                {isFiltered && <DynamicColumnIcon />}
+                            </>
+                        )}
                     </Th>
                     <Th className={getVisibilityClass('cluster')} sort={getSortParams('Cluster')}>
                         Cluster
@@ -218,16 +229,40 @@ function AffectedDeploymentsTable({
                                     <Td
                                         className={getVisibilityClass('imagesBySeverity')}
                                         modifier="nowrap"
-                                        dataLabel="Images by severity"
+                                        dataLabel={
+                                            isSimplifiedSeverity
+                                                ? 'Top deployment severity'
+                                                : 'Images by severity'
+                                        }
                                     >
-                                        <SeverityCountLabels
-                                            criticalCount={criticalImageCount}
-                                            importantCount={importantImageCount}
-                                            moderateCount={moderateImageCount}
-                                            lowCount={lowImageCount}
-                                            unknownCount={unknownImageCount}
-                                            filteredSeverities={filteredSeverities}
-                                        />
+                                        {isSimplifiedSeverity ? (
+                                            <TopSeverityLabel
+                                                severity={getTopSeverityFromCounts({
+                                                    critical: {
+                                                        total: criticalImageCount ?? 0,
+                                                    },
+                                                    important: {
+                                                        total: importantImageCount ?? 0,
+                                                    },
+                                                    moderate: {
+                                                        total: moderateImageCount ?? 0,
+                                                    },
+                                                    low: { total: lowImageCount ?? 0 },
+                                                    unknown: {
+                                                        total: unknownImageCount ?? 0,
+                                                    },
+                                                })}
+                                            />
+                                        ) : (
+                                            <SeverityCountLabels
+                                                criticalCount={criticalImageCount ?? 0}
+                                                importantCount={importantImageCount ?? 0}
+                                                moderateCount={moderateImageCount ?? 0}
+                                                lowCount={lowImageCount ?? 0}
+                                                unknownCount={unknownImageCount ?? 0}
+                                                filteredSeverities={filteredSeverities}
+                                            />
+                                        )}
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('cluster')}
