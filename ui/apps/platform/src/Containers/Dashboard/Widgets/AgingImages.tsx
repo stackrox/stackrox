@@ -18,10 +18,12 @@ import useURLSearch from 'hooks/useURLSearch';
 import useWidgetConfig from 'hooks/useWidgetConfig';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import type { SearchFilter } from 'types/search';
-import { vulnManagementImagesPath } from 'routePaths';
-import { getQueryString } from 'utils/queryStringUtils';
 import WidgetCard from 'Components/PatternFly/WidgetCard';
-import AgingImagesChart, { getTimeFilterOption, timeRangeTupleIndices } from './AgingImagesChart';
+import AgingImagesChart, {
+    getAgingImagesListLink,
+    getTimeFilterOption,
+    timeRangeTupleIndices,
+} from './AgingImagesChart';
 import type { TimeRangeCounts, TimeRangeTuple, TimeRangeTupleIndex } from './AgingImagesChart';
 import isResourceScoped from '../utils';
 import NoDataEmptyState from './NoDataEmptyState';
@@ -147,14 +149,6 @@ function isNumberInRange(timeRanges: TimeRangeTuple, index: TimeRangeTupleIndex)
 
 const fieldIdPrefix = 'aging-images';
 
-function getViewAllLink(searchFilter: SearchFilter) {
-    const queryString = getQueryString({
-        s: searchFilter,
-        sort: [{ id: 'Image Created Time', desc: 'false' }],
-    });
-    return `${vulnManagementImagesPath}${queryString}`;
-}
-
 function AgingImages() {
     const { searchFilter } = useURLSearch();
     const { pathname } = useLocation();
@@ -214,7 +208,7 @@ function AgingImages() {
                         alignItems={{ default: 'alignItemsCenter' }}
                     >
                         <FlexItem>
-                            <Link to={getViewAllLink(searchFilter)}>View all</Link>
+                            <Link to={getAgingImagesListLink(searchFilter)}>View all</Link>
                         </FlexItem>
                         <FlexItem>
                             {isOptionsChanged && (

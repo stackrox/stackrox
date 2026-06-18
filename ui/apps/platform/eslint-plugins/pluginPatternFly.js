@@ -362,6 +362,72 @@ const rules = {
             };
         },
     },
+    'no-Tab-tabContentId-without-children': {
+        // Tab element needs tabContentId prop only if it has separate content in TabContent element.
+        // Tab-empty-contentId is the opposite rule in pluginAccessibility.js file.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Omit tabContentId prop of Tab element that has children',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'Tab') {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            Array.isArray(ancestors[ancestors.length - 1].children) &&
+                            ancestors[ancestors.length - 1].children.length !== 0
+                        ) {
+                            if (
+                                node.attributes.some(
+                                    (attribute) => attribute.name?.name === 'tabContentId'
+                                )
+                            ) {
+                                context.report({
+                                    node,
+                                    message:
+                                        'Omit tabContentId prop of Tab element that has children',
+                                });
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'no-TabContent-hidden': {
+        // Do not use implicit conditional rendering via hidden prop.
+        // Because non-active tab might request data that user never sees.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Replace hidden prop of TabContent element with explicit conditional rendering',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'TabContent') {
+                        if (
+                            node.attributes.some((attribute) => attribute.name?.name === 'hidden')
+                        ) {
+                            context.report({
+                                node,
+                                message:
+                                    'Replace hidden prop of TabContent element with explicit conditional rendering',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
     'no-Td-data-label': {
         // Although Td element renders prop as data-label attribute,
         // require dataLabel prop to simplify other lint rules.

@@ -356,11 +356,17 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 				clientState, false)
 			return
 		}
+		if callbackURL.Scheme != "http" && callbackURL.Scheme != "https" {
+			r.error(w, errox.InvalidArgs.New("roxctl authorization callback URL must use http or https"), typ,
+				clientState, false)
+			return
+		}
 		// Verify the callback URL again before doing the final redirect, ensuring we _only_ redirect to localhost and
 		// no unauthorized third-party.
 		if !netutil.IsLocalHost(callbackURL.Hostname()) {
 			r.error(w, errox.InvalidArgs.New("roxctl authorization has to specify localhost / "+
 				"127.0.0.1 as callback URL"), typ, clientState, false)
+			return
 		}
 		qp := callbackURL.Query()
 		qp.Set(TokenQueryParameter, tokenInfo.Token)

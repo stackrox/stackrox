@@ -67,11 +67,12 @@ function SecureClusterModal({ isModalOpen, setIsModalOpen }): ReactElement {
                     </Tabs>
                     <Divider component="div" />
                 </FlexItem>
-                {activeKey === 'Operator' ? (
+                {activeKey === 'Operator' && (
                     <TabContent id={idOperator}>
                         <SecureClusterUsingOperator headingLevel={headingLevel} />
                     </TabContent>
-                ) : (
+                )}
+                {activeKey === 'Helm' && (
                     <TabContent id={idHelm}>
                         <SecureClusterUsingHelmChart headingLevel={headingLevel} />
                     </TabContent>

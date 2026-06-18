@@ -14,7 +14,7 @@ const { Logo, label, type } = descriptor;
 
 function MachineAccessTile(): ReactElement {
     const { data } = useRestQuery(fetchMachineAccessConfigs);
-    const integrations = data?.response?.configs ?? [];
+    const integrations = data?.configs ?? [];
 
     return (
         <IntegrationTile

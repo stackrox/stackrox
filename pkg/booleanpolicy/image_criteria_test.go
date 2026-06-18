@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/booleanpolicy/filter"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -21,6 +22,7 @@ import (
 
 func TestImageCriteria(t *testing.T) {
 	t.Setenv(features.CVEFixTimestampCriteria.EnvVar(), "true")
+	t.Setenv(features.EvaluationFilter.EnvVar(), "true")
 	suite.Run(t, new(ImageCriteriaTestSuite))
 }
 
@@ -519,4 +521,138 @@ func (suite *ImageCriteriaTestSuite) TestImageVerified_WithDeployment() {
 			}
 		})
 	}
+}
+
+func (suite *ImageCriteriaTestSuite) TestFilter_ExcludeLowLayerComponents() {
+	lowLayerComp := &storage.EmbeddedImageScanComponent{
+		Name: "low-layer-pkg", Version: "1.0",
+		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 1},
+		Vulns: []*storage.EmbeddedVulnerability{
+			{Cve: "CVE-2024-0001", Cvss: 9, Link: "https://low-cve"},
+		},
+	}
+	highLayerComp := &storage.EmbeddedImageScanComponent{
+		Name: "high-layer-pkg", Version: "2.0",
+		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 5},
+		Vulns: []*storage.EmbeddedVulnerability{
+			{Cve: "CVE-2024-0002", Cvss: 8, Link: "https://high-cve"},
+		},
+	}
+
+	img := &storage.Image{
+		Id:   "IMG_LAYER_TEST",
+		Name: &storage.ImageName{FullName: "docker.io/layertest"},
+		Scan: &storage.ImageScan{
+			Components: []*storage.EmbeddedImageScanComponent{lowLayerComp, highLayerComp},
+		},
+		BaseImageInfo: []*storage.BaseImageInfo{{MaxLayerIndex: 3}},
+	}
+
+	dep := &storage.Deployment{
+		Id: "DEP_LAYER_TEST",
+		Containers: []*storage.Container{{
+			Name:  "app",
+			Image: &storage.ContainerImage{Id: img.GetId()},
+		}},
+	}
+	suite.addDepAndImages(dep, img)
+
+	cvssPolicy := policyWithGroups(storage.EventSource_NOT_APPLICABLE,
+		&storage.PolicyGroup{FieldName: fieldnames.CVSS, Values: []*storage.PolicyValue{{Value: "> 7"}}},
+	)
+
+	suite.Run("no filter produces violations for both layers", func() {
+		matcher, err := BuildDeploymentMatcher(cvssPolicy)
+		suite.NoError(err)
+		violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
+		suite.NoError(err)
+		suite.Len(violations.AlertViolations, 2)
+	})
+
+	suite.Run("filter excluding low layers produces only high-layer violations", func() {
+		matcher, err := BuildDeploymentMatcher(cvssPolicy)
+		suite.NoError(err)
+		ed := enhancedDeployment(dep, []*storage.Image{img})
+		ed = applyTestFilters(ed, excludeLowLayerComponents(suite.T()))
+		violations, err := matcher.MatchDeployment(nil, ed)
+		suite.NoError(err)
+		suite.Len(violations.AlertViolations, 1)
+		suite.Contains(violations.AlertViolations[0].GetMessage(), "CVE-2024-0002")
+	})
+
+	suite.Run("filter excluding high layers produces only low-layer violations", func() {
+		matcher, err := BuildDeploymentMatcher(cvssPolicy)
+		suite.NoError(err)
+		ed := enhancedDeployment(dep, []*storage.Image{img})
+		ed = applyTestFilters(ed, excludeHighLayerComponents(suite.T()))
+		violations, err := matcher.MatchDeployment(nil, ed)
+		suite.NoError(err)
+		suite.Len(violations.AlertViolations, 1)
+		suite.Contains(violations.AlertViolations[0].GetMessage(), "CVE-2024-0001")
+	})
+}
+
+func (suite *ImageCriteriaTestSuite) TestFilter_MissingBaseImageInfo() {
+	component := &storage.EmbeddedImageScanComponent{
+		Name: "some-pkg", Version: "1.0",
+		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 2},
+		Vulns: []*storage.EmbeddedVulnerability{
+			{Cve: "CVE-2024-0099", Cvss: 9, Link: "https://cve"},
+		},
+	}
+	img := &storage.Image{
+		Id:   "IMG_NO_BASE_INFO",
+		Name: &storage.ImageName{FullName: "docker.io/nobaseinfo"},
+		Scan: &storage.ImageScan{Components: []*storage.EmbeddedImageScanComponent{component}},
+	}
+
+	dep := &storage.Deployment{
+		Id: "DEP_NO_BASE_INFO",
+		Containers: []*storage.Container{{
+			Name:  "app",
+			Image: &storage.ContainerImage{Id: img.GetId()},
+		}},
+	}
+	suite.addDepAndImages(dep, img)
+
+	cvssPolicy := policyWithGroups(storage.EventSource_NOT_APPLICABLE,
+		&storage.PolicyGroup{FieldName: fieldnames.CVSS, Values: []*storage.PolicyValue{{Value: "> 7"}}},
+	)
+
+	matcher, err := BuildDeploymentMatcher(cvssPolicy)
+	suite.NoError(err)
+	ed := enhancedDeployment(dep, []*storage.Image{img})
+	ed = applyTestFilters(ed, excludeLowLayerComponents(suite.T()))
+	violations, err := matcher.MatchDeployment(nil, ed)
+	suite.NoError(err)
+	suite.Len(violations.AlertViolations, 1,
+		"without BaseImageInfo, filter is a no-op and image should produce violations")
+}
+
+func excludeHighLayerComponents(t testing.TB) filter.EvaluationFilter {
+	return filter.NewTestFilter(t, func(dep *storage.Deployment, imgs []*storage.Image) (*storage.Deployment, []*storage.Image) {
+		result := make([]*storage.Image, len(imgs))
+		for i, img := range imgs {
+			if img == nil || img.GetScan() == nil || len(img.GetBaseImageInfo()) == 0 {
+				result[i] = img
+				continue
+			}
+			maxBase := img.GetBaseImageInfo()[0].GetMaxLayerIndex()
+			var kept []*storage.EmbeddedImageScanComponent
+			for _, c := range img.GetScan().GetComponents() {
+				li, hasIdx := c.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex)
+				if !hasIdx || li.LayerIndex <= maxBase {
+					kept = append(kept, c)
+				}
+			}
+			if len(kept) == len(img.GetScan().GetComponents()) {
+				result[i] = img
+				continue
+			}
+			cloned := img.CloneVT()
+			cloned.Scan.Components = kept
+			result[i] = cloned
+		}
+		return dep, result
+	})
 }

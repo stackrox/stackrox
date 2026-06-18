@@ -390,30 +390,35 @@ class AdmissionControllerTest extends BaseSpecification {
         "namespace removal"| "backend"    | null
     }
 
+    @Unroll
     @Tag("BAT")
     @IgnoreIf({ System.getenv("ROX_INIT_CONTAINER_SUPPORT") != "true" })
-    def "Verify AC allows deployment with init containers"() {
+    def "Verify AC enforcement on init containers: #desc"() {
         when:
         "Create a deployment with init containers"
         def deployment = new Deployment()
-                .setName("init-ac-test")
+                .setName("init-ac-${desc.replaceAll(' ', '-')}")
                 .setNamespace(TEST_NAMESPACE)
                 .setImagePrefetcherAffinity()
                 .setImage(BUSYBOX_TAGGED_IMAGE)
                 .addLabel("app", "test")
-                .addInitContainer("init-0", BUSYBOX_LATEST_TAG_IMAGE)
-                .addInitContainer("init-1", BUSYBOX_TAGGED_IMAGE)
+                .addInitContainer("init-0", initImage)
 
         def created = orchestrator.createDeploymentNoWait(deployment)
 
         then:
-        "Admission controller allows the deployment"
-        assert created
+        "Verify admission controller allows or blocks based on init container image"
+        assert created == allowed
 
         cleanup:
         if (created) {
             deleteDeploymentWithCaution(deployment)
         }
+
+        where:
+        initImage                | allowed | desc
+        BUSYBOX_TAGGED_IMAGE     | true    | "allowed with tagged init container"
+        BUSYBOX_LATEST_TAG_IMAGE | false   | "blocked with latest tag init container"
     }
 
 }

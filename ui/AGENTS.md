@@ -174,9 +174,15 @@ export function fetchMyResource(id: string): Promise<MyResource> {
 
 ## Testing Strategy
 
-- **Unit tests** (Vitest): Components in isolation, mocked dependencies, user interactions
-- **E2E tests** (Cypress): Critical user journeys, accessibility testing (cypress-axe)
-- **Component tests** (Cypress): Real DOM rendering, PatternFly integrations
+Three test levels, in order of preference:
+
+- **Unit tests** (Vitest): Pure logic only — utility functions, data transforms, validators. No DOM, no React, no `render()`.
+- **Component tests** (Cypress): Components with real DOM rendering, user interaction, provider context, mocked APIs via `cy.intercept()`. No network, no full app build.
+- **E2E tests** (Cypress): Full user workflows against a running StackRox deployment. Covers both standalone platform (`cypress/integration/`) and OCP console plugin (`cypress/integration-ocp/`).
+
+**Important:** Do not use `@testing-library/react` (`render`, `screen`, `userEvent`) in Vitest files. Component rendering and interaction testing belongs in Cypress component tests.
+
+**Before writing tests**, check for existing coverage — co-located `.test.ts` and `.cy.jsx`/`.cy.tsx` files for unit/component tests, and `cypress/integration/` for the feature domain's e2e tests. See [TESTING.md — Assessing Coverage](./apps/platform/TESTING.md#assessing-coverage).
 
 **After making changes:**
 
@@ -186,7 +192,12 @@ export function fetchMyResource(id: string): Promise<MyResource> {
 - For new features, ask the developer if they want tests written
 - When writing tests, focus on happy path and critical user flows — avoid over-engineering
 
-**For detailed testing guidance:** See [apps/platform/README.md#testing](./apps/platform/README.md#testing)
+**For detailed testing guidance:**
+
+- [apps/platform/TESTING.md](./apps/platform/TESTING.md) — Shared testing principles and anti-patterns
+- [apps/platform/TESTING_UNIT.md](./apps/platform/TESTING_UNIT.md) — Vitest unit test patterns (pure logic, mocking)
+- [apps/platform/TESTING_COMPONENT.md](./apps/platform/TESTING_COMPONENT.md) — Cypress component test patterns (mounting, interaction, providers)
+- [apps/platform/TESTING_E2E.md](./apps/platform/TESTING_E2E.md) — Cypress e2e patterns (standalone + OCP plugin)
 
 ---
 

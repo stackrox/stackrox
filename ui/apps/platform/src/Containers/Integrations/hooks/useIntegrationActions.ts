@@ -19,7 +19,6 @@ import type { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import { createMachineAccessConfig } from 'services/MachineAccessService';
 
 import type { IntegrationSource, IntegrationType } from '../utils/integrationUtils';
-import useFetchIntegrations from './useFetchIntegrations';
 import usePageState from './usePageState';
 
 export type UseIntegrationActions = {
@@ -43,7 +42,6 @@ function useIntegrationActions(): UseIntegrationActionsResult {
     // endpoints. This hook only mounts on create/edit routes, so 'apiClients' never
     // reaches here. Safe to narrow to the CRUD-capable source type.
     const crudSource = source as CrudIntegrationSource;
-    const fetchIntegrations = useFetchIntegrations(source);
     const integrationsListPath = `${integrationsPath}/${source}/${type}`;
 
     async function onSave(data, { updatePassword }: IntegrationOptions = {}) {
@@ -67,7 +65,6 @@ function useIntegrationActions(): UseIntegrationActionsResult {
                 navigate(-1);
             }
 
-            fetchIntegrations();
             return { message: 'Integration was saved successfully', isError: false, responseData };
         } catch (error) {
             return { message: getAxiosErrorMessage(error), isError: true };

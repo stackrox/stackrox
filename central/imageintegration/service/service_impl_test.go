@@ -515,6 +515,28 @@ func TestScannerV4Restrictions(t *testing.T) {
 	})
 }
 
+func TestGCRCreationBlocked(t *testing.T) {
+	s := &serviceImpl{}
+
+	ii := &storage.ImageIntegration{
+		Name: "my-gcr",
+		Type: registryTypes.GoogleType,
+		Categories: []storage.ImageIntegrationCategory{
+			storage.ImageIntegrationCategory_REGISTRY,
+		},
+		IntegrationConfig: &storage.ImageIntegration_Google{
+			Google: &storage.GoogleConfig{
+				Endpoint: "gcr.io",
+			},
+		},
+	}
+
+	_, err := s.PostImageIntegration(context.Background(), ii)
+	assert.ErrorIs(t, err, errox.InvalidArgs)
+	assert.ErrorContains(t, err, "Google Container Registry")
+	assert.ErrorContains(t, err, "deprecated")
+}
+
 func TestIAMRoleCapabilityValidation(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

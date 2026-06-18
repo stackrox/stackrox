@@ -312,6 +312,14 @@ func (s *SyslogNotifierTestSuite) TestValidateRemoteConfig() {
 	}
 	_, errURLValidIP := validateRemoteConfig(tcpConfigValidIP)
 	s.NoError(errURLValidIP)
+
+	tcpConfigIPv6 := &storage.Syslog_TCPConfig{
+		Hostname: "2001:db8::1",
+		Port:     514,
+	}
+	hostname, errIPv6 := validateRemoteConfig(tcpConfigIPv6)
+	s.NoError(errIPv6)
+	s.Equal("[2001:db8::1]:514", hostname)
 }
 
 func (s *SyslogNotifierTestSuite) TestHeaderFormat() {

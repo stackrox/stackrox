@@ -163,7 +163,7 @@ const ConfigManagementEntityCluster = ({
                     status: { orchestratorMetadata = null },
                 } = entity;
 
-                const { version = 'N/A' } = orchestratorMetadata;
+                const { version = 'N/A' } = orchestratorMetadata ?? {};
 
                 const metadataKeyValuePairs = [
                     {

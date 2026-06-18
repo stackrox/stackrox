@@ -1,7 +1,8 @@
 package netutil
 
 import (
-	"fmt"
+	"net"
+	"strconv"
 	"strings"
 )
 
@@ -11,18 +12,19 @@ func WithDefaultPort(hostAndMaybePort string, defaultPort uint16) string {
 	if hostAndMaybePort == "" {
 		return ""
 	}
+	port := strconv.FormatUint(uint64(defaultPort), 10)
 	if hostAndMaybePort[0] == '[' { // IPv6 ip+port notation
 		if hostAndMaybePort[len(hostAndMaybePort)-1] != ']' {
 			return hostAndMaybePort
 		}
-		return fmt.Sprintf("%s:%d", hostAndMaybePort, defaultPort)
+		return net.JoinHostPort(hostAndMaybePort[1:len(hostAndMaybePort)-1], port)
 	}
 	switch strings.Count(hostAndMaybePort, ":") {
 	case 0: // IPv4 or hostname
-		return fmt.Sprintf("%s:%d", hostAndMaybePort, defaultPort)
+		return net.JoinHostPort(hostAndMaybePort, port)
 	case 1: // IPv4 or hostname + port
 		return hostAndMaybePort
 	default: // >= 2 colons => IPv6, no port since doesn't start with '['
-		return fmt.Sprintf("[%s]:%d", hostAndMaybePort, defaultPort)
+		return net.JoinHostPort(hostAndMaybePort, port)
 	}
 }

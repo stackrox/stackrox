@@ -118,24 +118,26 @@ function NamespaceSideBar({
                 </Tabs>
             </StackItem>
             <StackItem isFilled style={{ overflow: 'auto' }}>
-                <TabContent
-                    eventKey="DEPLOYMENTS"
-                    id="DEPLOYMENTS"
-                    hidden={activeTab !== 'DEPLOYMENTS'}
-                >
-                    <NamespaceDeployments deployments={deployments} onNodeSelect={onNodeSelect} />
-                </TabContent>
-                <TabContent
-                    eventKey="NETWORK_POLICIES"
-                    id="NETWORK_POLICIES"
-                    hidden={activeTab !== 'NETWORK_POLICIES'}
-                    className="pf-v6-u-h-100"
-                >
-                    <NetworkPolicies
-                        entityName={namespaceNode?.label || ''}
-                        policyIds={uniqueNamespacePolicyIds}
-                    />
-                </TabContent>
+                {activeTab === 'DEPLOYMENTS' && (
+                    <TabContent eventKey="DEPLOYMENTS" id="DEPLOYMENTS">
+                        <NamespaceDeployments
+                            deployments={deployments}
+                            onNodeSelect={onNodeSelect}
+                        />
+                    </TabContent>
+                )}
+                {activeTab === 'NETWORK_POLICIES' && (
+                    <TabContent
+                        eventKey="NETWORK_POLICIES"
+                        id="NETWORK_POLICIES"
+                        className="pf-v6-u-h-100"
+                    >
+                        <NetworkPolicies
+                            entityName={namespaceNode?.label || ''}
+                            policyIds={uniqueNamespacePolicyIds}
+                        />
+                    </TabContent>
+                )}
             </StackItem>
         </Stack>
     );
