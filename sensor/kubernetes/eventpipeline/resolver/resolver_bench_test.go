@@ -84,21 +84,18 @@ func benchmarkProcessDeploymentReferences(b *testing.B, randomIDs bool) {
 		b.Run(fmt.Sprintf("events=%d/deployments=%d", bc.numEvents, bc.numDeployments), func(b *testing.B) {
 			doneSignal := concurrency.NewSignal()
 			setupMocks(b, &doneSignal, pubsubEnabled)
+			setupResolver(b)
+			b.Cleanup(func() { res.Stop() })
 
 			for b.Loop() {
 				b.StopTimer()
 				doneSignal.Reset()
 				events := createEvents(randomIDs, bc.numEvents, bc.numDeployments)
-				setupResolver(b)
 				b.StartTimer()
 				for _, event := range events {
 					dispatchEvent(b, event, res, pubsubEnabled)
 				}
 				doneSignal.Wait()
-				b.StopTimer()
-				res.Stop()
-				// b.Loop() requires the timer to be running when called.
-				b.StartTimer()
 			}
 		})
 	}
