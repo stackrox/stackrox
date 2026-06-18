@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v60/github"
+	"github.com/google/go-github/v88/github"
 )
 
 func createComment(ctx context.Context, client *github.Client, prNumber int, comment string) {
@@ -97,7 +97,7 @@ func statusesForPR(ctx context.Context, client *github.Client, url string) (map[
 	if err != nil {
 		return nil, err
 	}
-	_, err = client.Do(ctx, statusRequest, &statuses)
+	_, err = client.Do(statusRequest.WithContext(ctx), &statuses)
 	if err != nil {
 		return nil, err
 	}

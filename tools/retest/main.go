@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v60/github"
+	"github.com/google/go-github/v88/github"
 )
 
 // allowedCheckFailures defines a set of PR checks that should not prevent the retest job starting
@@ -24,7 +24,10 @@ const s = "stackrox"
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
-	client := github.NewClient(nil).WithAuthToken(os.Getenv("GITHUB_TOKEN"))
+	client, err := github.NewClient(github.WithAuthToken(os.Getenv("GITHUB_TOKEN")))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	if err := run(ctx, client); err != nil {
 		log.Fatal(err.Error())
 	}
