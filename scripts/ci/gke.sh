@@ -329,6 +329,7 @@ teardown_gke_cluster() {
     setup_gcp
 
     require_environment "CLUSTER_NAME"
+    require_executable "gcloud"
 
     if [[ "${canceled}" == "false" ]] &&
        [[ "${byodb}" == "false" ]]
