@@ -31,12 +31,19 @@ on:
           Newline-separated list of changed filenames, or empty
           string on push/failure (falsy, so jobs default to run).
         value: ${{ jobs.detect.outputs.files }}
+      ui_only:
+        description: >
+          'true' when every changed file is under ui/, empty
+          otherwise. Use to skip non-UI jobs on UI-only PRs:
+          if: !needs.X.outputs.files || !needs.X.outputs.ui_only
+        value: ${{ jobs.detect.outputs.ui_only }}
 
 jobs:
   detect:
     runs-on: ubuntu-latest
     outputs:
       files: ${{ steps.list.outputs.files }}
+      ui_only: ${{ steps.list.outputs.ui_only }}
     steps:
       - name: List changed files
         id: list
@@ -92,4 +99,9 @@ jobs:
               printf '^%s$\n' "${files[@]}"
               echo "EOF"
             } >> "${GITHUB_OUTPUT}"
+
+            if ! echo "${anchored}" | grep -qv '^\^ui/'; then
+              echo "All changed files are under ui/" >&2
+              echo "ui_only=true" >> "${GITHUB_OUTPUT}"
+            fi
           fi

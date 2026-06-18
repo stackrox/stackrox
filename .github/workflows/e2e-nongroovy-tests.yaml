@@ -18,9 +18,14 @@ defaults:
     shell: bash
 
 jobs:
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
+
   wait-for-images:
+    needs: detect-changes
     if: >-
-      github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      (github.event_name == 'push' || !github.event.pull_request.head.repo.fork) &&
+      (!needs.detect-changes.outputs.files || !needs.detect-changes.outputs.ui_only)
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repo

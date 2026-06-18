@@ -17,7 +17,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
+
   check-crd-compatibility:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      !needs.detect-changes.outputs.ui_only
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11

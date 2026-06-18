@@ -23,6 +23,10 @@ jobs:
     uses: ./.github/workflows/detect-changes.yml
 
   check-generated-files:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      !needs.detect-changes.outputs.ui_only
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
@@ -153,6 +157,10 @@ jobs:
         run: make style-slim
 
   golangci-lint:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      !needs.detect-changes.outputs.ui_only
     timeout-minutes: 240
     runs-on: ubuntu-latest
     steps:
@@ -198,6 +206,10 @@ jobs:
       run: make golangci-lint-cache-status
 
   check-dependent-images-exist:
+    needs: detect-changes
+    if: >-
+      !needs.detect-changes.outputs.files ||
+      !needs.detect-changes.outputs.ui_only
     # This job ensures that COLLECTOR_VERSION, FACT_VERSION or SCANNER_VERSION files cannot be updated to a version
     # for which the image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image
     # is there (no suffix) so that the failure also happens in this job.
