@@ -74,37 +74,37 @@ func (s *VMScanningSuite) assertPipelineMetrics(ctx context.Context, t require.T
 	}, metricsTimeout, metricsPoll)
 }
 
+func assertPositive(t *assert.CollectT, m testmetrics.Metrics, name string, labels ...string) float64 {
+	val, found := m.GetValue(name, labels...)
+	assert.Truef(t, found, "%s should be present", name)
+	assert.Greaterf(t, val, float64(0), "%s should be > 0", name)
+	return val
+}
+
+func assertZero(t *assert.CollectT, m testmetrics.Metrics, name string, labels ...string) {
+	val, found := m.GetValue(name, labels...)
+	if !found {
+		return
+	}
+	assert.Equalf(t, float64(0), val, "%s should be 0", name)
+}
+
 func assertPipeline(t *assert.CollectT, comp, sen testmetrics.Metrics) {
-	positive := func(m testmetrics.Metrics, name string, labels ...string) float64 {
-		val, found := m.GetValue(name, labels...)
-		assert.Truef(t, found, "%s should be present", name)
-		assert.Greaterf(t, val, float64(0), "%s should be > 0", name)
-		return val
-	}
-
-	zero := func(m testmetrics.Metrics, name string, labels ...string) {
-		val, found := m.GetValue(name, labels...)
-		if !found {
-			return
-		}
-		assert.Equalf(t, float64(0), val, "%s should be 0", name)
-	}
-
 	// Compliance relay: full receive → send → ack cycle.
-	compReceived := positive(comp, "rox_compliance_virtual_machine_relay_index_reports_received_total")
-	compSentOK := positive(comp, "rox_compliance_virtual_machine_relay_index_reports_sent_total", "failed", "false")
-	positive(comp, "rox_compliance_virtual_machine_relay_connections_accepted_total")
-	positive(comp, "rox_compliance_virtual_machine_relay_acks_received_total")
-	zero(comp, "rox_compliance_virtual_machine_relay_index_reports_sent_total", "failed", "true")
-	zero(comp, "rox_compliance_virtual_machine_relay_index_reports_mismatching_vsock_cid_total")
+	compReceived := assertPositive(t, comp, "rox_compliance_virtual_machine_relay_index_reports_received_total")
+	compSentOK := assertPositive(t, comp, "rox_compliance_virtual_machine_relay_index_reports_sent_total", "failed", "false")
+	assertPositive(t, comp, "rox_compliance_virtual_machine_relay_connections_accepted_total")
+	assertPositive(t, comp, "rox_compliance_virtual_machine_relay_acks_received_total")
+	assertZero(t, comp, "rox_compliance_virtual_machine_relay_index_reports_sent_total", "failed", "true")
+	assertZero(t, comp, "rox_compliance_virtual_machine_relay_index_reports_mismatching_vsock_cid_total")
 
 	// Sensor: full receive → send → ack cycle.
-	senReceived := positive(sen, "rox_sensor_virtual_machine_index_reports_received_total")
-	senSentOK := positive(sen, "rox_sensor_virtual_machine_index_reports_sent_total", "status", "success")
-	positive(sen, "rox_sensor_virtual_machine_index_report_acks_received_total", "action", "ACK")
-	zero(sen, "rox_sensor_virtual_machine_index_reports_sent_total", "status", "error")
-	zero(sen, "rox_sensor_virtual_machine_index_reports_sent_total", "status", "central not ready")
-	zero(sen, "rox_sensor_virtual_machine_index_report_enqueue_blocked_total")
+	senReceived := assertPositive(t, sen, "rox_sensor_virtual_machine_index_reports_received_total")
+	senSentOK := assertPositive(t, sen, "rox_sensor_virtual_machine_index_reports_sent_total", "status", "success")
+	assertPositive(t, sen, "rox_sensor_virtual_machine_index_report_acks_received_total", "action", "ACK")
+	assertZero(t, sen, "rox_sensor_virtual_machine_index_reports_sent_total", "status", "error")
+	assertZero(t, sen, "rox_sensor_virtual_machine_index_reports_sent_total", "status", "central not ready")
+	assertZero(t, sen, "rox_sensor_virtual_machine_index_report_enqueue_blocked_total")
 
 	// Relational invariants: can't send more than received.
 	assert.GreaterOrEqualf(t, compReceived, compSentOK,
