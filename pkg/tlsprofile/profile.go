@@ -123,7 +123,7 @@ func parseMinVersion(s string) (uint16, error) {
 func parseCipherSuites(s string) ([]uint16, error) {
 	var suites []uint16
 	var skipped []string
-	for _, name := range strings.Split(s, ",") {
+	for name := range strings.SplitSeq(s, ",") {
 		name = strings.TrimSpace(name)
 		if name == "" {
 			continue
