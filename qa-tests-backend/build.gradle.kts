@@ -123,7 +123,7 @@ tasks.withType<Test>().configureEach {
     classpath = testSourceSet.runtimeClasspath
 
     // Catches the case when tag filters match nothing: the task runs but
-    // zero tests execute. The afterTask hook below only handles NO-SOURCE.
+    // zero tests execute. This is different case than NO-SOURCE handled below with afterTask hook.
     addTestListener(object : TestListener {
         override fun afterSuite(suite: TestDescriptor, result: TestResult) {
             if (suite.parent == null && result.testCount == 0L) {
