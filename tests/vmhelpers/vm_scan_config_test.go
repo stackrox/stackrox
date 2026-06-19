@@ -1,6 +1,6 @@
-//go:build test_e2e_vm
+//go:build test && !test_e2e && !test_e2e_vm
 
-package tests
+package vmhelpers
 
 import (
 	"os"
@@ -12,7 +12,7 @@ import (
 
 func TestLoadVMScanConfig_MissingImages(t *testing.T) {
 	t.Setenv("VM_IMAGES", "")
-	cfg, err := loadVMScanConfig()
+	cfg, err := LoadVMScanConfig()
 	require.ErrorContains(t, err, "VM_IMAGES")
 	require.Nil(t, cfg)
 }
@@ -20,19 +20,19 @@ func TestLoadVMScanConfig_MissingImages(t *testing.T) {
 func TestLoadVMScanConfig_Defaults(t *testing.T) {
 	t.Setenv("VM_IMAGES", "registry.example.com/rhel9:latest,registry.example.com/rhel10:latest")
 	t.Setenv("VM_USERS", "")
-	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
+	t.Setenv("VIRTCTL_PATH", MustFindExecutable(t, "true"))
 	t.Setenv("ROXAGENT_BINARY_PATH", "/bin/true")
 	t.Setenv("VM_SCAN_NAMESPACE_PREFIX", "")
-	cfg, err := loadVMScanConfig()
+	cfg, err := LoadVMScanConfig()
 	require.NoError(t, err)
 	require.Equal(t, []string{"registry.example.com/rhel9:latest", "registry.example.com/rhel10:latest"}, cfg.Images)
-	require.Empty(t, cfg.GuestUsers, "no padding; vmSpecs() defaults per-image")
+	require.Empty(t, cfg.GuestUsers, "no padding; VMSpecs() defaults per-image")
 	require.Equal(t, "vm-scan-e2e", cfg.NamespacePrefix)
 	require.Equal(t, 20*time.Minute, cfg.ScanTimeout)
 	require.Equal(t, 10*time.Second, cfg.ScanPollInterval)
 	require.Equal(t, 5*time.Minute, cfg.DeleteTimeout)
 
-	specs := cfg.vmSpecs()
+	specs := cfg.VMSpecs()
 	require.Len(t, specs, 2)
 	require.Equal(t, "vm-0", specs[0].Name)
 	require.Equal(t, "vm-1", specs[1].Name)
@@ -41,16 +41,16 @@ func TestLoadVMScanConfig_Defaults(t *testing.T) {
 func TestLoadVMScanConfig_PartialUsers(t *testing.T) {
 	t.Setenv("VM_IMAGES", "img-a,img-b,img-c")
 	t.Setenv("VM_USERS", "alice")
-	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
+	t.Setenv("VIRTCTL_PATH", MustFindExecutable(t, "true"))
 	t.Setenv("ROXAGENT_BINARY_PATH", "/bin/true")
-	cfg, err := loadVMScanConfig()
+	cfg, err := LoadVMScanConfig()
 	require.NoError(t, err)
-	require.Equal(t, []string{"alice"}, cfg.GuestUsers, "only explicit users; vmSpecs() pads with default")
+	require.Equal(t, []string{"alice"}, cfg.GuestUsers, "only explicit users; VMSpecs() pads with default")
 }
 
 func TestLoadVMScanConfig_InvalidSSHKeyContent(t *testing.T) {
 	t.Setenv("VM_IMAGES", "registry.example.com/rhel9:latest")
-	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
+	t.Setenv("VIRTCTL_PATH", MustFindExecutable(t, "true"))
 	t.Setenv("ROXAGENT_BINARY_PATH", "/bin/true")
 
 	tests := map[string]string{
@@ -63,7 +63,7 @@ func TestLoadVMScanConfig_InvalidSSHKeyContent(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Setenv("VM_SSH_PRIVATE_KEY", badKey)
 			t.Setenv("VM_SSH_PUBLIC_KEY", "ssh-ed25519 AAAA test@host")
-			cfg, err := loadVMScanConfig()
+			cfg, err := LoadVMScanConfig()
 			require.Error(t, err)
 			require.Nil(t, cfg)
 			require.ErrorContains(t, err, "VM_SSH_PRIVATE_KEY must contain complete PEM-encoded key content")
@@ -75,14 +75,14 @@ func TestDiscoverVirtctlPath_InvalidEnvOverride(t *testing.T) {
 	t.Run("missing file should return error", func(t *testing.T) {
 		missing := t.TempDir() + "/virtctl-does-not-exist"
 		t.Setenv("VIRTCTL_PATH", missing)
-		_, err := discoverVirtctlPath()
+		_, err := DiscoverVirtctlPath()
 		require.ErrorContains(t, err, "is not accessible")
 	})
 
 	t.Run("directory should return error", func(t *testing.T) {
 		dir := t.TempDir()
 		t.Setenv("VIRTCTL_PATH", dir)
-		_, err := discoverVirtctlPath()
+		_, err := DiscoverVirtctlPath()
 		require.ErrorContains(t, err, "is not an executable file")
 	})
 
@@ -93,13 +93,13 @@ func TestDiscoverVirtctlPath_InvalidEnvOverride(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Setenv("VIRTCTL_PATH", path)
-		_, err = discoverVirtctlPath()
+		_, err = DiscoverVirtctlPath()
 		require.ErrorContains(t, err, "is not an executable file")
 	})
 }
 
 func TestGenerateEphemeralSSHKeypair(t *testing.T) {
-	priv, pub, err := generateEphemeralSSHKeypair()
+	priv, pub, err := GenerateEphemeralSSHKeypair()
 	require.NoError(t, err)
 	require.Contains(t, priv, "-----BEGIN OPENSSH PRIVATE KEY-----") // notsecret
 	require.Contains(t, pub, "ssh-ed25519 ")                         // notsecret
