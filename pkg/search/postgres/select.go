@@ -47,8 +47,7 @@ func getArrayFieldsFromType[T any]() map[string]bool {
 	}
 
 	arrayFields := make(map[string]bool)
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
+	for field := range t.Fields() {
 		dbTag := field.Tag.Get("db")
 		if dbTag == "" || dbTag == "-" {
 			continue

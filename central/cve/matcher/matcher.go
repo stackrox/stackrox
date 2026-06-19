@@ -246,8 +246,8 @@ func (m *CVEMatcher) MatchVersions(node *schema.NVDCVEFeedJSON10DefNode, version
 		// Note that cpeVersionAndUpdate can't be "*:*" in this case, since there is no info about start and end versions
 		if stringutils.AllEmpty(cpeMatch.VersionStartIncluding, cpeMatch.VersionEndIncluding, cpeMatch.VersionEndExcluding) {
 			// This means this version and all prelease, build versions of this version. For example 1.6.4:*
-			if strings.HasSuffix(cpeVersionAndUpdate, ":*") {
-				if match, err := matchBaseVersion(strings.TrimSuffix(cpeVersionAndUpdate, ":*"), versionToMatch); err != nil {
+			if before, ok := strings.CutSuffix(cpeVersionAndUpdate, ":*"); ok {
+				if match, err := matchBaseVersion(before, versionToMatch); err != nil {
 					errList.AddError(errors.Wrapf(err, "could not compare base version %q with cluster version: %q", strings.TrimSuffix(cpeVersionAndUpdate, ":*"), versionToMatch))
 				} else if match {
 					return true, errList.ToError()

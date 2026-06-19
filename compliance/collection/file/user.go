@@ -17,8 +17,8 @@ func parseSystemUserMap(file string, userMap map[uint32]string) {
 		log.Error(err)
 		return
 	}
-	lines := strings.Split(string(contents), "\n")
-	for _, l := range lines {
+	lines := strings.SplitSeq(string(contents), "\n")
+	for l := range lines {
 		if spl := strings.Split(l, ":"); len(spl) > 2 {
 			ui, err := strconv.ParseUint(spl[2], 10, 32)
 			if err != nil {

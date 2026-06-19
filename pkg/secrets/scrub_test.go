@@ -319,15 +319,15 @@ func validateStructTagsOnTypeHelper(ty reflect.Type, visited map[reflect.Type]st
 		return nil
 	}
 	visited[ty] = struct{}{}
-	for i := 0; i < ty.NumField(); i++ {
-		fieldType := ty.Field(i).Type
+	for field := range ty.Fields() {
+		fieldType := field.Type
 		switch fieldType.Kind() {
 		case reflect.Struct, reflect.Pointer, reflect.Interface:
 			if err := validateStructTagsOnTypeHelper(fieldType, visited); err != nil {
 				return err
 			}
 		}
-		fieldTag := ty.Field(i).Tag
+		fieldTag := field.Tag
 		switch fieldTag.Get(scrubStructTag) {
 		case scrubTagAlways:
 			if fieldType.Kind() != reflect.String || fieldType != reflect.TypeOf("") {

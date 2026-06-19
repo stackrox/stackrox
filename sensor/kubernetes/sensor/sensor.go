@@ -42,9 +42,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/common/processsignal"
-	"github.com/stackrox/rox/sensor/common/pubsub"
-	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
-	"github.com/stackrox/rox/sensor/common/pubsub/lane"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
@@ -76,16 +73,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if features.SensorInternalPubSub.Enabled() {
 		log.Info("Internal PubSub system enabled")
 		var err error
-		internalMessageDispatcher, err = pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(
-			[]pubsub.LaneConfig{
-				lane.NewBlockingLane(pubsub.KubernetesDispatcherEventLane),
-				lane.NewBlockingLane(pubsub.FromCentralResolverEventLane),
-				lane.NewBlockingLane(pubsub.EnrichedProcessIndicatorLane),
-				lane.NewBlockingLane(pubsub.UnenrichedProcessIndicatorLane),
-			},
-		))
+		internalMessageDispatcher, err = buildPubSubDispatcher()
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to create the pubsub dispatcher")
+			return nil, err
 		}
 	}
 
@@ -153,7 +143,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	pubSub := internalmessage.NewMessageSubscriber()
 
-	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan, storeProvider.Nodes(), storeProvider.ClusterLabels(), storeProvider.NamespaceLabels(), factSettingsMgr)
+	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan, storeProvider.Nodes(), storeProvider.ClusterLabels(), storeProvider.NamespaceLabels(), factSettingsMgr, internalMessageDispatcher)
 	reprocessorHandler := reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache)
 	pipeline, err := eventpipeline.New(clusterID, cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize, pubSub, internalMessageDispatcher)
 	if err != nil {
