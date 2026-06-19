@@ -4,7 +4,7 @@
 set -eou pipefail
 
 # Global script variables
-OPM_VERSION="1.21.0"
+OPM_VERSION="1.48.0"
 
 function usage() {
   echo "
@@ -132,7 +132,8 @@ export BUILDKIT_PROGRESS="plain"
 BUILD_INDEX_DIR="${BASE_DIR}/build/index/rhacs-operator-index"
 mkdir -p "${BUILD_INDEX_DIR}"
 
-cp "${SCRIPT_DIR}/index.Dockerfile" "${BUILD_INDEX_DIR}.Dockerfile"
+# With "--binary-image", we are setting the exact base image version. By default, "latest" would be used.
+"${OPM}" generate dockerfile --binary-image "quay.io/operator-framework/opm:v${OPM_VERSION}" "${BUILD_INDEX_DIR}"
 
 BUNDLE_VERSION="${BUNDLE_TAG##*:v}"
 
