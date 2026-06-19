@@ -220,6 +220,15 @@ jobs:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
         show: all
 
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # ratchet:codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        report_type: test_results
+        flags: e2e,byodb
+        files: ${{ env.ARTIFACT_DIR }}/**/*.xml
+
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira

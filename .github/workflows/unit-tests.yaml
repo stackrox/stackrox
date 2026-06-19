@@ -60,11 +60,6 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
-    - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        flags: go-unit-tests
-
     - name: Generate junit report
       if: always()
       run: make generate-junit-reports
@@ -93,6 +88,23 @@ jobs:
       if: always()
       with:
         paths: 'junit-reports/report.xml'
+
+    - name: Upload coverage to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # ratchet:codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        report_type: coverage
+        flags: go-unit-tests
+
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # ratchet:codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        report_type: test_results
+        flags: unit-tests,go
+        files: junit-reports/report.xml
 
     - name: Report test failures to Jira
       if: (!cancelled())
@@ -164,11 +176,6 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
 
-    - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        flags: go-unit-tests
-
     - name: Generate junit report
       if: always()
       run: make generate-junit-reports
@@ -178,6 +185,23 @@ jobs:
       if: always()
       with:
         paths: 'junit-reports/report.xml'
+
+    - name: Upload coverage to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # ratchet:codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        report_type: coverage
+        flags: go-unit-tests
+
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # ratchet:codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        report_type: test_results
+        flags: unit-tests,go-postgres
+        files: junit-reports/report.xml
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -233,6 +257,15 @@ jobs:
       with:
         paths: 'junit-reports/report.xml'
 
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # ratchet:codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        report_type: test_results
+        flags: unit-tests,go-bench
+        files: junit-reports/report.xml
+
     # Do not create junit report for bench tests:
     # https://github.com/jstemmer/go-junit-report/issues/174
 
@@ -278,6 +311,15 @@ jobs:
       if: always()
       with:
         paths: 'ui/apps/platform/test-results/reports/*.xml'
+
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # ratchet:codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        report_type: test_results
+        flags: unit-tests,ui
+        files: ui/apps/platform/test-results/reports/*.xml
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -344,6 +386,15 @@ jobs:
       with:
         paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
 
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # ratchet:codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        report_type: test_results
+        flags: unit-tests,ui-component
+        files: ui/apps/platform/cypress/test-results/reports/**/*.xml
+
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
@@ -388,6 +439,15 @@ jobs:
       with:
         paths: 'roxctl-test-output/*.xml'
 
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # ratchet:codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        report_type: test_results
+        flags: unit-tests,roxctl
+        files: roxctl-test-output/*.xml
+
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
@@ -423,6 +483,15 @@ jobs:
       if: always()
       with:
         paths: 'shell-test-output/*.xml'
+
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # ratchet:codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        report_type: test_results
+        flags: unit-tests,shell
+        files: shell-test-output/*.xml
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -512,6 +581,15 @@ jobs:
       if: always()
       with:
         paths: 'junit-reports/report.xml'
+
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # ratchet:codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        report_type: test_results
+        flags: unit-tests,sensor-integration
+        files: junit-reports/report.xml
 
     - name: Report junit failures in jira
       if: (!cancelled())
