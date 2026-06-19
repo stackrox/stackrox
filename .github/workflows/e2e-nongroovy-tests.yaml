@@ -2,9 +2,9 @@ name: e2e-nongroovy-tests
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 5 * * *"
   push:
+    tags:
+    - '*-nightly-*'
     branches:
     - master
   pull_request:
