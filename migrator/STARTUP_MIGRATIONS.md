@@ -1,10 +1,17 @@
 # Startup Migrations Guide
 
-Startup migrations run during the Central upgrade process, **before** Central starts serving
-traffic. They have exclusive database access but directly extend upgrade downtime.
+Startup migrations run during the Central upgrade process, **before** a new Central version
+starts serving traffic. With the Recreate rollout strategy they directly extend upgrade
+downtime; with RollingUpdate they extend the startup time of the new pod while the old pod
+continues serving traffic. They should be limited to **DDL/schema changes** that GORM
+AutoMigrate cannot handle.
 
-Use startup migrations for data transformations on tables with fewer than ~100k rows.
-For larger tables, use [background migrations](../central/backgroundmigrations/BACKGROUND_MIGRATIONS.md).
+**Do not use startup migrations for data backfills.** 
+Central supports both Recreate and RollingUpdate rollout strategies.
+With RollingUpdate, old Central pods continue running during the startup
+migration window, so any data backfill has the chance of being inconsistent, since old pods keep writing rows without populating the new column.
+Use a [background migration](../central/backgroundmigrations/BACKGROUND_MIGRATIONS.md) for all data backfills; background migrations 
+wait for the rollout to fully complete (all old pods terminated) before starting.
 
 ## Getting started
 
@@ -33,11 +40,16 @@ Your migration function receives a `*types.Databases`
 
 ```go
 type Databases struct {
-    GormDB     *gorm.DB      // For GORM operations (NOT part of outer transaction)
-    PostgresDB postgres.DB   // For raw SQL (participates in outer transaction) — pkg/postgres.DB
+    GormDB     *gorm.DB      // For GORM operations
+    PostgresDB postgres.DB   // For raw SQL — pkg/postgres.DB
     DBCtx      context.Context
 }
 ```
+
+**There is no outer transaction wrapping the migration.** 
+The runner calls `migration.Run()` without a transaction; only the version update after each
+migration is wrapped in a tx. If your migration needs transactional guarantees, open your own transaction.
+For batch operations, use a transaction per batch to keep WAL size bounded and avoid losing all progress on error.
 
 ### 3. Write tests
 
@@ -53,12 +65,9 @@ Run the test:
 go test -v -tags sql_integration ./migrator/migrations/m_{N}_to_m_{N+1}_*/
 ```
 
-## Data access patterns
+## Writing DDL migrations
 
-### Raw SQL (preferred)
-
-Raw SQL provides the best isolation from future code changes and participates in the
-outer migration transaction. Use it for straightforward operations.
+Use raw SQL for DDL statements. It provides the best isolation from future code changes.
 
 ```go
 func migrate(database *types.Databases) error {
@@ -69,98 +78,37 @@ func migrate(database *types.Databases) error {
     }
     defer conn.Release()
 
-    _, err = conn.Exec(ctx, `
-        UPDATE my_table
-        SET new_column = other_table.value
-        FROM other_table
-        WHERE my_table.fk = other_table.id
-          AND my_table.new_column IS NULL`)
+    _, err = conn.Exec(ctx, `ALTER TABLE my_table ALTER COLUMN status SET DEFAULT 'active'`)
     return err
 }
 ```
 
-### GORM
-
-Use GORM when you need object-oriented access or when working with schema changes.
-GORM operations do **not** participate in the outer transaction.
-
-**Important:** Always narrow your SELECT to specific columns. A `SELECT *` will break if a
-subsequent migration modifies the table structure, because GORM caches prepared statements.
-
-```go
-// Define a trimmed model with only the columns you need.
-type myRow struct {
-    ID         string `gorm:"column:id;type:varchar;primaryKey"`
-    Serialized []byte `gorm:"column:serialized;type:bytea"`
-}
-
-func migrate(database *types.Databases) error {
-    db := database.GormDB.WithContext(database.DBCtx).Table("my_table")
-    query := database.GormDB.WithContext(database.DBCtx).Table("my_table").Select("id, serialized")
-
-    rows, err := query.Rows()
-    if err != nil {
-        return err
-    }
-    defer rows.Close()
-    // ... process rows ...
-}
-```
-
-### Frozen schemas
-
-A migration must **never** import schemas from `pkg/postgres/schema` — those evolve with the
+**Important:** Never import schemas from `pkg/postgres/schema` — those evolve with the
 latest release and will break the migration when the schema changes in a future version.
-
-If your migration needs to create or modify a table schema, freeze the schema inside the
-migration package:
-
-```bash
-./tools/generate-helpers/pg-schema-migration-helper --type=storage.MyType --search-category MY_CATEGORY
-```
-
-Copy the output into a `schema/` subdirectory within your migration package. Remove any
-conversion functions you don't need.
-
-Then apply the frozen schema:
-
-```go
-pgutils.CreateTableFromModel(database.DBCtx, database.GormDB, schema.CreateTableMyTableStmt)
-```
+If your migration needs to ensure a table/column exists before running DDL, use a frozen schema with `pgutils.CreateTableFromModel`.
 
 ## Common scenarios
 
-Startup migrations are for operations on **small, bounded tables** where the execution time
-is predictable and short. If you need to backfill data or create indexes on large or
-high-cardinality tables, use a
-[background migration](../central/backgroundmigrations/BACKGROUND_MIGRATIONS.md) instead.
+Startup migrations are for **DDL/schema changes** that GORM AutoMigrate cannot handle.
+For all data backfills and transformations, use a [background migration](../central/backgroundmigrations/BACKGROUND_MIGRATIONS.md) instead.
 
-### Scenario 1: Fix or transform config data on a small table
+### Scenario 1: Set a column default
 
-Update values in a small table (e.g., cluster config, admission controller settings).
-Use GORM with a frozen schema when you need to deserialize/re-serialize protobuf blobs.
-
-See `m_211_to_m_212_admission_control_config` for a real example:
+Set a DB-level default for new rows. PostgreSQL optimizes `SET DEFAULT` as a metadata-only
+operation — no table scan.
 
 ```go
 func migrate(database *types.Databases) error {
-    ctx := sac.WithAllAccess(context.Background())
-    db := database.GormDB
-    pgutils.CreateTableFromModel(ctx, db, schema.CreateTableClustersStmt)
-
-    return fixAdmissionControllerConfig(ctx, db)
+    _, err := database.PostgresDB.Exec(database.DBCtx,
+        "ALTER TABLE my_table ALTER COLUMN status SET DEFAULT 'active'")
+    return err
 }
 ```
 
-Key patterns:
-- Apply the frozen schema first (`CreateTableFromModel`) to ensure the table has the
-  expected structure
-- Use GORM's `FindInBatches` or `Rows()` to iterate, with explicit column selection
-- Re-serialize the protobuf blob after modifying fields
+### Scenario 2: Drop a deprecated table
 
-### Scenario 2: Drop a table or delete rows
-
-Remove deprecated tables or obsolete data. These are simple SQL operations.
+Remove a table that is no longer referenced by any supported version. Only do this after
+the backwards compatibility window has passed (see [Breaking changes](#breaking-changes)).
 
 ```go
 func migrate(database *types.Databases) error {
@@ -170,51 +118,14 @@ func migrate(database *types.Databases) error {
 }
 ```
 
-Or delete specific rows:
-
-```go
-func migrate(database *types.Databases) error {
-    _, err := database.PostgresDB.Exec(database.DBCtx,
-        "DELETE FROM risks WHERE subject_type = $1",
-        storage.RiskSubjectType_IMAGE_COMPONENT)
-    return err
-}
-```
-
-See `m_216_to_m_217_remove_compliance_benchmark_table` and
-`m_222_to_m_223_remove_component_risk_records` for real examples.
-
-### Scenario 3: Index type conversion (legacy)
-
-Use the `indexhelper` package for converting index types (e.g., HASH to BTREE).
-Note: for **new** index creation, use proto tags (`sql:"index"` or `sql:"background-index"`)
-and the code generator instead. This scenario is only for legacy index type conversions.
-
-```go
-import "github.com/stackrox/rox/migrator/migrations/indexhelper"
-
-func migrate(database *types.Databases) error {
-    return indexhelper.MigrateIndex(
-        database.DBCtx,
-        database.PostgresDB,
-        "my_table",           // table name
-        "my_table_col_idx",   // current index name
-        "my_column",          // indexed column
-        "my_table_col_tmp",   // temporary index name during migration
-    )
-}
-```
-
-The helper creates a new BTREE index with a temporary name, drops the old HASH index,
-then renames the temporary index to the original name.
-
 ### What does NOT belong in a startup migration
 
 | Operation | Why not | Use instead |
 |---|---|---|
-| Backfill on high-cardinality table | Can cause hours of downtime (m_212: 8h on largest tenant) | Background migration |
-| `CREATE INDEX` on large table | Holds exclusive lock, blocks all writes | Background migration with `CONCURRENTLY` |
-| Pure SQL JOIN backfill on unbounded table | Single `UPDATE ... FROM` locks affected rows for the full duration | Background migration with batching |
+| Data backfills (any table size) | With RollingUpdate, old pods keep writing rows without the new column — backfill is immediately inconsistent | Background migration |
+| Serialized blob → column extraction | Old pods keep writing blobs without updating the extracted column | Background migration |
+| Index type conversions | Can be done concurrently without downtime | Background migration or proto tags |
+| `CREATE INDEX` on any table | Holds exclusive lock, blocks all writes | Proto tags (`sql:"index"` / `sql:"background-index"`) |
 | Schema-only changes (add column, add table) | Unnecessary — GORM AutoMigrate handles this | No migration needed |
 
 ## Writing tests
@@ -324,10 +235,9 @@ from upgrading into an incompatible state.
 
 ## Checklist
 
-- [ ] Migration is idempotent (safe to re-run)
-- [ ] Uses frozen schemas, not `pkg/postgres/schema`
-- [ ] GORM queries use explicit column selection (no `SELECT *`)
-- [ ] Table size is bounded and small (< 100k rows) — use a background migration otherwise
+- [ ] Migration is DDL-only (no data backfills — use a background migration for those)
+- [ ] DDL statements are idempotent (`IF EXISTS`, `IF NOT EXISTS`)
+- [ ] Does not import `pkg/postgres/schema`
 - [ ] Tests cover happy path, edge cases, and idempotency
 - [ ] Backwards compatibility test verifies old queries still work
 - [ ] No feature flag dependencies in migration code

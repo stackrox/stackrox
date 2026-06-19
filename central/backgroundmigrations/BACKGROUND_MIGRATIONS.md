@@ -1,21 +1,18 @@
 # Background Migrations Guide
 
 Background migrations run **after** Central is fully started and serving traffic.
-They are the **preferred default** for all data backfills and transformations because
-they do not add upgrade downtime. Use a startup migration only when a nwe Central version cannot
-function correctly without the migrated data AND the table is not on the
-[high-cardinality list](../../migrator/README.md#high-cardinality-tables-always-use-background-migrations).
+They are the **only** path for all data backfills and transformations. They wait for the
+rollout to fully complete (all old-version pods terminated) before starting, which is the
+primary mechanism that prevents conflicts with old Central code. Use a startup migration
+only for DDL/schema changes that GORM AutoMigrate cannot handle.
 
 For an overview of both migration types and the decision flowchart, see
 [README.md](../../migrator/README.md).
 
 ## When to use background migrations
 
-- Any data backfill or data transformation where Central can tolerate partially migrated
-  state (some rows backfilled, some not) while the migration runs
-- All operations on [high-cardinality tables](../../migrator/README.md#high-cardinality-tables-always-use-background-migrations), don't use a startup data migrations on these tables
-- Creating indexes not covered by the code generator (e.g., partial indexes, expression
-  indexes). Standard indexes are handled by proto tags (`sql:"index"` or
+- All data backfills and transformations, regardless of table size. Central must tolerate partially migrated state (some rows backfilled, some not) while the migration runs
+- Creating indexes not covered by the code generator (e.g., partial indexes, expression indexes). Standard indexes are handled by proto tags (`sql:"index"` or
   `sql:"background-index"`) and the background migration runner's index reconciliation.
 
 **Do NOT use background migrations** for:
@@ -147,9 +144,11 @@ Your `Run` function must satisfy these requirements:
 
 ## Concurrency with Central
 
-This is the most critical aspect of background migrations. Central is actively receiving
-sensor data, API calls, and processing events while your migration runs. You cannot
-control what events arrive, so the migration must account for concurrent writes.
+Background migrations wait for the rollout to fully complete before starting — at that
+point, only new Central code is running. However, the new Central is actively receiving
+sensor data, API calls, and processing events while the migration runs. You cannot
+control what events arrive, so the migration must account for concurrent writes from
+the new Central.
 
 ### Use `SELECT ... FOR UPDATE SKIP LOCKED`
 
@@ -169,9 +168,9 @@ rows, err := conn.Query(ctx, `
 
 - **`FOR UPDATE`** acquires row-level locks, preventing Central from modifying those
   rows while the migration processes them.
-- **`SKIP LOCKED`** skips rows currently locked by Central rather than blocking. This
-  assumes locked rows are being written by the new Central version and are already
-  consistently writing the field.
+- **`SKIP LOCKED`** skips rows currently locked by the new Central rather than blocking.
+  Since the rollout is complete at this point, any locked row is being written by the new
+  Central version which already populates the new column consistently.
 - **Primary key iteration** (`id > $1 ORDER BY id`) uses the primary key index for
   efficient pagination. The full table scan happens once; writes are far more expensive
   than the read pass, so this is less of a bottleneck.

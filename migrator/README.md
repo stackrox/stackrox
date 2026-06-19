@@ -37,25 +37,20 @@ Is the change schema-only (new column without backfill, new table)?
         ├── YES → No migration needed.
         └── NO →
             Setting a static column default (no backfill of existing rows)?
-            ├── YES → STARTUP MIGRATION with ALTER TABLE ... ALTER COLUMN ... SET DEFAULT
-            └── NO → Existing data must be backfilled or transformed. A MIGRATION is needed.
-                      Is the table on the high-cardinality list below?
-                      ├── YES → BACKGROUND MIGRATION [2]. Central MUST tolerate partially
-                      │         migrated data. Never use a startup backfill migration on these tables.
-                      └── NO →
-                          Must the migration complete BEFORE Central starts serving traffic?
-                          ├── YES → STARTUP MIGRATION [1]
-                          └── NO  → BACKGROUND MIGRATION [2] (preferred default)
+            ├── YES → STARTUP MIGRATION [1] with ALTER TABLE ... ALTER COLUMN ... SET DEFAULT
+            └── NO → Existing data must be backfilled or transformed.
+                      → BACKGROUND MIGRATION [2]. Central MUST tolerate partially
+                        migrated data while the migration runs.
 ```
 
-**Use a background migration unless the new version of Central cannot function correctly
-without the migrated data.** Background migrations do not add upgrade downtime and are
-the preferred default for all data backfills and transformations. Central code must
-tolerate partially migrated state (some rows backfilled, some not) while a background
-migration is in progress.
+**All data backfills must be background migrations.** Central supports both Recreate and
+RollingUpdate rollout strategies. With RollingUpdate, old Central pods continue running
+during startup migrations, so any data backfill would be immediately inconsistent — old
+pods keep writing rows without populating the new column. Background migrations avoid this
+by waiting for the rollout to fully complete (all old pods terminated) before starting.
 
-**Never use a startup migration on high-cardinality tables.** Design the application code
-to handle the zero/null value gracefully until the background migration completes.
+Central code must tolerate partially migrated state (some rows backfilled, some not) while
+a background migration is in progress.
 
 - **\[1\] Startup migration guide**: [STARTUP_MIGRATIONS.md](STARTUP_MIGRATIONS.md)
 - **\[2\] Background migration guide**: [BACKGROUND_MIGRATIONS.md](../central/backgroundmigrations/BACKGROUND_MIGRATIONS.md)
@@ -66,10 +61,10 @@ to handle the zero/null value gracefully until the background migration complete
 |---|---|---|
 | **Runs when** | Before Central starts (during upgrade) | After Central is running and rollout is complete |
 | **Central availability** | Central is **down** during execution | Central is **live** and serving traffic |
-| **Downtime impact** | Directly extends upgrade downtime | Zero additional downtime |
+| **Downtime impact** | Extends upgrade downtime (Recreate) or new pod startup time (RollingUpdate) | None |
 | **Concurrency** | Exclusive access to the database | Must handle concurrent reads/writes from Central |
 | **Transaction support** | Version update wrapped in transaction; migration code itself is not automatically wrapped | No automatic transaction wrapping |
-| **When to use** | Only when Central **cannot start** without the migrated data | Default for all other data backfills and transformations |
+| **When to use** | DDL/schema changes that GORM AutoMigrate cannot handle (e.g., `SET DEFAULT`, dropping tables, constraints) | All data backfills and transformations |
 | **Sequence tracking** | `CurrentDBVersionSeqNum` in `pkg/migrations/internal/seq_num.go` | `CurrentBgMigrationSeqNum` in `central/backgroundmigrations/seq_num.go` |
 | **Code location** | `migrator/migrations/m_{N}_to_m_{N+1}_*/` | `central/backgroundmigrations/migrations/*/` |
 | **Rerun on rollback** | Yes -- all migrations between versions re-execute on roll-forward | Yes -- seq num resets on rollback, migrations re-run on next upgrade |
@@ -226,8 +221,9 @@ apply a different schema change, so the current datastore or schema code cannot 
 
 Each migration is responsible for accessing the databases it needs and converting the data.
 A migration must **never** import schemas from `pkg/postgres/schema` -- those evolve with the
-latest release. Instead, freeze schemas inside the migration package. See
-[STARTUP_MIGRATIONS.md](STARTUP_MIGRATIONS.md) for details on frozen schemas.
+latest release. Instead, freeze schemas inside the migration package. This is primarily
+relevant for background migrations that deserialize data; startup migrations that only
+run DDL typically don't need frozen schemas.
 
 ## History
 
