@@ -1,385 +1,237 @@
-# StackRox Database migration
+# StackRox Database Migrations
 
-## IMPORTANT
-All migrations must be backwards compatible in order to ensure a safe and successful rollback.
+## IMPORTANT: Idempotency and Backwards compatibility
 
-Please review the [overview](OVERVIEW.md) for details on the upgrade and migration process.
+All migrations must be backwards compatible to ensure safe rollback.
+Migrations must be idempotent because they re-execute when rolling forward after a rollback.
+Migrations are forward only, there are no reverse migrations.
 
-## When is a migration NOT needed?
+**All migrations must be backwards compatible**. This means:
+- No destructive schema changes (dropping columns, renaming columns)
+- Data transformations must work with both old and new application code
+- New columns should use the zero value or a new field name to avoid conflicts
 
-Schema-only changes — adding columns, indexes and new tables — are applied
-automatically by GORM AutoMigrate during every Central startup. **You do NOT need to write a
-migration for these.** Simply update the proto definition (add field, add search tag) and
-regenerate the schema code. The migrator will pick up the new schema on the next startup.
+GORM AutoMigrate enforces this by design: it will not remove unused columns or make
+breaking data type changes, though it will perform updates on precision.
+See [GORM Auto Migration](https://gorm.io/docs/migration.html#Auto-Migration).
 
-A migration is **only** needed when you must **backfill or transform existing data**. For example:
-- Populating a new column with values derived from existing columns
-- Splitting data from one column into two
-- Converting enum values or data formats
+When a previously-supported version can no longer tolerate the current schema, update
+`MinimumSupportedDBVersionSeqNum` in `pkg/migrations/internal/fallback_seq_num.go`.
+The migrator will reject upgrades from versions below this threshold.
 
-If the application code can tolerate its default value (0, empty string, nil, false) in the new
-column until the data is naturally populated through normal operation, no migration is required.
+## Do you need a migration?
 
-## Purpose of database migrations
+**Most changes do NOT require a migration.**
 
-When changing the data model for stored objects, data conversions may be required. All migrations
-are in the `migrations` subdirectory.
-
-Migrations are organized with sequence numbers and executed in sequence. Each migration is provided
-with a pointer to `types.Databases` where the pointed object contains all necessary database instances,
-including `Postgres` and `GormDB` (datamodel for postgres) as well as a context `DBCtx`. 
-The context allows for the migrations to be wrapped in a transaction so they can be committed as they 
-are processed.  (Migrations moving data with `GormDB` will not be part of the outer transaction, 
-as such care should be taken when using `GormDB` to move data.)  Depending on the version a migration 
-is operating on, some database instances may be nil.
-
-A migration can read from any of the databases, make changes to the data or to the datamodel
-(database schema when working with postgres), then persist these changes to the database.
-
-## Migrations and feature flags
-
-The short version is:
-**Do not use feature flags in migration code**.
-The application has to work on the same data model with enabled and disabled feature flags.
-
-If a feature needs a new field (named `new_field` for the purpose of the example) in the stored data,
-the code should be able to support the zero value (0, empty string, nil pointer), or
-this `new_field` needs to be seeded. In the latter case, the data should have an initial seed in the form
-of a migration that populates it from default values, or a mix of existing fields. Once the migration has run,
-the application code should also populate and maintain this field on creation or update of stored objects.
-It is important that this `new_field` should be populated regardless of the fact that the feature is
-activated or not: the feature may have to be temporarily deactivated, and later reactivated, in which case
-the data should still be ready for use by the feature.
-
-If a feature cannot work without DB migration, the data should be migrated prior to any work on the feature.
-
-If a feature can work at lesser development cost without data migration, workaround code can be written
-to work on the existing schema. Once the feature is made Generally Available, a data migration
-can be written, applied and the workaround code replaced with code that uses the new data schema.
-
-## History of the datastores
-
-1. Before release 3.73, the migrator was targeting internal key-value stores `BoltDB` and `RocksDB`.
-
-   All migrations were of the form `m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migrations}` .
-
-2. Release 3.73 and 3.74 brought the database `Postgres` as Technical preview. This had the consequence that
-`Postgres` was a new potential datastore targeted by the migrator.
-
-   In these versions, two sets of data migrations were possible: key-value store migrations, and data move migrations
-   (from `BoltDB` and `RocksDB` to `Postgres`). The migration sequence is the following: first all key-value
-   data migrations are applied, then all data move migrations are applied.
-
-    - Key-value store data migrations have the form `m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migrations}` .
-    - Data move migrations have the form `n_{postgresSchemaVersion}_to_n_{postgresSchemaVersion+1}_{moved_data_type}` .
-    
-3. After 4.0, the key-value stores are deprecated and `Postgres` becomes the only data store.
-
-   The migration returns to the old scheme, restarting from the database version after all data moves to `Postgres`.
-
-   All migrations again have the form `m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migrations}`.
-
-4. Starting in 4.2, all migrations MUST be backwards compatible, at least while previous releases are supported.  
-
-   These rollbacks will use `central_active` and as such all schema changes and migrations must be backwards compatible.  This means no destructive changes like deleting columns or fields and ensuring that any data changes either work with previous versions or occur within a new field.  When a breaking change is made the `MinimumSupportedDBVersionSeqNum` will need to be updated to the minimum database version that will work with the breaking change.
-
-## How to write new migration script
-
-Script should correspond to single change. Script should be part of the same release as this change.
-Here are the steps to write migration script:
-
-1. Run `DESCRIPTION="xxx" make bootstrap_migration` with a proper description of what the migration will do
-   in the `DESCRIPTION` environment variable.
-
-2. Determine if this change breaks a previous releases database.  If so increment the `MinimumSupportedDBVersionSeqNum` 
-   to the `CurrentDBVersionSeqNum` of the release immediately following the release that cannot tolerate the change. 
-   For example, in 4.2 a column `column_v2` is added to replace the `column_v1` column in 4.1.  All the code from 4.2
-   onward will not reference `column_v1`.  At some point in the future a rollback to 4.1 will not longer be supported
-   and we want to remove `column_v1`.  To do so, we will upgrade the schema to remove the column
-   and update the `MinimumSupportedDBVersionSeqNum` to be the value of `CurrentDBVersionSeqNum` in 4.2
-   as 4.1 will no longer be supported.  The migration process will inform the user of an error when trying to migrate
-   to a software version that can no longer be supported by the database.
-
-3. Write the migration code and associated tests in the generated `migration_impl.go` and `migration_test.go` files.
-   The files contain a number of TODOs to help with the tasks to complete when writing the migration code itself.
-
-4. To better understand how to write the `migration.go` and `migration_test.go` files, look at existing examples
-in `migrations` directory, or at the examples listed below.
-
-    - [#1](https://github.com/stackrox/rox/pull/8609)
-    - [#2](https://github.com/stackrox/rox/pull/7581)
-    - [#3](https://github.com/stackrox/rox/pull/7921)
-
-    Avoid depending on code that might change in the future as **migration should produce consistent results**.
-
-## How to test migration on locally deployed cluster
-
-1. Create PR with migration files to build image in CI
-2. Checkout **before** commit with migration files and `make clean image`
-3. `export STORAGE=pvc`
-4. `teardown && ./deploy/k8s/deploy-local.sh`
-5. `./scripts/k8s/local-port-forward.sh`
-6. Create all necessary testing data via central UI and REST endpoints
-7. Checkout **at the same commit** your PR currently pointing to
-8. `kubectl -n stackrox set image deploy/central central=stackrox/main:$(make tag)`
-9. You can ensure migration script was executed by looking into Central logs. You should see next log messages:
-
-    ```bigquery
-    Migrator: <timestamp> log.go:18: Info: Found DB at version <currentDBVersion>, which is less than what we expect (<currentDBVersion+1>). Running migrations...
-    Migrator: <timestamp> log.go:18: Info: Successfully updated DB from version <currentDBVersion> to <currentDBVersion+1>
-    ```
-
-10. Re-run `./scripts/k8s/local-port-forward.sh`
-11. Verify that migration worked correctly
-
-## Writing postgres migration tests
-
-Follow the TODOs listed in `migration_test.go`.  This includes a recommended test to verify the pre-migration SQL statements provide
-the expected results against the post-migration database in order to verify backwards compatiblity.
-
-### Migrator limitations
-
-Migrator upgrades the data from a previous datamodel to the current one. In the case of data manipulation migrations,
-the previous and current datamodels can be identical. Now the previous and current datamodels can differ. When loading
-data, the migrator needs to access the legacy schema. Each migration may apply a different schema change, therefore
-the current datastore or schema code cannot be used.
-
-Each migration is responsible for looking into the databases (there can be multiple ones) it needs to load the data
-it manipulates and for converting it.
-
-### Possible migration steps
-
-#### Freeze current schema as needed.
-
-A migration shall not access current schema under `pkg/postgres/schema`. The migration access data in the format
-of its creation time and bring the format of the next migration. It is associated with a specific sequence number(aka version)
-and hence it does not evolve with the latest version. The frozen schema helps to keep migration separated
-from Central and keep the codes of migrations stable.
-
-To freeze a schema, you can use the following tool to generate a frozen schema, make sure use the exact same parameters
-to generate current schema which can be find in each Postgres store.
-
-```shell
-./tools/generate-helpers/pg-schema-migration-helper --type=<prototype> --search-category ...
+```
+Is the change schema-only (new column without backfill, new table)?
+├── YES → No migration needed. GORM AutoMigrate and proto code generation handles it.
+└── NO →
+    Adding an index?
+    ├── YES → No migration needed. Use proto tags instead.
+    │         Is the table on the high-cardinality list below?
+    │         ├── YES → Use sql:"background-index=btree" (created non-blocking after startup)
+    │         └── NO  → Use sql:"index=btree" (created at startup)
+    └── NO →
+        Can the new column tolerate its zero value until normal operation populates it?
+        ├── YES → No migration needed.
+        └── NO →
+            Setting a static column default (no backfill of existing rows)?
+            ├── YES → STARTUP MIGRATION [1] with ALTER TABLE ... ALTER COLUMN ... SET DEFAULT
+            └── NO → Existing data must be backfilled or transformed.
+                      → BACKGROUND MIGRATION [2]. Central MUST tolerate partially
+                        migrated data while the migration runs.
 ```
 
-This tool also generates conversion tools for schema, you may remove them. 
+**All data backfills must be background migrations.** Central supports both Recreate and
+RollingUpdate rollout strategies. With RollingUpdate, old Central pods continue running
+during startup migrations, so any data backfill would be immediately inconsistent — old
+pods keep writing rows without populating the new column. Background migrations avoid this
+by waiting for the rollout to fully complete (all old pods terminated) before starting.
 
-#### Create or upgrade the schema of a table.
+Central code must tolerate partially migrated state (some rows backfilled, some not) while
+a background migration is in progress.
 
-For the initial data push to postgres, the generated schemas under `migrator/migrations/frozenschema/v73` were used.
-The auto-generation scripts are removed so the schemas are frozen after 3.73.
+- **\[1\] Startup migration guide**: [STARTUP_MIGRATIONS.md](STARTUP_MIGRATIONS.md)
+- **\[2\] Background migration guide**: [BACKGROUND_MIGRATIONS.md](../central/backgroundmigrations/BACKGROUND_MIGRATIONS.md)
 
-In 3.74, snapshots of the schemas are taken with an on-demand basis.
+## Migration types
 
-Starting from release 4.0, we recommend to keep frozen schemas inside a new migration:
-- If the migration does not change the schema but need to access the data of a table, it needs to freeze its schema in the migration.
-- If the migration changes the schema of a table, it may need to freeze two versions of its schema before and after the schema change.
+| | Startup migration | Background migration |
+|---|---|---|
+| **Runs when** | Before Central starts (during upgrade) | After Central is running and rollout is complete |
+| **Central availability** | Central is **down** during execution | Central is **live** and serving traffic |
+| **Downtime impact** | Extends upgrade downtime (Recreate) or new pod startup time (RollingUpdate) | None |
+| **Concurrency** | Exclusive access to the database | Must handle concurrent reads/writes from Central |
+| **Transaction support** | Version update wrapped in transaction; migration code itself is not automatically wrapped | No automatic transaction wrapping |
+| **When to use** | DDL/schema changes that GORM AutoMigrate cannot handle (e.g., `SET DEFAULT`, dropping tables, constraints) | All data backfills and transformations |
+| **Sequence tracking** | `CurrentDBVersionSeqNum` in `pkg/migrations/internal/seq_num.go` | `CurrentBgMigrationSeqNum` in `central/backgroundmigrations/seq_num.go` |
+| **Code location** | `migrator/migrations/m_{N}_to_m_{N+1}_*/` | `central/backgroundmigrations/migrations/*/` |
+| **Rerun on rollback** | Yes -- all migrations between versions re-execute on roll-forward | Yes -- seq num resets on rollback, migrations re-run on next upgrade |
+| **Skip support** | `ROX_SKIP_MIGRATIONS` (comma-separated seq nums) | `ROX_SKIP_BACKGROUND_MIGRATIONS` (comma-separated seq nums) |
+| **Force rerun** | Rerun happens on rollback/rollforward | Rerun on rollback/rollforward `ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM` + `ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG` for fallback on upgrade from older versions |
+| **Detailed guide** | [STARTUP_MIGRATIONS.md](STARTUP_MIGRATIONS.md) | [BACKGROUND_MIGRATIONS.md](../central/backgroundmigrations/BACKGROUND_MIGRATIONS.md) |
 
-If your new migration need to change the Postgres schema, use the following statement to apply frozen schema in a migration.
+### High-cardinality tables (always use background migrations)
 
-```go
-pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableCollectionsStmt)
+These tables regularly exceed 100k rows in production environments:
+
+| Table | Observed in |
+|---|---|
+| `alerts` | RHIT, AppSRE |
+| `image_component_v2` | RHIT, IBM, Dogfood, AppSRE |
+| `image_cves_v2` | RHIT, IBM, AppSRE |
+| `images_layers` | RHIT, IBM |
+| `listening_endpoints` | RHIT |
+| `network_flows_v2` | RHIT, IBM, Dogfood, AppSRE, RHIT2 |
+| `process_indicators` | RHIT, IBM, AppSRE, RHIT2 |
+
+## How the systems interact
+
+```
+Central upgrade sequence:
+
+  +----------------------------------------------------------+
+  |                   STARTUP PHASE                          |
+  |                                                          |
+  |  1. Migrator acquires advisory lock                      |
+  |  2. Run startup migrations sequentially                  |
+  |  3. GORM AutoMigrate applies all registered schemas      |
+  |  4. Apply startup indexes (CREATE INDEX CONCURRENTLY)    |
+  |  5. Release advisory lock                                |
+  |                                                          |
+  |  Central is NOT serving traffic during this phase         |
+  +----------------------------+-----------------------------+
+                               |
+                               v
+  +----------------------------------------------------------+
+  |              CENTRAL STARTS SERVING                      |
+  |                                                          |
+  |  6. Datastores initialize                                |
+  |  7. gRPC/HTTP servers start                              |
+  |  8. Central is ready and serving traffic                  |
+  +----------------------------+-----------------------------+
+                               |
+                               v
+  +----------------------------------------------------------+
+  |         BACKGROUND PHASE (concurrent)                    |
+  |                                                          |
+  |  Background Migrations:                                  |
+  |  9. Rollout checker waits for all old pods to terminate   |
+  | 10. Acquire background migration advisory lock           |
+  | 11. Run background migrations sequentially               |
+  | 12. Each migration checkpoints progress on completion    |
+  | 13. Reconcile background indexes (CREATE INDEX           |
+  |     CONCURRENTLY for all background-index fields)        |
+  |                                                          |
+  |  Central IS serving traffic during this phase             |
+  +----------------------------------------------------------+
 ```
 
-#### Access data
+The rollout checker (step 9) ensures that no old-version Central pods are still running
+before background migrations begin. This prevents conflicts between old code writing data
+in the pre-migration format while the migration is transforming it.
 
-Migration can access the legacy and Postgres databases but it does not have access to the central datastores.
-In migrator, there are a multiple ways to access data.
+### Testing backwards compatibility
 
-1. Raw SQL commands
+The `gke-upgrade-tests` start with a 4.1.3 deployment and upgrade to the current
+release, executing all migrations and verifying rollback succeeds.
 
-    Raw SQL commands are always available to databases and it has good isolation from current release. It is used frequently in
-    migrations before Postgres. Migrations with raw SQL command needs less maintenance but it may not be convenient
-    and it could be error-prone.  This model supports the transaction passed via the databases.DBCtx.
-    We try to provide more convenient way to read and update the data.
+Beyond that, for any schema and/or data changes, engineers should:
 
-2. Gorm
+1. Deploy the previous version
+2. Upgrade to the current version
+3. Exercise the change (populate any necessary data)
+4. Rollback to the previous version
+5. Verify Central is up and functioning
+6. Roll forward to the current version
+7. Verify migrations executed and functionality works
 
-    Consideration:  If the migration is dealing with multiple tables tied together it may be simpler for
-    the migration author to use the store method vs gorm.
-    
-    Use Gorm to read small amount data. Gorm is light-weighted and comprehensive ORM allowing accessing databases
-    in an object oriented way. You may have partial data access by trimming the gorm model.
-    Check the [details](https://gorm.io/docs/) how to use Gorm.
+## Feature flags and migrations
 
-    The example below, illustrates how to walk the object to populate a field that was promoted to a column.  Note that
-    we must explicitly narrow the fields we select.  If we select the whole object, gorm will default to a `select *`
-    and in that case a subsquent migration modifying the structure of the same table will fail because the statement
-    cach will be invalid.  The simplest way to do that is to use a separate handle to query vs write.
-    
-    ```go
-    func migrate(database *types.Databases) error {
-        // We are simply promoting a field to a column so the serialized object is unchanged.  Thus, we
-        // have no need to worry about the old schema and can simply perform all our work on the new one.
-        db := database.GormDB
-        pgutils.CreateTableFromModel(database.DBCtx, db, schema.CreateTableListeningEndpointsStmt)
-        db = db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName)
-        query := db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName).Select("serialized")
+**Do not use feature flags in migration code.**
 
-        rows, err := query.Rows()
-        if err != nil {
-            return errors.Wrapf(err, "failed to iterate table %s", schema.ListeningEndpointsTableName)
-        }
-        defer func() { _ = rows.Close() }()
+Both startup and background migrations must produce the same result regardless of feature
+flag state. If a feature needs a new field, the migration must populate it unconditionally.
+The feature flag controls whether the application *uses* the field, not whether it *exists*.
 
-        var convertedPLOPs []*schema.ListeningEndpoints
-        var count int
-        for rows.Next() {
-            var plop *schema.ListeningEndpoints
-            if err = query.ScanRows(rows, &plop); err != nil {
-                return errors.Wrap(err, "failed to scan rows")
-            }
+If a feature cannot work without a migration, the data should be migrated prior to any work
+on the feature. If a feature can work without migration at lesser cost, workaround code can
+be written to work on the existing schema. Once the feature is GA, a migration can be written
+and the workaround code replaced.
 
-            plopProto, err := schema.ConvertProcessListeningOnPortStorageToProto(plop)
-            if err != nil {
-                return errors.Wrapf(err, "failed to convert %+v to proto", plop)
-            }
+## Index Management
 
-            converted, err := schema.ConvertProcessListeningOnPortStorageFromProto(plopProto)
-            if err != nil {
-                return errors.Wrapf(err, "failed to convert from proto %+v", plopProto)
-            }
-            convertedPLOPs = append(convertedPLOPs, converted)
-            count++
+All indexes are managed through proto tags and the code generator, not GORM struct tags.
+The generator produces complete `CREATE INDEX` SQL at codegen time; at runtime the SQL is
+executed verbatim. There are two creation paths depending on table size.
 
-            if len(convertedPLOPs) == batchSize {
-                // Upsert converted blobs
-                if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(schema.CreateTableListeningEndpointsStmt.GormModel).Create(&convertedPLOPs).Error; err != nil {
-                    return errors.Wrapf(err, "failed to upsert converted %d objects after %d upserted", len(convertedPLOPs), count-len(convertedPLOPs))
-                }
-                convertedPLOPs = convertedPLOPs[:0]
-            }
-        }
+### Adding a new index
 
-        if err := rows.Err(); err != nil {
-            return errors.Wrapf(err, "failed to get rows for %s", schema.ListeningEndpointsTableName)
-        }
+1. Add the appropriate tag to the proto field:
+   - **Small or new tables**: `sql:"index=btree"` -- created at startup using
+     `CREATE INDEX CONCURRENTLY`
+   - **High-cardinality tables**: `sql:"background-index=btree"` -- created after startup
+     using `CREATE INDEX CONCURRENTLY`
+2. Run `make proto-generated-srcs && make go-generated-srcs` to regenerate schema code
+3. The generated `CreateStmts` will include `Indexes: []*postgres.IndexDefinition{...}` entries
 
-        if len(convertedPLOPs) > 0 {
-            if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(schema.CreateTableListeningEndpointsStmt.GormModel).Create(&convertedPLOPs).Error; err != nil {
-                return errors.Wrapf(err, "failed to upsert last %d objects", len(convertedPLOPs))
-            }
-        }
-        log.Infof("Converted %d plop records", count)
+### How it works
 
-        return nil
-    }
-    ```
+- **Startup indexes** (`sql:"index"`, `Background: false`): Created by
+  `schema.ApplyAllStartupIndexes()` before Central serves traffic. All indexes use
+  `CREATE INDEX CONCURRENTLY` to avoid locking the table.
+- **Background indexes** (`sql:"background-index"`, `Background: true`): Created by the
+  background migration runner using `CREATE INDEX CONCURRENTLY IF NOT EXISTS` after all
+  numbered migrations complete. Runs after Central starts serving traffic. Use this for
+  high-cardinality tables where index creation on large datasets is slow.
+- **SAC filter index**: Automatically generated for tables with `Cluster ID` or `Namespace`
+  search fields.
 
-    Another example, to get all the image id and operating system from the image table, a Gorm model is needed first.
-    As not all data is needed, a trimmed model can be used. All Gorm models can be read from `pkg/postgres/schema`,
-    copied and trimmed.
+### Composite indexes
 
-   ```go
-   type imageIDAndOperatingSystem struct {
-       ID                  string `gorm:"column:id;type:varchar;primaryKey"`
-       ScanOperatingSystem string `gorm:"column:scan_operatingsystem;type:varchar"`
-   }
-   ```
-   
-    The trimmed Gorm model can be used to read from database.
+To create a composite index across multiple fields, give them the same index name:
 
-   ```go
-   imageTable := gormDB.Table(pkgSchema.ImagesSchema.Table).Model(pkgSchema.CreateTableImagesStmt.GormModel)
-   var imageCount int64
-   if err := imageTable.Count(&imageCount).Error; err != nil {
-       return err
-   }
-   imageBuf := make([]imageIDAndOs, 0, imageBatchSize)
-   imageToOsMap := make(map[string]string, imageCount)
-   result := imageTable.FindInBatches(&imageBuf, imageBatchSize, func(_ *gorm.DB, batch int) error {
-       for _, sub := range imageBuf {
-         imageToOsMap[sub.ID] = sub.ScanOperatingSystem
-       }
-       return nil
-   })
-   ```
-
-    Most protobuf object fields are wrapped in the serialized field in Postgres tables. The fields from the Gorm model
-    need to be deserialized/serialized to read/update the objects. In case a field has to be updated,
-    the protobuf object has to be serialized. To address this issue, a tool is provided to convert a protobuf object
-    to/from a Gorm model.
-
-   ```go
-   type ClusterHealthStatuses struct {
-       Id         string    `gorm:"column:id;type:varchar;primaryKey"`
-       Serialized []byte    `gorm:"column:serialized;type:bytea"`
-   }
-   ```
-   Gorm cannot participate in the transaction passed via the context.  The risk and possible ramifications of that
-   should be considered before deciding to use Gorm to move the data.
-
-3. Duplicate the Postgres Store
-   This method is used in version 73 and 74 to migrate all tables from RocksDB to Postgres. In addition to frozen schema,
-   the store to access the data are also frozen for migration. The migrations with this method are closely associated
-   with current release eg. search/delete with schema and the prototypes of the objects. 
-
-   Now that stores are built upon a generic store you would need to make a copy of the store and remove
-   references to SAC and such.  We should be careful not to rely on the search framework for queries as those
-   could change over time.  Additionally the stores should use the frozen schemas just as any other migration would
-   to ensure isolation.  
-
-   This model supports the transaction passed via the databases.DBCtx.
-
-#### Conversion tool
-
-All tables in central store protobuf objects in serialized form. The `serialized` column needs to be updated with
-the other columns.
-
-Doing the conversion for each migration is cumbersome and not convenient. A tool exists to generate the conversion 
-functions. The conversion functions can be generated and then tailored to be used in the migrations.
-
-The following shows an example of the conversion functions.
-
-The tool is `pg-schema-migration-helper`, it can be used as follows.
-
-```shell
-./tools/generate-helpers/pg-schema-migration-helper --type=storage.VulnerabilityRequest --search-category VULN_REQUEST
+```protobuf
+string auth_provider_id = 1; // @gotags: sql:"index=name:groups_unique;type:btree;category:unique"
+string key = 2;              // @gotags: sql:"index=name:groups_unique;type:btree;category:unique"
+string value = 3;            // @gotags: sql:"index=name:groups_unique;type:btree;category:unique"
 ```
 
-`pg-schema-migration-helper` uses the same elements as `pg-table-bindings-wrapper` (the code generator for the postgres
-stores in central). These elements are the protobuf types and search-categories. It uses these elements to generate the
-schema and conversion functions.
+### High-cardinality table indexes
 
-More examples with test protobuf objects are available in `migrator/migrations/postgreshelper/schema`
-```go
-func convertVulnerabilityRequestFromProto(obj *storage.VulnerabilityRequest) (*schema.VulnerabilityRequests, error) {
-        serialized, err := obj.MarshalVT()
-        if err != nil {
-                return nil, err
-        }
-        model := &schema.VulnerabilityRequests{
-                Id:                                obj.GetId(),
-                TargetState:                       obj.GetTargetState(),
-                Status:                            obj.GetStatus(),
-                Expired:                           obj.GetExpired(),
-                RequestorName:                     obj.GetRequestor().GetName(),
-                CreatedAt:                         pgutils.NilOrTime(obj.GetCreatedAt()),
-                LastUpdated:                       pgutils.NilOrTime(obj.GetLastUpdated()),
-                DeferralReqExpiryExpiresWhenFixed: obj.GetDeferralReq().GetExpiry().GetExpiresWhenFixed(),
-                DeferralReqExpiryExpiresOn:        pgutils.NilOrTime(obj.GetDeferralReq().GetExpiry().GetExpiresOn()),
-                CvesIds:                           pq.Array(obj.GetCves().GetIds()).(*pq.StringArray),
-                Serialized:                        serialized,
-        }
-        return model, nil
-}
- 
-func convertSlimUserFromProto(obj *storage.SlimUser, idx int, vulnerability_requests_Id string) (*schema.VulnerabilityRequestsApprovers, error) {
-        model := &schema.VulnerabilityRequestsApprovers{
-                VulnerabilityRequestsId: vulnerability_requests_Id,
-                Idx:                     idx,
-                Name:                    obj.GetName(),
-        }
-        return model, nil
-}
- 
-func convertRequestCommentFromProto(obj *storage.RequestComment, idx int, vulnerability_requests_Id string) (*schema.VulnerabilityRequestsComments, error) {
-        model := &schema.VulnerabilityRequestsComments{
-                VulnerabilityRequestsId: vulnerability_requests_Id,
-                Idx:                     idx,
-                UserName:                obj.GetUser().GetName(),
-        }
-        return model, nil
-}
-```
+When adding **new** indexes to the tables listed in the
+[high-cardinality table list](#high-cardinality-tables-always-use-background-migrations),
+always use `background-index`.
+
+Existing indexes on these tables that were previously created by GORM at startup are now
+also managed by the code generator and applied outside of GORM.
+
+## Writing migrations
+
+- **Startup migration**: See [STARTUP_MIGRATIONS.md](STARTUP_MIGRATIONS.md) for the full
+  guide including bootstrapping, data access patterns, frozen schemas, and testing.
+- **Background migration**: See [BACKGROUND_MIGRATIONS.md](../central/backgroundmigrations/BACKGROUND_MIGRATIONS.md)
+  for the full guide including concurrency handling, batching patterns, and testing.
+
+## Migrator limitations
+
+The migrator upgrades data from a previous datamodel to the current one. Each migration may
+apply a different schema change, so the current datastore or schema code cannot be used.
+
+Each migration is responsible for accessing the databases it needs and converting the data.
+A migration must **never** import schemas from `pkg/postgres/schema` -- those evolve with the
+latest release. Instead, freeze schemas inside the migration package. This is primarily
+relevant for background migrations that deserialize data; startup migrations that only
+run DDL typically don't need frozen schemas.
+
+## History
+
+1. Before release 3.73, the migrator targeted internal key-value stores (BoltDB and RocksDB).
+2. Releases 3.73 and 3.74 introduced Postgres as Technical Preview with parallel migration
+   paths (key-value and data-move migrations).
+3. After 4.0, Postgres became the default data store.
+4. Starting in 4.2, all migrations must be backwards compatible while previous releases are
+   supported.
+5. Starting in 4.11, background migrations were introduced for high-cardinality tables to
+   eliminate upgrade downtime for large data transformations.
