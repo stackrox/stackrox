@@ -22,6 +22,7 @@ env:
   # prevent per-commit cache misses.
   BUILD_TAG: 0.0.0
   SHORTCOMMIT: "0000000"
+  TMPDIR: /tmp
 
 jobs:
   detect-changes:
