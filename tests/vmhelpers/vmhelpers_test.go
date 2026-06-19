@@ -1,4 +1,4 @@
-//go:build test
+//go:build test && !test_e2e && !test_e2e_vm
 
 // This file exists so that the vm-scanning-unit-tests Makefile target (which
 // runs `go test ./vmhelpers`) succeeds even before the stacked branch
