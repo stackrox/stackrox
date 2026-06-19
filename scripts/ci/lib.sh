@@ -69,6 +69,8 @@ ci_exit_trap() {
 
     post_process_test_results "${JOB_SLACK_FAILURE_ATTACHMENTS}" "${JOB_JUNIT2JIRA_SUMMARY_FILE}"
 
+    strip_junit_system_output "${ARTIFACT_DIR:-}"
+
     while [[ -e /tmp/hold ]]; do
         info "Holding this job for debug"
         sleep 60
@@ -1664,15 +1666,19 @@ store_test_results() {
 
     mkdir -p "$dest"
     cp -a "$from" "$dest" || true # (best effort)
-    strip_junit_system_output "$dest"
 }
 
 # LP interop jobs merge all JUnit XMLs and store the result in a Kubernetes
 # Secret (SHARED_DIR) which has a 1 MiB size limit. The <system-out> content
 # from Gradle/Go tests easily exceeds that. Strip it from the ARTIFACT_DIR
-# copies — the same output is available in Gradle reports and spec-logs.
+# copies after junit2jira has read them (it includes stdout/stderr in Jira
+# issue descriptions). The LP ExitTrap runs after ci_exit_trap and finds the
+# stripped files.
 strip_junit_system_output() {
-    local dir="$1"
+    local dir="${1:-}"
+    if [[ -z "$dir" || ! -d "$dir" ]]; then
+        return
+    fi
     local f
     while IFS= read -r -d '' f; do
         sed -i '/<system-out>.*<\/system-out>/d; /<system-out>/,/<\/system-out>/d; /<system-err>.*<\/system-err>/d; /<system-err>/,/<\/system-err>/d' "$f"
