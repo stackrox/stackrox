@@ -129,8 +129,8 @@ tasks.withType<Test>().configureEach {
             if (suite.parent == null && result.testCount == 0L) {
                 throw GradleException(
                     "No tests were executed in task '${name}'. " +
-                    "This likely means no tests matched the configured filters (tags/excludes). " +
-                    "Check that testClassesDirs and classpath are wired correctly."
+                    "This likely means no tests matched the configured filters. " +
+                    "Check your tests selection (e.g. includeTags/excludeTags)."
                 )
             }
         }
@@ -275,10 +275,9 @@ tasks.register<Test>("testDeploymentCheck") {
 // detecting NO-SOURCE skips — tracked in gradle/gradle#36700.
 @Suppress("DEPRECATION")
 gradle.taskGraph.afterTask {
-    val task = this
-    if (task is Test && task.state.noSource) {
+    if (this is Test && this.state.noSource) {
         throw GradleException(
-            "Test task '${task.path}' was skipped with NO-SOURCE. " +
+            "Test task '${this.path}' was skipped with NO-SOURCE. " +
             "Check that testClassesDirs and classpath are wired correctly."
         )
     }

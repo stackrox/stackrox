@@ -69,8 +69,15 @@ class Env {
     }
 
     private loadEnvVarsFromPropsFile() {
+        def file = new File(PROPERTIES_FILE)
+        if (!file.exists()) {
+            LOG.info("Optional properties file '${PROPERTIES_FILE}' not found. " +
+                "You can create it to set env vars locally (e.g. integration credentials). " +
+                "See qa-tests-backend/README.md for details.")
+            return
+        }
         try {
-            envVars.load(new FileInputStream(PROPERTIES_FILE))
+            envVars.load(new FileInputStream(file))
         } catch (Exception ex) {
             LOG.error( "Failed to load extra properties file", ex)
         }
