@@ -87,6 +87,16 @@ handle_dangling_processes() {
     info "Process state at exit:"
     ps -e -O ppid
 
+    # Build the set of ancestor PIDs (parent, grandparent, ... up to init).
+    # Killing an ancestor terminates us and the step script above us, causing
+    # the Prow entrypoint to report "signal: terminated" / exit 255.
+    local -A ancestor_pids=()
+    local cur_pid="$$"
+    while [[ "$cur_pid" -gt 1 ]]; do
+        ancestor_pids["$cur_pid"]=1
+        cur_pid=$(ps -o ppid= -p "$cur_pid" 2>/dev/null | tr -d ' ') || break
+    done
+
     local psline pid ppid
     ps -e -O ppid | while read -r pid ppid psline; do
         # Example output:
@@ -101,8 +111,8 @@ handle_dangling_processes() {
             # Ignoring header
             continue
         fi
-        if [[ "$pid" == "$$" ]]; then
-            echo "Ignoring self: $psline"
+        if [[ -n "${ancestor_pids[$pid]:-}" ]]; then
+            echo "Ignoring self/ancestor: $psline"
             continue
         fi
         if [[ "$ppid" == "$$" ]]; then
