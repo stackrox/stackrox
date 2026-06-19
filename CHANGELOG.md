@@ -10,6 +10,12 @@ Put an entry in this file if your change is user-visible and you consider it _pa
 
 Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
+## [4.11.1]
+
+**Full Changelog**: [4.11.0...4.11.1](https://github.com/stackrox/stackrox/compare/4.11.0...4.11.1)
+
+For a description of the changes, review the [Release Notes](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/release_notes/index) on the Red Hat Documentation portal.
+
 ## [4.11.0]
 
 ### Added Features
