@@ -178,7 +178,11 @@ func repoRoot() string {
 	if !ok {
 		return "."
 	}
-	return filepath.Clean(filepath.Join(filepath.Dir(file), ".."))
+	return repoRootFrom(file)
+}
+
+func repoRootFrom(file string) string {
+	return filepath.Clean(filepath.Join(filepath.Dir(file), "..", ".."))
 }
 
 // GenerateEphemeralSSHKeypair creates a one-time ed25519 keypair and returns the key material.

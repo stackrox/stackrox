@@ -4,6 +4,7 @@ package vmhelpers
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -103,4 +104,11 @@ func TestGenerateEphemeralSSHKeypair(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, priv, "-----BEGIN OPENSSH PRIVATE KEY-----") // notsecret
 	require.Contains(t, pub, "ssh-ed25519 ")                         // notsecret
+}
+
+func TestRepoRootFrom_VMHelpersFile(t *testing.T) {
+	t.Parallel()
+
+	got := repoRootFrom(filepath.Join("/repo", "tests", "vmhelpers", "vm_scan_config.go"))
+	require.Equal(t, "/repo", got)
 }
