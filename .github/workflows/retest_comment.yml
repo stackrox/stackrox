@@ -9,7 +9,7 @@ jobs:
     if: >-
       github.event.issue.pull_request &&
       github.event.comment.body == '/experimental-retest'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
     - name: Fetch PR head SHA
       id: pr
