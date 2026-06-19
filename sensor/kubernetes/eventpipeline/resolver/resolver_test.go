@@ -78,6 +78,11 @@ func (s *resolverSuite) newResolver(pubsubEnabled bool) component.Resolver {
 	return resolver
 }
 
+func (s *resolverSuite) startResolver(resolver component.Resolver) {
+	s.Require().NoError(resolver.Start())
+	s.T().Cleanup(resolver.Stop)
+}
+
 func (s *resolverSuite) dispatchEvent(event *component.ResourceEvent, resolver component.Resolver, pubSubEnabled bool) {
 	if pubSubEnabled {
 		err := resolver.ProcessResourceEvent(event)
@@ -92,8 +97,7 @@ func (s *resolverSuite) Test_MessageSentToOutput() {
 		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
 			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 			resolver := s.newResolver(pubSubEnabled)
-			err := resolver.Start()
-			s.NoError(err)
+			s.startResolver(resolver)
 
 			messageReceived := sync.WaitGroup{}
 			messageReceived.Add(1)
@@ -120,8 +124,7 @@ func (s *resolverSuite) Test_Send_DeploymentWithRBACs() {
 	for _, pubSubEnabled := range []bool{true, false} {
 		s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 		resolver := s.newResolver(pubSubEnabled)
-		err := resolver.Start()
-		s.NoError(err)
+		s.startResolver(resolver)
 
 		testCases := map[string]struct {
 			deploymentID    string
@@ -178,8 +181,7 @@ func (s *resolverSuite) Test_Send_DeploymentsWithServiceExposure() {
 		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
 			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 			resolver := s.newResolver(pubSubEnabled)
-			err := resolver.Start()
-			s.NoError(err)
+			s.startResolver(resolver)
 
 			messageReceived := sync.WaitGroup{}
 			messageReceived.Add(2)
@@ -224,8 +226,7 @@ func (s *resolverSuite) Test_Send_MultipleDeploymentRefs() {
 		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
 			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 			resolver := s.newResolver(pubSubEnabled)
-			err := resolver.Start()
-			s.NoError(err)
+			s.startResolver(resolver)
 
 			messageReceived := sync.WaitGroup{}
 			messageReceived.Add(4)
@@ -261,8 +262,7 @@ func (s *resolverSuite) Test_Send_ResourceAction() {
 		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
 			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 			resolver := s.newResolver(pubSubEnabled)
-			err := resolver.Start()
-			s.NoError(err)
+			s.startResolver(resolver)
 
 			for _, action := range []central.ResourceAction{central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE} {
 				s.Run(fmt.Sprintf("ResourceAction: %s", action), func() {
@@ -297,8 +297,7 @@ func (s *resolverSuite) Test_Send_BuildDeploymentWithDependenciesError() {
 		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
 			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 			resolver := s.newResolver(pubSubEnabled)
-			err := resolver.Start()
-			s.NoError(err)
+			s.startResolver(resolver)
 
 			waitForEvents := sync.WaitGroup{}
 			waitForEvents.Add(2)
@@ -327,8 +326,7 @@ func (s *resolverSuite) Test_Send_DeploymentNotFound() {
 		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
 			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 			resolver := s.newResolver(pubSubEnabled)
-			err := resolver.Start()
-			s.NoError(err)
+			s.startResolver(resolver)
 
 			waitForEvents := sync.WaitGroup{}
 			waitForEvents.Add(2)
@@ -362,8 +360,7 @@ func (s *resolverSuite) Test_Send_DetectorReference() {
 		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
 			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 			resolver := s.newResolver(pubSubEnabled)
-			err := resolver.Start()
-			s.NoError(err)
+			s.startResolver(resolver)
 
 			messageReceived := sync.WaitGroup{}
 			messageReceived.Add(1)
@@ -391,8 +388,7 @@ func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
 	for _, pubSubEnabled := range []bool{true, false} {
 		s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 		resolver := s.newResolver(pubSubEnabled)
-		err := resolver.Start()
-		s.NoError(err)
+		s.startResolver(resolver)
 
 		// There are two types of resource events that will be written to the output queue.
 		// 1) Resource events that were processed at the handlers level. E.g.: Pod events,
@@ -486,8 +482,7 @@ func (s *resolverSuite) Test_Send_SkipDedupingBehavior() {
 			s.Run(fmt.Sprintf("%s with %s %t", name, features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
 				s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 				resolver := s.newResolver(pubSubEnabled)
-				err := resolver.Start()
-				s.NoError(err)
+				s.startResolver(resolver)
 
 				messageReceived := sync.WaitGroup{}
 				messageReceived.Add(tc.expectedSends)
