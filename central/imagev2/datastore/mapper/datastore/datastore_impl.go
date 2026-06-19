@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -117,7 +118,7 @@ func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Ima
 	}
 	allNames, err := ds.imageV2DataStore.GetImageNames(ctx, sha)
 	if err != nil {
-		return imageUtils.ConvertToV1(images[0]), true, nil
+		return nil, false, errors.Wrap(err, "getting image names")
 	}
 	return imageUtils.ConvertToV1(images[0], allNames...), true, nil
 }
