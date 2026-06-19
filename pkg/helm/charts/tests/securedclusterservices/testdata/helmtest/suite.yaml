@@ -25,8 +25,12 @@ defs: |
     [
       (envVars(.deployments["admission-control"]; "admission-control")["ROX_SENSOR_ENDPOINT"]
         | assertThat(. == ep)),
+      (envVars(.deployments.sensor; "sensor")["ROX_SENSOR_ENDPOINT"]
+        | assertThat(. == ep)),
       (envVars(.daemonsets.collector; "collector")["GRPC_SERVER"] | assertThat(. == ep)),
       (envVars(.daemonsets.collector; "compliance")["ROX_ADVERTISED_ENDPOINT"]
+        | assertThat(. == ep)),
+      (envVars(.daemonsets.collector; "compliance")["ROX_SENSOR_ENDPOINT"]
         | assertThat(. == ep))
     ][];
 

@@ -20,9 +20,11 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { policiesBasePath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import type { ExtendedPageAction } from 'utils/queryStringUtils';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import {
     POLICY_BEHAVIOR_ACTIONS_ID,
+    POLICY_BEHAVIOR_FILTERS_ID,
     POLICY_BEHAVIOR_ID,
     POLICY_BEHAVIOR_RESOURCES_ID,
     POLICY_DEFINITION_DETAILS_ID,
@@ -37,6 +39,7 @@ import PolicyDetailsForm from './Step1/PolicyDetailsForm';
 import PolicyBehaviorForm from './Step2/PolicyBehaviorForm';
 import PolicyCriteriaForm from './Step3/PolicyCriteriaForm';
 import PolicyScopeForm from './Step4/PolicyScopeForm';
+import PolicyFiltersForm from './StepFilters/PolicyFiltersForm';
 import PolicyActionsForm from './Step5/PolicyActionsForm';
 import ReviewPolicyForm from './Step6/ReviewPolicyForm';
 
@@ -49,6 +52,7 @@ type PolicyWizardProps = {
 
 function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
     const navigate = useNavigate();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const [stepId, setStepId] = useState<number | string>(POLICY_DEFINITION_DETAILS_ID);
     const [isValidOnServer, setIsValidOnServer] = useState(false);
     const [policyErrorMessage, setPolicyErrorMessage] = useState('');
@@ -226,14 +230,29 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                 <WizardStep
                                     name="Resources"
                                     id={POLICY_BEHAVIOR_RESOURCES_ID}
+                                    key={POLICY_BEHAVIOR_RESOURCES_ID}
                                     body={{ hasNoPadding: true }}
                                     footer={{ isNextDisabled: !isValidOnClient }}
                                 >
                                     <PolicyScopeForm />
                                 </WizardStep>,
+                                ...(isFeatureFlagEnabled('ROX_EVALUATION_FILTER') &&
+                                isFeatureFlagEnabled('ROX_INIT_CONTAINER_SUPPORT')
+                                    ? [
+                                          <WizardStep
+                                              name="Filters"
+                                              id={POLICY_BEHAVIOR_FILTERS_ID}
+                                              key={POLICY_BEHAVIOR_FILTERS_ID}
+                                              body={{ hasNoPadding: true }}
+                                          >
+                                              <PolicyFiltersForm />
+                                          </WizardStep>,
+                                      ]
+                                    : []),
                                 <WizardStep
                                     name="Actions"
                                     id={POLICY_BEHAVIOR_ACTIONS_ID}
+                                    key={POLICY_BEHAVIOR_ACTIONS_ID}
                                     body={{ hasNoPadding: true }}
                                     footer={{ isNextDisabled: !isValidOnClient }}
                                 >

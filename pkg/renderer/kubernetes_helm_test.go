@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/images/defaults"
-	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -95,31 +94,18 @@ func TestRenderSensorHelm(t *testing.T) {
 
 	cases := map[string]struct {
 		admissionController                       bool
-		istioVersion                              string
 		expectedAdmissionControllerRendered       bool
 		expectedAdmissionControllerSecretRendered bool
-		expectedHasDestinationRule                bool
 	}{
 		"withAdmissionControllerListenOnCreates": {
 			admissionController:                       true,
-			istioVersion:                              "",
 			expectedAdmissionControllerRendered:       true,
 			expectedAdmissionControllerSecretRendered: true,
-			expectedHasDestinationRule:                false,
 		},
 		"withoutAdmissionControllerListenOnCreates": {
 			admissionController:                       false,
-			istioVersion:                              "",
 			expectedAdmissionControllerRendered:       true,
 			expectedAdmissionControllerSecretRendered: true,
-			expectedHasDestinationRule:                false,
-		},
-		"onIstio": {
-			admissionController:                       true,
-			istioVersion:                              "1.5",
-			expectedAdmissionControllerRendered:       true,
-			expectedAdmissionControllerSecretRendered: true,
-			expectedHasDestinationRule:                true,
 		},
 	}
 
@@ -138,18 +124,11 @@ func TestRenderSensorHelm(t *testing.T) {
 				},
 			}
 
-			if c.istioVersion != "" {
-				istioAPIResources, err := istioutils.GetAPIResourcesByVersion(c.istioVersion)
-				require.NoError(t, err)
-				opts.APIVersions = helmUtil.VersionSetFromResources(istioAPIResources...)
-			}
-
 			files, err := RenderSensor(fields, certs, opts)
 			require.NoError(t, err)
 
 			admissionControllerRendered := false
 			admissionControllerSecretRendered := false
-			hasDestinationRule := false
 
 			for _, file := range files {
 				if file.Name == "admission-controller.yaml" {
@@ -158,14 +137,10 @@ func TestRenderSensorHelm(t *testing.T) {
 				if file.Name == "admission-controller-secret.yaml" {
 					admissionControllerSecretRendered = true
 				}
-				if bytes.Contains(file.Content, []byte("DestinationRule")) {
-					hasDestinationRule = true
-				}
 			}
 
 			assert.Equal(t, c.expectedAdmissionControllerRendered, admissionControllerRendered, "incorrect bundle rendered")
 			assert.Equal(t, c.expectedAdmissionControllerSecretRendered, admissionControllerSecretRendered, "incorrect bundle rendered")
-			assert.Equal(t, c.expectedHasDestinationRule, hasDestinationRule, "unexpected presence/absence of destination rule")
 		})
 	}
 }

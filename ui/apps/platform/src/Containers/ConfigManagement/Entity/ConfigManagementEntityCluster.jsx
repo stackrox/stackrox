@@ -163,7 +163,7 @@ const ConfigManagementEntityCluster = ({
                     status: { orchestratorMetadata = null },
                 } = entity;
 
-                const { version = 'N/A' } = orchestratorMetadata;
+                const { version = 'N/A' } = orchestratorMetadata ?? {};
 
                 const metadataKeyValuePairs = [
                     {
@@ -176,9 +176,9 @@ const ConfigManagementEntityCluster = ({
                 const totalControlCount = passingCount + failingCount + unknownCount;
 
                 return (
-                    <div className="w-full" id="capture-dashboard-stretch">
+                    <div className="w-full">
                         <CollapsibleSection title="Cluster Summary">
-                            <div className="flex flex-wrap pdf-page">
+                            <div className="flex flex-wrap">
                                 <Metadata
                                     className="mx-4 min-w-48 bg-base-100 min-h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
@@ -240,7 +240,7 @@ const ConfigManagementEntityCluster = ({
                             </div>
                         </CollapsibleSection>
                         <CollapsibleSection title="Cluster Findings">
-                            <div className="flex pdf-page pdf-stretch relative rounded mb-4 ml-4 mr-4">
+                            <div className="flex relative rounded mb-4 ml-4 mr-4">
                                 <BinderTabs>
                                     <Tab title="Policies">
                                         <DeploymentsWithFailedPolicies

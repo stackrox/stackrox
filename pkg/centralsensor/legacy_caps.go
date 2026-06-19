@@ -29,8 +29,8 @@ func extractCapsFromMD(md metautils.MD) set.Set[SensorCapability] {
 
 	result := set.NewSet[SensorCapability]()
 	if capsStr != "" {
-		capsStrs := strings.Split(capsStr, ",")
-		for _, capsStr := range capsStrs {
+		capsStrs := strings.SplitSeq(capsStr, ",")
+		for capsStr := range capsStrs {
 			result.Add(SensorCapability(capsStr))
 		}
 	}

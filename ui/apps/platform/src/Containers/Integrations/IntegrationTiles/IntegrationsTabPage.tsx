@@ -54,7 +54,6 @@ function IntegrationsTabPage({
                                     {integrationSourceTitleMap[sourceEnabled]}
                                 </TabTitleText>
                             }
-                            tabContentId={sourceEnabled}
                         >
                             <PageSection>{children}</PageSection>
                         </Tab>

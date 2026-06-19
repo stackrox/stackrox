@@ -155,8 +155,6 @@ $ make docker-build docker-push
 # Build and push bundle image
 $ make bundle-build docker-push-bundle
 ```
-_Note: Bundle helpers depend on Python <=3.13. By default, the build process will use the default Python version installed on the build host. You can override the python version if needed via the optional `PYTHON` env var, e.g. `PYTHON=python3.10 make bundle-build`_
-
 
 Build and push everything as **one-liner**
 
@@ -233,6 +231,11 @@ Also, you can tear everything down with
 ```bash
 $ kubectl delete ns bundle-test
 ```
+
+## Architecture
+
+For a description of the operator's internal architecture, reconciliation pipeline, and package layout,
+see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Extending the StackRox Custom Resource Definitions
 

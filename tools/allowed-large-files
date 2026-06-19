@@ -10,6 +10,7 @@ central/compliance/checks/fixtures/scraped.go
 central/compliance/standards/metadata/pci_dss_3_2.go
 central/cve/converter/utils/testdata/*
 central/cve/fetcher/testdata/cve-list.json
+central/detection/alertmanager/alert_manager_impl_test.go
 central/graphql/resolvers/generated.go
 central/image/service/service_impl.go
 central/networkgraph/service/service_impl_test.go
@@ -50,6 +51,7 @@ pkg/mitre/files/mitre.json
 pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks/mocks.go
 pkg/sac/effectiveaccessscope/effective_access_scope_test.go
 pkg/scancomponent/testdata_ComponentIDV2Golden.txt
+pkg/scanners/scannerv4/convert_test.go
 pkg/scannerv4/mappers/mappers.go
 pkg/scannerv4/mappers/mappers_test.go
 pkg/search/postgres/common_test.go
@@ -79,8 +81,7 @@ tests/e2e/run-scanner-v4-install.bats
 tests/performance/load/package-lock.json
 tests/performance/scale/config/metrics-acs.yml
 tests/performance/scale/config/metrics-full.yml
+ui/apps/platform/eslint.config.js
 ui/apps/platform/package-lock.json
 ui/apps/platform/src/Containers/Integrations/IntegrationForm/Forms/SignatureIntegrationForm.tsx
 ui/apps/platform/src/Containers/Policies/Wizard/Step3/policyCriteriaDescriptors.tsx
-ui/apps/platform/src/fonts/Open_Sans_Regular.json
-ui/apps/platform/src/images/globalSearchEmptyState.svg

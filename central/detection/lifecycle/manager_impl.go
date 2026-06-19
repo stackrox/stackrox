@@ -268,7 +268,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 
 			indicatorSlice = append(indicatorSlice, indicator)
 		} else {
-			metrics.ProcessIndicatorsNotPersistedInc()
+			processIndicatorDatastore.RecordProcessIndicatorNotPersisted(indicator)
 		}
 	}
 
@@ -524,14 +524,15 @@ func (m *managerImpl) HandleNodeAlerts(clusterID string, alerts []*storage.Alert
 	return nil
 }
 
-func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
+// registerPolicy updates detector policy sets and the disabled policy tracker under the lock.
+// Returns true if the policy applies at runtime and alert reconciliation is needed.
+func (m *managerImpl) registerPolicy(policy *storage.Policy) (needsAlertReconcile bool, err error) {
 	m.policyAlertsLock.Lock()
 	defer m.policyAlertsLock.Unlock()
 
-	// Add policy to set.
 	if policies.AppliesAtBuildTime(policy) {
 		if err := m.buildTimeDetector.PolicySet().UpsertPolicy(policy); err != nil {
-			return errors.Wrapf(err, "adding policy %s to build time detector", policy.GetName())
+			return false, errors.Wrapf(err, "adding policy %s to build time detector", policy.GetName())
 		}
 	} else {
 		m.buildTimeDetector.PolicySet().RemovePolicy(policy.GetId())
@@ -539,7 +540,7 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 
 	if policies.AppliesAtDeployTime(policy) {
 		if err := m.deployTimeDetector.PolicySet().UpsertPolicy(policy); err != nil {
-			return errors.Wrapf(err, "adding policy %s to deploy time detector", policy.GetName())
+			return false, errors.Wrapf(err, "adding policy %s to deploy time detector", policy.GetName())
 		}
 	} else {
 		m.deployTimeDetector.PolicySet().RemovePolicy(policy.GetId())
@@ -547,18 +548,9 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 
 	if policies.AppliesAtRunTime(policy) {
 		if err := m.runtimeDetector.PolicySet().UpsertPolicy(policy); err != nil {
-			return errors.Wrapf(err, "adding policy %s to runtime detector", policy.GetName())
+			return false, errors.Wrapf(err, "adding policy %s to runtime detector", policy.GetName())
 		}
-		// Perform notifications and update DB.
-		modifiedDeployments, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil,
-			alertmanager.WithPolicyID(policy.GetId()))
-		if err != nil {
-			return err
-		}
-		if modifiedDeployments.Cardinality() > 0 {
-			defer m.reprocessor.ReprocessRiskForDeployments(modifiedDeployments.AsSlice()...)
-		}
-
+		needsAlertReconcile = true
 	} else {
 		m.runtimeDetector.PolicySet().RemovePolicy(policy.GetId())
 	}
@@ -567,6 +559,30 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 		m.removedOrDisabledPolicies.Add(policy.GetId())
 	} else {
 		m.removedOrDisabledPolicies.Remove(policy.GetId())
+	}
+	return needsAlertReconcile, nil
+}
+
+// reconcileAlertsForPolicy reconciles alerts and reprocesses risk for a policy outside of any lock.
+func (m *managerImpl) reconcileAlertsForPolicy(policyID string) error {
+	modifiedDeployments, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil,
+		alertmanager.WithPolicyID(policyID))
+	if err != nil {
+		return err
+	}
+	if modifiedDeployments.Cardinality() > 0 {
+		m.reprocessor.ReprocessRiskForDeployments(modifiedDeployments.AsSlice()...)
+	}
+	return nil
+}
+
+func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
+	needsReconcile, err := m.registerPolicy(policy)
+	if err != nil {
+		return err
+	}
+	if needsReconcile {
+		return m.reconcileAlertsForPolicy(policy.GetId())
 	}
 	return nil
 }
@@ -583,12 +599,13 @@ func (m *managerImpl) RemoveDeploymentFromObservation(deploymentID string) {
 	m.deploymentObservationQueue.RemoveFromObservation(deploymentID)
 }
 
-func (m *managerImpl) RemovePolicy(policyID string) error {
+// deregisterPolicy removes a policy from all detectors under the lock.
+// Returns true if a runtime policy was removed and alert reconciliation is needed.
+func (m *managerImpl) deregisterPolicy(policyID string) bool {
 	m.policyAlertsLock.Lock()
 	defer m.policyAlertsLock.Unlock()
 
 	m.buildTimeDetector.PolicySet().RemovePolicy(policyID)
-
 	m.deployTimeDetector.PolicySet().RemovePolicy(policyID)
 
 	numRuntimePolicies := len(m.runtimeDetector.PolicySet().GetCompiledPolicies())
@@ -596,16 +613,13 @@ func (m *managerImpl) RemovePolicy(policyID string) error {
 	runtimePolicyRemoved := numRuntimePolicies-len(m.runtimeDetector.PolicySet().GetCompiledPolicies()) > 0
 
 	m.removedOrDisabledPolicies.Add(policyID)
+	return runtimePolicyRemoved
+}
 
-	// Runtime alerts need to be explicitly marked resolved as their updates are not synced from sensors
+func (m *managerImpl) RemovePolicy(policyID string) error {
+	runtimePolicyRemoved := m.deregisterPolicy(policyID)
 	if runtimePolicyRemoved {
-		modifiedDeployments, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithPolicyID(policyID))
-		if err != nil {
-			return err
-		}
-		if modifiedDeployments.Cardinality() > 0 {
-			m.reprocessor.ReprocessRiskForDeployments(modifiedDeployments.AsSlice()...)
-		}
+		return m.reconcileAlertsForPolicy(policyID)
 	}
 	return nil
 }

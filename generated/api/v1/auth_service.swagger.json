@@ -285,6 +285,10 @@
             },
             "traits": {
               "$ref": "#/definitions/v1Traits"
+            },
+            "audience": {
+              "type": "string",
+              "description": "The expected audience (aud claim) of the ID token.\nWhen set, the OIDC token verifier validates that the token's aud claim contains this value,\nrejecting tokens intended for other recipients (RFC 7519 Section 4.1.3).\nWhen empty, the audience check is skipped for backward compatibility."
             }
           },
           "description": "AuthMachineToMachineConfig determines rules for exchanging an identity token from a third party with\na Central access token. The M2M stands for machine to machine, as this is the intended use-case\nfor the config."
@@ -355,7 +359,8 @@
           "type": "string"
         },
         "uiEndpoint": {
-          "type": "string"
+          "type": "string",
+          "description": "The UI endpoint of the Central instance, e.g. \"central.example.com:443\".\nURLs with scheme (e.g. \"https://central.example.com\") are accepted and\nnormalized to host:port format. If no port is given, 443 is assumed."
         },
         "enabled": {
           "type": "boolean"
@@ -365,7 +370,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "Config holds auth provider specific configuration. Each configuration options\nare different based on the given auth provider type.\nOIDC:\n- \"issuer\": the OIDC issuer according to https://openid.net/specs/openid-connect-core-1_0.html#IssuerIdentifier.\n- \"client_id\": the client ID according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.2.\n- \"client_secret\": the client secret according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.3.1.\n- \"do_not_use_client_secret\": set to \"true\" if you want to create a configuration with only\n  a client ID and no client secret.\n- \"mode\": the OIDC callback mode, choosing from \"fragment\", \"post\", or \"query\".\n- \"disable_offline_access_scope\": set to \"true\" if no offline tokens shall be issued.\n- \"extra_scopes\": a space-delimited string of additional scopes to request in addition to \"openid profile email\"\n  according to https://www.rfc-editor.org/rfc/rfc6749.html#section-3.3.\n\nOpenShift Auth: supports no extra configuration options.\n\nUser PKI:\n- \"keys\": the trusted certificates PEM encoded.\n\nSAML:\n- \"sp_issuer\": the service provider issuer according to https://datatracker.ietf.org/doc/html/rfc7522#section-3.\n- \"idp_metadata_url\": the metadata URL according to https://docs.oasis-open.org/security/saml/v2.0/saml-metadata-2.0-os.pdf.\n- \"idp_issuer\": the IdP issuer.\n- \"idp_cert_pem\": the cert PEM encoded for the IdP endpoint.\n- \"idp_sso_url\": the IdP SSO URL.\n- \"idp_nameid_format\": the IdP name ID format.\n\nIAP:\n- \"audience\": the audience to use."
+          "description": "Config holds auth provider specific configuration. Each configuration options\nare different based on the given auth provider type.\nOIDC:\n- \"issuer\": the OIDC issuer according to https://openid.net/specs/openid-connect-core-1_0.html#IssuerIdentifier.\n- \"client_id\": the client ID according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.2.\n- \"client_secret\": the client secret according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.3.1.\n- \"do_not_use_client_secret\": set to \"true\" if you want to create a configuration with only\n  a client ID and no client secret.\n- \"mode\": the OIDC callback mode, choosing from \"fragment\", \"post\", or \"query\".\n- \"disable_offline_access_scope\": set to \"true\" if no offline tokens shall be issued.\n- \"extra_scopes\": a space-delimited string of additional scopes to request in addition to \"openid profile email\"\n  according to https://www.rfc-editor.org/rfc/rfc6749.html#section-3.3.\n\nOpenShift Auth: supports no extra configuration options.\n\nUser PKI:\n- \"keys\": the trusted certificates PEM encoded.\n\nSAML:\n- \"sp_issuer\": the service provider issuer according to https://datatracker.ietf.org/doc/html/rfc7522#section-3.\n- \"sp_audience\": the expected audience URI for assertion validation. If empty, audience is not enforced.\n- \"idp_metadata_url\": the metadata URL according to https://docs.oasis-open.org/security/saml/v2.0/saml-metadata-2.0-os.pdf.\n- \"idp_issuer\": the IdP issuer.\n- \"idp_cert_pem\": the cert PEM encoded for the IdP endpoint.\n- \"idp_sso_url\": the IdP SSO URL.\n- \"idp_nameid_format\": the IdP name ID format.\n\nIAP:\n- \"audience\": the audience to use."
         },
         "loginUrl": {
           "type": "string",
@@ -379,7 +384,7 @@
           "items": {
             "type": "string"
           },
-          "description": "UI endpoints which to allow in addition to `ui_endpoint`. I.e., if a login request\nis coming from any of these, the auth request will use these for the callback URL,\nnot ui_endpoint."
+          "description": "UI endpoints which to allow in addition to `ui_endpoint`. I.e., if a login request\nis coming from any of these, the auth request will use these for the callback URL,\nnot ui_endpoint. Same format rules as `ui_endpoint` apply."
         },
         "active": {
           "type": "boolean"
@@ -586,6 +591,10 @@
         },
         "traits": {
           "$ref": "#/definitions/v1Traits"
+        },
+        "audience": {
+          "type": "string",
+          "description": "The expected audience (aud claim) of the ID token.\nWhen set, the OIDC token verifier validates that the token's aud claim contains this value,\nrejecting tokens intended for other recipients (RFC 7519 Section 4.1.3).\nWhen empty, the audience check is skipped for backward compatibility."
         }
       },
       "description": "AuthMachineToMachineConfig determines rules for exchanging an identity token from a third party with\na Central access token. The M2M stands for machine to machine, as this is the intended use-case\nfor the config."

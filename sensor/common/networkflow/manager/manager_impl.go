@@ -142,7 +142,7 @@ func NewManager(
 	externalSrcs externalsrcs.Store,
 	policyDetector detector.Detector,
 	pubSub *internalmessage.MessageSubscriber,
-	updateComputer updatecomputer.UpdateComputer,
+	updateComputer *updatecomputer.Computer,
 	opts ...Option,
 ) Manager {
 	enricherTicker := time.NewTicker(enricherCycle)
@@ -213,8 +213,8 @@ type networkFlowManager struct {
 	clusterEntities EntityStore
 	externalSrcs    externalsrcs.Store
 
-	// UpdateComputer implementation for computing flow updates that are sent to Central on each tick.
-	updateComputer updatecomputer.UpdateComputer
+	// updateComputer computes flow updates that are sent to Central on each tick.
+	updateComputer *updatecomputer.Computer
 
 	activeConnectionsMutex sync.RWMutex
 	// activeConnections tracks all connections reported by Collector that are believed to be active.
@@ -322,6 +322,7 @@ func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
 		// If the m.sensorUpdates queue is full, we bounce the Network Flow update.
 		// They will still be processed by the detection engine for newer entities, but
 		// sensor will not keep ordered updates indefinitely in memory.
+		flowMetrics.NumMessagesDroppedOnSendCounter.Inc()
 		return false
 	}
 }
@@ -417,6 +418,8 @@ func (m *networkFlowManager) send(result *enrichmentResult) {
 		} else {
 			m.updateComputer.OnSendConnectionsFailure(result.updatedConns)
 			m.updateComputer.OnSendEndpointsFailure(result.updatedEndpoints)
+			flowMetrics.NumUpdatesDroppedOnSendCounter.WithLabelValues("connections").Add(float64(len(result.updatedConns)))
+			flowMetrics.NumUpdatesDroppedOnSendCounter.WithLabelValues("endpoints").Add(float64(len(result.updatedEndpoints)))
 		}
 	}
 
@@ -426,6 +429,7 @@ func (m *networkFlowManager) send(result *enrichmentResult) {
 			m.updateComputer.OnSuccessfulSendProcesses(result.currentEndpointsProcesses)
 		} else {
 			m.updateComputer.OnSendProcessesFailure(result.updatedProcesses)
+			flowMetrics.NumUpdatesDroppedOnSendCounter.WithLabelValues("endpoints_with_processes").Add(float64(len(result.updatedProcesses)))
 		}
 	}
 	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))

@@ -8,6 +8,7 @@ import (
 	"text/template"
 	"unicode"
 
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -132,6 +133,31 @@ func arr(els ...any) []any {
 	return els
 }
 
+func isMessageBytes(f walker.Field) bool {
+	return f.DataType == postgres.MessageBytes
+}
+
+type subMsgInit struct {
+	SetterPath string
+	GoType     string
+}
+
+func subMessageInits(schema *walker.Schema) []subMsgInit {
+	var inits []subMsgInit
+	for path, typ := range schema.SubMessages {
+		inits = append(inits, subMsgInit{SetterPath: "obj." + path, GoType: typ})
+	}
+	return inits
+}
+
+func messageBytesElemType(f walker.Field) string {
+	t := f.Type
+	if strings.HasPrefix(t, "[]") {
+		return t[2:]
+	}
+	return t
+}
+
 var funcMap = template.FuncMap{
 	"arr":                          arr,
 	"lowerCamelCase":               lowerCamelCase,
@@ -141,6 +167,10 @@ var funcMap = template.FuncMap{
 	"concatWith":                   concatWith,
 	"searchFieldNameInOtherSchema": searchFieldNameInOtherSchema,
 	"isSacScoping":                 isSacScoping,
+	"isMessageBytes":               isMessageBytes,
+	"messageBytesElemType":         messageBytesElemType,
+	"subMessageInits":              subMessageInits,
+	"trimPrefix":                   func(prefix, s string) string { return strings.TrimPrefix(s, prefix) },
 	"dict":                         dict,
 	"pluralType": func(s string) string {
 		if s[len(s)-1] == 'y' {

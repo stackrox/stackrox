@@ -21,6 +21,7 @@ instructions: |-
 kind: ComplianceCheckResult
 metadata:
   annotations:
+    compliance.openshift.io/last-scanned-timestamp: "2021-06-22T18:20:00Z"
     compliance.openshift.io/rule: accounts-no-uid-except-zero
   creationTimestamp: "2021-06-22T18:22:15Z"
   generation: 1

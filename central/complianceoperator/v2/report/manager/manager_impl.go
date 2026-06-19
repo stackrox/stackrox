@@ -179,7 +179,7 @@ func (m *managerImpl) Start() {
 
 func (m *managerImpl) Stop() {
 	m.metricsTicker.Stop()
-	if m.isStarted.Load() {
+	if !m.isStarted.Load() {
 		log.Error("Compliance report manager not started")
 		return
 	}
@@ -491,8 +491,12 @@ func (m *managerImpl) handleReadyScan() {
 				Observe(timeActive.Minutes())
 			delete(m.watchingScansStartTime, scanWatcherResult.WatcherID)
 		})
-		if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, m.checkResultDataStore); err != nil {
-			log.Errorf("unable to delete old CheckResults: %v", err)
+		if scanWatcherResult.Error == nil || errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
+			if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, m.checkResultDataStore); err != nil {
+				log.Errorf("unable to delete old CheckResults: %v", err)
+			}
+		} else {
+			log.Debugf("Skipping DeleteOldResults for scan %s: %v", scanWatcherResult.Scan.GetScanName(), scanWatcherResult.Error)
 		}
 		if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
 			log.Debugf("Scan %s was removed", scanWatcherResult.Scan.GetScanName())
@@ -599,7 +603,8 @@ func (m *managerImpl) handleReadyScanConfig() {
 		return
 	}
 	for scanConfigWatcherResult := range m.scanConfigReadyQueue.Seq(m.stopper.LowLevel().GetStopRequestSignal()) {
-		log.Debugf("Scan Config %s done with %d scans and %d reports", scanConfigWatcherResult.ScanConfig.GetScanConfigName(), len(scanConfigWatcherResult.ScanResults), len(scanConfigWatcherResult.ReportSnapshot))
+		log.Infof("Scan config %s completed with %d scans, %d reports, error: %v",
+			scanConfigWatcherResult.ScanConfig.GetScanConfigName(), len(scanConfigWatcherResult.ScanResults), len(scanConfigWatcherResult.ReportSnapshot), scanConfigWatcherResult.Error)
 		concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 			delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
 		})

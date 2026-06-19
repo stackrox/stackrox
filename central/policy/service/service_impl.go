@@ -29,9 +29,11 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
+	accesscontrol "github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	pkgDetection "github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -156,13 +158,20 @@ func (s *serviceImpl) getPolicy(ctx context.Context, id string) (*storage.Policy
 	if len(policy.GetCategories()) == 0 {
 		policy.Categories = []string{uncategorizedCategory}
 	}
+	stripEvaluationFilterIfDisabled(policy)
 	return policy, nil
+}
+
+func stripEvaluationFilterIfDisabled(p *storage.Policy) {
+	if !features.EvaluationFilter.Enabled() {
+		p.EvaluationFilter = nil
+	}
 }
 
 func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPolicy {
 	listPolicies := make([]*storage.ListPolicy, 0, len(policies))
 	for _, p := range policies {
-		listPolicies = append(listPolicies, &storage.ListPolicy{
+		lp := &storage.ListPolicy{
 			Id:              p.GetId(),
 			Name:            p.GetName(),
 			Description:     p.GetDescription(),
@@ -174,7 +183,11 @@ func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPo
 			EventSource:     p.GetEventSource(),
 			IsDefault:       p.GetIsDefault(),
 			Source:          p.GetSource(),
-		})
+		}
+		if features.EvaluationFilter.Enabled() {
+			lp.EvaluationFilter = p.GetEvaluationFilter()
+		}
+		listPolicies = append(listPolicies, lp)
 	}
 	return listPolicies
 }
@@ -336,6 +349,25 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 	// Note: default policies cannot be deleted, only disabled
 	if policy.GetIsDefault() {
 		return nil, errors.Wrap(errox.InvalidArgs, "A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
+	}
+
+	// Declarative policies can only be deleted by the config-controller via its finalizer.
+	if policy.GetSource() == storage.PolicySource_DECLARATIVE {
+		identity, err := authn.IdentityFromContext(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to determine caller identity")
+		}
+		isConfigController := false
+		for _, role := range identity.Roles() {
+			if role.GetRoleName() == accesscontrol.ConfigController {
+				isConfigController = true
+				break
+			}
+		}
+		if !isConfigController {
+			return nil, errors.Wrap(errox.NotAuthorized,
+				"An externally managed policy can only be deleted by deleting the corresponding SecurityPolicy custom resource.")
+		}
 	}
 
 	if err := s.policies.RemovePolicy(ctx, policy); err != nil {
@@ -745,6 +777,7 @@ func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoli
 
 	for _, policy := range policyList {
 		removeInternal(policy)
+		stripEvaluationFilterIfDisabled(policy)
 	}
 	return &storage.ExportPoliciesResponse{
 		Policies: policyList,

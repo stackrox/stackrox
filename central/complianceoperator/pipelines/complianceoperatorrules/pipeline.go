@@ -14,12 +14,17 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/set"
+	"golang.org/x/sync/semaphore"
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	_ pipeline.Fragment = (*pipelineImpl)(nil)
 )
 
@@ -30,15 +35,18 @@ func GetPipeline() pipeline.Fragment {
 
 // NewPipeline returns a new instance of Pipeline.
 func NewPipeline(datastore datastore.DataStore, manager manager.Manager) pipeline.Fragment {
+	maxConcurrency := int64(env.ComplianceV1MaxConcurrency.IntegerSetting())
 	return &pipelineImpl{
 		datastore: datastore,
 		manager:   manager,
+		semaphore: semaphore.NewWeighted(maxConcurrency),
 	}
 }
 
 type pipelineImpl struct {
 	datastore datastore.DataStore
 	manager   manager.Manager
+	semaphore *semaphore.Weighted
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -70,8 +78,13 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(_ context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ComplianceOperatorRule)
+
+	if err := s.acquireSemaphore(ctx); err != nil {
+		return err
+	}
+	defer s.semaphore.Release(1)
 
 	event := msg.GetEvent()
 	rule := event.GetComplianceOperatorRule()
@@ -87,6 +100,29 @@ func (s *pipelineImpl) Run(_ context.Context, clusterID string, msg *central.Msg
 	default:
 		return s.manager.AddRule(rule)
 	}
+}
+
+func (s *pipelineImpl) acquireSemaphore(ctx context.Context) error {
+	waitTime := env.ComplianceV1SemaphoreWaitTime.DurationSetting()
+
+	acquireCtx := ctx
+	if waitTime > 0 {
+		var cancel context.CancelFunc
+		acquireCtx, cancel = context.WithTimeout(ctx, waitTime)
+		defer cancel()
+	}
+
+	if err := s.semaphore.Acquire(acquireCtx, 1); err != nil {
+		if ctx.Err() != nil {
+			log.Debugf("Unable to acquire semaphore for compliance rule update: %v", err)
+		} else if errors.Is(err, context.DeadlineExceeded) {
+			log.Warnf("Timed out waiting to process compliance rule (waited %v): %v", waitTime, err)
+		} else {
+			log.Errorf("Unexpected error acquiring compliance rule semaphore: %v", err)
+		}
+		return err
+	}
+	return nil
 }
 
 func (s *pipelineImpl) OnFinish(_ string) {}

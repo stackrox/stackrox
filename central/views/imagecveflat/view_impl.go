@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 
+	imagev2common "github.com/stackrox/rox/central/imagev2/common"
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -32,24 +33,20 @@ func (v *imageCVEFlatViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 	if err := common.ValidateQuery(q); err != nil {
 		return 0, err
 	}
+	q = imagev2common.WithRowsFromImageV2Only(q)
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	result, err := pgSearch.RunSelectOneForSchema[imageCVEFlatCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
-	if err != nil {
-		return 0, err
-	}
-	if result == nil {
-		return 0, nil
-	}
-	return result.CVECount, nil
+	return pgSearch.RunDistinctCountForSchema(queryCtx, v.db, v.schema, q, search.CVE)
 }
 
 func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]CveFlat, error) {
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
+	q = imagev2common.WithRowsFromImageV2Only(q)
+
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
 	// Update the sort options to use aggregations if necessary as we are grouping by CVEs

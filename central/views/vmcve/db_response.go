@@ -8,7 +8,6 @@ import (
 
 type vmCVECoreResponse struct {
 	CVE                        string     `db:"cve"`
-	CVEIDs                     []string   `db:"cve_id"`
 	VMsWithCriticalSeverity    int        `db:"critical_severity_count"`
 	FixableVMsWithCriticalSev  int        `db:"fixable_critical_severity_count"`
 	VMsWithImportantSeverity   int        `db:"important_severity_count"`
@@ -28,10 +27,6 @@ type vmCVECoreResponse struct {
 
 func (c *vmCVECoreResponse) GetCVE() string {
 	return c.CVE
-}
-
-func (c *vmCVECoreResponse) GetCVEIDs() []string {
-	return c.CVEIDs
 }
 
 func (c *vmCVECoreResponse) GetVMsBySeverity() common.ResourceCountByCVESeverity {
@@ -73,10 +68,6 @@ func (c *vmCVECoreResponse) GetEPSSProbability() float32 {
 		return 0.0
 	}
 	return *c.EPSSProbabilityMax
-}
-
-type vmCVECoreCount struct {
-	CVECount int `db:"cve_count"`
 }
 
 type vmIDResponse struct {
@@ -193,7 +184,3 @@ func (r *affectedVMResponse) GetIsFixable() bool             { return r.FixableC
 func (r *affectedVMResponse) GetMaxCVSS() float32            { return r.MaxCVSS }
 func (r *affectedVMResponse) GetGuestOS() string             { return r.GuestOS }
 func (r *affectedVMResponse) GetAffectedComponentCount() int { return r.AffectedComponentCount }
-
-type affectedVMCount struct {
-	VMCount int `db:"virtual_machine_id_count"`
-}

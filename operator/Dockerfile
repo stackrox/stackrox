@@ -2,7 +2,7 @@
 ARG roxpath=/workspace/src/github.com/stackrox/rox
 ARG TARGET_ARCH=amd64
 
-FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/go-toolset:1.25 AS builder
+FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/go-toolset:1.26 AS builder
 
 # Build the manager binary
 ARG TARGET_ARCH
@@ -64,6 +64,7 @@ ARG ROX_IMAGE_FLAVOR
 ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
 
 COPY --from=builder ${roxpath}/stackrox-operator /usr/local/bin/
+COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 
 # The following are numeric uid and gid of `nobody` user in UBI.
 # We can't use symbolic names because otherwise k8s will fail to start the pod with an error like this:

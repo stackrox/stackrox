@@ -418,7 +418,7 @@ func (suite *RuntimeCriteriaTestSuite) TestKubeEventConstraints() {
 			}
 			require.NoError(t, err)
 
-			actualViolations, err := m.MatchKubeEvent(nil, c.event, &storage.Deployment{})
+			actualViolations, err := m.MatchKubeEvent(nil, c.event, EnhancedDeployment{Deployment: &storage.Deployment{}})
 			suite.Require().NoError(err)
 
 			assert.Nil(t, actualViolations.ProcessViolation)
@@ -491,7 +491,7 @@ func (suite *RuntimeCriteriaTestSuite) TestKubeEventDefaultPolicies() {
 			m, err := BuildKubeEventMatcher(policy)
 			require.NoError(t, err)
 
-			actualViolations, err := m.MatchKubeEvent(nil, c.event, &storage.Deployment{})
+			actualViolations, err := m.MatchKubeEvent(nil, c.event, EnhancedDeployment{Deployment: &storage.Deployment{}})
 			suite.Require().NoError(err)
 
 			assert.Nil(t, actualViolations.ProcessViolation)

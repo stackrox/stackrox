@@ -559,6 +559,13 @@ var (
 
 	TestShortCircuitID = newFieldLabel("Test ShortCircuit ID")
 
+	TestNoSerID        = newFieldLabel("Test NoSer ID")
+	TestNoSerName      = newFieldLabel("Test NoSer Name")
+	TestNoSerPriority  = newFieldLabel("Test NoSer Priority")
+	TestNoSerCreatedAt = newFieldLabel("Test NoSer Created At")
+	TestNoSerClusterID = newFieldLabel("Test NoSer Cluster ID")
+	TestNoSerTags      = newFieldLabel("Test NoSer Tags")
+
 	// Derived test fields
 	// The derived fields depending of fields with map and scalar data type array data structures are unsupported.
 	TestGrandparentCount        = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)

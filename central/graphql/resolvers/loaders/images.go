@@ -48,7 +48,6 @@ type ImageLoader interface {
 	FullImageWithID(ctx context.Context, id string) (*storage.Image, error)
 
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
-	CountAll(ctx context.Context) (int32, error)
 }
 
 // imageLoaderImpl implements the ImageDataLoader interface.
@@ -121,11 +120,6 @@ func (idl *imageLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query)
 		return 0, err
 	}
 	return int32(count), nil
-}
-
-func (idl *imageLoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.ds.CountImages(ctx)
-	return int32(count), err
 }
 
 func (idl *imageLoaderImpl) load(ctx context.Context, ids []string, pullFullObject bool) ([]*storage.Image, error) {

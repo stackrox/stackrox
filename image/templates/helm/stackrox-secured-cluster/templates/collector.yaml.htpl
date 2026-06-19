@@ -7,7 +7,6 @@ metadata:
     {{- include "srox.labels" (list . "daemonset" "collector") | nindent 4 }}
     service: collector
     app: collector
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "daemonset" "collector") | nindent 4 }}
   name: collector
@@ -22,6 +21,7 @@ spec:
       labels:
         service: collector
         app: collector
+        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "daemonset" "collector") | nindent 8 }}
       annotations:
         {{- $annotations := dict -}}
@@ -146,12 +146,8 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
-        - mountPath: /host/proc
-          name: proc-ro
-          readOnly: true
-          mountPropagation: HostToContainer
-        - mountPath: /host/etc
-          name: etc-ro
+        - mountPath: /host
+          name: host-root-ro
           readOnly: true
           mountPropagation: HostToContainer
         - mountPath: /etc/stackrox
@@ -198,6 +194,8 @@ spec:
               apiVersion: v1
               fieldPath: spec.nodeName
         - name: ROX_ADVERTISED_ENDPOINT
+          value: {{ quote ._rox.sensor.endpoint }}
+        - name: ROX_SENSOR_ENDPOINT
           value: {{ quote ._rox.sensor.endpoint }}
         - name: ROX_NODE_SCANNING_ENDPOINT
           value: {{ quote ._rox.collector.nodescanningEndpoint }}
@@ -350,7 +348,6 @@ metadata:
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "service" "compliance-metrics") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "service" "compliance-metrics") | nindent 4 }}
 spec:

@@ -9,7 +9,6 @@ import (
 type Result struct {
 	ID      string
 	Matches map[string][]string
-	Score   float64
 
 	// NEW: Optional fields populated when selects are provided in query
 	// These fields enable single-pass query construction of SearchResult protos
@@ -104,7 +103,6 @@ func ResultsToSearchResultProtos(results []Result, converter SearchResultConvert
 			Location:       converter.BuildLocation(result),
 			Category:       converter.GetCategory(),
 			FieldToMatches: GetProtoMatchesMap(result.Matches),
-			Score:          result.Score,
 		})
 	}
 	return protoResults

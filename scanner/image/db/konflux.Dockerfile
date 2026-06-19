@@ -1,4 +1,4 @@
-FROM registry.redhat.io/rhel9/postgresql-15:latest@sha256:285c5c740f9d6127d37b9322dec7057a45690c827c06b54270079faa30fdf46d
+FROM registry.redhat.io/rhel9/postgresql-15:latest@sha256:ba85fa939583ef38cbd53c815904e871dac359cef6582e8ea0efe8534fcd8093
 
 ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
@@ -27,6 +27,7 @@ USER root
 COPY \
      scanner/image/db/scripts/docker-entrypoint.sh \
      scanner/image/db/scripts/init-entrypoint.sh \
+     scanner/image/db/scripts/cert-watcher.sh \
      /usr/local/bin/
 
 RUN localedef -f UTF-8 -i en_US en_US.UTF-8 && \

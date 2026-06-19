@@ -936,6 +936,48 @@ module.exports = [
         },
     },
     {
+        files: ['cypress/**/*.{js,ts}', 'src/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'cypress/constants/**',
+            'cypress/integration/clusters/**', // delete obsolete tests
+            'cypress/integration/compliance/**', // deprecated
+            'cypress/integration/configmanagement/**', // deprecated/modernized
+            'cypress/integration/integrations/**', // replace
+            'cypress/integration/networkGraph/**', // replace
+            'cypress/integration/risk/**', // deprecated/modernized
+            'cypress/integration/systemConfig/**', // replace
+            'cypress/integration/vulnmanagement/**', // deprecated
+            'cypress/selectors/**',
+            'src/Components/**', // replace non-deprecated
+            'src/Containers/AccessControl/**', // replace
+            'src/Containers/Clusters/**', // delete obsolete tests
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ConfigManagement/**', // deprecated/modernized
+            'src/Containers/Integrations/**', // replace
+            'src/Containers/Login/**', // replace
+            'src/Containers/MainPage/**', // replace
+            'src/Containers/NetworkGraph/**', // replace
+            'src/Containers/Policies/**', // replace
+            'src/Containers/PolicyCategories/**', // replace
+            'src/Containers/Risk/**', // replace
+            'src/Containers/SystemConfig/**', // replace
+            'src/Containers/SystemHealth/**', // replace
+            'src/Containers/User/**', // replace
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/css/trumps.css', // delete or replace
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-data-testid': 'error',
+        },
+    },
+    {
         files: ['src/**/*.{js,jsx,ts,tsx}'],
         ignores: [
             'src/Components/CheckboxTable.jsx', // deprecated
@@ -947,7 +989,6 @@ module.exports = [
             'src/Components/Select.jsx', // deprecated
             'src/Components/Table.jsx', // deprecated
             'src/Components/Tabs.jsx', // deprecated
-            'src/Components/WorkflowPDFExportButton.jsx', // deprecated
             'src/Components/visuals/Sunburst.jsx', // deprecated
             'src/Components/visuals/SunburstDetailSection.jsx', // deprecated
             'src/Containers/Compliance/**', // deprecated
@@ -1039,7 +1080,6 @@ module.exports = [
             'src/utils/getEntityName.js', // deprecated
             'src/utils/getPaginatedList.js', // move into Containers/Risk/EventTimeline
             'src/utils/gqlLoading.js', // deferred
-            'src/utils/pdfUtils.js', // deprecated
             'src/utils/permissionRuleGroupUtils.js', // deferred
             'src/utils/queryMap.js', // deprecated
             'src/utils/queryService.js', // deferred
@@ -1098,8 +1138,6 @@ module.exports = [
             'src/Containers/AccessControl/AuthProviders/AuthProvidersList.tsx', // replace
             'src/Containers/Clusters/DownloadHelmValues.tsx', // replace
             'src/Containers/Compliance/**', // deprecated
-            'src/Containers/Integrations/IntegrationsListPage/IntegrationsListPage.tsx', // replace
-            'src/Containers/Integrations/hooks/useIntegrations.ts', // replace hook itself
             'src/Containers/Login/LoginPage.jsx', // replace
             'src/Containers/Login/TestLoginResultsPage.jsx', // replace
             'src/Containers/MainPage/AcsFeedbackModal.tsx', // replace

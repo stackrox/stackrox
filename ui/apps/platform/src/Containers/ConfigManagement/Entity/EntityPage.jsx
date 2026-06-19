@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
 
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
-import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import { searchParams } from 'constants/searchParams';
 import configMgmtPaginationContext, {
     MAIN_PAGINATION_PARAMS,
@@ -22,7 +21,6 @@ import Entity from '../Entity';
 
 const EntityPage = () => {
     const sidePanelRef = useRef(null);
-    const [isExporting, setIsExporting] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
     const match = useWorkflowMatch();
@@ -37,7 +35,6 @@ const EntityPage = () => {
     );
 
     const params = URLService.getParams(match, location);
-    const { urlParams } = URLService.getURL(match, location);
     const {
         pageEntityType,
         pageEntityId,
@@ -76,13 +73,7 @@ const EntityPage = () => {
     return (
         <workflowStateContext.Provider value={pageState}>
             <div className="flex flex-1 flex-col" style={style}>
-                <EntityPageHeader
-                    entityType={pageEntityType}
-                    entityId={pageEntityId}
-                    urlParams={urlParams}
-                    isExporting={isExporting}
-                    setIsExporting={setIsExporting}
-                />
+                <EntityPageHeader entityType={pageEntityType} entityId={pageEntityId} />
                 <Tabs
                     pageEntityId={pageEntityId}
                     entityType={pageEntityType}
@@ -91,7 +82,7 @@ const EntityPage = () => {
                 />
                 <div className="flex flex-1 w-full h-full relative z-0 overflow-hidden">
                     <configMgmtPaginationContext.Provider value={MAIN_PAGINATION_PARAMS}>
-                        <div className="h-full w-full overflow-auto" id="capture-list">
+                        <div className="h-full w-full overflow-auto">
                             <Entity
                                 entityType={pageEntityType}
                                 entityId={pageEntityId}
@@ -122,7 +113,6 @@ const EntityPage = () => {
                     </searchContext.Provider>
                 </div>
             </div>
-            {isExporting && <BackdropExporting />}
         </workflowStateContext.Provider>
     );
 };

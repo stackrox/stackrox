@@ -1,7 +1,11 @@
 package scannerv4
 
 import (
+	"cmp"
 	"fmt"
+	"regexp"
+	"slices"
+	"strconv"
 	"strings"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -11,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -21,21 +26,27 @@ import (
 // Claircore or StackRox updater names.
 const vulnDataSourceDelimiter = "::"
 
+// digitSegment matches contiguous runs of digits for numeric segment comparisons.
+var digitSegment = regexp.MustCompile(`\d+`)
+
 func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, scannerVersion string) *storage.ImageScan {
+	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
+	if features.ScannerV4RedHatVEXNotAffected.Enabled() {
+		filterNotAffectedVulnerabilities(report, layerSHAToIndex)
+	}
+
 	scan := &storage.ImageScan{
 		ScannerVersion:  scannerVersion,
 		ScanTime:        protocompat.TimestampNow(),
 		OperatingSystem: os(report),
-		Components:      components(metadata, report),
+		Components:      componentsWithLayerMap(metadata, report, layerSHAToIndex),
 		Notes:           notes(report),
 	}
 
 	return scan
 }
 
-func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) []*storage.EmbeddedImageScanComponent {
-	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
-
+func componentsWithLayerMap(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, layerSHAToIndex map[string]int32) []*storage.EmbeddedImageScanComponent {
 	pkgs := report.GetContents().GetPackages()
 	if len(pkgs) == 0 {
 		pkgs = make(map[string]*v4.Package, len(report.GetContents().GetPackagesDEPRECATED()))
@@ -44,8 +55,34 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 			pkgs[pkg.GetId()] = pkg
 		}
 	}
+	// Filter out packages that should not become user-facing components.
+	// Unreferenced source packages are kept defensively.
+	dedupe := features.ScannerV4Dedupe.Enabled()
+	var referencedSourceIDs set.StringSet
+	if dedupe {
+		referencedSourceIDs = set.NewStringSet()
+		for _, pkg := range pkgs {
+			if pkg.GetKind() != "binary" {
+				continue
+			}
+			if srcID := pkg.GetSource().GetId(); srcID != "" {
+				referencedSourceIDs.Add(srcID)
+			}
+		}
+	}
+
 	components := make([]*storage.EmbeddedImageScanComponent, 0, len(pkgs))
 	for id, pkg := range pkgs {
+		if dedupe {
+			switch pkg.GetKind() {
+			case "ancestry":
+				continue
+			case "source":
+				if referencedSourceIDs.Contains(id) {
+					continue
+				}
+			}
+		}
 		vulnIDs := report.GetPackageVulnerabilities()[id].GetValues()
 
 		var (
@@ -63,7 +100,7 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 			Name:         pkg.GetName(),
 			Version:      pkg.GetVersion(),
 			Architecture: pkg.GetArch(),
-			Vulns:        vulnerabilities(report.GetVulnerabilities(), vulnIDs, envOS(env, report)),
+			Vulns:        vulnerabilities(report.GetVulnerabilities(), vulnIDs, envOS(env, report), pkg.GetFixedInVersion()),
 			FixedBy:      pkg.GetFixedInVersion(),
 			Source:       source,
 			Location:     location,
@@ -173,13 +210,20 @@ func layerIndex(layerSHAToIndex map[string]int32, env *v4.Environment) *storage.
 	}
 }
 
-func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability, ids []string, envOS string) []*storage.EmbeddedVulnerability {
+func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability, ids []string, envOS string, pkgFixedByVersion string) []*storage.EmbeddedVulnerability {
 	if len(vulnerabilities) == 0 || len(ids) == 0 {
 		return nil
 	}
 
+	dedupe := features.ScannerV4Dedupe.Enabled()
+
 	vulns := make([]*storage.EmbeddedVulnerability, 0, len(ids))
 	uniqueVulns := set.NewStringSet()
+	var cveNameToIdx map[string]int
+	if dedupe {
+		cveNameToIdx = make(map[string]int, len(ids))
+	}
+
 	for _, id := range ids {
 		if !uniqueVulns.Add(id) {
 			// Already saw this vulnerability, so ignore it.
@@ -192,36 +236,55 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			continue
 		}
 
-		// TODO(ROX-20355): Populate last modified once the API is available.
-		vuln := &storage.EmbeddedVulnerability{
-			Cve:      ccVuln.GetName(),
-			Advisory: advisory(ccVuln.GetAdvisory()),
-			Summary:  ccVuln.GetDescription(),
-			// TODO(ROX-26547)
-			// The link field will be overwritten if preferred CVSS source is available
-			Link:        link(ccVuln.GetLink()),
-			PublishedOn: ccVuln.GetIssued(),
-			// LastModified: ,
-			VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-			Severity:              normalizedSeverity(ccVuln.GetNormalizedSeverity()),
-			Epss:                  epss(ccVuln.GetEpssMetrics()),
-			FixAvailableTimestamp: ccVuln.GetFixedDate(),
-			Datasource:            vulnDataSource(ccVuln, envOS),
-		}
-		if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
-			utils.Should(err)
-		}
-		maybeOverwriteSeverity(vuln)
-		if ccVuln.GetFixedInVersion() != "" {
-			vuln.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
-				FixedBy: ccVuln.GetFixedInVersion(),
+		name := ccVuln.GetName()
+
+		// Multiple Scanner V4 vulns from different sources can share the
+		// same CVE identifier. Merge duplicates into a single entry.
+		if dedupe && name != "" {
+			if idx, exists := cveNameToIdx[name]; exists {
+				candidate := buildEmbeddedVulnerability(ccVuln, envOS)
+				mergeFixFields(vulns[idx], candidate, pkgFixedByVersion)
+				mergeScoringFields(vulns[idx], candidate)
+				continue
 			}
+			cveNameToIdx[name] = len(vulns)
 		}
 
-		vulns = append(vulns, vuln)
+		vulns = append(vulns, buildEmbeddedVulnerability(ccVuln, envOS))
 	}
 
 	return vulns
+}
+
+// buildEmbeddedVulnerability converts a single v4 vulnerability into its
+// storage representation, populating all fields from the v4 source.
+func buildEmbeddedVulnerability(ccVuln *v4.VulnerabilityReport_Vulnerability, envOS string) *storage.EmbeddedVulnerability {
+	// TODO(ROX-20355): Populate last modified once the API is available.
+	vuln := &storage.EmbeddedVulnerability{
+		Cve:      ccVuln.GetName(),
+		Advisory: advisory(ccVuln.GetAdvisory()),
+		Summary:  ccVuln.GetDescription(),
+		// TODO(ROX-26547)
+		// The link field will be overwritten if preferred CVSS source is available
+		Link:        link(ccVuln.GetLink()),
+		PublishedOn: ccVuln.GetIssued(),
+		// LastModified: ,
+		VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+		Severity:              normalizedSeverity(ccVuln.GetNormalizedSeverity()),
+		Epss:                  epss(ccVuln.GetEpssMetrics()),
+		FixAvailableTimestamp: ccVuln.GetFixedDate(),
+		Datasource:            vulnDataSource(ccVuln, envOS),
+	}
+	if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
+		utils.Should(err)
+	}
+	maybeOverwriteSeverity(vuln)
+	if ccVuln.GetFixedInVersion() != "" {
+		vuln.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
+			FixedBy: ccVuln.GetFixedInVersion(),
+		}
+	}
+	return vuln
 }
 
 // vulnDataSource builds a string that uniquely identifies a vulnerability's datasource.
@@ -447,6 +510,122 @@ func distributions(report *v4.VulnerabilityReport) map[string]*v4.Distribution {
 	return dists
 }
 
+func aliasKey(alias *v4.VulnerabilityReport_Alias) string {
+	return alias.GetSpace() + ":" + alias.GetName()
+}
+
+func getPackageLayerSHA(report *v4.VulnerabilityReport, pkgID string) (string, bool) {
+	env := environment(report, pkgID)
+	if env == nil {
+		return "", false
+	}
+	return env.GetIntroducedIn(), true
+}
+
+// filterNotAffectedVulnerabilities removes vulnerabilities from PackageVulnerabilities
+// when they are covered by VEX not-affected assertions via AncestryPackage entries.
+// A package is covered if it was introduced at or below the AncestryPackage's layer
+// and shares a common alias with the not-affected vulnerability.
+func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHAToIndex map[string]int32) {
+	if len(report.GetPackageNotVulnerable()) == 0 {
+		return
+	}
+
+	// Find AncestryPackage entries and collect their boundaries with aliases.
+	type boundary struct {
+		layerIndex      int32
+		notAffectedKeys set.StringSet
+	}
+	var boundaries []boundary
+
+	for pkgID, vulnIDs := range report.GetPackageNotVulnerable() {
+		pkg := report.GetContents().GetPackages()[pkgID]
+		if pkg == nil || pkg.GetKind() != "ancestry" {
+			continue
+		}
+
+		layerSHA, ok := getPackageLayerSHA(report, pkgID)
+		if !ok {
+			continue
+		}
+		layerIdx, ok := layerSHAToIndex[layerSHA]
+		if !ok {
+			continue
+		}
+
+		aliasKeys := set.NewStringSet()
+		for _, vulnID := range vulnIDs.GetValues() {
+			vuln := report.GetVulnerabilities()[vulnID]
+			if vuln == nil {
+				continue
+			}
+			for _, alias := range vuln.GetAliases() {
+				aliasKeys.Add(aliasKey(alias))
+			}
+		}
+
+		if aliasKeys.Cardinality() > 0 {
+			boundaries = append(boundaries, boundary{
+				layerIndex:      layerIdx,
+				notAffectedKeys: aliasKeys,
+			})
+		}
+	}
+
+	if len(boundaries) == 0 {
+		return
+	}
+
+	// Filter PackageVulnerabilities based on boundaries.
+	for pkgID, vulnIDs := range report.GetPackageVulnerabilities() {
+		pkgLayerSHA, ok := getPackageLayerSHA(report, pkgID)
+		if !ok {
+			continue
+		}
+		pkgLayerIdx, ok := layerSHAToIndex[pkgLayerSHA]
+		if !ok {
+			continue
+		}
+
+		var filtered []string
+		for _, vulnID := range vulnIDs.GetValues() {
+			vuln := report.GetVulnerabilities()[vulnID]
+			if vuln == nil {
+				filtered = append(filtered, vulnID)
+				continue
+			}
+
+			suppressed := false
+			for _, b := range boundaries {
+				if pkgLayerIdx > b.layerIndex {
+					continue
+				}
+				for _, alias := range vuln.GetAliases() {
+					if b.notAffectedKeys.Contains(aliasKey(alias)) {
+						suppressed = true
+						break
+					}
+				}
+				if suppressed {
+					break
+				}
+			}
+
+			if suppressed {
+				log.Debugf("Suppressing vuln %q for package %q due to VEX not-affected assertion", vuln.GetName(), pkgID)
+			} else {
+				filtered = append(filtered, vulnID)
+			}
+		}
+
+		if len(filtered) == 0 {
+			delete(report.PackageVulnerabilities, pkgID) //nolint:protogetter // mutation requires direct field access
+		} else {
+			report.PackageVulnerabilities[pkgID] = &v4.StringList{Values: filtered}
+		}
+	}
+}
+
 func notes(report *v4.VulnerabilityReport) []storage.ImageScan_Note {
 	notes := make([]storage.ImageScan_Note, 0, len(v4.VulnerabilityReport_Note_value))
 
@@ -466,4 +645,107 @@ func notes(report *v4.VulnerabilityReport) []storage.ImageScan_Note {
 	}
 
 	return notes
+}
+
+// mergeFixFields overwrites fix-related fields on dst when src has more
+// recent or more complete fix data. Priority: later fix date, has fix over
+// doesn't, matches package-level fix version, higher version by numeric
+// comparison.
+func mergeFixFields(dst, src *storage.EmbeddedVulnerability, pkgFixedByVersion string) {
+	c := cmp.Or(
+		protocompat.CompareTimestamps(src.GetFixAvailableTimestamp(), dst.GetFixAvailableTimestamp()),
+		compareFixVersions(src.GetFixedBy(), dst.GetFixedBy(), pkgFixedByVersion),
+	)
+	if c > 0 {
+		applyFixFields(dst, src)
+	}
+}
+
+// compareFixVersions returns positive when a represents a more complete or
+// higher fix version than b. Priority: having a fix over not, matching
+// pkgFixedBy, higher version by numeric comparison.
+func compareFixVersions(a, b, pkgFixedBy string) int {
+	aHasFix, bHasFix := a != "", b != ""
+	if aHasFix != bHasFix {
+		if aHasFix {
+			return 1
+		}
+		return -1
+	}
+	if !aHasFix {
+		return 0
+	}
+	if pkgFixedBy != "" && (a == pkgFixedBy) != (b == pkgFixedBy) {
+		if a == pkgFixedBy {
+			return 1
+		}
+		return -1
+	}
+	// Reaching here means both have a fix, neither matches pkgFixedBy (or it
+	// is empty), and the versions disagree. This is rare — it requires two
+	// sources to report different fix versions for the same CVE. Use a
+	// deterministic numeric comparison so the result is stable across runs.
+	if a != b {
+		c := compareNumericSegments(a, b)
+		winner := a
+		if c < 0 {
+			winner = b
+		}
+		log.Debugf("fix version mismatch during dedup: %q vs %q, picking %q via numeric comparison", a, b, winner)
+		return c
+	}
+	return 0
+}
+
+// applyFixFields overwrites fix-related fields on dst from src.
+func applyFixFields(dst, src *storage.EmbeddedVulnerability) {
+	dst.Advisory = src.GetAdvisory()
+	dst.Datasource = src.GetDatasource()
+	dst.FixAvailableTimestamp = src.GetFixAvailableTimestamp()
+	dst.SetFixedBy = src.GetSetFixedBy()
+}
+
+// compareNumericSegments compares two strings by extracting their numeric
+// segments and comparing left-to-right, falling back to lexicographic order.
+func compareNumericSegments(a, b string) int {
+	if c := slices.Compare(splitVersionNumbers(a), splitVersionNumbers(b)); c != 0 {
+		return c
+	}
+	return cmp.Compare(a, b)
+}
+
+func splitVersionNumbers(v string) []int {
+	matches := digitSegment.FindAllString(v, -1)
+	nums := make([]int, 0, len(matches))
+	for _, m := range matches {
+		n, _ := strconv.Atoi(m)
+		nums = append(nums, n)
+	}
+	return nums
+}
+
+// mergeScoringFields overwrites scoring-related fields on dst when src has more
+// complete or higher-severity scoring data. Priority: more CVSS metrics, higher
+// severity, higher CVSS base score.
+func mergeScoringFields(dst, src *storage.EmbeddedVulnerability) {
+	c := cmp.Or(
+		cmp.Compare(len(src.GetCvssMetrics()), len(dst.GetCvssMetrics())),
+		cmp.Compare(src.GetSeverity(), dst.GetSeverity()),
+		cmp.Compare(src.GetCvss(), dst.GetCvss()),
+	)
+	if c <= 0 {
+		return
+	}
+
+	dst.Summary = src.GetSummary()
+	dst.Severity = src.GetSeverity()
+	dst.CvssV2 = src.GetCvssV2()
+	dst.CvssV3 = src.GetCvssV3()
+	dst.Cvss = src.GetCvss()
+	dst.ScoreVersion = src.GetScoreVersion()
+	dst.CvssMetrics = src.GetCvssMetrics()
+	dst.NvdCvss = src.GetNvdCvss()
+	dst.Link = src.GetLink()
+	dst.PublishedOn = src.GetPublishedOn()
+	dst.Epss = src.GetEpss()
 }

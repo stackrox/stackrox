@@ -299,7 +299,3 @@ func (c *NodeCVESearchResultConverter) BuildLocation(result *pkgSearch.Result) s
 func (c *NodeCVESearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_NODE_VULNERABILITIES
 }
-
-func (c *NodeCVESearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
-	return result.Score
-}

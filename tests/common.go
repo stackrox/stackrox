@@ -1,4 +1,4 @@
-//go:build test_e2e || sql_integration || compliance || destructive || externalbackups || test_compatibility
+//go:build test_e2e || test_e2e_vm || sql_integration || compliance || destructive || externalbackups || test_compatibility
 
 package tests
 
@@ -562,16 +562,17 @@ func waitForPodRunning(t testutils.T, client kubernetes.Interface, podNamespace,
 
 		// Log pod and container status for debugging
 		// Note: ImagePullBackOff, ErrImagePull, etc. appear in container status, not pod status
-		logMsg := fmt.Sprintf("Pod phase: %s, Reason: %q, Message: %q",
-			k8sPod.Status.Phase, k8sPod.Status.Reason, k8sPod.Status.Message)
+		var logMsg strings.Builder
+		logMsg.WriteString(fmt.Sprintf("Pod phase: %s, Reason: %q, Message: %q",
+			k8sPod.Status.Phase, k8sPod.Status.Reason, k8sPod.Status.Message))
 		var containerInfo strings.Builder
 		for _, status := range k8sPod.Status.ContainerStatuses {
 			// Build log message for non-ready containers
 			if !status.Ready {
 				if status.State.Waiting != nil {
-					logMsg += fmt.Sprintf(", Container %q: %q", status.Name, status.State.Waiting.Reason)
+					logMsg.WriteString(fmt.Sprintf(", Container %q: %q", status.Name, status.State.Waiting.Reason))
 				} else if status.State.Terminated != nil {
-					logMsg += fmt.Sprintf(", Container %q: Terminated (%q)", status.Name, status.State.Terminated.Reason)
+					logMsg.WriteString(fmt.Sprintf(", Container %q: Terminated (%q)", status.Name, status.State.Terminated.Reason))
 				}
 			}
 			// Build detailed info for error message (always, in case pod is not running)
@@ -582,7 +583,7 @@ func waitForPodRunning(t testutils.T, client kubernetes.Interface, podNamespace,
 					status.State.Waiting.Reason, status.State.Waiting.Message))
 			}
 		}
-		waitT.Logf(logMsg)
+		waitT.Logf(logMsg.String())
 
 		// Provide detailed error message if pod is not running
 		if k8sPod.Status.Phase != coreV1.PodRunning {

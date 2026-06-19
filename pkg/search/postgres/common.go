@@ -225,6 +225,13 @@ func (q *query) getPortionBeforeFromClause() string {
 		}
 		return fmt.Sprintf("select count(%s)", countOn)
 	case GET:
+		if q.Schema.NoSerialized {
+			var colPaths []string
+			for _, f := range q.Schema.DBColumnFields() {
+				colPaths = append(colPaths, qualifyColumn(q.Schema.Table, f.ColumnName, ""))
+			}
+			return "select " + strings.Join(colPaths, ", ")
+		}
 		// For GET queries with joins, we use GROUP BY for distinctness, so no need for DISTINCT ON
 		return fmt.Sprintf("select %s.serialized", q.From)
 	case SEARCH:
@@ -329,10 +336,20 @@ func (q *query) AsSQL() string {
 			}
 		}
 
-		// Add serialized column to GROUP BY (required since we're selecting it)
-		serializedPath := fmt.Sprintf("%s.serialized", q.From)
-		if groupByFields.Add(serializedPath) {
-			groupByParts = append(groupByParts, serializedPath)
+		if q.Schema.NoSerialized {
+			// Add all selected columns to GROUP BY
+			for _, f := range q.Schema.DBColumnFields() {
+				colPath := qualifyColumn(q.Schema.Table, f.ColumnName, "")
+				if groupByFields.Add(colPath) {
+					groupByParts = append(groupByParts, colPath)
+				}
+			}
+		} else {
+			// Add serialized column to GROUP BY (required since we're selecting it)
+			serializedPath := fmt.Sprintf("%s.serialized", q.From)
+			if groupByFields.Add(serializedPath) {
+				groupByParts = append(groupByParts, serializedPath)
+			}
 		}
 
 		// Add ordering fields from the primary table to GROUP BY (they're identical for same PK)
@@ -577,6 +594,26 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 
 	where := seenQueries.GetArbitraryElem()
 	where = strings.TrimSuffix(where, exactQuerySuffix)
+
+	// For large value sets, use = ANY($$) with a single array parameter
+	// to avoid the 65535 parameter limit. For small sets, use IN ($1, $2, ...)
+	// for better plan quality since the planner can inspect individual values.
+	// pgx infers the array type from the element type ([]uuid.UUID → uuid[],
+	// []string → text[], etc.) so no explicit cast is needed.
+	if len(values) >= env.PostgresParameterThreshold.IntegerSetting() {
+		originalValues := make([]interface{}, len(entries))
+		for i, entry := range entries {
+			originalValues[i] = entry.Where.Values[0]
+		}
+		return &pgsearch.QueryEntry{
+			Where: pgsearch.WhereClause{
+				Query:  fmt.Sprintf("%s = ANY($$)", where),
+				Values: []interface{}{originalValues},
+			},
+			SelectedFields: entries[0].SelectedFields,
+			GroupBy:        nil,
+		}
+	}
 
 	return &pgsearch.QueryEntry{
 		Where: pgsearch.WhereClause{
@@ -1159,7 +1196,7 @@ func RunQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, 
 	return nil
 }
 
-func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (*cursorSession, error) {
+func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, hint string) (*cursorSession, error) {
 	preparedQuery, err := prepareQuery(ctx, schema, q)
 	if err != nil {
 		return nil, err
@@ -1192,8 +1229,8 @@ func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1
 		}
 	}
 
-	cursorSuffix := random.GenerateString(16, random.CaseInsensitiveAlpha)
-	cursorId := stringutils.JoinNonEmpty("_", preparedQuery.From, cursorSuffix)
+	cursorSuffix := random.GenerateString(4, random.CaseInsensitiveAlpha)
+	cursorId := stringutils.JoinNonEmpty("_", preparedQuery.From, hint, cursorSuffix)
 
 	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursorId, queryStr), preparedQuery.Data...)
 	if err != nil {
@@ -1210,12 +1247,12 @@ func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1
 	return &cursor, nil
 }
 
-func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, callback func(obj PT) error) error {
+func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, hint string, callback func(obj PT) error) error {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
 	defer cancel()
 
 	cursor, err := pgutils.Retry2(ctx, func() (*cursorSession, error) {
-		return retryableGetCursorSession(ctx, schema, q, db)
+		return retryableGetCursorSession(ctx, schema, q, db, hint)
 	})
 	if err != nil {
 		return errors.Wrap(err, "prepare cursor")

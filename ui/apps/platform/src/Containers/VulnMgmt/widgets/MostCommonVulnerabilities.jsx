@@ -111,7 +111,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
 
     return (
         <Widget
-            className="h-full pdf-page"
+            className="h-full"
             header="Most common image vulnerabilities"
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >

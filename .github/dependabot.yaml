@@ -217,6 +217,21 @@ updates:
       prefix: chore
 
   - package-ecosystem: 'gomod'
+    directory: '/operator/tools/crdify/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    labels:
+    - "dependencies"
+    - "area/operator"
+    - "auto-merge"
+    - "auto-retest"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'gomod'
     directory: '/operator/tools/operator-sdk/'
     schedule:
       interval: 'weekly'
@@ -294,6 +309,11 @@ updates:
     commit-message:
       include: scope
       prefix: chore
+    ignore:
+      # ubi9/go-toolset has both Go-based (1.x) and RHEL-based (9.x) tags.
+      # Only track Go version tags.
+      - dependency-name: "ubi9/go-toolset"
+        versions: [">= 2"]
 
   - package-ecosystem: 'docker'
     directory: 'operator/tests/controller/metrics'
@@ -362,6 +382,19 @@ updates:
     labels:
     - "ci-all-qa-tests"
     - "dependencies"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'docker'
+    directory: '.github/test-images'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    labels:
+    - "dependencies"
+    - "auto-retest"
     commit-message:
       include: scope
       prefix: chore

@@ -49,8 +49,8 @@ func loadAndWatchLeafCert() {
 }
 
 func loadLeafCertFromDirectory(dir string) (*tls.Certificate, error) {
-	certFile := filepath.Join(dir, mtls.ServiceCertFileName)
-	keyFile := filepath.Join(dir, mtls.ServiceKeyFileName)
+	certFile := filepath.Join(dir, filepath.Base(mtls.CertFilePath()))
+	keyFile := filepath.Join(dir, filepath.Base(mtls.KeyFilePath()))
 
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
@@ -92,6 +92,16 @@ func addSecondaryCACertIfExists(certPool *x509.CertPool) {
 	if err == nil {
 		certPool.AddCert(secondaryCACert)
 	}
+}
+
+// WatchedLeafCert returns the current in-memory leaf certificate maintained by
+// certwatch. The certificate is loaded from disk on startup and updated
+// atomically whenever the cert files change, with validation on each reload
+// (invalid certificates are rejected, preserving the previous valid cert).
+// Returns nil if no certificate has been loaded yet.
+func WatchedLeafCert() *tls.Certificate {
+	loadAndWatchLeafCert()
+	return leafCert.Load()
 }
 
 // TLSConfig initializes a server configuration that requires client TLS

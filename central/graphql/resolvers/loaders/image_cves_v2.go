@@ -45,7 +45,6 @@ type ImageCVEV2Loader interface {
 	FromQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageCVEV2, error)
 	GetIDs(ctx context.Context, query *v1.Query) ([]string, error)
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
-	CountAll(ctx context.Context) (int32, error)
 }
 
 // imageCveV2LoaderImpl implements the ImageCVELoader interface.
@@ -97,11 +96,6 @@ func (idl *imageCveV2LoaderImpl) CountFromQuery(ctx context.Context, query *v1.Q
 		return 0, err
 	}
 	return int32(count), nil
-}
-
-func (idl *imageCveV2LoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.ds.Count(ctx, search.EmptyQuery())
-	return int32(count), err
 }
 
 func (idl *imageCveV2LoaderImpl) load(ctx context.Context, ids []string) ([]*storage.ImageCVEV2, error) {

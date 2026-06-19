@@ -76,22 +76,16 @@ func removeTablesWithNoSearchableFields(schema *Schema) (shouldInclude bool) {
 
 func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
 	if len(parentPrimaryKeys) == 0 {
-		s.Fields = append(s.Fields, getSerializedField(s))
+		// Root table: add serialized field unless NoSerialized is set.
+		if !s.NoSerialized {
+			s.Fields = append(s.Fields, getSerializedField(s))
+		}
 	} else {
-		// Collect additional fields separately so we can put them in front of the field list
-		// (since these are primary keys, that is cleaner).
+		// Child table: add parent FK fields and idx column.
 		var additionalFields []Field
-		// Child tables represent tables that are stored in an array inside the parent.
-		// Rows in the child table do not have an id of their own.
-		// Instead, they are identified by their parent's primary key, and an index column (which
-		// represents the index of this specific child among the parent's children).
 		for _, parentPrimaryKey := range parentPrimaryKeys {
 			var columnNameInChild string
 			var columnNameInChildForCodeVariables string
-			// If a column in a child table references a column "X" in the parent table, we
-			// name the column in the child "parent_table_name_X".
-			// We keep this name even in the grandchild, and do not continuously add prefixes in front.
-			// This is accomplished by only prefixing the table name if the column is not already a reference.
 			if parentPrimaryKey.Options.Reference == nil {
 				columnNameInChild = fmt.Sprintf("%s_%s", parentPrimaryKey.Schema.Table, parentPrimaryKey.ColumnName)
 			} else {
@@ -132,17 +126,37 @@ func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
 }
 
 func postProcessSchema(s *Schema) {
-	removeTablesWithNoSearchableFields(s)
+	// NoSerialized schemas need all child tables since there's no serialized blob
+	// to fall back on — the child table IS the data for repeated message fields.
+	if !s.NoSerialized {
+		removeTablesWithNoSearchableFields(s)
+	}
 	addCommonFields(s)
 }
 
+// WalkOption configures schema generation.
+type WalkOption func(*Schema)
+
+// WithNoSerialized produces a schema without a serialized bytea column.
+// All proto fields become individual DB columns.
+func WithNoSerialized() WalkOption {
+	return func(s *Schema) {
+		s.NoSerialized = true
+	}
+}
+
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
-func Walk(obj reflect.Type, table string) *Schema {
+func Walk(obj reflect.Type, table string, opts ...WalkOption) *Schema {
 	schema := &Schema{
 		Table:    table,
 		Type:     obj.String(),
 		TypeName: obj.Elem().Name(),
 	}
+
+	for _, opt := range opts {
+		opt(schema)
+	}
+
 	handleStruct(walkerContext{}, schema, obj.Elem())
 
 	// Post-process schema
@@ -156,7 +170,7 @@ const defaultIndex = "btree"
 func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignoreFKs, ignoreIndex bool) PostgresOptions {
 	var opts PostgresOptions
 
-	for _, field := range strings.Split(tag, ",") {
+	for field := range strings.SplitSeq(tag, ",") {
 		switch {
 		case field == "-":
 			opts.Ignored = true
@@ -279,6 +293,8 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 		case strings.HasPrefix(field, "type"):
 			typeName := field[strings.Index(field, "(")+1 : strings.Index(field, ")")]
 			opts.ColumnType = typeName
+		case strings.HasPrefix(field, "strategy"):
+			opts.RepeatedStrategy = field[strings.Index(field, "(")+1 : strings.Index(field, ")")]
 		case field == "":
 		default:
 			// ignore for just right now
@@ -289,7 +305,7 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 }
 
 func getProtoBufName(protoBufTag string) string {
-	for _, part := range strings.Split(protoBufTag, ",") {
+	for part := range strings.SplitSeq(protoBufTag, ",") {
 		if strings.HasPrefix(part, "name=") {
 			return part[len("name="):]
 		}
@@ -360,6 +376,9 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 		}
 		opts := getPostgresOptions(structField.Tag.Get("sql"), schema.Parent == nil, ctx.ignorePK, ctx.ignoreUnique, ctx.ignoreFKs, ctx.ignoreIndex)
 		if opts.Ignored {
+			if schema.Root().NoSerialized {
+				log.Panicf("field %s.%s has sql:\"-\" which is incompatible with --no-serialized", original.Name(), structField.Name)
+			}
 			continue
 		}
 		searchOpts, derivedFields := getSearchOptions(ctx, structField.Tag.Get("search"))
@@ -395,6 +414,13 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 				schema.AddFieldWithType(field, dt, opts)
 				continue
 			}
+			if schema.NoSerialized {
+				setterPath := getterToSetter(ctx.Getter(field.Name))
+				if schema.SubMessages == nil {
+					schema.SubMessages = make(map[string]string)
+				}
+				schema.SubMessages[setterPath] = structField.Type.Elem().String()
+			}
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts), schema, structField.Type.Elem())
 		case reflect.Slice:
 			elemType := structField.Type.Elem()
@@ -413,6 +439,16 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 					schema.AddFieldWithType(field, postgres.IntArray, opts)
 				}
 				continue
+			}
+
+			switch opts.RepeatedStrategy {
+			case "bytea":
+				schema.AddFieldWithType(field, postgres.MessageBytes, opts)
+				continue
+			case "child_table", "":
+				// Default behavior: create a child table.
+			default:
+				log.Errorf("field %s.%s has unsupported strategy(%s), valid values are: bytea, child_table", original.Name(), structField.Name, opts.RepeatedStrategy)
 			}
 
 			childSchema := &Schema{

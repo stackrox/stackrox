@@ -13,7 +13,7 @@ import (
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	namespaceDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
+	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	deploymentsView "github.com/stackrox/rox/central/views/deployments"
@@ -50,7 +50,7 @@ type NewDataModelEnhancedReportingTestSuite struct {
 	testDB                *pgtest.TestPostgres
 	watchedImageDatastore watchedImageDS.DataStore
 	clusterDatastore      *clusterDSMocks.MockDataStore
-	namespaceDatastore    *namespaceDSMocks.MockDataStore
+	namespaceDatastore    namespaceDS.DataStore
 	reportGenerator       *reportGeneratorImpl
 }
 
@@ -60,6 +60,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) TearDownSuite() {
 	s.truncateTable(postgresSchema.ImageComponentV2TableName)
 	s.truncateTable(postgresSchema.ImageCvesV2TableName)
 	s.truncateTable(postgresSchema.CollectionsTableName)
+	s.truncateTable(postgresSchema.NamespacesTableName)
 }
 
 func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
@@ -98,7 +99,9 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 	_, collectionQueryResolver, err := collectionDS.New(collectionStore)
 	s.NoError(err)
 	s.clusterDatastore = clusterDSMocks.NewMockDataStore(mockCtrl)
-	s.namespaceDatastore = namespaceDSMocks.NewMockDataStore(mockCtrl)
+	var nsErr error
+	s.namespaceDatastore, nsErr = namespaceDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Require().NoError(nsErr)
 
 	// Add Test Data to DataStores
 	clusters := []*storage.Cluster{
@@ -107,6 +110,18 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 	}
 
 	namespaces := testNamespaces(clusters, 2)
+	// Add labels to namespaces so entity scope label queries can be tested:
+	// ns1 gets env=prod, ns2 gets env=dev.
+	for _, ns := range namespaces {
+		if ns.GetName() == "ns1" {
+			ns.Labels = map[string]string{"env": "prod"}
+		} else {
+			ns.Labels = map[string]string{"env": "dev"}
+		}
+		nsErr := s.namespaceDatastore.AddNamespace(s.ctx, ns)
+		s.Require().NoError(nsErr)
+	}
+
 	deployments, images := testDeploymentsWithImages(namespaces, 1)
 	// insert deployments in deployment table
 	for _, dep := range deployments {
@@ -145,9 +160,6 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 
 	s.clusterDatastore.EXPECT().GetClusters(gomock.Any()).
 		Return(clusters, nil).AnyTimes()
-
-	s.namespaceDatastore.EXPECT().GetAllNamespaces(gomock.Any()).
-		Return(namespaces, nil).AnyTimes()
 
 	blobStore := blobDS.NewTestDatastore(s.T(), s.testDB.DB)
 
@@ -527,6 +539,38 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGetReportDataWithEntityScop
 				componentNames:  []string{"c1_ns1_dep0_img_comp"},
 				cveNames: []string{
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
+				},
+			},
+		},
+		"Namespace label regex scope with CVSS filter": {
+			// ns1 has label env=prod; regex "env=pr.*" matches prod but not dev.
+			// With all-cluster SAC access and CVSS:>=7.0, only fixable_critical CVEs are returned
+			// for deployments in ns1 across both clusters, plus watched images.
+			entityScope: &storage.EntityScope{
+				Rules: []*storage.EntityScopeRule{
+					{
+						Entity: storage.EntityType_ENTITY_TYPE_NAMESPACE,
+						Field:  storage.EntityField_FIELD_LABEL,
+						Values: []*storage.RuleValue{
+							{Value: "env=pr.*", MatchType: storage.MatchType_REGEX},
+						},
+					},
+				},
+			},
+			query:      "CVSS:>=7.0",
+			imageTypes: allImageTypes,
+			scopeRules: []*storage.SimpleAccessScope_Rules{
+				{IncludedClusters: []string{"c1", "c2"}},
+			},
+			expected: &vulnReportDataNewDataModel{
+				deploymentNames: []string{"c1_ns1_dep0", "c2_ns1_dep0"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c2_ns1_dep0_img", "w0_img", "w1_img"},
+				componentNames:  []string{"c1_ns1_dep0_img_comp", "c2_ns1_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
+				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
+					"CVE-fixable_critical-c2_ns1_dep0_img_comp",
+					"CVE-fixable_critical-w0_img_comp",
+					"CVE-fixable_critical-w1_img_comp",
 				},
 			},
 		},

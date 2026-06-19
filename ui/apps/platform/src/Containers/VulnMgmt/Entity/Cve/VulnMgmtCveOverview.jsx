@@ -150,19 +150,19 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                 <CollapsibleSection title="CVE Summary">
                     <div className="mx-4 grid-dense grid-auto-fit grid grid-gap-6 xxxl:grid-gap-8 lg:grid-columns-2 xl:grid-columns-3 mb-4">
                         <Metadata
-                            className="h-full min-w-48 bg-base-100 pdf-page s-2"
+                            className="h-full min-w-48 bg-base-100 s-2"
                             headerComponents={linkToMoreInfo}
                             keyValuePairs={metaDataDetails}
                             description={summary || 'No description available.'}
                             title="Description & Details"
                         />
                         <Metadata
-                            className="bg-base-100 min-h-48 pdf-page s-1"
+                            className="bg-base-100 min-h-48 s-1"
                             keyValuePairs={cvssScoreBreakdown}
                             title="CVSS Score Breakdown"
                         />
                         <Metadata
-                            className="bg-base-100 min-h-48 pdf-page s-1"
+                            className="bg-base-100 min-h-48 s-1"
                             keyValuePairs={scanningDetails}
                             title="Scanning Details"
                         />

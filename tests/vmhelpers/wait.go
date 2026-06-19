@@ -1,0 +1,147 @@
+package vmhelpers
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strings"
+	"testing"
+	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+// Shared poll-loop logging constants used by both VM and guest SSH wait helpers.
+const (
+	waitLogEveryAttempts = 5
+	waitDetailMaxLen     = 300
+)
+
+// shouldLogWaitAttempt limits poll-loop log noise: first attempt plus every Nth.
+func shouldLogWaitAttempt(attempt int) bool {
+	return attempt <= 1 || attempt%waitLogEveryAttempts == 0
+}
+
+// truncateWaitDetail shortens per-attempt detail strings for log lines.
+func truncateWaitDetail(detail string) string {
+	detail = strings.TrimSpace(detail)
+	if len(detail) <= waitDetailMaxLen {
+		return detail
+	}
+	return detail[:waitDetailMaxLen] + fmt.Sprintf(" ... (truncated from %d bytes)", len(detail))
+}
+
+// logWaitAttempt emits one structured poll line when shouldLogWaitAttempt allows it.
+func logWaitAttempt(t testing.TB, desc string, attempt int, detail string) {
+	t.Helper()
+	if !shouldLogWaitAttempt(attempt) {
+		return
+	}
+	t.Logf("%s: attempt %d: %s", desc, attempt, detail)
+}
+
+// ErrAuthenticationExpired is returned when an API call fails with an
+// authentication/authorization error that typically indicates an expired
+// kubeconfig token or revoked credentials. Tests should stop immediately
+// when this is encountered rather than retrying.
+var ErrAuthenticationExpired = errors.New("authentication expired — kubeconfig token or API credentials may have expired; remaining operations will fail")
+
+// IsAuthenticationExpired reports whether err looks like an expired or revoked
+// credential. It checks for wrapped ErrAuthenticationExpired sentinels (so
+// callers that already tagged an error can re-check without false negatives),
+// gRPC Unauthenticated status codes, and Kubernetes API Unauthorized errors.
+//
+// We use string matching in addition to structured checks because errors in
+// the e2e test context arrive from heterogeneous sources — gRPC (Central API),
+// Kubernetes API server, and virtctl/SSH subprocesses — each with different
+// error types. apierrors.IsUnauthorized only covers k8s API errors; gRPC
+// Unauthenticated is handled above; the substring fallback catches plain-text
+// errors from virtctl, HTTP 401 responses, and wrapped k8s errors that lost
+// their type information.
+func IsAuthenticationExpired(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, ErrAuthenticationExpired) {
+		return true
+	}
+	if s, ok := status.FromError(err); ok && s.Code() == codes.Unauthenticated {
+		return true
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "unauthorized") || strings.Contains(msg, "the server has asked for the client to provide credentials")
+}
+
+// WaitOptions configures a single-condition poll loop used by Central wait helpers.
+type WaitOptions struct {
+	Timeout      time.Duration
+	PollInterval time.Duration
+	// Logf, when set, is called on each unsuccessful poll with the condition
+	// description and current detail so operators can follow progress in real time.
+	Logf func(string, ...any)
+}
+
+// validateWaitOptions returns an error if Timeout or PollInterval are non-positive.
+func validateWaitOptions(desc string, opts WaitOptions) error {
+	if opts.Timeout <= 0 {
+		return fmt.Errorf("vmhelpers: %s: WaitOptions.Timeout must be positive", desc)
+	}
+	if opts.PollInterval <= 0 {
+		return fmt.Errorf("vmhelpers: %s: WaitOptions.PollInterval must be positive", desc)
+	}
+	return nil
+}
+
+// pollUntil is the poll loop for Central gRPC scan-lifecycle waits.
+// Use this instead of k8s wait.PollUntilContextCancel when you need:
+//   - auth-expiry fail-fast: aborts immediately on expired kubeconfig tokens
+//     instead of burning the full timeout,
+//   - structured diagnostics: each poll returns a detail string so timeout
+//     errors report exactly which stage was stuck.
+//
+// For K8s resource polling (namespace deletion, service account readiness,
+// VMI conditions) where errors are terminal-or-transient and auth is handled
+// at the call site, prefer wait.PollUntilContextCancel directly.
+func pollUntil(ctx context.Context, opts WaitOptions, desc string, poll func(ctx context.Context) (done bool, detail string, err error)) error {
+	if err := validateWaitOptions(desc, opts); err != nil {
+		return err
+	}
+	deadline := time.Now().Add(opts.Timeout)
+	var lastDetail string
+	for {
+		if err := ctx.Err(); err != nil {
+			return fmt.Errorf("vmhelpers: %s: %w", desc, err)
+		}
+		done, detail, err := poll(ctx)
+		if detail != "" {
+			lastDetail = detail
+		}
+		if err != nil {
+			if IsAuthenticationExpired(err) {
+				return fmt.Errorf("vmhelpers: %s: %w: %v", desc, ErrAuthenticationExpired, err)
+			}
+			return fmt.Errorf("vmhelpers: %s: %w", desc, err)
+		}
+		if done {
+			if opts.Logf != nil && detail != "" {
+				opts.Logf("poll %s: done (%s)", desc, detail)
+			}
+			return nil
+		}
+		if opts.Logf != nil && detail != "" {
+			opts.Logf("poll %s: waiting (%s)", desc, detail)
+		}
+		if time.Now().After(deadline) {
+			if lastDetail != "" {
+				return fmt.Errorf("vmhelpers: timeout waiting for %s after %v (last detail: %s)", desc, opts.Timeout, lastDetail)
+			}
+			return fmt.Errorf("vmhelpers: timeout waiting for %s after %v", desc, opts.Timeout)
+		}
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("vmhelpers: %s: %w", desc, ctx.Err())
+		case <-time.After(opts.PollInterval):
+		}
+	}
+}

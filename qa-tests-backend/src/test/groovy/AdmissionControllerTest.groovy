@@ -10,6 +10,7 @@ import services.ImageService
 import services.PolicyService
 import util.Timer
 
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -33,6 +34,7 @@ class AdmissionControllerTest extends BaseSpecification {
     static final private String BUSYBOX_NO_BYPASS        = "busybox-no-bypass"
     static final private String BUSYBOX_BYPASS           = "busybox-bypass"
     static final private String BUSYBOX_LATEST_TAG_IMAGE = "quay.io/rhacs-eng/qa-multi-arch-busybox:latest"
+    static final private String BUSYBOX_TAGGED_IMAGE     = "quay.io/rhacs-eng/qa-multi-arch:busybox-1-28"
 
     private final static String CLONED_POLICY_SUFFIX = "(${TEST_NAMESPACE})"
     private final static String LATEST_TAG = "Latest tag"
@@ -150,7 +152,7 @@ class AdmissionControllerTest extends BaseSpecification {
         when:
         "Create a deployment with a non-violating image"
         def modDeployment = deployment.clone()
-        modDeployment.image = "quay.io/rhacs-eng/qa-multi-arch:busybox-1-28"
+        modDeployment.image = BUSYBOX_TAGGED_IMAGE
         def created = orchestrator.createDeploymentNoWait(modDeployment)
         assert created
 
@@ -386,6 +388,37 @@ class AdmissionControllerTest extends BaseSpecification {
         desc               | initialValue | changedValue
         "namespace reload" | "backend"    | "frontend"
         "namespace removal"| "backend"    | null
+    }
+
+    @Unroll
+    @Tag("BAT")
+    @IgnoreIf({ System.getenv("ROX_INIT_CONTAINER_SUPPORT") != "true" })
+    def "Verify AC enforcement on init containers: #desc"() {
+        when:
+        "Create a deployment with init containers"
+        def deployment = new Deployment()
+                .setName("init-ac-${desc.replaceAll(' ', '-')}")
+                .setNamespace(TEST_NAMESPACE)
+                .setImagePrefetcherAffinity()
+                .setImage(BUSYBOX_TAGGED_IMAGE)
+                .addLabel("app", "test")
+                .addInitContainer("init-0", initImage)
+
+        def created = orchestrator.createDeploymentNoWait(deployment)
+
+        then:
+        "Verify admission controller allows or blocks based on init container image"
+        assert created == allowed
+
+        cleanup:
+        if (created) {
+            deleteDeploymentWithCaution(deployment)
+        }
+
+        where:
+        initImage                | allowed | desc
+        BUSYBOX_TAGGED_IMAGE     | true    | "allowed with tagged init container"
+        BUSYBOX_LATEST_TAG_IMAGE | false   | "blocked with latest tag init container"
     }
 
 }

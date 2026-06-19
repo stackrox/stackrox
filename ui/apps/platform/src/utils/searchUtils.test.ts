@@ -13,6 +13,7 @@ import {
     getViewStateFromSearch,
     hasSearchKeyValue,
     isKeyValueSearchTerm,
+    removeRegexSearchModifiers,
     searchValueAsArray,
     wrapInQuotes,
 } from './searchUtils';
@@ -472,8 +473,8 @@ describe('searchUtils', () => {
             expect(formatKeyValue('visa', (v) => `r/${v}`)).toEqual(['r/visa=r/.*', 'r/.*=r/visa']);
         });
 
-        it('escapes internal double quotes in key and value', () => {
-            expect(formatKeyValue('k"ey=v"al', wrapInQuotes)).toEqual(['"k\\"ey"="v\\"al"']);
+        it('wraps key and value with internal double quotes', () => {
+            expect(formatKeyValue('k"ey=v"al', wrapInQuotes)).toEqual(['"k"ey"="v"al"']);
         });
 
         it('uses wildcard for empty key or value around equals sign', () => {
@@ -490,9 +491,9 @@ describe('searchUtils', () => {
             expect(wrapInQuotes('test value')).toBe('"test value"');
         });
 
-        it('escapes internal double quotes', () => {
-            expect(wrapInQuotes('hello"world')).toBe('"hello\\"world"');
-            expect(wrapInQuotes('say "hello"')).toBe('"say \\"hello\\""');
+        it('does not escape internal double quotes', () => {
+            expect(wrapInQuotes('hello"world')).toBe('"hello"world"');
+            expect(wrapInQuotes('say "hello"')).toBe('"say "hello""');
         });
 
         it('handles empty string', () => {
@@ -601,6 +602,158 @@ describe('searchUtils', () => {
                 Cluster: ['r/production'],
                 'Deployment Label': ['r/app=r/reporting'],
             });
+        });
+    });
+
+    describe('removeRegexSearchModifiers', () => {
+        it('strips regex prefix from text search values', () => {
+            const searchFilter = { Cluster: ['r/production'] };
+            const result = removeRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({ Cluster: ['production'] });
+        });
+
+        it('preserves quoted exact-match values', () => {
+            const searchFilter = { Cluster: ['"production"'] };
+            const result = removeRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({ Cluster: ['"production"'] });
+        });
+
+        it('handles mixed quoted and unquoted values', () => {
+            const searchFilter = {
+                Cluster: ['r/production', '"exact-match"', 'r/staging'],
+            };
+            const result = removeRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({
+                Cluster: ['production', '"exact-match"', 'staging'],
+            });
+        });
+
+        it('does not modify fields not in regexSearchOptions', () => {
+            const searchFilter = {
+                Cluster: ['r/production'],
+                'Random Field': 'value',
+            };
+            const result = removeRegexSearchModifiers(searchFilter);
+            expect(result.Cluster).toEqual(['production']);
+            expect(result['Random Field']).toEqual('value');
+        });
+
+        it('reverses label regex values with equals sign', () => {
+            const searchFilter = { 'Deployment Label': ['r/app=r/reporting'] };
+            const result = removeRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({ 'Deployment Label': ['app=reporting'] });
+        });
+
+        it('collapses label regex no-equals pair back to single value', () => {
+            const searchFilter = { 'Deployment Label': ['r/visa=r/.*', 'r/.*=r/visa'] };
+            const result = removeRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({ 'Deployment Label': ['visa'] });
+        });
+
+        it('reverses quoted label values with equals sign', () => {
+            const searchFilter = { 'Deployment Label': ['"app"="reporting"'] };
+            const result = removeRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({ 'Deployment Label': ['"app=reporting"'] });
+        });
+
+        it('collapses quoted label no-equals pair back to single value', () => {
+            const searchFilter = { 'Deployment Label': ['"visa"=r/.*', 'r/.*="visa"'] };
+            const result = removeRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({ 'Deployment Label': ['"visa"'] });
+        });
+
+        it('reverses label values with multiple unrelated regex pairs', () => {
+            const searchFilter = {
+                'Deployment Label': [
+                    '"visa"=r/.*',
+                    '"key"="val"',
+                    'r/.*=r/mastercard',
+                    'r/.*="visa"',
+                    'r/mastercard=r/.*',
+                ],
+            };
+            const result = removeRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({
+                'Deployment Label': ['"visa"', '"key=val"', 'mastercard'],
+            });
+        });
+
+        it('reverses all label search terms', () => {
+            const searchFilter = {
+                'Image Label': ['r/env=r/prod'],
+                'Node Label': ['r/role=r/worker'],
+                'Cluster Label': ['r/team=r/platform'],
+                'Namespace Label': ['r/app=r/web'],
+            };
+            const result = removeRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({
+                'Image Label': ['env=prod'],
+                'Node Label': ['role=worker'],
+                'Cluster Label': ['team=platform'],
+                'Namespace Label': ['app=web'],
+            });
+        });
+    });
+
+    describe('applyRegexSearchModifiers and removeRegexSearchModifiers round-trip', () => {
+        it('round-trips plain text values', () => {
+            const original = { Cluster: ['production', 'staging'] };
+            expect(removeRegexSearchModifiers(applyRegexSearchModifiers(original))).toEqual(
+                original
+            );
+        });
+
+        it('round-trips exact-match values', () => {
+            const original = { Cluster: ['"production"'] };
+            expect(removeRegexSearchModifiers(applyRegexSearchModifiers(original))).toEqual(
+                original
+            );
+        });
+
+        it('round-trips mixed quoted and unquoted values', () => {
+            const original = { Cluster: ['production', '"exact-match"', 'staging'] };
+            expect(removeRegexSearchModifiers(applyRegexSearchModifiers(original))).toEqual(
+                original
+            );
+        });
+
+        it('round-trips label key=value regex', () => {
+            const original = { 'Deployment Label': ['app=reporting'] };
+            expect(removeRegexSearchModifiers(applyRegexSearchModifiers(original))).toEqual(
+                original
+            );
+        });
+
+        it('round-trips label no-equals regex', () => {
+            const original = { 'Deployment Label': ['visa'] };
+            expect(removeRegexSearchModifiers(applyRegexSearchModifiers(original))).toEqual(
+                original
+            );
+        });
+
+        it('round-trips label key=value exact', () => {
+            const original = { 'Deployment Label': ['"app=reporting"'] };
+            expect(removeRegexSearchModifiers(applyRegexSearchModifiers(original))).toEqual(
+                original
+            );
+        });
+
+        it('round-trips label no-equals exact', () => {
+            const original = { 'Deployment Label': ['"visa"'] };
+            expect(removeRegexSearchModifiers(applyRegexSearchModifiers(original))).toEqual(
+                original
+            );
+        });
+
+        it('round-trips a complex mixed filter', () => {
+            const original = {
+                Cluster: ['production', '"exact-cluster"'],
+                'Deployment Label': ['app=reporting', 'visa', '"env=prod"', '"team"'],
+                'Random Field': 'untouched',
+            };
+            expect(removeRegexSearchModifiers(applyRegexSearchModifiers(original))).toEqual(
+                original
+            );
         });
     });
 });

@@ -33,6 +33,10 @@ ci_export() {
     else
         export "$env_name"="$env_value"
     fi
+
+    if [[ -n "${GITHUB_ENV:-}" ]]; then
+        printf '%s=%q\n' "${env_name}" "${env_value}" >> "$GITHUB_ENV"
+    fi
 }
 
 # set_ci_shared_export() - for openshift-ci and GHA this is state shared between steps.
@@ -223,7 +227,7 @@ get_central_diagnostics() {
 }
 
 push_image_manifest_lists() {
-    info "Pushing main, roxctl and central-db images as manifest lists"
+    info "Pushing main and roxctl images as manifest lists"
 
     if [[ "$#" -ne 3 ]]; then
         die "missing arg. usage: push_image_manifest_lists <push_context> <brand> <architectures (CSV)>"
@@ -233,7 +237,7 @@ push_image_manifest_lists() {
     local brand="$2"
     local architectures="$3"
 
-    local main_image_set=("main" "roxctl" "central-db")
+    local main_image_set=("main" "roxctl")
 
     local registry
     registry="$(registry_from_branding "$brand")"
@@ -265,7 +269,7 @@ registry_from_branding() {
 }
 
 push_main_image_set() {
-    info "Pushing main, roxctl and central-db images"
+    info "Pushing main and roxctl images"
 
     if [[ "$#" -ne 3 ]]; then
         die "missing arg. usage: push_main_image_set <push_context> <brand> <arch>"
@@ -275,7 +279,7 @@ push_main_image_set() {
     local brand="$2"
     local arch="$3"
 
-    local main_image_set=("main" "roxctl" "central-db")
+    local main_image_set=("main" "roxctl")
 
     _push_main_image_set() {
         local registry="$1"
@@ -366,7 +370,7 @@ push_operator_image() {
 }
 
 push_scanner_image_manifest_lists() {
-    info "Pushing scanner-v4 and scanner-v4-db images as manifest lists"
+    info "Pushing scanner-v4 image as manifest list"
 
     if [[ "$#" -ne 2 ]]; then
         die "missing arg. usage: push_scanner_image_manifest_lists <registry> <architectures (CSV)>"
@@ -374,7 +378,7 @@ push_scanner_image_manifest_lists() {
 
     local registry="$1"
     local architectures="$2"
-    local scanner_image_set=("scanner-v4" "scanner-v4-db")
+    local scanner_image_set=("scanner-v4")
 
     local tag
     tag="$(make --quiet --no-print-directory -C scanner tag)"
@@ -386,7 +390,7 @@ push_scanner_image_manifest_lists() {
 }
 
 push_scanner_image_set() {
-    info "Pushing scanner-v4 and scanner-v4-db images"
+    info "Pushing scanner-v4 image"
 
     if [[ "$#" -ne 2 ]]; then
         die "missing arg. usage: push_scanner_image_set <registry> <arch>"
@@ -395,7 +399,7 @@ push_scanner_image_set() {
     local registry="$1"
     local arch="$2"
 
-    local scanner_image_set=("scanner-v4" "scanner-v4-db")
+    local scanner_image_set=("scanner-v4")
 
     _push_scanner_image_set() {
         local registry="$1"
@@ -612,38 +616,19 @@ _image_prefetcher_prebuilt_start() {
     case "$CI_JOB_NAME" in
     *qa-e2e-tests)
         image_prefetcher_start_set qa-e2e
-        # Override the default image pull policy for containers with quay.io
-        # images to rely on prefetched images. This helps ensure that the static
-        # prefect list stays up to date with additions.
-        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
+        _set_quay_pull_policy
         ;;
     *nongroovy-e2e-tests)
         image_prefetcher_start_set qa-nongroovy-e2e
-        # Override the default image pull policy for containers with quay.io
-        # images to rely on prefetched images. This helps ensure that the static
-        # prefect list stays up to date with additions.
-        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
-        ;;
-    *sensor-integration-tests)
-        image_prefetcher_start_set sensor-integration
-        # Override the default image pull policy for containers with quay.io
-        # images to rely on prefetched images. This helps ensure that the static
-        # prefect list stays up to date with additions.
-        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
+        _set_quay_pull_policy
         ;;
     *nongroovy-compatibility-tests)
         image_prefetcher_start_set nongroovy-compatibility
-        # Override the default image pull policy for containers with quay.io
-        # images to rely on prefetched images. This helps ensure that the static
-        # prefect list stays up to date with additions.
-        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
+        _set_quay_pull_policy
         ;;
     *compatibility-tests)
         image_prefetcher_start_set compatibility
-        # Override the default image pull policy for containers with quay.io
-        # images to rely on prefetched images. This helps ensure that the static
-        # prefect list stays up to date with additions.
-        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
+        _set_quay_pull_policy
         ;;
     *-operator-e2e-tests)
         image_prefetcher_start_set operator-e2e
@@ -653,6 +638,24 @@ _image_prefetcher_prebuilt_start() {
         info "No pre-built image prefetching is currently performed for: ${CI_JOB_NAME}."
         ;;
     esac
+}
+
+# Override imagePullPolicy for quay.io images to prefer prefetched images.
+# Unfortunately https://github.com/kubernetes/kubernetes/issues/138175 broke
+# this for a handful of images that are also pulled from another registry
+# (but have the same content digest).
+# On GKE, we worked this around with kubelet credential plugin integration in the image
+# prefetcher, so in this case we can use `Never` to enforce that the prefetch list stays
+# complete — any image missing from prefetch list fails loudly.
+# On providers (OCP, EKS, AKS) that do not have credential plugin integration (yet),
+# use IfNotPresent instead.
+# TODO(ROX-35031): set this unconditionally to Never when a proper fix is available in all supported OCP versions
+_set_quay_pull_policy() {
+    local policy="Never"
+    if [[ "${KUBERNETES_PROVIDER}" != "gke" ]]; then
+        policy="IfNotPresent"
+    fi
+    ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "$policy"
 }
 
 _image_prefetcher_system_start() {
@@ -785,9 +788,6 @@ _image_prefetcher_prebuilt_await() {
         ;;
     *nongroovy-e2e-tests)
         image_prefetcher_await_set qa-nongroovy-e2e
-        ;;
-    *sensor-integration-tests)
-        image_prefetcher_await_set sensor-integration
         ;;
     *compatibility-tests)
         image_prefetcher_await_set compatibility
@@ -949,9 +949,6 @@ populate_prefetcher_image_list() {
     qa-nongroovy-e2e)
         cp "$SCRIPTS_ROOT/tests/images-to-prefetch.txt" "$image_list"
         ;;
-    sensor-integration)
-        cp "$SCRIPTS_ROOT/sensor/tests/images-to-prefetch.txt" "$image_list"
-        ;;
     nongroovy-compatibility)
         cp "$SCRIPTS_ROOT/tests/images-to-prefetch.txt" "$image_list"
         ;;
@@ -990,10 +987,12 @@ scanner-v4-db ${tag}
 END
             ;;
         *-race-condition-qa-e2e-tests)
+            local base_tag="${tag%-rcd}"
+            local rcd_tag="${base_tag}-rcd"
             cat >> "${image_list}" << END
-central-db ${tag}
-main ${tag}-rcd
-roxctl ${tag}
+central-db ${base_tag}
+main ${rcd_tag}
+roxctl ${base_tag}
 END
             if is_in_PR_context && ! pr_has_label "ci-build-race-condition-debug"; then
                 echo "ERROR: Your PR is missing the \"ci-build-race-condition-debug\" label."
@@ -1046,7 +1045,7 @@ check_rhacs_eng_image_exists() {
     local name="$1"
     local tag="$2"
 
-    local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$tag"
+    local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag/?onlyActiveTags=true&specificTag=$tag"
     info "Checking for $name using $url"
     local check
     local extra_args=()
@@ -1147,10 +1146,10 @@ push_helm_charts() {
     roxctl helm output central-services --image-defaults=opensource --output-dir "${central_services_chart_dir}/opensource"
     roxctl helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
     roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${secured_cluster_services_chart_dir}/opensource"
-    ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh opensource
+    ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh opensource "${tag}"
     mv operator/dist/chart "${operator_chart_dir}/opensource"
     # TODO(ROX-33131): Consider moving the downstream chart build/publishing to konflux.
-    ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh rhacs
+    ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh rhacs "${tag}"
     mv operator/dist/chart "${operator_chart_dir}/rhacs"
     "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}" "${operator_chart_dir}"
 }

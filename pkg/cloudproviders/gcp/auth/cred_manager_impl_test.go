@@ -6,11 +6,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/fake"
+	k8stesting "k8s.io/client-go/testing"
 )
 
 const (
@@ -120,27 +123,44 @@ func TestCredentialManager(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			var changeCount atomic.Int32
 
-			// Use Eventually to retry the entire operation with a configurable timeout.
-			// This handles the k8s fake client potentially losing events.
-			require.EventuallyWithT(t, func(ct *assert.CollectT) {
-				k8sClient := fake.NewClientset()
-				manager := newCredentialsManagerImpl(k8sClient, namespace, secretName, func() {
-					changeCount.Add(1)
-				})
-				manager.Start()
-				defer manager.Stop()
-				require.Eventually(ct, manager.informer.HasSynced, 5*time.Second, 100*time.Millisecond)
+			k8sClient := fake.NewClientset()
 
-				changeCount.Store(0)
-				require.NoError(ct, c.setupFn(k8sClient))
+			watchRegistered := make(chan struct{})
+			var watchOnce sync.Once
+			k8sClient.PrependWatchReactor("secrets", func(action k8stesting.Action) (bool, watch.Interface, error) {
+				w, err := k8sClient.Tracker().Watch(action.GetResource(), action.GetNamespace())
+				watchOnce.Do(func() { close(watchRegistered) })
+				return true, w, err
+			})
 
-				assert.Eventually(ct, func() bool {
-					manager.mutex.RLock()
-					defer manager.mutex.RUnlock()
-					return changeCount.Load() == int32(c.changes) &&
-						string(manager.stsConfig) == c.expected
-				}, 200*time.Millisecond, 10*time.Millisecond)
-			}, 10*time.Second, 200*time.Millisecond, "callbacks not invoked as expected or state incorrect (changes: %d/%d)",
+			manager := newCredentialsManagerImpl(k8sClient, namespace, secretName, func() {
+				changeCount.Add(1)
+			})
+			manager.Start()
+			defer manager.Stop()
+
+			// There is a problem with fake informer. It happens that Go routine that starts informers,
+			// marks HasSynced as a true before watchers are registered. Because of that,
+			// events are never received. There are no watchers that are listening to these events
+			// after HasSynced is true. That's why we need to wait for HasSynced and Watch event.
+			require.Eventually(t, manager.informer.HasSynced, 30*time.Second, 100*time.Millisecond)
+
+			// Wait that watch is executed and events will be properly received.
+			select {
+			case <-watchRegistered:
+			case <-time.After(10 * time.Second):
+				require.FailNow(t, "timed out waiting for watch to be registered")
+			}
+
+			require.NoError(t, c.setupFn(k8sClient))
+
+			assert.Eventually(t, func() bool {
+				manager.mutex.RLock()
+				defer manager.mutex.RUnlock()
+				return changeCount.Load() == int32(c.changes) &&
+					string(manager.stsConfig) == c.expected
+			}, 10*time.Second, 50*time.Millisecond,
+				"callbacks not invoked as expected or state incorrect (changes: %d/%d)",
 				changeCount.Load(), c.changes)
 		})
 	}

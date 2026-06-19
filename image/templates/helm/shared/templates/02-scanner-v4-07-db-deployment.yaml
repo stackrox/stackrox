@@ -23,9 +23,9 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: scanner-v4-db
+        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "scanner-v4-db") | nindent 8 }}
       annotations:
-        traffic.sidecar.istio.io/excludeInboundPorts: "5432"
         {{- include "srox.podAnnotations" (list . "deployment" "scanner-v4-db") | nindent 8 }}
         {{- if eq ._rox.env.openshift 4 }}
         openshift.io/required-scc: nonroot-v2
@@ -46,6 +46,7 @@ spec:
       {{- end }}
       serviceAccountName: scanner-v4
       terminationGracePeriodSeconds: 120
+      shareProcessNamespace: true
       initContainers:
       - name: init-db
         image: {{ ._rox.scannerV4.db.image.fullRef | quote }}
@@ -110,6 +111,7 @@ spec:
           mountPath: /run/secrets/stackrox.io/certs
         - name: shared-memory
           mountPath: /dev/shm
+      {{- include "srox.certWatcherSidecar" (list . "scanner-v4-db" ._rox.scannerV4.db.image.fullRef "certs") | nindent 6 }}
       securityContext:
         fsGroup: 70
         runAsUser: 70

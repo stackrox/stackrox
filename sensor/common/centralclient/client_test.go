@@ -1,11 +1,14 @@
 package centralclient
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"embed"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
@@ -23,6 +27,8 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/cryptoutils/mocks"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -539,6 +545,41 @@ func (t *ClientTestSuite) TestExtractCentralCAsFromTrustInfo() {
 			}
 		})
 	}
+}
+
+func writeLeafCertToFiles(tb testing.TB, certDir string, cert tls.Certificate) {
+	tb.Helper()
+	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Certificate[0]})
+	keyBytes, err := x509.MarshalPKCS8PrivateKey(cert.PrivateKey)
+	require.NoError(tb, err)
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyBytes})
+	require.NoError(tb, os.WriteFile(filepath.Join(certDir, "cert.pem"), certPEM, 0600))
+	require.NoError(tb, os.WriteFile(filepath.Join(certDir, "key.pem"), keyPEM, 0600))
+}
+
+func (t *ClientTestSuite) TestNewClient_GetClientCertificateReloadsFromDisk() {
+	cert1 := testutils.IssueSelfSignedCert(t.T(), "first-sensor-cert")
+	writeLeafCertToFiles(t.T(), t.clientCertDir, cert1)
+
+	c, err := NewClient(endpoint)
+	t.Require().NoError(err)
+
+	transport, ok := c.httpClient.Transport.(*http.Transport)
+	t.Require().True(ok)
+	t.Require().NotNil(transport.TLSClientConfig.GetClientCertificate)
+
+	got1, err := transport.TLSClientConfig.GetClientCertificate(nil)
+	t.Require().NoError(err)
+	t.Equal(cert1.Certificate[0], got1.Certificate[0])
+
+	cert2 := testutils.IssueSelfSignedCert(t.T(), "second-sensor-cert")
+	writeLeafCertToFiles(t.T(), t.clientCertDir, cert2)
+
+	t.Require().Eventually(func() bool {
+		got, err := transport.TLSClientConfig.GetClientCertificate(nil)
+		return err == nil && len(got.Certificate) > 0 &&
+			bytes.Equal(got.Certificate[0], cert2.Certificate[0])
+	}, 30*time.Second, 200*time.Millisecond, "expected rotated cert to be picked up by certwatch")
 }
 
 func (t *ClientTestSuite) TestNewClientReplacesProtocols() {

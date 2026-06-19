@@ -46,7 +46,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
     }
 
     const { orchestratorMetadata = null } = status;
-    const { buildDate = '', version = 'N/A' } = orchestratorMetadata;
+    const { buildDate = '', version = 'N/A' } = orchestratorMetadata ?? {};
 
     function yesNoMaybe(value) {
         if (!value && value !== false) {
@@ -82,7 +82,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
-                                className="h-full min-w-48 pdf-page"
+                                className="h-full min-w-48"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={clusterStats}
                                 title="Details & Metadata"
@@ -118,7 +118,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                 </CollapsibleSection>
 
                 <CollapsibleSection title="Cluster Findings">
-                    <div className="pdf-page pdf-stretch pdf-new flex relative rounded mb-4 ml-4 mr-4">
+                    <div className="flex relative rounded mb-4 ml-4 mr-4">
                         <BinderTabs>
                             <Tab title="Fixable Image CVEs">
                                 <TableWidgetFixableCves

@@ -36,7 +36,8 @@ compliance-v2-tests:
 .PHONY: vm-scanning-tests
 vm-scanning-tests:
 	@echo "+ $@"
-	@bash -o pipefail -c 'GOTAGS=$(GOTAGS),test,test_e2e_vm $(TOPLEVEL)/scripts/go-test.sh -cover $(TESTFLAGS) -v . 2>&1 | tee test.log'
-	@$(MAKE) report JUNIT_OUT=vm-scanning-tests-results
+	@bash -o pipefail -c 'GOTAGS=$(GOTAGS),test,test_e2e_vm $(TOPLEVEL)/scripts/go-test.sh -cover $(TESTFLAGS) -v . 2>&1 | tee test.log'; rc=$$?; \
+	$(MAKE) report JUNIT_OUT=vm-scanning-tests-results; \
+	exit $$rc
 
 include ../make/stackrox.mk

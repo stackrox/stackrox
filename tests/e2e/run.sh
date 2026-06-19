@@ -144,9 +144,6 @@ run_roxctl_tests() {
     junit_wrap "roxctl-authz-trace" "roxctl authz-trace test" "" \
         "$ROOT/tests/roxctl/authz-trace.sh"
 
-    junit_wrap "roxctl-istio-support" "roxctl istio-support test" "" \
-        "$ROOT/tests/roxctl/istio-support.sh"
-
     junit_wrap "roxctl-k8s-context" "roxctl --use-current-k8s-context test" "" \
         "$ROOT/tests/roxctl/roxctl-k8s-context.sh"
 

@@ -14,7 +14,7 @@ jobs:
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ci-performance-tests') }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -46,13 +46,13 @@ jobs:
       SCALE_WORKLOAD_CLUSTERS: 10
     steps:
       - name: Checkout repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Checkout workflow scripts
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
         with:
           repository: "stackrox/workflow"
           path: workflow
@@ -166,7 +166,7 @@ jobs:
           flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 50 --duration 20m --tag github_run_id=${{ github.run_id }} --tag github_ref=${{ github.ref }} --tag github_sha=${{ github.sha }}
 
       - name: Publish JUnit test report in job summary
-        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # ratchet:test-summary/action@v2
+        uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
         with:
           paths: performance-results/report.xml
 
@@ -197,7 +197,7 @@ jobs:
           cat pr-comment.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Add text report and links as PR comment
-        uses: mshick/add-pr-comment@64b8e914979889d746c99dea15a76e77ef64580a # ratchet:mshick/add-pr-comment@v3
+        uses: mshick/add-pr-comment@8e4927817251f1ff60c001f04568532b38e0b4a0 # ratchet:mshick/add-pr-comment@v3
         with:
           message-id: performance-evaluation
           message-path: |

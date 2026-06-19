@@ -34,11 +34,17 @@ function FilterLinks({
 
         return (
             <Flex spaceItems={{ default: 'spaceItemsMd' }}>
-                {filterLinks.map(({ basePath, linkText }) => (
-                    <FlexItem key={linkText}>
-                        <Link to={`${basePath}?${queryString}`}>{linkText}</Link>
-                    </FlexItem>
-                ))}
+                {filterLinks.map(({ basePath, linkText, searchParams }) => {
+                    const extra = searchParams ? `${searchParams}&` : '';
+                    const separator = basePath.includes('?') ? '&' : '?';
+                    return (
+                        <FlexItem key={linkText}>
+                            <Link to={`${basePath}${separator}${extra}${queryString}`}>
+                                {linkText}
+                            </Link>
+                        </FlexItem>
+                    );
+                })}
             </Flex>
         );
     }

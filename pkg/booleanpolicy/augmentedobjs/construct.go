@@ -1,13 +1,11 @@
 package augmentedobjs
 
 import (
-	"fmt"
 	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -222,10 +220,9 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 	return obj, err
 }
 
-// constructDeployment is the internal implementation that also returns the filtered deployment,
+// constructDeployment is the internal implementation that also returns the deployment,
 // allowing callers like ConstructDeploymentWithProcess to use it for index lookups.
 func constructDeployment(deployment *storage.Deployment, images []*storage.Image, applied *NetworkPoliciesApplied) (*pathutil.AugmentedObj, *storage.Deployment, error) {
-	deployment, images = filterInitContainers(deployment, images)
 	obj := pathutil.NewAugmentedObj(deployment)
 	if len(images) != len(deployment.GetContainers()) {
 		return nil, nil, errors.Errorf("deployment %s/%s had %d containers, but got %d images",
@@ -256,7 +253,9 @@ func constructDeployment(deployment *storage.Deployment, images []*storage.Image
 
 	for idx, container := range deployment.GetContainers() {
 		for i, env := range container.GetConfig().GetEnv() {
-			envVarObj := &envVar{EnvVar: fmt.Sprintf("%s%s%s%s%s", env.GetEnvVarSource(), CompositeFieldCharSep, env.GetKey(), CompositeFieldCharSep, env.GetValue())}
+			envVarObj := &envVar{
+				EnvVar: env.GetEnvVarSource().String() + CompositeFieldCharSep + env.GetKey() + CompositeFieldCharSep + env.GetValue(),
+			}
 			err := obj.AddPlainObjAt(
 				envVarObj,
 				pathutil.FieldStep("Containers"), pathutil.IndexStep(idx), pathutil.FieldStep("Config"),
@@ -270,39 +269,6 @@ func constructDeployment(deployment *storage.Deployment, images []*storage.Image
 	}
 
 	return obj, deployment, nil
-}
-
-// filterInitContainers returns a filtered deployment and image slice with init containers removed.
-// TODO(ROX-33067): Make this filter conditional on policy evaluation settings.
-func filterInitContainers(deployment *storage.Deployment, images []*storage.Image) (*storage.Deployment, []*storage.Image) {
-	if !features.InitContainerSupport.Enabled() {
-		return deployment, images
-	}
-
-	hasInit := false
-	for _, c := range deployment.GetContainers() {
-		if c.GetType() == storage.ContainerType_INIT {
-			hasInit = true
-			break
-		}
-	}
-	if !hasInit {
-		return deployment, images
-	}
-
-	filtered := deployment.CloneVT()
-	filtered.Containers = nil
-	var filteredImages []*storage.Image
-	for i, c := range deployment.GetContainers() {
-		if c.GetType() == storage.ContainerType_INIT {
-			continue
-		}
-		filtered.Containers = append(filtered.Containers, c)
-		if i < len(images) {
-			filteredImages = append(filteredImages, images[i])
-		}
-	}
-	return filtered, filteredImages
 }
 
 // ConstructImage constructs the augmented image object.
@@ -331,7 +297,9 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 	// Since policies query for Dockerfile Line as a single compound field, we simulate it by creating a "composite"
 	// dockerfile line under each layer.
 	for i, layer := range image.GetMetadata().GetV1().GetLayers() {
-		lineObj := &dockerfileLine{Line: fmt.Sprintf("%s%s%s", layer.GetInstruction(), CompositeFieldCharSep, layer.GetValue())}
+		lineObj := &dockerfileLine{
+			Line: layer.GetInstruction() + CompositeFieldCharSep + layer.GetValue(),
+		}
 		err := obj.AddPlainObjAt(
 			lineObj,
 			pathutil.FieldStep("Metadata"), pathutil.FieldStep("V1"), pathutil.FieldStep("Layers"),
@@ -346,7 +314,7 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 	// "composite" component and version field.
 	for i, component := range image.GetScan().GetComponents() {
 		compAndVersionObj := &componentAndVersion{
-			ComponentAndVersion: fmt.Sprintf("%s%s%s", component.GetName(), CompositeFieldCharSep, component.GetVersion()),
+			ComponentAndVersion: component.GetName() + CompositeFieldCharSep + component.GetVersion(),
 		}
 		err := obj.AddPlainObjAt(
 			compAndVersionObj,

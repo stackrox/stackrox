@@ -15,7 +15,7 @@ const source = 'cloudSources';
 
 function CloudSourceIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): ReactElement {
     const { data, error } = useRestQuery(fetchCloudSources);
-    const integrations = data?.response?.cloudSources ?? [];
+    const integrations = data?.cloudSources ?? [];
 
     return (
         <IntegrationsTabPage source={source} sourcesEnabled={sourcesEnabled}>

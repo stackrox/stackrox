@@ -45,7 +45,6 @@ type NodeComponentLoader interface {
 	FromQuery(ctx context.Context, query *v1.Query) ([]*storage.NodeComponent, error)
 
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
-	CountAll(ctx context.Context) (int32, error)
 }
 
 // nodeComponentLoaderImpl implements the NodeComponentLoader interface.
@@ -86,11 +85,6 @@ func (idl *nodeComponentLoaderImpl) CountFromQuery(ctx context.Context, query *v
 		return 0, err
 	}
 	return int32(numResults), nil
-}
-
-func (idl *nodeComponentLoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.ds.Count(ctx, search.EmptyQuery())
-	return int32(count), err
 }
 
 func (idl *nodeComponentLoaderImpl) load(ctx context.Context, ids []string) ([]*storage.NodeComponent, error) {

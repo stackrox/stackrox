@@ -56,24 +56,44 @@ if [[ "$DEBUG_BUILD" != "yes" ]]; then
   ldflags+=(-s -w)
 fi
 
-if [[ "${CGO_ENABLED}" != 0 ]]; then
-  echo >&2 "CGO_ENABLED is not 0. Compiling with -linkmode=external"
-  ldflags+=('-linkmode=external')
-fi
-
 function invoke_go() {
   local tool="${1:?"invoke_go tool argument required"}"
   shift
   local args=()
-  local CGO_ENABLED
+  local cgo_ldflags=("${ldflags[@]}")
+  local cc_compiler=""
+  local cgo_enabled="${CGO_ENABLED:-0}"
 
   args+=("-buildvcs=false")
-  args+=(-ldflags="${ldflags[*]}")
   args+=(-tags "$(tr , ' ' <<<"$GOTAGS")")
+
   if [[ "$RACE" == "true" ]]; then
-    export CGO_ENABLED=1
+    echo >&2 "RACE==true, forcing CGO_ENABLED=1"
+    cgo_enabled=1
     args+=("-race")
+
+    if command -v musl-gcc &> /dev/null; then
+      echo >&2 "Using musl-gcc for static linking to avoid GLIBC dependencies"
+      cc_compiler="musl-gcc"
+      cgo_ldflags+=('-extldflags=-static')
+    else
+      echo >&2 "musl-gcc not found, using default cc and linker (auto)"
+    fi
   fi
+
+  # -linkmode=external must be set for all CGO builds so the external linker
+  # (gcc or musl-gcc) is used. This check is inside invoke_go rather than at
+  # the top level because race builds override cgo_enabled to 1 after the
+  # environment is read.
+  if [[ "$cgo_enabled" != 0 ]]; then
+    echo >&2 "CGO_ENABLED=$cgo_enabled, adding -linkmode=external"
+    cgo_ldflags+=('-linkmode=external')
+  fi
+
+  args+=(-ldflags="${cgo_ldflags[*]}")
+
+  export CGO_ENABLED="$cgo_enabled"
+  [[ -n "$cc_compiler" ]] && export CC="$cc_compiler"
   go "$tool" "${args[@]}" "$@"
 }
 

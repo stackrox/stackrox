@@ -45,7 +45,7 @@ jobs:
       versions: ${{ steps.set-versions.outputs.versions }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Parse VULNERABILITY_BUNDLE_VERSION
@@ -104,7 +104,7 @@ jobs:
       manual_url: ${{ steps.set-manual-url.outputs.manual_url }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -216,7 +216,7 @@ jobs:
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -226,7 +226,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout specific reference
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ env.ROX_GIT_REF }}
@@ -253,11 +253,6 @@ jobs:
         unzip -l "$path"
         echo "STACKROX_NVD_ZIP_PATH=$path" >> "$GITHUB_ENV"
 
-    - name: Run Updater (single bundle)
-      if: ${{ env.SCANNER_BUNDLE_VERSION == 'v1' }}
-      run: |
-        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${SCANNER_BUNDLE_VERSION}"
-
     - name: Run updater (multi bundle)
       run: |
         tag=$(make -s --no-print-directory tag)
@@ -280,7 +275,7 @@ jobs:
 
     # Checkout again to get the latest local actions for cleanup phase
     - name: Checkout repository
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
       if: always()
       with:
         fetch-depth: 0
@@ -302,7 +297,7 @@ jobs:
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -312,7 +307,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout specific reference
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -370,7 +365,7 @@ jobs:
 
     # Checkout again to get the latest local actions for cleanup phase
     - name: Checkout repository
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
       if: always()
       with:
         fetch-depth: 0
@@ -382,7 +377,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -454,38 +449,6 @@ jobs:
       run: |
         echo "Copy upstream dev (dev) to downstream dev (1.0.0)"
         gsutil cp -r gs://definitions.stackrox.io/v4/vulnerability-bundles/dev/* gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/
-
-    - name: Copy v1 to pre-versioned bundles
-      # Run on schedule or when dispatched to build "GA" (only possible if RC was not requested).
-      if: github.event.inputs.rc_ref == ''
-      run: |
-        # Only execute if v1 files were created by the build job.
-        if ! [ -d "definitions_files/v1" ]; then
-           echo "error: no definition files for v1 were created: skipping..."
-           exit 0
-        fi
-        # Using v1 bundle for released versions listed in RELEASE_VERSION.
-        single=gs://definitions.stackrox.io/v4/vulnerability-bundles/v1/vulns.json.zst
-        multi=gs://definitions.stackrox.io/v4/vulnerability-bundles/v1/vulnerabilities.zip
-        # Parse all supported pre-4.6 releases and copy the versioned bundle v1 to ensure
-        # these releases get updates.
-        grep -E "^4\.(4|5)\.[0-9]+$" scanner/updater/version/RELEASE_VERSION | while read -r release; do
-          case "$release" in
-          4.4.*)
-            gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
-            ;;
-          4.5.*)
-            gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
-            gsutil cp "$multi" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
-            ;;
-          *)
-            echo "Should not happen!"
-            echo "Error: unexpected release version: $release"
-            echo "Ignoring..."
-            ;;
-          esac
-          echo "Copied v1 into $release"
-        done
 
   send-notification:
     needs:
