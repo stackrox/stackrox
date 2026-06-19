@@ -1170,8 +1170,8 @@ func waitUntilCentralSensorConnectionIs(t *testing.T, ctx context.Context, statu
 
 // mustSetDeploymentEnvVal sets the specified env variable on a container in a deployment using strategic merge patch, or fails the test.
 func (ks *KubernetesSuite) mustSetDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string, value string) *appsV1.Deployment {
-	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"spec":{"containers":[{"name":%q,"env":[{"name":%q,"value":%q}]}]}}}}`,
-		container, envVar, value))
+	patch := fmt.Appendf(nil, `{"spec":{"template":{"spec":{"containers":[{"name":%q,"env":[{"name":%q,"value":%q}]}]}}}}`,
+		container, envVar, value)
 	whatVar := fmt.Sprintf("variable %q on deployment %q in namespace %q to %q", envVar, deployment, namespace, value)
 	ks.logf("Setting %s", whatVar)
 	var patchedDeploy *appsV1.Deployment

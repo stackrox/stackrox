@@ -1,7 +1,6 @@
 package relaytest
 
 import (
-	"context"
 	"io"
 	"testing"
 	"time"
@@ -29,8 +28,7 @@ func TestMockVsockConn(t *testing.T) {
 
 func TestMockSensorClient(t *testing.T) {
 	client := NewMockSensorClient(t)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	req := &sensor.UpsertVirtualMachineIndexReportRequest{
 		IndexReport: &v1.IndexReport{VsockCid: "1"},
