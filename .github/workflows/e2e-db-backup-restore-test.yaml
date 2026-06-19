@@ -2,9 +2,9 @@ name: e2e-db-backup-restore-test
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "30 5 * * *"
   push:
+    tags:
+    - '*-nightly-*'
     branches:
     - master
   pull_request:
