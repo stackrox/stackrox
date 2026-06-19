@@ -1,6 +1,6 @@
-//go:build test_e2e_vm
+//go:build test && !test_e2e && !test_e2e_vm
 
-package tests
+package vmhelpers
 
 import (
 	"context"
@@ -49,7 +49,7 @@ func TestSetContainerEnv(t *testing.T) {
 					},
 				},
 			}
-			changed, err := setContainerEnv(ds, "compliance", "ROX_METRICS_PORT", tc.envAfter)
+			changed, err := SetContainerEnv(ds, "compliance", "ROX_METRICS_PORT", tc.envAfter)
 			require.NoError(t, err)
 			require.Equal(t, tc.changed, changed)
 			require.Equal(t, tc.envAfter, ds.Spec.Template.Spec.Containers[0].Env[0].Value)
@@ -91,11 +91,9 @@ func TestEnsureComplianceMetricsEnv_RetriesOnConflict(t *testing.T) {
 		return false, nil, nil
 	})
 
-	s := &VMScanningSuite{k8sClient: cs}
-	s.SetT(t)
-	s.ctx = t.Context()
-
-	s.ensureComplianceMetricsEnv(t.Context(), "stackrox", "collector", "compliance", "ROX_METRICS_PORT", ":9091")
+	logf := func(string, ...any) {}
+	err := EnsureComplianceMetricsEnv(t.Context(), cs, logf, "stackrox", "collector", "compliance", "ROX_METRICS_PORT", ":9091")
+	require.NoError(t, err)
 
 	got, err := cs.AppsV1().DaemonSets("stackrox").Get(context.Background(), "collector", metaV1.GetOptions{})
 	require.NoError(t, err)
