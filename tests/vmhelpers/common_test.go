@@ -1,6 +1,6 @@
-//go:build test_e2e || test_e2e_vm
+//go:build test && !test_e2e && !test_e2e_vm
 
-package tests
+package vmhelpers
 
 import (
 	"bytes"
@@ -25,31 +25,31 @@ Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deseru
 
 func TestLogMatcher(t *testing.T) {
 	tests := map[string]struct {
-		funcs          []logMatcher
+		funcs          []LogMatcher
 		expectedResult assert.BoolAssertionFunc
 		expectedError  assert.ErrorAssertionFunc
 		expectedString string
 	}{
 		"one match": {
-			funcs: []logMatcher{
-				containsLineMatching(regexp.MustCompile("sunt in culpa qui officia deserunt")),
+			funcs: []LogMatcher{
+				ContainsLineMatching(regexp.MustCompile("sunt in culpa qui officia deserunt")),
 			},
 			expectedResult: assert.True,
 			expectedError:  assert.NoError,
 			expectedString: `[contains line(s) matching "sunt in culpa qui officia deserunt"]`,
 		},
 		"two matches": {
-			funcs: []logMatcher{
-				containsLineMatching(regexp.MustCompile("Lorem ipsum dolor")),
-				containsLineMatching(regexp.MustCompile("Duis aute irure")),
+			funcs: []LogMatcher{
+				ContainsLineMatching(regexp.MustCompile("Lorem ipsum dolor")),
+				ContainsLineMatching(regexp.MustCompile("Duis aute irure")),
 			},
 			expectedResult: assert.True,
 			expectedError:  assert.NoError,
 			expectedString: `[contains line(s) matching "Lorem ipsum dolor" contains line(s) matching "Duis aute irure"]`,
 		},
 		"text divided with newline": {
-			funcs: []logMatcher{
-				containsLineMatching(regexp.MustCompile("labore et dolore.*magna aliqua")),
+			funcs: []LogMatcher{
+				ContainsLineMatching(regexp.MustCompile("labore et dolore.*magna aliqua")),
 			},
 			expectedResult: assert.False,
 			expectedError:  assert.NoError,
@@ -59,7 +59,7 @@ func TestLogMatcher(t *testing.T) {
 	r := bytes.NewReader(text)
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			actual, actualErr := allMatch(r, test.funcs...)
+			actual, actualErr := AllMatch(r, test.funcs...)
 			test.expectedResult(t, actual)
 			test.expectedError(t, actualErr)
 			assert.Equal(t, test.expectedString, fmt.Sprintf("%s", test.funcs))
@@ -68,24 +68,18 @@ func TestLogMatcher(t *testing.T) {
 }
 
 func TestCreateK8sClientWithConfig_RetriesOnFailure(t *testing.T) {
-	// This test verifies that the configureRetryableTransport function configures retries correctly
-	// by injecting a mock transport that fails initially, then succeeds
-
 	var callCount int
 
-	// Create a mock transport that fails the first 2 times, succeeds on the 3rd
-	mockTransport := RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+	mockTransport := roundTripperFunc(func(r *http.Request) (*http.Response, error) {
 		callCount++
 		currentCall := callCount
 
 		t.Logf("Mock transport call #%d to %s", currentCall, r.URL.String())
 
 		if currentCall <= 2 {
-			// Simulate network error for first 2 calls
 			return nil, errors.New("network error: connection refused")
 		}
 
-		// Succeed on the 3rd call - return a mock successful response
 		responseBody := `{
 			"major": "1",
 			"minor": "28",
@@ -105,24 +99,19 @@ func TestCreateK8sClientWithConfig_RetriesOnFailure(t *testing.T) {
 		}, nil
 	})
 
-	// Create a mock REST config
 	restCfg := &rest.Config{
 		Host: "https://mock-k8s-api.example.com",
-		WrapTransport: func(rt http.RoundTripper) http.RoundTripper {
-			// Return our mock transport instead of the real one
+		WrapTransport: func(http.RoundTripper) http.RoundTripper {
 			return mockTransport
 		},
 	}
-	configureRetryableTransport(t, restCfg)
+	ConfigureRetryableTransport(t, restCfg)
 
-	// Create client with our mock config
-	client := createK8sClientWithConfig(t, restCfg)
+	client := CreateK8sClientWithConfig(t, restCfg)
 	require.NotNil(t, client, "client should not be nil")
 
-	// Make an API call that should trigger retries
 	version, err := client.Discovery().ServerVersion()
 
-	// The call should succeed after retries
 	require.NoError(t, err, "Discovery call should succeed after retries")
 	require.NotNil(t, version, "Server version should not be nil")
 	assert.Equal(t, "1", version.Major)
@@ -132,10 +121,8 @@ func TestCreateK8sClientWithConfig_RetriesOnFailure(t *testing.T) {
 	t.Logf("Successfully completed after %d calls (including retries)", callCount)
 }
 
-// RoundTripperFunc is a function type that implements http.RoundTripper interface
-type RoundTripperFunc func(*http.Request) (*http.Response, error)
+type roundTripperFunc func(*http.Request) (*http.Response, error)
 
-// RoundTrip implements http.RoundTripper interface
-func (fn RoundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+func (fn roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 	return fn(r)
 }
