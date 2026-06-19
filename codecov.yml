@@ -7,3 +7,63 @@ codecov:
   notify:
     after_n_builds: 2
     wait_for_ci: false
+
+comment:
+  layout: "header, diff, components"
+
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto
+  individual_components:
+    - component_id: core-workflows
+      name: Core Workflows
+      paths:
+        - central/policy/**
+        - central/reports/**
+        - central/reportconfiguration/**
+        - central/vulnmgmt/**
+        - pkg/detection/**
+        - pkg/booleanpolicy/**
+        - pkg/defaults/policies/**
+        - pkg/search/**
+        - pkg/postgres/**
+        - migrator/**
+    - component_id: sensor-ecosystem
+      name: Sensor Ecosystem
+      paths:
+        - sensor/**
+        - roxctl/**
+        - .*/administration/.*
+        - .*/auth/.*
+        - .*/cloudsources/.*
+        - .*/declarativeconfig/.*
+        - pkg/sac/**
+        - pkg/signatures/**
+        - pkg/features/**
+    - component_id: scanner
+      name: Scanner
+      paths:
+        - scanner/**
+        - pkg/scanners/**
+        - pkg/scannerv4/**
+        - pkg/scans/**
+        - pkg/registries/**
+        - pkg/registrymirror/**
+        - pkg/images/enricher/**
+        - pkg/nodes/**
+        - central/scannerdefinitions/**
+        - central/image/service/**
+        - central/imageintegration/service/**
+    - component_id: install
+      name: Install & Operator
+      paths:
+        - operator/**
+        - image/templates/**
+        - pkg/helm/**
+        - pkg/crs/**
+    - component_id: shared-libs
+      name: Shared Libraries
+      paths:
+        - pkg/**
