@@ -462,6 +462,8 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # ratchet:docker/setup-qemu-action@v4
+        with:
+          image: quay.io/rhacs-eng/qa-multi-arch-binfmt:latest
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # ratchet:docker/setup-buildx-action@v4
@@ -662,6 +664,8 @@ jobs:
       - name: Set up QEMU
         if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
         uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # ratchet:docker/setup-qemu-action@v4
+        with:
+          image: quay.io/rhacs-eng/qa-multi-arch-binfmt:latest
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # ratchet:docker/setup-buildx-action@v4
@@ -998,6 +1002,8 @@ jobs:
       - name: Set up QEMU
         if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
         uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # ratchet:docker/setup-qemu-action@v4
+        with:
+          image: quay.io/rhacs-eng/qa-multi-arch-binfmt:latest
 
       - name: Check that Operator image is runnable
         run: docker run --rm --platform linux/${{ matrix.arch }} "quay.io/${QUAY_ORG}/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
@@ -1064,6 +1070,8 @@ jobs:
       - name: Set up QEMU
         if: matrix.arch != 'amd64' && matrix.arch != 'arm64'
         uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # ratchet:docker/setup-qemu-action@v4
+        with:
+          image: quay.io/rhacs-eng/qa-multi-arch-binfmt:latest
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # ratchet:docker/setup-buildx-action@v4
