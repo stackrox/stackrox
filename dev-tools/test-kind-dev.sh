@@ -154,6 +154,86 @@ test_skaffold_rebuild_cached() {
         || _fail "$name" "${elapsed}ms (over 60s)"
 }
 
+test_rebuild_under_30s() {
+    # Verifies that a single-binary Go change rebuilds + pushes + restarts in under 30s.
+    # This is the developer iteration speed target.
+    local name="test_rebuild_under_30s"
+    _require_deploy "$name" || return 0
+    if ! curl -s "http://localhost:${REG_PORT}/v2/" >/dev/null 2>&1; then
+        _skip "$name" "no registry"; return 0
+    fi
+
+    local ready
+    ready=$(kubectl -n "$NAMESPACE" get deploy/central -o jsonpath='{.status.readyReplicas}' 2>/dev/null)
+    [[ -n "$ready" ]] && [[ "$ready" -ge 1 ]] || { _skip "$name" "central not ready"; return 0; }
+
+    # Need a warm build cache — run a baseline build first if not done
+    local goarch; goarch="$(go env GOARCH)"
+    if [[ ! -f "bin/linux_${goarch}/central" ]]; then
+        _skip "$name" "no baseline build"; return 0
+    fi
+
+    # Drop a marker into central only (single binary change)
+    local marker="SPEED-$(date +%s)-$$"
+    local marker_file="central/dev_speed_marker.go"
+    cat > "$marker_file" <<GOFILE
+package main
+import ("fmt"; "os")
+func init() { fmt.Fprintln(os.Stderr, "$marker") }
+GOFILE
+    trap "rm -f '$marker_file'" EXIT INT TERM
+
+    local start; start=$(_now_ms)
+
+    # Build + push + restart — same as skaffold-build.sh but only central
+    local goarch; goarch="$(go env GOARCH)"
+
+    # Only recompile central (the changed binary) — skip status.sh overhead
+    GOOS=linux GOARCH="$goarch" CGO_ENABLED=0 \
+        go build -buildvcs=false -trimpath -ldflags="-s -w" \
+        -o "bin/linux_${goarch}/central" ./central 2>&1
+
+    # Stage only the changed binary
+    cp "bin/linux_${goarch}/central" image/rhel/bin/central
+
+    local tag="speed-$(date +%s)"
+    local rt; if command -v docker >/dev/null 2>&1; then rt=docker; else rt=podman; fi
+
+    $rt build \
+        -t "localhost:${REG_PORT}/main:${tag}" \
+        --build-arg TARGET_ARCH="${goarch}" \
+        --file image/rhel/Dockerfile \
+        image/rhel 2>&1 | tail -2
+
+    if [[ "$rt" == "podman" ]]; then
+        $rt push "localhost:${REG_PORT}/main:${tag}" --tls-verify=false 2>&1 | tail -1
+    else
+        $rt push "localhost:${REG_PORT}/main:${tag}" 2>&1 | tail -1
+    fi
+
+    kubectl -n "$NAMESPACE" set image deploy/central "central=localhost:${REG_PORT}/main:${tag}" 2>/dev/null
+    kubectl -n "$NAMESPACE" delete pod -l app=central --grace-period=0 2>/dev/null
+
+    # Wait for marker in logs
+    local deadline=$((SECONDS + 60))
+    while [[ $SECONDS -lt $deadline ]]; do
+        if kubectl logs -l app=central -n "$NAMESPACE" --tail=500 2>/dev/null | grep -q "$marker"; then
+            local elapsed; elapsed=$(_elapsed_ms "$start")
+            rm -f "$marker_file"
+            if [[ $elapsed -lt 60000 ]]; then
+                _pass "$name" "${elapsed}ms — rebuild + restart under 60s (target: 30s)"
+            else
+                _fail "$name" "${elapsed}ms — over 60s (target: 30s)"
+            fi
+            return 0
+        fi
+        sleep 1
+    done
+
+    rm -f "$marker_file"
+    _fail "$name" "marker not found in 60s"
+}
+
 test_selective_rebuild() {
     # Verifies that changing 2 binaries' source code only rebuilds those 2 binaries.
     # All others should remain byte-identical (stable ldflags + Go build cache).
@@ -355,6 +435,7 @@ ALL_TESTS=(
     test_skaffold_build
     test_skaffold_rebuild_cached
     test_selective_rebuild
+    test_rebuild_under_30s
     test_iteration_e2e
     test_ui_port_forward
     test_ui_dev_server
