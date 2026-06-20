@@ -188,27 +188,33 @@ GOFILE
     # Build + push + restart — same as skaffold-build.sh but only central
     local goarch; goarch="$(go env GOARCH)"
 
-    # Only recompile central (the changed binary) — skip status.sh overhead
+    # Only recompile central (the changed binary)
     GOOS=linux GOARCH="$goarch" CGO_ENABLED=0 \
         go build -buildvcs=false -trimpath -ldflags="-s -w" \
         -o "bin/linux_${goarch}/central" ./central 2>&1
 
-    # Stage only the changed binary
     cp "bin/linux_${goarch}/central" image/rhel/bin/central
 
     local tag="speed-$(date +%s)"
-    local rt; if command -v docker >/dev/null 2>&1; then rt=docker; else rt=podman; fi
 
-    $rt build \
-        -t "localhost:${REG_PORT}/main:${tag}" \
-        --build-arg TARGET_ARCH="${goarch}" \
-        --file image/rhel/Dockerfile \
-        image/rhel 2>&1 | tail -2
-
-    if [[ "$rt" == "podman" ]]; then
-        $rt push "localhost:${REG_PORT}/main:${tag}" --tls-verify=false 2>&1 | tail -1
+    # Use BuildKit for fast cached image build+push
+    if BUILDKIT_HOST="${BUILDKIT_HOST:-}" buildctl debug workers >/dev/null 2>&1; then
+        buildctl build \
+            --frontend dockerfile.v0 \
+            --local context=image/rhel \
+            --local dockerfile=image/rhel \
+            --opt "build-arg:TARGET_ARCH=${goarch}" \
+            --output "type=image,name=${KIND_CLUSTER_NAME}-registry:5000/main:${tag},push=true,registry.insecure=true" \
+            2>&1 | tail -2
     else
-        $rt push "localhost:${REG_PORT}/main:${tag}" 2>&1 | tail -1
+        local rt; if command -v docker >/dev/null 2>&1; then rt=docker; else rt=podman; fi
+        $rt build -t "localhost:${REG_PORT}/main:${tag}" --build-arg "TARGET_ARCH=${goarch}" \
+            --file image/rhel/Dockerfile image/rhel 2>&1 | tail -2
+        if [[ "$rt" == "podman" ]]; then
+            $rt push "localhost:${REG_PORT}/main:${tag}" --tls-verify=false 2>&1 | tail -1
+        else
+            $rt push "localhost:${REG_PORT}/main:${tag}" 2>&1 | tail -1
+        fi
     fi
 
     kubectl -n "$NAMESPACE" set image deploy/central "central=localhost:${REG_PORT}/main:${tag}" 2>/dev/null
@@ -220,10 +226,10 @@ GOFILE
         if kubectl logs -l app=central -n "$NAMESPACE" --tail=500 2>/dev/null | grep -q "$marker"; then
             local elapsed; elapsed=$(_elapsed_ms "$start")
             rm -f "$marker_file"
-            if [[ $elapsed -lt 60000 ]]; then
-                _pass "$name" "${elapsed}ms — rebuild + restart under 60s (target: 30s)"
+            if [[ $elapsed -lt 30000 ]]; then
+                _pass "$name" "${elapsed}ms — rebuild + restart under 30s"
             else
-                _fail "$name" "${elapsed}ms — over 60s (target: 30s)"
+                _fail "$name" "${elapsed}ms — over 30s target"
             fi
             return 0
         fi

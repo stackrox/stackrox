@@ -6,14 +6,17 @@
 #   1. Get the image tag from `make tag`
 #   2. Try to pull that exact tag from the remote registry (CI already built it)
 #   3. If pull succeeds: tag + push to local registry. No local build needed.
-#   4. If pull fails: build locally using existing Make targets.
+#   4. If pull fails: compile locally with direct `go build` (no Make/status.sh
+#      overhead), build image with BuildKit (COPY --link caching + direct push).
 #
 # Skaffold sets $IMAGE to the target image reference (e.g., localhost:5000/main:tag).
 
 set -euo pipefail
 
-TAG="$(make --quiet --no-print-directory tag 2>/dev/null)"
+GOARCH="$(go env GOARCH)"
+OUTDIR="bin/linux_${GOARCH}"
 REGISTRY="${DEFAULT_IMAGE_REGISTRY:-$(make --quiet --no-print-directory default-image-registry 2>/dev/null)}"
+TAG="$(make --quiet --no-print-directory tag 2>/dev/null)"
 
 if command -v docker >/dev/null 2>&1; then
     RT=docker
@@ -41,65 +44,71 @@ if [[ "$TAG" != *-dirty ]]; then
     echo "=== Pull failed — building locally ==="
 fi
 
-# --- Local build using existing Make targets ---
-# main-build-nodeps: compiles all Go binaries natively (no Docker container)
-# copy-binaries-to-image-dir: stages binaries into image/rhel/bin/
-# docker-build-main-image: builds the container image with COPY --link
+# --- Local build: direct go build + BuildKit image ---
 
-echo "=== Building Go binaries ==="
+echo "=== Cross-compiling Go binaries ==="
 
-export BUILD_TAG=0.0.0
-export SHORTCOMMIT=dev
-export STABLE_COLLECTOR_VERSION=0.0.0
-export STABLE_FACT_VERSION=0.0.0
-export STABLE_SCANNER_VERSION=0.0.0
-export SKIP_UI_BUILD="${SKIP_UI_BUILD:-1}"
-export CGO_ENABLED=0
-export GOOS=linux
+BINS=(
+    "central:./central"
+    "migrator:./migrator"
+    "compliance:./compliance/cmd/compliance"
+    "kubernetes-sensor:./sensor/kubernetes"
+    "sensor-upgrader:./sensor/upgrader"
+    "admission-control:./sensor/admission-control"
+    "config-controller:./config-controller"
+    "roxagent:./compliance/virtualmachines/roxagent"
+    "roxctl:./roxctl"
+)
 
-make main-build-nodeps
+for entry in "${BINS[@]}"; do
+    bin="${entry%%:*}"
+    pkg="${entry##*:}"
+    GOOS=linux GOARCH="$GOARCH" CGO_ENABLED=0 \
+        go build -buildvcs=false -trimpath -ldflags="-s -w" \
+        -o "${OUTDIR}/${bin}" "$pkg"
+done
 
 echo "=== Staging binaries ==="
 
-make copy-go-binaries-to-image-dir CI=1 2>/dev/null || {
-    # CI=1 path needs all-platform roxctl; fall back to manual copy
-    mkdir -p image/rhel/bin
-    GOARCH="$(go env GOARCH)"
-    cp "bin/linux_${GOARCH}/central"            image/rhel/bin/central
-    cp "bin/linux_${GOARCH}/config-controller"  image/rhel/bin/config-controller
-    cp "bin/linux_${GOARCH}/migrator"           image/rhel/bin/migrator
-    cp "bin/linux_${GOARCH}/kubernetes"          image/rhel/bin/kubernetes-sensor
-    cp "bin/linux_${GOARCH}/upgrader"            image/rhel/bin/sensor-upgrader
-    cp "bin/linux_${GOARCH}/admission-control"  image/rhel/bin/admission-control
-    cp "bin/linux_${GOARCH}/compliance"          image/rhel/bin/compliance
-    cp "bin/linux_${GOARCH}/roxagent"            image/rhel/bin/roxagent
-    cp "bin/linux_${GOARCH}/roxctl"              "image/rhel/bin/roxctl-linux-${GOARCH}"
-    find image/rhel/bin -type f -exec chmod +x {} \;
-}
+mkdir -p image/rhel/bin
+cp "${OUTDIR}/central"            image/rhel/bin/central
+cp "${OUTDIR}/config-controller"  image/rhel/bin/config-controller
+cp "${OUTDIR}/migrator"           image/rhel/bin/migrator
+cp "${OUTDIR}/kubernetes-sensor"  image/rhel/bin/kubernetes-sensor
+cp "${OUTDIR}/sensor-upgrader"    image/rhel/bin/sensor-upgrader
+cp "${OUTDIR}/admission-control"  image/rhel/bin/admission-control
+cp "${OUTDIR}/compliance"         image/rhel/bin/compliance
+cp "${OUTDIR}/roxagent"           image/rhel/bin/roxagent
+cp "${OUTDIR}/roxctl"             "image/rhel/bin/roxctl-linux-${GOARCH}"
+chmod +x image/rhel/bin/*
 
-# Ensure UI/docs/notices dirs exist (stubs for dev if not built)
+# Ensure UI/docs/notices dirs exist (stubs for dev)
 mkdir -p image/rhel/ui/build image/rhel/docs/api/v1 image/rhel/docs/api/v2 image/rhel/THIRD_PARTY_NOTICES
 [[ -d ui/build ]] && cp -r ui/build image/rhel/ui/ 2>/dev/null || true
 [[ -f image/rhel/docs/api/v1/swagger.json ]] || echo '{}' > image/rhel/docs/api/v1/swagger.json
 [[ -f image/rhel/docs/api/v2/swagger.json ]] || echo '{}' > image/rhel/docs/api/v2/swagger.json
 
-echo "=== Building container image ==="
+echo "=== Building + pushing image ==="
 
-TAG="$(make --quiet --no-print-directory tag 2>/dev/null)"
-$RT build \
-    -t "${REGISTRY}/main:${TAG}" \
-    --build-arg ROX_PRODUCT_BRANDING="$(make --quiet --no-print-directory product-branding 2>/dev/null)" \
-    --build-arg TARGET_ARCH="$(go env GOARCH)" \
-    --build-arg ROX_IMAGE_FLAVOR="$(make --quiet --no-print-directory image-flavor 2>/dev/null)" \
-    --build-arg LABEL_VERSION="${TAG}" \
-    --build-arg LABEL_RELEASE="${TAG}" \
-    --file image/rhel/Dockerfile \
-    image/rhel
-
-# Tag and push to local registry
-$RT tag "${REGISTRY}/main:${TAG}" "$IMAGE"
-if [[ "$RT" == "podman" ]]; then
-    $RT push "$IMAGE" --tls-verify=false
+# Use BuildKit if available (COPY --link caching + direct push, ~2-7s)
+# Fall back to podman/docker build + push (~18s)
+if [[ -n "${BUILDKIT_HOST:-}" ]] || buildctl debug workers >/dev/null 2>&1; then
+    buildctl build \
+        --frontend dockerfile.v0 \
+        --local context=image/rhel \
+        --local dockerfile=image/rhel \
+        --opt "build-arg:TARGET_ARCH=${GOARCH}" \
+        --output "type=image,name=${BUILDKIT_REGISTRY:-${IMAGE}},push=true,registry.insecure=true"
 else
-    $RT push "$IMAGE"
+    $RT build \
+        -t "$IMAGE" \
+        --build-arg "TARGET_ARCH=${GOARCH}" \
+        --file image/rhel/Dockerfile \
+        image/rhel
+
+    if [[ "$RT" == "podman" ]]; then
+        $RT push "$IMAGE" --tls-verify=false
+    else
+        $RT push "$IMAGE"
+    fi
 fi
