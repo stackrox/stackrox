@@ -154,6 +154,77 @@ test_skaffold_rebuild_cached() {
         || _fail "$name" "${elapsed}ms (over 60s)"
 }
 
+test_selective_rebuild() {
+    # Verifies that changing 2 binaries' source code only rebuilds those 2 binaries.
+    # All others should remain byte-identical (stable ldflags + Go build cache).
+    local name="test_selective_rebuild"
+
+    local goarch; goarch="$(go env GOARCH)"
+    local bindir="bin/linux_${goarch}"
+
+    # Need a baseline build first
+    if [[ ! -f "${bindir}/central" ]]; then
+        _skip "$name" "no baseline binaries (run test_skaffold_build first)"
+        return 0
+    fi
+
+    # Record md5 of all binaries before change
+    declare -A before
+    for bin in central migrator compliance kubernetes kubernetes-sensor upgrader sensor-upgrader admission-control config-controller roxagent roxctl; do
+        [[ -f "${bindir}/${bin}" ]] && before[$bin]=$(md5sum "${bindir}/${bin}" | cut -d' ' -f1)
+    done
+
+    # Drop marker files into central and migrator (two separate binaries)
+    local marker="SELECTIVE-$(date +%s)-$$"
+    local central_marker="central/dev_selective_marker.go"
+    local migrator_marker="migrator/dev_selective_marker.go"
+
+    cat > "$central_marker" <<GOFILE
+package main
+import "fmt"
+func init() { fmt.Print("$marker-central") }
+GOFILE
+    cat > "$migrator_marker" <<GOFILE
+package main
+import "fmt"
+func init() { fmt.Print("$marker-migrator") }
+GOFILE
+    trap "rm -f '$central_marker' '$migrator_marker'" EXIT INT TERM
+
+    # Rebuild
+    export BUILD_TAG=0.0.0 SHORTCOMMIT=dev STABLE_COLLECTOR_VERSION=0.0.0 STABLE_FACT_VERSION=0.0.0 STABLE_SCANNER_VERSION=0.0.0
+    export CGO_ENABLED=0 GOOS=linux
+    make main-build-nodeps 2>&1 | tail -2
+
+    rm -f "$central_marker" "$migrator_marker"
+
+    # Compare md5s
+    local changed=0
+    local unchanged=0
+    local changed_names=""
+    for bin in "${!before[@]}"; do
+        [[ -f "${bindir}/${bin}" ]] || continue
+        local after
+        after=$(md5sum "${bindir}/${bin}" | cut -d' ' -f1)
+        if [[ "$after" != "${before[$bin]}" ]]; then
+            changed=$((changed + 1))
+            changed_names="${changed_names} ${bin}"
+        else
+            unchanged=$((unchanged + 1))
+        fi
+    done
+
+    echo "    changed:${changed_names:-none} (${changed}), unchanged: ${unchanged}"
+
+    if [[ $changed -eq 2 ]] && [[ "$changed_names" == *central* ]] && [[ "$changed_names" == *migrator* ]]; then
+        _pass "$name" "only central + migrator changed (${changed} changed, ${unchanged} unchanged)"
+    elif [[ $changed -eq 0 ]]; then
+        _fail "$name" "no binaries changed — marker files not compiled?"
+    else
+        _fail "$name" "expected 2 changed (central, migrator), got ${changed}:${changed_names}"
+    fi
+}
+
 test_iteration_e2e() {
     local name="test_iteration_e2e"
     _require_deploy "$name" || return 0
@@ -283,6 +354,7 @@ ALL_TESTS=(
     test_memory
     test_skaffold_build
     test_skaffold_rebuild_cached
+    test_selective_rebuild
     test_iteration_e2e
     test_ui_port_forward
     test_ui_dev_server
