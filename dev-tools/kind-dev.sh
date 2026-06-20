@@ -192,7 +192,7 @@ print('Init bundle generated')
 fi
 
 # Clean up any port-forward we started (skaffold dev manages its own)
-kill "$PF_PID" 2>/dev/null; wait "$PF_PID" 2>/dev/null || true
+[[ -n "${PF_PID:-}" ]] && kill "$PF_PID" 2>/dev/null && wait "$PF_PID" 2>/dev/null || true
 
 # --- Run Skaffold dev loop ---
 echo ""
