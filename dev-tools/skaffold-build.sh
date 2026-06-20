@@ -6,7 +6,7 @@
 #   1. Get the image tag from `make tag`
 #   2. Try to pull that exact tag from the remote registry (CI already built it)
 #   3. If pull succeeds: tag + push to local registry. No local build needed.
-#   4. If pull fails: build locally using existing Make targets (same as CI).
+#   4. If pull fails: build locally using existing Make targets.
 #
 # Skaffold sets $IMAGE to the target image reference (e.g., localhost:5000/main:tag).
 
@@ -42,16 +42,22 @@ if [[ "$TAG" != *-dirty ]]; then
 fi
 
 # --- Local build using existing Make targets ---
+# main-build-nodeps: compiles all Go binaries natively (no Docker container)
+# copy-binaries-to-image-dir: stages binaries into image/rhel/bin/
+# docker-build-main-image: builds the container image with COPY --link
 
-echo "=== Building (make main-build + docker-build-main-image) ==="
+echo "=== Building Go binaries ==="
 
-export SKIP_UI_BUILD="${SKIP_UI_BUILD:-1}"
 export BUILD_TAG=0.0.0
 export SHORTCOMMIT=dev
-export GOTAGS="${GOTAGS:-}"
+export SKIP_UI_BUILD="${SKIP_UI_BUILD:-1}"
 
-make main-build
-make docker-build-main-image
+make main-build-nodeps
+make copy-binaries-to-image-dir
+
+echo "=== Building container image ==="
+
+make docker-build-main-image DOCKERBUILD="$RT build"
 
 # Tag and push to local registry
 $RT tag "${REGISTRY}/main:${TAG}" "$IMAGE"
