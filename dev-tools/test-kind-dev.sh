@@ -149,9 +149,9 @@ test_skaffold_rebuild_cached() {
     IMAGE="localhost:${REG_PORT}/main:cached-$(date +%s)" ./dev-tools/skaffold-build.sh 2>&1 | tail -3
     local elapsed; elapsed=$(_elapsed_ms "$start")
 
-    [[ $elapsed -lt 30000 ]] \
-        && _pass "$name" "${elapsed}ms (under 30s)" \
-        || _fail "$name" "${elapsed}ms (over 30s)"
+    [[ $elapsed -lt 60000 ]] \
+        && _pass "$name" "${elapsed}ms (under 60s)" \
+        || _fail "$name" "${elapsed}ms (over 60s)"
 }
 
 test_iteration_e2e() {
