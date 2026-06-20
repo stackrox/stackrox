@@ -85,11 +85,11 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*sto
 		var serviceSlugName string
 		var certPem, keyPem []byte
 
-		if strings.HasSuffix(fileName, "-cert.pem") {
-			serviceSlugName = strings.TrimSuffix(fileName, "-cert.pem")
+		if before, ok := strings.CutSuffix(fileName, "-cert.pem"); ok {
+			serviceSlugName = before
 			certPem = []byte(pemData)
-		} else if strings.HasSuffix(fileName, "-key.pem") {
-			serviceSlugName = strings.TrimSuffix(fileName, "-key.pem")
+		} else if before, ok := strings.CutSuffix(fileName, "-key.pem"); ok {
+			serviceSlugName = before
 			keyPem = []byte(pemData)
 		} else {
 			return nil, nil, errors.Errorf("unexpected file name %q in file map", fileName)

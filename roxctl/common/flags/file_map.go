@@ -33,9 +33,9 @@ func (v FileMapVar) String() string {
 
 // Set implements the value interface.
 func (v *FileMapVar) Set(val string) error {
-	mappings := strings.Split(val, ",")
+	mappings := strings.SplitSeq(val, ",")
 
-	for _, mapping := range mappings {
+	for mapping := range mappings {
 		mappingParts := strings.SplitN(mapping, "=", 2)
 		if len(mappingParts) == 0 {
 			continue

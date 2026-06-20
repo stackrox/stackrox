@@ -20,6 +20,7 @@ var (
 )
 
 // IndexReportsReceived is a counter for the number of virtual machine index reports received.
+// Asserted in VM E2E tests (tests/vm_scanning_metrics_test.go). Update tests when renaming or removing.
 var IndexReportsReceived = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -30,6 +31,7 @@ var IndexReportsReceived = prometheus.NewCounter(
 )
 
 // IndexReportsSent is a counter for the number of virtual machine index reports sent.
+// Asserted in VM E2E tests (tests/vm_scanning_metrics_test.go). Update tests when renaming or removing.
 var IndexReportsSent = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -95,6 +97,7 @@ var IndexReportBlockingEnqueueDurationMilliseconds = prometheus.NewHistogramVec(
 )
 
 // IndexReportEnqueueBlockedTotal counts how often the enqueue channel was full.
+// Asserted in VM E2E tests (tests/vm_scanning_metrics_test.go). Update tests when renaming or removing.
 var IndexReportEnqueueBlockedTotal = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -116,6 +119,7 @@ var VMDiscoveredData = prometheus.NewCounterVec(
 )
 
 // IndexReportAcksReceived counts ACK/NACK responses received from Central for VM index reports.
+// Asserted in VM E2E tests (tests/vm_scanning_metrics_test.go). Update tests when renaming or removing.
 var IndexReportAcksReceived = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,

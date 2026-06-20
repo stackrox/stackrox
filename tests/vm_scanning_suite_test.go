@@ -140,6 +140,9 @@ func (s *VMScanningSuite) SetupSuite() {
 	s.logf("VM scanning setup: verify cluster KVM readiness")
 	mustVerifyClusterKVMReady(t, s.ctx, s.k8sClient)
 
+	s.logf("VM scanning setup: ensure compliance metrics are exposed")
+	s.ensureComplianceMetricsExposed()
+
 	// VM_SCAN_NAMESPACE pins the test namespace for local development and re-runs:
 	// VMs survive across invocations so you can iterate on later test stages without
 	// waiting for full VM provisioning each time.
@@ -442,11 +445,8 @@ func (s *VMScanningSuite) provisionVMs(specs []vmSpec) {
 		vmCancel()
 
 		nodeName, err := vmhelpers.GetVMINodeName(ctx, s.dynamicClient, vm.Namespace, vm.Name)
-		if err != nil {
-			s.logf("provision VMs: could not determine node for %s/%s: %v", vm.Namespace, vm.Name, err)
-		} else {
-			vm.NodeName = nodeName
-		}
+		require.NoError(s.T(), err, "GetVMINodeName %s/%s", vm.Namespace, vm.Name)
+		vm.NodeName = nodeName
 	}
 
 	s.logf("VM placement:\n%s", s.vmPlacementSummary(ctx))

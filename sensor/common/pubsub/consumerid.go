@@ -9,6 +9,8 @@ const (
 	EnrichedProcessConsumer
 	UnenrichedProcessConsumer
 	FileActivityEnrichedProcessConsumer
+	DetectorProcessIndicatorConsumer
+	DetectorNetworkFlowConsumer
 )
 
 var (
@@ -19,6 +21,8 @@ var (
 		EnrichedProcessConsumer:             "EnrichedProcess",
 		FileActivityEnrichedProcessConsumer: "FileActivityEnrichedProcess",
 		UnenrichedProcessConsumer:           "UnenrichedProcess",
+		DetectorProcessIndicatorConsumer:    "DetectorProcessIndicator",
+		DetectorNetworkFlowConsumer:         "DetectorNetworkFlow",
 	}
 )
 

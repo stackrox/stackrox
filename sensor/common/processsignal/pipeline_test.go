@@ -191,8 +191,7 @@ func TestProcessPipelineOnline(t *testing.T) {
 		mockDetector, nil)
 	require.NoError(t, err)
 	p.Notify(common.SensorComponentEventCentralReachable)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	actualEvents := forwardEvents(ctx, sensorEvents)
 

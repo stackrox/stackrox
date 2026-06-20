@@ -1,7 +1,6 @@
 package manager
 
 import (
-	"context"
 	"sort"
 	"testing"
 	"time"
@@ -40,8 +39,7 @@ func TestIPv6Sort(t *testing.T) {
 func TestPublicIPsManager(t *testing.T) {
 	mgr := newPublicIPsManager()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	go mgr.Run(ctx, clusterentities.NewStore(0, nil, false))
 

@@ -8,6 +8,8 @@ const (
 	FromCentralResolverEventTopic
 	UnenrichedProcessIndicatorTopic
 	EnrichedProcessIndicatorTopic
+	DetectorProcessIndicatorTopic
+	DetectorNetworkFlowTopic
 )
 
 var (
@@ -17,6 +19,8 @@ var (
 		FromCentralResolverEventTopic:   "FromCentralResolverEvent",
 		UnenrichedProcessIndicatorTopic: "UnenrichedProcessIndicator",
 		EnrichedProcessIndicatorTopic:   "EnrichedProcessIndicator",
+		DetectorProcessIndicatorTopic:   "DetectorProcessIndicator",
+		DetectorNetworkFlowTopic:        "DetectorNetworkFlow",
 	}
 )
 

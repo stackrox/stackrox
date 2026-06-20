@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 	"testing/synctest"
 
@@ -638,13 +639,14 @@ func formatSentEvents(events []*component.ResourceEvent) string {
 	if len(events) == 0 {
 		return "[]"
 	}
-	result := "["
+	var result strings.Builder
+	result.WriteString("[")
 	for i, e := range events {
 		if i > 0 {
-			result += ", "
+			result.WriteString(", ")
 		}
-		result += fmt.Sprintf("{Forward:%d, Detector:%d, Reprocess:%v}",
-			len(e.ForwardMessages), len(e.DetectorMessages), e.ReprocessDeployments)
+		result.WriteString(fmt.Sprintf("{Forward:%d, Detector:%d, Reprocess:%v}",
+			len(e.ForwardMessages), len(e.DetectorMessages), e.ReprocessDeployments))
 	}
-	return result + "]"
+	return result.String() + "]"
 }

@@ -8,6 +8,8 @@ const (
 	FromCentralResolverEventLane
 	UnenrichedProcessIndicatorLane
 	EnrichedProcessIndicatorLane
+	DetectorProcessIndicatorLane
+	DetectorNetworkFlowLane
 )
 
 var (
@@ -17,6 +19,8 @@ var (
 		FromCentralResolverEventLane:   "FromCentralResolverEvent",
 		UnenrichedProcessIndicatorLane: "UnenrichedProcessIndicator",
 		EnrichedProcessIndicatorLane:   "EnrichedProcessIndicator",
+		DetectorProcessIndicatorLane:   "DetectorProcessIndicator",
+		DetectorNetworkFlowLane:        "DetectorNetworkFlow",
 	}
 )
 

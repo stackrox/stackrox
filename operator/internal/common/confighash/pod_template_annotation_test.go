@@ -110,8 +110,8 @@ func createTestReplicaSet() *unstructured.Unstructured {
 }
 
 func extractResourceSection(yamlOutput, resourceMarker string) string {
-	sections := strings.Split(yamlOutput, "---")
-	for _, section := range sections {
+	sections := strings.SplitSeq(yamlOutput, "---")
+	for section := range sections {
 		section = strings.TrimSpace(section)
 		if strings.Contains(section, resourceMarker) {
 			return section
