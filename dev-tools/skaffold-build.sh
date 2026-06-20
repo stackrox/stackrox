@@ -50,6 +50,9 @@ echo "=== Building Go binaries ==="
 
 export BUILD_TAG=0.0.0
 export SHORTCOMMIT=dev
+export STABLE_COLLECTOR_VERSION=0.0.0
+export STABLE_FACT_VERSION=0.0.0
+export STABLE_SCANNER_VERSION=0.0.0
 export SKIP_UI_BUILD="${SKIP_UI_BUILD:-1}"
 export CGO_ENABLED=0
 export GOOS=linux
