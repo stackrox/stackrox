@@ -92,13 +92,26 @@ echo "=== Building + pushing image ==="
 
 # Use BuildKit if available (COPY --link caching + direct push, ~2-7s)
 # Fall back to podman/docker build + push (~18s)
-if [[ -n "${BUILDKIT_HOST:-}" ]] || buildctl debug workers >/dev/null 2>&1; then
+BUILDKITD_CONTAINER="${BUILDKITD_CONTAINER:-buildkitd}"
+if $RT inspect "$BUILDKITD_CONTAINER" >/dev/null 2>&1; then
+    # BuildKit running in a container with image/rhel/ mounted — no context transfer
+    REG_IMAGE="${IMAGE/localhost/$(echo "$BUILDKITD_CONTAINER" | sed 's/buildkitd//')registry}"
+    # Convert localhost:PORT to CLUSTER-registry:5000 for in-network push
+    REG_IMAGE="$(echo "$IMAGE" | sed "s|localhost:[0-9]*|${KIND_CLUSTER_NAME:-stackrox-dev}-registry:5000|")"
+    $RT exec "$BUILDKITD_CONTAINER" buildctl build \
+        --addr unix:///run/buildkit/buildkitd.sock \
+        --frontend dockerfile.v0 \
+        --local context=/context \
+        --local dockerfile=/context \
+        --opt "build-arg:TARGET_ARCH=${GOARCH}" \
+        --output "type=image,name=${REG_IMAGE},push=true,registry.insecure=true"
+elif [[ -n "${BUILDKIT_HOST:-}" ]]; then
     buildctl build \
         --frontend dockerfile.v0 \
         --local context=image/rhel \
         --local dockerfile=image/rhel \
         --opt "build-arg:TARGET_ARCH=${GOARCH}" \
-        --output "type=image,name=${BUILDKIT_REGISTRY:-${IMAGE}},push=true,registry.insecure=true"
+        --output "type=image,name=${IMAGE},push=true,registry.insecure=true"
 else
     $RT build \
         -t "$IMAGE" \
