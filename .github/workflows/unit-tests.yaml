@@ -180,13 +180,11 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
-  # Coverage collection runs separately so -coverprofile doesn't break
-  # Go's test cache. With -coverprofile present, test cache hit rate
-  # drops from 75% to 11% (confirmed by 10-branch A/B test, PRs
-  # #21199-#21215). The exact Go-internal mechanism is unclear — the
-  # test binary and cache keys are identical with and without the flag,
-  # but -coverprofile causes Go to store additional coverage profile
-  # entries that interact poorly with our backdate+trim cycle.
+  # Coverage runs separately because -coverprofile adds ~4 minutes of
+  # overhead to every go-unit-tests run — even at 100% cache hits. Go
+  # must read, merge, and write coverage profile data for each cached
+  # package. Measured locally: 7m20s with -coverprofile vs 3m36s without
+  # (735/735 cached, zero code changes, same GOCACHE).
   # This job uses -count=1 (no test caching) but restores the compile
   # cache (save: false) to avoid recompiling from scratch.
   go-coverage:
