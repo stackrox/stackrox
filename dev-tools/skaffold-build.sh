@@ -51,13 +51,47 @@ echo "=== Building Go binaries ==="
 export BUILD_TAG=0.0.0
 export SHORTCOMMIT=dev
 export SKIP_UI_BUILD="${SKIP_UI_BUILD:-1}"
+export CGO_ENABLED=0
+export GOOS=linux
 
 make main-build-nodeps
-make copy-binaries-to-image-dir
+
+echo "=== Staging binaries ==="
+
+make copy-go-binaries-to-image-dir CI=1 2>/dev/null || {
+    # CI=1 path needs all-platform roxctl; fall back to manual copy
+    mkdir -p image/rhel/bin
+    GOARCH="$(go env GOARCH)"
+    cp "bin/linux_${GOARCH}/central"            image/rhel/bin/central
+    cp "bin/linux_${GOARCH}/config-controller"  image/rhel/bin/config-controller
+    cp "bin/linux_${GOARCH}/migrator"           image/rhel/bin/migrator
+    cp "bin/linux_${GOARCH}/kubernetes"          image/rhel/bin/kubernetes-sensor
+    cp "bin/linux_${GOARCH}/upgrader"            image/rhel/bin/sensor-upgrader
+    cp "bin/linux_${GOARCH}/admission-control"  image/rhel/bin/admission-control
+    cp "bin/linux_${GOARCH}/compliance"          image/rhel/bin/compliance
+    cp "bin/linux_${GOARCH}/roxagent"            image/rhel/bin/roxagent
+    cp "bin/linux_${GOARCH}/roxctl"              "image/rhel/bin/roxctl-linux-${GOARCH}"
+    find image/rhel/bin -type f -exec chmod +x {} \;
+}
+
+# Ensure UI/docs/notices dirs exist (stubs for dev if not built)
+mkdir -p image/rhel/ui/build image/rhel/docs/api/v1 image/rhel/docs/api/v2 image/rhel/THIRD_PARTY_NOTICES
+[[ -d ui/build ]] && cp -r ui/build image/rhel/ui/ 2>/dev/null || true
+[[ -f image/rhel/docs/api/v1/swagger.json ]] || echo '{}' > image/rhel/docs/api/v1/swagger.json
+[[ -f image/rhel/docs/api/v2/swagger.json ]] || echo '{}' > image/rhel/docs/api/v2/swagger.json
 
 echo "=== Building container image ==="
 
-make docker-build-main-image DOCKERBUILD="$RT build"
+TAG="$(make --quiet --no-print-directory tag 2>/dev/null)"
+$RT build \
+    -t "${REGISTRY}/main:${TAG}" \
+    --build-arg ROX_PRODUCT_BRANDING="$(make --quiet --no-print-directory product-branding 2>/dev/null)" \
+    --build-arg TARGET_ARCH="$(go env GOARCH)" \
+    --build-arg ROX_IMAGE_FLAVOR="$(make --quiet --no-print-directory image-flavor 2>/dev/null)" \
+    --build-arg LABEL_VERSION="${TAG}" \
+    --build-arg LABEL_RELEASE="${TAG}" \
+    --file image/rhel/Dockerfile \
+    image/rhel
 
 # Tag and push to local registry
 $RT tag "${REGISTRY}/main:${TAG}" "$IMAGE"
