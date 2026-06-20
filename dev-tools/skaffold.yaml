@@ -1,0 +1,70 @@
+# Skaffold config for StackRox local development on KinD.
+#
+# Handles the full lifecycle: build → deploy → watch → rebuild → redeploy.
+#
+# Setup (one-time):
+#   ./dev-tools/kind-dev.sh
+#
+# Development:
+#   skaffold dev -f dev-tools/skaffold.yaml
+#
+# How it works:
+#   1. Cross-compiles Go binaries natively on the host (no Docker build container)
+#   2. Builds a dev image via Dockerfile.dev (COPY --link — only changed layers rebuild)
+#   3. Pushes to local registry (localhost:5000)
+#   4. Deploys/upgrades via Helm with reduced resource limits
+#   5. Watches .go files and repeats on change
+#   6. Port-forwards Central to localhost:8000
+
+apiVersion: skaffold/v4beta12
+kind: Config
+metadata:
+  name: stackrox-dev
+
+build:
+  local:
+    push: true
+  artifacts:
+    - image: localhost:5000/main
+      custom:
+        buildCommand: ./dev-tools/skaffold-build.sh
+        dependencies:
+          paths:
+            - central/**/*.go
+            - sensor/**/*.go
+            - migrator/**/*.go
+            - compliance/**/*.go
+            - config-controller/**/*.go
+            - pkg/**/*.go
+          ignore:
+            - "**/*_test.go"
+            - "**/generated/**"
+            - "**/*.pb.go"
+
+deploy:
+  helm:
+    releases:
+      - name: stackrox-central-services
+        namespace: stackrox
+        createNamespace: true
+        chartPath: deploy/k8s/central-deploy/chart
+        valuesFiles:
+          - deploy/k8s/central-deploy/values-public.yaml
+          - deploy/k8s/central-deploy/values-private.yaml
+          - deploy/common/local-dev-values.yaml
+        setValues:
+          system.enablePodSecurityPolicies: "false"
+          central.telemetry.enabled: "false"
+          central.persistence.none: "true"
+          imagePullSecrets.allowNone: "true"
+          scanner.disable: "true"
+          scannerV4.disable: "true"
+        setValueTemplates:
+          central.image.fullRef: "{{.IMAGE_FULLY_QUALIFIED_localhost_5000_main}}"
+
+portForward:
+  - resourceType: service
+    resourceName: central
+    namespace: stackrox
+    port: 443
+    localPort: 8000

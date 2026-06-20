@@ -1,0 +1,21 @@
+# KinD cluster configuration for StackRox local development.
+# Used by dev-tools/kind-dev.sh. The REPO_ROOT placeholder is substituted at runtime.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+containerdConfigPatches:
+  - |-
+    [plugins."io.containerd.grpc.v1.cri".registry]
+      config_path = "/etc/containerd/certs.d"
+nodes:
+  - role: control-plane
+    extraMounts:
+      # Mount repo bin/ into the node so hotreload can read cross-compiled binaries.
+      - hostPath: REPO_ROOT/bin
+        containerPath: /src/bin
+        readOnly: true
+    kubeadmConfigPatches:
+      - |
+        kind: KubeletConfiguration
+        evictionHard:
+          memory.available: "100Mi"
+          nodefs.available: "5%"

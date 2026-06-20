@@ -1,0 +1,26 @@
+# Lightweight dev Dockerfile for fast local iteration.
+# Uses the deployed production image as base, only replaces Go binaries.
+# With COPY --link, only layers for changed binaries are rebuilt.
+#
+# Build context should be bin/linux_${GOARCH}/ (contains the flat binaries).
+#
+# Usage:
+#   docker build -f dev-tools/Dockerfile.dev \
+#     --build-arg BASE_IMAGE=quay.io/stackrox-io/main:4.7.2 \
+#     -t localhost:5000/main:dev bin/linux_arm64/
+
+ARG BASE_IMAGE
+
+FROM ${BASE_IMAGE}
+
+USER 0:0
+
+COPY --link central            /stackrox/central
+COPY --link migrator           /stackrox/bin/migrator
+COPY --link compliance         /stackrox/bin/compliance
+COPY --link kubernetes-sensor  /stackrox/bin/kubernetes-sensor
+COPY --link sensor-upgrader    /stackrox/bin/sensor-upgrader
+COPY --link admission-control  /stackrox/bin/admission-control
+COPY --link config-controller  /stackrox/bin/config-controller
+
+USER 4000:4000
