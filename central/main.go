@@ -319,23 +319,11 @@ func main() {
 		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
 	}
 
-	if !pgconfig.IsExternalDatabase() {
-		// Need to remove the backup clone and set the current version
-		sourceMap, config, err := pgconfig.GetPostgresConfig()
-		if err != nil {
-			log.Errorf("Unable to get Postgres DB config: %v", err)
-		}
-
-		err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
-		if err != nil {
-			log.Errorf("Failed to remove backup DB: %v", err)
-		}
-	}
-
-	features.LogFeatureFlags()
-
 	go startGRPCServer()
 	go startTelemetryServer()
+	go dropBackupDB()
+
+	features.LogFeatureFlags()
 
 	if env.ManagedCentral.BooleanSetting() {
 		clusterInternalServer := internal.NewHTTPServer(metrics.HTTPSingleton())
@@ -376,6 +364,20 @@ func clusterInternalRoutes() []*internal.Route {
 		Compression:   true,
 	})
 	return result
+}
+
+func dropBackupDB() {
+	if pgconfig.IsExternalDatabase() {
+		return
+	}
+	sourceMap, config, err := pgconfig.GetPostgresConfig()
+	if err != nil {
+		log.Errorf("Unable to get Postgres DB config: %v", err)
+		return
+	}
+	if err := pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone()); err != nil {
+		log.Errorf("Failed to remove backup DB: %v", err)
+	}
 }
 
 func startServices() {
