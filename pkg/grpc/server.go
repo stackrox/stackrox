@@ -118,7 +118,7 @@ type API interface {
 
 type apiImpl struct {
 	apiServices        []APIService
-	config             Config
+	config             *Config
 	requestInfoHandler *requestinfo.Handler
 	listenersLock      sync.Mutex
 	listeners          []serverAndListener
@@ -166,8 +166,10 @@ type Config struct {
 	ServicesReadySignal <-chan struct{}
 }
 
-// NewAPI returns an API object.
-func NewAPI(config Config) API {
+// NewAPI returns an API object. The config is stored by pointer, allowing
+// callers to set fields (e.g. IdentityExtractors, AuthProviders) after
+// creation but before Start()/ServicesReadySignal.
+func NewAPI(config *Config) API {
 	var shutdownRequested atomic.Bool
 	shutdownRequested.Store(false)
 	return &apiImpl{

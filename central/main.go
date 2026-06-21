@@ -649,7 +649,7 @@ func startGRPCServer() {
 	config.HTTPInterceptors = append(config.HTTPInterceptors, c.GetHTTPInterceptor())
 	config.UnaryInterceptors = append(config.UnaryInterceptors, c.GetGRPCInterceptor())
 
-	server := pkgGRPC.NewAPI(config)
+	server := pkgGRPC.NewAPI(&config)
 	server.Register(servicesToRegister()...)
 	startedSig := server.Start()
 
