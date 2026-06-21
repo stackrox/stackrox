@@ -252,6 +252,13 @@ jobs:
           curl -fsSL --retry 5 --retry-all-errors -o /usr/local/bin/roxie https://github.com/stackrox/roxie/releases/download/v0.4.1/roxie-linux-amd64
           chmod +x /usr/local/bin/roxie
 
+      - name: Install oc
+        if: inputs.infra-flavor == 'openshift-4'
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz \
+            | tar xz -C /usr/local/bin oc
+          oc version --client
+
       - name: Wait for cluster and get kubeconfig
         env:
           INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
