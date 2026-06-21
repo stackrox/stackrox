@@ -106,6 +106,7 @@ var (
 
 	postgresDB postgres.DB
 	pgSync     sync.Once
+	dbReady    = make(chan struct{})
 
 	// PostgresQueryTimeout - Postgres query timeout value
 	PostgresQueryTimeout = 10 * time.Second
@@ -117,15 +118,29 @@ var (
 	writtenStates = set.NewStringSet()
 )
 
-// GetPostgres returns a global database instance. It should be called after InitializePostgres
+// GetPostgres returns the global database instance, blocking until the database
+// has been initialized and migrations have completed. This gate ensures no
+// datastore queries run before the schema is ready.
 func GetPostgres() postgres.DB {
+	<-dbReady
 	return postgresDB
+}
+
+// SignalReady signals that the database is initialized and migrations are
+// complete. All callers blocked on GetPostgres() will be unblocked.
+func SignalReady() {
+	close(dbReady)
 }
 
 // SetPostgresTest sets a global database instance. It should be used in tests only.
 func SetPostgresTest(t *testing.T, db postgres.DB) postgres.DB {
 	t.Log("Initializing Postgres... ")
 	postgresDB = db
+	select {
+	case <-dbReady:
+	default:
+		close(dbReady)
+	}
 	return postgresDB
 }
 

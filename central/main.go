@@ -549,18 +549,21 @@ func newRateLimiter() ratelimit.RateLimiter {
 func startGRPCServer() {
 	ctx := context.Background()
 
-	db := globaldb.InitializePostgres(ctx)
-
-	if err := migrate.Run(db); err != nil {
-		log.Panicf("Migrator failed: %v", err)
-	}
-
-	versionStore := vStore.NewPostgres(db)
-	if err := version.Ensure(versionStore); err != nil {
-		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
-	}
-
-	go dropBackupDB()
+	// Start DB connection + migration in background. The lazy pool connects
+	// on first query. Once migration completes, SignalReady() unblocks all
+	// callers of globaldb.GetPostgres() (which singletons use for DB access).
+	go func() {
+		db := globaldb.InitializePostgres(ctx)
+		if err := migrate.Run(db); err != nil {
+			log.Panicf("Migrator failed: %v", err)
+		}
+		versionStore := vStore.NewPostgres(db)
+		if err := version.Ensure(versionStore); err != nil {
+			log.Panicf("DB version check failed. You may need to run migrations: %v", err)
+		}
+		globaldb.SignalReady()
+		go dropBackupDB()
+	}()
 
 	// Temporarily elevate permissions to modify auth providers.
 	authProviderRegisteringCtx := sac.WithGlobalAccessScopeChecker(ctx,
