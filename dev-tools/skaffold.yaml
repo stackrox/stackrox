@@ -57,10 +57,28 @@ deploy:
           central.telemetry.enabled: "false"
           central.persistence.none: "true"
           imagePullSecrets.allowNone: "true"
-          scanner.disable: "false"
-          scannerV4.disable: "false"
         setValueTemplates:
           central.image.fullRef: "{{.IMAGE_FULLY_QUALIFIED_localhost_5000_main}}"
+        overrides:
+          image:
+            registry: quay.io/stackrox-io
+          scanner:
+            disable: false
+            image:
+              registry: quay.io/stackrox-io
+              name: scanner
+            dbImage:
+              registry: quay.io/stackrox-io
+              name: scanner-db
+          scannerV4:
+            disable: false
+            image:
+              registry: quay.io/stackrox-io
+              name: scanner-v4
+            db:
+              image:
+                registry: quay.io/stackrox-io
+                name: scanner-v4-db
 
 portForward:
   - resourceType: service
