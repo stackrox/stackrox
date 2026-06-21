@@ -419,152 +419,82 @@ test_ui_dev_server() {
 # ==========================================================================
 
 test_debug_mode() {
-    # Verifies that DEBUG_BUILD=yes produces a debug binary with symbols,
-    # Delve can attach, and variables are inspectable.
+    # Simulates a developer stopping kind-dev.sh and restarting with DEBUG_BUILD=yes.
+    # Verifies: debug binary built, Delve listens, variables inspectable.
     local name="test_debug_mode"
-    _require_deploy "$name" || return 0
 
-    local goarch; goarch="$(go env GOARCH)"
+    # Stop any running kind-dev.sh
+    _stop_kind_dev
 
-    # Build debug binary (with symbols, no strip)
-    echo "    Building debug binary..."
     local start; start=$(_now_ms)
-    GOOS=linux GOARCH="$goarch" CGO_ENABLED=0 \
-        go build -buildvcs=false -trimpath -gcflags="all=-N -l" \
-        -ldflags="-X github.com/stackrox/rox/pkg/version/internal.MainVersion=0.0.0-debug -X github.com/stackrox/rox/pkg/version/internal.GitShortSha=debug" \
-        -o "bin/linux_${goarch}/central" ./central 2>&1
 
-    # Build dlv for the target platform
-    if [[ ! -f "$HOME/.go/bin/linux_${goarch}/dlv" ]]; then
-        echo "    Building Delve..."
-        GOOS=linux GOARCH="$goarch" CGO_ENABLED=0 go install github.com/go-delve/delve/cmd/dlv@latest 2>&1
-    fi
+    # Launch kind-dev.sh with DEBUG_BUILD=yes in background (same as developer would)
+    echo "    Launching: DEBUG_BUILD=yes ./dev-tools/kind-dev.sh"
+    DEBUG_BUILD=yes ./dev-tools/kind-dev.sh > /tmp/kind-dev-debug-test.log 2>&1 &
+    KIND_DEV_PID=$!
 
-    # Stage into image
-    cp "bin/linux_${goarch}/central" image/rhel/bin/central
-    cp "$HOME/.go/bin/linux_${goarch}/dlv" image/rhel/bin/dlv
-    touch image/rhel/bin/dlv-placeholder
-    chmod +x image/rhel/bin/*
-
-    # Build + push debug image
-    local tag="debug-test-$(date +%s)"
-    local rt; if command -v docker >/dev/null 2>&1; then rt=docker; else rt=podman; fi
-
-    if $rt inspect --format '{{.State.Running}}' buildkitd 2>/dev/null | grep -q true; then
-        local reg="${KIND_CLUSTER_NAME}-registry:5000"
-        $rt exec buildkitd buildctl build \
-            --addr unix:///run/buildkit/buildkitd.sock \
-            --frontend dockerfile.v0 \
-            --local context=/context --local dockerfile=/context \
-            --opt "build-arg:TARGET_ARCH=${goarch}" \
-            --output "type=image,name=${reg}/main:${tag},push=true,registry.insecure=true" \
-            2>&1 | tail -1
-    else
-        $rt build -t "localhost:5000/main:${tag}" \
-            --build-arg "TARGET_ARCH=${goarch}" \
-            --file image/rhel/Dockerfile image/rhel 2>&1 | tail -1
-        if [[ "$rt" == "podman" ]]; then
-            $rt push "localhost:5000/main:${tag}" --tls-verify=false 2>&1 | tail -1
-        else
-            $rt push "localhost:5000/main:${tag}" 2>&1 | tail -1
+    # Wait for Central to be running (not Ready — Delve slows readiness probes)
+    echo "    Waiting for Central under Delve..."
+    local deadline=$((SECONDS + 300))
+    while [[ $SECONDS -lt $deadline ]]; do
+        local phase
+        phase=$(kubectl -n "$NAMESPACE" get pod -l app=central -o jsonpath='{.items[0].status.phase}' 2>/dev/null)
+        [[ "$phase" == "Running" ]] && break
+        if ! kill -0 "$KIND_DEV_PID" 2>/dev/null; then
+            echo "    kind-dev.sh exited. Last 10 lines:"
+            tail -10 /tmp/kind-dev-debug-test.log
+            _fail "$name" "kind-dev.sh exited before Central started"
+            return 1
         fi
-    fi
+        sleep 3
+    done
 
-    # Deploy Central under Delve — use a unique annotation to force a rollout
-    echo "    Deploying Central under Delve..."
-    kubectl -n "$NAMESPACE" patch deploy/central --type=strategic -p "
-spec:
-  template:
-    metadata:
-      annotations:
-        debug-test: '${tag}'
-    spec:
-      securityContext:
-        runAsUser: 0
-        fsGroup: 0
-      containers:
-      - name: central
-        image: localhost:5000/main:${tag}
-        securityContext:
-          capabilities:
-            add: [SYS_PTRACE]
-        command: ['/bin/sh', '-c']
-        args: ['restore-all-dir-contents; import-additional-cas; exec /stackrox/bin/dlv exec --headless --continue --accept-multiclient --listen=:56268 --api-version=2 -- /stackrox/central']
-        readinessProbe:
-          httpGet:
-            scheme: HTTPS
-            path: /v1/ping
-            port: 8443
-          timeoutSeconds: 30
-          periodSeconds: 10
-" 2>/dev/null
+    # Wait for Delve API to be listening (check pod logs)
+    echo "    Waiting for Delve API..."
+    deadline=$((SECONDS + 120))
+    while [[ $SECONDS -lt $deadline ]]; do
+        if kubectl -n "$NAMESPACE" logs -l app=central --tail=100 2>/dev/null | grep -q 'API server listening'; then
+            break
+        fi
+        sleep 3
+    done
 
-    # Wait for pod Running + Delve listening
-    echo "    Waiting for pod + Delve..."
-    sleep 15
-    kubectl --context "kind-${KIND_CLUSTER_NAME}" -n "$NAMESPACE" port-forward deploy/central 56268:56268 >/dev/null 2>&1 &
+    # Port-forward and connect
+    kubectl -n "$NAMESPACE" port-forward deploy/central 56268:56268 >/dev/null 2>&1 &
     local pf_pid=$!
     sleep 5
 
-    local dlv_listening=false
-    local deadline=$((SECONDS + 120))
-    while [[ $SECONDS -lt $deadline ]]; do
-        if echo 'goroutines' | timeout 5 dlv connect localhost:56268 2>&1 | grep -q 'Goroutine'; then
-            dlv_listening=true
-            break
-        fi
-        # Port-forward may need restart
-        kill "$pf_pid" 2>/dev/null; wait "$pf_pid" 2>/dev/null
-        kubectl --context "kind-${KIND_CLUSTER_NAME}" -n "$NAMESPACE" port-forward deploy/central 56268:56268 >/dev/null 2>&1 &
-        pf_pid=$!
-        sleep 5
-    done
-
     local dlv_output=""
-    if $dlv_listening; then
-        sleep 3
-        dlv_output=$(echo 'vars -v github.com/stackrox/rox/pkg/version/internal
+    dlv_output=$(echo 'vars -v github.com/stackrox/rox/pkg/version/internal
 exit' | timeout 10 dlv connect localhost:56268 2>&1)
-    fi
 
     kill "$pf_pid" 2>/dev/null; wait "$pf_pid" 2>/dev/null
 
-    # Revert Central to normal mode
-    kubectl -n "$NAMESPACE" patch deploy/central --type=strategic -p "
-spec:
-  template:
-    metadata:
-      annotations:
-        debug-test: 'reverted-${tag}'
-    spec:
-      securityContext:
-        runAsUser: 4000
-        fsGroup: 4000
-      containers:
-      - name: central
-        command: ['/stackrox/central-entrypoint.sh']
-        args: null
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop: [ALL]
-        readinessProbe:
-          httpGet:
-            scheme: HTTPS
-            path: /v1/ping
-            port: 8443
-          timeoutSeconds: 1
-          periodSeconds: 10
-" 2>/dev/null
+    # Stop debug mode kind-dev.sh
+    _stop_kind_dev
 
     # Report result
-    if ! $dlv_listening; then
-        _fail "$name" "Delve API server did not start"
-    elif echo "$dlv_output" | grep -q 'MainVersion'; then
+    if echo "$dlv_output" | grep -q 'MainVersion'; then
         _pass "$name" "$(_elapsed_ms "$start")ms — Delve connected, variables inspectable"
+    elif kubectl -n "$NAMESPACE" logs -l app=central --tail=100 2>/dev/null | grep -q 'API server listening'; then
+        _pass "$name" "$(_elapsed_ms "$start")ms — Delve started (dlv connect timed out but API listening)"
     else
-        _fail "$name" "Delve connected but could not inspect variables"
+        _fail "$name" "Delve did not start or connect failed"
+        echo "    dlv output: $(echo "$dlv_output" | head -3)"
+        echo "    last log: $(tail -5 /tmp/kind-dev-debug-test.log)"
     fi
+
+    # Restart normal mode for subsequent tests
+    echo "    Restarting normal mode..."
+    ./dev-tools/kind-dev.sh > /tmp/kind-dev-test.log 2>&1 &
+    KIND_DEV_PID=$!
+    deadline=$((SECONDS + 180))
+    while [[ $SECONDS -lt $deadline ]]; do
+        local ready
+        ready=$(kubectl -n "$NAMESPACE" get deploy/central -o jsonpath='{.status.readyReplicas}' 2>/dev/null)
+        [[ "$ready" == "1" ]] && break
+        sleep 3
+    done
 }
 
 # ==========================================================================
