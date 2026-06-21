@@ -264,6 +264,7 @@ extend_roxie_envrc() {
 export CLUSTER="${CLUSTER}"
 export API_HOSTNAME="${API_HOSTNAME}"
 export API_PORT="${API_PORT}"
+export ROX_USERNAME="admin"
 EOF
 }
 
