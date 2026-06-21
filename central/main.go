@@ -369,6 +369,8 @@ func dropBackupDB() {
 }
 
 func startServices() {
+	fetcher.SingletonManager().Start()
+
 	go cloudSourcesManager.Singleton().Start()
 
 	reprocessor.Singleton().Start()
@@ -515,9 +517,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 	); err != nil {
 		log.Panicf("Couldn't start sensor connection manager: %v", err)
 	}
-
-	// Start cluster-level (Kubernetes, OpenShift, Istio) vulnerability data fetcher.
-	fetcher.SingletonManager().Start()
 
 	if devbuild.IsEnabled() {
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
