@@ -1,6 +1,7 @@
 package migrate
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -9,17 +10,31 @@ import (
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/version"
 )
 
-// Run executes the migration logic in-process. This replaces the separate
-// migrator binary invocation from start-central.sh.
-func Run() error {
+// Run executes the migration logic in-process using Central's existing DB
+// pool. On the fast path (version matches), this returns immediately without
+// creating any additional connections.
+func Run(centralDB postgres.DB) error {
 	log.WriteToStderrf("Run migrator with version: %s, DB sequence: %d",
 		version.GetMainVersion(), migrations.CurrentDBVersionSeqNum())
+
+	// Fast path: check if DB version matches using Central's existing pool.
+	// If it does, no migration or schema work is needed.
+	if dbSeqNum, err := readVersionSeqNum(centralDB); err == nil {
+		currSeqNum := migrations.CurrentDBVersionSeqNum()
+		if dbSeqNum == currSeqNum {
+			log.WriteToStderrf("DB is already at version %d, skipping migrations", dbSeqNum)
+			return nil
+		}
+		log.WriteToStderrf("DB at version %d, binary at %d — running migrations", dbSeqNum, currSeqNum)
+	}
 
 	conf := config.GetConfig()
 	if conf == nil {
@@ -84,4 +99,13 @@ func ensureDatabaseExists() error {
 	}, retry.Tries(60), retry.BetweenAttempts(func(_ int) {
 		time.Sleep(5 * time.Second)
 	}))
+}
+
+// readVersionSeqNum reads the DB schema version sequence number directly via
+// pgx. Returns an error if the versions table doesn't exist (fresh install).
+func readVersionSeqNum(db postgres.DB) (int, error) {
+	ctx := sac.WithAllAccess(context.Background())
+	var seqNum int
+	err := db.QueryRow(ctx, "SELECT seqnum FROM versions LIMIT 1").Scan(&seqNum)
+	return seqNum, err
 }

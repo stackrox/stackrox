@@ -308,11 +308,16 @@ func main() {
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
 
-	if err := migrate.Run(); err != nil {
+	db := globaldb.InitializePostgres(ctx)
+
+	if err := migrate.Run(db); err != nil {
 		log.Panicf("Migrator failed: %v", err)
 	}
 
-	ensureDB(ctx)
+	versionStore := vStore.NewPostgres(db)
+	if err := version.Ensure(versionStore); err != nil {
+		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
+	}
 
 	if !pgconfig.IsExternalDatabase() {
 		// Need to remove the backup clone and set the current version
@@ -371,14 +376,6 @@ func clusterInternalRoutes() []*internal.Route {
 		Compression:   true,
 	})
 	return result
-}
-
-func ensureDB(ctx context.Context) {
-	versionStore := vStore.NewPostgres(globaldb.InitializePostgres(ctx))
-	err := version.Ensure(versionStore)
-	if err != nil {
-		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
-	}
 }
 
 func startServices() {
