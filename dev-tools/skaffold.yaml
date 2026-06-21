@@ -62,14 +62,17 @@ deploy:
         overrides:
           image:
             registry: quay.io/stackrox-io
+            tag: "4.11.0"
           scanner:
             disable: false
             image:
               registry: quay.io/stackrox-io
               name: scanner
+              tag: "4.11.0"
             dbImage:
               registry: quay.io/stackrox-io
               name: scanner-db
+              tag: "4.11.0"
           scannerV4:
             disable: false
             image:

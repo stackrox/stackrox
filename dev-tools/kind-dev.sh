@@ -79,7 +79,6 @@ fi
 
 # --- Ensure base images are available in KinD node ---
 MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(git tag --sort=-version:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -1)}"
-SCANNER_TAG="${SCANNER_IMAGE_TAG:-$(make --quiet --no-print-directory scanner-tag 2>/dev/null)}"
 COLLECTOR_TAG="${COLLECTOR_IMAGE_TAG:-$(make --quiet --no-print-directory collector-tag 2>/dev/null)}"
 REGISTRY="${DEFAULT_IMAGE_REGISTRY:-$(make --quiet --no-print-directory default-image-registry)}"
 goarch="$(go env GOARCH)"
@@ -94,8 +93,8 @@ pull_if_missing() {
 
 echo "=== Pulling base images ==="
 pull_if_missing "${REGISTRY}/central-db:${MAIN_IMAGE_TAG}"
-pull_if_missing "${REGISTRY}/scanner:${SCANNER_TAG}"
-pull_if_missing "${REGISTRY}/scanner-db:${SCANNER_TAG}"
+pull_if_missing "${REGISTRY}/scanner:${MAIN_IMAGE_TAG}"
+pull_if_missing "${REGISTRY}/scanner-db:${MAIN_IMAGE_TAG}"
 pull_if_missing "${REGISTRY}/scanner-v4:${MAIN_IMAGE_TAG}"
 pull_if_missing "${REGISTRY}/scanner-v4-db:${MAIN_IMAGE_TAG}"
 pull_if_missing "${REGISTRY}/collector:${COLLECTOR_TAG}"
