@@ -158,6 +158,8 @@ spec:
             scheme: HTTPS
             path: /ready
             port: 9443
+          periodSeconds: 1
+          failureThreshold: 3
         ports:
           - containerPort: 8443
             name: api

@@ -63,6 +63,8 @@ spec:
             scheme: HTTPS
             path: /v1/ping
             port: 8443
+          periodSeconds: 1
+          failureThreshold: 3
         resources:
           {{- ._rox.central._resources | nindent 10 }}
         securityContext:
