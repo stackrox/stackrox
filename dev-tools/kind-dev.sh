@@ -71,6 +71,37 @@
 # Note: Test images from quay.io/rhacs-eng need pull secrets. The script creates
 # them in the "qa" namespace if ~/.config/containers/auth.json has quay.io creds.
 #
+# == Debugging Go Code ==
+#
+# Run in debug mode to attach a debugger (Delve) to Central:
+#
+#   ./dev-tools/kind-dev.sh debug
+#
+# This builds with debug symbols (-gcflags="all=-N -l", no -s -w strip),
+# installs Delve in the image, and runs `skaffold debug` which injects a
+# Delve debug server on port 56268.
+#
+# IDE setup (VS Code):
+#   Add to .vscode/launch.json:
+#   {
+#     "name": "Attach to Central (KinD)",
+#     "type": "go",
+#     "request": "attach",
+#     "mode": "remote",
+#     "port": 56268,
+#     "host": "localhost",
+#     "substitutePath": [
+#       { "from": "${workspaceFolder}", "to": "/src" }
+#     ]
+#   }
+#
+# IDE setup (GoLand):
+#   Run → Edit Configurations → + → Go Remote → Host: localhost, Port: 56268
+#
+# Note: debug builds are ~40% larger and ~10s slower to compile (no optimization).
+# Auto-rebuild is disabled in debug mode to prevent tearing down debug sessions.
+# Trigger manual rebuilds with `skaffold build` in another terminal.
+#
 # == Ctrl+C Behavior ==
 #
 # Pressing Ctrl+C stops Skaffold but leaves the cluster and deployment running
@@ -120,6 +151,8 @@ _rt() {
     if command -v docker >/dev/null 2>&1; then docker "$@"; else podman "$@"; fi
 }
 
+SKAFFOLD_MODE=dev
+
 for arg in "$@"; do
     case "$arg" in
         teardown|delete|destroy)
@@ -128,8 +161,12 @@ for arg in "$@"; do
             _rt rm -f "$REG_NAME" 2>/dev/null || true
             exit 0
             ;;
+        debug)
+            SKAFFOLD_MODE=debug
+            export DEBUG_BUILD=yes
+            ;;
         -h|--help)
-            head -17 "$0" | tail -15 | sed 's/^# \?//'
+            sed -n '2,/^[^#]/{ /^#/s/^# \?//p }' "$0"
             exit 0
             ;;
     esac
@@ -309,4 +346,10 @@ echo "  Password: $(cat deploy/k8s/central-deploy/password 2>/dev/null || echo '
 echo "  Press Ctrl+C to stop (cluster stays running for next time)"
 echo ""
 
-exec skaffold dev -f dev-tools/skaffold.yaml --cleanup=false --kube-context "kind-${CLUSTER_NAME}"
+if [[ "$SKAFFOLD_MODE" == "debug" ]]; then
+    echo "  DEBUG MODE: Delve debugger will be injected. Attach IDE to localhost:56268"
+    echo ""
+    exec skaffold debug -f dev-tools/skaffold.yaml --cleanup=false --kube-context "kind-${CLUSTER_NAME}" --port-forward
+else
+    exec skaffold dev -f dev-tools/skaffold.yaml --cleanup=false --kube-context "kind-${CLUSTER_NAME}"
+fi

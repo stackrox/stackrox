@@ -61,17 +61,29 @@ BINS=(
 )
 
 VERSION_PKG="github.com/stackrox/rox/pkg/version/internal"
-LDFLAGS="-s -w \
- -X ${VERSION_PKG}.MainVersion=0.0.0-dev \
- -X ${VERSION_PKG}.CollectorVersion=0.0.0-dev \
- -X ${VERSION_PKG}.ScannerVersion=0.0.0-dev \
- -X ${VERSION_PKG}.GitShortSha=dev"
+GCFLAGS=""
+
+if [[ "${DEBUG_BUILD:-}" == "yes" || "${SKAFFOLD_DEBUG:-}" == "true" ]]; then
+    echo "=== DEBUG BUILD: symbols preserved, optimizations disabled ==="
+    LDFLAGS=" \
+     -X ${VERSION_PKG}.MainVersion=0.0.0-dev \
+     -X ${VERSION_PKG}.CollectorVersion=0.0.0-dev \
+     -X ${VERSION_PKG}.ScannerVersion=0.0.0-dev \
+     -X ${VERSION_PKG}.GitShortSha=dev"
+    GCFLAGS="-gcflags=all=-N -l"
+else
+    LDFLAGS="-s -w \
+     -X ${VERSION_PKG}.MainVersion=0.0.0-dev \
+     -X ${VERSION_PKG}.CollectorVersion=0.0.0-dev \
+     -X ${VERSION_PKG}.ScannerVersion=0.0.0-dev \
+     -X ${VERSION_PKG}.GitShortSha=dev"
+fi
 
 for entry in "${BINS[@]}"; do
     bin="${entry%%:*}"
     pkg="${entry##*:}"
     GOOS=linux GOARCH="$GOARCH" CGO_ENABLED=0 \
-        go build -buildvcs=false -trimpath -ldflags="$LDFLAGS" \
+        go build -buildvcs=false -trimpath $GCFLAGS -ldflags="$LDFLAGS" \
         -o "${OUTDIR}/${bin}" "$pkg"
 done
 
@@ -111,6 +123,7 @@ if $RT inspect --format '{{.State.Running}}' "$BUILDKITD_CONTAINER" 2>/dev/null 
         --local context=/context \
         --local dockerfile=/context \
         --opt "build-arg:TARGET_ARCH=${GOARCH}" \
+        --opt "build-arg:DEBUG_BUILD=${DEBUG_BUILD:-no}" \
         --output "type=image,name=${REG_IMAGE},push=true,registry.insecure=true"
 elif [[ -n "${BUILDKIT_HOST:-}" ]]; then
     buildctl build \
@@ -118,11 +131,13 @@ elif [[ -n "${BUILDKIT_HOST:-}" ]]; then
         --local context=image/rhel \
         --local dockerfile=image/rhel \
         --opt "build-arg:TARGET_ARCH=${GOARCH}" \
+        --opt "build-arg:DEBUG_BUILD=${DEBUG_BUILD:-no}" \
         --output "type=image,name=${IMAGE},push=true,registry.insecure=true"
 else
     $RT build \
         -t "$IMAGE" \
         --build-arg "TARGET_ARCH=${GOARCH}" \
+        --build-arg "DEBUG_BUILD=${DEBUG_BUILD:-no}" \
         --file image/rhel/Dockerfile \
         image/rhel
 
