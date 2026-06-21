@@ -28,7 +28,7 @@ func Run(centralDB postgres.DB) error {
 	// Fast path: check if DB version matches using Central's existing pool.
 	// This is also where the lazy pool establishes its first connection,
 	// so we retry here until the database is reachable.
-	dbSeqNum, err := readVersionSeqNumWithRetry(centralDB)
+	dbSeqNum, err := readVersionSeqNum(centralDB)
 	if err == nil {
 		currSeqNum := migrations.CurrentDBVersionSeqNum()
 		if dbSeqNum == currSeqNum {
@@ -103,17 +103,23 @@ func ensureDatabaseExists() error {
 	}))
 }
 
-// readVersionSeqNumWithRetry reads the DB version, retrying until the database
-// is reachable. This is where the lazy pool's first connection is established.
-func readVersionSeqNumWithRetry(db postgres.DB) (int, error) {
+// readVersionSeqNum attempts to read the DB version. It retries on connection
+// errors (DB not yet reachable) but returns immediately on "database/table
+// doesn't exist" which indicates a fresh install needing the full migration.
+func readVersionSeqNum(db postgres.DB) (int, error) {
 	var seqNum int
-	err := retry.WithRetry(func() error {
+	for attempt := range 60 {
 		ctx := sac.WithAllAccess(context.Background())
-		return db.QueryRow(ctx, "SELECT seqnum FROM versions LIMIT 1").Scan(&seqNum)
-	}, retry.Tries(60), retry.BetweenAttempts(func(_ int) {
+		err := db.QueryRow(ctx, "SELECT seqnum FROM versions LIMIT 1").Scan(&seqNum)
+		if err == nil {
+			return seqNum, nil
+		}
+		s := err.Error()
+		if strings.Contains(s, "does not exist") || strings.Contains(s, "3D000") || strings.Contains(s, "42P01") {
+			return 0, err
+		}
+		log.WriteToStderrf("waiting for database (attempt %d): %v", attempt+1, err)
 		time.Sleep(5 * time.Second)
-	}), retry.OnFailedAttempts(func(err error) {
-		log.WriteToStderrf("waiting for database: %v", err)
-	}))
-	return seqNum, err
+	}
+	return 0, errors.New("timed out waiting for database")
 }
