@@ -115,6 +115,7 @@ import (
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	customMetrics "github.com/stackrox/rox/central/metrics/custom"
 	"github.com/stackrox/rox/central/metrics/telemetry"
+	"github.com/stackrox/rox/central/migrate"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
 	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
@@ -306,7 +307,17 @@ func main() {
 	devmode.StartOnDevBuilds("central")
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
-	ensureDB(ctx)
+
+	db := globaldb.InitializePostgres(ctx)
+
+	if err := migrate.Run(db); err != nil {
+		log.Panicf("Migrator failed: %v", err)
+	}
+
+	versionStore := vStore.NewPostgres(db)
+	if err := version.Ensure(versionStore); err != nil {
+		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
+	}
 
 	if !pgconfig.IsExternalDatabase() {
 		// Need to remove the backup clone and set the current version
@@ -365,14 +376,6 @@ func clusterInternalRoutes() []*internal.Route {
 		Compression:   true,
 	})
 	return result
-}
-
-func ensureDB(ctx context.Context) {
-	versionStore := vStore.NewPostgres(globaldb.InitializePostgres(ctx))
-	err := version.Ensure(versionStore)
-	if err != nil {
-		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
-	}
 }
 
 func startServices() {
