@@ -1,0 +1,40 @@
+name: qa-e2e-tests-ocp-4.22
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - labeled
+      - synchronize
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  run:
+    uses: ./.github/workflows/_qa-e2e-tests.yaml
+    with:
+      ci-job-name: ocp-4.22-qa-e2e-tests
+      cluster-wait-timeout-minutes: 50
+      infra-flavor: openshift-4
+      infra-args: |
+        openshift-version=ocp/stable-4.22
+        master-node-type=e2-standard-4
+        master-node-count=3
+        worker-node-type=e2-standard-8
+        worker-node-count=3
+        fips-enabled=true
+        ssd-storage-class=true
+      infra-lifespan: 5h
+      extra-env-vars: |
+        ORCHESTRATOR_FLAVOR=openshift
+        KUBERNETES_PROVIDER=ocp
+        SFA_AGENT=true
+        SETUP_WORKLOAD_IDENTITIES=true
+    secrets: inherit
