@@ -94,6 +94,8 @@ COPY --link bin/admission-control  /stackrox/bin/admission-control
 COPY --link bin/config-controller  /stackrox/bin/config-controller
 COPY --link bin/roxagent           /stackrox/bin/roxagent
 COPY --link bin/roxctl*            /assets/downloads/cli/
+# dlv (Delve debugger) — present only in DEBUG_BUILD=yes images
+COPY --link bin/dlv-placeholder bin/dlv* /stackrox/bin/
 
 RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
     ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux
