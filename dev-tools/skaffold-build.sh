@@ -60,11 +60,18 @@ BINS=(
     "roxctl:./roxctl"
 )
 
+VERSION_PKG="github.com/stackrox/rox/pkg/version/internal"
+LDFLAGS="-s -w \
+ -X ${VERSION_PKG}.MainVersion=0.0.0-dev \
+ -X ${VERSION_PKG}.CollectorVersion=0.0.0-dev \
+ -X ${VERSION_PKG}.ScannerVersion=0.0.0-dev \
+ -X ${VERSION_PKG}.GitShortSha=dev"
+
 for entry in "${BINS[@]}"; do
     bin="${entry%%:*}"
     pkg="${entry##*:}"
     GOOS=linux GOARCH="$GOARCH" CGO_ENABLED=0 \
-        go build -buildvcs=false -trimpath -ldflags="-s -w" \
+        go build -buildvcs=false -trimpath -ldflags="$LDFLAGS" \
         -o "${OUTDIR}/${bin}" "$pkg"
 done
 
@@ -93,7 +100,7 @@ echo "=== Building + pushing image ==="
 # Use BuildKit if available (COPY --link caching + direct push, ~2-7s)
 # Fall back to podman/docker build + push (~18s)
 BUILDKITD_CONTAINER="${BUILDKITD_CONTAINER:-buildkitd}"
-if $RT inspect "$BUILDKITD_CONTAINER" >/dev/null 2>&1; then
+if $RT inspect --format '{{.State.Running}}' "$BUILDKITD_CONTAINER" 2>/dev/null | grep -q true; then
     # BuildKit running in a container with image/rhel/ mounted — no context transfer
     REG_IMAGE="${IMAGE/localhost/$(echo "$BUILDKITD_CONTAINER" | sed 's/buildkitd//')registry}"
     # Convert localhost:PORT to CLUSTER-registry:5000 for in-network push
