@@ -72,7 +72,9 @@ RUN \
     # by the script `save-dir-contents` during the image build. The directory
     # contents are then restored by the script `restore-all-dir-contents`
     # during the container start.
-    chown -R 4000:4000 /etc/pki/ca-trust && save-dir-contents /etc/pki/ca-trust/source && \
+    chown -R 4000:4000 /etc/pki/ca-trust && \
+    update-ca-trust extract --output /etc/pki/ca-trust/extracted && \
+    save-dir-contents /etc/pki/ca-trust/source /etc/pki/ca-trust/extracted && \
     mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
     mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
     mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
