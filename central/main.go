@@ -549,34 +549,26 @@ func newRateLimiter() ratelimit.RateLimiter {
 func startGRPCServer() {
 	ctx := context.Background()
 
-	// Start DB connection + migration in background. The lazy pool connects
-	// on first query. Once migration completes, SignalReady() unblocks all
-	// callers of globaldb.GetPostgres() (which singletons use for DB access).
-	go func() {
-		db := globaldb.InitializePostgres(ctx)
-		if err := migrate.Run(db); err != nil {
-			log.Panicf("Migrator failed: %v", err)
-		}
-		versionStore := vStore.NewPostgres(db)
-		if err := version.Ensure(versionStore); err != nil {
-			log.Panicf("DB version check failed. You may need to run migrations: %v", err)
-		}
-		globaldb.SignalReady()
-		go dropBackupDB()
-	}()
+	// DB init + migration (lazy pool connects on first query).
+	db := globaldb.InitializePostgres(ctx)
+	if err := migrate.Run(db); err != nil {
+		log.Panicf("Migrator failed: %v", err)
+	}
+	versionStore := vStore.NewPostgres(db)
+	if err := version.Ensure(versionStore); err != nil {
+		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
+	}
+	globaldb.SignalReady()
+	go dropBackupDB()
 
-	// Temporarily elevate permissions to modify auth providers.
+	// Auth provider setup.
 	authProviderRegisteringCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))
 
-	// Create the registry of applied auth providers.
 	registry := authProviderRegistry.Singleton()
 
-	// env.EnableOpenShiftAuth signals the desire but does not guarantee Central
-	// is configured correctly to talk to the OpenShift's OAuth server. If this
-	// is the case, we can be setting up an auth providers which won't work.
 	if env.EnableOpenShiftAuth.BooleanSetting() {
 		authProviderBackendFactories[openshift.TypeName] = openshift.NewFactory
 	}
@@ -609,8 +601,8 @@ func startGRPCServer() {
 	}
 
 	idExtractors := []authn.IdentityExtractor{
-		serviceMTLSExtractor, // internal services
-		tokenbased.NewExtractor(roleDataStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens
+		serviceMTLSExtractor,
+		tokenbased.NewExtractor(roleDataStore.Singleton(), jwt.ValidatorSingleton()),
 		userpass.IdentityExtractorOrPanic(roleDataStore.Singleton(), basicAuthMgr, basicAuthProvider),
 		serviceTokenExtractor,
 		authnUserpki.NewExtractor(tlsconfig.ManagerInstance()),
@@ -644,19 +636,15 @@ func startGRPCServer() {
 		)
 	}
 
-	// This adds an on-demand global tracing for the built-in authorization.
 	authzTraceSink := trace.AuthzTraceSinkSingleton()
 	config.UnaryInterceptors = append(config.UnaryInterceptors,
 		observe.AuthzTraceInterceptor(authzTraceSink),
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
-
-	// Before authorization is checked, we want to inject the sac client into the context.
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
-	// Telemetry client has to add interceptors before starting the server.
 	c := phonehomeClient.Singleton()
 	config.HTTPInterceptors = append(config.HTTPInterceptors, c.GetHTTPInterceptor())
 	config.UnaryInterceptors = append(config.UnaryInterceptors, c.GetGRPCInterceptor())

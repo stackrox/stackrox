@@ -157,6 +157,13 @@ type Config struct {
 	MaxConnectionAge time.Duration
 	// Subsystem is used to enrich metrics with information about the component that runs this API.
 	Subsystem pkgMetrics.Subsystem
+
+	// ServicesReadySignal, if set, causes the server to bind its socket
+	// immediately but defer service registration and serving until the
+	// channel is closed. Connections that arrive in the interim are held
+	// in the OS TCP backlog. This allows the port to be open (for health
+	// probes) while the application initializes.
+	ServicesReadySignal <-chan struct{}
 }
 
 // NewAPI returns an API object.
@@ -469,18 +476,17 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 		grpc.MaxConcurrentStreams(maxGrpcConcurrentStreams()),
 	)
 
-	for _, service := range a.apiServices {
-		service.RegisterServiceServer(a.grpcServer)
-	}
-
+	// Set up the local gRPC endpoint and HTTP mux. These need the gRPC
+	// server object but NOT registered services.
 	dialCtxFunc := a.listenOnLocalEndpoint(a.grpcServer)
 	localConn, err := a.connectToLocalEndpoint(dialCtxFunc)
 	if err != nil {
 		log.Panicf("Could not connect to local endpoint: %v", err)
 	}
-
 	httpHandler := a.muxer(localConn)
 
+	// Bind external sockets. Connections arriving before Serve() queue
+	// in the OS TCP backlog (port is open for health probes).
 	var allSrvAndLiss []serverAndListener
 	for _, endpointCfg := range a.config.Endpoints {
 		addr, srvAndLiss, err := endpointCfg.instantiate(httpHandler, a.grpcServer, a.config.Subsystem)
@@ -496,17 +502,31 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 		}
 	}
 
-	errC := make(chan error, len(allSrvAndLiss))
-
-	for _, srvAndLis := range allSrvAndLiss {
-		go a.serveBlocking(srvAndLis, errC)
-	}
-
 	concurrency.WithLock(&a.listenersLock, func() {
 		a.listeners = allSrvAndLiss
 	})
 
-	if startedSig != nil {
+	// If ServicesReadySignal is set, signal that the socket is bound
+	// (before services are registered), then wait for services.
+	if a.config.ServicesReadySignal != nil {
+		if startedSig != nil {
+			startedSig.Signal()
+		}
+		log.Info("Launching backend gRPC listener (port bound, waiting for services)")
+		<-a.config.ServicesReadySignal
+	}
+
+	for _, service := range a.apiServices {
+		service.RegisterServiceServer(a.grpcServer)
+	}
+
+	errC := make(chan error, len(allSrvAndLiss))
+	for _, srvAndLis := range allSrvAndLiss {
+		go a.serveBlocking(srvAndLis, errC)
+	}
+
+	// Signal started if not already signaled above.
+	if a.config.ServicesReadySignal == nil && startedSig != nil {
 		startedSig.Signal()
 	}
 
