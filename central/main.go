@@ -115,6 +115,7 @@ import (
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	customMetrics "github.com/stackrox/rox/central/metrics/custom"
 	"github.com/stackrox/rox/central/metrics/telemetry"
+	"github.com/stackrox/rox/central/migrate"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
 	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
@@ -306,6 +307,11 @@ func main() {
 	devmode.StartOnDevBuilds("central")
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
+
+	if err := migrate.Run(); err != nil {
+		log.Panicf("Migrator failed: %v", err)
+	}
+
 	ensureDB(ctx)
 
 	if !pgconfig.IsExternalDatabase() {
