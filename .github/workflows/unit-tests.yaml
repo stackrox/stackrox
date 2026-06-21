@@ -180,11 +180,10 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
-  # Coverage runs separately because -coverprofile adds ~4 minutes of
-  # overhead to every go-unit-tests run — even at 100% cache hits. Go
-  # must read, merge, and write coverage profile data for each cached
-  # package. Measured locally: 7m20s with -coverprofile vs 3m36s without
-  # (735/735 cached, zero code changes, same GOCACHE).
+  # Coverage runs separately because -coverprofile adds ~12s overhead
+  # per warm PR run (A/B tested: 90s avg without vs 102s avg with,
+  # 93% cache, 4 sequential runs on this branch). On cold runs the
+  # overhead is larger (~2x locally). Cache hit rate is unaffected.
   # This job uses -count=1 (no test caching) but restores the compile
   # cache (save: false) to avoid recompiling from scratch.
   go-coverage:
