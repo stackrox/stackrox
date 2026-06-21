@@ -56,7 +56,16 @@ func configureCerts(namespace string) error {
 	if allExist, err := fileutils.AllExist(mtls.CertFilePath(), mtls.KeyFilePath()); err != nil {
 		log.Infof("Could not stat certificate and key in default location: %v. Assuming they don't exist...", err)
 	} else if allExist && isUsableServiceCert(mtls.CertFilePath(), namespace) {
-		// Found usable cert in default location
+		return nil
+	}
+
+	// Check legacy cert location (certs-legacy volume mount).
+	legacyCertPath := "/run/secrets/stackrox.io/certs-legacy/cert.pem"
+	legacyKeyPath := "/run/secrets/stackrox.io/certs-legacy/key.pem"
+	if allExist, err := fileutils.AllExist(legacyCertPath, legacyKeyPath); err == nil && allExist && isUsableServiceCert(legacyCertPath, namespace) {
+		log.Info("Using legacy cert location")
+		os.Setenv(mtls.CertFilePathEnvName, legacyCertPath)
+		os.Setenv(mtls.KeyFileEnvName, legacyKeyPath)
 		return nil
 	}
 

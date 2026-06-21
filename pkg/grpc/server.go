@@ -478,8 +478,18 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 		grpc.MaxConcurrentStreams(maxGrpcConcurrentStreams()),
 	)
 
-	// Set up the local gRPC endpoint and HTTP mux. These need the gRPC
-	// server object but NOT registered services.
+	// If ServicesReadySignal is set, wait for services to be ready before
+	// proceeding. Services must be registered before Serve() is called.
+	if a.config.ServicesReadySignal != nil {
+		log.Info("Waiting for services to be ready before starting gRPC server")
+		<-a.config.ServicesReadySignal
+	}
+
+	// Register services before listenOnLocalEndpoint (which calls Serve).
+	for _, service := range a.apiServices {
+		service.RegisterServiceServer(a.grpcServer)
+	}
+
 	dialCtxFunc := a.listenOnLocalEndpoint(a.grpcServer)
 	localConn, err := a.connectToLocalEndpoint(dialCtxFunc)
 	if err != nil {
@@ -487,8 +497,6 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 	}
 	httpHandler := a.muxer(localConn)
 
-	// Bind external sockets. Connections arriving before Serve() queue
-	// in the OS TCP backlog (port is open for health probes).
 	var allSrvAndLiss []serverAndListener
 	for _, endpointCfg := range a.config.Endpoints {
 		addr, srvAndLiss, err := endpointCfg.instantiate(httpHandler, a.grpcServer, a.config.Subsystem)
@@ -507,20 +515,6 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 	concurrency.WithLock(&a.listenersLock, func() {
 		a.listeners = allSrvAndLiss
 	})
-
-	// If ServicesReadySignal is set, signal that the socket is bound
-	// (before services are registered), then wait for services.
-	if a.config.ServicesReadySignal != nil {
-		if startedSig != nil {
-			startedSig.Signal()
-		}
-		log.Info("Launching backend gRPC listener (port bound, waiting for services)")
-		<-a.config.ServicesReadySignal
-	}
-
-	for _, service := range a.apiServices {
-		service.RegisterServiceServer(a.grpcServer)
-	}
 
 	errC := make(chan error, len(allSrvAndLiss))
 	for _, srvAndLis := range allSrvAndLiss {
