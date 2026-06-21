@@ -63,7 +63,7 @@ BINS=(
 VERSION_PKG="github.com/stackrox/rox/pkg/version/internal"
 GCFLAGS=""
 
-if [[ "${DEBUG_BUILD:-}" == "yes" || "${SKAFFOLD_DEBUG:-}" == "true" ]]; then
+if [[ "${DEBUG_BUILD:-}" == "yes" ]]; then
     echo "=== DEBUG BUILD: symbols preserved, optimizations disabled ==="
     LDFLAGS=" \
      -X ${VERSION_PKG}.MainVersion=0.0.0-dev \
