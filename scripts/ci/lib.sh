@@ -1028,6 +1028,39 @@ scanner-v4-db ${tag}
 roxctl ${tag}
 END
             ;;
+        *-qa-e2e-tests)
+            local tag_sanitized; tag_sanitized="${tag//x/0}"
+            local tag_suffix; tag_suffix="${IMAGE_TAG_SUFFIX:-}"
+            if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+                cat >> "${image_list}" << END
+release-operator ${tag_sanitized}${tag_suffix}
+release-operator-bundle v${tag_sanitized}${tag_suffix}
+release-main ${tag_sanitized}${tag_suffix}
+release-central-db ${tag_sanitized}${tag_suffix}
+release-collector ${tag_sanitized}${tag_suffix}
+release-fact ${tag_sanitized}${tag_suffix}
+release-scanner ${tag_sanitized}${tag_suffix}
+release-scanner-db ${tag_sanitized}${tag_suffix}
+release-scanner-v4 ${tag_sanitized}${tag_suffix}
+release-scanner-v4-db ${tag_sanitized}${tag_suffix}
+release-roxctl ${tag_sanitized}${tag_suffix}
+END
+            else
+                cat >> "${image_list}" << END
+stackrox-operator ${tag_sanitized}
+stackrox-operator-bundle v${tag_sanitized}
+main ${tag}
+central-db ${tag}
+collector ${tag}
+fact ${tag}
+scanner ${tag}
+scanner-db ${tag}
+scanner-v4 ${tag}
+scanner-v4-db ${tag}
+roxctl ${tag}
+END
+            fi
+            ;;
         *)
             cat >> "${image_list}" << END
 central-db ${tag}
@@ -1050,6 +1083,7 @@ END
     sort -u "${image_list}" > "${unique}"
     cat "${unique}" > "${image_list}"
     rm -f "${unique}"
+
 }
 
 check_rhacs_eng_image_exists() {
