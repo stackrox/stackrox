@@ -184,7 +184,7 @@ print('Init bundle generated')
 
     helm --kube-context "kind-${CLUSTER_NAME}" upgrade --install -n stackrox \
         stackrox-secured-cluster-services deploy/k8s/sensor-chart \
-        --set clusterName=local \
+        --set clusterName=remote \
         --set centralEndpoint=central.stackrox.svc:443 \
         --set image.main.fullRef="${SENSOR_IMAGE}" \
         --set imagePullSecrets.allowNone=true \
