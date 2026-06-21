@@ -2,18 +2,109 @@
 #
 # StackRox local development on KinD.
 #
-# Run this once, leave it running. It sets up the infrastructure (if needed)
-# and starts Skaffold in dev mode — watching Go source files, auto-rebuilding,
-# and redeploying to the local cluster.
+# One command to run the full StackRox stack locally with automatic rebuild
+# on Go source changes. Designed for daily development — run it once in a
+# terminal and leave it running all day.
 #
-# Usage:
+# == Quick Start ==
+#
 #   ./dev-tools/kind-dev.sh              # start (or resume) dev loop
 #   ./dev-tools/kind-dev.sh teardown     # delete cluster + registry
 #
-# First run creates the KinD cluster, local registry, and generates the Helm
-# chart (~2 min). Subsequent runs skip straight to Skaffold.
+# First run (~5 min): creates KinD cluster, local registry, pulls base images,
+# generates Helm charts, builds your code, deploys full stack, deploys Sensor.
+# Subsequent runs: skips setup, goes straight to Skaffold watch loop.
 #
-# Prerequisites: kind, kubectl, helm, skaffold, roxctl, podman or docker
+# == What Gets Deployed ==
+#
+# Full stack in the "stackrox" namespace:
+#   Central, Central-DB, Scanner (V2), Scanner-DB, Scanner V4 (indexer + matcher + DB),
+#   Sensor, Collector (CORE_BPF), Admission-controller, Config-controller
+# Total memory: ~3.3 GB
+#
+# == Go Developer Workflow ==
+#
+# With this script running, edit any .go file in central/, sensor/, pkg/, etc.
+# Skaffold detects the change, cross-compiles all binaries, builds a container
+# image (only changed binary layers rebuild via COPY --link), pushes to the
+# local registry, and Helm-upgrades the deployment. ~20s from save to running.
+#
+#   Terminal 1:  ./dev-tools/kind-dev.sh
+#   Terminal 2:  kubectl logs -f -l app=central -n stackrox --tail=100
+#   Editor:      edit central/main.go, save → see rebuild in Terminal 1,
+#                new log output in Terminal 2
+#
+# == UI Developer Workflow ==
+#
+# The UI dev server runs on your host (not in the cluster). Central in KinD
+# serves as the API backend.
+#
+#   Terminal 1:  ./dev-tools/kind-dev.sh
+#   Terminal 2:  kubectl -n stackrox port-forward svc/central 8000:443
+#   Terminal 3:  cd ui/apps/platform && npm run start
+#   Browser:     https://localhost:3000  (Vite HMR — sub-second updates)
+#
+# == Running E2E Tests ==
+#
+# Groovy (qa-tests-backend):
+#   cd qa-tests-backend
+#   JAVA_HOME=/path/to/jdk21 ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password) \
+#     API_HOSTNAME=localhost API_PORT=8443 CLUSTER=K8S \
+#     POD_SECURITY_POLICIES=false REMOTE_CLUSTER_ARCH=aarch64 \
+#     ./gradlew test --tests="PolicyConfigurationTest"
+#
+# Go e2e:
+#   ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password) \
+#     API_ENDPOINT=localhost:8443 \
+#     go test -v -tags test_e2e -run TestPing -count=1 ./tests/
+#
+# Cypress UI:
+#   cd ui/apps/platform
+#   ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password) \
+#     npm run cypress-spec -- "configmanagement/dashboard.test.js"
+#
+# Note: Groovy tests need a port-forward on 8443:
+#   kubectl -n stackrox port-forward svc/central 8443:443
+#
+# Note: Cypress tests need the Vite dev server on :3000 (see UI workflow above)
+#
+# Note: Test images from quay.io/rhacs-eng need pull secrets. The script creates
+# them in the "qa" namespace if ~/.config/containers/auth.json has quay.io creds.
+#
+# == Ctrl+C Behavior ==
+#
+# Pressing Ctrl+C stops Skaffold but leaves the cluster and deployment running
+# (--cleanup=false). Re-run this script to resume watching. The cluster persists
+# until you run: ./dev-tools/kind-dev.sh teardown
+#
+# == Environment Variables ==
+#
+#   KIND_CLUSTER_NAME    Cluster name (default: stackrox-dev)
+#   KIND_REGISTRY_PORT   Local registry port (default: 5000)
+#   MAIN_IMAGE_TAG       Base image tag (default: latest release git tag)
+#   BUILDKITD_CONTAINER  BuildKit container name (default: buildkitd)
+#
+# == Prerequisites ==
+#
+#   kind, kubectl, helm, skaffold, roxctl, podman or docker
+#   Optional: buildkitd container for fast image builds (~1s vs ~18s)
+#
+# == Troubleshooting ==
+#
+#   Disk pressure / pod evictions:
+#     The full stack uses ~86% of KinD's 100GB disk. The kubelet threshold
+#     is set to 1% to avoid false evictions. If pods get evicted, run:
+#       kubectl taint node stackrox-dev-control-plane node.kubernetes.io/disk-pressure-
+#
+#   Sensor not connecting after Central restart:
+#     Sensor reconnects within 10s (backoff: 1s initial, 10s max). If it's
+#     stuck, restart the sensor pod:
+#       kubectl -n stackrox delete pod -l app=sensor --grace-period=0
+#
+#   Version panic ("failed to parse main version"):
+#     The build uses stable ldflags (0.0.0-dev). If you see this, the image
+#     wasn't built by skaffold-build.sh. Re-run this script to rebuild.
+#
 
 set -euo pipefail
 
