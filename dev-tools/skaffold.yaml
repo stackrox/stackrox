@@ -57,8 +57,8 @@ deploy:
           central.telemetry.enabled: "false"
           central.persistence.none: "true"
           imagePullSecrets.allowNone: "true"
-          scanner.disable: "true"
-          scannerV4.disable: "true"
+          scanner.disable: "false"
+          scannerV4.disable: "false"
         setValueTemplates:
           central.image.fullRef: "{{.IMAGE_FULLY_QUALIFIED_localhost_5000_main}}"
 

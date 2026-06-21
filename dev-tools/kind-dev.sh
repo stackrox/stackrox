@@ -77,15 +77,29 @@ data:
 EOF
 fi
 
-# --- Ensure central-db base image is available ---
+# --- Ensure base images are available in KinD node ---
 MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(git tag --sort=-version:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -1)}"
+SCANNER_TAG="${SCANNER_IMAGE_TAG:-$(make --quiet --no-print-directory scanner-tag 2>/dev/null)}"
+COLLECTOR_TAG="${COLLECTOR_IMAGE_TAG:-$(make --quiet --no-print-directory collector-tag 2>/dev/null)}"
 REGISTRY="${DEFAULT_IMAGE_REGISTRY:-$(make --quiet --no-print-directory default-image-registry)}"
-if ! _rt exec "$NODE_NAME" crictl img --no-trunc 2>/dev/null | grep -q "${REGISTRY}/central-db:${MAIN_IMAGE_TAG}"; then
-    echo "=== Pulling central-db base image ==="
-    goarch="$(go env GOARCH)"
-    _rt exec "$NODE_NAME" ctr -n k8s.io images pull --platform "linux/${goarch}" \
-        "${REGISTRY}/central-db:${MAIN_IMAGE_TAG}" 2>&1 | tail -1
-fi
+goarch="$(go env GOARCH)"
+
+pull_if_missing() {
+    local img="$1"
+    if ! _rt exec "$NODE_NAME" crictl img --no-trunc 2>/dev/null | grep -q "$img"; then
+        echo "  Pulling $img..."
+        _rt exec "$NODE_NAME" ctr -n k8s.io images pull --platform "linux/${goarch}" "$img" 2>&1 | tail -1 &
+    fi
+}
+
+echo "=== Pulling base images ==="
+pull_if_missing "${REGISTRY}/central-db:${MAIN_IMAGE_TAG}"
+pull_if_missing "${REGISTRY}/scanner:${SCANNER_TAG}"
+pull_if_missing "${REGISTRY}/scanner-db:${SCANNER_TAG}"
+pull_if_missing "${REGISTRY}/scanner-v4:${MAIN_IMAGE_TAG}"
+pull_if_missing "${REGISTRY}/scanner-v4-db:${MAIN_IMAGE_TAG}"
+pull_if_missing "${REGISTRY}/collector:${COLLECTOR_TAG}"
+wait
 
 # --- Ensure Helm chart is generated ---
 if [[ ! -f deploy/k8s/central-deploy/chart/Chart.yaml ]]; then
@@ -175,6 +189,7 @@ print('Init bundle generated')
         --set centralEndpoint=central.stackrox.svc:443 \
         --set image.main.fullRef="${SENSOR_IMAGE}" \
         --set imagePullSecrets.allowNone=true \
+        --set image.collector.fullRef="${REGISTRY}/collector:${COLLECTOR_TAG}" \
         --set collector.collectionMethod=CORE_BPF \
         --set admissionControl.replicas=1 \
         --set sensor.resources.requests.memory=100Mi \
