@@ -1,0 +1,431 @@
+name: _qa-e2e-tests
+
+on:
+  workflow_call:
+    inputs:
+      ci-job-name:
+        description: "Unique job name, e.g. gke-qa-e2e-tests"
+        required: true
+        type: string
+      trigger-label:
+        description: "PR label that triggers this workflow. If empty, runs unconditionally."
+        required: false
+        type: string
+        default: ""
+      extra-env-vars:
+        description: "Flavor-specific env vars as multi-line KEY=VALUE pairs"
+        required: false
+        type: string
+        default: ""
+
+      # ----- Image inputs -----
+      konflux-images:
+        description: "Wait for Konflux-built images instead of upstream images"
+        required: false
+        type: boolean
+        default: false
+
+      # ----- Infra cluster provisioning inputs -----
+      infra-flavor:
+        description: "Infra cluster flavor, e.g. gke-default, ocp-4"
+        required: false
+        type: string
+        default: "gke-default"
+      infra-args:
+        description: "Infra cluster args as multi-line KEY=VALUE pairs, one per line"
+        required: false
+        type: string
+        default: |
+          nodes=3
+          machine-type=e2-standard-8
+      infra-lifespan:
+        description: "Infra cluster lifespan (auto-deleted after expiry)"
+        required: false
+        type: string
+        default: "5h"
+
+      # ----- Timeout inputs -----
+      cluster-wait-timeout-minutes:
+        description: "Timeout for waiting on cluster provisioning (OCP needs longer)"
+        required: false
+        type: number
+        default: 25
+      job-timeout-minutes:
+        description: "Overall job timeout"
+        required: false
+        type: number
+        default: 360
+      part1-timeout-minutes:
+        description: "Part 1 test timeout"
+        required: false
+        type: number
+        default: 250
+      part2-timeout-minutes:
+        description: "Part 2 test timeout"
+        required: false
+        type: number
+        default: 35
+      db-backup-restore-timeout-minutes:
+        description: "DB backup and restore test timeout"
+        required: false
+        type: number
+        default: 30
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  # 28-char limit enforced by infra service
+  CLUSTER_NAME: qa-e2e-${{ github.run_id }}-${{ github.run_attempt }}
+
+jobs:
+  wait-for-images:
+    if: >-
+      !github.event.pull_request.head.repo.fork && (
+        github.event_name != 'pull_request' ||
+        inputs.trigger-label == '' ||
+        contains(github.event.pull_request.labels.*.name, inputs.trigger-label)
+      )
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.compute-tags.outputs.tag }}
+      tag_sanitized: ${{ steps.compute-tags.outputs.tag_sanitized }}
+      tag_suffix: ${{ steps.compute-tags.outputs.tag_suffix }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/actions/handle-tagged-build
+      - name: Compute image tags
+        id: compute-tags
+        run: |
+          tag="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
+          # stackrox-operator uses the main tag with 'x' replaced by '0';
+          # stackrox-operator-bundle additionally gets a 'v' prefix (applied below).
+          tag_sanitized="${tag//x/0}"
+          # Konflux images use a "-fast" suffix except on release branches.
+          branch="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          tag_suffix=""
+          if [[ "${{ inputs.konflux-images }}" == "true" && "$branch" != release-* ]]; then
+            tag_suffix="-fast"
+          fi
+          {
+            echo "tag=${tag}"
+            echo "tag_sanitized=${tag_sanitized}"
+            echo "tag_suffix=${tag_suffix}"
+          } | tee -a "$GITHUB_ENV" "$GITHUB_OUTPUT"
+      - name: Wait for images
+        if: ${{ !inputs.konflux-images }}
+        uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
+        with:
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          # collector has its own version (COLLECTOR_VERSION), but the build
+          # pipeline retags it with the main tag (see push_matching_collector_scanner_images).
+          image: |
+            rhacs-eng/main:${{ env.tag }}
+            rhacs-eng/central-db:${{ env.tag }}
+            rhacs-eng/fact:${{ env.tag }}
+            rhacs-eng/collector:${{ env.tag }}
+            rhacs-eng/scanner:${{ env.tag }}
+            rhacs-eng/scanner-db:${{ env.tag }}
+            rhacs-eng/scanner-v4:${{ env.tag }}
+            rhacs-eng/scanner-v4-db:${{ env.tag }}
+            rhacs-eng/stackrox-operator:${{ env.tag_sanitized }}
+            rhacs-eng/stackrox-operator-bundle:v${{ env.tag_sanitized }}
+
+      - name: Wait for images (konflux)
+        if: ${{ inputs.konflux-images }}
+        uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
+        with:
+          limit: 3600 # Let's wait a full hour, because Konflux image building is slower.
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          image: |
+            rhacs-eng/release-main:${{ env.tag_sanitized }}${{ env.tag_suffix }}
+            rhacs-eng/release-central-db:${{ env.tag_sanitized }}${{ env.tag_suffix }}
+            rhacs-eng/release-fact:${{ env.tag_sanitized }}${{ env.tag_suffix }}
+            rhacs-eng/release-collector:${{ env.tag_sanitized }}${{ env.tag_suffix }}
+            rhacs-eng/release-scanner:${{ env.tag_sanitized }}${{ env.tag_suffix }}
+            rhacs-eng/release-scanner-db:${{ env.tag_sanitized }}${{ env.tag_suffix }}
+            rhacs-eng/release-scanner-v4:${{ env.tag_sanitized }}${{ env.tag_suffix }}
+            rhacs-eng/release-scanner-v4-db:${{ env.tag_sanitized }}${{ env.tag_suffix }}
+            rhacs-eng/release-operator:${{ env.tag_sanitized }}${{ env.tag_suffix }}
+            rhacs-eng/release-operator-bundle:v${{ env.tag_sanitized }}${{ env.tag_suffix }}
+
+  create-cluster:
+    if: >-
+      !github.event.pull_request.head.repo.fork && (
+        github.event_name != 'pull_request' ||
+        inputs.trigger-label == '' ||
+        contains(github.event.pull_request.labels.*.name, inputs.trigger-label)
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare infra args
+        id: prepare-infra-args
+        env:
+          INFRA_ARGS: ${{ inputs.infra-args }}
+        run: |
+          args=$(echo "$INFRA_ARGS" | grep -v '^$' | paste -sd ',' -)
+          echo "args=$args" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger cluster creation
+        uses: stackrox/actions/infra/create-cluster@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/create-cluster@v1
+        with:
+          token: ${{ secrets.INFRA_TOKEN }}
+          flavor: ${{ inputs.infra-flavor }}
+          name: ${{ env.CLUSTER_NAME }}
+          lifespan: ${{ inputs.infra-lifespan }}
+          args: ${{ steps.prepare-infra-args.outputs.args }}
+          wait: false
+
+  qa-e2e-tests:
+    needs: [wait-for-images, create-cluster]
+    if: >-
+      !github.event.pull_request.head.repo.fork && (
+        github.event_name != 'pull_request' ||
+        inputs.trigger-label == '' ||
+        contains(github.event.pull_request.labels.*.name, inputs.trigger-label)
+      )
+    runs-on: ubuntu-latest
+    env:
+      CI_JOB_NAME: ${{ inputs.ci-job-name }}
+      ARTIFACT_DIR: ./junit-reports/
+      USE_LOCAL_ROXCTL: "true"
+      ROX_RISK_REPROCESSING_INTERVAL: 15s
+      ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL: 30s
+      GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      QA_TEST_DEBUG_LOGS: /tmp/qa-tests-backend-logs
+      AWS_S3_BACKUP_TEST_BUCKET_REGION: us-east-2
+      PYTHONUNBUFFERED: "1"
+      IMAGE_TAG_SUFFIX: ${{ needs.wait-for-images.outputs.tag_suffix }}
+    timeout-minutes: ${{ inputs.job-timeout-minutes }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Docker login to Quay.io
+        env:
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
+
+      - name: Set flavor-specific env vars
+        env:
+          EXTRA_ENV_VARS: ${{ inputs.extra-env-vars }}
+        run: |
+          while IFS= read -r line; do
+            if [[ -n "$line" ]]; then
+              echo "$line" >> "$GITHUB_ENV"
+            fi
+          done <<< "$EXTRA_ENV_VARS"
+          if [[ "${{ inputs.konflux-images }}" == "true" ]]; then
+            echo "USE_KONFLUX_IMAGES=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Set up Cloud SDK
+        if: startsWith(inputs.infra-flavor, 'gke')
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+        with:
+          install_components: "gke-gcloud-auth-plugin"
+
+      - uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
+
+      - name: Install roxctl
+        uses: stackrox/roxctl-installer-action@47fb4f5b275066b8322369e6e33fa010915b0d13 # ratchet:stackrox/roxctl-installer-action@v1
+        with:
+          roxctl-release: latest
+
+      - name: Install roxie
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors -o /usr/local/bin/roxie https://github.com/stackrox/roxie/releases/download/v0.4.1/roxie-linux-amd64
+          chmod +x /usr/local/bin/roxie
+
+      - name: Wait for cluster and get kubeconfig
+        env:
+          INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+        timeout-minutes: ${{ inputs.cluster-wait-timeout-minutes }}
+        run: |
+          infractl wait "${CLUSTER_NAME}"
+          infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
+          echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
+
+      - name: Verify kubectl access
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Create artifact directory
+        run: mkdir -p "$ARTIFACT_DIR"
+
+      - name: Download Go module dependencies
+        # The qa-tests-backend Makefile copies scanner protos from the Go module
+        # cache (via go list -m). Unlike Prow's apollo-ci image, GHA runners
+        # don't have the cache pre-populated.
+        run: go mod download github.com/stackrox/scanner
+
+      - name: Run pre-test
+        shell: python
+        env:
+          QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          import sys
+          sys.path.append('.openshift-ci')
+          from pre_tests import PreSystemTests
+          PreSystemTests().run()
+
+      - name: Run Part 1 tests
+        env: &test_env
+          USE_ROXIE_DEPLOY: true
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          REDHAT_USERNAME: ${{ secrets.REDHAT_USERNAME }}
+          REDHAT_PASSWORD: ${{ secrets.REDHAT_PASSWORD }}
+          GOOGLE_CREDENTIALS_GCR_SCANNER_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_SCANNER_V2 }}
+          GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2 }}
+          GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2: ${{ secrets.GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2 }}
+          GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2: ${{ secrets.GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2 }}
+          AZURE_REGISTRY_PASSWORD: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ECR_REGISTRY_NAME: ${{ secrets.AWS_ECR_REGISTRY_NAME }}
+          AWS_ECR_REGISTRY_REGION: ${{ secrets.AWS_ECR_REGISTRY_REGION }}
+          AWS_ASSUME_ROLE_ACCESS_KEY_ID: ${{ secrets.AWS_ASSUME_ROLE_ACCESS_KEY_ID }}
+          AWS_ASSUME_ROLE_SECRET_ACCESS_KEY: ${{ secrets.AWS_ASSUME_ROLE_SECRET_ACCESS_KEY }}
+          AWS_ASSUME_ROLE_ROLE_ID: ${{ secrets.AWS_ASSUME_ROLE_ROLE_ID }}
+          AWS_ASSUME_ROLE_EXTERNAL_ID: ${{ secrets.AWS_ASSUME_ROLE_EXTERNAL_ID }}
+          AWS_ASSUME_ROLE_TEST_CONDITION_ID: ${{ secrets.AWS_ASSUME_ROLE_TEST_CONDITION_ID }}
+          AWS_S3_BACKUP_TEST_BUCKET_NAME: ${{ secrets.AWS_S3_BACKUP_TEST_BUCKET_NAME }}
+          SLACK_FIXABLE_VULNS_CHANNEL: ${{ secrets.SLACK_FIXABLE_VULNS_CHANNEL }}
+          SLACK_ALT_WEBHOOK: ${{ secrets.SLACK_ALT_WEBHOOK }}
+          GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2: ${{ secrets.GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2 }}
+          QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          OCM_OFFLINE_TOKEN: ${{ secrets.OCM_OFFLINE_TOKEN }}
+          CLOUD_SOURCES_TEST_OCM_CLIENT_ID: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_ID }}
+          CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET }}
+          CLOUDFLARE_R2_BACKUP_TEST_BUCKET_NAME: ${{ secrets.CLOUDFLARE_R2_BACKUP_TEST_BUCKET_NAME }}
+          CLOUDFLARE_R2_BACKUP_TEST_REGION: ${{ secrets.CLOUDFLARE_R2_BACKUP_TEST_REGION }}
+          CLOUDFLARE_R2_BACKUP_TEST_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_R2_BACKUP_TEST_ACCOUNT_ID }}
+          CLOUDFLARE_R2_BACKUP_TEST_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_BACKUP_TEST_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_BACKUP_TEST_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_BACKUP_TEST_SECRET_ACCESS_KEY }}
+          SLACK_MAIN_WEBHOOK: ${{ secrets.SLACK_MAIN_WEBHOOK }}
+          BUILD_ID: ${{ github.run_id }}
+        timeout-minutes: ${{ inputs.part1-timeout-minutes }}
+        run: qa-tests-backend/scripts/run-part-1.sh
+
+      - name: Run Part 1 post-test
+        if: always() && env.KUBECONFIG != ''
+        env: *test_env
+        shell: python
+        run: |
+          import os, sys
+          sys.path.append('.openshift-ci')
+          from post_tests import PostClusterTest
+          post = PostClusterTest(
+              check_stackrox_logs=True,
+              artifact_destination_prefix="part-1",
+          )
+          if os.environ.get("ORCHESTRATOR_FLAVOR") == "k8s":
+              post.openshift_namespaces = []
+          post.run(['/tmp/qa-part1-misc-logs', os.environ.get('ARTIFACT_DIR', './junit-reports/')])
+
+      - name: Run Part 2 tests
+        id: run-part-2
+        env: *test_env
+        timeout-minutes: ${{ inputs.part2-timeout-minutes }}
+        run: qa-tests-backend/scripts/run-part-2.sh
+
+      - name: Run Part 2 post-test
+        if: always() && steps.run-part-2.outcome != 'skipped' && env.KUBECONFIG != ''
+        env: *test_env
+        shell: python
+        run: |
+          import os, sys
+          sys.path.append('.openshift-ci')
+          from post_tests import PostClusterTest
+          post = PostClusterTest(
+              check_stackrox_logs=True,
+              artifact_destination_prefix="part-2",
+          )
+          if os.environ.get("ORCHESTRATOR_FLAVOR") == "k8s":
+              post.openshift_namespaces = []
+          post.run(['/tmp/qa-part2-misc-logs', os.environ.get('ARTIFACT_DIR', './junit-reports/')])
+
+      - name: Run DB backup and restore test
+        id: run-db-backup-restore
+        env: *test_env
+        timeout-minutes: ${{ inputs.db-backup-restore-timeout-minutes }}
+        run: tests/e2e/lib.sh db_backup_and_restore_test /tmp/db-backup-restore-test
+
+      - name: Run DB backup and restore post-test
+        if: always() && steps.run-db-backup-restore.outcome != 'skipped' && env.KUBECONFIG != ''
+        env: *test_env
+        shell: python
+        run: |
+          import sys
+          sys.path.append('.openshift-ci')
+          from post_tests import CheckStackroxLogs
+          CheckStackroxLogs(
+              check_for_errors_in_stackrox_logs=True,
+              artifact_destination_prefix="db-test",
+          ).run(['/tmp/db-backup-restore-test'])
+
+      - name: Run final-post
+        if: always()
+        env: *test_env
+        shell: python
+        run: |
+          import sys
+          sys.path.append('.openshift-ci')
+          from post_tests import FinalPost
+          FinalPost(store_qa_tests_data=True).run()
+
+      - name: Publish test summary
+        uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+        if: always()
+        with:
+          paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+          show: all
+
+      - name: Report junit failures in jira
+        if: (!cancelled())
+        id: junit2jira
+        uses: ./.github/actions/junit2jira
+        with:
+          create-jiras: ${{ github.event_name == 'push' }}
+          jira-user: ${{ secrets.JIRA_USER }}
+          jira-token: ${{ secrets.JIRA_TOKEN }}
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+          directory: ${{ env.ARTIFACT_DIR }}
+
+  delete-cluster:
+    if: ${{ always() }}
+    needs: [create-cluster, qa-e2e-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
+
+      - name: Delete cluster
+        env:
+          INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+        run: |
+          if [[ "${{ needs.create-cluster.result }}" == "success" ]]; then
+            infractl delete "${CLUSTER_NAME}" || echo "infractl delete failed; relying on lifespan expiry"
+          else
+            echo "create-cluster job did not succeed; nothing to delete"
+          fi
