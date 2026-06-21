@@ -308,20 +308,8 @@ func main() {
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
 
-	db := globaldb.InitializePostgres(ctx)
-
-	if err := migrate.Run(db); err != nil {
-		log.Panicf("Migrator failed: %v", err)
-	}
-
-	versionStore := vStore.NewPostgres(db)
-	if err := version.Ensure(versionStore); err != nil {
-		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
-	}
-
 	go startGRPCServer()
 	go startTelemetryServer()
-	go dropBackupDB()
 
 	features.LogFeatureFlags()
 
@@ -559,8 +547,23 @@ func newRateLimiter() ratelimit.RateLimiter {
 }
 
 func startGRPCServer() {
+	ctx := context.Background()
+
+	db := globaldb.InitializePostgres(ctx)
+
+	if err := migrate.Run(db); err != nil {
+		log.Panicf("Migrator failed: %v", err)
+	}
+
+	versionStore := vStore.NewPostgres(db)
+	if err := version.Ensure(versionStore); err != nil {
+		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
+	}
+
+	go dropBackupDB()
+
 	// Temporarily elevate permissions to modify auth providers.
-	authProviderRegisteringCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+	authProviderRegisteringCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))

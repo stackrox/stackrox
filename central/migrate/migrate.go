@@ -26,8 +26,10 @@ func Run(centralDB postgres.DB) error {
 		version.GetMainVersion(), migrations.CurrentDBVersionSeqNum())
 
 	// Fast path: check if DB version matches using Central's existing pool.
-	// If it does, no migration or schema work is needed.
-	if dbSeqNum, err := readVersionSeqNum(centralDB); err == nil {
+	// This is also where the lazy pool establishes its first connection,
+	// so we retry here until the database is reachable.
+	dbSeqNum, err := readVersionSeqNumWithRetry(centralDB)
+	if err == nil {
 		currSeqNum := migrations.CurrentDBVersionSeqNum()
 		if dbSeqNum == currSeqNum {
 			log.WriteToStderrf("DB is already at version %d, skipping migrations", dbSeqNum)
@@ -101,11 +103,17 @@ func ensureDatabaseExists() error {
 	}))
 }
 
-// readVersionSeqNum reads the DB schema version sequence number directly via
-// pgx. Returns an error if the versions table doesn't exist (fresh install).
-func readVersionSeqNum(db postgres.DB) (int, error) {
-	ctx := sac.WithAllAccess(context.Background())
+// readVersionSeqNumWithRetry reads the DB version, retrying until the database
+// is reachable. This is where the lazy pool's first connection is established.
+func readVersionSeqNumWithRetry(db postgres.DB) (int, error) {
 	var seqNum int
-	err := db.QueryRow(ctx, "SELECT seqnum FROM versions LIMIT 1").Scan(&seqNum)
+	err := retry.WithRetry(func() error {
+		ctx := sac.WithAllAccess(context.Background())
+		return db.QueryRow(ctx, "SELECT seqnum FROM versions LIMIT 1").Scan(&seqNum)
+	}, retry.Tries(60), retry.BetweenAttempts(func(_ int) {
+		time.Sleep(5 * time.Second)
+	}), retry.OnFailedAttempts(func(err error) {
+		log.WriteToStderrf("waiting for database: %v", err)
+	}))
 	return seqNum, err
 }
