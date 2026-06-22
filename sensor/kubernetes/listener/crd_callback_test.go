@@ -105,3 +105,36 @@ func TestCrdWatcherCallbackWrapper_PubSubDisabled_PublishesViaInternalmessage(t 
 		t.Fatal("timeout: internalmessage SoftRestart callback never fired")
 	}
 }
+
+// TestCrdWatcherCallbackWrapper_PubSubEnabled_CancelledContext verifies that
+// when the context is cancelled before the CRD status fires, the published
+// SoftRestartEvent carries the cancelled context and reports IsExpired() == true.
+func TestCrdWatcherCallbackWrapper_PubSubEnabled_CancelledContext(t *testing.T) {
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockDispatcher := listenerMocks.NewMockpubSubPublisher(mockCtrl)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	var capturedEvent pubsub.Event
+	mockDispatcher.EXPECT().Publish(gomock.Any()).DoAndReturn(func(e pubsub.Event) error {
+		capturedEvent = e
+		return nil
+	})
+
+	cb := crdWatcherCallbackWrapper(
+		ctx,
+		allResourcesAvailable(),
+		internalmessage.NewMessageSubscriber(),
+		mockDispatcher,
+		"cancelled restart",
+	)
+	cb(&watcher.Status{Available: true})
+
+	require.IsType(t, &SoftRestartEvent{}, capturedEvent)
+	assert.True(t, capturedEvent.(*SoftRestartEvent).IsExpired(), "event must be expired when context is cancelled")
+}
