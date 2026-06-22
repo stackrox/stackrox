@@ -717,9 +717,6 @@ jobs:
         if: github.event_name != 'pull_request'
         run: make check-debugger
 
-      - name: Check roxctl CLI binaries are statically linked
-        run: make check-roxctl-static
-
       - name: Prepare roxctl build context
         run: |
           cp -r image/rhel/THIRD_PARTY_NOTICES image/roxctl/THIRD_PARTY_NOTICES
@@ -1280,6 +1277,64 @@ jobs:
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
+
+  check-roxctl-static:
+    runs-on: ubuntu-latest
+    needs:
+    - pre-build-cli
+    - pre-build-go-binaries
+    if: ${{ !cancelled() }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      with:
+        fetch-depth: 1
+        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/download-artifact-with-retry
+      with:
+        name: cli-build
+
+    - name: Unpack cli build
+      run: tar xvf cli-build.tar
+
+    - uses: ./.github/actions/download-artifact-with-retry
+      with:
+        name: go-binaries-build-amd64-default
+
+    - name: Unpack Go binaries build
+      run: tar xvf go-binaries-build.tar
+
+    - name: Check roxctl binaries are statically linked
+      run: |
+        failed=0
+        checked=0
+        for bin in bin/linux_amd64/roxctl bin/darwin_amd64/roxctl bin/linux_arm64/roxctl; do
+          [[ -f "$bin" ]] || continue
+          out=$(file -b "$bin")
+          name=$(basename "$(dirname "$bin")")/roxctl
+          if echo "$out" | grep -q "ELF"; then
+            checked=$((checked + 1))
+            if echo "$out" | grep -q "dynamically linked"; then
+              echo "::error::$name is dynamically linked: $out"
+              failed=1
+            else
+              echo "OK: $name is statically linked"
+            fi
+          elif echo "$out" | grep -q "Mach-O\|PE32"; then
+            echo "OK: $name is non-Linux binary (skip linking check)"
+          else
+            echo "SKIP: $name is not a real binary ($(echo "$out" | head -c 40))"
+          fi
+        done
+
+        if [[ "$failed" -eq 1 ]]; then
+          echo "::error::roxctl CLI binaries must be statically linked for portability."
+          exit 1
+        fi
+        if [[ "$checked" -eq 0 ]]; then
+          echo "No ELF roxctl binaries found (CLI build was likely skipped)."
+        fi
 
   slack-on-build-failure:
     env:
