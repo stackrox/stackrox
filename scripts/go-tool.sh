@@ -71,9 +71,7 @@ function invoke_go() {
     echo >&2 "RACE==true, forcing CGO_ENABLED=1"
     cgo_enabled=1
     args+=("-race")
-  fi
 
-  if [[ "$cgo_enabled" != 0 ]]; then
     if command -v musl-gcc &> /dev/null; then
       echo >&2 "Using musl-gcc for static linking to avoid GLIBC dependencies"
       cc_compiler="musl-gcc"
@@ -81,6 +79,13 @@ function invoke_go() {
     else
       echo >&2 "musl-gcc not found, using default cc and linker (auto)"
     fi
+  fi
+
+  # -linkmode=external must be set for all CGO builds so the external linker
+  # (gcc or musl-gcc) is used. This check is inside invoke_go rather than at
+  # the top level because race builds override cgo_enabled to 1 after the
+  # environment is read.
+  if [[ "$cgo_enabled" != 0 ]]; then
     echo >&2 "CGO_ENABLED=$cgo_enabled, adding -linkmode=external"
     cgo_ldflags+=('-linkmode=external')
   fi
