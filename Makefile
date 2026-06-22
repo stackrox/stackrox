@@ -508,10 +508,11 @@ main-build-nodeps:
 		scanner/cmd/scanner \
 		sensor/admission-control \
 		sensor/kubernetes \
-		sensor/upgrader
+		sensor/upgrader \
+		compliance/virtualmachines/roxagent
 	mv bin/linux_$(GOARCH)/cmd bin/linux_$(GOARCH)/stackrox-operator
 ifndef SKIP_CLI_BUILD
-	CGO_ENABLED=0 $(GOBUILD) roxctl compliance/virtualmachines/roxagent
+	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
 
 .PHONY: scale-build
