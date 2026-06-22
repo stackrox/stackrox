@@ -249,6 +249,7 @@ func (c *cachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error
 		cacheMissTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "Exists"}).Inc()
 		return false, nil
 	}
+	cacheHitTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "Exists"}).Inc()
 	return c.isReadAllowed(ctx, obj), nil
 }
 
@@ -294,6 +295,7 @@ func (c *cachedStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, erro
 	if !c.isReadAllowed(ctx, obj) {
 		return nil, false, nil
 	}
+	cacheHitTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "Get"}).Inc()
 	return obj.CloneVT(), true, nil
 }
 
@@ -307,10 +309,11 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 	defer c.cacheLock.RUnlock()
 	results := make([]PT, 0, len(identifiers))
 	misses := make([]int, 0)
+	var notFound int
 	for idx, id := range identifiers {
 		obj, found := c.cache[id]
 		if !found {
-			cacheMissTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "GetMany"}).Inc()
+			notFound++
 			misses = append(misses, idx)
 			continue
 		}
@@ -320,6 +323,10 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 		}
 		results = append(results, obj.CloneVT())
 	}
+	if notFound > 0 {
+		cacheMissTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "GetMany"}).Add(float64(notFound))
+	}
+	cacheHitTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "GetMany"}).Add(float64(len(results)))
 	return results, misses, nil
 }
 

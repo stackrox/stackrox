@@ -10,6 +10,7 @@ func init() {
 		cacheEntries,
 		cachePopulationDuration,
 		cacheBypassTotal,
+		cacheHitTotal,
 		cacheMissTotal,
 	)
 }
@@ -35,6 +36,13 @@ var (
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "cache_bypass_total",
 		Help:      "Number of queries that bypassed the cache and hit the database directly",
+	}, []string{"Type", "Operation"})
+
+	cacheHitTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "cache_hit_total",
+		Help:      "Number of cache lookups where the ID was found",
 	}, []string{"Type", "Operation"})
 
 	cacheMissTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
