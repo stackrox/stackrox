@@ -11,14 +11,17 @@ import {
     getHiddenColumnCount,
     useManagedColumns,
 } from 'hooks/useManagedColumns';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
-import { listVMs } from 'services/VirtualMachineService';
+import { listVirtualMachines } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 
+import {
+    getVirtualMachineScannedComponentsCount,
+    getVirtualMachineSeveritiesCount,
+} from '../aggregateUtils';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
@@ -29,7 +32,6 @@ import {
 } from '../../searchFilterConfig';
 import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
 import { VIRTUAL_MACHINE_SORT_FIELD } from '../../utils/sortFields';
-import VirtualMachinesCvesTableLegacy from './VirtualMachinesCvesTableLegacy';
 
 const searchFilterConfig = [
     virtualMachinesClusterSearchFilterConfig,
@@ -69,7 +71,7 @@ export const defaultColumns = {
     },
 } as const;
 
-function VirtualMachinesCvesTableEnhanced() {
+function VirtualMachinesCvesTableLegacy() {
     const managedColumnState = useManagedColumns('VirtualMachinesCvesTable', defaultColumns);
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -83,14 +85,14 @@ function VirtualMachinesCvesTableEnhanced() {
     const hiddenColumnCount = getHiddenColumnCount(managedColumnState.columns);
     const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
 
-    const fetchVMs = useCallback(
-        () => listVMs({ searchFilter, page, perPage, sortOption }),
+    const fetchVirtualMachines = useCallback(
+        () => listVirtualMachines({ searchFilter, page, perPage, sortOption }),
         [searchFilter, page, perPage, sortOption]
     );
-    const { data, isLoading, error } = useRestQuery(fetchVMs);
+    const { data, isLoading, error } = useRestQuery(fetchVirtualMachines);
     const tableState = getTableUIState({
         isLoading,
-        data: data?.vms ?? [],
+        data: data?.virtualMachines ?? [],
         error,
         searchFilter,
     });
@@ -164,7 +166,10 @@ function VirtualMachinesCvesTableEnhanced() {
                         renderer={({ data }) => (
                             <Tbody>
                                 {data.map((virtualMachine) => {
-                                    const counts = virtualMachine.cveSeverityCounts;
+                                    const virtualMachineSeverityCounts =
+                                        getVirtualMachineSeveritiesCount(virtualMachine);
+
+                                    const scanTime = virtualMachine?.scan?.scanTime;
                                     return (
                                         <Tr key={virtualMachine.id}>
                                             <Td
@@ -186,11 +191,21 @@ function VirtualMachinesCvesTableEnhanced() {
                                                 dataLabel="CVEs by severity"
                                             >
                                                 <SeverityCountLabels
-                                                    criticalCount={counts?.critical?.total ?? 0}
-                                                    importantCount={counts?.important?.total ?? 0}
-                                                    moderateCount={counts?.moderate?.total ?? 0}
-                                                    lowCount={counts?.low?.total ?? 0}
-                                                    unknownCount={counts?.unknown?.total ?? 0}
+                                                    criticalCount={
+                                                        virtualMachineSeverityCounts.CRITICAL_VULNERABILITY_SEVERITY
+                                                    }
+                                                    importantCount={
+                                                        virtualMachineSeverityCounts.IMPORTANT_VULNERABILITY_SEVERITY
+                                                    }
+                                                    moderateCount={
+                                                        virtualMachineSeverityCounts.MODERATE_VULNERABILITY_SEVERITY
+                                                    }
+                                                    lowCount={
+                                                        virtualMachineSeverityCounts.LOW_VULNERABILITY_SEVERITY
+                                                    }
+                                                    unknownCount={
+                                                        virtualMachineSeverityCounts.UNKNOWN_VULNERABILITY_SEVERITY
+                                                    }
                                                     entity="virtual machine"
                                                 />
                                             </Td>
@@ -210,16 +225,16 @@ function VirtualMachinesCvesTableEnhanced() {
                                                 className={getVisibilityClass('scannedComponents')}
                                                 dataLabel="Scanned components"
                                             >
-                                                {virtualMachine.componentScanCount
-                                                    ? `${virtualMachine.componentScanCount.scanned}/${virtualMachine.componentScanCount.total} scanned components`
-                                                    : 'Not available'}
+                                                {getVirtualMachineScannedComponentsCount(
+                                                    virtualMachine
+                                                )}
                                             </Td>
                                             <Td
                                                 className={getVisibilityClass('scanTime')}
                                                 dataLabel="Scan time"
                                             >
-                                                {virtualMachine.scanTime ? (
-                                                    <DateDistance date={virtualMachine.scanTime} />
+                                                {typeof scanTime === 'string' ? (
+                                                    <DateDistance date={scanTime} />
                                                 ) : (
                                                     'Not available'
                                                 )}
@@ -236,17 +251,4 @@ function VirtualMachinesCvesTableEnhanced() {
     );
 }
 
-function VirtualMachinesCvesTable() {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isEnhancedDataModelEnabled = isFeatureFlagEnabled(
-        'ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL'
-    );
-
-    if (isEnhancedDataModelEnabled) {
-        return <VirtualMachinesCvesTableEnhanced />;
-    }
-
-    return <VirtualMachinesCvesTableLegacy />;
-}
-
-export default VirtualMachinesCvesTable;
+export default VirtualMachinesCvesTableLegacy;
