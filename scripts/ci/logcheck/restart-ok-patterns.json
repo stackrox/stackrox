@@ -21,7 +21,7 @@
         "comment": "sensor is up before central in scale-tests",
         "job": "scale-tests",
         "logfile": "sensor-previous",
-        "logline": "checking central status failed after"
+        "logline": "checking central status over HTTP failed"
     },
     {
         "comment": "collector initialization restart with download failure due to bouncing in upgrade test",
@@ -45,7 +45,7 @@
         "comment": "Central images may be slow to pull",
         "job": "upgrade",
         "logfile": "sensor-previous",
-        "logline": "checking central status failed after"
+        "logline": "checking central status over HTTP failed"
     },
     {
         "comment": "Central may still hold handle to closed connection due to various db restarts",

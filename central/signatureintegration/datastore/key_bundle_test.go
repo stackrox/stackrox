@@ -180,12 +180,12 @@ func redHatIntegrationMatcher() gomock.Matcher {
 }
 
 func validBundleJSON() []byte {
-	return []byte(fmt.Sprintf(`{"keys": [{"name": "test-key-1", "pem": %q}]}`, testPublicKeyPEM))
+	return fmt.Appendf(nil, `{"keys": [{"name": "test-key-1", "pem": %q}]}`, testPublicKeyPEM)
 }
 
 func validBundleJSON2Keys() []byte {
-	return []byte(fmt.Sprintf(`{"keys": [{"name": "test-key-1", "pem": %q}, {"name": "test-key-2", "pem": %q}]}`,
-		testPublicKeyPEM, testPublicKeyPEM2))
+	return fmt.Appendf(nil, `{"keys": [{"name": "test-key-1", "pem": %q}, {"name": "test-key-2", "pem": %q}]}`,
+		testPublicKeyPEM, testPublicKeyPEM2)
 }
 
 func TestStartKeyBundleWatcherDisabled(t *testing.T) {
