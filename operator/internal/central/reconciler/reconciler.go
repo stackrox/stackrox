@@ -32,7 +32,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string, tlsProfile *tlspro
 			&platform.SecuredCluster{},
 			reconciler.HandleSiblings[*platform.SecuredCluster](platform.CentralGVK, mgr),
 			// Only appearance and disappearance of a SecuredCluster resource can influence whether
-			// an init bundle should be created by the Central controller.
+			// a cluster-registration-secret should be created by the Central controller.
 			utils.CreateAndDeleteOnlyPredicate[*platform.SecuredCluster]{}))
 	// IMPORTANT: The FeatureDefaultingExtension preExtension implements feature-defaulting logic
 	// and therefore must be executed and registered first.
@@ -64,7 +64,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string, tlsProfile *tlspro
 	opts = append(opts, otherPreExtensions...)
 	opts = append(opts, predicates...)
 	opts = append(opts, pkgReconciler.WithAggressiveConflictResolution(true))
-	opts = append(opts, pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod))
+	opts = append(opts, pkgReconciler.WithReconcilePeriod(extensions.CRSReconcilePeriod))
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
 
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)

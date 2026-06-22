@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -19,7 +18,6 @@ import (
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/services"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -41,10 +39,6 @@ func verifyCentralCert(t *testing.T, data types.SecretDataMap, verificationTime 
 
 func verifyCentralServiceCert(serviceType storage.ServiceType) secretVerifyFunc {
 	return verifyServiceCert(serviceType, "")
-}
-
-func verifySecuredClusterServiceCert(serviceType storage.ServiceType) secretVerifyFunc {
-	return verifyServiceCert(serviceType, services.ServiceTypeToSlugName(serviceType)+"-")
 }
 
 func verifyServiceCert(serviceType storage.ServiceType, fileNamePrefix string) secretVerifyFunc {
@@ -235,7 +229,7 @@ func TestCreateCentralTLS(t *testing.T) {
 				"central-db-tls": verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
 			},
 		},
-		"When no secrets exist and scanner is disabled but secured cluster exists, a managed central-tls secret and init bundle secrets should be created": {
+		"When no secrets exist and scanner is disabled but secured cluster exists, a managed central-tls secret and CRS secret should be created": {
 			Spec: basicSpecWithScanner(false, false),
 			Other: []ctrlClient.Object{&platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{
@@ -244,11 +238,9 @@ func TestCreateCentralTLS(t *testing.T) {
 				},
 			}},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				"central-tls":           verifyCentralCert,
-				"central-db-tls":        verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
-				"admission-control-tls": verifySecuredClusterServiceCert(storage.ServiceType_ADMISSION_CONTROL_SERVICE),
-				"collector-tls":         verifySecuredClusterServiceCert(storage.ServiceType_COLLECTOR_SERVICE),
-				"sensor-tls":            verifySecuredClusterServiceCert(storage.ServiceType_SENSOR_SERVICE),
+				"central-tls":                 verifyCentralCert,
+				"central-db-tls":              verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
+				"cluster-registration-secret": verifyCRS,
 			},
 		},
 		"When no secrets exist and scanner is enabled, all managed secrets should be created": {
@@ -450,11 +442,6 @@ func TestCreateCentralTLS(t *testing.T) {
 	}
 
 	for name, c := range cases {
-		if strings.Contains(name, "init bundle secrets should be created") {
-			// See ROX-9967.
-			// TODO(ROX-9969): Remove this exclusion after the init-bundle cert rotation stabilization.
-			continue
-		}
 		t.Run(name, func(t *testing.T) {
 
 			testSecretReconciliation(t, reconcileCentralTLS, c)

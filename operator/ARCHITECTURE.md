@@ -190,8 +190,8 @@ etc.) at startup and:
 
 Central and SecuredCluster reconcilers watch each other's CR type. This enables:
 
-- **Central** to auto-generate init bundles when a SecuredCluster appears in
-  the same namespace.
+- **Central** to auto-provision a cluster-registration-secret (CRS) when a
+  SecuredCluster appears in the same namespace.
 - **SecuredCluster** to decide whether to deploy a local scanner based on
   whether a Central exists in the same namespace.
 
