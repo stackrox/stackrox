@@ -288,6 +288,19 @@ with open('/tmp/sensor-init-bundle.yaml', 'w') as f:
 print('Init bundle generated')
 "
 
+    # Add quay.io registry integration with credentials (if available) so Scanner
+    # can pull and scan images from quay.io/stackrox-io and quay.io/rhacs-eng.
+    if [[ -f "$HOME/.config/containers/auth.json" ]]; then
+        QUAY_AUTH=$(python3 -c "import json; d=json.load(open('$HOME/.config/containers/auth.json')); print(d.get('auths',{}).get('quay.io',{}).get('auth',''))" 2>/dev/null | base64 -d 2>/dev/null)
+        if [[ -n "$QUAY_AUTH" ]]; then
+            QUAY_USER="${QUAY_AUTH%%:*}"
+            QUAY_PASS="${QUAY_AUTH#*:}"
+            curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" -X POST https://localhost:8000/v1/imageintegrations \
+                -d "{\"name\":\"StackRox Quay.io\",\"type\":\"docker\",\"categories\":[\"REGISTRY\"],\"docker\":{\"endpoint\":\"quay.io\",\"username\":\"${QUAY_USER}\",\"password\":\"${QUAY_PASS}\"},\"skipTestIntegration\":true}" >/dev/null 2>&1
+            echo "Added quay.io registry integration for scanning"
+        fi
+    fi
+
     # Use dev image from local registry if available, else release image from quay.io
     SENSOR_IMAGE="${REGISTRY}/main:${MAIN_IMAGE_TAG}"
     if curl -s "http://localhost:${REG_PORT}/v2/main/tags/list" 2>/dev/null | grep -q '"tags"'; then
