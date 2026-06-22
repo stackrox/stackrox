@@ -39,6 +39,8 @@ const (
 	crsDataKey                    = "crs"
 	crsAnnotationPrefix           = "crs.platform.stackrox.io/"
 	operatorManagedCRSName        = "operator-managed"
+	// Keep in sync with mtls.ephemeralProfileWithExpirationInHoursCertLifetime.
+	crsCertLifetime = 3 * time.Hour
 
 	// CRSReconcilePeriod is the maximum period between untriggered reconciliations that renew
 	// the operator-managed cluster-registration-secret. It must be less than half of
@@ -133,29 +135,13 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 }
 
 func (r *createCentralTLSExtensionRun) reconcileCRSSecret(ctx context.Context, shouldDelete bool) error {
-	crsSecretShouldExist, err := r.shouldCRSSecretExist(ctx, shouldDelete)
-	if err != nil {
-		return err
-	}
-	if !crsSecretShouldExist {
+	if shouldDelete {
 		return r.DeleteSecret(ctx, clusterRegistrationSecretName)
 	}
 	if err := r.EnsureSecret(ctx, clusterRegistrationSecretName, r.validateCRSData, r.generateCRSData, commonLabels.TLSSecretLabels()); err != nil {
 		return errors.Wrap(err, "reconciling cluster-registration-secret failed")
 	}
 	return r.ensureCRSSecretAnnotations(ctx)
-}
-
-func (r *createCentralTLSExtensionRun) shouldCRSSecretExist(ctx context.Context, shouldDelete bool) (bool, error) {
-	if shouldDelete {
-		// Don't bother listing secured clusters if we're ensuring absence of the CRS for other reasons.
-		return false, nil
-	}
-	securedClusterPresent, err := r.isSiblingSecuredClusterPresent(ctx)
-	if err != nil {
-		return false, errors.Wrap(err, "determining whether to create cluster-registration-secret failed")
-	}
-	return securedClusterPresent, nil
 }
 
 func (r *createCentralTLSExtensionRun) validateCRSData(data types.SecretDataMap, _ bool) error {
@@ -177,7 +163,7 @@ func (r *createCentralTLSExtensionRun) validateCRSData(data types.SecretDataMap,
 	if err != nil {
 		return err
 	}
-	if _, err := r.ca.ValidateAndExtractSubject(cert); err != nil {
+	if _, err := r.ca.ValidateAndExtractSubject(cert, mtls.WithCurrentTime(r.currentTime)); err != nil {
 		return errors.Wrap(err, "CRS certificate is not signed by current CA")
 	}
 	subject := mtls.SubjectFromCommonName(cert.Subject.CommonName)
@@ -193,7 +179,12 @@ func (r *createCentralTLSExtensionRun) validateCRSData(data types.SecretDataMap,
 func (r *createCentralTLSExtensionRun) generateCRSData(_ types.SecretDataMap) (types.SecretDataMap, error) {
 	crsID := uuid.NewV4()
 	subject := mtls.NewInitSubject(centralsensor.EphemeralInitCertClusterID, storage.ServiceType_REGISTRANT_SERVICE, crsID)
-	issuedCert, err := r.ca.IssueCertForSubject(subject, mtls.WithValidityExpiringInHours())
+	opts := append([]mtls.IssueCertOption{
+		mtls.WithValidityExpiringInHours(),
+		mtls.WithValidityNotBefore(r.currentTime),
+		mtls.WithValidityNotAfter(r.currentTime.Add(crsCertLifetime)),
+	}, r.extraIssueCertOptions...)
+	issuedCert, err := r.ca.IssueCertForSubject(subject, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, "issuing CRS certificate failed")
 	}
@@ -624,13 +615,4 @@ func (r *createCentralTLSExtensionRun) generateScannerV4DBTLSData(_ types.Secret
 		return nil, err
 	}
 	return fileMap, nil
-}
-
-func (r *createCentralTLSExtensionRun) isSiblingSecuredClusterPresent(ctx context.Context) (bool, error) {
-	list := &platform.SecuredClusterList{}
-	namespace := r.centralObj.GetNamespace()
-	if err := r.Client().List(ctx, list, ctrlClient.InNamespace(namespace)); err != nil {
-		return false, errors.Wrapf(err, "cannot list securedclusters in namespace %q", namespace)
-	}
-	return len(list.Items) > 0, nil
 }

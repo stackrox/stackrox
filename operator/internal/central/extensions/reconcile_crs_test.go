@@ -45,6 +45,20 @@ func verifyCRS(t *testing.T, data types.SecretDataMap, atTime *time.Time) {
 	}
 }
 
+func expectedSecretsWithCRS(secrets map[string]secretVerifyFunc) map[string]secretVerifyFunc {
+	if secrets == nil {
+		secrets = make(map[string]secretVerifyFunc)
+	} else {
+		copied := make(map[string]secretVerifyFunc, len(secrets)+1)
+		for name, verify := range secrets {
+			copied[name] = verify
+		}
+		secrets = copied
+	}
+	secrets[clusterRegistrationSecretName] = verifyCRS
+	return secrets
+}
+
 func buildCRSData(t *testing.T, ca mtls.CA, opts ...mtls.IssueCertOption) types.SecretDataMap {
 	t.Helper()
 	crsID := uuid.NewV4()
@@ -100,20 +114,16 @@ func TestReconcileCRSSecret(t *testing.T) {
 	}
 
 	cases := map[string]secretReconciliationTestCase{
-		"When secured cluster is removed, operator-managed CRS secret should be deleted": {
+		"When no secured cluster exists, operator-managed CRS secret should still be created": {
 			Spec:            basicSpecWithScanner(false, false),
-			ExistingManaged: []*v1.Secret{existingCentral, existingCentralDB, {ObjectMeta: metav1.ObjectMeta{Name: clusterRegistrationSecretName, Namespace: testutils.TestNamespace}, Data: buildCRSData(t, testCA)}},
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
+			ExistingManaged: []*v1.Secret{existingCentral, existingCentralDB},
+			ExpectedCreatedSecrets: expectedSecretsWithCRS(map[string]secretVerifyFunc{
 				"central-tls":    verifyCentralCert,
 				"central-db-tls": verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
-			},
-			ExpectedNotExistingSecrets: []string{clusterRegistrationSecretName},
+			}),
 		},
 		"When CRS certificate is past half validity, it should be renewed": {
 			Spec: basicSpecWithScanner(false, false),
-			Other: []ctrlClient.Object{
-				siblingSecuredCluster,
-			},
 			ExistingManaged: []*v1.Secret{
 				existingCentral,
 				existingCentralDB,
@@ -128,20 +138,27 @@ func TestReconcileCRSSecret(t *testing.T) {
 					),
 				},
 			},
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				"central-tls":                 verifyCentralCert,
-				"central-db-tls":              verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
-				clusterRegistrationSecretName: verifyCRS,
-			},
+			ExpectedCreatedSecrets: expectedSecretsWithCRS(map[string]secretVerifyFunc{
+				"central-tls":    verifyCentralCert,
+				"central-db-tls": verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
+			}),
 		},
 		"When creating cluster-registration-secret fails, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false, false),
+			ExistingManaged:        []*v1.Secret{existingCentral, existingCentralDB},
+			InterceptedK8sAPICalls: creatingSecretFails(clusterRegistrationSecretName),
+			ExpectedError:          "reconciling cluster-registration-secret",
+		},
+		"When a sibling secured cluster exists, CRS is still created the same way": {
 			Spec: basicSpecWithScanner(false, false),
 			Other: []ctrlClient.Object{
 				siblingSecuredCluster,
 			},
-			ExistingManaged:        []*v1.Secret{existingCentral, existingCentralDB},
-			InterceptedK8sAPICalls: creatingSecretFails(clusterRegistrationSecretName),
-			ExpectedError:          "reconciling cluster-registration-secret",
+			ExistingManaged: []*v1.Secret{existingCentral, existingCentralDB},
+			ExpectedCreatedSecrets: expectedSecretsWithCRS(map[string]secretVerifyFunc{
+				"central-tls":    verifyCentralCert,
+				"central-db-tls": verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
+			}),
 		},
 	}
 

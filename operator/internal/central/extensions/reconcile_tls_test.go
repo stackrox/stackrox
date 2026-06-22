@@ -224,28 +224,14 @@ func TestCreateCentralTLS(t *testing.T) {
 	cases := map[string]secretReconciliationTestCase{
 		"When no secrets exist and scanner is disabled, a managed central-tls and central-db-tls secrets should be created": {
 			Spec: basicSpecWithScanner(false, false),
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
+			ExpectedCreatedSecrets: expectedSecretsWithCRS(map[string]secretVerifyFunc{
 				"central-tls":    verifyCentralCert,
 				"central-db-tls": verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
-			},
-		},
-		"When no secrets exist and scanner is disabled but secured cluster exists, a managed central-tls secret and CRS secret should be created": {
-			Spec: basicSpecWithScanner(false, false),
-			Other: []ctrlClient.Object{&platform.SecuredCluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-secured-cluster-services",
-					Namespace: testutils.TestNamespace,
-				},
-			}},
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				"central-tls":                 verifyCentralCert,
-				"central-db-tls":              verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
-				"cluster-registration-secret": verifyCRS,
-			},
+			}),
 		},
 		"When no secrets exist and scanner is enabled, all managed secrets should be created": {
 			Spec: basicSpecWithScanner(true, true),
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
+			ExpectedCreatedSecrets: expectedSecretsWithCRS(map[string]secretVerifyFunc{
 				"central-tls":            verifyCentralCert,
 				"central-db-tls":         verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
 				"scanner-tls":            verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
@@ -253,15 +239,15 @@ func TestCreateCentralTLS(t *testing.T) {
 				"scanner-v4-indexer-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
 				"scanner-v4-matcher-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_MATCHER_SERVICE),
 				"scanner-v4-db-tls":      verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_DB_SERVICE),
-			},
+			}),
 		},
 		"When a managed central-tls secret with valid CA but invalid service cert exists, it should be fixed": {
 			Spec:            basicSpecWithScanner(false, false),
 			ExistingManaged: []*v1.Secret{existingCentralWithInvalidLeaf, existingCentralDB},
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
+			ExpectedCreatedSecrets: expectedSecretsWithCRS(map[string]secretVerifyFunc{
 				"central-tls":    verifyCentralCert,
 				"central-db-tls": verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
-			},
+			}),
 		},
 		"When a managed central-tls secret with missing CA key exists, it should fail": {
 			Spec:            basicSpecWithScanner(false, false),
@@ -279,19 +265,20 @@ func TestCreateCentralTLS(t *testing.T) {
 			ExpectedError:   "invalid CA in the existing secret, please delete it to allow re-generation: tls: failed to find any PEM data in certificate input",
 		},
 		"When a valid unmanaged central-tls and central-db-tls secrets exist and scanner is disabled, no further secrets should be created": {
-			Spec:     basicSpecWithScanner(false, false),
-			Existing: []*v1.Secret{existingCentral, existingCentralDB},
+			Spec:                   basicSpecWithScanner(false, false),
+			Existing:               []*v1.Secret{existingCentral, existingCentralDB},
+			ExpectedCreatedSecrets: expectedSecretsWithCRS(nil),
 		},
 		"When a valid unmanaged central-tls and central-db-tls secrets exist and scanner is enabled, managed secrets should be created for scanner": {
 			Spec:     basicSpecWithScanner(true, true),
 			Existing: []*v1.Secret{existingCentral, existingCentralDB},
-			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
+			ExpectedCreatedSecrets: expectedSecretsWithCRS(map[string]secretVerifyFunc{
 				"scanner-tls":            verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
 				"scanner-db-tls":         verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
 				"scanner-v4-indexer-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
 				"scanner-v4-matcher-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_MATCHER_SERVICE),
 				"scanner-v4-db-tls":      verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_DB_SERVICE),
-			},
+			}),
 		},
 		"When valid unmanaged secrets exist for everything and scanner is disabled, no secrets should be created or deleted": {
 			Spec: basicSpecWithScanner(false, false),
@@ -299,6 +286,7 @@ func TestCreateCentralTLS(t *testing.T) {
 				existingCentral, existingCentralDB, existingScanner, existingScannerDB,
 				existingScannerV4Indexer, existingScannerV4Matcher, existingScannerV4DB,
 			},
+			ExpectedCreatedSecrets: expectedSecretsWithCRS(nil),
 		},
 		"When valid unmanaged secrets exist for everything and scanner is enabled, no secrets should be created or deleted": {
 			Spec: basicSpecWithScanner(true, true),
@@ -306,6 +294,7 @@ func TestCreateCentralTLS(t *testing.T) {
 				existingCentral, existingCentralDB, existingScanner, existingScannerDB,
 				existingScannerV4Indexer, existingScannerV4Matcher, existingScannerV4DB,
 			},
+			ExpectedCreatedSecrets: expectedSecretsWithCRS(nil),
 		},
 		"When creating a new central-tls secret fails, an error should be returned": {
 			Spec:                   basicSpecWithScanner(false, false),

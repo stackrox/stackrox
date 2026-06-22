@@ -31,8 +31,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string, tlsProfile *tlspro
 			mgr.GetCache(),
 			&platform.SecuredCluster{},
 			reconciler.HandleSiblings[*platform.SecuredCluster](platform.CentralGVK, mgr),
-			// Only appearance and disappearance of a SecuredCluster resource can influence whether
-			// a cluster-registration-secret should be created by the Central controller.
+			// Reconcile Central when a sibling SecuredCluster is created or deleted.
 			utils.CreateAndDeleteOnlyPredicate[*platform.SecuredCluster]{}))
 	// IMPORTANT: The FeatureDefaultingExtension preExtension implements feature-defaulting logic
 	// and therefore must be executed and registered first.

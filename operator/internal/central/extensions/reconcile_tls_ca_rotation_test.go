@@ -87,12 +87,13 @@ func TestCentralCARotation(t *testing.T) {
 	}
 
 	commonSecrets := map[string]secretVerifyFunc{
-		"central-db-tls":         verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
-		"scanner-tls":            verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
-		"scanner-db-tls":         verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
-		"scanner-v4-indexer-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
-		"scanner-v4-matcher-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_MATCHER_SERVICE),
-		"scanner-v4-db-tls":      verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_DB_SERVICE),
+		"central-db-tls":              verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
+		"scanner-tls":                 verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
+		"scanner-db-tls":              verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
+		"scanner-v4-indexer-tls":      verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
+		"scanner-v4-matcher-tls":      verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_MATCHER_SERVICE),
+		"scanner-v4-db-tls":           verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_DB_SERVICE),
+		clusterRegistrationSecretName: verifyCRS,
 	}
 
 	for _, tp := range timepoints {
