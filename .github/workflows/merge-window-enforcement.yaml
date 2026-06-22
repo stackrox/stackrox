@@ -1,0 +1,39 @@
+name: Merge Window Enforcement
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+    branches:
+      - release-*
+
+jobs:
+  enforce-merge-window:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+
+      - name: Check merge window status
+        env:
+          MERGE_WINDOW_FILE: .github/merge-window
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+        run: |
+          if [ ! -f "${MERGE_WINDOW_FILE}" ]; then
+            echo "Merge window file not found. Assuming merge window is open."
+            exit 0
+          fi
+
+          state="$(cat "${MERGE_WINDOW_FILE}")"
+          if [ "$state" = "OPEN" ]; then
+            echo "Merge window is open"
+            # TODO: Update comment if it exists to say merging is allowed.
+          else
+            echo "Merge window is closed"
+            # TODO: Prevent duplicate comments.
+            gh pr comment ${{ github.event.pull_request.number }} \
+              --body "Merge window is closed. Please wait for the merge window to open before merging. You need to re-run this workflow to check again."
+            exit 1
+          fi
