@@ -327,7 +327,7 @@ print('Init bundle generated')
         --set image.collector.fullRef="${REGISTRY}/collector:${COLLECTOR_TAG}" \
         --set customize.envVars.ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL=1s \
         --set customize.envVars.ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL=10s \
-        --set collector.collectionMethod=CORE_BPF \
+        --set collector.collectionMethod=NO_COLLECTION \
         --set admissionControl.replicas=1 \
         --set sensor.resources.requests.memory=100Mi \
         --set sensor.resources.requests.cpu=100m \
