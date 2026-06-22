@@ -508,7 +508,8 @@ require (
 	k8s.io/component-helpers v0.35.6 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250922181213-ec3ebc5fd46b // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
+	k8s.io/kube-openapi v0.31.0 // indirect
+	kubevirt.io/client-go v1.8.4 // indirect
 	kubevirt.io/containerized-data-importer-api v1.64.0 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	modernc.org/libc v1.72.3 // indirect
@@ -584,3 +585,5 @@ replace (
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.2.0
 	github.com/mholt/archiver/v3 => github.com/anchore/archiver/v3 v3.5.2
 )
+
+replace k8s.io/kube-openapi v0.31.0 => k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912
