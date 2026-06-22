@@ -241,8 +241,9 @@ if [[ ! -f deploy/k8s/sensor-chart/Chart.yaml ]]; then
         --output-dir deploy/k8s/sensor-chart 2>&1 | tail -1
 fi
 
+
 # --- Initial deploy if Central isn't running ---
-if ! kubectl -n stackrox get deploy/central -o jsonpath='{.status.readyReplicas}' 2>/dev/null | grep -q "1"; then
+if ! kubectl --context "kind-${CLUSTER_NAME}" -n stackrox get deploy/central -o jsonpath='{.status.readyReplicas}' 2>/dev/null | grep -q "1"; then
     echo "=== Initial deploy (skaffold run) ==="
     skaffold run -f dev-tools/skaffold.yaml --kube-context "kind-${CLUSTER_NAME}" 2>&1 | tail -5
 
@@ -342,8 +343,9 @@ echo ""
 
 if [[ "${DEBUG_BUILD:-}" == "yes" ]]; then
     echo "  DEBUG MODE: Delve debugger will be injected. Attach IDE to localhost:56268"
+    echo "  Ctrl+C will clean up the debug deployment so normal mode works on next run."
     echo ""
-    exec skaffold debug -f dev-tools/skaffold.yaml --cleanup=false --kube-context "kind-${CLUSTER_NAME}" --port-forward
+    exec skaffold debug -f dev-tools/skaffold.yaml --cleanup=true --kube-context "kind-${CLUSTER_NAME}" --port-forward
 else
     exec skaffold dev -f dev-tools/skaffold.yaml --cleanup=false --kube-context "kind-${CLUSTER_NAME}"
 fi
