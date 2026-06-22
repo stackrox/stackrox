@@ -3,18 +3,19 @@ package signatures
 import (
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 var (
-	ErrKeyBundleEmpty       = errors.New("key bundle must contain at least one key")
-	ErrKeyNameEmpty         = errors.New("empty name")
-	ErrKeyNamePathSeparator = errors.New("must not contain path separators")
-	ErrKeyNameDuplicate     = errors.New("duplicate key name")
-	ErrKeyInvalidPEM        = errors.New("invalid PEM-encoded public key")
+	ErrKeyBundleEmpty       = errox.InvalidArgs.New("key bundle must contain at least one key")
+	ErrKeyNameEmpty         = errox.InvalidArgs.New("empty name")
+	ErrKeyNamePathSeparator = errox.InvalidArgs.New("must not contain path separators")
+	ErrKeyNameDuplicate     = errox.InvalidArgs.New("duplicate key name")
+	ErrKeyInvalidPEM        = errox.InvalidArgs.New("invalid PEM-encoded public key")
 )
 
 // KeyBundle represents a set of public keys in the key bundle JSON format.
@@ -33,7 +34,7 @@ type KeyBundleEntry struct {
 func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 	var bundle KeyBundle
 	if err := json.Unmarshal(data, &bundle); err != nil {
-		return nil, errors.Wrap(err, "unmarshalling key bundle JSON")
+		return nil, errox.InvalidArgs.CausedByf("unmarshalling key bundle JSON: %v", err)
 	}
 	if len(bundle.Keys) == 0 {
 		return nil, ErrKeyBundleEmpty
@@ -43,18 +44,18 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 		entry := &bundle.Keys[i]
 		entry.Name = strings.TrimSpace(entry.Name)
 		if entry.Name == "" {
-			return nil, errors.Wrapf(ErrKeyNameEmpty, "key at index %d", i)
+			return nil, fmt.Errorf("key at index %d: %w", i, ErrKeyNameEmpty)
 		}
 		if strings.ContainsAny(entry.Name, "/\\") {
-			return nil, errors.Wrapf(ErrKeyNamePathSeparator, "key name %q", entry.Name)
+			return nil, fmt.Errorf("key name %q: %w", entry.Name, ErrKeyNamePathSeparator)
 		}
 		if _, exists := seenNames[entry.Name]; exists {
-			return nil, errors.Wrapf(ErrKeyNameDuplicate, "%q", entry.Name)
+			return nil, fmt.Errorf("%q: %w", entry.Name, ErrKeyNameDuplicate)
 		}
 		seenNames[entry.Name] = struct{}{}
 		keyBlock, rest := pem.Decode([]byte(strings.TrimSpace(entry.PEM)))
 		if !IsValidPublicKeyPEMBlock(keyBlock, rest) {
-			return nil, errors.Wrapf(ErrKeyInvalidPEM, "key %q", entry.Name)
+			return nil, fmt.Errorf("key %q: %w", entry.Name, ErrKeyInvalidPEM)
 		}
 		entry.PEM = string(pem.EncodeToMemory(keyBlock))
 	}
