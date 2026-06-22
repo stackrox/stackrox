@@ -9,8 +9,8 @@
 #   skaffold dev -f dev-tools/skaffold.yaml
 #
 # How it works:
-#   1. Cross-compiles Go binaries natively on the host (no Docker build container)
-#   2. Builds a dev image via Dockerfile.dev (COPY --link — only changed layers rebuild)
+#   1. Tries to pull a pre-built CI image (skips build if available)
+#   2. Falls back to native cross-compilation + image build (COPY --link caching)
 #   3. Pushes to local registry (localhost:5000)
 #   4. Deploys/upgrades via Helm with reduced resource limits
 #   5. Watches .go files and repeats on change

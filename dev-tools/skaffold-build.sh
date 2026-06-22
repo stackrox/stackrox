@@ -99,6 +99,16 @@ cp "${OUTDIR}/admission-control"  image/rhel/bin/admission-control
 cp "${OUTDIR}/compliance"         image/rhel/bin/compliance
 cp "${OUTDIR}/roxagent"           image/rhel/bin/roxagent
 cp "${OUTDIR}/roxctl"             "image/rhel/bin/roxctl-linux-${GOARCH}"
+
+# Install Delve for debug builds
+if [[ "${DEBUG_BUILD:-}" == "yes" ]]; then
+    if [[ ! -f "$HOME/.go/bin/linux_${GOARCH}/dlv" ]]; then
+        echo "    Building Delve..."
+        GOOS=linux GOARCH="$GOARCH" CGO_ENABLED=0 go install github.com/go-delve/delve/cmd/dlv@latest 2>&1
+    fi
+    cp "$HOME/.go/bin/linux_${GOARCH}/dlv" image/rhel/bin/dlv
+fi
+touch image/rhel/bin/dlv-placeholder
 chmod +x image/rhel/bin/*
 
 # Ensure UI/docs/notices dirs exist (stubs for dev)
