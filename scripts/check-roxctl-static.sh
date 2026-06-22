@@ -3,11 +3,19 @@
 # Verify that roxctl CLI binaries in the main image are statically linked.
 # Dynamically linked roxctl binaries break downstream consumers that run
 # them on Alpine or older glibc distros.
-# This script must be called from the Makefile which sets TAG.
+#
+# Usage: TAG=<image-tag> ./scripts/check-roxctl-static.sh
+#        IMAGE=<full-image-ref> ./scripts/check-roxctl-static.sh
+#
+# When IMAGE is set, it is used directly. Otherwise stackrox/main:${TAG}
+# is used (for local builds via `make check-roxctl-static`).
 
 set -euo pipefail
 
-image="stackrox/main:${TAG}"
+image="${IMAGE:-stackrox/main:${TAG}}"
+echo "Checking image: $image"
+
+docker pull "$image" 2>/dev/null || true
 container=$(docker create "$image")
 
 tmpdir=$(mktemp -d)

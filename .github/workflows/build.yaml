@@ -1281,9 +1281,11 @@ jobs:
   check-roxctl-static:
     runs-on: ubuntu-latest
     needs:
-    - pre-build-cli
-    - pre-build-go-binaries
+    - define-job-matrix
+    - build-and-push-main
     if: ${{ !cancelled() }}
+    env:
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
     steps:
     - name: Checkout
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
@@ -1291,50 +1293,21 @@ jobs:
         fetch-depth: 1
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-    - uses: ./.github/actions/download-artifact-with-retry
+    - uses: ./.github/actions/job-preamble
       with:
-        name: cli-build
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Unpack cli build
-      run: tar xvf cli-build.tar
-
-    - uses: ./.github/actions/download-artifact-with-retry
+    - name: Login to quay.io/stackrox-io
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # ratchet:docker/login-action@v4
       with:
-        name: go-binaries-build-amd64-default
+        registry: quay.io
+        username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+        password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
-    - name: Unpack Go binaries build
-      run: tar xvf go-binaries-build.tar
-
-    - name: Check roxctl binaries are statically linked
+    - name: Check roxctl binaries in main image are statically linked
       run: |
-        failed=0
-        checked=0
-        for bin in bin/linux_amd64/roxctl bin/darwin_amd64/roxctl bin/linux_arm64/roxctl; do
-          [[ -f "$bin" ]] || continue
-          out=$(file -b "$bin")
-          name=$(basename "$(dirname "$bin")")/roxctl
-          if echo "$out" | grep -q "ELF"; then
-            checked=$((checked + 1))
-            if echo "$out" | grep -q "dynamically linked"; then
-              echo "::error::$name is dynamically linked: $out"
-              failed=1
-            else
-              echo "OK: $name is statically linked"
-            fi
-          elif echo "$out" | grep -q "Mach-O\|PE32"; then
-            echo "OK: $name is non-Linux binary (skip linking check)"
-          else
-            echo "SKIP: $name is not a real binary ($(echo "$out" | head -c 40))"
-          fi
-        done
-
-        if [[ "$failed" -eq 1 ]]; then
-          echo "::error::roxctl CLI binaries must be statically linked for portability."
-          exit 1
-        fi
-        if [[ "$checked" -eq 0 ]]; then
-          echo "No ELF roxctl binaries found (CLI build was likely skipped)."
-        fi
+        TAG=$(make --quiet --no-print-directory tag)
+        IMAGE="quay.io/stackrox-io/main:${TAG}" ./scripts/check-roxctl-static.sh
 
   slack-on-build-failure:
     env:
