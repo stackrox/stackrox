@@ -4,7 +4,7 @@
 set -eou pipefail
 
 # Global script variables
-OPM_VERSION="1.21.0"
+OPM_VERSION="1.48.0"
 
 function usage() {
   echo "

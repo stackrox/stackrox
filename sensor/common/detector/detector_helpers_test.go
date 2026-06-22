@@ -26,11 +26,11 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func createTestDetector(tb testing.TB, pubSubEnabled bool) (*detectorImpl, *mockStore.MockDeploymentStore, *mockStore.MockNetworkPolicyStore) {
+func createTestDetector(tb testing.TB, pubSubEnabled bool) (*detectorImpl, *mockStore.MockDeploymentStore, *mockStore.MockNetworkPolicyStore, *mockStore.MockNodeStore) {
 	return createTestDetectorWithBufferSize(tb, pubSubEnabled, 100)
 }
 
-func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferSize int) (*detectorImpl, *mockStore.MockDeploymentStore, *mockStore.MockNetworkPolicyStore) {
+func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferSize int) (*detectorImpl, *mockStore.MockDeploymentStore, *mockStore.MockNetworkPolicyStore, *mockStore.MockNodeStore) {
 	tb.Helper()
 
 	ctrl := gomock.NewController(tb)
@@ -40,11 +40,13 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 	networkPolicyStore := mockStore.NewMockNetworkPolicyStore(ctrl)
 	serviceAccountStore := mockStore.NewMockServiceAccountStore(ctrl)
 	serviceAccountStore.EXPECT().GetImagePullSecrets(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	nodeStore := mockStore.NewMockNodeStore(ctrl)
 
 	detectorStopper := concurrency.NewStopper()
 
 	var piQueue *queue.Queue[*detectorEvents.IndicatorEvent]
 	var netFlowQueue *queue.Queue[*detectorEvents.NetworkFlowEvent]
+	var fileAccessQueue *queue.Queue[*detectorEvents.FileAccessEvent]
 	if !pubSubEnabled {
 		piQueue = queue.NewQueue[*detectorEvents.IndicatorEvent](
 			detectorStopper, "PIsQueue", bufferSize, nil, nil,
@@ -52,10 +54,10 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 		netFlowQueue = queue.NewQueue[*detectorEvents.NetworkFlowEvent](
 			detectorStopper, "FlowsQueue", bufferSize, nil, nil,
 		)
+		fileAccessQueue = queue.NewQueue[*detectorEvents.FileAccessEvent](
+			detectorStopper, "FileAccessQueue", bufferSize, nil, nil,
+		)
 	}
-	fileAccessQueue := queue.NewQueue[*queue.FileAccessQueueItem](
-		detectorStopper, "FileAccessQueue", bufferSize, nil, nil,
-	)
 	deploymentQueue := queue.NewSimpleQueue[*queue.DeploymentQueueItem](
 		"DeploymentQueue", 0, nil, nil,
 	)
@@ -68,6 +70,7 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 		deploymentProcessingMap:   make(map[string]int64),
 		enricher:                  newEnricher(&fakeClusterIDPeekWaiter{}, nil, serviceAccountStore, nil, nil),
 		deploymentStore:           deploymentStore,
+		nodeStore:                 nodeStore,
 		networkPolicyStore:        networkPolicyStore,
 		baselineEval:              baseline.NewBaselineEvaluator(),
 		networkbaselineEval:       networkBaselineEval.NewNetworkBaselineEvaluator(),
@@ -101,6 +104,13 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 						),
 					),
 				),
+				lane.NewConcurrentLane(pubsub.DetectorFileAccessLane,
+					lane.WithConcurrentLaneConsumer(
+						consumer.NewBufferedConsumer(
+							consumer.WithBufferedConsumerSize(bufferSize),
+						),
+					),
+				),
 			},
 		))
 		require.NoError(tb, err)
@@ -108,7 +118,7 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 		d.pubSubDispatcher = dispatcher
 	}
 
-	return d, deploymentStore, networkPolicyStore
+	return d, deploymentStore, networkPolicyStore, nodeStore
 }
 
 const benchBufferSize = 20000
@@ -116,7 +126,7 @@ const benchBufferSize = 20000
 func createBenchDetector(b *testing.B, pubSubEnabled bool) *detectorImpl {
 	b.Helper()
 
-	d, ds, nps := createTestDetectorWithBufferSize(b, pubSubEnabled, benchBufferSize)
+	d, ds, nps, _ := createTestDetectorWithBufferSize(b, pubSubEnabled, benchBufferSize)
 
 	ds.EXPECT().GetSnapshot(gomock.Any()).DoAndReturn(func(id string) *storage.Deployment {
 		return &storage.Deployment{Id: id, Name: "bench-" + id, Namespace: "default"}
