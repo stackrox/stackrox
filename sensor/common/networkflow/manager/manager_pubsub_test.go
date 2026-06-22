@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -12,6 +13,8 @@ import (
 	mocksManager "github.com/stackrox/rox/sensor/common/networkflow/manager/mocks"
 	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stackrox/rox/sensor/common/pubsub"
+	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
+	"github.com/stackrox/rox/sensor/common/pubsub/lane"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -139,4 +142,64 @@ func TestNewManager_PubSubEnabled_CallbackSkipsExpiredEvent(t *testing.T) {
 	require.NotNil(t, capturing.callback)
 	require.NoError(t, capturing.callback(&expiredEvent{}))
 	assert.False(t, mgr.initialSync.Load(), "callback must not set initialSync for an expired event")
+}
+
+// TestNewManager_PubSubEnabled_RealDispatcher creates a real PubSub dispatcher
+// (not a capturing mock), publishes a ResourceSyncFinishedEvent through it, and
+// verifies initialSync is set. This exercises the actual lane routing.
+func TestNewManager_PubSubEnabled_RealDispatcher(t *testing.T) {
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+
+	mockCtrl := gomock.NewController(t)
+	disp, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(
+		[]pubsub.LaneConfig{
+			lane.NewBlockingLane(pubsub.ResourceSyncFinishedLane),
+		},
+	))
+	require.NoError(t, err)
+	defer disp.Stop()
+
+	mgr := NewManager(
+		mocksManager.NewMockEntityStore(mockCtrl),
+		mocksExternalSrc.NewMockStore(mockCtrl),
+		mocksDetector.NewMockDetector(mockCtrl),
+		internalmessage.NewMessageSubscriber(),
+		disp,
+		updatecomputer.New(),
+	).(*networkFlowManager)
+	// Don't call mgr.Stop() — manager was never Start()ed, so the stopper
+	// goroutine would block indefinitely. The dispatcher cleanup is sufficient.
+
+	assert.False(t, mgr.initialSync.Load())
+
+	require.NoError(t, disp.Publish(&stubEvent{}))
+
+	assert.Eventually(t, func() bool {
+		return mgr.initialSync.Load()
+	}, 500*time.Millisecond, 5*time.Millisecond, "initialSync must be set after publishing through real dispatcher")
+}
+
+// TestNewManager_PubSubEnabled_ConcurrentCallbacks fires the registered callback
+// from many goroutines simultaneously and verifies no data races occur.
+// Run with -race to exercise the race detector.
+func TestNewManager_PubSubEnabled_ConcurrentCallbacks(t *testing.T) {
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+
+	capturing := &capturingDispatcher{}
+	_, mgr := newManagerForPubSubTest(t, capturing)
+	require.NotNil(t, capturing.callback)
+	_ = mgr
+
+	const goroutines = 50
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+	for range goroutines {
+		go func() {
+			defer wg.Done()
+			_ = capturing.callback(&stubEvent{})
+		}()
+	}
+	wg.Wait()
+
+	assert.True(t, mgr.initialSync.Load(), "initialSync must be true after concurrent callbacks")
 }

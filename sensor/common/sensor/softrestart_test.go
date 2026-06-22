@@ -11,7 +11,9 @@ package sensor
 //     consumer ID and topic.
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -164,4 +166,39 @@ func TestSoftRestartCallback_SkipsExpiredEvent(t *testing.T) {
 
 	require.NoError(t, softRestartCallback(s)(&expiredSoftRestartEvent{}))
 	assert.Equal(t, 0, fakeCC.stopCount, "Stop() must not be called for an expired event")
+}
+
+// TestSensor_PubSubDisabled_SoftRestartViaInternalmessage verifies the legacy
+// internalmessage path: when the flag is off, publishing a SoftRestart message
+// through the old subscriber triggers Stop() on centralCommunication.
+func TestSensor_PubSubDisabled_SoftRestartViaInternalmessage(t *testing.T) {
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "false")
+
+	s := sensorForCallbackTest()
+	fakeCC := &fakeCentralComm{}
+	s.centralCommunication = fakeCC
+
+	require.NoError(t, s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(msg *internalmessage.SensorInternalMessage) {
+		if msg.IsExpired() {
+			return
+		}
+		s.centralCommunicationLock.Lock()
+		defer s.centralCommunicationLock.Unlock()
+		if s.centralCommunication == nil {
+			return
+		}
+		s.centralCommunication.Stop()
+	}))
+
+	require.NoError(t, s.pubSub.Publish(&internalmessage.SensorInternalMessage{
+		Kind:     internalmessage.SensorMessageSoftRestart,
+		Text:     "legacy soft restart",
+		Validity: context.Background(),
+	}))
+
+	assert.Eventually(t, func() bool {
+		fakeCC.mu.Lock()
+		defer fakeCC.mu.Unlock()
+		return fakeCC.stopCount == 1
+	}, 500*time.Millisecond, 5*time.Millisecond, "Stop() must be called via legacy path")
 }
