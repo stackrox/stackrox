@@ -16,6 +16,7 @@ import io.stackrox.proto.api.v1.AuthproviderService
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.AuthProviderOuterClass
 
+import io.stackrox.annotations.Retry
 import util.Env
 import util.Helpers
 import util.Keys
@@ -65,6 +66,7 @@ class AuthProviderService extends BaseService {
         }
     }
 
+    @Retry
     static deleteAuthProvider(String id) {
         getAuthProviderService().deleteAuthProvider(Common.DeleteByIDWithForce.newBuilder().setId(id).build())
     }

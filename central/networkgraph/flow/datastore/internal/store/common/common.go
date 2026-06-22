@@ -21,7 +21,7 @@ var (
 
 // FlowStoreKeyPrefix returns the prefix for a specific flow store
 func FlowStoreKeyPrefix(clusterID string) []byte {
-	return []byte(fmt.Sprintf("%s\x00%s\x00", GlobalPrefix, clusterID))
+	return fmt.Appendf(nil, "%s\x00%s\x00", GlobalPrefix, clusterID)
 }
 
 // GetDeploymentIDsFromKey take in an id []byte and return the deployments in the id
@@ -32,7 +32,7 @@ func GetDeploymentIDsFromKey(id []byte) ([]byte, []byte) {
 
 // GetID converts *storage.NetworkFlowProperties into a []byte
 func GetID(props *storage.NetworkFlowProperties) []byte {
-	return []byte(fmt.Sprintf("%x:%s:%x:%s:%x:%x", int32(props.GetSrcEntity().GetType()), props.GetSrcEntity().GetId(), int32(props.GetDstEntity().GetType()), props.GetDstEntity().GetId(), props.GetDstPort(), int32(props.GetL4Protocol())))
+	return fmt.Appendf(nil, "%x:%s:%x:%s:%x:%x", int32(props.GetSrcEntity().GetType()), props.GetSrcEntity().GetId(), int32(props.GetDstEntity().GetType()), props.GetDstEntity().GetId(), props.GetDstPort(), int32(props.GetL4Protocol()))
 }
 
 // ParseID parses the bytes into a storage.NetworkFlowProperties struct

@@ -7,6 +7,7 @@ import (
 
 // IndexReportsMismatchingVsockCID is a counter for the number of virtual machine index reports whose reported vsock CID does not
 // match the connection's vsock CID.
+// Asserted in VM E2E tests (tests/vm_scanning_metrics_test.go). Update tests when renaming or removing.
 var IndexReportsMismatchingVsockCID = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -17,6 +18,7 @@ var IndexReportsMismatchingVsockCID = prometheus.NewCounter(
 )
 
 // IndexReportsReceived is a counter for the number of virtual machine index reports received.
+// Asserted in VM E2E tests (tests/vm_scanning_metrics_test.go). Update tests when renaming or removing.
 var IndexReportsReceived = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -27,6 +29,7 @@ var IndexReportsReceived = prometheus.NewCounter(
 )
 
 // IndexReportsSentToSensor is a counter for the number of virtual machine index reports sent to sensor.
+// Asserted in VM E2E tests (tests/vm_scanning_metrics_test.go). Update tests when renaming or removing.
 var IndexReportsSentToSensor = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -39,6 +42,7 @@ var IndexReportsSentToSensor = prometheus.NewCounterVec(
 
 // ConnectionsAccepted is a counter for the number of connections accepted by this relay. A mismatch between
 // this and IndexReportsReceived indicates issues reading or parsing data.
+// Asserted in VM E2E tests (tests/vm_scanning_metrics_test.go). Update tests when renaming or removing.
 var ConnectionsAccepted = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -128,6 +132,7 @@ var ReportsRateLimited = prometheus.NewCounterVec(
 // AcksReceived counts ACK confirmations for VM index reports on the Relay VM index path.
 // It is incremented when ACK callback handling runs (not from the Sensor receive loop directly).
 // NACKs are tracked separately in the main compliance component where they're handled.
+// Asserted in VM E2E tests (tests/vm_scanning_metrics_test.go). Update tests when renaming or removing.
 var AcksReceived = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
