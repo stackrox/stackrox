@@ -163,9 +163,7 @@ spec:
             name: admission-control
             optional: true
         - name: config-store
-          hostPath:
-            path: /var/lib/stackrox/admission-control/
-            type: DirectoryOrCreate
+          emptyDir: {}
         - name: ssl
           emptyDir: {}
         - name: pki
