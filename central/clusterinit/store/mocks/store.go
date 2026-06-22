@@ -115,17 +115,17 @@ func (mr *MockStoreMockRecorder) GetAllCRS(ctx any) *gomock.Call {
 }
 
 // InitiateClusterRegistration mocks base method.
-func (m *MockStore) InitiateClusterRegistration(ctx context.Context, initArtifactId, clusterName string) error {
+func (m *MockStore) InitiateClusterRegistration(ctx context.Context, certIdentifier, initArtifactId, clusterName string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InitiateClusterRegistration", ctx, initArtifactId, clusterName)
+	ret := m.ctrl.Call(m, "InitiateClusterRegistration", ctx, certIdentifier, initArtifactId, clusterName)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // InitiateClusterRegistration indicates an expected call of InitiateClusterRegistration.
-func (mr *MockStoreMockRecorder) InitiateClusterRegistration(ctx, initArtifactId, clusterName any) *gomock.Call {
+func (mr *MockStoreMockRecorder) InitiateClusterRegistration(ctx, certIdentifier, initArtifactId, clusterName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitiateClusterRegistration", reflect.TypeOf((*MockStore)(nil).InitiateClusterRegistration), ctx, initArtifactId, clusterName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitiateClusterRegistration", reflect.TypeOf((*MockStore)(nil).InitiateClusterRegistration), ctx, certIdentifier, initArtifactId, clusterName)
 }
 
 // MarkClusterRegistrationComplete mocks base method.

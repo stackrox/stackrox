@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -35,7 +36,7 @@ type Store interface {
 	Delete(ctx context.Context, id string) error
 	Upsert(ctx context.Context, crs *storage.InitBundleMeta) error
 	Revoke(ctx context.Context, id string) error
-	InitiateClusterRegistration(ctx context.Context, initArtifactId, clusterName string) error
+	InitiateClusterRegistration(ctx context.Context, certIdentifier, initArtifactId, clusterName string) error
 	MarkClusterRegistrationComplete(ctx context.Context, initArtifactId, clusterName string) error
 }
 
@@ -173,7 +174,14 @@ func (w *storeImpl) Revoke(ctx context.Context, id string) error {
 
 // InitiateClusterRegistration checks if another registration using the CRS with the provided CRS ID is possible.
 // If the provided id belongs to an init bundle, then registration is always allowed, without any bookkeeping.
-func (w *storeImpl) InitiateClusterRegistration(ctx context.Context, initArtifactId, clusterName string) error {
+// certIdentifier is the cluster ID from the connecting certificate's CommonName; ephemeral operator-issued
+// certificates use centralsensor.EphemeralInitCertClusterID and have no persisted metadata.
+func (w *storeImpl) InitiateClusterRegistration(ctx context.Context, certIdentifier, initArtifactId, clusterName string) error {
+	if certIdentifier == centralsensor.EphemeralInitCertClusterID {
+		log.Infof("Allowing registration of cluster %s using ephemeral CRS %s (no persisted metadata).", clusterName, initArtifactId)
+		return nil
+	}
+
 	w.uniqueUpdateMutex.Lock()
 	defer w.uniqueUpdateMutex.Unlock()
 
