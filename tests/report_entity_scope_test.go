@@ -45,26 +45,12 @@ func (s *ReportEntityScopeSuite) SetupSuite() {
 
 func (s *ReportEntityScopeSuite) waitForCentralReady() {
 	s.T().Log("Waiting for Central to be ready...")
-	ticker := time.NewTicker(2 * time.Second)
-	defer ticker.Stop()
-	timer := time.NewTimer(2 * time.Minute)
-	defer timer.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
-			_, err := s.service.CountReportConfigurations(ctx, &apiV2.RawQuery{})
-			cancel()
-			if err == nil {
-				s.T().Log("Central is ready")
-				return
-			}
-			s.T().Logf("Central not ready yet: %v", err)
-		case <-timer.C:
-			s.Require().Fail("Timed out waiting for Central to become ready")
-			return
-		}
-	}
+	s.Require().Eventually(func() bool {
+		ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
+		defer cancel()
+		_, err := s.service.CountReportConfigurations(ctx, &apiV2.RawQuery{})
+		return err == nil
+	}, 2*time.Minute, 2*time.Second, "Central did not become ready")
 }
 
 func (s *ReportEntityScopeSuite) TearDownSuite() {
