@@ -30,7 +30,9 @@ func main() {
 			os.Exit(1)
 		}()
 	}()
-	if err := cmd.RootCmd(ctx).Execute(); err != nil {
+	rootCmd := cmd.RootCmd(ctx)
+	rootCmd.AddCommand(cmd.ServeCmd(ctx))
+	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}
 }
