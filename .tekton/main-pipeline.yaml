@@ -404,6 +404,9 @@ spec:
     - name: IMAGE_DIGEST
       value: $(tasks.build-image-index.results.IMAGE_DIGEST)
     taskSpec:
+      description: |
+        Verify that roxctl CLI binaries in the main image are statically linked.
+        Dynamically linked roxctl breaks downstream consumers on Alpine or older glibc distros.
       params:
       - name: IMAGE_URL
         type: string
@@ -411,12 +414,12 @@ spec:
         type: string
       steps:
       - name: check
-        image: registry.access.redhat.com/ubi9/ubi:latest
+        image: registry.access.redhat.com/ubi9-minimal:latest@sha256:ae09ecc3d754bc1726cbda3e2599cc7839e09fe1cc547ce173cf669b645be3cc
+        imagePullPolicy: IfNotPresent
         script: |
-          #!/usr/bin/env bash
           set -euo pipefail
 
-          dnf install -y -q skopeo file
+          microdnf install -y -q skopeo file tar
 
           tmpdir=$(mktemp -d)
           image="$(params.IMAGE_URL)@$(params.IMAGE_DIGEST)"
@@ -429,10 +432,10 @@ spec:
           mkdir -p "${tmpdir}/extracted"
           for layer in "${tmpdir}"/image/*; do
             [[ -f "$layer" ]] || continue
-            # Skip the manifest and version files
             file -b "$layer" | grep -qi "gzip\|tar\|zstandard" || continue
             if tar tf "$layer" 2>/dev/null | grep -q "assets/downloads/cli/roxctl-linux-"; then
-              tar xf "$layer" -C "${tmpdir}/extracted" --wildcards 'assets/downloads/cli/roxctl-linux-*' 2>/dev/null || true
+              tar xf "$layer" -C "${tmpdir}/extracted" --wildcards \
+                'assets/downloads/cli/roxctl-linux-*' 2>/dev/null || true
             fi
           done
 
