@@ -397,6 +397,80 @@ spec:
       operator: in
       values: ["false"]
 
+  - name: check-roxctl-static
+    params:
+    - name: IMAGE_URL
+      value: $(tasks.build-image-index.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+    taskSpec:
+      params:
+      - name: IMAGE_URL
+        type: string
+      - name: IMAGE_DIGEST
+        type: string
+      steps:
+      - name: check
+        image: registry.access.redhat.com/ubi9/ubi:latest
+        script: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          dnf install -y -q skopeo file
+
+          tmpdir=$(mktemp -d)
+          image="$(params.IMAGE_URL)@$(params.IMAGE_DIGEST)"
+          echo "Pulling amd64 image: $image"
+
+          skopeo copy --override-arch amd64 --override-os linux \
+            "docker://${image}" "dir:${tmpdir}/image"
+
+          echo "Extracting roxctl binaries from layers..."
+          mkdir -p "${tmpdir}/extracted"
+          for layer in "${tmpdir}"/image/*; do
+            [[ -f "$layer" ]] || continue
+            # Skip the manifest and version files
+            file -b "$layer" | grep -qi "gzip\|tar\|zstandard" || continue
+            if tar tf "$layer" 2>/dev/null | grep -q "assets/downloads/cli/roxctl-linux-"; then
+              tar xf "$layer" -C "${tmpdir}/extracted" --wildcards 'assets/downloads/cli/roxctl-linux-*' 2>/dev/null || true
+            fi
+          done
+
+          failed=0
+          checked=0
+          for bin in "${tmpdir}"/extracted/assets/downloads/cli/roxctl-linux-*; do
+            [[ -f "$bin" ]] || continue
+            name=$(basename "$bin")
+            [[ "$name" == "roxctl-linux" ]] && continue
+            out=$(file -b "$bin")
+            if echo "$out" | grep -q "ELF"; then
+              checked=$((checked + 1))
+              if echo "$out" | grep -q "dynamically linked"; then
+                echo "FAIL: /assets/downloads/cli/$name is dynamically linked"
+                echo "  $out"
+                failed=1
+              else
+                echo "OK: /assets/downloads/cli/$name is statically linked"
+              fi
+            fi
+          done
+
+          rm -rf "$tmpdir"
+
+          if [[ "$checked" -eq 0 ]]; then
+            echo "ERROR: no ELF roxctl binaries found in the image"
+            exit 1
+          fi
+          if [[ "$failed" -eq 1 ]]; then
+            echo "FAIL: roxctl CLI binaries must be statically linked for portability."
+            exit 1
+          fi
+          echo "All $checked roxctl binaries verified as statically linked."
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: ["false"]
+
   - name: clair-scan
     matrix:
       params:
