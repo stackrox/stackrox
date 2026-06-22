@@ -120,6 +120,20 @@
 #   kind, kubectl, helm, skaffold, roxctl, podman or docker
 #   Optional: buildkitd container for fast image builds (~1s vs ~18s)
 #
+# == Podman Setup (macOS) ==
+#
+# For full functionality (including Collector with BPF), podman must
+# run in rootful mode. Rootless mode blocks BPF syscalls via user
+# namespace remapping.
+#
+#   podman machine stop
+#   podman machine set --rootful
+#   podman machine set --memory 8192    # 8GB for full stack
+#   podman machine start
+#
+# Without rootful: everything works except Collector (NO_COLLECTION fallback).
+# With rootful: Collector runs CORE_BPF for runtime process/network detection.
+#
 # == Troubleshooting ==
 #
 #   Disk pressure / pod evictions:
@@ -327,7 +341,7 @@ print('Init bundle generated')
         --set image.collector.fullRef="${REGISTRY}/collector:${COLLECTOR_TAG}" \
         --set customize.envVars.ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL=1s \
         --set customize.envVars.ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL=10s \
-        --set collector.collectionMethod=NO_COLLECTION \
+        --set collector.collectionMethod=CORE_BPF \
         --set admissionControl.replicas=1 \
         --set sensor.resources.requests.memory=100Mi \
         --set sensor.resources.requests.cpu=100m \
