@@ -142,7 +142,7 @@ func TestParseKeyBundle(t *testing.T) {
 
 func TestParseKeyBundleMalformedJSON(t *testing.T) {
 	bundle, err := ParseKeyBundle([]byte(`{not json`))
-	assert.ErrorContains(t, err, "unmarshalling key bundle JSON")
+	assert.ErrorIs(t, err, ErrUnmarshalling)
 	assert.Nil(t, bundle)
 }
 

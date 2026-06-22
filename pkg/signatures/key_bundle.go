@@ -3,7 +3,6 @@ package signatures
 import (
 	"encoding/json"
 	"encoding/pem"
-	"fmt"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -16,6 +15,7 @@ var (
 	ErrKeyNamePathSeparator = errox.InvalidArgs.New("must not contain path separators")
 	ErrKeyNameDuplicate     = errox.InvalidArgs.New("duplicate key name")
 	ErrKeyInvalidPEM        = errox.InvalidArgs.New("invalid PEM-encoded public key")
+	ErrUnmarshalling        = errox.InvalidArgs.New("unmarshalling key bundle JSON")
 )
 
 // KeyBundle represents a set of public keys in the key bundle JSON format.
@@ -34,7 +34,7 @@ type KeyBundleEntry struct {
 func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 	var bundle KeyBundle
 	if err := json.Unmarshal(data, &bundle); err != nil {
-		return nil, errox.InvalidArgs.CausedByf("unmarshalling key bundle JSON: %v", err)
+		return nil, ErrUnmarshalling.CausedBy(err)
 	}
 	if len(bundle.Keys) == 0 {
 		return nil, ErrKeyBundleEmpty
@@ -44,18 +44,18 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 		entry := &bundle.Keys[i]
 		entry.Name = strings.TrimSpace(entry.Name)
 		if entry.Name == "" {
-			return nil, fmt.Errorf("key at index %d: %w", i, ErrKeyNameEmpty)
+			return nil, ErrKeyNameEmpty.CausedByf("key at index %d", i)
 		}
 		if strings.ContainsAny(entry.Name, "/\\") {
-			return nil, fmt.Errorf("key name %q: %w", entry.Name, ErrKeyNamePathSeparator)
+			return nil, ErrKeyNamePathSeparator.CausedByf("key name %q", entry.Name)
 		}
 		if _, exists := seenNames[entry.Name]; exists {
-			return nil, fmt.Errorf("%q: %w", entry.Name, ErrKeyNameDuplicate)
+			return nil, ErrKeyNameDuplicate.CausedByf("%q", entry.Name)
 		}
 		seenNames[entry.Name] = struct{}{}
 		keyBlock, rest := pem.Decode([]byte(strings.TrimSpace(entry.PEM)))
 		if !IsValidPublicKeyPEMBlock(keyBlock, rest) {
-			return nil, fmt.Errorf("key %q: %w", entry.Name, ErrKeyInvalidPEM)
+			return nil, ErrKeyInvalidPEM.CausedByf("key %q", entry.Name)
 		}
 		entry.PEM = string(pem.EncodeToMemory(keyBlock))
 	}
