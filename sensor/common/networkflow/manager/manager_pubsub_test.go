@@ -2,7 +2,7 @@ package manager
 
 import (
 	"context"
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 	"testing"
 	"time"
 
