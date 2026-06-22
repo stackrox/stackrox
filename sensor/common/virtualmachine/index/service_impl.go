@@ -69,7 +69,7 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 	log.Debugf("VM discovered data: detected_os=%s, os_version=%q, activation_status=%s, dnf_metadata_status=%s",
 		detectedOS.String(), osVersion, activationStatus.String(), dnfMetadataStatus.String())
 
-	// Record metric for VM discovered data for cusomer data debugging purposes.
+	// Record metric for VM discovered data for customer data debugging purposes.
 	metrics.VMDiscoveredData.With(prometheus.Labels{
 		"detected_os":         detectedOS.String(),
 		"activation_status":   activationStatus.String(),

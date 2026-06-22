@@ -396,6 +396,7 @@ func (h *handlerImpl) newVirtualMachineMessageToCentral(
 	vmInfo.AgentFacts = agentFactsFromDiscoveredData(discoveredData)
 	updatedVM := h.store.AddOrUpdate(vmInfo)
 	if updatedVM == nil {
+		// Current store never returns nil; guard kept for interface safety.
 		return nil
 	}
 
@@ -441,13 +442,16 @@ func vmIDFromResourceID(resourceID string) string {
 	return resourceID
 }
 
+// agentFactsFromDiscoveredData maps proto-reported roxagent data to user-facing
+// fact key/value pairs. Only explicitly supported enum values are mapped;
+// unrecognized or unspecified values are intentionally ignored so that Sensor
+// does not surface raw proto names in the UI.
 func agentFactsFromDiscoveredData(discoveredData *v1.DiscoveredData) map[string]string {
 	if discoveredData == nil {
 		return nil
 	}
 
 	facts := map[string]string{}
-	// Currently only RHEL is reported by roxagent; other OS types are ignored until supported.
 	switch discoveredData.GetDetectedOs() {
 	case v1.DetectedOS_RHEL:
 		guestOS := rhelGuestOS
@@ -455,18 +459,24 @@ func agentFactsFromDiscoveredData(discoveredData *v1.DiscoveredData) map[string]
 			guestOS += " " + osVersion
 		}
 		facts[pkgVM.DetectedGuestOSKey] = guestOS
+	default:
+		// Unrecognized or UNKNOWN OS; no fact emitted until a mapping is added.
 	}
 	switch discoveredData.GetActivationStatus() {
 	case v1.ActivationStatus_ACTIVE:
 		facts[pkgVM.ActivationStatusKey] = pkgVM.ActivationStatusActive
 	case v1.ActivationStatus_INACTIVE:
 		facts[pkgVM.ActivationStatusKey] = pkgVM.ActivationStatusInactive
+	default:
+		// Unspecified; no fact emitted.
 	}
 	switch discoveredData.GetDnfMetadataStatus() {
 	case v1.DnfMetadataStatus_AVAILABLE:
 		facts[pkgVM.DNFMetadataStatusKey] = pkgVM.DNFMetadataStatusAvailable
 	case v1.DnfMetadataStatus_UNAVAILABLE:
 		facts[pkgVM.DNFMetadataStatusKey] = pkgVM.DNFMetadataStatusUnavailable
+	default:
+		// Unspecified; no fact emitted.
 	}
 	if len(facts) == 0 {
 		return nil
