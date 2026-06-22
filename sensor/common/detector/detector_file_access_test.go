@@ -16,7 +16,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestIndicatorPipeline(t *testing.T) {
+func TestFileAccessPipeline(t *testing.T) {
 	deployment := &storage.Deployment{
 		Id:        "dep-1",
 		Name:      "test-deployment",
@@ -24,18 +24,18 @@ func TestIndicatorPipeline(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		setupMocks    func(*mockStore.MockDeploymentStore, *mockStore.MockNetworkPolicyStore)
+		setupMocks    func(*mockStore.MockDeploymentStore, *mockStore.MockNetworkPolicyStore, *mockStore.MockNodeStore)
 		setupDetector func(*detectorImpl)
-		indicator     *storage.ProcessIndicator
+		access        *storage.FileAccess
 		expectOutput  bool
 	}{
-		"indicator with alerts reaches output": {
-			indicator: &storage.ProcessIndicator{
-				Id:           "pi-1",
-				DeploymentId: "dep-1",
-				Signal:       &storage.ProcessSignal{ExecFilePath: "/bin/bash"},
+		"deployment file access with alerts reaches output": {
+			access: &storage.FileAccess{
+				Process:   &storage.ProcessIndicator{DeploymentId: "dep-1"},
+				File:      &storage.FileAccess_File{EffectivePath: "/etc/passwd"},
+				Operation: storage.FileAccess_OPEN,
 			},
-			setupMocks: func(ds *mockStore.MockDeploymentStore, nps *mockStore.MockNetworkPolicyStore) {
+			setupMocks: func(ds *mockStore.MockDeploymentStore, nps *mockStore.MockNetworkPolicyStore, _ *mockStore.MockNodeStore) {
 				ds.EXPECT().GetSnapshot("dep-1").Return(deployment)
 				nps.EXPECT().Find("default", gomock.Any()).Return(nil)
 			},
@@ -43,31 +43,64 @@ func TestIndicatorPipeline(t *testing.T) {
 				d.unifiedDetector = &fakeUnifiedDetector{
 					alerts: []*storage.Alert{{
 						Id:     "alert-1",
-						Policy: &storage.Policy{Id: "policy-1", Name: "test-policy"},
+						Policy: &storage.Policy{Id: "policy-1"},
 					}},
 				}
 			},
 			expectOutput: true,
 		},
-		"indicator with no alerts produces no output": {
-			indicator: &storage.ProcessIndicator{
-				Id:           "pi-2",
-				DeploymentId: "dep-1",
-				Signal:       &storage.ProcessSignal{ExecFilePath: "/bin/ls"},
+		"deployment file access with no alerts produces no output": {
+			access: &storage.FileAccess{
+				Process:   &storage.ProcessIndicator{DeploymentId: "dep-1"},
+				File:      &storage.FileAccess_File{EffectivePath: "/tmp/safe"},
+				Operation: storage.FileAccess_OPEN,
 			},
-			setupMocks: func(ds *mockStore.MockDeploymentStore, nps *mockStore.MockNetworkPolicyStore) {
+			setupMocks: func(ds *mockStore.MockDeploymentStore, nps *mockStore.MockNetworkPolicyStore, _ *mockStore.MockNodeStore) {
 				ds.EXPECT().GetSnapshot("dep-1").Return(deployment)
 				nps.EXPECT().Find("default", gomock.Any()).Return(nil)
 			},
 			expectOutput: false,
 		},
-		"indicator for missing deployment produces no output": {
-			indicator: &storage.ProcessIndicator{
-				Id:           "pi-3",
-				DeploymentId: "dep-missing",
+		"deployment file access for missing deployment produces no output": {
+			access: &storage.FileAccess{
+				Process:   &storage.ProcessIndicator{DeploymentId: "dep-missing"},
+				File:      &storage.FileAccess_File{EffectivePath: "/etc/passwd"},
+				Operation: storage.FileAccess_OPEN,
 			},
-			setupMocks: func(ds *mockStore.MockDeploymentStore, _ *mockStore.MockNetworkPolicyStore) {
+			setupMocks: func(ds *mockStore.MockDeploymentStore, _ *mockStore.MockNetworkPolicyStore, _ *mockStore.MockNodeStore) {
 				ds.EXPECT().GetSnapshot("dep-missing").Return(nil)
+			},
+			expectOutput: false,
+		},
+		"node file access with alerts reaches output": {
+			access: &storage.FileAccess{
+				Hostname:  "node-1",
+				Process:   &storage.ProcessIndicator{},
+				File:      &storage.FileAccess_File{EffectivePath: "/etc/shadow"},
+				Operation: storage.FileAccess_OPEN,
+			},
+			setupMocks: func(_ *mockStore.MockDeploymentStore, _ *mockStore.MockNetworkPolicyStore, ns *mockStore.MockNodeStore) {
+				ns.EXPECT().GetNodeByHostname("node-1").Return(&storage.Node{Id: "node-1", Name: "node-1"})
+			},
+			setupDetector: func(d *detectorImpl) {
+				d.unifiedDetector = &fakeUnifiedDetector{
+					alerts: []*storage.Alert{{
+						Id:     "alert-1",
+						Policy: &storage.Policy{Id: "policy-1"},
+					}},
+				}
+			},
+			expectOutput: true,
+		},
+		"node file access for missing node produces no output": {
+			access: &storage.FileAccess{
+				Hostname:  "node-missing",
+				Process:   &storage.ProcessIndicator{},
+				File:      &storage.FileAccess_File{EffectivePath: "/etc/shadow"},
+				Operation: storage.FileAccess_OPEN,
+			},
+			setupMocks: func(_ *mockStore.MockDeploymentStore, _ *mockStore.MockNetworkPolicyStore, ns *mockStore.MockNodeStore) {
+				ns.EXPECT().GetNodeByHostname("node-missing").Return(nil)
 			},
 			expectOutput: false,
 		},
@@ -79,8 +112,8 @@ func TestIndicatorPipeline(t *testing.T) {
 				t.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 
 				synctest.Test(t, func(t *testing.T) {
-					d, ds, nps, _ := createTestDetector(t, pubSubEnabled)
-					tc.setupMocks(ds, nps)
+					d, ds, nps, ns := createTestDetector(t, pubSubEnabled)
+					tc.setupMocks(ds, nps, ns)
 					if tc.setupDetector != nil {
 						tc.setupDetector(d)
 					}
@@ -90,16 +123,14 @@ func TestIndicatorPipeline(t *testing.T) {
 
 					d.Notify(common.SensorComponentEventCentralReachable)
 
-					d.ProcessIndicator(context.Background(), tc.indicator)
+					d.ProcessFileAccess(context.Background(), tc.access)
 					synctest.Wait()
 
 					if tc.expectOutput {
 						select {
 						case msg := <-d.output:
 							require.NotNil(t, msg)
-							alertResults := msg.GetEvent().GetAlertResults()
-							assert.Equal(t, tc.indicator.GetDeploymentId(), alertResults.GetDeploymentId())
-							assert.NotEmpty(t, alertResults.GetAlerts())
+							assert.NotEmpty(t, msg.GetEvent().GetAlertResults().GetAlerts())
 						default:
 							t.Fatal("expected output but none available")
 						}
@@ -116,7 +147,7 @@ func TestIndicatorPipeline(t *testing.T) {
 	}
 }
 
-func TestIndicatorPipelineOfflineBlocks(t *testing.T) {
+func TestFileAccessPipelineOfflineBlocks(t *testing.T) {
 	deployment := &storage.Deployment{
 		Id:        "dep-1",
 		Name:      "test-deployment",
@@ -138,21 +169,20 @@ func TestIndicatorPipelineOfflineBlocks(t *testing.T) {
 				require.NoError(t, d.Start())
 				defer d.Stop()
 
-				// Pipeline starts offline — send an indicator
-				d.ProcessIndicator(context.Background(), &storage.ProcessIndicator{
-					Id: "pi-offline", DeploymentId: "dep-1",
-					Signal: &storage.ProcessSignal{ExecFilePath: "/bin/test"},
+				// Pipeline starts offline
+				d.ProcessFileAccess(context.Background(), &storage.FileAccess{
+					Process:   &storage.ProcessIndicator{DeploymentId: "dep-1"},
+					File:      &storage.FileAccess_File{EffectivePath: "/etc/passwd"},
+					Operation: storage.FileAccess_OPEN,
 				})
 				synctest.Wait()
 
-				// No output while offline
 				select {
 				case <-d.output:
 					t.Fatal("expected no output while offline")
 				default:
 				}
 
-				// Go online — buffered event should be processed
 				d.Notify(common.SensorComponentEventCentralReachable)
 				synctest.Wait()
 
@@ -168,7 +198,7 @@ func TestIndicatorPipelineOfflineBlocks(t *testing.T) {
 	}
 }
 
-func TestIndicatorPipelineDropsWhenFull(t *testing.T) {
+func TestFileAccessPipelineDropsWhenFull(t *testing.T) {
 	deployment := &storage.Deployment{
 		Id:        "dep-1",
 		Name:      "test-deployment",
@@ -178,8 +208,9 @@ func TestIndicatorPipelineDropsWhenFull(t *testing.T) {
 	totalEvents := bufferSize + 20
 
 	// Initialize the rate-limited logger before entering synctest bubbles.
-	// The hashicorp LRU it uses spawns a timer goroutine that would cause
-	// synctest to panic if created inside the bubble.
+	// It uses a hashicorp LRU that spawns a background timer goroutine;
+	// if created inside the bubble, synctest panics on exit because the
+	// goroutine remains blocked.
 	logging.GetRateLimitedLogger()
 
 	for _, pubSubEnabled := range []bool{false, true} {
@@ -197,27 +228,24 @@ func TestIndicatorPipelineDropsWhenFull(t *testing.T) {
 				require.NoError(t, d.Start())
 				defer d.Stop()
 
-				// Pipeline starts offline — send more events than the buffer can hold
 				for i := range totalEvents {
-					d.ProcessIndicator(context.Background(), &storage.ProcessIndicator{
-						Id: fmt.Sprintf("pi-%d", i), DeploymentId: "dep-1",
-						Signal: &storage.ProcessSignal{ExecFilePath: "/bin/test"},
+					d.ProcessFileAccess(context.Background(), &storage.FileAccess{
+						Process:   &storage.ProcessIndicator{Id: fmt.Sprintf("pi-%d", i), DeploymentId: "dep-1"},
+						File:      &storage.FileAccess_File{EffectivePath: "/etc/passwd"},
+						Operation: storage.FileAccess_OPEN,
 					})
 				}
 				synctest.Wait()
 
-				// No output while offline
 				select {
 				case <-d.output:
 					t.Fatal("expected no output while offline")
 				default:
 				}
 
-				// Go online
 				d.Notify(common.SensorComponentEventCentralReachable)
 				synctest.Wait()
 
-				// Drain and count.
 				// The legacy queue holds exactly bufferSize items.
 				// The PubSub BufferedConsumer holds bufferSize + 1: its run()
 				// goroutine pulls one event from the buffer to process (blocking
