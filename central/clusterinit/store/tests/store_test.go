@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/store"
 	pgStore "github.com/stackrox/rox/central/clusterinit/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -142,7 +143,7 @@ func (s *clusterInitStoreTestSuite) TestCrsWithoutMaxRegistrations() {
 	err := s.store.Add(s.ctx, crsMeta)
 	s.Require().NoError(err, "adding CRS %s failed", crsId)
 
-	err = s.store.InitiateClusterRegistration(s.ctx, crsId, clusterName)
+	err = s.store.InitiateClusterRegistration(s.ctx, centralsensor.RegisteredInitCertClusterID, crsId, clusterName)
 	s.NoErrorf(err, "recording initiated registration for CRS %s failed", crsId)
 
 	crsMeta, err = s.store.Get(s.ctx, crsMeta.GetId())
@@ -171,10 +172,10 @@ func (s *clusterInitStoreTestSuite) TestCrsAutoRevocationOneShot() {
 	err := s.store.Add(s.ctx, crsMeta)
 	s.Require().NoError(err, "adding CRS %s failed", crsId)
 
-	err = s.store.InitiateClusterRegistration(s.ctx, crsId, clusterName)
+	err = s.store.InitiateClusterRegistration(s.ctx, centralsensor.RegisteredInitCertClusterID, crsId, clusterName)
 	s.NoErrorf(err, "recording initiated registration for CRS %s failed", crsId)
 
-	err = s.store.InitiateClusterRegistration(s.ctx, crsId, clusterName)
+	err = s.store.InitiateClusterRegistration(s.ctx, centralsensor.RegisteredInitCertClusterID, crsId, clusterName)
 	s.Error(err, "cluster registration still possible")
 
 	err = s.store.MarkClusterRegistrationComplete(s.ctx, crsId, clusterName)
@@ -200,10 +201,10 @@ func (s *clusterInitStoreTestSuite) TestCrsAutoRevocationAfterTwoRegistrations()
 	err := s.store.Add(s.ctx, crsMeta)
 	s.Require().NoError(err, "adding CRS %s failed", crsId)
 
-	err = s.store.InitiateClusterRegistration(s.ctx, crsId, clusterName)
+	err = s.store.InitiateClusterRegistration(s.ctx, centralsensor.RegisteredInitCertClusterID, crsId, clusterName)
 	s.NoErrorf(err, "recording initiated registration for CRS %s failed", crsId)
 
-	err = s.store.InitiateClusterRegistration(s.ctx, crsId, clusterName)
+	err = s.store.InitiateClusterRegistration(s.ctx, centralsensor.RegisteredInitCertClusterID, crsId, clusterName)
 	s.NoError(err, "cluster registration not possible")
 
 	err = s.store.MarkClusterRegistrationComplete(s.ctx, crsId, clusterName)
@@ -215,10 +216,10 @@ func (s *clusterInitStoreTestSuite) TestCrsAutoRevocationAfterTwoRegistrations()
 
 	clusterName = fmt.Sprintf("some-cluster-%s", uuid.NewV4().String())
 
-	err = s.store.InitiateClusterRegistration(s.ctx, crsId, clusterName)
+	err = s.store.InitiateClusterRegistration(s.ctx, centralsensor.RegisteredInitCertClusterID, crsId, clusterName)
 	s.NoErrorf(err, "recording initiated registration for CRS %s failed", crsId)
 
-	err = s.store.InitiateClusterRegistration(s.ctx, crsId, clusterName)
+	err = s.store.InitiateClusterRegistration(s.ctx, centralsensor.RegisteredInitCertClusterID, crsId, clusterName)
 	s.Error(err, "cluster registration still possible")
 
 	err = s.store.MarkClusterRegistrationComplete(s.ctx, crsId, clusterName)

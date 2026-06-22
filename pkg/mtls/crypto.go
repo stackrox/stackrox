@@ -70,7 +70,7 @@ const (
 	certLifetime = 365 * 24 * time.Hour
 
 	ephemeralProfileWithExpirationInHours             = "ephemeralWithExpirationInHours"
-	ephemeralProfileWithExpirationInHoursCertLifetime = 3 * time.Hour // NB: keep in sync with operator's InitBundleReconcilePeriod
+	ephemeralProfileWithExpirationInHoursCertLifetime = 3 * time.Hour // operator CRSReconcilePeriod must be less than half this value
 
 	ephemeralProfileWithExpirationInDays             = "ephemeralWithExpirationInDays"
 	ephemeralProfileWithExpirationInDaysCertLifetime = 2 * 24 * time.Hour

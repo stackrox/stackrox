@@ -72,7 +72,7 @@ type DataStore interface {
 	SearchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error)
 	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 
-	LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, bundleID string, hello *central.SensorHello) (*storage.Cluster, error)
+	LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, certIdentifier, bundleID string, hello *central.SensorHello) (*storage.Cluster, error)
 
 	MatchProcessIndicator(ctx context.Context, indicator *storage.ProcessIndicator) (bool, error)
 }

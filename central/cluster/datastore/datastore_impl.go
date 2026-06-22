@@ -1046,7 +1046,7 @@ func checkGracePeriodForReconnect(cluster *storage.Cluster, deploymentID *storag
 
 // Returns the cluster, a bool indicating whether it was an existing cluster (true) or newly created (false), and an error.
 // The bool is important because existing clusters need grace period checks and update checks, while new clusters skip those.
-func (ds *datastoreImpl) lookupOrCreateCluster(ctx context.Context, clusterID, clusterName, registrantID string, config clusterConfigData) (*storage.Cluster, bool, error) {
+func (ds *datastoreImpl) lookupOrCreateCluster(ctx context.Context, clusterID, clusterName, certIdentifier, registrantID string, config clusterConfigData) (*storage.Cluster, bool, error) {
 	if clusterID == "" && clusterName == "" {
 		return nil, false, errors.New("neither a cluster ID nor a cluster name was specified")
 	}
@@ -1078,9 +1078,13 @@ func (ds *datastoreImpl) lookupOrCreateCluster(ctx context.Context, clusterID, c
 	}
 
 	// Path 2: Create new cluster by name
-	cluster := buildNewClusterFromConfig(clusterName, registrantID, config)
+	effectiveRegistrantID := registrantID
+	if certIdentifier == centralsensor.EphemeralInitCertClusterID {
+		effectiveRegistrantID = ""
+	}
+	cluster := buildNewClusterFromConfig(clusterName, effectiveRegistrantID, config)
 
-	if err := ds.clusterInitStore.InitiateClusterRegistration(ctx, registrantID, clusterName); err != nil {
+	if err := ds.clusterInitStore.InitiateClusterRegistration(ctx, certIdentifier, registrantID, clusterName); err != nil {
 		return nil, false, errors.Wrapf(err, "initiating registrations of cluster %s using init artifact %s", clusterName, registrantID)
 	}
 
@@ -1095,7 +1099,8 @@ func (ds *datastoreImpl) lookupOrCreateCluster(ctx context.Context, clusterID, c
 // * ID of an init bundle, when connecting with an init bundle certificate.
 // * ID of a CRS, when connecting with a CRS certificate.
 // * Empty, when connecting with non-init service certificates.
-func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, registrantID string, hello *central.SensorHello) (*storage.Cluster, error) {
+// certIdentifier is the cluster ID from the certificate's CommonName (a sentinel value for init/CRS certs).
+func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, certIdentifier, registrantID string, hello *central.SensorHello) (*storage.Cluster, error) {
 	if err := checkWriteSac(ctx, clusterID); err != nil {
 		return nil, err
 	}
@@ -1105,7 +1110,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	cluster, isExisting, err := ds.lookupOrCreateCluster(ctx, clusterID, config.clusterName, registrantID, config)
+	cluster, isExisting, err := ds.lookupOrCreateCluster(ctx, clusterID, config.clusterName, certIdentifier, registrantID, config)
 	if err != nil {
 		return nil, err
 	}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"time"
 
@@ -19,21 +20,33 @@ import (
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/types"
+	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/crs"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/services"
 	"github.com/stackrox/rox/pkg/uuid"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	numServiceCertDataEntries = 3 // cert pem + key pem + ca pem
-	// InitBundleReconcilePeriod is the maximum period required for reconciliation of an init bundle.
-	// It must be sufficient to renew an ephemeral init bundle certificate which has relatively short lifetime (within a matter of hours).
-	// NB: keep in sync with crypto.ephemeralProfileWithExpirationInHoursCertLifetime
-	InitBundleReconcilePeriod   = 1 * time.Hour
+
+	clusterRegistrationSecretName = "cluster-registration-secret"
+	crsDataKey                    = "crs"
+	crsAnnotationPrefix           = "crs.platform.stackrox.io/"
+	operatorManagedCRSName        = "operator-managed"
+	// Keep in sync with mtls.ephemeralProfileWithExpirationInHoursCertLifetime.
+	crsCertLifetime = 3 * time.Hour
+
+	// CRSReconcilePeriod is the maximum period between untriggered reconciliations that renew
+	// the operator-managed cluster-registration-secret. It must be less than half of
+	// crypto.ephemeralProfileWithExpirationInHoursCertLifetime so CRS is renewed before half-validity.
+	CRSReconcilePeriod = 1 * time.Hour
+
 	envCentralCARotationEnabled = "CENTRAL_CA_ROTATION_ENABLED"
 )
 
@@ -80,8 +93,7 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 				return errors.Wrapf(err, "reconciling %s-tls secret failed", prefix)
 			}
 		}
-		return nil
-		// reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.
+		return r.reconcileCRSSecret(ctx, true)
 	}
 
 	if err := r.EnsureSecret(ctx, common.CentralTLSSecretName, r.validateAndConsumeCentralTLSData, r.generateCentralTLSData, commonLabels.TLSSecretLabels()); err != nil {
@@ -119,47 +131,135 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 		r.renderCache.SetCAHash(r.centralObj, confighash.ComputeCAHash(caPEM))
 	}
 
-	return nil // reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.
+	return r.reconcileCRSSecret(ctx, false)
 }
 
-//lint:ignore U1000 ignore unused method. TODO(ROX-9969): remove lint ignore after the init-bundle cert rotation stabilization.
-func (r *createCentralTLSExtensionRun) reconcileInitBundleSecrets(ctx context.Context, shouldDelete bool) error {
-	bundleSecretShouldExist, err := r.shouldBundleSecretsExist(ctx, shouldDelete)
+func (r *createCentralTLSExtensionRun) reconcileCRSSecret(ctx context.Context, shouldDelete bool) error {
+	if shouldDelete {
+		return r.DeleteSecret(ctx, clusterRegistrationSecretName)
+	}
+	if err := r.EnsureSecret(ctx, clusterRegistrationSecretName, r.validateCRSData, r.generateCRSData, commonLabels.TLSSecretLabels()); err != nil {
+		return errors.Wrap(err, "reconciling cluster-registration-secret failed")
+	}
+	return r.ensureCRSSecretAnnotations(ctx)
+}
+
+func (r *createCentralTLSExtensionRun) validateCRSData(data types.SecretDataMap, _ bool) error {
+	crsData, ok := data[crsDataKey]
+	if !ok || len(crsData) == 0 {
+		return errors.New("missing CRS data")
+	}
+	crsObj, err := crs.DeserializeSecret(string(crsData))
+	if err != nil {
+		return errors.Wrap(err, "deserializing CRS")
+	}
+	if len(crsObj.CAs) == 0 {
+		return errors.New("missing CA in CRS")
+	}
+	if !bytes.Equal([]byte(crsObj.CAs[0]), r.ca.CertPEM()) {
+		return errors.New("CRS CA does not match current CA")
+	}
+	cert, err := parseCRSCertificate(crsObj)
 	if err != nil {
 		return err
 	}
-	for _, serviceType := range centralsensor.AllSecuredClusterServices {
-		slugCaseService := services.ServiceTypeToSlugName(serviceType)
-		secretName := slugCaseService + "-tls"
-		if !bundleSecretShouldExist {
-			if err := r.DeleteSecret(ctx, secretName); err != nil {
-				return errors.Wrapf(err, "deleting %s secret failed", secretName)
-			}
-			continue
-		}
-		validateFunc := func(fileMap types.SecretDataMap, _ bool) error {
-			return r.validateServiceTLSData(serviceType, slugCaseService+"-", fileMap)
-		}
-		generateFunc := func(_ types.SecretDataMap) (types.SecretDataMap, error) {
-			return r.generateInitBundleTLSData(slugCaseService+"-", serviceType)
-		}
-		if err := r.EnsureSecret(ctx, secretName, validateFunc, generateFunc, commonLabels.TLSSecretLabels()); err != nil {
-			return errors.Wrapf(err, "reconciling %s secret failed", secretName)
-		}
+	if _, err := r.ca.ValidateAndExtractSubject(cert, mtls.WithCurrentTime(r.currentTime)); err != nil {
+		return errors.Wrap(err, "CRS certificate is not signed by current CA")
 	}
-	return nil
+	subject := mtls.SubjectFromCommonName(cert.Subject.CommonName)
+	if subject.ServiceType != storage.ServiceType_REGISTRANT_SERVICE {
+		return fmt.Errorf("unexpected service type %v in CRS certificate", subject.ServiceType)
+	}
+	if subject.Identifier != centralsensor.EphemeralInitCertClusterID {
+		return fmt.Errorf("unexpected cluster ID %q in CRS certificate", subject.Identifier)
+	}
+	return r.checkCertRenewal(cert)
 }
 
-func (r *createCentralTLSExtensionRun) shouldBundleSecretsExist(ctx context.Context, shouldDelete bool) (bool, error) {
-	if shouldDelete {
-		// Don't bother listing secured clusters if we're ensuring absence of bundle for other reasons.
-		return false, nil
-	}
-	securedClusterPresent, err := r.isSiblingSecuredClusterPresent(ctx)
+func (r *createCentralTLSExtensionRun) generateCRSData(_ types.SecretDataMap) (types.SecretDataMap, error) {
+	crsID := uuid.NewV4()
+	subject := mtls.NewInitSubject(centralsensor.EphemeralInitCertClusterID, storage.ServiceType_REGISTRANT_SERVICE, crsID)
+	opts := append([]mtls.IssueCertOption{
+		mtls.WithValidityExpiringInHours(),
+		mtls.WithValidityNotBefore(r.currentTime),
+		mtls.WithValidityNotAfter(r.currentTime.Add(crsCertLifetime)),
+	}, r.extraIssueCertOptions...)
+	issuedCert, err := r.ca.IssueCertForSubject(subject, opts...)
 	if err != nil {
-		return false, errors.Wrap(err, "determining whether to create init bundle failed")
+		return nil, errors.Wrap(err, "issuing CRS certificate failed")
 	}
-	return securedClusterPresent, nil
+	crsObj := &crs.CRS{
+		Version: 1,
+		CAs:     []string{string(r.ca.CertPEM())},
+		Cert:    string(issuedCert.CertPEM),
+		Key:     string(issuedCert.KeyPEM),
+	}
+	serialized, err := crs.SerializeSecret(crsObj)
+	if err != nil {
+		return nil, errors.Wrap(err, "serializing CRS")
+	}
+	return types.SecretDataMap{crsDataKey: []byte(serialized)}, nil
+}
+
+func (r *createCentralTLSExtensionRun) ensureCRSSecretAnnotations(ctx context.Context) error {
+	secret := &corev1.Secret{}
+	key := ctrlClient.ObjectKey{Namespace: r.centralObj.GetNamespace(), Name: clusterRegistrationSecretName}
+	if err := utils.GetWithFallbackToUncached(ctx, r.Client(), r.UncachedClient(), key, secret); err != nil {
+		return errors.Wrap(err, "getting cluster-registration-secret for annotation update")
+	}
+	if !metav1.IsControlledBy(secret, r.centralObj) {
+		return nil
+	}
+
+	crsObj, err := crs.DeserializeSecret(string(secret.Data[crsDataKey]))
+	if err != nil {
+		return errors.Wrap(err, "deserializing CRS for annotation update")
+	}
+	cert, err := parseCRSCertificate(crsObj)
+	if err != nil {
+		return err
+	}
+
+	crsID := ""
+	if len(cert.Subject.Organization) > 0 {
+		crsID = cert.Subject.Organization[0]
+	}
+
+	desiredAnnotations := map[string]string{
+		crsAnnotationPrefix + "name":       operatorManagedCRSName,
+		crsAnnotationPrefix + "created-at": cert.NotBefore.Format(time.RFC3339Nano),
+		crsAnnotationPrefix + "expires-at": cert.NotAfter.Format(time.RFC3339Nano),
+		crsAnnotationPrefix + "id":         crsID,
+	}
+
+	if secret.Annotations == nil {
+		secret.Annotations = make(map[string]string)
+	}
+
+	needsUpdate := false
+	for annotationKey, annotationValue := range desiredAnnotations {
+		if secret.Annotations[annotationKey] != annotationValue {
+			secret.Annotations[annotationKey] = annotationValue
+			needsUpdate = true
+		}
+	}
+	if !needsUpdate {
+		return nil
+	}
+
+	return errors.Wrap(r.Client().Update(ctx, secret), "updating cluster-registration-secret annotations")
+}
+
+func parseCRSCertificate(crsObj *crs.CRS) (*x509.Certificate, error) {
+	block, _ := pem.Decode([]byte(crsObj.Cert))
+	if block == nil {
+		return nil, errors.New("failed to decode CRS certificate PEM")
+	}
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing CRS certificate")
+	}
+	return cert, nil
 }
 
 func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap types.SecretDataMap, _ bool) error {
@@ -515,23 +615,4 @@ func (r *createCentralTLSExtensionRun) generateScannerV4DBTLSData(_ types.Secret
 		return nil, err
 	}
 	return fileMap, nil
-}
-
-func (r *createCentralTLSExtensionRun) generateInitBundleTLSData(fileNamePrefix string, serviceType storage.ServiceType) (types.SecretDataMap, error) {
-	fileMap := make(types.SecretDataMap, numServiceCertDataEntries)
-	bundleID := uuid.NewV4()
-	subject := mtls.NewInitSubject(centralsensor.EphemeralInitCertClusterID, serviceType, bundleID)
-	if err := r.generateServiceTLSData(subject, fileNamePrefix, fileMap, mtls.WithValidityExpiringInHours()); err != nil {
-		return nil, err
-	}
-	return fileMap, nil
-}
-
-func (r *createCentralTLSExtensionRun) isSiblingSecuredClusterPresent(ctx context.Context) (bool, error) {
-	list := &platform.SecuredClusterList{}
-	namespace := r.centralObj.GetNamespace()
-	if err := r.Client().List(ctx, list, ctrlClient.InNamespace(namespace)); err != nil {
-		return false, errors.Wrapf(err, "cannot list securedclusters in namespace %q", namespace)
-	}
-	return len(list.Items) > 0, nil
 }

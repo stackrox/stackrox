@@ -274,6 +274,9 @@ func verifyCreatedSecrets(
 }
 
 func isTLSSecret(secret v1.Secret) bool {
+	if secret.Name == "cluster-registration-secret" {
+		return false
+	}
 	if secret.Labels == nil {
 		return false
 	}

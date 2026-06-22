@@ -184,18 +184,18 @@ func (mr *MockDataStoreMockRecorder) GetClustersForSAC() *gomock.Call {
 }
 
 // LookupOrCreateClusterFromConfig mocks base method.
-func (m *MockDataStore) LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, bundleID string, hello *central.SensorHello) (*storage.Cluster, error) {
+func (m *MockDataStore) LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, certIdentifier, bundleID string, hello *central.SensorHello) (*storage.Cluster, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LookupOrCreateClusterFromConfig", ctx, clusterID, bundleID, hello)
+	ret := m.ctrl.Call(m, "LookupOrCreateClusterFromConfig", ctx, clusterID, certIdentifier, bundleID, hello)
 	ret0, _ := ret[0].(*storage.Cluster)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // LookupOrCreateClusterFromConfig indicates an expected call of LookupOrCreateClusterFromConfig.
-func (mr *MockDataStoreMockRecorder) LookupOrCreateClusterFromConfig(ctx, clusterID, bundleID, hello any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) LookupOrCreateClusterFromConfig(ctx, clusterID, certIdentifier, bundleID, hello any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LookupOrCreateClusterFromConfig", reflect.TypeOf((*MockDataStore)(nil).LookupOrCreateClusterFromConfig), ctx, clusterID, bundleID, hello)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LookupOrCreateClusterFromConfig", reflect.TypeOf((*MockDataStore)(nil).LookupOrCreateClusterFromConfig), ctx, clusterID, certIdentifier, bundleID, hello)
 }
 
 // MatchProcessIndicator mocks base method.
