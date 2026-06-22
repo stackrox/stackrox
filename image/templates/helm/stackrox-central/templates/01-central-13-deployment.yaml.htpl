@@ -55,7 +55,7 @@ spec:
       - name: central
         image: {{ ._rox.central.image.fullRef | quote }}
         command:
-          - /stackrox/central
+          - /stackrox/central-entrypoint.sh
         ports:
           {{- toYaml ._rox.central._containerPorts | nindent 10 }}
         readinessProbe:
@@ -169,6 +169,10 @@ spec:
         - name: central-jwt-volume
           mountPath: /run/secrets/stackrox.io/jwt/
           readOnly: true
+        - name: central-etc-ssl-volume
+          mountPath: /etc/ssl
+        - name: central-etc-pki-volume
+          mountPath: /etc/pki/ca-trust
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
           readOnly: true
@@ -223,6 +227,10 @@ spec:
       - name: varlog
         emptyDir: {}
       - name: central-tmp-volume
+        emptyDir: {}
+      - name: central-etc-ssl-volume
+        emptyDir: {}
+      - name: central-etc-pki-volume
         emptyDir: {}
       - name: central-certs-volume
         secret:
