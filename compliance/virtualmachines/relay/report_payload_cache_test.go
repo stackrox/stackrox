@@ -41,11 +41,16 @@ func TestReportPayloadCache_LRUByUpdatedAt_EvictionScenario(t *testing.T) {
 
 	// Identical payload for vm0 — no recency / updatedAt change.
 	c.Upsert(vm0, payload0.CloneVT(), t2)
+	ts, tsOK := c.updatedAt(vm0)
+	require.Truef(t, tsOK, "expected vm0 to be cached after identical upsert")
+	require.Equalf(t, t0, ts, "expected updatedAt unchanged after identical-payload upsert, got %v", ts)
 
 	c.Upsert(vm0, payload2, t3)
 
 	c.Upsert(vm2, payload3, t4)
 
+	// Expected state: due to the cache size (2), vm0 and vm2 are present;
+	// vm1 was evicted due to cache capacity constraints.
 	got0, ok0 := c.Get(vm0)
 	require.Truef(t, ok0, "expected vm0 cache lookup to be a hit, but got a miss")
 	require.Truef(t, got0.EqualVT(payload2), "expected vm0 cached payload to match payload2, but it did not")
@@ -62,7 +67,8 @@ func TestReportPayloadCache_LRUByUpdatedAt_EvictionScenario(t *testing.T) {
 func TestReportPayloadCache_Upsert_StoresClone(t *testing.T) {
 	t.Parallel()
 
-	c := newReportPayloadCache(4, time.Hour)
+	const maxSlots = 4
+	c := newReportPayloadCache(maxSlots, time.Hour)
 	now := time.Unix(20, 0)
 	r := relaytest.NewTestVMReport("upsert-clone")
 	expected := r.CloneVT()
@@ -78,7 +84,8 @@ func TestReportPayloadCache_Upsert_StoresClone(t *testing.T) {
 func TestReportPayloadCache_Get_ReturnsSharedReference_CallerCanMutate(t *testing.T) {
 	t.Parallel()
 
-	c := newReportPayloadCache(4, time.Hour)
+	const maxSlots = 4
+	c := newReportPayloadCache(maxSlots, time.Hour)
 	now := time.Unix(10, 0)
 	r := relaytest.NewTestVMReport("x")
 	c.Upsert(key1, r, now)
@@ -98,7 +105,9 @@ func TestReportPayloadCache_Get_ReturnsSharedReference_CallerCanMutate(t *testin
 func TestReportPayloadCache_TTLZero_ImmediateExpiryOnSweep(t *testing.T) {
 	t.Parallel()
 
-	c := newReportPayloadCache(4, 0)
+	const maxSlots = 4
+	const immediateExpiry time.Duration = 0
+	c := newReportPayloadCache(maxSlots, immediateExpiry)
 	base := time.Unix(2000, 0)
 	r := relaytest.NewTestVMReport("x")
 	c.Upsert(key1, r, base)
@@ -139,9 +148,9 @@ func TestReportPayloadCache_Get_TTLExpiry_DoesNotEvict(t *testing.T) {
 func TestReportPayloadCache_Upsert_ExpiresAtMostBudgetPerInsert(t *testing.T) {
 	t.Parallel()
 
-	const staleEntries = 20
+	const staleEntries = 3 * upsertExpiredEvictionPerInsert // well above budget to highlight bounded sweep
 	ttl := 10 * time.Minute
-	c := newReportPayloadCache(64, ttl)
+	c := newReportPayloadCache(staleEntries+10, ttl)
 	base := time.Unix(5000, 0)
 	for i := range staleEntries {
 		c.Upsert(fmt.Sprintf("k-%02d", i), relaytest.NewTestVMReport(fmt.Sprintf("%02d", i)), base.Add(time.Duration(i)*time.Second))
@@ -191,6 +200,8 @@ func TestReportPayloadCache_LenAndCapacity(t *testing.T) {
 
 	now := time.Unix(10, 0)
 	c.Upsert("x", relaytest.NewTestVMReport("x"), now)
+	// Capacity is unchanged, immutable after cache instantiation.
+	require.Equalf(t, 5, c.Capacity(), "expected cache capacity %d, got %d", 5, c.Capacity())
 	require.Equalf(t, 1, c.Len(), "expected cache length after one insert %d, got %d", 1, c.Len())
 }
 
@@ -288,6 +299,28 @@ func TestReportPayloadCache_SweepExpired_MultipleExpired_OrderedOldestUpdatedFir
 	assertEviction(t, evictions[0], "older", 90*time.Minute, 90*time.Minute)
 	assertEviction(t, evictions[1], "newer", 70*time.Minute, 70*time.Minute)
 	require.Equalf(t, 0, c.Len(), "expected cache length after sweep %d, got %d", 0, c.Len())
+}
+
+func TestReportPayloadCache_SweepExpired_AllStale_EvictsAll(t *testing.T) {
+	t.Parallel()
+
+	const maxSlots = 4
+	ttl := time.Hour
+	c := newReportPayloadCache(maxSlots, ttl)
+	base := time.Unix(3000, 0)
+
+	c.Upsert("a", relaytest.NewTestVMReport("a"), base)
+	c.Upsert("b", relaytest.NewTestVMReport("b"), base.Add(10*time.Minute))
+	c.Upsert("c", relaytest.NewTestVMReport("c"), base.Add(20*time.Minute))
+	require.Equalf(t, 3, c.Len(), "expected cache length after inserts %d, got %d", 3, c.Len())
+
+	sweepAt := base.Add(2 * time.Hour)
+	evictions := c.SweepExpired(sweepAt)
+	require.Lenf(t, evictions, 3, "expected all-stale sweep to evict %d entries, got %d", 3, len(evictions))
+	assertEviction(t, evictions[0], "a", 2*time.Hour, 2*time.Hour)
+	assertEviction(t, evictions[1], "b", 110*time.Minute, 110*time.Minute)
+	assertEviction(t, evictions[2], "c", 100*time.Minute, 100*time.Minute)
+	require.Equalf(t, 0, c.Len(), "expected empty cache after all-stale sweep, got len=%d", c.Len())
 }
 
 func TestReportPayloadCache_Remove_ReturnsEvictionDurations(t *testing.T) {

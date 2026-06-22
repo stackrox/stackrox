@@ -66,6 +66,11 @@ func newReportPayloadCache(maxSlots int, ttl time.Duration) *reportPayloadCache 
 // When a new key is inserted at capacity, the LRU entry is evicted first; that eviction is returned for metrics (residency
 // is measured at eviction time relative to the evicted entry's updatedAt).
 func (c *reportPayloadCache) Upsert(resourceID string, report *v1.VMReport, now time.Time) []payloadEviction {
+	// maxSlots is immutable; non-positive means the cache is disabled and byID is always empty.
+	if c.maxSlots <= 0 {
+		return nil
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -82,9 +87,6 @@ func (c *reportPayloadCache) Upsert(resourceID string, report *v1.VMReport, now 
 		return evictions
 	}
 
-	if c.maxSlots <= 0 {
-		return evictions
-	}
 	if len(c.byID) >= c.maxSlots {
 		if ev, ok := c.evictLRUNoLock(now); ok {
 			evictions = append(evictions, ev)
@@ -153,8 +155,11 @@ func (c *reportPayloadCache) evictExpiredFromFrontNoLock(now time.Time, budget i
 }
 
 // Get returns the cached report reference if present. Get does not enforce TTL and does not
-// modify cache contents. Reads do not affect eviction order by updatedAt. Callers must treat
-// returned reports as read-only.
+// modify cache contents. Reads do not affect eviction order by updatedAt.
+//
+// Ownership semantics: Upsert stores a clone, so writer mutations after Upsert are not
+// reflected in the cache. Get returns a shared reference (no copy), so reader mutations
+// after Get ARE visible to subsequent lookups. Callers must treat returned reports as read-only.
 func (c *reportPayloadCache) Get(resourceID string) (report *v1.VMReport, ok bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -200,6 +205,17 @@ func (c *reportPayloadCache) Len() int {
 func (c *reportPayloadCache) Capacity() int {
 	// No locking as maxSlots is immutable after construction.
 	return c.maxSlots
+}
+
+// updatedAt returns the updatedAt timestamp for the given resourceID, or the zero time if absent.
+func (c *reportPayloadCache) updatedAt(resourceID string) (time.Time, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	elem, ok := c.byID[resourceID]
+	if !ok {
+		return time.Time{}, false
+	}
+	return elem.Value.(*reportPayloadEntry).updatedAt, true
 }
 
 func evictionForEntry(ent *reportPayloadEntry, now time.Time) payloadEviction {
