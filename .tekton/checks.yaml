@@ -11,7 +11,7 @@ metadata:
     pipelinesascode.tekton.dev/on-comment: "/konflux-retest checks"
     pipelinesascode.tekton.dev/on-cel-expression: |
       (event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")) ||
-      (event == "pull_request" && body.action != "ready_for_review")
+      (event == "pull_request" && (body.action == "opened" || body.action == "synchronize" || body.action == "reopened"))
   labels:
     appstudio.openshift.io/application: acs
   name: checks
