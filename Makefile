@@ -505,13 +505,14 @@ main-build-nodeps:
 		config-controller \
 		migrator \
 		operator/cmd \
-		roxctl \
 		scanner/cmd/scanner \
 		sensor/admission-control \
 		sensor/kubernetes \
-		sensor/upgrader \
-		compliance/virtualmachines/roxagent
+		sensor/upgrader
 	mv bin/linux_$(GOARCH)/cmd bin/linux_$(GOARCH)/stackrox-operator
+ifndef SKIP_CLI_BUILD
+	CGO_ENABLED=0 $(GOBUILD) roxctl compliance/virtualmachines/roxagent
+endif
 
 .PHONY: scale-build
 scale-build: build-prep
