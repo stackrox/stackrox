@@ -68,8 +68,11 @@ func TestLogMatcher(t *testing.T) {
 }
 
 func TestCreateK8sClientWithConfig_RetriesOnFailure(t *testing.T) {
+	// This test verifies that the ConfigureRetryableTransport function configures retries correctly
+	// by injecting a mock transport that fails initially, then succeeds.
 	var callCount int
 
+	// Create a mock transport that fails the first 2 times, succeeds on the 3rd.
 	mockTransport := roundTripperFunc(func(r *http.Request) (*http.Response, error) {
 		callCount++
 		currentCall := callCount
@@ -77,9 +80,11 @@ func TestCreateK8sClientWithConfig_RetriesOnFailure(t *testing.T) {
 		t.Logf("Mock transport call #%d to %s", currentCall, r.URL.String())
 
 		if currentCall <= 2 {
+			// Simulate network error for first 2 calls.
 			return nil, errors.New("network error: connection refused")
 		}
 
+		// Succeed on the 3rd call and return a mock successful response.
 		responseBody := `{
 			"major": "1",
 			"minor": "28",
@@ -99,19 +104,24 @@ func TestCreateK8sClientWithConfig_RetriesOnFailure(t *testing.T) {
 		}, nil
 	})
 
+	// Create a mock REST config.
 	restCfg := &rest.Config{
 		Host: "https://mock-k8s-api.example.com",
 		WrapTransport: func(http.RoundTripper) http.RoundTripper {
+			// Return our mock transport instead of the real one.
 			return mockTransport
 		},
 	}
 	ConfigureRetryableTransport(t, restCfg)
 
+	// Create client with our mock config.
 	client := CreateK8sClientWithConfig(t, restCfg)
 	require.NotNil(t, client, "client should not be nil")
 
+	// Make an API call that should trigger retries.
 	version, err := client.Discovery().ServerVersion()
 
+	// The call should succeed after retries.
 	require.NoError(t, err, "Discovery call should succeed after retries")
 	require.NotNil(t, version, "Server version should not be nil")
 	assert.Equal(t, "1", version.Major)
@@ -121,8 +131,10 @@ func TestCreateK8sClientWithConfig_RetriesOnFailure(t *testing.T) {
 	t.Logf("Successfully completed after %d calls (including retries)", callCount)
 }
 
+// roundTripperFunc is a function type that implements the http.RoundTripper interface.
 type roundTripperFunc func(*http.Request) (*http.Response, error)
 
+// RoundTrip implements the http.RoundTripper interface.
 func (fn roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 	return fn(r)
 }

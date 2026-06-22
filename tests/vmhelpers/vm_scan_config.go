@@ -46,19 +46,19 @@ type VMSpec struct {
 
 // VMScanConfig contains the VM scanning test configuration derived from the environment.
 type VMScanConfig struct {
-	Images              []string
-	GuestUsers          []string
+	Images              []string // container-disk images (from VM_IMAGES, comma-separated)
+	GuestUsers          []string // per-image SSH users (from VM_USERS, comma-separated; shorter lists are padded with defaultGuestUser)
 	VirtctlPath         string
 	RoxagentBinaryPath  string
 	Repo2CPEURL         string
-	SSHPrivateKey       string
-	SSHPublicKey        string
+	SSHPrivateKey       string // PEM-encoded private key content (not a file path)
+	SSHPublicKey        string // OpenSSH authorized_keys line (not a file path)
 	NamespacePrefix     string
 	ScanTimeout         time.Duration
 	ScanPollInterval    time.Duration
 	DeleteTimeout       time.Duration
 	SkipCleanup         bool
-	ImagePullSecretPath string
+	ImagePullSecretPath string // Path to docker config JSON for private registries
 }
 
 // LoadVMScanConfig reads the VM scanning configuration from the environment.
@@ -125,7 +125,8 @@ func LoadVMScanConfig() (*VMScanConfig, error) {
 	return cfg, nil
 }
 
-// VMSpecs builds the VM specification list from the parsed images and guest users.
+// VMSpecs builds the VM specification list from the parsed images and guest
+// users. VM names are generated as vm-0, vm-1, etc.
 func (c *VMScanConfig) VMSpecs() []VMSpec {
 	specs := make([]VMSpec, len(c.Images))
 	for i, img := range c.Images {
@@ -161,6 +162,8 @@ func DiscoverVirtctlPath() (string, error) {
 	return p, nil
 }
 
+// discoverRoxagentBinaryPath returns the ROXAGENT_BINARY_PATH env var if set,
+// otherwise probes the standard build output path relative to the repository root.
 func discoverRoxagentBinaryPath() (string, error) {
 	if v := strings.TrimSpace(os.Getenv("ROXAGENT_BINARY_PATH")); v != "" {
 		return v, nil
@@ -173,6 +176,7 @@ func discoverRoxagentBinaryPath() (string, error) {
 	return "", fmt.Errorf("ROXAGENT_BINARY_PATH not set and %s does not exist; run 'make roxagent_linux-amd64'", candidate)
 }
 
+// repoRoot returns the repository root by walking up from this source file.
 func repoRoot() string {
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
@@ -185,7 +189,8 @@ func repoRootFrom(file string) string {
 	return filepath.Clean(filepath.Join(filepath.Dir(file), "..", ".."))
 }
 
-// GenerateEphemeralSSHKeypair creates a one-time ed25519 keypair and returns the key material.
+// GenerateEphemeralSSHKeypair creates a one-time ed25519 keypair and returns
+// the PEM-encoded private key and the OpenSSH authorized_keys public key line.
 func GenerateEphemeralSSHKeypair() (privateKeyPEM string, publicKeyAuthorized string, err error) {
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {

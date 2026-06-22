@@ -709,6 +709,8 @@ func getConfig(t testutils.T) *rest.Config {
 
 // configureRetryableTransport configures a rest.Config to use retryable HTTP client
 // for network resilience. This adds automatic retry logic for transient network errors.
+// The concrete implementation lives in vmhelpers so it can be unit-tested without
+// pulling those unit tests into this e2e-tagged package.
 func configureRetryableTransport(t testutils.T, restCfg *rest.Config) {
 	vmhelpers.ConfigureRetryableTransport(t, restCfg)
 }

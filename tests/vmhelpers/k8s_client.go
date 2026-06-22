@@ -11,6 +11,20 @@ import (
 )
 
 // testutilsLogger adapts testutils.T to retryablehttp.Logger interface.
+//
+// WHY THIS EXISTS (and why it's unfortunate):
+// The retryablehttp library requires a logger implementing its Logger interface with Printf method.
+// Go's *testing.T has Logf but NOT Printf (different method names, same functionality).
+// We cannot add Printf to testutils.T because that would break compatibility with *testing.T,
+// which is used throughout the codebase (for example, centralgrpc.GRPCConnectionToCentral(t testutils.T)).
+//
+// CLEANER ALTERNATIVE:
+// Accept *testing.T directly in helper functions and create testutils.T wrappers locally where needed
+// (specifically for the retry mechanism). This would avoid the interface constraint propagating everywhere.
+// However, this would be a larger refactor affecting many test helper functions.
+//
+// CURRENT COMPROMISE:
+// Use this tiny adapter ONLY where retryablehttp requires it. Everywhere else uses testutils.T naturally.
 type testutilsLogger struct{ testutils.T }
 
 func (l testutilsLogger) Printf(format string, v ...any) { l.Logf(format, v...) }
