@@ -47,6 +47,9 @@ declare -A TEST_CASES=(
 )
 
 FAILED="false"
+roxctl_stderr="$(mktemp)"
+jq_stderr="$(mktemp)"
+trap 'rm -f "$roxctl_stderr" "$jq_stderr"' EXIT
 
 for yaml_file in "${!TEST_CASES[@]}"; do
     yaml_path="$DIR/$yaml_file"
@@ -72,10 +75,13 @@ for yaml_file in "${!TEST_CASES[@]}"; do
     done
 
     # Get alerts from roxctl
-    alerts_json="$(roxctl "${extra_args[@]}" -e "$API_ENDPOINT" deployment check --file "$yaml_path" --output json)"
+    alerts_json="$(roxctl "${extra_args[@]}" -e "$API_ENDPOINT" deployment check \
+        --file "$yaml_path" --output json 2>"$roxctl_stderr")" || true
 
     # Extract matching policy names (new format uses .results[].violatedPolicies[])
-    matching_policies="$(echo "$alerts_json" | jq -r ".results[].violatedPolicies[].name | select($jq_filter)" || echo "")"
+    matching_policies="$(echo "$alerts_json" | \
+        jq -r ".results[].violatedPolicies[].name | select($jq_filter)" \
+        2>"$jq_stderr")" || true
     actual_count="$(echo "$matching_policies" | grep -c . || echo "0")"
 
     if [[ "$actual_count" != "$expected_count" ]]; then
@@ -85,6 +91,15 @@ for yaml_file in "${!TEST_CASES[@]}"; do
             >&2 echo "  Found policies: $matching_policies"
         else
             >&2 echo "  Found policies: (none)"
+        fi
+        if [[ -s "$roxctl_stderr" ]]; then
+            >&2 echo "  roxctl stderr:"
+            cat "$roxctl_stderr" >&2
+        fi
+        if [[ -s "$jq_stderr" ]]; then
+            >&2 echo "  jq stderr:"
+            cat "$jq_stderr" >&2
+            >&2 echo "  jq input (truncated): ${alerts_json:0:500}"
         fi
         FAILED="true"
     else
@@ -99,6 +114,14 @@ for yaml_file in "${!TEST_CASES[@]}"; do
         if [[ "$all_found" == "true" ]]; then
             echo "Analyzed $yaml_file successfully (found $expected_count expected alert(s))"
         else
+            if [[ -s "$roxctl_stderr" ]]; then
+                >&2 echo "  roxctl stderr:"
+                cat "$roxctl_stderr" >&2
+            fi
+            if [[ -s "$jq_stderr" ]]; then
+                >&2 echo "  jq stderr:"
+                cat "$jq_stderr" >&2
+            fi
             FAILED="true"
         fi
     fi
