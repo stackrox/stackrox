@@ -2,11 +2,11 @@ package manager
 
 import (
 	"context"
-	"github.com/stackrox/rox/pkg/sync"
 	"testing"
 	"time"
 
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/sync"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	mocksExternalSrc "github.com/stackrox/rox/sensor/common/externalsrcs/mocks"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
