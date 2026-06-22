@@ -112,9 +112,9 @@ while read -r line; do
     fi
 
     case "$version" in
-        dev|v1)
-            # These vulnerability bundle versions are special, and we cannot
-            # validate them by fetching the vulnerability version.
+        dev)
+            # This vulnerability bundle version is special, and we cannot
+            # validate it by fetching the vulnerability version.
             ;;
         *)
             actual_version=$(fetch_version "$resolved_tag")

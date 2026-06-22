@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -32,8 +31,7 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 	t.Setenv(env.ConnectionRetryMaxInterval.EnvVar(), "2s")
 
 	var err error
-	ctx, cancelFn := context.WithCancel(context.Background())
-	defer cancelFn()
+	ctx := t.Context()
 	config := helper.DefaultConfig()
 	config.RealCerts = helper.UseRealCollector.BooleanSetting()
 	config.InitialSystemPolicies, err = testutils.GetPoliciesFromFile("../../data/runtime-policies.json")

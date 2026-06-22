@@ -144,8 +144,7 @@ func TestScanWatcher(t *testing.T) {
 	for tName, tCase := range cases {
 		t.Run(tName, func(t *testing.T) {
 			watcherID := "id"
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			ctx := t.Context()
 			resultQueue := queue.NewQueue[*ScanWatcherResults]()
 			scanWatcher := NewScanWatcher(ctx, ctx, watcherID, resultQueue)
 			for _, event := range tCase.events {
