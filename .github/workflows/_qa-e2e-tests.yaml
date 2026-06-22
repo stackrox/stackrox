@@ -203,6 +203,21 @@ jobs:
       IMAGE_TAG_SUFFIX: ${{ needs.wait-for-images.outputs.tag_suffix }}
     timeout-minutes: ${{ inputs.job-timeout-minutes }}
     steps:
+      - name: Announce artifact bucket
+        run: |
+          bucket="gs://stackrox-ci-artifacts"
+          path="${GITHUB_REPOSITORY}/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}/qa-e2e-tests"
+          browser="https://console.cloud.google.com/storage/browser/stackrox-ci-artifacts/${path}"
+          {
+            echo "### Test Artifacts"
+            echo ""
+            echo "**[Browse artifacts in GCS](${browser}?authuser=0)** ([authuser=1](${browser}?authuser=1), [authuser=2](${browser}?authuser=2))"
+            echo ""
+            echo '```bash'
+            echo "gcloud storage cp -r ${bucket}/${path} ."
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Checkout repo
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
         with:
