@@ -26,6 +26,8 @@ jobs:
     if: >-
       github.event_name == 'push' || !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.build-tag.outputs.tag }}
     steps:
     - name: Checkout repo
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
@@ -35,7 +37,9 @@ jobs:
     - uses: ./.github/actions/handle-tagged-build
     - name: Compute build tag
       id: build-tag
-      run: echo "tag=${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}" | tee -a "$GITHUB_ENV"
+      run: |
+        tag="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
+        echo "tag=$tag" | tee -a "$GITHUB_OUTPUT" -a "$GITHUB_ENV"
     - name: Wait for images
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
@@ -51,6 +55,7 @@ jobs:
     needs: [ wait-for-images ]
     runs-on: ubuntu-latest
     env:
+      MAIN_IMAGE_TAG: ${{ needs.wait-for-images.outputs.tag }}
       CI_JOB_NAME: gke-db-backup-restore-test
       ARTIFACT_DIR: ./junit-reports/
       LOAD_BALANCER: lb
