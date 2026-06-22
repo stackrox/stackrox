@@ -848,6 +848,10 @@ offline-bundle: clean-offline-bundle
 .PHONY: check-debugger
 check-debugger:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" BUILD_TAG="$(BUILD_TAG)" TAG="$(TAG)" ./scripts/check-debugger.sh
+
+.PHONY: check-roxctl-static
+check-roxctl-static:
+	/usr/bin/env TAG="$(TAG)" ./scripts/check-roxctl-static.sh
 ifeq ($(DEBUG_BUILD),yes)
 	$(warning Warning: DEBUG_BUILD is enabled. Don not use this for production builds)
 endif

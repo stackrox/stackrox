@@ -717,6 +717,10 @@ jobs:
         if: github.event_name != 'pull_request'
         run: make check-debugger
 
+      - name: Check roxctl CLI binaries are statically linked
+        if: github.event_name != 'pull_request'
+        run: make check-roxctl-static
+
       - name: Prepare roxctl build context
         run: |
           cp -r image/rhel/THIRD_PARTY_NOTICES image/roxctl/THIRD_PARTY_NOTICES
