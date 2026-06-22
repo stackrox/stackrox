@@ -381,3 +381,28 @@ func (s *InitContainerSuite) TestPolicyEvaluatesBothContainerTypes() {
 	s.waitForViolationAlert(deployName, createdPolicy.GetName(), 1)
 	t.Logf("Verified: both init and regular containers with :latest tag triggered policy violation")
 }
+
+func (s *InitContainerSuite) TestEvaluationFilterSkipsInitContainers() {
+	t := s.T()
+	ns := fmt.Sprintf("init-test-filter-%d", rand.IntN(10000))
+	createNamespaceWithLabels(t, ns, nil)
+	defer deleteNamespace(t, ns)
+
+	policy := s.newLatestTagPolicy(
+		fmt.Sprintf("Test - Skip Init %d", rand.IntN(10000)), ns,
+	)
+	policy.EvaluationFilter = &storage.EvaluationFilter{
+		SkipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+	}
+	createdPolicy := s.createPolicyWithCleanup(policy)
+
+	// Both use :latest, but the policy skips init containers — only the regular container should trigger
+	deployName := fmt.Sprintf("init-filter-skip-%d", rand.IntN(10000))
+	s.createDeploymentWithInitContainers(deployName, ns, []string{busyboxLatest}, nginxLatest)
+	defer teardownDeploymentWithoutCheck(t, deployName, ns)
+
+	s.waitForDeploymentWithContainers(deployName, 2)
+
+	s.waitForViolationAlert(deployName, createdPolicy.GetName(), 1)
+	t.Logf("Verified: policy with skip init filter only triggered on regular container")
+}

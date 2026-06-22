@@ -141,7 +141,7 @@ var (
 	BackgroundMigration = registerFeature("Enable long-running background migrations in Central", "ROX_BACKGROUND_MIGRATION", enabled)
 
 	// EvaluationFilter enables evaluation filtering in policy evaluation.
-	EvaluationFilter = registerFeature("Enable evaluation filtering in policy evaluation", "ROX_EVALUATION_FILTER")
+	EvaluationFilter = registerFeature("Enable evaluation filtering in policy evaluation", "ROX_EVALUATION_FILTER", enabled)
 )
 
 // The following feature flags are related to Scanner V4.
