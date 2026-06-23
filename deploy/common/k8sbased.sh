@@ -1012,7 +1012,7 @@ function launch_sensor {
       fi
 
       echo "Deploying sensor using manifests..."
-      NAMESPACE="${sensor_namespace}" "${k8s_dir}/sensor-deploy/sensor.sh"
+      KUBE_COMMAND="${ORCH_CMD}" NAMESPACE="${sensor_namespace}" "${k8s_dir}/sensor-deploy/sensor.sh"
     fi
 
     # Only apply sensor env vars via kubectl for non-Helm deployments.
