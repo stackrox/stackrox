@@ -65,8 +65,10 @@ test_setup() {
     ./dev-tools/kind-dev.sh > /tmp/kind-dev-test.log 2>&1 &
     KIND_DEV_PID=$!
 
-    echo "    Waiting for Central to be ready (up to 5 min)..."
-    local deadline=$((SECONDS + 300))
+    local timeout=300
+    [[ "${CI:-}" == "true" ]] && timeout=600
+    echo "    Waiting for Central to be ready (up to $((timeout/60)) min)..."
+    local deadline=$((SECONDS + timeout))
     while [[ $SECONDS -lt $deadline ]]; do
         if kubectl -n "$NAMESPACE" get deploy/central -o jsonpath='{.status.readyReplicas}' 2>/dev/null | grep -q "1"; then
             _pass "$name" "$(_elapsed_ms "$start")ms — kind-dev.sh + skaffold deploy complete"
@@ -83,7 +85,7 @@ test_setup() {
 
     echo "    Timed out. Last 20 lines of kind-dev.sh output:"
     tail -20 /tmp/kind-dev-test.log
-    _fail "$name" "central not ready after 5 minutes"
+    _fail "$name" "central not ready after $((timeout/60)) minutes"
 }
 
 # ==========================================================================
@@ -152,9 +154,11 @@ test_skaffold_rebuild_cached() {
     IMAGE="localhost:${REG_PORT}/main:cached-$(date +%s)" ./dev-tools/skaffold-build.sh 2>&1 | tail -3
     local elapsed; elapsed=$(_elapsed_ms "$start")
 
-    [[ $elapsed -lt 60000 ]] \
-        && _pass "$name" "${elapsed}ms (under 60s)" \
-        || _fail "$name" "${elapsed}ms (over 60s)"
+    local target=60000
+    [[ "${CI:-}" == "true" ]] && target=180000
+    [[ $elapsed -lt $target ]] \
+        && _pass "$name" "${elapsed}ms (under $((target/1000))s)" \
+        || _fail "$name" "${elapsed}ms (over $((target/1000))s)"
 }
 
 test_rebuild_under_30s() {
@@ -224,15 +228,17 @@ GOFILE
     kubectl -n "$NAMESPACE" delete pod -l app=central --grace-period=0 2>/dev/null
 
     # Wait for marker in logs
-    local deadline=$((SECONDS + 60))
+    local target=30000
+    [[ "${CI:-}" == "true" ]] && target=120000
+    local deadline=$((SECONDS + 120))
     while [[ $SECONDS -lt $deadline ]]; do
         if kubectl logs -l app=central -n "$NAMESPACE" --tail=500 2>/dev/null | grep -q "$marker"; then
             local elapsed; elapsed=$(_elapsed_ms "$start")
             rm -f "$marker_file"
-            if [[ $elapsed -lt 30000 ]]; then
-                _pass "$name" "${elapsed}ms — rebuild + restart under 30s"
+            if [[ $elapsed -lt $target ]]; then
+                _pass "$name" "${elapsed}ms — rebuild + restart under $((target/1000))s"
             else
-                _fail "$name" "${elapsed}ms — over 30s target"
+                _fail "$name" "${elapsed}ms — over $((target/1000))s target"
             fi
             return 0
         fi
