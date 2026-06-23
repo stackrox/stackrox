@@ -30,6 +30,7 @@ jobs:
           if [ "$state" = "OPEN" ]; then
             echo "Merge window is open"
             # TODO: Update comment if it exists to say merging is allowed.
+            # TODO: Prevent duplicate comments.
           else
             echo "Merge window is closed"
             # TODO: Prevent duplicate comments.
