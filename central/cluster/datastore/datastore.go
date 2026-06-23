@@ -61,6 +61,7 @@ type DataStore interface {
 	UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error
 	UpdateClusterUpgradeStatus(ctx context.Context, id string, clusterUpgradeStatus *storage.ClusterUpgradeStatus) error
 	UpdateClusterCertExpiryStatus(ctx context.Context, id string, clusterCertExpiryStatus *storage.ClusterCertExpiryStatus) error
+	UpdateClusterVersionSkew(ctx context.Context, id string, versionSkew *storage.VersionSkew) error
 	UpdateClusterHealth(ctx context.Context, id string, clusterHealthStatus *storage.ClusterHealthStatus) error
 	UpdateSensorDeploymentIdentification(ctx context.Context, id string, identification *storage.SensorDeploymentIdentification) error
 	// UpdateAuditLogFileStates updates for each node in the cluster where the audit log was last at

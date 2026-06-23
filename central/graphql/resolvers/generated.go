@@ -344,6 +344,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"providerMetadata: ProviderMetadata",
 		"sensorVersion: String!",
 		"upgradeStatus: ClusterUpgradeStatus",
+		"versionSkew: VersionSkew",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterType(0)))
 	utils.Must(builder.AddType("ClusterUpgradeStatus", []string{
@@ -1533,6 +1534,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("V2Metadata", []string{
 		"digest: String!",
 	}))
+	utils.Must(builder.AddType("VersionSkew", []string{
+		"maxCompatibleSensorVersion: String!",
+		"minCompatibleSensorVersion: String!",
+		"reason: VersionSkewReason!",
+		"status: VersionSkewStatus!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.VersionSkewReason(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.VersionSkewStatus(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ViolationState(0)))
 	utils.Must(builder.AddType("Volume", []string{
 		"destination: String!",
@@ -4712,6 +4721,11 @@ func (resolver *clusterStatusResolver) SensorVersion(ctx context.Context) string
 func (resolver *clusterStatusResolver) UpgradeStatus(ctx context.Context) (*clusterUpgradeStatusResolver, error) {
 	value := resolver.data.GetUpgradeStatus()
 	return resolver.root.wrapClusterUpgradeStatus(value, true, nil)
+}
+
+func (resolver *clusterStatusResolver) VersionSkew(ctx context.Context) (*versionSkewResolver, error) {
+	value := resolver.data.GetVersionSkew()
+	return resolver.root.wrapVersionSkew(value, true, nil)
 }
 
 func toClusterType(value *string) storage.ClusterType {
@@ -16526,6 +16540,104 @@ func (resolver *Resolver) wrapV2MetadatasWithContext(ctx context.Context, values
 func (resolver *v2MetadataResolver) Digest(ctx context.Context) string {
 	value := resolver.data.GetDigest()
 	return value
+}
+
+type versionSkewResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.VersionSkew
+}
+
+func (resolver *Resolver) wrapVersionSkew(value *storage.VersionSkew, ok bool, err error) (*versionSkewResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &versionSkewResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapVersionSkews(values []*storage.VersionSkew, err error) ([]*versionSkewResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*versionSkewResolver, len(values))
+	for i, v := range values {
+		output[i] = &versionSkewResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapVersionSkewWithContext(ctx context.Context, value *storage.VersionSkew, ok bool, err error) (*versionSkewResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &versionSkewResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapVersionSkewsWithContext(ctx context.Context, values []*storage.VersionSkew, err error) ([]*versionSkewResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*versionSkewResolver, len(values))
+	for i, v := range values {
+		output[i] = &versionSkewResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *versionSkewResolver) MaxCompatibleSensorVersion(ctx context.Context) string {
+	value := resolver.data.GetMaxCompatibleSensorVersion()
+	return value
+}
+
+func (resolver *versionSkewResolver) MinCompatibleSensorVersion(ctx context.Context) string {
+	value := resolver.data.GetMinCompatibleSensorVersion()
+	return value
+}
+
+func (resolver *versionSkewResolver) Reason(ctx context.Context) string {
+	value := resolver.data.GetReason()
+	return value.String()
+}
+
+func (resolver *versionSkewResolver) Status(ctx context.Context) string {
+	value := resolver.data.GetStatus()
+	return value.String()
+}
+
+func toVersionSkewReason(value *string) storage.VersionSkewReason {
+	if value != nil {
+		return storage.VersionSkewReason(storage.VersionSkewReason_value[*value])
+	}
+	return storage.VersionSkewReason(0)
+}
+
+func toVersionSkewReasons(values *[]string) []storage.VersionSkewReason {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.VersionSkewReason, len(*values))
+	for i, v := range *values {
+		output[i] = toVersionSkewReason(&v)
+	}
+	return output
+}
+
+func toVersionSkewStatus(value *string) storage.VersionSkewStatus {
+	if value != nil {
+		return storage.VersionSkewStatus(storage.VersionSkewStatus_value[*value])
+	}
+	return storage.VersionSkewStatus(0)
+}
+
+func toVersionSkewStatuses(values *[]string) []storage.VersionSkewStatus {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.VersionSkewStatus, len(*values))
+	for i, v := range *values {
+		output[i] = toVersionSkewStatus(&v)
+	}
+	return output
 }
 
 func toViolationState(value *string) storage.ViolationState {

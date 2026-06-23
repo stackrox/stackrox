@@ -144,6 +144,27 @@ func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id s
 	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
+func (ds *datastoreImpl) UpdateClusterVersionSkew(ctx context.Context, id string, versionSkew *storage.VersionSkew) error {
+	if err := checkWriteSac(ctx, id); err != nil {
+		return err
+	}
+
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	cluster, err := ds.getClusterOnly(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if cluster.GetStatus() == nil {
+		cluster.Status = &storage.ClusterStatus{}
+	}
+
+	cluster.Status.VersionSkew = versionSkew
+	return ds.clusterStorage.Upsert(ctx, cluster)
+}
+
 func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error {
 	if err := checkWriteSac(ctx, id); err != nil {
 		return err
@@ -156,6 +177,7 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 
 	status.UpgradeStatus = cluster.GetStatus().GetUpgradeStatus()
 	status.CertExpiryStatus = cluster.GetStatus().GetCertExpiryStatus()
+	status.VersionSkew = cluster.GetStatus().GetVersionSkew()
 	cluster.Status = status
 
 	return ds.clusterStorage.Upsert(ctx, cluster)

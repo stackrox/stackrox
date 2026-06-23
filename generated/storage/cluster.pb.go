@@ -183,6 +183,107 @@ func (ManagerType) EnumDescriptor() ([]byte, []int) {
 	return file_storage_cluster_proto_rawDescGZIP(), []int{2}
 }
 
+type VersionSkewStatus int32
+
+const (
+	VersionSkewStatus_VERSION_SKEW_STATUS_UNSPECIFIED  VersionSkewStatus = 0
+	VersionSkewStatus_VERSION_SKEW_STATUS_MATCHING     VersionSkewStatus = 1
+	VersionSkewStatus_VERSION_SKEW_STATUS_COMPATIBLE   VersionSkewStatus = 2
+	VersionSkewStatus_VERSION_SKEW_STATUS_INCOMPATIBLE VersionSkewStatus = 3
+)
+
+// Enum value maps for VersionSkewStatus.
+var (
+	VersionSkewStatus_name = map[int32]string{
+		0: "VERSION_SKEW_STATUS_UNSPECIFIED",
+		1: "VERSION_SKEW_STATUS_MATCHING",
+		2: "VERSION_SKEW_STATUS_COMPATIBLE",
+		3: "VERSION_SKEW_STATUS_INCOMPATIBLE",
+	}
+	VersionSkewStatus_value = map[string]int32{
+		"VERSION_SKEW_STATUS_UNSPECIFIED":  0,
+		"VERSION_SKEW_STATUS_MATCHING":     1,
+		"VERSION_SKEW_STATUS_COMPATIBLE":   2,
+		"VERSION_SKEW_STATUS_INCOMPATIBLE": 3,
+	}
+)
+
+func (x VersionSkewStatus) Enum() *VersionSkewStatus {
+	p := new(VersionSkewStatus)
+	*p = x
+	return p
+}
+
+func (x VersionSkewStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VersionSkewStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_cluster_proto_enumTypes[3].Descriptor()
+}
+
+func (VersionSkewStatus) Type() protoreflect.EnumType {
+	return &file_storage_cluster_proto_enumTypes[3]
+}
+
+func (x VersionSkewStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VersionSkewStatus.Descriptor instead.
+func (VersionSkewStatus) EnumDescriptor() ([]byte, []int) {
+	return file_storage_cluster_proto_rawDescGZIP(), []int{3}
+}
+
+type VersionSkewReason int32
+
+const (
+	VersionSkewReason_VERSION_SKEW_REASON_UNSPECIFIED    VersionSkewReason = 0
+	VersionSkewReason_VERSION_SKEW_REASON_SENSOR_TOO_OLD VersionSkewReason = 1
+	VersionSkewReason_VERSION_SKEW_REASON_SENSOR_AHEAD   VersionSkewReason = 2
+)
+
+// Enum value maps for VersionSkewReason.
+var (
+	VersionSkewReason_name = map[int32]string{
+		0: "VERSION_SKEW_REASON_UNSPECIFIED",
+		1: "VERSION_SKEW_REASON_SENSOR_TOO_OLD",
+		2: "VERSION_SKEW_REASON_SENSOR_AHEAD",
+	}
+	VersionSkewReason_value = map[string]int32{
+		"VERSION_SKEW_REASON_UNSPECIFIED":    0,
+		"VERSION_SKEW_REASON_SENSOR_TOO_OLD": 1,
+		"VERSION_SKEW_REASON_SENSOR_AHEAD":   2,
+	}
+)
+
+func (x VersionSkewReason) Enum() *VersionSkewReason {
+	p := new(VersionSkewReason)
+	*p = x
+	return p
+}
+
+func (x VersionSkewReason) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VersionSkewReason) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_cluster_proto_enumTypes[4].Descriptor()
+}
+
+func (VersionSkewReason) Type() protoreflect.EnumType {
+	return &file_storage_cluster_proto_enumTypes[4]
+}
+
+func (x VersionSkewReason) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VersionSkewReason.Descriptor instead.
+func (VersionSkewReason) EnumDescriptor() ([]byte, []int) {
+	return file_storage_cluster_proto_rawDescGZIP(), []int{4}
+}
+
 type ClusterMetadata_Type int32
 
 const (
@@ -231,11 +332,11 @@ func (x ClusterMetadata_Type) String() string {
 }
 
 func (ClusterMetadata_Type) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cluster_proto_enumTypes[3].Descriptor()
+	return file_storage_cluster_proto_enumTypes[5].Descriptor()
 }
 
 func (ClusterMetadata_Type) Type() protoreflect.EnumType {
-	return &file_storage_cluster_proto_enumTypes[3]
+	return &file_storage_cluster_proto_enumTypes[5]
 }
 
 func (x ClusterMetadata_Type) Number() protoreflect.EnumNumber {
@@ -294,11 +395,11 @@ func (x ClusterUpgradeStatus_Upgradability) String() string {
 }
 
 func (ClusterUpgradeStatus_Upgradability) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cluster_proto_enumTypes[4].Descriptor()
+	return file_storage_cluster_proto_enumTypes[6].Descriptor()
 }
 
 func (ClusterUpgradeStatus_Upgradability) Type() protoreflect.EnumType {
-	return &file_storage_cluster_proto_enumTypes[4]
+	return &file_storage_cluster_proto_enumTypes[6]
 }
 
 func (x ClusterUpgradeStatus_Upgradability) Number() protoreflect.EnumNumber {
@@ -307,7 +408,7 @@ func (x ClusterUpgradeStatus_Upgradability) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ClusterUpgradeStatus_Upgradability.Descriptor instead.
 func (ClusterUpgradeStatus_Upgradability) EnumDescriptor() ([]byte, []int) {
-	return file_storage_cluster_proto_rawDescGZIP(), []int{16, 0}
+	return file_storage_cluster_proto_rawDescGZIP(), []int{17, 0}
 }
 
 type ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType int32
@@ -343,11 +444,11 @@ func (x ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType) String() s
 }
 
 func (ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cluster_proto_enumTypes[5].Descriptor()
+	return file_storage_cluster_proto_enumTypes[7].Descriptor()
 }
 
 func (ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType) Type() protoreflect.EnumType {
-	return &file_storage_cluster_proto_enumTypes[5]
+	return &file_storage_cluster_proto_enumTypes[7]
 }
 
 func (x ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType) Number() protoreflect.EnumNumber {
@@ -356,7 +457,7 @@ func (x ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType) Number() p
 
 // Deprecated: Use ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType.Descriptor instead.
 func (ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType) EnumDescriptor() ([]byte, []int) {
-	return file_storage_cluster_proto_rawDescGZIP(), []int{16, 0, 0}
+	return file_storage_cluster_proto_rawDescGZIP(), []int{17, 0, 0}
 }
 
 type UpgradeProgress_UpgradeState int32
@@ -427,11 +528,11 @@ func (x UpgradeProgress_UpgradeState) String() string {
 }
 
 func (UpgradeProgress_UpgradeState) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cluster_proto_enumTypes[6].Descriptor()
+	return file_storage_cluster_proto_enumTypes[8].Descriptor()
 }
 
 func (UpgradeProgress_UpgradeState) Type() protoreflect.EnumType {
-	return &file_storage_cluster_proto_enumTypes[6]
+	return &file_storage_cluster_proto_enumTypes[8]
 }
 
 func (x UpgradeProgress_UpgradeState) Number() protoreflect.EnumNumber {
@@ -440,7 +541,7 @@ func (x UpgradeProgress_UpgradeState) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use UpgradeProgress_UpgradeState.Descriptor instead.
 func (UpgradeProgress_UpgradeState) EnumDescriptor() ([]byte, []int) {
-	return file_storage_cluster_proto_rawDescGZIP(), []int{17, 0}
+	return file_storage_cluster_proto_rawDescGZIP(), []int{18, 0}
 }
 
 type ClusterHealthStatus_HealthStatusLabel int32
@@ -483,11 +584,11 @@ func (x ClusterHealthStatus_HealthStatusLabel) String() string {
 }
 
 func (ClusterHealthStatus_HealthStatusLabel) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cluster_proto_enumTypes[7].Descriptor()
+	return file_storage_cluster_proto_enumTypes[9].Descriptor()
 }
 
 func (ClusterHealthStatus_HealthStatusLabel) Type() protoreflect.EnumType {
-	return &file_storage_cluster_proto_enumTypes[7]
+	return &file_storage_cluster_proto_enumTypes[9]
 }
 
 func (x ClusterHealthStatus_HealthStatusLabel) Number() protoreflect.EnumNumber {
@@ -496,7 +597,7 @@ func (x ClusterHealthStatus_HealthStatusLabel) Number() protoreflect.EnumNumber 
 
 // Deprecated: Use ClusterHealthStatus_HealthStatusLabel.Descriptor instead.
 func (ClusterHealthStatus_HealthStatusLabel) EnumDescriptor() ([]byte, []int) {
-	return file_storage_cluster_proto_rawDescGZIP(), []int{19, 0}
+	return file_storage_cluster_proto_rawDescGZIP(), []int{20, 0}
 }
 
 // ClusterMetadata contains metadata information about the cluster infrastructure.
@@ -1749,6 +1850,74 @@ func (x *ClusterCertExpiryStatus) GetSensorCertNotBefore() *timestamppb.Timestam
 	return nil
 }
 
+type VersionSkew struct {
+	state                      protoimpl.MessageState `protogen:"open.v1"`
+	Status                     VersionSkewStatus      `protobuf:"varint,1,opt,name=status,proto3,enum=storage.VersionSkewStatus" json:"status,omitempty"`
+	Reason                     VersionSkewReason      `protobuf:"varint,2,opt,name=reason,proto3,enum=storage.VersionSkewReason" json:"reason,omitempty"`
+	MinCompatibleSensorVersion string                 `protobuf:"bytes,3,opt,name=min_compatible_sensor_version,json=minCompatibleSensorVersion,proto3" json:"min_compatible_sensor_version,omitempty"`
+	MaxCompatibleSensorVersion string                 `protobuf:"bytes,4,opt,name=max_compatible_sensor_version,json=maxCompatibleSensorVersion,proto3" json:"max_compatible_sensor_version,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
+}
+
+func (x *VersionSkew) Reset() {
+	*x = VersionSkew{}
+	mi := &file_storage_cluster_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VersionSkew) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VersionSkew) ProtoMessage() {}
+
+func (x *VersionSkew) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_cluster_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VersionSkew.ProtoReflect.Descriptor instead.
+func (*VersionSkew) Descriptor() ([]byte, []int) {
+	return file_storage_cluster_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *VersionSkew) GetStatus() VersionSkewStatus {
+	if x != nil {
+		return x.Status
+	}
+	return VersionSkewStatus_VERSION_SKEW_STATUS_UNSPECIFIED
+}
+
+func (x *VersionSkew) GetReason() VersionSkewReason {
+	if x != nil {
+		return x.Reason
+	}
+	return VersionSkewReason_VERSION_SKEW_REASON_UNSPECIFIED
+}
+
+func (x *VersionSkew) GetMinCompatibleSensorVersion() string {
+	if x != nil {
+		return x.MinCompatibleSensorVersion
+	}
+	return ""
+}
+
+func (x *VersionSkew) GetMaxCompatibleSensorVersion() string {
+	if x != nil {
+		return x.MaxCompatibleSensorVersion
+	}
+	return ""
+}
+
 type ClusterStatus struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SensorVersion string                 `protobuf:"bytes,1,opt,name=sensor_version,json=sensorVersion,proto3" json:"sensor_version,omitempty"`
@@ -1758,13 +1927,14 @@ type ClusterStatus struct {
 	OrchestratorMetadata  *OrchestratorMetadata    `protobuf:"bytes,4,opt,name=orchestrator_metadata,json=orchestratorMetadata,proto3" json:"orchestrator_metadata,omitempty"`
 	UpgradeStatus         *ClusterUpgradeStatus    `protobuf:"bytes,5,opt,name=upgrade_status,json=upgradeStatus,proto3" json:"upgrade_status,omitempty"`
 	CertExpiryStatus      *ClusterCertExpiryStatus `protobuf:"bytes,6,opt,name=cert_expiry_status,json=certExpiryStatus,proto3" json:"cert_expiry_status,omitempty"`
+	VersionSkew           *VersionSkew             `protobuf:"bytes,7,opt,name=version_skew,json=versionSkew,proto3" json:"version_skew,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ClusterStatus) Reset() {
 	*x = ClusterStatus{}
-	mi := &file_storage_cluster_proto_msgTypes[15]
+	mi := &file_storage_cluster_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1776,7 +1946,7 @@ func (x *ClusterStatus) String() string {
 func (*ClusterStatus) ProtoMessage() {}
 
 func (x *ClusterStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_cluster_proto_msgTypes[15]
+	mi := &file_storage_cluster_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1789,7 +1959,7 @@ func (x *ClusterStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterStatus.ProtoReflect.Descriptor instead.
 func (*ClusterStatus) Descriptor() ([]byte, []int) {
-	return file_storage_cluster_proto_rawDescGZIP(), []int{15}
+	return file_storage_cluster_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ClusterStatus) GetSensorVersion() string {
@@ -1834,6 +2004,13 @@ func (x *ClusterStatus) GetCertExpiryStatus() *ClusterCertExpiryStatus {
 	return nil
 }
 
+func (x *ClusterStatus) GetVersionSkew() *VersionSkew {
+	if x != nil {
+		return x.VersionSkew
+	}
+	return nil
+}
+
 type ClusterUpgradeStatus struct {
 	state                     protoimpl.MessageState             `protogen:"open.v1"`
 	Upgradability             ClusterUpgradeStatus_Upgradability `protobuf:"varint,1,opt,name=upgradability,proto3,enum=storage.ClusterUpgradeStatus_Upgradability" json:"upgradability,omitempty"`
@@ -1849,7 +2026,7 @@ type ClusterUpgradeStatus struct {
 
 func (x *ClusterUpgradeStatus) Reset() {
 	*x = ClusterUpgradeStatus{}
-	mi := &file_storage_cluster_proto_msgTypes[16]
+	mi := &file_storage_cluster_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1861,7 +2038,7 @@ func (x *ClusterUpgradeStatus) String() string {
 func (*ClusterUpgradeStatus) ProtoMessage() {}
 
 func (x *ClusterUpgradeStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_cluster_proto_msgTypes[16]
+	mi := &file_storage_cluster_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1874,7 +2051,7 @@ func (x *ClusterUpgradeStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterUpgradeStatus.ProtoReflect.Descriptor instead.
 func (*ClusterUpgradeStatus) Descriptor() ([]byte, []int) {
-	return file_storage_cluster_proto_rawDescGZIP(), []int{16}
+	return file_storage_cluster_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ClusterUpgradeStatus) GetUpgradability() ClusterUpgradeStatus_Upgradability {
@@ -1909,7 +2086,7 @@ type UpgradeProgress struct {
 
 func (x *UpgradeProgress) Reset() {
 	*x = UpgradeProgress{}
-	mi := &file_storage_cluster_proto_msgTypes[17]
+	mi := &file_storage_cluster_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1921,7 +2098,7 @@ func (x *UpgradeProgress) String() string {
 func (*UpgradeProgress) ProtoMessage() {}
 
 func (x *UpgradeProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_cluster_proto_msgTypes[17]
+	mi := &file_storage_cluster_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1934,7 +2111,7 @@ func (x *UpgradeProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpgradeProgress.ProtoReflect.Descriptor instead.
 func (*UpgradeProgress) Descriptor() ([]byte, []int) {
-	return file_storage_cluster_proto_rawDescGZIP(), []int{17}
+	return file_storage_cluster_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *UpgradeProgress) GetUpgradeState() UpgradeProgress_UpgradeState {
@@ -1970,7 +2147,7 @@ type AuditLogFileState struct {
 
 func (x *AuditLogFileState) Reset() {
 	*x = AuditLogFileState{}
-	mi := &file_storage_cluster_proto_msgTypes[18]
+	mi := &file_storage_cluster_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1982,7 +2159,7 @@ func (x *AuditLogFileState) String() string {
 func (*AuditLogFileState) ProtoMessage() {}
 
 func (x *AuditLogFileState) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_cluster_proto_msgTypes[18]
+	mi := &file_storage_cluster_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1995,7 +2172,7 @@ func (x *AuditLogFileState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuditLogFileState.ProtoReflect.Descriptor instead.
 func (*AuditLogFileState) Descriptor() ([]byte, []int) {
-	return file_storage_cluster_proto_rawDescGZIP(), []int{18}
+	return file_storage_cluster_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *AuditLogFileState) GetCollectLogsSince() *timestamppb.Timestamp {
@@ -2043,7 +2220,7 @@ type ClusterHealthStatus struct {
 
 func (x *ClusterHealthStatus) Reset() {
 	*x = ClusterHealthStatus{}
-	mi := &file_storage_cluster_proto_msgTypes[19]
+	mi := &file_storage_cluster_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2055,7 +2232,7 @@ func (x *ClusterHealthStatus) String() string {
 func (*ClusterHealthStatus) ProtoMessage() {}
 
 func (x *ClusterHealthStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_cluster_proto_msgTypes[19]
+	mi := &file_storage_cluster_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2068,7 +2245,7 @@ func (x *ClusterHealthStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterHealthStatus.ProtoReflect.Descriptor instead.
 func (*ClusterHealthStatus) Descriptor() ([]byte, []int) {
-	return file_storage_cluster_proto_rawDescGZIP(), []int{19}
+	return file_storage_cluster_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ClusterHealthStatus) GetId() string {
@@ -2175,7 +2352,7 @@ type CollectorHealthInfo struct {
 
 func (x *CollectorHealthInfo) Reset() {
 	*x = CollectorHealthInfo{}
-	mi := &file_storage_cluster_proto_msgTypes[20]
+	mi := &file_storage_cluster_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2187,7 +2364,7 @@ func (x *CollectorHealthInfo) String() string {
 func (*CollectorHealthInfo) ProtoMessage() {}
 
 func (x *CollectorHealthInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_cluster_proto_msgTypes[20]
+	mi := &file_storage_cluster_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2200,7 +2377,7 @@ func (x *CollectorHealthInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CollectorHealthInfo.ProtoReflect.Descriptor instead.
 func (*CollectorHealthInfo) Descriptor() ([]byte, []int) {
-	return file_storage_cluster_proto_rawDescGZIP(), []int{20}
+	return file_storage_cluster_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *CollectorHealthInfo) GetVersion() string {
@@ -2317,7 +2494,7 @@ type AdmissionControlHealthInfo struct {
 
 func (x *AdmissionControlHealthInfo) Reset() {
 	*x = AdmissionControlHealthInfo{}
-	mi := &file_storage_cluster_proto_msgTypes[21]
+	mi := &file_storage_cluster_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2329,7 +2506,7 @@ func (x *AdmissionControlHealthInfo) String() string {
 func (*AdmissionControlHealthInfo) ProtoMessage() {}
 
 func (x *AdmissionControlHealthInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_cluster_proto_msgTypes[21]
+	mi := &file_storage_cluster_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2342,7 +2519,7 @@ func (x *AdmissionControlHealthInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdmissionControlHealthInfo.ProtoReflect.Descriptor instead.
 func (*AdmissionControlHealthInfo) Descriptor() ([]byte, []int) {
-	return file_storage_cluster_proto_rawDescGZIP(), []int{21}
+	return file_storage_cluster_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *AdmissionControlHealthInfo) GetTotalDesiredPodsOpt() isAdmissionControlHealthInfo_TotalDesiredPodsOpt {
@@ -2437,7 +2614,7 @@ type ScannerHealthInfo struct {
 
 func (x *ScannerHealthInfo) Reset() {
 	*x = ScannerHealthInfo{}
-	mi := &file_storage_cluster_proto_msgTypes[22]
+	mi := &file_storage_cluster_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2449,7 +2626,7 @@ func (x *ScannerHealthInfo) String() string {
 func (*ScannerHealthInfo) ProtoMessage() {}
 
 func (x *ScannerHealthInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_cluster_proto_msgTypes[22]
+	mi := &file_storage_cluster_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2462,7 +2639,7 @@ func (x *ScannerHealthInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScannerHealthInfo.ProtoReflect.Descriptor instead.
 func (*ScannerHealthInfo) Descriptor() ([]byte, []int) {
-	return file_storage_cluster_proto_rawDescGZIP(), []int{22}
+	return file_storage_cluster_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ScannerHealthInfo) GetTotalDesiredAnalyzerPodsOpt() isScannerHealthInfo_TotalDesiredAnalyzerPodsOpt {
@@ -2600,7 +2777,7 @@ type DynamicClusterConfig_ProcessIndicatorsConfig struct {
 
 func (x *DynamicClusterConfig_ProcessIndicatorsConfig) Reset() {
 	*x = DynamicClusterConfig_ProcessIndicatorsConfig{}
-	mi := &file_storage_cluster_proto_msgTypes[23]
+	mi := &file_storage_cluster_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2612,7 +2789,7 @@ func (x *DynamicClusterConfig_ProcessIndicatorsConfig) String() string {
 func (*DynamicClusterConfig_ProcessIndicatorsConfig) ProtoMessage() {}
 
 func (x *DynamicClusterConfig_ProcessIndicatorsConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_cluster_proto_msgTypes[23]
+	mi := &file_storage_cluster_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2664,7 +2841,7 @@ type ClusterUpgradeStatus_UpgradeProcessStatus struct {
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) Reset() {
 	*x = ClusterUpgradeStatus_UpgradeProcessStatus{}
-	mi := &file_storage_cluster_proto_msgTypes[27]
+	mi := &file_storage_cluster_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2676,7 +2853,7 @@ func (x *ClusterUpgradeStatus_UpgradeProcessStatus) String() string {
 func (*ClusterUpgradeStatus_UpgradeProcessStatus) ProtoMessage() {}
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_cluster_proto_msgTypes[27]
+	mi := &file_storage_cluster_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2689,7 +2866,7 @@ func (x *ClusterUpgradeStatus_UpgradeProcessStatus) ProtoReflect() protoreflect.
 
 // Deprecated: Use ClusterUpgradeStatus_UpgradeProcessStatus.ProtoReflect.Descriptor instead.
 func (*ClusterUpgradeStatus_UpgradeProcessStatus) Descriptor() ([]byte, []int) {
-	return file_storage_cluster_proto_rawDescGZIP(), []int{16, 0}
+	return file_storage_cluster_proto_rawDescGZIP(), []int{17, 0}
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) GetActive() bool {
@@ -2873,14 +3050,20 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\x10\vJ\x04\b\v\x10\fJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0f\"\xb4\x01\n" +
 	"\x17ClusterCertExpiryStatus\x12H\n" +
 	"\x12sensor_cert_expiry\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x10sensorCertExpiry\x12O\n" +
-	"\x16sensor_cert_not_before\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x13sensorCertNotBefore\"\xbc\x03\n" +
+	"\x16sensor_cert_not_before\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x13sensorCertNotBefore\"\xfb\x01\n" +
+	"\vVersionSkew\x122\n" +
+	"\x06status\x18\x01 \x01(\x0e2\x1a.storage.VersionSkewStatusR\x06status\x122\n" +
+	"\x06reason\x18\x02 \x01(\x0e2\x1a.storage.VersionSkewReasonR\x06reason\x12A\n" +
+	"\x1dmin_compatible_sensor_version\x18\x03 \x01(\tR\x1aminCompatibleSensorVersion\x12A\n" +
+	"\x1dmax_compatible_sensor_version\x18\x04 \x01(\tR\x1amaxCompatibleSensorVersion\"\xf5\x03\n" +
 	"\rClusterStatus\x12%\n" +
 	"\x0esensor_version\x18\x01 \x01(\tR\rsensorVersion\x12R\n" +
 	"\x17DEPRECATED_last_contact\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x15DEPRECATEDLastContact\x12F\n" +
 	"\x11provider_metadata\x18\x03 \x01(\v2\x19.storage.ProviderMetadataR\x10providerMetadata\x12R\n" +
 	"\x15orchestrator_metadata\x18\x04 \x01(\v2\x1d.storage.OrchestratorMetadataR\x14orchestratorMetadata\x12D\n" +
 	"\x0eupgrade_status\x18\x05 \x01(\v2\x1d.storage.ClusterUpgradeStatusR\rupgradeStatus\x12N\n" +
-	"\x12cert_expiry_status\x18\x06 \x01(\v2 .storage.ClusterCertExpiryStatusR\x10certExpiryStatus\"\xa1\x06\n" +
+	"\x12cert_expiry_status\x18\x06 \x01(\v2 .storage.ClusterCertExpiryStatusR\x10certExpiryStatus\x127\n" +
+	"\fversion_skew\x18\a \x01(\v2\x14.storage.VersionSkewR\vversionSkew\"\xa1\x06\n" +
 	"\x14ClusterUpgradeStatus\x12Q\n" +
 	"\rupgradability\x18\x01 \x01(\x0e2+.storage.ClusterUpgradeStatus.UpgradabilityR\rupgradability\x12>\n" +
 	"\x1bupgradability_status_reason\x18\x02 \x01(\tR\x19upgradabilityStatusReason\x12b\n" +
@@ -2984,7 +3167,16 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\x14MANAGER_TYPE_UNKNOWN\x10\x00\x12\x17\n" +
 	"\x13MANAGER_TYPE_MANUAL\x10\x01\x12\x1b\n" +
 	"\x17MANAGER_TYPE_HELM_CHART\x10\x02\x12$\n" +
-	" MANAGER_TYPE_KUBERNETES_OPERATOR\x10\x03B.\n" +
+	" MANAGER_TYPE_KUBERNETES_OPERATOR\x10\x03*\xa4\x01\n" +
+	"\x11VersionSkewStatus\x12#\n" +
+	"\x1fVERSION_SKEW_STATUS_UNSPECIFIED\x10\x00\x12 \n" +
+	"\x1cVERSION_SKEW_STATUS_MATCHING\x10\x01\x12\"\n" +
+	"\x1eVERSION_SKEW_STATUS_COMPATIBLE\x10\x02\x12$\n" +
+	" VERSION_SKEW_STATUS_INCOMPATIBLE\x10\x03*\x86\x01\n" +
+	"\x11VersionSkewReason\x12#\n" +
+	"\x1fVERSION_SKEW_REASON_UNSPECIFIED\x10\x00\x12&\n" +
+	"\"VERSION_SKEW_REASON_SENSOR_TOO_OLD\x10\x01\x12$\n" +
+	" VERSION_SKEW_REASON_SENSOR_AHEAD\x10\x02B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -2999,104 +3191,110 @@ func file_storage_cluster_proto_rawDescGZIP() []byte {
 	return file_storage_cluster_proto_rawDescData
 }
 
-var file_storage_cluster_proto_enumTypes = make([]protoimpl.EnumInfo, 8)
-var file_storage_cluster_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_storage_cluster_proto_enumTypes = make([]protoimpl.EnumInfo, 10)
+var file_storage_cluster_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_storage_cluster_proto_goTypes = []any{
 	(ClusterType)(0),                        // 0: storage.ClusterType
 	(CollectionMethod)(0),                   // 1: storage.CollectionMethod
 	(ManagerType)(0),                        // 2: storage.ManagerType
-	(ClusterMetadata_Type)(0),               // 3: storage.ClusterMetadata.Type
-	(ClusterUpgradeStatus_Upgradability)(0), // 4: storage.ClusterUpgradeStatus.Upgradability
-	(ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType)(0), // 5: storage.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
-	(UpgradeProgress_UpgradeState)(0),                                 // 6: storage.UpgradeProgress.UpgradeState
-	(ClusterHealthStatus_HealthStatusLabel)(0),                        // 7: storage.ClusterHealthStatus.HealthStatusLabel
-	(*ClusterMetadata)(nil),                                           // 8: storage.ClusterMetadata
-	(*GoogleProviderMetadata)(nil),                                    // 9: storage.GoogleProviderMetadata
-	(*AWSProviderMetadata)(nil),                                       // 10: storage.AWSProviderMetadata
-	(*AzureProviderMetadata)(nil),                                     // 11: storage.AzureProviderMetadata
-	(*ProviderMetadata)(nil),                                          // 12: storage.ProviderMetadata
-	(*OrchestratorMetadata)(nil),                                      // 13: storage.OrchestratorMetadata
-	(*AdmissionControllerConfig)(nil),                                 // 14: storage.AdmissionControllerConfig
-	(*TolerationsConfig)(nil),                                         // 15: storage.TolerationsConfig
-	(*StaticClusterConfig)(nil),                                       // 16: storage.StaticClusterConfig
-	(*AutoLockProcessBaselinesConfig)(nil),                            // 17: storage.AutoLockProcessBaselinesConfig
-	(*DynamicClusterConfig)(nil),                                      // 18: storage.DynamicClusterConfig
-	(*CompleteClusterConfig)(nil),                                     // 19: storage.CompleteClusterConfig
-	(*SensorDeploymentIdentification)(nil),                            // 20: storage.SensorDeploymentIdentification
-	(*Cluster)(nil),                                                   // 21: storage.Cluster
-	(*ClusterCertExpiryStatus)(nil),                                   // 22: storage.ClusterCertExpiryStatus
-	(*ClusterStatus)(nil),                                             // 23: storage.ClusterStatus
-	(*ClusterUpgradeStatus)(nil),                                      // 24: storage.ClusterUpgradeStatus
-	(*UpgradeProgress)(nil),                                           // 25: storage.UpgradeProgress
-	(*AuditLogFileState)(nil),                                         // 26: storage.AuditLogFileState
-	(*ClusterHealthStatus)(nil),                                       // 27: storage.ClusterHealthStatus
-	(*CollectorHealthInfo)(nil),                                       // 28: storage.CollectorHealthInfo
-	(*AdmissionControlHealthInfo)(nil),                                // 29: storage.AdmissionControlHealthInfo
-	(*ScannerHealthInfo)(nil),                                         // 30: storage.ScannerHealthInfo
-	(*DynamicClusterConfig_ProcessIndicatorsConfig)(nil),              // 31: storage.DynamicClusterConfig.ProcessIndicatorsConfig
-	nil, // 32: storage.CompleteClusterConfig.ClusterLabelsEntry
-	nil, // 33: storage.Cluster.LabelsEntry
-	nil, // 34: storage.Cluster.AuditLogStateEntry
-	(*ClusterUpgradeStatus_UpgradeProcessStatus)(nil), // 35: storage.ClusterUpgradeStatus.UpgradeProcessStatus
-	(*timestamppb.Timestamp)(nil),                     // 36: google.protobuf.Timestamp
+	(VersionSkewStatus)(0),                  // 3: storage.VersionSkewStatus
+	(VersionSkewReason)(0),                  // 4: storage.VersionSkewReason
+	(ClusterMetadata_Type)(0),               // 5: storage.ClusterMetadata.Type
+	(ClusterUpgradeStatus_Upgradability)(0), // 6: storage.ClusterUpgradeStatus.Upgradability
+	(ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType)(0), // 7: storage.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
+	(UpgradeProgress_UpgradeState)(0),                                 // 8: storage.UpgradeProgress.UpgradeState
+	(ClusterHealthStatus_HealthStatusLabel)(0),                        // 9: storage.ClusterHealthStatus.HealthStatusLabel
+	(*ClusterMetadata)(nil),                                           // 10: storage.ClusterMetadata
+	(*GoogleProviderMetadata)(nil),                                    // 11: storage.GoogleProviderMetadata
+	(*AWSProviderMetadata)(nil),                                       // 12: storage.AWSProviderMetadata
+	(*AzureProviderMetadata)(nil),                                     // 13: storage.AzureProviderMetadata
+	(*ProviderMetadata)(nil),                                          // 14: storage.ProviderMetadata
+	(*OrchestratorMetadata)(nil),                                      // 15: storage.OrchestratorMetadata
+	(*AdmissionControllerConfig)(nil),                                 // 16: storage.AdmissionControllerConfig
+	(*TolerationsConfig)(nil),                                         // 17: storage.TolerationsConfig
+	(*StaticClusterConfig)(nil),                                       // 18: storage.StaticClusterConfig
+	(*AutoLockProcessBaselinesConfig)(nil),                            // 19: storage.AutoLockProcessBaselinesConfig
+	(*DynamicClusterConfig)(nil),                                      // 20: storage.DynamicClusterConfig
+	(*CompleteClusterConfig)(nil),                                     // 21: storage.CompleteClusterConfig
+	(*SensorDeploymentIdentification)(nil),                            // 22: storage.SensorDeploymentIdentification
+	(*Cluster)(nil),                                                   // 23: storage.Cluster
+	(*ClusterCertExpiryStatus)(nil),                                   // 24: storage.ClusterCertExpiryStatus
+	(*VersionSkew)(nil),                                               // 25: storage.VersionSkew
+	(*ClusterStatus)(nil),                                             // 26: storage.ClusterStatus
+	(*ClusterUpgradeStatus)(nil),                                      // 27: storage.ClusterUpgradeStatus
+	(*UpgradeProgress)(nil),                                           // 28: storage.UpgradeProgress
+	(*AuditLogFileState)(nil),                                         // 29: storage.AuditLogFileState
+	(*ClusterHealthStatus)(nil),                                       // 30: storage.ClusterHealthStatus
+	(*CollectorHealthInfo)(nil),                                       // 31: storage.CollectorHealthInfo
+	(*AdmissionControlHealthInfo)(nil),                                // 32: storage.AdmissionControlHealthInfo
+	(*ScannerHealthInfo)(nil),                                         // 33: storage.ScannerHealthInfo
+	(*DynamicClusterConfig_ProcessIndicatorsConfig)(nil),              // 34: storage.DynamicClusterConfig.ProcessIndicatorsConfig
+	nil, // 35: storage.CompleteClusterConfig.ClusterLabelsEntry
+	nil, // 36: storage.Cluster.LabelsEntry
+	nil, // 37: storage.Cluster.AuditLogStateEntry
+	(*ClusterUpgradeStatus_UpgradeProcessStatus)(nil), // 38: storage.ClusterUpgradeStatus.UpgradeProcessStatus
+	(*timestamppb.Timestamp)(nil),                     // 39: google.protobuf.Timestamp
 }
 var file_storage_cluster_proto_depIdxs = []int32{
-	3,  // 0: storage.ClusterMetadata.type:type_name -> storage.ClusterMetadata.Type
-	9,  // 1: storage.ProviderMetadata.google:type_name -> storage.GoogleProviderMetadata
-	10, // 2: storage.ProviderMetadata.aws:type_name -> storage.AWSProviderMetadata
-	11, // 3: storage.ProviderMetadata.azure:type_name -> storage.AzureProviderMetadata
-	8,  // 4: storage.ProviderMetadata.cluster:type_name -> storage.ClusterMetadata
-	36, // 5: storage.OrchestratorMetadata.build_date:type_name -> google.protobuf.Timestamp
+	5,  // 0: storage.ClusterMetadata.type:type_name -> storage.ClusterMetadata.Type
+	11, // 1: storage.ProviderMetadata.google:type_name -> storage.GoogleProviderMetadata
+	12, // 2: storage.ProviderMetadata.aws:type_name -> storage.AWSProviderMetadata
+	13, // 3: storage.ProviderMetadata.azure:type_name -> storage.AzureProviderMetadata
+	10, // 4: storage.ProviderMetadata.cluster:type_name -> storage.ClusterMetadata
+	39, // 5: storage.OrchestratorMetadata.build_date:type_name -> google.protobuf.Timestamp
 	0,  // 6: storage.StaticClusterConfig.type:type_name -> storage.ClusterType
 	1,  // 7: storage.StaticClusterConfig.collection_method:type_name -> storage.CollectionMethod
-	15, // 8: storage.StaticClusterConfig.tolerations_config:type_name -> storage.TolerationsConfig
-	14, // 9: storage.DynamicClusterConfig.admission_controller_config:type_name -> storage.AdmissionControllerConfig
-	17, // 10: storage.DynamicClusterConfig.auto_lock_process_baselines_config:type_name -> storage.AutoLockProcessBaselinesConfig
-	31, // 11: storage.DynamicClusterConfig.process_indicators:type_name -> storage.DynamicClusterConfig.ProcessIndicatorsConfig
-	18, // 12: storage.CompleteClusterConfig.dynamic_config:type_name -> storage.DynamicClusterConfig
-	16, // 13: storage.CompleteClusterConfig.static_config:type_name -> storage.StaticClusterConfig
-	32, // 14: storage.CompleteClusterConfig.cluster_labels:type_name -> storage.CompleteClusterConfig.ClusterLabelsEntry
+	17, // 8: storage.StaticClusterConfig.tolerations_config:type_name -> storage.TolerationsConfig
+	16, // 9: storage.DynamicClusterConfig.admission_controller_config:type_name -> storage.AdmissionControllerConfig
+	19, // 10: storage.DynamicClusterConfig.auto_lock_process_baselines_config:type_name -> storage.AutoLockProcessBaselinesConfig
+	34, // 11: storage.DynamicClusterConfig.process_indicators:type_name -> storage.DynamicClusterConfig.ProcessIndicatorsConfig
+	20, // 12: storage.CompleteClusterConfig.dynamic_config:type_name -> storage.DynamicClusterConfig
+	18, // 13: storage.CompleteClusterConfig.static_config:type_name -> storage.StaticClusterConfig
+	35, // 14: storage.CompleteClusterConfig.cluster_labels:type_name -> storage.CompleteClusterConfig.ClusterLabelsEntry
 	0,  // 15: storage.Cluster.type:type_name -> storage.ClusterType
-	33, // 16: storage.Cluster.labels:type_name -> storage.Cluster.LabelsEntry
+	36, // 16: storage.Cluster.labels:type_name -> storage.Cluster.LabelsEntry
 	1,  // 17: storage.Cluster.collection_method:type_name -> storage.CollectionMethod
-	23, // 18: storage.Cluster.status:type_name -> storage.ClusterStatus
-	18, // 19: storage.Cluster.dynamic_config:type_name -> storage.DynamicClusterConfig
-	15, // 20: storage.Cluster.tolerations_config:type_name -> storage.TolerationsConfig
-	27, // 21: storage.Cluster.health_status:type_name -> storage.ClusterHealthStatus
-	19, // 22: storage.Cluster.helm_config:type_name -> storage.CompleteClusterConfig
-	20, // 23: storage.Cluster.most_recent_sensor_id:type_name -> storage.SensorDeploymentIdentification
-	34, // 24: storage.Cluster.audit_log_state:type_name -> storage.Cluster.AuditLogStateEntry
+	26, // 18: storage.Cluster.status:type_name -> storage.ClusterStatus
+	20, // 19: storage.Cluster.dynamic_config:type_name -> storage.DynamicClusterConfig
+	17, // 20: storage.Cluster.tolerations_config:type_name -> storage.TolerationsConfig
+	30, // 21: storage.Cluster.health_status:type_name -> storage.ClusterHealthStatus
+	21, // 22: storage.Cluster.helm_config:type_name -> storage.CompleteClusterConfig
+	22, // 23: storage.Cluster.most_recent_sensor_id:type_name -> storage.SensorDeploymentIdentification
+	37, // 24: storage.Cluster.audit_log_state:type_name -> storage.Cluster.AuditLogStateEntry
 	2,  // 25: storage.Cluster.managed_by:type_name -> storage.ManagerType
-	36, // 26: storage.ClusterCertExpiryStatus.sensor_cert_expiry:type_name -> google.protobuf.Timestamp
-	36, // 27: storage.ClusterCertExpiryStatus.sensor_cert_not_before:type_name -> google.protobuf.Timestamp
-	36, // 28: storage.ClusterStatus.DEPRECATED_last_contact:type_name -> google.protobuf.Timestamp
-	12, // 29: storage.ClusterStatus.provider_metadata:type_name -> storage.ProviderMetadata
-	13, // 30: storage.ClusterStatus.orchestrator_metadata:type_name -> storage.OrchestratorMetadata
-	24, // 31: storage.ClusterStatus.upgrade_status:type_name -> storage.ClusterUpgradeStatus
-	22, // 32: storage.ClusterStatus.cert_expiry_status:type_name -> storage.ClusterCertExpiryStatus
-	4,  // 33: storage.ClusterUpgradeStatus.upgradability:type_name -> storage.ClusterUpgradeStatus.Upgradability
-	35, // 34: storage.ClusterUpgradeStatus.most_recent_process:type_name -> storage.ClusterUpgradeStatus.UpgradeProcessStatus
-	6,  // 35: storage.UpgradeProgress.upgrade_state:type_name -> storage.UpgradeProgress.UpgradeState
-	36, // 36: storage.UpgradeProgress.since:type_name -> google.protobuf.Timestamp
-	36, // 37: storage.AuditLogFileState.collect_logs_since:type_name -> google.protobuf.Timestamp
-	28, // 38: storage.ClusterHealthStatus.collector_health_info:type_name -> storage.CollectorHealthInfo
-	29, // 39: storage.ClusterHealthStatus.admission_control_health_info:type_name -> storage.AdmissionControlHealthInfo
-	30, // 40: storage.ClusterHealthStatus.scanner_health_info:type_name -> storage.ScannerHealthInfo
-	7,  // 41: storage.ClusterHealthStatus.sensor_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
-	7,  // 42: storage.ClusterHealthStatus.collector_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
-	7,  // 43: storage.ClusterHealthStatus.overall_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
-	7,  // 44: storage.ClusterHealthStatus.admission_control_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
-	7,  // 45: storage.ClusterHealthStatus.scanner_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
-	36, // 46: storage.ClusterHealthStatus.last_contact:type_name -> google.protobuf.Timestamp
-	26, // 47: storage.Cluster.AuditLogStateEntry.value:type_name -> storage.AuditLogFileState
-	36, // 48: storage.ClusterUpgradeStatus.UpgradeProcessStatus.initiated_at:type_name -> google.protobuf.Timestamp
-	25, // 49: storage.ClusterUpgradeStatus.UpgradeProcessStatus.progress:type_name -> storage.UpgradeProgress
-	5,  // 50: storage.ClusterUpgradeStatus.UpgradeProcessStatus.type:type_name -> storage.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
-	51, // [51:51] is the sub-list for method output_type
-	51, // [51:51] is the sub-list for method input_type
-	51, // [51:51] is the sub-list for extension type_name
-	51, // [51:51] is the sub-list for extension extendee
-	0,  // [0:51] is the sub-list for field type_name
+	39, // 26: storage.ClusterCertExpiryStatus.sensor_cert_expiry:type_name -> google.protobuf.Timestamp
+	39, // 27: storage.ClusterCertExpiryStatus.sensor_cert_not_before:type_name -> google.protobuf.Timestamp
+	3,  // 28: storage.VersionSkew.status:type_name -> storage.VersionSkewStatus
+	4,  // 29: storage.VersionSkew.reason:type_name -> storage.VersionSkewReason
+	39, // 30: storage.ClusterStatus.DEPRECATED_last_contact:type_name -> google.protobuf.Timestamp
+	14, // 31: storage.ClusterStatus.provider_metadata:type_name -> storage.ProviderMetadata
+	15, // 32: storage.ClusterStatus.orchestrator_metadata:type_name -> storage.OrchestratorMetadata
+	27, // 33: storage.ClusterStatus.upgrade_status:type_name -> storage.ClusterUpgradeStatus
+	24, // 34: storage.ClusterStatus.cert_expiry_status:type_name -> storage.ClusterCertExpiryStatus
+	25, // 35: storage.ClusterStatus.version_skew:type_name -> storage.VersionSkew
+	6,  // 36: storage.ClusterUpgradeStatus.upgradability:type_name -> storage.ClusterUpgradeStatus.Upgradability
+	38, // 37: storage.ClusterUpgradeStatus.most_recent_process:type_name -> storage.ClusterUpgradeStatus.UpgradeProcessStatus
+	8,  // 38: storage.UpgradeProgress.upgrade_state:type_name -> storage.UpgradeProgress.UpgradeState
+	39, // 39: storage.UpgradeProgress.since:type_name -> google.protobuf.Timestamp
+	39, // 40: storage.AuditLogFileState.collect_logs_since:type_name -> google.protobuf.Timestamp
+	31, // 41: storage.ClusterHealthStatus.collector_health_info:type_name -> storage.CollectorHealthInfo
+	32, // 42: storage.ClusterHealthStatus.admission_control_health_info:type_name -> storage.AdmissionControlHealthInfo
+	33, // 43: storage.ClusterHealthStatus.scanner_health_info:type_name -> storage.ScannerHealthInfo
+	9,  // 44: storage.ClusterHealthStatus.sensor_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
+	9,  // 45: storage.ClusterHealthStatus.collector_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
+	9,  // 46: storage.ClusterHealthStatus.overall_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
+	9,  // 47: storage.ClusterHealthStatus.admission_control_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
+	9,  // 48: storage.ClusterHealthStatus.scanner_health_status:type_name -> storage.ClusterHealthStatus.HealthStatusLabel
+	39, // 49: storage.ClusterHealthStatus.last_contact:type_name -> google.protobuf.Timestamp
+	29, // 50: storage.Cluster.AuditLogStateEntry.value:type_name -> storage.AuditLogFileState
+	39, // 51: storage.ClusterUpgradeStatus.UpgradeProcessStatus.initiated_at:type_name -> google.protobuf.Timestamp
+	28, // 52: storage.ClusterUpgradeStatus.UpgradeProcessStatus.progress:type_name -> storage.UpgradeProgress
+	7,  // 53: storage.ClusterUpgradeStatus.UpgradeProcessStatus.type:type_name -> storage.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
+	54, // [54:54] is the sub-list for method output_type
+	54, // [54:54] is the sub-list for method input_type
+	54, // [54:54] is the sub-list for extension type_name
+	54, // [54:54] is the sub-list for extension extendee
+	0,  // [0:54] is the sub-list for field type_name
 }
 
 func init() { file_storage_cluster_proto_init() }
@@ -3112,16 +3310,16 @@ func file_storage_cluster_proto_init() {
 	file_storage_cluster_proto_msgTypes[5].OneofWrappers = []any{
 		(*OrchestratorMetadata_OpenshiftVersion)(nil),
 	}
-	file_storage_cluster_proto_msgTypes[20].OneofWrappers = []any{
+	file_storage_cluster_proto_msgTypes[21].OneofWrappers = []any{
 		(*CollectorHealthInfo_TotalDesiredPods)(nil),
 		(*CollectorHealthInfo_TotalReadyPods)(nil),
 		(*CollectorHealthInfo_TotalRegisteredNodes)(nil),
 	}
-	file_storage_cluster_proto_msgTypes[21].OneofWrappers = []any{
+	file_storage_cluster_proto_msgTypes[22].OneofWrappers = []any{
 		(*AdmissionControlHealthInfo_TotalDesiredPods)(nil),
 		(*AdmissionControlHealthInfo_TotalReadyPods)(nil),
 	}
-	file_storage_cluster_proto_msgTypes[22].OneofWrappers = []any{
+	file_storage_cluster_proto_msgTypes[23].OneofWrappers = []any{
 		(*ScannerHealthInfo_TotalDesiredAnalyzerPods)(nil),
 		(*ScannerHealthInfo_TotalReadyAnalyzerPods)(nil),
 		(*ScannerHealthInfo_TotalDesiredDbPods)(nil),
@@ -3132,8 +3330,8 @@ func file_storage_cluster_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_cluster_proto_rawDesc), len(file_storage_cluster_proto_rawDesc)),
-			NumEnums:      8,
-			NumMessages:   28,
+			NumEnums:      10,
+			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

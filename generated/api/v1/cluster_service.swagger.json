@@ -723,6 +723,9 @@
         },
         "certExpiryStatus": {
           "$ref": "#/definitions/storageClusterCertExpiryStatus"
+        },
+        "versionSkew": {
+          "$ref": "#/definitions/storageVersionSkew"
         }
       }
     },
@@ -1016,6 +1019,42 @@
           "format": "date-time"
         }
       }
+    },
+    "storageVersionSkew": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/storageVersionSkewStatus"
+        },
+        "reason": {
+          "$ref": "#/definitions/storageVersionSkewReason"
+        },
+        "minCompatibleSensorVersion": {
+          "type": "string"
+        },
+        "maxCompatibleSensorVersion": {
+          "type": "string"
+        }
+      }
+    },
+    "storageVersionSkewReason": {
+      "type": "string",
+      "enum": [
+        "VERSION_SKEW_REASON_UNSPECIFIED",
+        "VERSION_SKEW_REASON_SENSOR_TOO_OLD",
+        "VERSION_SKEW_REASON_SENSOR_AHEAD"
+      ],
+      "default": "VERSION_SKEW_REASON_UNSPECIFIED"
+    },
+    "storageVersionSkewStatus": {
+      "type": "string",
+      "enum": [
+        "VERSION_SKEW_STATUS_UNSPECIFIED",
+        "VERSION_SKEW_STATUS_MATCHING",
+        "VERSION_SKEW_STATUS_COMPATIBLE",
+        "VERSION_SKEW_STATUS_INCOMPATIBLE"
+      ],
+      "default": "VERSION_SKEW_STATUS_UNSPECIFIED"
     },
     "v1ClusterDefaultsResponse": {
       "type": "object",
