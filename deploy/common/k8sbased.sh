@@ -92,7 +92,7 @@ function verify_orch {
             return
         fi
         echo "Cannot find openshift orchestrator. Please check your kubeconfig for: $(${ORCH_CMD} config current-context)"
-        echo "API resources returned by ${ORCH_CMD}:"
+        echo "API resources returned by ${KUBECTL:-kubectl}:"
         sed -e 's/^/    /;' <(echo "${k8s_api_versions}")
         exit 1
     fi
