@@ -65,7 +65,7 @@ function hotload_binary {
       binary_path="$ROX_LOCAL_SOURCE_PATH/bin/linux_${goarch}/${local_name}"
   fi
 
-  kubectl -n "${namespace}" patch "deploy/${deployment}" --patch-file <(cat <<EOF
+  ${ORCH_CMD} -n "${namespace}" patch "deploy/${deployment}" --patch-file <(cat <<EOF
 spec:
   template:
     spec:
@@ -81,23 +81,23 @@ spec:
           name: "binary-${local_name}"
 EOF
 )
-  kubectl -n "${namespace}" set env "deploy/${deployment}" "ROX_HOTRELOAD=true"
+  ${ORCH_CMD} -n "${namespace}" set env "deploy/${deployment}" "ROX_HOTRELOAD=true"
 }
 
 function verify_orch {
     if [ "$ORCH" == "openshift" ]; then
         local k8s_api_versions
-        k8s_api_versions=$(kubectl api-versions 2>&1)
+        k8s_api_versions=$(${ORCH_CMD} api-versions 2>&1)
         if echo "${k8s_api_versions}" | grep -q "openshift\.io"; then
             return
         fi
-        echo "Cannot find openshift orchestrator. Please check your kubeconfig for: $(kubectl config current-context)"
-        echo "API resources returned by kubectl:"
+        echo "Cannot find openshift orchestrator. Please check your kubeconfig for: $(${ORCH_CMD} config current-context)"
+        echo "API resources returned by ${ORCH_CMD}:"
         sed -e 's/^/    /;' <(echo "${k8s_api_versions}")
         exit 1
     fi
     if [ "$ORCH" == "k8s" ]; then
-        if kubectl api-versions | grep -q configs.operator.openshift.io; then
+        if ${ORCH_CMD} api-versions | grep -q configs.operator.openshift.io; then
             echo "Are you running an OpenShift orchestrator? Please use deploy/openshift/deploy*.sh to deploy."
             exit 1
         fi
@@ -109,7 +109,7 @@ function verify_orch {
 
 function local_dev {
       is_local_dev="${LOCAL_DEPLOYMENT}"
-      if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
+      if [[ $(${ORCH_CMD} get nodes -o json | jq '.items | length') == 1 ]]; then
         is_local_dev="true"
       fi
       echo "${is_local_dev}"
@@ -232,7 +232,7 @@ function launch_central {
     { command -v oc >/dev/null && pkill -9 -f oc'.*port-forward.*'; } || true
 
     if [[ "${STORAGE_CLASS}" == "faster" || "${SCANNER_V4_DB_STORAGE_CLASS}" == "faster" ]]; then
-        kubectl apply -f "${common_dir}/ssd-storageclass.yaml"
+        ${ORCH_CMD} apply -f "${common_dir}/ssd-storageclass.yaml"
     fi
 
     if [[ "${STORAGE}" == "none" && -n $STORAGE_CLASS ]]; then
@@ -256,7 +256,7 @@ function launch_central {
     	add_args "--with-config-file=${ROXDEPLOY_CONFIG_FILE_MAP}"
     fi
 
-    SUPPORTS_PSP=$(kubectl api-resources | grep "podsecuritypolicies" -c || true)
+    SUPPORTS_PSP=$(${ORCH_CMD} api-resources | grep "podsecuritypolicies" -c || true)
     if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
         echo "Pod security policies are not supported on this cluster. Skipping..."
         POD_SECURITY_POLICIES="false"
@@ -585,7 +585,7 @@ function launch_central {
     # to ongoing modifications to the central deployment. This port-forward dies and the script hangs "Waiting for
     # Central to respond" until it times out. Waiting for rollout status should help not get into such situation.
     rollout_wait_timeout="10m"
-    kubectl -n "${central_namespace}" rollout status deploy/central --timeout="${rollout_wait_timeout}"
+    ${ORCH_CMD} -n "${central_namespace}" rollout status deploy/central --timeout="${rollout_wait_timeout}"
 
     # if we have specified that we want to use a load balancer, then use that endpoint instead of localhost
     if [[ "${LOAD_BALANCER}" == "lb" ]]; then
@@ -595,7 +595,7 @@ function launch_central {
         until [[ -n "${LB_IP}" ]]; do
             echo -n "."
             sleep 1
-            LB_IP=$(kubectl -n "${central_namespace}" get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')
+            LB_IP=$(${ORCH_CMD} -n "${central_namespace}" get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')
             if [[ "$LB_IP" == "null" ]]; then
               unset LB_IP
             fi
@@ -610,7 +610,7 @@ function launch_central {
         until [ -n "${ROUTE_HOST}" ]; do
             echo -n "."
             sleep 1
-            ROUTE_HOST=$(kubectl -n "${central_namespace}" get route/central -o jsonpath='{.status.ingress[0].host}')
+            ROUTE_HOST=$(${ORCH_CMD} -n "${central_namespace}" get route/central -o jsonpath='{.status.ingress[0].host}')
         done
         echo
         export API_ENDPOINT="${ROUTE_HOST}:443"
@@ -622,7 +622,7 @@ function launch_central {
       "${COMMON_DIR}/monitoring.sh"
     fi
 
-    if [[ -n "$CI" ]] && ! kubectl config current-context | grep -q kind; then
+    if [[ -n "$CI" ]] && ! ${ORCH_CMD} config current-context | grep -q kind; then
         # Needed for GKE and OpenShift clusters
         echo "Sleep for 2 minutes to allow for stabilization"
         sleep 120
@@ -709,7 +709,7 @@ function launch_sensor {
       scanner_extra_config+=("--timeout=$ROXCTL_TIMEOUT")
     fi
 
-    SUPPORTS_PSP=$(kubectl api-resources | grep "podsecuritypolicies" -c || true)
+    SUPPORTS_PSP=$(${ORCH_CMD} api-resources | grep "podsecuritypolicies" -c || true)
     if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
         echo "Pod security policies are not supported on this cluster. Skipping..."
         POD_SECURITY_POLICIES="false"
@@ -934,8 +934,8 @@ function launch_sensor {
       fi
 
       if [[ "${sensor_namespace}" != "stackrox" ]]; then
-        kubectl create namespace "${sensor_namespace}" &>/dev/null || true
-        kubectl -n "${sensor_namespace}" get secret stackrox &>/dev/null || kubectl -n "${sensor_namespace}" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
+        ${ORCH_CMD} create namespace "${sensor_namespace}" &>/dev/null || true
+        ${ORCH_CMD} -n "${sensor_namespace}" get secret stackrox &>/dev/null || ${ORCH_CMD} -n "${sensor_namespace}" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
       fi
 
       if [[ -n "${ROX_PROCESS_INDICATORS_PER_NAMESPACE}" ]]; then
@@ -1029,7 +1029,7 @@ function launch_sensor {
       fi
 
       if [[ "${#sensor_env[@]}" -gt 0 ]]; then
-        kubectl -n "${sensor_namespace}" set env deploy/sensor "${sensor_env[@]}"
+        ${ORCH_CMD} -n "${sensor_namespace}" set env deploy/sensor "${sensor_env[@]}"
       fi
     fi
 
@@ -1048,7 +1048,7 @@ function launch_sensor {
     fi
 
     if [[ "${#collector_env[@]}" -gt 0 ]]; then
-      kubectl -n "${sensor_namespace}" set env ds/collector "${collector_env[@]}"
+      ${ORCH_CMD} -n "${sensor_namespace}" set env ds/collector "${collector_env[@]}"
     fi
 
     # For local installations (e.g. on Colima): hotload binary
@@ -1069,11 +1069,11 @@ function launch_sensor {
 
     # If deploying with chaos proxy enabled, patch sensor to add toxiproxy proxy deployment
     if [[ -n "${ROX_CHAOS_PROFILE}" ]]; then
-        original_endpoint=$(kubectl -n "${sensor_namespace}" get deploy/sensor -ojsonpath='{.spec.template.spec.containers[0].env[?(@.name=="ROX_CENTRAL_ENDPOINT")].value}')
+        original_endpoint=$(${ORCH_CMD} -n "${sensor_namespace}" get deploy/sensor -ojsonpath='{.spec.template.spec.containers[0].env[?(@.name=="ROX_CENTRAL_ENDPOINT")].value}')
 
         echo "Patching sensor with toxiproxy container"
-        kubectl -n "${sensor_namespace}" patch deploy/sensor --type=json -p="$(cat "${common_dir}/sensor-toxiproxy-patch.json")"
-        kubectl -n "${sensor_namespace}" set env deploy/sensor -e ROX_CENTRAL_ENDPOINT_NO_PROXY="$original_endpoint" \
+        ${ORCH_CMD} -n "${sensor_namespace}" patch deploy/sensor --type=json -p="$(cat "${common_dir}/sensor-toxiproxy-patch.json")"
+        ${ORCH_CMD} -n "${sensor_namespace}" set env deploy/sensor -e ROX_CENTRAL_ENDPOINT_NO_PROXY="$original_endpoint" \
                                                                -e ROX_CENTRAL_ENDPOINT="localhost:8989" \
                                                                -e ROX_CHAOS_PROFILE="$ROX_CHAOS_PROFILE"
     fi
