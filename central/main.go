@@ -654,7 +654,7 @@ func startGRPCServer() {
 	config.StreamInterceptors = append(config.StreamInterceptors, ri.StreamServerInterceptor())
 
 	c := phonehomeClient.Singleton()
-	ri.Add("telemetry", c.GetRequestHandler())
+	c.SetInterceptor(ri)
 
 	server := pkgGRPC.NewAPI(config)
 	server.Register(servicesToRegister()...)
