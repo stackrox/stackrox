@@ -17,15 +17,9 @@ ENV GOFLAGS=""
 # TODO(ROX-20240): enable non-release development builds.
 ENV GOTAGS="release"
 ENV CI=1
-
-# TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy.
-# CLI builds are without strictfipsruntime (and CGO_ENABLED is set to 0) because these binaries are for user download and use outside the cluster.
-RUN make roxctl-build
-
-ENV CGO_ENABLED=1
-# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
-ENV GOTAGS="release,strictfipsruntime"
-ENV GOEXPERIMENT=strictfipsruntime
+ENV CGO_ENABLED=0
+ENV GOFIPS140=certified
+ENV GOLANG_FIPS=0
 
 RUN make main-build-nodeps
 
@@ -82,7 +76,6 @@ RUN dnf module enable -y \
         findutils \
         gzip \
         less \
-        openssl \
         postgresql \
         tar && \
     dnf clean all --installroot=/out/ && \
@@ -135,6 +128,7 @@ LABEL \
 EXPOSE 8443
 
 ENV PATH="/stackrox:$PATH" \
+    GODEBUG="fips140=on" \
     ROX_ROXCTL_IN_MAIN_IMAGE="true" \
     ROX_IMAGE_FLAVOR="rhacs" \
     ROX_PRODUCT_BRANDING="RHACS_BRANDING"

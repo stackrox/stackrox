@@ -9,10 +9,10 @@ RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is
 ENV BUILD_TAG="$BUILD_TAG"
 
 # TODO(ROX-20240): enable non-release development builds.
-# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
-ENV GOTAGS="release,strictfipsruntime"
-ENV GOEXPERIMENT=strictfipsruntime
-ENV CI=1 GOFLAGS="" CGO_ENABLED=1
+ENV GOTAGS="release"
+ENV CI=1 GOFLAGS="" CGO_ENABLED=0
+ENV GOFIPS140=certified
+ENV GOLANG_FIPS=0
 
 RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go image/bin/operator
 
@@ -37,7 +37,6 @@ RUN dnf install -y \
     ca-certificates \
     gzip \
     less \
-    openssl \
     tar && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/*
@@ -72,7 +71,8 @@ COPY --from=builder /go/src/github.com/stackrox/rox/app/image/bin/operator /usr/
 
 COPY LICENSE /licenses/LICENSE
 
-ENV ROX_IMAGE_FLAVOR="rhacs"
+ENV ROX_IMAGE_FLAVOR="rhacs" \
+    GODEBUG="fips140=on"
 
 # The following are numeric uid and gid of `nobody` user in UBI.
 # We can't use symbolic names because otherwise k8s will fail to start the pod with an error like this:

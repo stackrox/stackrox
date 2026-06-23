@@ -18,11 +18,12 @@ ENV BUILD_TAG="$BUILD_TAG"
 
 ENV CI=1 GOFLAGS=""
 # TODO(ROX-20240): enable non-release development builds.
-# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
-ENV GOTAGS="release,strictfipsruntime"
-ENV GOEXPERIMENT=strictfipsruntime
+ENV GOTAGS="release"
+ENV CGO_ENABLED=0
+ENV GOFIPS140=certified
+ENV GOLANG_FIPS=0
 
-RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh ./roxctl && \
+RUN RACE=0 GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh ./roxctl && \
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl
 
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:b498b3ea26111ab4b81d65139f2ebd2ef9a2abb7a4588b7fdcc54889f95e9caa AS ubi-micro-base
@@ -44,7 +45,6 @@ RUN dnf install -y \
     ca-certificates \
     gzip \
     less \
-    openssl \
     tar && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/*
@@ -77,7 +77,8 @@ LABEL \
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"
 
-ENV ROX_ROXCTL_IN_MAIN_IMAGE="true"
+ENV ROX_ROXCTL_IN_MAIN_IMAGE="true" \
+    GODEBUG="fips140=on"
 
 USER 65534:65534
 
