@@ -25,6 +25,9 @@ PASS=0
 FAIL=0
 SKIP=0
 ERRORS=()
+KUBE_CONTEXT="kind-${KIND_CLUSTER_NAME}"
+
+kubectl() { command kubectl --context "$KUBE_CONTEXT" "$@"; }
 
 # --- Harness ---
 
@@ -422,6 +425,10 @@ test_debug_mode() {
     # Simulates a developer stopping kind-dev.sh and restarting with DEBUG_BUILD=yes.
     # Verifies: debug binary built, Delve listens, variables inspectable.
     local name="test_debug_mode"
+    if [[ "${CI:-}" == "true" ]]; then
+        _skip "$name" "skipped in CI (requires two full deploy cycles)"
+        return 0
+    fi
 
     # Stop any running kind-dev.sh
     _stop_kind_dev
