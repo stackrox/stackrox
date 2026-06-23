@@ -78,7 +78,7 @@ LABEL \
     release="1"
 
 ENV ROX_ROXCTL_IN_MAIN_IMAGE="true" \
-    GODEBUG="fips140=on"
+    GODEBUG="fips140=only"
 
 USER 65534:65534
 

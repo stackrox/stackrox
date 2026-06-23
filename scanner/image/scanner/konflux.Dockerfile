@@ -86,7 +86,7 @@ RUN \
 
 COPY LICENSE /licenses/LICENSE
 
-ENV GODEBUG="fips140=on"
+ENV GODEBUG="fips140=only"
 
 # This is equivalent to nobody:nobody.
 USER 65534:65534
