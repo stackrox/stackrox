@@ -511,7 +511,7 @@ main-build-nodeps:
 		sensor/upgrader \
 		compliance/virtualmachines/roxagent
 	mv bin/linux_$(GOARCH)/cmd bin/linux_$(GOARCH)/stackrox-operator
-	CGO_ENABLED=0 $(GOBUILD) roxctl
+	CGO_ENABLED=0 GOEXPERIMENT= GOTAGS="$(subst $(comma)strictfipsruntime,,$(subst strictfipsruntime$(comma),,$(GOTAGS)))" $(GOBUILD) roxctl
 
 .PHONY: scale-build
 scale-build: build-prep
