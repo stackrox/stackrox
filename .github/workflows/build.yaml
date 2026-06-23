@@ -351,14 +351,7 @@ jobs:
         run: echo "RACE=true" >> "$GITHUB_ENV"
 
       - name: Build Go Binaries
-        run: |
-          if [[ "${{ matrix.arch }}" != "amd64" ]]; then
-            echo "Building non-amd binary"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
-          else
-            echo "Building amd binary"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
-          fi
+        run: GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps roxctl_linux-${{ matrix.arch }}
 
       - name: Bundle the build to preserve permissions
         run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
