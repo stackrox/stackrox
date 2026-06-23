@@ -2,6 +2,7 @@ package signatures
 
 import (
 	_ "embed"
+	"slices"
 
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -25,6 +26,9 @@ const (
 
 //go:embed "bundle.json"
 var defaultBundleJSON []byte
+
+// DefaultBundleJSON returns a copy of the raw embedded bundle JSON.
+func DefaultBundleJSON() []byte { return slices.Clone(defaultBundleJSON) }
 
 var DefaultRedHatSignatureIntegration = mustParseEmbeddedBundle()
 

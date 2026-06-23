@@ -15,6 +15,25 @@ import (
 
 var redHatKeyBundlePath = filepath.Join(os.TempDir(), "redhat-signing-keys", "bundle.json")
 
+// ensureKeyBundleDirectory creates the directory where the watcher and
+// downloader expect to find bundle.json.
+func ensureKeyBundleDirectory() {
+	dir := filepath.Dir(redHatKeyBundlePath)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		log.Warnf("Failed to create key bundle directory %q: %v", dir, err)
+	}
+}
+
+// writeExampleBundle writes bundle.example.json so offline-mode customers can
+// see the expected format without consulting docs.
+func writeExampleBundle() {
+	dir := filepath.Dir(redHatKeyBundlePath)
+	examplePath := filepath.Join(dir, "bundle.example.json")
+	if err := os.WriteFile(examplePath, signatures.DefaultBundleJSON(), 0600); err != nil {
+		log.Warnf("Failed to write example bundle to %q: %v", examplePath, err)
+	}
+}
+
 func keyBundleHandler(siStore store.SignatureIntegrationStore) filewatcher.Handler {
 	return func(data []byte) error {
 		bundle, err := signatures.ParseKeyBundle(data)
