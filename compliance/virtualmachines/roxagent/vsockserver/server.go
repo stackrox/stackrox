@@ -2,6 +2,7 @@ package vsockserver
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"sync/atomic"
@@ -32,11 +33,11 @@ func (s *Server) SetReport(r *v1.VMReport) {
 
 // HandleConn writes the current Report to conn and closes it.
 func (s *Server) HandleConn(_ context.Context, conn net.Conn) error {
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	report := s.report.Load()
 	if report == nil {
-		return fmt.Errorf("no report available")
+		return errors.New("no report available")
 	}
 
 	data, err := proto.Marshal(report)
@@ -57,7 +58,7 @@ func (s *Server) HandleConn(_ context.Context, conn net.Conn) error {
 func (s *Server) Serve(ctx context.Context, ln net.Listener) {
 	go func() {
 		<-ctx.Done()
-		ln.Close()
+		_ = ln.Close()
 	}()
 
 	for {

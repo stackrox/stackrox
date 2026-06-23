@@ -57,7 +57,7 @@ func runServe(ctx context.Context, port uint32, hostPath, repoCPEURL string, res
 	if err != nil {
 		return fmt.Errorf("vsock listen on port %d: %w", port, err)
 	}
-	defer ln.Close()
+	defer func() { _ = ln.Close() }()
 	log.Infof("Listening on VSOCK port %d (pull mode)", port)
 
 	go srv.Serve(ctx, ln)

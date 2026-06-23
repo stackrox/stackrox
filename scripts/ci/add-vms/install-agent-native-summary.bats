@@ -12,15 +12,13 @@ function setup() {
     touch "${AUTOMATION_SSH_PRIVKEY}"
 }
 
-# mock_virtctl_service_status stubs virtctl to return the given
-# service_result, timer_enabled, and timer_active values when the
-# command contains "systemctl show roxagent.service".
-mock_virtctl_service_status() {
-    local service_result="$1" timer_enabled="$2" timer_active="$3"
-    # Export so the subshell created by `run` can see them.
-    export _MOCK_SERVICE_RESULT="$service_result"
-    export _MOCK_TIMER_ENABLED="$timer_enabled"
-    export _MOCK_TIMER_ACTIVE="$timer_active"
+# mock_virtctl_serve_status stubs virtctl to return the given
+# serve_enabled and serve_active values when the command contains
+# "systemctl is-enabled roxagent-serve.service".
+mock_virtctl_serve_status() {
+    local serve_enabled="$1" serve_active="$2"
+    export _MOCK_SERVE_ENABLED="$serve_enabled"
+    export _MOCK_SERVE_ACTIVE="$serve_active"
 
     virtctl() {
         local cmd=""
@@ -31,8 +29,8 @@ mock_virtctl_service_status() {
             esac
         done
 
-        if [[ "$cmd" == *"systemctl show roxagent.service"* ]]; then
-            printf '%s\n%s\n%s\n' "$_MOCK_SERVICE_RESULT" "$_MOCK_TIMER_ENABLED" "$_MOCK_TIMER_ACTIVE"
+        if [[ "$cmd" == *"roxagent-serve.service"* ]]; then
+            printf '%s\n%s\n' "$_MOCK_SERVE_ENABLED" "$_MOCK_SERVE_ACTIVE"
             return 0
         fi
         return 1
@@ -40,7 +38,7 @@ mock_virtctl_service_status() {
 }
 
 @test "native_agent_service_verified tracks successful starts" {
-    mock_virtctl_service_status "success" "enabled" "active"
+    mock_virtctl_serve_status "enabled" "active"
 
     run native_agent_service_verified "rhel10-1"
 
@@ -48,7 +46,7 @@ mock_virtctl_service_status() {
 }
 
 @test "native_agent_service_verified rejects unhealthy service state" {
-    mock_virtctl_service_status "failed" "enabled" "inactive"
+    mock_virtctl_serve_status "enabled" "inactive"
 
     run native_agent_service_verified "rhel10-1"
 

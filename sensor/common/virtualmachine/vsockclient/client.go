@@ -22,7 +22,7 @@ type StreamReader interface {
 // ReadVMReport reads a protobuf VMReport from the stream and closes it.
 // The stream comes from virtClient.VirtualMachineInstance(ns).VSOCK(name, opts).
 func ReadVMReport(stream StreamReader) (*v1.VMReport, error) {
-	defer stream.Close()
+	defer func() { _ = stream.Close() }()
 
 	data, err := io.ReadAll(io.LimitReader(stream, maxReportSize))
 	if err != nil {
