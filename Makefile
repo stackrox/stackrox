@@ -509,8 +509,7 @@ main-build-nodeps:
 		sensor/admission-control \
 		sensor/kubernetes \
 		sensor/upgrader \
-		compliance/virtualmachines/roxagent \
-		roxctl
+		compliance/virtualmachines/roxagent
 	mv bin/linux_$(GOARCH)/cmd bin/linux_$(GOARCH)/stackrox-operator
 
 .PHONY: scale-build

@@ -22,6 +22,8 @@ ENV CGO_ENABLED=0
 ENV GOFIPS140=certified
 ENV GOLANG_FIPS=0
 
+RUN make roxctl-build
+
 RUN make main-build-nodeps
 
 RUN mkdir -p image/rhel/docs/api/v1 && \
