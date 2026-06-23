@@ -3,6 +3,7 @@ package fetcher
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -76,9 +77,7 @@ func (m *orchestratorCVEManager) Scan(version string, cveType utils.CVEType) ([]
 	scanners := make(map[string]types.OrchestratorScanner)
 
 	concurrency.WithLock(&m.mutex, func() {
-		for k, v := range m.scanners {
-			scanners[k] = v
-		}
+		maps.Copy(scanners, m.scanners)
 	})
 
 	if len(scanners) == 0 {

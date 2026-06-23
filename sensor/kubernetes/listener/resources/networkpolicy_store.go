@@ -1,6 +1,8 @@
 package resources
 
 import (
+	"maps"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/sync"
@@ -112,9 +114,7 @@ func (n *networkPolicyStoreImpl) All() map[string]*storage.NetworkPolicy {
 	// copying map to ensure that the store contents will not be mutated from outside
 	result := make(map[string]*storage.NetworkPolicy)
 	for _, m := range n.data {
-		for k, v := range m {
-			result[k] = v
-		}
+		maps.Copy(result, m)
 	}
 	return result
 }

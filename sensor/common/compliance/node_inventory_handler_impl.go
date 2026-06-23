@@ -2,6 +2,7 @@ package compliance
 
 import (
 	"context"
+	"maps"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -507,20 +508,12 @@ func attachRPMtoRHCOS(version, arch string, rpm *v4.IndexReport) *v4.IndexReport
 	}
 	strID := strconv.Itoa(idCandidate)
 	oci := buildRHCOSIndexReport(strID, version, arch)
-	for pkgID, pkg := range rpm.GetContents().GetPackages() {
-		oci.Contents.Packages[pkgID] = pkg
-	}
+	maps.Copy(oci.GetContents().GetPackages(), rpm.GetContents().GetPackages())
 	oci.Contents.PackagesDEPRECATED = append(oci.Contents.PackagesDEPRECATED, rpm.GetContents().GetPackagesDEPRECATED()...)
-	for repoID, repo := range rpm.GetContents().GetRepositories() {
-		oci.Contents.Repositories[repoID] = repo
-	}
+	maps.Copy(oci.GetContents().GetRepositories(), rpm.GetContents().GetRepositories())
 	oci.Contents.RepositoriesDEPRECATED = append(oci.Contents.RepositoriesDEPRECATED, rpm.GetContents().GetRepositoriesDEPRECATED()...)
-	for envId, list := range rpm.GetContents().GetEnvironments() {
-		oci.Contents.Environments[envId] = list
-	}
-	for envId, list := range rpm.GetContents().GetEnvironmentsDEPRECATED() {
-		oci.Contents.EnvironmentsDEPRECATED[envId] = list
-	}
+	maps.Copy(oci.GetContents().GetEnvironments(), rpm.GetContents().GetEnvironments())
+	maps.Copy(oci.GetContents().GetEnvironmentsDEPRECATED(), rpm.GetContents().GetEnvironmentsDEPRECATED())
 	oci.Contents.Distributions = rpm.GetContents().GetDistributions()
 	oci.Contents.DistributionsDEPRECATED = rpm.GetContents().GetDistributionsDEPRECATED()
 	return oci

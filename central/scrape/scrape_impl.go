@@ -3,6 +3,7 @@ package scrape
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -57,9 +58,7 @@ func (s *scrapeImpl) GetResults() map[string]*compliance.ComplianceReturn {
 	defer s.lock.RUnlock()
 
 	ret := make(map[string]*compliance.ComplianceReturn, len(s.results))
-	for id, cr := range s.results {
-		ret[id] = cr
-	}
+	maps.Copy(ret, s.results)
 	return ret
 }
 
