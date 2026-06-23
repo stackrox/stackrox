@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/tests/logmatchers"
 	"github.com/stackrox/rox/tests/vmhelpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -868,7 +869,7 @@ func (ks *KubernetesSuite) logf(format string, args ...any) {
 	logf(ks.T(), format, args...)
 }
 
-type logMatcher = vmhelpers.LogMatcher
+type logMatcher = logmatchers.LogMatcher
 
 // waitUntilLog waits until ctx expires or logs of container in all pods matching podLabels satisfy all logMatchers.
 func (ks *KubernetesSuite) waitUntilLog(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatchers ...logMatcher) {
@@ -894,7 +895,7 @@ func (ks *KubernetesSuite) checkLogsClosure(ctx context.Context, namespace, labe
 			return fmt.Errorf("could not list pods matching %q in namespace %q: %w", labelSelector, namespace, err)
 		}
 		if len(podList.Items) == 0 {
-			if ok, err := allMatch(strings.NewReader(""), logMatchers...); ok {
+			if ok, err := logmatchers.AllMatch(strings.NewReader(""), logMatchers...); ok {
 				return nil
 			} else if err != nil {
 				return fmt.Errorf("empty list of pods caused failure: %w", err)
@@ -907,7 +908,7 @@ func (ks *KubernetesSuite) checkLogsClosure(ctx context.Context, namespace, labe
 			if err != nil {
 				return fmt.Errorf("retrieving logs of pod %q in namespace %q failed: %w", pod.GetName(), namespace, err)
 			}
-			if ok, err := allMatch(bytes.NewReader(log), logMatchers...); ok {
+			if ok, err := logmatchers.AllMatch(bytes.NewReader(log), logMatchers...); ok {
 				continue
 			} else if err != nil {
 				return fmt.Errorf("log of pod %q in namespace %q caused failure: %w", pod.GetName(), namespace, err)
