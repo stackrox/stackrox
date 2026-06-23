@@ -9,7 +9,7 @@ RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is
 ENV BUILD_TAG="$BUILD_TAG"
 
 # TODO(ROX-20240): enable non-release development builds.
-ENV GOTAGS="release"
+ENV GOTAGS="release,no_openssl"
 ENV CI=1 GOFLAGS="" CGO_ENABLED=0
 ENV GOFIPS140=certified
 ENV GOLANG_FIPS=0

@@ -6,7 +6,7 @@ ENV BUILD_TAG="$BUILD_TAG"
 
 ENV GOFLAGS=""
 # TODO(ROX-20240): enable non-release development builds.
-ENV GOTAGS="release"
+ENV GOTAGS="release,no_openssl"
 ENV CI=1
 ENV CGO_ENABLED=0
 ENV GOFIPS140=certified
