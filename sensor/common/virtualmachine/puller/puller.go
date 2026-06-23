@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/reportcheck"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 )
 
@@ -167,6 +168,8 @@ func (p *Puller) pullOne(vm *virtualmachine.Info) bool {
 	reportCID := report.GetIndexReport().GetVsockCid()
 	log.Infof("VSOCK pull [%s]: report received in %.1fms (vsock_cid=%s, packages=%d, success=%v)",
 		vmLabel, readDuration, reportCID, pkgCount, report.GetIndexReport().GetIndexV4().GetSuccess())
+
+	reportcheck.Log(vmLabel, report)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
