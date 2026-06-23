@@ -1,5 +1,6 @@
 ## Table of Contents
 
+
 - [StackRox Kubernetes Security Platform](#stackrox-kubernetes-security-platform)
     - [Table of Contents](#table-of-contents)
     - [Community](#community)
