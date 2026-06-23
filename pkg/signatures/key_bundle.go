@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
@@ -39,7 +40,7 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 	if len(bundle.Keys) == 0 {
 		return nil, ErrKeyBundleEmpty
 	}
-	seenNames := make(map[string]struct{}, len(bundle.Keys))
+	seenNames := set.NewStringSet()
 	for i := range bundle.Keys {
 		entry := &bundle.Keys[i]
 		entry.Name = strings.TrimSpace(entry.Name)
@@ -49,10 +50,9 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 		if strings.ContainsAny(entry.Name, "/\\") {
 			return nil, ErrKeyNamePathSeparator.CausedByf("key name %q", entry.Name)
 		}
-		if _, exists := seenNames[entry.Name]; exists {
+		if !seenNames.Add(entry.Name) {
 			return nil, ErrKeyNameDuplicate.CausedByf("%q", entry.Name)
 		}
-		seenNames[entry.Name] = struct{}{}
 		keyBlock, rest := pem.Decode([]byte(strings.TrimSpace(entry.PEM)))
 		if !IsValidPublicKeyPEMBlock(keyBlock, rest) {
 			return nil, ErrKeyInvalidPEM.CausedByf("key %q", entry.Name)
