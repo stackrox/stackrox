@@ -22,17 +22,19 @@ func init() {
 			"healthy: Int!",
 			"degraded: Int!",
 			"unhealthy: Int!",
+			"incompatibleVersionSkew: Int!",
 		}),
 	)
 }
 
 // ClusterHealthCounterResolver counts the clusters by their health status.
 type ClusterHealthCounterResolver struct {
-	total         int32
-	uninitialized int32
-	healthy       int32
-	degraded      int32
-	unhealthy     int32
+	total                   int32
+	uninitialized           int32
+	healthy                 int32
+	degraded                int32
+	unhealthy               int32
+	incompatibleVersionSkew int32
 }
 
 // ClusterHealthCounter returns counts of clusters in various health buckets.
@@ -68,11 +70,23 @@ func newClusterHealthCounterResolver(ctx context.Context, root *Resolver, q *v1.
 		return nil, err
 	}
 
+	clusters, err := root.ClusterDataStore.GetClusters(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var incompatibleSkew int32
+	for _, c := range clusters {
+		if c.GetStatus().GetVersionSkew().GetStatus() == storage.VersionSkewStatus_VERSION_SKEW_STATUS_INCOMPATIBLE {
+			incompatibleSkew++
+		}
+	}
+
 	resolver := &ClusterHealthCounterResolver{
-		total:     int32(len(total)),
-		healthy:   int32(len(healthy)),
-		degraded:  int32(len(degraded)),
-		unhealthy: int32(len(unhealthy)),
+		total:                   int32(len(total)),
+		healthy:                 int32(len(healthy)),
+		degraded:                int32(len(degraded)),
+		unhealthy:               int32(len(unhealthy)),
+		incompatibleVersionSkew: incompatibleSkew,
 	}
 	resolver.uninitialized = resolver.total - resolver.healthy - resolver.degraded - resolver.unhealthy
 	return resolver, nil
@@ -101,4 +115,9 @@ func (cr *ClusterHealthCounterResolver) Degraded(_ context.Context) int32 {
 // Unhealthy returns the number of clusters that are in unhealthy state.
 func (cr *ClusterHealthCounterResolver) Unhealthy(_ context.Context) int32 {
 	return cr.unhealthy
+}
+
+// IncompatibleVersionSkew returns the number of clusters with incompatible version skew.
+func (cr *ClusterHealthCounterResolver) IncompatibleVersionSkew(_ context.Context) int32 {
+	return cr.incompatibleVersionSkew
 }

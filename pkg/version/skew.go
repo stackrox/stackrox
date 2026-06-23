@@ -10,6 +10,33 @@ const (
 	supportedMinorVersionSkew = 3
 )
 
+func compatibleRange(ver string) (min, max string) {
+	parsed, err := parseVersion(ver)
+	if err != nil {
+		return "", ""
+	}
+	minMinor := parsed.EngRelease - supportedMinorVersionSkew + 1
+	if minMinor < 0 {
+		minMinor = 0
+	}
+	return fmt.Sprintf("%d.%d", parsed.MarketingMajor, minMinor),
+		fmt.Sprintf("%d.%d", parsed.MarketingMajor, parsed.EngRelease)
+}
+
+// MinCompatibleSensorVersion returns the oldest sensor version that
+// the current Central build is compatible with.
+func MinCompatibleSensorVersion() string {
+	min, _ := compatibleRange(GetMainVersion())
+	return min
+}
+
+// MaxCompatibleSensorVersion returns the newest sensor version that
+// the current Central build knows about.
+func MaxCompatibleSensorVersion() string {
+	_, max := compatibleRange(GetMainVersion())
+	return max
+}
+
 // ComputeVersionSkew determines the version skew status between Central and a Sensor.
 // It compares only the X.Y (major.minor) components, ignoring patch versions.
 func ComputeVersionSkew(centralVersion, sensorVersion string) *storage.VersionSkew {

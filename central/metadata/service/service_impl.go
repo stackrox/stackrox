@@ -206,6 +206,8 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 	// Only return the version to logged in users, not anonymous users.
 	if authn.IdentityFromContextOrNil(ctx) != nil {
 		metadata.Version = version.GetMainVersion()
+		metadata.MinCompatibleSensorVersion = version.MinCompatibleSensorVersion()
+		metadata.MaxCompatibleSensorVersion = version.MaxCompatibleSensorVersion()
 	}
 	return metadata, nil
 }
