@@ -5,7 +5,7 @@ package splunk
 import (
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 	"testing"
 	"time"
 
@@ -137,9 +137,7 @@ func (s *violationsTestSuite) TestQueryAlertsAreSortedByAlertID() {
 		a.Id = uuid.NewV4().String()
 		sortedIDs = append(sortedIDs, a.GetId())
 	}
-	sort.Slice(sortedIDs, func(i, j int) bool {
-		return sortedIDs[i] < sortedIDs[j]
-	})
+	slices.Sort(sortedIDs)
 
 	var resultIDs []string
 	s.withAlerts(alerts, func(alertsDS datastore.DataStore) {
