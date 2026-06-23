@@ -229,6 +229,7 @@ describe('Image Integrations', () => {
 
         visitIntegrationsTable(integrationSource, integrationType);
 
+        cy.get('.pf-v6-c-alert:contains("Deprecation notice")').should('exist');
         cy.get('[data-testid="add-integration"]').should('not.exist');
     });
 
