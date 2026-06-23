@@ -129,7 +129,7 @@ LABEL \
 EXPOSE 8443
 
 ENV PATH="/stackrox:$PATH" \
-    GODEBUG="fips140=on" \
+    GODEBUG="fips140=only" \
     ROX_ROXCTL_IN_MAIN_IMAGE="true" \
     ROX_IMAGE_FLAVOR="rhacs" \
     ROX_PRODUCT_BRANDING="RHACS_BRANDING"
