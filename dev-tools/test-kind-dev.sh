@@ -251,11 +251,12 @@ test_selective_rebuild() {
     local goarch; goarch="$(go env GOARCH)"
     local bindir="bin/linux_${goarch}"
 
-    # Need a baseline build first
-    if [[ ! -f "${bindir}/central" ]]; then
-        _skip "$name" "no baseline binaries (run test_skaffold_build first)"
-        return 0
-    fi
+    export BUILD_TAG=0.0.0 SHORTCOMMIT=dev STABLE_COLLECTOR_VERSION=0.0.0 STABLE_FACT_VERSION=0.0.0 STABLE_SCANNER_VERSION=0.0.0
+    export CGO_ENABLED=0 GOOS=linux
+
+    # Baseline build with stable ldflags (ensures "before" md5s match rebuild mechanism)
+    echo "    Building baseline..."
+    make main-build-nodeps 2>&1 | tail -2
 
     # Record md5 of all binaries before change
     declare -A before
@@ -280,9 +281,8 @@ func init() { fmt.Print("$marker-migrator") }
 GOFILE
     trap "rm -f '$central_marker' '$migrator_marker'" EXIT INT TERM
 
-    # Rebuild
-    export BUILD_TAG=0.0.0 SHORTCOMMIT=dev STABLE_COLLECTOR_VERSION=0.0.0 STABLE_FACT_VERSION=0.0.0 STABLE_SCANNER_VERSION=0.0.0
-    export CGO_ENABLED=0 GOOS=linux
+    # Rebuild with markers
+    echo "    Rebuilding with markers..."
     make main-build-nodeps 2>&1 | tail -2
 
     rm -f "$central_marker" "$migrator_marker"

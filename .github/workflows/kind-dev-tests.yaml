@@ -65,6 +65,7 @@ jobs:
             -ldflags="-s -w \
               -X ${VERSION_PKG}.MainVersion=0.0.0-dev \
               -X ${VERSION_PKG}.CollectorVersion=0.0.0-dev \
+              -X ${VERSION_PKG}.FactVersion=0.0.0-dev \
               -X ${VERSION_PKG}.ScannerVersion=0.0.0-dev \
               -X ${VERSION_PKG}.GitShortSha=dev" \
             -o /usr/local/bin/roxctl ./roxctl
