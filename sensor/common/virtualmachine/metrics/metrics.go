@@ -130,6 +130,80 @@ var IndexReportAcksReceived = prometheus.NewCounterVec(
 	[]string{"action"}, // "ACK" or "NACK"
 )
 
+// --- VSOCK pull-mode puller metrics ---
+
+// PullCyclesTotal counts completed poll cycles.
+var PullCyclesTotal = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_pull_cycles_total",
+		Help:      "Total number of VSOCK pull poll cycles executed",
+	},
+)
+
+// PullReportsReceivedTotal counts successfully pulled and enqueued reports.
+var PullReportsReceivedTotal = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_pull_reports_received_total",
+		Help:      "Total number of VM reports successfully pulled via VSOCK and enqueued for Central",
+	},
+)
+
+// PullDialErrorsTotal counts VSOCK dial failures.
+var PullDialErrorsTotal = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_pull_dial_errors_total",
+		Help:      "Total number of VSOCK dial errors during pull mode",
+	},
+)
+
+// PullReadErrorsTotal counts report read failures after successful dial.
+var PullReadErrorsTotal = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_pull_read_errors_total",
+		Help:      "Total number of VM report read errors after successful VSOCK dial",
+	},
+)
+
+// PullSendErrorsTotal counts failures to enqueue pulled reports.
+var PullSendErrorsTotal = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_pull_send_errors_total",
+		Help:      "Total number of failures to enqueue pulled VM reports for Central",
+	},
+)
+
+// PullDurationMilliseconds tracks the full pull latency per VM (dial+read+send).
+var PullDurationMilliseconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_pull_duration_milliseconds",
+		Help:      "End-to-end time (ms) to pull a VM report via VSOCK (dial + read + send)",
+		Buckets:   prometheus.ExponentialBuckets(50, 2, 10), // 50ms to ~25s
+	},
+)
+
+// PullCycleDurationMilliseconds tracks the wall-clock duration of an entire poll cycle.
+var PullCycleDurationMilliseconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_pull_cycle_duration_milliseconds",
+		Help:      "Wall-clock time (ms) of an entire pull poll cycle across all VMs",
+		Buckets:   prometheus.ExponentialBuckets(100, 2, 12), // 100ms to ~200s
+	},
+)
+
 func init() {
 	prometheus.MustRegister(
 		IndexReportsReceived,
@@ -140,5 +214,13 @@ func init() {
 		IndexReportEnqueueBlockedTotal,
 		VMDiscoveredData,
 		IndexReportAcksReceived,
+
+		PullCyclesTotal,
+		PullReportsReceivedTotal,
+		PullDialErrorsTotal,
+		PullReadErrorsTotal,
+		PullSendErrorsTotal,
+		PullDurationMilliseconds,
+		PullCycleDurationMilliseconds,
 	)
 }

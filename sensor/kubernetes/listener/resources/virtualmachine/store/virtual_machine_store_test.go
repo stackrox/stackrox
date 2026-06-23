@@ -1224,6 +1224,34 @@ func assertVMs(t *testing.T, expected *virtualmachine.Info, actual *virtualmachi
 	}
 }
 
+func (s *storeSuite) Test_ListRunning() {
+	s.Run("should return only running VMs", func() {
+		vms := []*virtualmachine.Info{
+			{ID: "running-1", Name: "vm-a", Namespace: "ns1", Running: true, VSOCKCID: newVSOCKCID(10)},
+			{ID: "stopped-1", Name: "vm-b", Namespace: "ns1", Running: false},
+			{ID: "running-2", Name: "vm-c", Namespace: "ns2", Running: true, VSOCKCID: newVSOCKCID(20)},
+		}
+		for _, vm := range vms {
+			s.store.AddOrUpdate(vm)
+		}
+
+		running := s.store.ListRunning()
+		s.Assert().Len(running, 2)
+
+		ids := make(map[virtualmachine.VMID]bool)
+		for _, vm := range running {
+			ids[vm.ID] = true
+			s.Assert().True(vm.Running)
+		}
+		s.Assert().True(ids["running-1"])
+		s.Assert().True(ids["running-2"])
+	})
+
+	s.Run("should return empty for empty store", func() {
+		s.Assert().Empty(s.store.ListRunning())
+	})
+}
+
 func newVSOCKCID(val uint32) *uint32 {
 	return &val
 }

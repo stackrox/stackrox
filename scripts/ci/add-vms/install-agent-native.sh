@@ -92,6 +92,39 @@ StandardError=journal
 EOF
 }
 
+# Prints a systemd unit (to stdout) for the roxagent serve (pull) mode.
+# Same bind mount logic as create_native_service_file but long-running.
+create_native_serve_file() {
+    local mount_path
+
+    cat <<'EOF'
+[Unit]
+Description=StackRox VM Agent - VSOCK pull server (POC)
+After=network.target roxagent-prep.service
+Requires=roxagent-prep.service
+
+[Service]
+Type=simple
+User=root
+Restart=on-failure
+RestartSec=5s
+BindPaths=/tmp/roxagent-rpm:/tmp/roxroot/var/lib/rpm
+EOF
+
+    for mount_path in "$@"; do
+        printf 'BindReadOnlyPaths=%s:/tmp/roxroot%s\n' "$mount_path" "$mount_path"
+    done
+
+    cat <<'EOF'
+ExecStart=/usr/local/bin/roxagent serve --port 818 --host-path /tmp/roxroot
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+}
+
 SYSTEMD_DIR="$SCRIPT_DIR/systemd"
 
 # Checks whether roxagent-serve is healthy on $1 (vm_name) by SSHing in and
@@ -147,12 +180,13 @@ install_on_vm() {
         "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent"
 
     echo "  Installing systemd units..."
-    local service_file prep_service_file timer_file serve_service_file
+    local service_file serve_service_file prep_service_file timer_file
     service_file="$(mktemp)"
+    serve_service_file="$(mktemp)"
     create_native_service_file "${available_mounts[@]}" > "$service_file"
+    create_native_serve_file "${available_mounts[@]}" > "$serve_service_file"
     prep_service_file="$SYSTEMD_DIR/roxagent-prep.service"
     timer_file="$SYSTEMD_DIR/roxagent.timer"
-    serve_service_file="$SYSTEMD_DIR/roxagent-serve.service"
 
     virtctl scp "${_ssh_opts[@]}" \
         "$prep_service_file" \
@@ -166,7 +200,7 @@ install_on_vm() {
     virtctl scp "${_ssh_opts[@]}" \
         "$serve_service_file" \
         "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent-serve.service"
-    rm -f "$service_file"
+    rm -f "$service_file" "$serve_service_file"
 
     virtctl ssh "${_ssh_opts[@]}" \
         --command 'set -e

@@ -2,7 +2,10 @@ package vsockclient
 
 import (
 	"fmt"
+	"net/url"
+	"strconv"
 
+	"k8s.io/client-go/rest"
 	kubevirtv1 "kubevirt.io/api/core/v1"
 	kvcorev1 "kubevirt.io/client-go/kubevirt/typed/core/v1"
 )
@@ -44,5 +47,33 @@ func (d *Dialer) Dial(vmiName string, port uint32, useTLS bool) (StreamReader, e
 
 	// ponytail: AsConn() wraps the existing websocket as a net.Conn —
 	// cheap, no error path. net.Conn satisfies StreamReader (io.Reader + Close).
+	return stream.AsConn(), nil
+}
+
+// MultiDialer dials VMs across namespaces using the KubeVirt API directly.
+// This bypasses kubecli (which has transitive dep issues with storagemigration
+// mocks) and calls AsyncSubresourceHelper on the typed client layer.
+type MultiDialer struct {
+	config *rest.Config
+}
+
+// NewMultiDialer creates a dialer from in-cluster (or kubeconfig) REST config.
+func NewMultiDialer(config *rest.Config) *MultiDialer {
+	return &MultiDialer{config: config}
+}
+
+// Dial connects to the named VMI's VSOCK port in the given namespace.
+func (d *MultiDialer) Dial(namespace, name string, port uint32, useTLS bool) (StreamReader, error) {
+	params := url.Values{}
+	params.Set("port", strconv.FormatUint(uint64(port), 10))
+	params.Set("tls", strconv.FormatBool(useTLS))
+
+	stream, err := kvcorev1.AsyncSubresourceHelper(
+		d.config, "virtualmachineinstances", namespace, name, "vsock", params,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("VSOCK dial %s/%s:%d: %w", namespace, name, port, err)
+	}
+
 	return stream.AsConn(), nil
 }

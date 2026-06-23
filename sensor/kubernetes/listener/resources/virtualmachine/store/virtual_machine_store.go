@@ -118,6 +118,20 @@ func (s *VirtualMachineStore) Size() int {
 	return len(s.virtualMachines)
 }
 
+// ListRunning returns a snapshot of all VMs currently marked as Running.
+// Each returned Info is a copy; callers may read freely without holding the lock.
+func (s *VirtualMachineStore) ListRunning() []*virtualmachine.Info {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	var out []*virtualmachine.Info
+	for _, vm := range s.virtualMachines {
+		if vm.Running {
+			out = append(out, vm.Copy())
+		}
+	}
+	return out
+}
+
 // GetFromCID returns the VirtualMachineInfo associated with a given VSOCK CID
 func (s *VirtualMachineStore) GetFromCID(cid uint32) *virtualmachine.Info {
 	s.lock.RLock()
