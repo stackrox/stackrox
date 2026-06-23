@@ -196,14 +196,8 @@ class Services extends BaseService {
 
         Timer t = new Timer(retries, intervalSeconds)
         while (t.IsValid()) {
-            def violations
-            try {
-                violations = AlertService.getViolations(ListAlertsRequest.newBuilder()
-                        .setQuery(query).build())
-            } catch (Exception e) {
-                LOG.warn("Error fetching violations for ${policyName}, will retry: ${e.message}")
-                continue
-            }
+            def violations = AlertService.getViolations(ListAlertsRequest.newBuilder()
+                    .setQuery(query).build())
             if (violations.size() > 0) {
                 LOG.info "violation size is: ${violations.size()}"
                 LOG.info "${policyName} triggered after waiting ${t.SecondsSince()} seconds"

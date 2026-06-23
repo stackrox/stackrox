@@ -19,7 +19,7 @@ class AlertService extends BaseService {
         return AlertServiceGrpc.newBlockingStub(getChannel())
     }
 
-    @Retry
+    @Retry(attempts = 5, delay = 2)
     static List<ListAlert> getViolations(ListAlertsRequest request = ListAlertsRequest.newBuilder().build()) {
         return getAlertClient().listAlerts(request).alertsList
     }
