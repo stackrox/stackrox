@@ -1,6 +1,8 @@
 package runner
 
 import (
+	"maps"
+
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -14,9 +16,7 @@ func transferMetadataMap(oldMap, newMap map[string]string) map[string]string {
 		}
 		result[k] = v
 	}
-	for k, v := range newMap {
-		result[k] = v
-	}
+	maps.Copy(result, newMap)
 	return result
 }
 

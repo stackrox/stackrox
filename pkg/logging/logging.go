@@ -32,7 +32,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -146,9 +146,7 @@ var (
 		for severity := range validLevels {
 			severities = append(severities, severity)
 		}
-		sort.Slice(severities, func(i, j int) bool {
-			return severities[i] < severities[j]
-		})
+		slices.Sort(severities)
 		return severities
 	}()
 

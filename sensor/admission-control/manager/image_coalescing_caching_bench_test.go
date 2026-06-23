@@ -5,8 +5,9 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"math/rand/v2"
-	"sort"
+	"slices"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -90,9 +91,7 @@ func (c *coalescingBenchImageClient) CallsByImage() map[string]int64 {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	result := make(map[string]int64, len(c.callsByImage))
-	for k, v := range c.callsByImage {
-		result[k] = v
-	}
+	maps.Copy(result, c.callsByImage)
 	return result
 }
 
@@ -316,7 +315,7 @@ func percentile(durations []time.Duration, p float64) time.Duration {
 	}
 	sorted := make([]time.Duration, len(durations))
 	copy(sorted, durations)
-	sort.Slice(sorted, func(i, j int) bool { return sorted[i] < sorted[j] })
+	slices.Sort(sorted)
 	idx := int(float64(len(sorted)-1) * p)
 	return sorted[idx]
 }
