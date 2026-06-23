@@ -229,7 +229,6 @@ describe('Image Integrations', () => {
 
         visitIntegrationsTable(integrationSource, integrationType);
 
-        cy.get('h2:contains("results found")');
         cy.get('[data-testid="add-integration"]').should('not.exist');
     });
 

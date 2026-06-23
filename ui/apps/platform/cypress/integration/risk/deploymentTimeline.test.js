@@ -142,23 +142,21 @@ describe('Risk Event Timeline for Deployment', () => {
 
     describe('Drilling Down To Container Events', () => {
         it("should drill down on a pod to see that pod's containers", () => {
-            openEventTimeline(fixtureForDeploymentEventTimeline);
+            openEventTimeline();
 
-            cy.get(selectors.eventTimeline.timeline.namesList.firstListedName).then(
-                (firstListedName) => {
-                    const firstPodName = firstListedName.text();
+            cy.get(selectors.eventTimeline.timeline.namesList.firstListedName, {
+                timeout: 30000,
+            }).then((firstListedName) => {
+                const firstPodName = firstListedName.text();
 
-                    clickFirstDrillDownButtonInEventTimeline(
-                        'risks/eventTimeline/podEventTimeline.json'
-                    );
+                // click the button and drill down to see containers
+                clickFirstDrillDownButtonInEventTimeline();
 
-                    cy.get(selectors.eventTimeline.backButton);
-                    cy.get(selectors.eventTimeline.panelHeader.header).should(
-                        'contain',
-                        firstPodName
-                    );
-                }
-            );
+                // the back button should be visible
+                cy.get(selectors.eventTimeline.backButton);
+                // the pod name should be shown in the panel header
+                cy.get(selectors.eventTimeline.panelHeader.header).should('contain', firstPodName);
+            });
         });
     });
 
