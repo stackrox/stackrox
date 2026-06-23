@@ -1626,6 +1626,10 @@ spec:
     | Central DB                       | Deployment      | Central DB is a PostgreSQL-based persistent storage for the data collected and managed by Central. |
     | Scanner                          | Deployment      | Scanner is a Red Hat developed and certified image scanner. Scanner analyzes and reports vulnerabilities for images. Scanner uses HPA to scale the number of replicas based on workload. |
     | Scanner DB                       | Deployment      | Scanner DB is a cache for vulnerability definitions to serve vulnerability scanning use cases throughout the software development life cycle. |
+    | Scanner V4 Indexer               | Deployment      | Scanner V4 Indexer analyzes container image layers and creates an index of packages and files. Scanner V4 Indexer uses HPA to scale the number of replicas based on workload. |
+    | Scanner V4 Matcher               | Deployment      | Scanner V4 Matcher matches indexed image content against vulnerability databases to identify security issues. Scanner V4 Matcher uses HPA to scale the number of replicas based on workload. |
+    | Scanner V4 DB                    | Deployment      | Scanner V4 DB is a PostgreSQL-based persistent storage for indexed image data and vulnerability matching results. |
+    | Config-As-Code                   | Deployment      | Config-As-Code component enables declarative configuration management by monitoring ConfigMaps and Secrets to automatically apply security policies and integrations. |
 
     ### Secured Cluster Services Explained
 
