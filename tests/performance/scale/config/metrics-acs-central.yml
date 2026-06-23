@@ -474,3 +474,24 @@
 
 - query: tar_matched_file_count_per_layer_sum{namespace="stackrox",container="central"}
   metricName: central_tar_matched_file_count_per_layer_sum
+
+- query: rox_central_cache_entries{namespace="stackrox",container="central"}
+  metricName: central_cache_entries
+
+- query: rox_central_cache_population_duration_seconds_bucket{namespace="stackrox",container="central"}
+  metricName: central_cache_population_duration_seconds_bucket
+
+- query: rox_central_cache_population_duration_seconds_count{namespace="stackrox",container="central"}
+  metricName: central_cache_population_duration_seconds_count
+
+- query: rox_central_cache_population_duration_seconds_sum{namespace="stackrox",container="central"}
+  metricName: central_cache_population_duration_seconds_sum
+
+- query: rox_central_cache_bypass_total{namespace="stackrox",container="central"}
+  metricName: central_cache_bypass_total
+
+- query: rox_central_cache_hit_total{namespace="stackrox",container="central"}
+  metricName: central_cache_hit_total
+
+- query: rox_central_cache_miss_total{namespace="stackrox",container="central"}
+  metricName: central_cache_miss_total
