@@ -40,7 +40,8 @@ type Getter[F Finding] func(F) string
 // specific label only when provided with a finding.
 type LazyLabelGetters[F Finding] map[Label]Getter[F]
 
-// GetLabels returns a slice of label names from the list of lazy getters.
+// GetLabels returns a sorted slice of label names from the list of lazy
+// getters.
 func (ll LazyLabelGetters[F]) GetLabels() []string {
 	result := make([]string, 0, len(ll))
 	for _, label := range ll.Labels() {
