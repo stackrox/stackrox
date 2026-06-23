@@ -10,7 +10,6 @@ import services.ImageService
 import services.PolicyService
 import util.Timer
 
-import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -392,7 +391,6 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @IgnoreIf({ System.getenv("ROX_INIT_CONTAINER_SUPPORT") != "true" })
     def "Verify AC enforcement on init containers: #desc"() {
         when:
         "Create a deployment with init containers"

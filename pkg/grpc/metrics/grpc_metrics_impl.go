@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"maps"
 	"runtime/debug"
 
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -118,9 +119,7 @@ func (g *grpcMetricsImpl) GetMetrics() (map[string]map[codes.Code]int64, map[str
 	externalPanics := make(map[string]map[string]int64, len(g.allMetrics))
 	for path, perPathMetric := range g.allMetrics {
 		externalCodeMap := make(map[codes.Code]int64, len(perPathMetric.normalInvocationStats))
-		for responseCode, count := range perPathMetric.normalInvocationStats {
-			externalCodeMap[responseCode] = count
-		}
+		maps.Copy(externalCodeMap, perPathMetric.normalInvocationStats)
 		if len(externalCodeMap) > 0 {
 			externalMetrics[path] = externalCodeMap
 		}

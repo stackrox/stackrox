@@ -10,6 +10,7 @@ const (
 	EnrichedProcessIndicatorTopic
 	DetectorProcessIndicatorTopic
 	DetectorNetworkFlowTopic
+	DetectorFileAccessTopic
 )
 
 var (
@@ -21,6 +22,7 @@ var (
 		EnrichedProcessIndicatorTopic:   "EnrichedProcessIndicator",
 		DetectorProcessIndicatorTopic:   "DetectorProcessIndicator",
 		DetectorNetworkFlowTopic:        "DetectorNetworkFlow",
+		DetectorFileAccessTopic:         "DetectorFileAccess",
 	}
 )
 

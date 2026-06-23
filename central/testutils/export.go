@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"math/rand"
 	"os"
 	"slices"
@@ -348,9 +349,7 @@ func (h *ExportServicePostgresTestHelper) InjectDataAndRunBenchmark(
 				b.Error(err)
 			}
 			imageIDs = append(imageIDs, addedImageIDs...)
-			for imageID, imageName := range addedImageNamesByID {
-				imageNamesByIDs[imageID] = imageName
-			}
+			maps.Copy(imageNamesByIDs, addedImageNamesByID)
 		}
 		log.Info("Injecting ", delta, " deployments")
 		deployments, err := h.InjectDeployments(b, delta, imageIDs, imageNamesByIDs)

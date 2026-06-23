@@ -2,6 +2,7 @@ package labels
 
 import (
 	"bytes"
+	"maps"
 
 	"github.com/pkg/errors"
 	commonLabels "github.com/stackrox/rox/pkg/labels"
@@ -31,9 +32,7 @@ func TLSSecretLabels() map[string]string {
 // DefaultLabels defines the default labels the operator should set on resources it creates.
 func DefaultLabels() map[string]string {
 	labels := make(map[string]string, len(defaultLabels))
-	for k, v := range defaultLabels {
-		labels[k] = v
-	}
+	maps.Copy(labels, defaultLabels)
 
 	return labels
 }
@@ -43,9 +42,7 @@ func MergeLabels(current, newLabels map[string]string) (map[string]string, bool)
 	updated := false
 	mergedLabels := map[string]string{}
 
-	for k, v := range current {
-		mergedLabels[k] = v
-	}
+	maps.Copy(mergedLabels, current)
 	for k, v := range newLabels {
 		if x, exists := mergedLabels[k]; !exists || x != v {
 			updated = true
@@ -61,9 +58,7 @@ func MergeLabels(current, newLabels map[string]string) (map[string]string, bool)
 func WithDefaults(labels map[string]string) (map[string]string, bool) {
 	updated := false
 	newLabels := map[string]string{}
-	for k, v := range labels {
-		newLabels[k] = v
-	}
+	maps.Copy(newLabels, labels)
 
 	for k, v := range defaultLabels {
 		value, hasKey := newLabels[k]
@@ -115,9 +110,7 @@ func (lpr labelPostRenderer) Run(renderedManifests *bytes.Buffer) (*bytes.Buffer
 			labels = map[string]string{}
 		}
 
-		for k, v := range lpr.labels {
-			labels[k] = v
-		}
+		maps.Copy(labels, lpr.labels)
 
 		objMeta.SetLabels(labels)
 
