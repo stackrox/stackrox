@@ -114,6 +114,7 @@ import (
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	customMetrics "github.com/stackrox/rox/central/metrics/custom"
+	"github.com/stackrox/rox/central/metrics/custom/api_requests"
 	"github.com/stackrox/rox/central/metrics/telemetry"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
@@ -655,6 +656,7 @@ func startGRPCServer() {
 
 	c := phonehomeClient.Singleton()
 	c.SetInterceptor(ri)
+	api_requests.SetInterceptor(ri)
 
 	server := pkgGRPC.NewAPI(config)
 	server.Register(servicesToRegister()...)

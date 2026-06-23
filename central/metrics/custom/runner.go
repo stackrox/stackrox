@@ -3,6 +3,7 @@ package custom
 import (
 	"context"
 	"net/http"
+	"slices"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -12,6 +13,7 @@ import (
 	expiryS "github.com/stackrox/rox/central/credentialexpiry/service"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/metrics/custom/api_requests"
 	"github.com/stackrox/rox/central/metrics/custom/clusters"
 	"github.com/stackrox/rox/central/metrics/custom/expiry"
 	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
@@ -30,7 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
-type trackerRunner []tracker.Registration
+type trackerRunner []*tracker.Registration
 
 // RunnerConfiguration is a composition of tracker configurations.
 // Returned by ValidateConfiguration() and accepted by Reconfigure(). This split
@@ -65,7 +67,7 @@ func withHardcodedConfiguration(period uint32, descriptors map[string][]string) 
 }
 
 func makeRunner(ds *runnerDatastores) trackerRunner {
-	return trackerRunner{{
+	runner := trackerRunner{{
 		image_vulnerabilities.New(ds.deployments),
 		(*storage.PrometheusMetrics).GetImageVulnerabilities,
 	}, {
@@ -92,8 +94,9 @@ func makeRunner(ds *runnerDatastores) trackerRunner {
 			// rox_central_cert_exp_hours
 			"hours": expiry.LazyLabels.GetLabels(),
 		}),
-	},
-	}
+	}}
+	runner = append(runner, slices.Collect(api_requests.Trackers())...)
+	return runner
 }
 
 func (tr trackerRunner) initialize(cds configDS.DataStore) {
@@ -142,6 +145,7 @@ func (tr trackerRunner) Reconfigure(cfg RunnerConfiguration) {
 			tracker.Reconfigure(cfg[i])
 		}
 	}
+	api_requests.RegisterHandler()
 }
 
 func (tr trackerRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
