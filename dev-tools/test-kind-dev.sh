@@ -48,6 +48,11 @@ _stop_kind_dev() {
     if [[ -n "$KIND_DEV_PID" ]] && kill -0 "$KIND_DEV_PID" 2>/dev/null; then
         echo "Stopping kind-dev.sh (pid $KIND_DEV_PID)..."
         kill -INT "$KIND_DEV_PID" 2>/dev/null
+        for _ in $(seq 1 30); do
+            kill -0 "$KIND_DEV_PID" 2>/dev/null || break
+            sleep 1
+        done
+        kill -9 "$KIND_DEV_PID" 2>/dev/null || true
         wait "$KIND_DEV_PID" 2>/dev/null || true
         KIND_DEV_PID=""
     fi
@@ -327,9 +332,14 @@ test_iteration_e2e() {
         _skip "$name" "no registry"; return 0
     fi
 
-    local ready
-    ready=$(kubectl -n "$NAMESPACE" get deploy/central -o jsonpath='{.status.readyReplicas}' 2>/dev/null)
-    [[ -n "$ready" ]] && [[ "$ready" -ge 1 ]] || { _skip "$name" "central not ready"; return 0; }
+    # Wait briefly for Central readiness (may still be restarting from previous test)
+    local ready=""
+    for _ in $(seq 1 60); do
+        ready=$(kubectl -n "$NAMESPACE" get deploy/central -o jsonpath='{.status.readyReplicas}' 2>/dev/null)
+        [[ -n "$ready" ]] && [[ "$ready" -ge 1 ]] && break
+        sleep 1
+    done
+    [[ -n "$ready" ]] && [[ "$ready" -ge 1 ]] || { _skip "$name" "central not ready after 60s"; return 0; }
 
     local marker="E2E-$(date +%s)-$$"
     local marker_file="central/dev_test_marker.go"
