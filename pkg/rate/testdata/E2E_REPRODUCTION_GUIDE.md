@@ -5,112 +5,103 @@ VM index report rate limiter on an OCP cluster with Scanner V4.
 
 ## Prerequisites
 
-- An OCP cluster with ACS installed (Central + Scanner V4)
-- `kubectl` configured to access the cluster
+- An OCP cluster with ACS installed via operator (Central + Scanner V4)
+- `kubectl` / `oc` configured to access the cluster
 - `crane` CLI installed (`go install github.com/google/go-containerregistry/cmd/crane@latest`)
-- Go toolchain (for building `local-sensor`)
-- Central API credentials (default: `admin` / password from the `central-htpasswd` secret)
-- The StackRox repo checked out with the completion-based branch
+- Go toolchain (for building `local-sensor` and Central binaries)
+- Central API credentials (from `roxie env` or the `central-htpasswd` secret)
+- The StackRox repo checked out on this branch
 
-## Step 1: Build Central Images
+## Step 1: Deploy ACS
 
-Build two Central images: one with the time-based limiter (baseline from master)
-and one with the completion-based limiter (this branch).
+Use [Roxie](https://github.com/stackrox/roxie) to deploy ACS with operator:
 
 ```bash
-cd <stackrox-repo>
-
-# Get the current Central image tag from the cluster
-CURRENT_IMAGE=$(kubectl get deployment -n stackrox central \
-  -o jsonpath='{.spec.template.spec.containers[0].image}')
-echo "Current image: $CURRENT_IMAGE"
-
-# Build the baseline (time-based) central binary from master
-git stash  # save any changes
-git checkout origin/master -- pkg/rate/limiter.go pkg/rate/metrics.go
-go build -o /tmp/central-baseline ./cmd/central/
-git checkout HEAD -- pkg/rate/limiter.go pkg/rate/metrics.go
-git stash pop
-
-# Build the completion-based central binary from this branch
-go build -o /tmp/central-completion ./cmd/central/
-
-# Create a layer for each binary and push to ttl.sh
-BASELINE_TAG="ttl.sh/stackrox-central-baseline-$(date +%s):24h"
-COMPLETION_TAG="ttl.sh/stackrox-central-completion-$(date +%s):24h"
-
-# Baseline image
-crane mutate "$CURRENT_IMAGE" \
-  --append <(cd /tmp && tar cf - central-baseline) \
-  --entrypoint /central-baseline \
-  --tag "$BASELINE_TAG"
-crane push "$BASELINE_TAG"
-
-# Completion image
-crane mutate "$CURRENT_IMAGE" \
-  --append <(cd /tmp && tar cf - central-completion) \
-  --entrypoint /central-completion \
-  --tag "$COMPLETION_TAG"
-crane push "$COMPLETION_TAG"
-
-echo "Baseline: $BASELINE_TAG"
-echo "Completion: $COMPLETION_TAG"
+roxie deploy both \
+  --tag <latest-master-tag> \
+  --envrc /tmp/roxie-env.sh \
+  --exposure loadbalancer \
+  --resources auto
 ```
 
-**Alternative (simpler):** If you only want to test the completion-based limiter
-against the stock Central, just build and push one image:
+Find the latest master-based tag:
 
 ```bash
-# Build the modified binary
-GOARCH=amd64 GOOS=linux go build -o /tmp/central-db ./cmd/central/
+TAGS=$(curl -s "https://quay.io/api/v1/repository/stackrox-io/main/tag/?limit=100&onlyActiveTags=true" \
+  | jq -r '.tags[].name | select(test("^[0-9]+[.][0-9]+[.]x-")) | select(test("-(arm64|amd64|s390x|ppc64le)$") | not)')
+echo "$TAGS" | head -5
+```
 
-# Append it to the existing image
-IMAGE_TAG="ttl.sh/stackrox-central-test-$(date +%s):24h"
-crane mutate "$CURRENT_IMAGE" \
-  --append <(cd /tmp && tar czf - central-db) \
-  --tag "$IMAGE_TAG"
+After deployment, read credentials:
 
-echo "Test image: $IMAGE_TAG"
+```bash
+source /tmp/roxie-env.sh
+curl -sk -u "admin:${ROX_ADMIN_PASSWORD}" "https://${ROX_ENDPOINT}/v1/metadata"
 ```
 
 ## Step 2: Configure Cluster
 
-```bash
-# Scale down the real sensor to avoid connection conflicts
-kubectl scale deployment sensor -n stackrox --replicas=0
+Determine ACS namespace layout (Roxie defaults: `acs-central` + `acs-sensor`):
 
-# Set environment variables on Central
-kubectl set env deployment/central -n stackrox \
+```bash
+CENTRAL_NS=acs-central
+SENSOR_NS=acs-sensor
+```
+
+Scale down real sensor and configure Central:
+
+```bash
+kubectl scale deployment sensor -n $SENSOR_NS --replicas=0
+
+kubectl set env deployment/central -n $CENTRAL_NS \
   ROX_VIRTUAL_MACHINES=true \
-  ROX_VM_TEST_MODE=true \
-  ROX_VM_INDEX_REPORT_BUCKET_CAPACITY=30
-
-# Deploy the completion-based image first
-kubectl set image deployment/central -n stackrox \
-  central=$COMPLETION_TAG
-kubectl rollout status deployment/central -n stackrox --timeout=180s
+  ROX_VM_INDEX_REPORT_BUCKET_CAPACITY=200
 ```
 
-## Step 3: Create Workload Configuration
+## Step 3: Build Central Images
+
+Build two Central images: completion-based (this branch) and baseline (master).
 
 ```bash
-cat > /tmp/vm-high-load-test.yaml << 'EOF'
-nodeWorkload:
-  numNodes: 4
-numNamespaces: 1
-virtualMachineWorkload:
-  poolSize: 100
-  updateInterval: 5m
-  lifecycleDuration: 30m
-  numLifecycles: 0
-  reportInterval: 10s
-  numPackages: 500
-  initialReportDelay: 2s
-EOF
-```
+# Detect cluster architecture
+ARCH=$(kubectl get nodes -o jsonpath='{.items[0].status.nodeInfo.architecture}')
+# Falls back to amd64
+ARCH=${ARCH:-amd64}
 
-This creates 100 fake VMs, each sending 500-package index reports every 10 seconds
-= 10 reports/second incoming rate.
+# Get current Central image
+CURRENT_IMAGE=$(kubectl get deployment -n $CENTRAL_NS central \
+  -o jsonpath='{.spec.template.spec.containers[0].image}')
+
+# --- Completion-based binary (this branch) ---
+GOOS=linux GOARCH=$ARCH CGO_ENABLED=0 go build -ldflags="-s -w" \
+  -o /tmp/central-completion ./central
+
+# --- Baseline binary (master's rate limiter) ---
+git stash
+git checkout origin/master -- pkg/rate/limiter.go pkg/rate/metrics.go
+GOOS=linux GOARCH=$ARCH CGO_ENABLED=0 go build -ldflags="-s -w" \
+  -o /tmp/central-baseline ./central
+git checkout HEAD -- pkg/rate/limiter.go pkg/rate/metrics.go
+git stash pop
+
+# --- Create images with crane ---
+cd /tmp
+mkdir -p stackrox && cp central-completion stackrox/central && chmod +x stackrox/central
+tar cf completion.tar stackrox/
+COMPLETION_TAG="ttl.sh/rox-central-completion-$(date +%s):24h"
+crane mutate "$CURRENT_IMAGE" --platform linux/$ARCH --set-platform linux/$ARCH \
+  --append completion.tar --tag "$COMPLETION_TAG"
+
+cp central-baseline stackrox/central && chmod +x stackrox/central
+tar cf baseline.tar stackrox/
+BASELINE_TAG="ttl.sh/rox-central-baseline-$(date +%s):24h"
+crane mutate "$CURRENT_IMAGE" --platform linux/$ARCH --set-platform linux/$ARCH \
+  --append baseline.tar --tag "$BASELINE_TAG"
+
+rm -rf stackrox
+echo "Completion: $COMPLETION_TAG"
+echo "Baseline:   $BASELINE_TAG"
+```
 
 ## Step 4: Build local-sensor
 
@@ -119,153 +110,163 @@ cd <stackrox-repo>
 go build -o ./tools/local-sensor/local-sensor ./tools/local-sensor/
 ```
 
-## Step 5: Run Completion-Based Test
+> **Note:** This branch includes a patch to `tools/local-sensor/main.go` that
+> creates a real K8s client for cert fetching when using `-with-fakeworkload`
+> combined with `-connect-central`. Without this patch, the fake workload
+> manager's K8s client cannot access real cluster secrets (`tls-cert-sensor`).
+
+## Step 5: Create Workload Configuration
 
 ```bash
-# Get Central endpoint
-CENTRAL_EP=$(kubectl get route -n stackrox central \
-  -o jsonpath='{.spec.host}'):443
-
-# Start local-sensor
-ROX_LOCAL_SENSOR=true \
-ROX_VIRTUAL_MACHINES=true \
-ROX_VM_TEST_MODE=true \
-LOGLEVEL=info \
-  ./tools/local-sensor/local-sensor \
-  -connect-central "$CENTRAL_EP" \
-  -with-fakeworkload /tmp/vm-high-load-test.yaml &
-LS_PID=$!
-
-# Wait for connection and initial reports to flow
-sleep 45
+cat > /tmp/vm-stress-test.yaml << 'EOF'
+nodeWorkload:
+  numNodes: 4
+numNamespaces: 1
+virtualMachineWorkload:
+  poolSize: 400          # 400 simulated VMs
+  updateInterval: 5m
+  lifecycleDuration: 30m
+  numLifecycles: 0
+  reportInterval: 1s     # each VM reports every second → 400 rps
+  numPackages: 500       # 500 real RHEL 9 packages per report
+  initialReportDelay: 2s
+EOF
 ```
 
-### Monitor Memory (run in a separate terminal)
+This generates 400 reports/sec, well above the bucket capacity of 200. Both
+rate limiter variants will drop reports at this load, confirming they are
+actively engaging.
+
+To see meaningful throughput differences between the variants, use a lower
+load (e.g., `poolSize: 50`, `reportInterval: 1s`) where the completion-based
+variant can keep pace while the time-based variant cannot.
+
+## Step 6: Run Tests
+
+For each variant (completion first, then baseline):
 
 ```bash
-echo "=== COMPLETION-BASED RATE LIMITER ==="
-for i in $(seq 1 12); do
-  kubectl top pod -n stackrox -l app=central --no-headers
+# Deploy the variant's image
+kubectl set image deployment/central -n $CENTRAL_NS \
+  central=$COMPLETION_TAG   # or $BASELINE_TAG
+kubectl rollout status deployment/central -n $CENTRAL_NS --timeout=300s
+
+# Wait for Central health
+until curl -sk -u "admin:$ROX_ADMIN_PASSWORD" \
+  "https://$ROX_ENDPOINT/v1/metadata" | grep -q version; do sleep 5; done
+
+# Start local-sensor
+ROX_LOCAL_SENSOR=true ROX_VIRTUAL_MACHINES=true LOGLEVEL=info \
+  ./tools/local-sensor/local-sensor \
+  -connect-central "$ROX_ENDPOINT" \
+  -namespace $SENSOR_NS \
+  -operator-install \
+  -with-fakeworkload /tmp/vm-stress-test.yaml &
+LS_PID=$!
+```
+
+### Monitor (15+ minutes per run)
+
+In a separate terminal:
+
+```bash
+# Memory samples every 30s
+for i in $(seq 1 30); do
+  kubectl top pod -n $CENTRAL_NS -l app=central --no-headers
   sleep 30
 done
 ```
 
-### Measure Throughput
+### Collect Metrics
 
 ```bash
-# Get Central pod name
-POD=$(kubectl get pods -n stackrox -l app=central \
+# Rate-limited reports (from Central logs)
+CENTRAL_POD=$(kubectl get pods -n $CENTRAL_NS -l app=central \
   -o jsonpath='{.items[0].metadata.name}')
+kubectl logs -n $CENTRAL_NS $CENTRAL_POD | \
+  grep "log suppressed" | awk '{print $(NF-1)}' | \
+  awk '{sum += $1} END {print "Dropped:", sum}'
 
-# Count enriched reports over 60 seconds
-START=$(kubectl logs -n stackrox $POD | grep -c "Successfully enriched")
-sleep 60
-END=$(kubectl logs -n stackrox $POD | grep -c "Successfully enriched")
-echo "Reports in 60s: $((END - START))"
+# Throughput (from Scanner V4 Matcher logs)
+MATCHER_POD=$(kubectl get pods -n $CENTRAL_NS -l app=scanner-v4-matcher \
+  -o jsonpath='{.items[0].metadata.name}')
+kubectl logs -n $CENTRAL_NS $MATCHER_POD | \
+  grep -c "GetVulnerabilities"
 ```
 
-### Check Vulnerability Matches
+### Stop and Switch
 
 ```bash
-CENTRAL_URL=$(kubectl get route -n stackrox central \
-  -o jsonpath='{.spec.host}')
-curl -sk -u admin:admin \
-  "https://${CENTRAL_URL}/v2/virtualmachines?pagination.limit=3" | \
-  python3 -c "
-import json, sys
-data = json.load(sys.stdin)
-for vm in data.get('virtualMachines', [])[:3]:
-    scan = vm.get('scan', {})
-    comps = scan.get('components', [])
-    vulns = sum(len(c.get('vulns', [])) for c in comps)
-    print(f'{vm[\"name\"]}: {len(comps)} components, {vulns} vulns')
-"
-```
+kill $LS_PID; wait $LS_PID 2>/dev/null
+# If port 8443 is still held:
+fuser -k 8443/tcp 2>/dev/null; sleep 5
 
-### Record Scanner V4 Usage
-
-```bash
-kubectl top pods -n stackrox -l app=scanner-v4-matcher
-kubectl top pods -n stackrox -l app=scanner-v4-db
-```
-
-### Stop Load Generator
-
-```bash
-kill $LS_PID
-wait $LS_PID
-```
-
-## Step 6: Run Baseline (Time-Based) Test
-
-```bash
-# Switch to baseline image
-kubectl set image deployment/central -n stackrox \
-  central=$BASELINE_TAG
-kubectl rollout status deployment/central -n stackrox --timeout=180s
-
-# Repeat Step 5 with the same workload configuration
+# Deploy baseline image and repeat
+kubectl set image deployment/central -n $CENTRAL_NS central=$BASELINE_TAG
 ```
 
 ## Step 7: Compare Results
 
-Expected results (from our test on ga-acp, 2026-05-15):
+Expected results at 400 rps (from our 6-run test on ga-ocp4-cron-2, 2026-06-23):
 
-| Metric | Time-Based | Completion-Based |
-|--------|-----------|-----------------|
-| Reports enriched/min | 19 | 182 |
-| Throughput (rps) | 0.3 | 3.0 |
-| Central memory (avg) | 252 Mi | 522 Mi |
-| Central memory (peak) | 263 Mi | 544 Mi |
-| Matcher CPU (per pod) | 65-143m | 714-824m |
-| DB CPU | 213m | 3,159m |
-| Reports dropped/10s | ~97 | ~0 |
+| Metric | Completion-Based (avg) | Time-Based Baseline (avg) |
+|--------|----------------------|--------------------------|
+| Reports dropped / 16 min | 10,736 | 11,573 |
+| Scanner V4 vuln lookups / 16 min | 354 | 340 |
+| Throughput (lookups/min) | 21.8 | 21.0 |
+| Central memory peak | 604 Mi | 783 Mi |
+
+At extreme saturation (400 rps >> 200 bucket capacity), both variants perform
+similarly. The completion-based variant shows a modest +4% throughput edge and
+lower peak memory.
+
+For clearer throughput differentiation, use lower load (e.g., 50 rps) where the
+completion-based variant can recycle tokens faster than the time-based refill.
 
 ## Step 8: Cleanup
 
 ```bash
 # Restore original Central image
-kubectl set image deployment/central -n stackrox \
-  central=$CURRENT_IMAGE
+kubectl set image deployment/central -n $CENTRAL_NS central=$CURRENT_IMAGE
+kubectl rollout status deployment/central -n $CENTRAL_NS --timeout=180s
 
 # Remove custom env vars
-kubectl set env deployment/central -n stackrox \
+kubectl set env deployment/central -n $CENTRAL_NS \
   ROX_VM_INDEX_REPORT_BUCKET_CAPACITY-
 
 # Scale sensor back up
-kubectl scale deployment sensor -n stackrox --replicas=1
-
-# Wait for rollout
-kubectl rollout status deployment/central -n stackrox --timeout=180s
-kubectl rollout status deployment/sensor -n stackrox --timeout=180s
+kubectl scale deployment sensor -n $SENSOR_NS --replicas=1
+kubectl rollout status deployment/sensor -n $SENSOR_NS --timeout=180s
 ```
 
 ## Troubleshooting
 
 ### local-sensor can't connect to Central
 
-Check the endpoint is correct and the route is accessible:
+Verify the endpoint is reachable:
 ```bash
-curl -sk "https://$(kubectl get route -n stackrox central \
-  -o jsonpath='{.spec.host}')/v1/ping"
+curl -sk "https://$ROX_ENDPOINT/v1/ping"
 ```
 
-### Port 8443/9443 conflicts
+For operator-deployed clusters, the `-operator-install` flag adjusts TLS
+expectations. The `-namespace` flag must match the sensor namespace.
 
-If local-sensor crashes with port binding errors, set `ROX_LOCAL_SENSOR=true`
-(already included in the commands above) which makes the gRPC server endpoints
-optional.
+### Port 8443 conflicts
+
+If local-sensor crashes with port binding errors, kill the old process:
+```bash
+fuser -k 8443/tcp
+```
+Setting `ROX_LOCAL_SENSOR=true` makes the local gRPC server endpoints optional.
 
 ### No reports flowing
 
-Check local-sensor logs for "Established connection to Central" and
-"VM index reports enabled". If missing, verify `ROX_VIRTUAL_MACHINES=true`
-and `ROX_VM_TEST_MODE=true` are set on both local-sensor env and Central
-deployment.
+Check local-sensor logs for "Established connection to Central". If VMs are
+not registering, ensure the workload YAML uses `virtualMachineWorkload` (not
+`vmWorkload`). Central must have `ROX_VIRTUAL_MACHINES=true`.
 
 ### Rate limiter not constraining
 
-If you see no rate-limit warnings in Central logs, the bucket capacity may be
-larger than the number of concurrent reports. Lower
-`ROX_VM_INDEX_REPORT_BUCKET_CAPACITY` (e.g., to 30) or increase `poolSize` in
-the workload YAML.
+If Central logs show no rate-limit warnings, the incoming rate may be below the
+bucket capacity. Increase `poolSize` or decrease `reportInterval` in the
+workload YAML, or lower `ROX_VM_INDEX_REPORT_BUCKET_CAPACITY`.

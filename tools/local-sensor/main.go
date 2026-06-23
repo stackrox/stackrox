@@ -447,6 +447,12 @@ func createDeploymentIdentificationWithNamespace(namespace string) *storage.Sens
 }
 
 func setupCentralWithRealConnection(cli client.Interface, localConfig localSensorConfig) (centralclient.CentralConnectionFactory, centralclient.CertLoader) {
+	// When using a fake workload with real Central, the passed-in client may be a fake
+	// that doesn't have real K8s secrets. Try to create a real client for cert fetching.
+	certClient := cli
+	if realClient, err := k8s.MakeOutOfClusterClient(); err == nil {
+		certClient = realClient
+	}
 	certFetcherOpts := []certs.OptionFunc{
 		certs.WithOutputDir("tmp/"),
 		certs.WithNamespace(localConfig.Namespace),
@@ -455,7 +461,7 @@ func setupCentralWithRealConnection(cli client.Interface, localConfig localSenso
 	if localConfig.OperatorInstall {
 		certFetcherOpts = append(certFetcherOpts, certs.WithClusterName("", "", ""))
 	}
-	certFetcher := certs.NewCertificateFetcher(cli, certFetcherOpts...)
+	certFetcher := certs.NewCertificateFetcher(certClient, certFetcherOpts...)
 	if err := certFetcher.FetchCertificatesAndSetEnvironment(); err != nil {
 		utils.CrashOnError(errors.Wrap(err, "failed to retrieve sensor's certificates"))
 	}
