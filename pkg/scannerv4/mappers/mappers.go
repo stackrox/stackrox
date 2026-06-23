@@ -267,6 +267,19 @@ func v4Package(p *claircore.Package) (*v4.Package, error) {
 	}, nil
 }
 
+// versionAgnosticDIDs lists distribution IDs whose vulnerability data is not
+// partitioned by version. A scanned image matching any of these DIDs is
+// considered supported regardless of its reported version.
+var versionAgnosticDIDs = map[string]bool{
+	"hummingbird": true,
+}
+
+// IsVersionAgnostic reports whether the given distribution ID uses
+// version-agnostic vulnerability matching.
+func IsVersionAgnostic(did string) bool {
+	return versionAgnosticDIDs[did]
+}
+
 // VersionID returns the distribution version ID.
 func VersionID(d *claircore.Distribution) string {
 	vID := d.VersionID
