@@ -9,6 +9,7 @@
 package vsockdialer
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -25,7 +26,8 @@ const (
 	subresourceAPIGroup = "subresources.kubevirt.io"
 	apiVersion          = "v1"
 	wsSubprotocol       = "plain.kubevirt.io"
-	wsBufferSize        = 10240
+	wsBufferSize        = 1 << 20  // 1 MiB — large enough for VM reports (~400–500 KB)
+	wsReadLimit         = 10 << 20 // 10 MiB — matches vsockclient.maxReportSize
 )
 
 // MultiDialer dials VMs across namespaces via the KubeVirt subresource API.
@@ -88,6 +90,8 @@ func dialSubresource(config *rest.Config, resource, namespace, name, subresource
 		}
 		return nil, fmt.Errorf("websocket dial (status %d): %w", code, err)
 	}
+	// Default gorilla read limit is 32 KB; VM reports can be ~500 KB.
+	conn.SetReadLimit(wsReadLimit)
 	return conn, nil
 }
 
@@ -150,6 +154,11 @@ func (r *wsReader) Read(p []byte) (int, error) {
 		if r.reader == nil {
 			msgType, rd, err := r.conn.NextReader()
 			if err != nil {
+				// VSOCK protocol: roxagent writes data then closes the
+				// connection. The websocket close IS the end-of-stream signal.
+				if isWSClose(err) {
+					return 0, io.EOF
+				}
 				return 0, err
 			}
 			if msgType == websocket.CloseMessage {
@@ -168,6 +177,14 @@ func (r *wsReader) Read(p []byte) (int, error) {
 		}
 		return n, err
 	}
+}
+
+func isWSClose(err error) bool {
+	var ce *websocket.CloseError
+	if errors.As(err, &ce) {
+		return true
+	}
+	return errors.Is(err, io.EOF)
 }
 
 func (r *wsReader) Close() error {
