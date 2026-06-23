@@ -203,10 +203,7 @@ $(call go-tool, YQ, github.com/mikefarah/yq/v4, tools/yq)
 
 # Build operator-sdk with containers_image_openpgp tag to avoid gpgme dependency
 # See: https://github.com/containers/image/blob/df7e80d2d19872b61f352a8a182ec934dc0c2346/README.md#buildtag-containers_image_openpgp
-OPERATOR_SDK := $(GOTOOLS_BIN)/operator-sdk
-$(OPERATOR_SDK): tools/operator-sdk/go.mod tools/operator-sdk/go.sum
-	@echo "+ $(notdir $@)"
-	$(SILENT)cd tools/operator-sdk && GOBIN="$(dir $@)" go install -tags=containers_image_openpgp github.com/operator-framework/operator-sdk/cmd/operator-sdk
+$(call go-tool, OPERATOR_SDK, github.com/operator-framework/operator-sdk/cmd/operator-sdk, tools/operator-sdk, -tags=containers_image_openpgp)
 
 OPERATOR_SDK_VERSION = $(shell cd tools/operator-sdk; go list -m -f '{{ .Version }}' github.com/operator-framework/operator-sdk)
 
