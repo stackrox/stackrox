@@ -588,4 +588,16 @@ replace (
 	github.com/mholt/archiver/v3 => github.com/anchore/archiver/v3 v3.5.2
 )
 
+// kubevirt.io/client-go v1.8.4 (built against k8s v0.34.3) declares a
+// dependency on the tagged k8s.io/kube-openapi v0.31.0.  This repo pins
+// kube-openapi via a pseudo-version that tracks the k8s v0.35.x staging
+// commit.  Because Go's MVS treats the tagged v0.31.0 as semver-higher
+// than v0.0.0-<date>, MVS would select the older tagged release, which is
+// API-incompatible with k8s v0.35.  The replace forces resolution to the
+// commit this repo actually needs.
+//
+// Drop this replace when kubevirt.io/client-go is upgraded to a version
+// whose go.mod requires a kube-openapi pseudo-version >= the one used by
+// the k8s libs in this repo (i.e. when kubevirt targets the same or newer
+// k8s minor as us).
 replace k8s.io/kube-openapi v0.31.0 => k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912
