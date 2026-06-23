@@ -78,10 +78,12 @@ deploy:
             image:
               registry: quay.io/stackrox-io
               name: scanner-v4
+              tag: "4.11.0"
             db:
               image:
                 registry: quay.io/stackrox-io
                 name: scanner-v4-db
+                tag: "4.11.0"
 
 portForward:
   - resourceType: service
