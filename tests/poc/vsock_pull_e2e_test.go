@@ -3,16 +3,14 @@
 package poc
 
 import (
-	"context"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
+	"github.com/stackrox/rox/sensor/kubernetes/virtualmachine/vsockdialer"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	kvcorev1 "kubevirt.io/client-go/kubevirt/typed/core/v1"
 )
 
 // TestVSOCKPull validates the full pull path:
@@ -42,20 +40,8 @@ func TestVSOCKPull(t *testing.T) {
 		require.NoError(t, err, "failed to get kubeconfig")
 	}
 
-	// ponytail: Using the typed KubeVirt client directly instead of kubecli
-	// to avoid transitive dep issues (kubecli's generated mock pulls
-	// k8s.io/client-go/kubernetes/typed/storagemigration/v1alpha1).
-	// The generated typed client stubs VSOCK with "not implemented" — when
-	// kubevirt dep alignment is fixed, switch to kubecli for real E2E runs.
-	kvClient, err := kvcorev1.NewForConfig(config)
-	require.NoError(t, err, "failed to create KubeVirt typed client")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	_ = ctx // ponytail: Dial doesn't accept ctx yet; timeout is a follow-up.
-
-	dialer := vsockclient.NewDialer(kvClient.VirtualMachineInstances(ns))
-	stream, err := dialer.Dial(name, vsockclient.DefaultVSOCKPort, false)
+	dialer := vsockdialer.NewMultiDialer(config)
+	stream, err := dialer.Dial(ns, name, vsockclient.DefaultVSOCKPort, false)
 	require.NoError(t, err, "VSOCK dial failed — check VMI is running and has autoattachVSOCK: true")
 
 	report, err := vsockclient.ReadVMReport(stream)

@@ -13,6 +13,9 @@ var log = logging.LoggerForModule()
 
 const maxReportSize = 10 * 1024 * 1024 // 10 MiB safety limit
 
+// DefaultVSOCKPort is the port roxagent listens on inside the VM.
+const DefaultVSOCKPort uint32 = 818
+
 // StreamReader is the minimal interface we need from KubeVirt's StreamInterface.
 type StreamReader interface {
 	io.Reader

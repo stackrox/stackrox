@@ -50,7 +50,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/store"
 	vmIndex "github.com/stackrox/rox/sensor/common/virtualmachine/index"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/puller"
-	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
 	"github.com/stackrox/rox/sensor/kubernetes/clustermetrics"
@@ -64,6 +63,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
 	"github.com/stackrox/rox/sensor/kubernetes/upgrade"
+	"github.com/stackrox/rox/sensor/kubernetes/virtualmachine/vsockdialer"
 )
 
 var log = logging.LoggerForModule()
@@ -205,13 +205,13 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		components = append(components, virtualMachineHandler)
 		complianceMultiplexer.AddComponentWithComplianceC(virtualMachineHandler)
 
-		// intentional simplification: POC-only pull mode — production should get REST config from client.Interface.
+		// ponytail: POC-only pull mode — production should get REST config from client.Interface.
 		kvConfig, kvErr := k8sutil.GetK8sInClusterConfig()
 		if kvErr != nil {
 			log.Warnf("VSOCK pull mode disabled (no in-cluster config): %v", kvErr)
 		} else {
 			components = append(components,
-				puller.New(storeProvider.VirtualMachines(), virtualMachineHandler, vsockclient.NewMultiDialer(kvConfig)))
+				puller.New(storeProvider.VirtualMachines(), virtualMachineHandler, vsockdialer.NewMultiDialer(kvConfig)))
 		}
 	}
 
