@@ -63,20 +63,6 @@ export type ImageVulnerabilityReportFiltersForCollection = {
     imageTypes: ImageType[];
 } & CvesSince;
 
-/*
-export type VulnerabilityReportFiltersBase = {
-    fixability: Fixability;
-    severities: VulnerabilitySeverity[];
-    imageTypes: ImageType[];
-    includeAdvisory: boolean;
-    includeEpssProbability: boolean;
-    // includeKnownExploit: boolean; // ROX_CISA_KEV
-    includeNvdCvss: boolean;
-};
-
-export type VulnerabilityReportFilters = VulnerabilityReportFiltersBase & CvesSince;
-*/
-
 export type CvesSince =
     | {
           allVuln: boolean;
