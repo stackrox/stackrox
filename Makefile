@@ -509,9 +509,9 @@ main-build-nodeps:
 		sensor/admission-control \
 		sensor/kubernetes \
 		sensor/upgrader \
-		compliance/virtualmachines/roxagent
+		compliance/virtualmachines/roxagent \
+		roxctl
 	mv bin/linux_$(GOARCH)/cmd bin/linux_$(GOARCH)/stackrox-operator
-	CGO_ENABLED=0 $(GOBUILD) roxctl
 
 .PHONY: scale-build
 scale-build: build-prep
