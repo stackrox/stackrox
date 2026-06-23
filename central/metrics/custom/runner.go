@@ -6,12 +6,14 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	adminEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	expiryS "github.com/stackrox/rox/central/credentialexpiry/service"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/metrics/custom/administrative_events"
 	"github.com/stackrox/rox/central/metrics/custom/clusters"
 	"github.com/stackrox/rox/central/metrics/custom/expiry"
 	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
@@ -50,6 +52,7 @@ type runnerDatastores struct {
 	clusters    clusterDS.DataStore
 	policies    policyDS.DataStore
 	expiry      expiryS.Service
+	adminEvents adminEventDS.DataStore
 }
 
 func withHardcodedConfiguration(period uint32, descriptors map[string][]string) func(*storage.PrometheusMetrics) *storage.PrometheusMetrics_Group {
@@ -96,6 +99,12 @@ func makeRunner(ds *runnerDatastores) trackerRunner {
 		withHardcodedConfiguration(60, map[string][]string{
 			// rox_central_cert_exp_hours
 			"hours": expiry.LazyLabels.GetLabels(),
+		}),
+	}, {
+		administrative_events.New(ds.adminEvents),
+		withHardcodedConfiguration(60, map[string][]string{
+			// rox_central_admin_event_total_occurrences
+			"total_occurrences": administrative_events.LazyLabels.GetLabels(),
 		}),
 	},
 	}
