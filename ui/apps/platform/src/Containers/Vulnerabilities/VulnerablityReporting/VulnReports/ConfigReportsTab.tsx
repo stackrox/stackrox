@@ -45,11 +45,9 @@ import JobStatusPopoverContent from 'Components/ReportJob/JobStatusPopoverConten
 import MyLastJobStatus from 'Components/ReportJob/MyLastJobStatus';
 import useAuthStatus from 'hooks/useAuthStatus';
 import { reportDownloadURL } from 'services/ReportsService';
+import type { ImageVulnerabilityReportConfiguration } from 'services/ReportsService.types';
 
-import type {
-    ImageVulnerabilityReportConfiguration,
-    ImageVulnerabilityResourceScope,
-} from '../../ImageVulnerabilityReports/imageVulnerabilityReports.types';
+import type { ImageVulnerabilityResourceScope } from '../../ImageVulnerabilityReports/imageVulnerabilityReports.types';
 import useFetchReports from '../api/useFetchReports';
 import useRunReport from '../api/useRunReport';
 import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
@@ -58,11 +56,10 @@ import useDeleteModal, {
     isSuccessDeleteResult,
 } from '../hooks/useDeleteModal';
 import { vulnerabilityConfigurationReportDetailsPath } from '../pathsForVulnerabilityReporting';
-import type { ReportConfiguration } from 'services/ReportsService.types';
 
 // resourceScope: {} after roll back to previous version that does not support a newer resource scope.
 // Do not let user clone or edit report configuration which might cause worse problems after roll forward.
-function isResourceScopeAbsent({ resourceScope }: ReportConfiguration) {
+function isResourceScopeAbsent({ resourceScope }: ImageVulnerabilityReportConfiguration) {
     return Object.keys(resourceScope).length === 0;
 }
 
@@ -386,8 +383,7 @@ function ConfigReportsTab() {
                                 </Tr>
                             </Tbody>
                         )}
-                        {reportConfigurations.map((reportArg, rowIndex) => {
-                            const report = reportArg as ImageVulnerabilityReportConfiguration; // ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING
+                        {reportConfigurations.map((report, rowIndex) => {
                             const vulnReportURL = generatePath(
                                 vulnerabilityConfigurationReportDetailsPath,
                                 {
@@ -406,7 +402,7 @@ function ConfigReportsTab() {
                                         navigate(`${vulnReportURL}?action=edit`);
                                     },
                                     isDisabled:
-                                        isReportStatusPending || isResourceScopeAbsent(reportArg),
+                                        isReportStatusPending || isResourceScopeAbsent(report),
                                 },
                                 {
                                     isSeparator: true,
@@ -424,7 +420,7 @@ function ConfigReportsTab() {
                                     isDisabled:
                                         isReportStatusPending ||
                                         report.notifiers.length === 0 ||
-                                        isResourceScopeAbsent(reportArg),
+                                        isResourceScopeAbsent(report),
                                 },
                                 {
                                     title: 'Generate download',
@@ -433,7 +429,7 @@ function ConfigReportsTab() {
                                         runReport(report.id, 'DOWNLOAD');
                                     },
                                     isDisabled:
-                                        isReportStatusPending || isResourceScopeAbsent(reportArg),
+                                        isReportStatusPending || isResourceScopeAbsent(report),
                                 },
                                 {
                                     title: 'Clone report',
@@ -441,7 +437,7 @@ function ConfigReportsTab() {
                                         event.preventDefault();
                                         navigate(`${vulnReportURL}?action=clone`);
                                     },
-                                    isDisabled: isResourceScopeAbsent(reportArg),
+                                    isDisabled: isResourceScopeAbsent(report),
                                 },
                                 {
                                     isSeparator: true,
