@@ -63,9 +63,8 @@ build_agent() {
 }
 
 # Prints a systemd unit (to stdout) for the main roxagent service.
-# Args: host paths that exist on the VM (from NATIVE_MOUNT_CANDIDATES).
-# Each path is bind-mounted read-only into the /tmp/roxroot sandbox so
-# roxagent can inspect host OS metadata without full root access.
+# All NATIVE_MOUNT_CANDIDATES are included with the systemd "-" prefix
+# so missing sources are silently skipped instead of requiring a probe.
 create_native_service_file() {
     local mount_path
 
@@ -81,8 +80,8 @@ User=root
 BindPaths=/tmp/roxagent-rpm:/tmp/roxroot/var/lib/rpm
 EOF
 
-    for mount_path in "$@"; do
-        printf 'BindReadOnlyPaths=%s:/tmp/roxroot%s\n' "$mount_path" "$mount_path"
+    for mount_path in "${NATIVE_MOUNT_CANDIDATES[@]}"; do
+        printf 'BindReadOnlyPaths=-%s:/tmp/roxroot%s\n' "$mount_path" "$mount_path"
     done
 
     cat <<'EOF'
@@ -111,8 +110,8 @@ RestartSec=5s
 BindPaths=/tmp/roxagent-rpm:/tmp/roxroot/var/lib/rpm
 EOF
 
-    for mount_path in "$@"; do
-        printf 'BindReadOnlyPaths=%s:/tmp/roxroot%s\n' "$mount_path" "$mount_path"
+    for mount_path in "${NATIVE_MOUNT_CANDIDATES[@]}"; do
+        printf 'BindReadOnlyPaths=-%s:/tmp/roxroot%s\n' "$mount_path" "$mount_path"
     done
 
     cat <<'EOF'
@@ -147,8 +146,7 @@ printf \"%s\\n%s\\n\" \"\$serve_enabled\" \"\$serve_active\"" \
 }
 
 # Deploys roxagent onto a single VM ($1) using the pre-built binary ($2).
-# Steps: probe which host paths exist -> scp binary + systemd units ->
-# install and enable via SSH -> run once and verify health.
+# Steps: scp binary + systemd units -> install and enable via SSH -> verify.
 # Appends the VM name to NATIVE_AGENT_READY_VMS or NATIVE_AGENT_FAILED_VMS.
 install_on_vm() {
     local vm_name="$1" binary_path="$2"
@@ -156,23 +154,6 @@ install_on_vm() {
     echo "--- Installing roxagent (native) on $vm_name ---"
 
     build_ssh_opts
-
-    echo "  Probing host inputs for curated roxroot mount set..."
-    local probe_cmd mount_path
-    probe_cmd="for path in"
-    for mount_path in "${NATIVE_MOUNT_CANDIDATES[@]}"; do
-        probe_cmd+=" ${mount_path}"
-    done
-    probe_cmd+="; do [ -e \"\$path\" ] && printf \"%s\\n\" \"\$path\"; done"
-
-    local -a available_mounts=()
-    while IFS= read -r mount_path; do
-        [[ -n "$mount_path" ]] && available_mounts+=("$mount_path")
-    done < <(
-        virtctl ssh "${_ssh_opts[@]}" \
-            --command "$probe_cmd" \
-            "${SSH_USER}@vmi/${vm_name}" 2>/dev/null || true
-    )
 
     echo "  Copying binary..."
     virtctl scp "${_ssh_opts[@]}" \
@@ -183,8 +164,8 @@ install_on_vm() {
     local service_file serve_service_file prep_service_file timer_file
     service_file="$(mktemp)"
     serve_service_file="$(mktemp)"
-    create_native_service_file "${available_mounts[@]}" > "$service_file"
-    create_native_serve_file "${available_mounts[@]}" > "$serve_service_file"
+    create_native_service_file > "$service_file"
+    create_native_serve_file > "$serve_service_file"
     prep_service_file="$SYSTEMD_DIR/roxagent-prep.service"
     timer_file="$SYSTEMD_DIR/roxagent.timer"
 
