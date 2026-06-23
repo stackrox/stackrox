@@ -2,7 +2,13 @@
 set -e
 
 export ORCH="openshift"
-export ORCH_CMD="oc"
+if [[ -n "${CI:-}" ]]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    export KUBECTL="oc"
+    export ORCH_CMD="${SCRIPT_DIR}/../../scripts/retry-kubectl.sh"
+else
+    export ORCH_CMD="oc"
+fi
 export ORCH_FULLNAME="openshift"
 
 export ADMISSION_CONTROLLER_POD_EVENTS="${ADMISSION_CONTROLLER_POD_EVENTS:-false}"

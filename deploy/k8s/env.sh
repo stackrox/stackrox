@@ -2,7 +2,12 @@
 set -e
 
 export ORCH="k8s"
-export ORCH_CMD="kubectl"
+if [[ -n "${CI:-}" ]]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    export ORCH_CMD="${SCRIPT_DIR}/../../scripts/retry-kubectl.sh"
+else
+    export ORCH_CMD="kubectl"
+fi
 export ORCH_FULLNAME="kubernetes"
 export CLUSTER_TYPE="KUBERNETES_CLUSTER"
 
