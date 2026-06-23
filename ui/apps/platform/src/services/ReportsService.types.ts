@@ -185,8 +185,8 @@ export type ViewBasedReportSnapshot = Snapshot & {
 // TODO temporary disjunction until snamshot has type property.
 type VulnerabilityReportFilters =
     | GenericVulnerabilityReportFilters
-    | ImageVulnerabilityReportConfigurationForCollection
-    | ImageVulnerabilityReportConfigurationForEntity;
+    | ImageVulnerabilityReportFiltersForCollection
+    | ImageVulnerabilityReportFiltersForEntity;
 
 // TODO distinguish configured versus view-based instead of combining them.
 export type ConfiguredReportSnapshot = Snapshot & {
