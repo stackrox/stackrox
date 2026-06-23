@@ -18,6 +18,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/rest"
 )
 
 func createTestSecret(name, namespace string, data map[string][]byte) *v1.Secret {
@@ -33,6 +34,8 @@ func createTestSecret(name, namespace string, data map[string][]byte) *v1.Secret
 type testClient struct {
 	k8s kubernetes.Interface
 }
+
+func (t *testClient) RESTConfig() *rest.Config { return nil }
 
 func (t *testClient) Kubernetes() kubernetes.Interface {
 	return t.k8s
