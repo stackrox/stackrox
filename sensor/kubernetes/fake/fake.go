@@ -36,6 +36,7 @@ import (
 	fakeDynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/rest"
 )
 
 const (
@@ -107,6 +108,11 @@ type clientSetImpl struct {
 	openshiftConfig   configVersioned.Interface
 	openshiftRoute    routeVersioned.Interface
 	openshiftOperator operatorVersioned.Interface
+}
+
+// RESTConfig returns nil for fake clients.
+func (c *clientSetImpl) RESTConfig() *rest.Config {
+	return nil
 }
 
 // Kubernetes returns the fake Kubernetes clientset

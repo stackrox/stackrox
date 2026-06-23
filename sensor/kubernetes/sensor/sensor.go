@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -205,13 +204,11 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		components = append(components, virtualMachineHandler)
 		complianceMultiplexer.AddComponentWithComplianceC(virtualMachineHandler)
 
-		// ponytail: POC-only pull mode — production should get REST config from client.Interface.
-		kvConfig, kvErr := k8sutil.GetK8sInClusterConfig()
-		if kvErr != nil {
-			log.Warnf("VSOCK pull mode disabled (no in-cluster config): %v", kvErr)
-		} else {
+		if kvConfig := cfg.k8sClient.RESTConfig(); kvConfig != nil {
 			components = append(components,
 				puller.New(storeProvider.VirtualMachines(), virtualMachineHandler, vsockdialer.NewMultiDialer(kvConfig)))
+		} else {
+			log.Warn("VSOCK pull mode disabled (no REST config available)")
 		}
 	}
 
