@@ -94,26 +94,23 @@ EOF
 
 SYSTEMD_DIR="$SCRIPT_DIR/systemd"
 
-# Checks whether roxagent is healthy on $1 (vm_name) by SSHing in and
-# querying systemd. Returns 0 only if the last service run succeeded,
-# the timer is enabled, and the timer is active.
+# Checks whether roxagent-serve is healthy on $1 (vm_name) by SSHing in and
+# querying systemd. Returns 0 only if the serve service is enabled and active.
 native_agent_service_verified() {
     local vm_name="$1"
     build_ssh_opts
 
     local status_output
     status_output="$(virtctl ssh "${_ssh_opts[@]}" \
-        --command "service_result=\"\$(systemctl show roxagent.service -p Result --value 2>/dev/null || true)\";
-timer_enabled=\"\$(systemctl is-enabled roxagent.timer 2>/dev/null || true)\";
-timer_active=\"\$(systemctl is-active roxagent.timer 2>/dev/null || true)\";
-printf \"%s\\n%s\\n%s\\n\" \"\$service_result\" \"\$timer_enabled\" \"\$timer_active\"" \
+        --command "serve_enabled=\"\$(systemctl is-enabled roxagent-serve.service 2>/dev/null || true)\";
+serve_active=\"\$(systemctl is-active roxagent-serve.service 2>/dev/null || true)\";
+printf \"%s\\n%s\\n\" \"\$serve_enabled\" \"\$serve_active\"" \
         "${SSH_USER}@vmi/${vm_name}" 2>/dev/null || true)"
 
     mapfile -t status_lines <<< "$status_output"
 
-    [[ "${status_lines[0]:-}" == "success" &&
-        "${status_lines[1]:-}" == "enabled" &&
-        "${status_lines[2]:-}" == "active" ]]
+    [[ "${status_lines[0]:-}" == "enabled" &&
+        "${status_lines[1]:-}" == "active" ]]
 }
 
 # Deploys roxagent onto a single VM ($1) using the pre-built binary ($2).
@@ -150,11 +147,12 @@ install_on_vm() {
         "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent"
 
     echo "  Installing systemd units..."
-    local service_file prep_service_file timer_file
+    local service_file prep_service_file timer_file serve_service_file
     service_file="$(mktemp)"
     create_native_service_file "${available_mounts[@]}" > "$service_file"
     prep_service_file="$SYSTEMD_DIR/roxagent-prep.service"
     timer_file="$SYSTEMD_DIR/roxagent.timer"
+    serve_service_file="$SYSTEMD_DIR/roxagent-serve.service"
 
     virtctl scp "${_ssh_opts[@]}" \
         "$prep_service_file" \
@@ -165,6 +163,9 @@ install_on_vm() {
     virtctl scp "${_ssh_opts[@]}" \
         "$timer_file" \
         "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent.timer"
+    virtctl scp "${_ssh_opts[@]}" \
+        "$serve_service_file" \
+        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent-serve.service"
     rm -f "$service_file"
 
     virtctl ssh "${_ssh_opts[@]}" \
@@ -175,9 +176,10 @@ rm -f /tmp/roxagent
 sudo cp /tmp/roxagent-prep.service /etc/systemd/system/roxagent-prep.service
 sudo cp /tmp/roxagent.service /etc/systemd/system/roxagent.service
 sudo cp /tmp/roxagent.timer /etc/systemd/system/roxagent.timer
-sudo restorecon -Rv /etc/systemd/system/roxagent-prep.service /etc/systemd/system/roxagent.service /etc/systemd/system/roxagent.timer 2>/dev/null || true
+sudo cp /tmp/roxagent-serve.service /etc/systemd/system/roxagent-serve.service
+sudo restorecon -Rv /etc/systemd/system/roxagent-prep.service /etc/systemd/system/roxagent.service /etc/systemd/system/roxagent.timer /etc/systemd/system/roxagent-serve.service 2>/dev/null || true
 sudo systemctl daemon-reload
-sudo systemctl enable --now roxagent.timer
+sudo systemctl enable --now roxagent-serve.service
 echo "NATIVE_INSTALL_OK"' \
         "${SSH_USER}@vmi/${vm_name}"
 
@@ -185,7 +187,7 @@ echo "NATIVE_INSTALL_OK"' \
     echo "  Verifying agent status on $vm_name..."
     local verify_output
     verify_output="$(virtctl ssh "${_ssh_opts[@]}" \
-        --command 'sudo systemctl start roxagent.service; echo "---"; sudo systemctl status roxagent.timer --no-pager; echo "---"; sudo journalctl -u roxagent.service --no-pager -n 20' \
+        --command 'echo "---"; sudo systemctl status roxagent-serve.service --no-pager; echo "---"; sudo journalctl -u roxagent-serve.service --no-pager -n 20' \
         "${SSH_USER}@vmi/${vm_name}" 2>&1 || true)"
     printf '%s\n' "$verify_output"
 

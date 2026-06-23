@@ -1,0 +1,16 @@
+[Unit]
+Description=StackRox VM Agent - VSOCK pull server (POC)
+After=network.target roxagent-prep.service
+Requires=roxagent-prep.service
+
+[Service]
+Type=simple
+User=root
+Restart=on-failure
+RestartSec=5s
+ExecStart=/usr/local/bin/roxagent serve --port 818 --host-path /tmp/roxroot
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
