@@ -1,7 +1,7 @@
 ARG PG_VERSION=15
 
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:8bca01ace56d684c43f59d9c60c8e9516ee30c46e7d7357c2f9b526369d3fddf AS go-builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:8bca01ace56d684c43f59d9c60c8e9516ee30c46e7d7357c2f9b526369d3fddf AS go-base
 
 RUN dnf -y install --allowerasing jq
 
@@ -15,12 +15,16 @@ ENV BUILD_TAG="$BUILD_TAG"
 
 ENV GOFLAGS=""
 # TODO(ROX-20240): enable non-release development builds.
-ENV GOTAGS="release"
 ENV CI=1
 
+
+FROM go-base AS cli-builder
+
 # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy.
-# CLI builds are without strictfipsruntime (and CGO_ENABLED is set to 0) because these binaries are for user download and use outside the cluster.
-RUN make roxctl-build
+RUN GOTAGS="release" make roxctl-build copy-cli-binaries-to-image-dir
+
+
+FROM go-base AS go-builder
 
 ENV CGO_ENABLED=1
 # TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
@@ -34,7 +38,8 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
     mkdir -p image/rhel/docs/api/v2 && \
     ./scripts/mergeswag.sh 2 generated/api/v2 >image/rhel/docs/api/v2/swagger.json
 
-RUN make copy-go-binaries-to-image-dir
+RUN make copy-server-binaries-to-image-dir && \
+    cp bin/linux_$(go env GOARCH)/roxctl image/rhel/bin/roxctl
 
 
 FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:6a3eed5bfd580871fde7329421ce0b2ae533e28792f6db1accbd77602e271ad7 as ui-builder
@@ -97,16 +102,16 @@ COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/migrator /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/central /stackrox/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/compliance /stackrox/bin/
-COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl* /assets/downloads/cli/
+COPY --from=cli-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl* /assets/downloads/cli/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/kubernetes-sensor /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/sensor-upgrader /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/admission-control /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/config-controller /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxagent /stackrox/bin/
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /stackrox/
+COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/bin/roxctl /stackrox/roxctl
 RUN GOARCH=$(uname -m) ; \
     case $GOARCH in x86_64) GOARCH=amd64 ;; aarch64) GOARCH=arm64 ;; esac ; \
-    ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /stackrox/roxctl ; \
     ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /assets/downloads/cli/roxctl-linux
 
 ARG BUILD_TAG
