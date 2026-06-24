@@ -14,6 +14,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+- ROX-35181: Administrative events are now exposed as a custom Prometheus metric (`rox_central_admin_event_total_occurrences`), aggregated by Type, Level, Domain, ResourceType, and ResourceName.
+
 ### Removed Features
 
 ### Deprecated Features
