@@ -5,58 +5,18 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// GetValidReportConfiguration returns a mock report configuration
+// GetValidReportConfiguration returns a mock V2 report configuration
 func GetValidReportConfiguration() *storage.ReportConfiguration {
 	return &storage.ReportConfiguration{
 		Id:          "report1",
 		Name:        "App Team 1 Report",
 		Description: "Report for CVEs in app team 1's infrastructure",
 		Type:        storage.ReportConfiguration_VULNERABILITY,
-		Filter: &storage.ReportConfiguration_VulnReportFilters{
-			VulnReportFilters: &storage.VulnerabilityReportFilters{
-				Fixability:      storage.VulnerabilityReportFilters_FIXABLE,
-				SinceLastReport: false,
-				Severities:      []storage.VulnerabilitySeverity{storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY},
-			},
-		},
-		ScopeId: "scope-1",
-		NotifierConfig: &storage.ReportConfiguration_EmailConfig{
-			EmailConfig: &storage.EmailNotifierConfiguration{
-				NotifierId:   "email-notifier-gmail",
-				MailingLists: []string{"foo@yahoo.com"},
-			},
-		},
-		Schedule: &storage.Schedule{
-			IntervalType: storage.Schedule_WEEKLY,
-			Interval: &storage.Schedule_DaysOfWeek_{
-				DaysOfWeek: &storage.Schedule_DaysOfWeek{
-					Days: []int32{1},
-				},
-			},
-		},
-		LastRunStatus:         nil,
-		LastSuccessfulRunTime: nil,
-	}
-}
-
-// GetValidReportConfigWithMultipleNotifiersV1 returns a valid storage report configuration object with 2 email notifier configs for v1 workflow
-func GetValidReportConfigWithMultipleNotifiersV1() *storage.ReportConfiguration {
-	return &storage.ReportConfiguration{
-		Id:          "report1",
-		Name:        "App Team 1 Report",
-		Description: "Report for CVEs in app team 1's infrastructure",
-		Type:        storage.ReportConfiguration_VULNERABILITY,
+		Version:     2,
 		Filter: &storage.ReportConfiguration_VulnReportFilters{
 			VulnReportFilters: &storage.VulnerabilityReportFilters{
 				Fixability: storage.VulnerabilityReportFilters_FIXABLE,
 				Severities: []storage.VulnerabilitySeverity{storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY},
-				ImageTypes: []storage.VulnerabilityReportFilters_ImageType{
-					storage.VulnerabilityReportFilters_DEPLOYED,
-					storage.VulnerabilityReportFilters_WATCHED,
-				},
-				CvesSince: &storage.VulnerabilityReportFilters_SinceLastSentScheduledReport{
-					SinceLastSentScheduledReport: true,
-				},
 			},
 		},
 		Schedule: &storage.Schedule{
@@ -67,11 +27,21 @@ func GetValidReportConfigWithMultipleNotifiersV1() *storage.ReportConfiguration 
 				},
 			},
 		},
-		ScopeId: "collection-1",
-		NotifierConfig: &storage.ReportConfiguration_EmailConfig{
-			EmailConfig: &storage.EmailNotifierConfiguration{
-				NotifierId:   "email-notifier-yahoo",
-				MailingLists: []string{"foo@yahoo.com"},
+		ResourceScope: &storage.ResourceScope{
+			ScopeReference: &storage.ResourceScope_CollectionId{
+				CollectionId: "collection-1",
+			},
+		},
+		Notifiers: []*storage.NotifierConfiguration{
+			{
+				Ref: &storage.NotifierConfiguration_Id{
+					Id: "email-notifier-gmail",
+				},
+				NotifierConfig: &storage.NotifierConfiguration_EmailConfig{
+					EmailConfig: &storage.EmailNotifierConfiguration{
+						MailingLists: []string{"foo@yahoo.com"},
+					},
+				},
 			},
 		},
 	}
@@ -137,87 +107,6 @@ func GetValidReportConfigWithMultipleNotifiersV2() *storage.ReportConfiguration 
 			},
 		},
 	}
-}
-
-// GetInvalidReportConfigurationNoNotifier returns a mock report configuration without a notifier
-func GetInvalidReportConfigurationNoNotifier() *storage.ReportConfiguration {
-	rc := GetValidReportConfiguration()
-	rc.NotifierConfig = nil
-	return rc
-}
-
-// GetInvalidReportConfigurationIncorrectSchedule returns a mock report configuration with an invalid schedule
-func GetInvalidReportConfigurationIncorrectSchedule() *storage.ReportConfiguration {
-	rc := GetValidReportConfiguration()
-	rc.Schedule = &storage.Schedule{
-		IntervalType: storage.Schedule_WEEKLY,
-		Interval: &storage.Schedule_DaysOfWeek_{
-			DaysOfWeek: &storage.Schedule_DaysOfWeek{
-				Days: []int32{8},
-			},
-		},
-	}
-	return rc
-}
-
-// GetInvalidReportConfigurationMissingSchedule returns a mock report configuration without a schedule
-func GetInvalidReportConfigurationMissingSchedule() *storage.ReportConfiguration {
-	rc := GetValidReportConfiguration()
-	rc.Schedule = nil
-	return rc
-}
-
-// GetInvalidReportConfigurationMissingDaysOfWeek returns a mock report configuration with an invalid schedule that is
-// missing days of week
-func GetInvalidReportConfigurationMissingDaysOfWeek() *storage.ReportConfiguration {
-	rc := GetValidReportConfiguration()
-	rc.Schedule = &storage.Schedule{
-		IntervalType: storage.Schedule_WEEKLY,
-		Interval: &storage.Schedule_DaysOfWeek_{
-			DaysOfWeek: &storage.Schedule_DaysOfWeek{
-				Days: []int32{},
-			},
-		},
-	}
-	return rc
-}
-
-// GetInvalidReportConfigurationMissingDaysOfMonth returns a mock report configuration with an invalid schedule that is
-// missing days of month
-func GetInvalidReportConfigurationMissingDaysOfMonth() *storage.ReportConfiguration {
-	rc := GetValidReportConfiguration()
-	rc.Schedule = &storage.Schedule{
-		IntervalType: storage.Schedule_MONTHLY,
-		Interval: &storage.Schedule_DaysOfMonth_{
-			DaysOfMonth: &storage.Schedule_DaysOfMonth{
-				Days: nil,
-			},
-		},
-	}
-	return rc
-}
-
-// GetInvalidReportConfigurationDailySchedule returns a mock report configuration with daily intervalType in schedule
-func GetInvalidReportConfigurationDailySchedule() *storage.ReportConfiguration {
-	rc := GetValidReportConfiguration()
-	rc.Schedule = &storage.Schedule{
-		IntervalType: storage.Schedule_DAILY,
-		Interval:     nil,
-	}
-	return rc
-}
-
-// GetInvalidReportConfigurationIncorrectEmailV1 returns a mock report configuration with incorrect email
-func GetInvalidReportConfigurationIncorrectEmailV1() *storage.ReportConfiguration {
-	rc := GetValidReportConfiguration()
-
-	rc.NotifierConfig = &storage.ReportConfiguration_EmailConfig{
-		EmailConfig: &storage.EmailNotifierConfiguration{
-			NotifierId:   "email-notifier-gmail",
-			MailingLists: []string{"sdfdksfjk"},
-		},
-	}
-	return rc
 }
 
 // GetValidV2ReportConfigWithMultipleNotifiers returns a valid v2 api report configuration object with 2 email notifier configs
