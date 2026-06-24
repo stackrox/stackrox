@@ -1,0 +1,143 @@
+name: FIPS check-payload
+
+on:
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+    - labeled
+  push:
+    branches:
+    - release-*
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: 'Image tag to scan (e.g. 4.11.0 or konflux-<sha>.git)'
+        required: true
+        type: string
+
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch'
+      && format('FIPS check-payload {0}', inputs.image-tag)
+      || format('FIPS check-payload {0}', github.sha) }}
+
+concurrency:
+  group: fips-check-payload-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-payload:
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || github.event_name == 'push'
+      || contains(github.event.pull_request.labels.*.name, 'fips-check')
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: quay.io/rhacs-eng
+      IMAGES: release-main release-central-db release-roxctl
+    steps:
+      - name: Determine image tag
+        id: tag
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "tag=${{ inputs.image-tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=konflux-${{ github.sha }}.git" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Wait for Konflux images
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          tag="${{ steps.tag.outputs.tag }}"
+          echo "Waiting for Konflux images with tag: ${tag}"
+          images=(${{ env.IMAGES }})
+          for image in "${images[@]}"; do
+            ref="${{ env.REGISTRY }}/${image}:${tag}"
+            echo "Polling for ${ref}..."
+            for attempt in $(seq 1 90); do
+              if docker manifest inspect "${ref}" > /dev/null 2>&1; then
+                echo "${ref} is available (attempt ${attempt})"
+                break
+              fi
+              if [[ $attempt -eq 90 ]]; then
+                echo "Timed out waiting for ${ref} after 45 minutes"
+                exit 1
+              fi
+              sleep 30
+            done
+          done
+          echo "All images available"
+
+      - name: Checkout check-payload
+        uses: actions/checkout@v4
+        with:
+          repository: stackrox/openshift-check-payload
+          ref: development
+
+      - uses: actions/setup-go@v5
+
+      - name: Install oc CLI
+        run: |
+          if command -v oc &> /dev/null; then exit 0; fi
+          curl --retry 5 -sLo /tmp/oc.tar.gz \
+            https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-client-linux.tar.gz
+          tar xzf /tmp/oc.tar.gz -C /usr/local/bin oc
+          oc version
+
+      - name: Install podman
+        run: |
+          which podman || sudo apt-get -y install podman
+          podman -v
+
+      - name: Login to Quay.io
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Scan images for FIPS compliance
+        run: |
+          tag="${{ steps.tag.outputs.tag }}"
+          images=(${{ env.IMAGES }})
+          exitcode=0
+
+          echo "## FIPS check-payload results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Image | Status | Details |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-------|--------|---------|" >> "$GITHUB_STEP_SUMMARY"
+
+          for image in "${images[@]}"; do
+            ref="${{ env.REGISTRY }}/${image}:${tag}"
+            logfile="/tmp/scan-${image}.log"
+            echo "::group::Scanning ${ref}"
+
+            if podman unshare go run main.go scan operator --verbose --spec "${ref}" 2>&1 \
+                | tee "${logfile}"; then
+              echo "| ${image} | :white_check_mark: pass | |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              (( exitcode++ ))
+              details=""
+              for status_type in warning failed; do
+                if grep -q "status=\"${status_type}\"" "${logfile}"; then
+                  findings=$(grep "status=\"${status_type}\"" "${logfile}" \
+                    | grep -o 'path=.*error="[^"]*"' | head -3)
+                  details="${details} ${findings}"
+                fi
+              done
+              echo "| ${image} | :x: fail | ${details} |" >> "$GITHUB_STEP_SUMMARY"
+            fi
+
+            echo "::endgroup::"
+            rm -f "${logfile}"
+          done
+
+          if [[ $exitcode -ne 0 ]]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo ":x: **${exitcode} image(s) failed FIPS check-payload scan**" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo ":white_check_mark: **All images passed FIPS check-payload scan**" >> "$GITHUB_STEP_SUMMARY"
