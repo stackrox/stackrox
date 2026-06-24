@@ -33,7 +33,7 @@ opt-in into this behavior:
 
 ```bash
 export USE_ROXIE_DEPLOY=true
-/deploy/deploy.sh
+./deploy/deploy.sh
 ```
 
 Any extra arguments you pass to `deploy.sh` are forwarded directly to roxie,
