@@ -93,6 +93,22 @@ func TestNewV7(t *testing.T) {
 	})
 }
 
+func TestNewV5BackwardCompatibility(t *testing.T) {
+	// RFC 4122 Appendix B test vector: DNS namespace + "example.com"
+	dnsNS := FromStringOrNil("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
+	got := NewV5(dnsNS, "example.com")
+	assert.Equal(t, "cfbff0d1-9375-5685-968c-48ce8b15ae17", got.String())
+}
+
+func TestNewV5FromNonUUIDsBackwardCompatibility(t *testing.T) {
+	got := NewV5FromNonUUIDs("test-namespace", "test-name")
+	// Regenerating must produce the same UUID every time.
+	got2 := NewV5FromNonUUIDs("test-namespace", "test-name")
+	assert.Equal(t, got.String(), got2.String())
+	// Version nibble must be 5.
+	assert.Equal(t, byte('5'), got.String()[14])
+}
+
 func TestNewTestUUID(t *testing.T) {
 	test := NewTestUUID(-1)
 	require.NotNil(t, test)

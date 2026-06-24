@@ -151,14 +151,14 @@ func NewV5FromNonUUIDs(ns, name string) UUID {
 		panic(err)
 	}
 	return UUID{
-		uuid: uuid.NewSHA1(nsUUID, []byte(name)),
+		uuid: uuid.NewHash(newSHA1(), nsUUID, []byte(name), 5),
 	}
 }
 
 // NewV5 returns UUID based on SHA-1 hash of namespace UUID and name.
 func NewV5(ns UUID, name string) UUID {
 	return UUID{
-		uuid: uuid.NewSHA1(ns.uuid, []byte(name)),
+		uuid: uuid.NewHash(newSHA1(), ns.uuid, []byte(name), 5),
 	}
 }
 
