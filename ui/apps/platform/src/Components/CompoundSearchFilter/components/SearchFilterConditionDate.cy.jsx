@@ -38,8 +38,11 @@ function setup() {
 }
 
 function selectCondition(condition) {
+    const escapedCondition = condition.replace(/[()]/g, '\\$&');
     cy.get(selectors.conditionSelectToggle).click();
-    cy.get(`${selectors.conditionSelectItems} button:contains("${condition}")`).click();
+    cy.get(`${selectors.conditionSelectItems} button`)
+        .contains(new RegExp(`^${escapedCondition}$`, 'i'))
+        .click();
 }
 
 describe(Cypress.spec.relative, () => {
