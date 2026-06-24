@@ -116,6 +116,10 @@ gh_download_release() {
         -H "X-GitHub-Api-Version: 2026-03-10" \
         "https://api.github.com/repos/${repo}/releases/${version}" \
         | jq -r --arg asset_name "${asset_name}" '.assets[]|select(.name==$asset_name)|.id')"
+    if [[ -z "$asset_id" ]]; then
+        echo >&2 "Error: No asset ID found for asset name ${asset_name} for release tag ${version} in repo ${repo}"
+        exit 1
+    fi
     curl -fsSL --retry 3 --retry-delay 5 --retry-connrefused \
         -H 'Accept: application/octet-stream' \
         -o "$target" \
