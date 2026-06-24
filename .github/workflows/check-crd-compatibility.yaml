@@ -11,6 +11,8 @@ on:
     - opened
     - reopened
     - synchronize
+    paths-ignore:
+    - 'ui/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
