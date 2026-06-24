@@ -304,9 +304,15 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 	log.Info("Launching backend gRPC listener")
 	go func() {
 		if err := server.Serve(lis); err != nil {
-			log.Fatal(err)
+			// If gRPC shutdown was requested, then we should only log that the endpoint is stopping. Otherwise, this is happening
+			// for unknown reasons and a fatal error will be reported.
+			if a.shutdownInProgress.Load() {
+				log.Info("gRPC Stop requested: local endpoint shutting down")
+			} else {
+				log.Fatal(err)
+			}
+			return
 		}
-
 		if !a.shutdownInProgress.Load() {
 			log.Fatal("Unexpected local API server termination.")
 		}
