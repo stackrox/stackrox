@@ -677,46 +677,30 @@ When data in a table is derived from another, write records from the primary obj
 
 ### No-Serialized Store
 
-Use `--no-serialized` to generate a store where every proto field is stored as an individual database column. No `serialized` bytea blob is written.
+Use `--no-serialized` to generate a store where every proto field is stored as an individual database column. No `serialized` bytea blob is written. The generated store type is `NoSerializedStore[T]`.
 
-**When to use:**
-- New tables where you want to eliminate the serialized blob overhead.
-- Tables where SQL-level access to all fields is needed (reporting, complex joins).
-- Tables where the serialized blob would be large and mostly redundant with indexed columns.
-
-**Constraints:**
-- `sql:"-"` is **disallowed** — without a serialized blob, excluded fields would be silently lost. The walker panics if it encounters this.
-- All proto field types must be supported by the column scanner (scalars, timestamps, enums, UUIDs, string arrays, nested messages, repeated messages).
+> **Important:** `sql:"-"` is disallowed in no-serialized schemas — without a blob, excluded fields would be lost. The walker panics if it encounters this.
 
 **Proto:**
 ```protobuf
 message MyResource {
   string id = 1; // @gotags: search:"Resource ID" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Resource Name"
-  int32 priority = 3;
-  google.protobuf.Timestamp created_at = 4; // @gotags: sql:"type(timestamptz)"
-  repeated string tags = 5;
+  google.protobuf.Timestamp created_at = 3; // @gotags: sql:"type(timestamptz)"
 
-  // Embedded 1-to-1 message — flattened into parent table columns
-  message Metadata {
-    string author = 1;
-    int32 version = 2;
-  }
-  Metadata metadata = 6;
-
-  // Repeated message — child table (default)
+  // Repeated message — child table (default strategy)
   message Label {
     string key = 1;
     string value = 2;
   }
-  repeated Label labels = 7;
+  repeated Label labels = 4;
 
   // Repeated message — bytea in parent table (no child table)
   message Annotation {
     string key = 1;
     string value = 2;
   }
-  repeated Annotation annotations = 8; // @gotags: sql:"strategy(bytea)"
+  repeated Annotation annotations = 5; // @gotags: sql:"strategy(bytea)"
 }
 ```
 
@@ -727,20 +711,14 @@ message MyResource {
 
 **Generated SQL tables:**
 ```sql
--- No serialized column. All fields are individual columns.
 create table if not exists my_resources (
   Id uuid,
   Name varchar,
-  Priority integer,
   CreatedAt timestamptz,
-  Tags text[],
-  Metadata_Author varchar,
-  Metadata_Version integer,
   Annotations bytea,
   PRIMARY KEY(Id)
 )
 
--- Child table for repeated Label messages
 create table if not exists my_resources_labels (
   MyResources_Id uuid,
   idx int,
@@ -751,34 +729,9 @@ create table if not exists my_resources_labels (
 )
 ```
 
-#### Repeated Message Strategies
+Repeated message fields default to a child table. Use `sql:"strategy(bytea)"` to store them as a blob in the parent table instead (useful when the data doesn't need SQL-level access).
 
-For repeated message fields in a no-serialized store, there are two strategies:
-
-| Strategy | Syntax | Behavior |
-|----------|--------|----------|
-| `child_table` (default) | (no tag needed) | Creates a separate child table with parent FK + `idx` column. Best for data you need to query/join on. |
-| `bytea` | `sql:"strategy(bytea)"` | Serializes the repeated messages as a bytea blob in the parent table. Best for opaque data that doesn't need SQL-level access. |
-
-#### Child Fetch Control
-
-No-serialized stores with child tables support functional options to control whether child data is fetched:
-
-```go
-// Default: fetches parent + all child tables
-obj, found, err := store.Get(ctx, id)
-
-// Skip child table fetching for performance (repeated message fields will be nil/empty)
-obj, found, err := store.GetWithOptions(ctx, id, pgSearch.WithoutChildren())
-
-// Batch walk without children
-err := store.WalkByQueryWithOptions(ctx, query, func(obj *T) error {
-    // obj.Labels will be nil, obj.Annotations (bytea) will still be populated
-    return nil
-}, pgSearch.WithoutChildren())
-```
-
-> **Note:** `WithoutChildren()` only skips child _table_ fetches. Fields stored with `strategy(bytea)` are in the parent table and are always returned.
+No-serialized stores support `GetWithOptions(ctx, id, pgSearch.WithoutChildren())` and `WalkByQueryWithOptions` to skip child table fetches for performance. `strategy(bytea)` fields are in the parent table and are always returned regardless.
 
 ---
 
