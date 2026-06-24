@@ -28,7 +28,14 @@ Ask the user which scenario applies:
 - Needs a new proto file in `proto/storage/`, a new gen.go, and registration in several files.
 - Follow all steps below.
 
-### C) Adding a v2 API for a storage proto
+### C) Creating a new no-serialized store
+
+- Same as (B) but uses `--no-serialized` flag — all proto fields become individual DB columns, no serialized bytea blob.
+- Generates a `NoSerializedStore[T]` with column-based scan/insert and optional child fetch control.
+- `sql:"-"` is **disallowed** (walker panics). Use `sql:"strategy(bytea)"` for repeated messages you want in the parent table.
+- Follow all steps below, with the no-serialized architectural decision in Step 3d.
+
+### D) Adding a v2 API for a storage proto
 
 - Storage protos (`proto/storage/`) are written first. v2 API protos (`proto/api/v2/`) are created afterward as a separate layer.
 - v2 API protos MUST have separate message bodies from storage protos — even if the fields look similar.
@@ -60,16 +67,21 @@ When adding a field, walk through these questions with the user. Refer to `proto
    - Yes -> `sql:"index=btree"` (default), `brin` for time-series, `gin` for arrays. `hash` indexes have been observed to be expensive; prefer btree unless the user explicitly requests a hash index.
    - Part of a composite unique index? -> `sql:"index=name:my_index;category:unique"` (same name on all fields)
 
-5. **Should this field be a policy criteria?**
+5. **Is this a repeated message field? Which storage strategy?**
+   - Default (no tag) -> creates a child table with parent FK + `idx` column
+   - `sql:"strategy(bytea)"` -> serializes as bytea in the parent table (no child table, no SQL-level access to individual elements)
+   - Child table is best for queryable/joinable data. Bytea is best for opaque data that doesn't need SQL access.
+
+6. **Should this field be a policy criteria?**
    - Yes -> `policy:"Display Name"`
 
-6. **Is this a sensitive credential?**
+7. **Is this a sensitive credential?**
    - Yes -> `scrub:"always"` for secrets, `scrub:"dependent"` for related fields like endpoints
 
-7. **Should this field be excluded from hash computation?**
+8. **Should this field be excluded from hash computation?**
    - Yes (timestamps, computed scores, the hash field itself) -> `hash:"ignore"` or `sensorhash:"ignore"`
 
-8. **Is this an endpoint URL that must not be localhost?**
+9. **Is this an endpoint URL that must not be localhost?**
    - Yes -> `validate:"nolocalendpoint"`
 
 ## Step 3: Architectural Decisions
@@ -120,7 +132,30 @@ Without `--search-scope`, the search framework BFS-traverses ALL connected schem
 **Ask the user:**
 > "Are there overlapping search fields with connected tables? Overlapping names are sometimes necessary for business logic, but be aware that `--search-scope` can only exclude entire tables — it cannot resolve ambiguity between tables that are both in scope. If overlapping names are intentional, verify that the BFS join path produces correct results for your queries."
 
-### 3c. API Proto vs Storage Proto
+### 3c. Serialized vs No-Serialized Store
+
+**Option 1: Serialized (default)**
+- A `serialized` bytea column stores the full proto blob alongside indexed columns.
+- Reads deserialize from the blob — fast single-row retrieval, no need to scan every column.
+- Data is duplicated between the blob and indexed columns.
+- `sql:"-"` can exclude fields from columns (they're still in the blob).
+- Mature, battle-tested path used by all existing stores.
+
+**Option 2: No-Serialized (`--no-serialized`)**
+- All proto fields become individual DB columns. No serialized blob.
+- No data duplication. Every field is directly queryable via SQL.
+- Generated store is `NoSerializedStore[T]` with column-based scan/insert.
+- Supports child fetch control: `WithChildren()` / `WithoutChildren()` functional options.
+- `sql:"-"` is disallowed (walker panics). Use `sql:"strategy(bytea)"` for repeated messages that don't need SQL access.
+- Best for new tables where you want full SQL-level access to all fields.
+
+**Ask the user:**
+> "Should this store use the default serialized blob or the no-serialized mode?
+> - Serialized: proven, fast single-row reads, allows `sql:\"-\"` exclusions.
+> - No-serialized: no data duplication, full SQL access to all fields, child fetch control.
+> - No-serialized is recommended for new tables unless you need `sql:\"-\"` exclusions."
+
+### 3d. API Proto vs Storage Proto
 
 For v2 APIs, storage and API protos MUST be separate messages even if they look similar.
 
@@ -159,6 +194,11 @@ Select flags based on the decisions above. Common patterns:
 **Schema-only (hand-written store):**
 ```go
 //go:generate pg-table-bindings-wrapper --type=storage.MyResource --schema-only --search-category MY_RESOURCES
+```
+
+**No-serialized store (all fields as columns):**
+```go
+//go:generate pg-table-bindings-wrapper --type=storage.MyResource --no-serialized --search-category MY_RESOURCES
 ```
 
 **Singleton (config/settings):**

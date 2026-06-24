@@ -26,6 +26,7 @@ This document is the comprehensive reference for StackRox proto `@gotags:` annot
   - [Excluding Proto Fields from SQL Table](#excluding-proto-fields-from-sql-table)
   - [Restricting Searching to Specific Tables](#restricting-searching-to-specific-tables)
   - [Generating Read-Only Store](#generating-read-only-store)
+  - [No-Serialized Store](#no-serialized-store)
 - [Proto Type to SQL Type Mapping](#proto-type-to-sql-type-mapping)
 - [Notable Code References](#notable-code-references)
 
@@ -39,6 +40,8 @@ The Postgres store layer primarily comprises two components:
 - **Store** -- provides an interface to the underlying SQL table which stores the data.
 
 A column is added in the generated table for each proto field which is tagged as a constraint or searchable. By default, for all top-level proto messages, the `serialized` column is added to the table. `serialized` records all bytes of the proto object.
+
+When `--no-serialized` is used, **all** proto fields become individual DB columns and no `serialized` bytea blob is stored. This eliminates data duplication but requires every field to be scannable. See [No-Serialized Store](#no-serialized-store) for details.
 
 ---
 
@@ -93,8 +96,11 @@ Controls how proto fields map to SQL columns in the generated schema.
 | Ignore child FKs | `sql:"ignore-fks"` | Ignore FK tags from sub-fields. |
 | Ignore child indexes | `sql:"ignore-index"` | Ignore index tags from sub-fields. |
 | Ignore search labels | `sql:"ignore_labels(Label1,Label2)"` | Skip specific search labels from embedded message fields. |
+| Repeated strategy | `sql:"strategy(bytea)"` | For repeated message fields: store as a serialized bytea blob in the parent table instead of creating a child table. Valid values: `bytea`, `child_table` (default). See [No-Serialized Store](#no-serialized-store). |
 
 > **Warning:** Multiple primary keys are highly discouraged. Use composite primary keys via `postgres.IDFromPks(...)` (`pkg/search/postgres/utils.go`) instead.
+
+> **Warning:** `sql:"-"` is incompatible with `--no-serialized`. Without a serialized blob, excluded fields would be silently lost on read. The walker panics if it encounters `sql:"-"` in a no-serialized schema. Use `sql:"strategy(bytea)"` for repeated messages you want to keep in the parent table.
 
 **Examples:**
 ```protobuf
@@ -114,6 +120,9 @@ string value = 3;            // @gotags: sql:"index=category:unique;name:groups_
 
 // Embedded entity with ignored PK and search labels
 Policy policy = 2; // @gotags: sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"
+
+// Repeated message stored as bytea in parent table (no child table created)
+repeated Annotation annotations = 16; // @gotags: sql:"strategy(bytea)"
 ```
 
 ---
@@ -363,6 +372,7 @@ package postgres
 | `--search-category` | Search category enum name to index under. Required if any `search:` tags exist. | | no |
 | `--references` | Additional FK references, comma-separated: `<[table_name:]type>` | | no |
 | `--search-scope` | Restrict search joins to these categories, comma-separated | all connected | no |
+| `--no-serialized` | All proto fields become individual DB columns with no serialized bytea blob. Generates a `NoSerializedStore[T]` with column-based scan/insert. `sql:"-"` is disallowed. | `false` | no |
 | `--schema-only` | Generate only the schema, not store and index | `false` | no |
 | `--read-only-store` | Generate a read-only store (no write methods) | `false` | no |
 | `--singleton` | Single-record store (no PK required) | `false` | no |
@@ -403,6 +413,11 @@ package postgres
 **Cached store with SAC:**
 ```go
 //go:generate pg-table-bindings-wrapper --type=storage.Cluster --cached-store --for-sac --search-category CLUSTERS --no-copy-from --default-sort search.Cluster.String()
+```
+
+**No-serialized store (all fields as columns):**
+```go
+//go:generate pg-table-bindings-wrapper --type=storage.MyResource --no-serialized --search-category MY_RESOURCES
 ```
 
 **Read-only edge table with references:**
@@ -660,6 +675,111 @@ Use `--read-only-store` for tables whose data is derived from other tables:
 
 When data in a table is derived from another, write records from the primary object's store to avoid races. For embedded 1-to-n relationships, the generator handles transactional upserts. For synthetically attached foreign keys, this must be handled manually.
 
+### No-Serialized Store
+
+Use `--no-serialized` to generate a store where every proto field is stored as an individual database column. No `serialized` bytea blob is written.
+
+**When to use:**
+- New tables where you want to eliminate the serialized blob overhead.
+- Tables where SQL-level access to all fields is needed (reporting, complex joins).
+- Tables where the serialized blob would be large and mostly redundant with indexed columns.
+
+**Constraints:**
+- `sql:"-"` is **disallowed** — without a serialized blob, excluded fields would be silently lost. The walker panics if it encounters this.
+- All proto field types must be supported by the column scanner (scalars, timestamps, enums, UUIDs, string arrays, nested messages, repeated messages).
+
+**Proto:**
+```protobuf
+message MyResource {
+  string id = 1; // @gotags: search:"Resource ID" sql:"pk,type(uuid)"
+  string name = 2; // @gotags: search:"Resource Name"
+  int32 priority = 3;
+  google.protobuf.Timestamp created_at = 4; // @gotags: sql:"type(timestamptz)"
+  repeated string tags = 5;
+
+  // Embedded 1-to-1 message — flattened into parent table columns
+  message Metadata {
+    string author = 1;
+    int32 version = 2;
+  }
+  Metadata metadata = 6;
+
+  // Repeated message — child table (default)
+  message Label {
+    string key = 1;
+    string value = 2;
+  }
+  repeated Label labels = 7;
+
+  // Repeated message — bytea in parent table (no child table)
+  message Annotation {
+    string key = 1;
+    string value = 2;
+  }
+  repeated Annotation annotations = 8; // @gotags: sql:"strategy(bytea)"
+}
+```
+
+**gen.go:**
+```go
+//go:generate pg-table-bindings-wrapper --type=storage.MyResource --no-serialized --search-category MY_RESOURCES
+```
+
+**Generated SQL tables:**
+```sql
+-- No serialized column. All fields are individual columns.
+create table if not exists my_resources (
+  Id uuid,
+  Name varchar,
+  Priority integer,
+  CreatedAt timestamptz,
+  Tags text[],
+  Metadata_Author varchar,
+  Metadata_Version integer,
+  Annotations bytea,
+  PRIMARY KEY(Id)
+)
+
+-- Child table for repeated Label messages
+create table if not exists my_resources_labels (
+  MyResources_Id uuid,
+  idx int,
+  Key varchar,
+  Value varchar,
+  PRIMARY KEY(MyResources_Id, idx),
+  CONSTRAINT fk_parent_table_0 FOREIGN KEY (MyResources_Id) REFERENCES my_resources(Id) ON DELETE CASCADE
+)
+```
+
+#### Repeated Message Strategies
+
+For repeated message fields in a no-serialized store, there are two strategies:
+
+| Strategy | Syntax | Behavior |
+|----------|--------|----------|
+| `child_table` (default) | (no tag needed) | Creates a separate child table with parent FK + `idx` column. Best for data you need to query/join on. |
+| `bytea` | `sql:"strategy(bytea)"` | Serializes the repeated messages as a bytea blob in the parent table. Best for opaque data that doesn't need SQL-level access. |
+
+#### Child Fetch Control
+
+No-serialized stores with child tables support functional options to control whether child data is fetched:
+
+```go
+// Default: fetches parent + all child tables
+obj, found, err := store.Get(ctx, id)
+
+// Skip child table fetching for performance (repeated message fields will be nil/empty)
+obj, found, err := store.GetWithOptions(ctx, id, pgSearch.WithoutChildren())
+
+// Batch walk without children
+err := store.WalkByQueryWithOptions(ctx, query, func(obj *T) error {
+    // obj.Labels will be nil, obj.Annotations (bytea) will still be populated
+    return nil
+}, pgSearch.WithoutChildren())
+```
+
+> **Note:** `WithoutChildren()` only skips child _table_ fetches. Fields stored with `strategy(bytea)` are in the parent table and are always returned.
+
 ---
 
 ## Proto Type to SQL Type Mapping
@@ -680,6 +800,8 @@ Default mappings (overridable with `sql:"type(X)"`):
 | `repeated string` | `text[]` | `*pq.StringArray` |
 | `repeated int32` / `repeated enum` | `int[]` | `*pq.Int32Array` |
 | `map<string, string>` | `jsonb` | `map[string]string` |
+
+| `repeated Message` (with `strategy(bytea)`) | `bytea` | `[]byte` (length-prefixed proto messages) |
 
 Common type overrides:
 - `type(uuid)` -- forces UUID type for string fields storing UUIDs
@@ -704,3 +826,5 @@ Common type overrides:
 - `pkg/secrets/scrub.go` -- scrub tag implementation
 - `pkg/endpoints/validate.go` -- validate tag implementation
 - `pkg/sensor/hash/hasher.go` -- hash/sensorhash tag usage
+- `pkg/search/postgres/no_serialized_store.go` -- NoSerializedStore implementation, FetchOption, WithChildren/WithoutChildren
+- `pkg/postgres/pgutils/messagebytes.go` -- strategy(bytea) marshal/unmarshal helpers
