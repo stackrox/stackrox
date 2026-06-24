@@ -33,7 +33,7 @@ Ask the user which scenario applies:
 - Same as (B) but uses `--no-serialized` flag — all proto fields become individual DB columns, no serialized bytea blob.
 - Generates a `NoSerializedStore[T]` with column-based scan/insert and optional child fetch control.
 - `sql:"-"` is **disallowed** (walker panics). Use `sql:"strategy(bytea)"` for repeated messages you want in the parent table.
-- Follow all steps below, with the no-serialized architectural decision in Step 3d.
+- Follow all steps below, with the no-serialized architectural decision in Step 3c.
 
 ### D) Adding a v2 API for a storage proto
 
@@ -152,8 +152,7 @@ Without `--search-scope`, the search framework BFS-traverses ALL connected schem
 **Ask the user:**
 > "Should this store use the default serialized blob or the no-serialized mode?
 > - Serialized: proven, fast single-row reads, allows `sql:\"-\"` exclusions.
-> - No-serialized: no data duplication, full SQL access to all fields, child fetch control.
-> - No-serialized is recommended for new tables unless you need `sql:\"-\"` exclusions."
+> - No-serialized: no data duplication, full SQL access to all fields, child fetch control."
 
 ### 3d. API Proto vs Storage Proto
 

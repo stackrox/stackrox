@@ -753,7 +753,6 @@ Default mappings (overridable with `sql:"type(X)"`):
 | `repeated string` | `text[]` | `*pq.StringArray` |
 | `repeated int32` / `repeated enum` | `int[]` | `*pq.Int32Array` |
 | `map<string, string>` | `jsonb` | `map[string]string` |
-
 | `repeated Message` (with `strategy(bytea)`) | `bytea` | `[]byte` (length-prefixed proto messages) |
 
 Common type overrides:
