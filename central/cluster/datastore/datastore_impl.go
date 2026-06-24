@@ -191,6 +191,7 @@ func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 				ds.idToNamespaceFilterCache.Add(c.GetId(), compiledFilter)
 			} else {
 				log.Errorf("Could not compile filter regexp: %v", err)
+				ds.idToNamespaceFilterCache.Remove(c.GetId())
 			}
 		} else {
 			// We got empty filter building the cluster. There should be no
@@ -939,6 +940,7 @@ func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *stora
 			ds.idToNamespaceFilterCache.Add(cluster.GetId(), compiledFilter)
 		} else {
 			log.Errorf("Could not compile filter regexp: %v", err)
+			ds.idToNamespaceFilterCache.Remove(cluster.GetId())
 		}
 	} else {
 		// We got empty filter updating the cluster. Make sure the cache is
