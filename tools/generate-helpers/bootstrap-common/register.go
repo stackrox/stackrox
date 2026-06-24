@@ -21,7 +21,9 @@ func RegisterMigration(registrationFilePath, migrationDirName, registrationPrefi
 	}
 	defer closeFile(writeFile)
 	for _, line := range newFileLines {
-		fmt.Fprintln(writeFile, line)
+		if _, err := fmt.Fprintln(writeFile, line); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -59,6 +61,9 @@ func buildRegistrationLines(registrationFilePath, migrationDirName, registration
 
 		newFileLines = append(newFileLines, line)
 	}
+	if err := fileScanner.Err(); err != nil {
+		return nil, fmt.Errorf("reading %s: %w", registrationFilePath, err)
+	}
 
 	if registered {
 		return newFileLines, nil
@@ -92,6 +97,9 @@ func buildRegistrationLines(registrationFilePath, migrationDirName, registration
 		}
 
 		newFileLines = append(newFileLines, line)
+	}
+	if err := fileScanner.Err(); err != nil {
+		return nil, fmt.Errorf("reading %s: %w", registrationFilePath, err)
 	}
 
 	if !wroteImport {

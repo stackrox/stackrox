@@ -13,7 +13,7 @@ func init() {
 	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum:     {{.startSequenceNumber}},
 		VersionAfterSeqNum: {{.nextSeqNum}},
-		Description:        "{{.description}}",
+		Description:        {{printf "%q" .description}},
 		Run:                run,
 	})
 }
