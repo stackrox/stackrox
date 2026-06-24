@@ -164,7 +164,7 @@ func applyIndexes(ctx context.Context, db postgres.DB, background bool, timeout 
 		len(desired), label, len(desired)-len(toCreate), len(toDrop), len(toCreate))
 
 	for _, idx := range toDrop {
-		if err := dropInvalidIndex(ctx, db, idx.Name); err != nil {
+		if err := dropInvalidIndex(ctx, db, idx.Name, timeout); err != nil {
 			return fmt.Errorf("dropping invalid index %s: %w", idx.Name, err)
 		}
 	}
@@ -183,10 +183,10 @@ func applyIndexes(ctx context.Context, db postgres.DB, background bool, timeout 
 
 // ApplyAllIndexes creates ALL indexes immediately.
 // Used by tests where all indexes including background migration indexes are needed right away.
-func ApplyAllIndexes(ctx context.Context, db postgres.DB) {
+func ApplyAllIndexes(ctx context.Context, db postgres.DB, tb testing.TB) {
 	for _, idx := range GetAllIndexDefinitions() {
 		if _, err := db.Exec(ctx, idx.CreateSQL); err != nil {
-			log.Errorf("Failed to create index %s: %v", idx.Name, err)
+			tb.Fatalf("Failed to create index %s: %v", idx.Name, err)
 		}
 	}
 }
@@ -253,9 +253,9 @@ func getExistingIndexes(ctx context.Context, db postgres.DB) (*indexState, error
 	return state, nil
 }
 
-func dropInvalidIndex(ctx context.Context, db postgres.DB, name string) error {
+func dropInvalidIndex(ctx context.Context, db postgres.DB, name string, timeout time.Duration) error {
 	log.Warnf("Dropping invalid index %s (leftover from crashed CONCURRENTLY)", name)
-	stmtCtx, cancel := context.WithTimeout(ctx, env.BackgroundIndexTimeout.DurationSetting())
+	stmtCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	_, err := db.Exec(stmtCtx, "DROP INDEX CONCURRENTLY IF EXISTS "+pq.QuoteIdentifier(name))
 	return err

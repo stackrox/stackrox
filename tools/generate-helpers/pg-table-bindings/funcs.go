@@ -208,6 +208,9 @@ func (b *indexBuilder) build() IndexInfo {
 func collectIndexes(schema *walker.Schema, obj object) []IndexInfo {
 	tablePrefix := strings.ToLower(lowerCamelCase(schema.Table))
 	table := strings.ToLower(schema.Table)
+	if !safeIdentifier.MatchString(table) {
+		log.Fatalf("table name %q contains unsafe characters", table)
+	}
 
 	idxNameToBuilder := make(map[string]*indexBuilder)
 	// idxBuildOrder is used to consistently iterator of idxNameToBuilder
@@ -233,6 +236,9 @@ func collectIndexes(schema *walker.Schema, obj object) []IndexInfo {
 				indexType := idx.IndexType
 				if indexType == "" {
 					indexType = "btree"
+				}
+				if !safeIdentifier.MatchString(indexType) {
+					log.Fatalf("index type %q in index %q contains unsafe characters", indexType, name)
 				}
 				b = &indexBuilder{
 					name:       name,

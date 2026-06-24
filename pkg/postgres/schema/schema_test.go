@@ -116,7 +116,7 @@ func (s *SchemaTestSuite) resetTestIndexTable() {
 
 func (s *SchemaTestSuite) TestApplyAllIndexes() {
 	s.resetTestIndexTable()
-	ApplyAllIndexes(s.ctx, s.pool)
+	ApplyAllIndexes(s.ctx, s.pool, s.T())
 
 	created := s.getIndexNames("idx_test_applies")
 	s.Contains(created, "idxtestapply_col_a")
@@ -149,8 +149,31 @@ func (s *SchemaTestSuite) TestApplyAllBackgroundIndexes() {
 
 func (s *SchemaTestSuite) TestApplyIndexesIdempotent() {
 	s.resetTestIndexTable()
-	ApplyAllIndexes(s.ctx, s.pool)
-	ApplyAllIndexes(s.ctx, s.pool)
+	ApplyAllIndexes(s.ctx, s.pool, s.T())
+	ApplyAllIndexes(s.ctx, s.pool, s.T())
+}
+
+func (s *SchemaTestSuite) TestInvalidIndexDropAndRecreate() {
+	s.resetTestIndexTable()
+
+	// Create the index first so we can invalidate it.
+	_, err := s.pool.Exec(s.ctx, "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_col_a ON idx_test_applies USING btree (col_a)")
+	s.Require().NoError(err)
+	s.Contains(s.getIndexNames("idx_test_applies"), "idxtestapply_col_a")
+
+	// Mark the index as invalid to simulate a crashed CONCURRENTLY.
+	_, err = s.pool.Exec(s.ctx,
+		`UPDATE pg_index SET indisvalid = false
+		 WHERE indexrelid = (SELECT oid FROM pg_class WHERE relname = 'idxtestapply_col_a')`)
+	s.Require().NoError(err)
+	s.NotContains(s.getIndexNames("idx_test_applies"), "idxtestapply_col_a",
+		"index should not appear in valid set after invalidation")
+
+	// ApplyAllStartupIndexes should drop the invalid index and recreate it.
+	err = ApplyAllStartupIndexes(s.ctx, s.pool)
+	s.Require().NoError(err)
+	s.Contains(s.getIndexNames("idx_test_applies"), "idxtestapply_col_a",
+		"index should be valid again after reconciliation")
 }
 
 type IdxTestApply struct {
