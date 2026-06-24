@@ -260,6 +260,10 @@ func getCentralComponentValues(ctx context.Context, c *platform.CentralComponent
 		cv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, c.HostAliases))
 	}
 
+	if c.RolloutStrategy != nil {
+		cv.SetStringValue("rolloutStrategy", string(*c.RolloutStrategy))
+	}
+
 	cv.AddChild("db", getCentralDBComponentValues(ctx, c.DB, namespace, client, defaults))
 	cv.AddChild("telemetry", getTelemetryValues(c.Telemetry))
 

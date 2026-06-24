@@ -592,6 +592,14 @@ spec:
                           More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                         type: object
                     type: object
+                  rolloutStrategy:
+                    description: |-
+                      Configures the rollout strategy for the Central deployment.
+                      The default is: Recreate.
+                    enum:
+                    - Recreate
+                    - RollingUpdate
+                    type: string
                   telemetry:
                     description: |-
                       Configures telemetry settings for Central. If enabled, Central transmits telemetry and diagnostic

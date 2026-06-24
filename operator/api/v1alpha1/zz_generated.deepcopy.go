@@ -222,6 +222,11 @@ func (in *CentralComponentSpec) DeepCopyInto(out *CentralComponentSpec) {
 		*out = new(NotifierSecretsEncryption)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.RolloutStrategy != nil {
+		in, out := &in.RolloutStrategy, &out.RolloutStrategy
+		*out = new(RolloutStrategy)
+		**out = **in
+	}
 	in.DeploymentSpec.DeepCopyInto(&out.DeploymentSpec)
 }
 
