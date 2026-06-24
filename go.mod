@@ -38,7 +38,6 @@ require (
 	github.com/bmatcuk/doublestar/v4 v4.10.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cespare/xxhash/v2 v2.3.0
-	github.com/cloudflare/cfssl v1.6.5
 	github.com/cockroachdb/pebble/v2 v2.1.6
 	github.com/containers/image/v5 v5.36.2
 	github.com/coreos/go-oidc/v3 v3.18.0
@@ -420,7 +419,6 @@ require (
 	github.com/openshift-online/ocm-api-model/model v0.0.457 // indirect
 	github.com/openshift/custom-resource-status v1.1.2 // indirect
 	github.com/operator-framework/operator-lib v0.17.0 // indirect
-	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
@@ -470,14 +468,11 @@ require (
 	github.com/trivago/tgo v1.0.7 // indirect
 	github.com/ulikunitz/xz v0.5.15 // indirect
 	github.com/vladimirvivien/gexe v0.5.0 // indirect
-	github.com/weppos/publicsuffix-go v0.50.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
-	github.com/zmap/zcrypto v0.0.0-20250129210703-03c45d0bae98 // indirect
-	github.com/zmap/zlint/v3 v3.6.6 // indirect
 	gitlab.com/gitlab-org/api/client-go v1.11.0 // indirect
 	go.etcd.io/bbolt v1.4.3 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
