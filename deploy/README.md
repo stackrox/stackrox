@@ -28,7 +28,7 @@ for deploying the whole stack consisting of the operator, Central and SecuredClu
 
 #### Shell script wrapper
 
-For addressing muscle memory habbits, `deploy.sh` can invoke roxie under the hood when you
+For addressing muscle memory habits, `deploy.sh` can invoke roxie under the hood when you
 opt-in into this behavior:
 
 ```bash
