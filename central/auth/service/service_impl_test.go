@@ -748,7 +748,8 @@ func (s *authServiceAccessControlTestSuite) TestUpdateRollback() {
 	})
 	s.Require().NoError(err)
 
-	s.mockTokenExchanger.EXPECT().Config().Return(v1tostorage.AuthM2MConfig(newConfig)).Times(2)
+	expectedConfigs := []*storage.AuthMachineToMachineConfig{v1tostorage.AuthM2MConfig(newConfig)}
+	s.mockTokenExchanger.EXPECT().Configs().Return(expectedConfigs).Times(2)
 
 	// No error during rollback.
 	gomock.InOrder(
@@ -768,7 +769,7 @@ func (s *authServiceAccessControlTestSuite) TestUpdateRollback() {
 	})
 	s.Error(err)
 	s.NotContains(err.Error(), "rollback")
-	protoassert.Equal(s.T(), v1tostorage.AuthM2MConfig(newConfig), s.mockExchangerFactory.currentExchangerConfig)
+	protoassert.SlicesEqual(s.T(), expectedConfigs, s.mockExchangerFactory.currentExchangerConfigs)
 }
 
 func (s *authServiceAccessControlTestSuite) addRoles() {
@@ -804,13 +805,13 @@ func (s *authServiceAccessControlTestSuite) addRoles() {
 // Mocks used within tests.
 
 type mockExchangerFactory struct {
-	currentExchangerConfig *storage.AuthMachineToMachineConfig
-	mockExchanger          *mocks.MockTokenExchanger
+	currentExchangerConfigs []*storage.AuthMachineToMachineConfig
+	mockExchanger           *mocks.MockTokenExchanger
 }
 
 func (m *mockExchangerFactory) factory() m2m.TokenExchangerFactory {
-	return func(_ context.Context, config *storage.AuthMachineToMachineConfig, _ roleDataStore.DataStore, _ tokens.IssuerFactory) (m2m.TokenExchanger, error) {
-		m.currentExchangerConfig = config
+	return func(_ context.Context, configs []*storage.AuthMachineToMachineConfig, _ roleDataStore.DataStore, _ tokens.IssuerFactory) (m2m.TokenExchanger, error) {
+		m.currentExchangerConfigs = configs
 		return m.mockExchanger, nil
 	}
 }

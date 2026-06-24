@@ -23,6 +23,12 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
+const (
+	// issuerSeparator is used to encode the issuer field for database storage.
+	// The stored issuer is the concatenation of the traits origin and the issuer value.
+	issuerSeparator = "|"
+)
+
 var (
 	_ DataStore = (*datastoreImpl)(nil)
 
@@ -36,6 +42,36 @@ type datastoreImpl struct {
 	roleDataStore roleDataStore.DataStore
 
 	mutex sync.RWMutex
+}
+
+// encodeIssuer encodes the issuer field by concatenating the traits origin and the issuer value.
+// This allows different origins to have configurations with the same issuer URL.
+// Format: "ORIGIN|issuer_url" (e.g., "DECLARATIVE|https://example.com")
+func encodeIssuer(config *storage.AuthMachineToMachineConfig) string {
+	origin := config.GetTraits().GetOrigin().String()
+	issuer := config.GetIssuer()
+	return fmt.Sprintf("%s%s%s", origin, issuerSeparator, issuer)
+}
+
+// decodeIssuer extracts the raw issuer from an encoded issuer string.
+// The encoded format is "ORIGIN|issuer", this returns just the "issuer" part.
+func decodeIssuer(encodedIssuer string) string {
+	_, issuer, found := strings.Cut(encodedIssuer, issuerSeparator)
+	if found {
+		return issuer
+	}
+	// If not encoded, return as-is (for backwards compatibility)
+	return encodedIssuer
+}
+
+// withEncodedIssuer creates a copy of the config with the issuer field encoded.
+// This copy is used for database operations to ensure the unique constraint works per origin.
+func withEncodedIssuer(config *storage.AuthMachineToMachineConfig) *storage.AuthMachineToMachineConfig {
+	// Clone the config to avoid modifying the original
+	encoded := config.CloneVT()
+	// Set the encoded issuer
+	encoded.Issuer = encodeIssuer(config)
+	return encoded
 }
 
 func (d *datastoreImpl) GetAuthM2MConfig(ctx context.Context, id string) (*storage.AuthMachineToMachineConfig, bool, error) {
@@ -82,14 +118,44 @@ func (d *datastoreImpl) upsertAuthM2MConfigNoLock(ctx context.Context,
 		}
 	}
 
-	// Get the existing stored config, if any.
+	// First, pull the stored configuration being updated, if it exists.
 	storedConfig, exists, err := d.getAuthM2MConfigNoLock(ctx, config.GetId())
 	if err != nil {
 		return nil, err
 	}
 
-	// Get the existing exchanger for the issuer, if any.
-	existingExchanger, _ := d.set.GetTokenExchanger(config.GetIssuer())
+	// Then, get the associated existing exchanger for the stored configuration's issuer.
+	var existingExchanger m2m.TokenExchanger
+	var storedConfigs []*storage.AuthMachineToMachineConfig
+	if exists && storedConfig != nil {
+		// Decode the issuer since the stored config has an encoded issuer but the
+		// token exchanger set uses raw issuers as keys.
+		rawIssuer := decodeIssuer(storedConfig.GetIssuer())
+		existingExchanger, _ = d.set.GetTokenExchanger(rawIssuer)
+
+		// Finally, get the configurations referenced by the exchanger.
+		if existingExchanger != nil {
+			exchangerConfigs := existingExchanger.Configs()
+			storedConfigs = make([]*storage.AuthMachineToMachineConfig, 0, len(exchangerConfigs))
+			for _, exchangerConfig := range exchangerConfigs {
+				sc, scExists, scErr := d.getAuthM2MConfigNoLock(ctx, exchangerConfig.GetId())
+				if scErr != nil {
+					return nil, scErr
+				}
+				if scExists && sc != nil {
+					storedConfigs = append(storedConfigs, sc)
+				}
+			}
+		}
+	}
+
+	// Determine the issuer for rollback operations (use stored config's issuer if available, otherwise new config's).
+	issuer := config.GetIssuer()
+	if storedConfig != nil && storedConfig.GetIssuer() != "" {
+		issuer = storedConfig.GetIssuer()
+	}
+
+	hasDiscrepantIssuer := exists && storedConfig != nil && storedConfig.GetIssuer() != config.GetIssuer()
 
 	// Create a transaction for the DB operation. Since we can potentially fail during in-memory operations (i.e.
 	// upserting the token exchanger in the set or removal) we want to make sure we can rollback DB changes.
@@ -101,26 +167,27 @@ func (d *datastoreImpl) upsertAuthM2MConfigNoLock(ctx context.Context,
 	// Upsert the token exchanger first, ensuring the config is valid and a token exchanger can be successfully
 	// created from it.
 	if err := d.set.UpsertTokenExchanger(ctx, config); err != nil {
-		return nil, d.wrapRollback(ctx, tx, err, storedConfig, config, existingExchanger)
+		return nil, d.wrapRollback(ctx, tx, err, issuer, storedConfigs, config, existingExchanger)
 	}
 
 	// Upsert the config to the DB after the token exchanger has been successfully added.
-	if err := d.store.Upsert(ctx, config); err != nil {
-		return nil, d.wrapRollback(ctx, tx, err, storedConfig, config, existingExchanger)
+	// We use withEncodedIssuer to ensure the database issuer column contains "ORIGIN|issuer"
+	// for unique constraint enforcement per origin.
+	if err := d.store.Upsert(ctx, withEncodedIssuer(config)); err != nil {
+		return nil, d.wrapRollback(ctx, tx, err, issuer, storedConfigs, config, existingExchanger)
 	}
 
 	// We need to ensure that any previously existing config is removed from the token exchanger set.
-	// Since this updated config may have updated the issuer, we need to fetch the existing, stored config from the
-	// database and ensure it's removed properly from the set. We do this at the end since we want the new config
-	// to successfully exist beforehand.
-	if exists && config.GetIssuer() != storedConfig.GetIssuer() {
-		if err := d.set.RemoveTokenExchanger(storedConfig.GetIssuer()); err != nil {
-			return nil, d.wrapRollback(ctx, tx, err, storedConfig, config, existingExchanger)
+	// Since this updated config may have updated the issuer, we need to remove the stored config from the
+	// old exchanger. We do this at the end since we want the new config to successfully exist beforehand.
+	if hasDiscrepantIssuer && storedConfig != nil {
+		if err := d.set.RemoveTokenExchanger(ctx, storedConfig); err != nil {
+			return nil, d.wrapRollback(ctx, tx, err, issuer, storedConfigs, config, existingExchanger)
 		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return nil, d.wrapRollback(ctx, tx, err, storedConfig, config, existingExchanger)
+		return nil, d.wrapRollback(ctx, tx, err, issuer, storedConfigs, config, existingExchanger)
 	}
 
 	return config, nil
@@ -206,7 +273,7 @@ func (d *datastoreImpl) RemoveAuthM2MConfig(ctx context.Context, id string) erro
 	if !exists {
 		return nil
 	}
-	if err := d.set.RemoveTokenExchanger(config.GetIssuer()); err != nil {
+	if err := d.set.RemoveTokenExchanger(ctx, config); err != nil {
 		return err
 	}
 
@@ -257,6 +324,7 @@ func newKubeM2MConfig(kubeSAIssuer string) *storage.AuthMachineToMachineConfig {
 		TokenExpirationDuration: "1h",
 		Mappings:                []*storage.AuthMachineToMachineConfig_Mapping{},
 		Issuer:                  kubeSAIssuer,
+		Traits:                  &storage.Traits{Origin: storage.Traits_DEFAULT},
 	}
 }
 
@@ -301,9 +369,16 @@ func (d *datastoreImpl) configureConfigControllerAccess(kubeSAConfig *storage.Au
 // wrapRollback wraps the error with potential rollback errors.
 // In the case the giving config is not nil, it will attempt to rollback the exchanger in the set in addition to
 // rolling back the transaction.
-func (d *datastoreImpl) wrapRollback(ctx context.Context, tx *pgPkg.Tx, err error,
-	storedConfig, newConfig *storage.AuthMachineToMachineConfig, existingExchanger m2m.TokenExchanger) error {
-	err = d.wrapRollBackSet(ctx, err, storedConfig, newConfig, existingExchanger)
+func (d *datastoreImpl) wrapRollback(
+	ctx context.Context,
+	tx *pgPkg.Tx,
+	err error,
+	issuer string,
+	storedConfigs []*storage.AuthMachineToMachineConfig,
+	newConfig *storage.AuthMachineToMachineConfig,
+	existingExchanger m2m.TokenExchanger,
+) error {
+	err = d.wrapRollBackSet(ctx, err, issuer, storedConfigs, newConfig, existingExchanger)
 	rollbackErr := tx.Rollback(ctx)
 	if rollbackErr != nil {
 		err = pkgErrors.Wrapf(rollbackErr, "rolling back due to: %v", err)
@@ -312,21 +387,27 @@ func (d *datastoreImpl) wrapRollback(ctx context.Context, tx *pgPkg.Tx, err erro
 	return err
 }
 
-func (d *datastoreImpl) wrapRollBackSet(ctx context.Context, err error, storedConfig,
-	newConfig *storage.AuthMachineToMachineConfig, existingExchanger m2m.TokenExchanger) error {
-	exchangerErr := d.set.RemoveTokenExchanger(newConfig.GetIssuer())
+func (d *datastoreImpl) wrapRollBackSet(
+	ctx context.Context,
+	err error,
+	issuer string,
+	storedConfigs []*storage.AuthMachineToMachineConfig,
+	newConfig *storage.AuthMachineToMachineConfig,
+	existingExchanger m2m.TokenExchanger,
+) error {
+	exchangerErr := d.set.RemoveTokenExchanger(ctx, newConfig)
 
 	// We have two configs to restore from: either a config has already existed within the DB for the given ID,
 	// or a token exchanger exists for the given issuer.
 	// We first attempt to restore the exchanger from the stored config. This is the case where e.g. an update to
 	// an existing config rendered as invalid.
-	// If no stored config is given, i.e. this is was not an update to an existing config, we rollback the changes
+	// If no stored config is given, i.e. this was not an update to an existing config, we rollback the changes
 	// from the existing exchanger config. This is the case where e.g. a new config was added with the same issuer
 	// as an existing config.
-	if storedConfig != nil {
-		exchangerErr = errors.Join(exchangerErr, d.set.RollbackExchanger(ctx, storedConfig))
-	} else if existingExchanger != nil && existingExchanger.Config() != nil {
-		exchangerErr = errors.Join(exchangerErr, d.set.RollbackExchanger(ctx, existingExchanger.Config()))
+	if len(storedConfigs) > 0 {
+		exchangerErr = errors.Join(exchangerErr, d.set.RollbackExchanger(ctx, issuer, storedConfigs))
+	} else if existingExchanger != nil && len(existingExchanger.Configs()) > 0 {
+		exchangerErr = errors.Join(exchangerErr, d.set.RollbackExchanger(ctx, issuer, existingExchanger.Configs()))
 	}
 
 	if exchangerErr != nil {

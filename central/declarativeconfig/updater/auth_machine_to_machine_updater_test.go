@@ -60,9 +60,9 @@ func (s *authMachineToMachineTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	mockSet := mocks.NewMockTokenExchangerSet(s.mockCtrl)
 	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
+	mockSet.EXPECT().RemoveTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, true).AnyTimes()
-	mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	s.db = pgtest.ForT(s.T())
 	s.roleDS = roleDataStore.GetTestPostgresDataStore(s.T(), s.db)
@@ -262,9 +262,9 @@ func (s *authMachineToMachineMockedTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	mockSet := mocks.NewMockTokenExchangerSet(s.mockCtrl)
 	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
+	mockSet.EXPECT().RemoveTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, true).AnyTimes()
-	mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	s.roleDS = roleDataStoreMocks.NewMockDataStore(s.mockCtrl)
 	s.m2mConfigDS = m2mDataStoreMocks.NewMockDataStore(s.mockCtrl)

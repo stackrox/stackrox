@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -21,31 +20,28 @@ var (
 )
 
 type roleMapper struct {
-	config        *storage.AuthMachineToMachineConfig
-	configRegexps []*regexp.Regexp
-	roleDS        roleDataStore.DataStore
+	mappings []*mapping
+	roleDS   roleDataStore.DataStore
 }
 
-func newRoleMapper(config *storage.AuthMachineToMachineConfig, roleDS roleDataStore.DataStore,
-	configRegExps []*regexp.Regexp) *roleMapper {
+func newRoleMapper(roleDS roleDataStore.DataStore, mappings []*mapping) *roleMapper {
 	return &roleMapper{
-		config:        config,
-		configRegexps: configRegExps,
-		roleDS:        roleDS,
+		mappings: mappings,
+		roleDS:   roleDS,
 	}
 }
 
 func (r *roleMapper) FromUserDescriptor(ctx context.Context, user *permissions.UserDescriptor) ([]permissions.ResolvedRole, error) {
-	return resolveRolesForClaims(ctx, user.Attributes, r.roleDS, r.config.GetMappings(), r.configRegexps)
+	return resolveRolesForClaims(ctx, user.Attributes, r.roleDS, r.mappings)
 }
 
 func resolveRolesForClaims(ctx context.Context, claims map[string][]string, roleDS roleDataStore.DataStore,
-	mappings []*storage.AuthMachineToMachineConfig_Mapping, expressions []*regexp.Regexp) ([]permissions.ResolvedRole, error) {
+	mappings []*mapping) ([]permissions.ResolvedRole, error) {
 	rolesForUser := set.NewStringSet()
 
-	for i, mapping := range mappings {
-		if valuesMatch(expressions[i], claims[mapping.GetKey()]) {
-			rolesForUser.Add(mapping.GetRole())
+	for _, mapping := range mappings {
+		if valuesMatch(mapping.expression, claims[mapping.key]) {
+			rolesForUser.Add(mapping.role)
 		}
 	}
 

@@ -14,16 +14,13 @@ import (
 func TestNewProvider(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	cfgId := uuid.NewTestUUID(1).String()
-	config := &storage.AuthMachineToMachineConfig{
-		Id:   cfgId,
-		Type: storage.AuthMachineToMachineConfig_GENERIC,
-	}
+	configType := storage.AuthMachineToMachineConfig_GENERIC
 	mockRoleMapper := permissionsMocks.NewMockRoleMapper(mockCtrl)
-	provider := newProviderFromConfig(config, mockRoleMapper)
+	provider := newProviderFromConfig(cfgId, configType.String(), mockRoleMapper)
 	assert.NotNil(t, provider)
 	assert.Equal(t, cfgId, provider.ID())
-	providerName := fmt.Sprintf("%s-%s", storage.AuthMachineToMachineConfig_GENERIC.String(), cfgId)
+	providerName := fmt.Sprintf("%s-%s", configType.String(), cfgId)
 	assert.Equal(t, providerName, provider.Name())
-	assert.Equal(t, storage.AuthMachineToMachineConfig_GENERIC.String(), provider.Type())
+	assert.Equal(t, configType.String(), provider.Type())
 	assert.Equal(t, mockRoleMapper, provider.RoleMapper())
 }

@@ -72,31 +72,31 @@ func (mr *MockTokenExchangerSetMockRecorder) HasExchangersConfigured() *gomock.C
 }
 
 // RemoveTokenExchanger mocks base method.
-func (m *MockTokenExchangerSet) RemoveTokenExchanger(issuer string) error {
+func (m *MockTokenExchangerSet) RemoveTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveTokenExchanger", issuer)
+	ret := m.ctrl.Call(m, "RemoveTokenExchanger", ctx, config)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveTokenExchanger indicates an expected call of RemoveTokenExchanger.
-func (mr *MockTokenExchangerSetMockRecorder) RemoveTokenExchanger(issuer any) *gomock.Call {
+func (mr *MockTokenExchangerSetMockRecorder) RemoveTokenExchanger(ctx, config any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTokenExchanger", reflect.TypeOf((*MockTokenExchangerSet)(nil).RemoveTokenExchanger), issuer)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTokenExchanger", reflect.TypeOf((*MockTokenExchangerSet)(nil).RemoveTokenExchanger), ctx, config)
 }
 
 // RollbackExchanger mocks base method.
-func (m *MockTokenExchangerSet) RollbackExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
+func (m *MockTokenExchangerSet) RollbackExchanger(ctx context.Context, issuer string, configs []*storage.AuthMachineToMachineConfig) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RollbackExchanger", ctx, config)
+	ret := m.ctrl.Call(m, "RollbackExchanger", ctx, issuer, configs)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RollbackExchanger indicates an expected call of RollbackExchanger.
-func (mr *MockTokenExchangerSetMockRecorder) RollbackExchanger(ctx, config any) *gomock.Call {
+func (mr *MockTokenExchangerSetMockRecorder) RollbackExchanger(ctx, issuer, configs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RollbackExchanger", reflect.TypeOf((*MockTokenExchangerSet)(nil).RollbackExchanger), ctx, config)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RollbackExchanger", reflect.TypeOf((*MockTokenExchangerSet)(nil).RollbackExchanger), ctx, issuer, configs)
 }
 
 // UpsertTokenExchanger mocks base method.

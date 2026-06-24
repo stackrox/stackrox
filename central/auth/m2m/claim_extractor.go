@@ -10,8 +10,8 @@ type claimExtractor interface {
 	ExtractClaims(idToken *IDToken) (map[string][]string, error)
 }
 
-func newClaimExtractorFromConfig(config *storage.AuthMachineToMachineConfig) claimExtractor {
-	switch config.GetType() {
+func newClaimExtractorForType(configType storage.AuthMachineToMachineConfig_Type) claimExtractor {
+	switch configType {
 	case storage.AuthMachineToMachineConfig_GITHUB_ACTIONS:
 		return &githubClaimExtractor{}
 	case storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT:

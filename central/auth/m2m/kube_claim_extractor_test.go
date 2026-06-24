@@ -11,10 +11,7 @@ import (
 func Test_kubeClaimExtractor(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 
-		e := newClaimExtractorFromConfig(&storage.AuthMachineToMachineConfig{
-			Id:   "id1",
-			Type: storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
-		})
+		e := newClaimExtractorForType(storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT)
 
 		claims, err := e.ExtractClaims(&IDToken{
 			Claims: func(v any) error {
@@ -50,10 +47,7 @@ func Test_kubeClaimExtractor(t *testing.T) {
 	})
 
 	t.Run("Kubernetes Token error", func(t *testing.T) {
-		e := newClaimExtractorFromConfig(&storage.AuthMachineToMachineConfig{
-			Id:   "id1",
-			Type: storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
-		})
+		e := newClaimExtractorForType(storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT)
 		testErr := errox.NotImplemented
 		_, err := e.ExtractClaims(&IDToken{
 			Claims: func(a any) error {
