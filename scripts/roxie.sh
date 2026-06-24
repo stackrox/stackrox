@@ -42,6 +42,9 @@ host_arch() {
         arm64)
             echo "arm64"
             ;;
+        aarch64)
+            echo "arm64"
+            ;;
         *)
             echo >&2 "Error: Unsupported architecture"
             exit 1
