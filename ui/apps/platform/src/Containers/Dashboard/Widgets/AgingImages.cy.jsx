@@ -1,7 +1,15 @@
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
+import { PublicConfigContext } from 'hooks/usePublicConfig';
 
 import AgingImages from './AgingImages';
+
+const publicConfigValue = {
+    isLoadingPublicConfig: false,
+    error: undefined,
+    publicConfig: { telemetry: { enabled: false } },
+    refetchPublicConfig: () => {},
+};
 
 const range0 = '30';
 const range1 = '90';
@@ -27,7 +35,9 @@ function setup() {
 
     cy.mount(
         <ComponentTestProvider>
-            <AgingImages />
+            <PublicConfigContext.Provider value={publicConfigValue}>
+                <AgingImages />
+            </PublicConfigContext.Provider>
         </ComponentTestProvider>
     );
 }
