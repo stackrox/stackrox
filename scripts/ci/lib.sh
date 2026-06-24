@@ -1083,7 +1083,6 @@ END
     sort -u "${image_list}" > "${unique}"
     cat "${unique}" > "${image_list}"
     rm -f "${unique}"
-
 }
 
 check_rhacs_eng_image_exists() {
