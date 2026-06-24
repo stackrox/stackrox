@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 	"testing"
 	"time"
@@ -757,9 +758,7 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 			}
 
 			oldFileMapCopy := make(types.SecretDataMap, len(oldFileMap))
-			for k, v := range oldFileMap {
-				oldFileMapCopy[k] = v
-			}
+			maps.Copy(oldFileMapCopy, oldFileMap)
 
 			newFileMap, err := r.generateCentralTLSData(oldFileMap)
 			require.NoError(t, err)

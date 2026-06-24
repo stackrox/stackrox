@@ -1,4 +1,4 @@
-//go:build test_e2e && !release
+//go:build test_e2e
 
 package tests
 
@@ -41,10 +41,6 @@ func TestInitContainers(t *testing.T) {
 }
 
 func (s *InitContainerSuite) SetupSuite() {
-	if os.Getenv("ROX_INIT_CONTAINER_SUPPORT") != "true" {
-		s.T().Skip("ROX_INIT_CONTAINER_SUPPORT not enabled")
-	}
-
 	conn := centralgrpc.GRPCConnectionToCentral(s.T())
 	s.deploymentService = v1.NewDeploymentServiceClient(conn)
 	s.policyService = v1.NewPolicyServiceClient(conn)

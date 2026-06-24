@@ -1,6 +1,7 @@
 package renderer
 
 import (
+	"maps"
 	"path"
 	"strings"
 
@@ -225,9 +226,7 @@ func renderAuxiliaryFiles(c Config, mode mode) ([]*zip.File, error) {
 
 	if mode == renderAll {
 		commonScriptFileMap := make(FileNameMap)
-		for k, v := range commonScriptMap {
-			commonScriptFileMap[k] = v
-		}
+		maps.Copy(commonScriptFileMap, commonScriptMap)
 		if c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL {
 			commonScriptFileMap["common/setup-central.sh"] = "scripts/setup.sh"
 		} else {

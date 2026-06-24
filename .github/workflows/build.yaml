@@ -351,7 +351,7 @@ jobs:
           sudo ln -sf /usr/include/asm /usr/include/x86_64-linux-musl/asm
 
       - name: Build Go Binaries
-        run: GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
+        run: GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps roxctl_linux-${{ matrix.arch }}
 
       - name: Bundle the build to preserve permissions
         run: tar -cvf go-binaries-build.tar bin/linux_${{ matrix.arch }}

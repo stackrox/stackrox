@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"text/template"
@@ -101,9 +102,7 @@ func (t *typeEntry) InputFields() []string {
 }
 
 func (t *typeEntry) ExtraFields() []string {
-	sort.Slice(t.extraResolvers, func(i, j int) bool {
-		return t.extraResolvers[i] < t.extraResolvers[j]
-	})
+	slices.Sort(t.extraResolvers)
 	return t.extraResolvers
 }
 

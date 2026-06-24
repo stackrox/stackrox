@@ -3,7 +3,7 @@ package effectiveaccessscope
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -38,9 +38,7 @@ func (c ScopeTreeCompacted) String() string {
 	}
 
 	// Ensure order consistency across invocations.
-	sort.Slice(clusterStrs, func(i, j int) bool {
-		return clusterStrs[i] < clusterStrs[j]
-	})
+	slices.Sort(clusterStrs)
 
 	return strings.Join(clusterStrs, ", ")
 }

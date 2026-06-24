@@ -40,6 +40,17 @@ func (s *ReportEntityScopeSuite) SetupSuite() {
 	s.ctx, s.cancel = context.WithTimeout(context.Background(), 10*time.Minute)
 	conn := centralgrpc.GRPCConnectionToCentral(s.T())
 	s.service = apiV2.NewReportServiceClient(conn)
+	s.waitForCentralReady()
+}
+
+func (s *ReportEntityScopeSuite) waitForCentralReady() {
+	s.T().Log("Waiting for Central to be ready...")
+	s.Require().Eventually(func() bool {
+		ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
+		defer cancel()
+		_, err := s.service.CountReportConfigurations(ctx, &apiV2.RawQuery{})
+		return err == nil
+	}, 2*time.Minute, 2*time.Second, "Central did not become ready")
 }
 
 func (s *ReportEntityScopeSuite) TearDownSuite() {

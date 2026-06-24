@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"slices"
 	"sort"
 	"strings"
 
@@ -364,9 +365,7 @@ func ensureReadOnlySettings(policy *storage.Policy) {
 func ensureMitreVectorSorted(policy *storage.Policy) {
 	for _, vector := range policy.GetMitreAttackVectors() {
 		techniques := vector.GetTechniques()
-		sort.Slice(techniques, func(i, j int) bool {
-			return techniques[i] < techniques[j]
-		})
+		slices.Sort(techniques)
 	}
 
 	vectors := policy.GetMitreAttackVectors()
