@@ -74,7 +74,7 @@ COPY --from=builder /go/src/github.com/stackrox/rox/app/image/bin/operator /usr/
 COPY LICENSE /licenses/LICENSE
 
 ENV ROX_IMAGE_FLAVOR="rhacs" \
-    GODEBUG="fips140=only"
+    GODEBUG="fips140=on"
 
 # The following are numeric uid and gid of `nobody` user in UBI.
 # We can't use symbolic names because otherwise k8s will fail to start the pod with an error like this:
