@@ -1,14 +1,16 @@
 package resources
 
 import (
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"sort"
 	"strings"
 	"unicode/utf8"
 
-	"github.com/cloudflare/cfssl/certinfo"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -70,40 +72,49 @@ func getSecretType(data string) storage.SecretType {
 	return storage.SecretType_UNDETERMINED
 }
 
-func convertInterfaceSliceToStringSlice(i []interface{}) []string {
-	strSlice := make([]string, 0, len(i))
-	for _, v := range i {
-		strSlice = append(strSlice, fmt.Sprintf("%v", v))
+func convertPkixName(name pkix.Name) *storage.CertName {
+	names := make([]string, 0, len(name.Names))
+	for _, atv := range name.Names {
+		names = append(names, fmt.Sprintf("%v", atv))
 	}
-	return strSlice
-}
-
-func convertCFSSLName(name certinfo.Name) *storage.CertName {
 	return &storage.CertName{
 		CommonName:       name.CommonName,
-		Country:          name.Country,
-		Organization:     name.Organization,
-		OrganizationUnit: name.OrganizationalUnit,
-		Locality:         name.Locality,
-		Province:         name.Province,
-		StreetAddress:    name.StreetAddress,
-		PostalCode:       name.PostalCode,
-		Names:            convertInterfaceSliceToStringSlice(name.Names),
+		Country:          strings.Join(name.Country, ", "),
+		Organization:     strings.Join(name.Organization, ", "),
+		OrganizationUnit: strings.Join(name.OrganizationalUnit, ", "),
+		Locality:         strings.Join(name.Locality, ", "),
+		Province:         strings.Join(name.Province, ", "),
+		StreetAddress:    strings.Join(name.StreetAddress, ", "),
+		PostalCode:       strings.Join(name.PostalCode, ", "),
+		Names:            names,
 	}
 }
 
 func parseCertData(data string) *storage.Cert {
-	info, err := certinfo.ParseCertificatePEM([]byte(data))
+	block, _ := pem.Decode([]byte(data))
+	if block == nil {
+		return nil
+	}
+	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
 		return nil
 	}
+	var sans []string
+	sans = append(sans, cert.DNSNames...)
+	sans = append(sans, cert.EmailAddresses...)
+	for _, ip := range cert.IPAddresses {
+		sans = append(sans, ip.String())
+	}
+	for _, uri := range cert.URIs {
+		sans = append(sans, uri.String())
+	}
 	return &storage.Cert{
-		Subject:   convertCFSSLName(info.Subject),
-		Issuer:    convertCFSSLName(info.Issuer),
-		Sans:      info.SANs,
-		StartDate: protoconv.ConvertTimeToTimestampOrNil(info.NotBefore),
-		EndDate:   protoconv.ConvertTimeToTimestampOrNil(info.NotAfter),
-		Algorithm: info.SignatureAlgorithm,
+		Subject:   convertPkixName(cert.Subject),
+		Issuer:    convertPkixName(cert.Issuer),
+		Sans:      sans,
+		StartDate: protoconv.ConvertTimeToTimestampOrNil(cert.NotBefore),
+		EndDate:   protoconv.ConvertTimeToTimestampOrNil(cert.NotAfter),
+		Algorithm: cert.SignatureAlgorithm.String(),
 	}
 }
 

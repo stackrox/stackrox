@@ -1,13 +1,19 @@
 package securedclustercertgen
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"fmt"
+	"math/big"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/cloudflare/cfssl/csr"
-	"github.com/cloudflare/cfssl/initca"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/cryptoutils"
@@ -319,20 +325,44 @@ func (s *securedClusterCARotationSuite) SetupTest() {
 	s.Require().NoError(err)
 
 	// Create a test secondary CA with a future expiration
-	s.secondaryCA = s.createTestCA("Test Secondary CA", "87600h") // 10 years
+	s.secondaryCA = s.createTestCA("Test Secondary CA", 10*365*24*time.Hour)
 }
 
-func (s *securedClusterCARotationSuite) createTestCA(commonName, expiry string) mtls.CA {
-	caCert, _, caKey, err := initca.New(&csr.CertificateRequest{
-		CN:         commonName,
-		KeyRequest: csr.NewKeyRequest(),
-		CA: &csr.CAConfig{
-			Expiry: expiry,
-		},
-	})
+func (s *securedClusterCARotationSuite) createTestCA(commonName string, expiry time.Duration) mtls.CA {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	s.Require().NoError(err)
 
-	ca, err := mtls.LoadCAForSigning(caCert, caKey)
+	serial, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 64))
+	s.Require().NoError(err)
+	serial.Add(serial, big.NewInt(1))
+
+	pubDER, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
+	s.Require().NoError(err)
+	ski := sha256.Sum256(pubDER)
+
+	now := time.Now()
+	template := &x509.Certificate{
+		SerialNumber:          serial,
+		Subject:               pkix.Name{CommonName: commonName},
+		NotBefore:             now,
+		NotAfter:              now.Add(expiry),
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+		MaxPathLen:            0,
+		MaxPathLenZero:        true,
+		SubjectKeyId:          ski[:20],
+	}
+
+	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	s.Require().NoError(err)
+
+	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	keyDER, err := x509.MarshalECPrivateKey(key)
+	s.Require().NoError(err)
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
+
+	ca, err := mtls.LoadCAForSigning(certPEM, keyPEM)
 	s.Require().NoError(err)
 	return ca
 }
@@ -354,7 +384,7 @@ func (s *securedClusterCARotationSuite) verifyServiceCertsSignedByCA(caCertPEM [
 
 func (s *securedClusterCARotationSuite) TestIssueSecuredClusterCertsWithCAs() {
 	// Create an older secondary CA that expires before the primary CA
-	olderSecondaryCA := s.createTestCA("Older Secondary CA", "1h") // 1 hour
+	olderSecondaryCA := s.createTestCA("Older Secondary CA", time.Hour)
 
 	testCases := []struct {
 		name                     string

@@ -2,11 +2,16 @@ package certgen
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"errors"
 	"time"
 
-	"github.com/cloudflare/cfssl/csr"
-	"github.com/cloudflare/cfssl/initca"
 	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/x509utils"
@@ -109,17 +114,46 @@ func GenerateCA() (mtls.CA, error) {
 	if err != nil {
 		return nil, pkgErrors.Wrap(err, "could not generate a serial number")
 	}
-	req := csr.CertificateRequest{
-		CN:           mtls.ServiceCACommonName,
-		KeyRequest:   csr.NewKeyRequest(),
-		SerialNumber: serial.String(),
-		CA: &csr.CAConfig{
-			Expiry: caCertExpiry.String(),
-		},
-	}
-	caCert, _, caKey, err := initca.New(&req)
+
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		return nil, pkgErrors.Wrap(err, "could not generate keypair")
+		return nil, pkgErrors.Wrap(err, "key generation")
 	}
-	return mtls.LoadCAForSigning(caCert, caKey)
+
+	pubDER, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
+	if err != nil {
+		return nil, pkgErrors.Wrap(err, "marshal public key")
+	}
+	ski := sha256.Sum256(pubDER)
+
+	now := time.Now()
+	template := &x509.Certificate{
+		SerialNumber: serial,
+		Subject: pkix.Name{
+			CommonName:   mtls.ServiceCACommonName,
+			SerialNumber: serial.String(),
+		},
+		NotBefore:             now,
+		NotAfter:              now.Add(caCertExpiry),
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+		MaxPathLen:            0,
+		MaxPathLenZero:        true,
+		SubjectKeyId:          ski[:20],
+	}
+
+	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	if err != nil {
+		return nil, pkgErrors.Wrap(err, "certificate creation")
+	}
+
+	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	keyDER, err := x509.MarshalECPrivateKey(key)
+	if err != nil {
+		return nil, pkgErrors.Wrap(err, "key marshaling")
+	}
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
+
+	return mtls.LoadCAForSigning(certPEM, keyPEM)
 }

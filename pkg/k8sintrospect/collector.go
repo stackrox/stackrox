@@ -13,10 +13,10 @@ import (
 	"time"
 
 	compv1alpha1 "github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
-	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,6 +30,8 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/yaml"
 )
+
+var log = logging.LoggerForModule()
 
 const (
 	logWindow = 20 * time.Minute
@@ -416,7 +418,7 @@ func (c *collector) Run() error {
 		for _, objCfg := range c.cfg.Objects {
 			objClient := clientMap[objCfg.GVK]
 			if objClient == nil {
-				log.Warningf("Missing type information for %q when generating diagnostic bundle. (CRD not present in cluster?)", objCfg.GVK.String())
+				log.Warnf("Missing type information for %q when generating diagnostic bundle. (CRD not present in cluster?)", objCfg.GVK.String())
 				continue
 			}
 			if err := c.collectObjectsData(ns, objCfg, objClient); err != nil {

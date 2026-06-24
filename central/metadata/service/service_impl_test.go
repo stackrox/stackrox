@@ -4,18 +4,23 @@ package service
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"errors"
 	"fmt"
+	"math/big"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/cloudflare/cfssl/csr"
-	"github.com/cloudflare/cfssl/initca"
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -326,15 +331,39 @@ func (s *serviceImplTestSuite) TestLoadSecondaryLeafCertIfValid() {
 	})
 }
 
-func (s *serviceImplTestSuite) createTestCA(commonName, expiry string) mtls.CA {
-	caCert, _, caKey, err := initca.New(&csr.CertificateRequest{
-		CN:         commonName,
-		KeyRequest: csr.NewKeyRequest(),
-		CA: &csr.CAConfig{
-			Expiry: expiry,
-		},
-	})
+func (s *serviceImplTestSuite) createTestCA(commonName, _ string) mtls.CA {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	s.Require().NoError(err)
+
+	serial, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 64))
+	s.Require().NoError(err)
+	serial.Add(serial, big.NewInt(1))
+
+	pubDER, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
+	s.Require().NoError(err)
+	ski := sha256.Sum256(pubDER)
+
+	now := time.Now()
+	template := &x509.Certificate{
+		SerialNumber:          serial,
+		Subject:               pkix.Name{CommonName: commonName},
+		NotBefore:             now,
+		NotAfter:              now.Add(365 * 24 * time.Hour),
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+		MaxPathLen:            0,
+		MaxPathLenZero:        true,
+		SubjectKeyId:          ski[:20],
+	}
+
+	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	s.Require().NoError(err)
+
+	caCert := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	keyDER, err := x509.MarshalECPrivateKey(key)
+	s.Require().NoError(err)
+	caKey := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
 
 	ca, err := mtls.LoadCAForSigning(caCert, caKey)
 	s.Require().NoError(err)
