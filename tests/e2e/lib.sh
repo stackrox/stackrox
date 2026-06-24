@@ -23,6 +23,10 @@ export SFA_AGENT="${SFA_AGENT:-false}"
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 
+# Scanner V4 default vuln bundle allow list, various sources are omitted to speed up CI (ie: suse).
+# Can be overridden by individual jobs. Setting to "" will load data from all sources.
+export SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST="${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-alpine,debian,epss,manual,nvd,osv,rhel-vex,stackrox-rhel-csaf,ubuntu}"
+
 # If `envsubst` is contained in a non-standard directory `env -i` won't be able to
 # execute it, even though it can be located via `$PATH`, hence we retrieve the absolute path of
 # `envsubst`` before passing it to `env`.
@@ -574,9 +578,15 @@ deploy_central_via_operator() {
         false) scannerV4ScannerComponent="Disabled" ;;
     esac
 
-    if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" && "$scannerV4ScannerComponent" != "Disabled" ]]; then
-        customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_READINESS'
-        customize_envVars+=$'\n        value: "vulnerability"'
+    if [[ "$scannerV4ScannerComponent" != "Disabled" ]]; then
+        if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
+            customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_READINESS'
+            customize_envVars+=$'\n        value: "vulnerability"'
+        fi
+        if [[ -n "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-}" ]]; then
+            customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST'
+            customize_envVars+=$'\n        value: "'"${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}"'"'
+        fi
     fi
 
     local scannerV4DbPersistenceYaml
@@ -803,12 +813,12 @@ deploy_optional_e2e_components() {
 install_the_compliance_operator() {
     csv=$(oc get csv -n openshift-compliance -o json | jq ".items[] | select(.metadata.name | test(\"compliance-operator\")).metadata.name")
     if [[ $csv == "" ]]; then
-        # Install from subscription, but point to the upstream images available
-        # in https://github.com/complianceascode/compliance-operator/pkgs/container/compliance-operator.
-        # Similar process as documented in https://docs.openshift.com/container-platform/latest/security/compliance_operator/compliance-operator-installation.html
+        # Install from the upstream catalog source to avoid flaky failures caused
+        # by the redhat-operators catalog refreshing mid-install (ROX-26851).
         info "Installing the compliance operator"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/namespace.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/catalog-source.yaml"
+        wait_for_catalogsource_ready openshift-marketplace compliance-operator 300
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/operator-group.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/subscription.yaml"
         wait_for_object_to_appear openshift-compliance deploy/compliance-operator 900
@@ -1970,6 +1980,33 @@ wait_for_object_to_appear() {
         info "Waiting for $namespace $object to appear"
         sleep "$waitInterval"
     done
+
+    return 0
+}
+
+wait_for_catalogsource_ready() {
+    if [[ "$#" -lt 2 ]]; then
+        die "missing args. usage: wait_for_catalogsource_ready <namespace> <name> [<delay>]"
+    fi
+
+    local namespace="$1"
+    local name="$2"
+    local delay="${3:-300}"
+    local waitInterval=10
+    local tries=$(( delay / waitInterval ))
+    local count=0
+
+    info "Waiting for CatalogSource $namespace/$name to be READY"
+    until [[ "$(oc get catalogsource "$name" -n "$namespace" -o jsonpath='{.status.connectionState.lastObservedState}' 2>/dev/null)" == "READY" ]]; do
+        count=$((count + 1))
+        if [[ $count -ge "$tries" ]]; then
+            info "CatalogSource $namespace/$name did not become READY after $count tries"
+            oc get catalogsource "$name" -n "$namespace" -o yaml || true
+            return 1
+        fi
+        sleep "$waitInterval"
+    done
+    info "CatalogSource $namespace/$name is READY"
 
     return 0
 }

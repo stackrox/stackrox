@@ -85,14 +85,6 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 	pubSubDispatcher common.PubSubDispatcher) Detector {
 	detectorStopper := concurrency.NewStopper()
 
-	netFlowQueue := queue.NewQueue[*queue.FlowQueueItem](
-		detectorStopper,
-		"FlowsQueue",
-		queueScaler.ScaleSizeOnNonDefault(env.DetectorNetworkFlowBufferSize),
-		detectorMetrics.DetectorNetworkFlowQueueOperations,
-		detectorMetrics.DetectorNetworkFlowDroppedCount,
-	)
-
 	deploymentQueueSize := 0
 	if env.DetectorDeploymentBufferSize.IntegerSetting() > 0 {
 		deploymentQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorDeploymentBufferSize)
@@ -105,15 +97,9 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 		detectorMetrics.DetectorDeploymentDroppedCount,
 	)
 
-	fileAccessQueue := queue.NewQueue[*queue.FileAccessQueueItem](
-		detectorStopper,
-		"FileAccessQueue",
-		queueScaler.ScaleSizeOnNonDefault(env.DetectorFileAccessBufferSize),
-		detectorMetrics.DetectorFileAccessQueueOperations,
-		detectorMetrics.DetectorFileAccessDroppedCount,
-	)
-
 	var piQueue *queue.Queue[*detectorEvents.IndicatorEvent]
+	var netFlowQueue *queue.Queue[*detectorEvents.NetworkFlowEvent]
+	var fileAccessQueue *queue.Queue[*detectorEvents.FileAccessEvent]
 	if !features.SensorInternalPubSub.Enabled() || pubSubDispatcher == nil {
 		piQueue = queue.NewQueue[*detectorEvents.IndicatorEvent](
 			detectorStopper,
@@ -121,6 +107,20 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 			queueScaler.ScaleSizeOnNonDefault(env.DetectorProcessIndicatorBufferSize),
 			detectorMetrics.DetectorProcessIndicatorQueueOperations,
 			detectorMetrics.DetectorProcessIndicatorDroppedCount,
+		)
+		netFlowQueue = queue.NewQueue[*detectorEvents.NetworkFlowEvent](
+			detectorStopper,
+			"FlowsQueue",
+			queueScaler.ScaleSizeOnNonDefault(env.DetectorNetworkFlowBufferSize),
+			detectorMetrics.DetectorNetworkFlowQueueOperations,
+			detectorMetrics.DetectorNetworkFlowDroppedCount,
+		)
+		fileAccessQueue = queue.NewQueue[*detectorEvents.FileAccessEvent](
+			detectorStopper,
+			"FileAccessQueue",
+			queueScaler.ScaleSizeOnNonDefault(env.DetectorFileAccessBufferSize),
+			detectorMetrics.DetectorFileAccessQueueOperations,
+			detectorMetrics.DetectorFileAccessDroppedCount,
 		)
 	}
 
@@ -200,10 +200,10 @@ type detectorImpl struct {
 
 	networkPolicyStore store.NetworkPolicyStore
 
-	networkFlowsQueue *queue.Queue[*queue.FlowQueueItem]
+	networkFlowsQueue *queue.Queue[*detectorEvents.NetworkFlowEvent]
 	indicatorsQueue   *queue.Queue[*detectorEvents.IndicatorEvent]
 	deploymentsQueue  queue.SimpleQueue[*queue.DeploymentQueueItem]
-	fileAccessQueue   *queue.Queue[*queue.FileAccessQueueItem]
+	fileAccessQueue   *queue.Queue[*detectorEvents.FileAccessEvent]
 
 	pubSubDispatcher common.PubSubDispatcher
 	runtimeRunning   concurrency.Signal
@@ -227,22 +227,38 @@ func (d *detectorImpl) Start() error {
 		); err != nil {
 			return errors.Wrap(err, "failed to register detector process indicator consumer")
 		}
+		if err := d.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.DetectorNetworkFlowConsumer,
+			pubsub.DetectorNetworkFlowTopic,
+			pubsub.DetectorNetworkFlowLane,
+			d.handleNetworkFlowEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register detector network flow consumer")
+		}
+		if err := d.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.DetectorFileAccessConsumer,
+			pubsub.DetectorFileAccessTopic,
+			pubsub.DetectorFileAccessLane,
+			d.handleFileAccessEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register detector file access consumer")
+		}
 	}
 
 	go d.runDetector()
 	go d.runAuditLogEventDetector()
 	go d.serializeDeployTimeOutput()
-	go d.processAlertsForFlowOnEntity()
 	go d.processDeployment()
-	go d.processFileAccess()
 
 	if !d.pubSubEnabled() {
 		go d.processIndicator()
+		go d.processAlertsForFlowOnEntity()
+		go d.processFileAccess()
 		d.indicatorsQueue.Start()
+		d.networkFlowsQueue.Start()
+		d.fileAccessQueue.Start()
 	}
 
-	d.networkFlowsQueue.Start()
-	d.fileAccessQueue.Start()
 	return nil
 }
 
@@ -332,17 +348,17 @@ func (d *detectorImpl) Notify(e common.SensorComponentEvent) {
 			d.runtimeRunning.Signal()
 		} else {
 			d.indicatorsQueue.Resume()
+			d.networkFlowsQueue.Resume()
+			d.fileAccessQueue.Resume()
 		}
-		d.networkFlowsQueue.Resume()
-		d.fileAccessQueue.Resume()
 	case common.SensorComponentEventOfflineMode:
 		if d.pubSubEnabled() {
 			d.runtimeRunning.Reset()
 		} else {
 			d.indicatorsQueue.Pause()
+			d.networkFlowsQueue.Pause()
+			d.fileAccessQueue.Pause()
 		}
-		d.networkFlowsQueue.Pause()
-		d.fileAccessQueue.Pause()
 	}
 }
 
@@ -764,7 +780,11 @@ func (d *detectorImpl) handleIndicatorEvent(event pubsub.Event) error {
 }
 
 func (d *detectorImpl) ProcessNetworkFlow(ctx context.Context, flow *storage.NetworkFlow) {
-	go d.processNetworkFlow(ctx, flow)
+	if d.pubSubEnabled() {
+		go d.processAndPublishNetworkFlow(ctx, flow)
+	} else {
+		go d.processNetworkFlow(ctx, flow)
+	}
 }
 
 type networkEntityDetails struct {
@@ -816,29 +836,70 @@ func (d *detectorImpl) getNetworkFlowEntityDetails(info *storage.NetworkEntityIn
 	}
 }
 
-func (d *detectorImpl) pushFlowOnEntity(
+// enrichFlowOnEntity snapshots the deployment and network policies at the
+// time the flow arrives. Returns nil if the entity is not a deployment or
+// the deployment is no longer in the store.
+func (d *detectorImpl) enrichFlowOnEntity(
 	ctx context.Context,
 	entity *storage.NetworkEntityInfo,
 	flowDetails *augmentedobjs.NetworkFlowDetails,
-) {
+) *detectorEvents.NetworkFlowEvent {
 	if entity.GetType() != storage.NetworkEntityInfo_DEPLOYMENT {
-		return
+		return nil
 	}
 	deployment := d.deploymentStore.GetSnapshot(entity.GetId())
 	if deployment == nil {
 		// Probably the deployment was deleted just before we had fetched entity names.
 		log.Warnf("Stop processing alerts for network flow on deployment %q. No deployment was found", entity.GetId())
-		return
+		return nil
 	}
 
-	item := &queue.FlowQueueItem{
+	return &detectorEvents.NetworkFlowEvent{
 		Ctx:        ctx,
 		Deployment: deployment,
 		Flow:       flowDetails,
 		Netpols:    d.getNetworkPoliciesApplied(deployment),
 	}
+}
 
-	d.networkFlowsQueue.Push(item)
+func (d *detectorImpl) pushFlowOnEntity(
+	ctx context.Context,
+	entity *storage.NetworkEntityInfo,
+	flowDetails *augmentedobjs.NetworkFlowDetails,
+) {
+	event := d.enrichFlowOnEntity(ctx, entity, flowDetails)
+	if event == nil {
+		return
+	}
+	d.networkFlowsQueue.Push(event)
+}
+
+func (d *detectorImpl) detectAndAlertForFlow(event *detectorEvents.NetworkFlowEvent) {
+	log.Debugf("processing network flow for deployment %s with id %s", event.Deployment.GetName(), event.Deployment.GetId())
+
+	// The context persists across disconnects with event buffering enabled
+	images := d.enricher.getImages(event.Ctx, event.Deployment)
+	alerts := d.unifiedDetector.DetectNetworkFlowForDeployment(booleanpolicy.EnhancedDeployment{
+		Deployment:             event.Deployment,
+		Images:                 images,
+		NetworkPoliciesApplied: event.Netpols,
+	}, event.Flow)
+	if len(alerts) == 0 {
+		// No need to process runtime alerts that have no violations
+		return
+	}
+	alertResults := &central.AlertResults{
+		DeploymentId: event.Deployment.GetId(),
+		Alerts:       alerts,
+		Stage:        storage.LifecycleStage_RUNTIME,
+	}
+
+	d.enforcer.ProcessAlertResults(central.ResourceAction_CREATE_RESOURCE, storage.LifecycleStage_RUNTIME, alertResults)
+
+	select {
+	case <-d.alertStopSig.Done():
+	case d.output <- createAlertResultsMsg(event.Ctx, central.ResourceAction_CREATE_RESOURCE, alertResults):
+	}
 }
 
 func (d *detectorImpl) processAlertsForFlowOnEntity() {
@@ -846,43 +907,49 @@ func (d *detectorImpl) processAlertsForFlowOnEntity() {
 		select {
 		case <-d.detectorStopper.Flow().StopRequested():
 			return
-		case item, ok := <-d.networkFlowsQueue.Pull():
+		case event, ok := <-d.networkFlowsQueue.Pull():
 			if !ok {
 				log.Debugf("network flow queue channel closed")
 				return
 			}
-			if item == nil {
+			if event == nil {
 				log.Debugf("pulled nil item from the queue")
 				continue
 			}
-			log.Debugf("processing network flow for deployment %s with id %s", item.Deployment.GetName(), item.Deployment.GetId())
-
-			// The context persists across disconnects with event buffering enabled
-			images := d.enricher.getImages(item.Ctx, item.Deployment)
-			alerts := d.unifiedDetector.DetectNetworkFlowForDeployment(booleanpolicy.EnhancedDeployment{
-				Deployment:             item.Deployment,
-				Images:                 images,
-				NetworkPoliciesApplied: item.Netpols,
-			}, item.Flow)
-			if len(alerts) == 0 {
-				// No need to process runtime alerts that have no violations
-				continue
-			}
-			alertResults := &central.AlertResults{
-				DeploymentId: item.Deployment.GetId(),
-				Alerts:       alerts,
-				Stage:        storage.LifecycleStage_RUNTIME,
-			}
-
-			d.enforcer.ProcessAlertResults(central.ResourceAction_CREATE_RESOURCE, storage.LifecycleStage_RUNTIME, alertResults)
-
-			select {
-			case <-d.alertStopSig.Done():
-				continue
-			case d.output <- createAlertResultsMsg(item.Ctx, central.ResourceAction_CREATE_RESOURCE, alertResults):
-			}
+			d.detectAndAlertForFlow(event)
 		}
 	}
+}
+
+func (d *detectorImpl) publishFlowOnEntity(
+	ctx context.Context,
+	entity *storage.NetworkEntityInfo,
+	flowDetails *augmentedobjs.NetworkFlowDetails,
+) {
+	event := d.enrichFlowOnEntity(ctx, entity, flowDetails)
+	if event == nil {
+		return
+	}
+	if err := d.pubSubDispatcher.Publish(event); err != nil {
+		log.Errorf("Failed to publish network flow event: %v", err)
+	}
+}
+
+func (d *detectorImpl) handleNetworkFlowEvent(event pubsub.Event) error {
+	flowEvent, ok := event.(*detectorEvents.NetworkFlowEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+
+	// Block while paused (offline mode)
+	select {
+	case <-d.runtimeRunning.Done():
+	case <-d.detectorStopper.Flow().StopRequested():
+		return nil
+	}
+
+	d.detectAndAlertForFlow(flowEvent)
+	return nil
 }
 
 func (d *detectorImpl) notFoundErrorToEntityKind(err error) string {
@@ -903,24 +970,27 @@ func (d *detectorImpl) handleEntityNotFound(err error, orientation string) {
 	log.Errorf("Error looking up %s entity details while running network flow policy: %v", orientation, err)
 }
 
-func (d *detectorImpl) processNetworkFlow(ctx context.Context, flow *storage.NetworkFlow) {
+// buildFlowDetails extracts entity names, evaluates baseline status,
+// and constructs the NetworkFlowDetails for a flow. Returns nil if the
+// entity types are unsupported or entity details cannot be resolved.
+func (d *detectorImpl) buildFlowDetails(flow *storage.NetworkFlow) *augmentedobjs.NetworkFlowDetails {
 	// Only run the flows through policies if the entity types are supported
 	_, srcTypeSupported := networkbaseline.ValidBaselinePeerEntityTypes[flow.GetProps().GetSrcEntity().GetType()]
 	_, dstTypeSupported := networkbaseline.ValidBaselinePeerEntityTypes[flow.GetProps().GetDstEntity().GetType()]
 	if !srcTypeSupported || !dstTypeSupported {
-		return
+		return nil
 	}
 
 	// First extract more information of the flow. Mainly entity names
 	srcDetails, err := d.getNetworkFlowEntityDetails(flow.GetProps().GetSrcEntity())
 	if err != nil {
 		d.handleEntityNotFound(err, "source")
-		return
+		return nil
 	}
 	dstDetails, err := d.getNetworkFlowEntityDetails(flow.GetProps().GetDstEntity())
 	if err != nil {
 		d.handleEntityNotFound(err, "destination")
-		return
+		return nil
 	}
 	// Check if flow is anomalous
 	flowIsNotInBaseline := d.networkbaselineEval.IsOutsideLockedBaseline(flow, srcDetails.name, dstDetails.name)
@@ -933,7 +1003,7 @@ func (d *detectorImpl) processNetworkFlow(ctx context.Context, flow *storage.Net
 			flowLastSeenTimestamp = timestamp
 		}
 	}
-	flowDetails := &augmentedobjs.NetworkFlowDetails{
+	return &augmentedobjs.NetworkFlowDetails{
 		SrcEntityName:          srcDetails.name,
 		SrcEntityType:          flow.GetProps().GetSrcEntity().GetType(),
 		DstEntityName:          dstDetails.name,
@@ -947,17 +1017,38 @@ func (d *detectorImpl) processNetworkFlow(ctx context.Context, flow *storage.Net
 		DstDeploymentNamespace: dstDetails.deploymentNamespace,
 		DstDeploymentType:      dstDetails.deploymentType,
 	}
+}
 
+func (d *detectorImpl) processNetworkFlow(ctx context.Context, flow *storage.NetworkFlow) {
+	flowDetails := d.buildFlowDetails(flow)
+	if flowDetails == nil {
+		return
+	}
 	d.pushFlowOnEntity(ctx, flow.GetProps().GetSrcEntity(), flowDetails)
 	d.pushFlowOnEntity(ctx, flow.GetProps().GetDstEntity(), flowDetails)
 }
 
-func (d *detectorImpl) ProcessFileAccess(ctx context.Context, access *storage.FileAccess) {
-	d.pushFileAccess(ctx, access)
+func (d *detectorImpl) processAndPublishNetworkFlow(ctx context.Context, flow *storage.NetworkFlow) {
+	flowDetails := d.buildFlowDetails(flow)
+	if flowDetails == nil {
+		return
+	}
+	d.publishFlowOnEntity(ctx, flow.GetProps().GetSrcEntity(), flowDetails)
+	d.publishFlowOnEntity(ctx, flow.GetProps().GetDstEntity(), flowDetails)
 }
 
-func (d *detectorImpl) pushFileAccess(ctx context.Context, access *storage.FileAccess) {
-	item := &queue.FileAccessQueueItem{
+func (d *detectorImpl) ProcessFileAccess(ctx context.Context, access *storage.FileAccess) {
+	if d.pubSubEnabled() {
+		d.publishFileAccess(ctx, access)
+	} else {
+		d.pushFileAccess(ctx, access)
+	}
+}
+
+// enrichFileAccess snapshots the deployment/node state at the time the
+// file access arrives.
+func (d *detectorImpl) enrichFileAccess(ctx context.Context, access *storage.FileAccess) *detectorEvents.FileAccessEvent {
+	event := &detectorEvents.FileAccessEvent{
 		Ctx:    ctx,
 		Access: access,
 	}
@@ -967,20 +1058,79 @@ func (d *detectorImpl) pushFileAccess(ctx context.Context, access *storage.FileA
 		if deployment == nil {
 			log.Debugf("Deployment has already been removed: %+v", access.GetProcess().GetDeploymentId())
 			// Because the file access was already enriched with a deployment, this means the deployment is gone
-			return
+			return nil
 		}
-		item.Deployment = deployment
-		item.Netpols = d.getNetworkPoliciesApplied(deployment)
+		event.Deployment = deployment
+		event.Netpols = d.getNetworkPoliciesApplied(deployment)
 	} else {
 		node := d.nodeStore.GetNodeByHostname(access.GetHostname())
 		if node == nil {
 			log.Warnf("Node %+v does not exist in store", access.GetHostname())
-			return
+			return nil
 		}
-		item.Node = node
+		event.Node = node
 	}
 
-	d.fileAccessQueue.Push(item)
+	return event
+}
+
+func (d *detectorImpl) pushFileAccess(ctx context.Context, access *storage.FileAccess) {
+	event := d.enrichFileAccess(ctx, access)
+	if event == nil {
+		return
+	}
+	d.fileAccessQueue.Push(event)
+}
+
+func (d *detectorImpl) publishFileAccess(ctx context.Context, access *storage.FileAccess) {
+	event := d.enrichFileAccess(ctx, access)
+	if event == nil {
+		return
+	}
+	if err := d.pubSubDispatcher.Publish(event); err != nil {
+		log.Errorf("Failed to publish file access event: %v", err)
+	}
+}
+
+func (d *detectorImpl) detectAndAlertForFileAccess(event *detectorEvents.FileAccessEvent) {
+	var alerts []*storage.Alert
+	var source central.AlertResults_Source
+	matchStart := time.Now()
+	if fsUtils.IsNodeFileAccess(event.Access) {
+		alerts = d.unifiedDetector.DetectNodeFileAccess(event.Node, event.Access)
+		source = central.AlertResults_NODE_EVENT
+	} else if fsUtils.IsDeploymentFileAccess(event.Access) {
+		images := d.enricher.getImages(event.Ctx, event.Deployment)
+		alerts = d.unifiedDetector.DetectFileAccessForDeployment(booleanpolicy.EnhancedDeployment{
+			Deployment:             event.Deployment,
+			Images:                 images,
+			NetworkPoliciesApplied: event.Netpols,
+		}, event.Access)
+		source = central.AlertResults_DEPLOYMENT_EVENT
+	}
+	detectorMetrics.FileAccessCriteriaMatchDuration.Observe(time.Since(matchStart).Seconds())
+
+	if len(alerts) == 0 {
+		// No need to process runtime alerts that have no violations
+		return
+	}
+
+	log.Debugf("%d violations for '%v' (%s)", len(alerts), event.Access.GetFile().GetEffectivePath(), event.Access.GetOperation())
+	alertResults := &central.AlertResults{
+		DeploymentId: event.Access.GetProcess().GetDeploymentId(),
+		Alerts:       alerts,
+		Stage:        storage.LifecycleStage_RUNTIME,
+		Source:       source,
+	}
+
+	if fsUtils.IsDeploymentFileAccess(event.Access) {
+		d.enforcer.ProcessAlertResults(central.ResourceAction_CREATE_RESOURCE, storage.LifecycleStage_RUNTIME, alertResults)
+	}
+
+	select {
+	case <-d.alertStopSig.Done():
+	case d.output <- createAlertResultsMsg(event.Ctx, central.ResourceAction_CREATE_RESOURCE, alertResults):
+	}
 }
 
 func (d *detectorImpl) processFileAccess() {
@@ -988,53 +1138,31 @@ func (d *detectorImpl) processFileAccess() {
 		select {
 		case <-d.detectorStopper.Flow().StopRequested():
 			return
-		case item, ok := <-d.fileAccessQueue.Pull():
+		case event, ok := <-d.fileAccessQueue.Pull():
 			if !ok {
 				return
 			}
-			if item == nil {
+			if event == nil {
 				continue
 			}
-
-			var alerts []*storage.Alert
-			var source central.AlertResults_Source
-			matchStart := time.Now()
-			if fsUtils.IsNodeFileAccess(item.Access) {
-				alerts = d.unifiedDetector.DetectNodeFileAccess(item.Node, item.Access)
-				source = central.AlertResults_NODE_EVENT
-			} else if fsUtils.IsDeploymentFileAccess(item.Access) {
-				images := d.enricher.getImages(item.Ctx, item.Deployment)
-				alerts = d.unifiedDetector.DetectFileAccessForDeployment(booleanpolicy.EnhancedDeployment{
-					Deployment:             item.Deployment,
-					Images:                 images,
-					NetworkPoliciesApplied: item.Netpols,
-				}, item.Access)
-				source = central.AlertResults_DEPLOYMENT_EVENT
-			}
-			detectorMetrics.FileAccessCriteriaMatchDuration.Observe(time.Since(matchStart).Seconds())
-
-			if len(alerts) == 0 {
-				// No need to process runtime alerts that have no violations
-				continue
-			}
-
-			log.Debugf("%d violations for '%v' (%s)", len(alerts), item.Access.GetFile().GetEffectivePath(), item.Access.GetOperation())
-			alertResults := &central.AlertResults{
-				DeploymentId: item.Access.GetProcess().GetDeploymentId(),
-				Alerts:       alerts,
-				Stage:        storage.LifecycleStage_RUNTIME,
-				Source:       source,
-			}
-
-			if fsUtils.IsDeploymentFileAccess(item.Access) {
-				d.enforcer.ProcessAlertResults(central.ResourceAction_CREATE_RESOURCE, storage.LifecycleStage_RUNTIME, alertResults)
-			}
-
-			select {
-			case <-d.alertStopSig.Done():
-				continue
-			case d.output <- createAlertResultsMsg(item.Ctx, central.ResourceAction_CREATE_RESOURCE, alertResults):
-			}
+			d.detectAndAlertForFileAccess(event)
 		}
 	}
+}
+
+func (d *detectorImpl) handleFileAccessEvent(event pubsub.Event) error {
+	fileAccessEvent, ok := event.(*detectorEvents.FileAccessEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+
+	// Block while paused (offline mode)
+	select {
+	case <-d.runtimeRunning.Done():
+	case <-d.detectorStopper.Flow().StopRequested():
+		return nil
+	}
+
+	d.detectAndAlertForFileAccess(fileAccessEvent)
+	return nil
 }

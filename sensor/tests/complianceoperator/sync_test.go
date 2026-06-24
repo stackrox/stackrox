@@ -166,6 +166,7 @@ func restartAndWaitForHello(t *testing.T, tc *helper.TestContext, centralCaps []
 	tc.RestartFakeCentralConnection(centralCaps...)
 	t.Log("Wait for Hello message")
 	tc.WaitForHello(t, helloMessageTimeout)
+	tc.WaitForSyncEvent(t, 10*time.Second)
 }
 
 func createSyncScanConfigsMessage(scanConfigs ...*central.ApplyComplianceScanConfigRequest) *central.MsgToSensor {

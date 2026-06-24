@@ -2,6 +2,7 @@ package extensions
 
 import (
 	"context"
+	"maps"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -126,9 +127,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 				Spec:   c.Spec,
 				Status: *c.Status.DeepCopy(),
 			}
-			for key, val := range c.Annotations {
-				central.Annotations[key] = val
-			}
+			maps.Copy(central.Annotations, c.Annotations)
 
 			ctx := context.Background()
 			sch := runtime.NewScheme()

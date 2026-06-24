@@ -52,7 +52,7 @@ func (c *perRPCCreds) RequireTransportSecurity() bool {
 
 func (c *perRPCCreds) refreshToken(ctx context.Context) error {
 	log.Debug("Refreshing Central API token")
-	token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	token, err := os.ReadFile("/var/run/secrets/stackrox.io/m2m/token")
 	if err != nil {
 		return errors.WithMessage(err, "error reading service account token file")
 	}
