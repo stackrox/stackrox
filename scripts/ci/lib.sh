@@ -34,6 +34,8 @@ ci_export() {
             die "GITHUB_ENV is unset in the environment even though GITHUB_ACTION is set"
         fi
         if [[ "$env_value" == *$'\n'* ]]; then
+            # GHA also supports multi-line values, which need to be added to $GITHUB_ENV with a
+            # special syntax.
             local delimiter="EOF_${env_name}_$$"
             printf '%s<<%s\n%s\n%s\n' "$env_name" "$delimiter" "$env_value" "$delimiter" >> "$GITHUB_ENV"
         else
