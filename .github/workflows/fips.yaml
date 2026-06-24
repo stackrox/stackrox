@@ -23,7 +23,7 @@ run-name: >-
       || format('FIPS check-payload {0}', github.sha) }}
 
 concurrency:
-  group: fips-check-payload-${{ github.ref }}
+  group: fips-check-payload-${{ github.ref }}-${{ inputs.image-tag || github.sha }}
   cancel-in-progress: true
 
 jobs:
