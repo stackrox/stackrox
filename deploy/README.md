@@ -53,7 +53,7 @@ flags, image tags, storage settings, and more. This is convenient at first, but
 becomes a maintenance burden: it's unclear which variables are active, what
 their defaults are, and whether your colleague's deployment matches yours.
 
-With roxie, **we intentionally do not inherit environment variables**. Instead,
+With roxie, **we intentionally do not inherit environment variables** (apart from one: `MAIN_IMAGE_TAG`). Instead,
 all configuration lives in a YAML config file that you pass explicitly. This
 makes deployments self-documenting and reproducible.
 
