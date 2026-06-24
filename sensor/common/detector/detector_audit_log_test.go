@@ -33,9 +33,10 @@ func newTestAuditEvents() *sensor.AuditEvents {
 // sendAuditEvent sends an audit event through the appropriate path:
 // in PubSub mode, publishes directly to the dispatcher (like the compliance
 // service would); in legacy mode, writes to the auditEventsChan.
-func sendAuditEvent(d *detectorImpl, pubSubEnabled bool, events *sensor.AuditEvents) {
+func sendAuditEvent(t *testing.T, d *detectorImpl, pubSubEnabled bool, events *sensor.AuditEvents) {
+	t.Helper()
 	if pubSubEnabled {
-		_ = d.pubSubDispatcher.Publish(&detectorEvents.AuditLogEvent{AuditEvents: events})
+		require.NoError(t, d.pubSubDispatcher.Publish(&detectorEvents.AuditLogEvent{AuditEvents: events}))
 	} else {
 		d.auditEventsChan <- events
 	}
@@ -76,7 +77,7 @@ func TestAuditLogPipeline(t *testing.T) {
 					require.NoError(t, d.Start())
 					defer d.Stop()
 
-					sendAuditEvent(d, pubSubEnabled, newTestAuditEvents())
+					sendAuditEvent(t, d, pubSubEnabled, newTestAuditEvents())
 					synctest.Wait()
 
 					if tc.expectOutput {
