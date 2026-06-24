@@ -75,7 +75,7 @@ func getSecretType(data string) storage.SecretType {
 func convertPkixName(name pkix.Name) *storage.CertName {
 	names := make([]string, 0, len(name.Names))
 	for _, atv := range name.Names {
-		names = append(names, fmt.Sprintf("%v", atv))
+		names = append(names, fmt.Sprintf("%v", atv.Value))
 	}
 	return &storage.CertName{
 		CommonName:       name.CommonName,

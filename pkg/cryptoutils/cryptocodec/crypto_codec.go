@@ -51,7 +51,7 @@ func (gcm *gcmCryptoCodecImpl) Encrypt(keyString string, stringToEncrypt string)
 	if err != nil {
 		return "", err
 	}
-	// NewGCMWithRandomNonce generates 12-byte nonces internally and prepends them to ciphertext.
+	// FIPS 140-only mode rejects cipher.NewGCM because it allows arbitrary IVs.
 	aesgcm, err := cipher.NewGCMWithRandomNonce(block)
 	if err != nil {
 		return "", err

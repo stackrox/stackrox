@@ -71,8 +71,6 @@ const (
 
 	ephemeralProfileWithExpirationInDays             = "ephemeralWithExpirationInDays"
 	ephemeralProfileWithExpirationInDaysCertLifetime = 2 * 24 * time.Hour
-
-	crsProfileDefaultValidityPeriod = 24 * time.Hour
 )
 
 var (
@@ -307,17 +305,13 @@ var certProfiles = map[string]certProfile{
 }
 
 func loadCAFromFiles() (*x509.Certificate, crypto.Signer, error) {
-	_, certPEM, _, err := readCA()
+	caCert, _, _, err := readCA()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "reading CA cert")
 	}
 	keyPEM, err := readCAKey()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "reading CA key")
-	}
-	caCert, err := x509utils.ParseCertificatePEM(certPEM)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "parsing CA cert")
 	}
 	caKey, err := x509utils.ParsePrivateKeyPEM(keyPEM)
 	if err != nil {
