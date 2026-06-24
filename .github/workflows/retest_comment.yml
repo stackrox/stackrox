@@ -8,7 +8,7 @@ jobs:
   rerun-failed:
     if: >-
       github.event.issue.pull_request &&
-      github.event.comment.body == '/experimental-retest'
+      github.event.comment.body == '/retest'
     runs-on: ubuntu-slim
     steps:
     - name: Fetch PR head SHA
