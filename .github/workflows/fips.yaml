@@ -112,6 +112,14 @@ jobs:
             logfile="/tmp/scan-${image}.log"
             echo "::group::Scanning ${ref}"
 
+            if ! podman pull "${ref}" 2>&1; then
+              echo "::error::Failed to pull ${ref}"
+              echo "| ${image} | :x: pull failed | image not found |" >> "$GITHUB_STEP_SUMMARY"
+              (( exitcode++ ))
+              echo "::endgroup::"
+              continue
+            fi
+
             if podman unshare go run main.go scan operator --verbose --spec "${ref}" 2>&1 \
                 | tee "${logfile}"; then
               echo "| ${image} | :white_check_mark: pass | |" >> "$GITHUB_STEP_SUMMARY"
