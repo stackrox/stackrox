@@ -141,7 +141,7 @@ jobs:
         if: ${{ inputs.konflux-images }}
         uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
         with:
-          limit: 3600 # Let's wait a full hour, because Konflux image building is slower.
+          limit: 7200 # Let's wait a two hours, because Konflux image building can be very slow.
           token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
           image: |
             rhacs-eng/release-main:${{ env.tag_sanitized }}${{ env.tag_suffix }}
