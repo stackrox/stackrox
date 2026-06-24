@@ -1,5 +1,10 @@
 name: CI Failures Report
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/ci-failures-report.yml'
+      - 'scripts/ci/metrics.sh'
+      - 'scripts/ci/sql/test_failure_streaks.sql'
   workflow_dispatch:
     inputs:
       test:
@@ -14,8 +19,6 @@ jobs:
   report-e2e-failures-to-slack:
     if:  ${{ github.repository_owner == 'stackrox' }}
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
     steps:
     - name: Checkout
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
@@ -32,9 +35,18 @@ jobs:
 
         # Avoid BQ init message in first report
         bq --quiet --format=pretty query --use_legacy_sql=false 'select 1'
+
+        # Use test mode for PRs and manual dispatch with test=true, production mode for scheduled runs
+        if [[ "${{ github.event_name }}" == "pull_request" ]] || [[ "${{ github.event.inputs.test }}" == "true" ]]; then
+          is_test="true"
+        else
+          is_test="false"
+        fi
+
         n=10
-        slack_top_n_failures ${n} "qa-e2e" ":testgrid: Top ${n} QA E2E Test failures in this and previous week" "${{github.event.inputs.test}}"
-        slack_top_n_failures ${n} "operator-e2e" ":operator: Top ${n} Operator E2E Test failures in this and previous week" "${{github.event.inputs.test}}"
-        slack_top_n_failures ${n} "ui-e2e" ":computer: Top ${n} UI E2E Test failures in this and previous week" "${{github.event.inputs.test}}"
-        slack_top_n_failures ${n} "nongroovy-e2e" ":go: Top ${n} NonGroovy E2E Test failures in this and previous week" "${{github.event.inputs.test}}"
-        slack_top_n_failures ${n} "go" ":github: Top ${n} unit test failures in this and previous week" "${{github.event.inputs.test}}"
+        slack_top_n_failures ${n} "qa-e2e" ":testgrid: Top ${n} QA E2E Test failures in this and previous week" "${is_test}"
+        slack_top_n_failures ${n} "operator-e2e" ":operator: Top ${n} Operator E2E Test failures in this and previous week" "${is_test}"
+        slack_top_n_failures ${n} "ui-e2e" ":computer: Top ${n} UI E2E Test failures in this and previous week" "${is_test}"
+        slack_top_n_failures ${n} "nongroovy-e2e" ":go: Top ${n} NonGroovy E2E Test failures in this and previous week" "${is_test}"
+        slack_top_n_failures ${n} "go" ":github: Top ${n} unit test failures in this and previous week" "${is_test}"
+        slack_test_failure_streaks 3 ${n} ":fire: Top ${n} tests failing 3+ times in a row (still failing today)" "${is_test}"
