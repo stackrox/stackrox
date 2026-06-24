@@ -11,7 +11,6 @@ import (
 
 	"github.com/cloudflare/cfssl/config"
 	cfcsr "github.com/cloudflare/cfssl/csr"
-	"github.com/cloudflare/cfssl/helpers"
 	cflog "github.com/cloudflare/cfssl/log"
 	cfsigner "github.com/cloudflare/cfssl/signer"
 	"github.com/cloudflare/cfssl/signer/local"
@@ -402,7 +401,7 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCe
 		return nil, errors.Wrap(err, "signing")
 	}
 
-	x509Cert, err := helpers.ParseCertificatePEM(certBytes)
+	x509Cert, err := x509utils.ParseCertificatePEM(certBytes)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not parse generated PEM cert")
 	}

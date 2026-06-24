@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/stackrox/rox/central/clusterinit/backend/access"
 	"github.com/stackrox/rox/central/clusterinit/backend/certificate"
 	"github.com/stackrox/rox/central/clusterinit/store"
@@ -32,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/x509utils"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -243,10 +243,8 @@ func (s *clusterInitBackendTestSuite) TestCRSDefaultExpiration() {
 	s.Require().NoError(err)
 
 	certPEM := []byte(crsWithMeta.CRS.Cert)
-	certs, _, err := helpers.ParseOneCertificateFromPEM(certPEM)
+	cert, err := x509utils.ParseCertificatePEM(certPEM)
 	s.Require().NoError(err)
-	s.Require().Len(certs, 1)
-	cert := certs[0]
 
 	epsilon := 70 * time.Second // Let's cover at least one minute of drift, because cfssl internally does rounding to minutes during cert issuing.
 	s.Assert().Less(cert.NotAfter.Sub(expectedNotAfter).Abs(), epsilon, "expected: |cert.NotAfter - expectedNotAfter| < epsilon")
@@ -263,10 +261,8 @@ func (s *clusterInitBackendTestSuite) TestCRSExpirationValidUntil() {
 	s.Require().NoError(err)
 
 	certPEM := []byte(crsWithMeta.CRS.Cert)
-	certs, _, err := helpers.ParseOneCertificateFromPEM(certPEM)
+	cert, err := x509utils.ParseCertificatePEM(certPEM)
 	s.Require().NoError(err)
-	s.Require().Len(certs, 1)
-	cert := certs[0]
 	s.Require().Equal(validUntil, cert.NotAfter)
 }
 

@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/x509utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -94,7 +94,7 @@ func (cmd *centralUserPkiCreateCommand) createProvider() error {
 		if err != nil {
 			return errors.Wrap(err, fn)
 		}
-		cert, err := helpers.ParseCertificatePEM(b)
+		cert, err := x509utils.ParseCertificatePEM(b)
 		if err != nil {
 			return errors.Wrap(err, fn)
 		}

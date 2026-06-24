@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/go-logr/logr"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/x509utils"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -124,7 +124,7 @@ func TestCentralCARotationAddSecondaryAndPromote(t *testing.T) {
 	require.NoError(t, err)
 
 	// Update the CA's NotBefore to be 4+ years ago to simulate an old deployment
-	privateKey, err := helpers.ParsePrivateKeyPEM(oldCA.KeyPEM())
+	privateKey, err := x509utils.ParsePrivateKeyPEM(oldCA.KeyPEM())
 	require.NoError(t, err)
 	oldCATime := time.Now().Add(-4*365*24*time.Hour - 24*time.Hour)
 	oldCACertBytes, err := updateCertificateNotBefore(oldCA.Certificate(), privateKey, oldCATime)
@@ -209,7 +209,7 @@ func updateSecondaryCANotBefore(t *testing.T, client ctrlClient.Client, currentT
 	secondaryCA, err := certgen.LoadSecondaryCAFromFileMap(secret.Data)
 	require.NoError(t, err)
 
-	privateKey, err := helpers.ParsePrivateKeyPEM(secondaryCA.KeyPEM())
+	privateKey, err := x509utils.ParsePrivateKeyPEM(secondaryCA.KeyPEM())
 	require.NoError(t, err)
 
 	updatedCert, err := updateCertificateNotBefore(secondaryCA.Certificate(), privateKey, currentTime)

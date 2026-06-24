@@ -19,7 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cloudflare/cfssl/helpers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
@@ -30,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/pkg/x509utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -152,7 +152,7 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 			Name:    fmt.Sprintf("test-%d", mathRand.Int()),
 			Enabled: true,
 			Config: map[string]string{
-				userpki.ConfigKeys: string(helpers.EncodeCertificatesPEM([]*x509.Certificate{rootCA, secondCA})),
+				userpki.ConfigKeys: string(x509utils.EncodeCertificatesPEM([]*x509.Certificate{rootCA, secondCA})),
 			},
 		},
 	}
@@ -223,7 +223,7 @@ func TestClientCARequested(t *testing.T) {
 	clientCAFile := mustGetEnv(t, "CLIENT_CA_PATH")
 	pemBytes, err := os.ReadFile(clientCAFile)
 	require.NoErrorf(t, err, "Could not read client CA file %s", clientCAFile)
-	caCert, err := helpers.ParseCertificatePEM(pemBytes)
+	caCert, err := x509utils.ParseCertificatePEM(pemBytes)
 	require.NoError(t, err, "Could not parse client CA PEM data")
 
 	var acceptableCAs [][]byte

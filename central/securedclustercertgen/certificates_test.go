@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/cloudflare/cfssl/csr"
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/cloudflare/cfssl/initca"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
@@ -17,6 +16,7 @@ import (
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/x509utils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -127,7 +127,7 @@ func (s *securedClusterCertGenSuite) TestLocalScannerCertificateGeneration() {
 		s.Run(tc.service.String(), func() {
 			certMap, err := certIssuer.generateServiceCertMap(tc.service, namespace, clusterID)
 			s.Require().NoError(err)
-			cert, err := helpers.ParseCertificatePEM(certMap["cert.pem"])
+			cert, err := x509utils.ParseCertificatePEM(certMap["cert.pem"])
 			s.Require().NoError(err)
 
 			subject := cert.Subject
@@ -170,7 +170,7 @@ func (s *securedClusterCertGenSuite) TestSecuredClusterCertificateGeneration() {
 		s.Run(tc.service.String(), func() {
 			certMap, err := certIssuer.generateServiceCertMap(tc.service, namespace, clusterID)
 			s.Require().NoError(err)
-			cert, err := helpers.ParseCertificatePEM(certMap["cert.pem"])
+			cert, err := x509utils.ParseCertificatePEM(certMap["cert.pem"])
 			s.Require().NoError(err)
 
 			subject := cert.Subject
@@ -342,11 +342,11 @@ func (s *securedClusterCARotationSuite) verifyServiceCertsSignedByCA(caCertPEM [
 	s.Equal(caCertPEM, certs.GetCaPem())
 
 	// Verify that all service certs are actually signed by the expected CA
-	caCert, err := helpers.ParseCertificatePEM(caCertPEM)
+	caCert, err := x509utils.ParseCertificatePEM(caCertPEM)
 	s.Require().NoError(err)
 	for _, serviceCert := range certs.GetServiceCerts() {
 		certPEM := serviceCert.GetCert().GetCertPem()
-		cert, err := helpers.ParseCertificatePEM(certPEM)
+		cert, err := x509utils.ParseCertificatePEM(certPEM)
 		s.Require().NoError(err)
 		s.Equal(caCert.Subject, cert.Issuer, "Service cert not signed by expected CA")
 	}
@@ -534,7 +534,7 @@ func (s *securedClusterCARotationSuite) TestServiceCertificateGeneration() {
 		s.NotEmpty(cert.GetCert().GetKeyPem())
 
 		// Verify the certificate can be parsed
-		parsedCert, err := helpers.ParseCertificatePEM(cert.GetCert().GetCertPem())
+		parsedCert, err := x509utils.ParseCertificatePEM(cert.GetCert().GetCertPem())
 		s.Require().NoError(err)
 		s.NotNil(parsedCert)
 	}

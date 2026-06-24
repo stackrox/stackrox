@@ -6,10 +6,10 @@ import (
 	"crypto/x509"
 	"slices"
 
-	"github.com/cloudflare/cfssl/helpers"
 	cfsslSigner "github.com/cloudflare/cfssl/signer"
 	"github.com/cloudflare/cfssl/signer/local"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/x509utils"
 )
 
 // CA represents a StackRox service certificate authority.
@@ -61,7 +61,7 @@ func LoadCAForSigning(certPEM, keyPEM []byte) (CA, error) {
 
 	ca.tlsCert.Leaf, _ = x509.ParseCertificate(ca.tlsCert.Certificate[0])
 
-	priv, err := helpers.ParsePrivateKeyPEM(keyPEM)
+	priv, err := x509utils.ParsePrivateKeyPEM(keyPEM)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func LoadCAForValidation(certPEM []byte) (CA, error) {
 	}
 
 	var err error
-	ca.tlsCert.Leaf, err = helpers.ParseCertificatePEM(certPEM)
+	ca.tlsCert.Leaf, err = x509utils.ParseCertificatePEM(certPEM)
 	if err != nil {
 		return nil, err
 	}

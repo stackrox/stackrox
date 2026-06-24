@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/tokens"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/x509utils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -40,7 +40,7 @@ func newBackend(_ context.Context, pathPrefix string, callbacks ProviderCallback
 	if pem == "" {
 		return nil, errors.Errorf("parameter %q is required", ConfigKeys)
 	}
-	certs, err := helpers.ParseCertificatesPEM([]byte(pem))
+	certs, err := x509utils.ParseCertificatesPEM([]byte(pem))
 	if err != nil {
 		return nil, err
 	}

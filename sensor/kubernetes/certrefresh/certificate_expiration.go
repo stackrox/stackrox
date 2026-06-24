@@ -5,9 +5,9 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/x509utils"
 )
 
 var (
@@ -44,7 +44,7 @@ func getCertificateRenewalTime(certificate *storage.TypedServiceCertificate) (ti
 	if len(certBytes) == 0 {
 		err = ErrEmptyCertificate
 	} else {
-		cert, err = helpers.ParseCertificatePEM(certBytes)
+		cert, err = x509utils.ParseCertificatePEM(certBytes)
 	}
 	if err != nil {
 		var zeroTime time.Time

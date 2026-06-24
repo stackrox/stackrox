@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/cloudflare/cfssl/csr"
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/cloudflare/cfssl/initca"
 	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/x509utils"
 )
 
 var (
@@ -93,7 +93,7 @@ func VerifyCACertInFileMap(fileMap map[string][]byte, ca mtls.CA) error {
 	if len(caCertPEM) == 0 {
 		return ErrNoCACert
 	}
-	caCert, err := helpers.ParseCertificatePEM(caCertPEM)
+	caCert, err := x509utils.ParseCertificatePEM(caCertPEM)
 	if err != nil {
 		return pkgErrors.Wrap(err, "unparseable CA certificate in file map")
 	}

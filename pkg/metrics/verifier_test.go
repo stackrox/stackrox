@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/x509utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -45,13 +45,13 @@ func TestClientCertVerifier(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			certFile, err := os.ReadFile(c.certFilePath)
 			require.NoError(t, err)
-			certs, err := helpers.ParseCertificatesPEM(certFile)
+			certs, err := x509utils.ParseCertificatesPEM(certFile)
 			require.NoError(t, err)
 			require.Len(t, certs, 1)
 
 			caFile, err := os.ReadFile("./testdata/ca.pem")
 			require.NoError(t, err)
-			caPool, err := helpers.PEMToCertPool(caFile)
+			caPool, err := x509utils.PEMToCertPool(caFile)
 			require.NoError(t, err)
 
 			tlsVerifier := &clientCertVerifier{

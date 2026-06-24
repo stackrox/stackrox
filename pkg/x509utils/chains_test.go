@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +28,7 @@ var (
 
 func init() {
 	var err error
-	certChain, err = helpers.ParseCertificatesPEM([]byte(pemChain))
+	certChain, err = ParseCertificatesPEM([]byte(pemChain))
 	utils.CrashOnError(err)
 
 	for _, cert := range certChain {

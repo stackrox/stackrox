@@ -3,9 +3,9 @@ package userpki
 import (
 	"testing"
 
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/x509utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,7 +33,7 @@ f51IDnm9EwnPPJH42AIPiTrsHnLg
 
 func TestExtractAttributes(t *testing.T) {
 	a := assert.New(t)
-	userA, err := helpers.ParseCertificatePEM(userA)
+	userA, err := x509utils.ParseCertificatePEM(userA)
 	if err != nil {
 		t.Fatal(err)
 	}

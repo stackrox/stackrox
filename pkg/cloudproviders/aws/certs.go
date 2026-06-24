@@ -3,8 +3,8 @@ package aws
 import (
 	"crypto/x509"
 
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/x509utils"
 )
 
 // awsCerts lists all known AWS certificates as of time of writing.
@@ -18,7 +18,7 @@ var awsCerts []*x509.Certificate
 
 func init() {
 	var err error
-	awsCerts, err = helpers.ParseCertificatesPEM([]byte(`
+	awsCerts, err = x509utils.ParseCertificatesPEM([]byte(`
 -----BEGIN CERTIFICATE-----
 MIIEEjCCAvqgAwIBAgIJALFpzEAVWaQZMA0GCSqGSIb3DQEBCwUAMFwxCzAJBgNV
 BAYTAlVTMRkwFwYDVQQIExBXYXNoaW5ndG9uIFN0YXRlMRAwDgYDVQQHEwdTZWF0
