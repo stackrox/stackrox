@@ -49,6 +49,7 @@ func New(db postgres.DB) Store {
 		copyFromTestNoSerializeds,
 		scanRow,
 		scanRows,
+		fetchChildren,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
@@ -304,6 +305,54 @@ func scanRows(rows pgx.Rows) ([]*storeType, error) {
 }
 
 // endregion No-serialized scan functions
+// region Child table fetching
+
+func fetchChildren(ctx context.Context, db postgres.Queryable, objs []*storeType) error {
+	if len(objs) == 0 {
+		return nil
+	}
+	objsByID := make(map[string]*storeType, len(objs))
+	ids := make([]string, 0, len(objs))
+	for _, obj := range objs {
+		id := pkGetter(obj)
+		objsByID[id] = obj
+		ids = append(ids, id)
+	}
+	{
+		rows, err := db.Query(ctx,
+			"SELECT test_no_serializeds_Id, idx, Key, Value FROM test_no_serializeds_labels WHERE test_no_serializeds_Id = ANY($1::uuid[]) ORDER BY test_no_serializeds_Id, idx",
+			ids)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var parentID string
+			var idx int
+			child := &storage.TestNoSerialized_Label{}
+
+			if err := rows.Scan(
+				&parentID,
+				&idx,
+				&child.Key,
+				&child.Value,
+			); err != nil {
+				return err
+			}
+			parent, ok := objsByID[parentID]
+			if !ok {
+				continue
+			}
+			parent.Labels = append(parent.Labels, child)
+		}
+		if err := rows.Err(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// endregion Child table fetching
 
 // endregion Helper functions
 

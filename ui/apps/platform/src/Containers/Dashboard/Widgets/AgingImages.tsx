@@ -14,6 +14,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import isEqual from 'lodash/isEqual';
 import pluralize from 'pluralize';
 
+import useAnalytics, { AGING_IMAGES_WIDGET_CLICKED } from 'hooks/useAnalytics';
 import useURLSearch from 'hooks/useURLSearch';
 import useWidgetConfig from 'hooks/useWidgetConfig';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
@@ -152,6 +153,7 @@ const fieldIdPrefix = 'aging-images';
 function AgingImages() {
     const { searchFilter } = useURLSearch();
     const { pathname } = useLocation();
+    const { analyticsTrack } = useAnalytics();
 
     const [{ timeRanges }, dispatch] = useWidgetConfig<Config, TimeRangeAction>(
         'AgingImages',
@@ -208,7 +210,17 @@ function AgingImages() {
                         alignItems={{ default: 'alignItemsCenter' }}
                     >
                         <FlexItem>
-                            <Link to={getAgingImagesListLink(searchFilter)}>View all</Link>
+                            <Link
+                                to={getAgingImagesListLink(searchFilter)}
+                                onClick={() => {
+                                    analyticsTrack({
+                                        event: AGING_IMAGES_WIDGET_CLICKED,
+                                        properties: { clickType: 'view-all' },
+                                    });
+                                }}
+                            >
+                                View all
+                            </Link>
                         </FlexItem>
                         <FlexItem>
                             {isOptionsChanged && (
@@ -277,6 +289,12 @@ function AgingImages() {
                     searchFilter={searchFilter}
                     timeRanges={timeRanges}
                     timeRangeCounts={timeRangeCounts}
+                    onBucketClick={(bucket) => {
+                        analyticsTrack({
+                            event: AGING_IMAGES_WIDGET_CLICKED,
+                            properties: { clickType: 'bucket', bucket },
+                        });
+                    }}
                 />
             ) : (
                 <NoDataEmptyState />

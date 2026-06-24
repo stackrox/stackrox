@@ -167,6 +167,15 @@ func (s *Schema) Root() *Schema {
 	return curr
 }
 
+// ShallowCopyWithoutChildren returns a copy of the schema with Children cleared.
+// The copy shares all other fields (Fields, References, etc.) with the original.
+// This is used to build queries that skip child table JOINs.
+func (s *Schema) ShallowCopyWithoutChildren() *Schema {
+	cp := *s
+	cp.Children = nil
+	return &cp
+}
+
 // SetOptionsMap sets options map for the schema.
 func (s *Schema) SetOptionsMap(optionsMap search.OptionsMap) {
 	s.OptionsMap = optionsMap

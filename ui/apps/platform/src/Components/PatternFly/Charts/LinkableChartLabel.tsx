@@ -8,15 +8,16 @@ export type LinkableChartLabelProps = ChartLabelProps & {
      * uses it to generate a link to navigate to when clicked.
      */
     linkWith: (props: ChartLabelProps) => string;
+    onClick?: (props: ChartLabelProps) => void;
 };
 
 /**
  * Component that wraps a PatternFly `ChartLabel` component with a `Link` component
  * in order to use labels as links.
  */
-export function LinkableChartLabel({ linkWith, ...props }: LinkableChartLabelProps) {
+export function LinkableChartLabel({ linkWith, onClick, ...props }: LinkableChartLabelProps) {
     return (
-        <Link to={linkWith(props)}>
+        <Link to={linkWith(props)} onClick={() => onClick?.(props)}>
             <ChartLabel
                 {...props}
                 style={{
