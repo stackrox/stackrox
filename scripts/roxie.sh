@@ -71,9 +71,6 @@ ensure_roxie_installed() {
         local asset_name="roxie-${os}-${arch}"
         local tmp_roxie; tmp_roxie=$(mktemp)
         gh_download_release "$tmp_roxie" "$GITHUB_ROXIE_REPO" "v${expected_version}" "$asset_name"
-        if [[ "$os" == "darwin" ]]; then
-            xattr -d com.apple.quarantine "$tmp_roxie"
-        fi
         mv "$tmp_roxie" "$install_path"
         chmod +x "$install_path"
         echo "roxie ${expected_version} has been installed to $install_path"
