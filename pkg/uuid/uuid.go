@@ -3,6 +3,7 @@
 package uuid
 
 import (
+	"crypto/fips140"
 	"crypto/sha256"
 	"database/sql/driver"
 	"fmt"
@@ -150,16 +151,22 @@ func NewV5FromNonUUIDs(ns, name string) UUID {
 	if err != nil {
 		panic(err)
 	}
-	return UUID{
-		uuid: uuid.NewHash(newSHA1(), nsUUID, []byte(name), 5),
-	}
+	var id uuid.UUID
+	// RFC 4122 mandates SHA-1 for UUID v5; this is non-cryptographic ID derivation.
+	fips140.WithoutEnforcement(func() {
+		id = uuid.NewSHA1(nsUUID, []byte(name))
+	})
+	return UUID{uuid: id}
 }
 
 // NewV5 returns UUID based on SHA-1 hash of namespace UUID and name.
 func NewV5(ns UUID, name string) UUID {
-	return UUID{
-		uuid: uuid.NewHash(newSHA1(), ns.uuid, []byte(name), 5),
-	}
+	var id uuid.UUID
+	// RFC 4122 mandates SHA-1 for UUID v5; this is non-cryptographic ID derivation.
+	fips140.WithoutEnforcement(func() {
+		id = uuid.NewSHA1(ns.uuid, []byte(name))
+	})
+	return UUID{uuid: id}
 }
 
 // NewDummy returns a uuid for testing purposes
