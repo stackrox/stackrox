@@ -114,7 +114,7 @@ func mainCmd() error {
 		},
 	}
 
-	apiServer := pkgGRPC.NewAPI(serverConfig)
+	apiServer := pkgGRPC.NewAPI(&serverConfig)
 	apiServer.Register(service.New(mgr))
 
 	apiServer.Start()

@@ -115,6 +115,7 @@ import (
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	customMetrics "github.com/stackrox/rox/central/metrics/custom"
 	"github.com/stackrox/rox/central/metrics/telemetry"
+	"github.com/stackrox/rox/central/migrate"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
 	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
@@ -306,25 +307,11 @@ func main() {
 	devmode.StartOnDevBuilds("central")
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
-	ensureDB(ctx)
-
-	if !pgconfig.IsExternalDatabase() {
-		// Need to remove the backup clone and set the current version
-		sourceMap, config, err := pgconfig.GetPostgresConfig()
-		if err != nil {
-			log.Errorf("Unable to get Postgres DB config: %v", err)
-		}
-
-		err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
-		if err != nil {
-			log.Errorf("Failed to remove backup DB: %v", err)
-		}
-	}
-
-	features.LogFeatureFlags()
 
 	go startGRPCServer()
 	go startTelemetryServer()
+
+	features.LogFeatureFlags()
 
 	if env.ManagedCentral.BooleanSetting() {
 		clusterInternalServer := internal.NewHTTPServer(metrics.HTTPSingleton())
@@ -367,15 +354,23 @@ func clusterInternalRoutes() []*internal.Route {
 	return result
 }
 
-func ensureDB(ctx context.Context) {
-	versionStore := vStore.NewPostgres(globaldb.InitializePostgres(ctx))
-	err := version.Ensure(versionStore)
+func dropBackupDB() {
+	if pgconfig.IsExternalDatabase() {
+		return
+	}
+	sourceMap, config, err := pgconfig.GetPostgresConfig()
 	if err != nil {
-		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
+		log.Errorf("Unable to get Postgres DB config: %v", err)
+		return
+	}
+	if err := pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone()); err != nil {
+		log.Errorf("Failed to remove backup DB: %v", err)
 	}
 }
 
 func startServices() {
+	fetcher.SingletonManager().Start()
+
 	go cloudSourcesManager.Singleton().Start()
 
 	reprocessor.Singleton().Start()
@@ -523,9 +518,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		log.Panicf("Couldn't start sensor connection manager: %v", err)
 	}
 
-	// Start cluster-level (Kubernetes, OpenShift, Istio) vulnerability data fetcher.
-	fetcher.SingletonManager().Start()
-
 	if devbuild.IsEnabled() {
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
@@ -554,18 +546,28 @@ func newRateLimiter() ratelimit.RateLimiter {
 }
 
 func startGRPCServer() {
-	// Temporarily elevate permissions to modify auth providers.
-	authProviderRegisteringCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+	ctx := context.Background()
+
+	// DB init + migration (lazy pool connects on first query).
+	db := globaldb.InitializePostgres(ctx)
+	if err := migrate.Run(db); err != nil {
+		log.Panicf("Migrator failed: %v", err)
+	}
+	versionStore := vStore.NewPostgres(db)
+	if err := version.Ensure(versionStore); err != nil {
+		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
+	}
+	globaldb.SignalReady()
+	go dropBackupDB()
+
+	// Auth provider setup.
+	authProviderRegisteringCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))
 
-	// Create the registry of applied auth providers.
 	registry := authProviderRegistry.Singleton()
 
-	// env.EnableOpenShiftAuth signals the desire but does not guarantee Central
-	// is configured correctly to talk to the OpenShift's OAuth server. If this
-	// is the case, we can be setting up an auth providers which won't work.
 	if env.EnableOpenShiftAuth.BooleanSetting() {
 		authProviderBackendFactories[openshift.TypeName] = openshift.NewFactory
 	}
@@ -598,8 +600,8 @@ func startGRPCServer() {
 	}
 
 	idExtractors := []authn.IdentityExtractor{
-		serviceMTLSExtractor, // internal services
-		tokenbased.NewExtractor(roleDataStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens
+		serviceMTLSExtractor,
+		tokenbased.NewExtractor(roleDataStore.Singleton(), jwt.ValidatorSingleton()),
 		userpass.IdentityExtractorOrPanic(roleDataStore.Singleton(), basicAuthMgr, basicAuthProvider),
 		serviceTokenExtractor,
 		authnUserpki.NewExtractor(tlsconfig.ManagerInstance()),
@@ -633,24 +635,20 @@ func startGRPCServer() {
 		)
 	}
 
-	// This adds an on-demand global tracing for the built-in authorization.
 	authzTraceSink := trace.AuthzTraceSinkSingleton()
 	config.UnaryInterceptors = append(config.UnaryInterceptors,
 		observe.AuthzTraceInterceptor(authzTraceSink),
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
-
-	// Before authorization is checked, we want to inject the sac client into the context.
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
-	// Telemetry client has to add interceptors before starting the server.
 	c := phonehomeClient.Singleton()
 	config.HTTPInterceptors = append(config.HTTPInterceptors, c.GetHTTPInterceptor())
 	config.UnaryInterceptors = append(config.UnaryInterceptors, c.GetGRPCInterceptor())
 
-	server := pkgGRPC.NewAPI(config)
+	server := pkgGRPC.NewAPI(&config)
 	server.Register(servicesToRegister()...)
 	startedSig := server.Start()
 

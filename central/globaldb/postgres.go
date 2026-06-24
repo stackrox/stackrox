@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	pgStats "github.com/stackrox/rox/pkg/postgres/stats"
-	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	stats "github.com/stackrox/rox/pkg/telemetry/data"
@@ -105,10 +104,9 @@ SELECT
 var (
 	log = logging.LoggerForModule()
 
-	postgresOpenRetries        = 10
-	postgresTimeBetweenRetries = 10 * time.Second
-	postgresDB                 postgres.DB
-	pgSync                     sync.Once
+	postgresDB postgres.DB
+	pgSync     sync.Once
+	dbReady    = make(chan struct{})
 
 	// PostgresQueryTimeout - Postgres query timeout value
 	PostgresQueryTimeout = 10 * time.Second
@@ -120,19 +118,36 @@ var (
 	writtenStates = set.NewStringSet()
 )
 
-// GetPostgres returns a global database instance. It should be called after InitializePostgres
+// GetPostgres returns the global database instance, blocking until the database
+// has been initialized and migrations have completed. This gate ensures no
+// datastore queries run before the schema is ready.
 func GetPostgres() postgres.DB {
+	<-dbReady
 	return postgresDB
+}
+
+// SignalReady signals that the database is initialized and migrations are
+// complete. All callers blocked on GetPostgres() will be unblocked.
+func SignalReady() {
+	close(dbReady)
 }
 
 // SetPostgresTest sets a global database instance. It should be used in tests only.
 func SetPostgresTest(t *testing.T, db postgres.DB) postgres.DB {
 	t.Log("Initializing Postgres... ")
 	postgresDB = db
+	select {
+	case <-dbReady:
+	default:
+		close(dbReady)
+	}
 	return postgresDB
 }
 
-// InitializePostgres creates and returns returns a global database instance.
+// InitializePostgres creates and returns a global database instance.
+// The pool is created with lazy connections (MinConns=0) so this returns
+// instantly without waiting for the database to be available. The actual
+// TCP+TLS connection is established on first query.
 func InitializePostgres(ctx context.Context) postgres.DB {
 	pgSync.Do(func() {
 		_, dbConfig, err := pgconfig.GetPostgresConfig()
@@ -141,30 +156,25 @@ func InitializePostgres(ctx context.Context) postgres.DB {
 		}
 
 		if !pgconfig.IsExternalDatabase() {
-			// Get the active database name for the connection
 			activeDB := pgconfig.GetActiveDB()
-
-			// Set the connection to be the active database.
 			dbConfig.ConnConfig.Database = activeDB
 		}
 
-		if err := retry.WithRetry(func() error {
-			postgresDB, err = postgres.New(ctx, dbConfig)
-			return err
-		}, retry.Tries(postgresOpenRetries), retry.BetweenAttempts(func(attempt int) {
-			time.Sleep(postgresTimeBetweenRetries)
-		}), retry.OnFailedAttempts(func(err error) {
-			log.Errorf("open database: %v", err)
-		})); err != nil {
-			log.Fatalf("Timed out trying to open database: %v", err)
-		}
-
-		_, err = postgresDB.Exec(ctx, "create extension if not exists pg_stat_statements")
+		// Create pool with lazy connections — no network I/O here.
+		// Connections are established on first query, which allows the
+		// gRPC server to bind its socket before the DB is reachable.
+		dbConfig.MinConns = 0
+		postgresDB, err = postgres.New(ctx, dbConfig)
 		if err != nil {
-			log.Warnf("Could not create pg_stat_statements extension.  Statement planning and execution stats may not be tracked: %v", err)
+			log.Fatalf("Could not create postgres pool: %v", err)
 		}
-		go startMonitoringPostgres(ctx, postgresDB, dbConfig)
 
+		go func() {
+			if _, err := postgresDB.Exec(ctx, "create extension if not exists pg_stat_statements"); err != nil {
+				log.Warnf("Could not create pg_stat_statements extension: %v", err)
+			}
+			startMonitoringPostgres(ctx, postgresDB, dbConfig)
+		}()
 	})
 	return postgresDB
 }

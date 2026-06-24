@@ -256,7 +256,7 @@ func (a *APIServerSuite) Test_GRPC_Server_Error_Response() {
 }
 
 func newAPIForTest(t *testing.T, config Config) API {
-	api := NewAPI(config)
+	api := NewAPI(&config)
 	impl, ok := api.(*apiImpl)
 	require.True(t, ok)
 	impl.debugLog = newDebugLogger(t)

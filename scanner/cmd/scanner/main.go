@@ -181,7 +181,7 @@ func createGRPCService(backends *Backends, cfg *config.Config) (grpc.API, error)
 	customRoutes = append(customRoutes, backends.HealthRoutes()...)
 
 	// Create gRPC API service.
-	grpcSrv := grpc.NewAPI(grpc.Config{
+	grpcSrv := grpc.NewAPI(&grpc.Config{
 		CustomRoutes:       customRoutes,
 		IdentityExtractors: []authn.IdentityExtractor{identityExtractor},
 		GRPCMetrics:        grpcmetrics.NewGRPCMetrics(),

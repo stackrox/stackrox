@@ -118,7 +118,7 @@ type API interface {
 
 type apiImpl struct {
 	apiServices        []APIService
-	config             Config
+	config             *Config
 	requestInfoHandler *requestinfo.Handler
 	listenersLock      sync.Mutex
 	listeners          []serverAndListener
@@ -157,10 +157,19 @@ type Config struct {
 	MaxConnectionAge time.Duration
 	// Subsystem is used to enrich metrics with information about the component that runs this API.
 	Subsystem pkgMetrics.Subsystem
+
+	// ServicesReadySignal, if set, causes the server to bind its socket
+	// immediately but defer service registration and serving until the
+	// channel is closed. Connections that arrive in the interim are held
+	// in the OS TCP backlog. This allows the port to be open (for health
+	// probes) while the application initializes.
+	ServicesReadySignal <-chan struct{}
 }
 
-// NewAPI returns an API object.
-func NewAPI(config Config) API {
+// NewAPI returns an API object. The config is stored by pointer, allowing
+// callers to set fields (e.g. IdentityExtractors, AuthProviders) after
+// creation but before Start()/ServicesReadySignal.
+func NewAPI(config *Config) API {
 	var shutdownRequested atomic.Bool
 	shutdownRequested.Store(false)
 	return &apiImpl{
@@ -469,6 +478,14 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 		grpc.MaxConcurrentStreams(maxGrpcConcurrentStreams()),
 	)
 
+	// If ServicesReadySignal is set, wait for services to be ready before
+	// proceeding. Services must be registered before Serve() is called.
+	if a.config.ServicesReadySignal != nil {
+		log.Info("Waiting for services to be ready before starting gRPC server")
+		<-a.config.ServicesReadySignal
+	}
+
+	// Register services before listenOnLocalEndpoint (which calls Serve).
 	for _, service := range a.apiServices {
 		service.RegisterServiceServer(a.grpcServer)
 	}
@@ -478,7 +495,6 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 	if err != nil {
 		log.Panicf("Could not connect to local endpoint: %v", err)
 	}
-
 	httpHandler := a.muxer(localConn)
 
 	var allSrvAndLiss []serverAndListener
@@ -496,17 +512,17 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 		}
 	}
 
-	errC := make(chan error, len(allSrvAndLiss))
-
-	for _, srvAndLis := range allSrvAndLiss {
-		go a.serveBlocking(srvAndLis, errC)
-	}
-
 	concurrency.WithLock(&a.listenersLock, func() {
 		a.listeners = allSrvAndLiss
 	})
 
-	if startedSig != nil {
+	errC := make(chan error, len(allSrvAndLiss))
+	for _, srvAndLis := range allSrvAndLiss {
+		go a.serveBlocking(srvAndLis, errC)
+	}
+
+	// Signal started if not already signaled above.
+	if a.config.ServicesReadySignal == nil && startedSig != nil {
 		startedSig.Signal()
 	}
 

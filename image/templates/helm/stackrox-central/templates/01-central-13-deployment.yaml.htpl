@@ -63,6 +63,8 @@ spec:
             scheme: HTTPS
             path: /v1/ping
             port: 8443
+          periodSeconds: 1
+          failureThreshold: 3
         resources:
           {{- ._rox.central._resources | nindent 10 }}
         securityContext:
@@ -155,10 +157,6 @@ spec:
           mountPath: /var/log/stackrox/
         - name: central-tmp-volume
           mountPath: /tmp
-        - name: central-etc-ssl-volume
-          mountPath: /etc/ssl
-        - name: central-etc-pki-volume
-          mountPath: /etc/pki/ca-trust
         - name: central-certs-volume
           mountPath: /run/secrets/stackrox.io/certs/
           readOnly: true
@@ -171,6 +169,10 @@ spec:
         - name: central-jwt-volume
           mountPath: /run/secrets/stackrox.io/jwt/
           readOnly: true
+        - name: central-etc-ssl-volume
+          mountPath: /etc/ssl
+        - name: central-etc-pki-volume
+          mountPath: /etc/pki/ca-trust
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
           readOnly: true

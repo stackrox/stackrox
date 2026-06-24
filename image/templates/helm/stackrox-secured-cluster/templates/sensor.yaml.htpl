@@ -127,15 +127,15 @@ spec:
         {{- end }}
         {{- include "srox.envVars" (list . "deployment" "sensor" "sensor") | nindent 8 }}
         volumeMounts:
-        - name: sensor-etc-ssl-volume
-          mountPath: /etc/ssl/
-        - name: sensor-etc-pki-volume
-          mountPath: /etc/pki/ca-trust/
         - name: certs
           mountPath: /run/secrets/stackrox.io/certs/
         - name: crs
           mountPath: /run/secrets/stackrox.io/crs/
           readOnly: true
+        - name: sensor-etc-ssl-volume
+          mountPath: /etc/ssl/
+        - name: sensor-etc-pki-volume
+          mountPath: /etc/pki/ca-trust/
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
           readOnly: true
@@ -162,6 +162,8 @@ spec:
             scheme: HTTPS
             path: /ready
             port: 9443
+          periodSeconds: 1
+          failureThreshold: 3
         ports:
           - containerPort: 8443
             name: api
@@ -246,10 +248,6 @@ spec:
         volumeMounts:
         - name: varlog
           mountPath: /var/log/stackrox/
-        - name: sensor-etc-ssl-volume
-          mountPath: /etc/ssl/
-        - name: sensor-etc-pki-volume
-          mountPath: /etc/pki/ca-trust/
         - name: certs
           mountPath: /run/secrets/stackrox.io/certs/
           readOnly: {{ (default false ._rox._securedClusterCertRefresh) | ternary "false" "true" }}
@@ -331,10 +329,6 @@ spec:
           secretName: cluster-registration-secret
           optional: true
       {{- end }}
-      - name: sensor-etc-ssl-volume
-        emptyDir: {}
-      - name: sensor-etc-pki-volume
-        emptyDir: {}
       - name: additional-ca-volume
         secret:
           secretName: additional-ca-sensor
@@ -342,6 +336,10 @@ spec:
       - name: varlog
         emptyDir: {}
       - name: cache
+        emptyDir: {}
+      - name: sensor-etc-ssl-volume
+        emptyDir: {}
+      - name: sensor-etc-pki-volume
         emptyDir: {}
       {{- if ._rox.env.openshift }}
       - name: sensor-bound-sa-token

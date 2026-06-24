@@ -2,6 +2,7 @@ package aws
 
 import (
 	"crypto/x509"
+	"sync"
 
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/stackrox/rox/pkg/utils"
@@ -14,11 +15,15 @@ import (
 // Note: THIS CAN BE BRITTLE. THERE IS NO GUARANTEE THESE CERTS WILL LAST FOREVER.
 // See https://github.com/aws/aws-sdk-go/pull/1593#pullrequestreview-70664445.
 // It is probably in everyone's best interest to check on this periodically.
-var awsCerts []*x509.Certificate
+var (
+	awsCerts     []*x509.Certificate
+	awsCertsOnce sync.Once
+)
 
-func init() {
-	var err error
-	awsCerts, err = helpers.ParseCertificatesPEM([]byte(`
+func getAWSCerts() []*x509.Certificate {
+	awsCertsOnce.Do(func() {
+		var err error
+		awsCerts, err = helpers.ParseCertificatesPEM([]byte(`
 -----BEGIN CERTIFICATE-----
 MIIEEjCCAvqgAwIBAgIJALFpzEAVWaQZMA0GCSqGSIb3DQEBCwUAMFwxCzAJBgNV
 BAYTAlVTMRkwFwYDVQQIExBXYXNoaW5ndG9uIFN0YXRlMRAwDgYDVQQHEwdTZWF0
@@ -608,5 +613,7 @@ SD11SximGIYCjfZpRqI3q50mbxCd7ckULz+UUPwLrfOds4VrVVSj+x0ZdY19Plv2
 9shw5ez6Cn7E3IfzqNHO
 -----END CERTIFICATE-----
 `))
-	utils.CrashOnError(err)
+		utils.CrashOnError(err)
+	})
+	return awsCerts
 }

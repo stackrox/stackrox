@@ -280,7 +280,7 @@ func (s *Sensor) Start() {
 		},
 		Subsystem: pkgMetrics.SensorSubsystem,
 	}
-	s.server = pkgGRPC.NewAPI(conf)
+	s.server = pkgGRPC.NewAPI(&conf)
 
 	s.server.Register(s.apiServices...)
 	log.Info("API services registered")
@@ -299,7 +299,7 @@ func (s *Sensor) Start() {
 		Subsystem: pkgMetrics.SensorSubsystem,
 	}
 
-	s.webhookServer = pkgGRPC.NewAPI(webhookConfig)
+	s.webhookServer = pkgGRPC.NewAPI(&webhookConfig)
 	s.webhookServer.Start()
 
 	for _, component := range s.components {
