@@ -22,7 +22,6 @@ env:
   # prevent per-commit cache misses.
   BUILD_TAG: 0.0.0
   SHORTCOMMIT: "0000000"
-  GODEBUG: "fips140=only"
 
 jobs:
   detect-changes:
@@ -59,6 +58,8 @@ jobs:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
+      env:
+        GODEBUG: "fips140=only"
       run: ${{ matrix.gotags }} make go-unit-tests
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
@@ -77,12 +78,18 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Go Integration Unit Tests
+      env:
+        GODEBUG: "fips140=only"
       run: ${{ matrix.gotags }} make integration-unit-tests
 
     - name: Go Operator Integration Tests
+      env:
+        GODEBUG: "fips140=only"
       run: ${{ matrix.gotags }} make -C operator/ test-integration
 
     - name: Go Operator Helm Tests
+      env:
+        GODEBUG: "fips140=only"
       run: ${{ matrix.gotags }} make -C operator/ test-helm
 
     - name: Generate junit report
@@ -163,6 +170,8 @@ jobs:
         fi
 
     - name: Go Unit Tests
+      env:
+        GODEBUG: "fips140=only"
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
@@ -222,6 +231,8 @@ jobs:
           || { sudo journalctl -u postgresql --no-pager -n 20; exit 1; }
 
     - name: Go Bench Tests
+      env:
+        GODEBUG: "fips140=only"
       run: make go-postgres-bench-tests
 
     - name: Generate junit report
@@ -502,6 +513,8 @@ jobs:
         done < sensor/tests/images-to-prefetch.txt
 
     - name: Run sensor integration tests
+      env:
+        GODEBUG: "fips140=only"
       run: make sensor-integration-test
 
     - name: Generate junit report
