@@ -433,7 +433,7 @@ func (m *VersionSkew) CloneVT() *VersionSkew {
 	}
 	r := new(VersionSkew)
 	r.Status = m.Status
-	r.Reason = m.Reason
+	r.IncompatibilityReason = m.IncompatibilityReason
 	r.MinCompatibleSensorVersion = m.MinCompatibleSensorVersion
 	r.MaxCompatibleSensorVersion = m.MaxCompatibleSensorVersion
 	if len(m.unknownFields) > 0 {
@@ -1425,7 +1425,7 @@ func (this *VersionSkew) EqualVT(that *VersionSkew) bool {
 	if this.Status != that.Status {
 		return false
 	}
-	if this.Reason != that.Reason {
+	if this.IncompatibilityReason != that.IncompatibilityReason {
 		return false
 	}
 	if this.MinCompatibleSensorVersion != that.MinCompatibleSensorVersion {
@@ -3364,8 +3364,8 @@ func (m *VersionSkew) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x1a
 	}
-	if m.Reason != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Reason))
+	if m.IncompatibilityReason != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.IncompatibilityReason))
 		i--
 		dAtA[i] = 0x10
 	}
@@ -4690,8 +4690,8 @@ func (m *VersionSkew) SizeVT() (n int) {
 	if m.Status != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.Status))
 	}
-	if m.Reason != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.Reason))
+	if m.IncompatibilityReason != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.IncompatibilityReason))
 	}
 	l = len(m.MinCompatibleSensorVersion)
 	if l > 0 {
@@ -8527,9 +8527,9 @@ func (m *VersionSkew) UnmarshalVT(dAtA []byte) error {
 			}
 		case 2:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Reason", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field IncompatibilityReason", wireType)
 			}
-			m.Reason = 0
+			m.IncompatibilityReason = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -8539,7 +8539,7 @@ func (m *VersionSkew) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Reason |= VersionSkewReason(b&0x7F) << shift
+				m.IncompatibilityReason |= VersionSkewIncompatibilityReason(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -14005,9 +14005,9 @@ func (m *VersionSkew) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 		case 2:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Reason", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field IncompatibilityReason", wireType)
 			}
-			m.Reason = 0
+			m.IncompatibilityReason = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -14017,7 +14017,7 @@ func (m *VersionSkew) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Reason |= VersionSkewReason(b&0x7F) << shift
+				m.IncompatibilityReason |= VersionSkewIncompatibilityReason(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

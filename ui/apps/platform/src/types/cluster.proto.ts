@@ -163,15 +163,17 @@ export type VersionSkewStatus =
     | 'VERSION_SKEW_STATUS_COMPATIBLE'
     | 'VERSION_SKEW_STATUS_INCOMPATIBLE';
 
-export type VersionSkewReason =
-    | 'VERSION_SKEW_REASON_UNSPECIFIED'
-    | 'VERSION_SKEW_REASON_SENSOR_TOO_OLD'
-    | 'VERSION_SKEW_REASON_SENSOR_AHEAD';
+export type VersionSkewIncompatibilityReason =
+    | 'VERSION_SKEW_INCOMPATIBILITY_REASON_UNSPECIFIED'
+    | 'VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_OLD'
+    | 'VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_NEW';
 
 export type VersionSkew = {
     status: VersionSkewStatus;
-    reason: VersionSkewReason;
+    incompatibilityReason: VersionSkewIncompatibilityReason;
+    // X.Y format (patch version not included).
     minCompatibleSensorVersion: string;
+    // X.Y format (patch version not included).
     maxCompatibleSensorVersion: string;
 };
 

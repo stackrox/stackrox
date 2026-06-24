@@ -74,7 +74,7 @@ func ComputeVersionSkew(centralVersion, sensorVersion string) *storage.VersionSk
 		(sensorParsed.MarketingMajor == centralParsed.MarketingMajor &&
 			sensorParsed.EngRelease > centralParsed.EngRelease) {
 		result.Status = storage.VersionSkewStatus_VERSION_SKEW_STATUS_INCOMPATIBLE
-		result.Reason = storage.VersionSkewReason_VERSION_SKEW_REASON_SENSOR_AHEAD
+		result.IncompatibilityReason = storage.VersionSkewIncompatibilityReason_VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_NEW
 		return result
 	}
 
@@ -85,6 +85,6 @@ func ComputeVersionSkew(centralVersion, sensorVersion string) *storage.VersionSk
 	}
 
 	result.Status = storage.VersionSkewStatus_VERSION_SKEW_STATUS_INCOMPATIBLE
-	result.Reason = storage.VersionSkewReason_VERSION_SKEW_REASON_SENSOR_TOO_OLD
+	result.IncompatibilityReason = storage.VersionSkewIncompatibilityReason_VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_OLD
 	return result
 }

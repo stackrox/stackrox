@@ -12,7 +12,7 @@ func TestComputeVersionSkew(t *testing.T) {
 		centralVersion string
 		sensorVersion  string
 		expectedStatus storage.VersionSkewStatus
-		expectedReason storage.VersionSkewReason
+		expectedReason storage.VersionSkewIncompatibilityReason
 		expectedMin    string
 		expectedMax    string
 	}{
@@ -48,7 +48,7 @@ func TestComputeVersionSkew(t *testing.T) {
 			centralVersion: "4.7.0",
 			sensorVersion:  "4.4.0",
 			expectedStatus: storage.VersionSkewStatus_VERSION_SKEW_STATUS_INCOMPATIBLE,
-			expectedReason: storage.VersionSkewReason_VERSION_SKEW_REASON_SENSOR_TOO_OLD,
+			expectedReason: storage.VersionSkewIncompatibilityReason_VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_OLD,
 			expectedMin:    "4.5",
 			expectedMax:    "4.7",
 		},
@@ -56,7 +56,7 @@ func TestComputeVersionSkew(t *testing.T) {
 			centralVersion: "4.7.0",
 			sensorVersion:  "4.8.0",
 			expectedStatus: storage.VersionSkewStatus_VERSION_SKEW_STATUS_INCOMPATIBLE,
-			expectedReason: storage.VersionSkewReason_VERSION_SKEW_REASON_SENSOR_AHEAD,
+			expectedReason: storage.VersionSkewIncompatibilityReason_VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_NEW,
 			expectedMin:    "4.5",
 			expectedMax:    "4.7",
 		},
@@ -64,7 +64,7 @@ func TestComputeVersionSkew(t *testing.T) {
 			centralVersion: "4.7.0",
 			sensorVersion:  "5.1.0",
 			expectedStatus: storage.VersionSkewStatus_VERSION_SKEW_STATUS_INCOMPATIBLE,
-			expectedReason: storage.VersionSkewReason_VERSION_SKEW_REASON_SENSOR_AHEAD,
+			expectedReason: storage.VersionSkewIncompatibilityReason_VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_NEW,
 			expectedMin:    "4.5",
 			expectedMax:    "4.7",
 		},
@@ -72,7 +72,7 @@ func TestComputeVersionSkew(t *testing.T) {
 			centralVersion: "5.1.0",
 			sensorVersion:  "4.10.0",
 			expectedStatus: storage.VersionSkewStatus_VERSION_SKEW_STATUS_INCOMPATIBLE,
-			expectedReason: storage.VersionSkewReason_VERSION_SKEW_REASON_SENSOR_TOO_OLD,
+			expectedReason: storage.VersionSkewIncompatibilityReason_VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_OLD,
 			expectedMin:    "5.0",
 			expectedMax:    "5.1",
 		},
@@ -106,7 +106,7 @@ func TestComputeVersionSkew(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			result := ComputeVersionSkew(tc.centralVersion, tc.sensorVersion)
 			assert.Equal(t, tc.expectedStatus, result.GetStatus())
-			assert.Equal(t, tc.expectedReason, result.GetReason())
+			assert.Equal(t, tc.expectedReason, result.GetIncompatibilityReason())
 			if tc.expectedMin != "" {
 				assert.Equal(t, tc.expectedMin, result.GetMinCompatibleSensorVersion())
 			}

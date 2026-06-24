@@ -886,6 +886,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Metadata", []string{
 		"buildFlavor: String!",
 		"licenseStatus: Metadata_LicenseStatus!",
+		"maxCompatibleSensorVersion: String!",
+		"minCompatibleSensorVersion: String!",
 		"releaseBuild: Boolean!",
 		"version: String!",
 	}))
@@ -1535,12 +1537,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"digest: String!",
 	}))
 	utils.Must(builder.AddType("VersionSkew", []string{
+		"incompatibilityReason: VersionSkewIncompatibilityReason!",
 		"maxCompatibleSensorVersion: String!",
 		"minCompatibleSensorVersion: String!",
-		"reason: VersionSkewReason!",
 		"status: VersionSkewStatus!",
 	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.VersionSkewReason(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.VersionSkewIncompatibilityReason(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.VersionSkewStatus(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ViolationState(0)))
 	utils.Must(builder.AddType("Volume", []string{
@@ -10349,6 +10351,16 @@ func (resolver *metadataResolver) LicenseStatus(ctx context.Context) string {
 	return value.String()
 }
 
+func (resolver *metadataResolver) MaxCompatibleSensorVersion(ctx context.Context) string {
+	value := resolver.data.GetMaxCompatibleSensorVersion()
+	return value
+}
+
+func (resolver *metadataResolver) MinCompatibleSensorVersion(ctx context.Context) string {
+	value := resolver.data.GetMinCompatibleSensorVersion()
+	return value
+}
+
 func (resolver *metadataResolver) ReleaseBuild(ctx context.Context) bool {
 	value := resolver.data.GetReleaseBuild()
 	return value
@@ -16584,6 +16596,11 @@ func (resolver *Resolver) wrapVersionSkewsWithContext(ctx context.Context, value
 	return output, nil
 }
 
+func (resolver *versionSkewResolver) IncompatibilityReason(ctx context.Context) string {
+	value := resolver.data.GetIncompatibilityReason()
+	return value.String()
+}
+
 func (resolver *versionSkewResolver) MaxCompatibleSensorVersion(ctx context.Context) string {
 	value := resolver.data.GetMaxCompatibleSensorVersion()
 	return value
@@ -16594,30 +16611,25 @@ func (resolver *versionSkewResolver) MinCompatibleSensorVersion(ctx context.Cont
 	return value
 }
 
-func (resolver *versionSkewResolver) Reason(ctx context.Context) string {
-	value := resolver.data.GetReason()
-	return value.String()
-}
-
 func (resolver *versionSkewResolver) Status(ctx context.Context) string {
 	value := resolver.data.GetStatus()
 	return value.String()
 }
 
-func toVersionSkewReason(value *string) storage.VersionSkewReason {
+func toVersionSkewIncompatibilityReason(value *string) storage.VersionSkewIncompatibilityReason {
 	if value != nil {
-		return storage.VersionSkewReason(storage.VersionSkewReason_value[*value])
+		return storage.VersionSkewIncompatibilityReason(storage.VersionSkewIncompatibilityReason_value[*value])
 	}
-	return storage.VersionSkewReason(0)
+	return storage.VersionSkewIncompatibilityReason(0)
 }
 
-func toVersionSkewReasons(values *[]string) []storage.VersionSkewReason {
+func toVersionSkewIncompatibilityReasons(values *[]string) []storage.VersionSkewIncompatibilityReason {
 	if values == nil {
 		return nil
 	}
-	output := make([]storage.VersionSkewReason, len(*values))
+	output := make([]storage.VersionSkewIncompatibilityReason, len(*values))
 	for i, v := range *values {
-		output[i] = toVersionSkewReason(&v)
+		output[i] = toVersionSkewIncompatibilityReason(&v)
 	}
 	return output
 }

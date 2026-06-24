@@ -230,16 +230,19 @@ enum VersionSkewStatus {
   VERSION_SKEW_STATUS_INCOMPATIBLE = 3;
 }
 
-enum VersionSkewReason {
-  VERSION_SKEW_REASON_UNSPECIFIED = 0;
-  VERSION_SKEW_REASON_SENSOR_TOO_OLD = 1;
-  VERSION_SKEW_REASON_SENSOR_AHEAD = 2;
+enum VersionSkewIncompatibilityReason {
+  VERSION_SKEW_INCOMPATIBILITY_REASON_UNSPECIFIED = 0;
+  VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_OLD = 1;
+  VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_NEW = 2;
 }
 
 message VersionSkew {
   VersionSkewStatus status = 1;
-  VersionSkewReason reason = 2;
+  // Only set when status is VERSION_SKEW_STATUS_INCOMPATIBLE.
+  VersionSkewIncompatibilityReason incompatibility_reason = 2;
+  // Oldest compatible Sensor version, in X.Y format (patch version not included).
   string min_compatible_sensor_version = 3;
+  // Newest compatible Sensor version, in X.Y format (patch version not included).
   string max_compatible_sensor_version = 4;
 }
 

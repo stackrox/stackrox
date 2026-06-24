@@ -235,52 +235,52 @@ func (VersionSkewStatus) EnumDescriptor() ([]byte, []int) {
 	return file_storage_cluster_proto_rawDescGZIP(), []int{3}
 }
 
-type VersionSkewReason int32
+type VersionSkewIncompatibilityReason int32
 
 const (
-	VersionSkewReason_VERSION_SKEW_REASON_UNSPECIFIED    VersionSkewReason = 0
-	VersionSkewReason_VERSION_SKEW_REASON_SENSOR_TOO_OLD VersionSkewReason = 1
-	VersionSkewReason_VERSION_SKEW_REASON_SENSOR_AHEAD   VersionSkewReason = 2
+	VersionSkewIncompatibilityReason_VERSION_SKEW_INCOMPATIBILITY_REASON_UNSPECIFIED    VersionSkewIncompatibilityReason = 0
+	VersionSkewIncompatibilityReason_VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_OLD VersionSkewIncompatibilityReason = 1
+	VersionSkewIncompatibilityReason_VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_NEW VersionSkewIncompatibilityReason = 2
 )
 
-// Enum value maps for VersionSkewReason.
+// Enum value maps for VersionSkewIncompatibilityReason.
 var (
-	VersionSkewReason_name = map[int32]string{
-		0: "VERSION_SKEW_REASON_UNSPECIFIED",
-		1: "VERSION_SKEW_REASON_SENSOR_TOO_OLD",
-		2: "VERSION_SKEW_REASON_SENSOR_AHEAD",
+	VersionSkewIncompatibilityReason_name = map[int32]string{
+		0: "VERSION_SKEW_INCOMPATIBILITY_REASON_UNSPECIFIED",
+		1: "VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_OLD",
+		2: "VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_NEW",
 	}
-	VersionSkewReason_value = map[string]int32{
-		"VERSION_SKEW_REASON_UNSPECIFIED":    0,
-		"VERSION_SKEW_REASON_SENSOR_TOO_OLD": 1,
-		"VERSION_SKEW_REASON_SENSOR_AHEAD":   2,
+	VersionSkewIncompatibilityReason_value = map[string]int32{
+		"VERSION_SKEW_INCOMPATIBILITY_REASON_UNSPECIFIED":    0,
+		"VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_OLD": 1,
+		"VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_NEW": 2,
 	}
 )
 
-func (x VersionSkewReason) Enum() *VersionSkewReason {
-	p := new(VersionSkewReason)
+func (x VersionSkewIncompatibilityReason) Enum() *VersionSkewIncompatibilityReason {
+	p := new(VersionSkewIncompatibilityReason)
 	*p = x
 	return p
 }
 
-func (x VersionSkewReason) String() string {
+func (x VersionSkewIncompatibilityReason) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (VersionSkewReason) Descriptor() protoreflect.EnumDescriptor {
+func (VersionSkewIncompatibilityReason) Descriptor() protoreflect.EnumDescriptor {
 	return file_storage_cluster_proto_enumTypes[4].Descriptor()
 }
 
-func (VersionSkewReason) Type() protoreflect.EnumType {
+func (VersionSkewIncompatibilityReason) Type() protoreflect.EnumType {
 	return &file_storage_cluster_proto_enumTypes[4]
 }
 
-func (x VersionSkewReason) Number() protoreflect.EnumNumber {
+func (x VersionSkewIncompatibilityReason) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use VersionSkewReason.Descriptor instead.
-func (VersionSkewReason) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use VersionSkewIncompatibilityReason.Descriptor instead.
+func (VersionSkewIncompatibilityReason) EnumDescriptor() ([]byte, []int) {
 	return file_storage_cluster_proto_rawDescGZIP(), []int{4}
 }
 
@@ -1851,11 +1851,14 @@ func (x *ClusterCertExpiryStatus) GetSensorCertNotBefore() *timestamppb.Timestam
 }
 
 type VersionSkew struct {
-	state                      protoimpl.MessageState `protogen:"open.v1"`
-	Status                     VersionSkewStatus      `protobuf:"varint,1,opt,name=status,proto3,enum=storage.VersionSkewStatus" json:"status,omitempty"`
-	Reason                     VersionSkewReason      `protobuf:"varint,2,opt,name=reason,proto3,enum=storage.VersionSkewReason" json:"reason,omitempty"`
-	MinCompatibleSensorVersion string                 `protobuf:"bytes,3,opt,name=min_compatible_sensor_version,json=minCompatibleSensorVersion,proto3" json:"min_compatible_sensor_version,omitempty"`
-	MaxCompatibleSensorVersion string                 `protobuf:"bytes,4,opt,name=max_compatible_sensor_version,json=maxCompatibleSensorVersion,proto3" json:"max_compatible_sensor_version,omitempty"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Status VersionSkewStatus      `protobuf:"varint,1,opt,name=status,proto3,enum=storage.VersionSkewStatus" json:"status,omitempty"`
+	// Only set when status is VERSION_SKEW_STATUS_INCOMPATIBLE.
+	IncompatibilityReason VersionSkewIncompatibilityReason `protobuf:"varint,2,opt,name=incompatibility_reason,json=incompatibilityReason,proto3,enum=storage.VersionSkewIncompatibilityReason" json:"incompatibility_reason,omitempty"`
+	// Oldest compatible Sensor version, in X.Y format (patch version not included).
+	MinCompatibleSensorVersion string `protobuf:"bytes,3,opt,name=min_compatible_sensor_version,json=minCompatibleSensorVersion,proto3" json:"min_compatible_sensor_version,omitempty"`
+	// Newest compatible Sensor version, in X.Y format (patch version not included).
+	MaxCompatibleSensorVersion string `protobuf:"bytes,4,opt,name=max_compatible_sensor_version,json=maxCompatibleSensorVersion,proto3" json:"max_compatible_sensor_version,omitempty"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -1897,11 +1900,11 @@ func (x *VersionSkew) GetStatus() VersionSkewStatus {
 	return VersionSkewStatus_VERSION_SKEW_STATUS_UNSPECIFIED
 }
 
-func (x *VersionSkew) GetReason() VersionSkewReason {
+func (x *VersionSkew) GetIncompatibilityReason() VersionSkewIncompatibilityReason {
 	if x != nil {
-		return x.Reason
+		return x.IncompatibilityReason
 	}
-	return VersionSkewReason_VERSION_SKEW_REASON_UNSPECIFIED
+	return VersionSkewIncompatibilityReason_VERSION_SKEW_INCOMPATIBILITY_REASON_UNSPECIFIED
 }
 
 func (x *VersionSkew) GetMinCompatibleSensorVersion() string {
@@ -3050,10 +3053,10 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\x10\vJ\x04\b\v\x10\fJ\x04\b\f\x10\rJ\x04\b\x0e\x10\x0f\"\xb4\x01\n" +
 	"\x17ClusterCertExpiryStatus\x12H\n" +
 	"\x12sensor_cert_expiry\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x10sensorCertExpiry\x12O\n" +
-	"\x16sensor_cert_not_before\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x13sensorCertNotBefore\"\xfb\x01\n" +
+	"\x16sensor_cert_not_before\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x13sensorCertNotBefore\"\xa9\x02\n" +
 	"\vVersionSkew\x122\n" +
-	"\x06status\x18\x01 \x01(\x0e2\x1a.storage.VersionSkewStatusR\x06status\x122\n" +
-	"\x06reason\x18\x02 \x01(\x0e2\x1a.storage.VersionSkewReasonR\x06reason\x12A\n" +
+	"\x06status\x18\x01 \x01(\x0e2\x1a.storage.VersionSkewStatusR\x06status\x12`\n" +
+	"\x16incompatibility_reason\x18\x02 \x01(\x0e2).storage.VersionSkewIncompatibilityReasonR\x15incompatibilityReason\x12A\n" +
 	"\x1dmin_compatible_sensor_version\x18\x03 \x01(\tR\x1aminCompatibleSensorVersion\x12A\n" +
 	"\x1dmax_compatible_sensor_version\x18\x04 \x01(\tR\x1amaxCompatibleSensorVersion\"\xf5\x03\n" +
 	"\rClusterStatus\x12%\n" +
@@ -3172,11 +3175,11 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\x1fVERSION_SKEW_STATUS_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cVERSION_SKEW_STATUS_MATCHING\x10\x01\x12\"\n" +
 	"\x1eVERSION_SKEW_STATUS_COMPATIBLE\x10\x02\x12$\n" +
-	" VERSION_SKEW_STATUS_INCOMPATIBLE\x10\x03*\x86\x01\n" +
-	"\x11VersionSkewReason\x12#\n" +
-	"\x1fVERSION_SKEW_REASON_UNSPECIFIED\x10\x00\x12&\n" +
-	"\"VERSION_SKEW_REASON_SENSOR_TOO_OLD\x10\x01\x12$\n" +
-	" VERSION_SKEW_REASON_SENSOR_AHEAD\x10\x02B.\n" +
+	" VERSION_SKEW_STATUS_INCOMPATIBLE\x10\x03*\xc7\x01\n" +
+	" VersionSkewIncompatibilityReason\x123\n" +
+	"/VERSION_SKEW_INCOMPATIBILITY_REASON_UNSPECIFIED\x10\x00\x126\n" +
+	"2VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_OLD\x10\x01\x126\n" +
+	"2VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_NEW\x10\x02B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -3198,7 +3201,7 @@ var file_storage_cluster_proto_goTypes = []any{
 	(CollectionMethod)(0),                   // 1: storage.CollectionMethod
 	(ManagerType)(0),                        // 2: storage.ManagerType
 	(VersionSkewStatus)(0),                  // 3: storage.VersionSkewStatus
-	(VersionSkewReason)(0),                  // 4: storage.VersionSkewReason
+	(VersionSkewIncompatibilityReason)(0),   // 4: storage.VersionSkewIncompatibilityReason
 	(ClusterMetadata_Type)(0),               // 5: storage.ClusterMetadata.Type
 	(ClusterUpgradeStatus_Upgradability)(0), // 6: storage.ClusterUpgradeStatus.Upgradability
 	(ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType)(0), // 7: storage.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
@@ -3265,7 +3268,7 @@ var file_storage_cluster_proto_depIdxs = []int32{
 	39, // 26: storage.ClusterCertExpiryStatus.sensor_cert_expiry:type_name -> google.protobuf.Timestamp
 	39, // 27: storage.ClusterCertExpiryStatus.sensor_cert_not_before:type_name -> google.protobuf.Timestamp
 	3,  // 28: storage.VersionSkew.status:type_name -> storage.VersionSkewStatus
-	4,  // 29: storage.VersionSkew.reason:type_name -> storage.VersionSkewReason
+	4,  // 29: storage.VersionSkew.incompatibility_reason:type_name -> storage.VersionSkewIncompatibilityReason
 	39, // 30: storage.ClusterStatus.DEPRECATED_last_contact:type_name -> google.protobuf.Timestamp
 	14, // 31: storage.ClusterStatus.provider_metadata:type_name -> storage.ProviderMetadata
 	15, // 32: storage.ClusterStatus.orchestrator_metadata:type_name -> storage.OrchestratorMetadata

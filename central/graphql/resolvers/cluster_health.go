@@ -70,7 +70,7 @@ func newClusterHealthCounterResolver(ctx context.Context, root *Resolver, q *v1.
 		return nil, err
 	}
 
-	clusters, err := root.ClusterDataStore.GetClusters(ctx)
+	clusters, err := root.ClusterDataStore.SearchRawClusters(ctx, q)
 	if err != nil {
 		return nil, err
 	}

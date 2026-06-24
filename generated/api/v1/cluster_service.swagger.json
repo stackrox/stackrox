@@ -1026,25 +1026,28 @@
         "status": {
           "$ref": "#/definitions/storageVersionSkewStatus"
         },
-        "reason": {
-          "$ref": "#/definitions/storageVersionSkewReason"
+        "incompatibilityReason": {
+          "$ref": "#/definitions/storageVersionSkewIncompatibilityReason",
+          "description": "Only set when status is VERSION_SKEW_STATUS_INCOMPATIBLE."
         },
         "minCompatibleSensorVersion": {
-          "type": "string"
+          "type": "string",
+          "description": "Oldest compatible Sensor version, in X.Y format (patch version not included)."
         },
         "maxCompatibleSensorVersion": {
-          "type": "string"
+          "type": "string",
+          "description": "Newest compatible Sensor version, in X.Y format (patch version not included)."
         }
       }
     },
-    "storageVersionSkewReason": {
+    "storageVersionSkewIncompatibilityReason": {
       "type": "string",
       "enum": [
-        "VERSION_SKEW_REASON_UNSPECIFIED",
-        "VERSION_SKEW_REASON_SENSOR_TOO_OLD",
-        "VERSION_SKEW_REASON_SENSOR_AHEAD"
+        "VERSION_SKEW_INCOMPATIBILITY_REASON_UNSPECIFIED",
+        "VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_OLD",
+        "VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_NEW"
       ],
-      "default": "VERSION_SKEW_REASON_UNSPECIFIED"
+      "default": "VERSION_SKEW_INCOMPATIBILITY_REASON_UNSPECIFIED"
     },
     "storageVersionSkewStatus": {
       "type": "string",
