@@ -45,7 +45,7 @@ according to severity level and impact on the project.
 
 ### Disclosure Model
 
-The stackrox project follows a **Coordinated Vulnerability Disclosure (CVD)** model aligned with OpenSSF guidance:
+The StackRox project follows a **Coordinated Vulnerability Disclosure (CVD)** model aligned with OpenSSF guidance:
 
 1. **Embargo Period:** Vulnerability details remain confidential until a fix is available and released.
 2. **Disclosure Timing:** Public disclosure occurs simultaneously with or immediately after the availability of a patched release.
