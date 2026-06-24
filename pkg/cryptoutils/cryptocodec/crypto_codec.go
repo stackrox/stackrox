@@ -5,12 +5,8 @@ import (
 	"crypto/cipher"
 	"encoding/base64"
 
-	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
-
-const gcmNonceSizeBytes = 12
 
 var (
 	once sync.Once
@@ -38,14 +34,10 @@ func Singleton() CryptoCodec {
 
 // NewGCMCryptoCodec returns new CryptoCodec that can perform GCM encryption/decryption
 func NewGCMCryptoCodec() CryptoCodec {
-	return &gcmCryptoCodecImpl{
-		nonceGen: cryptoutils.NewNonceGenerator(gcmNonceSizeBytes, nil),
-	}
+	return &gcmCryptoCodecImpl{}
 }
 
-type gcmCryptoCodecImpl struct {
-	nonceGen cryptoutils.NonceGenerator
-}
+type gcmCryptoCodecImpl struct{}
 
 // Encrypt GCM encrypts the given text and returns the encrypted
 // bytes as a base64 std encoded string. The encryption key should be a base64 std encoded string.
@@ -54,25 +46,18 @@ func (gcm *gcmCryptoCodecImpl) Encrypt(keyString string, stringToEncrypt string)
 	if err != nil {
 		return "", err
 	}
-	bytesToEncrypt := []byte(stringToEncrypt)
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
 	}
-	aesgcm, err := cipher.NewGCMWithNonceSize(block, gcmNonceSizeBytes)
+	// NewGCMWithRandomNonce generates 12-byte nonces internally and prepends them to ciphertext.
+	aesgcm, err := cipher.NewGCMWithRandomNonce(block)
 	if err != nil {
 		return "", err
 	}
 
-	nonce, err := gcm.nonceGen.NonceBytes()
-	if err != nil {
-		return "", err
-	}
-
-	cipherText := aesgcm.Seal(nil, nonce, bytesToEncrypt, nil)
-	// Append nonce at the beginning of encrypted string so that it can be reused at decryption
-	cipherText = append(nonce, cipherText...)
+	cipherText := aesgcm.Seal(nil, nil, []byte(stringToEncrypt), nil)
 	return base64.StdEncoding.EncodeToString(cipherText), nil
 }
 
@@ -88,7 +73,7 @@ func (gcm *gcmCryptoCodecImpl) Decrypt(keyString string, stringToDecrypt string)
 	if err != nil {
 		return "", err
 	}
-	aesgcm, err := cipher.NewGCMWithNonceSize(block, gcmNonceSizeBytes)
+	aesgcm, err := cipher.NewGCMWithRandomNonce(block)
 	if err != nil {
 		return "", err
 	}
@@ -97,11 +82,7 @@ func (gcm *gcmCryptoCodecImpl) Decrypt(keyString string, stringToDecrypt string)
 	if err != nil {
 		return "", err
 	}
-	if len(cipherText) < aesgcm.NonceSize() {
-		return "", errors.New("Invalid encrypted string")
-	}
-	nonce := cipherText[:aesgcm.NonceSize()]
-	decrypted, err := aesgcm.Open(nil, nonce, cipherText[aesgcm.NonceSize():], nil)
+	decrypted, err := aesgcm.Open(nil, nil, cipherText, nil)
 	if err != nil {
 		return "", err
 	}
