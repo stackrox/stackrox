@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/imagecve"
 	imageCVEViewMock "github.com/stackrox/rox/central/views/imagecve/mocks"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stretchr/testify/suite"
@@ -77,7 +76,7 @@ func (s *ImageCVEV2CoreResolverTestSuite) TestGetImageCVEsNonEmpty() {
 
 func (s *ImageCVEV2CoreResolverTestSuite) TestGetImageCVEsWithQuery() {
 	q := &PaginatedQuery{
-		Query: pointers.String("CVE:cve-2022-xyz"),
+		Query: new("CVE:cve-2022-xyz"),
 	}
 	expectedQ := search.NewQueryBuilder().AddStrings(search.CVE, "cve-2022-xyz").
 		WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
@@ -98,9 +97,9 @@ func (s *ImageCVEV2CoreResolverTestSuite) TestImageCVEsWithPaginatedQuery() {
 	q := &PaginatedQuery{
 		Pagination: &inputtypes.Pagination{
 			SortOption: &inputtypes.SortOption{
-				Field: pointers.String(search.CVSS.String()),
+				Field: new(search.CVSS.String()),
 				AggregateBy: &inputtypes.AggregateBy{
-					AggregateFunc: pointers.String(aggregatefunc.Max.Name()),
+					AggregateFunc: new(aggregatefunc.Max.Name()),
 				},
 			},
 		},
@@ -141,7 +140,7 @@ func (s *ImageCVEV2CoreResolverTestSuite) TestImageCVECount() {
 
 func (s *ImageCVEV2CoreResolverTestSuite) TestImageCVECountWithQuery() {
 	q := &RawQuery{
-		Query: pointers.String("Image:image"),
+		Query: new("Image:image"),
 	}
 	expectedQ := search.NewQueryBuilder().AddStrings(search.ImageName, "image").ProtoQuery()
 
@@ -172,7 +171,7 @@ func (s *ImageCVEV2CoreResolverTestSuite) TestGetImageCVENonEmpty() {
 			Cve                *string
 			SubfieldScopeQuery *string
 		}{
-			Cve: pointers.String("cve-xyz"),
+			Cve: new("cve-xyz"),
 		},
 	)
 	s.NoError(err)
@@ -192,8 +191,8 @@ func (s *ImageCVEV2CoreResolverTestSuite) TestGetImageCVENonEmpty() {
 		Cve                *string
 		SubfieldScopeQuery *string
 	}{
-		Cve:                pointers.String("cve-xyz"),
-		SubfieldScopeQuery: pointers.String("Fixable:true"),
+		Cve:                new("cve-xyz"),
+		SubfieldScopeQuery: new("Fixable:true"),
 	},
 	)
 	s.NoError(err)
@@ -213,8 +212,8 @@ func (s *ImageCVEV2CoreResolverTestSuite) TestGetImageCVENonEmpty() {
 		Cve                *string
 		SubfieldScopeQuery *string
 	}{
-		Cve:                pointers.String("cve-xyz"),
-		SubfieldScopeQuery: pointers.String("Namespace:n1"),
+		Cve:                new("cve-xyz"),
+		SubfieldScopeQuery: new("Namespace:n1"),
 	},
 	)
 	s.NoError(err)

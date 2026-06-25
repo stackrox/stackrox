@@ -1224,6 +1224,7 @@ func assertVMs(t *testing.T, expected *virtualmachine.Info, actual *virtualmachi
 	}
 }
 
+//go:fix inline
 func newVSOCKCID(val uint32) *uint32 {
-	return &val
+	return new(val)
 }

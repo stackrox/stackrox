@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/ptr"
 )
 
 func TestMergeCentralDefaultsIntoSpec(t *testing.T) {
@@ -20,14 +19,14 @@ func TestMergeCentralDefaultsIntoSpec(t *testing.T) {
 			before: &Central{
 				Spec: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(true),
+						CreateSCCs: new(true),
 					},
 				},
 			},
 			after: &Central{
 				Spec: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(true),
+						CreateSCCs: new(true),
 					},
 				},
 			},
@@ -36,24 +35,24 @@ func TestMergeCentralDefaultsIntoSpec(t *testing.T) {
 			before: &Central{
 				Spec: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(true),
+						CreateSCCs: new(true),
 					},
 				},
 				Defaults: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(false),
+						CreateSCCs: new(false),
 					},
 				},
 			},
 			after: &Central{
 				Spec: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(true),
+						CreateSCCs: new(true),
 					},
 				},
 				Defaults: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(false),
+						CreateSCCs: new(false),
 					},
 				},
 			},
@@ -62,24 +61,24 @@ func TestMergeCentralDefaultsIntoSpec(t *testing.T) {
 			before: &Central{
 				Spec: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(false),
+						CreateSCCs: new(false),
 					},
 				},
 				Defaults: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(true),
+						CreateSCCs: new(true),
 					},
 				},
 			},
 			after: &Central{
 				Spec: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(false),
+						CreateSCCs: new(false),
 					},
 				},
 				Defaults: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(true),
+						CreateSCCs: new(true),
 					},
 				},
 			},
@@ -88,19 +87,19 @@ func TestMergeCentralDefaultsIntoSpec(t *testing.T) {
 			before: &Central{
 				Defaults: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(true),
+						CreateSCCs: new(true),
 					},
 				},
 			},
 			after: &Central{
 				Spec: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(true),
+						CreateSCCs: new(true),
 					},
 				},
 				Defaults: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(true),
+						CreateSCCs: new(true),
 					},
 				},
 			},
@@ -109,19 +108,19 @@ func TestMergeCentralDefaultsIntoSpec(t *testing.T) {
 			before: &Central{
 				Defaults: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(false),
+						CreateSCCs: new(false),
 					},
 				},
 			},
 			after: &Central{
 				Spec: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(false),
+						CreateSCCs: new(false),
 					},
 				},
 				Defaults: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(false),
+						CreateSCCs: new(false),
 					},
 				},
 			},
@@ -133,19 +132,19 @@ func TestMergeCentralDefaultsIntoSpec(t *testing.T) {
 				},
 				Defaults: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(false),
+						CreateSCCs: new(false),
 					},
 				},
 			},
 			after: &Central{
 				Spec: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(false),
+						CreateSCCs: new(false),
 					},
 				},
 				Defaults: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(false),
+						CreateSCCs: new(false),
 					},
 				},
 			},
@@ -157,19 +156,19 @@ func TestMergeCentralDefaultsIntoSpec(t *testing.T) {
 				},
 				Defaults: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(true),
+						CreateSCCs: new(true),
 					},
 				},
 			},
 			after: &Central{
 				Spec: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(true),
+						CreateSCCs: new(true),
 					},
 				},
 				Defaults: CentralSpec{
 					Misc: &MiscSpec{
-						CreateSCCs: ptr.To(true),
+						CreateSCCs: new(true),
 					},
 				},
 			},

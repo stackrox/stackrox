@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -468,7 +467,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountPending() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
-	status := []*string{pointers.String(storage.RequestStatus_PENDING.String())}
+	status := []*string{new(storage.RequestStatus_PENDING.String())}
 	args := struct {
 		RequestStatus *[]*string
 	}{
@@ -500,7 +499,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountApproved() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
-	status := []*string{pointers.String(storage.RequestStatus_APPROVED.String())}
+	status := []*string{new(storage.RequestStatus_APPROVED.String())}
 	args := struct {
 		RequestStatus *[]*string
 	}{
@@ -528,7 +527,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountPendingUpdate() {
 
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
-	status := []*string{pointers.String(storage.RequestStatus_APPROVED_PENDING_UPDATE.String())}
+	status := []*string{new(storage.RequestStatus_APPROVED_PENDING_UPDATE.String())}
 	args := struct {
 		RequestStatus *[]*string
 	}{
@@ -588,7 +587,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountPendingWithImageScope() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
-	status := []*string{pointers.String(storage.RequestStatus_PENDING.String())}
+	status := []*string{new(storage.RequestStatus_PENDING.String())}
 	imageID1 := s.getImageID(s.testImages[0])
 	ctx = scoped.Context(ctx, scoped.Scope{
 		IDs:   []string{imageID1},
@@ -624,7 +623,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountApprovedWithImageScope() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
-	status := []*string{pointers.String(storage.RequestStatus_APPROVED.String())}
+	status := []*string{new(storage.RequestStatus_APPROVED.String())}
 	imageID1 := s.getImageID(s.testImages[0])
 	ctx = scoped.Context(ctx, scoped.Scope{
 		IDs:   []string{imageID1},
@@ -653,7 +652,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCo
 
 func (s *GraphQLImageVulnerabilityV2TestSuite) TestImageVulnerabilityExceptionCountPendingUpdateWithImageScope() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
-	status := []*string{pointers.String(storage.RequestStatus_APPROVED_PENDING_UPDATE.String())}
+	status := []*string{new(storage.RequestStatus_APPROVED_PENDING_UPDATE.String())}
 	imageID2 := s.getImageID(s.testImages[1])
 	ctx = scoped.Context(ctx, scoped.Scope{
 		IDs:   []string{imageID2},

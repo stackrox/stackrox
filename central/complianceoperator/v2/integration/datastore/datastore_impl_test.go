@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
@@ -450,32 +449,32 @@ func getDefaultTestIntegrationViews() []*IntegrationDetails {
 		{
 			ID:                                "",
 			Version:                           "2",
-			OperatorInstalled:                 pointers.Bool(true),
-			OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
+			OperatorInstalled:                 new(true),
+			OperatorStatus:                    new(storage.COStatus_HEALTHY),
 			ClusterID:                         testconsts.Cluster1,
 			ClusterName:                       "cluster1",
-			Type:                              pointers.Pointer(storage.ClusterType_KUBERNETES_CLUSTER),
-			StatusProviderMetadataClusterType: pointers.Pointer(storage.ClusterMetadata_AKS),
+			Type:                              new(storage.ClusterType_KUBERNETES_CLUSTER),
+			StatusProviderMetadataClusterType: new(storage.ClusterMetadata_AKS),
 		},
 		{
 			ID:                                "",
 			ClusterID:                         testconsts.Cluster2,
 			Version:                           "2",
-			OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
+			OperatorStatus:                    new(storage.COStatus_HEALTHY),
 			ClusterName:                       "cluster2",
-			Type:                              pointers.Pointer(storage.ClusterType_OPENSHIFT_CLUSTER),
-			StatusProviderMetadataClusterType: pointers.Pointer(storage.ClusterMetadata_ARO),
-			OperatorInstalled:                 pointers.Bool(true),
+			Type:                              new(storage.ClusterType_OPENSHIFT_CLUSTER),
+			StatusProviderMetadataClusterType: new(storage.ClusterMetadata_ARO),
+			OperatorInstalled:                 new(true),
 		},
 		{
 			ID:                                "",
 			ClusterID:                         testconsts.Cluster3,
 			Version:                           "2",
-			OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
+			OperatorStatus:                    new(storage.COStatus_HEALTHY),
 			ClusterName:                       "cluster3",
-			Type:                              pointers.Pointer(storage.ClusterType_OPENSHIFT4_CLUSTER),
-			StatusProviderMetadataClusterType: pointers.Pointer(storage.ClusterMetadata_OCP),
-			OperatorInstalled:                 pointers.Bool(true),
+			Type:                              new(storage.ClusterType_OPENSHIFT4_CLUSTER),
+			StatusProviderMetadataClusterType: new(storage.ClusterMetadata_OCP),
+			OperatorInstalled:                 new(true),
 		},
 	}
 

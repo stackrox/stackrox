@@ -6,7 +6,6 @@ import (
 
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/utils"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -305,8 +304,8 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 					// using a local copy of platform.ScannerAutoScalingEnabled in order to pass it as a reference
 					// since references to const strings are not allowed in Go
 					AutoScaling: &autoscalingEnabled,
-					MinReplicas: pointers.Int32(1),
-					MaxReplicas: pointers.Int32(3),
+					MinReplicas: new(int32(1)),
+					MaxReplicas: new(int32(3)),
 				},
 			},
 			componentKey: "indexer",
@@ -346,7 +345,7 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 		"set replicas if available": {
 			component: &platform.ScannerV4Component{
 				Scaling: &platform.ScannerComponentScaling{
-					Replicas: pointers.Int32(2),
+					Replicas: new(int32(2)),
 				},
 			},
 			componentKey: "indexer",
@@ -590,9 +589,9 @@ func TestSetScannerV4DBValues(t *testing.T) {
 			db: &platform.ScannerV4DB{
 				Persistence: &platform.ScannerV4Persistence{
 					PersistentVolumeClaim: &platform.ScannerV4PersistentVolumeClaim{
-						ClaimName:        pointers.String("test"),
-						Size:             pointers.String("100GB"),
-						StorageClassName: pointers.String("testSC"),
+						ClaimName:        new("test"),
+						Size:             new("100GB"),
+						StorageClassName: new("testSC"),
 					},
 				},
 			},
@@ -613,7 +612,7 @@ func TestSetScannerV4DBValues(t *testing.T) {
 			db: &platform.ScannerV4DB{
 				Persistence: &platform.ScannerV4Persistence{
 					HostPath: &platform.HostPathSpec{
-						Path: pointers.String("/test/path"),
+						Path: new("/test/path"),
 					},
 				},
 			},
@@ -629,10 +628,10 @@ func TestSetScannerV4DBValues(t *testing.T) {
 			db: &platform.ScannerV4DB{
 				Persistence: &platform.ScannerV4Persistence{
 					PersistentVolumeClaim: &platform.ScannerV4PersistentVolumeClaim{
-						ClaimName: pointers.String("test"),
+						ClaimName: new("test"),
 					},
 					HostPath: &platform.HostPathSpec{
-						Path: pointers.String("/test/path"),
+						Path: new("/test/path"),
 					},
 				},
 			},
@@ -793,7 +792,7 @@ func TestGetDeploymentDefaults(t *testing.T) {
 		"pinToNodes None": {
 			customize: &platform.CustomizeSpec{
 				DeploymentDefaults: &platform.DeploymentDefaultsSpec{
-					PinToNodes: pointers.Pointer(platform.PinToNodesNone),
+					PinToNodes: new(platform.PinToNodesNone),
 				},
 			},
 			wantNodeSelector: nil,
@@ -802,7 +801,7 @@ func TestGetDeploymentDefaults(t *testing.T) {
 		"pinToNodes InfraRole": {
 			customize: &platform.CustomizeSpec{
 				DeploymentDefaults: &platform.DeploymentDefaultsSpec{
-					PinToNodes: pointers.Pointer(platform.PinToNodesInfraRole),
+					PinToNodes: new(platform.PinToNodesInfraRole),
 				},
 			},
 			wantNodeSelector: map[string]string{
@@ -844,7 +843,7 @@ func TestGetDeploymentDefaults(t *testing.T) {
 		"invalid: pinToNodes with nodeSelector": {
 			customize: &platform.CustomizeSpec{
 				DeploymentDefaults: &platform.DeploymentDefaultsSpec{
-					PinToNodes: pointers.Pointer(platform.PinToNodesInfraRole),
+					PinToNodes: new(platform.PinToNodesInfraRole),
 					NodeSelector: map[string]string{
 						"global-node-selector-label": "global-node-selector-value",
 					},
@@ -855,7 +854,7 @@ func TestGetDeploymentDefaults(t *testing.T) {
 		"invalid: pinToNodes with tolerations": {
 			customize: &platform.CustomizeSpec{
 				DeploymentDefaults: &platform.DeploymentDefaultsSpec{
-					PinToNodes: pointers.Pointer(platform.PinToNodesInfraRole),
+					PinToNodes: new(platform.PinToNodesInfraRole),
 					Tolerations: []*corev1.Toleration{
 						{Key: "node.stackrox.io", Value: "false", Operator: corev1.TolerationOpEqual},
 					},
@@ -866,7 +865,7 @@ func TestGetDeploymentDefaults(t *testing.T) {
 		"invalid: pinToNodes with both nodeSelector and tolerations": {
 			customize: &platform.CustomizeSpec{
 				DeploymentDefaults: &platform.DeploymentDefaultsSpec{
-					PinToNodes: pointers.Pointer(platform.PinToNodesInfraRole),
+					PinToNodes: new(platform.PinToNodesInfraRole),
 					NodeSelector: map[string]string{
 						"global-node-selector-label": "global-node-selector-value",
 					},

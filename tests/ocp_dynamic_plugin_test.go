@@ -18,7 +18,6 @@ import (
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	routeclient "github.com/openshift/client-go/route/clientset/versioned"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -122,7 +121,7 @@ func requestToken(t *testing.T, ctx context.Context, k8sClient kubernetes.Interf
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		resp, err := k8sClient.CoreV1().ServiceAccounts(namespace).CreateToken(
 			ctx, saName,
-			&authv1.TokenRequest{Spec: authv1.TokenRequestSpec{ExpirationSeconds: pointers.Int64(600)}},
+			&authv1.TokenRequest{Spec: authv1.TokenRequestSpec{ExpirationSeconds: new(600)}},
 			metaV1.CreateOptions{},
 		)
 		require.NoError(c, err, "creating token for ServiceAccount %s/%s", namespace, saName)

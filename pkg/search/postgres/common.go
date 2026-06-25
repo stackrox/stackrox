@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -914,7 +913,7 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 		bufferToScanRowInto[0] = &outputSlice
 	} else {
 		for i := range numPrimaryKeys {
-			bufferToScanRowInto[i] = pointers.String("")
+			bufferToScanRowInto[i] = new("")
 		}
 	}
 	for i, field := range query.SelectedFields {
@@ -1344,7 +1343,7 @@ func RunDeleteRequestReturningIDsForSchema(ctx context.Context, schema *walker.S
 		bufferToScanRowInto[0] = &outputSlice
 	} else {
 		for i := range numPrimaryKeys {
-			bufferToScanRowInto[i] = pointers.String("")
+			bufferToScanRowInto[i] = new("")
 		}
 	}
 	returnedIDs := make([]string, 0)

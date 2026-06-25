@@ -87,7 +87,7 @@ func TestReadBaseValues(t *testing.T) {
 func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 	sc := platform.SecuredCluster{
 		Spec: platform.SecuredClusterSpec{
-			ClusterName: ptr.To("my-cluster"),
+			ClusterName: new("my-cluster"),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "stackrox",
@@ -131,7 +131,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				client: newDefaultFakeClient(t),
 				sc: platform.SecuredCluster{
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 						ScannerV4: &platform.LocalScannerV4ComponentSpec{
 							ScannerComponent: platform.LocalScannerV4ComponentDefault.Pointer(),
 						},
@@ -180,7 +180,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				client: newDefaultFakeClient(t),
 				sc: platform.SecuredCluster{
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "stackrox",
@@ -227,7 +227,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				client: newDefaultFakeClient(t),
 				sc: platform.SecuredCluster{
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "stackrox",
@@ -267,7 +267,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 					},
 				},
 			},
@@ -296,7 +296,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 						Scanner: &platform.LocalScannerComponentSpec{
 							ScannerComponent: platform.LocalScannerComponentDisabled.Pointer(),
 						},
@@ -330,7 +330,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 					},
 					Defaults: platform.SecuredClusterSpec{
 						ScannerV4: &platform.LocalScannerV4ComponentSpec{
@@ -372,7 +372,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 					},
 				},
 			},
@@ -404,8 +404,8 @@ func (s *TranslationTestSuite) TestTranslate() {
 						Namespace: "stackrox",
 					},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName:     ptr.To("test-cluster"),
-						CentralEndpoint: ptr.To("central.test:443"),
+						ClusterName:     new("test-cluster"),
+						CentralEndpoint: new("central.test:443"),
 						Sensor: &platform.SensorComponentSpec{
 							DeploymentSpec: platform.DeploymentSpec{
 								Tolerations: []*v1.Toleration{
@@ -494,7 +494,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						},
 						Monitoring: &platform.GlobalMonitoring{
 							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
-								Enabled: ptr.To(true),
+								Enabled: new(true),
 							},
 						},
 						Scanner: &platform.LocalScannerComponentSpec{
@@ -599,8 +599,8 @@ func (s *TranslationTestSuite) TestTranslate() {
 							DB: &platform.ScannerV4DB{
 								Persistence: &platform.ScannerV4Persistence{
 									PersistentVolumeClaim: &platform.ScannerV4PersistentVolumeClaim{
-										ClaimName:        ptr.To("scanner-v4-db-pvc"),
-										StorageClassName: ptr.To("test-sc1"),
+										ClaimName:        new("scanner-v4-db-pvc"),
+										StorageClassName: new("test-sc1"),
 									},
 								},
 								DeploymentSpec: platform.DeploymentSpec{
@@ -654,7 +654,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 								},
 							},
 						},
-						RegistryOverride: ptr.To("my.registry.override.com"),
+						RegistryOverride: new("my.registry.override.com"),
 					},
 				},
 			},
@@ -939,7 +939,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 						PerNode: &platform.PerNodeSpec{
 							Collector: &platform.CollectorContainerSpec{
 								Collection: platform.CollectionEBPF.Pointer(),
@@ -977,7 +977,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 						ProcessBaselines: &platform.ProcessBaselinesSpec{
 							AutoLock: platform.ProcessBaselinesAutoLockModeEnabled.Pointer(),
 						},
@@ -1012,7 +1012,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 						ProcessBaselines: &platform.ProcessBaselinesSpec{
 							AutoLock: platform.ProcessBaselinesAutoLockModeDisabled.Pointer(),
 						},
@@ -1047,7 +1047,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 						ProcessIndicators: &platform.ProcessIndicatorsSpec{
 							Persistence: platform.ProcessIndicatorConfigEnabled.Pointer(),
 						},
@@ -1336,7 +1336,7 @@ func (s *TranslationTestSuite) TestTranslateWithCABundle() {
 			sc := platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
 				Spec: platform.SecuredClusterSpec{
-					ClusterName: ptr.To("test-cluster"),
+					ClusterName: new("test-cluster"),
 				},
 			}
 
@@ -1454,7 +1454,7 @@ func TestDeploymentDefaults(t *testing.T) {
 			securedCluster: platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 				Spec: platform.SecuredClusterSpec{
-					ClusterName: ptr.To("test-cluster"),
+					ClusterName: new("test-cluster"),
 					ScannerV4: &platform.LocalScannerV4ComponentSpec{
 						ScannerComponent: ptr.To(platform.LocalScannerV4ComponentAutoSense),
 					},
@@ -1471,7 +1471,7 @@ func TestDeploymentDefaults(t *testing.T) {
 			securedCluster: platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 				Spec: platform.SecuredClusterSpec{
-					ClusterName: ptr.To("test-cluster"),
+					ClusterName: new("test-cluster"),
 					ScannerV4: &platform.LocalScannerV4ComponentSpec{
 						ScannerComponent: ptr.To(platform.LocalScannerV4ComponentAutoSense),
 					},
@@ -1491,7 +1491,7 @@ func TestDeploymentDefaults(t *testing.T) {
 			securedCluster: platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 				Spec: platform.SecuredClusterSpec{
-					ClusterName: ptr.To("test-cluster"),
+					ClusterName: new("test-cluster"),
 					ScannerV4: &platform.LocalScannerV4ComponentSpec{
 						ScannerComponent: ptr.To(platform.LocalScannerV4ComponentAutoSense),
 					},

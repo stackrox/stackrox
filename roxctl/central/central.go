@@ -3,7 +3,6 @@ package central
 import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/roxctl/central/backup"
 	"github.com/stackrox/rox/roxctl/central/cert"
 	"github.com/stackrox/rox/roxctl/central/crs"
@@ -30,7 +29,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		cert.Command(cliEnvironment),
 		generate.Command(cliEnvironment),
 		db.Command(cliEnvironment),
-		backup.Command(cliEnvironment, pointers.Bool(true)),
+		backup.Command(cliEnvironment, new(true)),
 		debug.Command(cliEnvironment),
 		userpki.Command(cliEnvironment),
 		whoami.Command(cliEnvironment),

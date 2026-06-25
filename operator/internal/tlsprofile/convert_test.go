@@ -5,7 +5,6 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/utils/ptr"
 )
 
 func TestConvertMinVersion(t *testing.T) {
@@ -66,11 +65,11 @@ func TestConvertCiphersToIANA(t *testing.T) {
 		},
 		"unknown ciphers are skipped": {
 			input:     []string{"ECDHE-ECDSA-AES128-GCM-SHA256", "UNKNOWN-CIPHER"},
-			wantExact: ptr.To("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"),
+			wantExact: new("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"),
 		},
 		"empty input": {
 			input:     nil,
-			wantExact: ptr.To(""),
+			wantExact: new(""),
 		},
 	}
 

@@ -52,7 +52,9 @@ var (
 
 // alertToMatchKey converts a *storage.Alert to an *alertviews.AlertMatchKey,
 // extracting the fields the same way the alertAdapter does in the impl file.
-func ptr[T any](v T) *T { return &v }
+//
+//go:fix inline
+func ptr[T any](v T) *T { return new(v) }
 
 func alertToMatchKey(a *storage.Alert) *alertviews.AlertMatchKey {
 	key := &alertviews.AlertMatchKey{
@@ -64,35 +66,35 @@ func alertToMatchKey(a *storage.Alert) *alertviews.AlertMatchKey {
 
 	// Deployment fields
 	if dep := a.GetDeployment(); dep != nil {
-		key.DeploymentID = ptr(dep.GetId())
-		key.DeploymentInactive = ptr(dep.GetInactive())
+		key.DeploymentID = new(dep.GetId())
+		key.DeploymentInactive = new(dep.GetInactive())
 	}
 
 	// Resource fields
 	if res := a.GetResource(); res != nil {
-		key.ResourceType = ptr(int(res.GetResourceType()))
-		key.ResourceName = ptr(res.GetName())
-		key.ClusterID = ptr(res.GetClusterId())
-		key.Namespace = ptr(res.GetNamespace())
+		key.ResourceType = new(int(res.GetResourceType()))
+		key.ResourceName = new(res.GetName())
+		key.ClusterID = new(res.GetClusterId())
+		key.Namespace = new(res.GetNamespace())
 	}
 
 	// Node fields
 	if node := a.GetNode(); node != nil {
-		key.NodeID = ptr(node.GetId())
-		key.NodeName = ptr(node.GetName())
+		key.NodeID = new(node.GetId())
+		key.NodeName = new(node.GetName())
 		if key.ClusterID == nil || *key.ClusterID == "" {
-			key.ClusterID = ptr(node.GetClusterId())
+			key.ClusterID = new(node.GetClusterId())
 		}
 	}
 
 	// Top-level cluster ID fallback (for deployment alerts)
 	if key.ClusterID == nil || *key.ClusterID == "" {
-		key.ClusterID = ptr(a.GetClusterId())
+		key.ClusterID = new(a.GetClusterId())
 	}
 
 	// Top-level namespace fallback (for deployment alerts)
 	if key.Namespace == nil || *key.Namespace == "" {
-		key.Namespace = ptr(a.GetNamespace())
+		key.Namespace = new(a.GetNamespace())
 	}
 
 	return key

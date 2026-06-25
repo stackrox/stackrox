@@ -20,7 +20,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/retryablehttp"
@@ -439,7 +438,7 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 			},
 		},
 		Spec: appsV1.DeploymentSpec{
-			Replicas: pointers.Int32(int32(replicas)),
+			Replicas: new(int32(replicas)),
 			Selector: &metaV1.LabelSelector{
 				MatchLabels: map[string]string{"app": deploymentName},
 			},
@@ -609,7 +608,7 @@ func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: pointers.Int64(0)})
+	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: new(0)})
 	require.NoError(t, err)
 
 	waitForTermination(t, pod.GetName())

@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -33,7 +32,7 @@ func (s *sensorGenerateOpenShiftCommand) ConstructOpenShift() error {
 	// This is intentionally NOT feature-flagged, because we always want to set the correct (auto) value,
 	// even if we turn off the flag before shipping.
 	if s.disableAuditLogCollection == nil {
-		s.disableAuditLogCollection = pointers.Bool(s.cluster.GetType() != storage.ClusterType_OPENSHIFT4_CLUSTER)
+		s.disableAuditLogCollection = new(s.cluster.GetType() != storage.ClusterType_OPENSHIFT4_CLUSTER)
 	}
 
 	s.cluster.DynamicConfig.DisableAuditLogs = *s.disableAuditLogCollection

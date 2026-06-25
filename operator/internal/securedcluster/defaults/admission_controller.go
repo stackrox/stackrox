@@ -6,7 +6,6 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/ptr"
 )
 
 var (
@@ -60,7 +59,7 @@ func admissionControllerDefaultingGreenFieldEnforce(_ logr.Logger, annotations m
 	}
 
 	enforcement := platform.PolicyEnforcementEnabled
-	defaults.AdmissionControl.Enforcement = ptr.To(enforcement)
+	defaults.AdmissionControl.Enforcement = new(enforcement)
 	annotations[FeatureDefaultKeyAdmissionControllerEnforcement] = string(enforcement)
 	return nil
 }
@@ -77,7 +76,7 @@ func admissionControllerDefaultingBrownFieldEnforce(logger logr.Logger, annotati
 			logger.Info("Invalid CR defaulting annotation {%q: %v}", FeatureDefaultKeyAdmissionControllerEnforcement, enforceAnnotation)
 			functionErr = errors.Errorf("unexpected value %q of CR annotation %s", enforceAnnotation, FeatureDefaultKeyAdmissionControllerEnforcement)
 		} else {
-			defaults.AdmissionControl.Enforcement = ptr.To(platform.PolicyEnforcement(enforceAnnotation))
+			defaults.AdmissionControl.Enforcement = new(platform.PolicyEnforcement(enforceAnnotation))
 		}
 	}
 
@@ -99,7 +98,7 @@ func admissionControllerDefaultingBrownFieldEnforce(logger logr.Logger, annotati
 		if listenOnCreates || listenOnUpdates {
 			enforcement = platform.PolicyEnforcementEnabled
 		}
-		defaults.AdmissionControl.Enforcement = ptr.To(enforcement)
+		defaults.AdmissionControl.Enforcement = new(enforcement)
 	}
 
 	if enforcement := defaults.AdmissionControl.Enforcement; enforcement != nil {

@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	integrationMocks "github.com/stackrox/rox/pkg/images/integration/mocks"
-	"github.com/stackrox/rox/pkg/pointers"
 	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -87,32 +86,32 @@ func (suite *ServiceTestSuite) TestValidateBaseImageRepository() {
 			input:               "test_com",
 			expectedValid:       true,
 			expectedErrMsg:      "",
-			expectRegistryMatch: pointers.Bool(true),
-			expectDelegation:    pointers.Bool(false),
+			expectRegistryMatch: new(true),
+			expectDelegation:    new(false),
 		},
 		{
 			description:         "accepts standard Docker registry format with organization",
 			input:               "docker.io/library/nginx",
 			expectedValid:       true,
 			expectedErrMsg:      "",
-			expectRegistryMatch: pointers.Bool(true),
-			expectDelegation:    pointers.Bool(false),
+			expectRegistryMatch: new(true),
+			expectDelegation:    new(false),
 		},
 		{
 			description:         "accepts IPv4 registry with custom port",
 			input:               "192.168.1.1:5000/myapp",
 			expectedValid:       true,
 			expectedErrMsg:      "",
-			expectRegistryMatch: pointers.Bool(true),
-			expectDelegation:    pointers.Bool(false),
+			expectRegistryMatch: new(true),
+			expectDelegation:    new(false),
 		},
 		{
 			description:         "accepts IPv6 registry with repository path",
 			input:               "[2001:db8::1]/repo",
 			expectedValid:       true,
 			expectedErrMsg:      "",
-			expectRegistryMatch: pointers.Bool(true),
-			expectDelegation:    pointers.Bool(false),
+			expectRegistryMatch: new(true),
+			expectDelegation:    new(false),
 		},
 		{
 			description:    "rejects empty repository path",
@@ -149,24 +148,24 @@ func (suite *ServiceTestSuite) TestValidateBaseImageRepository() {
 			input:               "docker.io/library/nginx",
 			expectedValid:       false,
 			expectedErrMsg:      "no matching image integration found: please add an image integration for 'docker.io/library/nginx'",
-			expectRegistryMatch: pointers.Bool(false),
-			expectDelegation:    pointers.Bool(false),
+			expectRegistryMatch: new(false),
+			expectDelegation:    new(false),
 		},
 		{
 			description:         "accepts repository path with matching central integration",
 			input:               "delegated.registry.com/myapp",
 			expectedValid:       true,
 			expectedErrMsg:      "",
-			expectRegistryMatch: pointers.Bool(true),
-			expectDelegation:    pointers.Bool(false),
+			expectRegistryMatch: new(true),
+			expectDelegation:    new(false),
 		},
 		{
 			description:         "rejects repository path when neither central integration nor delegation exists",
 			input:               "unknown.registry.com/myapp",
 			expectedValid:       false,
 			expectedErrMsg:      "no matching image integration found: please add an image integration for 'unknown.registry.com/myapp'",
-			expectRegistryMatch: pointers.Bool(false),
-			expectDelegation:    pointers.Bool(false),
+			expectRegistryMatch: new(false),
+			expectDelegation:    new(false),
 		},
 	}
 

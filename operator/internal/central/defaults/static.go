@@ -13,41 +13,41 @@ import (
 var staticDefaults = platform.CentralSpec{
 	Central: &platform.CentralComponentSpec{
 		NotifierSecretsEncryption: &platform.NotifierSecretsEncryption{
-			Enabled: ptr.To(false),
+			Enabled: new(false),
 		},
 		DB: &platform.CentralDBSpec{
 			// Persistence is taken care of by CentralDBPersistenceDefaultingFlow
 			ConnectionPoolSize: &platform.DBConnectionPoolSize{
-				MinConnections: ptr.To(int32(10)),
-				MaxConnections: ptr.To(int32(90)),
+				MinConnections: new(int32(10)),
+				MaxConnections: new(int32(90)),
 			},
 		},
 		Exposure: &platform.Exposure{
 			LoadBalancer: &platform.ExposureLoadBalancer{
-				Enabled: ptr.To(false),
-				Port:    ptr.To(int32(443)),
+				Enabled: new(false),
+				Port:    new(int32(443)),
 			},
 			NodePort: &platform.ExposureNodePort{
-				Enabled: ptr.To(false),
+				Enabled: new(false),
 			},
 			Route: &platform.ExposureRoute{
-				Enabled: ptr.To(false),
+				Enabled: new(false),
 				Reencrypt: &platform.ExposureRouteReencrypt{
-					Enabled: ptr.To(false),
+					Enabled: new(false),
 				},
 			},
 		},
 		Telemetry: &platform.Telemetry{
-			Enabled: ptr.To(true),
+			Enabled: new(true),
 		},
 	},
 	Scanner: &platform.ScannerComponentSpec{
 		Analyzer: &platform.ScannerAnalyzerComponent{
 			Scaling: &platform.ScannerComponentScaling{
 				AutoScaling: ptr.To(platform.ScannerAutoScalingEnabled),
-				Replicas:    ptr.To(int32(3)),
-				MinReplicas: ptr.To(int32(2)),
-				MaxReplicas: ptr.To(int32(5)),
+				Replicas:    new(int32(3)),
+				MinReplicas: new(int32(2)),
+				MaxReplicas: new(int32(5)),
 			},
 		},
 	},
@@ -56,23 +56,23 @@ var staticDefaults = platform.CentralSpec{
 		Indexer: &platform.ScannerV4Component{
 			Scaling: &platform.ScannerComponentScaling{
 				AutoScaling: ptr.To(platform.ScannerAutoScalingEnabled),
-				Replicas:    ptr.To(int32(3)),
-				MinReplicas: ptr.To(int32(2)),
-				MaxReplicas: ptr.To(int32(5)),
+				Replicas:    new(int32(3)),
+				MinReplicas: new(int32(2)),
+				MaxReplicas: new(int32(5)),
 			},
 		},
 		Matcher: &platform.ScannerV4Component{
 			Scaling: &platform.ScannerComponentScaling{
 				AutoScaling: ptr.To(platform.ScannerAutoScalingEnabled),
-				Replicas:    ptr.To(int32(3)),
-				MinReplicas: ptr.To(int32(2)),
-				MaxReplicas: ptr.To(int32(5)),
+				Replicas:    new(int32(3)),
+				MinReplicas: new(int32(2)),
+				MaxReplicas: new(int32(5)),
 			},
 		},
 		DB: &platform.ScannerV4DB{
 			Persistence: &platform.ScannerV4Persistence{
 				PersistentVolumeClaim: &platform.ScannerV4PersistentVolumeClaim{
-					ClaimName: ptr.To("scanner-v4-db"),
+					ClaimName: new("scanner-v4-db"),
 				},
 			},
 		},
@@ -82,7 +82,7 @@ var staticDefaults = platform.CentralSpec{
 	},
 	Monitoring: &platform.GlobalMonitoring{
 		OpenShiftMonitoring: &platform.OpenShiftMonitoring{
-			Enabled: ptr.To(true),
+			Enabled: new(true),
 		},
 	},
 	Network: &platform.GlobalNetworkSpec{

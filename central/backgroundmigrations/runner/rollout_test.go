@@ -15,7 +15,8 @@ const (
 	testNamespace = "stackrox"
 )
 
-func int32Ptr(i int32) *int32 { return &i }
+//go:fix inline
+func int32Ptr(i int32) *int32 { return new(i) }
 
 func newTestRolloutChecker(client *fake.Clientset) *k8sRolloutChecker {
 	return &k8sRolloutChecker{
