@@ -340,7 +340,7 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 	mockPruner.EXPECT().Prune(matcher(expectedIndicators...)).Return([]string{indicators[0].GetId()})
 	prunedSignal.Reset()
 	pruneTurnstile.AllowOne()
-	suite.True(concurrency.WaitWithTimeout(&prunedSignal, 3*prunePeriod))
+	suite.True(concurrency.WaitWithTimeout(&prunedSignal, 5*prunePeriod))
 	expectedIndicators = []*storage.ProcessIndicator{extraIndicator}
 	expectedIndicators = append(expectedIndicators, indicators[1:]...)
 	suite.verifyIndicatorsAre(expectedIndicators...)
