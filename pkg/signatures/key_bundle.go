@@ -56,7 +56,7 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 		return nil, ErrUnmarshalling.CausedBy(err)
 	}
 
-	if bundle.SchemaVersion != "" && bundle.SchemaVersion != SchemaVersion1 {
+	if bundle.SchemaVersion != SchemaVersion1 {
 		log.Warnf("Key bundle has unknown schema version %q; attempting to parse with known fields", bundle.SchemaVersion)
 	}
 

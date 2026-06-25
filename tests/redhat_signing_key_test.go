@@ -14,6 +14,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/pointers"
+	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -38,17 +39,6 @@ LKpdYJEldXnyRE4ppY5d7vnRZHvdZQMSE3KoRSMvVnzZtc9LTKLB3DlS/w==
 -----END PUBLIC KEY-----
 `
 )
-
-type bundleKey struct {
-	Name string `json:"name"`
-	Type string `json:"type,omitempty"`
-	PEM  string `json:"pem"`
-}
-
-type keyBundle struct {
-	SchemaVersion string      `json:"schemaVersion,omitempty"`
-	Keys          []bundleKey `json:"keys"`
-}
 
 type RedHatSigningKeySuite struct {
 	KubernetesSuite
@@ -151,9 +141,9 @@ func (s *RedHatSigningKeySuite) TestWatcherPicksUpBundleFile() {
 	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
 	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
 
-	bundle := keyBundle{
+	bundle := signatures.KeyBundle{
 		SchemaVersion: "1.0",
-		Keys: []bundleKey{
+		Keys: []signatures.KeyBundleEntry{
 			{Name: "test-key-1", Type: "cosign", PEM: testPublicKeyPEM1},
 			{Name: "test-key-2", Type: "cosign", PEM: testPublicKeyPEM2},
 		},
@@ -195,9 +185,9 @@ func (s *RedHatSigningKeySuite) TestWatcherPicksUpV1Bundle() {
 	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
 	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
 
-	bundle := keyBundle{
+	bundle := signatures.KeyBundle{
 		SchemaVersion: "1.0",
-		Keys: []bundleKey{
+		Keys: []signatures.KeyBundleEntry{
 			{Name: "v1-key-1", Type: "cosign", PEM: testPublicKeyPEM1},
 			{Name: "v1-key-unsupported", Type: "pgp", PEM: testPublicKeyPEM2},
 		},
@@ -234,9 +224,9 @@ func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 	bundleURLEnv := "ROX_REDHAT_SIGNING_KEY_BUNDLE_URL"
 	updateIntervalEnv := "ROX_REDHAT_SIGNING_KEY_UPDATE_INTERVAL"
 
-	bundle := keyBundle{
+	bundle := signatures.KeyBundle{
 		SchemaVersion: "1.0",
-		Keys: []bundleKey{
+		Keys: []signatures.KeyBundleEntry{
 			{Name: "updater-key-1", Type: "cosign", PEM: testPublicKeyPEM1},
 			{Name: "updater-key-2", Type: "cosign", PEM: testPublicKeyPEM2},
 		},
