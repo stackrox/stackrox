@@ -42,7 +42,7 @@ case "$file" in
     [[ "$file" == *"/generated/"* || "$file" == *"/vendor/"* ]] && exit 0
     dir=$(dirname "$file")
     pkg="./${dir#"$PROJECT_DIR"/}"
-    lint_output=$(make -s golangci-lint-nodeps PKG="$pkg" 2>&1 | head -15)
+    lint_output=$(make -s golangci-lint-nodeps PKG="$pkg" 2>&1 | grep -v "^level=" | head -15)
     ;;
   *.proto)
     lint_output=$(make -s proto-style FILE="$file" 2>&1 | head -15)
