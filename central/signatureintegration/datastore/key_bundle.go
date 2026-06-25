@@ -26,7 +26,7 @@ func keyBundleHandler(siStore store.SignatureIntegrationStore) filewatcher.Handl
 
 		si, err := bundle.ToSignatureIntegration()
 		if err != nil {
-			log.Warnf("Key bundle has no supported keys: %v", err)
+			log.Warnf("Failed to create Red Hat signature integration from key bundle: %v", err)
 			watcherFileErrorTotal.Inc()
 			return nil
 		}
