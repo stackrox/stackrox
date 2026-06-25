@@ -22,10 +22,10 @@ var (
 		GormModel: (*ProcessIndicators)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "processindicators_deploymentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_deploymentid ON process_indicators USING btree (deploymentid)", Background: false},
-			{Name: "processindicators_poduid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_poduid ON process_indicators USING btree (poduid)", Background: false},
-			{Name: "processindicators_signal_time", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_signal_time ON process_indicators USING btree (signal_time)", Background: false},
-			{Name: "processindicators_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_sac_filter ON process_indicators USING btree (clusterid, namespace)", Background: false},
+			{Name: "processindicators_deploymentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_deploymentid ON process_indicators USING btree (deploymentid)"},
+			{Name: "processindicators_poduid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_poduid ON process_indicators USING btree (poduid)"},
+			{Name: "processindicators_signal_time", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_signal_time ON process_indicators USING btree (signal_time)"},
+			{Name: "processindicators_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_sac_filter ON process_indicators USING btree (clusterid, namespace)"},
 		},
 	}
 

@@ -21,8 +21,8 @@ var (
 		GormModel: (*ImageComponentV2)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "imagecomponentv2_imageid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecomponentv2_imageid ON image_component_v2 USING btree (imageid)", Background: false},
-			{Name: "imagecomponentv2_imageidv2", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecomponentv2_imageidv2 ON image_component_v2 USING btree (imageidv2)", Background: false},
+			{Name: "imagecomponentv2_imageid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecomponentv2_imageid ON image_component_v2 USING btree (imageid)"},
+			{Name: "imagecomponentv2_imageidv2", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecomponentv2_imageidv2 ON image_component_v2 USING btree (imageidv2)"},
 		},
 	}
 

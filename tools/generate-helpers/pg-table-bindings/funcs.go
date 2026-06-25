@@ -162,9 +162,8 @@ func messageBytesElemType(f walker.Field) string {
 
 // IndexInfo holds the data needed to render a postgres.IndexDefinition literal in the template.
 type IndexInfo struct {
-	Name       string
-	CreateSQL  string
-	Background bool
+	Name      string
+	CreateSQL string
 }
 
 var safeIdentifier = regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
@@ -172,12 +171,11 @@ var safeIdentifier = regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
 // indexBuilder accumulates columns for a single index (which may span multiple fields
 // in the case of composite indexes) and produces the final IndexInfo.
 type indexBuilder struct {
-	name       string
-	table      string
-	columns    []string
-	indexType  string
-	unique     bool
-	background bool
+	name      string
+	table     string
+	columns   []string
+	indexType string
+	unique    bool
 }
 
 func (b *indexBuilder) addColumn(col string) {
@@ -196,9 +194,8 @@ func (b *indexBuilder) build() IndexInfo {
 	createSQL := fmt.Sprintf("CREATE %sINDEX CONCURRENTLY IF NOT EXISTS %s ON %s USING %s (%s)", unique, b.name, b.table, b.indexType, cols)
 
 	return IndexInfo{
-		Name:       b.name,
-		CreateSQL:  createSQL,
-		Background: b.background,
+		Name:      b.name,
+		CreateSQL: createSQL,
 	}
 }
 
@@ -228,9 +225,6 @@ func collectIndexes(schema *walker.Schema, obj object) []IndexInfo {
 			}
 
 			if b, ok := idxNameToBuilder[name]; ok {
-				if b.background != idx.Background {
-					log.Fatalf("composite index %q has conflicting Background flags across fields", name)
-				}
 				b.addColumn(col)
 			} else {
 				indexType := idx.IndexType
@@ -241,11 +235,10 @@ func collectIndexes(schema *walker.Schema, obj object) []IndexInfo {
 					log.Fatalf("index type %q in index %q contains unsafe characters", indexType, name)
 				}
 				b = &indexBuilder{
-					name:       name,
-					table:      table,
-					indexType:  indexType,
-					unique:     idx.IndexCategory == "unique",
-					background: idx.Background,
+					name:      name,
+					table:     table,
+					indexType: indexType,
+					unique:    idx.IndexCategory == "unique",
 				}
 				b.addColumn(col)
 				idxNameToBuilder[name] = b

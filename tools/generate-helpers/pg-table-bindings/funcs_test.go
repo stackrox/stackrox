@@ -26,7 +26,7 @@ func TestCollectIndexes(t *testing.T) {
 			},
 			obj: object{storageType: "storage.Deployment"},
 			expected: []IndexInfo{
-				{Name: "testtable_deploymentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS testtable_deploymentid ON test_table USING btree (deploymentid)", Background: false},
+				{Name: "testtable_deploymentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS testtable_deploymentid ON test_table USING btree (deploymentid)"},
 			},
 		},
 		"explicit name and type": {
@@ -41,7 +41,7 @@ func TestCollectIndexes(t *testing.T) {
 			},
 			obj: object{storageType: "storage.Deployment"},
 			expected: []IndexInfo{
-				{Name: "my_custom_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS my_custom_idx ON test_table USING hash (col1)", Background: false},
+				{Name: "my_custom_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS my_custom_idx ON test_table USING hash (col1)"},
 			},
 		},
 		"unique index": {
@@ -56,22 +56,7 @@ func TestCollectIndexes(t *testing.T) {
 			},
 			obj: object{storageType: "storage.Group"},
 			expected: []IndexInfo{
-				{Name: "groups_unique", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS groups_unique ON groups USING btree (authproviderid)", Background: false},
-			},
-		},
-		"background index": {
-			schema: &walker.Schema{
-				Table: "process_indicators",
-				Fields: []walker.Field{
-					{ColumnName: "DeploymentId", Options: walker.PostgresOptions{
-						PrimaryKey: true,
-						Index:      []*walker.PostgresIndexOptions{{IndexType: "btree", Background: true}},
-					}},
-				},
-			},
-			obj: object{storageType: "storage.ProcessIndicator"},
-			expected: []IndexInfo{
-				{Name: "processindicators_deploymentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processindicators_deploymentid ON process_indicators USING btree (deploymentid)", Background: true},
+				{Name: "groups_unique", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS groups_unique ON groups USING btree (authproviderid)"},
 			},
 		},
 		"composite index": {
@@ -89,7 +74,7 @@ func TestCollectIndexes(t *testing.T) {
 			},
 			obj: object{storageType: "storage.Deployment"},
 			expected: []IndexInfo{
-				{Name: "composite_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS composite_idx ON test_table USING btree (col1, col2)", Background: false},
+				{Name: "composite_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS composite_idx ON test_table USING btree (col1, col2)"},
 			},
 		},
 		"SAC filter btree": {
@@ -103,17 +88,17 @@ func TestCollectIndexes(t *testing.T) {
 			},
 			obj: object{storageType: "storage.Deployment"},
 			expected: []IndexInfo{
-				{Name: "deployments_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_sac_filter ON deployments USING btree (clusterid, namespace)", Background: false},
+				{Name: "deployments_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_sac_filter ON deployments USING btree (clusterid, namespace)"},
 			},
 		},
-		"SAC filter does not inherit background": {
+		"SAC filter with indexed field": {
 			schema: &walker.Schema{
 				Table: "process_indicators",
 				Fields: []walker.Field{
 					{ColumnName: "Id", Options: walker.PostgresOptions{PrimaryKey: true}},
 					{ColumnName: "DeploymentId", Options: walker.PostgresOptions{
 						PrimaryKey: true,
-						Index:      []*walker.PostgresIndexOptions{{IndexType: "btree", Background: true}},
+						Index:      []*walker.PostgresIndexOptions{{IndexType: "btree"}},
 					}},
 					{ColumnName: "ClusterId", Search: walker.SearchField{FieldName: search.ClusterID.String(), Enabled: true}},
 					{ColumnName: "Namespace", Search: walker.SearchField{FieldName: search.Namespace.String(), Enabled: true}},
@@ -121,8 +106,8 @@ func TestCollectIndexes(t *testing.T) {
 			},
 			obj: object{storageType: "storage.ProcessIndicator"},
 			expected: []IndexInfo{
-				{Name: "processindicators_deploymentid", Background: true},
-				{Name: "processindicators_sac_filter", Background: false},
+				{Name: "processindicators_deploymentid"},
+				{Name: "processindicators_sac_filter"},
 			},
 		},
 		"SAC filter cluster scope uses hash": {
@@ -135,7 +120,7 @@ func TestCollectIndexes(t *testing.T) {
 			},
 			obj: object{storageType: "storage.ClusterHealthStatus"},
 			expected: []IndexInfo{
-				{Name: "clusterhealthstatuses_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS clusterhealthstatuses_sac_filter ON cluster_health_statuses USING hash (clusterid)", Background: false},
+				{Name: "clusterhealthstatuses_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS clusterhealthstatuses_sac_filter ON cluster_health_statuses USING hash (clusterid)"},
 			},
 		},
 		"PK-only SAC field excluded": {
@@ -165,7 +150,7 @@ func TestCollectIndexes(t *testing.T) {
 					{ColumnName: "Id", Options: walker.PostgresOptions{PrimaryKey: true}},
 					{ColumnName: "DeploymentId", Options: walker.PostgresOptions{
 						PrimaryKey: true,
-						Index:      []*walker.PostgresIndexOptions{{IndexType: "btree", Background: true}},
+						Index:      []*walker.PostgresIndexOptions{{IndexType: "btree"}},
 					}},
 					{ColumnName: "PolicyId", Options: walker.PostgresOptions{
 						PrimaryKey: true,
@@ -175,8 +160,8 @@ func TestCollectIndexes(t *testing.T) {
 			},
 			obj: object{storageType: "storage.Alert"},
 			expected: []IndexInfo{
-				{Name: "alerts_deploymentid", Background: true},
-				{Name: "alerts_policyid", Background: false},
+				{Name: "alerts_deploymentid"},
+				{Name: "alerts_policyid"},
 			},
 		},
 		"field with multiple indexes": {
@@ -210,7 +195,7 @@ func TestCollectIndexes(t *testing.T) {
 			},
 			obj: object{storageType: "storage.Deployment"},
 			expected: []IndexInfo{
-				{Name: "my_idx", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS my_idx ON test_table USING btree (col1)", Background: false},
+				{Name: "my_idx", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS my_idx ON test_table USING btree (col1)"},
 			},
 		},
 	}
@@ -230,7 +215,6 @@ func TestCollectIndexes(t *testing.T) {
 					break
 				}
 				assert.Equal(t, exp.Name, result[i].Name)
-				assert.Equal(t, exp.Background, result[i].Background)
 				if exp.CreateSQL != "" {
 					assert.Equal(t, exp.CreateSQL, result[i].CreateSQL)
 				}

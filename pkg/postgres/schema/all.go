@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -120,35 +119,16 @@ func ApplySchemaForTable(ctx context.Context, gormDB *gorm.DB, table string) {
 	}
 }
 
-// ApplyAllStartupIndexes creates indexes with Background: false before Central serves traffic.
-// All indexes use CREATE INDEX CONCURRENTLY. The SQL is pre-generated in CreateSQL at codegen time.
-func ApplyAllStartupIndexes(ctx context.Context, db postgres.DB) error {
-	return applyIndexes(ctx, db, false, env.PostgresDefaultMigrationStatementTimeout.DurationSetting())
-}
-
-// ApplyAllBackgroundIndexes creates indexes with Background: true using CREATE INDEX CONCURRENTLY.
-// Called by the background migration runner after Central is serving traffic.
-func ApplyAllBackgroundIndexes(ctx context.Context, db postgres.DB) error {
-	return applyIndexes(ctx, db, true, env.BackgroundIndexTimeout.DurationSetting())
-}
-
-func applyIndexes(ctx context.Context, db postgres.DB, background bool, timeout time.Duration) error {
+// ApplyAllIndexes reconciles all indexes using CREATE INDEX CONCURRENTLY.
+// It drops invalid indexes and creates missing ones, using the given statement stmtTimeout
+// for each DDL statement.
+func ApplyAllIndexes(ctx context.Context, db postgres.DB, stmtTimeout time.Duration) error {
 	existing, err := getExistingIndexes(ctx, db)
 	if err != nil {
 		return fmt.Errorf("querying existing indexes: %w", err)
 	}
 
-	label := "startup"
-	if background {
-		label = "background"
-	}
-
-	var desired []*postgres.IndexDefinition
-	for _, idx := range GetAllIndexDefinitions() {
-		if idx.Background == background {
-			desired = append(desired, idx)
-		}
-	}
+	desired := GetAllIndexDefinitions()
 
 	var toDrop, toCreate []*postgres.IndexDefinition
 	for _, idx := range desired {
@@ -160,35 +140,25 @@ func applyIndexes(ctx context.Context, db postgres.DB, background bool, timeout 
 		}
 	}
 
-	log.Infof("Reconciling %d %s indexes: %d exist, %d invalid, %d to create",
-		len(desired), label, len(desired)-len(toCreate), len(toDrop), len(toCreate))
+	log.Infof("Reconciling %d indexes: %d exist, %d invalid, %d to create",
+		len(desired), len(desired)-len(toCreate), len(toDrop), len(toCreate))
 
 	for _, idx := range toDrop {
-		if err := dropInvalidIndex(ctx, db, idx.Name, timeout); err != nil {
+		if err := dropInvalidIndex(ctx, db, idx.Name, stmtTimeout); err != nil {
 			return fmt.Errorf("dropping invalid index %s: %w", idx.Name, err)
 		}
 	}
 
 	for _, idx := range toCreate {
-		log.Infof("Creating %s index: %s", label, idx.Name)
-		stmtCtx, cancel := context.WithTimeout(ctx, timeout)
+		log.Infof("Creating index: %s", idx.Name)
+		stmtCtx, cancel := context.WithTimeout(ctx, stmtTimeout)
 		_, err := db.Exec(stmtCtx, idx.CreateSQL)
 		cancel()
 		if err != nil {
-			return fmt.Errorf("creating %s index %s: %w", label, idx.Name, err)
+			return fmt.Errorf("creating index %s: %w", idx.Name, err)
 		}
 	}
 	return nil
-}
-
-// ApplyAllIndexes creates ALL indexes immediately.
-// Used by tests where all indexes including background migration indexes are needed right away.
-func ApplyAllIndexes(ctx context.Context, db postgres.DB, tb testing.TB) {
-	for _, idx := range GetAllIndexDefinitions() {
-		if _, err := db.Exec(ctx, idx.CreateSQL); err != nil {
-			tb.Fatalf("Failed to create index %s: %v", idx.Name, err)
-		}
-	}
 }
 
 // GetAllIndexDefinitions returns all index definitions across all registered tables.
@@ -253,9 +223,9 @@ func getExistingIndexes(ctx context.Context, db postgres.DB) (*indexState, error
 	return state, nil
 }
 
-func dropInvalidIndex(ctx context.Context, db postgres.DB, name string, timeout time.Duration) error {
+func dropInvalidIndex(ctx context.Context, db postgres.DB, name string, stmtTimeout time.Duration) error {
 	log.Warnf("Dropping invalid index %s (leftover from crashed CONCURRENTLY)", name)
-	stmtCtx, cancel := context.WithTimeout(ctx, timeout)
+	stmtCtx, cancel := context.WithTimeout(ctx, stmtTimeout)
 	defer cancel()
 	_, err := db.Exec(stmtCtx, "DROP INDEX CONCURRENTLY IF EXISTS "+pq.QuoteIdentifier(name))
 	return err

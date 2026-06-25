@@ -21,7 +21,7 @@ var (
 		GormModel: (*Namespaces)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "namespaces_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS namespaces_sac_filter ON namespaces USING btree (name, clusterid)", Background: false},
+			{Name: "namespaces_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS namespaces_sac_filter ON namespaces USING btree (name, clusterid)"},
 		},
 	}
 

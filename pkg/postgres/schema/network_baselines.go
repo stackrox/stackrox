@@ -20,7 +20,7 @@ var (
 		GormModel: (*NetworkBaselines)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "networkbaselines_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS networkbaselines_sac_filter ON network_baselines USING btree (clusterid, namespace)", Background: false},
+			{Name: "networkbaselines_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS networkbaselines_sac_filter ON network_baselines USING btree (clusterid, namespace)"},
 		},
 	}
 

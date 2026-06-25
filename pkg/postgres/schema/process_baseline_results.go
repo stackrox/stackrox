@@ -20,7 +20,7 @@ var (
 		GormModel: (*ProcessBaselineResults)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "processbaselineresults_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processbaselineresults_sac_filter ON process_baseline_results USING btree (clusterid, namespace)", Background: false},
+			{Name: "processbaselineresults_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processbaselineresults_sac_filter ON process_baseline_results USING btree (clusterid, namespace)"},
 		},
 	}
 

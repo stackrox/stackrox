@@ -29,28 +29,28 @@ var (
 						GormModel: (*DeploymentsContainersEnvs)(nil),
 						Children:  []*postgres.CreateStmts{},
 						Indexes: []*postgres.IndexDefinition{
-							{Name: "deploymentscontainersenvs_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainersenvs_idx ON deployments_containers_envs USING btree (idx)", Background: false},
+							{Name: "deploymentscontainersenvs_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainersenvs_idx ON deployments_containers_envs USING btree (idx)"},
 						},
 					},
 					&postgres.CreateStmts{
 						GormModel: (*DeploymentsContainersVolumes)(nil),
 						Children:  []*postgres.CreateStmts{},
 						Indexes: []*postgres.IndexDefinition{
-							{Name: "deploymentscontainersvolumes_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainersvolumes_idx ON deployments_containers_volumes USING btree (idx)", Background: false},
+							{Name: "deploymentscontainersvolumes_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainersvolumes_idx ON deployments_containers_volumes USING btree (idx)"},
 						},
 					},
 					&postgres.CreateStmts{
 						GormModel: (*DeploymentsContainersSecrets)(nil),
 						Children:  []*postgres.CreateStmts{},
 						Indexes: []*postgres.IndexDefinition{
-							{Name: "deploymentscontainerssecrets_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainerssecrets_idx ON deployments_containers_secrets USING btree (idx)", Background: false},
+							{Name: "deploymentscontainerssecrets_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainerssecrets_idx ON deployments_containers_secrets USING btree (idx)"},
 						},
 					},
 				},
 				Indexes: []*postgres.IndexDefinition{
-					{Name: "deploymentscontainers_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainers_idx ON deployments_containers USING btree (idx)", Background: false},
-					{Name: "deploymentscontainers_image_id", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainers_image_id ON deployments_containers USING hash (image_id)", Background: false},
-					{Name: "deploymentscontainers_image_idv2", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainers_image_idv2 ON deployments_containers USING btree (image_idv2)", Background: false},
+					{Name: "deploymentscontainers_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainers_idx ON deployments_containers USING btree (idx)"},
+					{Name: "deploymentscontainers_image_id", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainers_image_id ON deployments_containers USING hash (image_id)"},
+					{Name: "deploymentscontainers_image_idv2", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainers_image_idv2 ON deployments_containers USING btree (image_idv2)"},
 				},
 			},
 			&postgres.CreateStmts{
@@ -60,18 +60,18 @@ var (
 						GormModel: (*DeploymentsPortsExposureInfos)(nil),
 						Children:  []*postgres.CreateStmts{},
 						Indexes: []*postgres.IndexDefinition{
-							{Name: "deploymentsportsexposureinfos_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentsportsexposureinfos_idx ON deployments_ports_exposure_infos USING btree (idx)", Background: false},
+							{Name: "deploymentsportsexposureinfos_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentsportsexposureinfos_idx ON deployments_ports_exposure_infos USING btree (idx)"},
 						},
 					},
 				},
 				Indexes: []*postgres.IndexDefinition{
-					{Name: "deploymentsports_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentsports_idx ON deployments_ports USING btree (idx)", Background: false},
+					{Name: "deploymentsports_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentsports_idx ON deployments_ports USING btree (idx)"},
 				},
 			},
 		},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "deployments_riskscore", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_riskscore ON deployments USING btree (riskscore)", Background: false},
-			{Name: "deployments_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_sac_filter ON deployments USING btree (namespace, clusterid)", Background: false},
+			{Name: "deployments_riskscore", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_riskscore ON deployments USING btree (riskscore)"},
+			{Name: "deployments_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_sac_filter ON deployments USING btree (namespace, clusterid)"},
 		},
 	}
 

@@ -22,11 +22,11 @@ var (
 		GormModel: (*VirtualMachineCvev2)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "virtualmachinecvev2_vmv2id", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecvev2_vmv2id ON virtual_machine_cvev2 USING btree (vmv2id)", Background: false},
-			{Name: "virtualmachinecvev2_vmcomponentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecvev2_vmcomponentid ON virtual_machine_cvev2 USING btree (vmcomponentid)", Background: false},
-			{Name: "virtualmachinecvev2_cvebaseinfo_cve", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecvev2_cvebaseinfo_cve ON virtual_machine_cvev2 USING btree (cvebaseinfo_cve)", Background: false},
-			{Name: "virtualmachinecvev2_severity", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecvev2_severity ON virtual_machine_cvev2 USING btree (severity)", Background: false},
-			{Name: "virtualmachinecvev2_isfixable", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecvev2_isfixable ON virtual_machine_cvev2 USING btree (isfixable)", Background: false},
+			{Name: "virtualmachinecvev2_vmv2id", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecvev2_vmv2id ON virtual_machine_cvev2 USING btree (vmv2id)"},
+			{Name: "virtualmachinecvev2_vmcomponentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecvev2_vmcomponentid ON virtual_machine_cvev2 USING btree (vmcomponentid)"},
+			{Name: "virtualmachinecvev2_cvebaseinfo_cve", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecvev2_cvebaseinfo_cve ON virtual_machine_cvev2 USING btree (cvebaseinfo_cve)"},
+			{Name: "virtualmachinecvev2_severity", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecvev2_severity ON virtual_machine_cvev2 USING btree (severity)"},
+			{Name: "virtualmachinecvev2_isfixable", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecvev2_isfixable ON virtual_machine_cvev2 USING btree (isfixable)"},
 		},
 	}
 

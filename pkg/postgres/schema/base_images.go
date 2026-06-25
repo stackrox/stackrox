@@ -25,13 +25,13 @@ var (
 				GormModel: (*BaseImagesLayers)(nil),
 				Children:  []*postgres.CreateStmts{},
 				Indexes: []*postgres.IndexDefinition{
-					{Name: "baseimageslayers_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS baseimageslayers_idx ON base_images_layers USING btree (idx)", Background: false},
-					{Name: "base_image_id_layer", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS base_image_id_layer ON base_images_layers USING btree (layerdigest)", Background: false},
+					{Name: "baseimageslayers_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS baseimageslayers_idx ON base_images_layers USING btree (idx)"},
+					{Name: "base_image_id_layer", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS base_image_id_layer ON base_images_layers USING btree (layerdigest)"},
 				},
 			},
 		},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "baseimages_firstlayerdigest", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS baseimages_firstlayerdigest ON base_images USING btree (firstlayerdigest)", Background: false},
+			{Name: "baseimages_firstlayerdigest", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS baseimages_firstlayerdigest ON base_images USING btree (firstlayerdigest)"},
 		},
 	}
 

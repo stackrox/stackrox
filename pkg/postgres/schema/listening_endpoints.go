@@ -22,11 +22,11 @@ var (
 		GormModel: (*ListeningEndpoints)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "listeningendpoints_processindicatorid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS listeningendpoints_processindicatorid ON listening_endpoints USING btree (processindicatorid)", Background: false},
-			{Name: "listeningendpoints_closed", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS listeningendpoints_closed ON listening_endpoints USING btree (closed)", Background: false},
-			{Name: "listeningendpoints_deploymentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS listeningendpoints_deploymentid ON listening_endpoints USING btree (deploymentid)", Background: false},
-			{Name: "listeningendpoints_poduid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS listeningendpoints_poduid ON listening_endpoints USING btree (poduid)", Background: false},
-			{Name: "listeningendpoints_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS listeningendpoints_sac_filter ON listening_endpoints USING btree (clusterid, namespace)", Background: false},
+			{Name: "listeningendpoints_processindicatorid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS listeningendpoints_processindicatorid ON listening_endpoints USING btree (processindicatorid)"},
+			{Name: "listeningendpoints_closed", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS listeningendpoints_closed ON listening_endpoints USING btree (closed)"},
+			{Name: "listeningendpoints_deploymentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS listeningendpoints_deploymentid ON listening_endpoints USING btree (deploymentid)"},
+			{Name: "listeningendpoints_poduid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS listeningendpoints_poduid ON listening_endpoints USING btree (poduid)"},
+			{Name: "listeningendpoints_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS listeningendpoints_sac_filter ON listening_endpoints USING btree (clusterid, namespace)"},
 		},
 	}
 

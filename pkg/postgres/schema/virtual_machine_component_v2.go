@@ -21,10 +21,10 @@ var (
 		GormModel: (*VirtualMachineComponentV2)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "virtualmachinecomponentv2_vmscanid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecomponentv2_vmscanid ON virtual_machine_component_v2 USING btree (vmscanid)", Background: false},
-			{Name: "virtualmachinecomponentv2_name", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecomponentv2_name ON virtual_machine_component_v2 USING btree (name)", Background: false},
-			{Name: "virtualmachinecomponentv2_operatingsystem", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecomponentv2_operatingsystem ON virtual_machine_component_v2 USING btree (operatingsystem)", Background: false},
-			{Name: "virtualmachinecomponentv2_topcvss", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecomponentv2_topcvss ON virtual_machine_component_v2 USING btree (topcvss)", Background: false},
+			{Name: "virtualmachinecomponentv2_vmscanid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecomponentv2_vmscanid ON virtual_machine_component_v2 USING btree (vmscanid)"},
+			{Name: "virtualmachinecomponentv2_name", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecomponentv2_name ON virtual_machine_component_v2 USING btree (name)"},
+			{Name: "virtualmachinecomponentv2_operatingsystem", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecomponentv2_operatingsystem ON virtual_machine_component_v2 USING btree (operatingsystem)"},
+			{Name: "virtualmachinecomponentv2_topcvss", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinecomponentv2_topcvss ON virtual_machine_component_v2 USING btree (topcvss)"},
 		},
 	}
 

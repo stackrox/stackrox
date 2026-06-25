@@ -26,7 +26,7 @@ var (
 				GormModel: (*ComplianceOperatorReportSnapshotV2Scans)(nil),
 				Children:  []*postgres.CreateStmts{},
 				Indexes: []*postgres.IndexDefinition{
-					{Name: "complianceoperatorreportsnapshotv2scans_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorreportsnapshotv2scans_idx ON compliance_operator_report_snapshot_v2_scans USING btree (idx)", Background: false},
+					{Name: "complianceoperatorreportsnapshotv2scans_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorreportsnapshotv2scans_idx ON compliance_operator_report_snapshot_v2_scans USING btree (idx)"},
 				},
 			},
 		},

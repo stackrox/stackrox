@@ -20,7 +20,7 @@ var (
 		GormModel: (*Risks)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "risks_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS risks_sac_filter ON risks USING btree (subject_namespace, subject_clusterid)", Background: false},
+			{Name: "risks_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS risks_sac_filter ON risks USING btree (subject_namespace, subject_clusterid)"},
 		},
 	}
 

@@ -20,7 +20,7 @@ var (
 		GormModel: (*NetworkEntities)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "networkentities_info_externalsource_cidr", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS networkentities_info_externalsource_cidr ON network_entities USING btree (info_externalsource_cidr)", Background: false},
+			{Name: "networkentities_info_externalsource_cidr", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS networkentities_info_externalsource_cidr ON network_entities USING btree (info_externalsource_cidr)"},
 		},
 	}
 

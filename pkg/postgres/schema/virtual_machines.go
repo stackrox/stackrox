@@ -20,7 +20,7 @@ var (
 		GormModel: (*VirtualMachines)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "virtualmachines_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachines_sac_filter ON virtual_machines USING btree (namespace, clusterid)", Background: false},
+			{Name: "virtualmachines_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachines_sac_filter ON virtual_machines USING btree (namespace, clusterid)"},
 		},
 	}
 

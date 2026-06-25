@@ -21,7 +21,7 @@ var (
 		GormModel: (*NodeCves)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "nodecves_cvebaseinfo_cve", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodecves_cvebaseinfo_cve ON node_cves USING btree (cvebaseinfo_cve)", Background: false},
+			{Name: "nodecves_cvebaseinfo_cve", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodecves_cvebaseinfo_cve ON node_cves USING btree (cvebaseinfo_cve)"},
 		},
 	}
 

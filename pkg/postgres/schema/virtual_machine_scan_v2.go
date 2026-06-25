@@ -22,8 +22,8 @@ var (
 		GormModel: (*VirtualMachineScanV2)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "virtualmachinescanv2_vmv2id", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinescanv2_vmv2id ON virtual_machine_scan_v2 USING btree (vmv2id)", Background: false},
-			{Name: "virtualmachinescanv2_scantime", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinescanv2_scantime ON virtual_machine_scan_v2 USING btree (scantime)", Background: false},
+			{Name: "virtualmachinescanv2_vmv2id", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinescanv2_vmv2id ON virtual_machine_scan_v2 USING btree (vmv2id)"},
+			{Name: "virtualmachinescanv2_scantime", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS virtualmachinescanv2_scantime ON virtual_machine_scan_v2 USING btree (scantime)"},
 		},
 	}
 

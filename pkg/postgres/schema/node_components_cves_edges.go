@@ -21,8 +21,8 @@ var (
 		GormModel: (*NodeComponentsCvesEdges)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "nodecomponentscvesedges_nodecomponentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodecomponentscvesedges_nodecomponentid ON node_components_cves_edges USING hash (nodecomponentid)", Background: false},
-			{Name: "nodecomponentscvesedges_nodecveid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodecomponentscvesedges_nodecveid ON node_components_cves_edges USING hash (nodecveid)", Background: false},
+			{Name: "nodecomponentscvesedges_nodecomponentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodecomponentscvesedges_nodecomponentid ON node_components_cves_edges USING hash (nodecomponentid)"},
+			{Name: "nodecomponentscvesedges_nodecveid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodecomponentscvesedges_nodecveid ON node_components_cves_edges USING hash (nodecveid)"},
 		},
 	}
 

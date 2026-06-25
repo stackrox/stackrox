@@ -21,7 +21,7 @@ var (
 		GormModel: (*ImageCveInfos)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "imagecveinfos_cve", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecveinfos_cve ON image_cve_infos USING btree (cve)", Background: false},
+			{Name: "imagecveinfos_cve", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagecveinfos_cve ON image_cve_infos USING btree (cve)"},
 		},
 	}
 

@@ -21,7 +21,7 @@ var (
 		GormModel: (*ClusterCveEdges)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "clustercveedges_cveid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS clustercveedges_cveid ON cluster_cve_edges USING hash (cveid)", Background: false},
+			{Name: "clustercveedges_cveid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS clustercveedges_cveid ON cluster_cve_edges USING hash (cveid)"},
 		},
 	}
 

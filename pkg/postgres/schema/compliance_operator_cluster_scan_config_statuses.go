@@ -23,7 +23,7 @@ var (
 		GormModel: (*ComplianceOperatorClusterScanConfigStatuses)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "complianceoperatorclusterscanconfigstatuses_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorclusterscanconfigstatuses_sac_filter ON compliance_operator_cluster_scan_config_statuses USING hash (clusterid)", Background: false},
+			{Name: "complianceoperatorclusterscanconfigstatuses_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorclusterscanconfigstatuses_sac_filter ON compliance_operator_cluster_scan_config_statuses USING hash (clusterid)"},
 		},
 	}
 

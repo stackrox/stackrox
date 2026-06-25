@@ -26,12 +26,12 @@ var (
 						GormModel: (*TestGrandparentsEmbeddedsEmbedded2)(nil),
 						Children:  []*postgres.CreateStmts{},
 						Indexes: []*postgres.IndexDefinition{
-							{Name: "testgrandparentsembeddedsembedded2_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS testgrandparentsembeddedsembedded2_idx ON test_grandparents_embeddeds_embedded2 USING btree (idx)", Background: false},
+							{Name: "testgrandparentsembeddedsembedded2_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS testgrandparentsembeddedsembedded2_idx ON test_grandparents_embeddeds_embedded2 USING btree (idx)"},
 						},
 					},
 				},
 				Indexes: []*postgres.IndexDefinition{
-					{Name: "testgrandparentsembeddeds_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS testgrandparentsembeddeds_idx ON test_grandparents_embeddeds USING btree (idx)", Background: false},
+					{Name: "testgrandparentsembeddeds_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS testgrandparentsembeddeds_idx ON test_grandparents_embeddeds USING btree (idx)"},
 				},
 			},
 		},

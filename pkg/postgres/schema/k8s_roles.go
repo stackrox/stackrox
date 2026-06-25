@@ -20,7 +20,7 @@ var (
 		GormModel: (*K8sRoles)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "k8sroles_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS k8sroles_sac_filter ON k8s_roles USING btree (namespace, clusterid)", Background: false},
+			{Name: "k8sroles_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS k8sroles_sac_filter ON k8s_roles USING btree (namespace, clusterid)"},
 		},
 	}
 

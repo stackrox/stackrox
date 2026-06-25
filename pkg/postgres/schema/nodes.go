@@ -25,12 +25,12 @@ var (
 				GormModel: (*NodesTaints)(nil),
 				Children:  []*postgres.CreateStmts{},
 				Indexes: []*postgres.IndexDefinition{
-					{Name: "nodestaints_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodestaints_idx ON nodes_taints USING btree (idx)", Background: false},
+					{Name: "nodestaints_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodestaints_idx ON nodes_taints USING btree (idx)"},
 				},
 			},
 		},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "nodes_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodes_sac_filter ON nodes USING hash (clusterid)", Background: false},
+			{Name: "nodes_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodes_sac_filter ON nodes USING hash (clusterid)"},
 		},
 	}
 

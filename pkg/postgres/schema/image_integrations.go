@@ -20,7 +20,7 @@ var (
 		GormModel: (*ImageIntegrations)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "imageintegrations_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imageintegrations_sac_filter ON image_integrations USING btree (clusterid)", Background: false},
+			{Name: "imageintegrations_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imageintegrations_sac_filter ON image_integrations USING btree (clusterid)"},
 		},
 	}
 

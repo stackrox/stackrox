@@ -22,7 +22,7 @@ var (
 		GormModel: (*Policies)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "policies_id", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS policies_id ON policies USING btree (id)", Background: false},
+			{Name: "policies_id", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS policies_id ON policies USING btree (id)"},
 		},
 	}
 

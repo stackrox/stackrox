@@ -24,12 +24,12 @@ var (
 				GormModel: (*PodsLiveInstances)(nil),
 				Children:  []*postgres.CreateStmts{},
 				Indexes: []*postgres.IndexDefinition{
-					{Name: "podsliveinstances_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS podsliveinstances_idx ON pods_live_instances USING btree (idx)", Background: false},
+					{Name: "podsliveinstances_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS podsliveinstances_idx ON pods_live_instances USING btree (idx)"},
 				},
 			},
 		},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "pods_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS pods_sac_filter ON pods USING btree (namespace, clusterid)", Background: false},
+			{Name: "pods_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS pods_sac_filter ON pods USING btree (namespace, clusterid)"},
 		},
 	}
 

@@ -21,7 +21,7 @@ var (
 		GormModel: (*ComplianceRunResults)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "compliancerunresults_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS compliancerunresults_sac_filter ON compliance_run_results USING hash (runmetadata_clusterid)", Background: false},
+			{Name: "compliancerunresults_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS compliancerunresults_sac_filter ON compliance_run_results USING hash (runmetadata_clusterid)"},
 		},
 	}
 

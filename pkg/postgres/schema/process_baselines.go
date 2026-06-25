@@ -20,8 +20,8 @@ var (
 		GormModel: (*ProcessBaselines)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "processbaselines_key_deploymentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processbaselines_key_deploymentid ON process_baselines USING btree (key_deploymentid)", Background: false},
-			{Name: "processbaselines_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processbaselines_sac_filter ON process_baselines USING btree (key_clusterid, key_namespace)", Background: false},
+			{Name: "processbaselines_key_deploymentid", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processbaselines_key_deploymentid ON process_baselines USING btree (key_deploymentid)"},
+			{Name: "processbaselines_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS processbaselines_sac_filter ON process_baselines USING btree (key_clusterid, key_namespace)"},
 		},
 	}
 

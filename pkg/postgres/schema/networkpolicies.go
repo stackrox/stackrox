@@ -20,7 +20,7 @@ var (
 		GormModel: (*Networkpolicies)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "networkpolicies_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS networkpolicies_sac_filter ON networkpolicies USING btree (clusterid, namespace)", Background: false},
+			{Name: "networkpolicies_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS networkpolicies_sac_filter ON networkpolicies USING btree (clusterid, namespace)"},
 		},
 	}
 

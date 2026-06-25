@@ -22,7 +22,7 @@ var (
 		GormModel: (*ComplianceOperatorSuiteV2)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "complianceoperatorsuitev2_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorsuitev2_sac_filter ON compliance_operator_suite_v2 USING hash (clusterid)", Background: false},
+			{Name: "complianceoperatorsuitev2_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorsuitev2_sac_filter ON compliance_operator_suite_v2 USING hash (clusterid)"},
 		},
 	}
 

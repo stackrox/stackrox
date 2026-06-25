@@ -452,14 +452,11 @@ type SearchField struct {
 }
 
 // PostgresIndexOptions is the parsed representation of the index subpart of the sql tag in the struct field.
-// Background indexes use the "background-index" tag and are created using CREATE INDEX CONCURRENTLY
-// after Central starts, rather than blocking during startup.
 type PostgresIndexOptions struct {
 	IndexName     string
 	IndexType     string
 	IndexCategory string
 	IndexPriority string
-	Background    bool
 }
 
 // PostgresOptions is the parsed representation of the sql tag on the struct field

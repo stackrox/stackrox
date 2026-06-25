@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -116,7 +117,8 @@ func (s *SchemaTestSuite) resetTestIndexTable() {
 
 func (s *SchemaTestSuite) TestApplyAllIndexes() {
 	s.resetTestIndexTable()
-	ApplyAllIndexes(s.ctx, s.pool, s.T())
+	err := ApplyAllIndexes(s.ctx, s.pool, 30*time.Second)
+	s.Require().NoError(err)
 
 	created := s.getIndexNames("idx_test_applies")
 	s.Contains(created, "idxtestapply_col_a")
@@ -125,43 +127,19 @@ func (s *SchemaTestSuite) TestApplyAllIndexes() {
 	s.Contains(created, "idxtestapply_bg_col")
 }
 
-func (s *SchemaTestSuite) TestApplyAllStartupIndexes() {
-	s.resetTestIndexTable()
-	err := ApplyAllStartupIndexes(s.ctx, s.pool)
-	s.Require().NoError(err)
-
-	created := s.getIndexNames("idx_test_applies")
-	s.Contains(created, "idxtestapply_col_a", "non-unique startup index should be created")
-	s.Contains(created, "idxtestapply_composite", "composite startup index should be created")
-	s.Contains(created, "idxtestapply_unique_col", "unique startup index should be created")
-	s.NotContains(created, "idxtestapply_bg_col", "background index should not be created at startup")
-}
-
-func (s *SchemaTestSuite) TestApplyAllBackgroundIndexes() {
-	s.resetTestIndexTable()
-	err := ApplyAllBackgroundIndexes(s.ctx, s.pool)
-	s.Require().NoError(err)
-
-	created := s.getIndexNames("idx_test_applies")
-	s.Contains(created, "idxtestapply_bg_col", "background index should be created")
-	s.NotContains(created, "idxtestapply_col_a", "startup index should not be created by background apply")
-}
-
 func (s *SchemaTestSuite) TestApplyIndexesIdempotent() {
 	s.resetTestIndexTable()
-	ApplyAllIndexes(s.ctx, s.pool, s.T())
-	ApplyAllIndexes(s.ctx, s.pool, s.T())
+	s.Require().NoError(ApplyAllIndexes(s.ctx, s.pool, 30*time.Second))
+	s.Require().NoError(ApplyAllIndexes(s.ctx, s.pool, 30*time.Second))
 }
 
 func (s *SchemaTestSuite) TestInvalidIndexDropAndRecreate() {
 	s.resetTestIndexTable()
 
-	// Create the index first so we can invalidate it.
 	_, err := s.pool.Exec(s.ctx, "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_col_a ON idx_test_applies USING btree (col_a)")
 	s.Require().NoError(err)
 	s.Contains(s.getIndexNames("idx_test_applies"), "idxtestapply_col_a")
 
-	// Mark the index as invalid to simulate a crashed CONCURRENTLY.
 	_, err = s.pool.Exec(s.ctx,
 		`UPDATE pg_index SET indisvalid = false
 		 WHERE indexrelid = (SELECT oid FROM pg_class WHERE relname = 'idxtestapply_col_a')`)
@@ -169,8 +147,7 @@ func (s *SchemaTestSuite) TestInvalidIndexDropAndRecreate() {
 	s.NotContains(s.getIndexNames("idx_test_applies"), "idxtestapply_col_a",
 		"index should not appear in valid set after invalidation")
 
-	// ApplyAllStartupIndexes should drop the invalid index and recreate it.
-	err = ApplyAllStartupIndexes(s.ctx, s.pool)
+	err = ApplyAllIndexes(s.ctx, s.pool, 30*time.Second)
 	s.Require().NoError(err)
 	s.Contains(s.getIndexNames("idx_test_applies"), "idxtestapply_col_a",
 		"index should be valid again after reconciliation")
@@ -196,10 +173,10 @@ func (s *SchemaTestSuite) registerTestIndexTable() {
 	stmt := &pkgPostgres.CreateStmts{
 		GormModel: (*IdxTestApply)(nil),
 		Indexes: []*pkgPostgres.IndexDefinition{
-			{Name: "idxtestapply_col_a", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_col_a ON idx_test_applies USING btree (col_a)", Background: false},
-			{Name: "idxtestapply_composite", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_composite ON idx_test_applies USING btree (col_a, col_b)", Background: false},
-			{Name: "idxtestapply_unique_col", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_unique_col ON idx_test_applies USING btree (unique_col)", Background: false},
-			{Name: "idxtestapply_bg_col", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_bg_col ON idx_test_applies USING btree (bg_col)", Background: true},
+			{Name: "idxtestapply_col_a", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_col_a ON idx_test_applies USING btree (col_a)"},
+			{Name: "idxtestapply_composite", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_composite ON idx_test_applies USING btree (col_a, col_b)"},
+			{Name: "idxtestapply_unique_col", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_unique_col ON idx_test_applies USING btree (unique_col)"},
+			{Name: "idxtestapply_bg_col", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_bg_col ON idx_test_applies USING btree (bg_col)"},
 		},
 	}
 	registeredTables[tableName] = &registeredTable{

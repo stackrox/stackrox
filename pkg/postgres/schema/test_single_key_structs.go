@@ -22,7 +22,7 @@ var (
 		GormModel: (*TestSingleKeyStructs)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "testsinglekeystructs_key", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS testsinglekeystructs_key ON test_single_key_structs USING hash (key)", Background: false},
+			{Name: "testsinglekeystructs_key", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS testsinglekeystructs_key ON test_single_key_structs USING hash (key)"},
 		},
 	}
 

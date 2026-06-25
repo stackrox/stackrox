@@ -291,24 +291,6 @@ func TestGetPostgresOptions_IndexParsing(t *testing.T) {
 				{IndexName: "my_idx", IndexType: "btree", IndexCategory: "unique", IndexPriority: "1"},
 			},
 		},
-		"background-index bare": {
-			tag: "background-index",
-			expected: []*PostgresIndexOptions{
-				{IndexType: "btree", Background: true},
-			},
-		},
-		"background-index with type": {
-			tag: "background-index=hash",
-			expected: []*PostgresIndexOptions{
-				{IndexType: "hash", Background: true},
-			},
-		},
-		"background-index with full config": {
-			tag: "background-index=name:my_bg_idx;type:btree",
-			expected: []*PostgresIndexOptions{
-				{IndexName: "my_bg_idx", IndexType: "btree", Background: true},
-			},
-		},
 		"index with other fields": {
 			tag: "index=btree,type(uuid)",
 			expected: []*PostgresIndexOptions{

@@ -25,12 +25,12 @@ var (
 				GormModel: (*ComplianceOperatorProfileV2Rules)(nil),
 				Children:  []*postgres.CreateStmts{},
 				Indexes: []*postgres.IndexDefinition{
-					{Name: "complianceoperatorprofilev2rules_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorprofilev2rules_idx ON compliance_operator_profile_v2_rules USING btree (idx)", Background: false},
+					{Name: "complianceoperatorprofilev2rules_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorprofilev2rules_idx ON compliance_operator_profile_v2_rules USING btree (idx)"},
 				},
 			},
 		},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "complianceoperatorprofilev2_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorprofilev2_sac_filter ON compliance_operator_profile_v2 USING hash (clusterid)", Background: false},
+			{Name: "complianceoperatorprofilev2_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorprofilev2_sac_filter ON compliance_operator_profile_v2 USING hash (clusterid)"},
 		},
 	}
 

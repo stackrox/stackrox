@@ -43,7 +43,7 @@ import (
     {{- if $indexes }}
     Indexes: []*postgres.IndexDefinition{
         {{- range $idx := $indexes }}
-        {Name: "{{$idx.Name}}", CreateSQL: "{{$idx.CreateSQL}}", Background: {{$idx.Background}} },
+        {Name: "{{$idx.Name}}", CreateSQL: "{{$idx.CreateSQL}}"},
         {{- end }}
     },
     {{- end }}
