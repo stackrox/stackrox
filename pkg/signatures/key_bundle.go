@@ -41,11 +41,14 @@ type KeyBundleEntry struct {
 
 // ParseKeyBundle parses and validates a key bundle JSON. All keys must be valid
 // PEM-encoded public keys; if any key fails validation the entire bundle is rejected.
-// Keys with missing type default to "cosign".
 //
 // Schema version handling:
 //   - Missing or "1.0": accepted. Missing schemaVersion is normalized to "1.0".
 //   - Unknown versions: rejected with ErrUnknownSchemaVersion.
+//
+// Key type handling:
+//   - Missing type: defaults to "cosign".
+//   - All types are accepted; unsupported types are filtered by ToSignatureIntegration.
 func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 	var bundle KeyBundle
 	if err := json.Unmarshal(data, &bundle); err != nil {
