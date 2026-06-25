@@ -33,15 +33,16 @@ func keyBundleHandler(siStore store.SignatureIntegrationStore) filewatcher.Handl
 		}
 
 		watcherUpsertTotal.WithLabelValues("success").Inc()
-		watcherKeyCount.Set(float64(len(bundle.Keys)))
+		cosignKeys := si.GetCosign().GetPublicKeys()
+		watcherKeyCount.Set(float64(len(cosignKeys)))
 		watcherLastSuccessTimestamp.SetToCurrentTime()
 
-		keyNames := make([]string, 0, len(bundle.Keys))
-		for _, k := range bundle.Keys {
-			keyNames = append(keyNames, k.Name)
+		keyNames := make([]string, 0, len(cosignKeys))
+		for _, k := range cosignKeys {
+			keyNames = append(keyNames, k.GetName())
 		}
 		log.Infof("Updated Red Hat signature integration with %d key(s) from bundle: [%s]",
-			len(bundle.Keys), strings.Join(keyNames, ", "))
+			len(cosignKeys), strings.Join(keyNames, ", "))
 		return nil
 	}
 }

@@ -48,11 +48,18 @@ func TestBundleToSignatureIntegration(t *testing.T) {
 	assert.Equal(t, DefaultRedHatIntegrationName, si.GetName())
 	assert.Equal(t, storage.Traits_DEFAULT, si.GetTraits().GetOrigin())
 
+	var cosignEntries []KeyBundleEntry
+	for _, e := range bundle.Keys {
+		if e.Type == KeyTypeCosign {
+			cosignEntries = append(cosignEntries, e)
+		}
+	}
+
 	keys := si.GetCosign().GetPublicKeys()
-	require.Len(t, keys, len(bundle.Keys))
+	require.Len(t, keys, len(cosignEntries))
 	for i, key := range keys {
-		assert.Equal(t, bundle.Keys[i].Name, key.GetName())
-		assert.Equal(t, bundle.Keys[i].PEM, key.GetPublicKeyPemEnc())
+		assert.Equal(t, cosignEntries[i].Name, key.GetName())
+		assert.Equal(t, cosignEntries[i].PEM, key.GetPublicKeyPemEnc())
 	}
 }
 
@@ -124,6 +131,29 @@ func TestParseKeyBundle(t *testing.T) {
 			]}`,
 			wantErr: ErrKeyNameDuplicate,
 		},
+		"legacy format defaults type to cosign": {
+			input: `{"keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
+		},
+		"v1.0 with explicit cosign type": {
+			input: `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
+		},
+		"v1.0 with missing type defaults to cosign": {
+			input: `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
+		},
+		"unknown schema version rejected": {
+			input:   `{"schemaVersion": "2.0", "keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
+			wantErr: ErrUnknownSchemaVersion,
+		},
+		"v1.0 with mixed types parses successfully": {
+			input: `{"schemaVersion": "1.0", "keys": [
+				{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"},
+				{"name": "key-2", "type": "pgp", "pem": "` + testKeyPEMJSON2 + `"}
+			]}`,
+		},
+		"v1.0 with only unsupported types rejected": {
+			input:   `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "type": "pgp", "pem": "` + testKeyPEMJSON + `"}]}`,
+			wantErr: ErrNoSupportedKeys,
+		},
 	}
 
 	for name, tc := range cases {
@@ -138,6 +168,81 @@ func TestParseKeyBundle(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestParseKeyBundleSchemaVersionDefaults(t *testing.T) {
+	cases := map[string]struct {
+		input             string
+		wantSchemaVersion string
+		wantTypes         []string
+	}{
+		"legacy format sets version and type": {
+			input:             `{"keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
+			wantSchemaVersion: SchemaVersion1,
+			wantTypes:         []string{KeyTypeCosign},
+		},
+		"v1.0 with explicit type preserves it": {
+			input:             `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
+			wantSchemaVersion: SchemaVersion1,
+			wantTypes:         []string{KeyTypeCosign},
+		},
+		"v1.0 with missing type defaults to cosign": {
+			input:             `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
+			wantSchemaVersion: SchemaVersion1,
+			wantTypes:         []string{KeyTypeCosign},
+		},
+		"v1.0 with mixed types preserves all": {
+			input: `{"schemaVersion": "1.0", "keys": [
+				{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"},
+				{"name": "key-2", "type": "pgp", "pem": "` + testKeyPEMJSON2 + `"}
+			]}`,
+			wantSchemaVersion: SchemaVersion1,
+			wantTypes:         []string{KeyTypeCosign, "pgp"},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			bundle, err := ParseKeyBundle([]byte(tc.input))
+			require.NoError(t, err)
+			assert.Equal(t, tc.wantSchemaVersion, bundle.SchemaVersion)
+			require.Len(t, bundle.Keys, len(tc.wantTypes))
+			for i, wantType := range tc.wantTypes {
+				assert.Equal(t, wantType, bundle.Keys[i].Type, "key %d type", i)
+			}
+		})
+	}
+}
+
+func TestBundleToSignatureIntegrationFiltersNonCosignKeys(t *testing.T) {
+	bundle := &KeyBundle{
+		SchemaVersion: SchemaVersion1,
+		Keys: []KeyBundleEntry{
+			{Name: "cosign-key", Type: KeyTypeCosign, PEM: testPublicKeyPEM},
+			{Name: "pgp-key", Type: "pgp", PEM: testPublicKeyPEM2},
+		},
+	}
+
+	si := BundleToSignatureIntegration(bundle)
+	keys := si.GetCosign().GetPublicKeys()
+	require.Len(t, keys, 1)
+	assert.Equal(t, "cosign-key", keys[0].GetName())
+}
+
+func TestBundleToSignatureIntegrationAllCosignKeys(t *testing.T) {
+	bundle := &KeyBundle{
+		SchemaVersion: SchemaVersion1,
+		Keys: []KeyBundleEntry{
+			{Name: "key-1", Type: KeyTypeCosign, PEM: testPublicKeyPEM},
+			{Name: "key-2", Type: KeyTypeCosign, PEM: testPublicKeyPEM2},
+		},
+	}
+
+	si := BundleToSignatureIntegration(bundle)
+	keys := si.GetCosign().GetPublicKeys()
+	require.Len(t, keys, 2)
+	assert.Equal(t, "key-1", keys[0].GetName())
+	assert.Equal(t, "key-2", keys[1].GetName())
 }
 
 func TestParseKeyBundleMalformedJSON(t *testing.T) {

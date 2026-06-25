@@ -10,6 +10,11 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
+const (
+	SchemaVersion1 = "1.0"
+	KeyTypeCosign  = "cosign"
+)
+
 var (
 	ErrKeyBundleEmpty       = errox.InvalidArgs.New("key bundle must contain at least one key")
 	ErrKeyNameEmpty         = errox.InvalidArgs.New("empty name")
@@ -17,29 +22,51 @@ var (
 	ErrKeyNameDuplicate     = errox.InvalidArgs.New("duplicate key name")
 	ErrKeyInvalidPEM        = errox.InvalidArgs.New("invalid PEM-encoded public key")
 	ErrUnmarshalling        = errox.InvalidArgs.New("unmarshalling key bundle JSON")
+	ErrUnknownSchemaVersion = errox.InvalidArgs.New("unknown schema version")
+	ErrNoSupportedKeys      = errox.InvalidArgs.New("key bundle contains no supported key types")
 )
 
 // KeyBundle represents a set of public keys in the key bundle JSON format.
 type KeyBundle struct {
-	Keys []KeyBundleEntry `json:"keys"`
+	SchemaVersion string           `json:"schemaVersion,omitempty"`
+	Keys          []KeyBundleEntry `json:"keys"`
 }
 
 // KeyBundleEntry is a single named public key within a KeyBundle.
 type KeyBundleEntry struct {
 	Name string `json:"name"`
+	Type string `json:"type,omitempty"`
 	PEM  string `json:"pem"`
 }
 
 // ParseKeyBundle parses and validates a key bundle JSON. All keys must be valid
 // PEM-encoded public keys; if any key fails validation the entire bundle is rejected.
+//
+// Schema version handling:
+//   - Missing schemaVersion: treated as legacy format; all keys default to type "cosign".
+//   - "1.0": keys with missing type default to "cosign".
+//   - Unknown versions: rejected with ErrUnknownSchemaVersion.
+//
+// The bundle must contain at least one key with a supported type (currently "cosign").
 func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 	var bundle KeyBundle
 	if err := json.Unmarshal(data, &bundle); err != nil {
 		return nil, ErrUnmarshalling.CausedBy(err)
 	}
+
+	switch bundle.SchemaVersion {
+	case "":
+		bundle.SchemaVersion = SchemaVersion1
+	case SchemaVersion1:
+	default:
+		return nil, ErrUnknownSchemaVersion.CausedByf("%q", bundle.SchemaVersion)
+	}
+
 	if len(bundle.Keys) == 0 {
 		return nil, ErrKeyBundleEmpty
 	}
+
+	hasSupportedKey := false
 	seenNames := set.NewStringSet()
 	for i := range bundle.Keys {
 		entry := &bundle.Keys[i]
@@ -53,20 +80,35 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 		if !seenNames.Add(entry.Name) {
 			return nil, ErrKeyNameDuplicate.CausedByf("%q", entry.Name)
 		}
+		if entry.Type == "" {
+			entry.Type = KeyTypeCosign
+		}
 		keyBlock, rest := pem.Decode([]byte(strings.TrimSpace(entry.PEM)))
 		if !IsValidPublicKeyPEMBlock(keyBlock, rest) {
 			return nil, ErrKeyInvalidPEM.CausedByf("key %q", entry.Name)
 		}
 		entry.PEM = string(pem.EncodeToMemory(keyBlock))
+		if entry.Type == KeyTypeCosign {
+			hasSupportedKey = true
+		}
+	}
+
+	if !hasSupportedKey {
+		return nil, ErrNoSupportedKeys
 	}
 	return &bundle, nil
 }
 
 // BundleToSignatureIntegration converts a parsed KeyBundle into the default
 // Red Hat SignatureIntegration, using the well-known ID and name.
+// Only keys with type "cosign" are included; other key types are skipped with a warning.
 func BundleToSignatureIntegration(kb *KeyBundle) *storage.SignatureIntegration {
 	publicKeys := make([]*storage.CosignPublicKeyVerification_PublicKey, 0, len(kb.Keys))
 	for _, entry := range kb.Keys {
+		if entry.Type != KeyTypeCosign {
+			log.Warnf("Skipping key %q with unsupported type %q", entry.Name, entry.Type)
+			continue
+		}
 		publicKeys = append(publicKeys, &storage.CosignPublicKeyVerification_PublicKey{
 			Name:            entry.Name,
 			PublicKeyPemEnc: entry.PEM,

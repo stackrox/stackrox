@@ -41,11 +41,13 @@ LKpdYJEldXnyRE4ppY5d7vnRZHvdZQMSE3KoRSMvVnzZtc9LTKLB3DlS/w==
 
 type bundleKey struct {
 	Name string `json:"name"`
+	Type string `json:"type,omitempty"`
 	PEM  string `json:"pem"`
 }
 
 type keyBundle struct {
-	Keys []bundleKey `json:"keys"`
+	SchemaVersion string      `json:"schemaVersion,omitempty"`
+	Keys          []bundleKey `json:"keys"`
 }
 
 type RedHatSigningKeySuite struct {
@@ -174,6 +176,50 @@ func (s *RedHatSigningKeySuite) TestWatcherPicksUpBundleFile() {
 		"watcher did not pick up the bundle file")
 
 	t.Log("Watcher successfully picked up the bundle with 2 test keys")
+}
+
+func (s *RedHatSigningKeySuite) TestWatcherPicksUpV1Bundle() {
+	t := s.T()
+	ns := namespaces.StackRox
+	testCtx, overallCtx, cancel := testContexts(t, "TestWatcherPicksUpV1Bundle", 10*time.Minute)
+	defer cancel()
+
+	defer func() {
+		s.logf("Cleanup: removing %s env var", watchIntervalEnv)
+		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", watchIntervalEnv)
+		s.waitUntilK8sDeploymentReady(overallCtx, ns, "central")
+	}()
+
+	s.logf("Setting %s=%s on central", watchIntervalEnv, shortWatchInterval)
+	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
+	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
+
+	bundle := keyBundle{
+		SchemaVersion: "1.0",
+		Keys: []bundleKey{
+			{Name: "v1-key-1", Type: "cosign", PEM: testPublicKeyPEM1},
+			{Name: "v1-key-unsupported", Type: "pgp", PEM: testPublicKeyPEM2},
+		},
+	}
+	bundleJSON, err := json.Marshal(bundle)
+	s.Require().NoError(err)
+
+	b64 := base64.StdEncoding.EncodeToString(bundleJSON)
+	writeCmd := fmt.Sprintf("mkdir -p /tmp/redhat-signing-keys && echo %s | base64 -d > /tmp/redhat-signing-keys/bundle.json", b64)
+
+	s.logf("Writing v1.0 mixed-type key bundle to Central pod")
+	execInDeployment(t, s.k8s, "central", ns, "sh", "-c", writeCmd)
+
+	defer func() {
+		s.logf("Cleanup: removing test bundle file")
+		execInDeployment(t, s.k8s, "central", ns, "sh", "-c", "rm -f /tmp/redhat-signing-keys/bundle.json")
+	}()
+
+	s.logf("Waiting for watcher to pick up v1.0 bundle and filter non-cosign keys")
+	s.waitForIntegrationKeys(testCtx, []string{"v1-key-1"},
+		"watcher did not filter non-cosign keys from v1.0 bundle")
+
+	t.Log("Watcher successfully picked up v1.0 bundle and filtered non-cosign keys")
 }
 
 func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
