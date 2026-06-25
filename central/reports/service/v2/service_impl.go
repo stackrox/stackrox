@@ -41,30 +41,33 @@ var (
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		// V2 API authorization
-		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Image)): {
+		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Image), permissions.View(resources.Deployment)): {
 			apiV2.ReportService_ListReportConfigurations_FullMethodName,
 			apiV2.ReportService_GetReportConfiguration_FullMethodName,
 			apiV2.ReportService_CountReportConfigurations_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration), permissions.View(resources.Image)): {
+		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration), permissions.View(resources.Image), permissions.View(resources.Deployment)): {
 			apiV2.ReportService_PostReportConfiguration_FullMethodName,
 			apiV2.ReportService_UpdateReportConfiguration_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image)): {
+		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image), permissions.View(resources.Deployment)): {
 			apiV2.ReportService_DeleteReportConfiguration_FullMethodName,
 		},
-		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Image)): {
+		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Image), permissions.View(resources.Deployment)): {
 			apiV2.ReportService_GetReportStatus_FullMethodName,
 			apiV2.ReportService_GetReportHistory_FullMethodName,
 			apiV2.ReportService_GetMyReportHistory_FullMethodName,
+		},
+		user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)): {
 			apiV2.ReportService_GetViewBasedReportHistory_FullMethodName,
 			apiV2.ReportService_GetViewBasedMyReportHistory_FullMethodName,
-		},
-		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image)): {
-			apiV2.ReportService_RunReport_FullMethodName,
-			apiV2.ReportService_CancelReport_FullMethodName,
-			apiV2.ReportService_DeleteReport_FullMethodName,
 			apiV2.ReportService_PostViewBasedReport_FullMethodName,
+			apiV2.ReportService_CancelReport_FullMethodName,
+		},
+		// view permissions are enough if user is deleting a job created by the user
+		user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)): {
+			apiV2.ReportService_RunReport_FullMethodName,
+			apiV2.ReportService_DeleteReport_FullMethodName,
 		},
 	})
 )
@@ -465,11 +468,6 @@ func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.Report
 	// Check if view-based reports feature is enabled
 	if !features.VulnerabilityViewBasedReports.Enabled() {
 		return nil, errors.Wrap(errox.NotImplemented, "View-based vulnerability reports are not enabled. Please enable the ROX_VULNERABILITY_VIEW_BASED_REPORTS feature flag.")
-	}
-
-	// Authorisation: must have write access on workflow administration.
-	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
-		return nil, err
 	}
 
 	if req == nil {
