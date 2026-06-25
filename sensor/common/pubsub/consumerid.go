@@ -12,6 +12,7 @@ const (
 	DetectorProcessIndicatorConsumer
 	DetectorNetworkFlowConsumer
 	DetectorFileAccessConsumer
+	DetectorAuditLogConsumer
 )
 
 var (
@@ -25,6 +26,7 @@ var (
 		DetectorProcessIndicatorConsumer:    "DetectorProcessIndicator",
 		DetectorNetworkFlowConsumer:         "DetectorNetworkFlow",
 		DetectorFileAccessConsumer:          "DetectorFileAccess",
+		DetectorAuditLogConsumer:            "DetectorAuditLog",
 	}
 )
 
