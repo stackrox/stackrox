@@ -153,34 +153,34 @@ func TestParseKeyBundle(t *testing.T) {
 	}
 }
 
-func TestParseKeyBundleSchemaVersionDefaults(t *testing.T) {
+func TestParseKeyBundlePreservesFields(t *testing.T) {
 	cases := map[string]struct {
 		input             string
 		wantSchemaVersion string
 		wantTypes         []string
 	}{
-		"legacy format sets version and type": {
-			input:             `{"keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
-			wantSchemaVersion: SchemaVersion1,
-			wantTypes:         []string{KeyTypeCosign},
-		},
-		"v1.0 with explicit type preserves it": {
+		"v1.0 with explicit type": {
 			input:             `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
 			wantSchemaVersion: SchemaVersion1,
 			wantTypes:         []string{KeyTypeCosign},
 		},
-		"v1.0 with missing type defaults to cosign": {
-			input:             `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
-			wantSchemaVersion: SchemaVersion1,
-			wantTypes:         []string{KeyTypeCosign},
-		},
-		"v1.0 with mixed types preserves all": {
+		"mixed types preserved": {
 			input: `{"schemaVersion": "1.0", "keys": [
 				{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"},
 				{"name": "key-2", "type": "pgp", "pem": "` + testKeyPEMJSON2 + `"}
 			]}`,
 			wantSchemaVersion: SchemaVersion1,
 			wantTypes:         []string{KeyTypeCosign, "pgp"},
+		},
+		"missing version stays empty": {
+			input:             `{"keys": [{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
+			wantSchemaVersion: "",
+			wantTypes:         []string{KeyTypeCosign},
+		},
+		"missing type stays empty": {
+			input:             `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
+			wantSchemaVersion: SchemaVersion1,
+			wantTypes:         []string{""},
 		},
 	}
 

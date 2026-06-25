@@ -42,13 +42,12 @@ type KeyBundleEntry struct {
 // PEM-encoded public keys; if any key fails validation the entire bundle is rejected.
 //
 // Schema version handling:
-//   - Missing: normalized to "1.0".
+//   - Known versions (e.g. "1.0"): accepted.
 //   - Unknown versions: accepted with a warning. The parser extracts what it
 //     understands (keys with name/type/pem) regardless of version, so older
 //     code can still use bundles produced for newer schema versions.
 //
 // Key type handling:
-//   - Missing type: defaults to "cosign".
 //   - All types are accepted; unsupported types are filtered by ToSignatureIntegration.
 func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 	var bundle KeyBundle
@@ -56,9 +55,7 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 		return nil, ErrUnmarshalling.CausedBy(err)
 	}
 
-	if bundle.SchemaVersion == "" {
-		bundle.SchemaVersion = SchemaVersion1
-	} else if bundle.SchemaVersion != SchemaVersion1 {
+	if bundle.SchemaVersion != SchemaVersion1 {
 		log.Warnf("Key bundle has unknown schema version %q; attempting to parse with known fields", bundle.SchemaVersion)
 	}
 
@@ -78,9 +75,6 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 		}
 		if !seenNames.Add(entry.Name) {
 			return nil, ErrKeyNameDuplicate.CausedByf("%q", entry.Name)
-		}
-		if entry.Type == "" {
-			entry.Type = KeyTypeCosign
 		}
 		keyBlock, rest := pem.Decode([]byte(strings.TrimSpace(entry.PEM)))
 		if !IsValidPublicKeyPEMBlock(keyBlock, rest) {
