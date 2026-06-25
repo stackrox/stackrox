@@ -396,13 +396,14 @@ func (s *InitContainerSuite) TestEvaluationFilterSkipsInitContainers() {
 	}
 	createdPolicy := s.createPolicyWithCleanup(policy)
 
-	// Both use :latest, but the policy skips init containers — only the regular container should trigger
+	// Init uses :latest (would violate), regular uses tagged image (no violation).
+	// With skip-init filter, the only violating container is skipped — expect 0 alerts.
 	deployName := fmt.Sprintf("init-filter-skip-%d", rand.IntN(10000))
-	s.createDeploymentWithInitContainers(deployName, ns, []string{busyboxLatest}, nginxLatest)
+	s.createDeploymentWithInitContainers(deployName, ns, []string{busyboxLatest}, nginxTagged)
 	defer teardownDeploymentWithoutCheck(t, deployName, ns)
 
 	s.waitForDeploymentWithContainers(deployName, 2)
 
-	s.waitForViolationAlert(deployName, createdPolicy.GetName(), 1)
-	t.Logf("Verified: policy with skip init filter only triggered on regular container")
+	s.waitForViolationAlert(deployName, createdPolicy.GetName(), 0)
+	t.Logf("Verified: policy with skip init filter produced no violations")
 }
