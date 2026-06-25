@@ -211,7 +211,7 @@ openshift-ci-style:
 shell-style:
 ifdef FILE
 	@echo "+ $@ $(FILE)"
-	shellcheck --norc -P SCRIPTDIR -x "$(FILE)"
+	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh run_single "$(FILE)"
 else
 	@echo "+ $@"
 	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh
