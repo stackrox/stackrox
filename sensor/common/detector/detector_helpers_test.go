@@ -48,6 +48,7 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 	var piQueue *queue.Queue[*detectorEvents.IndicatorEvent]
 	var netFlowQueue *queue.Queue[*detectorEvents.NetworkFlowEvent]
 	var fileAccessQueue *queue.Queue[*detectorEvents.FileAccessEvent]
+	var deploymentQueue queue.SimpleQueue[*detectorEvents.DeploymentEvent]
 	if !pubSubEnabled {
 		piQueue = queue.NewQueue[*detectorEvents.IndicatorEvent](
 			detectorStopper, "PIsQueue", bufferSize, nil, nil,
@@ -58,10 +59,10 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 		fileAccessQueue = queue.NewQueue[*detectorEvents.FileAccessEvent](
 			detectorStopper, "FileAccessQueue", bufferSize, nil, nil,
 		)
+		deploymentQueue = queue.NewSimpleQueue[*detectorEvents.DeploymentEvent](
+			"DeploymentQueue", bufferSize, nil, nil,
+		)
 	}
-	deploymentQueue := queue.NewSimpleQueue[*queue.DeploymentQueueItem](
-		"DeploymentQueue", 0, nil, nil,
-	)
 
 	d := &detectorImpl{
 		unifiedDetector:           &fakeUnifiedDetector{},
@@ -114,6 +115,13 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 					),
 				),
 				lane.NewBlockingLane(pubsub.DetectorAuditLogLane),
+				lane.NewConcurrentLane(pubsub.DetectorDeploymentLane,
+					lane.WithConcurrentLaneConsumer(
+						consumer.NewBufferedConsumer(
+							consumer.WithBufferedConsumerSize(bufferSize),
+						),
+					),
+				),
 			},
 		))
 		require.NoError(tb, err)

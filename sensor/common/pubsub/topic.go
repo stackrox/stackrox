@@ -12,6 +12,7 @@ const (
 	DetectorNetworkFlowTopic
 	DetectorFileAccessTopic
 	DetectorAuditLogTopic
+	DetectorDeploymentTopic
 )
 
 var (
@@ -25,6 +26,7 @@ var (
 		DetectorNetworkFlowTopic:        "DetectorNetworkFlow",
 		DetectorFileAccessTopic:         "DetectorFileAccess",
 		DetectorAuditLogTopic:           "DetectorAuditLog",
+		DetectorDeploymentTopic:         "DetectorDeployment",
 	}
 )
 
