@@ -33,5 +33,5 @@ func mustParseEmbeddedBundle() *storage.SignatureIntegration {
 	if err != nil {
 		panic("embedded bundle.json is invalid: " + err.Error())
 	}
-	return BundleToSignatureIntegration(bundle)
+	return bundle.ToSignatureIntegration()
 }

@@ -120,10 +120,10 @@ func (kb *KeyBundle) UnsupportedKeys() []KeyBundleEntry {
 	return result
 }
 
-// BundleToSignatureIntegration converts a parsed KeyBundle into the default
+// ToSignatureIntegration converts a parsed KeyBundle into the default
 // Red Hat SignatureIntegration, using the well-known ID and name.
 // Only keys with supported types are included; unsupported key types are skipped with a warning.
-func BundleToSignatureIntegration(kb *KeyBundle) *storage.SignatureIntegration {
+func (kb *KeyBundle) ToSignatureIntegration() *storage.SignatureIntegration {
 	for _, entry := range kb.UnsupportedKeys() {
 		log.Warnf("Skipping key %q with unsupported type %q", entry.Name, entry.Type)
 	}

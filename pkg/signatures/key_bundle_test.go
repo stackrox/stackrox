@@ -43,7 +43,7 @@ func TestBundleToSignatureIntegration(t *testing.T) {
 	bundle, err := ParseKeyBundle(data)
 	require.NoError(t, err)
 
-	si := BundleToSignatureIntegration(bundle)
+	si := bundle.ToSignatureIntegration()
 	assert.Equal(t, DefaultRedHatIntegrationID, si.GetId())
 	assert.Equal(t, DefaultRedHatIntegrationName, si.GetName())
 	assert.Equal(t, storage.Traits_DEFAULT, si.GetTraits().GetOrigin())
@@ -228,7 +228,7 @@ func TestBundleToSignatureIntegrationFiltersNonCosignKeys(t *testing.T) {
 		},
 	}
 
-	si := BundleToSignatureIntegration(bundle)
+	si := bundle.ToSignatureIntegration()
 	keys := si.GetCosign().GetPublicKeys()
 	require.Len(t, keys, 1)
 	assert.Equal(t, "cosign-key", keys[0].GetName())
@@ -243,7 +243,7 @@ func TestBundleToSignatureIntegrationAllCosignKeys(t *testing.T) {
 		},
 	}
 
-	si := BundleToSignatureIntegration(bundle)
+	si := bundle.ToSignatureIntegration()
 	keys := si.GetCosign().GetPublicKeys()
 	require.Len(t, keys, 2)
 	assert.Equal(t, "key-1", keys[0].GetName())
