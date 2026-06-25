@@ -24,8 +24,8 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/tests/k8sutil"
 	"github.com/stackrox/rox/tests/logmatchers"
-	"github.com/stackrox/rox/tests/vmhelpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -710,10 +710,10 @@ func getConfig(t testutils.T) *rest.Config {
 
 // configureRetryableTransport configures a rest.Config to use retryable HTTP client
 // for network resilience. This adds automatic retry logic for transient network errors.
-// The concrete implementation lives in vmhelpers so it can be unit-tested without
+// The concrete implementation lives in k8sutil so it can be unit-tested without
 // pulling those unit tests into this e2e-tagged package.
 func configureRetryableTransport(t testutils.T, restCfg *rest.Config) {
-	vmhelpers.ConfigureRetryableTransport(t, restCfg)
+	k8sutil.ConfigureRetryableTransport(t, restCfg)
 }
 
 func createK8sClient(t testutils.T) kubernetes.Interface {
@@ -721,7 +721,7 @@ func createK8sClient(t testutils.T) kubernetes.Interface {
 }
 
 func createK8sClientWithConfig(t testutils.T, restCfg *rest.Config) kubernetes.Interface {
-	return vmhelpers.CreateK8sClientWithConfig(t, restCfg)
+	return k8sutil.CreateK8sClientWithConfig(t, restCfg)
 }
 
 // getClusterID returns the ID of the cluster in Central.
