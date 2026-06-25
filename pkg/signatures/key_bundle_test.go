@@ -43,7 +43,8 @@ func TestBundleToSignatureIntegration(t *testing.T) {
 	bundle, err := ParseKeyBundle(data)
 	require.NoError(t, err)
 
-	si := bundle.ToSignatureIntegration()
+	si, err := bundle.ToSignatureIntegration()
+	require.NoError(t, err)
 	assert.Equal(t, DefaultRedHatIntegrationID, si.GetId())
 	assert.Equal(t, DefaultRedHatIntegrationName, si.GetName())
 	assert.Equal(t, storage.Traits_DEFAULT, si.GetTraits().GetOrigin())
@@ -135,9 +136,8 @@ func TestParseKeyBundle(t *testing.T) {
 				{"name": "key-2", "type": "pgp", "pem": "` + testKeyPEMJSON2 + `"}
 			]}`,
 		},
-		"v1.0 with only unsupported types rejected": {
-			input:   `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "type": "pgp", "pem": "` + testKeyPEMJSON + `"}]}`,
-			wantErr: ErrNoSupportedKeys,
+		"v1.0 with only unsupported types parses successfully": {
+			input: `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "type": "pgp", "pem": "` + testKeyPEMJSON + `"}]}`,
 		},
 	}
 
@@ -228,7 +228,8 @@ func TestBundleToSignatureIntegrationFiltersNonCosignKeys(t *testing.T) {
 		},
 	}
 
-	si := bundle.ToSignatureIntegration()
+	si, err := bundle.ToSignatureIntegration()
+	require.NoError(t, err)
 	keys := si.GetCosign().GetPublicKeys()
 	require.Len(t, keys, 1)
 	assert.Equal(t, "cosign-key", keys[0].GetName())
@@ -243,11 +244,25 @@ func TestBundleToSignatureIntegrationAllCosignKeys(t *testing.T) {
 		},
 	}
 
-	si := bundle.ToSignatureIntegration()
+	si, err := bundle.ToSignatureIntegration()
+	require.NoError(t, err)
 	keys := si.GetCosign().GetPublicKeys()
 	require.Len(t, keys, 2)
 	assert.Equal(t, "key-1", keys[0].GetName())
 	assert.Equal(t, "key-2", keys[1].GetName())
+}
+
+func TestBundleToSignatureIntegrationRejectsNoSupportedKeys(t *testing.T) {
+	bundle := &KeyBundle{
+		SchemaVersion: SchemaVersion1,
+		Keys: []KeyBundleEntry{
+			{Name: "pgp-key", Type: "pgp", PEM: testPublicKeyPEM},
+		},
+	}
+
+	si, err := bundle.ToSignatureIntegration()
+	assert.ErrorIs(t, err, ErrNoSupportedKeys)
+	assert.Nil(t, si)
 }
 
 func TestParseKeyBundleMalformedJSON(t *testing.T) {

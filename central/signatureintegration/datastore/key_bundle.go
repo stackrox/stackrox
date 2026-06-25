@@ -24,7 +24,12 @@ func keyBundleHandler(siStore store.SignatureIntegrationStore) filewatcher.Handl
 			return nil
 		}
 
-		si := bundle.ToSignatureIntegration()
+		si, err := bundle.ToSignatureIntegration()
+		if err != nil {
+			log.Warnf("Key bundle has no supported keys: %v", err)
+			watcherFileErrorTotal.Inc()
+			return nil
+		}
 		ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 		if err := siStore.Upsert(ctx, si); err != nil {
 			log.Errorf("Failed to upsert Red Hat signature integration from key bundle: %v", err)

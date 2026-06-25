@@ -89,9 +89,6 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 		entry.PEM = string(pem.EncodeToMemory(keyBlock))
 	}
 
-	if len(bundle.SupportedKeys()) == 0 {
-		return nil, ErrNoSupportedKeys
-	}
 	return &bundle, nil
 }
 
@@ -123,18 +120,21 @@ func (kb *KeyBundle) UnsupportedKeys() []KeyBundleEntry {
 // ToSignatureIntegration converts a parsed KeyBundle into the default
 // Red Hat SignatureIntegration, using the well-known ID and name.
 // Only keys with supported types are included; unsupported key types are skipped with a warning.
-func (kb *KeyBundle) ToSignatureIntegration() *storage.SignatureIntegration {
-	for _, entry := range kb.UnsupportedKeys() {
-		log.Warnf("Skipping key %q with unsupported type %q", entry.Name, entry.Type)
-	}
-
-	supported := kb.SupportedKeys()
-	publicKeys := make([]*storage.CosignPublicKeyVerification_PublicKey, 0, len(supported))
-	for _, entry := range supported {
+// Returns ErrNoSupportedKeys if the bundle contains no keys with a supported type.
+func (kb *KeyBundle) ToSignatureIntegration() (*storage.SignatureIntegration, error) {
+	var publicKeys []*storage.CosignPublicKeyVerification_PublicKey
+	for _, entry := range kb.Keys {
+		if !supportedKeyTypes.Contains(entry.Type) {
+			log.Warnf("Skipping key %q with unsupported type %q", entry.Name, entry.Type)
+			continue
+		}
 		publicKeys = append(publicKeys, &storage.CosignPublicKeyVerification_PublicKey{
 			Name:            entry.Name,
 			PublicKeyPemEnc: entry.PEM,
 		})
+	}
+	if len(publicKeys) == 0 {
+		return nil, ErrNoSupportedKeys
 	}
 	return &storage.SignatureIntegration{
 		Id:   DefaultRedHatIntegrationID,
@@ -145,5 +145,5 @@ func (kb *KeyBundle) ToSignatureIntegration() *storage.SignatureIntegration {
 		Traits: &storage.Traits{
 			Origin: storage.Traits_DEFAULT,
 		},
-	}
+	}, nil
 }
