@@ -73,7 +73,8 @@ jobs:
       - name: Checkout check-payload
         uses: actions/checkout@v4
         with:
-          repository: openshift/check-payload
+          repository: stackrox/openshift-check-payload
+          ref: remove-rhacs-roxctl-exceptions
 
       - uses: actions/setup-go@v5
 
