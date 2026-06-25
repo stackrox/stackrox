@@ -88,10 +88,10 @@ const predefinedMetrics: Record<
         },
     },
     administrativeEvents: {
-        domain_level: {
+        domain_occurrences: {
             labels: ['Type', 'Level', 'Domain'],
         },
-        resource_level: {
+        resource_occurrences: {
             labels: ['Type', 'Level', 'Domain', 'ResourceType', 'ResourceName'],
         },
     },
