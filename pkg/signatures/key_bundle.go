@@ -38,7 +38,7 @@ type KeyBundleEntry struct {
 	PEM  string `json:"pem"`
 }
 
-// ParseKeyBundle parses and validates a key bundle JSON.
+// ParseKeyBundle parses and processs a key bundle JSON.
 //
 // Schema version handling:
 //   - Known versions (e.g. "1.0"): accepted.
@@ -48,7 +48,7 @@ type KeyBundleEntry struct {
 //
 // Key type handling:
 //   - All types are accepted; unsupported types are filtered by ToSignatureIntegration.
-//   - Keys with supported types are validated (e.g. PEM encoding for cosign keys).
+//   - Keys with supported types are processd (e.g. PEM encoding for cosign keys).
 //   - Keys with unsupported types are stored as-is without validation.
 func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 	var bundle KeyBundle
@@ -78,7 +78,7 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 			return nil, ErrKeyNameDuplicate.CausedByf("%q", entry.Name)
 		}
 		if spec, ok := supportedKeyTypes[entry.Type]; ok {
-			if err := spec.validate(entry); err != nil {
+			if err := spec.process(entry); err != nil {
 				return nil, err
 			}
 		}
@@ -87,18 +87,18 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 	return &bundle, nil
 }
 
-// keyTypeSpec describes how to validate a supported key type.
+// keyTypeSpec describes how to process a supported key type.
 type keyTypeSpec struct {
-	validate func(entry *KeyBundleEntry) error
+	process func(entry *KeyBundleEntry) error
 }
 
 // supportedKeyTypes maps each supported key type to its validation spec.
 // Adding a new type = one entry here.
 var supportedKeyTypes = map[string]keyTypeSpec{
-	KeyTypeCosign: {validate: validateCosignKey},
+	KeyTypeCosign: {process: processCosignKey},
 }
 
-func validateCosignKey(entry *KeyBundleEntry) error {
+func processCosignKey(entry *KeyBundleEntry) error {
 	keyBlock, rest := pem.Decode([]byte(strings.TrimSpace(entry.PEM)))
 	if !IsValidPublicKeyPEMBlock(keyBlock, rest) {
 		return ErrKeyInvalidPEM.CausedByf("key %q", entry.Name)
