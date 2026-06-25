@@ -1,19 +1,19 @@
 #!/bin/bash
 set -o pipefail
-# lint.sh — Per-file lint hook for AI coding agents (Claude Code, OpenCode, etc.)
+# lint.sh — Per-file lint hook for AI coding agents (Claude Code, OpenCode, Cursor)
 #
-# Calls the repo's own Makefile targets with FILE= or PKG= to scope checks to a
-# single file. Without FILE=/PKG= the targets run on everything (CI mode).
-# One source of truth for tool invocation — zero flag drift.
+# Calls the repo's Makefile targets to lint a single file. Uses the same tools,
+# flags, and configs as CI — one source of truth, zero flag drift.
 #
 # MAKEFILE TARGETS:
-#   *.go    → make golangci-lint PKG=./path/to/package
-#   *.proto → make proto-style FILE=path/to/file.proto
-#   *.sh    → make shell-style FILE=path/to/file.sh
-#   *.ts/tsx → prettier --write (ui/apps/platform/prettier.config.js)
+#   *.go    → make golangci-lint-nodeps PKG=...  (gofmt + golangci-lint, no slow deps)
+#   *.proto → make proto-style FILE=...          (buf format --exit-code --diff -w)
+#   *.sh    → make shell-style FILE=...          (shellcheck via scripts/style/shellcheck.sh)
+#   *.ts/tsx → prettier --write                  (ui/apps/platform/prettier.config.js)
 #
 # INVOCATION:
 #   Claude Code: via PostToolUse hook (reads stdin JSON)
+#   Cursor:      via .cursor/hooks.json afterFileEdit (${filePath} as $1)
 #   OpenCode:    pass file path as $1
 #   Direct:      .claude/hooks/lint.sh path/to/file.go
 
@@ -31,10 +31,9 @@ cd "$PROJECT_DIR" || exit 0
 case "$file" in
   *.go)
     [[ "$file" == *"/generated/"* || "$file" == *"/vendor/"* ]] && exit 0
-    go fmt "$file" 2>/dev/null
     dir=$(dirname "$file")
     pkg="./${dir#"$PROJECT_DIR"/}"
-    make -s golangci-lint PKG="$pkg" 2>&1 | head -15
+    make -s golangci-lint-nodeps PKG="$pkg" 2>&1 | head -15
     ;;
   *.proto)
     make -s proto-style FILE="$file" 2>&1 | head -15

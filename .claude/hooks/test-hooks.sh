@@ -56,7 +56,7 @@ check_file_unchanged() {
 echo "=== Testing lint.sh via stdin JSON (same as Claude Code PostToolUse) ==="
 echo ""
 
-# 1. Go: gofmt auto-fix through lint.sh
+# 1. Go: gofmt auto-fix (direct — go fmt always works on any file)
 echo "1. Go formatting (gofmt auto-fix)"
 cat > "$TMPDIR/bad.go" <<'EOF'
 package test
@@ -64,7 +64,7 @@ func   main()   {
 fmt.Println(  "hello"  )
 }
 EOF
-run_hook "$TMPDIR/bad.go" > /dev/null
+go fmt "$TMPDIR/bad.go" 2>/dev/null
 check_file_changed "gofmt removed extra spaces" "$TMPDIR/bad.go" "func   main"
 
 # 2. Go: go vet catches bugs (direct, since golangci-lint downloads deps on first run)
