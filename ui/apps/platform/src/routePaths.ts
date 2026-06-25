@@ -194,8 +194,6 @@ export type RouteKey =
     | 'vulnerabilities/exception-management'
     | 'vulnerabilities/node-cves'
     | 'vulnerabilities/reports'
-    | 'vulnerabilities/reports/configuration'
-    | 'vulnerabilities/reports/view-based'
     | 'vulnerabilities/user-workloads'
     | 'vulnerabilities/platform'
     | 'vulnerabilities/all-images'
@@ -372,16 +370,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Cluster']),
     },
     'vulnerabilities/reports': {
-        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
-    },
-    'vulnerabilities/reports/configuration': {
-        resourceAccessRequirements: everyResource([
-            'Deployment',
-            'Image',
-            'WorkflowAdministration',
-        ]),
-    },
-    'vulnerabilities/reports/view-based': {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/user-workloads': {
