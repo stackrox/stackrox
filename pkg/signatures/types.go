@@ -3,7 +3,9 @@ package signatures
 import (
 	_ "embed"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -34,8 +36,6 @@ func mustParseEmbeddedBundle() *storage.SignatureIntegration {
 		panic("embedded bundle.json is invalid: " + err.Error())
 	}
 	si, err := bundle.ToSignatureIntegration()
-	if err != nil {
-		panic("embedded bundle.json has no supported keys: " + err.Error())
-	}
+	utils.Should(errors.Wrap(err, "embedded bundle.json has no supported keys"))
 	return si
 }
