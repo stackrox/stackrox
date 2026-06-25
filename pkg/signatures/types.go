@@ -2,10 +2,16 @@ package signatures
 
 import (
 	_ "embed"
+	"os"
+	"path/filepath"
 	"slices"
 
 	"github.com/stackrox/rox/generated/storage"
 )
+
+// RedHatKeyBundlePath is the default filesystem path for the Red Hat signing
+// key bundle file. The watcher and downloader both use this path.
+var RedHatKeyBundlePath = filepath.Join(os.TempDir(), "redhat-signing-keys", "bundle.json")
 
 const (
 	// SignatureIntegrationIDPrefix should be prepended to every human-hostile ID of a

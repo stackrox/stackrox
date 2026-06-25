@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/signatures"
 )
 
-var redHatKeyBundlePath = filepath.Join(os.TempDir(), "redhat-signing-keys", "bundle.json")
+var redHatKeyBundlePath = signatures.RedHatKeyBundlePath
 
 // ensureKeyBundleDirectory creates the directory where the watcher and
 // downloader expect to find bundle.json.
