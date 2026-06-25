@@ -19,7 +19,7 @@ import (
 // Schema & data isolation:
 //  - [ ] Never imports schemas from pkg/postgres/schema (those evolve with the latest release)
 //  - [ ] If table schema is needed, freeze it inside this migration package
-//  - [ ] Uses raw SQL or frozen GORM models with explicit column selection (no SELECT *)
+//  - [ ] Uses raw SQL or frozen GORM models with a store copy
 //
 // Application integration:
 //  - [ ] Application code already populates the new column on INSERT/UPDATE
