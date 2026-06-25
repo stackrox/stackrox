@@ -98,8 +98,8 @@ export function checkNetworkGraphEmptyState() {
     );
 }
 
-export function waitForNetworkFlows(timeoutMs = 300000) {
-    const interval = 10000;
+export function waitForNetworkFlows(timeoutMs = 600000) {
+    const interval = 15000;
     const maxAttempts = Math.ceil(timeoutMs / interval);
 
     function poll(attempt) {

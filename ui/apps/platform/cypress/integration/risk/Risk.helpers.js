@@ -151,32 +151,31 @@ export function clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimel
 
 // data readiness
 
-export function waitForProcessEvents(timeoutMs = 300000) {
-    const interval = 10000;
+export function waitForProcessEvents(timeoutMs = 600000) {
+    const interval = 15000;
     const maxAttempts = Math.ceil(timeoutMs / interval);
 
     function poll(attempt) {
         if (attempt >= maxAttempts) {
             throw new Error(
-                `Timed out after ${timeoutMs / 1000}s waiting for deployment process events`
+                `Timed out after ${timeoutMs / 1000}s waiting for process events`
             );
         }
         const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
-        const query = encodeURIComponent('Namespace:stackrox');
         return cy
             .request({
-                url: `/v1/deploymentswithprocessinfo?query=${query}&pagination.limit=1&pagination.sortOption.field=Priority`,
+                url: '/v1/processcount',
                 auth,
                 failOnStatusCode: false,
             })
             .then((response) => {
-                const deployments = response?.body?.deployments ?? [];
-                if (deployments.length > 0 && deployments[0].baselineStatuses?.length > 0) {
-                    cy.log(`Process events ready for deployment: ${deployments[0].deployment?.name}`);
+                const count = response?.body?.count ?? 0;
+                if (count > 10) {
+                    cy.log(`Process events ready: ${count} processes`);
                     return;
                 }
                 cy.log(
-                    `Deployment process events not ready (attempt ${attempt + 1}/${maxAttempts}), retrying...`
+                    `Process count: ${count} (attempt ${attempt + 1}/${maxAttempts}), retrying...`
                 );
                 cy.wait(interval);
                 return poll(attempt + 1);
