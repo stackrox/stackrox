@@ -70,14 +70,6 @@ func dispatchEvent(b *testing.B, event *component.ResourceEvent, resolver compon
 	res.Send(event)
 }
 
-// benchmarkProcessDeploymentReferences runs the resolver benchmark using the
-// currently active feature flag value for SensorInternalPubSub.
-//
-// To compare legacy vs pubsub with benchstat:
-//
-//	ROX_SENSOR_PUBSUB=false go test -run='^$' -bench=BenchmarkProcess -benchmem -count=10 ./sensor/kubernetes/eventpipeline/resolver/ > bench_legacy.txt
-//	ROX_SENSOR_PUBSUB=true  go test -run='^$' -bench=BenchmarkProcess -benchmem -count=10 ./sensor/kubernetes/eventpipeline/resolver/ > bench_pubsub.txt
-//	benchstat bench_legacy.txt bench_pubsub.txt
 func benchmarkProcessDeploymentReferences(b *testing.B, randomIDs bool) {
 	pubsubEnabled := features.SensorInternalPubSub.Enabled()
 	for _, bc := range cases {
@@ -102,11 +94,21 @@ func benchmarkProcessDeploymentReferences(b *testing.B, randomIDs bool) {
 }
 
 func BenchmarkProcessDeploymentReferences(b *testing.B) {
-	benchmarkProcessDeploymentReferences(b, false)
+	for _, pubsubEnabled := range []bool{false, true} {
+		b.Run(fmt.Sprintf("pubsub=%t", pubsubEnabled), func(b *testing.B) {
+			b.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubsubEnabled))
+			benchmarkProcessDeploymentReferences(b, false)
+		})
+	}
 }
 
 func BenchmarkProcessRandomDeploymentReferences(b *testing.B) {
-	benchmarkProcessDeploymentReferences(b, true)
+	for _, pubsubEnabled := range []bool{false, true} {
+		b.Run(fmt.Sprintf("pubsub=%t", pubsubEnabled), func(b *testing.B) {
+			b.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubsubEnabled))
+			benchmarkProcessDeploymentReferences(b, true)
+		})
+	}
 }
 
 func setupResolver(b *testing.B) {
