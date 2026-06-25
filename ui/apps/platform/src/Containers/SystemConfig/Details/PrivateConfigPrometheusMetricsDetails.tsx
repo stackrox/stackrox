@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 
-import type { PrivateConfig, PrometheusMetricsCategory } from 'types/config.proto';
-import { PrometheusMetricsCard } from './components/PrometheusMetricsCard';
+import type { PrivateConfig } from 'types/config.proto';
+import { PrometheusMetricsTabbedCard } from './components/PrometheusMetricsCard';
 
 export type PrivateConfigPrometheusMetricsDetailsProps = {
     privateConfig: PrivateConfig;
@@ -9,26 +9,8 @@ export type PrivateConfigPrometheusMetricsDetailsProps = {
 
 const PrivateConfigPrometheusMetricsDetails = ({
     privateConfig,
-}: PrivateConfigPrometheusMetricsDetailsProps): ReactElement[] => {
-    const categoryTitles: Record<PrometheusMetricsCategory, string> = {
-        imageVulnerabilities: 'Image vulnerabilities',
-        nodeVulnerabilities: 'Node vulnerabilities',
-        policyViolations: 'Policy violations',
-        administrativeEvents: 'Administrative events',
-    };
-
-    return Object.entries(categoryTitles).map(([category, title]) => {
-        const config = privateConfig?.metrics?.[category];
-        return (
-            <PrometheusMetricsCard
-                category={category as PrometheusMetricsCategory}
-                key={category}
-                period={config?.gatheringPeriodMinutes || 0}
-                descriptors={config?.descriptors}
-                title={title}
-            />
-        );
-    });
+}: PrivateConfigPrometheusMetricsDetailsProps): ReactElement => {
+    return <PrometheusMetricsTabbedCard privateConfig={privateConfig} />;
 };
 
 export default PrivateConfigPrometheusMetricsDetails;

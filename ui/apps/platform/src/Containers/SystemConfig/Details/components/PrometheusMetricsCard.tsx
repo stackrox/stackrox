@@ -1,14 +1,13 @@
+import { useState } from 'react';
 import type { ReactElement } from 'react';
 import {
+    Badge,
     Card,
     CardBody,
-    CardHeader,
-    CardTitle,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
-    Divider,
     EmptyState,
     EmptyStateBody,
     FormGroup,
@@ -17,6 +16,9 @@ import {
     GridItem,
     Label,
     LabelGroup,
+    Tab,
+    TabTitleText,
+    Tabs,
     TextInput,
 } from '@patternfly/react-core';
 import { MinusIcon, PlusIcon } from '@patternfly/react-icons';
@@ -358,78 +360,107 @@ function PrometheusMetricsTable({
     );
 }
 
-export type PrometheusMetricsCardProps = {
-    category: PrometheusMetricsCategory;
-    period: number;
-    descriptors?: Record<string, PrometheusMetricsLabels>;
-    title: string;
+const categoryTitles: Record<PrometheusMetricsCategory, string> = {
+    imageVulnerabilities: 'Image vulnerabilities',
+    nodeVulnerabilities: 'Node vulnerabilities',
+    policyViolations: 'Policy violations',
+    administrativeEvents: 'Administrative events',
 };
 
-export function PrometheusMetricsCard({
-    category,
-    period,
-    descriptors,
-    title,
-}: PrometheusMetricsCardProps): ReactElement {
-    const hasMetrics = descriptors && Object.keys(descriptors).length > 0;
+function getMetricCount(descriptors: Record<string, PrometheusMetricsLabels> | undefined): number {
+    return descriptors ? Object.keys(descriptors).length : 0;
+}
+
+function MetricCountBadge({ count }: { count: number }): ReactElement | null {
+    if (count === 0) {
+        return null;
+    }
     return (
-        <GridItem key={category} md={hasMetrics ? 12 : 6} lg={hasMetrics ? 12 : 6}>
-            <Card data-testid={`${category}-view-metrics-config`}>
-                <CardHeader
-                    actions={{
-                        actions: (
-                            <>
-                                {period && hasMetrics ? (
-                                    <Label color="green">Enabled</Label>
+        <Badge isRead className="pf-v6-u-ml-sm">
+            {count}
+        </Badge>
+    );
+}
+
+export type PrometheusMetricsTabbedCardProps = {
+    privateConfig: PrivateConfig;
+};
+
+export function PrometheusMetricsTabbedCard({
+    privateConfig,
+}: PrometheusMetricsTabbedCardProps): ReactElement {
+    const categories = Object.keys(categoryTitles) as PrometheusMetricsCategory[];
+    const [activeTab, setActiveTab] = useState<PrometheusMetricsCategory>(categories[0]);
+
+    return (
+        <Card data-testid="prometheus-metrics-config">
+            <Tabs
+                activeKey={activeTab}
+                onSelect={(_event, tabKey) => setActiveTab(tabKey as PrometheusMetricsCategory)}
+            >
+                {categories.map((category) => {
+                    const config = privateConfig?.metrics?.[category];
+                    const descriptors = config?.descriptors;
+                    const period = config?.gatheringPeriodMinutes || 0;
+                    const metricCount = getMetricCount(descriptors);
+                    const hasMetrics = metricCount > 0;
+
+                    return (
+                        <Tab
+                            key={category}
+                            eventKey={category}
+                            title={
+                                <TabTitleText>
+                                    {categoryTitles[category]}
+                                    <MetricCountBadge count={metricCount} />
+                                </TabTitleText>
+                            }
+                        >
+                            <CardBody>
+                                {hasMetrics ? (
+                                    <>
+                                        <DescriptionList
+                                            isCompact
+                                            isHorizontal
+                                            horizontalTermWidthModifier={{
+                                                default: '15ch',
+                                            }}
+                                            columnModifier={{
+                                                default: '1Col',
+                                            }}
+                                        >
+                                            {period ? (
+                                                <DescriptionListGroup>
+                                                    <DescriptionListTerm>
+                                                        Gathering period
+                                                    </DescriptionListTerm>
+                                                    <DescriptionListDescription>
+                                                        {period}&nbsp;
+                                                        {pluralize('minute', period)}
+                                                    </DescriptionListDescription>
+                                                </DescriptionListGroup>
+                                            ) : null}
+                                        </DescriptionList>
+                                        <PrometheusMetricsTable
+                                            descriptors={descriptors}
+                                            category={category}
+                                            onCustomChange={undefined}
+                                        />
+                                    </>
                                 ) : (
-                                    <Label>Disabled</Label>
+                                    <EmptyState titleText="No metrics configured" variant="xs">
+                                        <EmptyStateBody>
+                                            Edit the configuration, or call <code>/v1/config</code>{' '}
+                                            API to add custom metrics.
+                                        </EmptyStateBody>
+                                    </EmptyState>
                                 )}
-                            </>
-                        ),
-                        hasNoOffset: false,
-                        className: undefined,
-                    }}
-                >
-                    <CardTitle component="h3">{title}</CardTitle>
-                </CardHeader>
-                <Divider component="div" />
-                <CardBody>
-                    {hasMetrics ? (
-                        <>
-                            <DescriptionList
-                                isCompact
-                                isHorizontal
-                                columnModifier={{
-                                    default: '1Col',
-                                }}
-                            >
-                                {period ? (
-                                    <DescriptionListGroup key={`${category}-period`}>
-                                        <DescriptionListTerm>Gathering period</DescriptionListTerm>
-                                        <DescriptionListDescription>
-                                            {period}&nbsp;
-                                            {pluralize('minute', period)}
-                                        </DescriptionListDescription>
-                                    </DescriptionListGroup>
-                                ) : null}
-                            </DescriptionList>
-                            <PrometheusMetricsTable
-                                descriptors={descriptors}
-                                category={category}
-                                onCustomChange={undefined}
-                            />
-                        </>
-                    ) : (
-                        <EmptyState titleText="No metrics configured" variant="xs">
-                            <EmptyStateBody>
-                                Edit the configuration, or call <code>/v1/config</code> API to add
-                                custom metrics.
-                            </EmptyStateBody>
-                        </EmptyState>
-                    )}
-                </CardBody>
-            </Card>
-        </GridItem>
+                            </CardBody>
+                        </Tab>
+                    );
+                })}
+            </Tabs>
+        </Card>
     );
 }
 
@@ -463,10 +494,8 @@ function PrometheusMetricsPeriodForm({
     );
 }
 
-export type PrometheusMetricsFormProps = {
+export type PrometheusMetricsTabbedFormProps = {
     pcfg: PrivateConfig;
-    category: PrometheusMetricsCategory;
-    title: string;
     onChange: (value, event) => Promise<void> | Promise<FormikErrors<FormikValues>>;
     onCustomChange?: (
         value: unknown,
@@ -474,43 +503,62 @@ export type PrometheusMetricsFormProps = {
     ) => Promise<void> | Promise<FormikErrors<FormikValues>>;
 };
 
-export function PrometheusMetricsForm({
+export function PrometheusMetricsTabbedForm({
     pcfg,
-    category,
-    title,
     onChange,
     onCustomChange,
-}: PrometheusMetricsFormProps): ReactElement {
+}: PrometheusMetricsTabbedFormProps): ReactElement {
+    const categories = Object.keys(categoryTitles) as PrometheusMetricsCategory[];
+    const [activeTab, setActiveTab] = useState<PrometheusMetricsCategory>(categories[0]);
+
     return (
-        <GridItem>
-            <Card data-testid={`${category}-metrics-config`}>
-                <CardHeader>
-                    <CardTitle component="h3">{title}</CardTitle>
-                </CardHeader>
-                <Divider component="div" />
-                <CardBody>
-                    <FormSection>
-                        <Grid hasGutter>
-                            <GridItem md={12}>
-                                <PrometheusMetricsPeriodForm
-                                    pcfg={pcfg}
-                                    category={category}
-                                    onChange={onChange}
-                                />
-                            </GridItem>
-                            <GridItem md={12}>
-                                <FormGroup label="Metrics configuration" role="group">
-                                    <PrometheusMetricsTable
-                                        descriptors={pcfg?.metrics?.[category]?.descriptors}
-                                        category={category}
-                                        onCustomChange={onCustomChange}
-                                    />
-                                </FormGroup>
-                            </GridItem>
-                        </Grid>
-                    </FormSection>
-                </CardBody>
-            </Card>
-        </GridItem>
+        <Card data-testid="prometheus-metrics-config">
+            <Tabs
+                activeKey={activeTab}
+                onSelect={(_event, tabKey) => setActiveTab(tabKey as PrometheusMetricsCategory)}
+            >
+                {categories.map((category) => {
+                    const metricCount = getMetricCount(pcfg?.metrics?.[category]?.descriptors);
+
+                    return (
+                        <Tab
+                            key={category}
+                            eventKey={category}
+                            title={
+                                <TabTitleText>
+                                    {categoryTitles[category]}
+                                    <MetricCountBadge count={metricCount} />
+                                </TabTitleText>
+                            }
+                        >
+                            <CardBody>
+                                <FormSection>
+                                    <Grid hasGutter>
+                                        <GridItem md={12}>
+                                            <PrometheusMetricsPeriodForm
+                                                pcfg={pcfg}
+                                                category={category}
+                                                onChange={onChange}
+                                            />
+                                        </GridItem>
+                                        <GridItem md={12}>
+                                            <FormGroup label="Metrics configuration" role="group">
+                                                <PrometheusMetricsTable
+                                                    descriptors={
+                                                        pcfg?.metrics?.[category]?.descriptors
+                                                    }
+                                                    category={category}
+                                                    onCustomChange={onCustomChange}
+                                                />
+                                            </FormGroup>
+                                        </GridItem>
+                                    </Grid>
+                                </FormSection>
+                            </CardBody>
+                        </Tab>
+                    );
+                })}
+            </Tabs>
+        </Card>
     );
 }

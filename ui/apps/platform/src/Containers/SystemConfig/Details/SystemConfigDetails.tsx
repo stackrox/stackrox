@@ -81,11 +81,9 @@ function SystemConfigDetails({
                         <code>/metrics</code> path. Scrape requests require permissions to view
                         Administration resources and are subject for the scoped access control.
                     </Content>
-                    <Grid hasGutter>
-                        <PrivateConfigPrometheusMetricsDetails
-                            privateConfig={systemConfig?.privateConfig}
-                        />
-                    </Grid>
+                    <PrivateConfigPrometheusMetricsDetails
+                        privateConfig={systemConfig?.privateConfig}
+                    />
                 </Stack>
             </PageSection>
             <PageSection data-testid="public-config">
