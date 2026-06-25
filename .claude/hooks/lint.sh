@@ -1,4 +1,5 @@
 #!/bin/bash
+set -o pipefail
 # lint.sh — Per-file lint hook for AI coding agents (Claude Code, OpenCode, etc.)
 #
 # Calls the repo's own Makefile targets with FILE= or PKG= to scope checks to a
