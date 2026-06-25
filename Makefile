@@ -162,10 +162,7 @@ golangci-lint-cache-status: $(GOLANGCILINT_BIN) deps
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCILINT_BIN) deps
-ifdef PKG
-	@echo "+ $@ $(PKG)"
-	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix $(PKG)
-else ifdef CI
+ifdef CI
 	@echo '+ $@'
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
 	@echo 'If this fails, run `make style`.'
@@ -177,6 +174,9 @@ else ifdef CI
 	@# We use --tests=false because some unit tests don't compile with release tags,
 	@# since they use functions that we don't define in the release build. That's okay.
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
+else ifdef PKG
+	@echo "+ $@ $(PKG)"
+	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix $(PKG)
 else
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix --enable=unused
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false

@@ -135,6 +135,25 @@ run_hook "$TMPDIR/readme.md" > /dev/null
 after=$(cat "$TMPDIR/readme.md")
 check_file_unchanged "markdown file untouched" "$before" "$after"
 
+# 7. Cursor mode: JSON output with additional_context
+echo ""
+echo "7. Cursor mode (JSON output)"
+output=$(echo '{"tool_input":{"file_path":"'"$TMPDIR/bad.sh"'"}, "cursor_version":"3.8.24"}' | \
+  CLAUDE_PROJECT_DIR="$PROJECT_DIR" bash "$HOOKS_DIR/lint.sh" 2>&1 || true)
+check_output "cursor gets JSON additional_context" "additional_context" "$output"
+
+# 8. Claude Code mode: plain text output
+echo ""
+echo "8. Claude Code mode (plain text output)"
+output=$(echo '{"tool_input":{"file_path":"'"$TMPDIR/bad.sh"'"}}' | \
+  CLAUDE_PROJECT_DIR="$PROJECT_DIR" bash "$HOOKS_DIR/lint.sh" 2>&1 || true)
+if echo "$output" | grep -q "additional_context"; then
+  echo "  FAIL: claude code should get plain text, not JSON"
+  fail=$((fail + 1))
+else
+  check_output "claude code gets plain text" "SC2086" "$output"
+fi
+
 echo ""
 echo "=== Results: $pass passed, $fail failed ==="
 [ "$fail" -eq 0 ] && exit 0 || exit 1
