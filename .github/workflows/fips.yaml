@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGISTRY: quay.io/rhacs-eng
-      IMAGES: release-main release-central-db release-roxctl release-operator release-scanner-v4
+      IMAGES: release-main release-central-db release-roxctl release-operator release-scanner-v4 release-scanner-v4-db release-scanner release-scanner-slim release-scanner-db release-scanner-db-slim release-collector release-fact
     steps:
       - name: Determine image tag
         id: tag
