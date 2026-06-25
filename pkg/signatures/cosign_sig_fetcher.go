@@ -5,21 +5,20 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	gcrRemote "github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	dockerRegistry "github.com/heroku/docker-registry-client/registry"
-	"github.com/pkg/errors"
 	"github.com/sigstore/cosign/v3/pkg/cosign"
-	"github.com/sigstore/cosign/v3/pkg/oci"
 	ociremote "github.com/sigstore/cosign/v3/pkg/oci/remote"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/stackrox/rox/generated/storage"
@@ -30,6 +29,8 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"golang.org/x/time/rate"
 )
+
+const fetchTimeout = 10 * time.Second
 
 type cosignSignatureFetcher struct {
 	// registryRateLimiter is a rate limiter for parallel calls to the registry. This will avoid reaching out to the
@@ -53,11 +54,15 @@ func init() {
 }
 
 // FetchSignatures implements the SignatureFetcher interface.
-// The signature associated with the image will be fetched from the given registry.
-// It will return the storage.ImageSignature and an error that indicated whether the fetching should be retried or not.
-// NOTE: No error will be returned when the image has no signature available. All occurring errors will be logged.
+// Signatures are discovered via two methods concurrently: the legacy cosign tag-based
+// path and the OCI 1.1 Referrers API. Results from both are merged and deduplicated.
+// When one path fails but the other returns signatures, the error is logged and the
+// successful results are returned. When both paths fail, the joined error is returned
+// to the caller so retry logic can act on it. Unauthorized errors are wrapped as
+// errox.NotAuthorized regardless of which path produced them.
+// NOTE: No error will be returned when the image has no signature available.
 func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *storage.Image,
-	fullImageName string, registry registryTypes.Registry,
+	fullImageName string, registry registryTypes.Registry, retryOpts ...retry.OptionsModifier,
 ) ([]*storage.Signature, error) {
 	// Short-circuit for images that do not have V2 metadata associated with them. These would be older images manifest
 	// schemes that are not supported by cosign, like the docker v1 manifest.
@@ -75,39 +80,99 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 	// Wait until the registry rate limiter allows entrance.
 	err = c.registryRateLimiter.Wait(ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "waiting for rate limiter entrance for registry %q", registry.Name())
+		return nil, fmt.Errorf("waiting for rate limiter entrance for registry %q: %w", registry.Name(), err)
 	}
 
-	// Fetch the signatures by injecting the registry specific authentication options to the google/go-containerregistry
-	// client.
-	// Additionally, use a local signed entity to skip fetching the image manifest and only fetch the signature manifest.
-	se := newLocalSignedEntity(image, imgRef, ociremote.WithRemoteOptions(optionsFromRegistry(ctx, registry)...))
-	signedPayloads, err := cosign.FetchSignatures(se)
+	// Inject the registry specific authentication options to the google/go-containerregistry client.
+	remoteOpts := optionsFromRegistry(ctx, registry)
+	ociOpts := []ociremote.Option{ociremote.WithRemoteOptions(remoteOpts...)}
 
-	// Cosign will return an error in case no signature is associated, we don't want to return that error. Since no
-	// error types are exposed need to check for string comparison.
-	// Cosign ref:
-	//  https://github.com/sigstore/cosign/blob/44f3814667ba6a398aef62814cabc82aee4896e5/pkg/cosign/fetch.go#L84-L86
-	if err != nil && !isMissingSignatureError(err) && !isUnknownMimeTypeError(err) {
-		// Specifically mark an error as errox.NotAuthorized so we skip using the same credentials for fetching.
-		// We can safely skip the potential marking of retryable errors as unauthorized errors are not transient.
-		if isUnauthorizedError(err) {
-			return nil, errox.NotAuthorized.CausedBy(err)
+	// Fetch from both discovery methods concurrently. Each path retries independently
+	// so a transient failure in one does not block the other.
+	var (
+		tagPayloads      []cosign.SignedPayload
+		tagErr           error
+		referrerPayloads []cosign.SignedPayload
+		referrerErr      error
+		wg               sync.WaitGroup
+	)
+	wg.Go(func() {
+		tagPayloads, tagErr = fetchWithRetry(ctx, ociOpts, retryOpts, func(opts []ociremote.Option) ([]cosign.SignedPayload, error) {
+			return fetchTagPayloads(image, imgRef, opts)
+		})
+	})
+	wg.Go(func() {
+		imgSHA := imgUtils.GetSHA(image)
+		if imgSHA == "" {
+			return
 		}
-		// Ensure we mark transient errors as retryable.
-		return nil, makeTransientErrorRetryable(err)
+		digestRef := imgRef.Context().Digest(imgSHA)
+		referrerPayloads, referrerErr = fetchWithRetry(ctx, ociOpts, retryOpts, func(opts []ociremote.Option) ([]cosign.SignedPayload, error) {
+			return fetchReferrerPayloads(ctx, digestRef, imgRef.Context(), opts)
+		})
+	})
+	wg.Wait()
+
+	// Merge payloads from both discovery methods.
+	var allPayloads []cosign.SignedPayload
+	if tagErr == nil {
+		allPayloads = append(allPayloads, tagPayloads...)
+	}
+	if referrerErr == nil {
+		allPayloads = append(allPayloads, referrerPayloads...)
 	}
 
-	// Short-circuit if no signatures are associated with the image.
-	if len(signedPayloads) == 0 {
+	fetchErr := errors.Join(tagErr, referrerErr)
+	if fetchErr != nil {
+		if len(allPayloads) > 0 {
+			log.Warnf("Partial signature discovery failure for %q: %v", fullImageName, fetchErr)
+		} else if isUnauthorizedError(tagErr) || isUnauthorizedError(referrerErr) {
+			return nil, errox.NotAuthorized.CausedBy(fetchErr)
+		} else {
+			return nil, fetchErr
+		}
+	}
+
+	if len(allPayloads) == 0 {
 		return nil, nil
 	}
 
-	cosignSignatures := make([]*storage.Signature, 0, len(signedPayloads))
+	cosignSignatures := convertPayloadsToSignatures(allPayloads, fullImageName)
+	if len(cosignSignatures) == 0 {
+		return nil, nil
+	}
 
-	for _, signedPayload := range signedPayloads {
+	return protoutils.SliceUnique(cosignSignatures), nil
+}
+
+// fetchWithRetry calls fn, optionally wrapping it in retry logic with a per-attempt timeout.
+// The timeout context is injected into the OCI options so fn does not need to handle contexts.
+// When retryOpts is empty, fn is called directly without retry or timeout wrapping.
+func fetchWithRetry(ctx context.Context, ociOpts []ociremote.Option, retryOpts []retry.OptionsModifier,
+	fn func([]ociremote.Option) ([]cosign.SignedPayload, error),
+) ([]cosign.SignedPayload, error) {
+	if len(retryOpts) == 0 {
+		return fn(ociOpts)
+	}
+	var payloads []cosign.SignedPayload
+	err := retry.WithRetry(func() error {
+		fetchCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
+		defer cancel()
+		opts := append(slices.Clone(ociOpts),
+			ociremote.WithMoreRemoteOptions(gcrRemote.WithContext(fetchCtx)))
+		var fetchErr error
+		payloads, fetchErr = fn(opts)
+		return makeTransientErrorRetryable(fetchErr)
+	}, retryOpts...)
+	return payloads, err
+}
+
+// convertPayloadsToSignatures converts cosign signed payloads to storage signature protos.
+func convertPayloadsToSignatures(payloads []cosign.SignedPayload, fullImageName string) []*storage.Signature {
+	signatures := make([]*storage.Signature, 0, len(payloads))
+
+	for _, signedPayload := range payloads {
 		rawSig, err := base64.StdEncoding.DecodeString(signedPayload.Base64Signature)
-		// We skip the invalid base64 signature and log its occurrence.
 		if err != nil {
 			log.Errorf("Error during decoding of raw signature for image %q: %v",
 				fullImageName, err)
@@ -133,9 +198,7 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 			}
 		}
 
-		// Since we are only focusing on public keys and certificates, we are ignoring the rekor bundles associated with
-		// the signature.
-		cosignSignatures = append(cosignSignatures, &storage.Signature{
+		signatures = append(signatures, &storage.Signature{
 			Signature: &storage.Signature_Cosign{
 				Cosign: &storage.CosignSignature{
 					RawSignature:     rawSig,
@@ -148,12 +211,7 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 		})
 	}
 
-	// Since we are skipping invalid base64 signatures, need to check the length of the result.
-	if len(cosignSignatures) == 0 {
-		return nil, nil
-	}
-
-	return protoutils.SliceUnique(cosignSignatures), nil
+	return signatures
 }
 
 func certificateFromSignedPayload(sp cosign.SignedPayload) ([]byte, error) {
@@ -261,6 +319,9 @@ func isUnknownMimeTypeError(err error) bool {
 // isUnauthorizedError is checking whether the returned error indicates that there was a http.StatusUnauthorized was
 // returned during fetching of signatures.
 func isUnauthorizedError(err error) bool {
+	if err == nil {
+		return false
+	}
 	return checkIfErrorContainsCode(err, http.StatusUnauthorized, http.StatusForbidden)
 }
 
@@ -285,41 +346,4 @@ func checkIfErrorContainsCode(err error, codes ...int) bool {
 	}
 
 	return false
-}
-
-var _ oci.SignedEntity = (*localSignedEntity)(nil)
-
-// localSignedEntity is an implementation of oci.SignedEntity used for fetching signatures.
-// This implementation skips fetching the manifest of the signed image, since within the image enriching, we already
-// fetched the image manifest beforehand.
-type localSignedEntity struct {
-	oci.SignedEntity
-	opts   []ociremote.Option
-	imgRef name.Reference
-	imgSHA string
-}
-
-func newLocalSignedEntity(img *storage.Image, imgRef name.Reference, opts ...ociremote.Option) *localSignedEntity {
-	imgSHA := imgUtils.GetSHA(img)
-	return &localSignedEntity{
-		opts:   opts,
-		imgRef: imgRef,
-		imgSHA: imgSHA,
-	}
-}
-
-func (s *localSignedEntity) Digest() (v1.Hash, error) {
-	return v1.NewHash(s.imgSHA)
-}
-
-func (s *localSignedEntity) Signatures() (oci.Signatures, error) {
-	h, err := s.Digest()
-	if err != nil {
-		return nil, err
-	}
-	// The name reference of the signature to fetch is going to be:
-	// <registry>/<repository>@<digest>.sig
-	// This is being kept in line with:
-	// https://github.com/sigstore/cosign/blob/65eb28af970d133adeefdc6c48d6e9304dd8cc3a/pkg/oci/remote/remote.go#L87
-	return ociremote.Signatures(s.imgRef.Context().Tag(fmt.Sprint(h.Algorithm, "-", h.Hex, ".sig")), s.opts...)
 }

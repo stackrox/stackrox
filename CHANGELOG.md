@@ -54,6 +54,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
     would leak to all images sharing the same digest.
   - Policies now evaluate correctly per the deployed/checked image name and respect its
     vulnerability exceptions, rather than being affected by shared-digest exception leakage.
+- ROX-34488: Added support for cosign signature discovery via OCI 1.1 referrers.
 
 ### Removed Features
 

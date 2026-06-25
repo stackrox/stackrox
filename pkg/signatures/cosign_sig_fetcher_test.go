@@ -1,6 +1,7 @@
 package signatures
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -287,6 +288,91 @@ func TestCosignSignatureFetcher_FetchSignature_NoSignature(t *testing.T) {
 	assert.Nil(t, result)
 }
 
+func TestCosignSignatureFetcher_FetchSignature_FromReferrers(t *testing.T) {
+	registryServer, imgRef, err := registryServerWithImage("nginx")
+	require.NoError(t, err, "setting up registry")
+	defer registryServer.Close()
+
+	cimg, err := imgUtils.GenerateImageFromString(imgRef)
+	require.NoError(t, err, "creating test image")
+	img := types.ToImage(cimg)
+	img.Metadata = &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: "something"}}
+
+	rawSig1, err := base64.StdEncoding.DecodeString(sig1)
+	require.NoError(t, err, "decoding signature")
+	sigPayload1, err := base64.StdEncoding.DecodeString(payload1)
+	require.NoError(t, err, "decoding payload")
+
+	// Upload signature as OCI referrer (not tag-based).
+	require.NoError(t, uploadSignatureAsReferrer(imgRef, sig1, sigPayload1, nil, nil),
+		"uploading signature as referrer")
+
+	expectedSignatures := []*storage.Signature{
+		{
+			Signature: &storage.Signature_Cosign{
+				Cosign: &storage.CosignSignature{
+					RawSignature:     rawSig1,
+					SignaturePayload: sigPayload1,
+				},
+			},
+		},
+	}
+
+	f := newCosignSignatureFetcher()
+	reg := &mockRegistry{cfg: &registryTypes.Config{}}
+
+	res, err := f.FetchSignatures(context.Background(), img, img.GetName().GetFullName(), reg)
+	assert.NoError(t, err)
+	protoassert.SlicesEqual(t, expectedSignatures, res)
+}
+
+func TestCosignSignatureFetcher_FetchSignature_BothTagAndReferrer(t *testing.T) {
+	registryServer, imgRef, err := registryServerWithImage("nginx")
+	require.NoError(t, err, "setting up registry")
+	defer registryServer.Close()
+
+	cimg, err := imgUtils.GenerateImageFromString(imgRef)
+	require.NoError(t, err, "creating test image")
+	img := types.ToImage(cimg)
+	img.Metadata = &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: "something"}}
+
+	rawSig1, err := base64.StdEncoding.DecodeString(sig1)
+	require.NoError(t, err)
+	rawSig2, err := base64.StdEncoding.DecodeString(sig2)
+	require.NoError(t, err)
+	sigPayload1, err := base64.StdEncoding.DecodeString(payload1)
+	require.NoError(t, err)
+	sigPayload2, err := base64.StdEncoding.DecodeString(payload2)
+	require.NoError(t, err)
+
+	// Upload sig1 via legacy tag.
+	require.NoError(t, uploadSignatureForImage(imgRef, sig1, sigPayload1, nil, nil, nil),
+		"uploading tag-based signature")
+	// Upload sig2 via referrer.
+	require.NoError(t, uploadSignatureAsReferrer(imgRef, sig2, sigPayload2, nil, nil),
+		"uploading referrer-based signature")
+
+	f := newCosignSignatureFetcher()
+	reg := &mockRegistry{cfg: &registryTypes.Config{}}
+
+	res, err := f.FetchSignatures(context.Background(), img, img.GetName().GetFullName(), reg)
+	assert.NoError(t, err)
+	// Both signatures should be found.
+	assert.Len(t, res, 2)
+
+	var foundSig1, foundSig2 bool
+	for _, s := range res {
+		if bytes.Equal(rawSig1, s.GetCosign().GetRawSignature()) {
+			foundSig1 = true
+		}
+		if bytes.Equal(rawSig2, s.GetCosign().GetRawSignature()) {
+			foundSig2 = true
+		}
+	}
+	assert.True(t, foundSig1, "tag-based signature should be found")
+	assert.True(t, foundSig2, "referrer-based signature should be found")
+}
+
 func TestIsMissingSignatureError(t *testing.T) {
 	notFoundErr := dockerRegistry.HttpStatusError{
 		Response: &http.Response{
@@ -495,4 +581,113 @@ func TestIsUnknownMimeTypeError(t *testing.T) {
 			assert.Equal(t, c.expectedRes, isUnknownMimeTypeError(c.err))
 		})
 	}
+}
+
+func TestCosignSignatureFetcher_FetchSignature_NoV2MetadataSkipsBoth(t *testing.T) {
+	cimg, err := imgUtils.GenerateImageFromString("test.io/test:latest")
+	require.NoError(t, err)
+	img := types.ToImage(cimg)
+	// No V2 metadata set — should short-circuit before any registry call.
+
+	f := newCosignSignatureFetcher()
+	res, err := f.FetchSignatures(context.Background(), img, img.GetName().GetFullName(), nil)
+	assert.NoError(t, err)
+	assert.Nil(t, res)
+}
+
+func TestCosignSignatureFetcher_FetchSignature_NoSignatureFromEither(t *testing.T) {
+	registryServer, imgRef, err := registryServerWithImage("nginx")
+	require.NoError(t, err, "setting up registry")
+	defer registryServer.Close()
+
+	cimg, err := imgUtils.GenerateImageFromString(imgRef)
+	require.NoError(t, err, "creating test image")
+	img := types.ToImage(cimg)
+	img.Metadata = &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: "something"}}
+
+	f := newCosignSignatureFetcher()
+	reg := &mockRegistry{cfg: &registryTypes.Config{}}
+
+	result, err := f.FetchSignatures(context.Background(), img, img.GetName().GetFullName(), reg)
+	assert.NoError(t, err)
+	assert.Nil(t, result)
+}
+
+func TestCosignSignatureFetcher_FetchSignature_DeduplicatesSameSignatureFromBothPaths(t *testing.T) {
+	registryServer, imgRef, err := registryServerWithImage("nginx")
+	require.NoError(t, err, "setting up registry")
+	defer registryServer.Close()
+
+	cimg, err := imgUtils.GenerateImageFromString(imgRef)
+	require.NoError(t, err, "creating test image")
+	img := types.ToImage(cimg)
+	img.Metadata = &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: "something"}}
+
+	sigPayload1, err := base64.StdEncoding.DecodeString(payload1)
+	require.NoError(t, err)
+
+	// Upload the same signature via both tag-based and referrer-based methods.
+	require.NoError(t, uploadSignatureForImage(imgRef, sig1, sigPayload1, nil, nil, nil),
+		"uploading tag-based signature")
+	require.NoError(t, uploadSignatureAsReferrer(imgRef, sig1, sigPayload1, nil, nil),
+		"uploading referrer-based signature")
+
+	f := newCosignSignatureFetcher()
+	reg := &mockRegistry{cfg: &registryTypes.Config{}}
+
+	rawSig1, err := base64.StdEncoding.DecodeString(sig1)
+	require.NoError(t, err)
+
+	res, err := f.FetchSignatures(context.Background(), img, img.GetName().GetFullName(), reg)
+	assert.NoError(t, err)
+	// The same signature from both paths should be deduplicated to a single result.
+	require.Len(t, res, 1)
+	assert.Equal(t, rawSig1, res[0].GetCosign().GetRawSignature())
+	assert.Equal(t, sigPayload1, res[0].GetCosign().GetSignaturePayload())
+}
+
+func TestCosignSignatureFetcher_FetchSignature_WithCredentials(t *testing.T) {
+	registryServer, imgRef, err := registryServerWithImage("nginx")
+	require.NoError(t, err, "setting up registry")
+	defer registryServer.Close()
+
+	cimg, err := imgUtils.GenerateImageFromString(imgRef)
+	require.NoError(t, err, "creating test image")
+	img := types.ToImage(cimg)
+	img.Metadata = &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: "something"}}
+
+	rawSig1, err := base64.StdEncoding.DecodeString(sig1)
+	require.NoError(t, err, "decoding signature")
+	sigPayload1, err := base64.StdEncoding.DecodeString(payload1)
+	require.NoError(t, err, "decoding payload")
+
+	require.NoError(t, uploadSignatureForImage(imgRef, sig1, sigPayload1, nil, nil, nil),
+		"uploading tag-based signature")
+
+	expectedSignatures := []*storage.Signature{
+		{
+			Signature: &storage.Signature_Cosign{
+				Cosign: &storage.CosignSignature{
+					RawSignature:     rawSig1,
+					SignaturePayload: sigPayload1,
+				},
+			},
+		},
+	}
+
+	ref, err := name.ParseReference(imgRef)
+	require.NoError(t, err)
+
+	f := newCosignSignatureFetcher()
+	// Use a registry config with credentials to exercise the authenticated transport path.
+	// The URL is required for WrapTransport to perform the initial /v2/ probe.
+	reg := &mockRegistry{cfg: &registryTypes.Config{
+		Username: "testuser",
+		Password: "testpass",
+		URL:      "http://" + ref.Context().RegistryStr(),
+	}}
+
+	res, err := f.FetchSignatures(context.Background(), img, img.GetName().GetFullName(), reg)
+	assert.NoError(t, err)
+	protoassert.SlicesEqual(t, expectedSignatures, res)
 }

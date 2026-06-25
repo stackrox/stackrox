@@ -56,7 +56,7 @@ type fakeSigFetcher struct {
 }
 
 func (f *fakeSigFetcher) FetchSignatures(_ context.Context, _ *storage.Image, _ string,
-	_ types.Registry) ([]*storage.Signature, error) {
+	_ types.Registry, _ ...retry.OptionsModifier) ([]*storage.Signature, error) {
 	if f.fail {
 		err := errors.New("some error")
 		if f.retryable {
