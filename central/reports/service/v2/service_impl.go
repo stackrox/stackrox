@@ -52,6 +52,7 @@ var (
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image), permissions.View(resources.Deployment)): {
 			apiV2.ReportService_DeleteReportConfiguration_FullMethodName,
+			apiV2.ReportService_RunReport_FullMethodName,
 		},
 		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Image), permissions.View(resources.Deployment)): {
 			apiV2.ReportService_GetReportStatus_FullMethodName,
@@ -66,7 +67,6 @@ var (
 		},
 		// view permissions are enough if user is deleting a job created by the user
 		user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)): {
-			apiV2.ReportService_RunReport_FullMethodName,
 			apiV2.ReportService_DeleteReport_FullMethodName,
 		},
 	})
