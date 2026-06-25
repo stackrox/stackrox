@@ -914,13 +914,13 @@ func (s *ReportServiceTestSuite) TestAuthzPermissions() {
 		},
 		"DeleteReport requires Modify WorkflowAdministration, denied with View Image+Deployment only": {
 			method:       apiV2.ReportService_DeleteReport_FullMethodName,
-			allowedPerms: modifyWorkflow,
-			deniedPerms:  viewImageDeployment,
+			allowedPerms: viewImageDeployment,
+			deniedPerms:  viewImageOnly,
 		},
 		"ListReportConfigurations requires View WorkflowAdministration, denied without it": {
 			method:       apiV2.ReportService_ListReportConfigurations_FullMethodName,
 			allowedPerms: viewWorkflow,
-			deniedPerms:  viewImageDeployment,
+			deniedPerms:  viewImageOnly,
 		},
 		"GetReportStatus requires View WorkflowAdministration, denied without it": {
 			method:       apiV2.ReportService_GetReportStatus_FullMethodName,
