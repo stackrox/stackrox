@@ -117,6 +117,21 @@ func TestMinorDistance(t *testing.T) {
 			bumps:   testBumps,
 			wantErr: true,
 		},
+		"lo version exceeds bump point": {
+			a: XY{4, 12}, b: XY{5, 1},
+			bumps:   testBumps,
+			wantErr: true,
+		},
+		"hi version exceeds bump point": {
+			a: XY{3, 70}, b: XY{3, 75},
+			bumps:   testBumps,
+			wantErr: true,
+		},
+		"version at bump point is valid": {
+			a: XY{4, 11}, b: XY{5, 2},
+			bumps: testBumps,
+			want:  3,
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -189,6 +204,10 @@ func TestCheckSkew(t *testing.T) {
 		"RC central": {
 			roxctl: "4.11.0", central: "5.0.0-rc.1",
 			maxSkew: 3, status: SkewOK,
+		},
+		"version inconsistent with bumps": {
+			roxctl: "4.12.0", central: "5.1.0",
+			maxSkew: 3, status: SkewIndeterminate,
 		},
 	}
 	for name, tt := range tests {

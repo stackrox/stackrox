@@ -180,6 +180,13 @@ func MinorDistance(a, b XY, bumps []MajorBump) (int, error) {
 		bumpFrom[bump.From.Major] = bump
 	}
 
+	for _, v := range []XY{lo, hi} {
+		if bump, ok := bumpFrom[v.Major]; ok && v.Minor > bump.From.Minor {
+			return 0, fmt.Errorf("version %s is inconsistent with bump data: major %d bumps at %s but version has minor %d",
+				v, v.Major, bump.From, v.Minor)
+		}
+	}
+
 	dist := 0
 	cur := lo
 	for cur != hi {
