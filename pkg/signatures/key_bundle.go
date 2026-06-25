@@ -22,7 +22,6 @@ var (
 	ErrKeyNameDuplicate     = errox.InvalidArgs.New("duplicate key name")
 	ErrKeyInvalidPEM        = errox.InvalidArgs.New("invalid PEM-encoded public key")
 	ErrUnmarshalling        = errox.InvalidArgs.New("unmarshalling key bundle JSON")
-	ErrUnknownSchemaVersion = errox.InvalidArgs.New("unknown schema version")
 	ErrNoSupportedKeys      = errox.InvalidArgs.New("key bundle contains no supported key types")
 )
 
@@ -43,8 +42,10 @@ type KeyBundleEntry struct {
 // PEM-encoded public keys; if any key fails validation the entire bundle is rejected.
 //
 // Schema version handling:
-//   - Missing or "1.0": accepted. Missing schemaVersion is normalized to "1.0".
-//   - Unknown versions: rejected with ErrUnknownSchemaVersion.
+//   - Missing: normalized to "1.0".
+//   - Unknown versions: accepted with a warning. The parser extracts what it
+//     understands (keys with name/type/pem) regardless of version, so older
+//     code can still use bundles produced for newer schema versions.
 //
 // Key type handling:
 //   - Missing type: defaults to "cosign".
@@ -55,12 +56,10 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 		return nil, ErrUnmarshalling.CausedBy(err)
 	}
 
-	switch bundle.SchemaVersion {
-	case "":
+	if bundle.SchemaVersion == "" {
 		bundle.SchemaVersion = SchemaVersion1
-	case SchemaVersion1:
-	default:
-		return nil, ErrUnknownSchemaVersion.CausedByf("%q", bundle.SchemaVersion)
+	} else if bundle.SchemaVersion != SchemaVersion1 {
+		log.Warnf("Key bundle has unknown schema version %q; attempting to parse with known fields", bundle.SchemaVersion)
 	}
 
 	if len(bundle.Keys) == 0 {

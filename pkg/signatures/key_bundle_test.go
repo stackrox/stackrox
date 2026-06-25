@@ -125,9 +125,8 @@ func TestParseKeyBundle(t *testing.T) {
 			]}`,
 			wantErr: ErrKeyNameDuplicate,
 		},
-		"unknown schema version rejected": {
-			input:   `{"schemaVersion": "2.0", "keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
-			wantErr: ErrUnknownSchemaVersion,
+		"unknown schema version accepted with warning": {
+			input: `{"schemaVersion": "2.0", "keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
 		},
 		"v1.0 with mixed types parses successfully": {
 			input: `{"schemaVersion": "1.0", "keys": [
