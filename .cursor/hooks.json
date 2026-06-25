@@ -1,6 +1,12 @@
 {
-  "afterFileEdit": {
-    "command": ".claude/hooks/lint.sh ${filePath}",
-    "description": "Run the same lint checks as CI (golangci-lint, buf format, shellcheck, prettier) scoped to the edited file"
+  "$schema": "https://unpkg.com/cursor-hooks@latest/schema/hooks.schema.json",
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": ".claude/hooks/lint.sh",
+        "description": "Run the same lint checks as CI scoped to the edited file"
+      }
+    ]
   }
 }
