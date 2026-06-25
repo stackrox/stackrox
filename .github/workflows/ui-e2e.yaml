@@ -294,13 +294,24 @@ jobs:
             fi
             ;;
           *policies*|*risk*)
-            echo "Waiting for deployment events..."
+            echo "Waiting for deployments..."
             for _ in $(seq 1 30); do
               deps=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
                 "https://${API_ENDPOINT}/v1/deploymentscount?query=" | jq -r '.count // 0')
               [ "${deps:-0}" -gt 5 ] && echo "Deployments: ${deps}" && break
               sleep 5
             done
+            echo "Waiting for process events (needed by timeline tests)..."
+            for i in $(seq 1 60); do
+              procs=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
+                "https://${API_ENDPOINT}/v1/processcount" | jq -r '.count // 0')
+              [ "${procs:-0}" -gt 0 ] && echo "Process events: ${procs}" && break
+              [ "$((i % 12))" -eq 0 ] && echo "Still waiting... (${i}x5s elapsed, processes=${procs:-0})"
+              sleep 5
+            done
+            if [ "${procs:-0}" -eq 0 ]; then
+              echo "::warning::No process events after 5 minutes -- timeline tests may fail"
+            fi
             ;;
           *)
             echo "No extra data wait needed for $SHARD"

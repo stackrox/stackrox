@@ -12,6 +12,7 @@ import {
     viewFirstRiskDeployment,
     viewGraph,
     visitRiskDeployments,
+    waitForProcessEvents,
 } from './Risk.helpers';
 import { selectors } from './Risk.selectors';
 
@@ -26,6 +27,10 @@ const fixtureForDeploymentEventTimeline = 'risks/eventTimeline/deploymentEventTi
 
 describe('Risk Event Timeline for Deployment', () => {
     withAuth();
+
+    before(() => {
+        waitForProcessEvents();
+    });
 
     describe('Clustering Events', () => {
         it('should show the clustered event markers', () => {

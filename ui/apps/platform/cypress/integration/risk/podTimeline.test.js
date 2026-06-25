@@ -11,6 +11,7 @@ import {
     viewFirstRiskDeployment,
     viewGraph,
     visitRiskDeployments,
+    waitForProcessEvents,
 } from './Risk.helpers';
 import { selectors } from './Risk.selectors';
 
@@ -29,6 +30,10 @@ const fixtureForPodEventTimeline = 'risks/eventTimeline/podEventTimeline.json';
 
 describe('Risk Event Timeline for Pod', () => {
     withAuth();
+
+    before(() => {
+        waitForProcessEvents();
+    });
 
     describe('Clustering Events', () => {
         it('should show the clustered event markers', () => {

@@ -149,6 +149,39 @@ export function clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimel
     );
 }
 
+// data readiness
+
+export function waitForProcessEvents(timeoutMs = 120000) {
+    const interval = 5000;
+    const maxAttempts = Math.ceil(timeoutMs / interval);
+
+    function poll(attempt) {
+        if (attempt >= maxAttempts) {
+            throw new Error(
+                `Timed out after ${timeoutMs / 1000}s waiting for process events`
+            );
+        }
+        const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
+        return cy
+            .request({
+                url: '/v1/processcount',
+                auth,
+                failOnStatusCode: false,
+            })
+            .then((response) => {
+                const count = response?.body?.count ?? 0;
+                if (count > 0) {
+                    cy.log(`Process events ready: count=${count}`);
+                    return;
+                }
+                cy.wait(interval);
+                return poll(attempt + 1);
+            });
+    }
+
+    return poll(0);
+}
+
 // interact
 
 export function clickTab(tabText) {
