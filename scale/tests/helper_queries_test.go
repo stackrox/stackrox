@@ -3,9 +3,9 @@ package tests
 import "encoding/json"
 
 type params struct {
-	Query         string                 `json:"query"`
-	OperationName string                 `json:"operationName"`
-	Variables     map[string]interface{} `json:"variables"`
+	Query         string         `json:"query"`
+	OperationName string         `json:"operationName"`
+	Variables     map[string]any `json:"variables"`
 }
 
 type triggerScanResponse struct {
@@ -51,7 +51,7 @@ func getRunStatuses(ids []string) []byte {
 	return marshallQuery(
 		getRunStatusesQuery,
 		"runStatuses",
-		map[string]interface{}{
+		map[string]any{
 			"ids": ids,
 		},
 	)
@@ -89,7 +89,7 @@ func getAggregatedResults(groupBy []string, unit string) []byte {
 	return marshallQuery(
 		getAggregatedResultsQuery,
 		"getAggregatedResults",
-		map[string]interface{}{
+		map[string]any{
 			"groupBy": groupBy,
 			"unit":    unit,
 		},
@@ -100,14 +100,14 @@ func getComplianceStandards(where string) []byte {
 	return marshallQuery(
 		getComplianceStandardsQuery,
 		"complianceStandards",
-		map[string]interface{}{
+		map[string]any{
 			"groupBy": []string{"STANDARD", "CATEGORY", "CONTROL"},
 			"where":   where,
 		},
 	)
 }
 
-func marshallQuery(query, opName string, variables map[string]interface{}) []byte {
+func marshallQuery(query, opName string, variables map[string]any) []byte {
 	queryParams := params{
 		Query:         query,
 		OperationName: opName,

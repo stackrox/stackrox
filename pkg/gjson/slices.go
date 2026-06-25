@@ -14,7 +14,7 @@ type SliceMapper struct {
 }
 
 // NewSliceMapper creates a SliceMapper which takes a json object and a map of GJSON compatible JSON expressions
-func NewSliceMapper(jsonObj interface{}, jsonPathExpressionMap map[string]string) (*SliceMapper, error) {
+func NewSliceMapper(jsonObj any, jsonPathExpressionMap map[string]string) (*SliceMapper, error) {
 	bytes, err := json.Marshal(jsonObj)
 	if err != nil {
 		return nil, err

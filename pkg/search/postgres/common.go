@@ -97,7 +97,7 @@ type query struct {
 	ReturningFields  []pgsearch.SelectQueryField
 	From             string
 	Where            string
-	Data             []interface{}
+	Data             []any
 
 	Having     string
 	Pagination parsedPaginationQuery
@@ -629,8 +629,8 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 // same input and merges their deduplicated []string results. Both transforms
 // return interface{}, but for map fields (labels, annotations) and array fields
 // the concrete type is []string.
-func composePostTransforms(a, b func(interface{}) interface{}) func(interface{}) interface{} {
-	return func(v interface{}) interface{} {
+func composePostTransforms(a, b func(any) any) func(any) any {
+	return func(v any) any {
 		aResult := a(v)
 		bResult := b(v)
 		// Type-assert to []string; if either result isn't a string slice, skip the merge.
@@ -739,7 +739,7 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 			}
 			return &pgsearch.QueryEntry{Where: pgsearch.WhereClause{
 				Query:  fmt.Sprintf("%s.%s = ANY($$%s)", schema.Table, schema.ID().ColumnName, cast),
-				Values: []interface{}{subBQ.DocIdQuery.GetIds()},
+				Values: []any{subBQ.DocIdQuery.GetIds()},
 			}}, nil
 		case *v1.BaseQuery_MatchFieldQuery:
 			queryFieldMetadata := queryFields[subBQ.MatchFieldQuery.GetField()]
@@ -812,7 +812,7 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 	return nil, nil
 }
 
-func valueFromStringPtrInterface(val interface{}) string {
+func valueFromStringPtrInterface(val any) string {
 	if val == nil {
 		return ""
 	}
@@ -883,7 +883,7 @@ func (t *tracedRows) Err() error {
 	return t.Rows.Err()
 }
 
-func tracedQuery(ctx context.Context, pool postgres.Queryable, sql string, args ...interface{}) (*tracedRows, error) {
+func tracedQuery(ctx context.Context, pool postgres.Queryable, sql string, args ...any) (*tracedRows, error) {
 	t := time.Now()
 	rows, err := pool.Query(ctx, sql, args...)
 	return &tracedRows{
@@ -892,7 +892,7 @@ func tracedQuery(ctx context.Context, pool postgres.Queryable, sql string, args 
 	}, err
 }
 
-func tracedQueryRow(ctx context.Context, pool postgres.Queryable, sql string, args ...interface{}) pgx.Row {
+func tracedQueryRow(ctx context.Context, pool postgres.Queryable, sql string, args ...any) pgx.Row {
 	t := time.Now()
 	row := pool.QueryRow(ctx, sql, args...)
 	postgres.AddTracedQuery(ctx, t, sql, args)
@@ -907,9 +907,9 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 	extraSelectedFields := query.ExtraSelectedFieldPaths()
 	numSelectFieldsForPrimaryKey := len(query.PrimaryKeyFields)
 	primaryKeysComposite := numPrimaryKeys > 1 && len(query.PrimaryKeyFields) == 1
-	bufferToScanRowInto := make([]interface{}, numSelectFieldsForPrimaryKey+len(query.SelectedFields)+len(extraSelectedFields))
+	bufferToScanRowInto := make([]any, numSelectFieldsForPrimaryKey+len(query.SelectedFields)+len(extraSelectedFields))
 	if primaryKeysComposite {
-		var outputSlice []interface{}
+		var outputSlice []any
 		bufferToScanRowInto[0] = &outputSlice
 	} else {
 		for i := range numPrimaryKeys {
@@ -940,7 +940,7 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 
 		idParts := make([]string, 0, numPrimaryKeys)
 		if primaryKeysComposite {
-			for _, elem := range *bufferToScanRowInto[0].(*[]interface{}) {
+			for _, elem := range *bufferToScanRowInto[0].(*[]any) {
 				idParts = append(idParts, elem.(string))
 			}
 		} else {
@@ -1337,9 +1337,9 @@ func RunDeleteRequestReturningIDsForSchema(ctx context.Context, schema *walker.S
 	numPrimaryKeys := len(schema.PrimaryKeys())
 	numSelectFieldsForPrimaryKey := len(query.PrimaryKeyFields)
 	primaryKeysComposite := numPrimaryKeys > 1 && len(query.PrimaryKeyFields) == 1
-	bufferToScanRowInto := make([]interface{}, numSelectFieldsForPrimaryKey)
+	bufferToScanRowInto := make([]any, numSelectFieldsForPrimaryKey)
 	if primaryKeysComposite {
-		var outputSlice []interface{}
+		var outputSlice []any
 		bufferToScanRowInto[0] = &outputSlice
 	} else {
 		for i := range numPrimaryKeys {
@@ -1361,7 +1361,7 @@ func RunDeleteRequestReturningIDsForSchema(ctx context.Context, schema *walker.S
 
 			idParts := make([]string, 0, numPrimaryKeys)
 			if primaryKeysComposite {
-				for _, elem := range *bufferToScanRowInto[0].(*[]interface{}) {
+				for _, elem := range *bufferToScanRowInto[0].(*[]any) {
 					idParts = append(idParts, elem.(string))
 				}
 			} else {

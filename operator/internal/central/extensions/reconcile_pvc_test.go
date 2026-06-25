@@ -933,7 +933,7 @@ func Test_getPersistenceByTarget(t *testing.T) {
 				},
 			},
 			target: PVCTargetCentralDBBackup,
-			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+			wantErr: func(t assert.TestingT, err error, i ...any) bool {
 				return assert.ErrorContains(t, err, "failed to calculate backup volume size: parsing main central-db PVC size \"1 Badger\" failed", i)
 			},
 		},

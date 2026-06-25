@@ -28,7 +28,7 @@ func (j *JSONArrayWriter) Init() error {
 }
 
 // WriteObject writes an interface into JSON and writes it to the writer
-func (j *JSONArrayWriter) WriteObject(i interface{}) error {
+func (j *JSONArrayWriter) WriteObject(i any) error {
 	if !j.prependComma {
 		j.prependComma = true
 	} else {

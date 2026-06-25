@@ -148,7 +148,7 @@ func nvdOpts() []updates.ManagerOption {
 			"nvd": nvd.NewFactory(),
 		}),
 		updates.WithConfigs(map[string]driver.ConfigUnmarshaler{
-			"nvd": func(i interface{}) error {
+			"nvd": func(i any) error {
 				cfg, ok := i.(*nvd.Config)
 				if !ok {
 					return errors.New("internal error: config assertion failed")

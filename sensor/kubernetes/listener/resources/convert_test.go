@@ -59,7 +59,7 @@ func hierarchyFromPodLister(l *mockPodLister) references.ParentHierarchy {
 
 func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 	cases := []struct {
-		inputObj       interface{}
+		inputObj       any
 		action         central.ResourceAction
 		expectedAction central.ResourceAction
 	}{
@@ -692,7 +692,7 @@ func TestConvert(t *testing.T) {
 
 	cases := []struct {
 		name               string
-		inputObj           interface{}
+		inputObj           any
 		deploymentType     string
 		action             central.ResourceAction
 		podLister          *mockPodLister

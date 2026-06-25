@@ -9,10 +9,10 @@ const (
 
 // ValidClusterVersion represents Openshift custom resource for cluster version.
 var ValidClusterVersion = &unstructured.Unstructured{
-	Object: map[string]interface{}{
+	Object: map[string]any{
 		"kind":       "ClusterVersion",
 		"apiVersion": "config.openshift.io/v1",
-		"metadata": map[string]interface{}{
+		"metadata": map[string]any{
 			"name": "version",
 		},
 	},

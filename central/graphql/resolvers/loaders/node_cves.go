@@ -16,7 +16,7 @@ import (
 var nodeCveLoaderType = reflect.TypeFor[storage.NodeCVE]()
 
 func init() {
-	RegisterTypeFactory(reflect.TypeFor[storage.NodeCVE](), func() interface{} {
+	RegisterTypeFactory(reflect.TypeFor[storage.NodeCVE](), func() any {
 		return NewNodeCVELoader(nodeCVEDataStore.Singleton())
 	})
 }

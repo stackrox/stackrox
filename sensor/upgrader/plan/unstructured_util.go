@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func nestedValueNoCopyOrError[T any](obj map[string]interface{}, fields ...string) (T, error) {
+func nestedValueNoCopyOrError[T any](obj map[string]any, fields ...string) (T, error) {
 	var val T
 	valRaw, found, err := unstructured.NestedFieldNoCopy(obj, fields...)
 	if err != nil {
@@ -23,7 +23,7 @@ func nestedValueNoCopyOrError[T any](obj map[string]interface{}, fields ...strin
 	return val, nil
 }
 
-func nestedNonZeroValueNoCopyOrError[T comparable](obj map[string]interface{}, fields ...string) (T, error) {
+func nestedNonZeroValueNoCopyOrError[T comparable](obj map[string]any, fields ...string) (T, error) {
 	var zeroVal T
 	val, err := nestedValueNoCopyOrError[T](obj, fields...)
 	if err != nil {
@@ -35,7 +35,7 @@ func nestedNonZeroValueNoCopyOrError[T comparable](obj map[string]interface{}, f
 	return val, nil
 }
 
-func nestedValueNoCopyOrDefault[T any](obj map[string]interface{}, def T, fields ...string) T {
+func nestedValueNoCopyOrDefault[T any](obj map[string]any, def T, fields ...string) T {
 	valRaw, found, err := unstructured.NestedFieldNoCopy(obj, fields...)
 	if err != nil || !found {
 		return def

@@ -40,11 +40,11 @@ func (rs *rowSets) Next() bool {
 	return r.pos <= len(r.rows)
 }
 
-func (rs *rowSets) Values() ([]interface{}, error) {
+func (rs *rowSets) Values() ([]any, error) {
 	return nil, nil
 }
 
-func (rs *rowSets) Scan(dest ...interface{}) error {
+func (rs *rowSets) Scan(dest ...any) error {
 	r := rs.sets[rs.pos]
 	if len(dest) != len(r.defs) {
 		return fmt.Errorf("incorrect argument number %d for columns %d", len(dest), len(r.defs))
@@ -123,7 +123,7 @@ func (rs *rowSets) empty() bool {
 	return true
 }
 
-func rawBytes(col interface{}) (_ []byte, ok bool) {
+func rawBytes(col any) (_ []byte, ok bool) {
 	val, ok := col.([]byte)
 	if !ok || len(val) == 0 {
 		return nil, false
@@ -139,7 +139,7 @@ func rawBytes(col interface{}) (_ []byte, ok bool) {
 // return for Query result
 type Rows struct {
 	defs     []pgconn.FieldDescription
-	rows     [][]interface{}
+	rows     [][]any
 	pos      int
 	nextErr  map[int]error
 	closeErr error
@@ -184,12 +184,12 @@ func (r *Rows) RowError(row int, err error) *Rows {
 // return the same instance to perform subsequent actions.
 // Note that the number of values must match the number
 // of columns
-func (r *Rows) AddRow(values ...interface{}) *Rows {
+func (r *Rows) AddRow(values ...any) *Rows {
 	if len(values) != len(r.defs) {
 		panic("Expected number of values to match number of columns")
 	}
 
-	row := make([]interface{}, len(r.defs))
+	row := make([]any, len(r.defs))
 	copy(row, values)
 	r.rows = append(r.rows, row)
 	return r

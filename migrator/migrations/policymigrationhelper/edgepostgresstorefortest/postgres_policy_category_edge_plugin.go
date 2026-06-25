@@ -116,7 +116,7 @@ func insertIntoPolicyCategoryEdges(batch *pgx.Batch, obj *storage.PolicyCategory
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetPolicyId(),

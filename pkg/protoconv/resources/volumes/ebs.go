@@ -16,7 +16,7 @@ func (e *ebs) Type() string {
 	return ebsType
 }
 
-func createEBS(i interface{}) VolumeSource {
+func createEBS(i any) VolumeSource {
 	ebsVolume, ok := i.(*v1.AWSElasticBlockStoreVolumeSource)
 	if !ok {
 		return &Unimplemented{}

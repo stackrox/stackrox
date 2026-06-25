@@ -50,7 +50,7 @@ func startAndWait(stopSignal concurrency.Waitable, wg *concurrency.WaitGroup, st
 	return concurrency.WaitInContext(wg, stopSignal)
 }
 
-func managedFieldsTransformer(obj interface{}) (interface{}, error) {
+func managedFieldsTransformer(obj any) (any, error) {
 	if obj == nil {
 		return obj, nil
 	}

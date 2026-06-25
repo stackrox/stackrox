@@ -47,13 +47,13 @@ func MarshalTextString(m proto.Message) string {
 }
 
 // MarshalMap marshals a proto message to a map[string]interface{} type.
-func MarshalMap(m proto.Message) (map[string]interface{}, error) {
+func MarshalMap(m proto.Message) (map[string]any, error) {
 	marshalledProto, err := protojson.Marshal(m)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert proto msg to json")
 	}
 
-	dest := map[string]interface{}{}
+	dest := map[string]any{}
 	err = json.Unmarshal(marshalledProto, &dest)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert to an unstructured map")

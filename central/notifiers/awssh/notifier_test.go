@@ -73,7 +73,7 @@ type BatchSizeMatcher struct {
 	size int
 }
 
-func (b *BatchSizeMatcher) Matches(in interface{}) bool {
+func (b *BatchSizeMatcher) Matches(in any) bool {
 	inputBatch := in.(*securityhub.BatchImportFindingsInput)
 	return len(inputBatch.Findings) == b.size
 }

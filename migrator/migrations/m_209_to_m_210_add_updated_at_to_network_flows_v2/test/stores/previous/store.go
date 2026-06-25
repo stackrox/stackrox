@@ -144,7 +144,7 @@ type flowStoreImpl struct {
 
 func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, tx *postgres.Tx, clusterID uuid.UUID, obj *storage.NetworkFlow) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetProps().GetSrcEntity().GetType(),
 		obj.GetProps().GetSrcEntity().GetId(),
@@ -167,7 +167,7 @@ func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, tx *postgres.
 
 func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx, objs ...*storage.NetworkFlow) error {
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
+	inputRows := make([][]any, 0, batchSize)
 	var err error
 
 	copyCols := []string{
@@ -182,7 +182,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx
 	}
 
 	for idx, obj := range objs {
-		inputRows = append(inputRows, []interface{}{
+		inputRows = append(inputRows, []any{
 			obj.GetProps().GetSrcEntity().GetType(),
 			obj.GetProps().GetSrcEntity().GetId(),
 			obj.GetProps().GetDstEntity().GetType(),

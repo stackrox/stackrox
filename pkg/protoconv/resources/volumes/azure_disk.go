@@ -18,7 +18,7 @@ func (h *azureDisk) Type() string {
 	return azureDiskType
 }
 
-func createAzureDisk(i interface{}) VolumeSource {
+func createAzureDisk(i any) VolumeSource {
 	azureVolume, ok := i.(*v1.AzureDiskVolumeSource)
 	if !ok {
 		return &Unimplemented{}

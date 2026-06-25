@@ -36,7 +36,7 @@ var (
 //   - If the false positive cannot be suppressed using the above methods, you can add it to the above
 //     ExcludedFromCompletenessTest list to explicitly suppress it in this test.
 func TestBundleResourcesComplete(t *testing.T) {
-	featureFlags := make(map[string]interface{})
+	featureFlags := make(map[string]any)
 	for _, ff := range features.Flags {
 		featureFlags[ff.EnvVar()] = ff.Enabled()
 	}

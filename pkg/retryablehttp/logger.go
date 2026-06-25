@@ -10,7 +10,7 @@ type DebugLogger struct {
 }
 
 // Printf implements the retryablehttp.Logger interface by logging at Debug level.
-func (l *DebugLogger) Printf(format string, v ...interface{}) {
+func (l *DebugLogger) Printf(format string, v ...any) {
 	l.logger.Debugf(format, v...)
 }
 

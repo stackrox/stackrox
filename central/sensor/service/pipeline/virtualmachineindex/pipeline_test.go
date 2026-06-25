@@ -675,7 +675,7 @@ func TestPipelineRunV2_StoresScanViaV2Datastore(t *testing.T) {
 
 	enricher.EXPECT().
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(vm *storage.VirtualMachine, _ interface{}) error {
+		DoAndReturn(func(vm *storage.VirtualMachine, _ any) error {
 			vm.Scan = &storage.VirtualMachineScan{
 				Components: []*storage.EmbeddedVirtualMachineScanComponent{
 					{Name: "test-pkg", Version: "1.0"},
@@ -818,7 +818,7 @@ func TestPipelineRunV2_NACKOnUpsertScanError(t *testing.T) {
 
 	enricher.EXPECT().
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(vm *storage.VirtualMachine, _ interface{}) error {
+		DoAndReturn(func(vm *storage.VirtualMachine, _ any) error {
 			vm.Scan = &storage.VirtualMachineScan{
 				Components: []*storage.EmbeddedVirtualMachineScanComponent{
 					{Name: "test-pkg", Version: "1.0"},
@@ -930,7 +930,7 @@ func TestLookupGuestOS(t *testing.T) {
 
 			enricher.EXPECT().
 				EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
-				DoAndReturn(func(vm *storage.VirtualMachine, _ interface{}) error {
+				DoAndReturn(func(vm *storage.VirtualMachine, _ any) error {
 					vm.Scan = &storage.VirtualMachineScan{}
 					return nil
 				})

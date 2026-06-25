@@ -19,7 +19,7 @@ func (h *cephfs) Type() string {
 	return cephFSType
 }
 
-func createCephfs(i interface{}) VolumeSource {
+func createCephfs(i any) VolumeSource {
 	cephVolume, ok := i.(*v1.CephFSVolumeSource)
 	if !ok {
 		return &Unimplemented{}

@@ -45,8 +45,8 @@ func TestGetCustomize(t *testing.T) {
 			wantValues: chartutil.Values{
 				"labels":      map[string]string{"label1": "value2"},
 				"annotations": map[string]string{"annotation1": "value3"},
-				"envVars": map[string]interface{}{
-					"ENV_VAR1": map[string]interface{}{
+				"envVars": map[string]any{
+					"ENV_VAR1": map[string]any{
 						"value": "value6",
 					},
 				},
@@ -152,7 +152,7 @@ func TestGetTLSConfigValues(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"additionalCAs": map[string]interface{}{
+				"additionalCAs": map[string]any{
 					"ca-name": "ca-content",
 				},
 			},
@@ -171,7 +171,7 @@ func TestGetTLSConfigValues(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"additionalCAs": map[string]interface{}{
+				"additionalCAs": map[string]any{
 					"ca1-name": "ca1-content",
 					"ca2-name": "ca2-content",
 				},
@@ -263,13 +263,13 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 			},
 			componentKey: "indexer",
 			want: chartutil.Values{
-				"indexer": map[string]interface{}{
-					"resources": map[string]interface{}{
-						"requests": map[string]interface{}{
+				"indexer": map[string]any{
+					"resources": map[string]any{
+						"requests": map[string]any{
 							"cpu":    "100m",
 							"memory": "200M",
 						},
-						"limits": map[string]interface{}{
+						"limits": map[string]any{
 							"cpu":    "150m",
 							"memory": "250M",
 						},
@@ -289,9 +289,9 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 			},
 			componentKey: "matcher",
 			want: chartutil.Values{
-				"matcher": map[string]interface{}{
-					"resources": map[string]interface{}{
-						"requests": map[string]interface{}{
+				"matcher": map[string]any{
+					"resources": map[string]any{
+						"requests": map[string]any{
 							"cpu": "100m",
 						},
 					},
@@ -310,8 +310,8 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 			},
 			componentKey: "indexer",
 			want: chartutil.Values{
-				"indexer": map[string]interface{}{
-					"autoscaling": map[string]interface{}{
+				"indexer": map[string]any{
+					"autoscaling": map[string]any{
 						"disable":     false,
 						"minReplicas": int32(1),
 						"maxReplicas": int32(3),
@@ -327,8 +327,8 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 			},
 			componentKey: "indexer",
 			want: chartutil.Values{
-				"indexer": map[string]interface{}{
-					"autoscaling": map[string]interface{}{
+				"indexer": map[string]any{
+					"autoscaling": map[string]any{
 						"disable": true,
 					},
 				},
@@ -350,7 +350,7 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 			},
 			componentKey: "indexer",
 			want: chartutil.Values{
-				"indexer": map[string]interface{}{
+				"indexer": map[string]any{
 					"replicas": int32(2),
 				},
 			},
@@ -365,9 +365,9 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 			},
 			componentKey: "indexer",
 			want: chartutil.Values{
-				"indexer": map[string]interface{}{
-					"tolerations": []interface{}{
-						map[string]interface{}{
+				"indexer": map[string]any{
+					"tolerations": []any{
+						map[string]any{
 							"effect": "NoSchedule", "key": "masternode", "operator": "Exists",
 						},
 					},
@@ -384,8 +384,8 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 			},
 			componentKey: "indexer",
 			want: chartutil.Values{
-				"indexer": map[string]interface{}{
-					"nodeSelector": map[string]interface{}{
+				"indexer": map[string]any{
+					"nodeSelector": map[string]any{
 						"masternode": "true",
 					},
 				},
@@ -401,9 +401,9 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 			},
 			componentKey: "indexer",
 			want: chartutil.Values{
-				"indexer": map[string]interface{}{
-					"hostAliases": []interface{}{
-						map[string]interface{}{
+				"indexer": map[string]any{
+					"hostAliases": []any{
+						map[string]any{
 							"ip":        "127.0.0.1",
 							"hostnames": []string{"localhost"},
 						},
@@ -467,9 +467,9 @@ func TestSetScannerV4DBValues(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"db": map[string]interface{}{
-					"persistence": map[string]interface{}{
-						"persistentVolumeClaim": map[string]interface{}{
+				"db": map[string]any{
+					"persistence": map[string]any{
+						"persistentVolumeClaim": map[string]any{
 							"createClaim": true,
 						},
 					},
@@ -495,8 +495,8 @@ func TestSetScannerV4DBValues(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"db": map[string]interface{}{
-					"persistence": map[string]interface{}{
+				"db": map[string]any{
+					"persistence": map[string]any{
 						"none": true,
 					},
 				},
@@ -518,13 +518,13 @@ func TestSetScannerV4DBValues(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"db": map[string]interface{}{
-					"resources": map[string]interface{}{
-						"requests": map[string]interface{}{
+				"db": map[string]any{
+					"resources": map[string]any{
+						"requests": map[string]any{
 							"cpu":    "100m",
 							"memory": "200M",
 						},
-						"limits": map[string]interface{}{
+						"limits": map[string]any{
 							"cpu":    "150m",
 							"memory": "250M",
 						},
@@ -541,9 +541,9 @@ func TestSetScannerV4DBValues(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"db": map[string]interface{}{
-					"tolerations": []interface{}{
-						map[string]interface{}{
+				"db": map[string]any{
+					"tolerations": []any{
+						map[string]any{
 							"effect": "NoSchedule", "key": "masternode", "operator": "Exists",
 						},
 					},
@@ -559,8 +559,8 @@ func TestSetScannerV4DBValues(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"db": map[string]interface{}{
-					"nodeSelector": map[string]interface{}{
+				"db": map[string]any{
+					"nodeSelector": map[string]any{
 						"masternode": "true",
 					},
 				},
@@ -575,9 +575,9 @@ func TestSetScannerV4DBValues(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"db": map[string]interface{}{
-					"hostAliases": []interface{}{
-						map[string]interface{}{
+				"db": map[string]any{
+					"hostAliases": []any{
+						map[string]any{
 							"ip":        "127.0.0.1",
 							"hostnames": []string{"localhost"},
 						},
@@ -596,9 +596,9 @@ func TestSetScannerV4DBValues(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"db": map[string]interface{}{
-					"persistence": map[string]interface{}{
-						"persistentVolumeClaim": map[string]interface{}{
+				"db": map[string]any{
+					"persistence": map[string]any{
+						"persistentVolumeClaim": map[string]any{
 							"claimName":    "test",
 							"createClaim":  true,
 							"size":         "100GB",
@@ -617,8 +617,8 @@ func TestSetScannerV4DBValues(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"db": map[string]interface{}{
-					"persistence": map[string]interface{}{
+				"db": map[string]any{
+					"persistence": map[string]any{
 						"hostPath": "/test/path",
 					},
 				},
@@ -671,21 +671,21 @@ func TestSetScannerV4DisableValue(t *testing.T) {
 	}{
 		"scannerV4Component Disabled": {
 			scannerV4Component: platform.ScannerV4ComponentDisabled,
-			want: map[string]interface{}{
+			want: map[string]any{
 				"disable": true,
 			},
 			wantErr: false,
 		},
 		"scannerV4Component Default": {
 			scannerV4Component: platform.ScannerV4ComponentDefault,
-			want: map[string]interface{}{
+			want: map[string]any{
 				"disable": true,
 			},
 			wantErr: false,
 		},
 		"scannerV4Component Enabled": {
 			scannerV4Component: platform.ScannerV4ComponentEnabled,
-			want: map[string]interface{}{
+			want: map[string]any{
 				"disable": false,
 			},
 			wantErr: false,
@@ -729,14 +729,14 @@ func TestGetNetworkComponentValues(t *testing.T) {
 	}{
 		"unset network policies": {
 			network: platform.GlobalNetworkSpec{},
-			want:    map[string]interface{}{},
+			want:    map[string]any{},
 			wantErr: false,
 		},
 		"disabled network policies": {
 			network: platform.GlobalNetworkSpec{
 				Policies: &networkPoliciesDisabled,
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"enableNetworkPolicies": false,
 			},
 			wantErr: false,
@@ -745,7 +745,7 @@ func TestGetNetworkComponentValues(t *testing.T) {
 			network: platform.GlobalNetworkSpec{
 				Policies: &networkPoliciesEnabled,
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"enableNetworkPolicies": true,
 			},
 			wantErr: false,

@@ -4,33 +4,33 @@ import "github.com/stackrox/rox/pkg/sync"
 
 // Cache offers a generic, threadsafe interface for a map based cache
 type Cache interface {
-	Add(key, value interface{})
-	Get(key interface{}) (interface{}, bool)
-	Remove(key interface{}) (interface{}, bool)
+	Add(key, value any)
+	Get(key any) (any, bool)
+	Remove(key any) (any, bool)
 	Size() int
-	Keys() []interface{}
+	Keys() []any
 }
 
 // New creates a new simple map backed cache
 func New() Cache {
 	return &cacheImpl{
-		cache: make(map[interface{}]interface{}),
+		cache: make(map[any]any),
 	}
 }
 
 type cacheImpl struct {
 	lock  sync.RWMutex
-	cache map[interface{}]interface{}
+	cache map[any]any
 }
 
-func (c *cacheImpl) Add(k, v interface{}) {
+func (c *cacheImpl) Add(k, v any) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	c.cache[k] = v
 }
 
-func (c *cacheImpl) Get(k interface{}) (interface{}, bool) {
+func (c *cacheImpl) Get(k any) (any, bool) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -41,7 +41,7 @@ func (c *cacheImpl) Get(k interface{}) (interface{}, bool) {
 	return val, true
 }
 
-func (c *cacheImpl) Remove(k interface{}) (interface{}, bool) {
+func (c *cacheImpl) Remove(k any) (any, bool) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -53,11 +53,11 @@ func (c *cacheImpl) Remove(k interface{}) (interface{}, bool) {
 	return v, true
 }
 
-func (c *cacheImpl) Keys() []interface{} {
+func (c *cacheImpl) Keys() []any {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
-	var keys = make([]interface{}, 0, len(c.cache))
+	var keys = make([]any, 0, len(c.cache))
 	for k := range c.cache {
 		keys = append(keys, k)
 	}

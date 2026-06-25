@@ -495,7 +495,7 @@ func (ds *datastoreImpl) validateUniqueNameAndID(ctx context.Context, policy *st
 	return importErrors, nil
 }
 
-func duplicateNameImportErrf(errType string, duplicateName string, errMsgTemplate string, args ...interface{}) *v1.ImportPolicyError {
+func duplicateNameImportErrf(errType string, duplicateName string, errMsgTemplate string, args ...any) *v1.ImportPolicyError {
 	return &v1.ImportPolicyError{
 		Message: fmt.Sprintf(errMsgTemplate, args...),
 		Type:    errType,

@@ -96,7 +96,7 @@ func getTriggerScan(clusterID, standardID string) []byte {
 	return marshallQuery(
 		triggerScanQuery,
 		"triggerScan",
-		map[string]interface{}{
+		map[string]any{
 			"clusterId":  clusterID,
 			"standardId": standardID,
 		},

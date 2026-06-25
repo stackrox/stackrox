@@ -37,7 +37,7 @@ func NewError(statusCode int, message string) HTTPError {
 }
 
 // Errorf returns a new HTTP error with a message constructed from a format string.
-func Errorf(statusCode int, format string, args ...interface{}) HTTPError {
+func Errorf(statusCode int, format string, args ...any) HTTPError {
 	return httpError{httpStatus: httpStatus{code: statusCode, message: fmt.Sprintf(format, args...)}}
 }
 
@@ -74,7 +74,7 @@ func WriteGRPCStyleError(w http.ResponseWriter, c codes.Code, err error) {
 
 // WriteGRPCStyleErrorf writes a gRPC-style error to an http response writer.
 // It's useful when you have to write an http method.
-func WriteGRPCStyleErrorf(w http.ResponseWriter, c codes.Code, format string, args ...interface{}) {
+func WriteGRPCStyleErrorf(w http.ResponseWriter, c codes.Code, format string, args ...any) {
 	WriteGRPCStyleError(w, c, fmt.Errorf(format, args...))
 }
 
@@ -97,6 +97,6 @@ func WriteError(w http.ResponseWriter, err error) {
 
 // WriteErrorf is a convenience method that is equivalent to calling
 // `WriteError(w, Errorf(statusCode, format, args...)`.
-func WriteErrorf(w http.ResponseWriter, statusCode int, format string, args ...interface{}) {
+func WriteErrorf(w http.ResponseWriter, statusCode int, format string, args ...any) {
 	WriteError(w, Errorf(statusCode, format, args...))
 }

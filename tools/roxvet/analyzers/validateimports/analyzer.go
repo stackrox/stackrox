@@ -390,7 +390,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	}
 }
 
-func run(pass *analysis.Pass) (interface{}, error) {
+func run(pass *analysis.Pass) (any, error) {
 	root, valid, err := getRoot(pass.Pkg.Path())
 	if err != nil {
 		pass.Reportf(token.NoPos, "couldn't find valid root: %v", err)

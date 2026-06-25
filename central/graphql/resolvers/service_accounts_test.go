@@ -109,7 +109,7 @@ func (s *ServiceAccountResolverTestSuite) TestGetServiceAccounts() {
 	}
 `
 	response := s.schema.Exec(s.getMockContext(),
-		query, "serviceAccounts", map[string]interface{}{"query": ""})
+		query, "serviceAccounts", map[string]any{"query": ""})
 
 	var resp struct {
 		Results []serviceAcctResponse `json:"results"`
@@ -157,7 +157,7 @@ func (s *ServiceAccountResolverTestSuite) TestGetSaNamespace() {
 	}
 `
 	response := s.schema.Exec(s.getMockContext(resources.Cluster, resources.Namespace),
-		query, "serviceAccounts", map[string]interface{}{"query": ""})
+		query, "serviceAccounts", map[string]any{"query": ""})
 
 	var resp struct {
 		Results []serviceAcctResponse `json:"results"`

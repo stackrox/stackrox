@@ -20,17 +20,17 @@ var seededRand = rand.New(rand.NewSource(seededInitializerSeed))
 
 // BasicTypeInitializer prescribes how to initialize a struct field with a given type.
 type BasicTypeInitializer interface {
-	Value(kind reflect.Kind, fieldPath []reflect.StructField) interface{}
+	Value(kind reflect.Kind, fieldPath []reflect.StructField) any
 }
 
 // UniqueTypeInitializer prescribes how to initialize a struct field with a given type.
 type UniqueTypeInitializer interface {
-	ValueUnique(kind reflect.Kind, fieldPath []reflect.StructField) interface{}
+	ValueUnique(kind reflect.Kind, fieldPath []reflect.StructField) any
 }
 
 type simpleInitializer struct{}
 
-func (simpleInitializer) Value(kind reflect.Kind, _ []reflect.StructField) interface{} {
+func (simpleInitializer) Value(kind reflect.Kind, _ []reflect.StructField) any {
 	switch kind {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return int32(1)
@@ -48,7 +48,7 @@ func (simpleInitializer) Value(kind reflect.Kind, _ []reflect.StructField) inter
 
 type uniqueInitializer struct{}
 
-func (uniqueInitializer) Value(kind reflect.Kind, _ []reflect.StructField) interface{} {
+func (uniqueInitializer) Value(kind reflect.Kind, _ []reflect.StructField) any {
 	switch kind {
 	case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return seededRand.Int31()
@@ -104,7 +104,7 @@ func JSONFieldsFilter(field reflect.StructField, _ []reflect.StructField) bool {
 // maps are initialized with one-element instances with recursively initialized elements/key-value pairs. For arrays,
 // all elements are initialized recursively. Basic types are initialized according to the given BasicTypeInitializer.
 // The field filter, if non-nil, causes pruning at selected (sub-)fields.
-func FullInit(val interface{}, init BasicTypeInitializer, fieldFilter FieldFilter) error {
+func FullInit(val any, init BasicTypeInitializer, fieldFilter FieldFilter) error {
 	rval := reflect.ValueOf(val)
 	if rval.Kind() != reflect.Pointer || rval.IsNil() {
 		return errors.New("argument to FullInit must be a non-nil pointer")

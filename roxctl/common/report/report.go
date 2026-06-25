@@ -91,7 +91,7 @@ func JSONWithRemarks(output io.Writer, alerts []*storage.Alert, remarks []*v1.De
 // writes that to the output stream.
 func PrettyWithResourceName(output io.Writer, alerts []*storage.Alert, enforcementStage storage.EnforcementAction, resourceType, resourceName string, printAllViolations bool) error {
 	alertTemplateObjects := makeAlertTemplateObjects(alerts, printAllViolations)
-	var templateMap = map[string]interface{}{
+	var templateMap = map[string]any{
 		"AlertTemplateObjects": alertTemplateObjects,
 		"ResourceType":         resourceType,
 		"ResourceName":         resourceName,

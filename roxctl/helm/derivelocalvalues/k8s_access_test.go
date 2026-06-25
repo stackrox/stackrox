@@ -15,25 +15,25 @@ func Test_k8sObjectDescription(t *testing.T) {
 		cache: map[string]map[string]unstructured.Unstructured{
 			"kindX": {
 				"obj": {
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"one": map[string]string{"two": "value"},
 					},
 				}},
 			"kindY": {
 				"obj1": {
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"number": 42,
 					},
 				},
 			},
 			"secret": {
 				"s1": {
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"data": map[string]any{"test": base64.StdEncoding.EncodeToString([]byte("b64 secret"))},
 					},
 				},
 				"s2": {
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"stringData": map[string]any{"test": "plaintext secret"},
 					},
 				},

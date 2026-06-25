@@ -115,12 +115,12 @@ func (k *KeyValueSlice) Swap(i, j int) {
 }
 
 // Push implements heap.Interface.
-func (k *KeyValueSlice) Push(x interface{}) {
+func (k *KeyValueSlice) Push(x any) {
 	*k = append(*k, x.(*KeyValue))
 }
 
 // Pop implements heap.Interface.
-func (k *KeyValueSlice) Pop() interface{} {
+func (k *KeyValueSlice) Pop() any {
 	length := len(*k)
 	ret := (*k)[length-1]
 	*k = (*k)[0 : length-1]

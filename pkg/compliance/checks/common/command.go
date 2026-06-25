@@ -57,10 +57,10 @@ func GetProcess(ret *standards.ComplianceData, processName string) (*compliance.
 }
 
 // GetValuesForCommandFromFlagsAndConfig returns the values for specific key from the args and unmarshalled config
-func GetValuesForCommandFromFlagsAndConfig(args []*compliance.CommandLine_Args, c map[string]interface{}, key string) []string {
+func GetValuesForCommandFromFlagsAndConfig(args []*compliance.CommandLine_Args, c map[string]any, key string) []string {
 	values := GetValuesForFlag(args, key)
 
-	var value interface{}
+	var value any
 	value, ok := c[key]
 	if !ok {
 		value, ok = c[key+"s"]

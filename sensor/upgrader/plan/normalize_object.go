@@ -33,9 +33,9 @@ func clearServiceAccountDynamicFields(obj *unstructured.Unstructured) {
 	// Remove the default token, as it is auto-populated.
 	defaultTokenNamePrefix := fmt.Sprintf("%s-token-", obj.GetName())
 	secrets, _, _ := unstructured.NestedSlice(obj.Object, "secrets")
-	var filteredSecrets []interface{}
+	var filteredSecrets []any
 	for _, secret := range secrets {
-		secretObj, _ := secret.(map[string]interface{})
+		secretObj, _ := secret.(map[string]any)
 		if secretName, _, _ := unstructured.NestedString(secretObj, "name"); !strings.HasPrefix(secretName, defaultTokenNamePrefix) {
 			filteredSecrets = append(filteredSecrets, secret)
 		}
@@ -43,7 +43,7 @@ func clearServiceAccountDynamicFields(obj *unstructured.Unstructured) {
 	utils.Should(unstructured.SetNestedSlice(obj.Object, filteredSecrets, "secrets"))
 }
 
-func deleteValueIfMatching(m map[string]interface{}, key string, defaultValue interface{}) {
+func deleteValueIfMatching(m map[string]any, key string, defaultValue any) {
 	if m[key] == defaultValue {
 		delete(m, key)
 	}
@@ -65,24 +65,24 @@ func clearAdmissionWebhookDefaultFields(obj *unstructured.Unstructured) {
 		return
 	}
 	for _, webhookInterface := range webhooks {
-		webhook, ok := webhookInterface.(map[string]interface{})
+		webhook, ok := webhookInterface.(map[string]any)
 		if !ok {
 			log.Errorf("Webhook %+v was not a map[string]interface{}", webhook)
 			return
 		}
 		deleteValueIfMatching(webhook, "timeoutSeconds", int64(30))
 		deleteValueIfMatching(webhook, "sideEffects", "Unknown")
-		admissionReviewVersions, ok := webhook["admissionReviewVersions"].([]interface{})
+		admissionReviewVersions, ok := webhook["admissionReviewVersions"].([]any)
 		if ok {
 			if len(admissionReviewVersions) == 1 && admissionReviewVersions[0] == "v1beta1" {
 				delete(webhook, "admissionReviewVersions")
 			}
 		}
 
-		rules, ok := webhook["rules"].([]interface{})
+		rules, ok := webhook["rules"].([]any)
 		if ok {
 			for _, r := range rules {
-				typedRule, ok := r.(map[string]interface{})
+				typedRule, ok := r.(map[string]any)
 				if !ok {
 					log.Errorf("Rule in webhook %+v was not a map[string]interface{}", webhook)
 					return

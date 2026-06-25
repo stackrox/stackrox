@@ -12,7 +12,7 @@ type contextWithAccessMatcher struct {
 	pred sac.ScopePredicate
 }
 
-func (m contextWithAccessMatcher) Matches(x interface{}) bool {
+func (m contextWithAccessMatcher) Matches(x any) bool {
 	ctx, _ := x.(context.Context)
 	if ctx == nil {
 		return false

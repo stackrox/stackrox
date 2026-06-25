@@ -16,7 +16,7 @@ import (
 var clusterCveLoaderType = reflect.TypeFor[storage.ClusterCVE]()
 
 func init() {
-	RegisterTypeFactory(reflect.TypeFor[storage.ClusterCVE](), func() interface{} {
+	RegisterTypeFactory(reflect.TypeFor[storage.ClusterCVE](), func() any {
 		return NewClusterCVELoader(clusterCVEDataStore.Singleton())
 	})
 }

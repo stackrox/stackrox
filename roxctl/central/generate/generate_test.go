@@ -144,7 +144,7 @@ func TestTelemetryConfiguration(t *testing.T) {
 	type result struct {
 		enabled bool
 		err     error
-		key     interface{}
+		key     any
 	}
 	dirtyVersion := "1.2.3-dirty"
 	releaseVersion := "1.2.3"

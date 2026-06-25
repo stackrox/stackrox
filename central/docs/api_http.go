@@ -56,7 +56,7 @@ func swaggerForRequest(req *http.Request, swaggerPath string) ([]byte, error) {
 		return nil, errors.Wrap(err, "could not parse swagger spec")
 	}
 
-	swaggerSpecOut := make(map[string]interface{}, len(swaggerSpec)+2)
+	swaggerSpecOut := make(map[string]any, len(swaggerSpec)+2)
 	for k, v := range swaggerSpec {
 		swaggerSpecOut[k] = v
 	}

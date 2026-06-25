@@ -117,7 +117,7 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 	}
 
 	// Verify custom environment variable
-	expectedEnvVar := map[string]interface{}{
+	expectedEnvVar := map[string]any{
 		"name":  "CUSTOM_ENV_VAR",
 		"value": "FOO",
 	}
@@ -132,7 +132,7 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 		s.NoError(err)
 		s.NotEmpty(containers)
 		for _, container := range containers {
-			containerObj := container.(map[string]interface{})
+			containerObj := container.(map[string]any)
 			envVars, _, err := unstructured.NestedSlice(containerObj, "env")
 			s.NoError(err)
 			s.Contains(envVars, expectedEnvVar)

@@ -231,8 +231,8 @@ func (suite *AlertManagerTestSuite) TearDownTest() {
 
 // Returns a function that can be used to match *v1.Query,
 // which ensure that the query specifies all the fields.
-func queryHasFields(fields ...search.FieldLabel) func(interface{}) bool {
-	return func(in interface{}) bool {
+func queryHasFields(fields ...search.FieldLabel) func(any) bool {
+	return func(in any) bool {
 		q := in.(*v1.Query)
 
 		fieldsFound := make([]bool, len(fields))

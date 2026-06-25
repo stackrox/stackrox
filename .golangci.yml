@@ -169,9 +169,6 @@ linters:
         - sensor\.DiagnoseConnectionFailure
         - status\.Error
         - utils\.Should
-    modernize:
-      disable:
-        - any
   exclusions:
     generated: lax
     rules:

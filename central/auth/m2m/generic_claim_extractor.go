@@ -50,7 +50,7 @@ func getFriendlyName(claims map[string][]string) string {
 }
 
 func (*genericClaimExtractor) ExtractClaims(idToken *IDToken) (map[string][]string, error) {
-	var unstructured map[string]interface{}
+	var unstructured map[string]any
 	if err := idToken.Claims(&unstructured); err != nil {
 		return nil, errors.Wrap(err, "extracting claims")
 	}
@@ -62,7 +62,7 @@ func (*genericClaimExtractor) ExtractClaims(idToken *IDToken) (map[string][]stri
 	return claims, nil
 }
 
-func parse(unstructured map[string]interface{}, claims map[string][]string, pfx string) {
+func parse(unstructured map[string]any, claims map[string][]string, pfx string) {
 	for key, value := range unstructured {
 		key = pfx + key
 		switch value := value.(type) {
@@ -76,7 +76,7 @@ func parse(unstructured map[string]interface{}, claims map[string][]string, pfx 
 					claims[key] = append(claims[key], s)
 				}
 			}
-		case map[string]interface{}:
+		case map[string]any:
 			parse(value, claims, key+".")
 		default:
 			log.Debugf("Dropping value %v for claim %s since its a non-supported type %T", value, key, value)

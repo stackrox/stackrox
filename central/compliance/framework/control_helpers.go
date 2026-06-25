@@ -8,7 +8,7 @@ func RecordEvidence(ctx ComplianceContext, status Status, msg string) {
 }
 
 // RecordEvidencef records evidence for the compliance check active in the given context.
-func RecordEvidencef(ctx ComplianceContext, status Status, format string, args ...interface{}) {
+func RecordEvidencef(ctx ComplianceContext, status Status, format string, args ...any) {
 	ctx.RecordEvidence(status, fmt.Sprintf(format, args...))
 }
 
@@ -18,7 +18,7 @@ func Pass(ctx ComplianceContext, msg string) {
 }
 
 // Passf records "pass" evidence for the compliance check active in the given context.
-func Passf(ctx ComplianceContext, format string, args ...interface{}) {
+func Passf(ctx ComplianceContext, format string, args ...any) {
 	Pass(ctx, fmt.Sprintf(format, args...))
 }
 
@@ -29,7 +29,7 @@ func PassNow(ctx ComplianceContext, msg string) {
 }
 
 // PassNowf records "pass" evidence for the compliance check active in the given context, and terminates the check.
-func PassNowf(ctx ComplianceContext, format string, args ...interface{}) {
+func PassNowf(ctx ComplianceContext, format string, args ...any) {
 	Passf(ctx, format, args...)
 	Abort(ctx, nil)
 }
@@ -40,7 +40,7 @@ func Fail(ctx ComplianceContext, msg string) {
 }
 
 // Failf records "fail" evidence for the compliance check active in the given context.
-func Failf(ctx ComplianceContext, format string, args ...interface{}) {
+func Failf(ctx ComplianceContext, format string, args ...any) {
 	Fail(ctx, fmt.Sprintf(format, args...))
 }
 
@@ -51,7 +51,7 @@ func FailNow(ctx ComplianceContext, msg string) {
 }
 
 // FailNowf records "fail" evidence for the compliance check active in the given context, and terminates the check.
-func FailNowf(ctx ComplianceContext, format string, args ...interface{}) {
+func FailNowf(ctx ComplianceContext, format string, args ...any) {
 	Failf(ctx, format, args...)
 	Abort(ctx, nil)
 }
@@ -62,7 +62,7 @@ func Skip(ctx ComplianceContext, msg string) {
 }
 
 // Skipf records "skip" evidence for the compliance check active in the given context.
-func Skipf(ctx ComplianceContext, format string, args ...interface{}) {
+func Skipf(ctx ComplianceContext, format string, args ...any) {
 	Skip(ctx, fmt.Sprintf(format, args...))
 }
 
@@ -73,13 +73,13 @@ func SkipNow(ctx ComplianceContext, msg string) {
 }
 
 // SkipNowf records "skip" evidence for the compliance check active in the given context, and terminates the check.
-func SkipNowf(ctx ComplianceContext, format string, args ...interface{}) {
+func SkipNowf(ctx ComplianceContext, format string, args ...any) {
 	Skipf(ctx, format, args...)
 	Abort(ctx, nil)
 }
 
 // Abortf aborts with an error created from the given format and args via `fmt.Errorf`.
-func Abortf(ctx ComplianceContext, format string, args ...interface{}) {
+func Abortf(ctx ComplianceContext, format string, args ...any) {
 	Abort(ctx, fmt.Errorf(format, args...))
 }
 
@@ -89,7 +89,7 @@ func Note(ctx ComplianceContext, msg string) {
 }
 
 // Notef records "note" evidence for the compliance check active in the given context.
-func Notef(ctx ComplianceContext, format string, args ...interface{}) {
+func Notef(ctx ComplianceContext, format string, args ...any) {
 	Note(ctx, fmt.Sprintf(format, args...))
 }
 
@@ -100,7 +100,7 @@ func NoteNow(ctx ComplianceContext, msg string) {
 }
 
 // NoteNowf records "note" evidence for the compliance check active in the given context, and terminates the check.
-func NoteNowf(ctx ComplianceContext, format string, args ...interface{}) {
+func NoteNowf(ctx ComplianceContext, format string, args ...any) {
 	Notef(ctx, format, args...)
 	Abort(ctx, nil)
 }

@@ -99,6 +99,6 @@ func (z *stringObjectEncoder) AddBinary(_ string, _ []byte)                     
 func (z *stringObjectEncoder) AddObject(_ string, _ zapcore.ObjectMarshaler) error { return nil }
 func (z *stringObjectEncoder) AddArray(_ string, _ zapcore.ArrayMarshaler) error   { return nil }
 func (z *stringObjectEncoder) AddComplex128(_ string, _ complex128)                {}
-func (z *stringObjectEncoder) AddReflected(_ string, _ interface{}) error          { return nil }
+func (z *stringObjectEncoder) AddReflected(_ string, _ any) error                  { return nil }
 func (z *stringObjectEncoder) AddComplex64(_ string, _ complex64)                  {}
 func (z *stringObjectEncoder) OpenNamespace(_ string)                              {}

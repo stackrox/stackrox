@@ -58,7 +58,7 @@ func constructFileAccessAlert(policy *storage.Policy, node *storage.Node, deploy
 func constructKubeEventAlert(
 	policy *storage.Policy,
 	kubeEvent *storage.KubernetesEvent,
-	kubeResource interface{},
+	kubeResource any,
 	violations booleanpolicy.Violations,
 ) *storage.Alert {
 	if len(violations.AlertViolations) == 0 {

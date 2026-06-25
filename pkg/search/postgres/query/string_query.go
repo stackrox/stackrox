@@ -21,8 +21,8 @@ func newStringQueryWhereClause(columnName string, value string, queryModifiers .
 	if len(queryModifiers) == 0 {
 		return WhereClause{
 			Query:  fmt.Sprintf("%s ilike $$", columnName),
-			Values: []interface{}{value + "%"},
-			equivalentGoFunc: func(foundValue interface{}) bool {
+			Values: []any{value + "%"},
+			equivalentGoFunc: func(foundValue any) bool {
 				return strings.HasPrefix(foundValue.(string), value)
 			},
 		}, nil
@@ -37,8 +37,8 @@ func newStringQueryWhereClause(columnName string, value string, queryModifiers .
 		if len(queryModifiers) == 1 {
 			return WhereClause{
 				Query:  fmt.Sprintf("NOT (%s ilike $$)", columnName),
-				Values: []interface{}{value + "%"},
-				equivalentGoFunc: func(foundValue interface{}) bool {
+				Values: []any{value + "%"},
+				equivalentGoFunc: func(foundValue any) bool {
 					foundVal := strings.ToLower(foundValue.(string))
 					return !strings.HasPrefix(foundVal, value)
 				},
@@ -55,8 +55,8 @@ func newStringQueryWhereClause(columnName string, value string, queryModifiers .
 		}
 		return WhereClause{
 			Query:  fmt.Sprintf("%s %s~* $$", columnName, negationString),
-			Values: []interface{}{value},
-			equivalentGoFunc: func(foundValue interface{}) bool {
+			Values: []any{value},
+			equivalentGoFunc: func(foundValue any) bool {
 				foundVal := strings.ToLower(foundValue.(string))
 				return re.MatchString(foundVal) != negated
 			},
@@ -64,8 +64,8 @@ func newStringQueryWhereClause(columnName string, value string, queryModifiers .
 	case pkgSearch.Equality:
 		return WhereClause{
 			Query:  fmt.Sprintf("%s %s= $$", columnName, negationString),
-			Values: []interface{}{value},
-			equivalentGoFunc: func(foundValue interface{}) bool {
+			Values: []any{value},
+			equivalentGoFunc: func(foundValue any) bool {
 				return strings.EqualFold(foundValue.(string), value) != negated
 			},
 		}, nil

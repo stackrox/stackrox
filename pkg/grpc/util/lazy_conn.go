@@ -66,7 +66,7 @@ func (c *LazyClientConn) getClientConn(ctx context.Context) (grpc.ClientConnInte
 }
 
 // Invoke waits for a delegate ClientConnInterface to become available and delegates the call to that.
-func (c *LazyClientConn) Invoke(ctx context.Context, method string, args interface{}, reply interface{}, opts ...grpc.CallOption) error {
+func (c *LazyClientConn) Invoke(ctx context.Context, method string, args any, reply any, opts ...grpc.CallOption) error {
 	cc, err := c.getClientConn(ctx)
 	if err != nil {
 		return err

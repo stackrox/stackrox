@@ -36,7 +36,7 @@ type resourceEventHandlerImpl struct {
 	hasSeenAllInitialIDsSignal concurrency.Signal
 }
 
-func (h *resourceEventHandlerImpl) OnAdd(obj interface{}, _ bool) {
+func (h *resourceEventHandlerImpl) OnAdd(obj any, _ bool) {
 	// If we are listing the initial objects, then we treat them as updates so enforcement isn't done
 	if h.syncingResources != nil && h.syncingResources.Get() {
 		h.sendResourceEvent(obj, nil, central.ResourceAction_SYNC_RESOURCE)
@@ -46,24 +46,24 @@ func (h *resourceEventHandlerImpl) OnAdd(obj interface{}, _ bool) {
 	h.registerObject(obj)
 }
 
-func (h *resourceEventHandlerImpl) OnUpdate(oldObj, newObj interface{}) {
+func (h *resourceEventHandlerImpl) OnUpdate(oldObj, newObj any) {
 	h.sendResourceEvent(newObj, oldObj, central.ResourceAction_UPDATE_RESOURCE)
 	h.registerObject(newObj)
 }
 
-func (h *resourceEventHandlerImpl) OnDelete(obj interface{}) {
+func (h *resourceEventHandlerImpl) OnDelete(obj any) {
 	if tombstone, ok := obj.(cache.DeletedFinalStateUnknown); ok {
 		obj = tombstone.Obj // we don't care about the final state, so just using the last known state is fine.
 	}
 	h.sendResourceEvent(obj, nil, central.ResourceAction_REMOVE_RESOURCE)
 }
 
-func (h *resourceEventHandlerImpl) PopulateInitialObjects(initialObjs []interface{}) <-chan struct{} {
+func (h *resourceEventHandlerImpl) PopulateInitialObjects(initialObjs []any) <-chan struct{} {
 	h.populateInitialObjects(initialObjs)
 	return h.hasSeenAllInitialIDsSignal.Done()
 }
 
-func (h *resourceEventHandlerImpl) populateInitialObjects(initialObjs []interface{}) {
+func (h *resourceEventHandlerImpl) populateInitialObjects(initialObjs []any) {
 	if h.hasSeenAllInitialIDsSignal.IsDone() {
 		return
 	}
@@ -85,7 +85,7 @@ func (h *resourceEventHandlerImpl) populateInitialObjects(initialObjs []interfac
 	h.checkHasSeenAllInitialIDsNoLock()
 }
 
-func (h *resourceEventHandlerImpl) registerObject(newObj interface{}) {
+func (h *resourceEventHandlerImpl) registerObject(newObj any) {
 	if h.hasSeenAllInitialIDsSignal.IsDone() {
 		return
 	}
@@ -119,7 +119,7 @@ func (h *resourceEventHandlerImpl) initialSyncDebugState() (missingCount int, to
 	return
 }
 
-func (h *resourceEventHandlerImpl) sendResourceEvent(obj, oldObj interface{}, action central.ResourceAction) {
+func (h *resourceEventHandlerImpl) sendResourceEvent(obj, oldObj any, action central.ResourceAction) {
 	if metaObj, ok := obj.(v1.Object); ok {
 		kubernetes.TrimAnnotations(metaObj)
 	}
@@ -136,7 +136,7 @@ func (h *resourceEventHandlerImpl) sendResourceEvent(obj, oldObj interface{}, ac
 	}
 }
 
-func getObjUID(newObj interface{}) types.UID {
+func getObjUID(newObj any) types.UID {
 	if objWithID, ok := newObj.(interface{ GetUID() types.UID }); ok {
 		return objWithID.GetUID()
 	}

@@ -19,7 +19,7 @@ var (
 	daemonSetGVK  = schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "DaemonSet"}
 )
 
-func mergeResourceList(into *map[string]interface{}, from map[string]interface{}) {
+func mergeResourceList(into *map[string]any, from map[string]any) {
 	if *into == nil {
 		*into = runtime.DeepCopyJSON(from)
 		return
@@ -30,15 +30,15 @@ func mergeResourceList(into *map[string]interface{}, from map[string]interface{}
 	}
 }
 
-func applyOldResourcesConfig(newPodSpec, oldPodSpec map[string]interface{}) error {
-	containerResourceReqs := make(map[string]map[string]interface{})
+func applyOldResourcesConfig(newPodSpec, oldPodSpec map[string]any) error {
+	containerResourceReqs := make(map[string]map[string]any)
 
-	oldContainers, err := nestedValueNoCopyOrError[[]interface{}](oldPodSpec, "containers")
+	oldContainers, err := nestedValueNoCopyOrError[[]any](oldPodSpec, "containers")
 	if err != nil {
 		return errors.Wrap(err, "retrieving containers field from old pod spec")
 	}
 	for _, ctrRaw := range oldContainers {
-		ctr, _ := ctrRaw.(map[string]interface{})
+		ctr, _ := ctrRaw.(map[string]any)
 		if ctr == nil {
 			return errors.New("non-map entry in old pod spec containers")
 		}
@@ -46,18 +46,18 @@ func applyOldResourcesConfig(newPodSpec, oldPodSpec map[string]interface{}) erro
 		if err != nil {
 			return errors.Wrap(err, "getting container name in old pod spec")
 		}
-		resources := nestedValueNoCopyOrDefault[map[string]interface{}](ctr, nil, "resources")
+		resources := nestedValueNoCopyOrDefault[map[string]any](ctr, nil, "resources")
 		if resources != nil {
 			containerResourceReqs[ctrName] = resources
 		}
 	}
 
-	newContainers, err := nestedValueNoCopyOrError[[]interface{}](newPodSpec, "containers")
+	newContainers, err := nestedValueNoCopyOrError[[]any](newPodSpec, "containers")
 	if err != nil {
 		return errors.Wrap(err, "retrieving containers field from new pod spec")
 	}
 	for _, ctrRaw := range newContainers {
-		ctr, _ := ctrRaw.(map[string]interface{})
+		ctr, _ := ctrRaw.(map[string]any)
 		if ctr == nil {
 			return errors.New("non-map entry in new pod spec containers")
 		}
@@ -69,21 +69,21 @@ func applyOldResourcesConfig(newPodSpec, oldPodSpec map[string]interface{}) erro
 		if oldResources == nil {
 			continue
 		}
-		newResources := nestedValueNoCopyOrDefault[map[string]interface{}](ctr, nil, "resources")
+		newResources := nestedValueNoCopyOrDefault[map[string]any](ctr, nil, "resources")
 		if newResources == nil {
-			newResources = make(map[string]interface{})
+			newResources = make(map[string]any)
 		}
-		oldRequests := nestedValueNoCopyOrDefault[map[string]interface{}](oldResources, nil, "requests")
+		oldRequests := nestedValueNoCopyOrDefault[map[string]any](oldResources, nil, "requests")
 		if oldRequests != nil {
-			newRequests := nestedValueNoCopyOrDefault[map[string]interface{}](newResources, nil, "requests")
+			newRequests := nestedValueNoCopyOrDefault[map[string]any](newResources, nil, "requests")
 			mergeResourceList(&newRequests, oldRequests)
 			if err := unstructured.SetNestedField(newResources, newRequests, "requests"); err != nil {
 				return errors.Wrapf(err, "could not set new resource requests for container %s", ctrName)
 			}
 		}
-		oldLimits := nestedValueNoCopyOrDefault[map[string]interface{}](oldResources, nil, "limits")
+		oldLimits := nestedValueNoCopyOrDefault[map[string]any](oldResources, nil, "limits")
 		if oldLimits != nil {
-			newLimits := nestedValueNoCopyOrDefault[map[string]interface{}](newResources, nil, "limits")
+			newLimits := nestedValueNoCopyOrDefault[map[string]any](newResources, nil, "limits")
 			mergeResourceList(&newLimits, oldLimits)
 			if err := unstructured.SetNestedField(newResources, newLimits, "limits"); err != nil {
 				return errors.Wrapf(err, "could not set new resource limits for container %s", ctrName)
@@ -96,7 +96,7 @@ func applyOldResourcesConfig(newPodSpec, oldPodSpec map[string]interface{}) erro
 	return nil
 }
 
-func getPodSpec(obj *unstructured.Unstructured) (map[string]interface{}, error) {
+func getPodSpec(obj *unstructured.Unstructured) (map[string]any, error) {
 	var podSpecPath []string
 	switch obj.GetObjectKind().GroupVersionKind() {
 	case deploymentGVK, daemonSetGVK:
@@ -109,7 +109,7 @@ func getPodSpec(obj *unstructured.Unstructured) (map[string]interface{}, error) 
 	if err != nil {
 		return nil, errors.Wrapf(err, "locating pod spec in object %s", k8sobjects.RefOf(obj))
 	}
-	podSpec, _ := podSpecRaw.(map[string]interface{})
+	podSpec, _ := podSpecRaw.(map[string]any)
 	if podSpec == nil {
 		return nil, errors.Errorf("did not find pod spec in object %s", k8sobjects.RefOf(obj))
 	}
@@ -150,7 +150,7 @@ func applyPreservedTolerations(newObj, oldObj *unstructured.Unstructured) error 
 		return errors.Wrap(err, "failed to extract pod spec from new object")
 	}
 
-	if tolerations := nestedValueNoCopyOrDefault[[]interface{}](oldPodSpec, nil, "tolerations"); tolerations != nil {
+	if tolerations := nestedValueNoCopyOrDefault[[]any](oldPodSpec, nil, "tolerations"); tolerations != nil {
 		if err := unstructured.SetNestedField(newPodSpec, tolerations, "tolerations"); err != nil {
 			return errors.Wrap(err, "failed to preserve tolerations from old pod spec")
 		}

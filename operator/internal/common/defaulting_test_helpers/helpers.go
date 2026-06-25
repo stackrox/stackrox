@@ -98,7 +98,7 @@ func checkObjectNoDefaults(t *testing.T, schema chartutil.Values) {
 	properties, err := schema.Table("properties")
 	require.NoErrorf(t, err, "%+v", schema)
 	for k, v := range properties {
-		prop := chartutil.Values(v.(map[string]interface{}))
+		prop := chartutil.Values(v.(map[string]any))
 		t.Run(k, func(t *testing.T) {
 			propType, err := prop.PathValue("type")
 			require.NoError(t, err)

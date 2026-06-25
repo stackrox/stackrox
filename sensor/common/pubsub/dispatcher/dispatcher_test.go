@@ -116,7 +116,7 @@ func (s *dispatcherSuite) Test_Publish() {
 		event           pubsub.Event
 		callback        testCallback
 		laneExpectCalls func(*mocks.MockLane, pubsub.EventCallback)
-		expectError     func(assert.TestingT, error, ...interface{}) bool
+		expectError     func(assert.TestingT, error, ...any) bool
 		handleWaitGroup func(*sync.WaitGroup)
 	}{
 		"should error with nil event": {

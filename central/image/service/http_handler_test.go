@@ -36,11 +36,11 @@ func getFakeSBOM(_ any) ([]byte, bool, error) {
 	return sbomBytes, true, nil
 }
 
-func createMockSBOM() map[string]interface{} {
-	return map[string]interface{}{
+func createMockSBOM() map[string]any {
+	return map[string]any{
 		"SPDXID":      "SPDXRef-DOCUMENT",
 		"spdxVersion": "SPDX-2.3",
-		"creationInfo": map[string]interface{}{
+		"creationInfo": map[string]any{
 			"created": "2023-08-30T04:40:16Z",
 			"creators": []string{
 				"Organization: xyz",

@@ -54,7 +54,7 @@ func TestWithDifferentFeatureFlags(t *testing.T) {
 				Flavor: &imageFlavor,
 				MetaValuesOverridesFunc: func(values *charts.MetaValues) {
 					if values.FeatureFlags == nil {
-						values.FeatureFlags = make(map[string]interface{})
+						values.FeatureFlags = make(map[string]any)
 					}
 					for name, setting := range testCaseSpec.featureFlags {
 						values.FeatureFlags[name] = setting

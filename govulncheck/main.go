@@ -23,7 +23,7 @@ type ExceptionConfig struct {
 	Exceptions map[string]*Exception `json:"exceptions"`
 }
 
-func printlnAndExitf(s string, args ...interface{}) {
+func printlnAndExitf(s string, args ...any) {
 	_, _ = fmt.Fprintf(os.Stderr, s+"\n", args...)
 	os.Exit(1)
 }
@@ -43,16 +43,16 @@ func readExceptionsFile() *ExceptionConfig {
 
 // Output is the output of the program
 type Output struct {
-	Data []map[string]interface{} `json:"data"`
+	Data []map[string]any `json:"data"`
 }
 
-func parseData(data map[string]interface{}, osvIDs map[string]struct{}, osvEntries map[string]map[string]interface{}) {
+func parseData(data map[string]any, osvIDs map[string]struct{}, osvEntries map[string]map[string]any) {
 	// OSV entries are now not tied to the module version but rather streamed continuously by govulncheck.
 	// We need to cache every OSV entry detected by govulncheck and in the end only return the
 	// ones which have findings on the module level.
 	keyMap, exists := data["osv"]
 	if exists {
-		osvEntry := keyMap.(map[string]interface{})
+		osvEntry := keyMap.(map[string]any)
 		osvEntries[osvEntry["id"].(string)] = osvEntry
 		return
 	}
@@ -65,7 +65,7 @@ func parseData(data map[string]interface{}, osvIDs map[string]struct{}, osvEntri
 		return
 	}
 
-	findingMap := keyMap.(map[string]interface{})
+	findingMap := keyMap.(map[string]any)
 	// Since the findings will potentially be duplicated when multiple traces are found
 	// (e.g. when multiple locations within a module are affected), we de-duplicate here.
 	osvID := findingMap["osv"].(string)
@@ -95,13 +95,13 @@ func collectAffectedVulnerabilities(vulnFile string, exceptionConfig *ExceptionC
 	defer func() { _ = file.Close() }()
 
 	output := &Output{
-		Data: make([]map[string]interface{}, 0),
+		Data: make([]map[string]any, 0),
 	}
 	decoder := json.NewDecoder(file)
 	uniqueOSVIDs := map[string]struct{}{}
-	osvEntries := map[string]map[string]interface{}{}
+	osvEntries := map[string]map[string]any{}
 	for {
-		data := make(map[string]interface{})
+		data := make(map[string]any)
 		err := decoder.Decode(&data)
 		if err != nil {
 			if err == io.EOF {

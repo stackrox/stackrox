@@ -16,7 +16,7 @@ import (
 var policyLoaderType = reflect.TypeFor[storage.Policy]()
 
 func init() {
-	RegisterTypeFactory(reflect.TypeFor[storage.Policy](), func() interface{} {
+	RegisterTypeFactory(reflect.TypeFor[storage.Policy](), func() any {
 		return NewPolicyLoader(policyDataStore.Singleton())
 	})
 }

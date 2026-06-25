@@ -46,8 +46,8 @@ const (
 
 // RenderAsYAML renders the CA config as a YAML file that can be used with Helm.
 func (c *CAConfig) RenderAsYAML() ([]byte, error) {
-	bundleMap := map[string]interface{}{
-		"ca": map[string]interface{}{
+	bundleMap := map[string]any{
+		"ca": map[string]any{
 			"cert": c.CACert,
 		},
 	}
@@ -62,9 +62,9 @@ func (c *CAConfig) RenderAsYAML() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func serviceTLS(cert *mtls.IssuedCert) map[string]interface{} {
-	return map[string]interface{}{
-		"serviceTLS": map[string]interface{}{
+func serviceTLS(cert *mtls.IssuedCert) map[string]any {
+	return map[string]any{
+		"serviceTLS": map[string]any{
 			"cert": string(cert.CertPEM),
 			"key":  string(cert.KeyPEM),
 		},
@@ -87,8 +87,8 @@ func (b *InitBundleWithMeta) RenderAsYAML() ([]byte, error) {
 		return nil, errors.New("no collector certificate in init bundle")
 	}
 
-	bundleMap := map[string]interface{}{
-		"ca": map[string]interface{}{
+	bundleMap := map[string]any{
+		"ca": map[string]any{
 			"cert": b.CACert,
 		},
 		"sensor":           serviceTLS(sensorTLS),

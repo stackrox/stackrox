@@ -16,7 +16,7 @@ func (e *gcePersistentDisk) Type() string {
 	return gcePersistentDiskType
 }
 
-func createGCEPersistentDisk(i interface{}) VolumeSource {
+func createGCEPersistentDisk(i any) VolumeSource {
 	gceVolume, ok := i.(*v1.GCEPersistentDiskVolumeSource)
 	if !ok {
 		return &Unimplemented{}

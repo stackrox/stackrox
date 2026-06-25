@@ -81,7 +81,7 @@ func TestMultiTableQueries(t *testing.T) {
 		expectedQueryPortion string
 		expectedFrom         string
 		expectedWhere        string
-		expectedData         []interface{}
+		expectedData         []any
 		expectedJoinTables   map[string]JoinType
 		expectedError        string
 	}{
@@ -91,7 +91,7 @@ func TestMultiTableQueries(t *testing.T) {
 			schema:        deploymentBaseSchema,
 			expectedFrom:  "deployments",
 			expectedWhere: "deployments.Name = $$",
-			expectedData:  []interface{}{"central"},
+			expectedData:  []any{"central"},
 		},
 		{
 			desc:               "child schema query",
@@ -100,7 +100,7 @@ func TestMultiTableQueries(t *testing.T) {
 			expectedFrom:       "deployments",
 			expectedWhere:      "deployments_containers.Image_Name_FullName = $$",
 			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner},
-			expectedData:       []interface{}{"stackrox"},
+			expectedData:       []any{"stackrox"},
 		},
 		{
 			desc: "base schema and child schema conjunction query",
@@ -111,7 +111,7 @@ func TestMultiTableQueries(t *testing.T) {
 			expectedFrom:       "deployments",
 			expectedWhere:      "(deployments.Name = $$ and deployments_containers.Image_Name_FullName = $$)",
 			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner},
-			expectedData:       []interface{}{"central", "stackrox"},
+			expectedData:       []any{"central", "stackrox"},
 		},
 		{
 			desc: "base schema and child schema disjunction query",
@@ -123,7 +123,7 @@ func TestMultiTableQueries(t *testing.T) {
 			expectedFrom:       "deployments",
 			expectedWhere:      "(deployments_containers.Image_Name_FullName = $$ or deployments.Name = $$)",
 			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner},
-			expectedData:       []interface{}{"central", "stackrox"},
+			expectedData:       []any{"central", "stackrox"},
 		},
 		{
 			desc: "multiple child schema query",
@@ -135,7 +135,7 @@ func TestMultiTableQueries(t *testing.T) {
 			expectedFrom:       "deployments",
 			expectedWhere:      "(deployments_containers.Image_Name_FullName = $$ and deployments_ports.Protocol = $$)",
 			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner, "deployments_ports": Inner},
-			expectedData:       []interface{}{"tcp", "stackrox"},
+			expectedData:       []any{"tcp", "stackrox"},
 		},
 		{
 			desc: "multiple child schema disjunction query",
@@ -147,7 +147,7 @@ func TestMultiTableQueries(t *testing.T) {
 			expectedFrom:       "deployments",
 			expectedWhere:      "(deployments_containers.Image_Name_FullName = $$ or deployments_ports.Protocol = $$)",
 			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner, "deployments_ports": Inner},
-			expectedData:       []interface{}{"tcp", "stackrox"},
+			expectedData:       []any{"tcp", "stackrox"},
 		},
 		{
 			desc: "base schema and child schema disjunction query; bool+match",
@@ -159,7 +159,7 @@ func TestMultiTableQueries(t *testing.T) {
 			expectedFrom:       "deployments",
 			expectedWhere:      "(deployments_containers.SecurityContext_Privileged = $$ or deployments.Name = $$)",
 			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner},
-			expectedData:       []interface{}{"central", "true"},
+			expectedData:       []any{"central", "true"},
 		},
 		{
 			desc:               "negated child schema query",
@@ -168,7 +168,7 @@ func TestMultiTableQueries(t *testing.T) {
 			expectedFrom:       "deployments",
 			expectedWhere:      "NOT (deployments_containers.Image_Name_FullName ilike $$)",
 			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner},
-			expectedData:       []interface{}{"central%"},
+			expectedData:       []any{"central%"},
 		},
 		{
 			desc:          "nil query",
@@ -176,7 +176,7 @@ func TestMultiTableQueries(t *testing.T) {
 			schema:        deploymentBaseSchema,
 			expectedFrom:  "deployments",
 			expectedWhere: "",
-			expectedData:  []interface{}{},
+			expectedData:  []any{},
 		},
 		{
 			desc: "id and match non query",
@@ -187,7 +187,7 @@ func TestMultiTableQueries(t *testing.T) {
 			schema:        deploymentBaseSchema,
 			expectedFrom:  "deployments",
 			expectedWhere: "(deployments.Id = ANY($$::uuid[]) and false)",
-			expectedData:  []interface{}{[]string{"123"}},
+			expectedData:  []any{[]string{"123"}},
 		},
 		{
 			desc: "base schema and child schema conjunction query on base ID",
@@ -198,7 +198,7 @@ func TestMultiTableQueries(t *testing.T) {
 			expectedFrom:       "deployments",
 			expectedWhere:      "(deployments.Id = $$ and deployments_containers.Image_Name_FullName = $$)",
 			expectedJoinTables: map[string]JoinType{"deployments_containers": Inner},
-			expectedData:       []interface{}{uuid.NewDummy(), "stackrox"},
+			expectedData:       []any{uuid.NewDummy(), "stackrox"},
 		},
 		{
 			desc: "base schema and child schema conjunction query on base invalid ID",
@@ -228,7 +228,7 @@ func TestMultiTableQueries(t *testing.T) {
 				ProtoQuery(),
 			schema:        imagesSchema,
 			expectedFrom:  "images",
-			expectedData:  []interface{}{"false", "0"},
+			expectedData:  []any{"false", "0"},
 			expectedWhere: "((deployments.PlatformComponent = $$ or deployments.PlatformComponent is null) and image_cves_v2.State = $$)",
 			expectedJoinTables: map[string]JoinType{
 				"image_cves_v2":          Inner,
@@ -271,7 +271,7 @@ func TestCountQueries(t *testing.T) {
 		q                 *v1.Query
 		schema            *walker.Schema
 		expectedStatement string
-		expectedData      []interface{}
+		expectedData      []any
 		expectedError     string
 	}{
 		{
@@ -280,7 +280,7 @@ func TestCountQueries(t *testing.T) {
 			q:                 search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
 			schema:            deploymentBaseSchema,
 			expectedStatement: normalizeStatement(`select count(*) from deployments where deployments.Name = $1`),
-			expectedData:      []interface{}{"central"},
+			expectedData:      []any{"central"},
 		},
 		{
 			desc:              "base schema query, multiple matches",
@@ -288,7 +288,7 @@ func TestCountQueries(t *testing.T) {
 			q:                 search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "A", "B").ProtoQuery(),
 			schema:            deploymentBaseSchema,
 			expectedStatement: "select count(*) from deployments where deployments.Name IN ($1, $2)",
-			expectedData:      []interface{}{"A", "B"},
+			expectedData:      []any{"A", "B"},
 		},
 		{
 			desc:   "child schema query",
@@ -298,7 +298,7 @@ func TestCountQueries(t *testing.T) {
 			expectedStatement: normalizeStatement(`select count(distinct(deployments.Id)) from deployments
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				where deployments_containers.Image_Name_FullName = $1`),
-			expectedData: []interface{}{"stackrox"},
+			expectedData: []any{"stackrox"},
 		},
 		{
 			desc: "base schema and child schema conjunction query",
@@ -310,7 +310,7 @@ func TestCountQueries(t *testing.T) {
 			expectedStatement: normalizeStatement(`select count(distinct(deployments.Id)) from deployments
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)`),
-			expectedData: []interface{}{"central", "stackrox"},
+			expectedData: []any{"central", "stackrox"},
 		},
 		{
 			desc: "base schema and child schema disjunction query",
@@ -323,7 +323,7 @@ func TestCountQueries(t *testing.T) {
 			expectedStatement: normalizeStatement(`select count(distinct(deployments.Id)) from deployments
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				where (deployments_containers.Image_Name_FullName = $1 or deployments.Name = $2)`),
-			expectedData: []interface{}{"stackrox", "central"},
+			expectedData: []any{"stackrox", "central"},
 		},
 		{
 			desc: "base schema and child schema disjunction query multiple values",
@@ -337,7 +337,7 @@ func TestCountQueries(t *testing.T) {
 			expectedStatement: normalizeStatement(`select count(distinct(deployments.Id)) from deployments
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				where (deployments_containers.Image_Name_FullName IN ($1, $2) or deployments.Name IN ($3, $4, $5) or deployments.Name = $6)`),
-			expectedData: []interface{}{"A", "B", "X", "Y", "Z", "X"},
+			expectedData: []any{"A", "B", "X", "Y", "Z", "X"},
 		},
 		{
 			desc: "base schema mix of conjunction and disjunction queries",
@@ -358,7 +358,7 @@ func TestCountQueries(t *testing.T) {
 			schema: alertSchema,
 			expectedStatement: normalizeStatement(`select count(*) from alerts
 				where ((alerts.ClusterId = $1 and alerts.Namespace = $2) and alerts.State IN ($3, $4))`),
-			expectedData: []interface{}{uuid.FromStringOrPanic("caaaaaaa-bbbb-4011-0000-111111111111"), "namespace", "3", "0"},
+			expectedData: []any{uuid.FromStringOrPanic("caaaaaaa-bbbb-4011-0000-111111111111"), "namespace", "3", "0"},
 		},
 		{
 			desc: "multiple child schema query",
@@ -372,7 +372,7 @@ func TestCountQueries(t *testing.T) {
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				inner join deployments_ports on deployments.Id = deployments_ports.deployments_Id
 				where (deployments_containers.Image_Name_FullName = $1 and deployments_ports.Protocol = $2)`),
-			expectedData: []interface{}{"stackrox", "tcp"},
+			expectedData: []any{"stackrox", "tcp"},
 		},
 		{
 			desc: "multiple child schema disjunction query",
@@ -386,7 +386,7 @@ func TestCountQueries(t *testing.T) {
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				inner join deployments_ports on deployments.Id = deployments_ports.deployments_Id
 				where (deployments_containers.Image_Name_FullName = $1 or deployments_ports.Protocol = $2)`),
-			expectedData: []interface{}{"stackrox", "tcp"},
+			expectedData: []any{"stackrox", "tcp"},
 		},
 		{
 			desc: "base schema and child schema disjunction query; bool+match",
@@ -399,7 +399,7 @@ func TestCountQueries(t *testing.T) {
 			expectedStatement: normalizeStatement(`select count(distinct(deployments.Id)) from deployments
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				where (deployments_containers.SecurityContext_Privileged = $1 or deployments.Name = $2)`),
-			expectedData: []interface{}{"true", "central"},
+			expectedData: []any{"true", "central"},
 		},
 		{
 			desc:   "negated child schema query",
@@ -409,7 +409,7 @@ func TestCountQueries(t *testing.T) {
 			expectedStatement: normalizeStatement(`select count(distinct(deployments.Id)) from deployments
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				where NOT (deployments_containers.Image_Name_FullName ilike $1)`),
-			expectedData: []interface{}{"central%"},
+			expectedData: []any{"central%"},
 		},
 		{
 			desc:              "nil query",
@@ -417,7 +417,7 @@ func TestCountQueries(t *testing.T) {
 			q:                 nil,
 			schema:            deploymentBaseSchema,
 			expectedStatement: normalizeStatement(`select count(*) from deployments`),
-			expectedData:      []interface{}(nil),
+			expectedData:      []any(nil),
 		},
 		{
 			desc: "id and match non query",
@@ -429,7 +429,7 @@ func TestCountQueries(t *testing.T) {
 			schema: deploymentBaseSchema,
 			expectedStatement: normalizeStatement(`select count(*) from deployments
 				where (deployments.Id = ANY($1::uuid[]) and false)`),
-			expectedData: []interface{}{[]string{"123"}},
+			expectedData: []any{[]string{"123"}},
 		},
 		{
 			desc: "base schema and child schema conjunction query on base ID",
@@ -441,7 +441,7 @@ func TestCountQueries(t *testing.T) {
 			expectedStatement: normalizeStatement(`select count(distinct(deployments.Id)) from deployments
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				where (deployments.Id = $1 and deployments_containers.Image_Name_FullName = $2)`),
-			expectedData: []interface{}{uuid.NewDummy(), "stackrox"},
+			expectedData: []any{uuid.NewDummy(), "stackrox"},
 		},
 		{
 			desc: "base schema and child schema conjunction query on base invalid ID",
@@ -475,7 +475,7 @@ func TestCountQueries(t *testing.T) {
 				AddStrings(search.PlatformComponent, "false", "-").
 				ProtoQuery(),
 			schema:       imagesSchema,
-			expectedData: []interface{}{"false", "0"},
+			expectedData: []any{"false", "0"},
 			expectedStatement: normalizeStatement(`select count(distinct(images.Id)) from images
 				left join deployments_containers on images.Id = deployments_containers.Image_Id
 				left join deployments on deployments_containers.deployments_Id = deployments.Id
@@ -1115,7 +1115,7 @@ func TestGetQueries(t *testing.T) {
 		q             *v1.Query
 		schema        *walker.Schema
 		expectedQuery string
-		expectedData  []interface{}
+		expectedData  []any
 		expectedError string
 	}{
 		{
@@ -1124,7 +1124,7 @@ func TestGetQueries(t *testing.T) {
 			q:             search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
 			schema:        deploymentBaseSchema,
 			expectedQuery: `select deployments.serialized from deployments where deployments.Name = $1`,
-			expectedData:  []interface{}{"central"},
+			expectedData:  []any{"central"},
 		},
 		{
 			desc:          "nil query - GET",
@@ -1132,7 +1132,7 @@ func TestGetQueries(t *testing.T) {
 			q:             nil,
 			schema:        deploymentBaseSchema,
 			expectedQuery: `select deployments.serialized from deployments`,
-			expectedData:  []interface{}(nil),
+			expectedData:  []any(nil),
 		},
 		{
 			desc:   "child schema query - GET with joins",
@@ -1143,7 +1143,7 @@ func TestGetQueries(t *testing.T) {
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				where deployments_containers.Image_Name_FullName = $1
 				group by deployments.Id, deployments.serialized`),
-			expectedData: []interface{}{"stackrox"},
+			expectedData: []any{"stackrox"},
 		},
 		{
 			desc: "base schema and child schema conjunction query - GET",
@@ -1156,7 +1156,7 @@ func TestGetQueries(t *testing.T) {
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)
 				group by deployments.Id, deployments.serialized`),
-			expectedData: []interface{}{"central", "stackrox"},
+			expectedData: []any{"central", "stackrox"},
 		},
 		{
 			desc: "multiple child schema query - GET",
@@ -1171,7 +1171,7 @@ func TestGetQueries(t *testing.T) {
 				inner join deployments_ports on deployments.Id = deployments_ports.deployments_Id
 				where (deployments_containers.Image_Name_FullName = $1 and deployments_ports.Protocol = $2)
 				group by deployments.Id, deployments.serialized`),
-			expectedData: []interface{}{"stackrox", "tcp"},
+			expectedData: []any{"stackrox", "tcp"},
 		},
 		{
 			desc: "base schema and child schema disjunction query - GET",
@@ -1185,7 +1185,7 @@ func TestGetQueries(t *testing.T) {
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				where (deployments_containers.Image_Name_FullName = $1 or deployments.Name = $2)
 				group by deployments.Id, deployments.serialized`),
-			expectedData: []interface{}{"stackrox", "central"},
+			expectedData: []any{"stackrox", "central"},
 		},
 		{
 			desc:   "negated child schema query - GET",
@@ -1196,7 +1196,7 @@ func TestGetQueries(t *testing.T) {
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				where NOT (deployments_containers.Image_Name_FullName ilike $1)
 				group by deployments.Id, deployments.serialized`),
-			expectedData: []interface{}{"central%"},
+			expectedData: []any{"central%"},
 		},
 		{
 			desc: "id query - GET",
@@ -1207,7 +1207,7 @@ func TestGetQueries(t *testing.T) {
 			),
 			schema:        deploymentBaseSchema,
 			expectedQuery: `select deployments.serialized from deployments where (deployments.Id = ANY($1::uuid[]) and false)`,
-			expectedData:  []interface{}{[]string{"123"}},
+			expectedData:  []any{[]string{"123"}},
 		},
 		{
 			desc: "base schema and child schema conjunction query on base ID - GET",
@@ -1220,7 +1220,7 @@ func TestGetQueries(t *testing.T) {
 				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
 				where (deployments.Id = $1 and deployments_containers.Image_Name_FullName = $2)
 				group by deployments.Id, deployments.serialized`),
-			expectedData: []interface{}{uuid.NewDummy(), "stackrox"},
+			expectedData: []any{uuid.NewDummy(), "stackrox"},
 		},
 		{
 			desc: "base schema and child schema conjunction query on base invalid ID - GET",
@@ -1286,7 +1286,7 @@ func TestGetQueries(t *testing.T) {
 				where deployments_containers.Image_Name_FullName = $1
 				group by deployments.Id, deployments.serialized
 				order by MIN(deployments_containers.Image_Name_FullName) asc nulls last LIMIT 10`),
-			expectedData: []interface{}{"test"},
+			expectedData: []any{"test"},
 		},
 		{
 			desc: "images ordered by CVE severity using join to ImageCVEV2 - GET",
@@ -1312,7 +1312,7 @@ func TestGetQueries(t *testing.T) {
 				where image_cves_v2.CveBaseInfo_Cve is not null
 				group by images.Id, images.serialized
 				order by MAX(image_cves_v2.Cvss) desc nulls last LIMIT 20`),
-			expectedData: []interface{}(nil),
+			expectedData: []any(nil),
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
@@ -1344,20 +1344,20 @@ func TestGetQueries(t *testing.T) {
 }
 
 func TestCombineQueryEntries_PostTransformComposition(t *testing.T) {
-	makeTransform := func(values []string) func(interface{}) interface{} {
-		return func(_ interface{}) interface{} { return values }
+	makeTransform := func(values []string) func(any) any {
+		return func(_ any) any { return values }
 	}
 
 	cases := map[string]struct {
 		entries           []*pgsearch.QueryEntry
 		expectedWhere     string
-		expectedValues    []interface{}
+		expectedValues    []any
 		expectedTransform []string // nil means PostTransform should be nil
 	}{
 		"two label filters are composed": {
 			entries: []*pgsearch.QueryEntry{
 				{
-					Where: pgsearch.WhereClause{Query: "cond_a", Values: []interface{}{"a"}},
+					Where: pgsearch.WhereClause{Query: "cond_a", Values: []any{"a"}},
 					SelectedFields: []pgsearch.SelectQueryField{{
 						SelectPath:    "deployments.Labels",
 						FieldPath:     "deployment.labels",
@@ -1365,7 +1365,7 @@ func TestCombineQueryEntries_PostTransformComposition(t *testing.T) {
 					}},
 				},
 				{
-					Where: pgsearch.WhereClause{Query: "cond_b", Values: []interface{}{"b"}},
+					Where: pgsearch.WhereClause{Query: "cond_b", Values: []any{"b"}},
 					SelectedFields: []pgsearch.SelectQueryField{{
 						SelectPath:    "deployments.Labels",
 						FieldPath:     "deployment.labels",
@@ -1374,7 +1374,7 @@ func TestCombineQueryEntries_PostTransformComposition(t *testing.T) {
 				},
 			},
 			expectedWhere:     "(cond_a or cond_b)",
-			expectedValues:    []interface{}{"a", "b"},
+			expectedValues:    []any{"a", "b"},
 			expectedTransform: []string{"app=visa", "app=mastercard"},
 		},
 		"three filters chain correctly": {

@@ -43,7 +43,7 @@ func deriveLocalValuesForChart(env environment.Environment, namespace, chartName
 }
 
 // Remove nils from the given map, serialize it as YAML and write it to the output stream.
-func writeYamlToStream(values map[string]interface{}, outputHandle io.Writer) error {
+func writeYamlToStream(values map[string]any, outputHandle io.Writer) error {
 	yaml, err := yaml.Marshal(values)
 	if err != nil {
 		return errors.Wrap(err, "YAML marshalling")
@@ -57,7 +57,7 @@ func writeYamlToStream(values map[string]interface{}, outputHandle io.Writer) er
 	return nil
 }
 
-func writeYamlToFile(values map[string]interface{}, path string) error {
+func writeYamlToFile(values map[string]any, path string) error {
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return errors.Wrapf(err, "opening file %q", path)
@@ -83,7 +83,7 @@ func writeYamlToFile(values map[string]interface{}, path string) error {
 	return nil
 }
 
-func writeValuesToOutput(env environment.Environment, publicValues, privateValues map[string]interface{}, output string, useDirectory bool) error {
+func writeValuesToOutput(env environment.Environment, publicValues, privateValues map[string]any, output string, useDirectory bool) error {
 	var err error
 
 	if useDirectory {
@@ -161,7 +161,7 @@ func deriveLocalValuesForCentralServices(ctx context.Context, env environment.En
 }
 
 // Implementation for command `helm derive-local-values`.
-func helmValuesForCentralServices(ctx context.Context, namespace string, k8s k8sObjectDescription) (map[string]interface{}, map[string]interface{}, error) {
+func helmValuesForCentralServices(ctx context.Context, namespace string, k8s k8sObjectDescription) (map[string]any, map[string]any, error) {
 	var err error
 
 	publicValues, publicErr := derivePublicLocalValuesForCentralServices(ctx, namespace, k8s)
@@ -185,41 +185,41 @@ func helmValuesForCentralServices(ctx context.Context, namespace string, k8s k8s
 }
 
 // Implementation for command `helm derive-local-values`.
-func derivePrivateLocalValuesForCentralServices(ctx context.Context, _ string, k8s k8sObjectDescription) (map[string]interface{}, error) {
-	m := map[string]interface{}{
+func derivePrivateLocalValuesForCentralServices(ctx context.Context, _ string, k8s k8sObjectDescription) (map[string]any, error) {
+	m := map[string]any{
 		"licenseKey": k8s.lookupSecretStringP(ctx, "central-license", "license.lic"),
-		"env": map[string]interface{}{
+		"env": map[string]any{
 			"proxyConfig": k8s.lookupSecretStringP(ctx, "proxy-config", "config.yaml"),
 		},
-		"ca": map[string]interface{}{
+		"ca": map[string]any{
 			"cert": k8s.lookupSecretStringP(ctx, "central-tls", "ca.pem"),
 			"key":  k8s.lookupSecretStringP(ctx, "central-tls", "ca-key.pem"),
 		},
-		"central": map[string]interface{}{
-			"jwtSigner": map[string]interface{}{
+		"central": map[string]any{
+			"jwtSigner": map[string]any{
 				"key": k8s.lookupSecretStringP(ctx, "central-tls", "jwt-key.pem"),
 			},
-			"serviceTLS": map[string]interface{}{
+			"serviceTLS": map[string]any{
 				"cert": k8s.lookupSecretStringP(ctx, "central-tls", "cert.pem"),
 				"key":  k8s.lookupSecretStringP(ctx, "central-tls", "key.pem"),
 			},
-			"defaultTLS": map[string]interface{}{
+			"defaultTLS": map[string]any{
 				"cert": k8s.lookupSecretStringP(ctx, "central-default-tls-cert", "tls.crt"),
 				"key":  k8s.lookupSecretStringP(ctx, "central-default-tls-cert", "tls.key"),
 			},
-			"adminPassword": map[string]interface{}{
+			"adminPassword": map[string]any{
 				"htpasswd": k8s.lookupSecretStringP(ctx, "central-htpasswd", "htpasswd"),
 			},
 		},
-		"scanner": map[string]interface{}{
-			"dbPassword": map[string]interface{}{
+		"scanner": map[string]any{
+			"dbPassword": map[string]any{
 				"value": k8s.lookupSecretStringP(ctx, "scanner-db-password", "password"),
 			},
-			"serviceTLS": map[string]interface{}{
+			"serviceTLS": map[string]any{
 				"cert": k8s.lookupSecretStringP(ctx, "scanner-tls", "cert.pem"),
 				"key":  k8s.lookupSecretStringP(ctx, "scanner-tls", "key.pem"),
 			},
-			"dbServiceTLS": map[string]interface{}{
+			"dbServiceTLS": map[string]any{
 				"cert": k8s.lookupSecretStringP(ctx, "scanner-db-tls", "cert.pem"),
 				"key":  k8s.lookupSecretStringP(ctx, "scanner-db-tls", "key.pem"),
 			},
@@ -230,25 +230,25 @@ func derivePrivateLocalValuesForCentralServices(ctx context.Context, _ string, k
 }
 
 // Implementation for command `helm derive-local-values`.
-func derivePublicLocalValuesForCentralServices(ctx context.Context, _ string, k8s k8sObjectDescription) (map[string]interface{}, error) {
+func derivePublicLocalValuesForCentralServices(ctx context.Context, _ string, k8s k8sObjectDescription) (map[string]any, error) {
 
 	// Note regarding custom metadata (annotations, labels and env vars): We make it easy for us:
 	// we simply retrieve the metadata from the central deployment and assume that any custom metadata
 	// on that resource is to be used globally for all StackRox resources.
 
-	var scannerConfig map[string]interface{}
+	var scannerConfig map[string]any
 	if k8s.Exists(ctx, "deployment", "scanner") {
-		scannerConfig = map[string]interface{}{
+		scannerConfig = map[string]any{
 			"replicas": k8s.evaluateToInt64(ctx, "deployment", "scanner", `{.spec.replicas}`, 3),
 			"autoscaling": k8s.evaluateToSubObject(ctx, "hpa", "scanner", `{.spec}`, []string{"minReplicas", "maxReplicas"},
-				map[string]interface{}{"disable": true}),
+				map[string]any{"disable": true}),
 			"resources": k8s.evaluateToObject(ctx, "deployment", "scanner",
 				`{.spec.template.spec.containers[?(@.name == "scanner")].resources}`, nil),
-			"image": map[string]interface{}{
+			"image": map[string]any{
 				"registry": extractImageRegistry(k8s.evaluateToString(ctx, "deployment", "scanner",
 					`{.spec.template.spec.containers[?(@.name == "scanner")].image}`, ""), "scanner"),
 			},
-			"dbImage": map[string]interface{}{
+			"dbImage": map[string]any{
 				"registry": extractImageRegistry(k8s.evaluateToString(ctx, "deployment", "scanner-db",
 					`{.spec.template.spec.containers[?(@.name == "db")].image}`, ""), "scanner-db"),
 			},
@@ -256,33 +256,33 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, _ string, k8
 				`{.spec.template.spec.containers[?(@.name == "db")].resources}`, nil),
 		}
 	} else {
-		scannerConfig = map[string]interface{}{
+		scannerConfig = map[string]any{
 			"disable": true,
 		}
 	}
 
 	declarativeConfigMounts := retrieveDeclarativeConfigMounts(ctx, k8s)
-	m := map[string]interface{}{
+	m := map[string]any{
 		// "image": We do not specify a global registry,
 		// instead we only specify central- and scanner-specific registries.
-		"env": map[string]interface{}{
+		"env": map[string]any{
 			"offlineMode": k8s.evaluateToString(ctx, "deployment", "central",
 				`{.spec.template.spec.containers[?(@.name == "central")].env[?(@.name == "ROX_OFFLINE_MODE")].value}`,
 				"false") == "true",
 		},
-		"central": map[string]interface{}{
-			"telemetry": map[string]interface{}{
+		"central": map[string]any{
+			"telemetry": map[string]any{
 				"enabled": k8s.evaluateToString(ctx, "deployment", "central",
 					`{.spec.template.spec.containers[?(@.name == "central")].env[?(@.name == "ROX_TELEMETRY_STORAGE_KEY_V1")].value}`, "") != "",
-				"storage": map[string]interface{}{
+				"storage": map[string]any{
 					"endpoint": k8s.evaluateToString(ctx, "deployment", "central",
 						`{.spec.template.spec.containers[?(@.name == "central")].env[?(@.name == "ROX_TELEMETRY_ENDPOINT")].value}`, ""),
 					"key": k8s.evaluateToString(ctx, "deployment", "central",
 						`{.spec.template.spec.containers[?(@.name == "central")].env[?(@.name == "ROX_TELEMETRY_STORAGE_KEY_V1")].value}`, ""),
 				},
 			},
-			"declarativeConfig": map[string]interface{}{
-				"mounts": map[string]interface{}{
+			"declarativeConfig": map[string]any{
+				"mounts": map[string]any{
 					"configMaps": retrieveDeclarativeConfigConfigMaps(ctx, k8s, declarativeConfigMounts),
 					"secrets":    retrieveDeclarativeConfigSecrets(ctx, k8s, declarativeConfigMounts),
 				},
@@ -291,11 +291,11 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, _ string, k8
 			"dbConfig":        k8s.evaluateToStringP(ctx, "configmap", "central-db-connection", `{.data['central-db-connection\.yaml']}`),
 			"endpointsConfig": k8s.evaluateToStringP(ctx, "configmap", "central-endpoints", `{.data['endpoints\.yaml']}`),
 			"nodeSelector":    k8s.evaluateToObject(ctx, "deployment", "central", `{.spec.template.spec.nodeSelector}`, nil),
-			"image": map[string]interface{}{
+			"image": map[string]any{
 				"registry": extractImageRegistry(k8s.evaluateToString(ctx, "deployment", "central",
 					`{.spec.template.spec.containers[?(@.name == "central")].image}`, ""), "main"),
 			},
-			"dbImage": map[string]interface{}{
+			"dbImage": map[string]any{
 				"registry": extractImageRegistry(k8s.evaluateToString(ctx, "deployment", "central-db",
 					`{.spec.template.spec.containers[?(@.name == "central-db")].image}`, ""), "central-db"),
 			},
@@ -303,18 +303,18 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, _ string, k8
 				`{.spec.template.spec.containers[?(@.name == "central")].resources}`, nil),
 			// Regarding the exposure configuration: Currently we make the assumption that the default port (443) is unchanged.
 			// Can be improved to also fetch the port information from the central-loadbalancer service.
-			"exposure": map[string]interface{}{
-				"loadBalancer": map[string]interface{}{
+			"exposure": map[string]any{
+				"loadBalancer": map[string]any{
 					"enabled": k8s.evaluateToString(ctx, "service", "central-loadbalancer", `{.spec.type}`, "") == "LoadBalancer",
 				},
-				"nodePort": map[string]interface{}{
+				"nodePort": map[string]any{
 					"enabled": k8s.evaluateToString(ctx, "service", "central-loadbalancer", `{.spec.type}`, "") == "NodePort",
 				},
 			},
 			"enableCentralDB": k8s.evaluateToString(ctx, "service", "central-db", `{.spec.type}`, "") != "",
 		},
 		"scanner": scannerConfig,
-		"customize": map[string]interface{}{
+		"customize": map[string]any{
 			"annotations": retrieveCustomAnnotations(k8s.evaluateToObject(ctx, "deployment", "central",
 				`{.metadata.annotations}`, nil)),
 			"labels": retrieveCustomLabels(k8s.evaluateToObject(ctx, "deployment", "central",
@@ -326,8 +326,8 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, _ string, k8
 			"envVars": retrieveCustomEnvVars(envVarSliceToObj(k8s.evaluateToSlice(ctx, "deployment", "central",
 				`{.spec.template.spec.containers[?(@.name == "central")].env}`, nil))),
 		},
-		"monitoring": map[string]interface{}{
-			"openshift": map[string]interface{}{
+		"monitoring": map[string]any{
+			"openshift": map[string]any{
 				"enabled": k8s.evaluateToString(ctx, "deployment", "central",
 					`{.spec.template.spec.containers[?(@.name == "central")].env[?(@.name == "ROX_ENABLE_SECURE_METRICS")].value}`, "false") == "true",
 			},
@@ -367,7 +367,7 @@ func retrieveDeclarativeConfigMounts(ctx context.Context, k8s k8sObjectDescripti
 	return declarativeConfigMounts
 }
 
-func retrieveCustomAnnotations(annotations map[string]interface{}) map[string]interface{} {
+func retrieveCustomAnnotations(annotations map[string]any) map[string]any {
 	return filterMap(annotations, []string{
 		"deployment.kubernetes.io/revision",
 		"meta.helm.sh/release-name",
@@ -378,7 +378,7 @@ func retrieveCustomAnnotations(annotations map[string]interface{}) map[string]in
 	})
 }
 
-func retrieveCustomLabels(labels map[string]interface{}) map[string]interface{} {
+func retrieveCustomLabels(labels map[string]any) map[string]any {
 	return filterMap(labels, []string{
 		"app",
 		"app.kubernets.io/component", // typo that existed in old versions
@@ -393,7 +393,7 @@ func retrieveCustomLabels(labels map[string]interface{}) map[string]interface{} 
 	})
 }
 
-func retrieveCustomEnvVars(envVars map[string]interface{}) map[string]interface{} {
+func retrieveCustomEnvVars(envVars map[string]any) map[string]any {
 	return filterMap(envVars, []string{env.OfflineModeEnv.EnvVar()})
 }
 

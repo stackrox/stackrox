@@ -27,7 +27,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 	storeProvider := InitializeStore(nil)
 	cases := []struct {
 		name               string
-		inputObj           interface{}
+		inputObj           any
 		deploymentType     string
 		action             central.ResourceAction
 		podLister          *mockPodLister

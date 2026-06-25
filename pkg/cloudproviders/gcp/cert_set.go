@@ -16,16 +16,16 @@ const (
 )
 
 type certSet struct {
-	keys map[string]interface{}
+	keys map[string]any
 }
 
-func (s *certSet) GetKey(kid string) interface{} {
+func (s *certSet) GetKey(kid string) any {
 	return s.keys[kid]
 }
 
 func (s *certSet) Fetch(ctx context.Context) error {
 	if s.keys == nil {
-		s.keys = make(map[string]interface{})
+		s.keys = make(map[string]any)
 	}
 
 	req, err := http.NewRequest(http.MethodGet, certsURL, nil)

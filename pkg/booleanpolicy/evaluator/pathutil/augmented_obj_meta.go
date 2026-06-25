@@ -64,7 +64,7 @@ type AugmentedObjMeta struct {
 // NewAugmentedObjMeta takes an object and creates an augmented obj.
 // The object value is not important, only its type matters.
 // Callers can use the AddObjectAt methods to add augments.
-func NewAugmentedObjMeta(exampleObj interface{}) *AugmentedObjMeta {
+func NewAugmentedObjMeta(exampleObj any) *AugmentedObjMeta {
 	return &AugmentedObjMeta{typ: reflect.TypeOf(exampleObj)}
 }
 
@@ -97,7 +97,7 @@ func (o *AugmentedObjMeta) AddAugmentedObjectAt(path []string, childObjMeta *Aug
 
 // AddPlainObjectAt is like AddAugmentedObjectAt, but takes a plain, non-augmented child object.
 // As with NewAugmentedObjMeta, the actual value of childObj does not matter, only its type does.
-func (o *AugmentedObjMeta) AddPlainObjectAt(path []string, childObj interface{}) *AugmentedObjMeta {
+func (o *AugmentedObjMeta) AddPlainObjectAt(path []string, childObj any) *AugmentedObjMeta {
 	return o.AddAugmentedObjectAt(path, NewAugmentedObjMeta(childObj))
 }
 

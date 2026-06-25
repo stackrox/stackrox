@@ -105,7 +105,7 @@ func NewJUnitPrinter(suiteName string, jsonPathExpressions map[string]string) *J
 // Print will print a JUnit compatible output to the io.Writer.
 // It will return an error if there is an issue with the JSON object, the JUnit report could not be generated
 // or it was not possible to write to the io.Writer.
-func (j *JUnitPrinter) Print(object interface{}, out io.Writer) error {
+func (j *JUnitPrinter) Print(object any, out io.Writer) error {
 	data, err := retrieveJUnitSuiteData(object, j.jsonPathExpressions)
 	if err != nil {
 		return err
@@ -134,7 +134,7 @@ func (j *JUnitPrinter) Print(object interface{}, out io.Writer) error {
 
 // retrieveJUnitSuiteData retrieves all required data from the JSON object to create a JUnit test suite.
 // It returns the test case names, failed test case names and the failed test case error messages.
-func retrieveJUnitSuiteData(jsonObj interface{}, junitJSONPathExpressions map[string]string) (map[string][]string, error) {
+func retrieveJUnitSuiteData(jsonObj any, junitJSONPathExpressions map[string]string) (map[string][]string, error) {
 	sliceMapper, err := gjson.NewSliceMapper(jsonObj, junitJSONPathExpressions)
 	if err != nil {
 		return nil, err

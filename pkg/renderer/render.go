@@ -12,7 +12,7 @@ import (
 
 // RenderFiles takes the template files from the given FileNameMap, and instantiates them with the given values. The
 // results are returned as ZipFiles.
-func RenderFiles(filenames map[string]string, values interface{}) ([]*zip.File, error) {
+func RenderFiles(filenames map[string]string, values any) ([]*zip.File, error) {
 	helmImage := image.GetDefaultImage()
 	var files []*zip.File
 	for f, tgtName := range filenames {

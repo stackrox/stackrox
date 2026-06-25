@@ -194,7 +194,7 @@ type TokenRefreshResponse struct {
 	Expiry time.Time `json:"expiry,omitzero"`
 }
 
-func (r *registryImpl) tokenRefreshEndpoint(req *http.Request) (interface{}, error) {
+func (r *registryImpl) tokenRefreshEndpoint(req *http.Request) (any, error) {
 	refreshTokenCookie, err := req.Cookie(RefreshTokenCookieName)
 	if err != nil {
 		return nil, httputil.Errorf(http.StatusBadRequest, "could not obtain refresh token cookie: %v", err)
@@ -388,7 +388,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	w.WriteHeader(http.StatusSeeOther)
 }
 
-func (r *registryImpl) logoutEndpoint(req *http.Request) (interface{}, error) {
+func (r *registryImpl) logoutEndpoint(req *http.Request) (any, error) {
 	if req.Method != http.MethodPost {
 		return nil, httputil.NewError(http.StatusMethodNotAllowed, "only POST requests are allowed")
 	}

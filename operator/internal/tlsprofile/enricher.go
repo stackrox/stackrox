@@ -29,8 +29,8 @@ func (e *enricher) Enrich(_ context.Context, _ k8sutil.Object, vals chartutil.Va
 	}
 
 	tlsVals := chartutil.Values{
-		"customize": map[string]interface{}{
-			"envVars": map[string]interface{}{
+		"customize": map[string]any{
+			"envVars": map[string]any{
 				"ROX_TLS_MIN_VERSION":           profile.MinVersion,
 				"ROX_TLS_CIPHER_SUITES":         profile.CipherSuites,
 				"ROX_OPENSSL_TLS_CIPHER_SUITES": profile.OpenSSLCiphers,

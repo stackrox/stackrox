@@ -4,12 +4,12 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-func filterMap(m map[string]interface{}, keysToDelete []string) map[string]interface{} {
+func filterMap(m map[string]any, keysToDelete []string) map[string]any {
 	if m == nil {
 		return nil
 	}
 	setKeysToDelete := set.NewStringSet(keysToDelete...)
-	mReduced := make(map[string]interface{})
+	mReduced := make(map[string]any)
 	for k, v := range m {
 		if !setKeysToDelete.Contains(k) {
 			mReduced[k] = v
@@ -21,11 +21,11 @@ func filterMap(m map[string]interface{}, keysToDelete []string) map[string]inter
 	return mReduced
 }
 
-func envVarSliceToObj(slice []interface{}) map[string]interface{} {
-	newObj := make(map[string]interface{})
+func envVarSliceToObj(slice []any) map[string]any {
+	newObj := make(map[string]any)
 
 	for _, x := range slice {
-		obj, ok := x.(map[interface{}]interface{})
+		obj, ok := x.(map[any]any)
 		if !ok {
 			continue
 		}

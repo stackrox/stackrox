@@ -38,7 +38,7 @@ type declarativeConfigHealthMatcher struct {
 	expected *storage.DeclarativeConfigHealth
 }
 
-func (i *declarativeConfigHealthMatcher) Matches(x interface{}) bool {
+func (i *declarativeConfigHealthMatcher) Matches(x any) bool {
 	integrationHealth, ok := x.(*storage.DeclarativeConfigHealth)
 
 	if !ok {

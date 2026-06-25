@@ -52,7 +52,7 @@ func TestTelemetryConfiguration(t *testing.T) {
 
 	type result struct {
 		enabled bool
-		key     interface{}
+		key     any
 	}
 
 	disabled := result{enabled: false, key: phonehome.DisabledKey}

@@ -67,7 +67,7 @@ func TestCentralDBDefaulting(t *testing.T) {
 					},
 				},
 			},
-			expectedError: func(t require.TestingT, err error, i ...interface{}) {
+			expectedError: func(t require.TestingT, err error, i ...any) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), "if a connection string is provided, no persistence settings must be supplied")
 			},

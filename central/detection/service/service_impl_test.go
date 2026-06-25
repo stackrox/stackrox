@@ -581,7 +581,7 @@ func TestParseList_Success(t *testing.T) {
 func TestParseList_ConversionToOpenshiftObjects(t *testing.T) {
 	cases := map[string]struct {
 		yaml         string
-		expectedType interface{}
+		expectedType any
 	}{
 		"single apps.openshift.io/v1/DeployConfig": {
 			yaml:         openshiftDeploymentConfigYaml,
@@ -615,7 +615,7 @@ func TestParseList_ConversionToOpenshiftObjects(t *testing.T) {
 func TestParseList_IgnoredObjects(t *testing.T) {
 	cases := map[string]struct {
 		yaml                   string
-		expectedObject         interface{}
+		expectedObject         any
 		expectedIgnoredObjects []string
 	}{
 		"single ignored object": {

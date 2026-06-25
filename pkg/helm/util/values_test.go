@@ -31,8 +31,8 @@ func TestValuesForKVPair_NestedKey(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := chartutil.Values{
-		"foo": map[string]interface{}{
-			"bar": map[string]interface{}{
+		"foo": map[string]any{
+			"bar": map[string]any{
 				"baz": 1337,
 			},
 		},

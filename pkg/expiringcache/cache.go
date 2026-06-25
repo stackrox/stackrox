@@ -68,7 +68,7 @@ func (e *expiringCacheImpl[K, V]) Add(key K, value V) {
 	e.addNoLock(key, value)
 }
 
-func (e *expiringCacheImpl[K, V]) addNoLock(key K, value interface{}) {
+func (e *expiringCacheImpl[K, V]) addNoLock(key K, value any) {
 	now := e.clock.Now()
 	e.cleanNoLock(now)
 
@@ -192,7 +192,7 @@ func (e *expiringCacheImpl[K, V]) Touch(key K) bool {
 	return true
 }
 
-func (e *expiringCacheImpl[K, V]) getValue(key interface{}) interface{} {
+func (e *expiringCacheImpl[K, V]) getValue(key any) any {
 	value := e.mq.get(key)
 	if value == nil {
 		return nil
@@ -203,18 +203,18 @@ func (e *expiringCacheImpl[K, V]) getValue(key interface{}) interface{} {
 
 // Store the value and the time of insertion in the mappedQueue.
 type cacheValue struct {
-	value interface{}
+	value any
 	at    time.Time
 }
 
-func wrap(value interface{}, at time.Time) *cacheValue {
+func wrap(value any, at time.Time) *cacheValue {
 	return &cacheValue{
 		value: value,
 		at:    at,
 	}
 }
 
-func unwrap[V any](value interface{}) (V, time.Time) {
+func unwrap[V any](value any) (V, time.Time) {
 	cv := value.(*cacheValue)
 	return cv.value.(V), cv.at
 }

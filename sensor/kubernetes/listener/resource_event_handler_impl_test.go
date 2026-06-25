@@ -146,13 +146,13 @@ func (suite *ResourceEventHandlerImplTestSuite) TestIDsAddedToMissingSet() {
 	handler := suite.newHandlerImpl()
 
 	testMsgOne := randomID()
-	handler.PopulateInitialObjects([]interface{}{testMsgOne})
+	handler.PopulateInitialObjects([]any{testMsgOne})
 	expectedMap := makeExpectedMap(testMsgOne)
 	suite.Equal(*expectedMap, handler.missingInitialIDs)
 
 	// Can't change the expected values.  We've already stopped tracking the seen values
 	testMsgTwo := randomID()
-	handler.PopulateInitialObjects([]interface{}{testMsgTwo})
+	handler.PopulateInitialObjects([]any{testMsgTwo})
 	suite.Equal(*expectedMap, handler.missingInitialIDs)
 }
 
@@ -162,7 +162,7 @@ func (suite *ResourceEventHandlerImplTestSuite) TestIDsRemovedFromMissingSet() {
 	testMsgOne := randomID()
 	testMsgTwo := randomID()
 	expectedMap := *makeExpectedMap(testMsgOne, testMsgTwo)
-	handler.PopulateInitialObjects([]interface{}{testMsgOne, testMsgTwo})
+	handler.PopulateInitialObjects([]any{testMsgOne, testMsgTwo})
 	suite.Equal(expectedMap, handler.missingInitialIDs)
 
 	var nilMap map[types.UID]struct{}
@@ -181,7 +181,7 @@ func (suite *ResourceEventHandlerImplTestSuite) TestSeenIDsNotAddedToMissingSet(
 
 	testMsgTwo := randomID()
 	expectedMap = makeExpectedMap(testMsgTwo)
-	handler.PopulateInitialObjects([]interface{}{testMsgOne, testMsgTwo})
+	handler.PopulateInitialObjects([]any{testMsgOne, testMsgTwo})
 	suite.Equal(*expectedMap, handler.missingInitialIDs)
 }
 
@@ -190,7 +190,7 @@ func (suite *ResourceEventHandlerImplTestSuite) TestSeenIDsNotUpdatedAfterPopula
 
 	testMsgOne := randomID()
 	expectedMap := makeExpectedMap(testMsgOne)
-	handler.PopulateInitialObjects([]interface{}{testMsgOne, testMsgOne})
+	handler.PopulateInitialObjects([]any{testMsgOne, testMsgOne})
 	suite.Equal(*expectedMap, handler.missingInitialIDs)
 
 	testMsgTwo := randomID()
@@ -207,7 +207,7 @@ func (suite *ResourceEventHandlerImplTestSuite) TestCompleteSync() {
 	suite.addObj(handler, testMsgOne, expectedMap)
 
 	expectedMap = makeExpectedMap(testMsgTwo)
-	handler.PopulateInitialObjects([]interface{}{testMsgOne, testMsgTwo})
+	handler.PopulateInitialObjects([]any{testMsgOne, testMsgTwo})
 	suite.Equal(*expectedMap, handler.missingInitialIDs)
 
 	suite.dispatcher.EXPECT().ProcessEvent(testMsgTwo, nil, central.ResourceAction_SYNC_RESOURCE).
@@ -224,7 +224,7 @@ func (suite *ResourceEventHandlerImplTestSuite) TestAllAlreadySeen() {
 	expectedMap := makeExpectedMap(testMsgOne)
 	suite.addObj(handler, testMsgOne, expectedMap)
 
-	handler.PopulateInitialObjects([]interface{}{testMsgOne})
+	handler.PopulateInitialObjects([]any{testMsgOne})
 	suite.assertFinished(handler)
 }
 
@@ -233,11 +233,11 @@ func (suite *ResourceEventHandlerImplTestSuite) TestEmptySeenAndEmptyPopulate() 
 	testMsgOne := randomID()
 	suite.addObj(handlerOne, testMsgOne, makeExpectedMap(testMsgOne))
 
-	handlerOne.PopulateInitialObjects([]interface{}{})
+	handlerOne.PopulateInitialObjects([]any{})
 	suite.assertFinished(handlerOne)
 
 	handlerTwo := suite.newHandlerImpl()
-	handlerTwo.PopulateInitialObjects([]interface{}{})
+	handlerTwo.PopulateInitialObjects([]any{})
 	suite.assertFinished(handlerTwo)
 }
 
@@ -258,7 +258,7 @@ type contextMatcher struct {
 }
 
 // Matches implements gomock.Matcher
-func (m *contextMatcher) Matches(x interface{}) bool {
+func (m *contextMatcher) Matches(x any) bool {
 	event, ok := x.(*component.ResourceEvent)
 	if !ok {
 		return false

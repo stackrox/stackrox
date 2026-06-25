@@ -97,7 +97,7 @@ func isTargetFun(fun *types.Func) bool {
 	return false
 }
 
-func run(pass *analysis.Pass) (interface{}, error) {
+func run(pass *analysis.Pass) (any, error) {
 	inspectResult := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 
 	// Keeps positions for every deferred expression so when looking at a

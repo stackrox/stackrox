@@ -53,7 +53,7 @@ func (e *ErrorList) AddWrap(err error, msg string) {
 }
 
 // AddWrapf is a convenient wrapper around `AddError(errors.Wrapf(err, format, args...))`.
-func (e *ErrorList) AddWrapf(err error, format string, args ...interface{}) {
+func (e *ErrorList) AddWrapf(err error, format string, args ...any) {
 	e.AddError(errors.Wrapf(err, format, args...))
 }
 
@@ -63,7 +63,7 @@ func (e *ErrorList) AddString(err string) {
 }
 
 // AddStringf adds a templated string
-func (e *ErrorList) AddStringf(t string, args ...interface{}) {
+func (e *ErrorList) AddStringf(t string, args ...any) {
 	e.errors = append(e.errors, errors.Errorf(t, args...))
 }
 

@@ -21,7 +21,7 @@ func resultIfNullValue(value string) (*search.Result, bool) {
 	return nil, false
 }
 
-func formatSingleMatchf(key, template string, val ...interface{}) map[string][]string {
+func formatSingleMatchf(key, template string, val ...any) map[string][]string {
 	return map[string][]string{
 		key: {fmt.Sprintf(template, val...)},
 	}

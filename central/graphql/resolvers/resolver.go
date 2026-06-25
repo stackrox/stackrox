@@ -275,7 +275,7 @@ func anyWriteAuth(resources ...permissions.ResourceMetadata) func(ctx context.Co
 	return applyAuthorizer(or.Or(authorizers...))
 }
 
-func stringSlice(inputSlice interface{}) []string {
+func stringSlice(inputSlice any) []string {
 	r := reflect.ValueOf(inputSlice)
 	output := make([]string, r.Len())
 	for i := 0; i < r.Len(); i++ {

@@ -141,7 +141,7 @@ func (c centralCfgMatcher) String() string {
 	return "config matcher"
 }
 
-func (c centralCfgMatcher) Matches(arg interface{}) bool {
+func (c centralCfgMatcher) Matches(arg any) bool {
 	cfgArg := arg.(*config.RoxctlConfig)
 	if cfgArg == nil {
 		return false

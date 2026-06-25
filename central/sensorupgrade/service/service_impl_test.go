@@ -199,7 +199,7 @@ type UpgradeConfigMatcher struct {
 	autoUpgrade bool
 }
 
-func (m *UpgradeConfigMatcher) Matches(x interface{}) bool {
+func (m *UpgradeConfigMatcher) Matches(x any) bool {
 	cfg, ok := x.(*storage.SensorUpgradeConfig)
 	if !ok {
 		return false

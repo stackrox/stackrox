@@ -193,6 +193,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 						Field: new("Image"),
 					},
 					Limit: new(10),
+					Limit: new(int32(10)),
 				},
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").WithPagination(
@@ -211,6 +212,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 						},
 					},
 					Limit: new(10),
+					Limit: new(int32(10)),
 				},
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").WithPagination(
@@ -233,6 +235,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 						},
 					},
 					Limit: new(10),
+					Limit: new(int32(10)),
 				},
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").WithPagination(
@@ -259,6 +262,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 						},
 					},
 					Limit: new(10),
+					Limit: new(int32(10)),
 				},
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").WithPagination(
@@ -285,6 +289,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 						},
 					},
 					Limit: new(10),
+					Limit: new(int32(10)),
 				},
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").WithPagination(
@@ -339,6 +344,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 						},
 					},
 					Limit: new(10),
+					Limit: new(int32(10)),
 				},
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").WithPagination(

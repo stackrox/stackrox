@@ -79,7 +79,7 @@ func getUseExisting(vals chartutil.Values, key string) ([]string, error) {
 	if !ok {
 		return nil, nil
 	}
-	parentTable, ok := parentValue.(map[string]interface{})
+	parentTable, ok := parentValue.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("key %q maps to a %T, table expected", key, parentValue)
 	}
@@ -87,7 +87,7 @@ func getUseExisting(vals chartutil.Values, key string) ([]string, error) {
 	if !ok {
 		return nil, nil
 	}
-	secretsSlice, ok := value.([]interface{})
+	secretsSlice, ok := value.([]any)
 	if !ok {
 		return nil, fmt.Errorf("unexpected value %q type: %T", key+".useExisting", value)
 	}
@@ -149,16 +149,16 @@ func appendUseExisting(vals chartutil.Values, key string, secretNamesToAdd []str
 		return nil, err
 	}
 	if _, ok := vals[key]; !ok {
-		vals[key] = map[string]interface{}{}
+		vals[key] = map[string]any{}
 	}
-	table := vals[key].(map[string]interface{})
+	table := vals[key].(map[string]any)
 	// conversion for consistency with ToHelmValues()
 	table["useExisting"] = toInterfaceSlice(append(useExistingSlice, secretNamesToAdd...))
 	return vals, nil
 }
 
-func toInterfaceSlice(secrets []string) []interface{} {
-	secretsAsInterface := make([]interface{}, 0, len(secrets))
+func toInterfaceSlice(secrets []string) []any {
+	secretsAsInterface := make([]any, 0, len(secrets))
 	for _, secret := range secrets {
 		secretsAsInterface = append(secretsAsInterface, secret)
 	}

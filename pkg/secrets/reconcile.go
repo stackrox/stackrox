@@ -9,7 +9,7 @@ import (
 )
 
 // ReconcileScrubbedStructWithExisting replaces scrub:always fields in updated with the corresponding field values in existing
-func ReconcileScrubbedStructWithExisting(updated interface{}, existing interface{}) error {
+func ReconcileScrubbedStructWithExisting(updated any, existing any) error {
 	// walk updated first to verify scrub:always fields are empty/masked and scrub:dependent fields are equal to existing
 	if err := reconcileScrubbedWithExisting(reflect.ValueOf(updated), reflect.ValueOf(existing), true, nil); err != nil {
 		return err

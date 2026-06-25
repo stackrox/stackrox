@@ -77,7 +77,7 @@ type AugmentedObj struct {
 // object is the passed object.
 // Callers can then call the AddObjAt methods to add augmented objects at various
 // paths within this object.
-func NewAugmentedObj(actualObj interface{}) *AugmentedObj {
+func NewAugmentedObj(actualObj any) *AugmentedObj {
 	value := reflect.ValueOf(actualObj)
 	return &AugmentedObj{augmentTreeRoot: augmentTree{value: &value}}
 }
@@ -89,7 +89,7 @@ func (o *AugmentedObj) AddAugmentedObjAt(subObj *AugmentedObj, steps ...Step) er
 
 // AddPlainObjAt is a convenience wrapper around AddAugmentedObjAt for sub-objects
 // that are not augmented.
-func (o *AugmentedObj) AddPlainObjAt(subObj interface{}, steps ...Step) error {
+func (o *AugmentedObj) AddPlainObjAt(subObj any, steps ...Step) error {
 	return o.AddAugmentedObjAt(NewAugmentedObj(subObj), steps...)
 }
 

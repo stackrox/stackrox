@@ -64,7 +64,7 @@ func GetCustomize(customizeSpec *platform.CustomizeSpec) *ValuesBuilder {
 	res := NewValuesBuilder()
 	res.SetStringMap("labels", customizeSpec.Labels)
 	res.SetStringMap("annotations", customizeSpec.Annotations)
-	envVarMap := make(map[string]interface{}, len(customizeSpec.EnvVars))
+	envVarMap := make(map[string]any, len(customizeSpec.EnvVars))
 	for i := range customizeSpec.EnvVars {
 		envVar := customizeSpec.EnvVars[i]
 		if _, ok := envVarMap[envVar.Name]; ok {
@@ -122,7 +122,7 @@ func GetTLSConfigValues(tls *platform.TLSConfig) *ValuesBuilder {
 func GetTolerations(key string, tolerations []*corev1.Toleration) *ValuesBuilder {
 	v := NewValuesBuilder()
 
-	var convertedList []interface{}
+	var convertedList []any
 	for _, toleration := range tolerations {
 		m, err := runtime.DefaultUnstructuredConverter.ToUnstructured(toleration)
 		if err != nil {
@@ -141,7 +141,7 @@ func GetTolerations(key string, tolerations []*corev1.Toleration) *ValuesBuilder
 func GetHostAliases(key string, hostAliases []corev1.HostAlias) *ValuesBuilder {
 	v := NewValuesBuilder()
 
-	var convertedList []interface{}
+	var convertedList []any
 	for i := range hostAliases {
 		hostAlias := hostAliases[i]
 		m, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&hostAlias)

@@ -6,7 +6,7 @@ import (
 )
 
 // MapSearchTagsToFieldPaths creates a FieldMap, by walking the given object.
-func MapSearchTagsToFieldPaths(toWalk interface{}) FieldMap {
+func MapSearchTagsToFieldPaths(toWalk any) FieldMap {
 	fieldMap := make(FieldMap)
 	visitFields(toWalk, func(fieldPath FieldPath) bool {
 		// Current field is the last field in the path.

@@ -77,8 +77,8 @@ func BenchmarkNodeResolver(b *testing.B) {
 			response := schema.Exec(ctx,
 				nodeWithScanQuery,
 				"getNodes",
-				map[string]interface{}{
-					"pagination": map[string]interface{}{
+				map[string]any{
+					"pagination": map[string]any{
 						"limit": 25,
 					},
 				},
@@ -92,8 +92,8 @@ func BenchmarkNodeResolver(b *testing.B) {
 			response := schema.Exec(ctx,
 				nodeWithoutScanQuery,
 				"getNodes",
-				map[string]interface{}{
-					"pagination": map[string]interface{}{
+				map[string]any{
+					"pagination": map[string]any{
 						"limit": 25,
 					},
 				},
@@ -107,8 +107,8 @@ func BenchmarkNodeResolver(b *testing.B) {
 			response := schema.Exec(ctx,
 				nodeWithScanLongQuery,
 				"getNodes",
-				map[string]interface{}{
-					"pagination": map[string]interface{}{
+				map[string]any{
+					"pagination": map[string]any{
 						"limit": 25,
 					},
 				},
@@ -122,8 +122,8 @@ func BenchmarkNodeResolver(b *testing.B) {
 			response := schema.Exec(ctx,
 				nodeWithoutScanLongQuery,
 				"getNodes",
-				map[string]interface{}{
-					"pagination": map[string]interface{}{
+				map[string]any{
+					"pagination": map[string]any{
 						"limit": 25,
 					},
 				},
@@ -137,8 +137,8 @@ func BenchmarkNodeResolver(b *testing.B) {
 			response := schema.Exec(ctx,
 				nodeOnlyQuery,
 				"getNodes",
-				map[string]interface{}{
-					"pagination": map[string]interface{}{
+				map[string]any{
+					"pagination": map[string]any{
 						"limit": 25,
 					},
 				},
@@ -152,8 +152,8 @@ func BenchmarkNodeResolver(b *testing.B) {
 			response := schema.Exec(ctx,
 				nodeWithCountsQuery,
 				"getNodes",
-				map[string]interface{}{
-					"pagination": map[string]interface{}{
+				map[string]any{
+					"pagination": map[string]any{
 						"limit": 25,
 					},
 				},

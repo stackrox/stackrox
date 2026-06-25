@@ -245,7 +245,7 @@ func TestKey_UniquenessForProcessListening(t *testing.T) {
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			var assertFunc func(t assert.TestingT, expected, actual interface{}, msgAndArgs ...interface{}) bool
+			var assertFunc func(t assert.TestingT, expected, actual any, msgAndArgs ...any) bool
 			assertFunc = assert.NotEqual
 			textNugget := "different"
 			if tc.expectEqualHashes {

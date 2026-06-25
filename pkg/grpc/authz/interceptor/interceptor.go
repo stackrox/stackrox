@@ -26,7 +26,7 @@ func (a *AuthStatus) String() string {
 
 // AuthContextUpdaterInterceptor returns a new unary server interceptors that performs per-request auth.
 func AuthContextUpdaterInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		var newCtx context.Context
 		var err error
 		if overrideSrv, ok := info.Server.(grpc_auth.ServiceAuthFuncOverride); ok {
@@ -55,7 +55,7 @@ func GetAuthErrorFromContext(ctx context.Context) AuthStatus {
 
 // AuthCheckerInterceptor actually checks the auth and rejects if it had an error
 func AuthCheckerInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		if authStatus := GetAuthErrorFromContext(ctx); authStatus.Error != nil {
 			return nil, authStatus.Error
 		}

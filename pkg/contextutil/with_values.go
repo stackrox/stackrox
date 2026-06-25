@@ -6,10 +6,10 @@ import (
 
 type contextWithValuesFrom struct {
 	context.Context
-	valueFunc func(interface{}) interface{}
+	valueFunc func(any) any
 }
 
-func (c contextWithValuesFrom) Value(key interface{}) interface{} {
+func (c contextWithValuesFrom) Value(key any) any {
 	return c.valueFunc(key)
 }
 

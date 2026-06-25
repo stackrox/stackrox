@@ -46,7 +46,7 @@ func New(notifications notifier.Processor) auditPkg.Auditor {
 }
 
 // SendAuditMessage will send an audit message for the specified request.
-func (a *audit) SendAuditMessage(ctx context.Context, req interface{}, grpcMethod string,
+func (a *audit) SendAuditMessage(ctx context.Context, req any, grpcMethod string,
 	authError interceptor.AuthStatus, requestError error) {
 	if !a.notifications.HasEnabledAuditNotifiers() {
 		return
@@ -78,7 +78,7 @@ var (
 	)
 )
 
-func (a *audit) newAuditMessage(ctx context.Context, req interface{}, grpcFullMethod string,
+func (a *audit) newAuditMessage(ctx context.Context, req any, grpcFullMethod string,
 	authError interceptor.AuthStatus, requestError error) *v1.Audit_Message {
 	ri := requestinfo.FromContext(ctx)
 
@@ -148,10 +148,10 @@ func (a *audit) newAuditMessage(ctx context.Context, req interface{}, grpcFullMe
 }
 
 // UnaryServerInterceptor is the interceptor for audit logging
-func (a *audit) UnaryServerInterceptor() func(ctx context.Context, req interface{},
-	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo,
-		handler grpc.UnaryHandler) (interface{}, error) {
+func (a *audit) UnaryServerInterceptor() func(ctx context.Context, req any,
+	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler) (any, error) {
 		resp, err := handler(ctx, req)
 		go a.SendAuditMessage(ctx, req, info.FullMethod, interceptor.GetAuthErrorFromContext(ctx), err)
 		return resp, err

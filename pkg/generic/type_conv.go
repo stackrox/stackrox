@@ -9,7 +9,7 @@ import (
 )
 
 // String accepts value as interface and converts it from basic type to its string representation.
-func String(value interface{}) string {
+func String(value any) string {
 	if value, ok := value.(fmt.Stringer); ok {
 		return value.String()
 	}

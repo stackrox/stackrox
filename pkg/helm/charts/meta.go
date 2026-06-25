@@ -32,7 +32,7 @@ type MetaValues struct {
 	ChartRepo                        defaults.ChartRepo
 	ImagePullSecrets                 defaults.ImagePullSecrets
 	Operator                         bool
-	FeatureFlags                     map[string]interface{}
+	FeatureFlags                     map[string]any
 	CertsOnly                        bool
 	ClusterType                      string
 	ClusterName                      string
@@ -45,7 +45,7 @@ type MetaValues struct {
 	CreateUpgraderSA                 bool
 	EnvVars                          map[string]string
 	K8sCommand                       string
-	K8sConfig                        map[string]interface{} // renderer.K8sConfig // introduces a cycle in the dependencies
+	K8sConfig                        map[string]any // renderer.K8sConfig // introduces a cycle in the dependencies
 	OfflineMode                      bool
 	AdmissionController              bool
 	AdmissionControlListenOnUpdates  bool

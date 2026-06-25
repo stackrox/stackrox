@@ -20,7 +20,7 @@ var (
 	graphqlClient *graphql.Client
 )
 
-func makeGraphQLRequest(t testutils.T, query string, vars map[string]interface{}, resp interface{}, timeout time.Duration) {
+func makeGraphQLRequest(t testutils.T, query string, vars map[string]any, resp any, timeout time.Duration) {
 	graphQLOnce.Do(func() {
 		graphqlClient = graphql.NewClient("/api/graphql", graphql.WithHTTPClient(centralgrpc.HTTPClientForCentral(t)))
 		require.NotNil(t, graphqlClient)

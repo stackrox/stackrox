@@ -20,13 +20,13 @@ type defaultReporter struct {
 	warnings []string
 }
 
-func (r *defaultReporter) Warnf(format string, args ...interface{}) {
+func (r *defaultReporter) Warnf(format string, args ...any) {
 	warning := fmt.Sprintf(format, args...)
 	log.Warn(warning)
 	r.warnings = append(r.warnings, warning)
 }
 
-func (r *defaultReporter) Errorf(format string, args ...interface{}) {
+func (r *defaultReporter) Errorf(format string, args ...any) {
 	errStr := fmt.Sprintf(format, args...)
 	log.Error(errStr)
 	r.errors = append(r.errors, errStr)

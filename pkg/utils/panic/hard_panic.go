@@ -15,7 +15,7 @@ const (
 // HardPanic is like panic, but on debug builds additionally ensures that the
 // panic will cause a crash with a full goroutine dump, independently of any
 // recovery handlers.
-func HardPanic(v interface{}) {
+func HardPanic(v any) {
 	if !buildinfo.ReleaseBuild {
 		trace := debug.GetLazyStacktrace(2)
 		time.AfterFunc(hardPanicDelay, func() {

@@ -67,11 +67,11 @@ func (f *issuerFactory) encode(claims *Claims) (string, error) {
 }
 
 // translateExtra converts a map[string]json.RawMessage to a map[string]interface{} expected by go-jose.
-func translateExtra(extra map[string]json.RawMessage) map[string]interface{} {
+func translateExtra(extra map[string]json.RawMessage) map[string]any {
 	if extra == nil {
 		return nil
 	}
-	result := make(map[string]interface{}, len(extra))
+	result := make(map[string]any, len(extra))
 	for k, v := range extra {
 		result[k] = v
 	}

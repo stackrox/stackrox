@@ -60,7 +60,7 @@ func IsTrackedOwnerReference(reference metav1.OwnerReference) bool {
 }
 
 // NewDeploymentFromStaticResource returns a storage.Deployment from a k8s object
-func NewDeploymentFromStaticResource(obj interface{}, deploymentType, clusterID, registryOverride string) (*storage.Deployment, error) {
+func NewDeploymentFromStaticResource(obj any, deploymentType, clusterID, registryOverride string) (*storage.Deployment, error) {
 	objMeta, err := meta.Accessor(obj)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not access metadata of object of type %T", obj)
@@ -216,7 +216,7 @@ func convertSELinux(SELinux *v1.SELinuxOptions) *storage.SecurityContext_SELinux
 	}
 }
 
-func (w *DeploymentWrap) populateFields(obj interface{}) {
+func (w *DeploymentWrap) populateFields(obj any) {
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	spec := objValue.FieldByName("Spec")
 	if !doesFieldExist(spec) {
@@ -352,7 +352,7 @@ func (w *DeploymentWrap) populateImagePullSecrets(podSpec v1.PodSpec) {
 	w.ImagePullSecrets = secrets
 }
 
-func (w *DeploymentWrap) populateDaemonSetReplicaSet(obj interface{}) {
+func (w *DeploymentWrap) populateDaemonSetReplicaSet(obj any) {
 	ds := reflect.ValueOf(obj)
 	if ds.Kind() == reflect.Pointer {
 		ds = ds.Elem()
@@ -368,7 +368,7 @@ func (w *DeploymentWrap) populateDaemonSetReplicaSet(obj interface{}) {
 	w.Replicas = na.Int()
 }
 
-func (w *DeploymentWrap) populateReplicas(spec reflect.Value, obj interface{}) {
+func (w *DeploymentWrap) populateReplicas(spec reflect.Value, obj any) {
 	if w.Deployment.GetType() == kubernetes.DaemonSet {
 		w.populateDaemonSetReplicaSet(obj)
 		return

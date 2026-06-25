@@ -10,14 +10,14 @@ import (
 
 //lint:file-ignore U1000 Unused functions are due to test skip.
 
-func panicTask(args ...interface{}) Task {
-	return func(ctx concurrency.ErrorWaitable) (interface{}, error) {
+func panicTask(args ...any) Task {
+	return func(ctx concurrency.ErrorWaitable) (any, error) {
 		panic(args)
 	}
 }
 
 func simpleTask(ds ...time.Duration) Task {
-	return func(ctx concurrency.ErrorWaitable) (interface{}, error) {
+	return func(ctx concurrency.ErrorWaitable) (any, error) {
 		if len(ds) == 0 {
 			time.Sleep(10 * time.Millisecond)
 		}
@@ -31,7 +31,7 @@ func simpleTask(ds ...time.Duration) Task {
 }
 
 func addWithContext(nums ...int) Task {
-	return func(ctx concurrency.ErrorWaitable) (interface{}, error) {
+	return func(ctx concurrency.ErrorWaitable) (any, error) {
 		ch := make(chan int, 1)
 		idx := 0
 		sum := 0
@@ -152,11 +152,11 @@ func TestBackgroundTasksManager(t *testing.T) {
 	t.Log("[CHECK] Validating valid inputs...")
 	testArgs := []int{1, 2, 3}
 	testRes := add(testArgs...)
-	meta := make(map[string]interface{})
+	meta := make(map[string]any)
 	testKey := "K"
 	testVal := "V"
 	meta[testKey] = testVal
-	c := func(ctx concurrency.ErrorWaitable) (interface{}, error) {
+	c := func(ctx concurrency.ErrorWaitable) (any, error) {
 		time.Sleep(4 * time.Millisecond)
 		return add(testArgs...), nil
 	}

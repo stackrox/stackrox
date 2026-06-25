@@ -28,7 +28,7 @@ type DeploymentStore struct {
 }
 
 // ProcessEvent processes deployment event.
-func (m *DeploymentStore) ProcessEvent(action central.ResourceAction, obj interface{}) {
+func (m *DeploymentStore) ProcessEvent(action central.ResourceAction, obj any) {
 	deployment, isDeployment := obj.(*storage.Deployment)
 	if !isDeployment {
 		return

@@ -114,8 +114,8 @@ func BenchmarkImageResolver(b *testing.B) {
 			response := schema.Exec(ctx,
 				imageWithScanQuery,
 				"getImages",
-				map[string]interface{}{
-					"pagination": map[string]interface{}{
+				map[string]any{
+					"pagination": map[string]any{
 						"limit": 25,
 					},
 				},
@@ -129,8 +129,8 @@ func BenchmarkImageResolver(b *testing.B) {
 			response := schema.Exec(ctx,
 				imageWithoutScanQuery,
 				"getImages",
-				map[string]interface{}{
-					"pagination": map[string]interface{}{
+				map[string]any{
+					"pagination": map[string]any{
 						"limit": 25,
 					},
 				},
@@ -144,8 +144,8 @@ func BenchmarkImageResolver(b *testing.B) {
 			response := schema.Exec(ctx,
 				imageWithScanLongQuery,
 				"getImages",
-				map[string]interface{}{
-					"pagination": map[string]interface{}{
+				map[string]any{
+					"pagination": map[string]any{
 						"limit": 25,
 					},
 				},
@@ -159,8 +159,8 @@ func BenchmarkImageResolver(b *testing.B) {
 			response := schema.Exec(ctx,
 				imageWithoutScanLongQuery,
 				"getImages",
-				map[string]interface{}{
-					"pagination": map[string]interface{}{
+				map[string]any{
+					"pagination": map[string]any{
 						"limit": 25,
 					},
 				},
@@ -174,8 +174,8 @@ func BenchmarkImageResolver(b *testing.B) {
 			response := schema.Exec(ctx,
 				imageOnlyQuery,
 				"getImages",
-				map[string]interface{}{
-					"pagination": map[string]interface{}{
+				map[string]any{
+					"pagination": map[string]any{
 						"limit": 25,
 					},
 				},
@@ -189,8 +189,8 @@ func BenchmarkImageResolver(b *testing.B) {
 			response := schema.Exec(ctx,
 				imageWithCountsQuery,
 				"getImages",
-				map[string]interface{}{
-					"pagination": map[string]interface{}{
+				map[string]any{
+					"pagination": map[string]any{
 						"limit": 25,
 					},
 				},
@@ -204,8 +204,8 @@ func BenchmarkImageResolver(b *testing.B) {
 			response := schema.Exec(ctx,
 				imageWithTopLevelScanTimeQuery,
 				"getImages",
-				map[string]interface{}{
-					"pagination": map[string]interface{}{
+				map[string]any{
+					"pagination": map[string]any{
 						"limit": 25,
 					},
 				},
@@ -219,8 +219,8 @@ func BenchmarkImageResolver(b *testing.B) {
 			response := schema.Exec(ctx,
 				imageWithNestedScanTimeQuery,
 				"getImages",
-				map[string]interface{}{
-					"pagination": map[string]interface{}{
+				map[string]any{
+					"pagination": map[string]any{
 						"limit": 25,
 					},
 				},

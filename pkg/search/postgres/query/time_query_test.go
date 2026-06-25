@@ -22,17 +22,17 @@ func TestTimeQuery(t *testing.T) {
 		value          string
 		expectErr      bool
 		expectedQuery  string
-		expectedValues []interface{}
+		expectedValues []any
 	}{
 		{
 			value:          "1",
 			expectedQuery:  "blah = $$",
-			expectedValues: []interface{}{ts1dayAgo},
+			expectedValues: []any{ts1dayAgo},
 		},
 		{
 			value:          "1d",
 			expectedQuery:  "blah = $$",
-			expectedValues: []interface{}{ts1dayAgo},
+			expectedValues: []any{ts1dayAgo},
 		},
 		{
 			value:     ">lol",
@@ -41,32 +41,32 @@ func TestTimeQuery(t *testing.T) {
 		{
 			value:          ">1",
 			expectedQuery:  "blah <= $$",
-			expectedValues: []interface{}{ts1dayAgo},
+			expectedValues: []any{ts1dayAgo},
 		},
 		{
 			value:          "1-10",
 			expectedQuery:  "blah > $$ and blah < $$",
-			expectedValues: []interface{}{ts10daysAgo, ts1dayAgo},
+			expectedValues: []any{ts10daysAgo, ts1dayAgo},
 		},
 		{
 			value:          "1d-10d",
 			expectedQuery:  "blah > $$ and blah < $$",
-			expectedValues: []interface{}{ts10daysAgo, ts1dayAgo},
+			expectedValues: []any{ts10daysAgo, ts1dayAgo},
 		},
 		{
 			value:          "-1d-10d",
 			expectedQuery:  "blah > $$ and blah < $$",
-			expectedValues: []interface{}{ts10daysAgo, ts1dayLater},
+			expectedValues: []any{ts10daysAgo, ts1dayLater},
 		},
 		{
 			value:          "-1d-10d",
 			expectedQuery:  "blah > $$ and blah < $$",
-			expectedValues: []interface{}{ts10daysAgo, ts1dayLater},
+			expectedValues: []any{ts10daysAgo, ts1dayLater},
 		},
 		{
 			value:          fmt.Sprintf("tr/%d-%d", fake1DayAgo.UnixMilli(), fakeNow.UnixMilli()),
 			expectedQuery:  "blah >= $$ and blah < $$",
-			expectedValues: []interface{}{ts1dayAgo, tsNow},
+			expectedValues: []any{ts1dayAgo, tsNow},
 		},
 	}
 

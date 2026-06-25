@@ -70,7 +70,7 @@ func getSecretType(data string) storage.SecretType {
 	return storage.SecretType_UNDETERMINED
 }
 
-func convertInterfaceSliceToStringSlice(i []interface{}) []string {
+func convertInterfaceSliceToStringSlice(i []any) []string {
 	strSlice := make([]string, 0, len(i))
 	for _, v := range i {
 		strSlice = append(strSlice, fmt.Sprintf("%v", v))
@@ -473,7 +473,7 @@ func secretToSensorEvent(action central.ResourceAction, secret *storage.Secret) 
 }
 
 // ProcessEvent processes a secret resource event, and returns the sensor events to emit in response.
-func (s *secretDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (s *secretDispatcher) ProcessEvent(obj, oldObj any, action central.ResourceAction) *component.ResourceEvent {
 	secret := obj.(*v1.Secret)
 
 	oldSecret, ok := oldObj.(*v1.Secret)

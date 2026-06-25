@@ -82,6 +82,7 @@ func (s *InitContainerSuite) createDeploymentWithInitContainers(name, namespace 
 		},
 		Spec: appsV1.DeploymentSpec{
 			Replicas: new(1),
+			Replicas: new(int32(1)),
 			Selector: &metaV1.LabelSelector{
 				MatchLabels: map[string]string{"app": name},
 			},
@@ -211,6 +212,7 @@ func (s *InitContainerSuite) TestInitContainerExtraction() {
 		},
 		Spec: appsV1.DeploymentSpec{
 			Replicas: new(1),
+			Replicas: new(int32(1)),
 			Selector: &metaV1.LabelSelector{
 				MatchLabels: map[string]string{"app": deployName},
 			},

@@ -91,11 +91,11 @@ type certsNewSyncHandler struct {
 	destDir string
 }
 
-func (h *certsNewSyncHandler) OnChange(dir string) (interface{}, error) {
+func (h *certsNewSyncHandler) OnChange(dir string) (any, error) {
 	return findFiles(dir)
 }
 
-func (h *certsNewSyncHandler) OnStableUpdate(val interface{}, err error) {
+func (h *certsNewSyncHandler) OnStableUpdate(val any, err error) {
 	if err != nil {
 		log.Errorf("Error reading TLS certificates from %q for sync to %q: %v", newSourceDir, h.destDir, err)
 		return

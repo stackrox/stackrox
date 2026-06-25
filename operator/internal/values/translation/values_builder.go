@@ -12,7 +12,7 @@ import (
 
 // ValuesBuilder helps assemble a values map in slightly less verbose way than otherwise with plain maps and errors.
 type ValuesBuilder struct {
-	data   map[string]interface{}
+	data   map[string]any
 	errors *multierror.Error
 }
 
@@ -35,36 +35,36 @@ func (v *ValuesBuilder) Build() (chartutil.Values, error) {
 }
 
 // getData allows deferring allocation of ValuesBuilder.data map until it is actually needed.
-func (v *ValuesBuilder) getData() map[string]interface{} {
+func (v *ValuesBuilder) getData() map[string]any {
 	if v.data == nil {
-		v.data = map[string]interface{}{}
+		v.data = map[string]any{}
 	}
 	return v.data
 }
 
 // SetPathValue sets a value into its path. It parses a path like "root.child" and creates the necessary child maps for it.
 // If the last element already existed it can't be overwritten and records an error.
-func (v *ValuesBuilder) SetPathValue(path string, value interface{}) {
+func (v *ValuesBuilder) SetPathValue(path string, value any) {
 	v.setValueByPath([]string{}, v.getData(), strings.Split(path, "."), value)
 }
 
-func (v *ValuesBuilder) setValueByPath(visited []string, data map[string]interface{}, path []string, value interface{}) {
+func (v *ValuesBuilder) setValueByPath(visited []string, data map[string]any, path []string, value any) {
 	if len(path) == 1 {
 		data[path[0]] = value
 		return
 	}
 
 	visited = append(visited, path[0])
-	if _, ok := data[path[0]].(map[string]interface{}); !ok {
+	if _, ok := data[path[0]].(map[string]any); !ok {
 		if data[path[0]] == nil {
-			data[path[0]] = map[string]interface{}{}
+			data[path[0]] = map[string]any{}
 		} else {
 			v.SetError(errors.Errorf("Could not overwrite key at path: %v", strings.Join(visited, ".")))
 			return
 		}
 	}
 
-	v.setValueByPath(visited, data[path[0]].(map[string]interface{}), path[1:], value)
+	v.setValueByPath(visited, data[path[0]].(map[string]any), path[1:], value)
 }
 
 // SetError appends error(s) to ValuesBuilder errors collection and returns the same ValuesBuilder.
@@ -202,7 +202,7 @@ func (v *ValuesBuilder) SetResourceList(key string, value v1.ResourceList) {
 }
 
 // SetMap adds values, if not empty, under the given key. Records error on attempt to overwrite key.
-func (v *ValuesBuilder) SetMap(key string, values map[string]interface{}) {
+func (v *ValuesBuilder) SetMap(key string, values map[string]any) {
 	if len(values) == 0 || v.validateKey(key) != nil {
 		return
 	}
@@ -210,7 +210,7 @@ func (v *ValuesBuilder) SetMap(key string, values map[string]interface{}) {
 }
 
 // SetMapSlice adds values slice, if not empty, under the given key. Records error on attempt to overwrite key.
-func (v *ValuesBuilder) SetMapSlice(key string, values []map[string]interface{}) {
+func (v *ValuesBuilder) SetMapSlice(key string, values []map[string]any) {
 	if len(values) == 0 || v.validateKey(key) != nil {
 		return
 	}
@@ -218,7 +218,7 @@ func (v *ValuesBuilder) SetMapSlice(key string, values []map[string]interface{})
 }
 
 // SetSlice adds values slice, if not empty, under the given key. Records error on attempt to overwrite key.
-func (v *ValuesBuilder) SetSlice(key string, values []interface{}) {
+func (v *ValuesBuilder) SetSlice(key string, values []any) {
 	if len(values) == 0 || v.validateKey(key) != nil {
 		return
 	}

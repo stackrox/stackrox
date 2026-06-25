@@ -29,8 +29,8 @@ func TestFromUnstructuredToSpecificTypePointer(t *testing.T) {
 
 	t.Run("successful convertion", func(tt *testing.T) {
 		from := &unstructured.Unstructured{
-			Object: map[string]interface{}{
-				"metadata": map[string]interface{}{
+			Object: map[string]any{
+				"metadata": map[string]any{
 					"name":      "pod-name",
 					"namespace": "pod-namespace",
 				},
@@ -43,8 +43,8 @@ func TestFromUnstructuredToSpecificTypePointer(t *testing.T) {
 	})
 	t.Run("convertion with unexpected fields", func(tt *testing.T) {
 		from := &unstructured.Unstructured{
-			Object: map[string]interface{}{
-				"metadata": map[string]interface{}{
+			Object: map[string]any{
+				"metadata": map[string]any{
 					"unexpected-field": "some-data",
 					"name":             "pod-name",
 					"namespace":        "pod-namespace",
@@ -59,8 +59,8 @@ func TestFromUnstructuredToSpecificTypePointer(t *testing.T) {
 	})
 	t.Run("convertion should fail with unexpected value", func(tt *testing.T) {
 		from := &unstructured.Unstructured{
-			Object: map[string]interface{}{
-				"metadata": map[string]interface{}{
+			Object: map[string]any{
+				"metadata": map[string]any{
 					"name":      0, // Name is expected to be a string
 					"namespace": "pod-namespace",
 				},

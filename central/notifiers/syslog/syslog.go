@@ -232,7 +232,7 @@ func makeExtensionPair(key, value string) string {
 	return fmt.Sprintf("%s=%s", key, value)
 }
 
-func makeJSONExtensionPair(key string, valueObject interface{}) string {
+func makeJSONExtensionPair(key string, valueObject any) string {
 	value, err := json.Marshal(valueObject)
 	if err != nil {
 		log.Warnw("Unable to JSON marshal audit log field",

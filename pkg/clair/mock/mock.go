@@ -17,9 +17,9 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.EmbeddedVulnerability) 
 			Link:        "https://security-tracker.debian.org/tracker/CVE-2017-7246",
 			Description: "Stack-based buffer overflow in the pcre32_copy_substring function in pcre_get.c in libpcre1 in PCRE 8.40 allows remote attackers to cause a denial of service (WRITE of size 268) or possibly have unspecified other impact via a crafted file.",
 			Name:        "CVE-2017-7246",
-			Metadata: map[string]interface{}{
-				"NVD": map[string]interface{}{
-					"CVSSv2": map[string]interface{}{
+			Metadata: map[string]any{
+				"NVD": map[string]any{
+					"CVSSv2": map[string]any{
 						"Score":   6.8,
 						"Vectors": "AV:N/AC:M/Au:N/C:P/I:P/A:P",
 					},
@@ -30,15 +30,15 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.EmbeddedVulnerability) 
 			Link:        "https://security-tracker.debian.org/tracker/CVE-2017-7247",
 			Description: "Stack-based buffer overflow in the pcre32_copy_substring function in pcre_get.c in libpcre1 in PCRE 8.40 allows remote attackers to cause a denial of service (WRITE of size 268) or possibly have unspecified other impact via a crafted file.",
 			Name:        "CVE-2017-7247",
-			Metadata: map[string]interface{}{
-				"NVD": map[string]interface{}{
-					"CVSSv2": map[string]interface{}{
+			Metadata: map[string]any{
+				"NVD": map[string]any{
+					"CVSSv2": map[string]any{
 						"Score":               6.8,
 						"Vectors":             "AV:N/AC:L/Au:S/C:N/I:N/A:C",
 						"ExploitabilityScore": 8.0,
 						"ImpactScore":         6.9,
 					},
-					"CVSSv3": map[string]interface{}{
+					"CVSSv3": map[string]any{
 						"Vectors":             "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
 						"Score":               7.5,
 						"ExploitabilityScore": 3.9,

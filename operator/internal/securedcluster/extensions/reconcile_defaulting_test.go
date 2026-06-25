@@ -430,7 +430,7 @@ func securedClusterToUnstructured(t *testing.T, securedCluster *platform.Secured
 
 func extractSecuredClusterDefaults(t *testing.T, u *unstructured.Unstructured) *platform.SecuredClusterSpec {
 	defaults := platform.SecuredClusterSpec{}
-	unstructuredSecuredClusterDefaults, ok := u.Object["defaults"].(map[string]interface{})
+	unstructuredSecuredClusterDefaults, ok := u.Object["defaults"].(map[string]any)
 	if ok {
 		err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredSecuredClusterDefaults, &defaults)
 		assert.Nil(t, err, "failed to extract SecuredCluster Defaults from unstructured object")

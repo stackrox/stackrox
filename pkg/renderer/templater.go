@@ -122,7 +122,7 @@ type K8sConfig struct {
 
 	OfflineMode bool
 
-	ImageOverrides map[string]interface{}
+	ImageOverrides map[string]any
 
 	EnableCentralDB bool
 }
@@ -224,8 +224,8 @@ func standardizeWhitespace(instructions string) string {
 
 // EnvironmentMap returns the values of Environment in the form of a map[string]interface{}
 // that can be used with sprig template functions.
-func (c Config) EnvironmentMap() map[string]interface{} {
-	result := make(map[string]interface{}, len(c.Environment))
+func (c Config) EnvironmentMap() map[string]any {
+	result := make(map[string]any, len(c.Environment))
 	for k, v := range c.Environment {
 		result[k] = v
 	}

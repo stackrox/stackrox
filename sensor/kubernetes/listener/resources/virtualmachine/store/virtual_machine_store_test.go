@@ -55,7 +55,7 @@ func (s *storeSuite) Test_AddVirtualMachine() {
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 		},
 		"with GuestOS": {
@@ -114,7 +114,7 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 		},
 		"original running with VSOCK - update running with different VSOCK": {
@@ -123,14 +123,14 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(2),
+				VSOCKCID:  new(uint32(2)),
 			},
 		},
 		"original running with VSOCK - update running with same VSOCK": {
@@ -139,14 +139,14 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 		},
 		"original running with VSOCK - update running without VSOCK": {
@@ -155,7 +155,7 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 			new: &virtualmachine.Info{
 				ID:        vmID,
@@ -171,7 +171,7 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 			new: &virtualmachine.Info{
 				ID:        vmID,
@@ -249,7 +249,7 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 		},
 		"original nil - update not running": {
@@ -457,8 +457,8 @@ func (s *storeSuite) Test_replaceVSOCKInfoNoLockCopiesIncomingPointer() {
 }
 
 func (s *storeSuite) Test_UpdateStateOrCreate() {
-	vsockCID1 := newVSOCKCID(1)
-	vsockCID2 := newVSOCKCID(2)
+	vsockCID1 := new(uint32(1))
+	vsockCID2 := new(uint32(2))
 	cases := map[string]struct {
 		original *virtualmachine.Info
 		new      *virtualmachine.Info
@@ -475,14 +475,14 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 				Running:   true,
 			},
 			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 				Running:   true,
 			},
 		},
@@ -513,7 +513,7 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 				Running:   true,
 			},
 			new: &virtualmachine.Info{
@@ -535,7 +535,7 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 				Running:   true,
 			},
 			new: &virtualmachine.Info{
@@ -558,7 +558,7 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 				Running:   true,
 			},
 			new: &virtualmachine.Info{
@@ -696,7 +696,7 @@ func (s *storeSuite) Test_UpdateStateOrCreateShouldRefreshRuntimeFields() {
 		Name:        vmName,
 		Namespace:   vmNamespace,
 		Running:     true,
-		VSOCKCID:    newVSOCKCID(1),
+		VSOCKCID:    new(uint32(1)),
 		GuestOS:     "Red Hat Enterprise Linux 9",
 		Description: "instance description",
 		IPAddresses: []string{"10.0.0.2"},
@@ -727,7 +727,7 @@ func (s *storeSuite) Test_UpdateStateOrCreateShouldRefreshRuntimeFields() {
 }
 
 func (s *storeSuite) Test_RemoveVirtualMachine() {
-	vsockCID1 := newVSOCKCID(1)
+	vsockCID1 := new(uint32(1))
 	cases := map[string]struct {
 		original   *virtualmachine.Info
 		idToRemove virtualmachine.VMID
@@ -831,7 +831,7 @@ func (s *storeSuite) Test_RemoveVirtualMachine() {
 }
 
 func (s *storeSuite) Test_ClearState() {
-	vsockCID1 := newVSOCKCID(1)
+	vsockCID1 := new(uint32(1))
 	cases := map[string]struct {
 		original *virtualmachine.Info
 		id       virtualmachine.VMID
@@ -856,7 +856,7 @@ func (s *storeSuite) Test_ClearState() {
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 			},
 			id: vmID,
 			expected: &virtualmachine.Info{
@@ -962,7 +962,7 @@ func (s *storeSuite) Test_ClearStateShouldRetainSpecFields() {
 		Name:        vmName,
 		Namespace:   vmNamespace,
 		Running:     true,
-		VSOCKCID:    newVSOCKCID(1),
+		VSOCKCID:    new(uint32(1)),
 		GuestOS:     "Red Hat Enterprise Linux 9",
 		Description: "instance description",
 		IPAddresses: []string{"10.0.0.2"},
@@ -1079,7 +1079,7 @@ func (s *storeSuite) Test_GetVirtualMachine() {
 		ID:        vmID,
 		Name:      vmName,
 		Namespace: vmNamespace,
-		VSOCKCID:  newVSOCKCID(1),
+		VSOCKCID:  new(uint32(1)),
 		Running:   true,
 		GuestOS:   "Red Hat Enterprise Linux",
 	}
@@ -1103,7 +1103,7 @@ func (s *storeSuite) Test_HasVirtualMachine() {
 		ID:        vmID,
 		Name:      vmName,
 		Namespace: vmNamespace,
-		VSOCKCID:  newVSOCKCID(1),
+		VSOCKCID:  new(uint32(1)),
 		Running:   true,
 	}
 	s.Run("success", func() {
@@ -1129,7 +1129,7 @@ func (s *storeSuite) Test_GetVirtualMachineFromCID() {
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 				Running:   true,
 			},
 			cid: 1,
@@ -1137,7 +1137,7 @@ func (s *storeSuite) Test_GetVirtualMachineFromCID() {
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 				Running:   true,
 			},
 		},
@@ -1146,7 +1146,7 @@ func (s *storeSuite) Test_GetVirtualMachineFromCID() {
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
-				VSOCKCID:  newVSOCKCID(1),
+				VSOCKCID:  new(uint32(1)),
 				Running:   true,
 			},
 			cid:        2, // Invalid CID

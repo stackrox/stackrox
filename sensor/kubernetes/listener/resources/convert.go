@@ -63,7 +63,7 @@ func getK8sComponentID(clusterID string, component string) string {
 type deploymentWrap struct {
 	*storage.Deployment
 	registryOverride string
-	original         interface{}
+	original         any
 	portConfigs      map[service.PortRef]*storage.PortConfig
 	pods             []*v1.Pod
 	// TODO(ROX-9984): we could have the networkPoliciesApplied stored here. This would require changes in the ProcessDeployment functions of the detector.
@@ -85,7 +85,7 @@ func doesFieldExist(value reflect.Value) bool {
 	return value.IsValid()
 }
 
-func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAction, deploymentType, clusterID string,
+func newDeploymentEventFromResource(obj any, action *central.ResourceAction, deploymentType, clusterID string,
 	lister v1listers.PodLister, namespaceStore *namespaceStore, hierarchy references.ParentHierarchy, registryOverride string,
 	namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentWrap {
 	wrap := newWrap(obj, deploymentType, clusterID, registryOverride)
@@ -102,7 +102,7 @@ func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAct
 	return wrap
 }
 
-func newWrap(obj interface{}, kind, clusterID, registryOverride string) *deploymentWrap {
+func newWrap(obj any, kind, clusterID, registryOverride string) *deploymentWrap {
 	deployment, err := resources.NewDeploymentFromStaticResource(obj, kind, clusterID, registryOverride)
 	if err != nil || deployment == nil {
 		return nil
@@ -157,7 +157,7 @@ func checkIfNewPodSpecRequired(podSpec *v1.PodSpec, pods []*v1.Pod) bool {
 	return updated
 }
 
-func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *central.ResourceAction, lister v1listers.PodLister,
+func (w *deploymentWrap) populateNonStaticFields(obj any, action *central.ResourceAction, lister v1listers.PodLister,
 	namespaceStore *namespaceStore, hierarchy references.ParentHierarchy,
 	namespaces *orchestratornamespaces.OrchestratorNamespaces) (bool, error) {
 	w.original = obj

@@ -39,8 +39,8 @@ func NewVirtualMachineInstanceDispatcher(clusterID string, store virtualMachineS
 }
 
 func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
-	obj interface{},
-	_ interface{},
+	obj any,
+	_ any,
 	action central.ResourceAction,
 ) *component.ResourceEvent {
 	if !features.VirtualMachines.Enabled() || !centralcaps.Has(centralsensor.VirtualMachinesSupported) {

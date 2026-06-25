@@ -18,7 +18,7 @@ func (h *configMap) Type() string {
 	return configMapType
 }
 
-func createConfigMap(i interface{}) VolumeSource {
+func createConfigMap(i any) VolumeSource {
 	configVolume, ok := i.(*v1.ConfigMapVolumeSource)
 	if !ok {
 		return &Unimplemented{}

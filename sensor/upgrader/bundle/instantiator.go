@@ -95,7 +95,7 @@ func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error))
 	for ; err == nil; yamlDoc, err = yamlReader.Read() {
 		// First, test if the document is empty. We cannot simply trim spaces and check for an empty slice,
 		// as it could contain comments.
-		var rawObj interface{}
+		var rawObj any
 		if err := yaml.Unmarshal(yamlDoc, &rawObj); err != nil {
 			return nil, errors.Wrap(err, "invalid YAML in multi-document file")
 		}

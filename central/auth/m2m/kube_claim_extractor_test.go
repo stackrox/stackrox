@@ -18,15 +18,15 @@ func Test_kubeClaimExtractor(t *testing.T) {
 
 		claims, err := e.ExtractClaims(&IDToken{
 			Claims: func(v any) error {
-				*v.(*map[string]any) = map[string]interface{}{
+				*v.(*map[string]any) = map[string]any{
 					"aud": []string{"https://example.com"},
 					"exp": 1763119831,
 					"iat": 1763116231,
 					"iss": "https://example.com",
 					"jti": "6a5e8681-3b2a-44f2-9462-ecf16f52c779",
-					"kubernetes.io": map[string]interface{}{
+					"kubernetes.io": map[string]any{
 						"namespace": "stackrox",
-						"serviceaccount": map[string]interface{}{
+						"serviceaccount": map[string]any{
 							"name": "config-controller",
 							"uid":  "3cd68f8a-7e72-44e7-af17-b283e7027980",
 						},

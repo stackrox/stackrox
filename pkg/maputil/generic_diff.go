@@ -9,15 +9,15 @@ import (
 
 // DiffLeaf contains the information for a diff found within untyped maps.
 type DiffLeaf struct {
-	A interface{} // This is the value in the `a` resource.
-	B interface{} // This is the value in the `b` resource.
+	A any // This is the value in the `a` resource.
+	B any // This is the value in the `b` resource.
 }
 
 // DiffGenericMap computes a diff in the form of a generic map for two generic maps.
 // The values in the result map are either of type `map[string]interface{}` or `DiffLeaf`.
-func DiffGenericMap(a map[string]interface{}, b map[string]interface{}) map[string]interface{} {
+func DiffGenericMap(a map[string]any, b map[string]any) map[string]any {
 	keys := set.NewStringSet()
-	diffMap := make(map[string]interface{})
+	diffMap := make(map[string]any)
 
 	// collect all keys first
 	for k := range a {
@@ -32,8 +32,8 @@ func DiffGenericMap(a map[string]interface{}, b map[string]interface{}) map[stri
 		aVal := a[k]
 		bVal := b[k]
 
-		aMap, aOk := aVal.(map[string]interface{})
-		bMap, bOk := bVal.(map[string]interface{})
+		aMap, aOk := aVal.(map[string]any)
+		bMap, bOk := bVal.(map[string]any)
 		if aOk && bOk {
 			// Compute diffs for the nested maps.
 			subDiff := DiffGenericMap(aMap, bMap)

@@ -29,7 +29,7 @@ func TestConfigure(t *testing.T) {
 		},
 		{
 			Name: "OK",
-			Config: func(i interface{}) error {
+			Config: func(i any) error {
 				cfg := i.(*Config)
 				s := "http://example.com/"
 				cfg.FeedRoot = &s
@@ -38,7 +38,7 @@ func TestConfigure(t *testing.T) {
 		},
 		{
 			Name:   "UnmarshalError",
-			Config: func(_ interface{}) error { return errors.New("expected error") },
+			Config: func(_ any) error { return errors.New("expected error") },
 			Check: func(t *testing.T, err error) {
 				if err == nil {
 					t.Error("expected unmarshal error")
@@ -47,7 +47,7 @@ func TestConfigure(t *testing.T) {
 		},
 		{
 			Name: "TrailingSlash",
-			Config: func(i interface{}) error {
+			Config: func(i any) error {
 				cfg := i.(*Config)
 				s := "http://example.com"
 				cfg.FeedRoot = &s
@@ -61,7 +61,7 @@ func TestConfigure(t *testing.T) {
 		},
 		{
 			Name: "BadURL",
-			Config: func(i interface{}) error {
+			Config: func(i any) error {
 				cfg := i.(*Config)
 				s := "http://[notaurl:/"
 				cfg.FeedRoot = &s
@@ -80,7 +80,7 @@ func TestConfigure(t *testing.T) {
 }
 
 type configTestcase struct {
-	Config func(interface{}) error
+	Config func(any) error
 	Check  func(*testing.T, error)
 	Name   string
 }
@@ -104,7 +104,7 @@ func (tc configTestcase) Run(ctx context.Context) func(*testing.T) {
 	}
 }
 
-func noopConfig(_ interface{}) error { return nil }
+func noopConfig(_ any) error { return nil }
 
 func TestFetch(t *testing.T) {
 	ctx := test.Logging(t)
@@ -185,7 +185,7 @@ func (tc fetchTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 	e := &Enricher{}
 	return func(t *testing.T) {
 		ctx := test.Logging(t)
-		f := func(i interface{}) error {
+		f := func(i any) error {
 			cfg, ok := i.(*Config)
 			if !ok {
 				t.Fatal("assertion failed")
@@ -268,7 +268,7 @@ func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 	e := &Enricher{}
 	return func(t *testing.T) {
 		ctx := test.Logging(t)
-		f := func(i interface{}) error {
+		f := func(i any) error {
 			cfg, ok := i.(*Config)
 			if !ok {
 				t.Fatal("assertion failed")
@@ -328,7 +328,7 @@ func TestEnrich(t *testing.T) {
 	if got, want := kind, nvd.Type; got != want {
 		t.Errorf("got: %q, want: %q", got, want)
 	}
-	want := map[string][]map[string]interface{}{
+	want := map[string][]map[string]any{
 		"1": {{
 			"descriptions": []any{
 				map[string]any{"lang": string("en"), "value": "Insecure Permissions vulnerability in fit2cloud Cloud Explorer Lite version 1.4.1, allow local attackers to escalate privileges and obtain sensitive information via the cloud accounts parameter."},
@@ -372,7 +372,7 @@ func TestEnrich(t *testing.T) {
 			"references": nil,
 		}},
 	}
-	got := map[string][]map[string]interface{}{}
+	got := map[string][]map[string]any{}
 	if err := json.Unmarshal(es[0], &got); err != nil {
 		t.Error(err)
 	}

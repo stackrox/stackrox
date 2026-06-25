@@ -15,7 +15,7 @@ import (
 // extracting an instance of a specific struct from the context which was
 // (hopefully) filled in by authorizers as they made authorization decisions.
 func AuthzTraceInterceptor(authzTraceSink AuthzTraceSink) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		resp, err := handler(ctx, req)
 
 		if trace := AuthzTraceFromContext(ctx); trace != nil {

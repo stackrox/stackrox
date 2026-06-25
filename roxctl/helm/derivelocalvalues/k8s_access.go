@@ -20,7 +20,7 @@ type k8sObjectDescriptionInterface interface {
 	get(ctx context.Context, kind string, name string) (*unstructured.Unstructured, error)
 }
 
-func (k *k8sObjectDescription) evaluate(ctx context.Context, kind string, name string, path string) interface{} {
+func (k *k8sObjectDescription) evaluate(ctx context.Context, kind string, name string, path string) any {
 	res, err := k.get(ctx, kind, name)
 	if err != nil {
 		k.warn("Failed to lookup resource %s/%s: %v", kind, name, err)
@@ -29,7 +29,7 @@ func (k *k8sObjectDescription) evaluate(ctx context.Context, kind string, name s
 	return unstructuredLookup(kind, name, *res, path)
 }
 
-func (k *k8sObjectDescription) evaluateOrDefault(ctx context.Context, kind string, name string, path string, def interface{}) interface{} {
+func (k *k8sObjectDescription) evaluateOrDefault(ctx context.Context, kind string, name string, path string, def any) any {
 	res := k.evaluate(ctx, kind, name, path)
 	if res == nil {
 		res = def
@@ -37,12 +37,12 @@ func (k *k8sObjectDescription) evaluateOrDefault(ctx context.Context, kind strin
 	return res
 }
 
-func (k *k8sObjectDescription) evaluateToObject(ctx context.Context, kind string, name string, jsonpath string, def map[string]interface{}) map[string]interface{} {
-	var objStrings map[string]interface{}
+func (k *k8sObjectDescription) evaluateToObject(ctx context.Context, kind string, name string, jsonpath string, def map[string]any) map[string]any {
+	var objStrings map[string]any
 	x := k.evaluateOrDefault(ctx, kind, name, jsonpath, def)
 	switch obj := x.(type) {
-	case map[interface{}]interface{}:
-		objStrings = make(map[string]interface{})
+	case map[any]any:
+		objStrings = make(map[string]any)
 		for k, v := range obj {
 			s, ok := k.(string)
 			if !ok {
@@ -51,7 +51,7 @@ func (k *k8sObjectDescription) evaluateToObject(ctx context.Context, kind string
 			objStrings[s] = v
 		}
 
-	case map[string]interface{}:
+	case map[string]any:
 		objStrings = obj
 
 	default:
@@ -62,9 +62,9 @@ func (k *k8sObjectDescription) evaluateToObject(ctx context.Context, kind string
 	return objStrings
 }
 
-func (k *k8sObjectDescription) evaluateToSlice(ctx context.Context, kind string, name string, jsonpath string, def []interface{}) []interface{} {
+func (k *k8sObjectDescription) evaluateToSlice(ctx context.Context, kind string, name string, jsonpath string, def []any) []any {
 	x := k.evaluateOrDefault(ctx, kind, name, jsonpath, def)
-	slice, ok := x.([]interface{})
+	slice, ok := x.([]any)
 	if !ok {
 		k.warn("Unexpected data type (%T) at JsonPath %q for resource %s/%s: %v", x, jsonpath, kind, name, x)
 		return def
@@ -72,16 +72,16 @@ func (k *k8sObjectDescription) evaluateToSlice(ctx context.Context, kind string,
 	return slice
 }
 
-func (k *k8sObjectDescription) evaluateToSubObject(ctx context.Context, kind string, name string, jsonpath string, retainKeys []string, def map[string]interface{}) map[string]interface{} {
-	var objStrings map[string]interface{}
+func (k *k8sObjectDescription) evaluateToSubObject(ctx context.Context, kind string, name string, jsonpath string, retainKeys []string, def map[string]any) map[string]any {
+	var objStrings map[string]any
 	x := k.evaluate(ctx, kind, name, jsonpath)
 	if reflectutils.IsNil(x) {
 		return def
 	}
 
 	switch obj := x.(type) {
-	case map[interface{}]interface{}:
-		objStrings = make(map[string]interface{})
+	case map[any]any:
+		objStrings = make(map[string]any)
 		for k, v := range obj {
 			s, ok := k.(string)
 			if !ok {
@@ -89,7 +89,7 @@ func (k *k8sObjectDescription) evaluateToSubObject(ctx context.Context, kind str
 			}
 			objStrings[s] = v
 		}
-	case map[string]interface{}:
+	case map[string]any:
 		objStrings = obj
 	default:
 		k.warn("Unexpected data type (%T) at JsonPath %q for resource %s/%s: %v", x, jsonpath, kind, name, x)
@@ -191,7 +191,7 @@ func (k *k8sObjectDescription) Exists(ctx context.Context, kind string, name str
 	return err == nil
 }
 
-func unstructuredLookup(kind string, name string, u unstructured.Unstructured, path string) interface{} {
+func unstructuredLookup(kind string, name string, u unstructured.Unstructured, path string) any {
 	jp := jsonpath.New(fmt.Sprintf("unstructured Lookup for %s/%s", kind, name))
 	err := jp.Parse(path)
 	if err != nil {
@@ -218,7 +218,7 @@ func (k *k8sObjectDescription) getWarnings() []string {
 	return k.warnings
 }
 
-func (k *k8sObjectDescription) warn(format string, args ...interface{}) {
+func (k *k8sObjectDescription) warn(format string, args ...any) {
 	msg := fmt.Sprintf(format, args...)
 	k.warnings = append(k.warnings, msg)
 }

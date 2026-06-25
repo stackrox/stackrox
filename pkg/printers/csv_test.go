@@ -113,7 +113,7 @@ func TestCsvPrinter_Print_Failures(t *testing.T) {
 		out            *strings.Builder
 		headers        []string
 		rowExpression  string
-		object         interface{}
+		object         any
 		expectedOutput string
 	}{
 		"invalid JSON should cause a failure": {

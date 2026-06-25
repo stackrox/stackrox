@@ -18,6 +18,7 @@ import (
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	routeclient "github.com/openshift/client-go/route/clientset/versioned"
+
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -122,6 +123,7 @@ func requestToken(t *testing.T, ctx context.Context, k8sClient kubernetes.Interf
 		resp, err := k8sClient.CoreV1().ServiceAccounts(namespace).CreateToken(
 			ctx, saName,
 			&authv1.TokenRequest{Spec: authv1.TokenRequestSpec{ExpirationSeconds: new(600)}},
+			&authv1.TokenRequest{Spec: authv1.TokenRequestSpec{ExpirationSeconds: new(int64(600))}},
 			metaV1.CreateOptions{},
 		)
 		require.NoError(c, err, "creating token for ServiceAccount %s/%s", namespace, saName)
@@ -242,7 +244,7 @@ func (s *OCPPluginSuite) TestPluginManifest() {
 
 		bodyBytes, err := io.ReadAll(resp.Body)
 		require.NoError(c, err, "reading plugin manifest response body")
-		var manifest map[string]interface{}
+		var manifest map[string]any
 		require.NoError(c, json.Unmarshal(bodyBytes, &manifest), "unmarshaling plugin manifest JSON")
 		assert.Contains(c, manifest, "name", "plugin manifest must contain a 'name' field")
 		assert.Contains(c, manifest, "version", "plugin manifest must contain a 'version' field")

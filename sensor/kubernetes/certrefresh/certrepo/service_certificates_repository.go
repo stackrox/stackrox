@@ -205,9 +205,9 @@ func (r *ServiceCertificatesRepoSecrets) patchServiceCertificate(ctx context.Con
 }
 
 type patchSecretDataByteMap struct {
-	Op    string      `json:"op"`
-	Path  string      `json:"path"`
-	Value interface{} `json:"value"`
+	Op    string `json:"op"`
+	Path  string `json:"path"`
+	Value any    `json:"value"`
 }
 
 func (r *ServiceCertificatesRepoSecrets) createSecret(ctx context.Context, caPem []byte,

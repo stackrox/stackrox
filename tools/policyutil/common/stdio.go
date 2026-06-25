@@ -15,23 +15,23 @@ var (
 )
 
 // PrintLog prints to STDERR and appends a newline.
-func PrintLog(format string, arg ...interface{}) {
+func PrintLog(format string, arg ...any) {
 	printf(os.Stderr, true, format, arg...)
 }
 
 // PrintVerboseLog redirects to PrintLog if verbose output is on.
-func PrintVerboseLog(format string, arg ...interface{}) {
+func PrintVerboseLog(format string, arg ...any) {
 	if Verbose {
 		PrintLog(format, arg...)
 	}
 }
 
 // PrintResult prints to STDOUT and appends a newline.
-func PrintResult(format string, arg ...interface{}) {
+func PrintResult(format string, arg ...any) {
 	printf(os.Stdout, true, format, arg...)
 }
 
-func printf(w io.Writer, eol bool, format string, arg ...interface{}) {
+func printf(w io.Writer, eol bool, format string, arg ...any) {
 	if len(arg) > 0 {
 		fmt.Fprintf(w, format, arg...)
 	} else {

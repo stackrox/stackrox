@@ -66,82 +66,82 @@ func newRateLimitLogger(l Logger, logCache pkgCacheLRU.LRU[string, *rateLimitedL
 }
 
 // ErrorL logs a templated error message if allowed by the rate limiter corresponding to the identifier
-func (rl *RateLimitedLogger) ErrorL(limiter string, template string, args ...interface{}) {
+func (rl *RateLimitedLogger) ErrorL(limiter string, template string, args ...any) {
 	rl.logf(zapcore.ErrorLevel, limiter, template, args...)
 }
 
 // Error logs the consecutive interfaces
-func (rl *RateLimitedLogger) Error(args ...interface{}) {
+func (rl *RateLimitedLogger) Error(args ...any) {
 	rl.logger.Error(args...)
 }
 
 // Errorf logs the input template filled with argument data
-func (rl *RateLimitedLogger) Errorf(template string, args ...interface{}) {
+func (rl *RateLimitedLogger) Errorf(template string, args ...any) {
 	rl.logger.Errorf(template, args...)
 }
 
 // Errorw logs the input message and keyValues
-func (rl *RateLimitedLogger) Errorw(msg string, keysAndValues ...interface{}) {
+func (rl *RateLimitedLogger) Errorw(msg string, keysAndValues ...any) {
 	rl.logger.Errorw(msg, keysAndValues...)
 }
 
 // WarnL logs a templated warn message if allowed by the rate limiter corresponding to the identifier
-func (rl *RateLimitedLogger) WarnL(limiter string, template string, args ...interface{}) {
+func (rl *RateLimitedLogger) WarnL(limiter string, template string, args ...any) {
 	rl.logf(zapcore.WarnLevel, limiter, template, args...)
 }
 
 // Warn logs the consecutive interfaces
-func (rl *RateLimitedLogger) Warn(args ...interface{}) {
+func (rl *RateLimitedLogger) Warn(args ...any) {
 	rl.logger.Warn(args...)
 }
 
 // Warnf logs the input template filled with argument data
-func (rl *RateLimitedLogger) Warnf(template string, args ...interface{}) {
+func (rl *RateLimitedLogger) Warnf(template string, args ...any) {
 	rl.logger.Warnf(template, args...)
 }
 
 // Warnw logs the input message and keyValues
-func (rl *RateLimitedLogger) Warnw(msg string, keysAndValues ...interface{}) {
+func (rl *RateLimitedLogger) Warnw(msg string, keysAndValues ...any) {
 	rl.logger.Warnw(msg, keysAndValues...)
 }
 
 // InfoL logs a templated info message if allowed by the rate limiter corresponding to the identifier
-func (rl *RateLimitedLogger) InfoL(limiter string, template string, args ...interface{}) {
+func (rl *RateLimitedLogger) InfoL(limiter string, template string, args ...any) {
 	rl.logf(zapcore.InfoLevel, limiter, template, args...)
 }
 
 // Info logs the consecutive interfaces
-func (rl *RateLimitedLogger) Info(args ...interface{}) {
+func (rl *RateLimitedLogger) Info(args ...any) {
 	rl.logger.Info(args...)
 }
 
 // Infof logs the input template filled with argument data
-func (rl *RateLimitedLogger) Infof(template string, args ...interface{}) {
+func (rl *RateLimitedLogger) Infof(template string, args ...any) {
 	rl.logger.Infof(template, args...)
 }
 
 // Infow logs the input message and keyValues
-func (rl *RateLimitedLogger) Infow(msg string, keysAndValues ...interface{}) {
+func (rl *RateLimitedLogger) Infow(msg string, keysAndValues ...any) {
 	rl.logger.Infow(msg, keysAndValues...)
 }
 
 // DebugL logs a templated debug message if allowed by the rate limiter corresponding to the identifier
-func (rl *RateLimitedLogger) DebugL(limiter string, template string, args ...interface{}) {
+func (rl *RateLimitedLogger) DebugL(limiter string, template string, args ...any) {
 	rl.logf(zapcore.DebugLevel, limiter, template, args...)
 }
 
 // Debug logs the consecutive interfaces
-func (rl *RateLimitedLogger) Debug(args ...interface{}) {
+func (rl *RateLimitedLogger) Debug(args ...any) {
 	rl.logger.Debug(args...)
 }
 
 // Debugf logs the input template filled with argument data
-func (rl *RateLimitedLogger) Debugf(template string, args ...interface{}) {
+func (rl *RateLimitedLogger) Debugf(template string, args ...any) {
 	rl.logger.Debugf(template, args...)
 }
 
 // Debugw logs the input message and keyValues
-func (rl *RateLimitedLogger) Debugw(msg string, keysAndValues ...interface{}) {
+func (rl *RateLimitedLogger) Debugw(msg string, keysAndValues ...any) {
 	rl.logger.Debugw(msg, keysAndValues...)
 }
 
@@ -198,7 +198,7 @@ func (rl *RateLimitedLogger) registerTraceAndLog(
 	log.log()
 }
 
-func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template string, args ...interface{}) {
+func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template string, args ...any) {
 	payload := fmt.Sprintf(template, args...)
 	_, file, line, ok := runtime.Caller(2)
 	if !ok {

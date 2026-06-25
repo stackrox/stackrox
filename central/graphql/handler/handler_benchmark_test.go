@@ -134,10 +134,10 @@ func getRequestJSON(
 	query string,
 	targetNamespace string,
 ) ([]byte, error) {
-	vals := map[string]interface{}{"query": query}
+	vals := map[string]any{"query": query}
 	if targetNamespace != "" {
 		query := "Namespace:" + targetNamespace
-		vals["variables"] = map[string]interface{}{
+		vals["variables"] = map[string]any{
 			"query": query,
 		}
 	}
@@ -154,11 +154,11 @@ func getGraphQLServer(testHelper *testutils.ExportServicePostgresTestHelper) (*h
 	resolver.DeploymentDataStore = testHelper.Deployments
 	resolver.ImageDataStore = testHelper.Images
 	// Override Deployment and Image loader to avoid panics
-	deploymentFactory := func() interface{} {
+	deploymentFactory := func() any {
 		return loaders.NewDeploymentLoader(resolver.DeploymentDataStore, testHelper.DeploymentView)
 	}
 	loaders.RegisterTypeFactory(reflect.TypeFor[storage.Deployment](), deploymentFactory)
-	imageFactory := func() interface{} {
+	imageFactory := func() any {
 		return loaders.NewImageLoader(resolver.ImageDataStore, testHelper.ImageView)
 	}
 	loaders.RegisterTypeFactory(reflect.TypeFor[storage.Image](), imageFactory)

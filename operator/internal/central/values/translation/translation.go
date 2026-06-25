@@ -230,7 +230,7 @@ func getCentralComponentValues(ctx context.Context, c *platform.CentralComponent
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
 	if c.DefaultTLSSecret != nil {
-		cv.SetMap("defaultTLS", map[string]interface{}{"reference": c.DefaultTLSSecret.Name})
+		cv.SetMap("defaultTLS", map[string]any{"reference": c.DefaultTLSSecret.Name})
 	}
 
 	cv.SetBoolValue("exposeMonitoring", c.Monitoring.IsEnabled())

@@ -6,8 +6,8 @@ import (
 )
 
 type checkReporter interface {
-	Warnf(format string, args ...interface{})
-	Errorf(format string, args ...interface{})
+	Warnf(format string, args ...any)
+	Errorf(format string, args ...any)
 }
 
 type check interface {
