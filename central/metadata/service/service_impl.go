@@ -207,7 +207,24 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 	if authn.IdentityFromContextOrNil(ctx) != nil {
 		metadata.Version = version.GetMainVersion()
 	}
+	metadata.KnownMajorBumps = knownMajorBumpsProto()
 	return metadata, nil
+}
+
+func knownMajorBumpsProto() []*v1.MajorVersionBump {
+	bumps, err := version.EmbeddedMajorBumps()
+	if err != nil {
+		log.Warnf("Failed to load embedded major version bumps: %v", err)
+		return nil
+	}
+	out := make([]*v1.MajorVersionBump, 0, len(bumps))
+	for _, b := range bumps {
+		out = append(out, &v1.MajorVersionBump{
+			FromVersion: b.From.String(),
+			ToVersion:   b.To.String(),
+		})
+	}
+	return out
 }
 
 // TLSChallenge implements a secure certificate discovery mechanism via an unauthenticated endpoint

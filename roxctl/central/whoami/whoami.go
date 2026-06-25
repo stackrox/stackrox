@@ -10,10 +10,12 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
+	"google.golang.org/grpc"
 )
 
 type centralWhoAmICommand struct {
@@ -92,7 +94,57 @@ User name:
 		cmd.env.Logger().PrintfLn("\t%s %s", accessString(access), resource)
 	}
 
+	cmd.checkVersionSkew(ctx, conn)
+
 	return nil
+}
+
+const maxVersionSkew = 3
+
+func (cmd *centralWhoAmICommand) checkVersionSkew(ctx context.Context, conn *grpc.ClientConn) {
+	metadata, err := v1.NewMetadataServiceClient(conn).GetMetadata(ctx, &v1.Empty{})
+	if err != nil {
+		cmd.env.Logger().WarnfLn("Could not fetch Central metadata for version skew check: %v", err)
+		return
+	}
+
+	centralVersion := metadata.GetVersion()
+	if centralVersion == "" {
+		return
+	}
+
+	localBumps, err := version.EmbeddedMajorBumps()
+	if err != nil {
+		cmd.env.Logger().WarnfLn("Could not load embedded version bump data: %v", err)
+		return
+	}
+
+	remoteBumps := bumpsFromProto(metadata.GetKnownMajorBumps())
+	merged := version.MergeBumps(localBumps, remoteBumps)
+
+	result := version.CheckSkew(version.GetMainVersion(), centralVersion, maxVersionSkew, merged)
+	switch result.Status {
+	case version.SkewWarning:
+		cmd.env.Logger().WarnfLn("WARNING: %s", result.Message)
+	case version.SkewOK:
+		cmd.env.Logger().InfofLn("Version check: %s", result.Message)
+	}
+}
+
+func bumpsFromProto(pb []*v1.MajorVersionBump) []version.MajorBump {
+	out := make([]version.MajorBump, 0, len(pb))
+	for _, b := range pb {
+		from, err := version.ParseXY(b.GetFromVersion())
+		if err != nil {
+			continue
+		}
+		to, err := version.ParseXY(b.GetToVersion())
+		if err != nil {
+			continue
+		}
+		out = append(out, version.MajorBump{From: from, To: to})
+	}
+	return out
 }
 
 func accessString(access storage.Access) string {
