@@ -48,18 +48,12 @@ func TestBundleToSignatureIntegration(t *testing.T) {
 	assert.Equal(t, DefaultRedHatIntegrationName, si.GetName())
 	assert.Equal(t, storage.Traits_DEFAULT, si.GetTraits().GetOrigin())
 
-	var cosignEntries []KeyBundleEntry
-	for _, e := range bundle.Keys {
-		if e.Type == KeyTypeCosign {
-			cosignEntries = append(cosignEntries, e)
-		}
-	}
-
+	supported := bundle.SupportedKeys()
 	keys := si.GetCosign().GetPublicKeys()
-	require.Len(t, keys, len(cosignEntries))
+	require.Len(t, keys, len(supported))
 	for i, key := range keys {
-		assert.Equal(t, cosignEntries[i].Name, key.GetName())
-		assert.Equal(t, cosignEntries[i].PEM, key.GetPublicKeyPemEnc())
+		assert.Equal(t, supported[i].Name, key.GetName())
+		assert.Equal(t, supported[i].PEM, key.GetPublicKeyPemEnc())
 	}
 }
 
@@ -203,6 +197,26 @@ func TestParseKeyBundleSchemaVersionDefaults(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestKeyBundleSupportedAndUnsupportedKeys(t *testing.T) {
+	bundle := &KeyBundle{
+		SchemaVersion: SchemaVersion1,
+		Keys: []KeyBundleEntry{
+			{Name: "cosign-1", Type: KeyTypeCosign, PEM: testPublicKeyPEM},
+			{Name: "pgp-1", Type: "pgp", PEM: testPublicKeyPEM2},
+			{Name: "cosign-2", Type: KeyTypeCosign, PEM: testPublicKeyPEM2},
+		},
+	}
+
+	supported := bundle.SupportedKeys()
+	require.Len(t, supported, 2)
+	assert.Equal(t, "cosign-1", supported[0].Name)
+	assert.Equal(t, "cosign-2", supported[1].Name)
+
+	unsupported := bundle.UnsupportedKeys()
+	require.Len(t, unsupported, 1)
+	assert.Equal(t, "pgp-1", unsupported[0].Name)
 }
 
 func TestBundleToSignatureIntegrationFiltersNonCosignKeys(t *testing.T) {

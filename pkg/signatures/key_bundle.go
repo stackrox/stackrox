@@ -66,7 +66,6 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 		return nil, ErrKeyBundleEmpty
 	}
 
-	hasSupportedKey := false
 	seenNames := set.NewStringSet()
 	for i := range bundle.Keys {
 		entry := &bundle.Keys[i]
@@ -88,27 +87,50 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 			return nil, ErrKeyInvalidPEM.CausedByf("key %q", entry.Name)
 		}
 		entry.PEM = string(pem.EncodeToMemory(keyBlock))
-		if entry.Type == KeyTypeCosign {
-			hasSupportedKey = true
-		}
 	}
 
-	if !hasSupportedKey {
+	if len(bundle.SupportedKeys()) == 0 {
 		return nil, ErrNoSupportedKeys
 	}
 	return &bundle, nil
 }
 
+// supportedKeyTypes defines which key types are currently handled.
+var supportedKeyTypes = set.NewFrozenStringSet(KeyTypeCosign)
+
+// SupportedKeys returns only the keys with types that are currently supported.
+func (kb *KeyBundle) SupportedKeys() []KeyBundleEntry {
+	var result []KeyBundleEntry
+	for _, entry := range kb.Keys {
+		if supportedKeyTypes.Contains(entry.Type) {
+			result = append(result, entry)
+		}
+	}
+	return result
+}
+
+// UnsupportedKeys returns only the keys with types that are not currently supported.
+func (kb *KeyBundle) UnsupportedKeys() []KeyBundleEntry {
+	var result []KeyBundleEntry
+	for _, entry := range kb.Keys {
+		if !supportedKeyTypes.Contains(entry.Type) {
+			result = append(result, entry)
+		}
+	}
+	return result
+}
+
 // BundleToSignatureIntegration converts a parsed KeyBundle into the default
 // Red Hat SignatureIntegration, using the well-known ID and name.
-// Only keys with type "cosign" are included; other key types are skipped with a warning.
+// Only keys with supported types are included; unsupported key types are skipped with a warning.
 func BundleToSignatureIntegration(kb *KeyBundle) *storage.SignatureIntegration {
-	publicKeys := make([]*storage.CosignPublicKeyVerification_PublicKey, 0, len(kb.Keys))
-	for _, entry := range kb.Keys {
-		if entry.Type != KeyTypeCosign {
-			log.Warnf("Skipping key %q with unsupported type %q", entry.Name, entry.Type)
-			continue
-		}
+	for _, entry := range kb.UnsupportedKeys() {
+		log.Warnf("Skipping key %q with unsupported type %q", entry.Name, entry.Type)
+	}
+
+	supported := kb.SupportedKeys()
+	publicKeys := make([]*storage.CosignPublicKeyVerification_PublicKey, 0, len(supported))
+	for _, entry := range supported {
 		publicKeys = append(publicKeys, &storage.CosignPublicKeyVerification_PublicKey{
 			Name:            entry.Name,
 			PublicKeyPemEnc: entry.PEM,
