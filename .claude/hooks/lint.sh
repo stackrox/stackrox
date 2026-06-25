@@ -37,18 +37,22 @@ PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
 cd "$PROJECT_DIR" || exit 0
 
 lint_output=""
+# Capture lint output. Suppress make/tool noise (level=, Flag --) so only findings show.
+# If a tool is missing or fails to start, output is empty and we exit 0 gracefully.
+run_lint() { make -s "$@" 2>&1 | grep -v -e "^level=" -e "^Flag " -e "^make:" -e "^+ " | head -15; }
+
 case "$file" in
   *.go)
     [[ "$file" == *"/generated/"* || "$file" == *"/vendor/"* ]] && exit 0
     dir=$(dirname "$file")
     pkg="./${dir#"$PROJECT_DIR"/}"
-    lint_output=$(make -s golangci-lint-nodeps PKG="$pkg" 2>&1 | grep -v "^level=" | head -15)
+    lint_output=$(run_lint golangci-lint-nodeps PKG="$pkg")
     ;;
   *.proto)
-    lint_output=$(make -s proto-style FILE="$file" 2>&1 | head -15)
+    lint_output=$(run_lint proto-style FILE="$file")
     ;;
   *.sh)
-    lint_output=$(make -s shell-style FILE="$file" 2>&1 | head -15)
+    lint_output=$(run_lint shell-style FILE="$file")
     ;;
   *.ts|*.tsx|*.js|*.jsx|*.css|*.scss)
     if [[ "$file" == */ui/* ]]; then
