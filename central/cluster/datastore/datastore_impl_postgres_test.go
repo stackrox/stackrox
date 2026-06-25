@@ -1034,7 +1034,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchRawClustersConsistentOrder
 	const numIterations = 10
 	var firstResults []*storage.Cluster
 
-	for i := 0; i < numIterations; i++ {
+	for i := range numIterations {
 		results, err := s.clusterDatastore.SearchRawClusters(ctx, pkgSearch.EmptyQuery())
 		s.Require().NoError(err)
 		s.Require().NotEmpty(results)
@@ -1058,7 +1058,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchRawClustersConsistentOrder
 	query := pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "test", "ordering").ProtoQuery()
 	var firstFilteredResults []*storage.Cluster
 
-	for i := 0; i < numIterations; i++ {
+	for i := range numIterations {
 		results, err := s.clusterDatastore.SearchRawClusters(ctx, query)
 		s.Require().NoError(err)
 		s.Require().Len(results, len(clusterNames), "Should return all test clusters")

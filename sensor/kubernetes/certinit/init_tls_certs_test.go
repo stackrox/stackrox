@@ -141,7 +141,7 @@ func (s *initTLSCertsSuite) TestSanityCheckDestination() {
 }
 
 func (s *initTLSCertsSuite) createFiles(dir string, count int, prefix, content string) {
-	for i := 0; i < count; i++ {
+	for i := range count {
 		err := os.WriteFile(filepath.Join(dir, fmt.Sprintf("%s%d", prefix, i)), []byte(content), 0600)
 		s.Require().NoError(err, "Failed to create cert file in %s", dir)
 	}
@@ -200,7 +200,7 @@ func (s *initTLSCertsSuite) TestCertsNewSyncHandler() {
 		s.Equal("v1", string(content))
 	}
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		err := os.WriteFile(filepath.Join(newSourceDir, fmt.Sprintf("cert%d", i)), []byte("v2"), 0600)
 		s.Require().NoError(err)
 	}

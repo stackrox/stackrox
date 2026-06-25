@@ -556,7 +556,7 @@ func (s *BaseImageRepositoryDatastoreTestSuite) TestUpdateStatus_OnlyIfStatus_Co
 	results := make(chan *storage.BaseImageRepository, numGoroutines)
 	errs := make(chan error, numGoroutines)
 
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		go func() {
 			updated, err := s.datastore.UpdateStatus(ctx, created.GetId(), StatusUpdate{
 				Status: storage.BaseImageRepository_QUEUED,
@@ -573,7 +573,7 @@ func (s *BaseImageRepositoryDatastoreTestSuite) TestUpdateStatus_OnlyIfStatus_Co
 
 	// Collect results.
 	var updatedCount int
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		updated := <-results
 		err := <-errs
 		s.NoError(err)

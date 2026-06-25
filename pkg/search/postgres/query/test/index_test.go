@@ -54,7 +54,7 @@ func getStruct(id int) *storage.TestSingleKeyStruct {
 
 func (s *SingleIndexSuite) TestDocIDs() {
 	var testStructs []*storage.TestSingleKeyStruct
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		testStructs = append(testStructs, getStruct(i))
 	}
 	s.NoError(s.store.UpsertMany(ctx, testStructs))
@@ -96,7 +96,7 @@ func (s *SingleIndexSuite) TestDocIDs() {
 
 func (s *SingleIndexSuite) TestSearchAfter() {
 	var testStructs []*storage.TestSingleKeyStruct
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		obj := getStruct(i)
 		obj.Uint64 = uint64(i / 2)
 		testStructs = append(testStructs, obj)

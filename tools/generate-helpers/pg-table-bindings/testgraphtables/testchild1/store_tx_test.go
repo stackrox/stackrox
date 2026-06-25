@@ -117,7 +117,7 @@ func (s *TestChild1StoreSuite) testWithCtx(ctx context.Context) {
 	s.Nil(foundTestChild1)
 
 	var testChild1s []*storage.TestChild1
-	for i := 0; i < 200; i++ {
+	for range 200 {
 		testChild1 := &storage.TestChild1{}
 		s.NoError(testutils.FullInit(testChild1, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testChild1s = append(testChild1s, testChild1)

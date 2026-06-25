@@ -48,7 +48,7 @@ func (s *migrationTestSuite) TestMigration() {
 	var convertedPLOPs []schema.ListeningEndpoints
 	numPLOPs := 3000
 	batchSize := 50
-	for i := 0; i < numPLOPs; i++ {
+	for range numPLOPs {
 		plop := &storage.ProcessListeningOnPortStorage{}
 		s.Require().NoError(testutils.FullInit(plop, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		plop.Id = uuid.NewV4().String()

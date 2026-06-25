@@ -419,7 +419,7 @@ func populateListFromDB[T any](ctx context.Context, _ *testing.T, db postgres.DB
 
 func getIndent(offset int) string {
 	var indent strings.Builder
-	for i := 0; i < offset; i++ {
+	for range offset {
 		indent.WriteString("  ")
 	}
 	return indent.String()

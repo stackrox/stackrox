@@ -49,7 +49,7 @@ func cleanupDatabase(b *testing.B, pool *pgtest.TestPostgres) {
 
 func setupTest(b *testing.B, pool *pgtest.TestPostgres, datastore DataStore, numConfigs int, numClusters int, numResults int) {
 	scanConfigs := make([]string, 0, numConfigs)
-	for i := 0; i < numConfigs; i++ {
+	for i := range numConfigs {
 		scanConfigName := fmt.Sprintf("scan-config-%d", i)
 		_, err := pool.DB.Exec(context.Background(), "insert into compliance_operator_scan_configuration_v2 (id, scanconfigname) values ($1, $2)", uuid.NewV4().String(), scanConfigName)
 		require.NoError(b, err)
@@ -59,7 +59,7 @@ func setupTest(b *testing.B, pool *pgtest.TestPostgres, datastore DataStore, num
 
 	clusters := make([]clusterInfo, 0, numClusters)
 	profiles := make(map[string]string, numClusters)
-	for i := 0; i < numClusters; i++ {
+	for i := range numClusters {
 		clusterID := uuid.NewV4().String()
 		clusterName := fmt.Sprintf("cluster-%d", i)
 		scanRefID := uuid.NewV4().String()
@@ -81,7 +81,7 @@ func setupTest(b *testing.B, pool *pgtest.TestPostgres, datastore DataStore, num
 		require.NoError(b, err)
 	}
 
-	for i := 0; i < numResults; i++ {
+	for i := range numResults {
 		resultName := fmt.Sprintf("check-result-%d", i)
 		for _, cluster := range clusters {
 			for _, scanConfig := range scanConfigs {

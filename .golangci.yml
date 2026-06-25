@@ -173,7 +173,6 @@ linters:
       disable:
         - any
         - newexpr
-        - rangeint
   exclusions:
     generated: lax
     rules:

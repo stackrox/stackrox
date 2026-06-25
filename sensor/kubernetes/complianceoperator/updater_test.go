@@ -278,7 +278,7 @@ func (s *UpdaterTestSuite) getInfo(times int, updateInterval time.Duration) *cen
 
 	var info *central.ComplianceOperatorInfo
 
-	for i := 0; i < times; i++ {
+	for range times {
 		select {
 		case response := <-updater.ResponsesC():
 			info = response.Msg.(*central.MsgFromSensor_ComplianceOperatorInfo).ComplianceOperatorInfo

@@ -25,7 +25,7 @@ func GenerateString(num int, charSet Charset) string {
 		return ""
 	}
 	var str strings.Builder
-	for i := 0; i < num; i++ {
+	for range num {
 		randInt := rand.IntN(len(charSet))
 		str.WriteString(string(charSet[randInt]))
 	}

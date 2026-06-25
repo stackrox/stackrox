@@ -71,7 +71,7 @@ func generateProcessIndicators(numProcesses int, deploymentID string, containers
 		containerStartTimes[containerName] = protoconv.MustConvertTimeToTimestamp(startTime)
 	}
 
-	for i := 0; i < numProcesses; i++ {
+	for i := range numProcesses {
 		template := processTemplates[i%len(processTemplates)]
 		containerName := containers[i%len(containers)]
 
@@ -227,7 +227,7 @@ func BenchmarkEvaluateBaselinesAndPersistResult(b *testing.B) {
 				wg := sync.WaitGroup{}
 				const parallelism = 10
 				wg.Add(parallelism)
-				for j := 0; j < parallelism; j++ {
+				for range parallelism {
 					go func() {
 						defer wg.Done()
 						violatingProcesses, err := evaluator.EvaluateBaselinesAndPersistResult(deployment)

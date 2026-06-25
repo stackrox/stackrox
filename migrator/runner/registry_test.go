@@ -18,7 +18,7 @@ const (
 func TestValidityOfRegistry(t *testing.T) {
 	a := assert.New(t)
 
-	for i := 0; i < lowestMigrationNumber; i++ {
+	for i := range lowestMigrationNumber {
 		_, exists := migrations.Get(i)
 		a.False(exists)
 	}

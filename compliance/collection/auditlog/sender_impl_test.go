@@ -61,7 +61,7 @@ func (s *ComplianceAuditLogSenderTestSuite) TestSendCorrectlySendsEvents() {
 func (s *ComplianceAuditLogSenderTestSuite) TestSendSendsInOrder() {
 	client, sender := s.getMocks()
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		mockEvent := s.fakeAuditEvent("get", "configmaps", fmt.Sprintf("map-%d", i), "stackrox")
 		err := sender.Send(context.Background(), &mockEvent)
 		s.NoError(err)

@@ -19,7 +19,7 @@ func aBeforeB(a, b []*storage.ComplianceAggregation_AggregationKey) bool {
 	minLen := min(len(a), len(b))
 
 	// Try to choose a or b based on scope. Lowest scope type works first.
-	for i := 0; i < minLen; i++ {
+	for i := range minLen {
 		if a[i].GetScope() < b[i].GetScope() {
 			return true
 		} else if a[i].GetScope() > b[i].GetScope() {
@@ -35,7 +35,7 @@ func aBeforeB(a, b []*storage.ComplianceAggregation_AggregationKey) bool {
 	}
 
 	// Same exact scopes, so we have to choose order based on ids.
-	for i := 0; i < minLen; i++ {
+	for i := range minLen {
 		var cmp int
 		if a[i].GetScope() == storage.ComplianceAggregation_CONTROL {
 			// We want to use version string comparison for control ids (1_20_a > 1_2_a)

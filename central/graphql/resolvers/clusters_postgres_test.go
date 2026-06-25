@@ -43,7 +43,7 @@ func (s *graphQLClusterTestSuite) SetupSuite() {
 	s.resolver = &Resolver{ClusterDataStore: clusterDataStore}
 
 	ctx := sac.WithAllAccess(context.Background())
-	for i := 0; i < 6; i++ {
+	for i := range 6 {
 		cluster := fixtures.GetCluster(fmt.Sprintf("Test cluster %d", i+1))
 		id, addErr := clusterDataStore.AddCluster(ctx, cluster)
 		s.Require().NoError(addErr)

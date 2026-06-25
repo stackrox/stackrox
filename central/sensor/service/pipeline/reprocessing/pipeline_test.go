@@ -79,7 +79,7 @@ func TestRunThrottlesConcurrency(t *testing.T) {
 	const numDeployments = 20
 
 	// Set up mocks: each ReprocessDeploymentRisk call sleeps briefly to simulate DB work.
-	for i := 0; i < numDeployments; i++ {
+	for range numDeployments {
 		depID := uuid.NewV4().String()
 		dep := &storage.Deployment{Id: depID, Name: "test"}
 		deployments.EXPECT().GetDeployment(gomock.Any(), depID).Return(dep, true, nil)

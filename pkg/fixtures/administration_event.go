@@ -27,7 +27,7 @@ func GetAdministrationEvent() *events.AdministrationEvent {
 // - odd ones will have resource type "General", level "WARNING", and type "GENERIC".
 func GetMultipleAdministrationEvents(numOfEvents int) []*events.AdministrationEvent {
 	res := make([]*events.AdministrationEvent, 0, numOfEvents)
-	for i := 0; i < numOfEvents; i++ {
+	for i := range numOfEvents {
 		event := &events.AdministrationEvent{
 			Domain:     fmt.Sprintf("sample domain %d", i),
 			Hint:       fmt.Sprintf("sample hint %d", i),

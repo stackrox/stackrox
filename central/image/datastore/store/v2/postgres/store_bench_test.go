@@ -32,11 +32,11 @@ func BenchmarkRealisticPopulateImage(b *testing.B) {
 	numComponents := 100
 	numCVEs := 10
 	images := make([]*storage.Image, 0, numImages)
-	for i := 0; i < numImages; i++ {
+	for i := range numImages {
 		components := make([]*storage.EmbeddedImageScanComponent, 0, numComponents)
-		for j := 0; j < numComponents; j++ {
+		for j := range numComponents {
 			vulns := make([]*storage.EmbeddedVulnerability, 0, numCVEs)
-			for k := 0; k < numCVEs; k++ {
+			for k := range numCVEs {
 				vulns = append(vulns, &storage.EmbeddedVulnerability{
 					Cve:               fmt.Sprintf("CVE-2024-%d%d%d", i, j, k),
 					Cvss:              5,
@@ -96,7 +96,7 @@ func BenchmarkWalkComparison(b *testing.B) {
 	// Setup: Insert test images
 	numImages := 100
 	images := make([]*storage.Image, 0, numImages)
-	for i := 0; i < numImages; i++ {
+	for i := range numImages {
 		img := fixtures.GetImageWithUniqueComponents(5)
 		img.Id = fmt.Sprintf("%d", i)
 		images = append(images, img)

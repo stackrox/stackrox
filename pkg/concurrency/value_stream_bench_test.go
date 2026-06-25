@@ -113,7 +113,7 @@ func BenchmarkValueStreamReadAsync(b *testing.B) {
 	it := vs.Iterator(true)
 
 	go func(n int) {
-		for i := 0; i < n; i++ {
+		for i := range n {
 			vs.Push(i)
 		}
 	}(b.N)
@@ -155,7 +155,7 @@ func BenchmarkBuf1ChanRead(b *testing.B) {
 
 	// Write to channel in a tight loop
 	go func(n int) {
-		for i := 0; i < n; i++ {
+		for i := range n {
 			c <- i
 		}
 	}(b.N)
@@ -179,7 +179,7 @@ func BenchmarkUnbufChanRead(b *testing.B) {
 
 	// Write to channel in a tight loop
 	go func(n int) {
-		for i := 0; i < n; i++ {
+		for i := range n {
 			c <- i
 		}
 	}(b.N)

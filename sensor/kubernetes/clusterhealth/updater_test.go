@@ -319,7 +319,7 @@ func (s *UpdaterTestSuite) getHealthInfo(times int) *storage.CollectorHealthInfo
 
 	var healthInfo *storage.CollectorHealthInfo
 
-	for i := 0; i < times; i++ {
+	for range times {
 		select {
 		case response := <-updater.ResponsesC():
 			healthInfo = response.Msg.(*central.MsgFromSensor_ClusterHealthInfo).ClusterHealthInfo.GetCollectorHealthInfo()
@@ -386,7 +386,7 @@ func (s *UpdaterTestSuite) addDeployment(d appsV1.Deployment) {
 }
 
 func (s *UpdaterTestSuite) addNodes(count int) {
-	for i := 0; i < count; i++ {
+	for i := range count {
 		_, err := s.client.CoreV1().Nodes().Create(context.Background(), &coreV1.Node{
 			ObjectMeta: metaV1.ObjectMeta{
 				Name: "mock-node-" + strconv.Itoa(i),

@@ -34,7 +34,7 @@ type workerQueue struct {
 func newWorkerQueue(poolSize int, typ string, injector common.MessageInjector) *workerQueue {
 	totalSize := poolSize + 1
 	queues := make([]*dedupingqueue.DedupingQueue[string], totalSize)
-	for i := 0; i < totalSize; i++ {
+	for i := range totalSize {
 		queues[i] = dedupingqueue.NewDedupingQueue[string](
 			dedupingqueue.WithQueueName[string](typ),
 			dedupingqueue.WithOperationMetricsFunc[string](metrics.IncrementSensorEventQueueCounter))

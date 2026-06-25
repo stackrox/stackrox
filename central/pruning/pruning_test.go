@@ -2882,7 +2882,7 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects_WhenDisabled() {
 }
 
 func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID string, numberPods int) {
-	for i := 0; i < numberPods; i++ {
+	for range numberPods {
 		pod := &storage.Pod{
 			Id:        uuid.NewV4().String(),
 			ClusterId: clusterID,
@@ -2893,7 +2893,7 @@ func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID s
 }
 
 func (s *PruningTestSuite) addNodes(nodeDS testNodeDatastore.DataStore, clusterID string, numberOfNodes int) {
-	for i := 0; i < numberOfNodes; i++ {
+	for range numberOfNodes {
 		pod := &storage.Node{
 			Id:        uuid.NewV4().String(),
 			ClusterId: clusterID,

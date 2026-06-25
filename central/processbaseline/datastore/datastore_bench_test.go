@@ -74,7 +74,7 @@ func generateProcessBaselines(numBaselines int, elementsPerBaseline int) []*stor
 
 	// Create baselines with varied characteristics
 	// Each deployment can have multiple containers
-	for i := 0; i < numBaselines; i++ {
+	for i := range numBaselines {
 		deploymentID := deploymentIDs[i%len(deploymentIDs)]
 		clusterID := clusterIDs[i%len(clusterIDs)]
 		namespace := fmt.Sprintf("namespace-%d", i%20) // 20 different namespaces
@@ -89,7 +89,7 @@ func generateProcessBaselines(numBaselines int, elementsPerBaseline int) []*stor
 
 		// Create elements for this baseline
 		elements := make([]*storage.BaselineElement, 0, elementsPerBaseline)
-		for j := 0; j < elementsPerBaseline; j++ {
+		for j := range elementsPerBaseline {
 			// Mix common processes with unique ones
 			var processName string
 			if j < len(processTemplates) {

@@ -314,7 +314,7 @@ func (a *authProviderCmd) validateGroups() ([]declarativeconfig.Group, error) {
 	}
 
 	groups := make([]declarativeconfig.Group, 0, expectedGroups)
-	for i := 0; i < expectedGroups; i++ {
+	for i := range expectedGroups {
 		groups = append(groups, declarativeconfig.Group{
 			AttributeKey:   a.groupsKeys[i],
 			AttributeValue: a.groupsValues[i],

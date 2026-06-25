@@ -121,7 +121,7 @@ func TestLimitWithThrottle(t *testing.T) {
 			numCalls := tt.maxPerSec + 10
 			resultChan := make(chan bool, numCalls)
 
-			for i := 0; i < numCalls; i++ {
+			for range numCalls {
 				wg.Go(func() {
 					resultChan <- rl.limit(context.Background())
 				})

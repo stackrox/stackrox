@@ -190,7 +190,7 @@ func createEvents(randomIDs bool, numEvents, numDeploymentRefs int) []*component
 	if !randomIDs {
 		ids = createIds(numDeploymentRefs)
 	}
-	for i := 0; i < numEvents; i++ {
+	for i := range numEvents {
 		var event component.ResourceEvent
 		if randomIDs {
 			ids = createRandomIds(numDeploymentRefs)
@@ -207,7 +207,7 @@ func createEvents(randomIDs bool, numEvents, numDeploymentRefs int) []*component
 
 func createIds(n int) []string {
 	ret := make([]string, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		ret[i] = fmt.Sprintf("deployment-%d", i)
 	}
 	return ret
@@ -225,7 +225,7 @@ func randStringWithLength(n int) string {
 
 func createRandomIds(n int) []string {
 	ret := make([]string, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		ret[i] = randStringWithLength(10)
 	}
 	return ret

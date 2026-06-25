@@ -35,7 +35,7 @@ func testHtpasswd(t *testing.T, password string) {
 func TestGeneratedPasswordIsAlphanumeric(t *testing.T) {
 	const tries = 20
 	re := regexp.MustCompile(`^[a-zA-Z0-9]{25}$`)
-	for i := 0; i < tries; i++ {
+	for range tries {
 		pw := CreatePassword()
 		match := re.Match([]byte(pw))
 		assert.Truef(t, match, "Password '%s' didn't match expected format", pw)

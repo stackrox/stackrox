@@ -101,7 +101,7 @@ func takeSliceMetaStep(currentType reflect.Type, metaStep pathutil.MetaStep, eva
 		}
 
 		var results []*fieldResult
-		for i := 0; i < length; i++ {
+		for i := range length {
 			if res, matches := nestedEvaluator.Evaluate(value.Index(i)); matches {
 				results = append(results, res)
 			}

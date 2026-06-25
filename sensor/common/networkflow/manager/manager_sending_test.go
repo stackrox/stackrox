@@ -219,7 +219,7 @@ func (b *sendNetflowsSuite) TestUpdatesGetBufferedWhenUnread() {
 	b.waitForSendCycles(startingSendCycles + 4)
 
 	// should be able to read four buffered updates in sequence
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		b.assertOneUpdatedCloseConnection()
 	}
 }
@@ -240,7 +240,7 @@ func (b *sendNetflowsSuite) TestCallsDetectionEvenOnFullBuffer() {
 	b.waitForSendCycles(startingSendCycles + 6)
 
 	// Will only store 5 network flow updates, as it's the maximum buffer size in the test
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		b.assertOneUpdatedCloseConnection()
 	}
 
