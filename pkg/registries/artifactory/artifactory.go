@@ -45,8 +45,8 @@ type artifactoryRegistry struct {
 }
 
 // Test overrides the default docker Test because Artifactory's /v2 ping
-// endpoint does not require authentication, so Ping always succeeds even
-// with invalid credentials.
+// endpoint may not require authentication (e.g. when anonymous access is
+// enabled), causing Ping to succeed even with invalid credentials.
 func (a *artifactoryRegistry) Test() error {
 	_, err := a.Client.Repositories()
 	if err != nil {
