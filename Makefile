@@ -162,7 +162,10 @@ golangci-lint-cache-status: $(GOLANGCILINT_BIN) deps
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCILINT_BIN) deps
-ifdef CI
+ifdef PKG
+	@echo "+ $@ $(PKG)"
+	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix $(PKG)
+else ifdef CI
 	@echo '+ $@'
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
 	@echo 'If this fails, run `make style`.'
@@ -181,8 +184,13 @@ endif
 
 .PHONY: proto-style
 proto-style: $(BUF_BIN) deps
+ifdef FILE
+	@echo "+ $@ $(FILE)"
+	$(BUF_BIN) format --exit-code --diff -w "$(FILE)"
+else
 	@echo "+ $@"
 	$(BUF_BIN) format --exit-code --diff -w
+endif
 
 .PHONY: qa-tests-style
 qa-tests-style:
@@ -201,8 +209,13 @@ openshift-ci-style:
 
 .PHONY: shell-style
 shell-style:
+ifdef FILE
+	@echo "+ $@ $(FILE)"
+	shellcheck --norc -P SCRIPTDIR -x "$(FILE)"
+else
 	@echo "+ $@"
 	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh
+endif
 
 .PHONY: update-shellcheck-skip
 update-shellcheck-skip:
