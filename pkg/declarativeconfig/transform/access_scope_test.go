@@ -23,7 +23,7 @@ func TestWrongConfigurationTypeTransformAccessScope(t *testing.T) {
 func TestTransformAccessScope(t *testing.T) {
 	at := newAccessScopeTransform()
 
-	simpleAccessScopeType := reflect.TypeOf((*storage.SimpleAccessScope)(nil))
+	simpleAccessScopeType := reflect.TypeFor[*storage.SimpleAccessScope]()
 
 	// 1. Access scope with empty rules mimicking an unrestricted scope.
 	scopeConfig := &declarativeconfig.AccessScope{
@@ -274,7 +274,7 @@ func TestTransformAccessScope(t *testing.T) {
 func TestUniversalTransformAccessScope(t *testing.T) {
 	ut := New()
 
-	simpleAccessScopeType := reflect.TypeOf((*storage.SimpleAccessScope)(nil))
+	simpleAccessScopeType := reflect.TypeFor[*storage.SimpleAccessScope]()
 
 	// 1. Access scope with empty rules mimicking an unrestricted scope.
 	scopeConfig := &declarativeconfig.AccessScope{

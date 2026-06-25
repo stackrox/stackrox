@@ -13,10 +13,10 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var clusterCveLoaderType = reflect.TypeOf(storage.ClusterCVE{})
+var clusterCveLoaderType = reflect.TypeFor[storage.ClusterCVE]()
 
 func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.ClusterCVE{}), func() interface{} {
+	RegisterTypeFactory(reflect.TypeFor[storage.ClusterCVE](), func() interface{} {
 		return NewClusterCVELoader(clusterCVEDataStore.Singleton())
 	})
 }

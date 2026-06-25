@@ -46,7 +46,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NetworkFlow)(nil)), "network_flows_v2")
+		schema = walker.Walk(reflect.TypeFor[*storage.NetworkFlow](), "network_flows_v2")
 		RegisterTable(schema, CreateTableNetworkFlowsStmt)
 		return schema
 	}()

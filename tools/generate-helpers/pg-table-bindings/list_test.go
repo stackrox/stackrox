@@ -36,8 +36,8 @@ func TestClusterGetter(t *testing.T) {
 	}
 
 	t.Run("panics for not directly scoped type", func(t *testing.T) {
-		assert.Panics(t, func() { clusterGetter("obj", walker.Walk(reflect.TypeOf(&storage.CVE{}), "")) })
-		assert.Panics(t, func() { clusterGetter("obj", walker.Walk(reflect.TypeOf(&storage.Email{}), "")) })
+		assert.Panics(t, func() { clusterGetter("obj", walker.Walk(reflect.TypeFor[*storage.CVE](), "")) })
+		assert.Panics(t, func() { clusterGetter("obj", walker.Walk(reflect.TypeFor[*storage.Email](), "")) })
 	})
 }
 
@@ -54,7 +54,7 @@ func TestNamespaceGetter(t *testing.T) {
 	}
 
 	t.Run("panics for not directly & ns scoped type", func(t *testing.T) {
-		assert.Panics(t, func() { namespaceGetter("obj", walker.Walk(reflect.TypeOf(&storage.Email{}), "")) })
-		assert.Panics(t, func() { namespaceGetter("obj", walker.Walk(reflect.TypeOf(&storage.Cluster{}), "")) })
+		assert.Panics(t, func() { namespaceGetter("obj", walker.Walk(reflect.TypeFor[*storage.Email](), "")) })
+		assert.Panics(t, func() { namespaceGetter("obj", walker.Walk(reflect.TypeFor[*storage.Cluster](), "")) })
 	})
 }

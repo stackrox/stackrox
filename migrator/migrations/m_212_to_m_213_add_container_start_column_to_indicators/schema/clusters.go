@@ -22,7 +22,7 @@ var (
 
 	// ClustersSchema is the go schema for table `clusters`.
 	ClustersSchema = func() *walker.Schema {
-		schema := walker.Walk(reflect.TypeOf((*storage.Cluster)(nil)), "clusters")
+		schema := walker.Walk(reflect.TypeFor[*storage.Cluster](), "clusters")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTERS, "cluster", (*storage.Cluster)(nil)))
 		schema.ScopingResource = resources.Cluster
 

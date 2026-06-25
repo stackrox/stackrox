@@ -502,7 +502,7 @@ func nilCheck(f reflect.Value) bool {
 }
 
 var (
-	imageScanPtrType = reflect.TypeOf((*storage.ImageScan)(nil))
+	imageScanPtrType = reflect.TypeFor[*storage.ImageScan]()
 )
 
 func createStructFieldNestedPredicate(field reflect.StructField, structTy reflect.Type, pred internalPredicate) internalPredicate {

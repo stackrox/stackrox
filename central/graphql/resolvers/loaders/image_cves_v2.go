@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var imageCveV2LoaderType = reflect.TypeOf(storage.ImageCVEV2{})
+var imageCveV2LoaderType = reflect.TypeFor[storage.ImageCVEV2]()
 
 func init() {
 	RegisterTypeFactory(imageCveV2LoaderType, func() interface{} {

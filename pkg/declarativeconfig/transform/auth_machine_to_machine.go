@@ -12,7 +12,7 @@ import (
 var (
 	_ Transformer = (*authMachineToMachineConfigTransform)(nil)
 
-	authM2MConfigType = reflect.TypeOf((*storage.AuthMachineToMachineConfig)(nil))
+	authM2MConfigType = reflect.TypeFor[*storage.AuthMachineToMachineConfig]()
 )
 
 type authMachineToMachineConfigTransform struct{}

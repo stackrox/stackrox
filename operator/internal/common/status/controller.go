@@ -56,7 +56,7 @@ func (r *Reconciler[T]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 func (r *Reconciler[T]) runReconciliationFlow(ctx context.Context, log logr.Logger, req ctrl.Request) error {
 	// Create a new instance of T using reflection
-	typeOfT := reflect.TypeOf(new(T)).Elem()
+	typeOfT := reflect.TypeFor[T]()
 	typeOfDerefT := typeOfT.Elem()
 	obj := reflect.New(typeOfDerefT).Interface().(T)
 
@@ -115,7 +115,7 @@ func (r *Reconciler[T]) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	// Watch CRs with a predicate to filter away status-only updates
-	typeOfT := reflect.TypeOf(new(T)).Elem()
+	typeOfT := reflect.TypeFor[T]()
 	typeOfDerefT := typeOfT.Elem()
 	emptyCR := reflect.New(typeOfDerefT).Interface().(T)
 

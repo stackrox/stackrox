@@ -22,8 +22,8 @@ import (
 var _ Transformer = (*authProviderTransform)(nil)
 
 var (
-	authProviderType = reflect.TypeOf((*storage.AuthProvider)(nil))
-	groupType        = reflect.TypeOf((*storage.Group)(nil))
+	authProviderType = reflect.TypeFor[*storage.AuthProvider]()
+	groupType        = reflect.TypeFor[*storage.Group]()
 )
 
 type authProviderTransform struct{}

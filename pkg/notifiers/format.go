@@ -229,7 +229,7 @@ func FormatNetworkPolicyYAML(yaml string, clusterName string, funcMap template.F
 // isViolationKeyValue returns try if src is of type **storage.Alert_Violation_KeyValueAttrs_
 // Used to validate if a one-of is of type KeyValueAttrs within a template
 func isViolationKeyValue(src interface{}) bool {
-	return reflect.TypeOf(src) == reflect.TypeOf((*storage.Alert_Violation_KeyValueAttrs_)(nil))
+	return reflect.TypeOf(src) == reflect.TypeFor[*storage.Alert_Violation_KeyValueAttrs_]()
 }
 
 // isFileAccess returns true if src is of type **storage.Alert_Violation_FileAccess

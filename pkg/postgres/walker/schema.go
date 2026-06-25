@@ -51,11 +51,11 @@ func getIdxField(s *Schema) Field {
 			variable: true,
 			value:    "idx",
 		},
-		Type:       reflect.TypeOf(0).String(),
+		Type:       reflect.TypeFor[int]().String(),
 		ColumnName: "idx",
 		DataType:   postgres.Integer,
 		SQLType:    "integer",
-		ModelType:  reflect.TypeOf(0).String(),
+		ModelType:  reflect.TypeFor[int]().String(),
 		Options: PostgresOptions{
 			Ignored: false,
 			Index: []*PostgresIndexOptions{

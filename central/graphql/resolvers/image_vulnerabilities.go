@@ -26,7 +26,7 @@ import (
 
 func init() {
 	schema := getBuilder()
-	generator.RegisterProtoEnum(schema, reflect.TypeOf(storage.CvssScoreVersion(0)))
+	generator.RegisterProtoEnum(schema, reflect.TypeFor[storage.CvssScoreVersion]())
 
 	utils.Must(schema.AddType("ImageCVEV2", []string{
 		"componentId: String!",

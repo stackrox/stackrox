@@ -13,10 +13,10 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var namespaceLoaderType = reflect.TypeOf(storage.NamespaceMetadata{})
+var namespaceLoaderType = reflect.TypeFor[storage.NamespaceMetadata]()
 
 func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.NamespaceMetadata{}), func() interface{} {
+	RegisterTypeFactory(reflect.TypeFor[storage.NamespaceMetadata](), func() interface{} {
 		return NewNamespaceLoader(datastore.Singleton())
 	})
 }

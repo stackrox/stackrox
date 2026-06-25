@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	componentV2LoaderType = reflect.TypeOf(storage.ImageComponentV2{})
+	componentV2LoaderType = reflect.TypeFor[storage.ImageComponentV2]()
 )
 
 func init() {

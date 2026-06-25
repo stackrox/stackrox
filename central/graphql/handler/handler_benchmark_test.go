@@ -157,11 +157,11 @@ func getGraphQLServer(testHelper *testutils.ExportServicePostgresTestHelper) (*h
 	deploymentFactory := func() interface{} {
 		return loaders.NewDeploymentLoader(resolver.DeploymentDataStore, testHelper.DeploymentView)
 	}
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.Deployment{}), deploymentFactory)
+	loaders.RegisterTypeFactory(reflect.TypeFor[storage.Deployment](), deploymentFactory)
 	imageFactory := func() interface{} {
 		return loaders.NewImageLoader(resolver.ImageDataStore, testHelper.ImageView)
 	}
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.Image{}), imageFactory)
+	loaders.RegisterTypeFactory(reflect.TypeFor[storage.Image](), imageFactory)
 	ourSchema, err := graphql.ParseSchema(schema, resolver)
 	if err != nil {
 		return nil, err
