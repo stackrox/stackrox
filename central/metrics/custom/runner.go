@@ -102,10 +102,7 @@ func makeRunner(ds *runnerDatastores) trackerRunner {
 		}),
 	}, {
 		administrative_events.New(ds.adminEvents),
-		withHardcodedConfiguration(60, map[string][]string{
-			// rox_central_admin_event_total_occurrences
-			"total_occurrences": administrative_events.LazyLabels.GetLabels(),
-		}),
+		(*storage.PrometheusMetrics).GetAdministrativeEvents,
 	},
 	}
 }

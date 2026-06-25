@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// LazyLabels is exported for use in hardcoded configuration.
 var LazyLabels = tracker.LazyLabelGetters[*finding]{
 	"Type":         func(f *finding) string { return f.GetType().String() },
 	"Level":        func(f *finding) string { return f.GetLevel().String() },

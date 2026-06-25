@@ -14,6 +14,7 @@ const PrivateConfigPrometheusMetricsDetails = ({
         imageVulnerabilities: 'Image vulnerabilities',
         nodeVulnerabilities: 'Node vulnerabilities',
         policyViolations: 'Policy violations',
+        administrativeEvents: 'Administrative events',
     };
 
     return Object.entries(categoryTitles).map(([category, title]) => {

@@ -34,6 +34,7 @@ const metricPrefixes = {
     imageVulnerabilities: 'rox_central_image_vuln_',
     nodeVulnerabilities: 'rox_central_node_vuln_',
     policyViolations: 'rox_central_policy_violation_',
+    administrativeEvents: 'rox_central_admin_event_',
 };
 
 const predefinedMetrics: Record<
@@ -84,6 +85,14 @@ const predefinedMetrics: Record<
                 'Severity',
             ],
             includeFilters: { State: 'ACTIVE' },
+        },
+    },
+    administrativeEvents: {
+        domain_level: {
+            labels: ['Type', 'Level', 'Domain'],
+        },
+        resource_level: {
+            labels: ['Type', 'Level', 'Domain', 'ResourceType', 'ResourceName'],
         },
     },
 };
