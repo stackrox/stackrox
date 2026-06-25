@@ -6,11 +6,16 @@ import {
     selectDeployment,
     selectNamespace,
     visitNetworkGraph,
+    waitForNetworkFlows,
 } from './networkGraph.helpers';
 import { networkGraphSelectors } from './networkGraph.selectors';
 
 describe('Network Graph deployment sidebar', () => {
     withAuth();
+
+    before(() => {
+        waitForNetworkFlows();
+    });
 
     it('should render a graph when cluster and namespace are selected', () => {
         visitNetworkGraph();
@@ -21,7 +26,6 @@ describe('Network Graph deployment sidebar', () => {
         selectNamespace('stackrox');
         selectDeployment('collector');
 
-        // confirm that the graph only contains collector and other StackRox deployments it communiticates with
         cy.get(
             `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("sensor")`
         );

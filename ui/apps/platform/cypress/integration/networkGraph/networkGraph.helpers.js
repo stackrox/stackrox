@@ -98,6 +98,57 @@ export function checkNetworkGraphEmptyState() {
     );
 }
 
+export function waitForNetworkFlows(timeoutMs = 300000) {
+    const interval = 10000;
+    const maxAttempts = Math.ceil(timeoutMs / interval);
+
+    function poll(attempt) {
+        if (attempt >= maxAttempts) {
+            throw new Error(
+                `Timed out after ${timeoutMs / 1000}s waiting for network flow data`
+            );
+        }
+        const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
+        return cy
+            .request({ url: '/v1/clusters', auth, failOnStatusCode: false })
+            .then((clustersResponse) => {
+                const clusters = clustersResponse?.body?.clusters ?? [];
+                if (clusters.length === 0) {
+                    cy.log('No clusters found, retrying...');
+                    cy.wait(interval);
+                    return poll(attempt + 1);
+                }
+                const clusterId = clusters[0].id;
+                return cy
+                    .request({
+                        url: `/v1/networkgraph/cluster/${clusterId}?query=Namespace:stackrox`,
+                        auth,
+                        failOnStatusCode: false,
+                    })
+                    .then((graphResponse) => {
+                        const nodes = graphResponse?.body?.nodes ?? [];
+                        const collectorNode = nodes.find(
+                            (n) => n?.entity?.deployment?.name === 'collector'
+                        );
+                        const hasOutEdges =
+                            collectorNode?.outEdges &&
+                            Object.keys(collectorNode.outEdges).length > 0;
+                        if (hasOutEdges) {
+                            cy.log('Network flow data ready for collector');
+                            return;
+                        }
+                        cy.log(
+                            `Network flows not ready (attempt ${attempt + 1}/${maxAttempts}), retrying...`
+                        );
+                        cy.wait(interval);
+                        return poll(attempt + 1);
+                    });
+            });
+    }
+
+    return poll(0);
+}
+
 export function updateAndCloseCidrModal() {
     cy.clock();
     cy.get(networkGraphSelectors.updateCidrBlocksButton).click();
