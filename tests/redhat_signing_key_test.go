@@ -12,6 +12,7 @@ import (
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/signatures"
@@ -24,7 +25,7 @@ import (
 )
 
 const (
-	redHatIntegrationID = "io.stackrox.signatureintegration.12a37a37-760e-4388-9e79-d62726c075b2"
+	redHatIntegrationID = signatures.DefaultRedHatIntegrationID
 	watchIntervalEnv    = "ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL"
 	shortWatchInterval  = "10s"
 
@@ -105,24 +106,23 @@ func (s *RedHatSigningKeySuite) TestDefaultIntegrationExists() {
 	resp, err := s.listIntegrations(ctx)
 	s.Require().NoError(err, "listing signature integrations")
 
-	var found bool
+	var matched *storage.SignatureIntegration
 	for _, si := range resp.GetIntegrations() {
-		if si.GetId() != redHatIntegrationID {
-			continue
+		if si.GetId() == redHatIntegrationID {
+			matched = si
+			break
 		}
-		found = true
-		s.Assert().Equal("Red Hat", si.GetName())
-		s.Assert().GreaterOrEqual(len(si.GetCosign().GetPublicKeys()), 1,
-			"expected at least one cosign public key")
-		for _, pk := range si.GetCosign().GetPublicKeys() {
-			s.Assert().NotEmpty(pk.GetName(), "key name must not be empty")
-			s.Assert().NotEmpty(pk.GetPublicKeyPemEnc(), "key PEM must not be empty")
-		}
-		break
 	}
-	s.Require().True(found, "Red Hat signature integration %q not found", redHatIntegrationID)
+	s.Require().NotNil(matched, "Red Hat signature integration %q not found", redHatIntegrationID)
+	s.Assert().Equal("Red Hat", matched.GetName())
+	s.Assert().GreaterOrEqual(len(matched.GetCosign().GetPublicKeys()), 1,
+		"expected at least one cosign public key")
+	for _, pk := range matched.GetCosign().GetPublicKeys() {
+		s.Assert().NotEmpty(pk.GetName(), "key name must not be empty")
+		s.Assert().NotEmpty(pk.GetPublicKeyPemEnc(), "key PEM must not be empty")
+	}
 	t.Logf("Red Hat integration found with %d key(s)",
-		len(resp.GetIntegrations()[0].GetCosign().GetPublicKeys()))
+		len(matched.GetCosign().GetPublicKeys()))
 }
 
 func (s *RedHatSigningKeySuite) TestWatcherPicksUpBundleFile() {

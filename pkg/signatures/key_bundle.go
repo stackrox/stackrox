@@ -38,7 +38,7 @@ type KeyBundleEntry struct {
 	PEM  string `json:"pem"`
 }
 
-// ParseKeyBundle parses and processs a key bundle JSON.
+// ParseKeyBundle parses and processes a key bundle JSON.
 //
 // Schema version handling:
 //   - Known versions (e.g. "1.0"): accepted.
@@ -48,7 +48,7 @@ type KeyBundleEntry struct {
 //
 // Key type handling:
 //   - All types are accepted; unsupported types are filtered by ToSignatureIntegration.
-//   - Keys with supported types are processd (e.g. PEM encoding for cosign keys).
+//   - Keys with supported types are processed (e.g. PEM encoding for cosign keys).
 //   - Keys with unsupported types are stored as-is without validation.
 func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 	var bundle KeyBundle

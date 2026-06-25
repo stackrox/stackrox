@@ -94,6 +94,15 @@ func TestHandlerMalformedJSONReturnsNil(t *testing.T) {
 	assert.NoError(t, err, "parse errors must return nil to suppress retry")
 }
 
+func TestHandlerNoSupportedKeysReturnsNil(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
+
+	handler := keyBundleHandler(mockStore)
+	err := handler([]byte(`{"schemaVersion": "1.0", "keys": [{"name": "k", "type": "pgp", "pem": "opaque"}]}`))
+	assert.NoError(t, err, "no-supported-keys errors must return nil to suppress retry")
+}
+
 func TestHandlerUpsertErrorReturnsError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockStore := storeMocks.NewMockSignatureIntegrationStore(ctrl)
